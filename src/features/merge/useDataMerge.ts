@@ -175,6 +175,50 @@ export function useDataMerge() {
     applyRow(rows[currentRowIndex])
   }, [isConnected, currentRowIndex, rows, applyRow])
 
+  // Intercepter l'édition de texte en mode merge
+  useEffect(() => {
+    const canvas = globalFabricCanvas
+    if (!canvas || !isConnected) return
+
+    const handleEditingEntered = (e: { target?: unknown }) => {
+      const target = e.target
+      if (!(target instanceof Textbox)) return
+      if (target.data?.templateText) {
+        target.set('text', target.data.templateText)
+        canvas.requestRenderAll()
+      }
+    }
+
+    const handleEditingExited = (e: { target?: unknown }) => {
+      const target = e.target
+      if (!(target instanceof Textbox)) return
+      const currentText = target.text ?? ''
+
+      if (hasPlaceholders(currentText)) {
+        if (!target.data) target.data = {}
+        target.data.templateText = currentText
+        const row = rows[currentRowIndex]
+        if (row) {
+          const resolved = resolveText(currentText, row)
+          target.set('text', resolved)
+        }
+      } else {
+        if (target.data?.templateText) {
+          delete target.data.templateText
+        }
+      }
+      canvas.requestRenderAll()
+    }
+
+    canvas.on('text:editing:entered', handleEditingEntered)
+    canvas.on('text:editing:exited', handleEditingExited)
+
+    return () => {
+      canvas.off('text:editing:entered', handleEditingEntered)
+      canvas.off('text:editing:exited', handleEditingExited)
+    }
+  }, [isConnected, rows, currentRowIndex])
+
   return {
     isConnected,
     dataSource,
