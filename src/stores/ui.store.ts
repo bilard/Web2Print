@@ -1,12 +1,10 @@
 import { create } from 'zustand'
 import type { GradientConfig } from './editor.store'
 
-type LeftPanel = 'elements' | 'text' | 'images' | 'shapes' | 'layers' | 'palette' | 'assets' | 'nanobana' | null
 export type CanvasBgType = 'solid' | 'gradient' | 'image'
 export type ActiveTool = 'select' | 'text' | 'rect' | 'ellipse' | 'line' | 'image' | 'hand' | 'zoom'
 
 interface UIState {
-  activeLeftPanel: LeftPanel
   rightPanelOpen: boolean
   settingsOpen: boolean
   pageSettingsOpen: boolean
@@ -19,8 +17,6 @@ interface UIState {
   canvasBgType: CanvasBgType
   canvasBgGradient: GradientConfig
   canvasBgImage: string | null
-  setActiveLeftPanel: (panel: LeftPanel) => void
-  toggleLeftPanel: (panel: Exclude<LeftPanel, null>) => void
   setRightPanelOpen: (open: boolean) => void
   setSettingsOpen: (open: boolean) => void
   setPageSettingsOpen: (open: boolean) => void
@@ -48,7 +44,6 @@ const DEFAULT_BG_GRADIENT: GradientConfig = {
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
-  activeLeftPanel: 'elements',
   rightPanelOpen: true,
   settingsOpen: false,
   pageSettingsOpen: false,
@@ -62,9 +57,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   canvasBgGradient: DEFAULT_BG_GRADIENT,
   canvasBgImage: null,
 
-  setActiveLeftPanel: (panel) => set({ activeLeftPanel: panel }),
-  toggleLeftPanel: (panel) =>
-    set((s) => ({ activeLeftPanel: s.activeLeftPanel === panel ? null : panel })),
   setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
   setPageSettingsOpen: (open) => set({ pageSettingsOpen: open }),
