@@ -27,6 +27,10 @@ interface MergeState {
   currentRowIndex: number
   isConnected: boolean
 
+  // Persisted source reference
+  savedDataSource: DataSourceRef | null
+  setSavedDataSource: (source: DataSourceRef | null) => void
+
   // Actions
   connect: (source: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) => void
   disconnect: () => void
@@ -41,6 +45,8 @@ export const useMergeStore = create<MergeState>((set, get) => ({
   rows: [],
   currentRowIndex: 0,
   isConnected: false,
+  savedDataSource: null,
+  setSavedDataSource: (source) => set({ savedDataSource: source }),
 
   connect: (source, columns, rows) =>
     set({ dataSource: source, columns, rows, currentRowIndex: 0, isConnected: true }),

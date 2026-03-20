@@ -6,6 +6,7 @@ import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { useDataMerge } from './useDataMerge'
 import { Database, Upload, Loader2, FileSpreadsheet } from 'lucide-react'
+import { useMergeStore } from '@/stores/merge.store'
 import type { DataSourceRef } from '@/stores/merge.store'
 
 interface SavedDataset {
@@ -20,6 +21,7 @@ interface SavedDataset {
 export function DataSourcePicker() {
   const user = useAuthStore((s) => s.user)
   const { connectSource } = useDataMerge()
+  const savedDataSource = useMergeStore((s) => s.savedDataSource)
   const { importFile } = useExcelImport()
   const { saveToFirebase } = useExcelFirebase()
 
@@ -91,6 +93,27 @@ export function DataSourcePicker() {
     } finally {
       setImporting(false)
     }
+  }
+
+  if (savedDataSource) {
+    return (
+      <div className="p-3 space-y-2">
+        <p className="text-xs text-white/40 text-center mb-2">Source précédente disponible</p>
+        <button
+          onClick={() => connectSource(savedDataSource)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-indigo-500/20 hover:bg-indigo-500/30 text-sm text-indigo-400 transition-colors"
+        >
+          <Database className="w-4 h-4" />
+          Reconnecter {savedDataSource.fileName}
+        </button>
+        <button
+          onClick={() => useMergeStore.getState().setSavedDataSource(null)}
+          className="w-full text-xs text-white/30 hover:text-white/50 text-center"
+        >
+          Choisir une autre source
+        </button>
+      </div>
+    )
   }
 
   if (mode === 'choose') {
