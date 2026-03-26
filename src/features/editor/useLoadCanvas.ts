@@ -7,11 +7,24 @@ import { db, storage } from '@/lib/firebase/config'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { usePaletteStore } from '@/stores/palette.store'
-import { useMergeStore } from '@/stores/merge.store'
+import { useMergeStore, type FormulaConfig } from '@/stores/merge.store'
 import { syncToStore } from './useAddObject'
 import { ensurePageBgRect } from './useCanvas'
 import { setLoadingInProgress } from './useAutoSave'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
+import { downloadIdmlFromStorage, globalIdmlSource } from '@/features/idml/idmlSource'
+
+function restoreMergeData<T>(
+  raw: string | undefined,
+  apply: (store: ReturnType<typeof useMergeStore.getState>, k: string, v: T) => void,
+): void {
+  if (!raw) return
+  try {
+    const parsed = JSON.parse(raw) as Record<string, T>
+    const store = useMergeStore.getState()
+    for (const [k, v] of Object.entries(parsed)) apply(store, k, v)
+  } catch { /* ignore */ }
+}
 
 // Force-register Fabric classes so loadFromJSON can deserialize them.
 // Using classRegistry.setClass prevents Vite tree-shaking from removing them.
@@ -256,6 +269,13 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           palette.setPalette(colors, gradients)
         } catch { /* ignore */ }
 
+        // Restore IDML source from Storage if not already in memory
+        if (!globalIdmlSource && data.idmlSourceFileName) {
+          downloadIdmlFromStorage(pid, data.idmlSourceFileName as string).catch((err) =>
+            console.warn('[Load] IDML source restore failed:', err),
+          )
+        }
+
         // Load fonts and project images in parallel
         const [, projectImageUrls] = await Promise.all([
           loadProjectFonts(pid, canvas),
@@ -402,6 +422,9 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
               setSavedDataSource(JSON.parse(data.dataSource))
             } catch { /* ignore */ }
           }
+          restoreMergeData<string>(data.mergeFormulas, (s, k, v) => s.setFormula(k, v))
+          restoreMergeData<boolean>(data.mergeHideLineIfEmpty, (s, k, v) => s.setHideLineIfEmpty(k, v))
+          restoreMergeData<FormulaConfig>(data.mergeFormulaConfigs, (s, k, v) => s.setFormulaConfig(k, v))
         }
 
         ensurePageBgRect(canvas)
@@ -417,18 +440,30 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           }
           canvas.requestRenderAll()
           syncToStore(canvas)
-          // Second pass for late-loading fonts
+          // Second pass for late-loading fonts + restauration auto-fit merge
           setTimeout(() => {
             document.fonts.ready.then(() => {
+              let autoFitApplied = false
               for (const obj of canvas.getObjects()) {
                 if (obj instanceof IText || obj instanceof Textbox) {
                   ;(obj as any)._clearCache?.()
                   ;(obj as any).dirty = true
                   ;(obj as any).initDimensions()
                 }
+                // Restaurer la largeur auto-fit des blocs merge à placeholder unique
+                if (obj instanceof Textbox && obj.data?.autoFitWidth) {
+                  const fitW = obj.data.autoFitWidth as number
+                  if (Math.abs((obj.width ?? 0) - fitW) > 1) {
+                    obj.set({ width: fitW, scaleX: 1, scaleY: 1 })
+                    ;(obj as any).initDimensions?.()
+                    obj.setCoords()
+                    autoFitApplied = true
+                  }
+                }
               }
               canvas.requestRenderAll()
               syncToStore(canvas)
+              if (autoFitApplied) canvas.requestRenderAll()
             })
           }, 500)
         })

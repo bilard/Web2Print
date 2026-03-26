@@ -5,12 +5,12 @@ import {
   AlignStartVertical, AlignCenterHorizontal, AlignEndHorizontal,
   AlignStartHorizontal, AlignCenterVertical, AlignEndVertical,
   Lock, Unlock, Link, Unlink, GalleryHorizontalEnd, GalleryVerticalEnd,
-  Eye, EyeOff, Copy, Trash2,
+  Eye, EyeOff, Copy, Trash2, Minimize2,
 } from 'lucide-react'
 import { Shadow, Gradient } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
-import { useTextEditor } from '@/features/editor/useTextEditor'
+import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'
 import { useObjectOperations } from '@/features/editor/useObjectOperations'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -138,13 +138,43 @@ export function PropertiesPanel() {
   const ops = useObjectOperations()
   const [activeTab, setActiveTab] = useState<'shape' | 'text'>('shape')
 
-  const obj = canvasObjects.find((o) => o.id === selectedObjectId)
+  const storeObj = canvasObjects.find((o) => o.id === selectedObjectId)
+
+  // Track cursor-level text style for per-character properties
+  const [cursorTextStyle, setCursorTextStyle] = useState<Record<string, unknown> | null>(null)
+  useEffect(() => {
+    const canvas = globalFabricCanvas
+    if (!canvas || storeObj?.type !== 'text') { setCursorTextStyle(null); return }
+    const update = () => {
+      const cs = getCurrentTextStyle(canvas)
+      setCursorTextStyle(cs as Record<string, unknown> | null)
+    }
+    update()
+    canvas.on('text:selection:changed' as any, update)
+    canvas.on('text:editing:entered' as any, update)
+    canvas.on('text:editing:exited' as any, update)
+    return () => {
+      canvas.off('text:selection:changed' as any, update)
+      canvas.off('text:editing:entered' as any, update)
+      canvas.off('text:editing:exited' as any, update)
+    }
+  }, [selectedObjectId, storeObj?.type])
+
+  // Merge cursor-level style into store object for display
+  const obj = storeObj ? (cursorTextStyle ? {
+    ...storeObj,
+    fontSize: (cursorTextStyle.fontSize as number) ?? storeObj.fontSize,
+    fontFamily: (cursorTextStyle.fontFamily as string) ?? storeObj.fontFamily,
+    fontWeight: (cursorTextStyle.fontWeight as string) ?? storeObj.fontWeight,
+    fontStyle: (cursorTextStyle.fontStyle as string) ?? storeObj.fontStyle,
+    fill: (cursorTextStyle.fill as string) ?? storeObj.fill,
+  } : storeObj) : undefined
 
   // Auto-switch to text tab when selecting a text object
   useEffect(() => {
-    if (obj?.type === 'text') setActiveTab('text')
+    if (storeObj?.type === 'text') setActiveTab('text')
     else setActiveTab('shape')
-  }, [selectedObjectId, obj?.type])
+  }, [selectedObjectId, storeObj?.type])
 
   const applyToFabric = (patch: Parameters<typeof updateObject>[1]) => {
     if (!obj) return
@@ -415,8 +445,8 @@ export function PropertiesPanel() {
                 {/* ── Taille & Position ── */}
                 <Section title="Taille & Position">
                   <Row>
-                    <NumInput label="X" value={obj.x} onChange={(v) => applyToFabric({ x: v })} />
-                    <NumInput label="Y" value={obj.y} onChange={(v) => applyToFabric({ y: v })} />
+                    <NumInput label="X" value={obj.x} onChange={(v) => applyToFabric({ x: v })} unit="pt" />
+                    <NumInput label="Y" value={obj.y} onChange={(v) => applyToFabric({ y: v })} unit="pt" />
                   </Row>
                   <Row>
                     <NumInput label="Largeur" value={obj.width} onChange={(v) => {
@@ -426,7 +456,7 @@ export function PropertiesPanel() {
                       } else {
                         applyToFabric({ width: v })
                       }
-                    }} />
+                    }} unit="pt" />
                     <NumInput label="Hauteur" value={obj.height} onChange={(v) => {
                       if (obj.lockAspectRatio && obj.height > 0) {
                         const ratio = obj.width / obj.height
@@ -434,7 +464,7 @@ export function PropertiesPanel() {
                       } else {
                         applyToFabric({ height: v })
                       }
-                    }} />
+                    }} unit="pt" />
                   </Row>
                   {/* Aspect ratio lock */}
                   <div className="flex items-center gap-2">
@@ -465,6 +495,30 @@ export function PropertiesPanel() {
                       {obj.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                     </button>
                   </div>
+                  {/* Ajuster à la taille du contenu (texte uniquement) */}
+                  {obj.type === 'text' && (
+                    <button
+                      onClick={() => {
+                        const canvas = globalFabricCanvas
+                        if (!canvas) return
+                        const fObj = canvas.getObjects().find((o) => (o as any).data?.id === obj.id)
+                        if (!fObj) return
+                        const tb = fObj as any
+                        if (typeof tb.calcTextWidth === 'function') {
+                          const minW = tb.calcTextWidth()
+                          tb.set({ width: Math.max(minW, 10), scaleX: 1, scaleY: 1 })
+                          tb.initDimensions?.()
+                          tb.setCoords()
+                          canvas.requestRenderAll()
+                          syncToStore(canvas)
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 rounded-md text-white/40 hover:text-indigo-300 transition-colors"
+                    >
+                      <Minimize2 className="w-3.5 h-3.5" />
+                      Ajuster à la taille du contenu
+                    </button>
+                  )}
                 </Section>
               </>
             )}

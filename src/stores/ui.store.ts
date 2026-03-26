@@ -3,9 +3,12 @@ import type { GradientConfig } from './editor.store'
 
 export type CanvasBgType = 'solid' | 'gradient' | 'image'
 export type ActiveTool = 'select' | 'text' | 'rect' | 'ellipse' | 'line' | 'image' | 'hand' | 'zoom'
+export type LeftPanelId = 'elements' | 'text' | 'nanobana' | 'shapes' | 'palette' | 'layers' | 'assets'
 
 interface UIState {
   rightPanelOpen: boolean
+  activeLeftPanel: LeftPanelId | null
+  toggleLeftPanel: (id: LeftPanelId) => void
   settingsOpen: boolean
   pageSettingsOpen: boolean
   zoom: number
@@ -45,6 +48,9 @@ const DEFAULT_BG_GRADIENT: GradientConfig = {
 
 export const useUIStore = create<UIState>((set, get) => ({
   rightPanelOpen: true,
+  activeLeftPanel: 'elements',
+  toggleLeftPanel: (id) =>
+    set((s) => ({ activeLeftPanel: s.activeLeftPanel === id ? null : id })),
   settingsOpen: false,
   pageSettingsOpen: false,
   zoom: 100,
@@ -72,12 +78,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
-    { id: 'data', collapsed: true },
-    { id: 'layers', collapsed: true },
-    { id: 'images', collapsed: true },
+    { id: 'data',    collapsed: true },
+    { id: 'layers',  collapsed: true },
+    { id: 'images',  collapsed: true },
     { id: 'palette', collapsed: true },
-    { id: 'assets', collapsed: true },
-    { id: 'import', collapsed: true },
+    { id: 'assets',  collapsed: true },
   ],
   setRightPanels: (panels) => set({ rightPanels: panels }),
   toggleRightPanel: (id) =>

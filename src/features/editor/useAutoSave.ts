@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Canvas, FabricImage } from 'fabric'
+import { Canvas, FabricImage, Textbox } from 'fabric'
 import { doc, updateDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { usePaletteStore } from '@/stores/palette.store'
 import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
+import { globalIdmlSource } from '@/features/idml/idmlSource'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
 export let globalSave: (() => Promise<void>) | null = null
@@ -95,8 +96,53 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
     canvas.requestRenderAll()
   }
 
-  // Step 2: Serialize with all images now having permanent URLs
+  // Step 2: Restore template text/styles/size before serializing (so saved JSON has {{}} placeholders)
+  type ResolvedEntry = {
+    obj: Textbox
+    resolved: string
+    resolvedStyles: Record<number, Record<number, Record<string, unknown>>>
+    resolvedWidth: number | undefined
+  }
+  const resolvedTexts: ResolvedEntry[] = []
+  for (const obj of canvas.getObjects()) {
+    if (obj instanceof Textbox && obj.data?.templateText) {
+      const tmpl = obj.data.templateText as string
+      if (obj.text !== tmpl) {
+        const resolvedStyles = JSON.parse(JSON.stringify((obj as any).styles || {})) as Record<number, Record<number, Record<string, unknown>>>
+        const resolvedWidth = obj.width
+        resolvedTexts.push({ obj, resolved: obj.text ?? '', resolvedStyles, resolvedWidth })
+
+        obj.set('text', tmpl)
+
+        // Restaurer les styles du template (indices corrects pour le texte template)
+        const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
+        ;(obj as any).styles = tStyles && Object.keys(tStyles).length > 0
+          ? JSON.parse(JSON.stringify(tStyles))
+          : {}
+
+        // Restaurer la largeur originale (avant auto-fit) pour que le template soit lisible
+        const origW = obj.data.originalWidth as number | undefined
+        if (origW && origW !== obj.width) {
+          obj.set('width', origW)
+          ;(obj as any).initDimensions?.()
+        }
+      }
+    }
+  }
+
+  // Step 3: Serialize with all images now having permanent URLs
   const canvasJson = (canvas as any).toJSON(['data'])
+
+  // Step 4: Restore resolved text/styles/size on canvas (user sees data, not templates)
+  for (const { obj, resolved, resolvedStyles, resolvedWidth } of resolvedTexts) {
+    obj.set('text', resolved)
+    ;(obj as any).styles = resolvedStyles
+    if (resolvedWidth !== undefined && resolvedWidth !== obj.width) {
+      obj.set('width', resolvedWidth)
+      ;(obj as any).initDimensions?.()
+    }
+  }
+
   return JSON.stringify(canvasJson)
 }
 
@@ -154,6 +200,12 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         canvasData: json,
         charSpacingMaps: Object.keys(charSpacingMaps).length > 0 ? JSON.stringify(charSpacingMaps) : null,
         dataSource: dataSource ? JSON.stringify(dataSource) : null,
+        mergeFormulas: Object.keys(useMergeStore.getState().formulas).length > 0
+          ? JSON.stringify(useMergeStore.getState().formulas) : null,
+        mergeFormulaConfigs: Object.keys(useMergeStore.getState().formulaConfigs).length > 0
+          ? JSON.stringify(useMergeStore.getState().formulaConfigs) : null,
+        mergeHideLineIfEmpty: Object.keys(useMergeStore.getState().hideLineIfEmpty).length > 0
+          ? JSON.stringify(useMergeStore.getState().hideLineIfEmpty) : null,
         canvasWidth,
         canvasHeight,
         canvasBg,
@@ -163,6 +215,7 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         paletteColors: JSON.stringify(paletteColors),
         paletteGradients: JSON.stringify(paletteGradients),
         thumbnail,
+        idmlSourceFileName: globalIdmlSource?.fileName ?? null,
         updatedAt: Date.now(),
       })
       setSaveStatus('saved')

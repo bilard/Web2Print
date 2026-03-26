@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
+import { SheetsFilePicker } from './SheetsFilePicker'
 import { useDataMerge } from './useDataMerge'
-import { Database, Upload, Loader2, FileSpreadsheet } from 'lucide-react'
+import { Database, Upload, Loader2, FileSpreadsheet, Table2, X } from 'lucide-react'
 import { useMergeStore } from '@/stores/merge.store'
 import type { DataSourceRef } from '@/stores/merge.store'
 
@@ -27,20 +28,16 @@ export function DataSourcePicker() {
 
   const [datasets, setDatasets] = useState<SavedDataset[]>([])
   const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<'choose' | 'list'>('choose')
+  const [mode, setMode] = useState<'choose' | 'list' | 'sheets'>('choose')
   const [importing, setImporting] = useState(false)
 
   const loadDatasets = useCallback(async () => {
     if (!user) return
     setLoading(true)
     try {
-      const q = query(
-        collection(db, 'excel_data'),
-        where('userId', '==', user.uid),
-        orderBy('updatedAt', 'desc')
-      )
+      const q = query(collection(db, 'excel_data'), where('userId', '==', user.uid))
       const snap = await getDocs(q)
-      setDatasets(snap.docs.map((d) => {
+      const list = snap.docs.map((d) => {
         const data = d.data()
         return {
           docId: d.id,
@@ -50,7 +47,11 @@ export function DataSourcePicker() {
           sheetCount: data.sheetCount ?? 1,
           updatedAt: data.updatedAt?.toMillis?.() ?? Date.now(),
         }
-      }))
+      })
+      list.sort((a, b) => b.updatedAt - a.updatedAt)
+      setDatasets(list)
+    } catch (err) {
+      console.error('[DataSourcePicker] Load error:', err)
     } finally {
       setLoading(false)
     }
@@ -69,7 +70,6 @@ export function DataSourcePicker() {
     await connectSource(source)
   }
 
-  // Matches useExcelFirebase getDocId() logic exactly
   const getFirebaseDocId = (fileName: string) => {
     const base = fileName.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
     return `${user!.uid}_${base}`
@@ -116,6 +116,20 @@ export function DataSourcePicker() {
     )
   }
 
+  if (mode === 'sheets') {
+    return (
+      <div>
+        <div className="flex items-center justify-between px-3 pt-3 pb-1">
+          <span className="text-xs text-white/60 font-medium">Google Sheets</span>
+          <button onClick={() => setMode('choose')} className="text-white/40 hover:text-white/70">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <SheetsFilePicker onClose={() => setMode('choose')} />
+      </div>
+    )
+  }
+
   if (mode === 'choose') {
     return (
       <div className="p-3 space-y-2">
@@ -138,6 +152,13 @@ export function DataSourcePicker() {
             disabled={importing}
           />
         </label>
+        <button
+          onClick={() => setMode('sheets')}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors"
+        >
+          <Table2 className="w-4 h-4 text-green-400" />
+          Importer depuis Google Sheets
+        </button>
       </div>
     )
   }
@@ -146,10 +167,7 @@ export function DataSourcePicker() {
     <div className="p-3 space-y-2">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-white/60 font-medium">Datasets disponibles</span>
-        <button
-          onClick={() => setMode('choose')}
-          className="text-xs text-white/40 hover:text-white/70"
-        >
+        <button onClick={() => setMode('choose')} className="text-xs text-white/40 hover:text-white/70">
           Retour
         </button>
       </div>

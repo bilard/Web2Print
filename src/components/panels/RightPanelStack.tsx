@@ -6,7 +6,7 @@ import {
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
-import { Layers, ImagePlus, Palette, FolderOpen, Download, Database } from 'lucide-react'
+import { Layers, ImagePlus, Palette, FolderOpen, Database } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { PropertiesPanel } from '@/components/panels/PropertiesPanel'
 import { CollapsiblePanel } from '@/components/panels/CollapsiblePanel'
@@ -14,16 +14,14 @@ import { LayersPanel } from '@/components/panels/LayersPanel'
 import { NanoBanaPanel } from '@/features/nanobana/NanoBanaPanel'
 import { PalettePanel } from '@/components/panels/PalettePanel'
 import { AssetsPanel } from '@/components/panels/AssetsPanel'
-import { ImagesPanel } from '@/components/panels/ImagesPanel'
 import { DataMergePanel } from '@/features/merge/DataMergePanel'
 
 const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode }> = {
-  data: { title: 'Données', icon: Database, content: <DataMergePanel /> },
-  layers: { title: 'Calques', icon: Layers, content: <LayersPanel /> },
-  images: { title: 'Images', icon: ImagePlus, content: <NanoBanaPanel /> },
-  palette: { title: 'Palette', icon: Palette, content: <PalettePanel /> },
-  assets: { title: 'Assets', icon: FolderOpen, content: <AssetsPanel /> },
-  import: { title: 'Import', icon: Download, content: <ImagesPanel /> },
+  data:   { title: 'Données', icon: Database,  content: <DataMergePanel /> },
+  layers: { title: 'Calques', icon: Layers,    content: <LayersPanel /> },
+  images: { title: 'Images',  icon: ImagePlus, content: <NanoBanaPanel /> },
+  palette:{ title: 'Palette', icon: Palette,   content: <PalettePanel /> },
+  assets: { title: 'Assets',  icon: FolderOpen,content: <AssetsPanel /> },
 }
 
 export function RightPanelStack() {
@@ -46,7 +44,7 @@ export function RightPanelStack() {
   return (
     <div className="w-[300px] bg-[#1a1a1a] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
       {/* Properties always on top */}
-      <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '50%' }}>
+      <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '70%' }}>
         <PropertiesPanel />
       </div>
 

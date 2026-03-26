@@ -17,6 +17,13 @@ export interface DataSourceRef {
   fileName: string
 }
 
+export type FormulaResultType = 'auto' | 'number' | 'text'
+
+export interface FormulaConfig {
+  resultType: FormulaResultType
+  decimals: number | null
+}
+
 interface MergeState {
   // Source
   dataSource: DataSourceRef | null
@@ -26,6 +33,20 @@ interface MergeState {
   // Navigation
   currentRowIndex: number
   isConnected: boolean
+
+  // Formulas: variable name → formula string (e.g. '"[brands]"')
+  formulas: Record<string, string>
+  setFormula: (variable: string, formula: string) => void
+  removeFormula: (variable: string) => void
+
+  // Formula configs: variable name → type + decimals options
+  formulaConfigs: Record<string, FormulaConfig>
+  setFormulaConfig: (variable: string, config: FormulaConfig) => void
+  removeFormulaConfig: (variable: string) => void
+
+  // hideLineIfEmpty: variable names where the entire line is removed when value is empty
+  hideLineIfEmpty: Record<string, boolean>
+  setHideLineIfEmpty: (variable: string, hide: boolean) => void
 
   // Persisted source reference
   savedDataSource: DataSourceRef | null
@@ -45,6 +66,27 @@ export const useMergeStore = create<MergeState>((set, get) => ({
   rows: [],
   currentRowIndex: 0,
   isConnected: false,
+  formulas: {},
+  setFormula: (variable, formula) =>
+    set((s) => ({ formulas: { ...s.formulas, [variable]: formula } })),
+  removeFormula: (variable) =>
+    set((s) => {
+      const f = { ...s.formulas }
+      delete f[variable]
+      return { formulas: f }
+    }),
+  formulaConfigs: {},
+  setFormulaConfig: (variable, config) =>
+    set((s) => ({ formulaConfigs: { ...s.formulaConfigs, [variable]: config } })),
+  removeFormulaConfig: (variable) =>
+    set((s) => {
+      const f = { ...s.formulaConfigs }
+      delete f[variable]
+      return { formulaConfigs: f }
+    }),
+  hideLineIfEmpty: {},
+  setHideLineIfEmpty: (variable, hide) =>
+    set((s) => ({ hideLineIfEmpty: { ...s.hideLineIfEmpty, [variable]: hide } })),
   savedDataSource: null,
   setSavedDataSource: (source) => set({ savedDataSource: source }),
 
