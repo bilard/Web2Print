@@ -163,18 +163,17 @@ export function useDuplicateTaxonomy() {
 
 // ─── Helper : met à jour les nodes d'une taxonomie avec optimistic update ─────
 
-function useUpdateNodes() {
-  const user = useAuthStore((s) => s.user)
-  const qc = useQueryClient()
-
+function makeOptimisticUpdater(
+  qc: ReturnType<typeof useQueryClient>,
+  uid: string
+) {
   return async (
     taxonomyId: string,
     updater: (nodes: Record<string, TaxonomyNode>) => Record<string, TaxonomyNode>
   ): Promise<{ previous: Taxonomy[] }> => {
-    await qc.cancelQueries({ queryKey: taxListKey(user!.uid) })
-    const previous = getCachedList(qc, user!.uid)
-
-    qc.setQueryData<Taxonomy[]>(taxListKey(user!.uid), (old) =>
+    await qc.cancelQueries({ queryKey: taxListKey(uid) })
+    const previous = getCachedList(qc, uid)
+    qc.setQueryData<Taxonomy[]>(taxListKey(uid), (old) =>
       (old ?? []).map((t) =>
         t.id === taxonomyId ? { ...t, nodes: updater(t.nodes) } : t
       )
@@ -188,7 +187,6 @@ function useUpdateNodes() {
 export function useAddNode() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const applyOptimistic = useUpdateNodes()
 
   return useMutation({
     mutationFn: async ({
@@ -223,10 +221,10 @@ export function useAddNode() {
       return node
     },
     onMutate: async ({ taxonomyId, parentId, label }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
-        (t) => t.id === taxonomyId
-      )
-      if (!taxonomy) return
+      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      const cached = getCachedList(qc, user!.uid)
+      const taxonomy = cached.find((t) => t.id === taxonomyId)
+      if (!taxonomy) return { previous: cached }
       const parentNode = parentId ? taxonomy.nodes[parentId] : null
       const tempId = crypto.randomUUID()
       const tempNode: TaxonomyNode = {
@@ -258,7 +256,6 @@ export function useAddNode() {
 export function useRenameNode() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const applyOptimistic = useUpdateNodes()
 
   return useMutation({
     mutationFn: async ({
@@ -283,11 +280,13 @@ export function useRenameNode() {
         updatedAt: Timestamp.now(),
       })
     },
-    onMutate: ({ taxonomyId, nodeId, label }) =>
-      applyOptimistic(taxonomyId, (nodes) => ({
+    onMutate: ({ taxonomyId, nodeId, label }) => {
+      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
         [nodeId]: { ...nodes[nodeId], label },
-      })),
+      }))
+    },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
       toast.error('Erreur lors du renommage du nœud')
@@ -304,7 +303,6 @@ export function useRenameNode() {
 export function useDeleteNode() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const applyOptimistic = useUpdateNodes()
 
   return useMutation({
     mutationFn: async ({
@@ -332,10 +330,10 @@ export function useDeleteNode() {
       })
     },
     onMutate: ({ taxonomyId, nodeId }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
-        (t) => t.id === taxonomyId
-      )
-      if (!taxonomy) return
+      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      const cached = getCachedList(qc, user!.uid)
+      const taxonomy = cached.find((t) => t.id === taxonomyId)
+      if (!taxonomy) return { previous: cached }
       const toDelete = new Set([
         nodeId,
         ...getAllDescendantIds(taxonomy.nodes, nodeId),
@@ -364,7 +362,6 @@ export function useDeleteNode() {
 export function useMoveNode() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const applyOptimistic = useUpdateNodes()
 
   return useMutation({
     mutationFn: async ({
@@ -402,16 +399,26 @@ export function useMoveNode() {
           : 0,
       }
 
+      // Recursively update levels of all descendants
+      const cascadeLevels = (parentId: string, parentLevel: number, nodesMap: Record<string, TaxonomyNode>) => {
+        const children = Object.values(nodesMap).filter(n => n.parentId === parentId)
+        for (const child of children) {
+          nodesMap[child.id] = { ...nodesMap[child.id], level: parentLevel + 1 }
+          cascadeLevels(child.id, parentLevel + 1, nodesMap)
+        }
+      }
+      cascadeLevels(nodeId, updatedNodes[nodeId].level, updatedNodes)
+
       await updateDoc(doc(db, 'taxonomies', taxonomyId), {
         nodes: updatedNodes,
         updatedAt: Timestamp.now(),
       })
     },
     onMutate: ({ taxonomyId, nodeId, newParentId, newOrder }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
-        (t) => t.id === taxonomyId
-      )
-      if (!taxonomy) return
+      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      const cached = getCachedList(qc, user!.uid)
+      const taxonomy = cached.find((t) => t.id === taxonomyId)
+      if (!taxonomy) return { previous: cached }
       return applyOptimistic(taxonomyId, (nodes) => {
         const siblings = Object.values(nodes)
           .filter((n) => n.parentId === newParentId && n.id !== nodeId)
@@ -427,6 +434,17 @@ export function useMoveNode() {
           order: newOrder,
           level: newParentId ? (updated[newParentId]?.level ?? 0) + 1 : 0,
         }
+
+        // Recursively update levels of all descendants
+        const cascadeLevels = (parentId: string, parentLevel: number, nodesMap: Record<string, TaxonomyNode>) => {
+          const children = Object.values(nodesMap).filter(n => n.parentId === parentId)
+          for (const child of children) {
+            nodesMap[child.id] = { ...nodesMap[child.id], level: parentLevel + 1 }
+            cascadeLevels(child.id, parentLevel + 1, nodesMap)
+          }
+        }
+        cascadeLevels(nodeId, updated[nodeId].level, updated)
+
         return updated
       })
     },
@@ -446,7 +464,6 @@ export function useMoveNode() {
 export function useLinkProject() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const applyOptimistic = useUpdateNodes()
 
   return useMutation({
     mutationFn: async ({
@@ -474,8 +491,9 @@ export function useLinkProject() {
         updatedAt: Timestamp.now(),
       })
     },
-    onMutate: ({ taxonomyId, nodeId, projectId }) =>
-      applyOptimistic(taxonomyId, (nodes) => ({
+    onMutate: ({ taxonomyId, nodeId, projectId }) => {
+      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
         [nodeId]: {
           ...nodes[nodeId],
@@ -483,20 +501,22 @@ export function useLinkProject() {
             ...new Set([...nodes[nodeId].linkedProjectIds, projectId]),
           ],
         },
-      })),
+      }))
+    },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
       toast.error('Erreur lors de la liaison')
     },
-    onSettled: (_d, _e, vars) =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+    onSettled: (_d, _e, vars) => {
+      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
+    },
   })
 }
 
 export function useUnlinkProject() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
-  const applyOptimistic = useUpdateNodes()
 
   return useMutation({
     mutationFn: async ({
@@ -526,8 +546,9 @@ export function useUnlinkProject() {
         updatedAt: Timestamp.now(),
       })
     },
-    onMutate: ({ taxonomyId, nodeId, projectId }) =>
-      applyOptimistic(taxonomyId, (nodes) => ({
+    onMutate: ({ taxonomyId, nodeId, projectId }) => {
+      const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
+      return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
         [nodeId]: {
           ...nodes[nodeId],
@@ -535,12 +556,15 @@ export function useUnlinkProject() {
             (id) => id !== projectId
           ),
         },
-      })),
+      }))
+    },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(taxListKey(user!.uid), (ctx as { previous: Taxonomy[] }).previous)
       toast.error('Erreur lors de la déliaison')
     },
-    onSettled: (_d, _e, vars) =>
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+    onSettled: (_d, _e, vars) => {
+      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
+      qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
+    },
   })
 }
