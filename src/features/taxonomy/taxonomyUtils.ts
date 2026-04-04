@@ -52,8 +52,11 @@ export function findPath(
   nodeId: string
 ): string[] {
   const path: string[] = []
+  const visited = new Set<string>()
   let current: TaxonomyNode | undefined = nodes[nodeId]
   while (current) {
+    if (visited.has(current.id)) break  // corrupt data: cycle detected
+    visited.add(current.id)
     path.unshift(current.id)
     current = current.parentId ? nodes[current.parentId] : undefined
   }
@@ -73,13 +76,16 @@ export function getBreadcrumb(
 /** Retourne tous les IDs descendants d'un nœud (récursif). */
 export function getAllDescendantIds(
   nodes: Record<string, TaxonomyNode>,
-  nodeId: string
+  nodeId: string,
+  visited: Set<string> = new Set()
 ): string[] {
   const result: string[] = []
   const children = Object.values(nodes).filter((n) => n.parentId === nodeId)
   for (const child of children) {
+    if (visited.has(child.id)) continue  // cycle guard
+    visited.add(child.id)
     result.push(child.id)
-    result.push(...getAllDescendantIds(nodes, child.id))
+    result.push(...getAllDescendantIds(nodes, child.id, visited))
   }
   return result
 }
