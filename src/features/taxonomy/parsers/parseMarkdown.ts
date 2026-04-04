@@ -37,6 +37,7 @@ export function parseMarkdown(content: string): TaxonomyNode[] {
       currentLevel0 = node
       currentLevel1 = null
       order1 = 0
+      order2 = 0
       continue
     }
 
