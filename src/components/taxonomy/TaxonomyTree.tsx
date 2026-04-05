@@ -46,7 +46,7 @@ export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
       .filter((n) => n.level === 0)
       .map((n) => n.id)
     expandAll(level0Ids)
-  }, [taxonomy.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [taxonomy.id, expandAll])
 
   const tree = buildTree(taxonomy.nodes)
 
@@ -55,7 +55,8 @@ export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
     ? tree.filter((n) => nodeMatchesSearch(n, searchQuery))
     : tree
 
-  const flatIds = filteredTree.map((n) => n.id)
+  // Tous les IDs sont enregistrés dans SortableContext pour couvrir les nœuds enfants
+  const flatIds = Object.keys(taxonomy.nodes)
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
