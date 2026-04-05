@@ -1,12 +1,13 @@
 // src/components/taxonomy/TaxonomySidebar.tsx
 import { useState } from 'react'
-import { Plus, MoreVertical, Pencil, Copy, Trash2 } from 'lucide-react'
+import { Plus, MoreVertical } from 'lucide-react'
 import {
   useRenameTaxonomy,
   useDeleteTaxonomy,
   useDuplicateTaxonomy,
 } from '@/features/taxonomy/useTaxonomyMutations'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
+import { TaxonomyContextMenu } from './TaxonomyContextMenu'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
 interface TaxonomySidebarProps {
@@ -113,51 +114,16 @@ export function TaxonomySidebar({
               </button>
 
               {openMenu === tax.id && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setOpenMenu(null)}
-                  />
-                  <div className="absolute right-2 top-8 z-50 w-36 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditName(tax.name)
-                        setEditingId(tax.id)
-                        setOpenMenu(null)
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Renommer
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        duplicate.mutate({ id: tax.id })
-                        setOpenMenu(null)
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] transition-colors"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      Dupliquer
-                    </button>
-                    <div className="h-px bg-white/[0.06] mx-2" />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteTax.mutate(tax.id)
-                        if (selectedTaxonomyId === tax.id)
-                          setSelectedTaxonomy(null)
-                        setOpenMenu(null)
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Supprimer
-                    </button>
-                  </div>
-                </>
+                <TaxonomyContextMenu
+                  onClose={() => setOpenMenu(null)}
+                  onRename={() => { setEditName(tax.name); setEditingId(tax.id); setOpenMenu(null) }}
+                  onDuplicate={() => { duplicate.mutate({ id: tax.id }); setOpenMenu(null) }}
+                  onDelete={() => {
+                    deleteTax.mutate(tax.id)
+                    if (selectedTaxonomyId === tax.id) setSelectedTaxonomy(null)
+                    setOpenMenu(null)
+                  }}
+                />
               )}
             </div>
           ))
