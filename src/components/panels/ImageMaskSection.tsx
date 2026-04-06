@@ -1,4 +1,4 @@
-import { FabricImage, type FabricObject } from 'fabric'
+import { type FabricImage, type FabricObject } from 'fabric'
 import { Crop } from 'lucide-react'
 import {
   enterCropMode,
@@ -14,7 +14,7 @@ interface Props {
 export function ImageMaskSection({ image }: Props) {
   const cropping = useCroppingImage()
   const isThisCropping = cropping === image
-  const isFabricImage = image instanceof FabricImage
+  const isFabricImage = (image as any).type === 'image'
 
   return (
     <div className="flex flex-col gap-2.5">

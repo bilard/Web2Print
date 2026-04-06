@@ -672,8 +672,8 @@ export function PropertiesPanel() {
                     (o) => (o as any).data?.id === obj.id,
                   )
                   if (!fObj) return null
-                  const isImage = fObj instanceof FabricImage
-                  const isPatternFilled = (fObj as any).fill instanceof Pattern
+                  const isImage = (fObj as any).type === 'image'
+                  const isPatternFilled = (fObj as any).fill?.type === 'pattern'
                   if (!isImage && !isPatternFilled) return null
                   return (
                     <Section title="Cadrage">

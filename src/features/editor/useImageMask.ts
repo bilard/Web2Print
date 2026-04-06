@@ -1,6 +1,16 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { Canvas, FabricImage, Rect, Pattern, type FabricObject } from 'fabric'
 
+// Détections duck-typées : `instanceof` est cassé quand Vite charge deux copies
+// du module fabric (chunks séparés). On se rabat sur le champ `type` standard
+// que Fabric pose sur chaque objet.
+function isFabricImage(obj: FabricObject | null | undefined): obj is FabricImage {
+  return !!obj && (obj as any).type === 'image'
+}
+function isPatternFill(fill: unknown): boolean {
+  return !!fill && typeof fill === 'object' && (fill as any).type === 'pattern'
+}
+
 // ---------------------------------------------------------------------------
 // Mode crop explicite (style Canva).
 //
@@ -112,13 +122,13 @@ function naturalSize(img: FabricImage | HTMLImageElement | HTMLCanvasElement | n
 }
 
 function isPatternFilled(obj: FabricObject): boolean {
-  return (obj as any).fill instanceof Pattern
+  return isPatternFill((obj as any).fill)
 }
 
 /** Détecte si un objet est crop-able (FabricImage ou Rect avec fill image). */
 export function canCrop(obj: FabricObject | null | undefined): boolean {
   if (!obj) return false
-  if (obj instanceof FabricImage) return true
+  if (isFabricImage(obj)) return true
   return isPatternFilled(obj)
 }
 
@@ -176,7 +186,7 @@ export function fillFrameProportionally(img: FabricImage): void {
 
 export function enterCropMode(obj: FabricObject): void {
   if (_state) return
-  if (obj instanceof FabricImage) {
+  if (isFabricImage(obj)) {
     enterCropImage(obj)
   } else if (isPatternFilled(obj)) {
     enterCropPattern(obj)
@@ -367,7 +377,7 @@ function enterCropPattern(rect: FabricObject): void {
   const canvas = rect.canvas
   if (!canvas) return
   const fill = (rect as any).fill as Pattern
-  if (!(fill instanceof Pattern)) return
+  if (!isPatternFill(fill)) return
   const source = (fill as any).source as HTMLImageElement | HTMLCanvasElement | null
   if (!source) return
 
