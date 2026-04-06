@@ -147,6 +147,10 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
     const onScalingStart = (e: { target?: any }) => {
       const t = e.target
       if (!(t instanceof FabricImage)) return
+      // Only snapshot when a scaling handle is being clicked, NOT on body clicks
+      // (avoids interference with double-click → enterContentMode)
+      const corner = (t as any).__corner
+      if (!corner) return
       const cp = (t as any).clipPath as Rect | undefined
       if (!cp) return
       _scaleSnapshots.set(t, {
@@ -179,6 +183,8 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
       // Current scale ratio relative to snapshot
       const sx = (t.scaleX ?? 1) / (snap.imgScaleX || 1)
       const sy = (t.scaleY ?? 1) / (snap.imgScaleY || 1)
+      // No-op if scale hasn't actually changed (e.g. spurious event from dblclick sequence)
+      if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return
 
       if (!shift && !meta) {
         // Frame-only resize: revert image scale, grow clipPath in object space
