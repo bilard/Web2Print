@@ -7,7 +7,7 @@ import {
   Lock, Unlock, Link, Unlink, GalleryHorizontalEnd, GalleryVerticalEnd,
   Eye, EyeOff, Copy, Trash2, Minimize2, ImagePlus,
 } from 'lucide-react'
-import { Shadow, Gradient, Pattern } from 'fabric'
+import { Shadow, Gradient, Pattern, FabricImage } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
 import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'
@@ -20,6 +20,7 @@ import type { Canvas } from 'fabric'
 import type { GradientConfig } from '@/stores/editor.store'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useImageGallery } from '@/features/nanobana/useImageGallery'
+import { ImageMaskSection } from './ImageMaskSection'
 
 // ── Image fill picker (galerie + upload) ────────────────────────────────────
 
@@ -664,6 +665,18 @@ export function PropertiesPanel() {
                     </button>
                   )}
                 </Section>
+
+                {/* ── Masque (images uniquement) ── */}
+                {(() => {
+                  const fObj = globalFabricCanvas?.getObjects().find(
+                    (o) => (o as any).data?.id === obj.id,
+                  )
+                  return fObj instanceof FabricImage ? (
+                    <Section title="Masque">
+                      <ImageMaskSection image={fObj} />
+                    </Section>
+                  ) : null
+                })()}
               </>
             )}
 
