@@ -1,5 +1,21 @@
 import { useEffect } from 'react'
 import { Canvas, FabricImage, Rect, type TPointerEventInfo, type TPointerEvent } from 'fabric'
+import { toast } from 'sonner'
+
+// ---------------------------------------------------------------------------
+// Tip on first mask scaling
+// ---------------------------------------------------------------------------
+
+const TIP_KEY = 'ds.tip.maskShortcuts.seen'
+function showTipOnce(): void {
+  try {
+    if (localStorage.getItem(TIP_KEY)) return
+    localStorage.setItem(TIP_KEY, '1')
+    toast.info('Astuce : Shift pour agrandir sans déformer, Cmd pour déformer, sans modificateur pour ajuster le cadre seul.', {
+      duration: 8000,
+    })
+  } catch { /* ignore */ }
+}
 
 // ---------------------------------------------------------------------------
 // Module-scope state for content-edit mode
@@ -143,6 +159,7 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
         clipLeft: cp.left ?? 0,
         clipTop: cp.top ?? 0,
       })
+      showTipOnce()
     }
 
     // Apply keyboard-modifier semantics during scaling
