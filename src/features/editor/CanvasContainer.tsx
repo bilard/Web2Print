@@ -31,6 +31,7 @@ export function CanvasContainer() {
   const canvasElRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const { fabricRef, fitToContainer } = useCanvas(canvasElRef)
+  const [canvasReady, setCanvasReady] = useState<Canvas | null>(null)
   const { zoom, canvasWidth, canvasHeight } = useUIStore()
   const { selectedObjectId } = useEditorStore()
 
@@ -42,6 +43,7 @@ export function CanvasContainer() {
     if (!fabricRef.current || !containerRef.current) return
     globalFabricCanvas = fabricRef.current
     ;(window as any).__fabricCanvas = fabricRef.current
+    setCanvasReady(fabricRef.current)
     fitToContainer(containerRef.current)
 
     // Prevent text deformation on resize: convert scale to width change
@@ -233,7 +235,7 @@ export function CanvasContainer() {
       )}
 
       {/* Image crop toolbars (floating) */}
-      <ImageCropToolbars canvas={fabricRef.current} />
+      <ImageCropToolbars canvas={canvasReady} />
 
       {/* Context menu */}
       {contextMenu && (
