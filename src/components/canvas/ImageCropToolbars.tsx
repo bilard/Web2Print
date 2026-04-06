@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Canvas, FabricImage, FabricObject } from 'fabric'
+import { Canvas, FabricObject } from 'fabric'
 import { Crop, Check, X } from 'lucide-react'
 import {
   enterCropMode,
   cancelCrop,
   applyCrop,
   useCroppingImage,
+  canCrop,
 } from '@/features/editor/useImageMask'
 
 interface Props {
@@ -23,14 +24,14 @@ interface Props {
 export function ImageCropToolbars({ canvas }: Props) {
   const cropping = useCroppingImage()
   const [tick, setTick] = useState(0)
-  const [activeImage, setActiveImage] = useState<FabricImage | null>(null)
+  const [activeImage, setActiveImage] = useState<FabricObject | null>(null)
 
-  // Suivre l'objet actif pour détecter une FabricImage sélectionnée
+  // Suivre l'objet actif crop-able (FabricImage ou Rect avec fill image)
   useEffect(() => {
     if (!canvas) return
     const updateActive = () => {
-      const obj = canvas.getActiveObject()
-      setActiveImage(obj instanceof FabricImage ? obj : null)
+      const obj = canvas.getActiveObject() ?? null
+      setActiveImage(canCrop(obj) ? obj : null)
     }
     updateActive()
     const onSelected = () => updateActive()

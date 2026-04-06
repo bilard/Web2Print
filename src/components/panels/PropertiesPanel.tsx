@@ -666,16 +666,20 @@ export function PropertiesPanel() {
                   )}
                 </Section>
 
-                {/* ── Masque (images uniquement) ── */}
+                {/* ── Cadrage (FabricImage ou shape avec fill image) ── */}
                 {(() => {
                   const fObj = globalFabricCanvas?.getObjects().find(
                     (o) => (o as any).data?.id === obj.id,
                   )
-                  return fObj instanceof FabricImage ? (
-                    <Section title="Masque">
+                  if (!fObj) return null
+                  const isImage = fObj instanceof FabricImage
+                  const isPatternFilled = (fObj as any).fill instanceof Pattern
+                  if (!isImage && !isPatternFilled) return null
+                  return (
+                    <Section title="Cadrage">
                       <ImageMaskSection image={fObj} />
                     </Section>
-                  ) : null
+                  )
                 })()}
               </>
             )}

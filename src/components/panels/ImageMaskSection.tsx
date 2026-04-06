@@ -1,4 +1,4 @@
-import { FabricImage } from 'fabric'
+import { FabricImage, type FabricObject } from 'fabric'
 import { Crop } from 'lucide-react'
 import {
   enterCropMode,
@@ -8,12 +8,13 @@ import {
 } from '@/features/editor/useImageMask'
 
 interface Props {
-  image: FabricImage
+  image: FabricObject
 }
 
 export function ImageMaskSection({ image }: Props) {
   const cropping = useCroppingImage()
   const isThisCropping = cropping === image
+  const isFabricImage = image instanceof FabricImage
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -33,22 +34,24 @@ export function ImageMaskSection({ image }: Props) {
         {isThisCropping ? 'Mode crop actif' : 'Recadrer la photo'}
       </button>
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => fitFrameToContent(image)}
-          className="flex-1 py-1.5 text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-md text-white/40 hover:text-white transition-colors"
-        >
-          Ajuster cadre
-        </button>
-        <button
-          type="button"
-          onClick={() => fillFrameProportionally(image)}
-          className="flex-1 py-1.5 text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-md text-white/40 hover:text-white transition-colors"
-        >
-          Remplir cadre
-        </button>
-      </div>
+      {isFabricImage && (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => fitFrameToContent(image as FabricImage)}
+            className="flex-1 py-1.5 text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-md text-white/40 hover:text-white transition-colors"
+          >
+            Ajuster cadre
+          </button>
+          <button
+            type="button"
+            onClick={() => fillFrameProportionally(image as FabricImage)}
+            className="flex-1 py-1.5 text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-md text-white/40 hover:text-white transition-colors"
+          >
+            Remplir cadre
+          </button>
+        </div>
+      )}
 
       <p className="text-[10px] text-white/30 leading-relaxed">
         Cliquez sur <span className="text-white/60">Recadrer</span> pour ajuster le cadre et
