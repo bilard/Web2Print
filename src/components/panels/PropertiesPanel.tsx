@@ -5,9 +5,9 @@ import {
   AlignStartVertical, AlignCenterHorizontal, AlignEndHorizontal,
   AlignStartHorizontal, AlignCenterVertical, AlignEndVertical,
   Lock, Unlock, Link, Unlink, GalleryHorizontalEnd, GalleryVerticalEnd,
-  Eye, EyeOff, Copy, Trash2, Minimize2,
+  Eye, EyeOff, Copy, Trash2, Minimize2, ImagePlus,
 } from 'lucide-react'
-import { Shadow, Gradient } from 'fabric'
+import { Shadow, Gradient, Pattern } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
 import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'
@@ -18,6 +18,99 @@ import { ColorPicker } from '@/components/shared/ColorPicker'
 import { GradientPicker, gradientToFabric, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
 import type { Canvas } from 'fabric'
 import type { GradientConfig } from '@/stores/editor.store'
+import { useNanoBanaStore } from '@/stores/nanobana.store'
+import { useImageGallery } from '@/features/nanobana/useImageGallery'
+
+// ── Image fill picker (galerie + upload) ────────────────────────────────────
+
+function ImageFillPicker({ fillImage, objId, applyImageFill }: {
+  fillImage: string | null
+  objId: string
+  applyImageFill: (fObj: any, canvas: Canvas, url: string) => void
+}) {
+  const galleryImages = useNanoBanaStore((s) => s.images)
+  const { uploadToGallery } = useImageGallery()
+  const [uploading, setUploading] = useState(false)
+  const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set())
+
+  const applyUrl = (url: string, name?: string) => {
+    const canvas = globalFabricCanvas
+    const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === objId)
+    if (!fObj || !canvas) return
+    if (name) (fObj as any).data = { ...(fObj as any).data, fillImageName: name }
+    applyImageFill(fObj, canvas, url)
+  }
+
+  const handleFileUpload = async (file: File) => {
+    const originalName = file.name
+    // Appliquer immédiatement avec blob URL
+    const blobUrl = URL.createObjectURL(file)
+    applyUrl(blobUrl, originalName)
+    // Upload en galerie en arrière-plan
+    setUploading(true)
+    try {
+      const galleryImg = await uploadToGallery(file)
+      if (galleryImg) {
+        // Remplacer le blob URL par l'URL permanente
+        applyUrl(galleryImg.url, originalName)
+      }
+    } catch (err) {
+      console.warn('[ImageFill] Gallery upload failed', err)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {fillImage && (
+        <div className="relative group">
+          <img src={fillImage} alt="Remplissage" className="w-full h-20 object-cover rounded border border-white/10" />
+          <button
+            onClick={() => {
+              const canvas = globalFabricCanvas
+              const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === objId)
+              if (!fObj || !canvas) return
+              ;(fObj as any).data = { ...(fObj as any).data, fillImage: null }
+              fObj.set('fill', 'transparent')
+              ;(fObj as any).dirty = true
+              canvas.fire('object:modified', { target: fObj })
+              canvas.renderAll()
+              syncToStore(canvas)
+            }}
+            className="absolute top-1 right-1 p-1 bg-black/60 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X size={12} className="text-white/60" />
+          </button>
+        </div>
+      )}
+      <label className={`flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded cursor-pointer hover:bg-white/10 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+        <ImagePlus size={14} className="text-white/40" />
+        <span className="text-[11px] text-white/50">{uploading ? 'Upload en cours…' : fillImage ? 'Changer l\'image' : 'Importer une image'}</span>
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (!file) return
+          handleFileUpload(file)
+          e.target.value = ''
+        }} />
+      </label>
+      {galleryImages.filter((img) => img.url && !brokenIds.has(img.id)).length > 0 && (
+        <>
+          <p className="text-[10px] text-white/30 uppercase tracking-wider">Galerie</p>
+          <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto">
+            {galleryImages.filter((img) => img.url && !brokenIds.has(img.id)).map((img) => (
+              <button key={img.id} onClick={() => applyUrl(img.url, img.name)}
+                className={`rounded border overflow-hidden aspect-square transition-colors ${fillImage === img.url ? 'border-indigo-500' : 'border-white/10 hover:border-white/30'}`}>
+                <img src={img.thumbnailUrl || img.url} alt={img.name} className="w-full h-full object-cover" loading="lazy"
+                  onError={() => setBrokenIds((prev) => new Set(prev).add(img.id))} />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 // ── Shared sub-components ───────────────────────────────────────────────────
 
@@ -54,7 +147,7 @@ function Toggle({ active, onClick, children, title }: { active: boolean; onClick
   )
 }
 
-function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
     <section className="flex flex-col gap-2.5">
@@ -287,6 +380,35 @@ export function PropertiesPanel() {
     syncToStore(canvas)
   }
 
+  const applyImageFill = (fObj: any, canvas: Canvas, url: string) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const objW = (fObj.width ?? 100) as number
+      const objH = (fObj.height ?? 100) as number
+      const scaleX = objW / img.width
+      const scaleY = objH / img.height
+      const scale = Math.max(scaleX, scaleY)
+      const offsetX = (objW - img.width * scale) / 2
+      const offsetY = (objH - img.height * scale) / 2
+
+      const pattern = new Pattern({
+        source: img,
+        repeat: 'no-repeat',
+        patternTransform: [scale, 0, 0, scale, offsetX, offsetY],
+      })
+      fObj.set('fill', pattern)
+      fObj.data = { ...fObj.data, fillImage: url }
+      fObj.dirty = true
+      fObj._cacheCanvas = null
+      fObj.setCoords()
+      canvas.fire('object:modified', { target: fObj })
+      canvas.renderAll()
+      syncToStore(canvas)
+    }
+    img.src = url
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -330,11 +452,18 @@ export function PropertiesPanel() {
                 {/* ── Remplissage ── */}
                 <Section title="Remplissage">
                   <div className="flex gap-1 mb-1">
-                    {(['solid', 'gradient', 'none'] as const).map(ft => (
+                    {(['solid', 'gradient', 'image', 'none'] as const).map(ft => (
                       <button key={ft} onClick={() => {
                         const canvas = globalFabricCanvas
                         const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === obj.id)
                         if (!fObj || !canvas) return
+                        // Clear image fillType marker when switching away
+                        if (ft !== 'image') {
+                          const d = (fObj as any).data ?? {}
+                          if (d.fillType === 'image') {
+                            ;(fObj as any).data = { ...d, fillType: undefined }
+                          }
+                        }
                         if (ft === 'none') {
                           fObj.set('fill', 'transparent')
                         } else if (ft === 'solid') {
@@ -355,6 +484,13 @@ export function PropertiesPanel() {
                               }
                             }
                           }
+                        } else if (ft === 'image') {
+                          ;(fObj as any).data = { ...(fObj as any).data, fillType: 'image' }
+                          // If there's already a fill image saved, re-apply it
+                          const savedUrl = (fObj as any).data?.fillImage
+                          if (savedUrl) {
+                            applyImageFill(fObj, canvas, savedUrl)
+                          }
                         }
                         ;(fObj as any).dirty = true
                         ;(fObj as any)._cacheCanvas = null
@@ -364,7 +500,7 @@ export function PropertiesPanel() {
                         syncToStore(canvas)
                       }}
                         className={`flex-1 py-1 text-[10px] rounded border transition-colors ${(obj.fillType ?? 'solid') === ft ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'}`}>
-                        {ft === 'solid' ? 'Uni' : ft === 'gradient' ? 'Dégradé' : 'Aucun'}
+                        {ft === 'solid' ? 'Uni' : ft === 'gradient' ? 'Dégradé' : ft === 'image' ? 'Image' : 'Aucun'}
                       </button>
                     ))}
                   </div>
@@ -379,6 +515,14 @@ export function PropertiesPanel() {
                     <GradientPicker
                       value={obj.gradient ?? DEFAULT_GRADIENT}
                       onChange={applyGradient} />
+                  )}
+
+                  {obj.fillType === 'image' && (
+                    <ImageFillPicker
+                      fillImage={obj.fillImage ?? null}
+                      objId={obj.id}
+                      applyImageFill={applyImageFill}
+                    />
                   )}
                 </Section>
 

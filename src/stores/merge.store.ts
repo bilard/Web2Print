@@ -17,6 +17,8 @@ export interface DataSourceRef {
   fileName: string
 }
 
+export type MergeMode = 'fabric' | 'idml'
+
 export type FormulaResultType = 'auto' | 'number' | 'text'
 
 export interface FormulaConfig {
@@ -33,6 +35,7 @@ interface MergeState {
   // Navigation
   currentRowIndex: number
   isConnected: boolean
+  mergeMode: MergeMode
 
   // Formulas: variable name → formula string (e.g. '"[brands]"')
   formulas: Record<string, string>
@@ -53,6 +56,7 @@ interface MergeState {
   setSavedDataSource: (source: DataSourceRef | null) => void
 
   // Actions
+  setMergeMode: (mode: MergeMode) => void
   connect: (source: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) => void
   disconnect: () => void
   setCurrentRow: (index: number) => void
@@ -66,6 +70,7 @@ export const useMergeStore = create<MergeState>((set, get) => ({
   rows: [],
   currentRowIndex: 0,
   isConnected: false,
+  mergeMode: 'fabric',
   formulas: {},
   setFormula: (variable, formula) =>
     set((s) => ({ formulas: { ...s.formulas, [variable]: formula } })),
@@ -90,11 +95,13 @@ export const useMergeStore = create<MergeState>((set, get) => ({
   savedDataSource: null,
   setSavedDataSource: (source) => set({ savedDataSource: source }),
 
+  setMergeMode: (mode: MergeMode) => set({ mergeMode: mode }),
+
   connect: (source, columns, rows) =>
     set({ dataSource: source, columns, rows, currentRowIndex: 0, isConnected: true }),
 
   disconnect: () =>
-    set({ dataSource: null, columns: [], rows: [], currentRowIndex: 0, isConnected: false }),
+    set({ dataSource: null, columns: [], rows: [], currentRowIndex: 0, isConnected: false, mergeMode: 'fabric' }),
 
   setCurrentRow: (index) => {
     const { rows } = get()

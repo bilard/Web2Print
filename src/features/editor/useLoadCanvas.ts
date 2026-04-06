@@ -41,6 +41,41 @@ classRegistry.setClass(Polygon, 'Polygon')
 classRegistry.setClass(Triangle, 'Triangle')
 
 /**
+ * Sanitize canvas JSON objects before loadFromJSON to prevent deserialization crashes.
+ * Fixes: data.type classRegistry collision, empty texts, broken paths/gradients.
+ */
+function sanitizeCanvasJson(objects: any[]): void {
+  for (const obj of objects) {
+    // data.type = 'text'/'rect'/'image' collides with Fabric v6 classRegistry.
+    // Move to _type before load; fixAndReattach restores it after.
+    if (obj.data && typeof obj.data === 'object' && obj.data.type) {
+      obj.data._type = obj.data.type
+      delete obj.data.type
+    }
+    // text MUST be a non-empty string or Fabric crashes in _splitTextIntoLines
+    const t = (obj.type || '').toLowerCase()
+    if (t === 'textbox' || t === 'i-text' || t === 'text') {
+      if (typeof obj.text !== 'string' || obj.text.length === 0) obj.text = ' '
+    }
+    // path objects need path data
+    if (obj.type === 'path' && !obj.path) obj.path = [['M', 0, 0]]
+    // gradients need colorStops and coords
+    for (const prop of ['fill', 'stroke']) {
+      const val = obj[prop]
+      if (val && typeof val === 'object' && val.type) {
+        if (!val.colorStops) val.colorStops = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }]
+        if (val.type === 'linear' && !val.coords) val.coords = { x1: 0, y1: 0, x2: 1, y2: 0 }
+        if (val.type === 'radial' && !val.coords) val.coords = { x1: 0.5, y1: 0.5, r1: 0, x2: 0.5, y2: 0.5, r2: 0.5 }
+      }
+    }
+    if (obj.shadow && typeof obj.shadow === 'object' && !obj.shadow.color) obj.shadow.color = 'rgba(0,0,0,0.5)'
+    if (obj.fill === null) obj.fill = ''
+    if (obj.stroke === null) obj.stroke = ''
+    if (obj.objects && Array.isArray(obj.objects)) sanitizeCanvasJson(obj.objects)
+  }
+}
+
+/**
  * After loadFromJSON, ensure all objects have a valid data.id
  * and re-attach per-object event listeners.
  */
@@ -52,6 +87,12 @@ function fixAndReattach(canvas: Canvas) {
 
     if (!obj.data.id) {
       obj.data.id = `restored_${idx}_${Date.now()}`
+    }
+
+    // Restore data.type hidden before loadFromJSON to avoid classRegistry collision
+    if (obj.data._type && !obj.data.type) {
+      obj.data.type = obj.data._type
+      delete obj.data._type
     }
 
     if (!obj.data.type) {
@@ -285,6 +326,9 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
         // Load canvas content
         if (data.canvasData) {
           const canvasJson = JSON.parse(data.canvasData)
+
+          // Sanitize JSON before loading to prevent Fabric deserialization crashes
+          if (canvasJson.objects) sanitizeCanvasJson(canvasJson.objects)
 
           // Fix all image objects before loading
           if (canvasJson.objects) {

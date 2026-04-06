@@ -70,8 +70,18 @@ export function remapStyles(
         value = formatFormulaResult(value, formulaConfigs[ph.key])
       }
 
-      // Appliquer le style du placeholder à tous les caractères résolus
-      const phStyle = lineStyles?.[ph.start]
+      // Appliquer le style du placeholder à tous les caractères résolus.
+      // Chercher le style au début du placeholder, sinon le premier style de la ligne.
+      let phStyle = lineStyles?.[ph.start]
+      if (!phStyle && lineStyles) {
+        // Fallback: premier style disponible sur la ligne (couvre le cas où
+        // les indices ont été décalés lors d'un cycle save/load)
+        const keys = Object.keys(lineStyles).map(Number).sort((a, b) => a - b)
+        for (const k of keys) {
+          if (k >= ph.start && k < ph.end) { phStyle = lineStyles[k]; break }
+        }
+        if (!phStyle && keys.length > 0) phStyle = lineStyles[keys[0]]
+      }
       for (let i = 0; i < value.length; i++) {
         if (phStyle) newLine[rPos + i] = { ...phStyle }
       }
@@ -95,19 +105,6 @@ export function remapStyles(
 
 const PLACEHOLDER_RE = /\{\{([^}]+)\}\}/g
 
-/**
- * Extrait les noms de variables d'un template texte.
- * "Bonjour {{nom}}, {{poste}}" → ['nom', 'poste']
- */
-export function extractVariables(template: string): string[] {
-  const vars: string[] = []
-  let match: RegExpExecArray | null
-  PLACEHOLDER_RE.lastIndex = 0
-  while ((match = PLACEHOLDER_RE.exec(template)) !== null) {
-    if (!vars.includes(match[1])) vars.push(match[1])
-  }
-  return vars
-}
 
 /**
  * Détecte si un texte contient au moins un placeholder {{...}}

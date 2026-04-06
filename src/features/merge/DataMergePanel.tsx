@@ -30,8 +30,13 @@ export function DataMergePanel() {
   const { isConnected, dataSource, columns, currentRowIndex, totalRows, nextRow, prevRow, disconnectSource, connectSource } =
     useDataMerge()
   const selectedObjectId = useEditorStore((s) => s.selectedObjectId)
+  const idmlSourceFileName = useEditorStore((s) => s.idmlSourceFileName)
   const [exportOpen, setExportOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Always use Fabric mode for preview — IDML mode is for export only.
+  // IDML preview replaces canvas objects and loses user-configured bindings.
+  const hasIdmlSource = isConnected && !!idmlSourceFileName
 
   const handleRefresh = async () => {
     if (!dataSource || refreshing) return
@@ -52,11 +57,17 @@ export function DataMergePanel() {
 
   return (
     <div className="text-sm">
-      {/* Source info */}
+      {/* Source info + mode badge */}
       <div className="px-3 py-2 flex items-center justify-between border-b border-white/5">
         <span className="text-white/70 truncate flex-1">
           <span className="text-indigo-400 font-medium">{dataSource?.fileName}</span>
         </span>
+        {/* IDML badge — shown when IDML export is available */}
+        {hasIdmlSource && (
+          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded mr-1 bg-emerald-500/20 text-emerald-400">
+            IDML
+          </span>
+        )}
         <button
           onClick={handleRefresh}
           disabled={refreshing}

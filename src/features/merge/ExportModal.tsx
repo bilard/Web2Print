@@ -1,18 +1,32 @@
 import { useState } from 'react'
-import { X, FileText, Image, Presentation, Loader2 } from 'lucide-react'
+import { X, FileText, Image, Presentation, FileType } from 'lucide-react'
 import { useMergeStore } from '@/stores/merge.store'
+import { useEditorStore } from '@/stores/editor.store'
 import { useBatchExport, type ExportFormat, type ExportMode, type BatchExportConfig } from './useBatchExport'
+import { useIdmlBatchExport, type IdmlExportConfig } from './useIdmlBatchExport'
 
 interface ExportModalProps {
   open: boolean
   onClose: () => void
 }
 
+type AllFormats = ExportFormat | 'idml'
+
 export function ExportModal({ open, onClose }: ExportModalProps) {
   const totalRows = useMergeStore((s) => s.rows.length)
+  const idmlSourceFileName = useEditorStore((s) => s.idmlSourceFileName)
   const { exportBatch, cancel, isExporting, progress, total } = useBatchExport()
+  const {
+    exportIdmlMultiPage,
+    cancel: cancelIdml,
+    isExporting: isExportingIdml,
+    progress: idmlProgress,
+    total: idmlTotal,
+  } = useIdmlBatchExport()
 
-  const [format, setFormat] = useState<ExportFormat>('pdf')
+  const hasIdmlSource = !!idmlSourceFileName
+
+  const [format, setFormat] = useState<AllFormats>('pdf')
   const [mode, setMode] = useState<ExportMode>('zip')
   const [rangeAll, setRangeAll] = useState(true)
   const [rangeStart, setRangeStart] = useState(1)
@@ -21,18 +35,37 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
   if (!open) return null
 
+  const anyExporting = isExporting || isExportingIdml
+  const currentProgress = isExportingIdml ? idmlProgress : progress
+  const currentTotal = isExportingIdml ? idmlTotal : total
+
   const handleExport = () => {
-    const config: BatchExportConfig = {
-      format,
-      mode: format === 'pdf' ? mode : 'zip',
-      rangeStart: rangeAll ? 0 : rangeStart - 1,
-      rangeEnd: rangeAll ? totalRows - 1 : rangeEnd - 1,
-      fileNamePattern,
+    if (format === 'idml') {
+      if (!hasIdmlSource) return
+      const config: IdmlExportConfig = {
+        rangeStart: rangeAll ? 0 : rangeStart - 1,
+        rangeEnd: rangeAll ? totalRows - 1 : rangeEnd - 1,
+        fileNamePattern,
+      }
+      exportIdmlMultiPage(config)
+    } else {
+      const config: BatchExportConfig = {
+        format,
+        mode: format === 'pdf' ? mode : 'zip',
+        rangeStart: rangeAll ? 0 : rangeStart - 1,
+        rangeEnd: rangeAll ? totalRows - 1 : rangeEnd - 1,
+        fileNamePattern,
+      }
+      exportBatch(config)
     }
-    exportBatch(config)
   }
 
-  const progressPercent = total > 0 ? Math.round((progress / total) * 100) : 0
+  const handleCancel = () => {
+    if (isExportingIdml) cancelIdml()
+    else cancel()
+  }
+
+  const progressPercent = currentTotal > 0 ? Math.round((currentProgress / currentTotal) * 100) : 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -51,10 +84,11 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
             <label className="text-xs text-white/50 font-medium mb-2 block">Format</label>
             <div className="flex gap-2">
               {([
-                { id: 'pdf', label: 'PDF', icon: FileText },
-                { id: 'pptx', label: 'PPTX', icon: Presentation },
-                { id: 'png', label: 'PNG', icon: Image },
-              ] as const).map(({ id, label, icon: Icon }) => (
+                { id: 'pdf' as AllFormats, label: 'PDF', icon: FileText },
+                { id: 'pptx' as AllFormats, label: 'PPTX', icon: Presentation },
+                { id: 'png' as AllFormats, label: 'PNG', icon: Image },
+                ...(hasIdmlSource ? [{ id: 'idml' as AllFormats, label: 'IDML', icon: FileType }] : []),
+              ]).map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setFormat(id)}
@@ -118,7 +152,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
             </div>
           </div>
 
-          {/* Naming (ZIP only) */}
+          {/* Naming (ZIP or IDML) */}
           {(mode === 'zip' || format !== 'pdf') && (
             <div>
               <label className="text-xs text-white/50 font-medium mb-2 block">Nommage des fichiers</label>
@@ -127,12 +161,19 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
             </div>
           )}
 
+          {/* IDML info */}
+          {format === 'idml' && (
+            <div className="text-xs text-emerald-400/70 bg-emerald-500/10 rounded-md px-3 py-2">
+              Export IDML multi-pages : un spread par ligne, fidélité InDesign.
+            </div>
+          )}
+
           {/* Progress */}
-          {isExporting && (
+          {anyExporting && (
             <div>
               <div className="flex items-center justify-between text-xs text-white/50 mb-1">
-                <span>Export en cours...</span>
-                <span>{progress}/{total} ({progressPercent}%)</span>
+                <span>Export {format === 'idml' ? 'IDML' : ''} en cours...</span>
+                <span>{currentProgress}/{currentTotal} ({progressPercent}%)</span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-indigo-500 transition-all duration-200" style={{ width: `${progressPercent}%` }} />
@@ -143,8 +184,8 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
         {/* Footer */}
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-white/10">
-          {isExporting ? (
-            <button onClick={cancel} className="px-4 py-2 rounded-md bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">
+          {anyExporting ? (
+            <button onClick={handleCancel} className="px-4 py-2 rounded-md bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">
               Annuler
             </button>
           ) : (

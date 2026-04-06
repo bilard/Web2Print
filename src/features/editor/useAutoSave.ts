@@ -96,6 +96,40 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
     canvas.requestRenderAll()
   }
 
+  // Step 1b: Persist non-permanent URLs in data.originalSrc and data.variants
+  for (const obj of canvas.getObjects()) {
+    if (!(obj instanceof FabricImage)) continue
+    const d = (obj as any).data
+    if (!d) continue
+
+    const uploadVariantUrl = async (url: string): Promise<string> => {
+      if (!url || url.startsWith('http://') || url.startsWith('https://')) return url
+      if (!url.startsWith('blob:') && !url.startsWith('data:')) return url
+      try {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        const name = `variant_${Date.now()}_${Math.random().toString(36).slice(2)}.png`
+        const imgRef = ref(storage, `projects/${projectId}/links/${name}`)
+        await uploadBytes(imgRef, blob)
+        return await getDownloadURL(imgRef)
+      } catch {
+        return url // keep as-is if upload fails
+      }
+    }
+
+    if (d.originalSrc && (d.originalSrc.startsWith('blob:') || d.originalSrc.startsWith('data:'))) {
+      d.originalSrc = await uploadVariantUrl(d.originalSrc)
+    }
+
+    if (Array.isArray(d.variants)) {
+      for (let i = 0; i < d.variants.length; i++) {
+        if (d.variants[i].startsWith('blob:') || d.variants[i].startsWith('data:')) {
+          d.variants[i] = await uploadVariantUrl(d.variants[i])
+        }
+      }
+    }
+  }
+
   // Step 2: Restore template text/styles/size before serializing (so saved JSON has {{}} placeholders)
   type ResolvedEntry = {
     obj: Textbox
@@ -131,7 +165,7 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
   }
 
   // Step 3: Serialize with all images now having permanent URLs
-  const canvasJson = (canvas as any).toJSON(['data'])
+  const canvasJson = canvas.toObject(['data'])
 
   // Step 4: Restore resolved text/styles/size on canvas (user sees data, not templates)
   for (const { obj, resolved, resolvedStyles, resolvedWidth } of resolvedTexts) {
@@ -227,11 +261,13 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
     }
   }
 
-  // Expose save globally
+  // Expose save globally — use ref to always point to latest save closure
+  const saveRef = useRef(save)
+  saveRef.current = save
   useEffect(() => {
-    globalSave = save
+    globalSave = () => saveRef.current()
     return () => { globalSave = null }
-  }, [fabricRef.current, projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track canvas changes → mark as unsaved + refresh page thumbnail (debounced)
   useEffect(() => {
