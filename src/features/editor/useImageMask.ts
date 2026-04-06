@@ -88,6 +88,33 @@ export function ensureImageClipPath(img: FabricImage): void {
   })
 }
 
+/** Reduce the clipPath to exactly cover the image's natural bounds. */
+export function fitFrameToContent(img: FabricImage): void {
+  const cp = (img as any).clipPath as Rect | undefined
+  if (!cp) return
+  const w = img.width ?? 0
+  const h = img.height ?? 0
+  cp.set({ left: -w / 2, top: -h / 2, width: w, height: h })
+  ;(img as any).dirty = true
+  img.canvas?.requestRenderAll()
+}
+
+/** Scale the image so it fully covers the clipPath, keeping aspect ratio. */
+export function fillFrameProportionally(img: FabricImage): void {
+  const cp = (img as any).clipPath as Rect | undefined
+  if (!cp) return
+  const cw = cp.width ?? 0
+  const ch = cp.height ?? 0
+  const iw = img.width ?? 0
+  const ih = img.height ?? 0
+  if (cw <= 0 || ch <= 0 || iw <= 0 || ih <= 0) return
+  const ratio = Math.max(cw / iw, ch / ih)
+  img.set({ scaleX: ratio, scaleY: ratio })
+  cp.set({ left: -iw / 2, top: -ih / 2 })
+  ;(img as any).dirty = true
+  img.canvas?.requestRenderAll()
+}
+
 export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
   useEffect(() => {
     const canvas = fabricRef.current
