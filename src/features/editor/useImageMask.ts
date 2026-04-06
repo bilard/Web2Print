@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import { Canvas, FabricImage, Rect, Pattern, type FabricObject } from 'fabric'
+import { Canvas, FabricImage, Rect, Pattern, Point, type FabricObject } from 'fabric'
 
 // Détections duck-typées : `instanceof` est cassé quand Vite charge deux copies
 // du module fabric (chunks séparés). On se rabat sur le champ `type` standard
@@ -43,6 +43,9 @@ type ImageSnapshot = {
   scaleY: number
   cropX: number
   cropY: number
+  originX: string
+  originY: string
+  angle: number
   opacity: number
   selectable: boolean
   lockScalingX: boolean
@@ -59,6 +62,15 @@ type PatternSnapshot = {
   strokeWidth: number
   strokeDashArray: number[] | null
   strokeUniform: boolean
+  originX: string
+  originY: string
+  angle: number
+  left: number
+  top: number
+  width: number
+  height: number
+  scaleX: number
+  scaleY: number
 }
 
 type CropState =
@@ -219,19 +231,28 @@ function enterCropImage(img: FabricImage): void {
   const cropY = (img as any).cropY ?? 0
   const w = img.width ?? 0
   const h = img.height ?? 0
-  const left = img.left ?? 0
-  const top = img.top ?? 0
+
+  // Capture la position visible (top-left du cadre actuel) en coords canvas,
+  // peu importe l'origin de l'image (IDML utilise center/center).
+  img.setCoords()
+  const aCoords = (img as any).aCoords
+  const tl: { x: number; y: number } = aCoords?.tl ?? { x: img.left ?? 0, y: img.top ?? 0 }
+  const visLeft = tl.x
+  const visTop = tl.y
 
   const snapshot: ImageSnapshot = {
     kind: 'image',
-    left,
-    top,
+    left: img.left ?? 0,
+    top: img.top ?? 0,
     width: w,
     height: h,
     scaleX: sx,
     scaleY: sy,
     cropX,
     cropY,
+    originX: ((img as any).originX as string) ?? 'left',
+    originY: ((img as any).originY as string) ?? 'top',
+    angle: (img as any).angle ?? 0,
     opacity: img.opacity ?? 1,
     selectable: img.selectable ?? true,
     lockScalingX: (img as any).lockScalingX ?? false,
@@ -240,14 +261,18 @@ function enterCropImage(img: FabricImage): void {
     hasControls: (img as any).hasControls ?? true,
   }
 
-  const fullLeft = left - cropX * sx
-  const fullTop = top - cropY * sy
+  // Position du bitmap COMPLET (top-left) en coords canvas
+  const fullLeft = visLeft - cropX * sx
+  const fullTop = visTop - cropY * sy
 
   ;(img as any).set({
     width: natW,
     height: natH,
     cropX: 0,
     cropY: 0,
+    originX: 'left',
+    originY: 'top',
+    angle: 0,
     left: fullLeft,
     top: fullTop,
     opacity: 0.4,
@@ -257,12 +282,15 @@ function enterCropImage(img: FabricImage): void {
     hasControls: false,
   })
   ;(img as any).dirty = true
+  img.setCoords()
 
   const cropFrame = new Rect({
-    left,
-    top,
+    left: visLeft,
+    top: visTop,
     width: w * sx,
     height: h * sy,
+    originX: 'left',
+    originY: 'top',
     fill: 'rgba(255,255,255,0.001)',
     stroke: '#6366f1',
     strokeWidth: 2,
@@ -295,6 +323,9 @@ function cancelCropImage(): void {
     cropY: snapshot.cropY,
     scaleX: snapshot.scaleX,
     scaleY: snapshot.scaleY,
+    originX: snapshot.originX,
+    originY: snapshot.originY,
+    angle: snapshot.angle,
     left: snapshot.left,
     top: snapshot.top,
     opacity: snapshot.opacity,
@@ -305,6 +336,7 @@ function cancelCropImage(): void {
     hasControls: snapshot.hasControls,
   })
   ;(image as any).dirty = true
+  image.setCoords()
   canvas.remove(cropFrame)
   canvas.setActiveObject(image)
   _state = null
@@ -315,7 +347,6 @@ function cancelCropImage(): void {
 function applyCropImage(): void {
   if (!_state || _state.kind !== 'image') return
   const { canvas, image, cropFrame, snapshot } = _state
-
   const sx = snapshot.scaleX || 1
   const sy = snapshot.scaleY || 1
   const fLeft = cropFrame.left ?? 0
@@ -346,15 +377,25 @@ function applyCropImage(): void {
     return
   }
 
+  // Le top-left visible du résultat = (fLeft, fTop). On calcule en origin
+  // 'left'/'top' puis on restaure l'origin d'origine via setPositionByOrigin.
+  const newVisLeft = imgLeft + newCropX * sx
+  const newVisTop = imgTop + newCropY * sy
+  // IMPORTANT : Fabric v6 FabricImage `set({width})` recalcule scaleX pour
+  // préserver la taille visuelle. On contourne en assignant directement les
+  // propriétés, puis on restaure scaleX/scaleY explicitement APRÈS.
+  ;(image as any).width = newW
+  ;(image as any).height = newH
+  ;(image as any).cropX = newCropX
+  ;(image as any).cropY = newCropY
+  ;(image as any).scaleX = sx
+  ;(image as any).scaleY = sy
   ;(image as any).set({
-    width: newW,
-    height: newH,
-    cropX: newCropX,
-    cropY: newCropY,
-    scaleX: sx,
-    scaleY: sy,
-    left: imgLeft + newCropX * sx,
-    top: imgTop + newCropY * sy,
+    originX: 'left',
+    originY: 'top',
+    angle: 0,
+    left: newVisLeft,
+    top: newVisTop,
     opacity: snapshot.opacity,
     selectable: snapshot.selectable,
     lockScalingX: snapshot.lockScalingX,
@@ -362,13 +403,36 @@ function applyCropImage(): void {
     lockRotation: snapshot.lockRotation,
     hasControls: snapshot.hasControls,
   })
+  // Re-force scaleX/scaleY au cas où set() les aurait touchés
+  ;(image as any).scaleX = sx
+  ;(image as any).scaleY = sy
   ;(image as any).dirty = true
   image.setCoords()
+  // Restaure l'origin d'origine en repositionnant pour conserver le top-left
+  if (snapshot.originX !== 'left' || snapshot.originY !== 'top') {
+    ;(image as any).setPositionByOrigin(
+      new Point(newVisLeft, newVisTop),
+      'left',
+      'top'
+    )
+    ;(image as any).set({ originX: snapshot.originX, originY: snapshot.originY })
+    ;(image as any).setPositionByOrigin(
+      new Point(newVisLeft, newVisTop),
+      'left',
+      'top'
+    )
+    image.setCoords()
+  }
+  // Note : angle reste 0 (le crop normalise toujours)
   canvas.remove(cropFrame)
   canvas.setActiveObject(image)
   _state = null
   notify()
   canvas.requestRenderAll()
+  // CRITIQUE : sync vers le store Zustand AVANT que React/PropertiesPanel
+  // ne re-pousse l'ancienne width vers fabric (et calcule un mauvais scaleX).
+  ;(image as any).fire?.('modified')
+  canvas.fire('object:modified', { target: image } as any)
 }
 
 // --- (B) Forme avec Pattern fill -------------------------------------------
@@ -381,34 +445,81 @@ function enterCropPattern(rect: FabricObject): void {
   const source = (fill as any).source as HTMLImageElement | HTMLCanvasElement | null
   if (!source) return
 
-  const transform = ((fill as any).patternTransform as number[]) ?? [1, 0, 0, 1, 0, 0]
-  const [a, , , d, e, f] = transform
-
-  const rsx = (rect as any).scaleX ?? 1
-  const rsy = (rect as any).scaleY ?? 1
-  const rLeft = (rect as any).left ?? 0
-  const rTop = (rect as any).top ?? 0
-
-  // Position et taille du bitmap complet en coordonnées canvas
-  const ghostLeft = rLeft + e * rsx
-  const ghostTop = rTop + f * rsy
-  const ghostScaleX = a * rsx
-  const ghostScaleY = d * rsy
+  // Capture la position visible top-left AVANT toute modification
+  rect.setCoords()
+  const aCoords = (rect as any).aCoords
+  const tl: { x: number; y: number } =
+    aCoords?.tl ?? { x: (rect as any).left ?? 0, y: (rect as any).top ?? 0 }
+  const visLeft = tl.x
+  const visTop = tl.y
 
   const snapshot: PatternSnapshot = {
     kind: 'pattern',
     fill,
-    transform: [...transform],
+    transform: [...(((fill as any).patternTransform as number[]) ?? [1, 0, 0, 1, 0, 0])],
     stroke: (rect as any).stroke,
     strokeWidth: (rect as any).strokeWidth ?? 0,
     strokeDashArray: ((rect as any).strokeDashArray as number[] | null) ?? null,
     strokeUniform: (rect as any).strokeUniform ?? false,
+    originX: ((rect as any).originX as string) ?? 'left',
+    originY: ((rect as any).originY as string) ?? 'top',
+    angle: (rect as any).angle ?? 0,
+    left: (rect as any).left ?? 0,
+    top: (rect as any).top ?? 0,
+    width: (rect as any).width ?? 0,
+    height: (rect as any).height ?? 0,
+    scaleX: (rect as any).scaleX ?? 1,
+    scaleY: (rect as any).scaleY ?? 1,
   }
+
+  // Baker scale + origin → top-left, scale=1, angle=0
+  const preRsx = snapshot.scaleX
+  const preRsy = snapshot.scaleY
+  const w0 = snapshot.width
+  const h0 = snapshot.height
+  const t0 = snapshot.transform
+  const baked = new Pattern({
+    source: source as any,
+    repeat: 'no-repeat',
+    patternTransform: [
+      t0[0] * preRsx,
+      0,
+      0,
+      t0[3] * preRsy,
+      t0[4] * preRsx,
+      t0[5] * preRsy,
+    ],
+  })
+  ;(rect as any).set({
+    originX: 'left',
+    originY: 'top',
+    angle: 0,
+    left: visLeft,
+    top: visTop,
+    width: w0 * preRsx,
+    height: h0 * preRsy,
+    scaleX: 1,
+    scaleY: 1,
+    fill: baked,
+  })
+  rect.setCoords()
+
+  // Maintenant rsx=rsy=1, originX='left', originY='top' → math triviale
+  const fillNow = (rect as any).fill as Pattern
+  const transform = ((fillNow as any).patternTransform as number[]) ?? [1, 0, 0, 1, 0, 0]
+  const [a, , , d, e, f] = transform
+
+  const ghostLeft = visLeft + e
+  const ghostTop = visTop + f
+  const ghostScaleX = a
+  const ghostScaleY = d
 
   // Ghost = bitmap complet, dimmed, draggable mais pas redimensionnable
   const ghost = new FabricImage(source as any, {
     left: ghostLeft,
     top: ghostTop,
+    originX: 'left',
+    originY: 'top',
     scaleX: ghostScaleX,
     scaleY: ghostScaleY,
     opacity: 0.4,
@@ -449,6 +560,15 @@ function cancelCropPattern(): void {
   if (!_state || _state.kind !== 'pattern') return
   const { canvas, rect, ghost, snapshot } = _state
   ;(rect as any).set({
+    width: snapshot.width,
+    height: snapshot.height,
+    scaleX: snapshot.scaleX,
+    scaleY: snapshot.scaleY,
+    angle: snapshot.angle,
+    originX: snapshot.originX,
+    originY: snapshot.originY,
+    left: snapshot.left,
+    top: snapshot.top,
     fill: snapshot.fill,
     stroke: snapshot.stroke,
     strokeWidth: snapshot.strokeWidth,
@@ -457,6 +577,7 @@ function cancelCropPattern(): void {
   })
   ;(rect as any).dirty = true
   ;(rect as any)._cacheCanvas = null
+  rect.setCoords()
   canvas.remove(ghost)
   canvas.setActiveObject(rect)
   _state = null
@@ -468,22 +589,34 @@ function applyCropPattern(): void {
   if (!_state || _state.kind !== 'pattern') return
   const { canvas, rect, ghost, snapshot } = _state
 
+  // Re-baker le scale du rect (l'utilisateur a pu le redimensionner via les
+  // coins, ce qui modifie scaleX/scaleY plutôt que width/height).
+  // En entry on a forcé originX/Y='left'/'top', donc left/top restent le top-left.
   const rsx = (rect as any).scaleX ?? 1
   const rsy = (rect as any).scaleY ?? 1
+  if (rsx !== 1 || rsy !== 1) {
+    ;(rect as any).set({
+      width: ((rect as any).width ?? 0) * rsx,
+      height: ((rect as any).height ?? 0) * rsy,
+      scaleX: 1,
+      scaleY: 1,
+    })
+    rect.setCoords()
+  }
+
   const rLeft = (rect as any).left ?? 0
   const rTop = (rect as any).top ?? 0
 
-  // Calcul du nouveau patternTransform à partir de la position du ghost
-  // dans l'espace local du rect (post-redimensionnement éventuel par Fabric).
+  // rsx=rsy=1 → coords pattern == coords canvas, math directe
   const gLeft = ghost.left ?? 0
   const gTop = ghost.top ?? 0
   const gsx = ghost.scaleX ?? 1
   const gsy = ghost.scaleY ?? 1
 
-  const newE = (gLeft - rLeft) / (rsx || 1)
-  const newF = (gTop - rTop) / (rsy || 1)
-  const newA = gsx / (rsx || 1)
-  const newD = gsy / (rsy || 1)
+  const newE = gLeft - rLeft
+  const newF = gTop - rTop
+  const newA = gsx
+  const newD = gsy
 
   const newPattern = new Pattern({
     source: (snapshot.fill as any).source,
@@ -498,6 +631,11 @@ function applyCropPattern(): void {
     strokeDashArray: snapshot.strokeDashArray,
     strokeUniform: snapshot.strokeUniform,
   })
+  // Restaure l'origin d'origine si différent (left/top reste le top-left visuel)
+  if (snapshot.originX !== 'left' || snapshot.originY !== 'top') {
+    ;(rect as any).set({ originX: snapshot.originX, originY: snapshot.originY })
+    ;(rect as any).setPositionByOrigin(new Point(rLeft, rTop), 'left', 'top')
+  }
   ;(rect as any).dirty = true
   ;(rect as any)._cacheCanvas = null
   rect.setCoords()
