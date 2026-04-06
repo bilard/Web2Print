@@ -1,32 +1,70 @@
-import { useEffect } from 'react'
-import { Canvas, FabricImage, type TPointerEventInfo, type TPointerEvent } from 'fabric'
-import { toast } from 'sonner'
+import { useEffect, useSyncExternalStore } from 'react'
+import { Canvas, FabricImage, Rect, type FabricObject } from 'fabric'
 
 // ---------------------------------------------------------------------------
-// Modèle natif Fabric : `width/height` = cadre visible (en pixels source),
-// `cropX/cropY` = décalage du bitmap dans le cadre (en pixels source),
-// `scaleX/scaleY` = zoom visuel du cadre.
-// Les poignées Fabric encadrent automatiquement `width*scaleX × height*scaleY`,
-// donc elles suivent le cadre — pas le bitmap entier.
+// Modèle natif Fabric pour les images :
+//   width/height = cadre visible (en pixels source)
+//   cropX/cropY  = décalage du bitmap dans le cadre (en pixels source)
+//   scaleX/scaleY = zoom visuel
+//
+// Mode crop explicite (style Canva) :
+//   1. enterCropMode(img) → on étend l'image au bitmap complet (dimmed),
+//      on ajoute un Rect "cropFrame" qui matérialise le cadre actuel.
+//   2. L'utilisateur peut glisser le cropFrame (déplacer/redimensionner)
+//      ET glisser l'image sous-jacente (repositionner le bitmap).
+//   3. applyCrop() → recalcule width/height + cropX/cropY de l'image à partir
+//      de la position/taille du cropFrame, puis sort du mode.
+//   4. cancelCrop() → restaure le snapshot et sort du mode.
 // ---------------------------------------------------------------------------
 
-const TIP_KEY = 'ds.tip.maskShortcuts.seen'
-function showTipOnce(): void {
-  try {
-    if (localStorage.getItem(TIP_KEY)) return
-    localStorage.setItem(TIP_KEY, '1')
-    toast.info(
-      'Astuce : Shift pour agrandir sans déformer, Cmd pour déformer, sans modificateur pour ajuster le cadre seul.',
-      { duration: 8000 },
-    )
-  } catch {
-    /* ignore */
-  }
+const CROP_FRAME_ID = '__crop_frame__'
+
+type Snapshot = {
+  left: number
+  top: number
+  width: number
+  height: number
+  scaleX: number
+  scaleY: number
+  cropX: number
+  cropY: number
+  opacity: number
+  selectable: boolean
+  lockScalingX: boolean
+  lockScalingY: boolean
+  lockRotation: boolean
+  hasControls: boolean
 }
 
-// ---------------------------------------------------------------------------
-// Helpers natural size
-// ---------------------------------------------------------------------------
+type CropState = {
+  canvas: Canvas
+  image: FabricImage
+  cropFrame: Rect
+  snapshot: Snapshot
+}
+
+let _state: CropState | null = null
+
+// --- React subscription -----------------------------------------------------
+
+const _listeners = new Set<() => void>()
+function subscribe(fn: () => void) {
+  _listeners.add(fn)
+  return () => _listeners.delete(fn)
+}
+function notify() {
+  for (const fn of _listeners) fn()
+}
+function getSnapshot(): FabricImage | null {
+  return _state?.image ?? null
+}
+
+/** Hook React qui retourne l'image en cours de crop, ou null. */
+export function useCroppingImage(): FabricImage | null {
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+}
+
+// --- Helpers ----------------------------------------------------------------
 
 function naturalSize(img: FabricImage): { w: number; h: number } {
   const el = (img as any)._originalElement || (img as any)._element
@@ -35,86 +73,26 @@ function naturalSize(img: FabricImage): { w: number; h: number } {
   return { w, h }
 }
 
-// ---------------------------------------------------------------------------
-// Mode édition de contenu (drag du bitmap dans le cadre)
-// ---------------------------------------------------------------------------
-
-const _contentModeImages = new WeakSet<FabricImage>()
-const _contentDragStart = new WeakMap<
-  FabricImage,
-  { x: number; y: number; cropX: number; cropY: number }
->()
-const _contentModeLocks = new WeakMap<FabricImage, { lockX: boolean; lockY: boolean }>()
-
-export function isInContentMode(img: FabricImage): boolean {
-  return _contentModeImages.has(img)
+export function isCropping(): boolean {
+  return _state !== null
 }
 
-export function enterContentMode(img: FabricImage): void {
-  _contentModeImages.add(img)
-  _contentModeLocks.set(img, {
-    lockX: (img as any).lockMovementX ?? false,
-    lockY: (img as any).lockMovementY ?? false,
-  })
-  ;(img as any).lockMovementX = true
-  ;(img as any).lockMovementY = true
-  ;(img as any).borderColor = '#6366f1'
-  ;(img as any).cornerColor = '#6366f1'
-  ;(img as any).dirty = true
-  img.canvas?.requestRenderAll()
+export function getCroppingImage(): FabricImage | null {
+  return _state?.image ?? null
 }
 
-export function exitContentMode(img: FabricImage): void {
-  _contentModeImages.delete(img)
-  const saved = _contentModeLocks.get(img)
-  if (saved) {
-    ;(img as any).lockMovementX = saved.lockX
-    ;(img as any).lockMovementY = saved.lockY
-    _contentModeLocks.delete(img)
-  }
-  _contentDragStart.delete(img)
-  ;(img as any).dirty = true
-  img.canvas?.requestRenderAll()
-}
-
-// ---------------------------------------------------------------------------
-// Snapshot pour gestes de redimensionnement
-// ---------------------------------------------------------------------------
-
-type ScaleSnapshot = {
-  width: number
-  height: number
-  scaleX: number
-  scaleY: number
-  cropX: number
-  cropY: number
-  left: number
-  top: number
-}
-
-const _scaleSnapshots = new WeakMap<FabricImage, ScaleSnapshot>()
-
-function isMetaKey(e: MouseEvent | TouchEvent): boolean {
-  return (e as MouseEvent).metaKey || (e as MouseEvent).ctrlKey
-}
-
-// ---------------------------------------------------------------------------
-// Helpers publics
-// ---------------------------------------------------------------------------
+// --- Helpers publics conservés (utilisés par ImageMaskSection) -------------
 
 /** Réinitialise le cadre à la taille naturelle du bitmap (pas de crop). */
 export function fitFrameToContent(img: FabricImage): void {
   const { w, h } = naturalSize(img)
   if (w <= 0 || h <= 0) return
-  img.set({ width: w, height: h, cropX: 0, cropY: 0 })
+  ;(img as any).set({ width: w, height: h, cropX: 0, cropY: 0 })
   ;(img as any).dirty = true
   img.canvas?.requestRenderAll()
 }
 
-/**
- * Garde le cadre affiché actuel et recadre le bitmap (cover) :
- * scaleX = scaleY uniformes, cropX/cropY centrent la portion visible.
- */
+/** Recadre le bitmap (cover) en gardant le cadre affiché actuel. */
 export function fillFrameProportionally(img: FabricImage): void {
   const { w: natW, h: natH } = naturalSize(img)
   const w = img.width ?? 0
@@ -141,7 +119,7 @@ export function fillFrameProportionally(img: FabricImage): void {
   const newCropY = (natH - newH) / 2
   const uniformScale = displayW / newW
 
-  img.set({
+  ;(img as any).set({
     width: newW,
     height: newH,
     cropX: newCropX,
@@ -153,188 +131,231 @@ export function fillFrameProportionally(img: FabricImage): void {
   img.canvas?.requestRenderAll()
 }
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
+// --- Mode crop --------------------------------------------------------------
+
+export function enterCropMode(img: FabricImage): void {
+  if (_state) return
+  const canvas = img.canvas
+  if (!canvas) return
+
+  const { w: natW, h: natH } = naturalSize(img)
+  if (natW <= 0 || natH <= 0) return
+
+  const sx = img.scaleX ?? 1
+  const sy = img.scaleY ?? 1
+  const cropX = (img as any).cropX ?? 0
+  const cropY = (img as any).cropY ?? 0
+  const w = img.width ?? 0
+  const h = img.height ?? 0
+  const left = img.left ?? 0
+  const top = img.top ?? 0
+
+  const snapshot: Snapshot = {
+    left,
+    top,
+    width: w,
+    height: h,
+    scaleX: sx,
+    scaleY: sy,
+    cropX,
+    cropY,
+    opacity: img.opacity ?? 1,
+    selectable: img.selectable ?? true,
+    lockScalingX: (img as any).lockScalingX ?? false,
+    lockScalingY: (img as any).lockScalingY ?? false,
+    lockRotation: (img as any).lockRotation ?? false,
+    hasControls: (img as any).hasControls ?? true,
+  }
+
+  // Position courante du coin haut-gauche du cadre visible (déjà = left, top).
+  // Position du coin haut-gauche du bitmap COMPLET si on retire le crop :
+  //   fullLeft = left - cropX * sx
+  //   fullTop  = top  - cropY * sy
+  const fullLeft = left - cropX * sx
+  const fullTop = top - cropY * sy
+
+  // Étendre l'image au bitmap complet, dimmed, non-scalable.
+  ;(img as any).set({
+    width: natW,
+    height: natH,
+    cropX: 0,
+    cropY: 0,
+    left: fullLeft,
+    top: fullTop,
+    opacity: 0.4,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
+    hasControls: false,
+  })
+  ;(img as any).dirty = true
+
+  // Cadre crop : un Rect calé sur la zone actuellement visible.
+  const cropFrame = new Rect({
+    left,
+    top,
+    width: w * sx,
+    height: h * sy,
+    fill: 'rgba(255,255,255,0.001)', // quasi-transparent, mais hit-testable
+    stroke: '#6366f1',
+    strokeWidth: 2,
+    strokeDashArray: [6, 4],
+    strokeUniform: true,
+    cornerColor: '#6366f1',
+    cornerStyle: 'circle',
+    transparentCorners: false,
+    borderColor: '#6366f1',
+    lockRotation: true,
+    hasRotatingPoint: false,
+    excludeFromExport: true,
+    objectCaching: false,
+  } as any)
+  ;(cropFrame as any).data = { id: CROP_FRAME_ID, isCropFrame: true }
+
+  canvas.add(cropFrame)
+  canvas.setActiveObject(cropFrame)
+
+  _state = { canvas, image: img, cropFrame, snapshot }
+  notify()
+  canvas.requestRenderAll()
+}
+
+export function cancelCrop(): void {
+  if (!_state) return
+  const { canvas, image, cropFrame, snapshot } = _state
+
+  ;(image as any).set({
+    width: snapshot.width,
+    height: snapshot.height,
+    cropX: snapshot.cropX,
+    cropY: snapshot.cropY,
+    scaleX: snapshot.scaleX,
+    scaleY: snapshot.scaleY,
+    left: snapshot.left,
+    top: snapshot.top,
+    opacity: snapshot.opacity,
+    selectable: snapshot.selectable,
+    lockScalingX: snapshot.lockScalingX,
+    lockScalingY: snapshot.lockScalingY,
+    lockRotation: snapshot.lockRotation,
+    hasControls: snapshot.hasControls,
+  })
+  ;(image as any).dirty = true
+
+  canvas.remove(cropFrame)
+  canvas.setActiveObject(image)
+  _state = null
+  notify()
+  canvas.requestRenderAll()
+}
+
+export function applyCrop(): void {
+  if (!_state) return
+  const { canvas, image, cropFrame, snapshot } = _state
+
+  // Le cropFrame est en coordonnées canvas. Calculer sa position relative à
+  // l'image étendue (qui montre le bitmap complet, scaleX/Y = snapshot).
+  const sx = snapshot.scaleX || 1
+  const sy = snapshot.scaleY || 1
+  const fLeft = cropFrame.left ?? 0
+  const fTop = cropFrame.top ?? 0
+  const fW = (cropFrame.width ?? 0) * (cropFrame.scaleX ?? 1)
+  const fH = (cropFrame.height ?? 0) * (cropFrame.scaleY ?? 1)
+  const imgLeft = image.left ?? 0
+  const imgTop = image.top ?? 0
+
+  // Conversion canvas → pixels source (px source = px canvas / scale)
+  let newCropX = (fLeft - imgLeft) / sx
+  let newCropY = (fTop - imgTop) / sy
+  let newW = fW / sx
+  let newH = fH / sy
+
+  // Clamp dans les limites du bitmap
+  const { w: natW, h: natH } = naturalSize(image)
+  if (newCropX < 0) {
+    newW += newCropX
+    newCropX = 0
+  }
+  if (newCropY < 0) {
+    newH += newCropY
+    newCropY = 0
+  }
+  if (newCropX + newW > natW) newW = natW - newCropX
+  if (newCropY + newH > natH) newH = natH - newCropY
+  if (newW < 1 || newH < 1) {
+    // Crop dégénéré → annuler
+    cancelCrop()
+    return
+  }
+
+  // Restaurer l'image avec le nouveau cadre, position calée sur le cropFrame
+  ;(image as any).set({
+    width: newW,
+    height: newH,
+    cropX: newCropX,
+    cropY: newCropY,
+    scaleX: sx,
+    scaleY: sy,
+    left: imgLeft + newCropX * sx,
+    top: imgTop + newCropY * sy,
+    opacity: snapshot.opacity,
+    selectable: snapshot.selectable,
+    lockScalingX: snapshot.lockScalingX,
+    lockScalingY: snapshot.lockScalingY,
+    lockRotation: snapshot.lockRotation,
+    hasControls: snapshot.hasControls,
+  })
+  ;(image as any).dirty = true
+  image.setCoords()
+
+  canvas.remove(cropFrame)
+  canvas.setActiveObject(image)
+  _state = null
+  notify()
+  canvas.requestRenderAll()
+}
+
+// --- Hook qui pose les listeners ------------------------------------------
 
 export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
   useEffect(() => {
     const canvas = fabricRef.current
     if (!canvas) return
 
-    // Snapshot au début d'un geste de scaling (uniquement sur poignée)
-    const onScalingStart = (e: { target?: any }) => {
-      const t = e.target
-      if (!(t instanceof FabricImage)) return
-      if (!(t as any).__corner) return
-      _scaleSnapshots.set(t, {
-        width: t.width ?? 0,
-        height: t.height ?? 0,
-        scaleX: t.scaleX ?? 1,
-        scaleY: t.scaleY ?? 1,
-        cropX: (t as any).cropX ?? 0,
-        cropY: (t as any).cropY ?? 0,
-        left: t.left ?? 0,
-        top: t.top ?? 0,
-      })
-      showTipOnce()
-    }
-
-    // Pendant le scaling : appliquer la sémantique des modificateurs
-    const onScaling = (e: TPointerEventInfo<TPointerEvent>) => {
-      const t = (e as any).target as FabricImage | undefined
-      if (!(t instanceof FabricImage)) return
-      const snap = _scaleSnapshots.get(t)
-      if (!snap) return
-
-      const native = e.e as MouseEvent
-      const shift = native.shiftKey
-      const meta = isMetaKey(native)
-
-      const rx = (t.scaleX ?? 1) / (snap.scaleX || 1)
-      const ry = (t.scaleY ?? 1) / (snap.scaleY || 1)
-      if (Math.abs(rx - 1) < 0.001 && Math.abs(ry - 1) < 0.001) return
-
-      const { w: natW, h: natH } = naturalSize(t)
-
-      if (!shift && !meta) {
-        // Cadre seul : on étend width/height, on rétablit scale, on ajuste crop
-        const newW = Math.max(1, snap.width * rx)
-        const newH = Math.max(1, snap.height * ry)
-        let newCropX = snap.cropX - (newW - snap.width) / 2
-        let newCropY = snap.cropY - (newH - snap.height) / 2
-        // Clamp dans le bitmap source
-        if (natW > 0) {
-          newCropX = Math.max(0, Math.min(newCropX, Math.max(0, natW - newW)))
-        }
-        if (natH > 0) {
-          newCropY = Math.max(0, Math.min(newCropY, Math.max(0, natH - newH)))
-        }
-        t.set({
-          width: newW,
-          height: newH,
-          cropX: newCropX,
-          cropY: newCropY,
-          scaleX: snap.scaleX,
-          scaleY: snap.scaleY,
-        })
-      } else if (shift && !meta) {
-        // Proportionnel cadre + contenu
-        const ratio = Math.max(rx, ry)
-        t.set({
-          scaleX: snap.scaleX * ratio,
-          scaleY: snap.scaleY * ratio,
-          width: snap.width,
-          height: snap.height,
-          cropX: snap.cropX,
-          cropY: snap.cropY,
-        })
-      } else if (meta && !shift) {
-        // Déformation libre cadre + contenu : on laisse Fabric, mais on garde width/height/crop
-        t.set({
-          width: snap.width,
-          height: snap.height,
-          cropX: snap.cropX,
-          cropY: snap.cropY,
-        })
-      } else {
-        // Cmd+Shift = proportionnel
-        const ratio = Math.max(rx, ry)
-        t.set({
-          scaleX: snap.scaleX * ratio,
-          scaleY: snap.scaleY * ratio,
-          width: snap.width,
-          height: snap.height,
-          cropX: snap.cropX,
-          cropY: snap.cropY,
-        })
-      }
-
-      ;(t as any).dirty = true
-    }
-
-    const onScaled = (e: { target?: any }) => {
-      const t = e.target
-      if (t instanceof FabricImage) _scaleSnapshots.delete(t)
-    }
-
-    canvas.on('mouse:down', onScalingStart)
-    canvas.on('object:scaling', onScaling)
-    canvas.on('object:modified', onScaled)
-
-    // --- Mode édition de contenu ---
-
-    const onDblClick = (e: { target?: any }) => {
-      const t = e.target
-      if (t instanceof FabricImage) enterContentMode(t)
-    }
-
+    // Échap → annuler le mode crop
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key !== 'Escape') return
-      const active = canvas.getActiveObject()
-      if (active instanceof FabricImage && isInContentMode(active)) {
-        exitContentMode(active)
+      if (!_state) return
+      if (ev.key === 'Escape') cancelCrop()
+      else if (ev.key === 'Enter') applyCrop()
+    }
+
+    // Empêcher la désélection : si on clique en dehors du cropFrame en mode crop,
+    // on garde l'état mais on rebascule la sélection sur le cropFrame.
+    const onSelectionCleared = () => {
+      if (!_state) return
+      _state.canvas.setActiveObject(_state.cropFrame)
+    }
+
+    // Si l'image en cours de crop est supprimée, sortir du mode
+    const onObjectRemoved = (e: { target?: FabricObject }) => {
+      if (!_state) return
+      if (e.target === _state.image) {
+        // L'image a été retirée → cleanup
+        _state.canvas.remove(_state.cropFrame)
+        _state = null
+        notify()
       }
     }
 
-    const onMouseDownContent = (e: TPointerEventInfo<TPointerEvent>) => {
-      const t = (e as any).target as FabricImage | undefined
-      if (!(t instanceof FabricImage)) return
-      if (!isInContentMode(t)) return
-      const p = canvas.getPointer(e.e)
-      _contentDragStart.set(t, {
-        x: p.x,
-        y: p.y,
-        cropX: (t as any).cropX ?? 0,
-        cropY: (t as any).cropY ?? 0,
-      })
-    }
-
-    const onMouseMoveContent = (e: TPointerEventInfo<TPointerEvent>) => {
-      const active = canvas.getActiveObject()
-      if (!(active instanceof FabricImage)) return
-      if (!isInContentMode(active)) return
-      const start = _contentDragStart.get(active)
-      if (!start) return
-      const p = canvas.getPointer(e.e)
-      const sx = active.scaleX ?? 1
-      const sy = active.scaleY ?? 1
-      // Drag → déplace le bitmap dans le sens du curseur,
-      // donc cropX/cropY diminuent.
-      const dxSrc = (p.x - start.x) / (sx || 1)
-      const dySrc = (p.y - start.y) / (sy || 1)
-      const w = active.width ?? 0
-      const h = active.height ?? 0
-      const { w: natW, h: natH } = naturalSize(active)
-      let newCropX = start.cropX - dxSrc
-      let newCropY = start.cropY - dySrc
-      if (natW > 0) newCropX = Math.max(0, Math.min(newCropX, Math.max(0, natW - w)))
-      if (natH > 0) newCropY = Math.max(0, Math.min(newCropY, Math.max(0, natH - h)))
-      ;(active as any).set({ cropX: newCropX, cropY: newCropY })
-      ;(active as any).dirty = true
-      canvas.requestRenderAll()
-    }
-
-    const onMouseUpContent = () => {
-      const active = canvas.getActiveObject()
-      if (active instanceof FabricImage) _contentDragStart.delete(active)
-    }
-
-    canvas.on('mouse:dblclick', onDblClick)
-    canvas.on('mouse:down', onMouseDownContent)
-    canvas.on('mouse:move', onMouseMoveContent)
-    canvas.on('mouse:up', onMouseUpContent)
     window.addEventListener('keydown', onKeyDown)
+    canvas.on('selection:cleared', onSelectionCleared)
+    canvas.on('object:removed', onObjectRemoved)
 
     return () => {
-      canvas.off('mouse:down', onScalingStart)
-      canvas.off('mouse:down', onMouseDownContent)
-      canvas.off('mouse:move', onMouseMoveContent)
-      canvas.off('mouse:up', onMouseUpContent)
-      canvas.off('object:scaling', onScaling)
-      canvas.off('object:modified', onScaled)
-      canvas.off('mouse:dblclick', onDblClick)
       window.removeEventListener('keydown', onKeyDown)
+      canvas.off('selection:cleared', onSelectionCleared)
+      canvas.off('object:removed', onObjectRemoved)
+      if (_state) cancelCrop()
     }
   }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
 }

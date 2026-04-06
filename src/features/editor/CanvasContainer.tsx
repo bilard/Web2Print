@@ -15,6 +15,7 @@ import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 import { usePageNavigation } from './usePageNavigation'
 import { syncToStore } from './useAddObject'
 import { ContextMenu } from '@/components/canvas/ContextMenu'
+import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { FileText } from 'lucide-react'
@@ -230,6 +231,9 @@ export function CanvasContainer() {
             style={{ top: Math.round(g.pos * zoom_ + vt[5]) }} />
         )
       )}
+
+      {/* Image crop toolbars (floating) */}
+      <ImageCropToolbars canvas={fabricRef.current} />
 
       {/* Context menu */}
       {contextMenu && (
