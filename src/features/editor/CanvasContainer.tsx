@@ -8,6 +8,7 @@ import { useSyncPropertiesToCanvas } from './useSelectedObject'
 import { useHistory } from './useHistory'
 import { useAutoSave } from './useAutoSave'
 import { useLoadCanvas } from './useLoadCanvas'
+import { useImageMask } from './useImageMask'
 import { useSnapGuides, type SnapGuide } from './useSnapGuides'
 import { useObjectOperations, setGlobalObjOps } from './useObjectOperations'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
@@ -130,6 +131,7 @@ export function CanvasContainer() {
   useGrid(fabricRef)
   useSyncPropertiesToCanvas(fabricRef)
   useSnapGuides(fabricRef, setSnapGuides)
+  useImageMask(fabricRef)
 
   const { undo, redo } = useHistory(fabricRef)
   useAutoSave(fabricRef)
