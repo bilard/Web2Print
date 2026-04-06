@@ -2,6 +2,49 @@ import { useEffect } from 'react'
 import { Canvas, FabricImage, Rect, type TPointerEventInfo, type TPointerEvent } from 'fabric'
 
 // ---------------------------------------------------------------------------
+// Module-scope state for content-edit mode
+// ---------------------------------------------------------------------------
+
+const _contentModeImages = new WeakSet<FabricImage>()
+const _contentDragStart = new WeakMap<FabricImage, { x: number; y: number; clipLeft: number; clipTop: number }>()
+// Saved lockMovement values so we can restore them on exit
+const _contentModeLocks = new WeakMap<FabricImage, { lockX: boolean; lockY: boolean }>()
+
+export function isInContentMode(img: FabricImage): boolean {
+  return _contentModeImages.has(img)
+}
+
+export function enterContentMode(img: FabricImage): void {
+  if (!(img as any).clipPath) return
+  _contentModeImages.add(img)
+  // Prevent Fabric's built-in object move while in content mode
+  _contentModeLocks.set(img, {
+    lockX: (img as any).lockMovementX ?? false,
+    lockY: (img as any).lockMovementY ?? false,
+  })
+  ;(img as any).lockMovementX = true
+  ;(img as any).lockMovementY = true
+  ;(img as any).borderColor = '#6366f1'
+  ;(img as any).cornerColor = '#6366f1'
+  ;(img as any).dirty = true
+  img.canvas?.requestRenderAll()
+}
+
+export function exitContentMode(img: FabricImage): void {
+  _contentModeImages.delete(img)
+  // Restore previous lock values
+  const saved = _contentModeLocks.get(img)
+  if (saved) {
+    ;(img as any).lockMovementX = saved.lockX
+    ;(img as any).lockMovementY = saved.lockY
+    _contentModeLocks.delete(img)
+  }
+  _contentDragStart.delete(img)
+  ;(img as any).dirty = true
+  img.canvas?.requestRenderAll()
+}
+
+// ---------------------------------------------------------------------------
 // Module-scope state for scaling snapshots
 // ---------------------------------------------------------------------------
 
@@ -129,11 +172,75 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
     canvas.on('object:scaling', onScaling)
     canvas.on('object:modified', onScaled)
 
+    // --- Content-edit mode listeners ---
+
+    const onDblClick = (e: { target?: any }) => {
+      const t = e.target
+      if (t instanceof FabricImage) enterContentMode(t)
+    }
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return
+      const active = canvas.getActiveObject()
+      if (active instanceof FabricImage && isInContentMode(active)) {
+        exitContentMode(active)
+      }
+    }
+
+    const onMouseDownContent = (e: TPointerEventInfo<TPointerEvent>) => {
+      const t = (e as any).target as FabricImage | undefined
+      if (!(t instanceof FabricImage)) return
+      if (!isInContentMode(t)) return
+      const cp = (t as any).clipPath as Rect | undefined
+      if (!cp) return
+      const p = canvas.getPointer(e.e)
+      _contentDragStart.set(t, {
+        x: p.x,
+        y: p.y,
+        clipLeft: cp.left ?? 0,
+        clipTop: cp.top ?? 0,
+      })
+    }
+
+    const onMouseMoveContent = (e: TPointerEventInfo<TPointerEvent>) => {
+      const active = canvas.getActiveObject()
+      if (!(active instanceof FabricImage)) return
+      if (!isInContentMode(active)) return
+      const start = _contentDragStart.get(active)
+      if (!start) return
+      const cp = (active as any).clipPath as Rect | undefined
+      if (!cp) return
+      const p = canvas.getPointer(e.e)
+      // Move clipPath in OPPOSITE direction → repositions image inside frame
+      cp.set({
+        left: start.clipLeft - (p.x - start.x),
+        top: start.clipTop - (p.y - start.y),
+      })
+      ;(active as any).dirty = true
+      canvas.requestRenderAll()
+    }
+
+    const onMouseUpContent = () => {
+      const active = canvas.getActiveObject()
+      if (active instanceof FabricImage) _contentDragStart.delete(active)
+    }
+
+    canvas.on('mouse:dblclick', onDblClick)
+    canvas.on('mouse:down', onMouseDownContent)
+    canvas.on('mouse:move', onMouseMoveContent)
+    canvas.on('mouse:up', onMouseUpContent)
+    window.addEventListener('keydown', onKeyDown)
+
     return () => {
       canvas.off('object:added', onAdded)
       canvas.off('mouse:down', onScalingStart)
+      canvas.off('mouse:down', onMouseDownContent)
+      canvas.off('mouse:move', onMouseMoveContent)
+      canvas.off('mouse:up', onMouseUpContent)
       canvas.off('object:scaling', onScaling)
       canvas.off('object:modified', onScaled)
+      canvas.off('mouse:dblclick', onDblClick)
+      window.removeEventListener('keydown', onKeyDown)
     }
   }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
 }
