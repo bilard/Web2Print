@@ -1488,8 +1488,22 @@ export async function exportIdmlModified(
     const origDisplayH = imageObj.data?.idmlH
     const localCx = imageObj.data?.localCx
     const localCy = imageObj.data?.localCy
-    const newDisplayW = (imageObj.width ?? 0) * (imageObj.scaleX ?? 1)
-    const newDisplayH = (imageObj.height ?? 0) * (imageObj.scaleY ?? 1)
+
+    // When a clipPath (mask frame) exists, the parent <Rectangle> bounds must match
+    // the clipPath dimensions — this mirrors InDesign's frame/content model where the
+    // frame clips the bitmap. The inner <Image> child keeps the full bitmap bounds so
+    // the offset between bitmap and frame is preserved automatically.
+    const cp = (imageObj as any).clipPath as
+      | { left: number; top: number; width: number; height: number }
+      | undefined
+    const sx = imageObj.scaleX ?? 1
+    const sy = imageObj.scaleY ?? 1
+    const iw = imageObj.width ?? 0
+    const ih = imageObj.height ?? 0
+
+    // Frame (Rectangle) dimensions — use clipPath when available, else full bitmap
+    const newDisplayW = cp ? cp.width * sx : iw * sx
+    const newDisplayH = cp ? cp.height * sy : ih * sy
 
     const sizeChanged =
       origDisplayW != null &&
@@ -1509,7 +1523,11 @@ export async function exportIdmlModified(
       origDisplayW!, origDisplayH!,
       localCx!, localCy!,
     )
-    if (patched) {
+    // Only rescale the inner <Image> child when the bitmap itself was resized (no
+    // clipPath in play). When the frame change is purely driven by a clipPath mask,
+    // the bitmap transform stays unchanged — the content extends beyond the frame just
+    // as it does in InDesign.
+    if (patched && !cp) {
       const scaleX = origDisplayW! > 0.001 ? newDisplayW / origDisplayW! : 1
       const scaleY = origDisplayH! > 0.001 ? newDisplayH / origDisplayH! : 1
       scaleImageChildTransform(spreadEntry, fabricId, scaleX, scaleY, localCx!, localCy!)
