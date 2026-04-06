@@ -170,81 +170,8 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
       setSelectedObjectIds([])
     })
 
-    // ── Double-clic : mode cadrage image ──────────────────────────────────
-    // L'image se déplace librement sous un clipPath fixe (masque).
-    let cropModeState: {
-      img: FabricImage
-      frameRect: Rect
-      clipRect: Rect
-      savedClipPath: any
-    } | null = null
-
-    const exitCropMode = () => {
-      if (!cropModeState) return
-      const { img, frameRect } = cropModeState
-      canvas.remove(frameRect)
-      canvas.requestRenderAll()
-      syncToStore(canvas)
-      cropModeState = null
-    }
-
-    canvas.on('mouse:dblclick', (e: any) => {
-      if (cropModeState) { exitCropMode(); return }
-
-      const target = e.target
-      if (!(target instanceof FabricImage)) return
-
-      // Calculer la position du cadre visible
-      const center = target.getCenterPoint()
-      const frameW = target.getScaledWidth()
-      const frameH = target.getScaledHeight()
-      const frameLeft = center.x - frameW / 2
-      const frameTop = center.y - frameH / 2
-
-      // ClipPath fixe = masque à la position actuelle du cadre
-      const clipRect = new Rect({
-        left: frameLeft,
-        top: frameTop,
-        width: frameW,
-        height: frameH,
-        absolutePositioned: true,
-      })
-
-      // Sauvegarder le clipPath existant et appliquer le masque
-      const savedClipPath = target.clipPath
-      target.clipPath = clipRect
-
-      // Cadre visuel pointillé
-      const zoom = canvas.getZoom() || 1
-      const sw = 1 / zoom
-      const frameRect = new Rect({
-        left: frameLeft,
-        top: frameTop,
-        width: frameW,
-        height: frameH,
-        fill: 'transparent',
-        stroke: '#6366f1',
-        strokeWidth: sw,
-        strokeDashArray: [5 * sw, 3.5 * sw],
-        selectable: false,
-        evented: false,
-        data: { isCropFrame: true },
-      })
-      canvas.add(frameRect)
-
-      cropModeState = { img: target, frameRect, clipRect, savedClipPath }
-      canvas.requestRenderAll()
-    })
-
-    // Pas de handler object:moving — l'image se déplace librement,
-    // le clipPath masque ce qui dépasse du cadre.
-
-    canvas.on('selection:cleared', () => {
-      if (cropModeState) exitCropMode()
-    })
-    canvas.on('selection:updated', () => {
-      if (cropModeState) exitCropMode()
-    })
+    // Image mask handling (double-click → content edit, scaling modifiers, etc.)
+    // is now provided by the useImageMask hook in CanvasContainer.
 
     return () => {
       canvas.dispose()
