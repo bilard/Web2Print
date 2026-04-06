@@ -1377,6 +1377,7 @@ export async function exportIdmlModified(
   const applyPosDelta = (
     fabricId: string,
     fab: FabricObject & { data?: FabricData },
+    centerOverride?: { x: number; y: number },
   ) => {
     if (patchedPositionIds.has(fabricId)) return
 
@@ -1385,7 +1386,7 @@ export async function exportIdmlModified(
     const origTf = extractItemTransformFromXml(se.xml, fabricId)
     if (!origTf) return
 
-    const center = fab.getCenterPoint()
+    const center = centerOverride ?? fab.getCenterPoint()
     const newLeft = center.x
     const newTop  = center.y
 
@@ -1479,16 +1480,6 @@ export async function exportIdmlModified(
       scaleY?: number
     }
 
-    applyPosDelta(fabricId, imageObj)
-
-    const spreadEntry = idToSpread.get(fabricId)
-    if (!spreadEntry) continue
-
-    const origDisplayW = imageObj.data?.idmlW
-    const origDisplayH = imageObj.data?.idmlH
-    const localCx = imageObj.data?.localCx
-    const localCy = imageObj.data?.localCy
-
     // When a clipPath (mask frame) exists, the parent <Rectangle> bounds must match
     // the clipPath dimensions — this mirrors InDesign's frame/content model where the
     // frame clips the bitmap. The inner <Image> child keeps the full bitmap bounds so
@@ -1498,6 +1489,37 @@ export async function exportIdmlModified(
       | undefined
     const sx = imageObj.scaleX ?? 1
     const sy = imageObj.scaleY ?? 1
+
+    // When a clipPath is present and offset from the image center (content-edit panning),
+    // the IDML frame position must reflect the clipPath's center in document space, not
+    // the image's center. In Fabric v6 object-space convention (absolutePositioned: false),
+    // cp.left/top are relative to the image center, so the offset is:
+    //   cpOffsetX = cp.left + cp.width/2   (0 when clipPath is centered on the image)
+    //   cpOffsetY = cp.top  + cp.height/2
+    // Multiplying by scale converts from object-space to document-space units.
+    // Falls back to img.getCenterPoint() when no clipPath or when offset is (0, 0).
+    let frameCenterOverride: { x: number; y: number } | undefined
+    if (cp) {
+      const cpOffsetX = cp.left + cp.width  / 2
+      const cpOffsetY = cp.top  + cp.height / 2
+      if (Math.abs(cpOffsetX) > 0.001 || Math.abs(cpOffsetY) > 0.001) {
+        const imgCenter = imageObj.getCenterPoint()
+        frameCenterOverride = {
+          x: imgCenter.x + cpOffsetX * sx,
+          y: imgCenter.y + cpOffsetY * sy,
+        }
+      }
+    }
+
+    applyPosDelta(fabricId, imageObj, frameCenterOverride)
+
+    const spreadEntry = idToSpread.get(fabricId)
+    if (!spreadEntry) continue
+
+    const origDisplayW = imageObj.data?.idmlW
+    const origDisplayH = imageObj.data?.idmlH
+    const localCx = imageObj.data?.localCx
+    const localCy = imageObj.data?.localCy
     const iw = imageObj.width ?? 0
     const ih = imageObj.height ?? 0
 
