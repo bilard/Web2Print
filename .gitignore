@@ -33,3 +33,14 @@ npm-debug.log*
 
 # Git worktrees
 .worktrees/
+
+# Local data dumps (not part of source)
+Monoprix/
+"Monoprix V2/"
+Doublet/
+Trafic/
+PowerPoint/
+.netlify/
+.playwright-mcp/
+.DS_Store
+dist/
