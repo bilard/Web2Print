@@ -36,7 +36,7 @@ npm-debug.log*
 
 # Local data dumps (not part of source)
 Monoprix/
-"Monoprix V2/"
+Monoprix V2/
 Doublet/
 Trafic/
 PowerPoint/
@@ -44,3 +44,5 @@ PowerPoint/
 .playwright-mcp/
 .DS_Store
 dist/
+.claude/
+env.local
