@@ -165,7 +165,7 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
   }
 
   // Step 3: Serialize with all images now having permanent URLs
-  const canvasJson = canvas.toObject(['data'])
+  const canvasJson = canvas.toObject(['data', 'clipPath'])
 
   // Step 4: Restore resolved text/styles/size on canvas (user sees data, not templates)
   for (const { obj, resolved, resolvedStyles, resolvedWidth } of resolvedTexts) {
