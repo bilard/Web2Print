@@ -193,47 +193,42 @@ export function useAddNode() {
       taxonomyId,
       parentId,
       label,
-      nodeId,
     }: {
       taxonomyId: string
       parentId: string | null
       label: string
-      nodeId: string
     }) => {
-      // Re-read from Firestore-synced cache, but filter out optimistic temp node
-      // to build the final state with the definitive ID
       const taxonomy = getCachedList(qc, user!.uid).find(
         (t) => t.id === taxonomyId
       )
       if (!taxonomy) throw new Error('Taxonomie introuvable')
 
       const parentNode = parentId ? taxonomy.nodes[parentId] : null
-      // Remove the optimistic entry (same nodeId) and re-add with final data
-      const baseNodes = { ...taxonomy.nodes }
-      delete baseNodes[nodeId]
+      const id = crypto.randomUUID()
       const node: TaxonomyNode = {
-        id: nodeId,
+        id,
         label,
         parentId,
-        order: getNextOrder(baseNodes, parentId),
+        order: getNextOrder(taxonomy.nodes, parentId),
         level: parentNode ? parentNode.level + 1 : 0,
         linkedProjectIds: [],
       }
-      const updatedNodes = { ...baseNodes, [nodeId]: node }
+      const updatedNodes = { ...taxonomy.nodes, [id]: node }
       await updateDoc(doc(db, 'taxonomies', taxonomyId), {
         nodes: updatedNodes,
         updatedAt: Timestamp.now(),
       })
       return node
     },
-    onMutate: async ({ taxonomyId, parentId, label, nodeId }) => {
+    onMutate: async ({ taxonomyId, parentId, label }) => {
       const applyOptimistic = makeOptimisticUpdater(qc, user!.uid)
       const cached = getCachedList(qc, user!.uid)
       const taxonomy = cached.find((t) => t.id === taxonomyId)
       if (!taxonomy) return { previous: cached }
       const parentNode = parentId ? taxonomy.nodes[parentId] : null
+      const tempId = crypto.randomUUID()
       const tempNode: TaxonomyNode = {
-        id: nodeId,
+        id: tempId,
         label,
         parentId,
         order: getNextOrder(taxonomy.nodes, parentId),
@@ -242,7 +237,7 @@ export function useAddNode() {
       }
       return applyOptimistic(taxonomyId, (nodes) => ({
         ...nodes,
-        [nodeId]: tempNode,
+        [tempId]: tempNode,
       }))
     },
     onError: (_e, _v, ctx) => {
@@ -461,66 +456,6 @@ export function useMoveNode() {
       qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
       qc.invalidateQueries({ queryKey: taxKey(vars.taxonomyId) })
     },
-  })
-}
-
-// ─── purgeEmptyNodes ─────────────────────────────────────────────────────────
-
-export function usePurgeEmptyNodes() {
-  const user = useAuthStore((s) => s.user)
-  const qc = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({
-      taxonomyId,
-      label = 'Nouveau nœud',
-    }: {
-      taxonomyId: string
-      label?: string
-    }) => {
-      const taxonomy = getCachedList(qc, user!.uid).find(
-        (t) => t.id === taxonomyId
-      )
-      if (!taxonomy) throw new Error('Taxonomie introuvable')
-
-      // Trouve tous les nœuds correspondant au label ET sans enfants ET sans projets liés
-      const nodeIds = Object.keys(taxonomy.nodes)
-      const childCounts = new Map<string, number>()
-      for (const node of Object.values(taxonomy.nodes)) {
-        if (node.parentId) {
-          childCounts.set(node.parentId, (childCounts.get(node.parentId) ?? 0) + 1)
-        }
-      }
-
-      const toDelete = new Set<string>()
-      for (const [id, node] of Object.entries(taxonomy.nodes)) {
-        if (
-          node.label === label &&
-          (childCounts.get(id) ?? 0) === 0 &&
-          node.linkedProjectIds.length === 0
-        ) {
-          toDelete.add(id)
-        }
-      }
-
-      if (toDelete.size === 0) return 0
-
-      const updatedNodes: Record<string, TaxonomyNode> = {}
-      for (const [id, node] of Object.entries(taxonomy.nodes)) {
-        if (!toDelete.has(id)) updatedNodes[id] = node
-      }
-      await updateDoc(doc(db, 'taxonomies', taxonomyId), {
-        nodes: updatedNodes,
-        updatedAt: Timestamp.now(),
-      })
-      return toDelete.size
-    },
-    onSuccess: (count) => {
-      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) })
-      if (count && count > 0) toast.success(`${count} nœud(s) vide(s) supprimé(s)`)
-      else toast.info('Aucun nœud vide à supprimer')
-    },
-    onError: () => toast.error('Erreur lors de la purge'),
   })
 }
 

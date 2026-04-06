@@ -3,6 +3,7 @@ import {
   collection,
   query,
   where,
+  orderBy,
   getDocs,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
@@ -12,13 +13,13 @@ import type { Taxonomy } from './types'
 async function fetchTaxonomies(userId: string): Promise<Taxonomy[]> {
   const q = query(
     collection(db, 'taxonomies'),
-    where('ownerId', '==', userId)
+    where('ownerId', '==', userId),
+    orderBy('createdAt', 'asc')
   )
   const snapshot = await getDocs(q)
-  const list = snapshot.docs.map(
+  return snapshot.docs.map(
     (docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Taxonomy)
   )
-  return list.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis())
 }
 
 export function useTaxonomies() {

@@ -2,13 +2,11 @@ import { create } from 'zustand'
 
 interface TaxonomyUIState {
   selectedTaxonomyId: string | null
-  selectedNodeId: string | null
   expandedNodeIds: Set<string>
   searchQuery: string
   highlightedNodeId: string | null
 
   setSelectedTaxonomy: (id: string | null) => void
-  setSelectedNode: (id: string | null) => void
   toggleNode: (id: string) => void
   expandAll: (nodeIds: string[]) => void
   collapseAll: () => void
@@ -18,13 +16,11 @@ interface TaxonomyUIState {
 
 export const useTaxonomyStore = create<TaxonomyUIState>((set) => ({
   selectedTaxonomyId: null,
-  selectedNodeId: null,
   expandedNodeIds: new Set<string>(),
   searchQuery: '',
   highlightedNodeId: null,
 
-  setSelectedTaxonomy: (id) => set({ selectedTaxonomyId: id, selectedNodeId: null }),
-  setSelectedNode: (id) => set({ selectedNodeId: id }),
+  setSelectedTaxonomy: (id) => set({ selectedTaxonomyId: id }),
 
   toggleNode: (id) =>
     set((s) => {

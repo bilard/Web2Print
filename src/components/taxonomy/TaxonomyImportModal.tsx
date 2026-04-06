@@ -79,13 +79,9 @@ export function TaxonomyImportModal({ open, onClose }: TaxonomyImportModalProps)
     const nodesMap: Record<string, TaxonomyNode> = {}
     for (const node of parsedNodes) nodesMap[node.id] = node
 
-    try {
-      const result = await createTaxonomy.mutateAsync({ name: taxName.trim(), nodes: nodesMap })
-      setSelectedTaxonomy(result.id)
-      handleClose()
-    } catch {
-      // onError dans la mutation gère le toast
-    }
+    const result = await createTaxonomy.mutateAsync({ name: taxName.trim(), nodes: nodesMap })
+    setSelectedTaxonomy(result.id)
+    handleClose()
   }
 
   const handleClose = () => {

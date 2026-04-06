@@ -47,14 +47,6 @@ service cloud.firestore {
       // Suppression : propriétaire uniquement
       allow delete: if isAuthenticated() && isOwner(resource);
 
-      // ── Project Gallery (NanoBana) ─────────────────────────────────────────
-
-      match /gallery/{imageId} {
-        allow read, write: if isAuthenticated() &&
-                              (get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid ||
-                               isCollaborator(projectId));
-      }
-
       // ── Collaborators ──────────────────────────────────────────────────────
 
       match /collaborators/{collaboratorUid} {
