@@ -1480,15 +1480,32 @@ export async function exportIdmlModified(
       scaleY?: number
     }
 
-    // When a clipPath (mask frame) exists, the parent <Rectangle> bounds must match
-    // the clipPath dimensions — this mirrors InDesign's frame/content model where the
-    // frame clips the bitmap. The inner <Image> child keeps the full bitmap bounds so
-    // the offset between bitmap and frame is preserved automatically.
-    const cp = (imageObj as any).clipPath as
-      | { left: number; top: number; width: number; height: number }
-      | undefined
+    // Modèle natif Fabric : `width/height` = cadre visible, `cropX/cropY` = décalage
+    // bitmap. On synthétise un objet `cp` équivalent à l'ancien clipPath pour réutiliser
+    // toute la logique IDML existante (parent <Rectangle> = cadre, enfant <Image> = bitmap).
     const sx = imageObj.scaleX ?? 1
     const sy = imageObj.scaleY ?? 1
+    const natEl = (imageObj as any)._originalElement || (imageObj as any)._element
+    const natW = natEl?.naturalWidth ?? natEl?.width ?? imageObj.width ?? 0
+    const natH = natEl?.naturalHeight ?? natEl?.height ?? imageObj.height ?? 0
+    const fw = imageObj.width ?? 0
+    const fh = imageObj.height ?? 0
+    const cropX = (imageObj as any).cropX ?? 0
+    const cropY = (imageObj as any).cropY ?? 0
+    const isCropped =
+      cropX > 0.001 ||
+      cropY > 0.001 ||
+      Math.abs(fw - natW) > 0.5 ||
+      Math.abs(fh - natH) > 0.5
+    const cp = isCropped
+      ? {
+          // Coordonnées exprimées en object-space par rapport au centre du bitmap natif
+          left: cropX - natW / 2,
+          top: cropY - natH / 2,
+          width: fw,
+          height: fh,
+        }
+      : undefined
 
     // When a clipPath is present and offset from the image center (content-edit panning),
     // the IDML frame position must reflect the clipPath's center in document space, not

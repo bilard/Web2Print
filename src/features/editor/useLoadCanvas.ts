@@ -15,22 +15,15 @@ import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { downloadIdmlFromStorage, globalIdmlSource } from '@/features/idml/idmlSource'
 
 /**
- * Ensure a FabricImage has a clipPath. If absent, attach a Rect covering
- * the image's native bounds (centered, object-space — Fabric v6 convention).
- * Idempotent.
+ * Drop any legacy `clipPath` left on a FabricImage by older saves.
+ * Image masks are now expressed via native `width/height` + `cropX/cropY`,
+ * which Fabric serializes natively.
  */
-function ensureImageClipPath(img: FabricImage): void {
-  if ((img as any).clipPath) return
-  const w = (img as any).width ?? 0
-  const h = (img as any).height ?? 0
-  if (w <= 0 || h <= 0) return
-  ;(img as any).clipPath = new Rect({
-    left: -w / 2,
-    top: -h / 2,
-    width: w,
-    height: h,
-    absolutePositioned: false,
-  })
+function stripLegacyClipPath(img: FabricImage): void {
+  if ((img as any).clipPath) {
+    ;(img as any).clipPath = undefined
+    ;(img as any).dirty = true
+  }
 }
 
 function restoreMergeData<T>(
@@ -412,7 +405,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           // Check images: if any FabricImage has no element or zero dimensions, retry loading
           for (const obj of loadedObjs) {
             if (obj instanceof FabricImage) {
-              ensureImageClipPath(obj)
+              stripLegacyClipPath(obj)
               const el = (obj as any)._element || (obj as any).getElement?.()
               const hasContent = el && (el.naturalWidth > 0 || el.width > 0)
               const imgName = obj.data?.name || 'unknown'

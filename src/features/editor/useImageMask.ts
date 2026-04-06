@@ -1,9 +1,13 @@
 import { useEffect } from 'react'
-import { Canvas, FabricImage, Rect, type TPointerEventInfo, type TPointerEvent } from 'fabric'
+import { Canvas, FabricImage, type TPointerEventInfo, type TPointerEvent } from 'fabric'
 import { toast } from 'sonner'
 
 // ---------------------------------------------------------------------------
-// Tip on first mask scaling
+// Modèle natif Fabric : `width/height` = cadre visible (en pixels source),
+// `cropX/cropY` = décalage du bitmap dans le cadre (en pixels source),
+// `scaleX/scaleY` = zoom visuel du cadre.
+// Les poignées Fabric encadrent automatiquement `width*scaleX × height*scaleY`,
+// donc elles suivent le cadre — pas le bitmap entier.
 // ---------------------------------------------------------------------------
 
 const TIP_KEY = 'ds.tip.maskShortcuts.seen'
@@ -11,19 +15,35 @@ function showTipOnce(): void {
   try {
     if (localStorage.getItem(TIP_KEY)) return
     localStorage.setItem(TIP_KEY, '1')
-    toast.info('Astuce : Shift pour agrandir sans déformer, Cmd pour déformer, sans modificateur pour ajuster le cadre seul.', {
-      duration: 8000,
-    })
-  } catch { /* ignore */ }
+    toast.info(
+      'Astuce : Shift pour agrandir sans déformer, Cmd pour déformer, sans modificateur pour ajuster le cadre seul.',
+      { duration: 8000 },
+    )
+  } catch {
+    /* ignore */
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Module-scope state for content-edit mode
+// Helpers natural size
+// ---------------------------------------------------------------------------
+
+function naturalSize(img: FabricImage): { w: number; h: number } {
+  const el = (img as any)._originalElement || (img as any)._element
+  const w = el?.naturalWidth ?? el?.width ?? img.width ?? 0
+  const h = el?.naturalHeight ?? el?.height ?? img.height ?? 0
+  return { w, h }
+}
+
+// ---------------------------------------------------------------------------
+// Mode édition de contenu (drag du bitmap dans le cadre)
 // ---------------------------------------------------------------------------
 
 const _contentModeImages = new WeakSet<FabricImage>()
-const _contentDragStart = new WeakMap<FabricImage, { x: number; y: number; clipLeft: number; clipTop: number }>()
-// Saved lockMovement values so we can restore them on exit
+const _contentDragStart = new WeakMap<
+  FabricImage,
+  { x: number; y: number; cropX: number; cropY: number }
+>()
 const _contentModeLocks = new WeakMap<FabricImage, { lockX: boolean; lockY: boolean }>()
 
 export function isInContentMode(img: FabricImage): boolean {
@@ -31,9 +51,7 @@ export function isInContentMode(img: FabricImage): boolean {
 }
 
 export function enterContentMode(img: FabricImage): void {
-  if (!(img as any).clipPath) return
   _contentModeImages.add(img)
-  // Prevent Fabric's built-in object move while in content mode
   _contentModeLocks.set(img, {
     lockX: (img as any).lockMovementX ?? false,
     lockY: (img as any).lockMovementY ?? false,
@@ -48,7 +66,6 @@ export function enterContentMode(img: FabricImage): void {
 
 export function exitContentMode(img: FabricImage): void {
   _contentModeImages.delete(img)
-  // Restore previous lock values
   const saved = _contentModeLocks.get(img)
   if (saved) {
     ;(img as any).lockMovementX = saved.lockX
@@ -61,158 +78,181 @@ export function exitContentMode(img: FabricImage): void {
 }
 
 // ---------------------------------------------------------------------------
-// Module-scope state for scaling snapshots
+// Snapshot pour gestes de redimensionnement
 // ---------------------------------------------------------------------------
 
 type ScaleSnapshot = {
-  imgW: number
-  imgH: number
-  imgScaleX: number
-  imgScaleY: number
-  clipW: number
-  clipH: number
-  clipLeft: number
-  clipTop: number
+  width: number
+  height: number
+  scaleX: number
+  scaleY: number
+  cropX: number
+  cropY: number
+  left: number
+  top: number
 }
 
 const _scaleSnapshots = new WeakMap<FabricImage, ScaleSnapshot>()
 
-/** Detect platform meta key (⌘ on macOS, Ctrl elsewhere). */
 function isMetaKey(e: MouseEvent | TouchEvent): boolean {
   return (e as MouseEvent).metaKey || (e as MouseEvent).ctrlKey
 }
 
 // ---------------------------------------------------------------------------
-// Public helpers
+// Helpers publics
 // ---------------------------------------------------------------------------
 
-/**
- * Attach a default clipPath to a FabricImage if it doesn't have one.
- * Centered, object-space (Fabric v6 convention).
- */
-export function ensureImageClipPath(img: FabricImage): void {
-  if ((img as any).clipPath) return
-  const w = (img as any).width ?? 0
-  const h = (img as any).height ?? 0
+/** Réinitialise le cadre à la taille naturelle du bitmap (pas de crop). */
+export function fitFrameToContent(img: FabricImage): void {
+  const { w, h } = naturalSize(img)
   if (w <= 0 || h <= 0) return
-  ;(img as any).clipPath = new Rect({
-    left: -w / 2,
-    top: -h / 2,
-    width: w,
-    height: h,
-    absolutePositioned: false,
-  })
+  img.set({ width: w, height: h, cropX: 0, cropY: 0 })
+  ;(img as any).dirty = true
+  img.canvas?.requestRenderAll()
 }
 
-/** Reduce the clipPath to exactly cover the image's natural bounds. */
-export function fitFrameToContent(img: FabricImage): void {
-  const cp = (img as any).clipPath as Rect | undefined
-  if (!cp) return
+/**
+ * Garde le cadre affiché actuel et recadre le bitmap (cover) :
+ * scaleX = scaleY uniformes, cropX/cropY centrent la portion visible.
+ */
+export function fillFrameProportionally(img: FabricImage): void {
+  const { w: natW, h: natH } = naturalSize(img)
   const w = img.width ?? 0
   const h = img.height ?? 0
-  cp.set({ left: -w / 2, top: -h / 2, width: w, height: h })
+  const sx = img.scaleX ?? 1
+  const sy = img.scaleY ?? 1
+  if (natW <= 0 || natH <= 0 || w <= 0 || h <= 0) return
+
+  const displayW = w * sx
+  const displayH = h * sy
+  const aspect = displayW / displayH
+  const natAspect = natW / natH
+
+  let newW: number
+  let newH: number
+  if (natAspect > aspect) {
+    newH = natH
+    newW = natH * aspect
+  } else {
+    newW = natW
+    newH = natW / aspect
+  }
+  const newCropX = (natW - newW) / 2
+  const newCropY = (natH - newH) / 2
+  const uniformScale = displayW / newW
+
+  img.set({
+    width: newW,
+    height: newH,
+    cropX: newCropX,
+    cropY: newCropY,
+    scaleX: uniformScale,
+    scaleY: uniformScale,
+  })
   ;(img as any).dirty = true
   img.canvas?.requestRenderAll()
 }
 
-/** Scale the image so it fully covers the clipPath, keeping aspect ratio. */
-export function fillFrameProportionally(img: FabricImage): void {
-  const cp = (img as any).clipPath as Rect | undefined
-  if (!cp) return
-  const cw = cp.width ?? 0
-  const ch = cp.height ?? 0
-  const iw = img.width ?? 0
-  const ih = img.height ?? 0
-  if (cw <= 0 || ch <= 0 || iw <= 0 || ih <= 0) return
-  const ratio = Math.max(cw / iw, ch / ih)
-  img.set({ scaleX: ratio, scaleY: ratio })
-  cp.set({ left: -iw / 2, top: -ih / 2 })
-  ;(img as any).dirty = true
-  img.canvas?.requestRenderAll()
-}
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
   useEffect(() => {
     const canvas = fabricRef.current
     if (!canvas) return
 
-    // Auto-attach clipPath to any newly added image
-    const onAdded = (e: { target?: any }) => {
-      const t = e.target
-      if (t instanceof FabricImage) ensureImageClipPath(t)
-    }
-    canvas.on('object:added', onAdded)
-
-    // Snapshot scale + clipPath dimensions when a scaling gesture begins
+    // Snapshot au début d'un geste de scaling (uniquement sur poignée)
     const onScalingStart = (e: { target?: any }) => {
       const t = e.target
       if (!(t instanceof FabricImage)) return
-      // Only snapshot when a scaling handle is being clicked, NOT on body clicks
-      // (avoids interference with double-click → enterContentMode)
-      const corner = (t as any).__corner
-      if (!corner) return
-      const cp = (t as any).clipPath as Rect | undefined
-      if (!cp) return
+      if (!(t as any).__corner) return
       _scaleSnapshots.set(t, {
-        imgW: t.width ?? 0,
-        imgH: t.height ?? 0,
-        imgScaleX: t.scaleX ?? 1,
-        imgScaleY: t.scaleY ?? 1,
-        clipW: cp.width ?? 0,
-        clipH: cp.height ?? 0,
-        clipLeft: cp.left ?? 0,
-        clipTop: cp.top ?? 0,
+        width: t.width ?? 0,
+        height: t.height ?? 0,
+        scaleX: t.scaleX ?? 1,
+        scaleY: t.scaleY ?? 1,
+        cropX: (t as any).cropX ?? 0,
+        cropY: (t as any).cropY ?? 0,
+        left: t.left ?? 0,
+        top: t.top ?? 0,
       })
       showTipOnce()
     }
 
-    // Apply keyboard-modifier semantics during scaling
+    // Pendant le scaling : appliquer la sémantique des modificateurs
     const onScaling = (e: TPointerEventInfo<TPointerEvent>) => {
       const t = (e as any).target as FabricImage | undefined
       if (!(t instanceof FabricImage)) return
-      const cp = (t as any).clipPath as Rect | undefined
-      if (!cp) return
       const snap = _scaleSnapshots.get(t)
-      // If no snapshot exists (e.g. programmatic scale), silently no-op
       if (!snap) return
 
       const native = e.e as MouseEvent
       const shift = native.shiftKey
       const meta = isMetaKey(native)
 
-      // Current scale ratio relative to snapshot
-      const sx = (t.scaleX ?? 1) / (snap.imgScaleX || 1)
-      const sy = (t.scaleY ?? 1) / (snap.imgScaleY || 1)
-      // No-op if scale hasn't actually changed (e.g. spurious event from dblclick sequence)
-      if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return
+      const rx = (t.scaleX ?? 1) / (snap.scaleX || 1)
+      const ry = (t.scaleY ?? 1) / (snap.scaleY || 1)
+      if (Math.abs(rx - 1) < 0.001 && Math.abs(ry - 1) < 0.001) return
+
+      const { w: natW, h: natH } = naturalSize(t)
 
       if (!shift && !meta) {
-        // Frame-only resize: revert image scale, grow clipPath in object space
-        t.set({ scaleX: snap.imgScaleX, scaleY: snap.imgScaleY })
-        cp.set({
-          width: snap.clipW * sx,
-          height: snap.clipH * sy,
+        // Cadre seul : on étend width/height, on rétablit scale, on ajuste crop
+        const newW = Math.max(1, snap.width * rx)
+        const newH = Math.max(1, snap.height * ry)
+        let newCropX = snap.cropX - (newW - snap.width) / 2
+        let newCropY = snap.cropY - (newH - snap.height) / 2
+        // Clamp dans le bitmap source
+        if (natW > 0) {
+          newCropX = Math.max(0, Math.min(newCropX, Math.max(0, natW - newW)))
+        }
+        if (natH > 0) {
+          newCropY = Math.max(0, Math.min(newCropY, Math.max(0, natH - newH)))
+        }
+        t.set({
+          width: newW,
+          height: newH,
+          cropX: newCropX,
+          cropY: newCropY,
+          scaleX: snap.scaleX,
+          scaleY: snap.scaleY,
         })
       } else if (shift && !meta) {
-        // Proportional resize of frame + content
-        const ratio = Math.max(sx, sy)
-        t.set({ scaleX: snap.imgScaleX * ratio, scaleY: snap.imgScaleY * ratio })
-        cp.set({ width: snap.clipW, height: snap.clipH })
+        // Proportionnel cadre + contenu
+        const ratio = Math.max(rx, ry)
+        t.set({
+          scaleX: snap.scaleX * ratio,
+          scaleY: snap.scaleY * ratio,
+          width: snap.width,
+          height: snap.height,
+          cropX: snap.cropX,
+          cropY: snap.cropY,
+        })
       } else if (meta && !shift) {
-        // Free deform of frame + content (clip stays in image object space → unchanged)
-        cp.set({ width: snap.clipW, height: snap.clipH })
+        // Déformation libre cadre + contenu : on laisse Fabric, mais on garde width/height/crop
+        t.set({
+          width: snap.width,
+          height: snap.height,
+          cropX: snap.cropX,
+          cropY: snap.cropY,
+        })
       } else {
-        // meta + shift → proportional
-        const ratio = Math.max(sx, sy)
-        t.set({ scaleX: snap.imgScaleX * ratio, scaleY: snap.imgScaleY * ratio })
-        cp.set({ width: snap.clipW, height: snap.clipH })
+        // Cmd+Shift = proportionnel
+        const ratio = Math.max(rx, ry)
+        t.set({
+          scaleX: snap.scaleX * ratio,
+          scaleY: snap.scaleY * ratio,
+          width: snap.width,
+          height: snap.height,
+          cropX: snap.cropX,
+          cropY: snap.cropY,
+        })
       }
 
-      ;(cp as any).dirty = true
       ;(t as any).dirty = true
     }
 
-    // Clear snapshot once the gesture is complete
     const onScaled = (e: { target?: any }) => {
       const t = e.target
       if (t instanceof FabricImage) _scaleSnapshots.delete(t)
@@ -222,7 +262,7 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
     canvas.on('object:scaling', onScaling)
     canvas.on('object:modified', onScaled)
 
-    // --- Content-edit mode listeners ---
+    // --- Mode édition de contenu ---
 
     const onDblClick = (e: { target?: any }) => {
       const t = e.target
@@ -241,14 +281,12 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
       const t = (e as any).target as FabricImage | undefined
       if (!(t instanceof FabricImage)) return
       if (!isInContentMode(t)) return
-      const cp = (t as any).clipPath as Rect | undefined
-      if (!cp) return
       const p = canvas.getPointer(e.e)
       _contentDragStart.set(t, {
         x: p.x,
         y: p.y,
-        clipLeft: cp.left ?? 0,
-        clipTop: cp.top ?? 0,
+        cropX: (t as any).cropX ?? 0,
+        cropY: (t as any).cropY ?? 0,
       })
     }
 
@@ -258,14 +296,21 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
       if (!isInContentMode(active)) return
       const start = _contentDragStart.get(active)
       if (!start) return
-      const cp = (active as any).clipPath as Rect | undefined
-      if (!cp) return
       const p = canvas.getPointer(e.e)
-      // Move clipPath in OPPOSITE direction → repositions image inside frame
-      cp.set({
-        left: start.clipLeft - (p.x - start.x),
-        top: start.clipTop - (p.y - start.y),
-      })
+      const sx = active.scaleX ?? 1
+      const sy = active.scaleY ?? 1
+      // Drag → déplace le bitmap dans le sens du curseur,
+      // donc cropX/cropY diminuent.
+      const dxSrc = (p.x - start.x) / (sx || 1)
+      const dySrc = (p.y - start.y) / (sy || 1)
+      const w = active.width ?? 0
+      const h = active.height ?? 0
+      const { w: natW, h: natH } = naturalSize(active)
+      let newCropX = start.cropX - dxSrc
+      let newCropY = start.cropY - dySrc
+      if (natW > 0) newCropX = Math.max(0, Math.min(newCropX, Math.max(0, natW - w)))
+      if (natH > 0) newCropY = Math.max(0, Math.min(newCropY, Math.max(0, natH - h)))
+      ;(active as any).set({ cropX: newCropX, cropY: newCropY })
       ;(active as any).dirty = true
       canvas.requestRenderAll()
     }
@@ -282,7 +327,6 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
     window.addEventListener('keydown', onKeyDown)
 
     return () => {
-      canvas.off('object:added', onAdded)
       canvas.off('mouse:down', onScalingStart)
       canvas.off('mouse:down', onMouseDownContent)
       canvas.off('mouse:move', onMouseMoveContent)

@@ -13,19 +13,24 @@ interface Props {
   image: FabricImage
 }
 
+type CropField = 'cropX' | 'cropY' | 'width' | 'height'
+
 export function ImageMaskSection({ image }: Props) {
   const [, force] = useState(0)
   const [helpOpen, setHelpOpen] = useState(false)
   const rerender = () => force((n) => n + 1)
 
-  const cp = (image as any).clipPath as
-    | { left: number; top: number; width: number; height: number }
-    | undefined
   const inContent = isInContentMode(image)
 
-  const setClipField = (field: 'left' | 'top' | 'width' | 'height', v: number) => {
-    if (!cp) return
-    ;(cp as any).set({ [field]: v })
+  const values: Record<CropField, number> = {
+    cropX: (image as any).cropX ?? 0,
+    cropY: (image as any).cropY ?? 0,
+    width: image.width ?? 0,
+    height: image.height ?? 0,
+  }
+
+  const setField = (field: CropField, v: number) => {
+    ;(image as any).set({ [field]: v })
     ;(image as any).dirty = true
     image.canvas?.requestRenderAll()
     rerender()
@@ -148,32 +153,30 @@ export function ImageMaskSection({ image }: Props) {
         </button>
       </div>
 
-      {/* clipPath geometry inputs */}
-      {cp && (
-        <div className="grid grid-cols-2 gap-2">
-          {(
-            [
-              { field: 'left', label: 'X' },
-              { field: 'top', label: 'Y' },
-              { field: 'width', label: 'L' },
-              { field: 'height', label: 'H' },
-            ] as const
-          ).map(({ field, label }) => (
-            <div key={field} className="flex flex-col gap-1">
-              <span className="text-[10px] text-white/30 uppercase tracking-wider">{label}</span>
-              <div className="flex items-center bg-white/5 border border-white/10 rounded-md overflow-hidden focus-within:border-indigo-500/50">
-                <input
-                  type="number"
-                  value={Math.round(cp[field])}
-                  onChange={(e) => setClipField(field, Number(e.target.value))}
-                  className="w-full bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none"
-                />
-                <span className="text-[10px] text-white/20 pr-1.5 shrink-0">pt</span>
-              </div>
+      {/* Crop / frame inputs (en pixels source) */}
+      <div className="grid grid-cols-2 gap-2">
+        {(
+          [
+            { field: 'cropX', label: 'X' },
+            { field: 'cropY', label: 'Y' },
+            { field: 'width', label: 'L' },
+            { field: 'height', label: 'H' },
+          ] as const
+        ).map(({ field, label }) => (
+          <div key={field} className="flex flex-col gap-1">
+            <span className="text-[10px] text-white/30 uppercase tracking-wider">{label}</span>
+            <div className="flex items-center bg-white/5 border border-white/10 rounded-md overflow-hidden focus-within:border-indigo-500/50">
+              <input
+                type="number"
+                value={Math.round(values[field])}
+                onChange={(e) => setField(field, Number(e.target.value))}
+                className="w-full bg-transparent px-2 py-1.5 text-xs text-white focus:outline-none"
+              />
+              <span className="text-[10px] text-white/20 pr-1.5 shrink-0">px</span>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
