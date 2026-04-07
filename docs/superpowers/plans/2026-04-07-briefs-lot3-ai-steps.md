@@ -1251,7 +1251,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
     const clientName = String(values.companyName ?? brief.clientName ?? 'Sans nom')
     try {
       await update.mutateAsync({
-        id: brief.id,
+        briefId: brief.id,
         patch: {
           clientName,
           'client.values': values,
@@ -1495,7 +1495,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
     }
     try {
       await update.mutateAsync({
-        id: brief.id,
+        briefId: brief.id,
         patch: {
           'dynamicForm.answers': answers,
           currentStep: 3,
@@ -1845,7 +1845,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
     }
     try {
       await update.mutateAsync({
-        id: brief.id,
+        briefId: brief.id,
         patch: {
           'cart.items': items,
           'cart.subtotal': subtotal,
