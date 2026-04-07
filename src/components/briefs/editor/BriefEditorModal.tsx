@@ -5,6 +5,7 @@ import { BriefStepper } from './BriefStepper'
 import { Step1Form } from './Step1Form'
 import { Step2Questions } from './Step2Questions'
 import { Step3Cart } from './Step3Cart'
+import { Step4Deck } from './Step4Deck'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
 interface Props {
@@ -51,9 +52,12 @@ export function BriefEditorModal({ taxonomy }: Props) {
           {brief && brief.currentStep === 3 && (
             <Step3Cart brief={brief} onAdvance={() => {}} />
           )}
-          {brief && brief.currentStep >= 4 && (
+          {brief && brief.currentStep === 4 && (
+            <Step4Deck brief={brief} onAdvance={() => {}} />
+          )}
+          {brief && brief.currentStep >= 5 && (
             <div className="h-full flex items-center justify-center text-[12px] text-white/40">
-              Étapes 4 et 5 disponibles dans le prochain lot.
+              Étape 5 (export PPTX) disponible dans le prochain lot.
             </div>
           )}
         </div>
