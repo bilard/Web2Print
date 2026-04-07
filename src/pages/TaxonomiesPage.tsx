@@ -1,7 +1,7 @@
 // src/pages/TaxonomiesPage.tsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Loader2, Filter, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { useAddNode } from '@/features/taxonomy/useTaxonomyMutations'
@@ -11,6 +11,9 @@ import { TaxonomySearchBar } from '@/components/taxonomy/TaxonomySearchBar'
 import { TaxonomyImportModal } from '@/components/taxonomy/TaxonomyImportModal'
 import { LinkProjectsModal } from '@/components/taxonomy/LinkProjectsModal'
 import { TaxonomyEmptyState } from '@/components/taxonomy/TaxonomyEmptyState'
+import { TaxonomyMainTabs } from '@/components/taxonomy/TaxonomyMainTabs'
+import { BriefsPanel } from '@/components/briefs/BriefsPanel'
+import { useBriefUIStore } from '@/stores/brief.store'
 
 interface TaxonomiesPageProps {
   embedded?: boolean
@@ -19,14 +22,39 @@ interface TaxonomiesPageProps {
 export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps) {
   const navigate = useNavigate()
   const { data: taxonomies, isLoading } = useTaxonomies()
-  const { selectedTaxonomyId } = useTaxonomyStore()
+  const {
+    selectedTaxonomyId,
+    showLinkedOnly,
+    toggleShowLinkedOnly,
+    collapseAll,
+    expandAll,
+    expandedNodeIds,
+  } = useTaxonomyStore()
+
   const addNode = useAddNode()
+  const currentTab = useBriefUIStore((s) => s.currentTab)
 
   const [importOpen, setImportOpen] = useState(false)
   const [linkNodeId, setLinkNodeId] = useState<string | null>(null)
 
   const selectedTaxonomy =
     taxonomies?.find((t) => t.id === selectedTaxonomyId) ?? null
+
+  // Y a-t-il au moins un nœud développé dans la taxonomie courante ?
+  const hasExpanded = !!selectedTaxonomy && Object.keys(selectedTaxonomy.nodes).some((id) => expandedNodeIds.has(id))
+
+  const handleToggleExpandAll = () => {
+    if (!selectedTaxonomy) return
+    if (hasExpanded) {
+      collapseAll()
+    } else {
+      // Développe uniquement les nœuds qui ont des enfants
+      const expandable = Object.values(selectedTaxonomy.nodes)
+        .filter((n) => Object.values(selectedTaxonomy.nodes).some((c) => c.parentId === n.id))
+        .map((n) => n.id)
+      expandAll(expandable)
+    }
+  }
 
   const handleAddRootNode = () => {
     if (!selectedTaxonomyId) return
@@ -68,10 +96,36 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
             </div>
           ) : (
             <>
+              <TaxonomyMainTabs />
+              {currentTab === 'tree' ? (
+              <>
               <div className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
                 <div className="flex-1 max-w-sm">
                   <TaxonomySearchBar taxonomy={selectedTaxonomy} />
                 </div>
+                <button
+                  onClick={handleToggleExpandAll}
+                  className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white/80 hover:bg-white/[0.06] px-3 py-1.5 rounded-md transition-colors"
+                  title={hasExpanded ? 'Tout réduire' : 'Tout développer'}
+                >
+                  {hasExpanded
+                    ? <ChevronsDownUp className="w-3.5 h-3.5" />
+                    : <ChevronsUpDown className="w-3.5 h-3.5" />}
+                  {hasExpanded ? 'Tout fermer' : 'Tout ouvrir'}
+                </button>
+                <button
+                  onClick={toggleShowLinkedOnly}
+                  className={`flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md transition-colors ${
+                    showLinkedOnly
+                      ? 'bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/30'
+                      : 'text-white/50 hover:text-white/80 hover:bg-white/[0.06]'
+                  }`}
+                  aria-pressed={showLinkedOnly}
+                  title="Afficher uniquement les nœuds liés à un projet"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  Liés uniquement
+                </button>
                 <button
                   onClick={handleAddRootNode}
                   className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white/80 hover:bg-white/[0.06] px-3 py-1.5 rounded-md transition-colors"
@@ -87,6 +141,10 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
                   onLinkProjects={(nodeId) => setLinkNodeId(nodeId)}
                 />
               </div>
+              </>
+              ) : (
+                <BriefsPanel taxonomy={selectedTaxonomy} />
+              )}
             </>
           )}
         </main>
