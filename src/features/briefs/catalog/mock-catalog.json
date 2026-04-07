@@ -1,0 +1,47 @@
+[
+  {
+    "sku": "DRP-FR-100150",
+    "name": "Drapeau France 100x150 polyester",
+    "description": "Drapeau français en polyester maille, 100x150 cm, fourreau et corde.",
+    "price": 24,
+    "imageUrl": "https://placehold.co/600x400?text=Drapeau+France",
+    "magentoCategoryIds": ["drapeaux-france"],
+    "attributes": { "matiere": "polyester", "taille": "100x150" }
+  },
+  {
+    "sku": "DRP-EU-100150",
+    "name": "Drapeau Europe 100x150 polyester",
+    "description": "Drapeau européen en polyester maille, 100x150 cm.",
+    "price": 26,
+    "imageUrl": "https://placehold.co/600x400?text=Drapeau+Europe",
+    "magentoCategoryIds": ["drapeaux-europe"],
+    "attributes": { "matiere": "polyester", "taille": "100x150" }
+  },
+  {
+    "sku": "MAT-FIX-6M",
+    "name": "Mât fixe aluminium 6m",
+    "description": "Mât fixe en aluminium anodisé, hauteur 6 m, fixation au sol.",
+    "price": 480,
+    "imageUrl": "https://placehold.co/600x400?text=Mat+6m",
+    "magentoCategoryIds": ["mats-fixes"],
+    "attributes": { "hauteur": 6, "matiere": "aluminium" }
+  },
+  {
+    "sku": "MAT-TEL-8M",
+    "name": "Mât télescopique 8m",
+    "description": "Mât télescopique en aluminium, hauteur ajustable jusqu'à 8 m.",
+    "price": 720,
+    "imageUrl": "https://placehold.co/600x400?text=Mat+telescopique",
+    "magentoCategoryIds": ["mats-telescopiques"],
+    "attributes": { "hauteur": 8, "matiere": "aluminium" }
+  },
+  {
+    "sku": "FIX-SOL-STD",
+    "name": "Fixation au sol standard",
+    "description": "Platine de fixation au sol pour mât diamètre 60 mm.",
+    "price": 85,
+    "imageUrl": "https://placehold.co/600x400?text=Fixation+sol",
+    "magentoCategoryIds": ["fixations-sol"],
+    "attributes": { "diametre": 60 }
+  }
+]
