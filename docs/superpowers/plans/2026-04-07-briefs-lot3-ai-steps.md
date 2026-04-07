@@ -2052,11 +2052,8 @@ export function BriefsList({ taxonomy }: Props) {
       const id = await create.mutateAsync({
         taxonomyId: taxonomy.id,
         clientName: 'Nouveau brief',
-        client: {
-          formTemplateSnapshot: taxonomy.formTemplate ?? createDefaultFormTemplate(),
-          values: {},
-        },
-      } as never)
+        formTemplateSnapshot: taxonomy.formTemplate ?? createDefaultFormTemplate(),
+      })
       openBriefEditor(id)
     } catch (err) {
       toast.error('Erreur lors de la création')
