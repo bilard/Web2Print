@@ -6,6 +6,7 @@ import { Step1Form } from './Step1Form'
 import { Step2Questions } from './Step2Questions'
 import { Step3Cart } from './Step3Cart'
 import { Step4Deck } from './Step4Deck'
+import { Step5Export } from './Step5Export'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
 interface Props {
@@ -55,10 +56,8 @@ export function BriefEditorModal({ taxonomy }: Props) {
           {brief && brief.currentStep === 4 && (
             <Step4Deck brief={brief} onAdvance={() => {}} />
           )}
-          {brief && brief.currentStep >= 5 && (
-            <div className="h-full flex items-center justify-center text-[12px] text-white/40">
-              Étape 5 (export PPTX) disponible dans le prochain lot.
-            </div>
+          {brief && brief.currentStep === 5 && (
+            <Step5Export brief={brief} />
           )}
         </div>
       </div>
