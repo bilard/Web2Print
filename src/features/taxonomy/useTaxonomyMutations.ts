@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
 import { getAllDescendantIds, getNextOrder } from './taxonomyUtils'
+import { createDefaultFormTemplate } from '@/features/briefs/defaults'
 import type { Taxonomy, TaxonomyNode } from './types'
 
 // ─── Clés React Query ─────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ export function useCreateTaxonomy() {
         createdAt: now,
         updatedAt: now,
         nodes,
+        formTemplate: createDefaultFormTemplate(),
       }
       await setDoc(doc(db, 'taxonomies', id), taxonomy)
       return taxonomy
