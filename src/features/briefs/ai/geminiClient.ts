@@ -1,0 +1,98 @@
+import { z } from 'zod'
+import { getApiKey } from '@/lib/apiKeys'
+
+const DEFAULT_MODEL = 'gemini-2.5-flash'
+const ENDPOINT = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+
+interface GenerateJsonOptions<T> {
+  prompt: string
+  schema: z.ZodSchema<T>
+  /** JSON Schema-like object passé à Gemini comme `responseSchema`. */
+  schemaForGemini: Record<string, unknown>
+  model?: string
+  /** Identifiant du prompt pour traçabilité (stocké dans brief.aiVersions). */
+  version: string
+}
+
+interface GeminiCandidate {
+  content?: { parts?: Array<{ text?: string }> }
+}
+interface GeminiResponse {
+  candidates?: GeminiCandidate[]
+}
+
+async function callGemini(
+  apiKey: string,
+  model: string,
+  prompt: string,
+  schemaForGemini: Record<string, unknown>,
+): Promise<string> {
+  const res = await fetch(`${ENDPOINT(model)}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: schemaForGemini,
+        temperature: 0.4,
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Gemini API ${res.status} : ${body.slice(0, 200)}`)
+  }
+
+  const data = (await res.json()) as GeminiResponse
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) throw new Error('Gemini : réponse vide')
+  return text
+}
+
+/**
+ * Génère un objet JSON typé via Gemini, avec validation Zod et retry-on-fail.
+ */
+export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
+  const apiKey = getApiKey('gemini')
+  if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
+
+  const model = opts.model ?? DEFAULT_MODEL
+
+  // 1er essai
+  const firstText = await callGemini(apiKey, model, opts.prompt, opts.schemaForGemini)
+  const firstParsed = safeJsonParse(firstText)
+  const firstValidation = opts.schema.safeParse(firstParsed)
+  if (firstValidation.success) return firstValidation.data
+
+  // 2e essai avec injection d'erreur
+  const errorMessage = firstValidation.error.issues
+    .map((i) => `${i.path.join('.')}: ${i.message}`)
+    .join(' ; ')
+  const retryPrompt =
+    opts.prompt +
+    `\n\nErreur précédente : ${errorMessage}. Renvoie un JSON strictement conforme au schéma demandé.`
+  const secondText = await callGemini(apiKey, model, retryPrompt, opts.schemaForGemini)
+  const secondParsed = safeJsonParse(secondText)
+  const secondValidation = opts.schema.safeParse(secondParsed)
+  if (secondValidation.success) return secondValidation.data
+
+  throw new Error(
+    `Réponse Gemini non conforme au schéma après retry : ${secondValidation.error.issues
+      .map((i) => i.message)
+      .join(' ; ')}`,
+  )
+}
+
+function safeJsonParse(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    // Gemini renvoie parfois ```json ... ``` malgré responseMimeType
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+    if (match) return JSON.parse(match[1])
+    throw new Error('Réponse Gemini non parsable en JSON')
+  }
+}
