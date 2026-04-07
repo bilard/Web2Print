@@ -1,0 +1,31 @@
+// À ajouter dans firestore.rules (console Firebase) ou dans le fichier
+// firestore.rules versionné s'il existe.
+
+// ─── Briefs : seul le owner peut lire/écrire ──────────────────────────────
+match /briefs/{briefId} {
+  allow read: if request.auth != null
+                && resource.data.ownerId == request.auth.uid;
+  allow create: if request.auth != null
+                  && request.resource.data.ownerId == request.auth.uid;
+  allow update, delete: if request.auth != null
+                          && resource.data.ownerId == request.auth.uid;
+
+  // Sous-collection images : même règle, ownership remonté via get()
+  match /images/{imageId} {
+    allow read, write: if request.auth != null
+      && get(/databases/$(database)/documents/briefs/$(briefId)).data.ownerId == request.auth.uid;
+  }
+}
+
+// ─── Index Firestore composites à créer ───────────────────────────────────
+//
+// Collection : briefs
+//
+// 1) Pour useBriefs({ taxonomyId }) :
+//    Champs : ownerId (Asc), taxonomyId (Asc), updatedAt (Desc)
+//
+// 2) Pour useBriefs({ limit }) (widget Dashboard) :
+//    Champs : ownerId (Asc), updatedAt (Desc)
+//
+// La console Firebase proposera automatiquement la création du 1er index
+// la première fois qu'une requête échoue avec un lien direct.
