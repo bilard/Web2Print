@@ -455,4 +455,3 @@ export function ColorPicker({ value, onChange, allowNoFill, label }: ColorPicker
   )
 }
 
-export default ColorPicker

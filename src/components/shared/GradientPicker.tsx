@@ -265,4 +265,3 @@ export function GradientPicker({ value, onChange }: GradientPickerProps) {
   )
 }
 
-export default GradientPicker
