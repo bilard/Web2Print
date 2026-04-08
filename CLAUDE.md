@@ -10,7 +10,7 @@ React 18, Vite 5, TypeScript strict, Fabric.js v6, Zustand v4, React Query v5, F
 - Stores : `camelCase.store.ts` (un par domaine)
 - Pas de logique métier dans les composants UI
 - Typer explicitement les props (pas d'`any`)
-- Fabric.js : encapsuler dans `features/editor/` uniquement
+- Fabric.js : logique d'édition centralisée dans `features/editor/`. Les modules d'import/export (`features/idml`, `features/pptx`, `features/export`, `features/merge`) et les panneaux d'édition (`components/panels`, `components/canvas`) peuvent importer Fabric directement pour le parsing et le rendu.
 - Firebase : accès uniquement via hooks de `features/`
 - **Dark mode obligatoire** : fond `#0f0f0f`, surfaces `#1a1a1a`, accents `#6366f1`
 - Répondre toujours en **français**
