@@ -32,6 +32,7 @@ export function ensurePageBgRect(canvas: Canvas) {
   if (!pageRect) {
     pageRect = new Rect({
       left: 0, top: 0,
+      originX: 'left', originY: 'top',
       width: docW, height: docH,
       fill: fill as any,
       selectable: false, evented: false, excludeFromExport: true,
@@ -40,7 +41,16 @@ export function ensurePageBgRect(canvas: Canvas) {
     })
     canvas.add(pageRect)
   } else {
-    pageRect.set({ width: docW, height: docH, fill: fill as any })
+    // Force origin back to left/top — something in the pipeline (e.g. a
+    // global object:added handler) can flip it to 'center', which would
+    // center the pageBg at (0,0) and make it overlap the content wrong.
+    pageRect.set({
+      left: 0, top: 0,
+      originX: 'left', originY: 'top',
+      width: docW, height: docH,
+      fill: fill as any,
+    })
+    pageRect.setCoords()
     ;(pageRect as any).dirty = true
     ;(pageRect as any)._cacheCanvas = null
   }

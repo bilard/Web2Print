@@ -106,8 +106,17 @@ export function CanvasContainer() {
       const canvas = fabricRef.current
       if (!canvas) return
       const { offsetWidth: cw, offsetHeight: ch } = container
-      // Only update the canvas element dimensions, preserve viewport transform
       canvas.setDimensions({ width: cw, height: ch })
+      // Keep current zoom but re-center the document so it stays visible
+      // when the container is resized (e.g., side panels opening/closing).
+      const { canvasWidth: docW, canvasHeight: docH } = useUIStore.getState()
+      const vpt = canvas.viewportTransform
+      if (vpt) {
+        const scale = vpt[0]
+        const offsetX = (cw - docW * scale) / 2
+        const offsetY = (ch - docH * scale) / 2
+        canvas.setViewportTransform([scale, 0, 0, scale, offsetX, offsetY])
+      }
       canvas.requestRenderAll()
     })
     ro.observe(container)
