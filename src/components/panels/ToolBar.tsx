@@ -1,4 +1,7 @@
+import { useState, useRef, useEffect } from 'react'
 import { useUIStore, type ActiveTool } from '@/stores/ui.store'
+import { useNanoBanaStore } from '@/stores/nanobana.store'
+import type { NanoBanaTab } from '@/features/nanobana/types'
 import { useAddObject } from '@/features/editor/useAddObject'
 import {
   MousePointer2,
@@ -6,7 +9,11 @@ import {
   Square,
   Circle,
   Minus,
-  ImagePlus,
+  Image as ImageIcon,
+  Search,
+  Upload,
+  Sparkles,
+  FolderOpen,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -17,6 +24,13 @@ const TOOL_SHAPE_MAP: Partial<Record<ActiveTool, string>> = {
   ellipse: 'ellipse',
   line: 'line',
 }
+
+const IMAGE_MENU_ITEMS: { id: NanoBanaTab; icon: typeof Search; label: string }[] = [
+  { id: 'stock', icon: Search, label: 'Stock images' },
+  { id: 'gallery', icon: FolderOpen, label: 'Mes images' },
+  { id: 'upload', icon: Upload, label: 'Uploader' },
+  { id: 'generate', icon: Sparkles, label: 'Générer (IA)' },
+]
 
 interface ToolButtonProps {
   tool: ActiveTool
@@ -68,6 +82,60 @@ function ToolButton({ tool, icon: Icon, tooltip }: ToolButtonProps) {
   )
 }
 
+function ImageMenuButton() {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const { setRightPanels, rightPanels } = useUIStore()
+  const setTab = useNanoBanaStore((s) => s.setTab)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const handleSelect = (tab: NanoBanaTab) => {
+    setTab(tab)
+    const updated = rightPanels.map((p) =>
+      p.id === 'images' ? { ...p, collapsed: false } : p
+    )
+    setRightPanels(updated)
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        title="Image (I)"
+        className={`w-8 h-8 flex items-center justify-center rounded transition ${
+          open ? 'bg-indigo-500/20 text-indigo-400' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+        }`}
+      >
+        <ImageIcon className="w-4 h-4" />
+      </button>
+
+      {open && (
+        <div className="absolute left-full top-0 ml-2 bg-[#1a1a1a] border border-white/10 rounded-lg py-1 w-[170px] shadow-xl z-50">
+          {IMAGE_MENU_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleSelect(item.id)}
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-[11px] text-white/70 hover:bg-white/5 hover:text-white transition text-left"
+            >
+              <item.icon className="w-4 h-4 text-white/40" />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ToolBar() {
   return (
     <div className="w-11 bg-[#1a1a1a] border-r border-white/10 flex flex-col items-center py-2 gap-0.5 shrink-0">
@@ -82,6 +150,12 @@ export function ToolBar() {
       <ToolButton tool="rect" icon={Square} tooltip="Rectangle (R)" />
       <ToolButton tool="ellipse" icon={Circle} tooltip="Ellipse (E)" />
       <ToolButton tool="line" icon={Minus} tooltip="Ligne (L)" />
+
+      {/* Separator */}
+      <div className="w-6 h-px bg-white/10 my-1" />
+
+      {/* Group 3: Image */}
+      <ImageMenuButton />
     </div>
   )
 }
