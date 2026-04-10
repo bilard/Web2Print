@@ -1,15 +1,16 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, HardDrive, FolderTree } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, HardDrive, FolderTree, LayoutGrid, List, Image as ImageIcon } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useProjects } from '@/features/projects/useProjects'
 import { useCreateProject, slugify } from '@/features/projects/useCreateProject'
 import { useDeleteProject } from '@/features/projects/useDeleteProject'
+import { useDuplicateProject } from '@/features/projects/useDuplicateProject'
 import { useProjectStore } from '@/stores/project.store'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
-import { ProjectCard } from '@/components/shared/ProjectCard'
+import { ProjectCard, type ProjectViewMode } from '@/components/shared/ProjectCard'
 import { NewDocumentPanel } from '@/components/shared/NewDocumentPanel'
 import { ImportPanel } from '@/components/shared/ImportPanel'
 import { SettingsPanel } from '@/components/shared/SettingsPanel'
@@ -19,16 +20,18 @@ import type { DocumentConfig } from '@/components/shared/NewDocumentPanel'
 import type { ImportSelection } from '@/components/shared/ImportPanel'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { LibraryTaxonomyFilter } from '@/components/shared/LibraryTaxonomyFilter'
+import { DamPage } from '../features/dam/components/DamPage'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
 
-type Section = 'blank' | 'import' | 'library' | 'data' | 'gdrive' | 'settings' | 'taxonomies'
+type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'gdrive' | 'settings' | 'taxonomies'
 
 const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }>; label: string; accent: string; activeBg: string; activeText: string }[] = [
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
   { id: 'import', icon: Upload,         label: 'Importer',         accent: 'text-amber-400',   activeBg: 'bg-amber-500/[0.1]',   activeText: 'text-amber-300' },
   { id: 'library',icon: Library,        label: 'Bibliothèque',     accent: 'text-sky-400',     activeBg: 'bg-sky-500/[0.1]',     activeText: 'text-sky-300' },
+  { id: 'images', icon: ImageIcon,      label: 'Images',           accent: 'text-pink-400',    activeBg: 'bg-pink-500/[0.1]',    activeText: 'text-pink-300' },
   { id: 'data',   icon: FileSpreadsheet,label: 'Données',          accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300' },
   { id: 'gdrive', icon: HardDrive,      label: 'Google Drive',     accent: 'text-blue-400',    activeBg: 'bg-blue-500/[0.1]',    activeText: 'text-blue-300' },
   { id: 'taxonomies', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300' },
@@ -43,6 +46,20 @@ export default function DashboardPage() {
   const [importLoading, setImportLoading] = useState(false)
   const [filterNodeId, setFilterNodeId] = useState<string | null>(null)
   const [filterProjectIds, setFilterProjectIds] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<ProjectViewMode>(() => {
+    if (typeof window === 'undefined') return 'list'
+    const stored = window.localStorage.getItem('library:viewMode')
+    return stored === 'grid' ? 'grid' : 'list'
+  })
+
+  const handleViewModeChange = useCallback((mode: ProjectViewMode) => {
+    setViewMode(mode)
+    try {
+      window.localStorage.setItem('library:viewMode', mode)
+    } catch {
+      /* noop */
+    }
+  }, [])
 
   const handleFilterSelect = useCallback((nodeId: string | null, projectIds: string[]) => {
     setFilterNodeId(nodeId)
@@ -52,6 +69,7 @@ export default function DashboardPage() {
   const { data: projects, isLoading, isError } = useProjects()
   const createProject = useCreateProject()
   const deleteProject = useDeleteProject()
+  const duplicateProject = useDuplicateProject()
   const setPendingImport = useProjectStore((s) => s.setPendingImport)
   const { importFile: importExcel } = useExcelImport()
 
@@ -273,6 +291,10 @@ export default function DashboardPage() {
             <TaxonomiesPage embedded />
           </Suspense>
         </div>
+      ) : activeSection === 'images' ? (
+        <div className="flex-1 overflow-hidden">
+          <DamPage />
+        </div>
       ) : activeSection === 'library' ? (
         <div className="flex-1 flex overflow-hidden">
           <LibraryTaxonomyFilter
@@ -290,6 +312,42 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </h1>
+
+                {/* Toggle vue grille / liste */}
+                <div
+                  className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.08] rounded-lg p-0.5"
+                  role="group"
+                  aria-label="Mode d'affichage"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleViewModeChange('grid')}
+                    aria-pressed={viewMode === 'grid'}
+                    title="Vue vignettes"
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                      viewMode === 'grid'
+                        ? 'bg-indigo-500/15 text-indigo-300'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Vignettes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleViewModeChange('list')}
+                    aria-pressed={viewMode === 'list'}
+                    title="Vue liste"
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-indigo-500/15 text-indigo-300'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <List className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Liste</span>
+                  </button>
+                </div>
               </div>
 
               {isLoading && (
@@ -327,13 +385,23 @@ export default function DashboardPage() {
               )}
 
               {!isLoading && !isError && filteredProjects.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" role="list" aria-label="Liste des projets">
+                <div
+                  className={
+                    viewMode === 'grid'
+                      ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                      : 'flex flex-col gap-1.5'
+                  }
+                  role="list"
+                  aria-label="Liste des projets"
+                >
                   {filteredProjects.map((project) => (
                     <ProjectCard
                       key={project.id}
                       project={project}
                       onDelete={(id) => deleteProject.mutate(id)}
+                      onDuplicate={(id) => duplicateProject.mutate(id)}
                       taxonomyLabel={projectTaxonomyLabel[project.id]}
+                      view={viewMode}
                     />
                   ))}
                 </div>
@@ -381,9 +449,7 @@ export default function DashboardPage() {
             {activeSection === 'settings' && (
               <>
                 <h1 className="text-xl font-bold mb-6">Paramètres</h1>
-                <div className="max-w-lg">
-                  <SettingsPanel />
-                </div>
+                <SettingsPanel />
               </>
             )}
           </div>
