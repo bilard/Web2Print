@@ -1,6 +1,8 @@
+export type DamSourceProvider = 'pexels' | 'unsplash' | 'project'
+
 export interface DamImage {
   id: string
-  sourceProvider: 'pexels' | 'unsplash'
+  sourceProvider: DamSourceProvider
   sourceId: string
   sourceUrl: string
   thumbnailUrl: string
@@ -43,7 +45,64 @@ export interface DamFavorite {
   createdAt: number
 }
 
-export type DamTab = 'stock' | 'my-images' | 'favorites' | 'collections' | 'recent'
+export interface DamCropMask {
+  /** Normalized 0-1 relative to image width */
+  x: number
+  /** Normalized 0-1 relative to image height */
+  y: number
+  /** Normalized 0-1 relative to image width */
+  width: number
+  /** Normalized 0-1 relative to image height */
+  height: number
+  /** When false, the mask is stored but not applied */
+  enabled: boolean
+}
+
+export interface DamVariantEdits {
+  zoom: number
+  rotation: number
+  flipH: boolean
+  flipV: boolean
+  filters: {
+    brightness: number
+    contrast: number
+    saturation: number
+    hue: number
+  }
+  mask: DamCropMask
+}
+
+export interface DamImageVariant {
+  id: string
+  parentAssetId: string
+  parentImageData: {
+    sourceProvider: 'pexels' | 'unsplash'
+    sourceId: string
+    fullUrl: string
+    previewUrl: string
+    thumbnailUrl: string
+    width: number
+    height: number
+    photographer: string
+    description: string
+    color: string
+    orientation: 'landscape' | 'portrait' | 'square'
+    tags: string[]
+    photographerUrl: string
+    sourceUrl: string
+  }
+  ownerId: string
+  createdAt: number
+  updatedAt: number
+  name: string
+  edits: DamVariantEdits
+  renderedUrl: string
+  renderedThumbUrl: string
+  renderedWidth: number
+  renderedHeight: number
+}
+
+export type DamTab = 'stock' | 'my-images' | 'favorites' | 'collections' | 'recent' | 'projects' | 'generate' | 'gdrive'
 
 export const DAM_CATEGORIES = [
   { id: 'business', label: 'Business', icon: '🏢' },

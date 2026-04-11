@@ -1,7 +1,7 @@
 // functions/src/dam/searchImages.ts
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
-import { searchPexels } from './pexelsClient'
-import { searchUnsplash } from './unsplashClient'
+import { searchPexels, getPexelsCurated } from './pexelsClient'
+import { searchUnsplash, getUnsplashCurated } from './unsplashClient'
 import type { DamImageResult } from './types'
 
 const cache = new Map<string, { data: any; expires: number }>()
@@ -44,22 +44,47 @@ export const searchImages = onCall(
         orderBy?: 'relevant' | 'latest'
       }
 
-    if (!query || typeof query !== 'string') {
-      throw new HttpsError('invalid-argument', 'query est requis')
+    if (query !== undefined && typeof query !== 'string') {
+      throw new HttpsError('invalid-argument', 'query doit être une chaîne')
     }
 
-    const cacheKey = JSON.stringify({ query, page, perPage, source, orientation, color, orderBy })
+    const normalizedQuery = (query ?? '').trim()
+    const isCurated = normalizedQuery.length === 0
+
+    const cacheKey = JSON.stringify({
+      query: normalizedQuery,
+      page,
+      perPage,
+      source,
+      orientation,
+      color,
+      orderBy,
+      curated: isCurated,
+    })
     const cached = getCached<any>(cacheKey)
     if (cached) return cached
 
-    const params = { query, page, perPage, orientation, color, orderBy }
+    const params = { query: normalizedQuery, page, perPage, orientation, color, orderBy }
+    const curatedParams = { page, perPage }
     const promises: Promise<{ images: DamImageResult[]; totalResults: number; hasMore: boolean }>[] = []
 
     if (source === 'all' || source === 'pexels') {
-      promises.push(searchPexels(params).catch(() => ({ images: [], totalResults: 0, hasMore: false })))
+      promises.push(
+        (isCurated ? getPexelsCurated(curatedParams) : searchPexels(params)).catch(() => ({
+          images: [],
+          totalResults: 0,
+          hasMore: false,
+        }))
+      )
     }
     if (source === 'all' || source === 'unsplash') {
-      promises.push(searchUnsplash(params).catch(() => ({ images: [], totalResults: 0, hasMore: false })))
+      promises.push(
+        (isCurated ? getUnsplashCurated(curatedParams) : searchUnsplash(params)).catch(() => ({
+          images: [],
+          totalResults: 0,
+          hasMore: false,
+        }))
+      )
     }
 
     const results = await Promise.all(promises)

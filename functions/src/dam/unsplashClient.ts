@@ -12,6 +12,52 @@ function getOrientation(w: number, h: number): 'landscape' | 'portrait' | 'squar
   return 'square'
 }
 
+function mapUnsplashPhotos(photos: any[]): DamImageResult[] {
+  return photos.map((p: any) => ({
+    id: `unsplash_${p.id}`,
+    sourceProvider: 'unsplash' as const,
+    sourceId: p.id,
+    sourceUrl: p.links.html,
+    thumbnailUrl: p.urls.small,
+    previewUrl: p.urls.regular,
+    fullUrl: p.urls.full,
+    width: p.width,
+    height: p.height,
+    photographer: p.user?.name ?? '',
+    photographerUrl: p.user?.links?.html ?? '',
+    description: p.description || p.alt_description || '',
+    tags: (p.tags ?? []).map((t: any) => t.title).filter(Boolean),
+    color: p.color || '#000000',
+    orientation: getOrientation(p.width, p.height),
+  }))
+}
+
+export async function getUnsplashCurated(
+  params: Pick<SearchParams, 'page' | 'perPage'>
+): Promise<SearchResult> {
+  const url = new URL(`${UNSPLASH_BASE}/photos`)
+  url.searchParams.set('page', String(params.page))
+  url.searchParams.set('per_page', String(params.perPage))
+  url.searchParams.set('order_by', 'popular')
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Client-ID ${unsplashApiKey.value()}` },
+  })
+
+  if (!res.ok) {
+    throw new Error(`Unsplash curated API error: ${res.status} ${res.statusText}`)
+  }
+
+  const data = (await res.json()) as any[]
+  const photos = Array.isArray(data) ? data : []
+
+  return {
+    images: mapUnsplashPhotos(photos),
+    totalResults: photos.length,
+    hasMore: photos.length >= params.perPage,
+  }
+}
+
 export async function searchUnsplash(params: SearchParams): Promise<SearchResult> {
   const url = new URL(`${UNSPLASH_BASE}/search/photos`)
   url.searchParams.set('query', params.query)
@@ -29,31 +75,13 @@ export async function searchUnsplash(params: SearchParams): Promise<SearchResult
     throw new Error(`Unsplash API error: ${res.status} ${res.statusText}`)
   }
 
-  const data = await res.json() as {
+  const data = (await res.json()) as {
     results?: any[]
     total?: number
   }
 
-  const images: DamImageResult[] = (data.results ?? []).map((p: any) => ({
-    id: `unsplash_${p.id}`,
-    sourceProvider: 'unsplash' as const,
-    sourceId: p.id,
-    sourceUrl: p.links.html,
-    thumbnailUrl: p.urls.small,
-    previewUrl: p.urls.regular,
-    fullUrl: p.urls.full,
-    width: p.width,
-    height: p.height,
-    photographer: p.user.name,
-    photographerUrl: p.user.links.html,
-    description: p.description || p.alt_description || '',
-    tags: (p.tags ?? []).map((t: any) => t.title).filter(Boolean),
-    color: p.color || '#000000',
-    orientation: getOrientation(p.width, p.height),
-  }))
-
   return {
-    images,
+    images: mapUnsplashPhotos(data.results ?? []),
     totalResults: data.total ?? 0,
     hasMore: params.page * params.perPage < (data.total ?? 0),
   }

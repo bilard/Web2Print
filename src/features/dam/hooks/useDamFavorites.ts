@@ -26,11 +26,17 @@ export function useDamFavorites() {
       where('userId', '==', user.uid)
     )
 
-    const unsub = onSnapshot(q, (snap) => {
-      const ids = new Set<string>()
-      snap.docs.forEach((d) => ids.add(d.data().assetId))
-      setFavoriteIds(ids)
-    })
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const ids = new Set<string>()
+        snap.docs.forEach((d) => ids.add(d.data().assetId))
+        setFavoriteIds(ids)
+      },
+      (err) => {
+        console.warn('dam_favorites listener error:', err.message)
+      }
+    )
 
     return unsub
   }, [user?.uid])

@@ -14,18 +14,35 @@ const SOURCES = [
 ]
 
 export function DamStockTab() {
-  const { query, setQuery, filters, setFilters, results, loading, hasMore } = useDamStore()
+  const { query, setQuery, filters, setFilters, results, loading, hasMore, lastError } = useDamStore()
   const { search, loadMore } = useDamSearch()
   const { searchByImage, uploading } = useDamSearchByImage()
-  const { insertOnCanvas } = useDamCanvasInsert()
+  const { insertOnCanvas, replaceOnCanvas } = useDamCanvasInsert()
   const { isFavorite, toggleFavorite } = useDamFavorites()
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const didInitRef = useRef(false)
 
   const handleSearch = useCallback(() => {
-    if (query.trim()) search()
-  }, [query, search])
+    search()
+  }, [search])
+
+  // Chargement initial : images curées dès l'ouverture de l'onglet
+  useEffect(() => {
+    if (didInitRef.current) return
+    didInitRef.current = true
+    if (results.length === 0 && !loading) {
+      search()
+    }
+  }, [search, results.length, loading])
+
+  // Recharger les curated quand la source change sans query
+  useEffect(() => {
+    if (!didInitRef.current) return
+    if (!query.trim()) search()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.source])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -49,6 +66,11 @@ export function DamStockTab() {
 
   const handleImageClick = (image: DamImage) => {
     insertOnCanvas(image)
+  }
+
+  // Double-clic = remplacer le bloc actuellement sélectionné sur le canvas
+  const handleImageDoubleClick = (image: DamImage) => {
+    replaceOnCanvas(image)
   }
 
   return (
@@ -112,8 +134,23 @@ export function DamStockTab() {
 
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         {!loading && results.length === 0 ? (
-          <div className="text-center text-white/20 text-[10px] mt-8">
-            Tapez un mot-clé pour chercher
+          <div className="text-center text-[10px] mt-8 px-3">
+            {lastError ? (
+              <div className="space-y-2">
+                <div className="text-red-400">Erreur de chargement</div>
+                <div className="text-white/40 break-words">{lastError}</div>
+                <button
+                  onClick={() => search()}
+                  className="mt-2 px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30"
+                >
+                  Réessayer
+                </button>
+              </div>
+            ) : (
+              <div className="text-white/20">
+                {query.trim() ? 'Aucun résultat' : 'Aucune image disponible'}
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-1">
@@ -126,6 +163,8 @@ export function DamStockTab() {
                   e.dataTransfer.setData('application/dam-image', JSON.stringify(image))
                 }}
                 onClick={() => handleImageClick(image)}
+                onDoubleClick={() => handleImageDoubleClick(image)}
+                title="Clic : insérer — Double-clic : remplacer le bloc actif"
                 className="group relative aspect-square rounded overflow-hidden cursor-pointer bg-white/5"
               >
                 <img

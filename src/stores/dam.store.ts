@@ -9,6 +9,7 @@ interface DamState {
   hasMore: boolean
   page: number
   totalResults: number
+  lastError: string | null
 
   suggestions: string[]
   recentSearches: string[]
@@ -16,6 +17,7 @@ interface DamState {
   activeTab: DamTab
   lightboxImage: DamImage | null
   selectedCollection: string | null
+  selectedProjectId: string | null
 
   setQuery: (q: string) => void
   setFilters: (f: Partial<DamFilters>) => void
@@ -23,12 +25,14 @@ interface DamState {
   appendResults: (images: DamImage[], hasMore: boolean) => void
   setLoading: (loading: boolean) => void
   setPage: (page: number) => void
+  setLastError: (err: string | null) => void
   setSuggestions: (suggestions: string[]) => void
   addRecentSearch: (term: string) => void
   setActiveTab: (tab: DamTab) => void
   openLightbox: (image: DamImage) => void
   closeLightbox: () => void
   setSelectedCollection: (id: string | null) => void
+  setSelectedProjectId: (id: string | null) => void
   reset: () => void
 }
 
@@ -56,6 +60,7 @@ export const useDamStore = create<DamState>((set, get) => ({
   hasMore: false,
   page: 1,
   totalResults: 0,
+  lastError: null,
 
   suggestions: [],
   recentSearches: loadRecentSearches(),
@@ -63,6 +68,7 @@ export const useDamStore = create<DamState>((set, get) => ({
   activeTab: 'stock',
   lightboxImage: null,
   selectedCollection: null,
+  selectedProjectId: null,
 
   setQuery: (query) => set({ query }),
   setFilters: (partial) => set((s) => ({ filters: { ...s.filters, ...partial }, page: 1 })),
@@ -71,6 +77,7 @@ export const useDamStore = create<DamState>((set, get) => ({
     set((s) => ({ results: [...s.results, ...images], hasMore })),
   setLoading: (loading) => set({ loading }),
   setPage: (page) => set({ page }),
+  setLastError: (lastError) => set({ lastError }),
   setSuggestions: (suggestions) => set({ suggestions }),
   addRecentSearch: (term) => {
     const trimmed = term.trim()
@@ -80,10 +87,16 @@ export const useDamStore = create<DamState>((set, get) => ({
     localStorage.setItem('dam_recent_searches', JSON.stringify(updated))
     set({ recentSearches: updated })
   },
-  setActiveTab: (activeTab) => set({ activeTab }),
+  setActiveTab: (activeTab) =>
+    set((s) => ({
+      activeTab,
+      // Reset project drill-down when leaving the Projets tab
+      selectedProjectId: activeTab === 'projects' ? s.selectedProjectId : null,
+    })),
   openLightbox: (image) => set({ lightboxImage: image }),
   closeLightbox: () => set({ lightboxImage: null }),
   setSelectedCollection: (selectedCollection) => set({ selectedCollection }),
+  setSelectedProjectId: (selectedProjectId) => set({ selectedProjectId }),
   reset: () =>
     set({
       query: '',

@@ -3,13 +3,9 @@ import { Loader2 } from 'lucide-react'
 import { useDamStore } from '../../../stores/dam.store'
 import { useDamSearch } from '../hooks/useDamSearch'
 import { DamImageCard } from './DamImageCard'
-import type { DamImage } from '../types'
+import { DamMasonry } from './DamMasonry'
 
-interface Props {
-  onAddToCollection?: (image: DamImage) => void
-}
-
-export function DamImageGrid({ onAddToCollection }: Props) {
+export function DamImageGrid() {
   const { results, loading, hasMore } = useDamStore()
   const { loadMore } = useDamSearch()
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -41,13 +37,10 @@ export function DamImageGrid({ onAddToCollection }: Props) {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pb-4">
-      <div className="columns-4 gap-2 [column-fill:_balance]">
-        {results.map((image) => (
-          <div key={image.id} className="break-inside-avoid mb-2">
-            <DamImageCard image={image} onAddToCollection={onAddToCollection} />
-          </div>
-        ))}
-      </div>
+      <DamMasonry
+        images={results}
+        renderItem={(image) => <DamImageCard image={image} />}
+      />
 
       <div ref={sentinelRef} className="h-10" />
 

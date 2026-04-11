@@ -12,6 +12,54 @@ function getOrientation(w: number, h: number): 'landscape' | 'portrait' | 'squar
   return 'square'
 }
 
+function mapPexelsPhotos(photos: any[]): DamImageResult[] {
+  return photos.map((p: any) => ({
+    id: `pexels_${p.id}`,
+    sourceProvider: 'pexels' as const,
+    sourceId: String(p.id),
+    sourceUrl: p.url,
+    thumbnailUrl: p.src.small,
+    previewUrl: p.src.medium,
+    fullUrl: p.src.original,
+    width: p.width,
+    height: p.height,
+    photographer: p.photographer,
+    photographerUrl: p.photographer_url,
+    description: p.alt || '',
+    tags: [],
+    color: p.avg_color || '#000000',
+    orientation: getOrientation(p.width, p.height),
+  }))
+}
+
+export async function getPexelsCurated(
+  params: Pick<SearchParams, 'page' | 'perPage'>
+): Promise<SearchResult> {
+  const url = new URL(`${PEXELS_BASE}/curated`)
+  url.searchParams.set('page', String(params.page))
+  url.searchParams.set('per_page', String(params.perPage))
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: pexelsApiKey.value() },
+  })
+
+  if (!res.ok) {
+    throw new Error(`Pexels curated API error: ${res.status} ${res.statusText}`)
+  }
+
+  const data = (await res.json()) as {
+    photos?: any[]
+    total_results?: number
+    next_page?: string
+  }
+
+  return {
+    images: mapPexelsPhotos(data.photos ?? []),
+    totalResults: data.total_results ?? 0,
+    hasMore: !!data.next_page,
+  }
+}
+
 export async function searchPexels(params: SearchParams): Promise<SearchResult> {
   const url = new URL(`${PEXELS_BASE}/search`)
   url.searchParams.set('query', params.query)
@@ -28,64 +76,15 @@ export async function searchPexels(params: SearchParams): Promise<SearchResult> 
     throw new Error(`Pexels API error: ${res.status} ${res.statusText}`)
   }
 
-  const data = await res.json() as {
+  const data = (await res.json()) as {
     photos?: any[]
     total_results?: number
     next_page?: string
   }
 
-  const images: DamImageResult[] = (data.photos ?? []).map((p: any) => ({
-    id: `pexels_${p.id}`,
-    sourceProvider: 'pexels' as const,
-    sourceId: String(p.id),
-    sourceUrl: p.url,
-    thumbnailUrl: p.src.small,
-    previewUrl: p.src.medium,
-    fullUrl: p.src.original,
-    width: p.width,
-    height: p.height,
-    photographer: p.photographer,
-    photographerUrl: p.photographer_url,
-    description: p.alt || '',
-    tags: [],
-    color: p.avg_color || '#000000',
-    orientation: getOrientation(p.width, p.height),
-  }))
-
   return {
-    images,
+    images: mapPexelsPhotos(data.photos ?? []),
     totalResults: data.total_results ?? 0,
     hasMore: !!data.next_page,
   }
-}
-
-export async function searchPexelsSimilar(_imageUrl: string): Promise<SearchResult> {
-  const res = await fetch(`${PEXELS_BASE}/curated?per_page=30`, {
-    headers: { Authorization: pexelsApiKey.value() },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Pexels API error: ${res.status}`)
-  }
-
-  const data = await res.json() as { photos?: any[] }
-  const images: DamImageResult[] = (data.photos ?? []).map((p: any) => ({
-    id: `pexels_${p.id}`,
-    sourceProvider: 'pexels' as const,
-    sourceId: String(p.id),
-    sourceUrl: p.url,
-    thumbnailUrl: p.src.small,
-    previewUrl: p.src.medium,
-    fullUrl: p.src.original,
-    width: p.width,
-    height: p.height,
-    photographer: p.photographer,
-    photographerUrl: p.photographer_url,
-    description: p.alt || '',
-    tags: [],
-    color: p.avg_color || '#000000',
-    orientation: getOrientation(p.width, p.height),
-  }))
-
-  return { images, totalResults: images.length, hasMore: false }
 }

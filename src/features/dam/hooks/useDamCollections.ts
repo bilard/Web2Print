@@ -30,11 +30,18 @@ export function useDamCollections() {
       where('ownerId', '==', user.uid)
     )
 
-    const unsub = onSnapshot(q, (snap) => {
-      const cols = snap.docs.map((d) => ({ id: d.id, ...d.data() } as DamCollection))
-      setCollections(cols)
-      setLoading(false)
-    })
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const cols = snap.docs.map((d) => ({ id: d.id, ...d.data() } as DamCollection))
+        setCollections(cols)
+        setLoading(false)
+      },
+      (err) => {
+        console.warn('dam_collections listener error:', err.message)
+        setLoading(false)
+      }
+    )
 
     return unsub
   }, [user?.uid])
