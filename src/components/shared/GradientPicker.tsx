@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import { Gradient } from 'fabric'
 import type { GradientConfig, GradientStop } from '@/stores/editor.store'

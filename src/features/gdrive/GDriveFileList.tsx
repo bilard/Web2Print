@@ -7,6 +7,8 @@ import type { GDriveFile, DriveSection } from './types'
 interface Props {
   section: DriveSection
   search: string
+  parentId: string | null
+  onFolderOpen: (file: GDriveFile) => void
 }
 
 function getDateGroup(file: GDriveFile, section: DriveSection): string {
@@ -30,10 +32,10 @@ function groupByDate(files: GDriveFile[], section: DriveSection) {
   return GROUP_ORDER.filter((g) => map[g]?.length > 0).map((g) => ({ label: g, files: map[g] }))
 }
 
-export function GDriveFileList({ section, search }: Props) {
+export function GDriveFileList({ section, search, parentId, onFolderOpen }: Props) {
   const [files, setFiles] = useState<GDriveFile[]>([])
   const [loading, setLoading] = useState(true)
-  const { listFilesBySection } = useGoogleDrive()
+  const { listFilesBySection, listFilesByParent } = useGoogleDrive()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -41,13 +43,18 @@ export function GDriveFileList({ section, search }: Props) {
     debounceRef.current = setTimeout(() => {
       setLoading(true)
       setFiles([])
-      listFilesBySection(section, search).then(setFiles).finally(() => setLoading(false))
+      const request = parentId
+        ? listFilesByParent(parentId, search)
+        : listFilesBySection(section, search)
+      request.then(setFiles).finally(() => setLoading(false))
     }, search ? 400 : 0)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [section, search]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [section, search, parentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dateLabel = section === 'shared' ? 'Date de partage' : 'Date de modification'
-  const groups = groupByDate(files, section)
+  const groups = parentId ? null : groupByDate(files, section)
+  const folders = parentId ? files.filter((f) => f.mimeType === 'application/vnd.google-apps.folder') : []
+  const nonFolders = parentId ? files.filter((f) => f.mimeType !== 'application/vnd.google-apps.folder') : []
 
   return (
     <div className="flex flex-col min-h-0">
@@ -55,7 +62,7 @@ export function GDriveFileList({ section, search }: Props) {
       <div className="flex items-center gap-3 px-3 pb-2 border-b border-white/[0.08] text-xs font-medium text-white/30">
         <div className="w-5 shrink-0" />
         <span className="flex-1">Nom</span>
-        {section === 'shared' && <span className="w-52 shrink-0">Partagé par</span>}
+        {section === 'shared' && !parentId && <span className="w-52 shrink-0">Partagé par</span>}
         <span className="w-28 shrink-0 text-right">{dateLabel}</span>
         <div className="w-6 shrink-0" />
       </div>
@@ -73,11 +80,29 @@ export function GDriveFileList({ section, search }: Props) {
         </div>
       )}
 
-      {!loading && groups.map(({ label, files: groupFiles }) => (
+      {!loading && parentId && folders.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-1">Dossiers</p>
+          {folders.map((file) => (
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} />
+          ))}
+        </div>
+      )}
+
+      {!loading && parentId && nonFolders.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3">Fichiers</p>
+          {nonFolders.map((file) => (
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} />
+          ))}
+        </div>
+      )}
+
+      {!loading && !parentId && groups?.map(({ label, files: groupFiles }) => (
         <div key={label}>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3 first:mt-1">{label}</p>
           {groupFiles.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} />
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} />
           ))}
         </div>
       ))}

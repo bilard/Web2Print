@@ -35,6 +35,12 @@ interface UIState {
   rightPanels: { id: string; collapsed: boolean }[]
   setRightPanels: (panels: { id: string; collapsed: boolean }[]) => void
   toggleRightPanel: (id: string) => void
+  damPickerOpen: boolean
+  setDamPickerOpen: (open: boolean) => void
+  damPickerMode: 'insert' | 'replace' | 'fill'
+  damPickerTargetId: string | null
+  openDamPickerForReplace: (targetId: string) => void
+  openDamPickerForFill: (targetId: string) => void
 }
 
 const DEFAULT_BG_GRADIENT: GradientConfig = {
@@ -91,4 +97,16 @@ export const useUIStore = create<UIState>((set, get) => ({
         p.id === id ? { ...p, collapsed: !p.collapsed } : p
       ),
     })),
+
+  damPickerOpen: false,
+  setDamPickerOpen: (damPickerOpen) =>
+    damPickerOpen
+      ? set({ damPickerOpen })
+      : set({ damPickerOpen, damPickerMode: 'insert', damPickerTargetId: null }),
+  damPickerMode: 'insert',
+  damPickerTargetId: null,
+  openDamPickerForReplace: (targetId) =>
+    set({ damPickerOpen: true, damPickerMode: 'replace', damPickerTargetId: targetId }),
+  openDamPickerForFill: (targetId) =>
+    set({ damPickerOpen: true, damPickerMode: 'fill', damPickerTargetId: targetId }),
 }))

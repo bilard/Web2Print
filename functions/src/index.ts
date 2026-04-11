@@ -8,4 +8,5 @@ export { scrapeCatalogForBrief }
 // --- DAM ---
 export { searchImages as damSearchImages } from './dam/searchImages'
 export { searchSimilar as damSearchSimilar } from './dam/searchSimilar'
+export { analyzeImage as damAnalyzeImage } from './dam/analyzeImage'
 export { damAutocomplete } from './dam/autocomplete'

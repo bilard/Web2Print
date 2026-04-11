@@ -19,4 +19,3 @@ export interface GDriveFile {
 
 export type DriveSection = 'my-drive' | 'shared' | 'recent' | 'starred'
 
-export type GDriveFileType = 'docs' | 'sheets' | 'slides' | 'forms' | 'vids'

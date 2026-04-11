@@ -7,6 +7,7 @@ import { RightPanelStack } from '@/components/panels/RightPanelStack'
 import { EditorFooter } from '@/components/panels/EditorFooter'
 import { TextToolbar } from '@/components/panels/TextToolbar'
 import { SettingsSheet } from '@/components/shared/SettingsSheet'
+import { DamPickerModal } from '@/features/dam/components/DamPickerModal'
 import { CanvasContainer } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useProjectStore } from '@/stores/project.store'
@@ -127,6 +128,7 @@ export default function EditorPage() {
 
       <EditorFooter />
       <SettingsSheet />
+      <DamPickerModal />
     </div>
   )
 }

@@ -28,12 +28,9 @@ export function useGoogleDrive() {
     if (token) connect(token, result.user.email ?? '')
   }, [connect])
 
-  const listFilesBySection = useCallback(async (section: DriveSection, search: string): Promise<GDriveFile[]> => {
+  const runQuery = useCallback(async (q: string, orderBy: string): Promise<GDriveFile[]> => {
     if (!accessToken) return []
-    const { q, orderBy } = SECTION_QUERIES[section]
-    const finalQ = search.trim() ? `${q} and name contains '${search.trim()}'` : q
-
-    const params = new URLSearchParams({ q: finalQ, fields: FILE_FIELDS, orderBy, pageSize: '100' })
+    const params = new URLSearchParams({ q, fields: FILE_FIELDS, orderBy, pageSize: '100' })
     const res = await fetch(`${DRIVE_API}/files?${params}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -45,5 +42,17 @@ export function useGoogleDrive() {
     return data.files ?? []
   }, [accessToken, disconnect])
 
-  return { connectDrive, listFilesBySection, disconnect }
+  const listFilesBySection = useCallback((section: DriveSection, search: string): Promise<GDriveFile[]> => {
+    const { q, orderBy } = SECTION_QUERIES[section]
+    const finalQ = search.trim() ? `${q} and name contains '${search.trim().replace(/'/g, "\\'")}'` : q
+    return runQuery(finalQ, orderBy)
+  }, [runQuery])
+
+  const listFilesByParent = useCallback((parentId: string, search: string): Promise<GDriveFile[]> => {
+    const base = `'${parentId}' in parents and trashed=false`
+    const finalQ = search.trim() ? `${base} and name contains '${search.trim().replace(/'/g, "\\'")}'` : base
+    return runQuery(finalQ, 'folder,modifiedTime desc')
+  }, [runQuery])
+
+  return { connectDrive, listFilesBySection, listFilesByParent, disconnect }
 }

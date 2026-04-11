@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Home, Users, Clock, Star, Search } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Home, Users, Clock, Star, Search, ChevronRight } from 'lucide-react'
 import { GDriveFileList } from './GDriveFileList'
-import type { DriveSection } from './types'
+import type { DriveSection, GDriveFile } from './types'
 
 const NAV: { id: DriveSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'my-drive', label: 'Mon Drive',         icon: Home },
@@ -10,9 +10,35 @@ const NAV: { id: DriveSection; label: string; icon: React.ComponentType<{ classN
   { id: 'starred',  label: 'Suivis',             icon: Star },
 ]
 
+interface FolderCrumb {
+  id: string
+  name: string
+}
+
 export function GDrivePanel() {
   const [section, setSection] = useState<DriveSection>('my-drive')
   const [search, setSearch] = useState('')
+  const [folderStack, setFolderStack] = useState<FolderCrumb[]>([])
+
+  const currentFolder = folderStack[folderStack.length - 1] ?? null
+  const sectionLabel = NAV.find((n) => n.id === section)?.label ?? ''
+
+  const handleSectionChange = useCallback((id: DriveSection) => {
+    setSection(id)
+    setSearch('')
+    setFolderStack([])
+  }, [])
+
+  const handleFolderOpen = useCallback((file: GDriveFile) => {
+    setFolderStack((stack) => [...stack, { id: file.id, name: file.name }])
+    setSearch('')
+  }, [])
+
+  const handleCrumbClick = useCallback((index: number) => {
+    // index = -1 → return to section root
+    setFolderStack((stack) => (index < 0 ? [] : stack.slice(0, index + 1)))
+    setSearch('')
+  }, [])
 
   return (
     <div className="flex gap-8" style={{ minHeight: 'calc(100vh - 200px)' }}>
@@ -33,20 +59,23 @@ export function GDrivePanel() {
 
         {/* Nav */}
         <nav className="flex flex-col gap-0.5">
-          {NAV.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => { setSection(id); setSearch('') }}
-              className={`flex items-center gap-3 px-4 py-2 rounded-full text-sm transition-colors text-left ${
-                section === id
-                  ? 'bg-blue-500/15 text-blue-300 font-medium'
-                  : 'text-white/50 hover:bg-white/[0.05] hover:text-white/70'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="truncate">{label}</span>
-            </button>
-          ))}
+          {NAV.map(({ id, label, icon: Icon }) => {
+            const isActive = section === id && folderStack.length === 0
+            return (
+              <button
+                key={id}
+                onClick={() => handleSectionChange(id)}
+                className={`flex items-center gap-3 px-4 py-2 rounded-full text-sm transition-colors text-left ${
+                  isActive
+                    ? 'bg-blue-500/15 text-blue-300 font-medium'
+                    : 'text-white/50 hover:bg-white/[0.05] hover:text-white/70'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate">{label}</span>
+              </button>
+            )
+          })}
         </nav>
 
       </aside>
@@ -59,13 +88,51 @@ export function GDrivePanel() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher dans Drive"
+            placeholder={currentFolder ? `Rechercher dans ${currentFolder.name}` : 'Rechercher dans Drive'}
             className="w-full bg-white/[0.05] border border-white/[0.08] rounded-2xl pl-11 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-blue-500/30 focus:bg-white/[0.07] transition-all"
           />
         </div>
 
+        {/* Breadcrumb */}
+        {folderStack.length > 0 && (
+          <nav aria-label="Fil d'Ariane" className="flex items-center gap-1 text-sm flex-wrap">
+            <button
+              onClick={() => handleCrumbClick(-1)}
+              className="text-white/50 hover:text-white transition-colors px-1"
+            >
+              {sectionLabel}
+            </button>
+            {folderStack.map((crumb, i) => {
+              const isLast = i === folderStack.length - 1
+              return (
+                <div key={crumb.id} className="flex items-center gap-1">
+                  <ChevronRight className="w-3.5 h-3.5 text-white/25" />
+                  {isLast ? (
+                    <span className="text-white font-medium px-1 truncate max-w-[260px]" title={crumb.name}>
+                      {crumb.name}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleCrumbClick(i)}
+                      className="text-white/50 hover:text-white transition-colors px-1 truncate max-w-[200px]"
+                      title={crumb.name}
+                    >
+                      {crumb.name}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </nav>
+        )}
+
         {/* File list */}
-        <GDriveFileList section={section} search={search} />
+        <GDriveFileList
+          section={section}
+          search={search}
+          parentId={currentFolder?.id ?? null}
+          onFolderOpen={handleFolderOpen}
+        />
       </div>
     </div>
   )

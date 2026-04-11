@@ -6,7 +6,7 @@
 
 const STORAGE_PREFIX = 'designstudio_apikey_'
 
-export interface ApiKeyConfig {
+interface ApiKeyConfig {
   id: string
   label: string
   envVar: string
@@ -18,7 +18,19 @@ export const API_KEYS: ApiKeyConfig[] = [
     id: 'gemini',
     label: 'Nano Banana (Gemini)',
     envVar: 'VITE_GEMINI_API_KEY',
-    description: 'Clé API Google Gemini pour la génération d\'images IA',
+    description: 'Clé API Google Gemini pour la génération d\'images IA et tâches rapides',
+  },
+  {
+    id: 'anthropic',
+    label: 'Claude (Anthropic)',
+    envVar: 'VITE_ANTHROPIC_API_KEY',
+    description: 'Clé API Anthropic — Claude Opus 4.6 pour le raisonnement (briefs, panier, deck)',
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    envVar: 'VITE_OPENAI_API_KEY',
+    description: 'Clé API OpenAI (optionnel — fallback ou tâches spécifiques)',
   },
   {
     id: 'firebase_api',

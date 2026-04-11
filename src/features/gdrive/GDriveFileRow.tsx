@@ -15,20 +15,29 @@ function getMimeStyle(mimeType: string): { abbrev: string; color: string; bg: st
 interface Props {
   file: GDriveFile
   section: DriveSection
+  onFolderOpen?: (file: GDriveFile) => void
 }
 
-export function GDriveFileRow({ file, section }: Props) {
+export function GDriveFileRow({ file, section, onFolderOpen }: Props) {
   const cfg = getMimeStyle(file.mimeType)
   const rawDate = section === 'shared' ? (file.sharedWithMeTime ?? file.modifiedTime) : file.modifiedTime
   const date = new Date(rawDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
   const sharer = file.sharingUser?.displayName ?? file.owners?.[0]?.displayName ?? ''
   const sharerPhoto = file.sharingUser?.photoLink ?? file.owners?.[0]?.photoLink
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (cfg.isFolder && onFolderOpen) {
+      e.preventDefault()
+      onFolderOpen(file)
+    }
+  }
+
   return (
     <a
       href={file.webViewLink}
-      target="_blank"
+      target={cfg.isFolder ? undefined : '_blank'}
       rel="noopener noreferrer"
+      onClick={handleClick}
       className="flex items-center gap-3 px-3 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors group cursor-pointer border-b border-white/[0.03] last:border-0"
     >
       {/* Icon */}

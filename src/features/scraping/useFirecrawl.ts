@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 import { getApiKey } from '@/lib/apiKeys'
 
-export const FIRECRAWL_BASE = 'https://api.firecrawl.dev/v1'
+const FIRECRAWL_BASE = 'https://api.firecrawl.dev/v1'
 
 const headers = () => ({
   'Content-Type': 'application/json',
@@ -33,18 +33,6 @@ export interface CrawlPage {
   url: string
   title: string
   content: string
-}
-
-export interface CrawlStatus {
-  status: 'scraping' | 'completed' | 'failed'
-  total: number
-  completed: number
-  data: CrawlPage[]
-}
-
-export interface ExtractStatus {
-  status: 'processing' | 'completed' | 'failed'
-  data: Record<string, unknown> | null
 }
 
 export type ScrapingMode = 'auto' | 'schema'
@@ -131,7 +119,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
 
 export type ExtractionTarget = 'single' | 'multiple'
 
-export function buildJsonSchema(fields: ScrapingField[], target: ExtractionTarget = 'multiple') {
+function buildJsonSchema(fields: ScrapingField[], target: ExtractionTarget = 'multiple') {
   const properties: Record<string, unknown> = {}
   for (const f of fields) {
     if (f.type === 'dict') {
@@ -182,7 +170,7 @@ export function buildJsonSchema(fields: ScrapingField[], target: ExtractionTarge
   }
 }
 
-export function normalizeToRows(
+function normalizeToRows(
   data: unknown,
   fields: ScrapingField[],
   target: ExtractionTarget = 'multiple',

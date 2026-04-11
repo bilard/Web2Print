@@ -3,7 +3,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 
-export interface UsageStats {
+interface UsageStats {
   projectCount: number
   exportCount: number
   storageUsedMb: number
