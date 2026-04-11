@@ -22,7 +22,7 @@ export type FieldTypeId =
   | 'formula'
   | 'image'
 
-export interface FieldTypeDefinition {
+interface FieldTypeDefinition {
   id: FieldTypeId
   label: string
   icon: string // Lucide icon name

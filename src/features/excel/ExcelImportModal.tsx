@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import {
   X, Upload, FileSpreadsheet, Loader2, MonitorUp, Plus,
-  Check, ChevronDown, ChevronRight, Tag, Layers,
+  Check, ChevronDown, ChevronRight, Layers,
 } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from './useExcelImport'

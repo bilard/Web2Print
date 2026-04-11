@@ -62,7 +62,7 @@ export function StatsBadges({ stats, fieldType, onSortAsc, onSortDesc, onClearSo
 }
 
 /** Inline cell badge for a value relative to min/avg/max */
-export function ValueBadge({ value, stats, fieldType }: { value: number; stats: ColumnStats; fieldType: FieldTypeId }) {
+function ValueBadge({ value, stats, fieldType }: { value: number; stats: ColumnStats; fieldType: FieldTypeId }) {
   if (!numericTypes.includes(fieldType)) return null
   if (stats.min === null || stats.max === null || typeof stats.min !== 'number' || typeof stats.max !== 'number') return null
 

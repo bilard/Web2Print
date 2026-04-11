@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import {
-  X, Upload, FileSpreadsheet, Loader2, Plus, Minus,
-  RefreshCw, ArrowRight, Check, AlertTriangle, MonitorUp,
+  X, Loader2, Plus, Minus,
+  RefreshCw, Check, MonitorUp,
 } from 'lucide-react'
 import type { SheetDiff, RowDiff, ColumnDiff } from './diffEngine'
 import type { ExcelSheet } from './types'

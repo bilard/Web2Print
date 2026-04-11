@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import { ChevronRight, FolderTree, X, Package, ChevronDown } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
-import { getTaxoColumns, getLevelColor } from './taxonomyBuilder'
+import { getTaxoColumns } from './taxonomyBuilder'
 import type { ExcelRow } from './types'
 
 interface TreeNode {
