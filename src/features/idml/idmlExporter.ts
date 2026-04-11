@@ -33,6 +33,10 @@ interface FabricData {
   idmlOrigFontSize?: number
   idmlPageOffsetX?: number
   idmlPageOffsetY?: number
+  idmlCropX0?: number
+  idmlCropY0?: number
+  idmlCropW0?: number
+  idmlCropH0?: number
 }
 
 interface PatchableObj {
@@ -430,6 +434,89 @@ function scaleImageChildTransform(
       const tx = localCx + (parts[4] - localCx) * scaleX
       const ty = localCy + (parts[5] - localCy) * scaleY
       const nextTransform = [a, b, c, d, tx, ty].map((n) => Number(n.toFixed(6))).join(' ')
+      return `<Image${before}ItemTransform="${nextTransform}"${after}>`
+    },
+  )
+
+  if (patchedRect === rectXml) return
+  se.xml = se.xml.slice(0, rectStart) + patchedRect + se.xml.slice(rectClose)
+  se.modified = true
+}
+
+/**
+ * Patch la transform du <Image> enfant après un crop utilisateur.
+ *
+ * Approche : préserver le `aOrig`/`dOrig` existant (ils encodent déjà la
+ * conversion source-pixel → unités locales du frame, peu importe la
+ * convention IDML interne) et ne décaler que `tx`/`ty` par la différence,
+ * en pixels source, entre le centre du crop courant et celui d'origine.
+ */
+function setCroppedImageChildTransform(
+  se: { xml: string; modified: boolean },
+  frameId: string,
+  cropXNow: number,
+  cropYNow: number,
+  fwNow: number,
+  fhNow: number,
+  cropX0: number,
+  cropY0: number,
+  fw0: number,
+  fh0: number,
+  imgNatPxW: number,
+  imgNatPxH: number,
+): void {
+  const selfIdx = se.xml.indexOf(`Self="${frameId}"`)
+  if (selfIdx < 0) return
+
+  let rectStart = selfIdx
+  while (rectStart > 0 && se.xml[rectStart] !== '<') rectStart--
+
+  const tagNameMatch = se.xml.slice(rectStart).match(/^<(\w+)\b/)
+  if (!tagNameMatch) return
+  const closeTag = `</${tagNameMatch[1]}>`
+
+  const rectEnd = se.xml.indexOf(closeTag, rectStart)
+  if (rectEnd < 0) return
+  const rectClose = rectEnd + closeTag.length
+  const rectXml = se.xml.slice(rectStart, rectClose)
+
+  // GraphicBounds donne la taille intrinsèque du bitmap en POINTS dans le
+  // référentiel local du Rectangle. La transform <Image> est en pt/pt, donc
+  // le décalage en pixels source doit être converti en points via le ratio
+  // graphicBounds / naturalPx.
+  const gbMatch = rectXml.match(
+    /<GraphicBounds\b[^>]*\bLeft="([^"]+)"[^>]*\bTop="([^"]+)"[^>]*\bRight="([^"]+)"[^>]*\bBottom="([^"]+)"/,
+  )
+  let pxToPtX = 1
+  let pxToPtY = 1
+  if (gbMatch && imgNatPxW > 0 && imgNatPxH > 0) {
+    const gbW = Number(gbMatch[3]) - Number(gbMatch[1])
+    const gbH = Number(gbMatch[4]) - Number(gbMatch[2])
+    if (gbW > 0) pxToPtX = gbW / imgNatPxW
+    if (gbH > 0) pxToPtY = gbH / imgNatPxH
+  }
+
+  // Décalage en points (référentiel local du Rectangle).
+  const dCenterPxX = ((cropXNow + fwNow / 2) - (cropX0 + fw0 / 2)) * pxToPtX
+  const dCenterPxY = ((cropYNow + fhNow / 2) - (cropY0 + fh0 / 2)) * pxToPtY
+
+  const patchedRect = rectXml.replace(
+    /<Image\b([^>]*?)\bItemTransform="([^"]+)"([^>]*)>/,
+    (_full, before, transformValue, after) => {
+      const parts = transformValue.trim().split(/\s+/).map(Number)
+      if (parts.length !== 6 || parts.some((n: number) => Number.isNaN(n))) {
+        return `<Image${before}ItemTransform="${transformValue}"${after}>`
+      }
+      const [a0, b0, c0, d0, tx0, ty0] = parts as [number, number, number, number, number, number]
+      // Convertir le décalage en pixels source vers les unités locales via la
+      // partie linéaire de la transform existante. On veut que le NOUVEAU pixel
+      // central tombe à la même position locale que l'ANCIEN pixel central :
+      //   txNew + a0*xNew = tx0 + a0*xOld   →   txNew = tx0 - a0*(xNew - xOld)
+      const newTx = tx0 - (a0 * dCenterPxX + c0 * dCenterPxY)
+      const newTy = ty0 - (b0 * dCenterPxX + d0 * dCenterPxY)
+      const nextTransform = [a0, b0, c0, d0, newTx, newTy]
+        .map((n) => Number(n.toFixed(6)))
+        .join(' ')
       return `<Image${before}ItemTransform="${nextTransform}"${after}>`
     },
   )
@@ -1127,7 +1214,9 @@ export async function exportIdmlModified(
       fill?: string
     }
 
-    const id = fab.data?.id
+    // Le bg d'un TextFrame a un id Fabric distinct (`__bg`) mais doit pointer
+    // sur l'élément IDML d'origine via `idmlRefId` pour les patches fill/position.
+    const id = (fab.data as any)?.idmlRefId ?? fab.data?.id
     if (!id) continue
 
     if ((fab.type === 'textbox' || fab.type === 'i-text') && fab.data?.type === 'text') {
@@ -1507,28 +1596,10 @@ export async function exportIdmlModified(
         }
       : undefined
 
-    // When a clipPath is present and offset from the image center (content-edit panning),
-    // the IDML frame position must reflect the clipPath's center in document space, not
-    // the image's center. In Fabric v6 object-space convention (absolutePositioned: false),
-    // cp.left/top are relative to the image center, so the offset is:
-    //   cpOffsetX = cp.left + cp.width/2   (0 when clipPath is centered on the image)
-    //   cpOffsetY = cp.top  + cp.height/2
-    // Multiplying by scale converts from object-space to document-space units.
-    // Falls back to img.getCenterPoint() when no clipPath or when offset is (0, 0).
-    let frameCenterOverride: { x: number; y: number } | undefined
-    if (cp) {
-      const cpOffsetX = cp.left + cp.width  / 2
-      const cpOffsetY = cp.top  + cp.height / 2
-      if (Math.abs(cpOffsetX) > 0.001 || Math.abs(cpOffsetY) > 0.001) {
-        const imgCenter = imageObj.getCenterPoint()
-        frameCenterOverride = {
-          x: imgCenter.x + cpOffsetX * sx,
-          y: imgCenter.y + cpOffsetY * sy,
-        }
-      }
-    }
-
-    applyPosDelta(fabricId, imageObj, frameCenterOverride)
+    // Modèle natif Fabric : `imageObj.getCenterPoint()` renvoie déjà le centre
+    // de la fenêtre visible (crop), pas celui du bitmap complet. On laisse donc
+    // applyPosDelta se baser dessus directement — pas d'override.
+    applyPosDelta(fabricId, imageObj)
 
     const spreadEntry = idToSpread.get(fabricId)
     if (!spreadEntry) continue
@@ -1562,14 +1633,30 @@ export async function exportIdmlModified(
       origDisplayW!, origDisplayH!,
       localCx!, localCy!,
     )
-    // Only rescale the inner <Image> child when the bitmap itself was resized (no
-    // clipPath in play). When the frame change is purely driven by a clipPath mask,
-    // the bitmap transform stays unchanged — the content extends beyond the frame just
-    // as it does in InDesign.
     if (patched && !cp) {
+      // Pas de crop : la frame ET le bitmap se redimensionnent ensemble.
       const scaleX = origDisplayW! > 0.001 ? newDisplayW / origDisplayW! : 1
       const scaleY = origDisplayH! > 0.001 ? newDisplayH / origDisplayH! : 1
       scaleImageChildTransform(spreadEntry, fabricId, scaleX, scaleY, localCx!, localCy!)
+    } else if (cp) {
+      const cropX0 = imageObj.data?.idmlCropX0
+      const cropY0 = imageObj.data?.idmlCropY0
+      const fw0 = imageObj.data?.idmlCropW0
+      const fh0 = imageObj.data?.idmlCropH0
+      console.log(
+        `[IDML Export][crop] id=${fabricId} now=(cropX=${cropX} cropY=${cropY} fw=${fw} fh=${fh} sx=${sx} sy=${sy}) ` +
+        `init=(cropX0=${cropX0} cropY0=${cropY0} fw0=${fw0} fh0=${fh0})`,
+      )
+      if (cropX0 != null && cropY0 != null && fw0 != null && fh0 != null) {
+        const el = (imageObj as unknown as { getElement?: () => HTMLImageElement | HTMLCanvasElement }).getElement?.()
+        const natW = (el as HTMLImageElement | undefined)?.naturalWidth ?? (el as HTMLCanvasElement | undefined)?.width ?? 0
+        const natH = (el as HTMLImageElement | undefined)?.naturalHeight ?? (el as HTMLCanvasElement | undefined)?.height ?? 0
+        setCroppedImageChildTransform(
+          spreadEntry, fabricId, cropX, cropY, fw, fh, cropX0, cropY0, fw0, fh0, natW, natH,
+        )
+      } else {
+        console.warn('[IDML Export][crop] cropX0/Y0/W0/H0 manquants — réimport IDML requis')
+      }
     }
   }
 
@@ -1583,7 +1670,7 @@ export async function exportIdmlModified(
       scaleX?: number
       scaleY?: number
     }
-    const id = fab.data?.id
+    const id = (fab.data as any)?.idmlRefId ?? fab.data?.id
     const fillImageUrl = fab.data?.fillImage
     if (!id || !fillImageUrl) continue
     if (fab.data?.type === 'image' || fab.data?.type === 'text') continue
@@ -1595,17 +1682,48 @@ export async function exportIdmlModified(
     // Raw fetch could return PNG/WebP bytes that would break a .jpg filename.
     let imgBytes: Uint8Array | null = null
 
-    // Helper: render an image element to JPEG via canvas
-    const renderToJpeg = async (source: HTMLImageElement | HTMLCanvasElement): Promise<Uint8Array | null> => {
-      const w = (source as HTMLImageElement).naturalWidth || source.width
-      const h = (source as HTMLImageElement).naturalHeight || source.height
-      if (w < 2 || h < 2) return null
+    // Pattern info from the Fabric Rect
+    const fillObj0 = (fab as any).fill
+    const patternSource = fillObj0?.source as HTMLImageElement | HTMLCanvasElement | undefined
+    const ptArr =
+      ((fillObj0 as any)?.patternTransform as number[] | undefined) ??
+      [1, 0, 0, 1, 0, 0]
+    const rsxRender = fab.scaleX ?? 1
+    const rsyRender = fab.scaleY ?? 1
+    const objW = fab.width ?? 0
+    const objH = fab.height ?? 0
+    const dispW = Math.max(1, Math.round(objW * rsxRender))
+    const dispH = Math.max(1, Math.round(objH * rsyRender))
+
+    // Render the *visible* fill content (bitmap + patternTransform, clipped to
+    // the rect bounds) into a temporary canvas. This way the embedded image
+    // exactly matches what the user sees, and ItemTransform is just identity
+    // mapping the bitmap onto the frame — no math juggling required.
+    const renderFillToJpeg = async (
+      source: HTMLImageElement | HTMLCanvasElement,
+    ): Promise<Uint8Array | null> => {
       const tmpCanvas = document.createElement('canvas')
-      tmpCanvas.width = w
-      tmpCanvas.height = h
+      tmpCanvas.width = dispW
+      tmpCanvas.height = dispH
       const ctx = tmpCanvas.getContext('2d')
       if (!ctx) return null
-      ctx.drawImage(source as HTMLImageElement, 0, 0, w, h)
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, dispW, dispH)
+      ctx.save()
+      // Map object-space (objW × objH) onto canvas (dispW × dispH)
+      ctx.scale(rsxRender, rsyRender)
+      ctx.beginPath()
+      ctx.rect(0, 0, objW, objH)
+      ctx.clip()
+      ctx.transform(ptArr[0], ptArr[1], ptArr[2], ptArr[3], ptArr[4], ptArr[5])
+      try {
+        ctx.drawImage(source as HTMLImageElement, 0, 0)
+      } catch (e) {
+        console.warn('[IDML Export] drawImage failed:', e)
+        ctx.restore()
+        return null
+      }
+      ctx.restore()
       const blob = await new Promise<Blob | null>((resolve) =>
         tmpCanvas.toBlob(resolve, 'image/jpeg', 0.92),
       )
@@ -1613,24 +1731,22 @@ export async function exportIdmlModified(
       return new Uint8Array(await blob.arrayBuffer())
     }
 
-    // Strategy 1: Use Pattern source element already in memory (fastest, no network)
-    const fillObj0 = (fab as any).fill
-    const patternSource = fillObj0?.source as HTMLImageElement | HTMLCanvasElement | undefined
+    // Strategy 1: Pattern source already in memory
     if (patternSource) {
       try {
-        imgBytes = await renderToJpeg(patternSource)
+        imgBytes = await renderFillToJpeg(patternSource)
       } catch (e) {
         console.warn('[IDML Export] S1 Pattern source failed:', e)
       }
     }
 
-    // Strategy 2: Load fresh image element from URL and render to JPEG
+    // Strategy 2: Load fresh image element from URL
     if (!imgBytes) {
       try {
         imgBytes = await new Promise<Uint8Array | null>((resolve) => {
           const img = new window.Image()
           img.crossOrigin = 'anonymous'
-          img.onload = () => renderToJpeg(img).then(resolve).catch(() => resolve(null))
+          img.onload = () => renderFillToJpeg(img).then(resolve).catch(() => resolve(null))
           img.onerror = () => resolve(null)
           img.src = fillImageUrl
         })
@@ -1660,10 +1776,9 @@ export async function exportIdmlModified(
     zip.file(linkPath, imgBytes)
     fillImageFiles.push({ name: imgName, bytes: imgBytes })
 
-    // Get native image dimensions from Pattern source (already extracted above as patternSource)
-    const patSrc = patternSource as HTMLImageElement | undefined
-    const natW = patSrc?.naturalWidth || patSrc?.width || 800
-    const natH = patSrc?.naturalHeight || patSrc?.height || 600
+    // The embedded bitmap is the pre-rendered fill, sized to the frame display.
+    const natW = dispW
+    const natH = dispH
     // Find the Rectangle/Polygon element in spread XML and inject <Image> child
     const selfIdx = se.xml.indexOf(`Self="${id}"`)
     if (selfIdx < 0) continue
@@ -1678,12 +1793,23 @@ export async function exportIdmlModified(
     const tagName = tagNameMatch[1]
 
     const closeTag = `</${tagName}>`
-    const closeIdx = se.xml.indexOf(closeTag, tagStart)
+    let closeIdx = se.xml.indexOf(closeTag, tagStart)
     if (closeIdx < 0) continue
 
-    // Skip if already has an Image/EPS/PDF child
-    const blockXml = se.xml.slice(tagStart, closeIdx)
-    if (/<(Image|EPS|PDF)\b/.test(blockXml)) continue
+    // If the frame already has an Image/EPS/PDF child (e.g. existing IDML
+    // sticker), strip it — we're replacing the embedded content with the
+    // user's new fill bitmap.
+    let blockXml = se.xml.slice(tagStart, closeIdx)
+    const childImageRe = /<(Image|EPS|PDF)\b[^>]*?>[\s\S]*?<\/\1>|<(Image|EPS|PDF)\b[^>]*\/>/g
+    if (childImageRe.test(blockXml)) {
+      const cleanedBlock = blockXml.replace(childImageRe, '')
+      se.xml = se.xml.slice(0, tagStart) + cleanedBlock + se.xml.slice(closeIdx)
+      blockXml = cleanedBlock
+      const newCloseIdx = se.xml.indexOf(closeTag, tagStart)
+      if (newCloseIdx < 0) continue
+      closeIdx = newCloseIdx
+      se.modified = true
+    }
 
     // Extract frame bounds from PathPointArray to get local coordinate system
     const anchors = [...blockXml.matchAll(/Anchor="([^ "]+) ([^ "]+)"/g)]
@@ -1705,13 +1831,13 @@ export async function exportIdmlModified(
     const frameW = frameRight - frameLeft
     const frameH = frameBottom - frameTop
 
-    // Calculate scale to cover the frame (like CSS background-size: cover)
-    const scaleToFit = Math.max(frameW / natW, frameH / natH)
-    // Offset to center the image in the frame
-    const scaledW = natW * scaleToFit
-    const scaledH = natH * scaleToFit
-    const tx = frameLeft - (scaledW - frameW) / 2
-    const ty = frameTop - (scaledH - frameH) / 2
+    // The bitmap was pre-rendered to exactly fill the frame, so the Image
+    // ItemTransform maps native pixel space (0..natW × 0..natH) onto the frame
+    // local rect (frameLeft..frameRight × frameTop..frameBottom).
+    const scaleX = natW > 0 ? frameW / natW : 1
+    const scaleY = natH > 0 ? frameH / natH : 1
+    const tx = frameLeft
+    const ty = frameTop
 
     // Build Image element matching real InDesign structure
     // Self IDs must follow InDesign format: 'u' + hex digits
@@ -1724,11 +1850,10 @@ export async function exportIdmlModified(
     // Relative URI — InDesign will search in Links/ folder next to the .idml file
     const linkUri = `file:Links/${imgName}`
 
-    // Determine image type string
-    const imgTypeStr = ext === 'png' ? '$ID/Portable Network Graphics (PNG)'
-      : ext === 'gif' ? '$ID/GIF' : '$ID/JPEG'
-    const imgFmtStr = ext === 'png' ? '$ID/Portable Network Graphics (PNG)'
-      : ext === 'gif' ? '$ID/GIF' : '$ID/JPEG'
+    // We always re-encode to JPEG above, so format is fixed.
+    void ext
+    const imgTypeStr = '$ID/JPEG'
+    const imgFmtStr = '$ID/JPEG'
 
     // Build LinkImportStamp matching InDesign format: "file <FILETIME> <size>"
     const stampSize = imgBytes.byteLength
@@ -1748,7 +1873,7 @@ export async function exportIdmlModified(
         `ECPaginationPageItemData="1 0" ` +
         `ImageTypeName="${imgTypeStr}" ` +
         `AppliedObjectStyle="ObjectStyle/$ID/[None]" ` +
-        `ItemTransform="${scaleToFit} 0 0 ${scaleToFit} ${tx} ${ty}" ` +
+        `ItemTransform="${scaleX} 0 0 ${scaleY} ${tx} ${ty}" ` +
         `GradientFillStart="0 0" GradientFillLength="0" GradientFillAngle="0" ` +
         `GradientStrokeStart="0 0" GradientStrokeLength="0" GradientStrokeAngle="0" ` +
         `HorizontalLayoutConstraints="FlexibleDimension FixedDimension FlexibleDimension" ` +

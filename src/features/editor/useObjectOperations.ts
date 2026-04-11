@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { Group, util } from 'fabric'
-import type { Canvas } from 'fabric'
-import { globalFabricCanvas } from './CanvasContainer'
+import { globalFabricCanvas, globalSnapshot } from './CanvasContainer'
 import { syncToStore } from './useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
@@ -47,6 +46,7 @@ export function useObjectOperations() {
     canvas.bringObjectForward(obj)
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const sendBackward = useCallback(() => {
@@ -56,6 +56,7 @@ export function useObjectOperations() {
     canvas.sendObjectBackwards(obj)
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const bringToFront = useCallback(() => {
@@ -65,6 +66,7 @@ export function useObjectOperations() {
     canvas.bringObjectToFront(obj)
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const sendToBack = useCallback(() => {
@@ -74,6 +76,7 @@ export function useObjectOperations() {
     canvas.sendObjectToBack(obj)
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const flipHorizontal = useCallback(() => {
@@ -83,6 +86,7 @@ export function useObjectOperations() {
     obj.set('flipX', !obj.flipX)
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const flipVertical = useCallback(() => {
@@ -92,6 +96,7 @@ export function useObjectOperations() {
     obj.set('flipY', !obj.flipY)
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   type AlignDir = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'
@@ -118,6 +123,7 @@ export function useObjectOperations() {
     })
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const groupSelected = useCallback(() => {
@@ -184,6 +190,7 @@ export function useObjectOperations() {
     })
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const distributeHorizontally = useCallback(() => {
@@ -204,6 +211,7 @@ export function useObjectOperations() {
     })
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const distributeVertically = useCallback(() => {
@@ -224,6 +232,7 @@ export function useObjectOperations() {
     })
     canvas.requestRenderAll()
     syncToStore(canvas)
+    globalSnapshot?.()
   }, [])
 
   const selectAll = useCallback(() => {

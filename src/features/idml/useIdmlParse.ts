@@ -28,9 +28,9 @@ function waitForCanvas(timeoutMs: number): Promise<typeof globalFabricCanvas> {
   })
 }
 
-export type ParseStep = 'idle' | 'parsing' | 'converting' | 'rendering' | 'done' | 'error'
+type ParseStep = 'idle' | 'parsing' | 'converting' | 'rendering' | 'done' | 'error'
 
-export interface IdmlParseState {
+interface IdmlParseState {
   step: ParseStep
   idmlDoc: IdmlDocument | null
   fabricObjects: FabricObject[]

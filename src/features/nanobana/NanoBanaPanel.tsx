@@ -1,6 +1,19 @@
 import { useEffect, useCallback } from 'react'
-import { ImagePlus, Upload, Sparkles, Search, Image as ImageIcon } from 'lucide-react'
+import {
+  ImagePlus,
+  Upload,
+  Sparkles,
+  Search,
+  Image as ImageIcon,
+  FolderOpen,
+  Heart,
+  FolderHeart,
+  Clock,
+} from 'lucide-react'
 import { DamStockTab } from '../dam/components/DamStockTab'
+import { DamRecentImages } from '../dam/components/DamRecentImages'
+import { DamFavorites } from '../dam/components/DamFavorites'
+import { DamCollections } from '../dam/components/DamCollections'
 import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -17,6 +30,10 @@ const TABS: { id: NanoBanaTab; icon: React.ComponentType<{ className?: string }>
   { id: 'upload', icon: Upload, label: 'Upload' },
   { id: 'generate', icon: Sparkles, label: 'IA' },
   { id: 'stock', icon: ImageIcon, label: 'Stock' },
+  { id: 'my-images', icon: FolderOpen, label: 'Mes images' },
+  { id: 'favorites', icon: Heart, label: 'Favoris' },
+  { id: 'collections', icon: FolderHeart, label: 'Collections' },
+  { id: 'recent', icon: Clock, label: 'Récents' },
 ]
 
 /** Refresh the current page thumbnail after canvas changes */
@@ -161,20 +178,21 @@ export function NanoBanaPanel() {
 
   return (
     <div className="p-3 flex flex-col gap-3">
-      {/* Tab bar */}
-      <div className="flex bg-white/5 rounded-lg p-0.5">
+      {/* Tab bar — scroll horizontal car 8 onglets */}
+      <div className="flex gap-0.5 bg-white/5 rounded-lg p-0.5 overflow-x-auto scrollbar-none">
         {TABS.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+            title={label}
+            className={`shrink-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-medium transition-all ${
               tab === id
                 ? 'bg-indigo-500/20 text-indigo-400'
                 : 'text-white/40 hover:text-white/60'
             }`}
           >
             <Icon className="w-3.5 h-3.5" />
-            {label}
+            <span className="whitespace-nowrap">{label}</span>
           </button>
         ))}
       </div>
@@ -199,6 +217,26 @@ export function NanoBanaPanel() {
       {tab === 'upload' && <UploadZone />}
       {tab === 'generate' && <GenerateTab onAddToCanvas={addToCanvas} onReplaceSelected={replaceSelectedImage} />}
       {tab === 'stock' && <DamStockTab />}
+      {tab === 'my-images' && (
+        <div className="flex flex-col min-h-[400px]">
+          <DamRecentImages sortBy="addedAt" />
+        </div>
+      )}
+      {tab === 'favorites' && (
+        <div className="flex flex-col min-h-[400px]">
+          <DamFavorites />
+        </div>
+      )}
+      {tab === 'collections' && (
+        <div className="flex flex-col min-h-[400px]">
+          <DamCollections />
+        </div>
+      )}
+      {tab === 'recent' && (
+        <div className="flex flex-col min-h-[400px]">
+          <DamRecentImages sortBy="usageCount" />
+        </div>
+      )}
     </div>
   )
 }

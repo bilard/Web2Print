@@ -39,4 +39,12 @@ export interface CompressionResult {
   compressedSize: number
 }
 
-export type NanoBanaTab = 'gallery' | 'upload' | 'generate' | 'stock'
+export type NanoBanaTab =
+  | 'gallery'
+  | 'upload'
+  | 'generate'
+  | 'stock'
+  | 'my-images'
+  | 'favorites'
+  | 'collections'
+  | 'recent'

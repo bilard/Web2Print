@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import { Canvas, FabricImage, Rect, Pattern, Point, type FabricObject } from 'fabric'
+import { Canvas, FabricImage, Rect, Line, Pattern, Point, type FabricObject } from 'fabric'
+import { applySquareCropControls } from './useCustomControls'
 
 // Détections duck-typées : `instanceof` est cassé quand Vite charge deux copies
 // du module fabric (chunks séparés). On se rabat sur le champ `type` standard
@@ -80,6 +81,7 @@ type CropState =
       image: FabricImage
       cropFrame: Rect
       snapshot: ImageSnapshot
+      dimOverlay: Rect
     }
   | {
       kind: 'pattern'
@@ -111,7 +113,7 @@ export function useCroppingImage(): FabricObject | null {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }
 
-export function isCropping(): boolean {
+function isCropping(): boolean {
   return _state !== null
 }
 
@@ -275,7 +277,7 @@ function enterCropImage(img: FabricImage): void {
     angle: 0,
     left: fullLeft,
     top: fullTop,
-    opacity: 0.4,
+    opacity: 1,
     lockScalingX: true,
     lockScalingY: true,
     lockRotation: true,
@@ -292,23 +294,119 @@ function enterCropImage(img: FabricImage): void {
     originX: 'left',
     originY: 'top',
     fill: 'rgba(255,255,255,0.001)',
-    stroke: '#6366f1',
-    strokeWidth: 2,
-    strokeDashArray: [6, 4],
+    stroke: '#818cf8',
+    strokeWidth: 1,
     strokeUniform: true,
-    cornerColor: '#6366f1',
-    cornerStyle: 'circle',
+    strokeLineCap: 'butt',
+    shadow: null,
+    cornerColor: '#ffffff',
+    cornerStrokeColor: '#818cf8',
+    cornerStyle: 'rect',
+    cornerSize: 8,
     transparentCorners: false,
-    borderColor: '#6366f1',
+    hasBorders: false,
+    borderColor: 'transparent',
+    borderScaleFactor: 0,
+    padding: 0,
     lockRotation: true,
     excludeFromExport: true,
     objectCaching: false,
   } as any)
   ;(cropFrame as any).data = { id: CROP_FRAME_ID, isCropFrame: true }
+  cropFrame.setControlsVisibility({ mtr: false })
 
+  // Grille 3x3 (règle des tiers) : 2 lignes verticales + 2 horizontales
+  // positionnées à 1/3 et 2/3 du cropFrame, synchronisées en temps réel.
+  const GRID_STROKE = 'rgba(255,255,255,0.35)'
+  const mkGridLine = (id: string) => {
+    const l = new Line([0, 0, 0, 0], {
+      stroke: GRID_STROKE,
+      strokeWidth: 1,
+      strokeUniform: true,
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+      objectCaching: false,
+    } as any)
+    ;(l as any).data = { id, isCropGrid: true }
+    return l
+  }
+  const gridV1 = mkGridLine('__crop_grid_v1__')
+  const gridV2 = mkGridLine('__crop_grid_v2__')
+  const gridH1 = mkGridLine('__crop_grid_h1__')
+  const gridH2 = mkGridLine('__crop_grid_h2__')
+
+  // Dim : 4 rectangles pleins (top/bottom/left/right) qui bordent pile le
+  // cropFrame. On évite le clipPath inversé dont le bord anti-aliasé créait
+  // un halo visible autour des pointillés.
+  const DIM_FILL = 'rgba(0,0,0,0.5)'
+  const DIM_FAR = 100000
+  const mkDim = (id: string) => {
+    const r = new Rect({
+      left: 0, top: 0, width: 0, height: 0,
+      originX: 'left', originY: 'top',
+      fill: DIM_FILL,
+      selectable: false, evented: false, excludeFromExport: true,
+      objectCaching: false,
+      strokeWidth: 0,
+    } as any)
+    ;(r as any).data = { id, isCropDim: true }
+    return r
+  }
+  const dimTop = mkDim('__crop_dim_top__')
+  const dimBottom = mkDim('__crop_dim_bottom__')
+  const dimLeft = mkDim('__crop_dim_left__')
+  const dimRight = mkDim('__crop_dim_right__')
+  // Compat : _state utilise encore un seul champ dimOverlay
+  const dimOverlay = dimTop
+
+  const syncDim = () => {
+    const fx = cropFrame.left ?? 0
+    const fy = cropFrame.top ?? 0
+    const fw = (cropFrame.width ?? 0) * (cropFrame.scaleX ?? 1)
+    const fh = (cropFrame.height ?? 0) * (cropFrame.scaleY ?? 1)
+    // Inset to leave the stroke fully visible (stroke is 2px screen with
+    // strokeUniform:true, so half-stroke in world units = 1 / zoom).
+    const z = canvas.getZoom() || 1
+    const p = 2 / z // half-stroke (1px) + 1px anti-alias guard in screen space
+    dimTop.set({ left: -DIM_FAR, top: -DIM_FAR, width: DIM_FAR * 2, height: DIM_FAR + fy - p })
+    dimBottom.set({ left: -DIM_FAR, top: fy + fh + p, width: DIM_FAR * 2, height: DIM_FAR })
+    dimLeft.set({ left: -DIM_FAR, top: fy - p, width: DIM_FAR + fx - p, height: fh + 2 * p })
+    dimRight.set({ left: fx + fw + p, top: fy - p, width: DIM_FAR, height: fh + 2 * p })
+    for (const r of [dimTop, dimBottom, dimLeft, dimRight]) {
+      r.setCoords()
+      ;(r as any).dirty = true
+    }
+    // Grille 3x3 : verticales à 1/3 et 2/3 en largeur, horizontales en hauteur
+    const v1x = fx + fw / 3
+    const v2x = fx + (fw * 2) / 3
+    const h1y = fy + fh / 3
+    const h2y = fy + (fh * 2) / 3
+    gridV1.set({ x1: v1x, y1: fy, x2: v1x, y2: fy + fh })
+    gridV2.set({ x1: v2x, y1: fy, x2: v2x, y2: fy + fh })
+    gridH1.set({ x1: fx, y1: h1y, x2: fx + fw, y2: h1y })
+    gridH2.set({ x1: fx, y1: h2y, x2: fx + fw, y2: h2y })
+    for (const l of [gridV1, gridV2, gridH1, gridH2]) {
+      l.setCoords()
+      ;(l as any).dirty = true
+    }
+    canvas.requestRenderAll()
+  }
+  syncDim()
+  cropFrame.on('moving', syncDim)
+  cropFrame.on('scaling', syncDim)
+  cropFrame.on('modified', syncDim)
+
+  canvas.add(dimTop, dimBottom, dimLeft, dimRight)
   canvas.add(cropFrame)
+  // Override les handles custom (cercles/pilules) par des carrés blancs
+  // style DAM. Doit être fait APRÈS canvas.add car object:added patche les
+  // controls avec les renderers custom par défaut du projet.
+  applySquareCropControls(cropFrame as any)
+  // Les lignes de grille sont ajoutées APRÈS le cropFrame pour être au-dessus
+  canvas.add(gridV1, gridV2, gridH1, gridH2)
   canvas.setActiveObject(cropFrame)
-  _state = { kind: 'image', canvas, image: img, cropFrame, snapshot }
+  _state = { kind: 'image', canvas, image: img, cropFrame, snapshot, dimOverlay }
   notify()
   canvas.requestRenderAll()
 }
@@ -316,6 +414,12 @@ function enterCropImage(img: FabricImage): void {
 function cancelCropImage(): void {
   if (!_state || _state.kind !== 'image') return
   const { canvas, image, cropFrame, snapshot } = _state
+  // Remove all dim rects + grid lines (tagged with isCropDim / isCropGrid)
+  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropDim || x.data?.isCropGrid)) {
+    canvas.remove(o)
+  }
+
+  // Restaurer l'image à son état exact d'avant l'entrée en mode crop
   ;(image as any).set({
     width: snapshot.width,
     height: snapshot.height,
@@ -344,17 +448,124 @@ function cancelCropImage(): void {
   canvas.requestRenderAll()
 }
 
+/**
+ * Toggle crop mask on/off pour une FabricImage.
+ * OFF : sauvegarde le crop dans data.savedCrop, affiche l'image complète.
+ * ON  : restaure le crop depuis data.savedCrop.
+ */
+export function toggleCropMask(img: FabricImage): void {
+  const canvas = img.canvas
+  if (!canvas) return
+  const d = (img as any).data ?? {}
+  const { w: natW, h: natH } = naturalSize(img)
+  if (natW <= 0 || natH <= 0) return
+
+  const hasSavedCrop = d.savedCrop != null
+  const sx = img.scaleX ?? 1
+  const sy = img.scaleY ?? 1
+  const origOX = ((img as any).originX as string) ?? 'left'
+  const origOY = ((img as any).originY as string) ?? 'top'
+
+  if (!hasSavedCrop) {
+    // Masque actif → le désactiver (montrer l'image complète)
+    const cropX = (img as any).cropX ?? 0
+    const cropY = (img as any).cropY ?? 0
+    const w = img.width ?? natW
+    const h = img.height ?? natH
+    if (cropX === 0 && cropY === 0 && w === natW && h === natH) return
+
+    // Sauvegarder le crop actuel + position
+    ;(img as any).data = {
+      ...d,
+      savedCrop: { cropX, cropY, width: w, height: h, left: img.left, top: img.top, originX: origOX, originY: origOY },
+    }
+
+    // Calculer le top-left visible du cadre cropé
+    img.setCoords()
+    const tl = (img as any).aCoords?.tl ?? { x: img.left ?? 0, y: img.top ?? 0 }
+
+    // Top-left de l'image complète = top-left visible - offset du crop
+    const fullLeft = tl.x - cropX * sx
+    const fullTop = tl.y - cropY * sy
+
+    ;(img as any).set({
+      left: fullLeft,
+      top: fullTop,
+      originX: 'left',
+      originY: 'top',
+      width: natW,
+      height: natH,
+      cropX: 0,
+      cropY: 0,
+    })
+  } else {
+    // Masque désactivé → restaurer le crop exactement comme avant
+    const saved = d.savedCrop
+    ;(img as any).set({
+      left: saved.left,
+      top: saved.top,
+      originX: saved.originX,
+      originY: saved.originY,
+      width: saved.width,
+      height: saved.height,
+      cropX: saved.cropX,
+      cropY: saved.cropY,
+    })
+
+    const { savedCrop: _, ...rest } = (img as any).data
+    ;(img as any).data = rest
+  }
+
+  ;(img as any).dirty = true
+  img.setCoords()
+  canvas.requestRenderAll()
+}
+
+/** Vérifie si une image a un crop masqué (savedCrop stocké) */
+export function hasCropMaskHidden(obj: FabricObject | null): boolean {
+  if (!obj) return false
+  return (obj as any).data?.savedCrop != null
+}
+
+/** Vérifie si une image a un crop actif */
+export function hasCropActive(obj: FabricObject | null): boolean {
+  if (!obj || !isFabricImage(obj)) return false
+  const cropX = (obj as any).cropX ?? 0
+  const cropY = (obj as any).cropY ?? 0
+  const { w: natW, h: natH } = naturalSize(obj as FabricImage)
+  const w = (obj as any).width ?? natW
+  const h = (obj as any).height ?? natH
+  return cropX !== 0 || cropY !== 0 || w !== natW || h !== natH
+}
+
 function applyCropImage(): void {
   if (!_state || _state.kind !== 'image') return
   const { canvas, image, cropFrame, snapshot } = _state
+  // Remove all dim rects + grid lines (tagged with isCropDim / isCropGrid)
+  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropDim || x.data?.isCropGrid)) {
+    canvas.remove(o)
+  }
   const sx = snapshot.scaleX || 1
   const sy = snapshot.scaleY || 1
   const fLeft = cropFrame.left ?? 0
   const fTop = cropFrame.top ?? 0
   const fW = (cropFrame.width ?? 0) * (cropFrame.scaleX ?? 1)
   const fH = (cropFrame.height ?? 0) * (cropFrame.scaleY ?? 1)
-  const imgLeft = image.left ?? 0
-  const imgTop = image.top ?? 0
+  const fAngle = (cropFrame.angle ?? 0)
+  const imgLeftRaw = image.left ?? 0
+  const imgTopRaw = image.top ?? 0
+
+  // Si le frame de crop est pivoté, on ramène le repère à un rect axis-aligned
+  // en faisant pivoter (imgLeft, imgTop) de -fAngle autour de (fLeft, fTop).
+  // L'image originale étant à angle 0, c'est équivalent à se placer dans le
+  // repère local du cropFrame.
+  const radInv = (-fAngle * Math.PI) / 180
+  const cosI = Math.cos(radInv)
+  const sinI = Math.sin(radInv)
+  const dxI = imgLeftRaw - fLeft
+  const dyI = imgTopRaw - fTop
+  const imgLeft = fLeft + dxI * cosI - dyI * sinI
+  const imgTop = fTop + dxI * sinI + dyI * cosI
 
   let newCropX = (fLeft - imgLeft) / sx
   let newCropY = (fTop - imgTop) / sy
@@ -377,10 +588,18 @@ function applyCropImage(): void {
     return
   }
 
-  // Le top-left visible du résultat = (fLeft, fTop). On calcule en origin
-  // 'left'/'top' puis on restaure l'origin d'origine via setPositionByOrigin.
-  const newVisLeft = imgLeft + newCropX * sx
-  const newVisTop = imgTop + newCropY * sy
+  // Top-left visible du résultat dans le repère local du cropFrame
+  // (axis-aligned), puis on rebascule dans le repère canvas en appliquant
+  // +fAngle autour de (fLeft, fTop) pour préserver la rotation.
+  const visLeftLocal = imgLeft + newCropX * sx
+  const visTopLocal = imgTop + newCropY * sy
+  const radFwd = (fAngle * Math.PI) / 180
+  const cosF = Math.cos(radFwd)
+  const sinF = Math.sin(radFwd)
+  const dxF = visLeftLocal - fLeft
+  const dyF = visTopLocal - fTop
+  const newVisLeft = fLeft + dxF * cosF - dyF * sinF
+  const newVisTop = fTop + dxF * sinF + dyF * cosF
   // IMPORTANT : Fabric v6 FabricImage `set({width})` recalcule scaleX pour
   // préserver la taille visuelle. On contourne en assignant directement les
   // propriétés, puis on restaure scaleX/scaleY explicitement APRÈS.
@@ -393,7 +612,7 @@ function applyCropImage(): void {
   ;(image as any).set({
     originX: 'left',
     originY: 'top',
-    angle: 0,
+    angle: fAngle,
     left: newVisLeft,
     top: newVisTop,
     opacity: snapshot.opacity,
@@ -522,7 +741,7 @@ function enterCropPattern(rect: FabricObject): void {
     originY: 'top',
     scaleX: ghostScaleX,
     scaleY: ghostScaleY,
-    opacity: 0.4,
+    opacity: 1,
     selectable: true,
     hasControls: false,
     lockRotation: true,
@@ -536,20 +755,85 @@ function enterCropPattern(rect: FabricObject): void {
   const idx = canvas.getObjects().indexOf(rect)
   if (idx >= 0) canvas.moveObjectTo(ghost, idx)
 
-  // Transformer le rect en cadre crop : fill quasi-transparent, contour dashed
+  // Transformer le rect en cadre crop : fill quasi-transparent, contour fin indigo
+  // Sauvegarder shadow/border pour restauration en cancel/apply (les objets IDML
+  // peuvent avoir un shadow ou un border qui créerait un halo visible).
+  ;(snapshot as any)._shadow = (rect as any).shadow
+  ;(snapshot as any)._borderColor = (rect as any).borderColor
+  ;(snapshot as any)._borderScaleFactor = (rect as any).borderScaleFactor
+  ;(snapshot as any)._padding = (rect as any).padding
   ;(rect as any).set({
     fill: 'rgba(255,255,255,0.001)',
-    stroke: '#6366f1',
-    strokeWidth: 2,
-    strokeDashArray: [6, 4],
+    stroke: '#818cf8',
+    strokeWidth: 1,
+    strokeDashArray: null,
     strokeUniform: true,
-    cornerColor: '#6366f1',
-    cornerStyle: 'circle',
+    strokeLineCap: 'butt',
+    shadow: null,
+    cornerColor: '#ffffff',
+    cornerStrokeColor: '#818cf8',
+    cornerStyle: 'rect',
+    cornerSize: 8,
     transparentCorners: false,
-    borderColor: '#6366f1',
+    hasBorders: false,
+    borderColor: 'transparent',
+    borderScaleFactor: 0,
+    padding: 0,
   })
   ;(rect as any).dirty = true
 
+  // Grille 3x3 (règle des tiers) synchronisée avec le rect
+  const GRID_STROKE_P = 'rgba(255,255,255,0.35)'
+  const mkGridLineP = (id: string) => {
+    const l = new Line([0, 0, 0, 0], {
+      stroke: GRID_STROKE_P,
+      strokeWidth: 1,
+      strokeUniform: true,
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+      objectCaching: false,
+    } as any)
+    ;(l as any).data = { id, isCropGrid: true }
+    return l
+  }
+  const pGridV1 = mkGridLineP('__crop_grid_v1__')
+  const pGridV2 = mkGridLineP('__crop_grid_v2__')
+  const pGridH1 = mkGridLineP('__crop_grid_h1__')
+  const pGridH2 = mkGridLineP('__crop_grid_h2__')
+
+  const syncGridP = () => {
+    const fx = (rect as any).left ?? 0
+    const fy = (rect as any).top ?? 0
+    const fw = ((rect as any).width ?? 0) * ((rect as any).scaleX ?? 1)
+    const fh = ((rect as any).height ?? 0) * ((rect as any).scaleY ?? 1)
+    const v1x = fx + fw / 3
+    const v2x = fx + (fw * 2) / 3
+    const h1y = fy + fh / 3
+    const h2y = fy + (fh * 2) / 3
+    pGridV1.set({ x1: v1x, y1: fy, x2: v1x, y2: fy + fh })
+    pGridV2.set({ x1: v2x, y1: fy, x2: v2x, y2: fy + fh })
+    pGridH1.set({ x1: fx, y1: h1y, x2: fx + fw, y2: h1y })
+    pGridH2.set({ x1: fx, y1: h2y, x2: fx + fw, y2: h2y })
+    for (const l of [pGridV1, pGridV2, pGridH1, pGridH2]) {
+      l.setCoords()
+      ;(l as any).dirty = true
+    }
+    canvas.requestRenderAll()
+  }
+  syncGridP()
+  rect.on('moving', syncGridP)
+  rect.on('scaling', syncGridP)
+  rect.on('modified', syncGridP)
+  // Stocke la référence pour un détachement ciblé dans cancel/apply
+  ;(rect as any)._cropSyncGridP = syncGridP
+
+  // Override les handles custom par des carrés blancs style DAM. On stocke
+  // les controls originaux pour les restaurer à cancel/apply.
+  ;(rect as any)._origCropControls = (rect as any).controls
+  applySquareCropControls(rect as any)
+
+  canvas.add(pGridV1, pGridV2, pGridH1, pGridH2)
   canvas.setActiveObject(rect)
   _state = { kind: 'pattern', canvas, rect, ghost, snapshot }
   notify()
@@ -559,6 +843,23 @@ function enterCropPattern(rect: FabricObject): void {
 function cancelCropPattern(): void {
   if (!_state || _state.kind !== 'pattern') return
   const { canvas, rect, ghost, snapshot } = _state
+  // Remove grid lines tagged with isCropGrid
+  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid)) {
+    canvas.remove(o)
+  }
+  // Détacher précisément les handlers de sync stockés lors de l'entrée
+  const syncGridP = (rect as any)._cropSyncGridP
+  if (syncGridP) {
+    ;(rect as any).off?.('moving', syncGridP)
+    ;(rect as any).off?.('scaling', syncGridP)
+    ;(rect as any).off?.('modified', syncGridP)
+    delete (rect as any)._cropSyncGridP
+  }
+  // Restaurer les controls originaux (circles/pilules) qu'on avait remplacés
+  if ((rect as any)._origCropControls) {
+    ;(rect as any).controls = (rect as any)._origCropControls
+    delete (rect as any)._origCropControls
+  }
   ;(rect as any).set({
     width: snapshot.width,
     height: snapshot.height,
@@ -574,6 +875,10 @@ function cancelCropPattern(): void {
     strokeWidth: snapshot.strokeWidth,
     strokeDashArray: snapshot.strokeDashArray,
     strokeUniform: snapshot.strokeUniform,
+    shadow: (snapshot as any)._shadow ?? null,
+    borderColor: (snapshot as any)._borderColor,
+    borderScaleFactor: (snapshot as any)._borderScaleFactor,
+    padding: (snapshot as any)._padding,
   })
   ;(rect as any).dirty = true
   ;(rect as any)._cacheCanvas = null
@@ -588,6 +893,24 @@ function cancelCropPattern(): void {
 function applyCropPattern(): void {
   if (!_state || _state.kind !== 'pattern') return
   const { canvas, rect, ghost, snapshot } = _state
+
+  // Remove grid lines tagged with isCropGrid
+  for (const o of canvas.getObjects().filter((x: any) => x.data?.isCropGrid)) {
+    canvas.remove(o)
+  }
+  // Détacher précisément les handlers de sync stockés lors de l'entrée
+  const syncGridP = (rect as any)._cropSyncGridP
+  if (syncGridP) {
+    ;(rect as any).off?.('moving', syncGridP)
+    ;(rect as any).off?.('scaling', syncGridP)
+    ;(rect as any).off?.('modified', syncGridP)
+    delete (rect as any)._cropSyncGridP
+  }
+  // Restaurer les controls originaux (circles/pilules) qu'on avait remplacés
+  if ((rect as any)._origCropControls) {
+    ;(rect as any).controls = (rect as any)._origCropControls
+    delete (rect as any)._origCropControls
+  }
 
   // Re-baker le scale du rect (l'utilisateur a pu le redimensionner via les
   // coins, ce qui modifie scaleX/scaleY plutôt que width/height).
@@ -630,6 +953,10 @@ function applyCropPattern(): void {
     strokeWidth: snapshot.strokeWidth,
     strokeDashArray: snapshot.strokeDashArray,
     strokeUniform: snapshot.strokeUniform,
+    shadow: (snapshot as any)._shadow ?? null,
+    borderColor: (snapshot as any)._borderColor,
+    borderScaleFactor: (snapshot as any)._borderScaleFactor,
+    padding: (snapshot as any)._padding,
   })
   // Restaure l'origin d'origine si différent (left/top reste le top-left visuel)
   if (snapshot.originX !== 'left' || snapshot.originY !== 'top') {

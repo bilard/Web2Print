@@ -1,80 +1,12 @@
-import { useEffect, useState } from 'react'
-import { ref, listAll, getDownloadURL } from 'firebase/storage'
-import { storage } from '@/lib/firebase/config'
+import { useState } from 'react'
 import { useEditorStore } from '@/stores/editor.store'
 import { ImageIcon, Type, Loader2, RefreshCw, X } from 'lucide-react'
-
-interface AssetItem {
-  name: string
-  url: string
-  fullPath: string
-}
-
-function useProjectAssets() {
-  const projectId = useEditorStore((s) => s.projectId)
-  const assetsVersion = useEditorStore((s) => s.assetsVersion)
-  const [images, setImages] = useState<AssetItem[]>([])
-  const [fonts, setFonts] = useState<AssetItem[]>([])
-  const [loading, setLoading] = useState(false)
-
-  const load = async () => {
-    if (!projectId) return
-    setLoading(true)
-    try {
-      const [imgResult, fontResult] = await Promise.allSettled([
-        listAll(ref(storage, `projects/${projectId}/links`)),
-        listAll(ref(storage, `projects/${projectId}/fonts`)),
-      ])
-
-      // Images
-      if (imgResult.status === 'fulfilled') {
-        const items = await Promise.all(
-          imgResult.value.items.map(async (item) => {
-            try {
-              const url = await getDownloadURL(item)
-              return { name: item.name, url, fullPath: item.fullPath }
-            } catch {
-              return { name: item.name, url: '', fullPath: item.fullPath }
-            }
-          })
-        )
-        setImages(items)
-      }
-
-      // Fonts
-      if (fontResult.status === 'fulfilled') {
-        const items = fontResult.value.items.map((item) => ({
-          name: item.name,
-          url: '',
-          fullPath: item.fullPath,
-        }))
-        setFonts(items)
-      }
-    } catch (err) {
-      console.warn('[Assets] Error loading:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { load() }, [projectId, assetsVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  return { images, fonts, loading, reload: load }
-}
-
-/** Parse font storage name: "Family__weight__style.ext" */
-function parseFontName(name: string): { family: string; weight: string; style: string } {
-  const base = name.replace(/\.[^.]+$/, '')
-  const parts = base.split('__')
-  return {
-    family: parts[0] || name,
-    weight: parts[1] || '400',
-    style: parts[2] || 'normal',
-  }
-}
+import { useProjectAssets, parseFontName, type AssetItem } from '@/features/assets/useProjectAssets'
 
 export function AssetsPanel() {
-  const { images, fonts, loading, reload } = useProjectAssets()
+  const projectId = useEditorStore((s) => s.projectId)
+  const assetsVersion = useEditorStore((s) => s.assetsVersion)
+  const { images, fonts, loading, reload } = useProjectAssets(projectId, { version: assetsVersion })
   const [tab, setTab] = useState<'images' | 'fonts'>('images')
   const [lightbox, setLightbox] = useState<AssetItem | null>(null)
 

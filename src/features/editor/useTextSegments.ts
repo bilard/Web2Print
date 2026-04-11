@@ -22,7 +22,7 @@ function styleKey(s: Pick<TextSegment, 'fill' | 'fontSize' | 'fontFamily' | 'fon
   return `${s.fill}|${s.fontSize}|${s.fontFamily}|${s.fontWeight}|${s.fontStyle}`
 }
 
-export function extractTextSegments(itext: IText): TextSegment[] {
+function extractTextSegments(itext: IText): TextSegment[] {
   const rawData = (itext as unknown as { data?: Record<string, unknown> }).data
   const templateText = rawData?.templateText as string | undefined
   const templateStyles = rawData?.templateStyles as CharStyleMap | undefined

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Shadow } from 'fabric'
 import type { Canvas } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
@@ -11,6 +11,7 @@ import { isInteracting } from './useAddObject'
  */
 export function useSyncPropertiesToCanvas(fabricRef: React.RefObject<Canvas | null>) {
   const { selectedObjectId, canvasObjects } = useEditorStore()
+  const snapshotTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const canvas = fabricRef.current
@@ -54,6 +55,9 @@ export function useSyncPropertiesToCanvas(fabricRef: React.RefObject<Canvas | nu
 
       fabricObj.setCoords()
       canvas.requestRenderAll()
+      // Debounced snapshot for undo history
+      if (snapshotTimer.current) clearTimeout(snapshotTimer.current)
+      snapshotTimer.current = setTimeout(() => { canvas.fire('object:modified', { target: fabricObj }) }, 300)
       return
     }
 
@@ -109,5 +113,9 @@ export function useSyncPropertiesToCanvas(fabricRef: React.RefObject<Canvas | nu
 
     fabricObj.setCoords()
     canvas.requestRenderAll()
+
+    // Debounced snapshot for undo history (300ms after last property change)
+    if (snapshotTimer.current) clearTimeout(snapshotTimer.current)
+    snapshotTimer.current = setTimeout(() => { canvas.fire('object:modified', { target: fabricObj }) }, 300)
   }, [canvasObjects, selectedObjectId]) // eslint-disable-line react-hooks/exhaustive-deps
 }

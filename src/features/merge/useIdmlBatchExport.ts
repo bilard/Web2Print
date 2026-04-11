@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useRef, useState } from 'react'
-import { useMergeStore, type MergeRow } from '@/stores/merge.store'
+import { useMergeStore } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { getIdmlBuffer } from '@/features/idml/idmlSource'
 import { extractIdmlContents, buildMultiPageIdml, type PatchOptions } from './idmlPatcher'

@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import PptxGenJS from 'pptxgenjs'
-import { Textbox, FabricImage, Rect, Ellipse } from 'fabric'
+import { Textbox } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'

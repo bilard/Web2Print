@@ -64,7 +64,7 @@ async function uploadSlideImages(
   }
 }
 
-export type PptxParseStep = 'idle' | 'parsing' | 'converting' | 'rendering' | 'done' | 'error'
+type PptxParseStep = 'idle' | 'parsing' | 'converting' | 'rendering' | 'done' | 'error'
 
 interface PptxParseState {
   step: PptxParseStep

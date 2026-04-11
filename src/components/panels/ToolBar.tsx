@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useUIStore, type ActiveTool } from '@/stores/ui.store'
-import { useNanoBanaStore } from '@/stores/nanobana.store'
-import type { NanoBanaTab } from '@/features/nanobana/types'
+import { useDamStore } from '@/stores/dam.store'
+import type { DamTab } from '@/features/dam/types'
 import { useAddObject } from '@/features/editor/useAddObject'
 import {
   MousePointer2,
@@ -25,10 +25,10 @@ const TOOL_SHAPE_MAP: Partial<Record<ActiveTool, string>> = {
   line: 'line',
 }
 
-const IMAGE_MENU_ITEMS: { id: NanoBanaTab; icon: typeof Search; label: string }[] = [
+const IMAGE_MENU_ITEMS: { id: DamTab; icon: typeof Search; label: string }[] = [
   { id: 'stock', icon: Search, label: 'Stock images' },
-  { id: 'gallery', icon: FolderOpen, label: 'Mes images' },
-  { id: 'upload', icon: Upload, label: 'Uploader' },
+  { id: 'my-images', icon: FolderOpen, label: 'Mes images' },
+  { id: 'recent', icon: Upload, label: 'Uploader' },
   { id: 'generate', icon: Sparkles, label: 'Générer (IA)' },
 ]
 
@@ -85,8 +85,8 @@ function ToolButton({ tool, icon: Icon, tooltip }: ToolButtonProps) {
 function ImageMenuButton() {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const { setRightPanels, rightPanels } = useUIStore()
-  const setTab = useNanoBanaStore((s) => s.setTab)
+  const setDamPickerOpen = useUIStore((s) => s.setDamPickerOpen)
+  const setActiveDamTab = useDamStore((s) => s.setActiveTab)
 
   useEffect(() => {
     if (!open) return
@@ -97,12 +97,9 @@ function ImageMenuButton() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const handleSelect = (tab: NanoBanaTab) => {
-    setTab(tab)
-    const updated = rightPanels.map((p) =>
-      p.id === 'images' ? { ...p, collapsed: false } : p
-    )
-    setRightPanels(updated)
+  const handleSelect = (tab: DamTab) => {
+    setActiveDamTab(tab)
+    setDamPickerOpen(true)
     setOpen(false)
   }
 

@@ -7,7 +7,7 @@ import {
 } from './assemblyLoader'
 import type { AssemblyFiles, LoadedFont, IdmlZipContents } from './assemblyLoader'
 
-export type UploadStep = 'idle' | 'detecting' | 'loading_fonts' | 'unzipping' | 'ready' | 'error'
+type UploadStep = 'idle' | 'detecting' | 'loading_fonts' | 'unzipping' | 'ready' | 'error'
 
 export interface IdmlUploadState {
   step: UploadStep

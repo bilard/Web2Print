@@ -1,26 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import {
   ChevronRight, X, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   ChevronsUp, ArrowUp, ArrowDown, ChevronsDown, FlipHorizontal, FlipVertical,
   AlignStartVertical, AlignCenterHorizontal, AlignEndHorizontal,
   AlignStartHorizontal, AlignCenterVertical, AlignEndVertical,
   Lock, Unlock, Link, Unlink, GalleryHorizontalEnd, GalleryVerticalEnd,
-  Eye, EyeOff, Copy, Trash2, Minimize2, ImagePlus,
+  Copy, Trash2, Minimize2, ImagePlus, ChevronDown,
+  Image as ImageIcon, FolderOpen, Heart, FolderHeart, Clock, Sparkles, Upload,
 } from 'lucide-react'
-import { Shadow, Gradient, Pattern, FabricImage } from 'fabric'
+import { Shadow, FabricImage } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
 import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'
 import { useObjectOperations } from '@/features/editor/useObjectOperations'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
+import { applyImageFill as applyImageFillUtil } from '@/features/editor/applyImageFill'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { GradientPicker, gradientToFabric, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
 import type { Canvas } from 'fabric'
 import type { GradientConfig } from '@/stores/editor.store'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useImageGallery } from '@/features/nanobana/useImageGallery'
+import { useUIStore } from '@/stores/ui.store'
+import { useDamStore } from '@/stores/dam.store'
+import type { DamTab } from '@/features/dam/types'
 import { ImageMaskSection } from './ImageMaskSection'
+
+const FILL_IMAGE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
+  { tab: 'stock', label: 'Stock', icon: ImageIcon },
+  { tab: 'my-images', label: 'Mes images', icon: FolderOpen },
+  { tab: 'favorites', label: 'Favoris', icon: Heart },
+  { tab: 'collections', label: 'Collections', icon: FolderHeart },
+  { tab: 'recent', label: 'Récents', icon: Clock },
+  { tab: 'generate', label: 'Nano Banana', icon: Sparkles },
+]
 
 // ── Image fill picker (galerie + upload) ────────────────────────────────────
 
@@ -31,8 +45,25 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
 }) {
   const galleryImages = useNanoBanaStore((s) => s.images)
   const { uploadToGallery } = useImageGallery()
+  const openDamPickerForFill = useUIStore((s) => s.openDamPickerForFill)
+  const setActiveDamTab = useDamStore((s) => s.setActiveTab)
   const [uploading, setUploading] = useState(false)
   const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set())
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Fermer le menu quand on clique ailleurs
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen])
 
   const applyUrl = (url: string, name?: string) => {
     const canvas = globalFabricCanvas
@@ -62,6 +93,12 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
     }
   }
 
+  const handlePickFromDam = (tab: DamTab) => {
+    setActiveDamTab(tab)
+    openDamPickerForFill(objId)
+    setMenuOpen(false)
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {fillImage && (
@@ -85,16 +122,62 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
           </button>
         </div>
       )}
-      <label className={`flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded cursor-pointer hover:bg-white/10 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-        <ImagePlus size={14} className="text-white/40" />
-        <span className="text-[11px] text-white/50">{uploading ? 'Upload en cours…' : fillImage ? 'Changer l\'image' : 'Importer une image'}</span>
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (!file) return
-          handleFileUpload(file)
-          e.target.value = ''
-        }} />
-      </label>
+      <div ref={menuRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          disabled={uploading}
+          className={`flex items-center gap-2 w-full px-3 py-2 bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          <ImagePlus size={14} className="text-white/40" />
+          <span className="text-[11px] text-white/50 flex-1 text-left">
+            {uploading ? 'Upload en cours…' : fillImage ? "Changer l'image" : 'Importer une image'}
+          </span>
+          <ChevronDown size={12} className="text-white/30" />
+        </button>
+        {menuOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-md shadow-xl overflow-hidden z-40">
+            {FILL_IMAGE_SOURCES.map((source) => {
+              const Icon = source.icon
+              return (
+                <button
+                  key={source.tab}
+                  type="button"
+                  onClick={() => handlePickFromDam(source.tab)}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-[#262626] hover:text-white transition-colors text-left"
+                >
+                  <Icon className="w-3.5 h-3.5 opacity-70" />
+                  <span>{source.label}</span>
+                </button>
+              )
+            })}
+            <div className="h-px bg-white/10" />
+            <button
+              type="button"
+              onClick={() => {
+                fileInputRef.current?.click()
+                setMenuOpen(false)
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-[#262626] hover:text-white transition-colors text-left"
+            >
+              <Upload className="w-3.5 h-3.5 opacity-70" />
+              <span>Depuis l'ordinateur</span>
+            </button>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            handleFileUpload(file)
+            e.target.value = ''
+          }}
+        />
+      </div>
       {galleryImages.filter((img) => img.url && !brokenIds.has(img.id)).length > 0 && (
         <>
           <p className="text-[10px] text-white/30 uppercase tracking-wider">Galerie</p>
@@ -381,33 +464,9 @@ export function PropertiesPanel() {
     syncToStore(canvas)
   }
 
+  // Délégué à l'util partagé (utilisé aussi par DamImageCard en mode "fill")
   const applyImageFill = (fObj: any, canvas: Canvas, url: string) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const objW = (fObj.width ?? 100) as number
-      const objH = (fObj.height ?? 100) as number
-      const scaleX = objW / img.width
-      const scaleY = objH / img.height
-      const scale = Math.max(scaleX, scaleY)
-      const offsetX = (objW - img.width * scale) / 2
-      const offsetY = (objH - img.height * scale) / 2
-
-      const pattern = new Pattern({
-        source: img,
-        repeat: 'no-repeat',
-        patternTransform: [scale, 0, 0, scale, offsetX, offsetY],
-      })
-      fObj.set('fill', pattern)
-      fObj.data = { ...fObj.data, fillImage: url }
-      fObj.dirty = true
-      fObj._cacheCanvas = null
-      fObj.setCoords()
-      canvas.fire('object:modified', { target: fObj })
-      canvas.renderAll()
-      syncToStore(canvas)
-    }
-    img.src = url
+    applyImageFillUtil(fObj, canvas, url)
   }
 
   return (

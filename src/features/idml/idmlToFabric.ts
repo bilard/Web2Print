@@ -7,7 +7,7 @@
  * Polygons use svgPath (with Bézier curves) + scaleX/Y props so that the
  * path shape stays in local coordinates while scale/rotation are applied by Fabric.
  */
-import { Rect, Ellipse, Line, Textbox, Path, Group, Shadow, FabricImage } from 'fabric'
+import { Rect, Ellipse, Line, Textbox, Path, Shadow, FabricImage } from 'fabric'
 import type { FabricObject } from 'fabric'
 import type { IdmlObject, IdmlColor, IdmlParagraph } from './idmlParser'
 import { resolveAvailableFont } from '@/features/assets/useFonts'
@@ -18,7 +18,7 @@ import { resolveAvailableFont } from '@/features/assets/useFonts'
  * This is needed because Fabric.js stylesToArray merges consecutive chars
  * with different charSpacing (not compared in hasStyleChanged), losing the values.
  */
-export function extractCharSpacingMap(
+function extractCharSpacingMap(
   styles: Record<number, Record<number, Record<string, unknown>>>,
 ): Record<string, number> | null {
   const map: Record<string, number> = {}
@@ -248,7 +248,7 @@ function makeData(obj: IdmlObject, name?: string) {
   }
 }
 
-export function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | null {
+function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | null {
   const displayW = obj.width * obj.scaleX
   const displayH = obj.height * obj.scaleY
   const angle = obj.rotation
@@ -417,7 +417,9 @@ export function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject
               stroke: '', strokeWidth: 0,
               opacity: obj.opacity,
               shadow: makeShadow(obj),
-              data: { ...makeData(obj, 'TextFrameBg'), type: 'path' },
+              // ID Fabric distinct du Textbox pour éviter les doublons dans le panneau Calques.
+              // `idmlRefId` permet à l'exporter de retrouver l'élément IDML d'origine.
+              data: { ...makeData(obj, 'TextFrameBg'), type: 'path', id: `${obj.id}__bg`, idmlRefId: obj.id },
             })
             results.push(bgShape)
           } catch (e) {
@@ -433,7 +435,8 @@ export function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject
             stroke: '', strokeWidth: 0,
             opacity: obj.opacity,
             shadow: makeShadow(obj),
-            data: { ...makeData(obj, 'TextFrameBg'), type: 'rect' },
+            // Voir commentaire ci-dessus : id distinct + idmlRefId pour le mapping export.
+            data: { ...makeData(obj, 'TextFrameBg'), type: 'rect', id: `${obj.id}__bg`, idmlRefId: obj.id },
           })
           results.push(bgRect)
         }
@@ -834,7 +837,14 @@ export async function idmlToFabricObjects(
                 localCx: obj.localCenterX,
                 localCy: obj.localCenterY,
                 idmlPageOffsetX: obj.idmlPageOffsetX,
-                idmlPageOffsetY: obj.idmlPageOffsetY
+                idmlPageOffsetY: obj.idmlPageOffsetY,
+                // État initial du crop (en pixels source) pour permettre à
+                // l'export IDML de calculer un shift relatif si l'utilisateur
+                // recadre l'image.
+                idmlCropX0: cropX,
+                idmlCropY0: cropY,
+                idmlCropW0: cropW,
+                idmlCropH0: cropH,
               },
             })
             result.push(img)

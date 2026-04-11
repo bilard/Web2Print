@@ -9,7 +9,6 @@ import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } fr
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
 import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
-import type { FormulaConfig } from '@/stores/merge.store'
 import type { ExcelSheet, CellValue } from '@/features/excel/types'
 
 /** Cache des URLs d'assets du projet */

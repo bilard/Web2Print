@@ -8,7 +8,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 
-export interface IdmlSourceData {
+interface IdmlSourceData {
   rawBuffer: ArrayBuffer
   fileName: string
   projectId: string | null
@@ -24,10 +24,6 @@ export function setGlobalIdmlSource(
 ): void {
   globalIdmlSource = { rawBuffer: buffer.slice(0), fileName, projectId }
   console.log(`[IDML Source] Stocké en mémoire: "${fileName}" (${(buffer.byteLength / 1024).toFixed(1)} KB)`)
-}
-
-export function clearGlobalIdmlSource(): void {
-  globalIdmlSource = null
 }
 
 /** Upload le fichier IDML vers Firebase Storage pour persistance entre sessions */

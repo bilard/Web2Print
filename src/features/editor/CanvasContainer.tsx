@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Canvas, Point, IText, FabricImage } from 'fabric'
 import { useCanvas } from './useCanvas'
 import { setIsInteracting } from './useAddObject'
+import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { useZoom, usePan } from './useZoom'
 import { useGrid } from './useGrid'
 import { useSyncPropertiesToCanvas } from './useSelectedObject'
@@ -18,11 +19,11 @@ import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
-import { FileText } from 'lucide-react'
 
 export let globalFabricCanvas: Canvas | null = null
 export let globalUndo: (() => void) | null = null
 export let globalRedo: (() => void) | null = null
+export let globalSnapshot: (() => void) | null = null
 export let globalFitCanvas: (() => void) | null = null
 
 interface ContextMenuState { x: number; y: number }
@@ -145,7 +146,7 @@ export function CanvasContainer() {
   useSnapGuides(fabricRef, setSnapGuides)
   useImageMask(fabricRef)
 
-  const { undo, redo } = useHistory(fabricRef)
+  const { undo, redo, snapshot } = useHistory(fabricRef)
   useAutoSave(fabricRef)
   useLoadCanvas(fabricRef)
 
@@ -163,6 +164,69 @@ export function CanvasContainer() {
     setDragOver(false)
     const canvas = fabricRef.current
     if (!canvas) return
+
+    // Font drop — apply font to the text object under the cursor
+    const fontData = e.dataTransfer.getData('application/x-asset-font')
+    if (fontData) {
+      try {
+        const { family, weight, style, url } = JSON.parse(fontData) as {
+          family: string
+          weight: string
+          style: string
+          url: string
+        }
+        // Convert drop position (screen) → document coords
+        const rect = containerRef.current?.getBoundingClientRect()
+        const vt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+        const zoom = canvas.getZoom()
+        const dropX = rect ? ((e.clientX - rect.left) - vt[4]) / zoom : 0
+        const dropY = rect ? ((e.clientY - rect.top) - vt[5]) / zoom : 0
+
+        // Find first text object under the drop point (prefer top-most → iterate reversed)
+        const textTypes = new Set(['i-text', 'textbox', 'text'])
+        const objs = canvas.getObjects()
+        let target: (typeof objs)[number] | undefined
+        for (let i = objs.length - 1; i >= 0; i--) {
+          const obj = objs[i]
+          if (!(obj instanceof IText) && !textTypes.has(obj.type as string)) continue
+          const r = obj.getBoundingRect()
+          if (dropX >= r.left && dropX <= r.left + r.width && dropY >= r.top && dropY <= r.top + r.height) {
+            target = obj
+            break
+          }
+        }
+        if (!target) {
+          console.info('[Canvas] Font drop: no text object under cursor')
+          return
+        }
+
+        // Load font file via FontFace API, then apply
+        if (url) {
+          try {
+            const face = new FontFace(family, `url(${url})`, {
+              weight: weight || '400',
+              style: style || 'normal',
+            })
+            await face.load()
+            ;(document.fonts as any).add(face)
+            registerDynamicFontVariant(family, weight || '400', style || 'normal', '')
+          } catch (loadErr) {
+            console.warn('[Canvas] FontFace load failed:', loadErr)
+          }
+        }
+
+        ;(target as any).set({
+          fontFamily: family,
+          fontWeight: parseInt(weight || '400', 10) || weight || 400,
+          fontStyle: style || 'normal',
+        })
+        canvas.requestRenderAll()
+        syncToStore(canvas)
+      } catch (err) {
+        console.warn('[Canvas] Drop font error:', err)
+      }
+      return
+    }
 
     const data = e.dataTransfer.getData('application/x-asset-image')
     if (!data) return
@@ -209,7 +273,8 @@ export function CanvasContainer() {
   useEffect(() => {
     globalUndo = undo
     globalRedo = redo
-    return () => { globalUndo = null; globalRedo = null }
+    globalSnapshot = snapshot
+    return () => { globalUndo = null; globalRedo = null; globalSnapshot = null }
   }, [undo, redo])
 
   // Compute guide positions in screen coords
@@ -221,7 +286,10 @@ export function CanvasContainer() {
       ref={containerRef}
       className={`w-full h-full relative overflow-hidden bg-[#111] ${dragOver ? 'ring-2 ring-inset ring-indigo-500/50' : ''}`}
       onDragOver={(e) => {
-        if (e.dataTransfer.types.includes('application/x-asset-image')) {
+        if (
+          e.dataTransfer.types.includes('application/x-asset-image') ||
+          e.dataTransfer.types.includes('application/x-asset-font')
+        ) {
           e.preventDefault()
           e.dataTransfer.dropEffect = 'copy'
           setDragOver(true)

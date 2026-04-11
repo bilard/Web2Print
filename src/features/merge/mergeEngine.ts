@@ -233,7 +233,7 @@ export function isImageUrl(value: string): boolean {
 /**
  * Sanitize un nom de fichier en remplaçant les caractères interdits.
  */
-export function sanitizeFileName(name: string): string {
+function sanitizeFileName(name: string): string {
   const sanitized = name.replace(/[/\\:*?"<>|]/g, '_').trim()
   return sanitized || 'export'
 }

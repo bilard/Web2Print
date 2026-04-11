@@ -53,10 +53,6 @@ function variantLabel(weight: string, style: string): string {
   return label
 }
 
-export function registerDynamicFont(family: string) {
-  dynamicFontFamilies.add(family)
-}
-
 export function registerDynamicFontVariant(family: string, weight: string, style: string, fileName: string, customLabel?: string) {
   dynamicFontFamilies.add(family)
   if (!dynamicFontVariants.has(family)) dynamicFontVariants.set(family, [])
@@ -125,24 +121,6 @@ export function resolveAvailableFont(family: string): string {
 
   // 4. No match found — return as-is, browser will use fallback
   return family
-}
-
-/**
- * Check if a font family (or a close match) is loaded in dynamic fonts.
- */
-export function hasDynamicFont(family: string): boolean {
-  if (!family) return false
-  if (dynamicFontFamilies.has(family)) return true
-  const norm = family.toLowerCase().replace(/[-_]/g, ' ').trim()
-  for (const f of dynamicFontFamilies) {
-    const normF = f.toLowerCase().replace(/[-_]/g, ' ').trim()
-    if (normF === norm) return true
-  }
-  const base = normalizeFontBase(family)
-  for (const f of dynamicFontFamilies) {
-    if (normalizeFontBase(f) === base) return true
-  }
-  return false
 }
 
 export function getAllFonts(): FontDef[] {

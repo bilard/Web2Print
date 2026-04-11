@@ -9,7 +9,7 @@
  */
 import { Rect, Ellipse, Line, Textbox, FabricImage, Triangle, Gradient, Shadow } from 'fabric'
 import type { FabricObject } from 'fabric'
-import type { PptxSlide, PptxElement, PptxShape, PptxPicture, PptxColor, PptxTextBody, PptxParagraph, PptxGradient, PptxShadow } from './pptxParser'
+import type { PptxSlide, PptxShape, PptxPicture, PptxColor, PptxTextBody, PptxParagraph, PptxGradient, PptxShadow } from './pptxParser'
 
 // ─── Helpers de conversion ────────────────────────────────────────────────────
 

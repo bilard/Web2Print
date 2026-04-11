@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { Canvas } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
+import { syncToStore } from './useAddObject'
 
 const MAX_HISTORY = 50
 
@@ -8,11 +9,11 @@ export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
   const { setCanUndo, setCanRedo } = useEditorStore()
   const stack = useRef<string[]>([])
   const cursor = useRef<number>(-1)
-  const ignoreNext = useRef(false)
+  const isRestoring = useRef(false)
 
   const snapshot = useCallback(() => {
     const canvas = fabricRef.current
-    if (!canvas) return
+    if (!canvas || isRestoring.current) return
     const json = JSON.stringify(canvas.toObject(['data']))
     // Drop redo branch
     stack.current = stack.current.slice(0, cursor.current + 1)
@@ -27,9 +28,11 @@ export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
     const canvas = fabricRef.current
     if (!canvas || cursor.current <= 0) return
     cursor.current--
-    ignoreNext.current = true
+    isRestoring.current = true
     await canvas.loadFromJSON(JSON.parse(stack.current[cursor.current]))
     canvas.requestRenderAll()
+    syncToStore(canvas)
+    isRestoring.current = false
     setCanUndo(cursor.current > 0)
     setCanRedo(true)
   }, [fabricRef, setCanUndo, setCanRedo])
@@ -38,9 +41,11 @@ export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
     const canvas = fabricRef.current
     if (!canvas || cursor.current >= stack.current.length - 1) return
     cursor.current++
-    ignoreNext.current = true
+    isRestoring.current = true
     await canvas.loadFromJSON(JSON.parse(stack.current[cursor.current]))
     canvas.requestRenderAll()
+    syncToStore(canvas)
+    isRestoring.current = false
     setCanUndo(true)
     setCanRedo(cursor.current < stack.current.length - 1)
   }, [fabricRef, setCanUndo, setCanRedo])
@@ -54,7 +59,7 @@ export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
     snapshot()
 
     const onChange = () => {
-      if (ignoreNext.current) { ignoreNext.current = false; return }
+      if (isRestoring.current) return
       snapshot()
     }
 

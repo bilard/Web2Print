@@ -12,7 +12,7 @@ import { resolveText } from './mergeEngine'
 
 const PH_RE = /\{\{([^}]+)\}\}/g
 
-export interface PatchBindings {
+interface PatchBindings {
   /** objectId → { property: columnKey } */
   [objectId: string]: Record<string, string>
 }
@@ -26,7 +26,7 @@ export interface PatchOptions {
   bindings?: PatchBindings
 }
 
-export interface PatchedIdml {
+interface PatchedIdml {
   stories: Record<string, string>
   spreads: Record<string, string>
   /** New image files to inject: linkPath → Blob */
@@ -281,7 +281,7 @@ function patchGraphicResources(
  * Fonction principale : patche un ZIP IDML complet pour une ligne de données.
  * Retourne les contenus XML patchés, prêts pour re-parse ou export.
  */
-export function patchIdmlForRow(
+function patchIdmlForRow(
   contents: IdmlZipContents,
   options: PatchOptions,
 ): PatchedIdml {
@@ -310,7 +310,7 @@ export function patchIdmlForRow(
  * Suffixe tous les Self IDs et leurs références dans un spread + stories
  * pour éviter les collisions dans un IDML multi-pages.
  */
-export function suffixIds(xml: string, suffix: string): string {
+function suffixIds(xml: string, suffix: string): string {
   // Suffix Self="..." attributes (catches ALL elements including Story, TextFrame, Page, etc.)
   let result = xml.replace(/Self="([^"]+)"/g, `Self="$1${suffix}"`)
   // Suffix ParentStory="..." references (TextFrame → Story link)

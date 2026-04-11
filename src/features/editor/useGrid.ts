@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Canvas, Line, StaticCanvas } from 'fabric'
+import { Canvas, Line } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 
 const GRID_SIZE = 20

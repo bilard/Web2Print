@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Rect, Ellipse, IText, Textbox, Line, Triangle, Polygon, FabricObject, Shadow, Gradient, Group, Pattern } from 'fabric'
+import { Rect, Ellipse, IText, Textbox, Line, Triangle, Polygon, FabricObject, Gradient, Group, Pattern } from 'fabric'
 import { globalFabricCanvas } from './CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import type { CanvasObjectProps, ShadowConfig, GradientConfig } from '@/stores/editor.store'

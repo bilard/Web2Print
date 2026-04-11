@@ -191,15 +191,68 @@ export function applyCustomControls() {
   proto.padding = 0
 }
 
-/** Apply custom controls to a specific canvas — call after canvas creation */
-export function applyCustomControlsToCanvas(canvas: { getObjects: () => any[] }) {
-  // Patch existing objects
-  for (const obj of canvas.getObjects()) {
-    if (obj.controls) patchControls(obj.controls)
-  }
-}
-
 /** Apply custom controls to a single Fabric object */
 export function applyCustomControlsToObject(obj: { controls?: Record<string, Control> }) {
   if (obj.controls) patchControls(obj.controls)
+}
+
+// ── Square handles (for the crop frame — mimics DAM crop overlay) ───────────
+
+const CROP_HANDLE_SIZE = 8
+const CROP_HANDLE_FILL = '#ffffff'
+const CROP_HANDLE_STROKE = '#818cf8' // indigo-400
+
+/** Render a small white square with an indigo-400 border (crop handle) */
+function renderSquareHandle(
+  this: Control,
+  ctx: CanvasRenderingContext2D,
+  left: number,
+  top: number,
+  _styleOverride: any,
+  _fabricObject: InteractiveFabricObject,
+) {
+  ctx.save()
+  ctx.translate(left, top)
+
+  const s = CROP_HANDLE_SIZE
+  ctx.fillStyle = CROP_HANDLE_FILL
+  ctx.fillRect(-s / 2, -s / 2, s, s)
+
+  ctx.strokeStyle = CROP_HANDLE_STROKE
+  ctx.lineWidth = 1
+  ctx.strokeRect(-s / 2, -s / 2, s, s)
+
+  ctx.restore()
+}
+
+/**
+ * Patche l'objet pour qu'il utilise des handles carrés blancs (style DAM).
+ * Clone les controls pour ne pas affecter les autres objets qui partagent
+ * les controls par défaut du prototype Fabric.
+ */
+export function applySquareCropControls(obj: {
+  controls?: Record<string, Control>
+}) {
+  if (!obj.controls) return
+  const original = obj.controls
+  // Shallow clone of the controls map + clone of each Control instance so
+  // `render` override reste propre à ce cropFrame.
+  const cloned: Record<string, Control> = {}
+  for (const key of Object.keys(original)) {
+    const src = original[key] as any
+    const dst = Object.create(Object.getPrototypeOf(src))
+    Object.assign(dst, src)
+    cloned[key] = dst
+  }
+  obj.controls = cloned
+
+  for (const key of ['tl', 'tr', 'bl', 'br', 'mt', 'mb', 'ml', 'mr']) {
+    if (cloned[key]) {
+      cloned[key].render = renderSquareHandle
+      cloned[key].sizeX = CROP_HANDLE_SIZE
+      cloned[key].sizeY = CROP_HANDLE_SIZE
+    }
+  }
+  // Supprime la poignée de rotation (le crop n'a pas de rotation)
+  if (cloned.mtr) delete cloned.mtr
 }
