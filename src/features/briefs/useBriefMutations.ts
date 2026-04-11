@@ -4,12 +4,14 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
+import { ref as storageRef, listAll, deleteObject } from 'firebase/storage'
+import { db, storage } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
-import type { Brief, BriefStep } from './types'
+import type { Brief } from './types'
 import type { ClientFormField } from '@/features/taxonomy/types'
 
 interface CreateBriefInput {
@@ -21,11 +23,6 @@ interface CreateBriefInput {
 interface UpdateBriefInput {
   briefId: string
   patch: Partial<Omit<Brief, 'id' | 'ownerId' | 'createdAt'>>
-}
-
-interface AdvanceStepInput {
-  briefId: string
-  step: BriefStep
 }
 
 export function useCreateBrief() {
@@ -74,11 +71,35 @@ export function useUpdateBrief() {
   })
 }
 
+/**
+ * Supprime récursivement tous les fichiers sous un préfixe Storage.
+ * Parcourt les sous-dossiers via listAll (Firebase Web SDK n'expose pas de
+ * suppression récursive native).
+ */
+async function deleteStorageFolder(path: string): Promise<void> {
+  const folderRef = storageRef(storage, path)
+  const listing = await listAll(folderRef)
+  await Promise.all([
+    ...listing.items.map((item) => deleteObject(item).catch(() => undefined)),
+    ...listing.prefixes.map((prefix) => deleteStorageFolder(prefix.fullPath)),
+  ])
+}
+
 export function useDeleteBrief() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (briefId: string) => {
+      // 1. Supprimer la sous-collection Firestore briefs/{id}/images
+      const imagesSnap = await getDocs(
+        collection(db, 'briefs', briefId, 'images'),
+      )
+      await Promise.all(imagesSnap.docs.map((d) => deleteDoc(d.ref)))
+
+      // 2. Supprimer tous les fichiers Storage sous briefs/{id}/
+      await deleteStorageFolder(`briefs/${briefId}`)
+
+      // 3. Supprimer le document brief lui-même
       await deleteDoc(doc(db, 'briefs', briefId))
     },
     onSuccess: () => {
@@ -87,20 +108,3 @@ export function useDeleteBrief() {
   })
 }
 
-export function useAdvanceBriefStep() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({ briefId, step }: AdvanceStepInput) => {
-      const ref = doc(db, 'briefs', briefId)
-      await updateDoc(ref, {
-        currentStep: step,
-        updatedAt: serverTimestamp(),
-      })
-    },
-    onSuccess: (_d, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['brief', vars.briefId] })
-      queryClient.invalidateQueries({ queryKey: ['briefs'] })
-    },
-  })
-}

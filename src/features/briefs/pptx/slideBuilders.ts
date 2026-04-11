@@ -2,6 +2,7 @@ import type pptxgen from 'pptxgenjs'
 import type { SlideSpec, CartItem } from '@/features/briefs/types'
 import type { Branding } from './branding'
 import { computeSubtotal, computeTotal } from '@/features/briefs/cart/cartMath'
+import { fitContain, type FetchedImage } from './imageFetcher'
 
 type Pres = InstanceType<typeof pptxgen>
 
@@ -9,8 +10,25 @@ export interface SlideContext {
   branding: Branding
   cart: CartItem[]
   discount: { type: 'percent' | 'amount'; value: number } | undefined
-  /** id (`hero` ou `product_${sku}`) → data URL base64 */
-  images: Map<string, string>
+  /** id (`hero` ou `product_${sku}`) → image téléchargée avec dimensions naturelles */
+  images: Map<string, FetchedImage>
+}
+
+/**
+ * Ajoute une image dans une boîte en préservant son ratio (letterbox centré).
+ * À utiliser à la place de `slide.addImage({ sizing })` qui a un comportement
+ * non fiable selon les versions de PptxGenJS et les clients Office.
+ */
+function addContainedImage(
+  slide: pptxgen.Slide,
+  img: FetchedImage,
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+) {
+  const { x, y, w, h } = fitContain(img.naturalWidth, img.naturalHeight, boxX, boxY, boxW, boxH)
+  slide.addImage({ data: img.data, x, y, w, h })
 }
 
 const FONT = 'Helvetica'
@@ -29,7 +47,7 @@ function addBrandHeader(slide: pptxgen.Slide, ctx: SlideContext) {
     line: { color: ctx.branding.primaryColor },
   })
   if (ctx.branding.logoUrl && ctx.images.has('logo')) {
-    slide.addImage({ data: ctx.images.get('logo'), x: 0.3, y: 0.05, w: 0.5, h: 0.25 })
+    addContainedImage(slide, ctx.images.get('logo')!, 0.3, 0.05, 0.5, 0.25)
   }
   slide.addText(ctx.branding.companyName, {
     x: 0.9,
@@ -42,12 +60,12 @@ function addBrandHeader(slide: pptxgen.Slide, ctx: SlideContext) {
   })
 }
 
-export function buildCoverSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'cover' }>, ctx: SlideContext) {
+function buildCoverSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'cover' }>, ctx: SlideContext) {
   const slide = pres.addSlide()
   slide.background = { color: '0F0F0F' }
   const hero = ctx.images.get('hero')
   if (hero) {
-    slide.addImage({ data: hero, x: 0, y: 0, w: '100%', h: '100%', sizing: { type: 'cover', w: 13.33, h: 7.5 } })
+    addContainedImage(slide, hero, 0, 0, 13.33, 7.5)
     // overlay sombre
     slide.addShape('rect', { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 40 }, line: { color: '000000' } })
   }
@@ -63,7 +81,7 @@ export function buildCoverSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'co
   })
 }
 
-export function buildContextSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'context' }>, ctx: SlideContext) {
+function buildContextSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'context' }>, ctx: SlideContext) {
   const slide = pres.addSlide()
   addBrandHeader(slide, ctx)
   slide.addText(spec.title, { x: 0.6, y: 0.7, w: 12, h: 0.8, ...TITLE_OPTS, color: '111111' })
@@ -73,7 +91,7 @@ export function buildContextSlide(pres: Pres, spec: Extract<SlideSpec, { type: '
   )
 }
 
-export function buildProductGridSlide(
+function buildProductGridSlide(
   pres: Pres,
   spec: Extract<SlideSpec, { type: 'product_grid' }>,
   ctx: SlideContext,
@@ -88,20 +106,32 @@ export function buildProductGridSlide(
     '1x3': { cols: 3, rows: 1 },
   }
   const { cols, rows } = layouts[spec.layout]
-  const cellW = 12 / cols
-  const cellH = (rows === 1 ? 4.5 : 5) / rows
+  // Cellules carrées centrées dans la zone disponible (12 large × 5.5 haut)
+  const availW = 12
+  const availH = 5.5
+  const gap = 0.25
+  const labelH = 0.4
+  // Taille d'une cellule image carrée maximisant la zone
+  const cellSize = Math.min(
+    (availW - gap * (cols - 1)) / cols,
+    (availH - gap * (rows - 1) - labelH) / rows,
+  )
+  const totalW = cellSize * cols + gap * (cols - 1)
+  const totalH = (cellSize + labelH) * rows + gap * (rows - 1)
+  const offsetX = 0.6 + (availW - totalW) / 2
+  const offsetY = 1.7 + (availH - totalH) / 2
 
   spec.productSkus.slice(0, cols * rows).forEach((sku, idx) => {
     const col = idx % cols
     const row = Math.floor(idx / cols)
-    const x = 0.6 + col * cellW + 0.1
-    const y = 1.7 + row * cellH + 0.1
-    const w = cellW - 0.2
-    const h = cellH - 0.7
+    const x = offsetX + col * (cellSize + gap)
+    const y = offsetY + row * (cellSize + labelH + gap)
+    const w = cellSize
+    const h = cellSize
 
     const img = ctx.images.get(`product_${sku}`)
     if (img) {
-      slide.addImage({ data: img, x, y, w, h, sizing: { type: 'cover', w, h } })
+      addContainedImage(slide, img, x, y, w, h)
     } else {
       slide.addShape('rect', { x, y, w, h, fill: { color: 'EEEEEE' }, line: { color: 'DDDDDD' } })
     }
@@ -119,7 +149,7 @@ export function buildProductGridSlide(
   })
 }
 
-export function buildProductFocusSlide(
+function buildProductFocusSlide(
   pres: Pres,
   spec: Extract<SlideSpec, { type: 'product_focus' }>,
   ctx: SlideContext,
@@ -128,7 +158,7 @@ export function buildProductFocusSlide(
   addBrandHeader(slide, ctx)
   const img = ctx.images.get(`product_${spec.productSku}`)
   if (img) {
-    slide.addImage({ data: img, x: 0.6, y: 1.0, w: 6, h: 6, sizing: { type: 'cover', w: 6, h: 6 } })
+    addContainedImage(slide, img, 0.6, 1.0, 6, 6)
   } else {
     slide.addShape('rect', { x: 0.6, y: 1.0, w: 6, h: 6, fill: { color: 'EEEEEE' }, line: { color: 'DDDDDD' } })
   }
@@ -139,7 +169,7 @@ export function buildProductFocusSlide(
   )
 }
 
-export function buildBudgetSlide(
+function buildBudgetSlide(
   pres: Pres,
   spec: Extract<SlideSpec, { type: 'budget' }>,
   ctx: SlideContext,
@@ -201,7 +231,7 @@ export function buildBudgetSlide(
   }
 }
 
-export function buildCtaSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'cta' }>, ctx: SlideContext) {
+function buildCtaSlide(pres: Pres, spec: Extract<SlideSpec, { type: 'cta' }>, ctx: SlideContext) {
   const slide = pres.addSlide()
   slide.background = { color: ctx.branding.primaryColor }
   slide.addText(spec.title, { x: 0.6, y: 2.5, w: 12, h: 1.2, ...TITLE_OPTS, fontSize: 40, color: 'FFFFFF', align: 'center' })

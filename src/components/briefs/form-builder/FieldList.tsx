@@ -13,7 +13,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Plus } from 'lucide-react'
+import { GripVertical, Plus, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import type { ClientFormField, ClientFormFieldType } from '@/features/taxonomy/types'
 import { FIELD_TYPE_REGISTRY, ALL_FIELD_TYPES, createEmptyField } from './fieldTypes'
@@ -24,6 +24,7 @@ interface Props {
   onSelect: (id: string) => void
   onReorder: (fields: ClientFormField[]) => void
   onAdd: (field: ClientFormField) => void
+  onToggleHidden: (id: string) => void
 }
 
 export function FieldList({
@@ -32,6 +33,7 @@ export function FieldList({
   onSelect,
   onReorder,
   onAdd,
+  onToggleHidden,
 }: Props) {
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
@@ -66,6 +68,7 @@ export function FieldList({
                 field={field}
                 selected={field.id === selectedFieldId}
                 onSelect={() => onSelect(field.id)}
+                onToggleHidden={() => onToggleHidden(field.id)}
               />
             ))}
           </SortableContext>
@@ -106,10 +109,12 @@ function SortableRow({
   field,
   selected,
   onSelect,
+  onToggleHidden,
 }: {
   field: ClientFormField
   selected: boolean
   onSelect: () => void
+  onToggleHidden: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: field.id })
@@ -131,7 +136,7 @@ function SortableRow({
         selected
           ? 'bg-indigo-500/15 ring-1 ring-indigo-500/40'
           : 'hover:bg-white/[0.04]'
-      }`}
+      } ${field.hidden ? 'opacity-40' : ''}`}
     >
       <button
         {...attributes}
@@ -148,6 +153,21 @@ function SortableRow({
       {field.builtin && (
         <span className="text-[9px] uppercase text-indigo-400/70">built</span>
       )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleHidden()
+        }}
+        className="text-white/30 hover:text-white/80"
+        aria-label={field.hidden ? 'Afficher' : 'Masquer'}
+        title={field.hidden ? 'Afficher' : 'Masquer'}
+      >
+        {field.hidden ? (
+          <EyeOff className="w-3.5 h-3.5" />
+        ) : (
+          <Eye className="w-3.5 h-3.5" />
+        )}
+      </button>
     </div>
   )
 }

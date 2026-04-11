@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { ArrowRight, Sparkles, RefreshCw, Download } from 'lucide-react'
 import { toast } from 'sonner'
-import { useGenerateCart } from '@/features/briefs/ai/useGenerateCart'
+import { useGenerateCart, type CartProgressEvent } from '@/features/briefs/ai/useGenerateCart'
 import { useUpdateBrief } from '@/features/briefs/useBriefMutations'
 import { computeSubtotal, computeTotal } from '@/features/briefs/cart/cartMath'
 import { cartItemsToCsv } from '@/features/briefs/cart/cartCsv'
 import { CartTable } from './CartTable'
 import { CartSummary } from './CartSummary'
+import { CartGenerationLog } from './CartGenerationLog'
 import type { Brief, CartItem, CartDiscount } from '@/features/briefs/types'
 
 interface Props {
@@ -19,6 +20,8 @@ export function Step3Cart({ brief, onAdvance }: Props) {
   const update = useUpdateBrief()
   const [items, setItems] = useState<CartItem[]>(brief.cart?.items ?? [])
   const [discount, setDiscount] = useState<CartDiscount | undefined>(brief.cart?.discount)
+  const [logEvents, setLogEvents] = useState<CartProgressEvent[]>([])
+  const autoGenStartedRef = useRef(false)
 
   // resync si Firestore renvoie de nouveaux items après generation
   useEffect(() => {
@@ -30,14 +33,31 @@ export function Step3Cart({ brief, onAdvance }: Props) {
   const total = useMemo(() => computeTotal(items, discount), [items, discount])
   const hasItems = items.length > 0
 
+  // Auto-génération à l'arrivée si panier vide
+  useEffect(() => {
+    if (!hasItems && !generate.isPending && !autoGenStartedRef.current) {
+      autoGenStartedRef.current = true
+      handleGenerate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleGenerate = async () => {
+    setLogEvents([])
     try {
-      const r = await generate.mutateAsync({ brief })
+      const r = await generate.mutateAsync({
+        brief,
+        onProgress: (e) => setLogEvents((prev) => [...prev, e]),
+      })
       toast.success(`${r.items.length} produits générés`)
       if (r.droppedSkus.length > 0) {
         toast.warning(`${r.droppedSkus.length} SKU(s) ignoré(s) car inconnus`)
       }
     } catch (err) {
+      setLogEvents((prev) => [
+        ...prev,
+        { step: 'error', message: (err as Error).message || 'Erreur inconnue' },
+      ])
       toast.error((err as Error).message || 'Échec de la génération')
     }
   }
@@ -77,6 +97,21 @@ export function Step3Cart({ brief, onAdvance }: Props) {
     }
   }
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey) return
+      if (update.isPending || !hasItems) return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      e.preventDefault()
+      e.stopPropagation()
+      handleNext()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, discount, update.isPending, hasItems])
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-6">
@@ -109,10 +144,18 @@ export function Step3Cart({ brief, onAdvance }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-[1fr_280px] gap-4">
-            <CartTable items={items} onChange={setItems} />
-            <CartSummary subtotal={subtotal} total={total} discount={discount} onDiscountChange={setDiscount} />
-          </div>
+          {(generate.isPending || logEvents.length > 0) && (
+            <div className="mb-4">
+              <CartGenerationLog events={logEvents} isRunning={generate.isPending} />
+            </div>
+          )}
+
+          {generate.isPending && !hasItems ? null : (
+            <div className="grid grid-cols-[1fr_280px] gap-4">
+              <CartTable items={items} onChange={setItems} />
+              <CartSummary subtotal={subtotal} total={total} discount={discount} onDiscountChange={setDiscount} />
+            </div>
+          )}
 
           {brief.cart?.aiReasoning && (
             <p className="mt-6 text-[11px] text-white/40 italic">IA : {brief.cart.aiReasoning}</p>

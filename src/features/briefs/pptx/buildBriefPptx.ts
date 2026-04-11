@@ -1,8 +1,39 @@
 import pptxgen from 'pptxgenjs'
-import type { Brief, BriefImage } from '@/features/briefs/types'
+import type { Brief, BriefImage, SlideSpec } from '@/features/briefs/types'
 import { extractBranding } from './branding'
-import { fetchImageAsBase64 } from './imageFetcher'
+import { fetchImageWithDimensions, type FetchedImage } from './imageFetcher'
 import { buildSlide, type SlideContext } from './slideBuilders'
+
+function buildFallbackSlides(brief: Brief): SlideSpec[] {
+  const items = brief.cart?.items ?? []
+  const company = (brief.client.values.companyName as string) || brief.clientName || 'Client'
+  const slides: SlideSpec[] = [
+    {
+      type: 'cover',
+      title: `Proposition pour ${company}`,
+      subtitle: 'Solution signalétique sur-mesure',
+      heroPrompt: '',
+    },
+    {
+      type: 'product_grid',
+      title: 'Notre sélection produits',
+      productSkus: items.map((i) => i.sku),
+      layout: items.length > 4 ? '3x2' : '2x2',
+    },
+    {
+      type: 'budget',
+      title: 'Budget estimatif',
+      showTotal: true,
+      showItemized: true,
+    },
+    {
+      type: 'cta',
+      title: 'Prochaines étapes',
+      message: 'Validons ensemble cette proposition pour démarrer la production.',
+    },
+  ]
+  return slides
+}
 
 interface BuildOpts {
   brief: Brief
@@ -14,10 +45,10 @@ interface BuildOpts {
  * Retourne un Blob prêt à être téléchargé.
  */
 export async function buildBriefPptx({ brief, images }: BuildOpts): Promise<Blob> {
-  const slides = brief.deck?.slides ?? []
-  if (slides.length === 0) {
-    throw new Error('Le deck est vide. Génère la structure du deck à l\'étape 4.')
-  }
+  const slides: SlideSpec[] =
+    brief.deck?.slides && brief.deck.slides.length > 0
+      ? brief.deck.slides
+      : buildFallbackSlides(brief)
 
   const branding = extractBranding(brief)
 
@@ -25,14 +56,12 @@ export async function buildBriefPptx({ brief, images }: BuildOpts): Promise<Blob
   const fetchTargets: { key: string; url: string }[] = images.map((img) => ({ key: img.id, url: img.url }))
   if (branding.logoUrl) fetchTargets.push({ key: 'logo', url: branding.logoUrl })
 
-  const imageMap = new Map<string, string>()
+  const imageMap = new Map<string, FetchedImage>()
   await Promise.all(
     fetchTargets.map(async ({ key, url }) => {
       try {
-        const dataUrl = await fetchImageAsBase64(url)
-        imageMap.set(key, dataUrl)
+        imageMap.set(key, await fetchImageWithDimensions(url))
       } catch (err) {
-        // On continue sans cette image (placeholder dans le slide builder)
         console.warn(`Image ${key} non téléchargée :`, err)
       }
     }),

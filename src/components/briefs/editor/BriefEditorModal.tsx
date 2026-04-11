@@ -1,6 +1,8 @@
 import { X } from 'lucide-react'
 import { useBriefUIStore } from '@/stores/brief.store'
 import { useBrief } from '@/features/briefs/useBrief'
+import { useUpdateBrief, useDeleteBrief } from '@/features/briefs/useBriefMutations'
+import type { Brief, BriefStep } from '@/features/briefs/types'
 import { BriefStepper } from './BriefStepper'
 import { Step1Form } from './Step1Form'
 import { Step2Questions } from './Step2Questions'
@@ -13,9 +15,45 @@ interface Props {
   taxonomy: Taxonomy
 }
 
+/**
+ * Détecte un brief "fantôme" : créé mais jamais réellement renseigné.
+ * On purge à la fermeture pour éviter d'accumuler des draft vides en Firestore.
+ */
+function isEmptyDraft(b: Brief): boolean {
+  if (b.status !== 'draft') return false
+  if (b.currentStep > 1) return false
+  const v = b.client?.values ?? {}
+  const meaningfulKeys = Object.entries(v).filter(([, val]) => {
+    if (typeof val === 'string') return val.trim().length > 0
+    if (val === null || val === undefined) return false
+    if (typeof val === 'object' && Object.keys(val as object).length === 0) return false
+    return true
+  })
+  // Pas de clientName saisi ET pas de valeurs métier renseignées → fantôme
+  return !b.clientName?.trim() && meaningfulKeys.length === 0
+}
+
 export function BriefEditorModal({ taxonomy }: Props) {
   const { briefEditorOpen, currentBriefId, closeBriefEditor } = useBriefUIStore()
   const { data: brief, isLoading } = useBrief(currentBriefId)
+  const update = useUpdateBrief()
+  const remove = useDeleteBrief()
+
+  const goToStep = (step: BriefStep) => {
+    if (!brief) return
+    update.mutate({ briefId: brief.id, patch: { currentStep: step } as never })
+  }
+
+  const handleClose = () => {
+    // Auto-purge des brouillons fantômes à la fermeture
+    if (brief && isEmptyDraft(brief)) {
+      remove.mutate(brief.id, {
+        onSettled: () => closeBriefEditor(),
+      })
+      return
+    }
+    closeBriefEditor()
+  }
 
   if (!briefEditorOpen) return null
 
@@ -27,10 +65,10 @@ export function BriefEditorModal({ taxonomy }: Props) {
             {brief?.clientName || 'Nouveau brief'}
           </h2>
           <div className="flex-1 flex justify-center">
-            {brief && <BriefStepper current={brief.currentStep} />}
+            {brief && <BriefStepper current={brief.currentStep} onNavigate={goToStep} />}
           </div>
           <button
-            onClick={closeBriefEditor}
+            onClick={handleClose}
             aria-label="Fermer"
             className="text-white/40 hover:text-white/80 p-1.5 rounded-md hover:bg-white/[0.06]"
           >

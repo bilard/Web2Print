@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 
-const DEFAULT_MODEL = 'gemini-2.5-flash'
+const DEFAULT_MODEL = 'gemini-3.1-pro-preview'
 const ENDPOINT = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 
@@ -28,8 +28,11 @@ async function callGemini(
   prompt: string,
   schemaForGemini: Record<string, unknown>,
 ): Promise<string> {
+  const ctrl = new AbortController()
+  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
   const res = await fetch(`${ENDPOINT(model)}?key=${apiKey}`, {
     method: 'POST',
+    signal: ctrl.signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
@@ -41,6 +44,7 @@ async function callGemini(
     }),
   })
 
+  clearTimeout(timeoutId)
   if (!res.ok) {
     const body = await res.text()
     throw new Error(`Gemini API ${res.status} : ${body.slice(0, 200)}`)

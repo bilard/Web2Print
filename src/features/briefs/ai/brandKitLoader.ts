@@ -1,0 +1,96 @@
+import type { ReferenceImage } from './geminiImageClient'
+
+interface BrandKitFile {
+  url: string
+  filename: string
+  contentType: string
+  size: number
+  relativePath?: string
+}
+
+interface BrandKitValue {
+  url?: string
+  filename?: string
+  contentType?: string
+  size?: number
+  files?: BrandKitFile[]
+}
+
+const SUPPORTED_IMAGE_TYPES = /^image\/(png|jpeg|jpg|webp)$/i
+const MAX_REFS = 6
+const MAX_BYTES = 4 * 1024 * 1024 // 4 MB par image de référence
+
+/**
+ * Extrait la liste de fichiers exploitables (images raster) depuis la valeur
+ * `brandKit` du formulaire. Ignore les PDF, .ai, .eps et autres formats
+ * non supportés par l'API Gemini Image en inlineData.
+ */
+function listSupportedFiles(kit: BrandKitValue | undefined): BrandKitFile[] {
+  if (!kit) return []
+  const all: BrandKitFile[] = kit.files?.length
+    ? kit.files
+    : kit.url
+      ? [
+          {
+            url: kit.url,
+            filename: kit.filename ?? 'fichier',
+            contentType: kit.contentType ?? '',
+            size: kit.size ?? 0,
+          },
+        ]
+      : []
+
+  return all.filter((f) => {
+    if (f.size > MAX_BYTES) return false
+    if (SUPPORTED_IMAGE_TYPES.test(f.contentType)) return true
+    // Fallback sur extension si contentType absent
+    return /\.(png|jpe?g|webp)$/i.test(f.filename)
+  })
+}
+
+async function fetchAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Fetch ${res.status} sur ${url}`)
+  const blob = await res.blob()
+  const mimeType = blob.type || 'image/png'
+  const buffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
+  return { data: btoa(binary), mimeType }
+}
+
+/**
+ * Charge les images de référence du kit client en base64, prêtes à être
+ * envoyées à Gemini Nano Banana 2 en inlineData parts.
+ *
+ * Limite à MAX_REFS fichiers pour éviter de saturer le payload. Priorité
+ * aux logos (détectés par nom de fichier).
+ */
+export async function loadBrandKitReferences(
+  kit: BrandKitValue | undefined,
+): Promise<ReferenceImage[]> {
+  const files = listSupportedFiles(kit)
+  if (files.length === 0) return []
+
+  // Priorité : logos en premier
+  const scored = files
+    .map((f) => ({
+      f,
+      score: /logo/i.test(f.filename) ? 0 : /charte|chartre|brand|guide/i.test(f.filename) ? 1 : 2,
+    }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, MAX_REFS)
+    .map((s) => s.f)
+
+  const refs: ReferenceImage[] = []
+  for (const file of scored) {
+    try {
+      const { data, mimeType } = await fetchAsBase64(file.url)
+      refs.push({ data, mimeType, label: file.filename })
+    } catch (err) {
+      console.warn(`[brandKitLoader] échec chargement ${file.filename}:`, err)
+    }
+  }
+  return refs
+}

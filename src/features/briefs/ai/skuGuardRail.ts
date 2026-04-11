@@ -4,7 +4,7 @@ interface AiSuggestion {
   aiJustification: string
 }
 
-export interface GuardRailResult {
+interface GuardRailResult {
   kept: AiSuggestion[]
   invalidSkus: string[]
   shouldRetry: boolean

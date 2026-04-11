@@ -3,7 +3,7 @@ import type { TaxonomyNode } from '@/features/taxonomy/types'
 
 export const VERSION = 'dynamic-questions-2026-04-07-1'
 
-export const QuestionSchema = z.object({
+const QuestionSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   type: z.enum(['text', 'number', 'select', 'multiselect', 'boolean']),
@@ -17,10 +17,6 @@ export const DynamicQuestionsResponseSchema = z.object({
   questions: z.array(QuestionSchema).min(2).max(10),
   reasoning: z.string(),
 })
-
-export type DynamicQuestionsResponse = z.infer<
-  typeof DynamicQuestionsResponseSchema
->
 
 /** Schéma JSON-Schema pour Gemini `responseSchema`. */
 export const RESPONSE_SCHEMA_FOR_GEMINI = {

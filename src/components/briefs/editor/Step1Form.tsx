@@ -1,9 +1,52 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { DynamicFormRenderer } from '@/components/briefs/form-renderer/DynamicFormRenderer'
 import { useUpdateBrief } from '@/features/briefs/useBriefMutations'
 import type { Brief } from '@/features/briefs/types'
+import type { ClientFormField } from '@/features/taxonomy/types'
+
+function ensureBrandKitField(fields: ClientFormField[]): ClientFormField[] {
+  if (fields.some((f) => f.key === 'brandKit')) return fields
+  // Insère après secondaryColor (ou en fin si absent)
+  const idx = fields.findIndex((f) => f.key === 'secondaryColor')
+  const insertAfter = idx >= 0 ? idx : fields.length - 1
+  const baseOrder = fields[insertAfter]?.order ?? 0
+  const brandKit: ClientFormField = {
+    id: 'builtin-brandKit',
+    key: 'brandKit',
+    label: 'Charte graphique / kit de communication',
+    type: 'brand_kit_upload',
+    required: false,
+    group: 'Identité visuelle',
+    order: baseOrder + 1,
+    builtin: true,
+    helpText: 'Importez un PDF, une image ou un dossier complet. Sera utilisé pour les exports.',
+  }
+  return [...fields.slice(0, insertAfter + 1), brandKit, ...fields.slice(insertAfter + 1)]
+}
+
+function ensureClientWebsiteUrlField(fields: ClientFormField[]): ClientFormField[] {
+  if (fields.some((f) => f.key === 'clientWebsiteUrl')) return fields
+  // Insère juste après companyName (ou en tête)
+  const idx = fields.findIndex((f) => f.key === 'companyName')
+  const insertAfter = idx >= 0 ? idx : -1
+  const baseOrder = fields[insertAfter]?.order ?? 0
+  const urlField: ClientFormField = {
+    id: 'builtin-clientWebsiteUrl',
+    key: 'clientWebsiteUrl',
+    label: 'URL du site client',
+    type: 'text',
+    required: false,
+    group: 'Société',
+    order: baseOrder + 0.5,
+    builtin: true,
+    placeholder: 'https://www.exemple.fr',
+    helpText:
+      "Utilisé comme contexte si aucun PDF/kit n'est fourni. L'IA s'en servira pour inférer l'univers visuel et le ton.",
+  }
+  return [...fields.slice(0, insertAfter + 1), urlField, ...fields.slice(insertAfter + 1)]
+}
 
 interface Props {
   brief: Brief
@@ -20,19 +63,23 @@ export function Step1Form({ brief, onAdvance }: Props) {
 
   const handleNext = async () => {
     const missing = brief.client.formTemplateSnapshot.filter(
-      (f) => f.required && !values[f.key],
+      (f) => f.required && !f.hidden && !values[f.key],
     )
     if (missing.length > 0) {
       toast.error(`Champs obligatoires manquants : ${missing.map((f) => f.label).join(', ')}`)
       return
     }
     const clientName = String(values.companyName ?? brief.clientName ?? 'Sans nom')
+    // Firestore refuse les undefined : on les retire avant sauvegarde
+    const cleanValues = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => v !== undefined),
+    )
     try {
       await update.mutateAsync({
         briefId: brief.id,
         patch: {
           clientName,
-          'client.values': values,
+          'client.values': cleanValues,
           status: 'form_filled',
           currentStep: 2,
         } as never,
@@ -43,6 +90,21 @@ export function Step1Form({ brief, onAdvance }: Props) {
       console.error(err)
     }
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey) return
+      if (update.isPending) return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'TEXTAREA') return
+      e.preventDefault()
+      e.stopPropagation()
+      handleNext()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, update.isPending])
 
   return (
     <div className="flex flex-col h-full">
@@ -55,9 +117,10 @@ export function Step1Form({ brief, onAdvance }: Props) {
             Remplissez les champs ci-dessous. Les champs marqués d'un astérisque sont obligatoires.
           </p>
           <DynamicFormRenderer
-            fields={brief.client.formTemplateSnapshot}
+            fields={ensureClientWebsiteUrlField(ensureBrandKitField(brief.client.formTemplateSnapshot))}
             values={values}
             onChange={handleChange}
+            briefId={brief.id}
           />
         </div>
       </div>

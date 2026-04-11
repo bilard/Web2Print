@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ArrowRight, Sparkles, RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Sparkles, RefreshCw, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGenerateDynamicQuestions } from '@/features/briefs/ai/useGenerateDynamicQuestions'
 import { useUpdateBrief } from '@/features/briefs/useBriefMutations'
@@ -32,8 +32,22 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
     }
   }
 
+  // Auto-génération à l'arrivée si aucune question encore présente
+  useEffect(() => {
+    if (!hasQuestions && !generate.isPending) {
+      handleGenerate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleNext = async () => {
-    const missing = questions.filter((q) => q.required && (answers[q.id] === undefined || answers[q.id] === ''))
+    const missing = questions.filter((q) => {
+      if (!q.required) return false
+      // Pas bloquant : booleans et questions à 0 ou 1 option
+      if (q.type === 'boolean') return false
+      if (q.options && q.options.length <= 1) return false
+      return answers[q.id] === undefined || answers[q.id] === ''
+    })
     if (missing.length > 0) {
       toast.error(`Réponses obligatoires manquantes : ${missing.map((q) => q.label).join(', ')}`)
       return
@@ -52,6 +66,21 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
       console.error(err)
     }
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey) return
+      if (update.isPending || !hasQuestions) return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'TEXTAREA') return
+      e.preventDefault()
+      e.stopPropagation()
+      handleNext()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers, update.isPending, hasQuestions])
 
   return (
     <div className="flex flex-col h-full">
@@ -74,9 +103,10 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
             </button>
           </div>
 
-          {!hasQuestions && !generate.isPending && (
-            <div className="text-[12px] text-white/40 text-center py-12 border border-dashed border-white/[0.08] rounded-md">
-              Cliquez sur « Générer les questions » pour démarrer.
+          {generate.isPending && (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 border border-dashed border-white/[0.08] rounded-md">
+              <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+              <p className="text-[12px] text-white/50">Génération des questions en cours…</p>
             </div>
           )}
 

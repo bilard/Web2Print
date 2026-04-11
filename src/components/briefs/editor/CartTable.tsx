@@ -1,5 +1,6 @@
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, ExternalLink } from 'lucide-react'
 import type { CartItem } from '@/features/briefs/types'
+import { formatPrice } from '@/features/briefs/cart/formatPrice'
 
 interface Props {
   items: CartItem[]
@@ -52,12 +53,25 @@ export function CartTable({ items, onChange }: Props) {
                   />
                 </td>
                 <td className="px-3 py-2 text-white/80">
-                  <input
-                    type="text"
-                    value={it.name}
-                    onChange={(e) => updateItem(idx, { name: e.target.value })}
-                    className="bg-transparent w-full focus:outline-none"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={it.name}
+                      onChange={(e) => updateItem(idx, { name: e.target.value })}
+                      className="bg-transparent flex-1 focus:outline-none"
+                    />
+                    {it.sourceUrl && (
+                      <a
+                        href={it.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/30 hover:text-indigo-300 shrink-0"
+                        title="Voir sur le site source"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-right">
                   <input
@@ -78,7 +92,7 @@ export function CartTable({ items, onChange }: Props) {
                     className="bg-transparent w-full text-right focus:outline-none"
                   />
                 </td>
-                <td className="px-3 py-2 text-right text-white/80">{total.toFixed(2)} €</td>
+                <td className="px-3 py-2 text-right text-white/80 whitespace-nowrap">{formatPrice(total)}</td>
                 <td className="px-2 py-2 text-right">
                   <button
                     onClick={() => removeItem(idx)}

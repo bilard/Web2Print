@@ -75,6 +75,15 @@ export function createDefaultFormTemplate(): ClientFormField[] {
       required: false,
       group: 'Identité visuelle',
     },
+    {
+      id: 'builtin-brandKit',
+      key: 'brandKit',
+      label: 'Charte graphique / kit de communication',
+      type: 'brand_kit_upload',
+      required: false,
+      group: 'Identité visuelle',
+      helpText: 'Importez un PDF ou ZIP. Sera utilisé pour les exports PPTX/PDF.',
+    },
 
     // ─── Livraison ──────────────────────────────────────────────────────────
     {

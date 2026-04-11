@@ -5,40 +5,52 @@ function readString(values: Record<string, unknown>, key: string): string | unde
   return typeof v === 'string' && v.trim() ? v.trim() : undefined
 }
 
-function brandPalette(values: Record<string, unknown>): string {
-  const primary = readString(values, 'primaryColor')
-  const secondary = readString(values, 'secondaryColor')
-  if (primary && secondary) return `Brand palette accents: ${primary} and ${secondary}.`
-  if (primary) return `Brand accent color: ${primary}.`
-  return ''
-}
+/**
+ * Déduit un décor court (quelques mots) à partir du contexte client.
+ * Nano Banana 2 préfère des descriptions visuelles directes et courtes
+ * à des instructions méta longues.
+ */
+function inferSetting(brief: Brief): string {
+  const v = brief.client.values
+  const haystack = [
+    readString(v, 'contextSummary'),
+    readString(v, 'sector'),
+    readString(v, 'companyName'),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
 
-function sectorPhrase(values: Record<string, unknown>): string {
-  const sector = readString(values, 'sector')
-  if (!sector) return 'a generic commercial environment'
-  return `a ${sector.toLowerCase()} environment`
+  if (/garage|parking|automobile|atelier|m[éeè]canique/.test(haystack))
+    return 'a car repair workshop with concrete floor and tools'
+  if (/mairie|municipal|collectivit|commune|ville/.test(haystack))
+    return 'a town hall lobby with civic architecture'
+  if (/restaurant|brasserie|caf[ée]|h[ôo]tel/.test(haystack))
+    return 'a warm hospitality venue'
+  if (/sport|stade|club|tournoi/.test(haystack)) return 'an outdoor sports venue'
+  if (/[ée]cole|coll[èe]ge|lyc[ée]e|universit[ée]/.test(haystack)) return 'a school building'
+  if (/h[ôo]pital|clinique|m[ée]dical|sant[ée]/.test(haystack)) return 'a medical facility lobby'
+  if (/chantier|btp|construction/.test(haystack)) return 'a construction site'
+  if (/[ée]v[ée]nement|salon|foire|congr[èe]s|expo/.test(haystack)) return 'a professional trade show venue'
+  if (/magasin|boutique|retail|commerce/.test(haystack)) return 'a modern retail storefront'
+  if (/bureau|tertiaire|entreprise|corporate/.test(haystack)) return 'a modern corporate office'
+  return 'a professional environment'
 }
-
-const NEGATIVE = 'No text, no logo, no watermark, no people staring at camera.'
 
 /**
- * Construit un prompt anglais déterministe pour le visuel hero d'un brief.
+ * Prompt court et descriptif pour l'image hero du brief.
+ * @param scene décor en anglais produit par inferSceneDescription (optionnel)
  */
-export function buildHeroImagePrompt(brief: Brief): string {
-  const v = brief.client.values
-  const company = readString(v, 'companyName') ?? 'a company'
-  const palette = brandPalette(v)
-  const env = sectorPhrase(v)
-  return `Photorealistic wide-angle hero image for a commercial proposal addressed to ${company}, set in ${env}. Cinematic lighting, shallow depth of field, premium feeling. ${palette} ${NEGATIVE}`.trim()
+export function buildHeroImagePrompt(brief: Brief, scene?: string): string {
+  const setting = scene?.trim() || inferSetting(brief)
+  return `Photorealistic wide-angle photograph. Scene: ${setting}. Cinematic lighting, shallow depth of field, premium editorial style.`
 }
 
 /**
- * Construit un prompt anglais déterministe pour mettre en scène un produit du panier.
+ * Prompt court et descriptif pour un produit du panier.
  */
-export function buildProductImagePrompt(brief: Brief, item: CartItem): string {
-  const v = brief.client.values
-  const env = sectorPhrase(v)
-  const palette = brandPalette(v)
-  const desc = item.description ? ` Product details: ${item.description}.` : ''
-  return `Photorealistic product staging of "${item.name}" placed in ${env}. Soft natural lighting, marketing-grade composition.${desc} ${palette} ${NEGATIVE}`.trim()
+export function buildProductImagePrompt(brief: Brief, item: CartItem, scene?: string): string {
+  const setting = scene?.trim() || inferSetting(brief)
+  return `Photorealistic product photograph of a ${item.name.toLowerCase()}. Scene: ${setting}. Soft natural lighting, marketing editorial composition, realistic materials and textures.`
 }
+

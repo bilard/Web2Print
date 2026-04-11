@@ -12,16 +12,22 @@ const baseInput =
 export function QuestionRenderer({ questions, values, onChange }: Props) {
   return (
     <div className="flex flex-col gap-5">
-      {questions.map((q) => (
+      {questions.map((q) => {
+        const effectiveRequired =
+          q.required &&
+          q.type !== 'boolean' &&
+          !(q.options && q.options.length <= 1)
+        return (
         <div key={q.id} className="flex flex-col gap-1.5">
           <label className="text-[12px] text-white/70">
             {q.label}
-            {q.required && <span className="text-red-400 ml-1">*</span>}
+            {effectiveRequired && <span className="text-red-400 ml-1">*</span>}
           </label>
           {renderField(q, values[q.id], (v) => onChange(q.id, v))}
           {q.helpText && <p className="text-[11px] text-white/40">{q.helpText}</p>}
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

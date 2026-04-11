@@ -46,6 +46,12 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
     setSelectedId(null)
   }
 
+  const handleToggleHidden = (id: string) => {
+    setDraft((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, hidden: !f.hidden } : f)),
+    )
+  }
+
   const handleAdd = (field: ClientFormField) => {
     setDraft((prev) => [...prev, field])
     setSelectedId(field.id)
@@ -104,6 +110,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
               onSelect={setSelectedId}
               onReorder={setDraft}
               onAdd={handleAdd}
+              onToggleHidden={handleToggleHidden}
             />
           </div>
 

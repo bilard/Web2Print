@@ -3,10 +3,15 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { generateImage } from './geminiImageClient'
 import { uploadBriefImage } from '@/features/briefs/storage/briefImagesStorage'
+import { loadBrandKitReferences } from './brandKitLoader'
 import type { Brief, CartItem } from '@/features/briefs/types'
-import { buildHeroImagePrompt, buildProductImagePrompt } from './imagePromptBuilder'
+import { composeImagePrompt, type ImageTarget } from './composeImagePrompt'
+import { inferSceneDescription } from './inferSceneDescription'
 
-type Target = { kind: 'hero' } | { kind: 'product'; item: CartItem }
+type Target =
+  | { kind: 'hero' }
+  | { kind: 'product'; item: CartItem }
+  | { kind: 'staging_scene' }
 
 interface Args {
   brief: Brief
@@ -14,13 +19,16 @@ interface Args {
 }
 
 function imageIdFor(target: Target): string {
-  return target.kind === 'hero' ? 'hero' : `product_${target.item.sku}`
+  if (target.kind === 'hero') return 'hero'
+  if (target.kind === 'staging_scene') return 'staging_scene'
+  return `product_${target.item.sku}`
 }
 
-function promptFor(brief: Brief, target: Target): string {
-  return target.kind === 'hero'
-    ? buildHeroImagePrompt(brief)
-    : buildProductImagePrompt(brief, target.item)
+function toComposeTarget(brief: Brief, target: Target): ImageTarget {
+  if (target.kind === 'hero') return { kind: 'hero' }
+  if (target.kind === 'staging_scene')
+    return { kind: 'staging_scene', items: brief.cart?.items ?? [] }
+  return { kind: 'product', item: target.item }
 }
 
 /**
@@ -33,14 +41,19 @@ export function useGenerateBriefImage() {
   return useMutation({
     mutationFn: async ({ brief, target }: Args) => {
       const id = imageIdFor(target)
-      const prompt = promptFor(brief, target)
-      const { blob, mimeType } = await generateImage(prompt)
+      const scene = await inferSceneDescription(brief)
+      const prompt = await composeImagePrompt(brief, toComposeTarget(brief, target), scene)
+      const brandKit = (brief.client.values as Record<string, unknown>).brandKit as
+        | Parameters<typeof loadBrandKitReferences>[0]
+        | undefined
+      const refs = await loadBrandKitReferences(brandKit).catch(() => [])
+      const { blob, mimeType } = await generateImage(prompt, refs)
       const url = await uploadBriefImage(brief.id, id, blob, mimeType)
 
       await setDoc(doc(db, 'briefs', brief.id, 'images', id), {
         id,
         type: target.kind,
-        productSku: target.kind === 'product' ? target.item.sku : undefined,
+        productSku: target.kind === 'product' ? target.item.sku : null,
         prompt,
         url,
         updatedAt: serverTimestamp(),

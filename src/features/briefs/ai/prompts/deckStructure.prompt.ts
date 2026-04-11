@@ -48,8 +48,6 @@ export const DeckResponseSchema = z.object({
   reasoning: z.string(),
 })
 
-export type DeckResponse = z.infer<typeof DeckResponseSchema>
-
 export const RESPONSE_SCHEMA_FOR_GEMINI = {
   type: 'object',
   properties: {
@@ -84,6 +82,103 @@ export const RESPONSE_SCHEMA_FOR_GEMINI = {
   required: ['slides', 'reasoning'],
 }
 
+/**
+ * Schéma strict dédié à Claude (tool input_schema). Utilise `oneOf` discriminé
+ * par `type` pour forcer chaque variant à déclarer ses champs requis — aligné
+ * 1:1 sur `SlideSpecSchema` (Zod). Gemini `responseSchema` ne supporte pas
+ * `oneOf`, d'où la coexistence avec `RESPONSE_SCHEMA_FOR_GEMINI`.
+ */
+export const RESPONSE_SCHEMA_FOR_CLAUDE = {
+  type: 'object',
+  properties: {
+    slides: {
+      type: 'array',
+      minItems: 3,
+      maxItems: 10,
+      items: {
+        oneOf: [
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['cover'] },
+              title: { type: 'string' },
+              subtitle: { type: 'string' },
+              heroPrompt: { type: 'string' },
+            },
+            required: ['type', 'title', 'subtitle', 'heroPrompt'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['context'] },
+              title: { type: 'string' },
+              bullets: {
+                type: 'array',
+                items: { type: 'string' },
+                minItems: 1,
+                maxItems: 6,
+              },
+            },
+            required: ['type', 'title', 'bullets'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['product_grid'] },
+              title: { type: 'string' },
+              productSkus: {
+                type: 'array',
+                items: { type: 'string' },
+                minItems: 1,
+              },
+              layout: { type: 'string', enum: ['2x2', '3x2', '1x3'] },
+            },
+            required: ['type', 'title', 'productSkus', 'layout'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['product_focus'] },
+              title: { type: 'string' },
+              productSku: { type: 'string' },
+              keyPoints: {
+                type: 'array',
+                items: { type: 'string' },
+                minItems: 1,
+                maxItems: 5,
+              },
+              imagePrompt: { type: 'string' },
+            },
+            required: ['type', 'title', 'productSku', 'keyPoints', 'imagePrompt'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['budget'] },
+              title: { type: 'string' },
+              showTotal: { type: 'boolean' },
+              showItemized: { type: 'boolean' },
+            },
+            required: ['type', 'title', 'showTotal', 'showItemized'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['cta'] },
+              title: { type: 'string' },
+              message: { type: 'string' },
+              contactEmail: { type: 'string' },
+            },
+            required: ['type', 'title', 'message'],
+          },
+        ],
+      },
+    },
+    reasoning: { type: 'string' },
+  },
+  required: ['slides', 'reasoning'],
+}
+
 interface BuildOpts {
   brief: Brief
 }
@@ -94,10 +189,17 @@ export function buildPrompt({ brief }: BuildOpts): string {
       .map((it) => `- ${it.sku} | ${it.name} | qté ${it.quantity}`)
       .join('\n') ?? '(panier vide)'
 
-  return `Tu es un commercial expert en signalétique et PLV. Construis la structure d'un deck commercial cohérent pour présenter cette offre à un client. 4 à 8 slides au total.
+  const brandKit = (brief.client?.values as Record<string, unknown> | undefined)?.brandKit as
+    | { url?: string; filename?: string }
+    | undefined
+  const brandKitLine = brandKit?.url
+    ? `\nCharte graphique fournie : ${brandKit.filename ?? 'fichier'} (${brandKit.url}). Respecte ses codes visuels.`
+    : ''
+
+  return `Tu es un commercial expert en signalétique et PLV. Construis la structure d'un deck commercial cohérent pour présenter cette offre à un client. 4 à 8 slides au total.${brandKitLine}
 
 Brief client :
-${JSON.stringify(brief.client.values, null, 2)}
+${JSON.stringify(brief.client?.values ?? {}, null, 2)}
 
 Réponses complémentaires :
 ${JSON.stringify(brief.dynamicForm?.answers ?? {}, null, 2)}

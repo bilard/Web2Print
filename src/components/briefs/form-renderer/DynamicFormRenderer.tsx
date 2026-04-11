@@ -6,6 +6,7 @@ import { EmailField } from './fields/EmailField'
 import { SelectField } from './fields/SelectField'
 import { ColorField } from './fields/ColorField'
 import { LogoUploadField } from './fields/LogoUploadField'
+import { BrandKitUploadField } from './fields/BrandKitUploadField'
 import { BudgetRangeField } from './fields/BudgetRangeField'
 import { AddressField } from './fields/AddressField'
 
@@ -14,6 +15,7 @@ interface Props {
   values: Record<string, unknown>
   onChange: (key: string, value: unknown) => void
   disabled?: boolean
+  briefId?: string
 }
 
 /**
@@ -25,8 +27,9 @@ export function DynamicFormRenderer({
   values,
   onChange,
   disabled,
+  briefId,
 }: Props) {
-  const sorted = [...fields].sort((a, b) => a.order - b.order)
+  const sorted = [...fields].filter((f) => !f.hidden).sort((a, b) => a.order - b.order)
   const grouped = groupByGroup(sorted)
 
   return (
@@ -46,6 +49,8 @@ export function DynamicFormRenderer({
                 value={values[field.key]}
                 onChange={(v) => onChange(field.key, v)}
                 disabled={disabled}
+                briefId={briefId}
+                onSiblingChange={onChange}
               />
             ))}
           </div>
@@ -70,9 +75,11 @@ interface FieldRendererProps {
   value: unknown
   onChange: (value: unknown) => void
   disabled?: boolean
+  briefId?: string
+  onSiblingChange?: (key: string, value: unknown) => void
 }
 
-function FieldRenderer({ field, value, onChange, disabled }: FieldRendererProps) {
+function FieldRenderer({ field, value, onChange, disabled, briefId, onSiblingChange }: FieldRendererProps) {
   switch (field.type) {
     case 'text':
       return <TextField field={field} value={value as string} onChange={onChange} disabled={disabled} />
@@ -87,7 +94,18 @@ function FieldRenderer({ field, value, onChange, disabled }: FieldRendererProps)
     case 'color':
       return <ColorField field={field} value={value as string} onChange={onChange} disabled={disabled} />
     case 'logo_upload':
-      return <LogoUploadField field={field} value={value as string} onChange={onChange} disabled={disabled} />
+      return <LogoUploadField field={field} value={value as string} onChange={onChange} disabled={disabled} briefId={briefId} />
+    case 'brand_kit_upload':
+      return (
+        <BrandKitUploadField
+          field={field}
+          value={value as { url?: string; filename?: string; contentType?: string; size?: number }}
+          onChange={onChange}
+          disabled={disabled}
+          briefId={briefId}
+          onSiblingChange={onSiblingChange}
+        />
+      )
     case 'budget_range':
       return <BudgetRangeField field={field} value={value as { min?: number; max?: number }} onChange={onChange} disabled={disabled} />
     case 'address':

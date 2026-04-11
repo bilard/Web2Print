@@ -1,4 +1,5 @@
 import type { CartDiscount } from '@/features/briefs/types'
+import { formatPrice } from '@/features/briefs/cart/formatPrice'
 
 interface Props {
   subtotal: number
@@ -12,7 +13,7 @@ export function CartSummary({ subtotal, total, discount, onDiscountChange }: Pro
     <div className="border border-white/[0.06] rounded-md p-4 bg-[#141414] flex flex-col gap-3 text-[12px]">
       <div className="flex justify-between text-white/60">
         <span>Sous-total</span>
-        <span>{subtotal.toFixed(2)} €</span>
+        <span>{formatPrice(subtotal)}</span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -44,7 +45,7 @@ export function CartSummary({ subtotal, total, discount, onDiscountChange }: Pro
 
       <div className="border-t border-white/[0.06] pt-3 flex justify-between text-white font-semibold text-[13px]">
         <span>Total estimé</span>
-        <span>{total.toFixed(2)} €</span>
+        <span>{formatPrice(total)}</span>
       </div>
     </div>
   )

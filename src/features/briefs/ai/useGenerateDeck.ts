@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { generateJson } from './geminiClient'
+import { generateJson } from '@/features/ai/llmRouter'
 import {
   buildPrompt,
   RESPONSE_SCHEMA_FOR_GEMINI,
+  RESPONSE_SCHEMA_FOR_CLAUDE,
   DeckResponseSchema,
   VERSION,
 } from './prompts/deckStructure.prompt'
@@ -20,9 +21,11 @@ export function useGenerateDeck() {
     mutationFn: async ({ brief }: Args) => {
       const prompt = buildPrompt({ brief })
       const result = await generateJson({
+        task: 'brief.deckStructure',
         prompt,
         schema: DeckResponseSchema,
-        schemaForGemini: RESPONSE_SCHEMA_FOR_GEMINI,
+        schemaForLLM: RESPONSE_SCHEMA_FOR_GEMINI,
+        schemaForClaude: RESPONSE_SCHEMA_FOR_CLAUDE,
         version: VERSION,
       })
 

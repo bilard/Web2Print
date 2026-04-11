@@ -13,6 +13,8 @@ export interface CartItem {
   unitPrice?: number             // prix catalogue d'origine
   unitPriceOverride?: number     // prix édité par l'utilisateur
   imageUrl?: string
+  /** Lien vers la fiche produit sur le site source (scraping). */
+  sourceUrl?: string
   description?: string
   aiJustification?: string
   source: 'ai' | 'manual'
@@ -63,10 +65,8 @@ export type SlideSpec =
       contactEmail?: string
     }
 
-export type SlideType = SlideSpec['type']
-
 // ─── Versions de prompts IA stockées sur le brief ───────────────────────────
-export interface BriefAiVersions {
+interface BriefAiVersions {
   questions?: string
   branchSelection?: string
   cart?: string
@@ -74,7 +74,7 @@ export interface BriefAiVersions {
 }
 
 // ─── Brief ──────────────────────────────────────────────────────────────────
-export type BriefStatus =
+type BriefStatus =
   | 'draft'
   | 'form_filled'
   | 'cart_ready'
@@ -125,8 +125,8 @@ export interface Brief {
 
 // ─── Image générée pour un brief (sous-collection) ──────────────────────────
 export interface BriefImage {
-  id: string                     // 'hero' ou `product_${sku}`
-  type: 'hero' | 'product'
+  id: string                     // 'hero' | `product_${sku}` | 'staging_scene'
+  type: 'hero' | 'product' | 'staging_scene'
   productSku?: string
   prompt: string
   url: string                    // Firebase Storage
