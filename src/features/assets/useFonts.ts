@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export interface FontDef {
+interface FontDef {
   family: string
   label: string
   weights: number[]
@@ -27,7 +27,7 @@ const loadedFonts = new Set<string>()
 const dynamicFontFamilies = new Set<string>()
 
 // Variantes disponibles par famille : family → [{weight, style, fileName}]
-export interface FontVariant {
+interface FontVariant {
   weight: string
   style: string
   label: string

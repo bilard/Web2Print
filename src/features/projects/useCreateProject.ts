@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cleanupOrphanLinksInTaxonomies } from './useDeleteProject'
 import type { ProjectData } from '@/types/project'
 
-export interface CreateProjectParams {
+interface CreateProjectParams {
   title: string
   canvasWidth: number
   canvasHeight: number

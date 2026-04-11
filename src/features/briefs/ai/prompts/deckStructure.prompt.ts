@@ -4,7 +4,7 @@ import type { Brief } from '@/features/briefs/types'
 export const VERSION = 'deck-structure-2026-04-07-1'
 
 // Union discriminée alignée sur SlideSpec (types.ts).
-export const SlideSpecSchema = z.discriminatedUnion('type', [
+const SlideSpecSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('cover'),
     title: z.string().min(1),

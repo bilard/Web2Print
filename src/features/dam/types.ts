@@ -39,12 +39,6 @@ export interface DamCollection {
   updatedAt: number
 }
 
-export interface DamFavorite {
-  userId: string
-  assetId: string
-  createdAt: number
-}
-
 export interface DamCropMask {
   /** Normalized 0-1 relative to image width */
   x: number
@@ -104,7 +98,7 @@ export interface DamImageVariant {
 
 export type DamTab = 'stock' | 'my-images' | 'favorites' | 'collections' | 'recent' | 'projects' | 'generate' | 'gdrive'
 
-export const DAM_CATEGORIES = [
+const DAM_CATEGORIES = [
   { id: 'business', label: 'Business', icon: '🏢' },
   { id: 'nature', label: 'Nature', icon: '🌿' },
   { id: 'technology', label: 'Technologie', icon: '💻' },

@@ -4,7 +4,7 @@ import type { ExcelColumn, CellValue } from './types'
 
 export type FormulaCategory = 'logique' | 'texte' | 'math' | 'date'
 
-export interface FormulaFunction {
+interface FormulaFunction {
   name: string
   description: string
   syntax: string

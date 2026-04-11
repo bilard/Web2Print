@@ -17,7 +17,7 @@ export interface DataSourceRef {
   fileName: string
 }
 
-export type MergeMode = 'fabric' | 'idml'
+type MergeMode = 'fabric' | 'idml'
 
 export type FormulaResultType = 'auto' | 'number' | 'text'
 

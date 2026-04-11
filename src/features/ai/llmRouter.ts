@@ -13,9 +13,9 @@ import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson as geminiGenerateJson } from '@/features/briefs/ai/geminiClient'
 
-export type LLMProviderId = 'claude' | 'gemini' | 'openai'
+type LLMProviderId = 'claude' | 'gemini' | 'openai'
 
-export type LLMTask =
+type LLMTask =
   | 'brief.dynamicQuestions'
   | 'brief.cartGeneration'
   | 'brief.deckStructure'
@@ -42,7 +42,7 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
 }
 
-export interface GenerateJsonOptions<T> {
+interface GenerateJsonOptions<T> {
   task: LLMTask
   prompt: string
   schema: z.ZodSchema<T>

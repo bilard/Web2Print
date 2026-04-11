@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export interface PageData {
+interface PageData {
   id: string
   label: string
   canvasJSON: string | null

@@ -3,7 +3,7 @@ import { getApiKey } from '@/lib/apiKeys'
 const MODEL = 'gemini-2.5-flash'
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
 
-export interface ExtractedBrandColors {
+interface ExtractedBrandColors {
   primary?: string
   secondary?: string
 }

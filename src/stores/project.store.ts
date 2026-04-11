@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { IdmlUploadState } from '@/features/idml/useIdmlUpload'
 
-export interface PendingImport {
+interface PendingImport {
   type: 'idml' | 'pptx' | 'image'
   files: File[]
 }

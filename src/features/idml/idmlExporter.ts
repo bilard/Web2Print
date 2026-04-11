@@ -1184,7 +1184,7 @@ function patchStory(
 
 // ─── Export principal ────────────────────────────────────────────────────────
 
-export interface FillImageFile {
+interface FillImageFile {
   name: string
   bytes: Uint8Array
 }

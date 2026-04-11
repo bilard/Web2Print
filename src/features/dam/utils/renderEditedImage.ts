@@ -17,7 +17,7 @@ export const DEFAULT_MASK: DamCropMask = {
   enabled: false,
 }
 
-export function isMaskIdentity(mask: DamCropMask): boolean {
+function isMaskIdentity(mask: DamCropMask): boolean {
   return (
     !mask.enabled ||
     (mask.x === 0 && mask.y === 0 && mask.width === 1 && mask.height === 1)
@@ -28,7 +28,7 @@ export function isMaskIdentity(mask: DamCropMask): boolean {
  * Converts a normalized mask (0-1) to pixel coordinates in the source image.
  * If the mask is disabled or identity, returns the full image area.
  */
-export function getMaskPixels(imgW: number, imgH: number, mask: DamCropMask) {
+function getMaskPixels(imgW: number, imgH: number, mask: DamCropMask) {
   if (isMaskIdentity(mask)) {
     return { cropX: 0, cropY: 0, cropW: imgW, cropH: imgH }
   }
