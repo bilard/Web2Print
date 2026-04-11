@@ -1,9 +1,10 @@
-import { Pencil, Copy, Trash2 } from 'lucide-react'
+import { Pencil, Copy, Trash2, Settings } from 'lucide-react'
 
 interface TaxonomyContextMenuProps {
   onClose: () => void
   onRename: () => void
   onDuplicate: () => void
+  onSettings: () => void
   onDelete: () => void
 }
 
@@ -11,6 +12,7 @@ export function TaxonomyContextMenu({
   onClose,
   onRename,
   onDuplicate,
+  onSettings,
   onDelete,
 }: TaxonomyContextMenuProps) {
   return (
@@ -30,6 +32,13 @@ export function TaxonomyContextMenu({
         >
           <Copy className="w-3.5 h-3.5" />
           Dupliquer
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onSettings() }}
+          className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] transition-colors"
+        >
+          <Settings className="w-3.5 h-3.5" />
+          Paramètres
         </button>
         <div className="h-px bg-white/[0.06] mx-2" />
         <button

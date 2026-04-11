@@ -39,13 +39,6 @@ export function buildTree(
   return roots
 }
 
-/** Retourne tous les nœuds aplatis dans l'ordre level/order. */
-export function flattenTree(nodes: Record<string, TaxonomyNode>): TaxonomyNode[] {
-  return Object.values(nodes).sort((a, b) =>
-    a.level !== b.level ? a.level - b.level : a.order - b.order
-  )
-}
-
 /** Retourne le chemin [root, …, nodeId] en IDs. */
 export function findPath(
   nodes: Record<string, TaxonomyNode>,
@@ -110,4 +103,13 @@ export function nodeMatchesSearch(
   const q = query.toLowerCase()
   if (node.label.toLowerCase().includes(q)) return true
   return node.children.some((child) => nodeMatchesSearch(child, q))
+}
+
+/**
+ * Vrai si le nœud lui-même OU un de ses descendants a des projets liés.
+ * Utilisé pour le filtre "nœuds avec projets uniquement".
+ */
+export function nodeHasLinkedProjects(node: TaxonomyNodeWithChildren): boolean {
+  if (node.linkedProjectIds.length > 0) return true
+  return node.children.some(nodeHasLinkedProjects)
 }

@@ -89,6 +89,36 @@ export function useRenameTaxonomy() {
   })
 }
 
+// ─── updateTaxonomySettings ───────────────────────────────────────────────────
+
+export function useUpdateTaxonomySettings() {
+  const user = useAuthStore((s) => s.user)
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, sourceUrl }: { id: string; sourceUrl: string }) => {
+      await updateDoc(doc(db, 'taxonomies', id), {
+        sourceUrl,
+        updatedAt: Timestamp.now(),
+      })
+    },
+    onMutate: async ({ id, sourceUrl }) => {
+      await qc.cancelQueries({ queryKey: taxListKey(user!.uid) })
+      const previous = getCachedList(qc, user!.uid)
+      qc.setQueryData<Taxonomy[]>(taxListKey(user!.uid), (old) =>
+        (old ?? []).map((t) => (t.id === id ? { ...t, sourceUrl } : t))
+      )
+      return { previous }
+    },
+    onError: (_e, _v, ctx) => {
+      qc.setQueryData(taxListKey(user!.uid), ctx?.previous)
+      toast.error('Erreur lors de la mise à jour')
+    },
+    onSettled: () =>
+      qc.invalidateQueries({ queryKey: taxListKey(user!.uid) }),
+  })
+}
+
 // ─── deleteTaxonomy ───────────────────────────────────────────────────────────
 
 export function useDeleteTaxonomy() {

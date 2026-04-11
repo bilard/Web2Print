@@ -8,6 +8,7 @@ import {
 } from '@/features/taxonomy/useTaxonomyMutations'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { TaxonomyContextMenu } from './TaxonomyContextMenu'
+import { TaxonomySettingsModal } from './TaxonomySettingsModal'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
 interface TaxonomySidebarProps {
@@ -23,6 +24,7 @@ export function TaxonomySidebar({
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [settingsId, setSettingsId] = useState<string | null>(null)
 
   const rename = useRenameTaxonomy()
   const deleteTax = useDeleteTaxonomy()
@@ -118,6 +120,7 @@ export function TaxonomySidebar({
                   onClose={() => setOpenMenu(null)}
                   onRename={() => { setEditName(tax.name); setEditingId(tax.id); setOpenMenu(null) }}
                   onDuplicate={() => { duplicate.mutate({ id: tax.id }); setOpenMenu(null) }}
+                  onSettings={() => { setSettingsId(tax.id); setOpenMenu(null) }}
                   onDelete={() => {
                     deleteTax.mutate(tax.id)
                     if (selectedTaxonomyId === tax.id) setSelectedTaxonomy(null)
@@ -129,6 +132,17 @@ export function TaxonomySidebar({
           ))
         )}
       </div>
+
+      {settingsId && (() => {
+        const tax = taxonomies.find((t) => t.id === settingsId)
+        if (!tax) return null
+        return (
+          <TaxonomySettingsModal
+            taxonomy={tax}
+            onClose={() => setSettingsId(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

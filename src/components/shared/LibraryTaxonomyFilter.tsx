@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { ChevronRight, ChevronDown, FolderTree, X } from 'lucide-react'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useProjects } from '@/features/projects/useProjects'
@@ -74,7 +74,8 @@ function FilterNode({
   const hasProjects = hasLinkedProjects(node, existingProjectIds)
   if (!hasProjects) return null
 
-  const isExpanded = expandedIds.has(node.id)
+  // Toujours développé : le panneau Filtrer est purement visuel/navigable, pas un arbre repliable
+  const isExpanded = true
   const isSelected = selectedNodeId === node.id
   const projectCount = effectiveLinkedIds(node, existingProjectIds).length
   const childrenWithProjects = node.children.filter((c) => hasLinkedProjects(c, existingProjectIds))
@@ -173,15 +174,13 @@ export function LibraryTaxonomyFilter({ selectedNodeId, onSelectNode }: LibraryT
     return { trees: result, defaultExpanded: allExpand }
   }, [taxonomies, existingProjectIds])
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => defaultExpanded)
+  // Tous les nœuds visibles sont développés par défaut. L'utilisateur peut ensuite
+  // replier manuellement, mais à chaque rechargement (nouvelles taxonomies/projets)
+  // on redéveloppe tout pour rester cohérent avec l'image mentale du panneau.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(defaultExpanded))
 
-  // Sync expanded when taxonomies change
-  useMemo(() => {
-    setExpandedIds((prev) => {
-      const merged = new Set(prev)
-      defaultExpanded.forEach((id) => merged.add(id))
-      return merged
-    })
+  useEffect(() => {
+    setExpandedIds(new Set(defaultExpanded))
   }, [defaultExpanded])
 
   const handleToggle = useCallback((id: string) => {

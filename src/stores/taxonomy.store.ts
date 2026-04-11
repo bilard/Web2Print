@@ -5,6 +5,7 @@ interface TaxonomyUIState {
   expandedNodeIds: Set<string>
   searchQuery: string
   highlightedNodeId: string | null
+  showLinkedOnly: boolean
 
   setSelectedTaxonomy: (id: string | null) => void
   toggleNode: (id: string) => void
@@ -12,6 +13,7 @@ interface TaxonomyUIState {
   collapseAll: () => void
   setSearch: (q: string) => void
   setHighlighted: (id: string | null) => void
+  toggleShowLinkedOnly: () => void
 }
 
 export const useTaxonomyStore = create<TaxonomyUIState>((set) => ({
@@ -19,6 +21,7 @@ export const useTaxonomyStore = create<TaxonomyUIState>((set) => ({
   expandedNodeIds: new Set<string>(),
   searchQuery: '',
   highlightedNodeId: null,
+  showLinkedOnly: false,
 
   setSelectedTaxonomy: (id) => set({ selectedTaxonomyId: id }),
 
@@ -42,4 +45,6 @@ export const useTaxonomyStore = create<TaxonomyUIState>((set) => ({
   setSearch: (q) => set({ searchQuery: q }),
 
   setHighlighted: (id) => set({ highlightedNodeId: id }),
+
+  toggleShowLinkedOnly: () => set((s) => ({ showLinkedOnly: !s.showLinkedOnly })),
 }))

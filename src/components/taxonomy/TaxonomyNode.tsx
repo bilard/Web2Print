@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { useRenameNode, useDeleteNode, useAddNode } from '@/features/taxonomy/useTaxonomyMutations'
+import { nodeHasLinkedProjects } from '@/features/taxonomy/taxonomyUtils'
 import type { TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
 import { TaxonomyNodeActions } from './TaxonomyNodeActions'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -20,9 +21,10 @@ interface TaxonomyNodeProps {
   taxonomyId: string
   onLinkProjects: (nodeId: string) => void
   searchQuery: string
+  showLinkedOnly?: boolean
 }
 
-export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery }: TaxonomyNodeProps) {
+export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, showLinkedOnly = false }: TaxonomyNodeProps) {
   const { expandedNodeIds, highlightedNodeId, toggleNode } = useTaxonomyStore()
   const isExpanded = expandedNodeIds.has(node.id)
   const isHighlighted = highlightedNodeId === node.id
@@ -38,6 +40,54 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery }: 
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+
+  const hasLinkedProjects = node.linkedProjectIds.length > 0
+  const hasLinkedDescendant = !hasLinkedProjects && nodeHasLinkedProjects(node)
+
+  // Échelle monochrome indigo : hiérarchie par luminosité (clair → atténué)
+  // pour une lecture harmonieuse niveau par niveau.
+  const LEVEL_TEXT = [
+    'text-white',            // 0 — titre, blanc pur
+    'text-indigo-100',       // 1
+    'text-indigo-200/90',    // 2
+    'text-indigo-300/80',    // 3
+    'text-indigo-300/65',    // 4
+    'text-indigo-300/55',    // 5+
+  ]
+  const LEVEL_BULLET = [
+    'bg-indigo-200',
+    'bg-indigo-300',
+    'bg-indigo-400/80',
+    'bg-indigo-400/60',
+    'bg-indigo-400/45',
+    'bg-indigo-400/35',
+  ]
+  const LEVEL_FONT = [
+    'text-[15px] font-bold',
+    'text-[13px] font-semibold',
+    'text-[12px] font-medium',
+    'text-[12px] font-normal',
+    'text-[11px] font-normal',
+    'text-[11px] font-normal',
+  ]
+  const lvl = Math.min(node.level, LEVEL_TEXT.length - 1)
+
+  const levelStyles = (() => {
+    if (hasLinkedProjects) {
+      // Nœud lié direct → teal franc, taille préservée selon le niveau
+      return `${LEVEL_FONT[lvl]} text-teal-300`
+    }
+    if (hasLinkedDescendant) {
+      // Ancêtre d'un nœud lié → teal atténué
+      return `${LEVEL_FONT[lvl]} text-teal-400/70`
+    }
+    return `${LEVEL_FONT[lvl]} ${LEVEL_TEXT[lvl]}`
+  })()
+  const bulletColor = hasLinkedProjects
+    ? 'bg-teal-300'
+    : hasLinkedDescendant
+      ? 'bg-teal-400/50'
+      : LEVEL_BULLET[lvl]
 
   useEffect(() => { if (isEditing) inputRef.current?.focus() }, [isEditing])
 
@@ -68,11 +118,19 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery }: 
     setShowDeleteConfirm(false)
   }
 
+  const visibleChildren = showLinkedOnly
+    ? node.children.filter(nodeHasLinkedProjects)
+    : node.children
+
   return (
     <div ref={setNodeRef} style={style} id={`taxonomy-node-${node.id}`}>
       <div
         className={`group flex items-center gap-1 px-2 py-[3px] rounded-md cursor-pointer select-none
-          ${isHighlighted ? 'bg-indigo-500/20 ring-1 ring-indigo-500/40' : 'hover:bg-white/[0.04]'}`}
+          ${isHighlighted
+            ? 'bg-indigo-500/20 ring-1 ring-indigo-500/40'
+            : hasLinkedProjects
+              ? 'bg-teal-500/[0.07] hover:bg-teal-500/[0.12] ring-1 ring-teal-500/15'
+              : 'hover:bg-white/[0.04]'}`}
         style={{ paddingLeft: `${node.level * 16 + 8}px` }}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
@@ -90,7 +148,7 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery }: 
         >
           {!node.isLeaf
             ? (isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />)
-            : <span className="w-1.5 h-1.5 rounded-full bg-white/20 block" />}
+            : <span className={`w-1.5 h-1.5 rounded-full block ${bulletColor}`} />}
         </button>
         {isEditing ? (
           <input ref={inputRef} value={editLabel} onChange={(e) => setEditLabel(e.target.value)}
@@ -98,7 +156,7 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery }: 
             className="flex-1 bg-white/10 rounded px-1.5 py-0.5 text-[12px] text-white outline-none ring-1 ring-indigo-500"
           />
         ) : (
-          <span className="flex-1 text-[12px] text-white/70 truncate"
+          <span className={`flex-1 truncate ${levelStyles}`}
             onDoubleClick={() => { setIsEditing(true); setEditLabel(node.label) }}
           >
             {highlightLabel(node.label, searchQuery)}
@@ -120,11 +178,11 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery }: 
           />
         )}
       </div>
-      {!node.isLeaf && isExpanded && (
+      {!node.isLeaf && isExpanded && visibleChildren.length > 0 && (
         <div>
-          {node.children.map((child) => (
+          {visibleChildren.map((child) => (
             <TaxonomyNode key={child.id} node={child} taxonomyId={taxonomyId}
-              onLinkProjects={onLinkProjects} searchQuery={searchQuery}
+              onLinkProjects={onLinkProjects} searchQuery={searchQuery} showLinkedOnly={showLinkedOnly}
             />
           ))}
         </div>

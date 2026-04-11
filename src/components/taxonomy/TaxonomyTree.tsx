@@ -17,7 +17,7 @@ import {
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { useMoveNode } from '@/features/taxonomy/useTaxonomyMutations'
-import { buildTree, nodeMatchesSearch } from '@/features/taxonomy/taxonomyUtils'
+import { buildTree, nodeMatchesSearch, nodeHasLinkedProjects } from '@/features/taxonomy/taxonomyUtils'
 import { TaxonomyNode } from './TaxonomyNode'
 import type { Taxonomy, TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
 
@@ -27,7 +27,7 @@ interface TaxonomyTreeProps {
 }
 
 export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
-  const { searchQuery, expandAll } = useTaxonomyStore()
+  const { searchQuery, expandAll, showLinkedOnly } = useTaxonomyStore()
   const moveNode = useMoveNode()
   const initialized = useRef(false)
 
@@ -48,12 +48,33 @@ export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
     expandAll(level0Ids)
   }, [taxonomy.id, expandAll])
 
+  // En mode "Liés uniquement", développe automatiquement tous les ancêtres
+  // qui contiennent un nœud lié pour révéler les feuilles d'un coup.
+  useEffect(() => {
+    if (!showLinkedOnly) return
+    const fullTree = buildTree(taxonomy.nodes)
+    const idsToExpand: string[] = []
+    const walk = (nodes: TaxonomyNodeWithChildren[]) => {
+      for (const n of nodes) {
+        if (nodeHasLinkedProjects(n) && n.children.length > 0) {
+          idsToExpand.push(n.id)
+          walk(n.children)
+        }
+      }
+    }
+    walk(fullTree)
+    if (idsToExpand.length > 0) expandAll(idsToExpand)
+  }, [showLinkedOnly, taxonomy, expandAll])
+
   const tree = buildTree(taxonomy.nodes)
 
   // Filtrage search : ne garde que les branches qui contiennent un match
-  const filteredTree = searchQuery
+  let filteredTree = searchQuery
     ? tree.filter((n) => nodeMatchesSearch(n, searchQuery))
     : tree
+  if (showLinkedOnly) {
+    filteredTree = filteredTree.filter(nodeHasLinkedProjects)
+  }
 
   // Tous les IDs sont enregistrés dans SortableContext pour couvrir les nœuds enfants
   const flatIds = Object.keys(taxonomy.nodes)
@@ -92,6 +113,7 @@ export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
         taxonomyId={taxonomy.id}
         onLinkProjects={onLinkProjects}
         searchQuery={searchQuery}
+        showLinkedOnly={showLinkedOnly}
       />
     ))
   }

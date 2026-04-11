@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase/firestore'
 
 // ─── Questions dynamiques par nœud ──────────────────────────────────────────
-export type DynamicQuestionType =
+type DynamicQuestionType =
   | 'text'
   | 'number'
   | 'select'
@@ -26,6 +26,7 @@ export type ClientFormFieldType =
   | 'select'
   | 'color'
   | 'logo_upload'
+  | 'brand_kit_upload'
   | 'budget_range'
   | 'address'
 
@@ -41,6 +42,7 @@ export interface ClientFormField {
   group?: string             // 'Société' | 'Identité visuelle' | ...
   order: number
   builtin: boolean           // non supprimable
+  hidden?: boolean           // masqué dans le rendu (Step1Form, preview, etc.)
 }
 
 // ─── Nœud de taxonomie ──────────────────────────────────────────────────────
@@ -70,6 +72,9 @@ export interface Taxonomy {
 
   // Lot 1 : template du formulaire client (1:1 avec la taxonomie)
   formTemplate?: ClientFormField[]
+
+  // URL de la source / site web de la nomenclature
+  sourceUrl?: string
 }
 
 export interface TaxonomyNodeWithChildren extends TaxonomyNode {
