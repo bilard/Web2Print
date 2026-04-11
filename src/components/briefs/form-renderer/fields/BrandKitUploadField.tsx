@@ -75,8 +75,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
           setProgress({ done: i + 1, total: files.length })
           continue
         }
-        // @ts-expect-error webkitRelativePath existe sur les fichiers d'un dossier
-        const rel: string = f.webkitRelativePath || f.name
+        const rel: string = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name
         const safe = rel.replace(/[^a-zA-Z0-9._/-]+/g, '_')
         const path = `briefs/${briefId}/brandkit/${Date.now()}_${safe}`
         const ref = storageRef(storage, path)

@@ -39,7 +39,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
       autoGenStartedRef.current = true
       handleGenerate()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [])
 
   const handleGenerate = async () => {
@@ -109,7 +109,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [items, discount, update.isPending, hasItems])
 
   return (

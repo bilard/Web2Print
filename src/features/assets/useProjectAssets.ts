@@ -77,7 +77,7 @@ export function useProjectAssets(projectId: string | null, options: UseProjectAs
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [projectId, version])
 
   return { images, fonts, loading, reload: load }

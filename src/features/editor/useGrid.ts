@@ -48,5 +48,5 @@ export function useGrid(fabricRef: React.RefObject<Canvas | null>) {
     }
 
     canvas.requestRenderAll()
-  }, [gridVisible, canvasWidth, canvasHeight, fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gridVisible, canvasWidth, canvasHeight, fabricRef.current])  
 }

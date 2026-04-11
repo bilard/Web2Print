@@ -161,7 +161,6 @@ export function useImageGeneration() {
         // Extract image from response — handle both camelCase and snake_case keys
         const resParts = data.candidates?.[0]?.content?.parts ?? []
         const imagePart = resParts.find(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (p: any) =>
             p.inline_data?.mime_type?.startsWith('image/') ||
             p.inlineData?.mimeType?.startsWith('image/'),

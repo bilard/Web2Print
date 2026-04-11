@@ -187,7 +187,7 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
       canvas.dispose()
       fabricRef.current = null
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   // Update page background rectangle when size, color, gradient or image changes
   useEffect(() => {

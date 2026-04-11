@@ -37,7 +37,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
     if (!hasQuestions && !generate.isPending) {
       handleGenerate()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [])
 
   const handleNext = async () => {
@@ -79,7 +79,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [answers, update.isPending, hasQuestions])
 
   return (

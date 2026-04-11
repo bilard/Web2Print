@@ -72,7 +72,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       setSheetWidth(rowCount > 1 ? window.innerWidth : Math.round(window.innerWidth / 2))
     }
     prevSheetRowId.current = sheetRowId
-  }, [sheetRowId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sheetRowId])  
 
   const sheet = sheets[activeSheetIndex]
   const hasData = sheets.length > 0 && (sheet?.rows.length > 0 || sheet?.columns.length > 0)
@@ -109,7 +109,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
   useEffect(() => {
     refreshFileList()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   // Auto-save on data change (debounced)
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       }
     }, 3000)
     return () => clearTimeout(timer)
-  }, [sheets, currentFileName]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sheets, currentFileName])  
 
   const handleSave = async () => {
     const name = currentFileName ?? sheet?.name ?? 'data'

@@ -79,7 +79,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
     if (!brief.cart?.items.length) return
     setDeckAutoTried(true)
     handleGenerateDeck()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [slideCount])
 
   // Auto-génération des images à l'arrivée s'il manque des visuels pour
@@ -95,7 +95,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
     if (hasAllRequired) return
     setAutoTried(true)
     handleGenerateAllImages()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [imagesLoading, existingImages.length, brief.cart?.items])
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [update.isPending])
 
   return (

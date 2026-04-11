@@ -1675,7 +1675,7 @@ function parseElement(
   // Colors — inline attributes override ObjectStyle
   const appliedObjStyle = attr(el, 'AppliedObjectStyle')
   const objStyle = objStyleMap.get(appliedObjStyle)
-  let fillRef = attr(el, 'FillColor') || objStyle?.fillColor || '$ID/None'
+  const fillRef = attr(el, 'FillColor') || objStyle?.fillColor || '$ID/None'
   const strokeRef = attr(el, 'StrokeColor') || objStyle?.strokeColor || '$ID/None'
   const fill = colorMap.get(fillRef) ?? null
   const stroke = colorMap.get(strokeRef) ?? null

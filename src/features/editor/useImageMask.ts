@@ -1015,5 +1015,5 @@ export function useImageMask(fabricRef: React.RefObject<Canvas | null>) {
       canvas.off('object:removed', onObjectRemoved)
       if (_state) cancelCrop()
     }
-  }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current])  
 }

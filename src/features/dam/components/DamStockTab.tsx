@@ -41,7 +41,7 @@ export function DamStockTab() {
   useEffect(() => {
     if (!didInitRef.current) return
     if (!query.trim()) search()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [filters.source])
 
   const handleKeyDown = useCallback(

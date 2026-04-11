@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/main.tsx",
+        "index.html",
+        "vite.config.ts",
+        "tailwind.config.{js,cjs,ts}",
+        "postcss.config.{js,cjs}",
+        "src/**/*.test.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignore": [
+        "src/components/ui/**",
+        "src/types/fabric.d.ts"
+      ]
+    },
+    "functions": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+      "ignore": ["lib/**"]
+    }
+  },
+  "ignore": [
+    "scripts/**",
+    "functions/lib/**"
+  ]
+}

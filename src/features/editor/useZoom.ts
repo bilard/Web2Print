@@ -26,7 +26,7 @@ export function useZoom(fabricRef: React.RefObject<Canvas | null>) {
 
     canvas.on('mouse:wheel', handleWheel)
     return () => { canvas.off('mouse:wheel', handleWheel) }
-  }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current])  
 }
 
 export function usePan(fabricRef: React.RefObject<Canvas | null>) {
@@ -96,5 +96,5 @@ export function usePan(fabricRef: React.RefObject<Canvas | null>) {
       canvas.off('mouse:move', onMouseMove)
       canvas.off('mouse:up', onMouseUp)
     }
-  }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current])  
 }

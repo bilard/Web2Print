@@ -8,7 +8,7 @@ import {
   Copy, Trash2, Minimize2, ImagePlus, ChevronDown,
   Image as ImageIcon, FolderOpen, Heart, FolderHeart, Clock, Sparkles, Upload,
 } from 'lucide-react'
-import { Shadow, FabricImage } from 'fabric'
+import { Shadow } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
 import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'

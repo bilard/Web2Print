@@ -72,7 +72,7 @@ export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
       canvas.off('object:removed', onChange)
       canvas.off('object:modified', onChange)
     }
-  }, [fabricRef.current, snapshot]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current, snapshot])  
 
   // Keyboard shortcuts
   useEffect(() => {

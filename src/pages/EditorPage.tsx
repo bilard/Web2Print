@@ -94,7 +94,7 @@ export default function EditorPage() {
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [pendingImport]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pendingImport])  
 
   return (
     <div className="flex flex-col h-screen bg-[#0f0f0f] overflow-hidden">

@@ -35,7 +35,7 @@ export function ScrapeTab({ url, loading, onScrape, result }: Props) {
       if (needsProxy && proxy === 'none') setProxy('basic')
       else if (!needsProxy && !isSpa) { setProxy('none'); setWaitFor(0) }
     } catch { /* URL invalide */ }
-  }, [url]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [url])  
 
   return (
     <div className="space-y-4">

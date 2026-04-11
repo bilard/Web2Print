@@ -30,7 +30,7 @@ export function SheetsFilePicker({ onClose }: Props) {
       setLoading(false)
     }, search ? 400 : 0)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [connected, search]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [connected, search])  
 
   if (!connected) {
     return (

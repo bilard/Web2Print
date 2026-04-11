@@ -533,5 +533,5 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
         setLoadingInProgress(false)
       }
     }
-  }, [projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId])  
 }

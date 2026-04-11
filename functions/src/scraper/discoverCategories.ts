@@ -1,6 +1,6 @@
 import { load } from 'cheerio'
 
-export interface CategoryLink {
+interface CategoryLink {
   url: string
   label: string
   score: number

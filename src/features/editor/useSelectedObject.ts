@@ -117,5 +117,5 @@ export function useSyncPropertiesToCanvas(fabricRef: React.RefObject<Canvas | nu
     // Debounced snapshot for undo history (300ms after last property change)
     if (snapshotTimer.current) clearTimeout(snapshotTimer.current)
     snapshotTimer.current = setTimeout(() => { canvas.fire('object:modified', { target: fabricObj }) }, 300)
-  }, [canvasObjects, selectedObjectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [canvasObjects, selectedObjectId])  
 }

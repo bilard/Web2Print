@@ -267,7 +267,7 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
   useEffect(() => {
     globalSave = () => saveRef.current()
     return () => { globalSave = null }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   // Track canvas changes → mark as unsaved + refresh page thumbnail (debounced)
   useEffect(() => {
@@ -305,7 +305,7 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
       canvas.off('object:added', markUnsaved)
       canvas.off('object:removed', markUnsaved)
     }
-  }, [fabricRef.current, projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current, projectId])  
 
   // Save title immediately when it changes — but only after initial load
   useEffect(() => {

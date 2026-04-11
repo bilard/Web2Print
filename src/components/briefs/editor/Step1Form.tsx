@@ -103,7 +103,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [values, update.isPending])
 
   return (

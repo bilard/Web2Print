@@ -49,7 +49,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
       request.then(setFiles).finally(() => setLoading(false))
     }, search ? 400 : 0)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [section, search, parentId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [section, search, parentId])  
 
   const dateLabel = section === 'shared' ? 'Date de partage' : 'Date de modification'
   const groups = parentId ? null : groupByDate(files, section)

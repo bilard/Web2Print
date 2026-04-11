@@ -72,7 +72,7 @@ export function CanvasContainer() {
       canvas.off('mouse:down', onTransformStart)
       canvas.off('mouse:up', onTransformEnd)
     }
-  }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current])  
 
   // Re-fit when document dimensions change (template change)
   useEffect(() => {
@@ -97,7 +97,7 @@ export function CanvasContainer() {
     const center = new Point(canvas.getWidth() / 2, canvas.getHeight() / 2)
     canvas.zoomToPoint(center, zoom / 100)
     canvas.requestRenderAll()
-  }, [zoom]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [zoom])  
 
   // Resize observer — only resize the HTML canvas, keep current zoom/pan
   useEffect(() => {
@@ -137,7 +137,7 @@ export function CanvasContainer() {
     const el = canvas.getElement()
     el.addEventListener('contextmenu', onContextMenu)
     return () => el.removeEventListener('contextmenu', onContextMenu)
-  }, [fabricRef.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current])  
 
   useZoom(fabricRef)
   usePan(fabricRef)

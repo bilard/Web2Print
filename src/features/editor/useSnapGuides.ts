@@ -119,5 +119,5 @@ export function useSnapGuides(
       canvas.off('object:modified', clearGuides)
       canvas.off('mouse:up', clearGuides)
     }
-  }, [fabricRef.current, setGuides]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fabricRef.current, setGuides])  
 }
