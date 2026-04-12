@@ -28,6 +28,78 @@ function isGarbageContent(text: string): boolean {
   return GARBAGE_RE.test(text)
 }
 
+/**
+ * Post-processing : enrichit un EnrichedProduct avec les groupes du markdown source.
+ * - Advantages : si le markdown contient des groupes (ex: "Les + Nicoll performance"),
+ *   remplace les advantages plates par les groupées (match par texte similaire).
+ * - Specs : attribue les groupes du markdown aux specs plates si possible.
+ * - Variants : extrait les variantes du markdown si absentes.
+ */
+function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: string | null): EnrichedProduct {
+  if (!markdownContent || markdownContent.length < 100) return enriched
+
+  let { advantages, specifications, variants } = enriched
+
+  // ── Advantages : récupérer les groupes depuis le markdown ──
+  const mdAdvantages = parseAdvantagesFromMarkdown(markdownContent)
+  if (mdAdvantages.length > 0 && mdAdvantages.some(a => a.group)) {
+    // Le markdown a des groupes → les utiliser
+    if (advantages.length === 0 || !advantages.some(a => a.group)) {
+      // Tenter un match par texte similaire pour conserver l'ordre du LLM
+      // mais attribuer les groupes du markdown
+      if (advantages.length > 0) {
+        const grouped = advantages.map(adv => {
+          // Chercher la meilleure correspondance dans le markdown
+          const match = mdAdvantages.find(md =>
+            md.text === adv.text
+            || adv.text.includes(md.text.slice(0, 30))
+            || md.text.includes(adv.text.slice(0, 30))
+          )
+          return match ? { ...adv, group: match.group } : adv
+        })
+        // Si le markdown a plus d'items, ajouter les manquants
+        const existingTexts = new Set(grouped.map(a => a.text.slice(0, 30).toLowerCase()))
+        const missing = mdAdvantages.filter(md =>
+          !existingTexts.has(md.text.slice(0, 30).toLowerCase())
+        )
+        advantages = [...grouped, ...missing]
+      } else {
+        advantages = mdAdvantages
+      }
+      console.log('[post-process] advantages enriched with markdown groups:', advantages.filter(a => a.group).length, '/', advantages.length, 'grouped')
+    }
+  }
+  // Si advantages est toujours vide mais le markdown en a (sans groupes)
+  if (advantages.length === 0 && mdAdvantages.length > 0) {
+    advantages = mdAdvantages
+  }
+
+  // ── Specs : récupérer les groupes depuis le markdown ──
+  const mdSpecs = parseSpecsFromMarkdown(markdownContent)
+  if (mdSpecs.length > 0 && mdSpecs.some(s => s.group) && !specifications.some(s => s.group)) {
+    // Attribuer les groupes par match de nom
+    specifications = specifications.map(spec => {
+      const match = mdSpecs.find(ms =>
+        ms.name.toLowerCase() === spec.name.toLowerCase()
+        || ms.name.toLowerCase().includes(spec.name.toLowerCase())
+        || spec.name.toLowerCase().includes(ms.name.toLowerCase())
+      )
+      return match?.group ? { ...spec, group: match.group } : spec
+    })
+    console.log('[post-process] specs enriched with markdown groups:', specifications.filter(s => s.group).length, '/', specifications.length, 'grouped')
+  }
+
+  // ── Variants : extraire du markdown si absentes ──
+  if ((!variants || variants.length === 0) && markdownContent) {
+    variants = parseVariantsFromMarkdown(markdownContent)
+    if (variants.length > 0) {
+      console.log('[post-process] variants extracted from markdown:', variants.length)
+    }
+  }
+
+  return { ...enriched, advantages, specifications, variants }
+}
+
 /** Nettoie un EnrichedProduct en retirant les contenus parasites */
 function sanitizeEnriched(enriched: EnrichedProduct): EnrichedProduct {
   return {
@@ -2475,6 +2547,11 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             llmModel: llmModelUsed,
           }
         }
+
+        // ── Post-processing : enrichir avec groupes markdown + variantes ──
+        // Le LLM et le schema Firecrawl retournent des données plates (pas de groupes).
+        // Le markdown scrappé contient souvent les groupes d'origine du fabricant.
+        enriched = enrichWithMarkdownGroups(enriched, markdownContent)
 
         enriched = sanitizeEnriched(enriched)
         setData(sheetName, rowId, enriched)
