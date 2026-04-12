@@ -29,71 +29,57 @@ function isGarbageContent(text: string): boolean {
 }
 
 /**
- * Post-processing : enrichit un EnrichedProduct avec les groupes du markdown source.
- * - Advantages : si le markdown contient des groupes (ex: "Les + Nicoll performance"),
- *   remplace les advantages plates par les groupées (match par texte similaire).
- * - Specs : attribue les groupes du markdown aux specs plates si possible.
- * - Variants : extrait les variantes du markdown si absentes.
+ * Post-processing : enrichit un EnrichedProduct avec les données du markdown source.
+ * Le markdown est la SOURCE DE VÉRITÉ pour les groupes, les items manquants et les variantes.
+ * Le LLM et le schema Firecrawl retournent tout à plat — le markdown conserve la structure.
  */
 function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: string | null): EnrichedProduct {
-  if (!markdownContent || markdownContent.length < 100) return enriched
+  if (!markdownContent || markdownContent.length < 100) {
+    console.log('[post-process] no markdown content, skipping')
+    return enriched
+  }
+
+  console.log('[post-process] markdown length:', markdownContent.length, 'chars')
+  // Log les lignes contenant des keywords features/avantages pour debug
+  const featureLines = markdownContent.split('\n')
+    .filter(l => /les\s*\+|avantage|caract[eé]ristique|points?\s*forts?|features?/i.test(l))
+    .slice(0, 10)
+  if (featureLines.length > 0) {
+    console.log('[post-process] feature-related lines in markdown:', featureLines.map(l => l.trim().slice(0, 80)))
+  }
 
   let { advantages, specifications, variants } = enriched
 
-  // ── Advantages : récupérer les groupes depuis le markdown ──
+  // ── 1. Advantages : le markdown fait autorité (groupes + complétude) ──
   const mdAdvantages = parseAdvantagesFromMarkdown(markdownContent)
-  if (mdAdvantages.length > 0 && mdAdvantages.some(a => a.group)) {
-    // Le markdown a des groupes → les utiliser
-    if (advantages.length === 0 || !advantages.some(a => a.group)) {
-      // Tenter un match par texte similaire pour conserver l'ordre du LLM
-      // mais attribuer les groupes du markdown
-      if (advantages.length > 0) {
-        const grouped = advantages.map(adv => {
-          // Chercher la meilleure correspondance dans le markdown
-          const match = mdAdvantages.find(md =>
-            md.text === adv.text
-            || adv.text.includes(md.text.slice(0, 30))
-            || md.text.includes(adv.text.slice(0, 30))
-          )
-          return match ? { ...adv, group: match.group } : adv
-        })
-        // Si le markdown a plus d'items, ajouter les manquants
-        const existingTexts = new Set(grouped.map(a => a.text.slice(0, 30).toLowerCase()))
-        const missing = mdAdvantages.filter(md =>
-          !existingTexts.has(md.text.slice(0, 30).toLowerCase())
-        )
-        advantages = [...grouped, ...missing]
-      } else {
-        advantages = mdAdvantages
-      }
-      console.log('[post-process] advantages enriched with markdown groups:', advantages.filter(a => a.group).length, '/', advantages.length, 'grouped')
+  console.log('[post-process] markdown advantages:', mdAdvantages.length, 'items,', mdAdvantages.filter(a => a.group).length, 'grouped')
+  if (mdAdvantages.length > 0) {
+    // Le markdown a plus d'items OU a des groupes → le préférer
+    if (mdAdvantages.length >= advantages.length || mdAdvantages.some(a => a.group)) {
+      advantages = mdAdvantages
+      console.log('[post-process] ✓ using markdown advantages:', advantages.length, 'items')
     }
   }
-  // Si advantages est toujours vide mais le markdown en a (sans groupes)
-  if (advantages.length === 0 && mdAdvantages.length > 0) {
-    advantages = mdAdvantages
-  }
 
-  // ── Specs : récupérer les groupes depuis le markdown ──
+  // ── 2. Specs : attribuer les groupes du markdown ──
   const mdSpecs = parseSpecsFromMarkdown(markdownContent)
   if (mdSpecs.length > 0 && mdSpecs.some(s => s.group) && !specifications.some(s => s.group)) {
-    // Attribuer les groupes par match de nom
     specifications = specifications.map(spec => {
-      const match = mdSpecs.find(ms =>
-        ms.name.toLowerCase() === spec.name.toLowerCase()
-        || ms.name.toLowerCase().includes(spec.name.toLowerCase())
-        || spec.name.toLowerCase().includes(ms.name.toLowerCase())
-      )
+      const match = mdSpecs.find(ms => {
+        const a = ms.name.toLowerCase().replace(/\s+/g, ' ')
+        const b = spec.name.toLowerCase().replace(/\s+/g, ' ')
+        return a === b || a.includes(b) || b.includes(a)
+      })
       return match?.group ? { ...spec, group: match.group } : spec
     })
-    console.log('[post-process] specs enriched with markdown groups:', specifications.filter(s => s.group).length, '/', specifications.length, 'grouped')
+    console.log('[post-process] ✓ specs grouped:', specifications.filter(s => s.group).length, '/', specifications.length)
   }
 
-  // ── Variants : extraire du markdown si absentes ──
-  if ((!variants || variants.length === 0) && markdownContent) {
+  // ── 3. Variants : extraire du markdown ──
+  if (!variants || variants.length === 0) {
     variants = parseVariantsFromMarkdown(markdownContent)
     if (variants.length > 0) {
-      console.log('[post-process] variants extracted from markdown:', variants.length)
+      console.log('[post-process] ✓ variants:', variants.length)
     }
   }
 
@@ -1737,69 +1723,100 @@ function parseVariantsFromMarkdown(md: string): Array<{ reference: string; label
 
 /**
  * Extrait les avantages/features depuis un markdown de page produit.
- * Cherche les listes à puces significatives.
+ * Gère les formats :
+ *   - Headings : `## Les + Nicoll performance` / `### Caractéristiques`
+ *   - Bold : `**Les + Nicoll performance**`
+ *   - Texte simple suivi de bullets
+ *   - Sections multiples (parcourt TOUT le markdown)
  */
 function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: string }> {
   const advantages: Array<{ text: string; group?: string }> = []
+  const seenTexts = new Set<string>()
 
-  // Pattern pour détecter les headings de sections features/avantages (tous niveaux)
-  const featureSectionRe = /^#{1,4}\s*(.*(caract[eé]ristiques?|avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+).*)$/im
+  // Keywords qui identifient une section de features/avantages
+  const featureKeywords = /(?:caract[eé]ristiques?|avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+|atouts?|plus\s+produit)/i
+
+  // Extraire le nom du groupe depuis un titre
+  const extractGroupName = (raw: string): string | undefined => {
+    const cleaned = raw
+      .replace(/\*\*/g, '')
+      .replace(/^les\s*\+\s*/i, '')
+      .replace(/^(caract[eé]ristiques?|avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|atouts?|plus\s+produit)\s*/i, '')
+      .trim()
+    return cleaned.length > 1 && cleaned.length < 80 ? cleaned : undefined
+  }
+
+  const addBullet = (text: string, group: string | undefined) => {
+    const clean = text
+      .replace(/\*\*/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/\\\\/g, '')
+      .trim()
+    if (clean.length > 10 && !clean.startsWith('http') && !/^\d+$/.test(clean) && !seenTexts.has(clean)) {
+      seenTexts.add(clean)
+      advantages.push({ text: clean, group })
+    }
+  }
 
   const lines = md.split('\n')
   let currentGroup: string | undefined
   let inFeatureZone = false
-  const seenTexts = new Set<string>()
 
-  for (const line of lines) {
-    const trimmed = line.trim()
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+    if (!trimmed) continue
 
-    // Détecter un heading de features (groupe ou section principale)
-    const headingMatch = trimmed.match(/^#{1,4}\s+(.+)$/)
+    // ── Détecter les titres de section (headings ET bold) ──
+
+    // Format heading : ## Les + Nicoll performance
+    const headingMatch = trimmed.match(/^#{1,5}\s+(.+)$/)
     if (headingMatch) {
       const headingText = headingMatch[1].replace(/\*\*/g, '').trim()
-      if (featureSectionRe.test(trimmed)) {
+      if (featureKeywords.test(headingText)) {
         inFeatureZone = true
-        // Extraire le nom du groupe depuis le heading (ex: "Les + Nicoll performance" → "Nicoll performance")
-        const groupName = headingText
-          .replace(/^les\s*\+\s*/i, '')
-          .replace(/^(caract[eé]ristiques?|avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?)\s*/i, '')
-          .trim()
-        currentGroup = groupName || undefined
+        currentGroup = extractGroupName(headingText)
+        console.log('[parse-advantages] heading group:', currentGroup ?? '(sans nom)', '→', trimmed.slice(0, 60))
         continue
       }
-      // Heading non-feature → fin de zone si on était dans une zone feature
-      if (inFeatureZone && /^#{1,2}\s/.test(trimmed)) {
-        inFeatureZone = false
-        currentGroup = undefined
+      // Heading non-feature de même niveau → fin de zone
+      if (inFeatureZone) {
+        // Ne quitter que si c'est un heading de même niveau ou supérieur (pas un sous-heading)
+        const level = trimmed.match(/^(#{1,5})/)?.[1].length ?? 99
+        if (level <= 2) {
+          inFeatureZone = false
+          currentGroup = undefined
+        }
       }
+      continue
+    }
+
+    // Format bold seul : **Les + Nicoll performance** (sans heading #)
+    const boldMatch = trimmed.match(/^\*\*(.+?)\*\*\s*$/)
+    if (boldMatch && featureKeywords.test(boldMatch[1])) {
+      inFeatureZone = true
+      currentGroup = extractGroupName(boldMatch[1])
+      console.log('[parse-advantages] bold group:', currentGroup ?? '(sans nom)', '→', trimmed.slice(0, 60))
       continue
     }
 
     if (!inFeatureZone) continue
 
-    // Bullet point
-    const bulletMatch = trimmed.match(/^[-*•]\s+(.+)/)
+    // ── Capturer les bullets ──
+    const bulletMatch = trimmed.match(/^[-*•·✓✔]\s+(.+)/)
     if (bulletMatch) {
-      let text = bulletMatch[1].trim()
-      text = text.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\\\\/g, '').trim()
-      if (text.length > 10 && !text.startsWith('http') && !/^\d+$/.test(text) && !seenTexts.has(text)) {
-        seenTexts.add(text)
-        advantages.push({ text, group: currentGroup })
-      }
+      addBullet(bulletMatch[1], currentGroup)
       continue
     }
 
-    // Paragraphe de texte (features sans bullet)
+    // Paragraphe de texte dans une zone feature (features sans bullet)
     if (trimmed.length > 20 && trimmed.length < 300
-        && !trimmed.startsWith('|') && !trimmed.startsWith('http') && !trimmed.startsWith('[')) {
-      const clean = trimmed.replace(/\*\*/g, '').trim()
-      if (clean && !seenTexts.has(clean)) {
-        seenTexts.add(clean)
-        advantages.push({ text: clean, group: currentGroup })
-      }
+        && !trimmed.startsWith('|') && !trimmed.startsWith('http') && !trimmed.startsWith('[')
+        && !trimmed.startsWith('#')) {
+      addBullet(trimmed, currentGroup)
     }
   }
 
+  console.log('[parse-advantages] total:', advantages.length, 'items,', advantages.filter(a => a.group).length, 'grouped')
   return advantages
 }
 
