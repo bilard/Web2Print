@@ -13,7 +13,30 @@ import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson as geminiGenerateJson } from '@/features/briefs/ai/geminiClient'
 
-type LLMProviderId = 'claude' | 'gemini' | 'openai'
+export type LLMProviderId = 'claude' | 'gemini' | 'openai'
+
+/**
+ * Snapshot du payload réellement envoyé au provider LLM.
+ * Exposé via `onRequestSent` pour permettre un affichage debug dans l'UI
+ * (prompt + paramètres tels qu'ils sont envoyés à l'API).
+ */
+export interface LlmRequestInfo {
+  provider: LLMProviderId
+  endpoint: string
+  model: string
+  temperature: number
+  max_tokens: number
+  /** Messages envoyés au modèle (rôle + contenu texte concaténé). */
+  messages: Array<{ role: string; content: string }>
+  /** Nom de l'outil (Claude tool-use). */
+  tool_name?: string
+  /** Schéma d'input de l'outil — ce que le modèle doit remplir. */
+  input_schema?: Record<string, unknown>
+  /** Nom de la tâche (LLMTask) — pour la traçabilité. */
+  task: string
+  /** Version du prompt (pour la traçabilité). */
+  version: string
+}
 
 type LLMTask =
   | 'brief.dynamicQuestions'
@@ -21,6 +44,7 @@ type LLMTask =
   | 'brief.deckStructure'
   | 'brief.imagePrompts'
   | 'brief.catalogKeywords'
+  | 'product.enrichment'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -40,6 +64,7 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
+  'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
 }
 
 interface GenerateJsonOptions<T> {
@@ -54,26 +79,43 @@ interface GenerateJsonOptions<T> {
   version: string
   /** Override manuel du provider (debug / forçage). */
   forceProvider?: LLMProviderId
+  /** Callback invoqué avec le provider réellement utilisé (primaire OU fallback)
+   *  et le modèle exact. Utile pour afficher la provenance dans l'UI. */
+  onProviderUsed?: (info: { provider: LLMProviderId; model: string }) => void
+  /** Callback invoqué juste avant l'envoi du payload au provider, avec un snapshot
+   *  des paramètres effectifs (modèle, temperature, prompt, tool schema…).
+   *  Permet à l'UI d'afficher le prompt et les paramètres exacts en mode debug. */
+  onRequestSent?: (info: LlmRequestInfo) => void
 }
 
 /**
  * Point d'entrée unique. Essaie le provider primaire, fallback en cas d'échec.
  * Throws seulement si TOUS les providers configurés échouent.
  */
+const DEFAULT_MODEL: Record<LLMProviderId, string> = {
+  claude: 'claude-opus-4-6',
+  gemini: 'gemini-2.0-flash',
+  openai: 'gpt-4o',
+}
+
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
   const route = TASK_ROUTING[opts.task]
   const primary = opts.forceProvider ?? route.primary
   const fallback = opts.forceProvider ? undefined : route.fallback
 
   try {
-    return await callProvider(primary, opts, route.model)
+    const result = await callProvider(primary, opts, route.model)
+    opts.onProviderUsed?.({ provider: primary, model: route.model ?? DEFAULT_MODEL[primary] })
+    return result
   } catch (err) {
     if (!fallback) throw err
     console.warn(
       `[llmRouter] ${opts.task}: provider primaire "${primary}" a échoué, fallback sur "${fallback}". Cause:`,
       err,
     )
-    return await callProvider(fallback, opts)
+    const result = await callProvider(fallback, opts)
+    opts.onProviderUsed?.({ provider: fallback, model: DEFAULT_MODEL[fallback] })
+    return result
   }
 }
 
@@ -132,6 +174,23 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     input_schema: opts.schemaForClaude ?? opts.schemaForLLM,
   }
 
+  const temperature = 0.4
+  const max_tokens = 8192
+
+  // Notifie l'UI du payload exact avant l'envoi (pour affichage debug).
+  opts.onRequestSent?.({
+    provider: 'claude',
+    endpoint: ANTHROPIC_ENDPOINT,
+    model,
+    temperature,
+    max_tokens,
+    messages: [{ role: 'user', content: opts.prompt }],
+    tool_name: toolName,
+    input_schema: tool.input_schema as Record<string, unknown>,
+    task: opts.task,
+    version: opts.version,
+  })
+
   const ctrl = new AbortController()
   const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
 
@@ -148,8 +207,8 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
       },
       body: JSON.stringify({
         model,
-        max_tokens: 8192,
-        temperature: 0.4,
+        max_tokens,
+        temperature,
         tools: [tool],
         tool_choice: { type: 'tool', name: toolName },
         messages: [{ role: 'user', content: opts.prompt }],

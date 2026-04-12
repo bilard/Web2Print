@@ -144,7 +144,7 @@ function createTextbox(shape: PptxShape, s: Scale): FabricObject[] {
   const baseFontSize = (firstRun?.sz ?? 18) * s.font
   const baseFill = firstRun?.color ? colorToCss(firstRun.color) : '#000000'
   const baseFontFamily = firstRun?.fontFamily ?? 'Calibri'
-  const alignMap: Record<PptxParagraph['align'], string> = {
+  const alignMap: Record<PptxParagraph['align'], 'left' | 'center' | 'right' | 'justify'> = {
     left: 'left', center: 'center', right: 'right', justify: 'justify',
   }
   const textAlign = alignMap[firstPara?.align ?? 'left'] ?? 'left'

@@ -13,13 +13,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-fabric': ['fabric'],
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          'vendor-pdflib': ['pdf-lib'],
-          'vendor-export': ['pptxgenjs'],
-          'vendor-jszip': ['jszip'],
-          'vendor-xlsx': ['xlsx'],
+        // rolldown-vite (Vite 8) exige une fonction pour manualChunks,
+        // la forme objet n'est plus acceptée.
+        manualChunks: (id) => {
+          if (id.includes('node_modules/fabric/')) return 'vendor-fabric'
+          if (id.includes('node_modules/firebase/') || id.includes('node_modules/@firebase/')) return 'vendor-firebase'
+          if (id.includes('node_modules/pdf-lib/')) return 'vendor-pdflib'
+          if (id.includes('node_modules/pptxgenjs/')) return 'vendor-export'
+          if (id.includes('node_modules/jszip/')) return 'vendor-jszip'
+          if (id.includes('node_modules/xlsx/')) return 'vendor-xlsx'
+          return undefined
         },
       },
     },

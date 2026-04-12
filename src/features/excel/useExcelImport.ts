@@ -55,8 +55,10 @@ export function useExcelImport() {
   }
 
   const createEmpty = () => {
+    const { sheets: existingSheets } = useExcelStore.getState()
+    const sheetNumber = existingSheets.length + 1
     const sheet: ExcelSheet = {
-      name: 'Feuille 1',
+      name: `Feuille ${sheetNumber}`,
       columns: [
         {
           key: 'col_1',
@@ -86,7 +88,14 @@ export function useExcelImport() {
       rows: [],
       taxonomy: [],
     }
-    setSheets([sheet])
+    // Préserver les feuilles existantes : ajouter la nouvelle feuille comme
+    // nouvel onglet et la rendre active, au lieu d'écraser les données chargées.
+    setSheets([...existingSheets, sheet])
+    const store = useExcelStore.getState()
+    store.setActiveSheet(existingSheets.length)
+    // Fermer toute fiche produit ouverte — son rowId réfère à une ligne d'un
+    // autre onglet et n'existe pas dans la nouvelle feuille vide.
+    store.setSheetRowId(null)
   }
 
   const exportToXlsx = (sheets: ExcelSheet[], filename = 'export.xlsx') => {

@@ -124,8 +124,8 @@ export function NanoBanaPanel() {
     const zIndex = canvas.getObjects().indexOf(active)
 
     // Capturer l'image d'origine avant remplacement
-    let originalSrc: string | null = oldData.originalSrc ?? null
-    const variants: string[] = [...(oldData.variants ?? [])]
+    let originalSrc: string | null = (oldData.originalSrc as string | null | undefined) ?? null
+    const variants: string[] = [...((oldData.variants as string[] | undefined) ?? [])]
 
     if (active instanceof FabricImage) {
       const currentSrc = captureImageDataUrl(active)

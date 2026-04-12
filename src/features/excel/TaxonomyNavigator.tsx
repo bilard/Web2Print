@@ -2,6 +2,7 @@ import { useMemo, useCallback } from 'react'
 import { ChevronRight, FolderTree, X, Package, ChevronDown } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { getTaxoColumns } from './taxonomyBuilder'
+import { isRowEnriched } from './DataTable'
 import type { ExcelRow } from './types'
 
 interface TreeNode {
@@ -16,7 +17,7 @@ interface TreeNode {
 }
 
 export function TaxonomyNavigator() {
-  const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter } = useExcelStore()
+  const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, aiFilter } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
 
   const taxoCols = useMemo(() => {
@@ -63,8 +64,12 @@ export function TaxonomyNavigator() {
       })
     }
 
-    return buildLevel(0, sheet.rows)
-  }, [sheet, taxoCols, taxonomyNavFilter])
+    let initialRows = sheet.rows
+    if (aiFilter === 'enriched') initialRows = initialRows.filter(isRowEnriched)
+    else if (aiFilter === 'raw') initialRows = initialRows.filter((r) => !isRowEnriched(r))
+
+    return buildLevel(0, initialRows)
+  }, [sheet, taxoCols, taxonomyNavFilter, aiFilter])
 
   const handleSelect = useCallback((colKey: string, value: string, level: number) => {
     const newFilter = { ...taxonomyNavFilter }
@@ -93,13 +98,15 @@ export function TaxonomyNavigator() {
   // Count total filtered rows
   const filteredCount = useMemo(() => {
     if (!sheet) return 0
-    if (!hasFilters) return sheet.rows.length
     let rows = sheet.rows
+    if (aiFilter === 'enriched') rows = rows.filter(isRowEnriched)
+    else if (aiFilter === 'raw') rows = rows.filter((r) => !isRowEnriched(r))
+    if (!hasFilters) return rows.length
     for (const [colKey, value] of Object.entries(taxonomyNavFilter)) {
       rows = rows.filter((r) => String(r[colKey]) === value)
     }
     return rows.length
-  }, [sheet, taxonomyNavFilter, hasFilters])
+  }, [sheet, taxonomyNavFilter, hasFilters, aiFilter])
 
   if (!sheet || taxoCols.length === 0) {
     return (

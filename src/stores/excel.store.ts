@@ -17,6 +17,8 @@ interface ExcelState {
   sheetRowId: string | null
   /** Whether to group rows by taxonomy levels in the table */
   groupByTaxonomy: boolean
+  /** Filter rows by AI enrichment status: 'all' (default), 'enriched' (IA only), 'raw' (non-IA only) */
+  aiFilter: 'all' | 'enriched' | 'raw'
 
   // Actions
   setSheets: (sheets: ExcelSheet[]) => void
@@ -30,6 +32,7 @@ interface ExcelState {
   setSheetRowId: (id: string | null) => void
   setCurrentFileName: (name: string | null) => void
   setGroupByTaxonomy: (v: boolean) => void
+  setAiFilter: (v: 'all' | 'enriched' | 'raw') => void
 
   // Column actions
   updateColumnType: (sheetIdx: number, colKey: string, type: FieldTypeId) => void
@@ -42,7 +45,10 @@ interface ExcelState {
   reorderColumns: (sheetIdx: number, fromIndex: number, toIndex: number) => void
   hideColumn: (sheetIdx: number, colKey: string) => void
   updateColumnFormula: (sheetIdx: number, colKey: string, formula: string) => void
-  addColumn: (sheetIdx: number, col: import('@/features/excel/types').ExcelColumn) => void
+  addColumn: (sheetIdx: number, col: import('@/features/excel/types').ExcelColumn, position?: 'start' | 'end') => void
+
+  // Sheet actions
+  deleteSheet: (sheetIdx: number) => void
 
   // Row actions
   addRow: (sheetIdx: number, row: ExcelRow) => void
@@ -81,9 +87,27 @@ export const useExcelStore = create<ExcelState>((set) => ({
   taxonomyNavFilter: {},
   sheetRowId: null,
   groupByTaxonomy: true,
+  aiFilter: 'all',
 
-  setSheets: (sheets) => set({ sheets }),
-  setActiveSheet: (activeSheetIndex) => set({ activeSheetIndex }),
+  setSheets: (sheets) =>
+    set((s) => {
+      // Clamp activeSheetIndex pour éviter un index hors-bornes après
+      // remplacement (import/load Firebase). Sans ça, sheets[activeSheetIndex]
+      // devient undefined → DataTable retourne null et TaxonomyNavigator
+      // affiche l'état vide, alors que les onglets sont bien présents.
+      const activeSheetIndex =
+        sheets.length === 0
+          ? 0
+          : Math.min(Math.max(s.activeSheetIndex, 0), sheets.length - 1)
+      // Toute fiche produit ouverte référait à une ligne de l'ancien jeu de
+      // données — on ferme par sécurité.
+      return { sheets, activeSheetIndex, sheetRowId: null }
+    }),
+  setActiveSheet: (activeSheetIndex) =>
+    // Fermer toute fiche produit ouverte : son rowId référait à une ligne
+    // de l'ancienne feuille et n'existe pas dans la nouvelle → ProductSheet
+    // rendrait null, laissant l'écran vide à la place du DataTable.
+    set({ activeSheetIndex, sheetRowId: null }),
   setSelectedColumn: (selectedColumnKey) => set({ selectedColumnKey }),
   setImportModalOpen: (importModalOpen) => set({ importModalOpen }),
   setDetecting: (detecting) => set({ detecting }),
@@ -93,6 +117,7 @@ export const useExcelStore = create<ExcelState>((set) => ({
   setSheetRowId: (sheetRowId) => set({ sheetRowId }),
   setCurrentFileName: (currentFileName) => set({ currentFileName }),
   setGroupByTaxonomy: (groupByTaxonomy) => set({ groupByTaxonomy }),
+  setAiFilter: (aiFilter) => set({ aiFilter }),
 
   updateColumnType: (sheetIdx, colKey, type) =>
     set((s) => {
@@ -212,13 +237,31 @@ export const useExcelStore = create<ExcelState>((set) => ({
       return { sheets }
     }),
 
-  addColumn: (sheetIdx, col) =>
+  addColumn: (sheetIdx, col, position) =>
     set((s) => {
       const sheets = [...s.sheets]
       const sheet = { ...sheets[sheetIdx] }
-      sheet.columns = [...sheet.columns, col]
+      sheet.columns = position === 'start' ? [col, ...sheet.columns] : [...sheet.columns, col]
       sheets[sheetIdx] = sheet
       return { sheets }
+    }),
+
+  deleteSheet: (sheetIdx) =>
+    set((s) => {
+      if (sheetIdx < 0 || sheetIdx >= s.sheets.length) return s
+      const sheets = s.sheets.filter((_, i) => i !== sheetIdx)
+      // Recalcule l'index actif : si on supprime avant l'actif, décrémente ;
+      // si on supprime l'actif, reste sur la même position (clampée à la fin).
+      let activeSheetIndex = s.activeSheetIndex
+      if (sheetIdx < s.activeSheetIndex) {
+        activeSheetIndex = s.activeSheetIndex - 1
+      } else if (sheetIdx === s.activeSheetIndex) {
+        activeSheetIndex = Math.min(s.activeSheetIndex, sheets.length - 1)
+      }
+      if (activeSheetIndex < 0) activeSheetIndex = 0
+      // Toute fiche produit ouverte référait potentiellement à une ligne de
+      // la feuille supprimée — on ferme par sécurité.
+      return { sheets, activeSheetIndex, sheetRowId: null }
     }),
 
   addRow: (sheetIdx, row) =>

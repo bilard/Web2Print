@@ -144,7 +144,7 @@ const BINDING_ICON: Record<string, typeof Type> = {
   opacity: Eye,
 }
 
-function ActiveBindings({ columns }: { columns: { key: string; label: string }[] }) {
+function ActiveBindings({ columns }: { columns: { key: string; label: string; fieldType?: string }[] }) {
   const canvas = globalFabricCanvas
   const { isConnected, currentRowIndex } = useMergeStore()
   const selectedObjectId = useEditorStore((s) => s.selectedObjectId)
@@ -383,7 +383,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string }[]
           </div>
           <div className="max-h-32 overflow-y-auto space-y-0.5">
             {columns.map((col) => {
-              const FIcon = FIELD_ICON[col.fieldType] ?? Type
+              const FIcon = (col.fieldType && FIELD_ICON[col.fieldType]) || Type
               return (
                 <button
                   key={col.key}

@@ -11,6 +11,7 @@ import {
   List,
   Palette,
   ImageUp,
+  Package,
   Wallet,
   MapPin,
 } from 'lucide-react'
@@ -27,9 +28,10 @@ export const FIELD_TYPE_REGISTRY: Record<ClientFormFieldType, FieldTypeMeta> = {
   email:        { label: 'Email',            icon: Mail },
   select:       { label: 'Liste déroulante', icon: List },
   color:        { label: 'Couleur',          icon: Palette },
-  logo_upload:  { label: 'Logo',             icon: ImageUp },
-  budget_range: { label: 'Fourchette budget',icon: Wallet },
-  address:      { label: 'Adresse',          icon: MapPin },
+  logo_upload:      { label: 'Logo',              icon: ImageUp },
+  brand_kit_upload: { label: 'Brand kit',          icon: Package },
+  budget_range:     { label: 'Fourchette budget',  icon: Wallet },
+  address:          { label: 'Adresse',            icon: MapPin },
 }
 
 export const ALL_FIELD_TYPES = Object.keys(
@@ -44,6 +46,7 @@ const LABEL_BY_TYPE: Record<ClientFormFieldType, string> = {
   select: 'Nouvelle liste',
   color: 'Nouvelle couleur',
   logo_upload: 'Nouveau logo',
+  brand_kit_upload: 'Nouveau brand kit',
   budget_range: 'Nouveau budget',
   address: 'Nouvelle adresse',
 }

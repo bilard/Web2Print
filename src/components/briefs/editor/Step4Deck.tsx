@@ -146,11 +146,11 @@ export function Step4Deck({ brief, onAdvance }: Props) {
                   <li
                     key={i}
                     className="text-[11px] text-white/70 bg-[#141414] border border-white/[0.06] rounded px-3 py-2 truncate"
-                    title={'title' in s ? s.title : s.type}
+                    title={s.title}
                   >
                     <span className="text-indigo-300">{i + 1}.</span>{' '}
                     <span className="text-white/40">[{s.type}]</span>{' '}
-                    {'title' in s ? s.title : ''}
+                    {s.title}
                   </li>
                 ))}
               </ul>

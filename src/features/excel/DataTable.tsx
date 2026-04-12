@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useMemo, Fragment, type RefObject, type MouseEvent as ReactMouseEvent } from 'react'
-import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, Expand, ChevronRight, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, Expand, ChevronRight, ChevronDown, Sparkles } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { FieldTypeSelector } from './FieldTypeSelector'
 import { StatsBadges } from './StatsBadges'
 import { ColumnMenu } from './ColumnMenu'
+import { AddColumnMenu } from './AddColumnMenu'
 import { FormulaEditor } from './FormulaEditor'
 import { evaluateFormula } from './formulaEngine'
 import { getTaxoColumns } from './taxonomyBuilder'
@@ -13,9 +14,30 @@ type SortDir = 'asc' | 'desc' | 'color' | null
 
 const numericTypes: FieldTypeId[] = ['number', 'currency', 'percent', 'rating']
 
+/** Clés des colonnes d'enrichissement IA (cf. useSaveEnrichedProduct.ENRICHMENT_COLUMNS) */
+export const AI_ENRICHMENT_KEYS = [
+  'ai_description',
+  'ai_advantages',
+  'ai_specifications',
+  'ai_images',
+  'ai_documents',
+  'ai_source',
+  'ai_scraper',
+  'ai_llm_model',
+  'ai_llm_request',
+] as const
+
+/** Une ligne est considérée comme enrichie si au moins un de ses champs ai_* est rempli. */
+export function isRowEnriched(row: ExcelRow): boolean {
+  return AI_ENRICHMENT_KEYS.some((k) => {
+    const v = row[k]
+    return typeof v === 'string' ? v.trim().length > 0 : v != null
+  })
+}
+
 export function DataTable() {
   const {
-    sheets, activeSheetIndex, searchQuery, taxonomyNavFilter, groupByTaxonomy,
+    sheets, activeSheetIndex, searchQuery, taxonomyNavFilter, groupByTaxonomy, aiFilter,
     updateColumnType, setColumnPrimary, updateCell, deleteRow, addRow,
     updateColumnWidth, moveColumn, moveColumnTo, hideColumn, updateColumnFormula, addColumn,
     updateColumnLabel, updateColumnDecimals, reorderColumns,
@@ -35,6 +57,11 @@ export function DataTable() {
   // Formula editor state
   const [editingFormula, setEditingFormula] = useState<string | null>(null)
 
+  // Column rename state
+  const [renamingCol, setRenamingCol] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
   // Grouping: collapsed groups (key = "level:value" or "level:parent>value")
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
@@ -47,6 +74,13 @@ export function DataTable() {
   if (!sheet) return null
 
   const hiddenCols = new Set(sheet.hiddenColumns ?? [])
+  // Masquer aussi les colonnes utilisées comme niveaux de taxonomie quand le groupement est actif
+  const taxoLevels = sheet.taxonomyLevels ?? {}
+  if (groupByTaxonomy) {
+    for (const key of Object.keys(taxoLevels)) {
+      if (taxoLevels[key] > 0) hiddenCols.add(key)
+    }
+  }
   const visibleColumns = sheet.columns.filter((c) => !hiddenCols.has(c.key))
   const formatStatValue = (v: number | string | null, ft: FieldTypeId) => {
     if (v === null) return '—'
@@ -71,18 +105,33 @@ export function DataTable() {
     return Math.max(col.width, badgesWidth, labelMin)
   }
 
-  const handleAddFormulaColumn = () => {
-    const colKey = `formula_${Date.now()}`
+  const startRename = (colKey: string) => {
+    const col = sheet.columns.find((c) => c.key === colKey)
+    if (!col) return
+    setRenamingCol(colKey)
+    setRenameValue(col.label)
+    setTimeout(() => renameInputRef.current?.select(), 30)
+  }
+
+  const commitRename = () => {
+    if (renamingCol && renameValue.trim()) {
+      updateColumnLabel(activeSheetIndex, renamingCol, renameValue.trim())
+    }
+    setRenamingCol(null)
+  }
+
+  const handleAddColumn = (type: FieldTypeId, label: string, position?: 'start' | 'end') => {
+    const colKey = `${type}_${Date.now()}`
     addColumn(activeSheetIndex, {
       key: colKey,
-      label: 'Calcul',
-      fieldType: 'formula',
-      detectedType: 'formula',
+      label,
+      fieldType: type,
+      detectedType: type,
       isPrimary: false,
       width: 180,
-      formula: '',
-    })
-    setEditingFormula(colKey)
+      ...(type === 'formula' ? { formula: '' } : {}),
+    }, position)
+    if (type === 'formula') setEditingFormula(colKey)
   }
 
   // Filter rows by taxonomy navigation + search
@@ -100,6 +149,11 @@ export function DataTable() {
         return v !== null && String(v).toLowerCase().includes(searchQuery.toLowerCase())
       }),
     )
+  }
+  if (aiFilter === 'enriched') {
+    filteredRows = filteredRows.filter(isRowEnriched)
+  } else if (aiFilter === 'raw') {
+    filteredRows = filteredRows.filter((r) => !isRowEnriched(r))
   }
 
   // Sort rows
@@ -365,8 +419,8 @@ export function DataTable() {
         <thead>
           {/* Row 1: Column name */}
           <tr>
-            <th className="sticky top-0 z-20 w-10 px-2 bg-[#141414] border-b-2 border-r border-white/[0.08] text-[10px] text-white/20 font-normal align-middle">
-              #
+            <th className="sticky top-0 left-0 z-30 w-10 bg-[#141414] border-b-2 border-r border-white/[0.08] align-middle">
+              <AddColumnMenu onAdd={(type, label) => handleAddColumn(type, label, 'start')} />
             </th>
             {visibleColumns.map((col, colIdx) => (
               <th
@@ -404,12 +458,28 @@ export function DataTable() {
                   {col.isPrimary && (
                     <span title="Champ principal"><Key className="w-3 h-3 text-amber-400 shrink-0" /></span>
                   )}
-                  <span
-                    className="text-[11px] font-bold text-white/60 uppercase tracking-wide truncate flex-1 cursor-pointer"
-                    onClick={() => handleSort(col.key)}
-                  >
-                    {col.label}
-                  </span>
+                  {renamingCol === col.key ? (
+                    <input
+                      ref={renameInputRef}
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRename()
+                        if (e.key === 'Escape') setRenamingCol(null)
+                      }}
+                      className="text-[11px] font-bold text-white/80 uppercase tracking-wide flex-1 bg-white/10 border border-indigo-500/50 rounded px-1.5 py-0.5 outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span
+                      className="text-[11px] font-bold text-white/60 uppercase tracking-wide truncate flex-1 cursor-pointer"
+                      onClick={() => handleSort(col.key)}
+                      onDoubleClick={(e) => { e.stopPropagation(); startRename(col.key) }}
+                    >
+                      {col.label}
+                    </span>
+                  )}
                   {col.fieldType === 'formula' && (
                     <button
                       onClick={() => setEditingFormula(col.key)}
@@ -444,6 +514,7 @@ export function DataTable() {
                       onMoveFirst={() => moveColumnTo(activeSheetIndex, col.key, 'first')}
                       onMoveLast={() => moveColumnTo(activeSheetIndex, col.key, 'last')}
                       onHide={() => hideColumn(activeSheetIndex, col.key)}
+                      onRename={() => startRename(col.key)}
                     />
                   </span>
                 </div>
@@ -455,19 +526,13 @@ export function DataTable() {
               </th>
             ))}
             <th className="sticky top-0 z-20 w-10 bg-[#141414] border-b-2 border-white/[0.08] align-middle">
-              <button
-                onClick={handleAddFormulaColumn}
-                className="w-full h-full flex items-center justify-center text-white/15 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
-                title="Ajouter un champ calculé"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+              <AddColumnMenu onAdd={handleAddColumn} />
             </th>
           </tr>
 
           {/* Row 2: Type + Stats — sticky below row 1 (top ~37px) */}
           <tr>
-            <th className="sticky top-[37px] z-20 w-10 bg-[#111111] border-b border-r border-white/[0.06]" />
+            <th className="sticky top-[37px] left-0 z-30 w-10 bg-[#111111] border-b border-r border-white/[0.06]" />
             {visibleColumns.map((col, vColIdx) => (
               <th
                 key={col.key}
@@ -661,16 +726,33 @@ function DataRow({
   inputRef, startEdit, commitEdit, setEditingCell, setSheetRowId, deleteRow,
   activeSheetIndex, formatCell, getCellColorStyle, dragColIdx,
 }: DataRowProps) {
+  const enriched = isRowEnriched(row)
   return (
     <tr
       className={`group transition-colors hover:bg-white/[0.07] cursor-pointer ${rowIdx % 2 === 1 ? 'bg-white/[0.025]' : ''}`}
     >
       <td
-        className="px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle"
+        className={`sticky left-0 z-10 relative px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a]`}
         onClick={() => setSheetRowId(row._id)}
       >
+        {/* Accent gauche indigo si ligne enrichie par l'IA */}
+        {enriched && (
+          <span
+            className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-indigo-400/70 via-fuchsia-400/50 to-indigo-400/70"
+            aria-hidden
+          />
+        )}
         <div className="flex items-center justify-center gap-0.5">
-          <span className="text-[10px] text-white/15 group-hover:hidden tabular-nums">{rowIdx + 1}</span>
+          {enriched ? (
+            <span
+              className="group-hover:hidden inline-flex items-center justify-center"
+              title="Ce produit a été enrichi par l'IA"
+            >
+              <Sparkles className="w-3 h-3 text-indigo-400/90" />
+            </span>
+          ) : (
+            <span className="text-[10px] text-white/15 group-hover:hidden tabular-nums">{rowIdx + 1}</span>
+          )}
           <Expand className="w-3 h-3 text-white/20 group-hover:text-indigo-400 hidden group-hover:block transition-colors" />
         </div>
       </td>
@@ -687,8 +769,11 @@ function DataRow({
           <td
             key={col.key}
             className={`px-3 py-[7px] border-b border-r border-white/[0.05] overflow-hidden align-middle ${isFormulaCol ? 'cursor-default' : 'cursor-text'} ${dragColIdx !== null && dragColIdx === vColIdx ? 'opacity-30' : ''}`}
-            onClick={() => setSheetRowId(row._id)}
-            onDoubleClick={(e) => { e.stopPropagation(); if (!isFormulaCol) startEdit(row._id, col.key, value) }}
+            onClick={(e) => {
+              if (isEditing || isFormulaCol) return
+              e.stopPropagation()
+              startEdit(row._id, col.key, value)
+            }}
             style={{ backgroundColor: colorStyle?.bg }}
           >
             {isEditing ? (
@@ -842,13 +927,18 @@ function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, ...rowPr
               className={`cursor-pointer transition-colors ${levelStyles.hoverBg}`}
               onClick={() => toggleGroup(item.key)}
             >
-              <td colSpan={totalCols} className={levelStyles.borderClass}>
+              <td
+                colSpan={totalCols}
+                className={`${levelStyles.borderClass} p-0`}
+                style={{
+                  borderLeft: `3px solid ${item.color}${item.level <= 2 ? '' : '60'}`,
+                  backgroundColor: `${item.color}${levelStyles.bgOpacity}`,
+                }}
+              >
                 <div
-                  className={`flex items-center ${levelStyles.py} px-3`}
+                  className={`sticky left-0 flex items-center ${levelStyles.py} pr-3 w-fit`}
                   style={{
                     paddingLeft: `${12 + indent}px`,
-                    borderLeft: `3px solid ${item.color}${item.level <= 2 ? '' : '60'}`,
-                    backgroundColor: `${item.color}${levelStyles.bgOpacity}`,
                   }}
                 >
                   {isCollapsed ? (

@@ -81,7 +81,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
       { key: 'availability', label: 'Disponibilité', description: 'Stock ou disponibilité (ex: "En stock", "En rupture de stock")', type: 'string' },
       { key: 'ean', label: 'EAN', description: 'Code EAN ou code-barres', type: 'string' },
       { key: 'images', label: 'Images', description: 'URLs COMPLÈTES de TOUTES les images produit (photos sous différents angles, vues). Inclure chaque URL d\'image produit trouvée sur la page, sous forme de tableau de strings.', type: 'strings' },
-      { key: 'specifications', label: 'Spécifications techniques', description: 'TOUTES les lignes du tableau de spécifications sous forme [{name, value}]. Sans exception.', type: 'specs' },
+      { key: 'specifications', label: 'Spécifications techniques', description: 'TOUTES les lignes de TOUTES les sections de spécifications sous forme [{name, value}]. Inclure CHAQUE section (Informations, Poids, Puissance, Décibels, Vibrations, Dimensions, Batterie, etc.) et CHAQUE ligne de chaque section. Capturer aussi les specs dans les accordéons ou sections repliables. Sans exception, sans limite.', type: 'specs' },
       { key: 'documents', label: 'Documents', description: 'URLs ABSOLUES et COMPLÈTES (commençant par https://) de tous les fichiers téléchargeables présents sur la page : PDF, notices, fiches techniques, déclarations de conformité CE, manuels d\'utilisation. Chercher les attributs href des balises <a> dont le lien se termine par .pdf ou pointe vers un téléchargement. Ne retourner QUE les URLs, jamais les titres textuels.', type: 'strings' },
     ],
   },

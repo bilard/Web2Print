@@ -422,8 +422,8 @@ function scaleImageChildTransform(
   const rectXml = se.xml.slice(rectStart, rectClose)
   const patchedRect = rectXml.replace(
     /<Image\b([^>]*?)\bItemTransform="([^"]+)"([^>]*)>/,
-    (_full, before, transformValue, after) => {
-      const parts = transformValue.trim().split(/\s+/).map(Number)
+    (_full: string, before: string, transformValue: string, after: string) => {
+      const parts: number[] = transformValue.trim().split(/\s+/).map(Number)
       if (parts.length !== 6 || parts.some((n) => Number.isNaN(n))) {
         return `<Image${before}ItemTransform="${transformValue}"${after}>`
       }
@@ -1841,7 +1841,10 @@ export async function exportIdmlModified(
 
     // Build Image element matching real InDesign structure
     // Self IDs must follow InDesign format: 'u' + hex digits
-    const idHash = Array.from(id).reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) >>> 0, 0)
+    const idHash: number = Array.from(String(id)).reduce<number>(
+      (h, c) => ((h << 5) - h + c.charCodeAt(0)) >>> 0,
+      0,
+    )
     const imageId = `u${(idHash + 0xA000).toString(16)}`
     const linkId = `u${(idHash + 0xB000).toString(16)}`
     const sizeHex = `0~${imgBytes.byteLength.toString(16)}`

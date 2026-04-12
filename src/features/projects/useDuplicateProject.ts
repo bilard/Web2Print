@@ -26,14 +26,15 @@ async function duplicateProject(
 
   const ref = await addDoc(collection(db, 'projects'), data)
 
+  const extras = data as typeof data & { thumbnail?: string | null; canvasData?: string | null }
   return {
     id: ref.id,
     title: data.title as string,
-    thumbnail: (data.thumbnail as string | null) ?? null,
+    thumbnail: extras.thumbnail ?? null,
     createdAt: now,
     updatedAt: now,
     ownerId: userId,
-    canvasData: (data.canvasData as string | null) ?? null,
+    canvasData: extras.canvasData ?? null,
   }
 }
 

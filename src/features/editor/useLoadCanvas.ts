@@ -103,7 +103,7 @@ function fixAndReattach(canvas: Canvas) {
 
     // Restore data.type hidden before loadFromJSON to avoid classRegistry collision
     if (obj.data._type && !obj.data.type) {
-      obj.data.type = obj.data._type
+      obj.data.type = obj.data._type as string
       delete obj.data._type
     }
 

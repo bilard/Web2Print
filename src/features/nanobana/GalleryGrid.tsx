@@ -205,9 +205,9 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
     const persistentSrc = captureImageDataUrl(target) ?? ci.currentSrc
 
     if (!d.originalSrc) {
-      target.data = { ...d, originalSrc: persistentSrc, variants: d.variants ?? [] }
+      target.data = { ...d, originalSrc: persistentSrc, variants: (d.variants as string[] | undefined) ?? [] }
     } else {
-      const variants = [...(d.variants ?? [])]
+      const variants: string[] = [...((d.variants as string[] | undefined) ?? [])]
       if (persistentSrc !== d.originalSrc && !variants.includes(persistentSrc)) {
         variants.push(persistentSrc)
       }

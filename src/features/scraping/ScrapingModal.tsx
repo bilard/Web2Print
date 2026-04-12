@@ -59,16 +59,24 @@ export function ScrapingModal({ open, onClose }: Props) {
   const handleImportResult = (fields: ScrapingField[]) => {
     if (!result) return
     const sheet = scrapeResultToSheet(result, fields, hostname)
-    setSheets([sheet])
-    setCurrentFileName(hostname)
+    // Préserver les feuilles existantes : ajouter comme nouvel onglet et l'activer.
+    setSheets([...sheets, sheet])
+    const store = useExcelStore.getState()
+    store.setActiveSheet(sheets.length)
+    store.setSheetRowId(null) // fermer toute fiche produit ouverte
+    if (sheets.length === 0) setCurrentFileName(hostname)
     handleClose()
   }
 
   const handleImportCrawl = () => {
     if (crawlPages.length === 0) return
     const sheet = crawlPagesToSheet(crawlPages, hostname)
-    setSheets([sheet])
-    setCurrentFileName(hostname)
+    // Préserver les feuilles existantes : ajouter comme nouvel onglet et l'activer.
+    setSheets([...sheets, sheet])
+    const store = useExcelStore.getState()
+    store.setActiveSheet(sheets.length)
+    store.setSheetRowId(null) // fermer toute fiche produit ouverte
+    if (sheets.length === 0) setCurrentFileName(hostname)
     handleClose()
   }
 

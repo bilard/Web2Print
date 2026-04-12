@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
   MoreVertical, ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
-  ChevronsLeft, ChevronsRight, EyeOff, ArrowUpDown,
+  ChevronsLeft, ChevronsRight, Trash2, ArrowUpDown, Pencil,
 } from 'lucide-react'
 
 interface ColumnMenuProps {
@@ -17,11 +17,12 @@ interface ColumnMenuProps {
   onMoveFirst: () => void
   onMoveLast: () => void
   onHide: () => void
+  onRename?: () => void
 }
 
 export function ColumnMenu({
   colIndex, totalColumns, sortDir,
-  onSort, onClearSort, onMoveLeft, onMoveRight, onMoveFirst, onMoveLast, onHide,
+  onSort, onClearSort, onMoveLeft, onMoveRight, onMoveFirst, onMoveLast, onHide, onRename,
 }: ColumnMenuProps) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
@@ -129,10 +130,21 @@ export function ColumnMenu({
 
           <div className="h-px bg-white/10 mx-2 my-1.5" />
 
-          {/* Hide */}
+          {/* Rename */}
+          {onRename && (
+            <MenuItem
+              icon={<Pencil className="w-3.5 h-3.5" />}
+              label="Renommer"
+              onClick={() => action(onRename)}
+            />
+          )}
+
+          <div className="h-px bg-white/10 mx-2 my-1.5" />
+
+          {/* Delete */}
           <MenuItem
-            icon={<EyeOff className="w-3.5 h-3.5" />}
-            label="Masquer la colonne"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+            label="Supprimer"
             disabled={totalColumns <= 1}
             danger
             onClick={() => action(onHide)}

@@ -179,14 +179,14 @@ export function getCurrentTextStyle(canvas: Canvas | null): TextStyle | null {
   const cursorStyle = getStyleAtCursor(itext)
 
   return {
-    fontFamily: (cursorStyle.fontFamily ?? itext.fontFamily as string) ?? 'Inter',
-    fontSize: (cursorStyle.fontSize ?? itext.fontSize) ?? 24,
+    fontFamily: ((cursorStyle.fontFamily as string | undefined) ?? (itext.fontFamily as string | undefined)) ?? 'Inter',
+    fontSize: ((cursorStyle.fontSize as number | undefined) ?? itext.fontSize) ?? 24,
     fontWeight: ((cursorStyle.fontWeight ?? itext.fontWeight) as 'normal' | 'bold') ?? 'normal',
     fontStyle: ((cursorStyle.fontStyle ?? itext.fontStyle) as 'normal' | 'italic') ?? 'normal',
-    underline: (cursorStyle.underline ?? itext.underline) ?? false,
-    linethrough: (cursorStyle.linethrough ?? (itext as any).linethrough) ?? false,
+    underline: ((cursorStyle.underline as boolean | undefined) ?? itext.underline) ?? false,
+    linethrough: ((cursorStyle.linethrough as boolean | undefined) ?? (itext as any).linethrough) ?? false,
     textAlign: (itext.textAlign as TextStyle['textAlign']) ?? 'left',
-    fill: (cursorStyle.fill ?? (typeof itext.fill === 'string' ? itext.fill : null)) ?? '#ffffff',
+    fill: ((cursorStyle.fill as string | undefined) ?? (typeof itext.fill === 'string' ? itext.fill : null)) ?? '#ffffff',
     charSpacing: (itext as any).charSpacing ?? 0,
     lineHeight: itext.lineHeight ?? 1.16,
   }

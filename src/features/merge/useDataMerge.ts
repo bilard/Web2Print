@@ -85,7 +85,8 @@ export function useDataMerge() {
       // Auto-fit uniquement les Textbox dont tout le contenu est un placeholder unique
       for (const obj of canvas.getObjects()) {
         if (!(obj instanceof Textbox)) continue
-        const tmpl = obj.data?.templateText as string | undefined
+        if (!obj.data) continue
+        const tmpl = obj.data.templateText as string | undefined
         if (!tmpl) continue
         const isSinglePlaceholder = /^\{\{[^}]+\}\}$/.test(tmpl.trim())
         if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {

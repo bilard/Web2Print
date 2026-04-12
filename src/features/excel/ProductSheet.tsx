@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   X, ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
-  Tag, Barcode, FileText, Play, Link2, Download, Zap,
+  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database,
 } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { evaluateFormula } from './formulaEngine'
 import { getLevelColor } from './taxonomyBuilder'
 import type { ExcelColumn, CellValue, FieldTypeId } from './types'
+import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 
 interface Props {
   rowId: string
@@ -80,6 +81,9 @@ const isSpecKey   = (k: string) => /spec|tech|caract/i.test(k)
 const isAdvKey    = (k: string) => /avantage|advantage|feature|benefit/i.test(k)
 const isBrandKey  = (k: string) => /marque|brand|fabricant/i.test(k)
 const isDocKey    = (k: string) => /^documents?$|pdf|video|notice|lien|link|url/i.test(k)
+/** Libellé produit — utilisé en priorité sur `isPrimary` pour l'enrichissement IA
+ *  (la primary est souvent mal détectée à l'import — cf. useExcelImport.ts). */
+const isTitleKey  = (k: string) => /libell|d[eé]signation|nom.?(article|produit)?|titre|title|product.?name/i.test(k)
 
 type Tab = 'general' | 'specs' | 'documents'
 
@@ -93,6 +97,48 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  // Split resizable entre panneau source (gauche) et enrichissement IA (droite)
+  const splitContainerRef = useRef<HTMLDivElement>(null)
+  const [leftRatio, setLeftRatio] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.5
+    const stored = window.localStorage.getItem('productSheet.splitRatio')
+    const parsed = stored ? Number(stored) : NaN
+    return Number.isFinite(parsed) && parsed >= 0.2 && parsed <= 0.8 ? parsed : 0.5
+  })
+  const draggingRef = useRef(false)
+
+  const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    draggingRef.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!draggingRef.current || !splitContainerRef.current) return
+      const rect = splitContainerRef.current.getBoundingClientRect()
+      const ratio = (e.clientX - rect.left) / rect.width
+      const clamped = Math.max(0.2, Math.min(0.8, ratio))
+      setLeftRatio(clamped)
+    }
+    const onUp = () => {
+      if (!draggingRef.current) return
+      draggingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      try {
+        window.localStorage.setItem('productSheet.splitRatio', String(leftRatio))
+      } catch { /* noop */ }
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [leftRatio])
 
   if (!sheet) return null
   const row = sheet.rows.find(r => r._id === rowId)
@@ -114,10 +160,21 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const fmt = (value: CellValue, col: ExcelColumn): string => {
     if (value === null || value === undefined || value === '') return '—'
     if (col.fieldType === 'checkbox') return value ? 'Oui' : 'Non'
-    const num = typeof value === 'number' ? value : parseFloat(String(value))
-    if (col.fieldType === 'currency' && !isNaN(num)) return `${num.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`
-    if (col.fieldType === 'percent' && !isNaN(num)) return `${num.toLocaleString('fr-FR', { minimumFractionDigits: 1 })}%`
+    // parseFloat français : "84,90" → 84.9 (on remplace la virgule décimale)
+    const num = typeof value === 'number'
+      ? value
+      : parseFloat(String(value).replace(/\s/g, '').replace(',', '.'))
+    // Décimales configurées sur la colonne, défaut 2 (aligné avec DataTable.tsx)
+    const decimals = col.decimals ?? 2
+    const formatNum = (n: number) =>
+      n.toLocaleString('fr-FR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+    if (col.fieldType === 'currency' && !isNaN(num)) return `${formatNum(num)} €`
+    if (col.fieldType === 'percent' && !isNaN(num)) return `${formatNum(num)}%`
     if (col.fieldType === 'rating' && !isNaN(num)) return '★'.repeat(Math.round(num)) + '☆'.repeat(Math.max(0, 5 - Math.round(num)))
+    if (col.fieldType === 'number' && !isNaN(num)) return formatNum(num)
     return String(value)
   }
 
@@ -143,7 +200,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const title = primaryCol ? String(getValue(primaryCol) ?? '') : `Ligne ${currentIdx + 1}`
   const taxoCols = visibleCols.filter(c => (levels[c.key] ?? 0) > 0)
     .sort((a, b) => (levels[a.key] ?? 0) - (levels[b.key] ?? 0))
-  const imageCols = visibleCols.filter(c => c.key !== primaryCol?.key && isImageCol(c, sheet.rows))
+  const imageCols = visibleCols.filter(c => c.key !== primaryCol?.key && !c.key.startsWith('ai_') && isImageCol(c, sheet.rows))
 
   const allImages: string[] = []
   imageCols.forEach(col => allImages.push(...parseImageList(getValue(col))))
@@ -152,7 +209,8 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const contentCols = visibleCols.filter(c =>
     c.key !== primaryCol?.key &&
     (levels[c.key] ?? 0) === 0 &&
-    !imageCols.some(ic => ic.key === c.key)
+    !imageCols.some(ic => ic.key === c.key) &&
+    !c.key.startsWith('ai_') // colonnes IA affichées dans le panneau droit uniquement
   )
 
   // Separate into tabs
@@ -169,6 +227,49 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   // Count tabs with content
   const hasSpecs = specCols.length > 0
   const hasDocs  = docCols.length > 0
+
+  // ── Enrichment input (pour le panneau IA) ───────────────────────────────────
+  const firstValue = (predicate: (c: ExcelColumn) => boolean): string | undefined => {
+    const col = visibleCols.find(predicate)
+      ?? sheet.columns.find(predicate)
+    if (!col) return undefined
+    const v = getValue(col)
+    return v == null || v === '' ? undefined : String(v)
+  }
+
+  // Libellé produit : priorité aux clés explicites (libellé/désignation/nom article).
+  // Fallback : `primaryCol` si elle n'est pas une colonne de taxonomie, ni ref/brand/price.
+  // Ignore `title` (= primaryCol header) qui est souvent la racine taxonomique sur fichiers mal marqués.
+  const isTaxoCol = (c: ExcelColumn) => (levels[c.key] ?? 0) > 0
+  const isMetaCol = (c: ExcelColumn) =>
+    isRefKey(c.key) || isBrandKey(c.key) || isPriceKey(c.key) ||
+    isAvailKey(c.key) || isEanKey(c.key) || isDocKey(c.key) ||
+    isImageCol(c, sheet.rows) || c.key.startsWith('ai_')
+  const titleCol = visibleCols.find(c => !isTaxoCol(c) && isTitleKey(c.key))
+    ?? (primaryCol && !isTaxoCol(primaryCol) && !isMetaCol(primaryCol) ? primaryCol : undefined)
+    ?? visibleCols.find(c => !isTaxoCol(c) && !isMetaCol(c) && !isDescKey(c.key) && !isSpecKey(c.key) && !isAdvKey(c.key))
+  const productTitle = titleCol ? String(getValue(titleCol) ?? '').trim() : ''
+
+  // Chemin de catégorie taxonomique (ex: "Électronique > Informatique > Ordinateurs portables")
+  // — donne au LLM le contexte pour détecter une incohérence avec le libellé scrapé.
+  const taxoColsAll = visibleCols
+    .filter(c => (levels[c.key] ?? -1) >= 0 && c.key in levels)
+    .sort((a, b) => (levels[a.key] ?? 0) - (levels[b.key] ?? 0))
+  const categoryPath = taxoColsAll
+    .map(c => String(getValue(c) ?? '').trim())
+    .filter(Boolean)
+    .join(' > ') || undefined
+
+  const enrichmentInput = {
+    sheetName: sheet.name,
+    rowId,
+    title: productTitle,
+    brand: firstValue(c => isBrandKey(c.key) || isBrandKey(c.label)),
+    sku: firstValue(c => isRefKey(c.key) || isRefKey(c.label)),
+    reference: firstValue(c => isRefKey(c.key) || isRefKey(c.label)),
+    description: firstValue(c => isDescKey(c.key) || isDescKey(c.label)),
+    category: categoryPath,
+  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -280,33 +381,79 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
               </span>
             )
           })}
-          {contentCols.filter(c => isPriceKey(c.key)).map(col => {
-            const v = getValue(col); if (!v) return null
-            return <span key={col.key} className="text-[18px] font-bold text-emerald-400 ml-auto">{fmt(v, col)}</span>
-          })}
+          {(() => {
+            const priceCols = contentCols.filter(c => isPriceKey(c.key)).filter(col => {
+              const v = getValue(col); return v !== null && v !== undefined && v !== ''
+            })
+            if (priceCols.length === 0) return null
+            return (
+              <div className="ml-auto flex items-stretch gap-1">
+                {priceCols.map((col, i) => {
+                  const v = getValue(col)
+                  return (
+                    <div
+                      key={col.key}
+                      className={`flex flex-col items-end justify-center px-2.5 py-1 rounded-md bg-emerald-500/[0.06] border border-emerald-500/15 ${i > 0 ? '' : ''}`}
+                    >
+                      <span className="text-[16px] font-bold text-emerald-400 leading-none tabular-nums">
+                        {fmt(v, col)}
+                      </span>
+                      <span className="text-[9px] font-medium uppercase tracking-wider text-emerald-300/50 leading-none mt-0.5">
+                        {col.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-white/[0.06] shrink-0 bg-[#111113]">
-        {([
-          { id: 'general' as Tab, label: 'Général' },
-          ...(hasSpecs ? [{ id: 'specs' as Tab, label: 'Spécifications' }] : []),
-          ...(hasDocs  ? [{ id: 'documents' as Tab, label: 'Documents' }] : []),
-        ]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-1 px-3 py-2.5 text-[11px] font-semibold transition-colors ${
-              tab === t.id
-                ? 'text-indigo-400 border-b-2 border-indigo-400 bg-indigo-500/[0.04]'
-                : 'text-white/35 hover:text-white/60 border-b-2 border-transparent'
-            }`}>
-            {t.label}
-          </button>
-        ))}
+      {/* Split layout : source (gauche) | enrichissement IA (droite) — resize manuel via divider */}
+      <div ref={splitContainerRef} className="flex-1 flex min-h-0 w-full overflow-hidden">
+
+      {/* ── Colonne gauche : données source ──────────────────────────────── */}
+      <div
+        className="min-w-0 min-h-0 flex flex-col overflow-hidden shrink-0"
+        style={{ width: `${leftRatio * 100}%` }}
+      >
+
+      {/* Source label */}
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06] bg-[#111113] shrink-0">
+        <div className="w-5 h-5 rounded-md bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
+          <Database className="w-3 h-3 text-white/50" />
+        </div>
+        <span className="text-[11px] font-semibold text-white/60 uppercase tracking-wider">
+          Source
+        </span>
       </div>
 
+      {/* Tabs — "Général" retiré : c'est la vue par défaut, on n'affiche que les tabs spécialisées.
+         Click sur une tab active = retour à la vue générale. */}
+      {(hasSpecs || hasDocs) && (
+        <div className="flex border-b border-white/[0.06] shrink-0 bg-[#111113]">
+          {([
+            ...(hasSpecs ? [{ id: 'specs' as Tab, label: 'Spécifications' }] : []),
+            ...(hasDocs  ? [{ id: 'documents' as Tab, label: 'Documents' }] : []),
+          ]).map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(tab === t.id ? 'general' : t.id)}
+              className={`flex-1 px-3 py-2.5 text-[11px] font-semibold transition-colors ${
+                tab === t.id
+                  ? 'text-indigo-400 border-b-2 border-indigo-400 bg-indigo-500/[0.04]'
+                  : 'text-white/35 hover:text-white/60 border-b-2 border-transparent'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
 
         {/* ── GÉNÉRAL ── */}
         {tab === 'general' && (
@@ -349,23 +496,38 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             })}
 
 
-            {/* Remaining general fields */}
-            {generalCols.filter(c =>
-              !isDescKey(c.key) && !isAdvKey(c.key) && !isEanKey(c.key) &&
-              !isRefKey(c.key) && !isBrandKey(c.key) && !isPriceKey(c.key) && !isAvailKey(c.key)
-            ).map(col => {
+            {/* Remaining general fields — inclut les champs méta (ref, marque,
+               EAN, prix, dispo) pour qu'ils soient tous visibles et éditables
+               dans le panneau source. Les chips en en-tête en sont un résumé
+               visuel, les lignes ici sont la version labellisée/modifiable. */}
+            {generalCols.filter(c => !isDescKey(c.key) && !isAdvKey(c.key) && !isPriceKey(c.key)).map(col => {
               const v = getValue(col)
-              if (!v) return null
+              if (v === null || v === undefined || v === '') return null
               return (
                 <div key={col.key} className="group flex items-start gap-3 px-5 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
                   <span className="text-[11px] text-white/35 w-28 shrink-0 pt-[1px] truncate">{col.label}</span>
                   <div className="flex-1 min-w-0">
                     {editingField === col.key ? (
-                      <input autoFocus type="text" value={editValue}
-                        onChange={e => setEditValue(e.target.value)}
+                      <textarea autoFocus value={editValue} rows={1}
+                        ref={(el) => {
+                          if (!el) return
+                          // Auto-resize à l'ouverture pour afficher tout le contenu
+                          el.style.height = 'auto'
+                          el.style.height = `${el.scrollHeight}px`
+                        }}
+                        onChange={e => {
+                          setEditValue(e.target.value)
+                          // Auto-resize pendant la saisie
+                          e.currentTarget.style.height = 'auto'
+                          e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
+                        }}
                         onBlur={() => commitEdit(col.key)}
-                        onKeyDown={e => { if (e.key === 'Enter') commitEdit(col.key); if (e.key === 'Escape') setEditingField(null) }}
-                        className="w-full bg-white/[0.04] border border-indigo-500/40 rounded px-2 py-1 text-[12px] text-white outline-none" />
+                        onKeyDown={e => {
+                          // Entrée valide, Shift+Entrée = nouvelle ligne
+                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(col.key) }
+                          if (e.key === 'Escape') setEditingField(null)
+                        }}
+                        className="w-full bg-white/[0.04] border border-indigo-500/40 rounded px-2 py-1 text-[12px] text-white outline-none resize-none leading-relaxed break-words" />
                     ) : (
                       <p className="text-[12px] text-white/65 leading-relaxed break-words cursor-pointer hover:text-white/90 transition-colors"
                         onClick={() => { setEditingField(col.key); setEditValue(v != null ? String(v) : '') }}>
@@ -505,6 +667,33 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
 
         <div className="h-4" />
       </div>
+      </div>
+      {/* ── /Colonne gauche ───────────────────────────────────────────────── */}
+
+      {/* ── Divider draggable ─────────────────────────────────────────────── */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        onMouseDown={onDividerMouseDown}
+        onDoubleClick={() => {
+          setLeftRatio(0.5)
+          try { window.localStorage.setItem('productSheet.splitRatio', '0.5') } catch { /* noop */ }
+        }}
+        className="group relative w-1 shrink-0 cursor-col-resize bg-white/[0.06] hover:bg-indigo-400/40 active:bg-indigo-400/60 transition-colors"
+        title="Glisser pour redimensionner — double-clic pour réinitialiser"
+      >
+        {/* Zone de capture élargie pour faciliter le grab */}
+        <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
+        {/* Indicateur visuel au hover */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-8 rounded-full bg-white/20 group-hover:bg-indigo-300 transition-colors" />
+      </div>
+
+      {/* ── Colonne droite : enrichissement IA ───────────────────────────── */}
+      <div className="min-w-0 min-h-0 flex-1 flex flex-col overflow-hidden">
+        <EnrichmentPanel input={enrichmentInput} />
+      </div>
+      </div>
+      {/* ── /Split layout ─────────────────────────────────────────────────── */}
     </div>
   )
 }

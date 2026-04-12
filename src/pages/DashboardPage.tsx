@@ -121,9 +121,11 @@ export default function DashboardPage() {
 
   const handleImport = async (selection: ImportSelection) => {
     // Excel → charger dans le store Données et ouvrir la section
-    if (selection.type === 'xlsx' && selection.files[0]) {
-      await importExcel(selection.files[0])
-      setActiveSection('data')
+    if (selection.type === 'xlsx') {
+      if (selection.files[0]) {
+        await importExcel(selection.files[0])
+        setActiveSection('data')
+      }
       return
     }
 
@@ -148,7 +150,7 @@ export default function DashboardPage() {
         title = selection.files[0]?.name.replace(/\.[^.]+$/, '') || 'Import'
       }
 
-      setPendingImport(selection)
+      setPendingImport({ type: selection.type, files: selection.files })
 
       const project = await createProject.mutateAsync({
         title,

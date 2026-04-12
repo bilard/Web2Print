@@ -516,7 +516,7 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           charSpacing: tracking,
           fontFamily: resolvedFont,
           fontWeight: firstPara.fontWeight as string,
-          fontStyle: firstPara.fontStyle as string,
+          fontStyle: firstPara.fontStyle as 'normal' | 'italic' | 'oblique',
           fill: colorToHex(firstPara.color, '#000000'),
           textAlign: firstPara.alignment,
           splitByGrapheme: false,

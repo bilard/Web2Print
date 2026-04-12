@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
   FileSpreadsheet, Upload, Download, Search, ArrowLeft,
   Table2, Tag, Plus, Save, Cloud, CloudOff,
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
-  MoreVertical, ExternalLink,
+  MoreVertical, ExternalLink, Sparkles, Layers, X,
 } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { ExcelImportModal } from '@/features/excel/ExcelImportModal'
-import { DataTable } from '@/features/excel/DataTable'
+import { DataTable, isRowEnriched } from '@/features/excel/DataTable'
 import { TaxonomyManager } from '@/features/excel/TaxonomyManager'
 import { FieldsPanel } from '@/features/excel/FieldsPanel'
 import { TaxonomyNavigator } from '@/features/excel/TaxonomyNavigator'
@@ -25,9 +25,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate()
   const {
     sheets, activeSheetIndex, importModalOpen, searchQuery, currentFileName,
-    sheetRowId, taxonomyNavFilter, groupByTaxonomy,
+    sheetRowId, taxonomyNavFilter, groupByTaxonomy, aiFilter,
     setImportModalOpen, setActiveSheet, setSearchQuery, setSheets, setCurrentFileName,
-    setSheetRowId, setGroupByTaxonomy,
+    setSheetRowId, setGroupByTaxonomy, setAiFilter, deleteSheet,
   } = useExcelStore()
   const { exportToXlsx, createEmpty } = useExcelImport()
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase } = useExcelFirebase()
@@ -41,38 +41,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [loadingFiles, setLoadingFiles] = useState(false)
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
-  const [sheetWidth, setSheetWidth] = useState(Math.round(window.innerWidth / 2))
-  const sheetDragRef = useRef<{ startX: number; startW: number } | null>(null)
-  const prevSheetRowId = useRef<string | null>(null)
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!sheetDragRef.current) return
-      const delta = sheetDragRef.current.startX - e.clientX
-      setSheetWidth(Math.max(320, Math.min(window.innerWidth - 200, sheetDragRef.current.startW + delta)))
-    }
-    const onUp = () => { sheetDragRef.current = null; document.body.style.cursor = '' }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
-  }, [])
-
   // Quand l'utilisateur clique sur un nœud de la taxonomie, fermer la fiche
   // produit pour revenir à la vue liste (DataTable).
   useEffect(() => {
     setSheetRowId(null)
   }, [taxonomyNavFilter, setSheetRowId])
-
-  // Recalcule la largeur à la première ouverture d'une fiche (après un reset ou un chargement)
-  useEffect(() => {
-    if (!sheetRowId) { prevSheetRowId.current = null; return }
-    if (!prevSheetRowId.current) {
-      // Première ouverture sur cette source → calculer selon le nb de lignes
-      const rowCount = sheets[activeSheetIndex]?.rows.length ?? 0
-      setSheetWidth(rowCount > 1 ? window.innerWidth : Math.round(window.innerWidth / 2))
-    }
-    prevSheetRowId.current = sheetRowId
-  }, [sheetRowId])  
 
   const sheet = sheets[activeSheetIndex]
   const hasData = sheets.length > 0 && (sheet?.rows.length > 0 || sheet?.columns.length > 0)
@@ -94,8 +67,21 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         })
       )
     }
+    if (aiFilter === 'enriched') {
+      rows = rows.filter(isRowEnriched)
+    } else if (aiFilter === 'raw') {
+      rows = rows.filter((r) => !isRowEnriched(r))
+    }
     return rows.map((r) => r._id)
-  }, [sheet, taxonomyNavFilter, searchQuery])
+  }, [sheet, taxonomyNavFilter, searchQuery, aiFilter])
+
+  // Compteurs pour le toggle IA : total / enrichis / non-enrichis (sur l'ensemble de la feuille)
+  const aiCounts = useMemo(() => {
+    if (!sheet) return { total: 0, enriched: 0, raw: 0 }
+    let enriched = 0
+    for (const r of sheet.rows) if (isRowEnriched(r)) enriched++
+    return { total: sheet.rows.length, enriched, raw: sheet.rows.length - enriched }
+  }, [sheet])
 
   // Load saved files list
   const refreshFileList = useCallback(async () => {
@@ -282,19 +268,40 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           {/* Sheet tabs (multi-feuilles) ou nom unique */}
           {sheets.length > 1 ? (
             <div className="flex items-center gap-0.5 border-l border-white/[0.06] pl-2">
-              {sheets.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveSheet(i)}
-                  className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${
-                    i === activeSheetIndex
-                      ? 'bg-white/[0.08] text-white/70'
-                      : 'text-white/30 hover:text-white/50 hover:bg-white/[0.04]'
-                  }`}
-                >
-                  {s.name}
-                </button>
-              ))}
+              {sheets.map((s, i) => {
+                const active = i === activeSheetIndex
+                return (
+                  <div
+                    key={i}
+                    className={`group/tab flex items-center gap-0.5 pl-2.5 pr-1 rounded-md transition-colors ${
+                      active
+                        ? 'bg-white/[0.08] text-white/70'
+                        : 'text-white/30 hover:text-white/50 hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <button
+                      onClick={() => setActiveSheet(i)}
+                      className="text-[11px] py-1 max-w-[140px] truncate"
+                      title={s.name}
+                    >
+                      {s.name}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (window.confirm(`Supprimer l'onglet « ${s.name} » ? Les ${s.rows.length} ligne(s) seront perdues.`)) {
+                          deleteSheet(i)
+                        }
+                      }}
+                      className="opacity-0 group-hover/tab:opacity-100 hover:bg-white/10 rounded p-0.5 transition-opacity text-white/40 hover:text-white/80"
+                      title={`Supprimer « ${s.name} »`}
+                      aria-label={`Supprimer ${s.name}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <h1 className="text-[13px] font-medium text-white/70">
@@ -342,6 +349,52 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent text-[12px] text-white/60 placeholder:text-white/25 outline-none flex-1"
             />
+          </div>
+        )}
+
+        {/* Filtre IA : segment 3 options (Tous / IA / Non-IA) */}
+        {hasData && (
+          <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded-md p-0.5 gap-0.5">
+            <button
+              onClick={() => setAiFilter('all')}
+              title="Afficher tous les produits"
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                aiFilter === 'all'
+                  ? 'bg-white/[0.08] text-white/85'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Tous
+              <span className="text-[10px] text-white/40 tabular-nums">{aiCounts.total}</span>
+            </button>
+            <button
+              onClick={() => setAiFilter('enriched')}
+              title="Afficher uniquement les produits enrichis par l'IA"
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                aiFilter === 'enriched'
+                  ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25'
+                  : 'text-white/40 hover:text-indigo-300/70 hover:bg-indigo-500/5'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              IA
+              <span className={`text-[10px] tabular-nums ${aiFilter === 'enriched' ? 'text-indigo-300/70' : 'text-white/40'}`}>
+                {aiCounts.enriched}
+              </span>
+            </button>
+            <button
+              onClick={() => setAiFilter('raw')}
+              title="Afficher uniquement les produits non enrichis"
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                aiFilter === 'raw'
+                  ? 'bg-white/[0.08] text-white/85 border border-white/15'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+              }`}
+            >
+              Non-IA
+              <span className="text-[10px] text-white/40 tabular-nums">{aiCounts.raw}</span>
+            </button>
           </div>
         )}
 
@@ -442,24 +495,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 </div>
               )}
 
-              {/* Data table */}
-              <DataTable />
-
-              {/* Product sheet panel */}
-              {sheetRowId && (
-                <div
-                  className="relative bg-[#1a1a1e] border-l border-white/[0.08] flex flex-col shrink-0 overflow-hidden"
-                  style={{ width: sheetWidth }}
-                >
-                  {/* Drag handle */}
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-1 z-10 cursor-col-resize hover:bg-indigo-500/40 transition-colors"
-                    onMouseDown={e => {
-                      sheetDragRef.current = { startX: e.clientX, startW: sheetWidth }
-                      document.body.style.cursor = 'col-resize'
-                      e.preventDefault()
-                    }}
-                  />
+              {/* Main area : table OU fiche produit plein écran (exclusif) */}
+              {sheetRowId ? (
+                <div className="flex-1 min-w-0 bg-[#1a1a1e] flex flex-col overflow-hidden">
                   <ProductSheet
                     rowId={sheetRowId}
                     allRowIds={filteredRowIds}
@@ -467,10 +505,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                     onNavigate={(id) => setSheetRowId(id)}
                   />
                 </div>
+              ) : (
+                <DataTable />
               )}
 
-              {/* Right sidebar — Champs / Taxonomie only */}
-              {showRight && (
+              {/* Right sidebar — Champs / Taxonomie — masqué quand la fiche produit est ouverte */}
+              {showRight && !sheetRowId && (
                 <div className="w-72 bg-[#161616] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
                   {/* Tabs */}
                   <div className="flex border-b border-white/10">
