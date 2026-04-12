@@ -1799,6 +1799,20 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
       continue
     }
 
+    // Format texte simple : "Les + Nicoll performance" (ni heading ni bold)
+    // Détecté seulement si la ligne est courte et suivi d'un bullet
+    if (!trimmed.startsWith('-') && !trimmed.startsWith('*') && !trimmed.startsWith('•')
+        && featureKeywords.test(trimmed) && trimmed.length < 80) {
+      const nextLine = (lines[i + 1] ?? '').trim()
+      const isTitleBeforeBullets = /^[-*•·✓✔]\s+/.test(nextLine)
+      if (isTitleBeforeBullets || inFeatureZone) {
+        inFeatureZone = true
+        currentGroup = extractGroupName(trimmed)
+        console.log('[parse-advantages] text group:', currentGroup ?? '(sans nom)', '→', trimmed.slice(0, 60))
+        continue
+      }
+    }
+
     if (!inFeatureZone) continue
 
     // ── Capturer les bullets ──
