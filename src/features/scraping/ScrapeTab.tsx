@@ -1,44 +1,73 @@
-import { useState, useEffect } from 'react'
-import { Sparkles, Loader2, Monitor, Smartphone, Shield, ChevronDown, ChevronUp, Timer } from 'lucide-react'
-import type { ScrapingField, ScrapingMode, ScrapeResult, ExtractionTarget } from './useFirecrawl'
+import { useState, useEffect, useMemo } from 'react'
+import { Sparkles, Loader2, ChevronDown, ChevronUp, Timer, RefreshCw, ExternalLink } from 'lucide-react'
+import type { ScrapingField, ScrapingMode, ScrapeResult, ExtractionTarget } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
-import { FIELD_TEMPLATES } from './useFirecrawl'
+import { FIELD_TEMPLATES, detectBrandFromUrl, BRAND_OFFICIAL_SITES } from './useJina'
 
 interface Props {
   url: string
   loading: boolean
   onScrape: (
     mode: ScrapingMode, fields: ScrapingField[], prompt: string,
-    opts: { mobile?: boolean; screenshot?: boolean; proxy?: 'basic' | 'enhanced' | 'auto'; target?: ExtractionTarget; waitFor?: number }
+    opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean }
   ) => void
   result: ScrapeResult | null
+  /** Appelé quand l'utilisateur clique sur la suggestion de site officiel */
+  onUrlSuggestion?: (url: string) => void
 }
 
-export function ScrapeTab({ url, loading, onScrape, result }: Props) {
+export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: Props) {
   const [mode, setMode] = useState<ScrapingMode>('schema')
   const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.product.fields)
   const [prompt, setPrompt] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [target, setTarget] = useState<ExtractionTarget>('single')
-  const [mobile, setMobile] = useState(false)
-  const [screenshot, setScreenshot] = useState(false)
-  const [proxy, setProxy] = useState<'none' | 'basic' | 'enhanced' | 'auto'>('none')
+  const [noCache, setNoCache] = useState(false)
   const [waitFor, setWaitFor] = useState(0)
 
-  // Auto-détection des sites SPA/JS-heavy → active waitFor et proxy par défaut
+  // Détection de marque → suggestion site officiel
+  const brandSuggestion = useMemo(() => detectBrandFromUrl(url), [url])
+
+  // Auto-détection des sites SPA/JS-heavy → active waitFor par défaut
   useEffect(() => {
     try {
       const host = new URL(url).hostname
       const isSpa = /milwaukeetool|dewalt|metabo|bosch|stanley|hikoki|festool|makita|stihl|husqvarna|worx|ryobi|aeg-powertools/i.test(host)
-      const needsProxy = /leroymerlin|castorama|boulanger|fnac|darty|amazon|cdiscount|manomano|conforama|ikea|leroy/i.test(host)
-      setWaitFor(isSpa || needsProxy ? 3000 : 0)
-      if (needsProxy && proxy === 'none') setProxy('basic')
-      else if (!needsProxy && !isSpa) { setProxy('none'); setWaitFor(0) }
+      const needsWait = /leroymerlin|castorama|boulanger|fnac|darty|amazon|cdiscount|manomano|conforama|ikea|leroy/i.test(host)
+      setWaitFor(isSpa || needsWait ? 10000 : 0)
+      if (!isSpa && !needsWait) setWaitFor(0)
     } catch { /* URL invalide */ }
-  }, [url])  
+  }, [url])
+
+  // Auto-switch vers template "Produit complet" quand on détecte un site fabricant
+  useEffect(() => {
+    try {
+      const host = new URL(url).hostname
+      const isBrandSite = Object.values(BRAND_OFFICIAL_SITES).some(b => host.includes(new URL(b.baseUrl).hostname))
+      if (isBrandSite && fields === FIELD_TEMPLATES.product.fields) {
+        setFields(FIELD_TEMPLATES.product_full.fields)
+      }
+    } catch { /* URL invalide */ }
+  }, [url])
 
   return (
     <div className="space-y-4">
+      {/* Suggestion site officiel */}
+      {brandSuggestion && (
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/8 border border-amber-500/20">
+          <ExternalLink className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <p className="text-[11px] text-amber-300/80 flex-1">
+            <strong>{brandSuggestion.officialSite.label}</strong> détecté — privilégier le site officiel pour des données complètes
+          </p>
+          <button
+            onClick={() => onUrlSuggestion?.(brandSuggestion.officialSite.baseUrl)}
+            className="text-[10px] px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/20 transition-colors whitespace-nowrap"
+          >
+            {new URL(brandSuggestion.officialSite.baseUrl).hostname}
+          </button>
+        </div>
+      )}
+
       {/* Cible + Mode */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -55,7 +84,7 @@ export function ScrapeTab({ url, loading, onScrape, result }: Props) {
               ))}
             </div>
           </div>
-          {/* Mode schema vs auto — auto désactivé pour produit unique */}
+          {/* Mode schema vs auto */}
           <div>
             <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1">Champs</label>
             <div className="flex rounded-md overflow-hidden border border-white/10">
@@ -82,7 +111,11 @@ export function ScrapeTab({ url, loading, onScrape, result }: Props) {
             <button
               key={key}
               onClick={() => { setFields(t.fields); setMode('schema') }}
-              className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-indigo-300 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-colors"
+              className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-colors ${
+                fields === t.fields
+                  ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
+                  : 'bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-indigo-300 hover:border-indigo-500/30 hover:bg-indigo-500/10'
+              }`}
             >
               {t.label}
             </button>
@@ -122,30 +155,11 @@ export function ScrapeTab({ url, loading, onScrape, result }: Props) {
         {showAdvanced && (
           <div className="mt-2 flex flex-wrap gap-3 p-3 bg-black/20 rounded-lg border border-white/[0.06]">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={mobile} onChange={(e) => setMobile(e.target.checked)}
+              <input type="checkbox" checked={noCache} onChange={(e) => setNoCache(e.target.checked)}
                 className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
-              <Smartphone className="w-3 h-3 text-white/30" />
-              <span className="text-[11px] text-white/50">Mobile</span>
+              <RefreshCw className="w-3 h-3 text-white/30" />
+              <span className="text-[11px] text-white/50">Pas de cache</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={screenshot} onChange={(e) => setScreenshot(e.target.checked)}
-                className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
-              <Monitor className="w-3 h-3 text-white/30" />
-              <span className="text-[11px] text-white/50">Screenshot</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <Shield className="w-3 h-3 text-white/30" />
-              <select
-                value={proxy}
-                onChange={(e) => setProxy(e.target.value as typeof proxy)}
-                className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-[11px] text-white/60 focus:border-indigo-500/50 focus:outline-none"
-              >
-                <option value="none">Proxy : aucun</option>
-                <option value="basic">Proxy basic</option>
-                <option value="enhanced">Proxy enhanced</option>
-                <option value="auto">Proxy auto</option>
-              </select>
-            </div>
             <div className="flex items-center gap-2">
               <Timer className={`w-3 h-3 ${waitFor > 0 ? 'text-amber-400/70' : 'text-white/30'}`} />
               <select
@@ -153,28 +167,20 @@ export function ScrapeTab({ url, loading, onScrape, result }: Props) {
                 onChange={(e) => setWaitFor(Number(e.target.value))}
                 className={`bg-white/5 border rounded px-2 py-0.5 text-[11px] focus:outline-none ${waitFor > 0 ? 'border-amber-500/30 text-amber-300 focus:border-amber-500/50' : 'border-white/10 text-white/60 focus:border-indigo-500/50'}`}
               >
-                <option value={0}>Attente JS : aucune</option>
-                <option value={1000}>Attente JS : 1s</option>
-                <option value={2000}>Attente JS : 2s</option>
-                <option value={3000}>Attente JS : 3s</option>
-                <option value={5000}>Attente JS : 5s</option>
+                <option value={0}>Timeout : défaut (10s)</option>
+                <option value={10000}>Timeout : 10s</option>
+                <option value={15000}>Timeout : 15s</option>
+                <option value={20000}>Timeout : 20s</option>
+                <option value={30000}>Timeout : 30s</option>
               </select>
             </div>
           </div>
         )}
       </div>
 
-      {/* Screenshot preview */}
-      {result?.screenshot && (
-        <div className="space-y-1.5">
-          <span className="text-[10px] text-white/30 uppercase tracking-wider">Screenshot</span>
-          <img src={result.screenshot} alt="Screenshot" className="w-full rounded-lg border border-white/10 object-cover max-h-48" />
-        </div>
-      )}
-
       {/* Action */}
       <button
-        onClick={() => onScrape(mode, fields, prompt, { mobile, screenshot, proxy: proxy === 'none' ? undefined : proxy, target, waitFor: waitFor > 0 ? waitFor : undefined })}
+        onClick={() => onScrape(mode, fields, prompt, { target, waitFor: waitFor > 0 ? waitFor : undefined, noCache })}
         disabled={!url || loading}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >

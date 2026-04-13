@@ -1,20 +1,31 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import type { ScrapeResult } from './useFirecrawl'
+import type { ScrapeResult } from './useJina'
 
 interface Props {
   result: ScrapeResult
 }
 
-const isSpecsArray = (v: unknown): v is { name: string; value: string }[] =>
+const isSpecsArray = (v: unknown): v is { group?: string; name: string; value: string }[] =>
   Array.isArray(v) && v.length > 0 && typeof (v[0] as Record<string, unknown>)?.name === 'string'
 
 function formatCell(v: unknown): string {
   if (v == null) return '—'
-  if (isSpecsArray(v)) return v.map((s) => `${s.name}: ${s.value}`).join(' · ')
+  if (isSpecsArray(v)) return v.map((s) => `${s.group ? `[${s.group}] ` : ''}${s.name}: ${s.value}`).join(' · ')
   if (Array.isArray(v)) return v.join(', ')
   if (typeof v === 'object') return JSON.stringify(v)
   return String(v)
+}
+
+/** Groupe les specs par leur champ `group` */
+function groupSpecs(specs: { group?: string; name: string; value: string }[]): { group: string; items: { name: string; value: string }[] }[] {
+  const groups = new Map<string, { name: string; value: string }[]>()
+  for (const s of specs) {
+    const g = s.group || 'Général'
+    if (!groups.has(g)) groups.set(g, [])
+    groups.get(g)!.push({ name: s.name, value: s.value })
+  }
+  return Array.from(groups.entries()).map(([group, items]) => ({ group, items }))
 }
 
 export function ScrapingPreview({ result }: Props) {
@@ -28,9 +39,10 @@ export function ScrapingPreview({ result }: Props) {
     )
   }
 
-  // Detect specs columns for expanded view
   const specsRow = result.rows[0]
   const specsColumns = result.columns.filter((c) => isSpecsArray(specsRow?.[c]))
+  const docsColumns = specsColumns.filter((c) => c === 'documents')
+  const pureSpecsColumns = specsColumns.filter((c) => c !== 'documents')
   const baseColumns = result.columns.filter((c) => !isSpecsArray(specsRow?.[c]))
 
   return (
@@ -61,9 +73,14 @@ export function ScrapingPreview({ result }: Props) {
                   {col}
                 </th>
               ))}
-              {specsColumns.map((col) => (
+              {pureSpecsColumns.map((col) => (
                 <th key={col} className="text-left px-3 py-2 text-emerald-400/50 font-medium whitespace-nowrap">
                   {col} <span className="text-[9px] text-white/20">({(specsRow?.[col] as unknown[])?.length ?? 0} specs)</span>
+                </th>
+              ))}
+              {docsColumns.map((col) => (
+                <th key={col} className="text-left px-3 py-2 text-blue-400/50 font-medium whitespace-nowrap">
+                  {col} <span className="text-[9px] text-white/20">({(specsRow?.[col] as unknown[])?.length ?? 0} docs)</span>
                 </th>
               ))}
             </tr>
@@ -76,8 +93,15 @@ export function ScrapingPreview({ result }: Props) {
                     {formatCell(row[col])}
                   </td>
                 ))}
-                {specsColumns.map((col) => (
+                {pureSpecsColumns.map((col) => (
                   <td key={col} className="px-3 py-1.5 text-emerald-400/60 max-w-[300px]">
+                    <div className="truncate text-[10px]">
+                      {isSpecsArray(row[col]) ? row[col].map((s) => s.name).join(' · ') : '—'}
+                    </div>
+                  </td>
+                ))}
+                {docsColumns.map((col) => (
+                  <td key={col} className="px-3 py-1.5 text-blue-400/60 max-w-[300px]">
                     <div className="truncate text-[10px]">
                       {isSpecsArray(row[col]) ? row[col].map((s) => s.name).join(' · ') : '—'}
                     </div>
@@ -94,18 +118,62 @@ export function ScrapingPreview({ result }: Props) {
         )}
       </div>
 
-      {/* Specs détail (quand 1 seule ligne) */}
-      {result.rows.length === 1 && specsColumns.length > 0 && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-1.5">
+      {/* Specs groupées (quand 1 seule ligne) */}
+      {result.rows.length === 1 && pureSpecsColumns.length > 0 && (
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-3">
           <span className="text-[10px] text-emerald-400/60 uppercase tracking-wider">Spécifications extraites</span>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
-            {(specsRow?.[specsColumns[0]] as { name: string; value: string }[])?.map((s, i) => (
-              <div key={i} className="flex items-baseline gap-2 py-0.5">
-                <span className="text-[11px] text-white/40 shrink-0">{s.name}</span>
-                <span className="text-[11px] text-white/70 font-medium">{s.value}</span>
+          {pureSpecsColumns.map((col) => {
+            const specs = specsRow?.[col]
+            if (!isSpecsArray(specs)) return null
+            const grouped = groupSpecs(specs)
+            return (
+              <div key={col} className="space-y-2">
+                {grouped.map((g) => (
+                  <div key={g.group}>
+                    <div className="text-[10px] font-medium text-emerald-400/80 mb-1 border-b border-emerald-500/10 pb-0.5">
+                      {g.group}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+                      {g.items.map((s, i) => (
+                        <div key={i} className="flex items-baseline gap-2 py-0.5">
+                          <span className="text-[11px] text-white/40 shrink-0">{s.name}</span>
+                          <span className="text-[11px] text-white/70 font-medium">{s.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Documents (quand 1 seule ligne) */}
+      {result.rows.length === 1 && docsColumns.length > 0 && (
+        <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 space-y-1.5">
+          <span className="text-[10px] text-blue-400/60 uppercase tracking-wider">Documents téléchargeables</span>
+          {docsColumns.map((col) => {
+            const docs = specsRow?.[col]
+            if (!isSpecsArray(docs)) return null
+            return (
+              <div key={col} className="space-y-0.5">
+                {docs.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2 py-0.5">
+                    <span className="text-[11px] text-white/50">{d.name}</span>
+                    <a
+                      href={d.value}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-blue-400/60 hover:text-blue-400 truncate max-w-[300px] transition-colors"
+                    >
+                      {d.value}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       )}
 

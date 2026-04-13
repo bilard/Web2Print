@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Globe, Download, AlertCircle, Sparkles, Map, FolderSync } from 'lucide-react'
-import { useFirecrawl, scrapeResultToSheet, crawlPagesToSheet } from './useFirecrawl'
-import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useFirecrawl'
+import { useJina, scrapeResultToSheet, crawlPagesToSheet } from './useJina'
+import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
 import { ScrapeTab } from './ScrapeTab'
 import { MapExtractTab } from './MapExtractTab'
 import { CrawlTab } from './CrawlTab'
@@ -26,7 +26,7 @@ export function ScrapingModal({ open, onClose }: Props) {
   const [url, setUrl] = useState('')
   const [result, setResult] = useState<ScrapeResult | null>(null)
   const [crawlPages, setCrawlPages] = useState<CrawlPage[]>([])
-  const { scrape, map, extract, crawl, abort, loading, error, progress } = useFirecrawl()
+  const { scrape, map, extract, crawl, abort, loading, error, progress } = useJina()
   const { setSheets, setCurrentFileName, sheets } = useExcelStore()
 
   if (!open) return null
@@ -34,7 +34,7 @@ export function ScrapingModal({ open, onClose }: Props) {
   const urlValid = (() => { try { new URL(url); return true } catch { return false } })()
   const hostname = (() => { try { return new URL(url).hostname.replace('www.', '') } catch { return 'scraped' } })()
 
-  const handleScrape = async (mode: ScrapingMode, fields: ScrapingField[], prompt: string, opts: { mobile?: boolean; screenshot?: boolean; proxy?: 'basic' | 'enhanced' | 'auto'; target?: ExtractionTarget }) => {
+  const handleScrape = async (mode: ScrapingMode, fields: ScrapingField[], prompt: string, opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean }) => {
     setResult(null)
     const res = await scrape(url, mode, fields, prompt, opts)
     if (res) setResult(res)
@@ -44,9 +44,9 @@ export function ScrapingModal({ open, onClose }: Props) {
     return map(url, search)
   }
 
-  const handleExtract = async (urls: string[], fields: ScrapingField[], prompt: string, opts: { enableWebSearch?: boolean }) => {
+  const handleExtract = async (urls: string[], fields: ScrapingField[], prompt: string) => {
     setResult(null)
-    const res = await extract(urls, fields, prompt, opts)
+    const res = await extract(urls, fields, prompt)
     if (res) setResult(res)
   }
 
@@ -100,8 +100,8 @@ export function ScrapingModal({ open, onClose }: Props) {
           <div className="flex items-center gap-2.5">
             <Globe className="w-4 h-4 text-indigo-400" />
             <h2 className="text-sm font-semibold text-white/80">Web Scraping</h2>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Firecrawl AI
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              Jina AI
             </span>
           </div>
           <button onClick={handleClose} className="p-1 text-white/30 hover:text-white/60 transition-colors">
@@ -148,7 +148,7 @@ export function ScrapingModal({ open, onClose }: Props) {
           )}
 
           {tab === 'scrape' && (
-            <ScrapeTab url={urlValid ? url : ''} loading={loading} onScrape={handleScrape} result={result} />
+            <ScrapeTab url={urlValid ? url : ''} loading={loading} onScrape={handleScrape} result={result} onUrlSuggestion={(suggested) => setUrl(suggested)} />
           )}
           {tab === 'map' && (
             <MapExtractTab url={urlValid ? url : ''} loading={loading} onMap={handleMap} onExtract={handleExtract} result={result} />

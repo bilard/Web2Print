@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Globe, Loader2, Square, CheckSquare } from 'lucide-react'
-import type { CrawlPage } from './useFirecrawl'
+import type { CrawlPage } from './useJina'
 
 interface Props {
   url: string

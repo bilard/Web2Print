@@ -51,9 +51,9 @@ const GeminiLogo = () => (
   </svg>
 )
 
-const FirecrawlLogo = () => (
-  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-orange-400" fill="currentColor" aria-hidden="true">
-    <path d="M12 2C8 2 5 5.5 5 9c0 2.5 1.2 4.7 3 6.1V17a1 1 0 001 1h6a1 1 0 001-1v-1.9c1.8-1.4 3-3.6 3-6.1 0-3.5-3-7-7-7zm-1 15v1h2v-1h-2zm3.7-4.3A5 5 0 0112 14a5 5 0 01-2.7-.3C8.5 13 7 11.1 7 9c0-2.8 2.2-5 5-5s5 2.2 5 5c0 2.1-1.5 4-3.3 4.7z"/>
+const JinaLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-amber-400" fill="currentColor" aria-hidden="true">
+    <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3a2 2 0 110 4 2 2 0 010-4zm0 14a7.5 7.5 0 01-5.5-2.4c.3-1.8 2.6-3.1 5.5-3.1s5.2 1.3 5.5 3.1A7.5 7.5 0 0112 19z"/>
   </svg>
 )
 
@@ -329,7 +329,7 @@ function ConnectorsTab() {
   return (
     <div className="flex flex-col gap-2">
       <ApiKeyRow id="removebg" label="Remove.bg" description="Suppression de fond d'images" logo={<RemoveBgLogo />} />
-      <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping et extraction web" logo={<FirecrawlLogo />} placeholder="fc-..." />
+      <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
       <GDriveConnectorRow />
     </div>
   )

@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { Map, Sparkles, Loader2, CheckSquare, Square, Globe, Search } from 'lucide-react'
-import type { ScrapingField, MapLink, ScrapeResult } from './useFirecrawl'
+import type { ScrapingField, MapLink, ScrapeResult } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
-import { FIELD_TEMPLATES } from './useFirecrawl'
+import { FIELD_TEMPLATES } from './useJina'
 
 interface Props {
   url: string
   loading: boolean
   onMap: (search?: string) => Promise<MapLink[] | null>
-  onExtract: (urls: string[], fields: ScrapingField[], prompt: string, opts: { enableWebSearch?: boolean }) => void
+  onExtract: (urls: string[], fields: ScrapingField[], prompt: string) => void
   result: ScrapeResult | null
 }
 
@@ -18,7 +18,6 @@ export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props)
   const [mapSearch, setMapSearch] = useState('')
   const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.listing.fields)
   const [prompt, setPrompt] = useState('')
-  const [webSearch, setWebSearch] = useState(false)
   const [step, setStep] = useState<'map' | 'extract'>('map')
 
   const handleMap = async () => {
@@ -115,14 +114,8 @@ export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props)
         className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none resize-none font-mono"
       />
 
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" checked={webSearch} onChange={(e) => setWebSearch(e.target.checked)}
-          className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
-        <span className="text-[11px] text-white/50">Enrichir avec la recherche web (enableWebSearch)</span>
-      </label>
-
       <button
-        onClick={() => onExtract(Array.from(selected), fields, prompt, { enableWebSearch: webSearch })}
+        onClick={() => onExtract(Array.from(selected), fields, prompt)}
         disabled={selected.size === 0 || loading}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >

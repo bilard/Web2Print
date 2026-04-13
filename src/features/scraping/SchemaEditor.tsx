@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
-import type { ScrapingField } from './useFirecrawl'
+import type { ScrapingField } from './useJina'
 
 interface Props {
   fields: ScrapingField[]

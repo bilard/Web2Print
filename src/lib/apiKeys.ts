@@ -51,16 +51,16 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Bucket de stockage Firebase',
   },
   {
-    id: 'firecrawl',
-    label: 'Firecrawl',
-    envVar: 'VITE_FIRECRAWL_KEY',
-    description: 'Clé API Firecrawl pour le scraping web',
-  },
-  {
     id: 'removebg',
     label: 'Remove.bg',
     envVar: 'VITE_REMOVEBG_KEY',
     description: 'Clé API Remove.bg pour la suppression de fond',
+  },
+  {
+    id: 'jina',
+    label: 'Jina AI',
+    envVar: 'VITE_JINA_API_KEY',
+    description: 'Clé API Jina — scraping et recherche produit',
   },
 ]
 
@@ -157,19 +157,6 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         return { status: 'ok', message: `Bucket : ${key}` }
       }
       return { status: 'error', message: 'Format invalide' }
-    }
-
-    if (id === 'firecrawl') {
-      const res = await fetch('https://api.firecrawl.dev/v1/map', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ url: 'https://firecrawl.dev', limit: 1 }),
-      })
-      if (res.ok || res.status === 402) {
-        return { status: 'ok', message: 'Connecté à Firecrawl' }
-      }
-      if (res.status === 401) return { status: 'error', message: 'Clé invalide' }
-      return { status: 'error', message: `Erreur ${res.status}` }
     }
 
     if (id === 'removebg') {
