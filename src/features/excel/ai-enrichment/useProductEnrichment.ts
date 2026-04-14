@@ -3,9 +3,10 @@ import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson } from '@/features/ai/llmRouter'
 import { useEnrichmentStore } from './enrichmentStore'
-import type { EnrichedProduct } from './types'
+import type { EnrichedProduct, ProductPrice } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle } from './scrapeBundle'
+import { extractSpecsBlockFromHtml, extractDocumentsBlockFromHtml } from './htmlSpecsExtractor'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -117,9 +118,19 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     }
   }
 
-  // ── 2. Specs : attribuer les groupes du markdown ──
+  // ── 2. Specs : LLM = source de vérité. Backfill UNIQUEMENT si LLM vide.
+  //    Pas de remplacement : si le LLM a retourné des specs, on les garde —
+  //    le TS-side extracteur est moins fiable (risque de capter des grilles UI).
+  //    Sinon, on complète les groupes par matching sur le markdown.
   const mdSpecs = parseSpecsFromMarkdown(markdownContent)
-  if (mdSpecs.length > 0 && mdSpecs.some(s => s.group) && !specifications.some(s => s.group)) {
+  if (specifications.length === 0) {
+    const cleanSpecs = parseCleanSpecsFromJinaBlock(markdownContent)
+    if (cleanSpecs.length > 0) {
+      specifications = cleanSpecs
+      console.log('[post-process] ✓ specs backfilled from JINA block:', specifications.length, 'items')
+    }
+  } else if (mdSpecs.length > 0 && mdSpecs.some(s => s.group) && !specifications.some(s => s.group)) {
+    // Markdown a des groupes, pas le LLM → enrichir par matching
     specifications = specifications.map(spec => {
       const match = mdSpecs.find(ms => {
         const a = ms.name.toLowerCase().replace(/\s+/g, ' ')
@@ -205,7 +216,13 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   // Nettoyer tous les noms de documents (titres génériques → noms extraits de l'URL)
   const cleanedDocuments = documents.map(doc => cleanDocumentName(doc))
 
-  return { ...enriched, description, advantages, specifications, variants, documents: cleanedDocuments }
+  // Dédupliquer par URL normalisée (un même PDF peut arriver plusieurs fois via
+  // LLM + markdown + proxy CORS + reader Jina, chaque fois avec un titre différent).
+  // On garde la PREMIÈRE occurrence (ordre : LLM → markdown) — cleanDocumentName
+  // assure que le titre est lisible quel que soit le format source.
+  const dedupedDocuments = deduplicateDocuments(cleanedDocuments)
+
+  return { ...enriched, description, advantages, specifications, variants, documents: dedupedDocuments }
 }
 
 /** Détecte si un texte est principalement du contenu cookie/GDPR (ratio de lignes garbage) */
@@ -325,6 +342,12 @@ const enrichedProductSchema = z.object({
   variants: z.array(enrichedVariantSchema).optional().default([]),
   images: z.array(z.string()),
   documents: z.array(z.string()),
+  heroImage: z.string().optional(),
+  price: z.object({
+    amount: z.number(),
+    currency: z.string(),
+    priceType: z.enum(['TTC', 'HT', 'unit']).optional(),
+  }).nullable().optional(),
 })
 
 const enrichedProductJsonSchema = {
@@ -378,6 +401,21 @@ const enrichedProductJsonSchema = {
       type: 'array',
       items: { type: 'string' },
       description: 'URLs complètes des documents téléchargeables (PDF, notices, fiches techniques, déclarations CE). Reprendre les URLs telles quelles depuis les données scrapées.',
+    },
+    heroImage: {
+      type: 'string',
+      description: 'URL de LA meilleure image produit (hero shot / image principale / première photo produit). Doit être une URL présente dans les images scrapées. Ne jamais inventer.',
+    },
+    price: {
+      type: 'object',
+      nullable: true,
+      description: "Prix du produit si visible dans la page (JSON-LD Offer, balise price, texte 'XX,XX €'). Omettre ou null si absent. Ne jamais inventer.",
+      properties: {
+        amount: { type: 'number', description: 'Valeur numérique (ex: 323.44)' },
+        currency: { type: 'string', description: 'Code ISO 4217 : EUR, USD, TND, GBP' },
+        priceType: { type: 'string', enum: ['TTC', 'HT', 'unit'], description: 'TTC si mention TTC/incl. VAT, HT si HT/excl. VAT, unit sinon' },
+      },
+      required: ['amount', 'currency'],
     },
   },
   required: ['description', 'advantages', 'specifications', 'variants', 'images', 'documents'],
@@ -490,7 +528,7 @@ function tokenizeTitle(s: string): string[] {
     .filter((t) => t.length >= 3 && !STOPWORDS.has(t))
 }
 
-function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, reference?: string): number {
+function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, reference?: string, modelFromTitle?: string): number {
   let s = 0
   const url = r.url
   let pathname = ''
@@ -515,14 +553,28 @@ function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, re
     } catch { /* ignore */ }
   }
 
-  // ── CRITIQUE : la référence/SKU/modèle apparaît dans l'URL (+20) ────
+  // ── CRITIQUE : la référence/SKU/modèle apparaît dans l'URL (+25) ────
   //    Ex: URL .../m18-fpd3/ contient "m18fpd3" → c'est LA page produit.
   //    La page catégorie .../perceuses-a-percussion/ ne contiendra PAS la ref.
-  if (reference) {
-    const refNorm = reference.toLowerCase().replace(/[^a-z0-9]/g, '')
+  //    On teste reference (SKU fourni) ET modelFromTitle (extrait du titre : "DUH752Z").
+  const refCandidates = [reference, modelFromTitle].filter((x): x is string => !!x && x.length >= 3)
+  let refHit = false
+  for (const candidate of refCandidates) {
+    const refNorm = candidate.toLowerCase().replace(/[^a-z0-9]/g, '')
     if (refNorm.length >= 3 && pathNorm.includes(refNorm)) {
-      s += 20
-      console.log('[scoring] ref in URL! +20:', reference, '→', pathname)
+      s += 25
+      refHit = true
+      console.log('[scoring] ref in URL! +25:', candidate, '→', pathname)
+      break
+    }
+  }
+
+  // ── Pénalité catégorie : URL contient /products/ ou /categorie/ mais
+  //    AUCUN code modèle. Les pages fiche produit ont toujours la ref dans le slug. ──
+  if (!refHit && refCandidates.length > 0) {
+    if (/\/(products?|categories?|categorie|gamme|collection)\//i.test(pathname)) {
+      s -= 15
+      console.log('[scoring] category path, no ref in URL! −15:', pathname)
     }
   }
 
@@ -1071,6 +1123,34 @@ function detectManufacturerSite(url: string): string | null {
   } catch { return null }
 }
 
+/**
+ * Réécrit le premier segment locale d'une URL vers `/fr/` quand il s'agit
+ * d'un code locale non-français (us, en, de, …). Règle générique applicable
+ * à tout site multi-locale : pour une recherche française, on préfère la
+ * version française de la même page.
+ *
+ * Exemples :
+ *   /us/products/x → /fr/products/x
+ *   /en-gb/p/y     → /fr/p/y
+ *   /fr/produits/z → inchangé
+ *   /products/a    → inchangé (pas de segment locale)
+ */
+const KNOWN_LOCALE_SEGMENTS = /^(us|en|en-[a-z]{2}|de|de-[a-z]{2}|es|es-[a-z]{2}|it|it-[a-z]{2}|nl|pt|pt-[a-z]{2}|pl|ja|zh|zh-[a-z]{2}|ko|ru|tr|ar|he|hi|uk|cs|da|sv|no|fi|hu|ro|bg|hr|sk|sl|lt|lv|et|mt|el|ga|is|ch|at|be|lu|dk|ie|gb|au|nz|ca|mx|br)$/i
+function preferFrenchUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    const m = u.pathname.match(/^\/([a-z]{2,3}(?:-[a-z]{2,3})?)(\/|$)/i)
+    if (!m) return url
+    const locale = m[1].toLowerCase()
+    if (locale === 'fr' || locale.startsWith('fr-')) return url
+    if (!KNOWN_LOCALE_SEGMENTS.test(locale)) return url
+    u.pathname = '/fr' + m[2] + u.pathname.slice(m[0].length)
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
 // ── Scraping avancé des sites fabricants (REDUX store, embedded data) ────────
 
 interface ManufacturerData {
@@ -1086,6 +1166,63 @@ export interface DeepScrapeResult {
   markdown: string
   html: string | null
   source: 'post-browser' | 'get-fallback' | 'basic-merged'
+}
+
+/**
+ * Filet de sécurité : si le markdown ne contient pas déjà les blocs
+ * JINA_EXTRACTED_SPECS / DOCUMENTS (cas où le script injecté n'a pas tourné —
+ * POST bloqué par CORS, CSP, etc.), on parse le HTML capturé côté TS avec
+ * DOMParser et on ajoute les blocs manuellement. DOMParser ignore CSS donc
+ * les panels `display:none` sont parcourus de toute façon.
+ */
+function enrichResultWithHtmlExtraction(result: DeepScrapeResult, pageUrl: string): DeepScrapeResult {
+  let md = result.markdown
+  if (result.html) {
+    if (md.indexOf('JINA_EXTRACTED_SPECS_START') === -1) {
+      const block = extractSpecsBlockFromHtml(result.html)
+      if (block) {
+        md += `\n\n${block}`
+        console.log('[html-extractor] ✓ TS-side specs block appended from Jina html (', block.length, 'chars)')
+      }
+    }
+    if (md.indexOf('JINA_EXTRACTED_DOCUMENTS_START') === -1) {
+      const block = extractDocumentsBlockFromHtml(result.html, pageUrl)
+      if (block) {
+        md += `\n\n${block}`
+        console.log('[html-extractor] ✓ TS-side documents block appended from Jina html (', block.length, 'chars)')
+      }
+    }
+  }
+  return md === result.markdown ? result : { ...result, markdown: md }
+}
+
+/**
+ * CORS-proxy fallback : fetch le HTML brut du fabricant et extrait specs/docs.
+ * Utile quand Jina ne livre pas le DOM complet (tabs lazy-loaded, SPA partielle).
+ * Lancé APRÈS enrichResultWithHtmlExtraction, déclenché uniquement si les blocs
+ * JINA_EXTRACTED_SPECS/DOCUMENTS sont toujours absents ou faibles.
+ */
+async function fetchAndExtractFromRawHtml(pageUrl: string): Promise<{ specs: string; docs: string } | null> {
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(pageUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(pageUrl)}`,
+  ]
+  for (const proxy of proxies) {
+    try {
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(20000) })
+      if (!res.ok) continue
+      const html = await res.text()
+      if (!html || html.length < 2000) continue
+      console.log('[cors-proxy-extract] got', html.length, 'chars from', proxy.split('?')[0])
+      const specs = extractSpecsBlockFromHtml(html)
+      const docs = extractDocumentsBlockFromHtml(html, pageUrl)
+      if (specs || docs) {
+        console.log('[cors-proxy-extract] ✓ specs:', specs.length, 'chars, docs:', docs.length, 'chars')
+        return { specs, docs }
+      }
+    } catch { /* try next */ }
+  }
+  return null
 }
 
 /**
@@ -1109,91 +1246,466 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
   // car c'est la seule méthode capturée par Jina (appendChild + innerHTML ne marchent pas).
   const EXPAND_ACCORDIONS_SCRIPT = `
 (function() {
-  // ── Ouvrir les accordéons classiques (universel, tout type de site) ──
-  function expandAll() {
-    var sels = [
-      '[aria-expanded="false"]',
-      '[data-toggle="collapse"]', '[data-bs-toggle="collapse"]',
-      '.accordion-header', '.accordion__header', '.accordion-trigger',
-      '.accordion-button.collapsed',
-      'details:not([open]) > summary',
-      '[role="tab"][aria-selected="false"]', '[role="tab"]:not([aria-selected="true"])',
-      '[class*="accordion"] button', '[class*="collapse"] button',
-      '.tab-link:not(.active)', '[class*="tab-button"]:not(.active)',
-      '[class*="spec"] [class*="toggle"]', '[class*="spec"] [class*="expand"]',
-      '[class*="tab-item"]:not(.active)', '[data-tab]:not(.active)',
-      '.expandable:not(.expanded)', '[class*="show-more"]', '[class*="read-more"]',
-      '[class*="collapsible"] [class*="header"]', '[class*="panel-heading"]',
-      'button[class*="more"]', 'a[class*="more"]'
-    ];
-    sels.forEach(function(sel) {
-      try { document.querySelectorAll(sel).forEach(function(el) { try { el.click(); } catch(e) {} }); } catch(e) {}
-    });
-    document.querySelectorAll('details:not([open])').forEach(function(d) { d.setAttribute('open', ''); });
-    // Ouvrir tous les contenus cachés (accordéons, onglets, sections repliées)
-    var hiddenSels = [
-      '.collapse:not(.show)', '[class*="accordion-content"]', '[class*="accordion__content"]',
-      '[class*="tab-panel"][hidden]', '[class*="tab-pane"]:not(.active)',
-      '[class*="panel-body"][style*="display: none"]', '[class*="panel-body"][style*="display:none"]',
-      '[role="tabpanel"][hidden]', '[role="tabpanel"][aria-hidden="true"]',
-      '[class*="collapsible-content"]', '[class*="expandable-content"]',
-      '[class*="spec"][style*="display: none"]', '[class*="spec"][style*="display:none"]',
-      '[class*="hidden-content"]', '[class*="more-content"]',
-      '[data-expanded="false"]', '[aria-hidden="true"][class*="panel"]'
-    ];
-    hiddenSels.forEach(function(sel) {
+  // ── STRATÉGIE UNIVERSELLE : s'appuyer sur les primitives W3C / WAI-ARIA.
+  //    Tout site accessible expose les mêmes attributs standard :
+  //      • Tabs pattern   → [role="tab"] + aria-controls="id" + [role="tabpanel"]
+  //      • Disclosure     → [aria-expanded] + aria-controls="id"
+  //      • Native HTML5   → <details open>, <summary>
+  //      • Hidden content → [hidden] (attribut HTML), [aria-hidden="true"]
+  //    Aucun besoin de deviner des noms de classes — on parse ces contrats.
+  //    Pour les sites non conformes (rares) : le fallback click() générique
+  //    sur tout bouton/lien parent d'une région cachée couvre le reste.
+  function unhide(el) {
+    if (!el || el.nodeType !== 1) return;
+    el.style.setProperty('display', 'revert', 'important');
+    el.style.setProperty('visibility', 'visible', 'important');
+    el.style.setProperty('opacity', '1', 'important');
+    el.style.setProperty('height', 'auto', 'important');
+    el.style.setProperty('max-height', 'none', 'important');
+    el.style.setProperty('overflow', 'visible', 'important');
+    el.style.setProperty('clip', 'auto', 'important');
+    el.style.setProperty('clip-path', 'none', 'important');
+    el.removeAttribute('hidden');
+    el.setAttribute('aria-hidden', 'false');
+  }
+
+  // Bombe atomique : force-unhide TOUT élément display:none/visibility:hidden.
+  // Couvre les patterns legacy non-ARIA (ex: Makita <div class="article_tab_content"
+  // style="display:none">) que la navigation par primitives W3C ne peut pas cibler.
+  function revealAllHidden() {
+    var SKIP = { SCRIPT:1, STYLE:1, LINK:1, META:1, TEMPLATE:1, NOSCRIPT:1, HEAD:1, HTML:1, IFRAME:1, TITLE:1, BASE:1 };
+    document.querySelectorAll('body *').forEach(function(el) {
+      if (SKIP[el.tagName]) return;
       try {
-        document.querySelectorAll(sel).forEach(function(el) {
-          el.style.display = 'block'; el.style.height = 'auto'; el.style.overflow = 'visible';
-          el.style.maxHeight = 'none'; el.style.opacity = '1'; el.style.visibility = 'visible';
-          el.classList.add('show', 'in', 'active'); el.classList.remove('collapsed', 'hidden', 'hide');
-          el.removeAttribute('hidden'); el.setAttribute('aria-hidden', 'false');
-        });
+        var cs = window.getComputedStyle(el);
+        if (!cs) return;
+        if (cs.display === 'none') el.style.setProperty('display', 'block', 'important');
+        if (cs.visibility === 'hidden') el.style.setProperty('visibility', 'visible', 'important');
+        if (cs.opacity === '0') el.style.setProperty('opacity', '1', 'important');
       } catch(e) {}
     });
   }
 
-  // ── Navigation séquentielle des onglets (appelée à chaque tick du polling) ──
-  var _tabClickIdx = 0;
-  function cycleTabs() {
-    var tabSels = [
-      '[role="tab"]',
-      '.nav-link[data-toggle="tab"]', '.nav-link[data-bs-toggle="tab"]',
-      '.tab-link', '[class*="tab-button"]', '[class*="tab-trigger"]',
-      '[class*="tab-item"] a', '[class*="tab-item"] button',
-      '[data-tab]', '.tabs__link', '.product-tabs a', '.product-tab'
-    ];
-    var allTabs = [];
-    tabSels.forEach(function(sel) {
-      try {
-        document.querySelectorAll(sel).forEach(function(el) {
-          if (allTabs.indexOf(el) === -1) allTabs.push(el);
-        });
-      } catch(e) {}
+  function expandAll() {
+    // 0) Unhide massif — avant toute autre opération.
+    revealAllHidden();
+
+    // 1) Tabs pattern (W3C WAI-ARIA) — activer TOUS les panels simultanément.
+    //    Chaque [role="tab"] pointe vers son panel via aria-controls.
+    document.querySelectorAll('[role="tab"]').forEach(function(tab) {
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
+      var panelId = tab.getAttribute('aria-controls');
+      if (panelId) {
+        var panel = document.getElementById(panelId);
+        if (panel) unhide(panel);
+      }
     });
-    if (allTabs.length > 1 && _tabClickIdx < allTabs.length) {
-      try { allTabs[_tabClickIdx].click(); } catch(e) {}
-      _tabClickIdx++;
-      // Forcer TOUS les panneaux d'onglets à rester visibles après le clic
-      setTimeout(function() {
-        var panelSels = [
-          '[role="tabpanel"]', '[class*="tab-pane"]', '[class*="tab-content"] > *',
-          '[class*="tab-panel"]', '[class*="product-tab-content"]'
-        ];
-        panelSels.forEach(function(sel) {
-          try {
-            document.querySelectorAll(sel).forEach(function(el) {
-              el.style.display = 'block';
-              el.style.visibility = 'visible';
-              el.style.height = 'auto';
-              el.style.opacity = '1';
-              el.style.overflow = 'visible';
-              el.removeAttribute('hidden');
-              el.setAttribute('aria-hidden', 'false');
-            });
-          } catch(e) {}
+    // Couvrir les tabpanels même si aucun tab ne les référence (mal codé).
+    document.querySelectorAll('[role="tabpanel"]').forEach(unhide);
+
+    // 2) Disclosure pattern (WAI-ARIA) — tout [aria-expanded] + aria-controls.
+    document.querySelectorAll('[aria-expanded="false"]').forEach(function(trigger) {
+      trigger.setAttribute('aria-expanded', 'true');
+      var targetId = trigger.getAttribute('aria-controls');
+      if (targetId) {
+        targetId.split(/\\s+/).forEach(function(id) {
+          var target = document.getElementById(id);
+          if (target) unhide(target);
         });
-      }, 150);
+      }
+    });
+
+    // 3) Native HTML5 <details> — juste ajouter l'attribut open.
+    document.querySelectorAll('details:not([open])').forEach(function(d) {
+      d.setAttribute('open', '');
+    });
+
+    // 4) Attribut natif [hidden] — retirer (spec HTML5 : équivaut à display:none).
+    document.querySelectorAll('[hidden]').forEach(function(el) {
+      // Préserver <script>/<style>/<template> qui sont légitimement cachés.
+      var tag = el.tagName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEMPLATE' || tag === 'LINK' || tag === 'META') return;
+      el.removeAttribute('hidden');
+      unhide(el);
+    });
+
+    // 5) [aria-hidden="true"] hors navigation — WAI-ARIA indique contenu caché
+    //    aux AT, donc typiquement caché visuellement aussi sur sites accessibles.
+    document.querySelectorAll('[aria-hidden="true"]').forEach(function(el) {
+      if (el.closest('nav,header,footer')) return;
+      unhide(el);
+    });
+
+    // 6) CSS global : filet de sécurité pour les cas non couverts par JS (re-render React/Vue).
+    if (!document.getElementById('__jina_force_visible__')) {
+      var styleTag = document.createElement('style');
+      styleTag.id = '__jina_force_visible__';
+      styleTag.textContent = [
+        '[role="tabpanel"]{display:block!important;visibility:visible!important;opacity:1!important;height:auto!important;max-height:none!important;overflow:visible!important}',
+        '[aria-hidden="true"]:not(nav):not(header):not(footer){display:revert!important;visibility:visible!important;opacity:1!important}',
+        'details{open:true}',
+        'img[loading="lazy"]{content-visibility:visible}'
+      ].join('\\n');
+      document.head.appendChild(styleTag);
+    }
+
+    // 7) Lazy-load images : spec HTML5 loading="lazy" → forcer le chargement.
+    document.querySelectorAll('img[loading="lazy"]').forEach(function(img) { img.loading = 'eager'; });
+    // Conventions de facto (HTMLImageElement ne définit pas data-src, mais les
+    // libs lazyload standard s'en servent) — swap si src absent.
+    document.querySelectorAll('img[data-src],img[data-srcset]').forEach(function(img) {
+      var ds = img.getAttribute('data-src');
+      var dss = img.getAttribute('data-srcset');
+      if (ds && !img.getAttribute('src')) img.setAttribute('src', ds);
+      if (dss && !img.getAttribute('srcset')) img.setAttribute('srcset', dss);
+    });
+    // Scroll pour réveiller IntersectionObserver (pattern lazy-load standard).
+    try { window.scrollTo(0, document.body.scrollHeight); window.scrollTo(0, 0); } catch(e) {}
+
+    // 8) Pattern tabs de facto : <a href="#id"> qui pointe vers un panel local.
+    //    Très courant (Bootstrap tabs legacy, onglets custom Drupal/Makita, etc.).
+    //    On dé-masque la cible ET on déclenche le click (pour les handlers JS).
+    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+      var href = a.getAttribute('href') || '';
+      if (href.length < 2) return;
+      var id = href.substring(1);
+      if (!id || /^[!?\\/]/.test(id)) return;
+      var target = document.getElementById(id);
+      if (!target) return;
+      // Ne cliquer que si la cible ressemble à un panel (contient du contenu bloc),
+      // pas une simple ancre vers un titre (pour éviter de casser la navigation).
+      if (target.children.length > 0 || (target.textContent || '').trim().length > 40) {
+        unhide(target);
+        try { a.click(); } catch(e) {}
+      }
+    });
+
+    // 9) Bootstrap (legacy + v5) : data-toggle/data-bs-toggle + data-target/data-bs-target.
+    document.querySelectorAll('[data-toggle],[data-bs-toggle]').forEach(function(trigger) {
+      var sel = trigger.getAttribute('data-target') || trigger.getAttribute('data-bs-target') || '';
+      if (sel && sel.charAt(0) === '#') {
+        var tgt = document.getElementById(sel.substring(1));
+        if (tgt) unhide(tgt);
+      }
+      try { trigger.click(); } catch(e) {}
+    });
+
+    // 10) Fallback générique : cliquer tout ce qui a un handler explicite (onclick
+    //     inline, role="tab"/"button") ou un <summary>. Couvre les sites legacy
+    //     non-ARIA (ex: Makita <li id="tab_3" onclick="switchArtikelTab(this)">).
+    document.querySelectorAll(
+      '[onclick],[role="tab"],[role="button"],button[aria-controls],a[aria-controls],summary'
+    ).forEach(function(el) {
+      try { el.click(); } catch(e) {}
+    });
+  }
+
+  // ── Extraction VIDÉOS (iframe YouTube/Vimeo + <video> + data-video-id) ──
+  function extractVideos() {
+    var videos = [];
+    var seen = {};
+    var addVideo = function(url, title) {
+      if (!url || seen[url]) return;
+      seen[url] = true;
+      videos.push((title ? title + ' | ' : '') + url);
+    };
+    // iframes YouTube / Vimeo / Wistia
+    document.querySelectorAll('iframe[src*="youtube"],iframe[src*="youtu.be"],iframe[src*="vimeo"],iframe[src*="wistia"]').forEach(function(f) {
+      addVideo(f.src, f.getAttribute('title') || '');
+    });
+    // video tags
+    document.querySelectorAll('video[src],video source[src]').forEach(function(v) {
+      addVideo(v.src, v.getAttribute('title') || v.getAttribute('aria-label') || '');
+    });
+    // data-video-id → reconstruire URL YouTube
+    document.querySelectorAll('[data-youtube-id],[data-video-id],[data-yt-id]').forEach(function(el) {
+      var id = el.getAttribute('data-youtube-id') || el.getAttribute('data-video-id') || el.getAttribute('data-yt-id');
+      if (id && /^[A-Za-z0-9_-]{6,}$/.test(id)) {
+        addVideo('https://www.youtube.com/watch?v=' + id, el.getAttribute('aria-label') || el.textContent || '');
+      }
+    });
+    // Liens <a> vers YouTube/Vimeo
+    document.querySelectorAll('a[href*="youtube.com/watch"],a[href*="youtu.be/"],a[href*="vimeo.com/"]').forEach(function(a) {
+      addVideo(a.href, (a.textContent || '').trim());
+    });
+    if (videos.length > 0) {
+      var div = document.createElement('div');
+      div.innerText = 'JINA_EXTRACTED_VIDEOS_START\\n' + videos.join('\\n') + '\\nJINA_EXTRACTED_VIDEOS_END';
+      document.body.prepend(div);
+    }
+  }
+
+  // ── Extraction SPECS génériques (<table> + <dl>) ──
+  //    Couvre tous les sites qui exposent des caractéristiques via tables HTML standard.
+  function extractGenericSpecs() {
+    var out = '';
+    var seenPairs = {};
+
+    function nearestHeading(el) {
+      var cur = el;
+      for (var i = 0; i < 4 && cur; i++) {
+        var sib = cur.previousElementSibling;
+        while (sib) {
+          if (/^H[1-6]$/.test(sib.tagName)) {
+            var t = (sib.textContent || '').replace(/\\s+/g, ' ').trim();
+            if (t && t.length <= 80) return t;
+          }
+          sib = sib.previousElementSibling;
+        }
+        cur = cur.parentElement;
+      }
+      return '';
+    }
+
+    // Tables 2-colonnes : label | value
+    document.querySelectorAll('table').forEach(function(tbl) {
+      var rows = tbl.querySelectorAll('tr');
+      if (rows.length < 2) return;
+      var localPairs = [];
+      rows.forEach(function(tr) {
+        var cells = tr.querySelectorAll('td,th');
+        if (cells.length < 2) return;
+        var k = (cells[0].textContent || '').replace(/\\s+/g, ' ').trim();
+        var v = (cells[1].textContent || '').replace(/\\s+/g, ' ').trim();
+        // Support ✓/✗ → Oui/Non
+        if (!v && cells[1].querySelector('[class*="check"],svg')) v = 'Oui';
+        if (!k || !v || k === v) return;
+        if (k.length > 80 || v.length > 200) return;
+        var pk = k.toLowerCase();
+        if (seenPairs[pk]) return;
+        seenPairs[pk] = true;
+        localPairs.push(k + ' = ' + v);
+      });
+      if (localPairs.length >= 2) {
+        var cap = tbl.querySelector('caption');
+        var title = (cap && (cap.textContent || '').trim()) || nearestHeading(tbl) || 'Spécifications';
+        out += 'GROUP: ' + title + '\\n' + localPairs.join('\\n') + '\\n';
+      }
+    });
+
+    // Listes de définition <dl><dt>/<dd>
+    document.querySelectorAll('dl').forEach(function(dl) {
+      var dts = dl.querySelectorAll('dt');
+      var dds = dl.querySelectorAll('dd');
+      if (dts.length < 2 || dts.length !== dds.length) return;
+      var localPairs = [];
+      for (var i = 0; i < dts.length; i++) {
+        var k = (dts[i].textContent || '').replace(/\\s+/g, ' ').trim();
+        var v = (dds[i].textContent || '').replace(/\\s+/g, ' ').trim();
+        if (!k || !v || k.length > 80 || v.length > 200) continue;
+        var pk = k.toLowerCase();
+        if (seenPairs[pk]) continue;
+        seenPairs[pk] = true;
+        localPairs.push(k + ' = ' + v);
+      }
+      if (localPairs.length >= 2) {
+        var title = nearestHeading(dl) || 'Spécifications';
+        out += 'GROUP: ' + title + '\\n' + localPairs.join('\\n') + '\\n';
+      }
+    });
+
+    // Pseudo-tables en <div> : pattern ultra-courant sur e-commerce moderne.
+    //   <div class="specs"><div class="row"><div>Label</div><div>Value</div></div>...</div>
+    // Heuristique : élément avec ≥3 enfants directs "similaires", chaque enfant
+    // contenant un label court + une valeur courte → c'est une table de specs.
+    function extractPairFromRow(row) {
+      // Déballer récursivement les wrappers à enfant unique (Makita : <div.techspecs--row>
+      // → <div.techspecs-content-inner> → <li.row-content> → 2 divs label/value).
+      var cur = row;
+      for (var u = 0; u < 6; u++) {
+        var ch = Array.from(cur.children).filter(function(e) {
+          var t = (e.textContent || '').trim();
+          return t.length > 0;
+        });
+        if (ch.length >= 2) break;
+        if (ch.length === 1) { cur = ch[0]; continue; }
+        break;
+      }
+      var subs = Array.from(cur.children).filter(function(e) {
+        var t = (e.textContent || '').trim();
+        return t.length > 0;
+      });
+      if (subs.length >= 2) {
+        var k1 = (subs[0].textContent || '').replace(/\\s+/g, ' ').trim();
+        var v1 = (subs[1].textContent || '').replace(/\\s+/g, ' ').trim();
+        if (!v1 && subs[1].querySelector('svg,[class*="check"]')) v1 = 'Oui';
+        if (k1 && v1 && k1 !== v1 && k1.length <= 80 && v1.length <= 200) return [k1, v1];
+      }
+      // Fallback : pattern "Label : valeur" dans un seul élément texte
+      var flat = (row.textContent || '').replace(/\\s+/g, ' ').trim();
+      var m = flat.match(/^([^:：]{2,60})\\s*[:：]\\s*(.{1,200})$/);
+      if (m) return [m[1].trim(), m[2].trim()];
+      return null;
+    }
+
+    // Filtre anti-parasite : écarter nav, cookies, menus, footers.
+    function isJunkContext(el) {
+      var cur = el;
+      while (cur && cur !== document.body) {
+        var tag = cur.tagName;
+        if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER') return true;
+        var cls = (cur.className || '') + ' ' + (cur.id || '');
+        if (typeof cls !== 'string') cls = '';
+        if (/cookie|consent|gdpr|mega-?menu|navigation|breadcrumb|footer|cart|panier|newsletter|social/i.test(cls)) return true;
+        cur = cur.parentElement;
+      }
+      return false;
+    }
+
+    function scanContainerForPairs(el) {
+      var tag = el.tagName;
+      if (tag === 'TABLE' || tag === 'DL' || tag === 'TR' || tag === 'THEAD' || tag === 'TBODY' || tag === 'TFOOT') return null;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return null;
+      if (isJunkContext(el)) return null;
+      var kids = el.children;
+      if (!kids || kids.length < 2 || kids.length > 80) return null;
+      var pairs = [];
+      for (var i = 0; i < kids.length; i++) {
+        var p = extractPairFromRow(kids[i]);
+        if (p) pairs.push(p);
+      }
+      if (pairs.length < 2 || pairs.length / kids.length < 0.5) return null;
+      return pairs;
+    }
+
+    // 1) PRIORITÉ : conteneurs explicitement nommés "specs/tech/caracteristic/features".
+    //    Couvre Makita <ul class="techspecs">, sites avec class="specifications" / "product-specs" / "tech-details".
+    var priorityContainers = document.querySelectorAll(
+      '[class*="techspec" i],[class*="tech-spec" i],[class*="specification" i],[class*="product-spec" i],' +
+      '[class*="caracteris" i],[class*="features-list" i],[class*="attributes" i],[id*="specification" i],' +
+      '[id*="techspec" i],[id*="caracteris" i],[class*="datasheet" i]'
+    );
+    var priorityHit = {};
+    priorityContainers.forEach(function(el) {
+      if (priorityHit[el.tagName + '#' + (el.id||'') + '.' + (el.className||'')]) return;
+      var pairs = scanContainerForPairs(el);
+      if (!pairs) return;
+      priorityHit[el.tagName + '#' + (el.id||'') + '.' + (el.className||'')] = true;
+      var localPairs = [];
+      for (var pi = 0; pi < pairs.length; pi++) {
+        var k = pairs[pi][0], v = pairs[pi][1], pk = k.toLowerCase();
+        if (seenPairs[pk]) continue;
+        seenPairs[pk] = true;
+        localPairs.push(k + ' = ' + v);
+      }
+      if (localPairs.length >= 2) {
+        var title = nearestHeading(el) || 'Caractéristiques techniques';
+        out += 'GROUP: ' + title + '\\n' + localPairs.join('\\n') + '\\n';
+      }
+    });
+
+    // 2) Générique : si le pre-scan n'a rien sorti, tenter tout le body (ordre document).
+    if (Object.keys(priorityHit).length === 0) {
+      document.querySelectorAll('body *').forEach(function(el) {
+        var pairs = scanContainerForPairs(el);
+        if (!pairs || pairs.length < 3) return;
+        var localPairs = [];
+        for (var pi = 0; pi < pairs.length; pi++) {
+          var k = pairs[pi][0], v = pairs[pi][1], pk = k.toLowerCase();
+          if (seenPairs[pk]) continue;
+          seenPairs[pk] = true;
+          localPairs.push(k + ' = ' + v);
+        }
+        if (localPairs.length >= 3) {
+          var title = nearestHeading(el) || 'Spécifications';
+          out += 'GROUP: ' + title + '\\n' + localPairs.join('\\n') + '\\n';
+        }
+      });
+    }
+
+    // Remove previous injection to avoid duplicates
+    var prev = document.getElementById('__jina_specs_block__');
+    if (prev) prev.remove();
+    if (out) {
+      var div = document.createElement('div');
+      div.id = '__jina_specs_block__';
+      div.innerText = 'JINA_EXTRACTED_SPECS_START\\n' + out + 'JINA_EXTRACTED_SPECS_END';
+      document.body.prepend(div);
+    }
+  }
+
+  // ── Extraction DOCUMENTS (PDF) avec label row correct ──
+  //    Pattern courant : <tr><td>Déclaration CE</td><td><a>PDF</a></td></tr>
+  //    Le texte de l'anchor est juste "PDF" ou filename → on remonte au row.
+  function extractGenericDocuments() {
+    var docs = [];
+    var seen = {};
+
+    function labelForAnchor(a) {
+      var GENERIC = /^(pdf|download|t[eé]l[eé]charger|voir|view|open|ouvrir|link|file|document)\\.?$/i;
+      var cur = a.parentElement;
+      for (var d = 0; d < 5 && cur; d++) {
+        var tag = cur.tagName;
+        if (tag === 'BODY' || tag === 'HTML' || tag === 'MAIN' || tag === 'SECTION' || tag === 'ARTICLE') break;
+        var clone = cur.cloneNode(true);
+        clone.querySelectorAll('a, button, img, svg, script, style, noscript').forEach(function(e) { e.remove(); });
+        var parentTxt = (clone.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (parentTxt && parentTxt.length >= 5 && parentTxt.length <= 200 && !GENERIC.test(parentTxt)) return parentTxt;
+        cur = cur.parentElement;
+      }
+      var txt = (a.textContent || '').replace(/\\s+/g, ' ').trim();
+      if (txt && !GENERIC.test(txt) && txt.length <= 200) return txt;
+      var aria = a.getAttribute('aria-label') || '';
+      if (aria && !GENERIC.test(aria)) return aria.trim();
+      var title = a.getAttribute('title') || '';
+      if (title && !GENERIC.test(title)) return title.trim();
+      try {
+        var u = new URL(a.href);
+        var fn = u.pathname.split('/').pop() || '';
+        return decodeURIComponent(fn.replace(/\\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim() || 'Document';
+      } catch(e) { return 'Document'; }
+    }
+
+    document.querySelectorAll('a[href]').forEach(function(a) {
+      var url = a.href || '';
+      if (!/\\.pdf($|\\?|#)/i.test(url)) return;
+      if (seen[url]) return;
+      seen[url] = true;
+      var label = labelForAnchor(a);
+      docs.push(label + ' | ' + url);
+    });
+
+    var prev = document.getElementById('__jina_docs_block__');
+    if (prev) prev.remove();
+    if (docs.length > 0) {
+      var div = document.createElement('div');
+      div.id = '__jina_docs_block__';
+      div.innerText = 'JINA_EXTRACTED_DOCUMENTS_START\\n' + docs.join('\\n') + '\\nJINA_EXTRACTED_DOCUMENTS_END';
+      document.body.prepend(div);
+    }
+  }
+
+  // ── Extraction VARIANTS (selects + swatches + liste déclinaisons) ──
+  function extractVariants() {
+    var variants = [];
+    var seen = {};
+    // <select> nommé variant/color/size/option
+    document.querySelectorAll('select').forEach(function(sel) {
+      var name = (sel.name || sel.id || '').toLowerCase();
+      if (!/variant|color|couleur|size|taille|option|model|modele|ref/i.test(name)) return;
+      Array.from(sel.options).forEach(function(opt) {
+        var label = (opt.textContent || '').trim();
+        var val = (opt.value || '').trim();
+        if (label && val && label !== '—' && !/choisir|select|please/i.test(label)) {
+          var k = name + '|' + val;
+          if (!seen[k]) { seen[k] = true; variants.push(name + ' = ' + label + ' (' + val + ')'); }
+        }
+      });
+    });
+    // Swatches de couleur / radios variant
+    document.querySelectorAll('[class*="swatch"],[class*="variant-option"],[class*="color-option"],[class*="size-option"],input[type="radio"][name*="variant" i],input[type="radio"][name*="color" i]').forEach(function(el) {
+      var label = (el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('data-value') || el.textContent || el.value || '').trim();
+      var name = (el.getAttribute('name') || el.className || 'variant').toLowerCase();
+      if (label && label.length > 0 && label.length < 80) {
+        var k = name + '|' + label;
+        if (!seen[k]) { seen[k] = true; variants.push(name + ' = ' + label); }
+      }
+    });
+    if (variants.length > 0) {
+      var div = document.createElement('div');
+      div.innerText = 'JINA_EXTRACTED_VARIANTS_START\\n' + variants.join('\\n') + '\\nJINA_EXTRACTED_VARIANTS_END';
+      document.body.prepend(div);
     }
   }
 
@@ -1548,18 +2060,39 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     return false;
   }
 
-  // Exécution immédiate : accordéons + premier onglet
+  // Exécution immédiate : expand + extraire specs/docs du DOM initial (tables
+  // et liens PDF sont en général déjà là, juste cachés par display:none).
   expandAll();
-  cycleTabs();
+  try { extractGenericSpecs(); } catch(e) {}
+  try { extractGenericDocuments(); } catch(e) {}
 
-  // Polling : attendre que le framework SPA soit prêt (max 10s)
-  // Chaque tick : expand accordéons + cliquer l'onglet suivant + tenter extraction
+  // Polling 20s (100 × 200ms) : ré-applique expansion + extractions à chaque tick
+  // (remove+re-insert idempotent). Couvre les ré-rendus React/Vue et les AJAX lazy.
   var attempts = 0;
+  var spaDone = false;
+  var finalDone = false;
   var interval = setInterval(function() {
     attempts++;
     expandAll();
-    cycleTabs();
-    if (tryExtractSPA() || attempts > 50) {
+    if (!spaDone && tryExtractSPA()) spaDone = true;
+    // Re-scan specs + docs à chaque tick — chaque passage remplace le div injecté.
+    try { extractGenericSpecs(); } catch(e) {}
+    try { extractGenericDocuments(); } catch(e) {}
+    // Après 8s (40 ticks), on considère que les AJAX lazy sont arrivés :
+    // extraire vidéos + variants à partir du DOM stabilisé.
+    if (attempts === 40) {
+      try { extractVideos(); } catch(e) {}
+      try { extractVariants(); } catch(e) {}
+    }
+    if (attempts > 100) {
+      if (!finalDone) {
+        finalDone = true;
+        try { expandAll(); } catch(e) {}
+        try { extractVideos(); } catch(e) {}
+        try { extractVariants(); } catch(e) {}
+        try { extractGenericSpecs(); } catch(e) {}
+        try { extractGenericDocuments(); } catch(e) {}
+      }
       clearInterval(interval);
     }
   }, 200);
@@ -1583,7 +2116,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
         'Accept': 'application/json',
         'Authorization': `Bearer ${jinaKey}`,
         'X-Engine': 'browser',
-        'X-Timeout': '60',
+        'X-Timeout': '90',
         'X-No-Cache': 'true',
         'X-With-Links-Summary': 'all',
         'X-With-Images-Summary': 'all',
@@ -1658,17 +2191,58 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
       }
     }
 
-    return { markdown: md, html: capturedHtml, source: 'post-browser' as const }
+    return enrichResultWithHtmlExtraction({ markdown: md, html: capturedHtml, source: 'post-browser' as const }, pageUrl)
   } catch (err) {
-    console.warn('[jina-manufacturer] POST scrape failed:', err)
+    console.warn('[jina-manufacturer] POST scrape failed:', err, '— trying GET browser fallback')
+    const jinaKey = getApiKey('jina')
+    if (jinaKey) {
+      return jinaScrapeMaufacturerPageFallback(pageUrl, jinaKey)
+    }
     const fallbackMd = await jinaScrapeMarkdown(pageUrl)
     return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
   }
 }
 
-/** Fallback GET pour le scraping fabricant (sans injection JS) — utilise le mode JSON */
+/** Fallback GET pour le scraping fabricant (sans injection JS).
+ *  Essaie d'abord le mode GET browser engine (rend le DOM JS sans injection),
+ *  puis retombe sur le mode JSON classique. Utile quand le POST est bloqué
+ *  par CORS mais que GET browser passe (SPA qui rend son contenu côté client).
+ */
 async function jinaScrapeMaufacturerPageFallback(pageUrl: string, jinaKey: string): Promise<DeepScrapeResult | null> {
-  // Réutilise jinaScrapeMarkdown qui est déjà en mode JSON avec images/links
+  console.log('[jina-manufacturer-fallback] trying GET browser engine (no JS injection)')
+  try {
+    const res = await fetch(`https://r.jina.ai/${pageUrl}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${jinaKey}`,
+        'X-Engine': 'browser',
+        'X-Timeout': '60',
+        'X-No-Cache': 'true',
+        'X-With-Links-Summary': 'all',
+        'X-With-Images-Summary': 'all',
+        'X-With-Iframe': 'true',
+        'X-With-Shadow-Dom': 'true',
+        'X-Return-Format': 'html,markdown',
+      },
+    })
+    if (res.ok) {
+      const json = await res.json() as { data?: { content?: string; html?: string; links?: Record<string, string>; images?: Record<string, string> } }
+      const md = json?.data?.content || ''
+      const html = json?.data?.html ?? null
+      if (md && md.length > 500) {
+        console.log('[jina-manufacturer-fallback] ✓ GET browser got', md.length, 'chars')
+        return enrichResultWithHtmlExtraction({ markdown: md, html, source: 'get-fallback' as const }, pageUrl)
+      }
+      console.warn('[jina-manufacturer-fallback] GET browser returned thin content (', md.length, 'chars)')
+    } else {
+      console.warn('[jina-manufacturer-fallback] GET browser HTTP', res.status)
+    }
+  } catch (e) {
+    console.warn('[jina-manufacturer-fallback] GET browser threw:', e)
+  }
+
+  // Dernier recours : mode JSON classique
   console.log('[jina-manufacturer-fallback] falling back to JSON mode scrape')
   const fallbackMd = await jinaScrapeMarkdown(pageUrl)
   return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
@@ -2049,6 +2623,7 @@ function buildManufacturerProduct(
   rawData: ManufacturerData,
   productUrl: string,
   additionalSources: string[],
+  primaryImages: string[] = [],
 ): EnrichedProduct {
   console.log('[manufacturer-build] combining markdown + raw data')
 
@@ -2092,16 +2667,15 @@ function buildManufacturerProduct(
     variants = parseVariantsFromMarkdown(markdownContent)
   }
 
-  // Images : markdown (inclut Jina injected + inline + summary) > REDUX
-  let images: string[] = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
-  // Merge avec REDUX rawData images (sans doublons)
-  if (rawData.images.length > 0) {
-    const seen = new Set(images)
-    for (const url of rawData.images) {
-      if (!seen.has(url)) { images.push(url); seen.add(url) }
-    }
+  // Images : primaires (og:image / twitter:image / JSON-LD / link image_src) en tête,
+  // puis markdown (Jina injected + inline + summary), puis REDUX. Dédupliquées.
+  const mdImages = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
+  const imgSeen = new Set<string>()
+  const images: string[] = []
+  for (const url of [...primaryImages, ...mdImages, ...rawData.images]) {
+    if (!imgSeen.has(url)) { imgSeen.add(url); images.push(url) }
   }
-  console.log('[manufacturer-build] images:', images.length)
+  console.log('[manufacturer-build] images:', images.length, '(primary:', primaryImages.length, ', md:', mdImages.length, ', redux:', rawData.images.length, ')')
 
   // Documents : Jina injected > REDUX downloads > PDFs du markdown
   const documents: string[] = []
@@ -2177,7 +2751,40 @@ function buildManufacturerProduct(
 
 // ── Parsers markdown : extraction structurée depuis le texte brut ───────────
 
-function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string; group?: string }> {
+/**
+ * Parse UNIQUEMENT le bloc JINA_EXTRACTED_SPECS (injecté par notre script ou
+ * par l'extracteur HTML TS-side). Ne touche PAS au reste du markdown — évite
+ * de récupérer les tables de cookies, accessoires, etc. Utilisé pour backfill
+ * quand le LLM n'a rien retourné.
+ */
+export function parseCleanSpecsFromJinaBlock(md: string): Array<{ name: string; value: string; group?: string }> {
+  const specs: Array<{ name: string; value: string; group?: string }> = []
+  const seen = new Set<string>()
+  const start = md.indexOf('JINA_EXTRACTED_SPECS_START')
+  const end = md.indexOf('JINA_EXTRACTED_SPECS_END')
+  if (start < 0 || end <= start) return specs
+  const block = md.slice(start, end)
+  let currentGroup: string | undefined
+  const decodeHtml = (s: string) => s.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c))).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+  for (const line of block.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed.startsWith('GROUP:')) {
+      currentGroup = decodeHtml(trimmed.slice(6).trim()) || undefined
+    } else if (trimmed.includes(' = ')) {
+      const eqIdx = trimmed.indexOf(' = ')
+      const name = decodeHtml(trimmed.slice(0, eqIdx).trim())
+      const value = decodeHtml(trimmed.slice(eqIdx + 3).trim())
+      if (!name || !value) continue
+      const key = `${name.toLowerCase()}::${value.toLowerCase()}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      specs.push({ name, value, group: currentGroup })
+    }
+  }
+  return specs
+}
+
+export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string; group?: string }> {
   const specs: Array<{ name: string; value: string; group?: string }> = []
   const seen = new Set<string>()
 
@@ -2236,6 +2843,12 @@ function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string
     let v = value.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
     const key = `${n.toLowerCase()}::${v.toLowerCase()}`
     if (!n || !v || seen.has(key)) return
+    // Règle générique : rejeter les cellules polluées par des artefacts markdown
+    // non nettoyés (image/lien non résolus) → indicatif d'un parsing raté, pas
+    // d'une vraie paire name/value.
+    if (/^!?\[/.test(n) || /^!?\[/.test(v)) return
+    if (/\]\s*\(/.test(n) || /\]\s*\(/.test(v)) return
+    if (/^blob:/i.test(v) || /^https?:\/\//i.test(v) || /^\/\//.test(v)) return
     // Rejeter les métadonnées Jina / balises HTML / URLs
     if (JUNK_NAME_RE.test(n)) return
     if (JUNK_VALUE_RE.test(v)) return
@@ -2559,7 +3172,41 @@ function isJunkCellValue(v: string): boolean {
   return false
 }
 
-function parseVariantsFromMarkdown(md: string): Array<{ reference: string; label: string; properties: Record<string, string> }> {
+/**
+ * Nettoie génériquement une cellule de table markdown des artefacts qui
+ * peuvent s'y retrouver quand Jina rend du HTML avec images/liens inline :
+ *  - `![alt](url)`   → garde `alt`
+ *  - `[text](url)`   → garde `text` (sauf si text est une URL → vide)
+ *  - `[x]` / `[ ]`   → cases à cocher → vide
+ *  - `**bold**`      → garde le contenu
+ * Règle générique : aucune table ne doit propager d'artefacts bruts à l'UI.
+ */
+export function cleanMarkdownCell(s: string): string {
+  if (!s) return ''
+  let v = s.trim()
+  v = v.replace(/\*\*/g, '').replace(/__/g, '')
+  v = v.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+  v = v.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, target) => (/^https?:\/\//i.test(target.trim()) ? '' : label))
+  v = v.replace(/^\[[\sxX]\]\s*/, '')
+  v = v.replace(/^\[\]\s*/, '')
+  return v.trim()
+}
+
+/**
+ * Valide qu'une chaîne ressemble à une référence produit réaliste.
+ * Règle générique : une variante sans référence valide est presque toujours
+ * un faux positif (ligne de disclaimer, séparateur, en-tête dupliquée).
+ */
+export function isValidVariantRef(ref: string): boolean {
+  if (!ref) return false
+  const r = ref.trim()
+  if (r.length < 3 || r.length > 40) return false
+  if (!/\d/.test(r)) return false
+  if (!/^[A-Za-z0-9][A-Za-z0-9\-_./+ ]*$/.test(r)) return false
+  return true
+}
+
+export function parseVariantsFromMarkdown(md: string): Array<{ reference: string; label: string; properties: Record<string, string> }> {
   const variants: Array<{ reference: string; label: string; properties: Record<string, string> }> = []
 
   const lines = md.split('\n')
@@ -2572,7 +3219,7 @@ function parseVariantsFromMarkdown(md: string): Array<{ reference: string; label
     const trimmed = lines[li].trim()
 
     if (trimmed.startsWith('|') && trimmed.endsWith('|') && !inTable) {
-      const cells = trimmed.split('|').map(c => c.trim()).slice(1, -1)
+      const cells = trimmed.split('|').map(c => cleanMarkdownCell(c)).slice(1, -1)
       const refCol = cells.findIndex(c => /^r[eé]f|^code|^sku|^article|^part\s*n|^model/i.test(c))
       if (refCol >= 0) {
         headers = cells
@@ -2586,12 +3233,16 @@ function parseVariantsFromMarkdown(md: string): Array<{ reference: string; label
     if (inTable && /^\|[\s-:|]+\|$/.test(trimmed)) continue
 
     if (inTable && trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      const cells = trimmed.split('|').map(c => c.replace(/\*\*/g, '').trim()).slice(1, -1)
+      const cells = trimmed.split('|').map(c => cleanMarkdownCell(c)).slice(1, -1)
       if (cells.length >= headers.length - 1 && refIdx < cells.length) {
         // Strip header prefix des cellules ref et label
         const refRaw = cells[refIdx]
         const ref = stripCellHeaderPrefix(headers[refIdx] || 'Réf.', refRaw)
         if (!ref || /^[-:]+$/.test(ref)) continue
+        // Règle générique : rejet des lignes dont la "référence" n'a pas le
+        // format d'une ref réelle (cas typique : tables de disclaimer ou
+        // notes en prose).
+        if (!isValidVariantRef(ref)) continue
         const labelRaw = labelIdx >= 0 && labelIdx < cells.length ? cells[labelIdx] : ''
         const label = stripCellHeaderPrefix(headers[labelIdx] || 'Libellé', labelRaw)
         const properties: Record<string, string> = {}
@@ -2679,7 +3330,18 @@ function parseVariantsFromMarkdown(md: string): Array<{ reference: string; label
     }
   }
 
-  return variants
+  // Règle générique : dédoublonnage final par référence (uppercase).
+  // Cas typique : Jina rend la même table 2× (mobile+desktop, ou DOM dupliqué
+  // par onglets), ce qui produit des variantes identiques.
+  const seenRefs = new Set<string>()
+  const deduped: typeof variants = []
+  for (const v of variants) {
+    const key = v.reference.toUpperCase().trim()
+    if (!key || seenRefs.has(key)) continue
+    seenRefs.add(key)
+    deduped.push(v)
+  }
+  return deduped
 }
 
 /** Extrait tous les blobs "Caractéristiques <contenu> Voir moins" du markdown, dans l'ordre. */
@@ -2766,7 +3428,175 @@ function canonicalizeImageUrl(url: string): string {
   }
 }
 
-function parseImagesFromMarkdown(md: string): string[] {
+/**
+ * Extrait les images marquées "principales" par le site depuis le HTML rendu.
+ * Sources génériques (par priorité) :
+ *   1. og:image  /  og:image:secure_url
+ *   2. twitter:image  /  twitter:image:src
+ *   3. JSON-LD schema.org (Product.image, offers.image, @graph[].image)
+ *   4. <link rel="image_src" href>
+ * Filtrage : data:, blob:, pixels de tracking, dimensions < 200px quand connues.
+ */
+export function extractPrimaryImagesFromHtml(html: string | null, baseUrl: string): string[] {
+  if (!html) return []
+  const out: string[] = []
+  const seen = new Set<string>()
+  const rejected: string[] = []
+
+  const toAbs = (u: string): string | null => {
+    try { return new URL(u, baseUrl).toString() } catch { return null }
+  }
+  const reject = (url: string, reason: string) => { rejected.push(`${reason}: ${url.slice(0, 120)}`) }
+  const acceptable = (url: string): boolean => {
+    if (!url) return false
+    if (/^data:/i.test(url)) { reject(url, 'data'); return false }
+    if (/^blob:/i.test(url)) { reject(url, 'blob'); return false }
+    if (/[?&](?:utm_|ga_|gclid|fbclid)/i.test(url) && /\/(?:track|pixel|beacon|1x1|spacer)/i.test(url)) { reject(url, 'tracker'); return false }
+    if (/(?:^|[/_-])(?:1x1|pixel|spacer|blank|transparent|beacon)[._-]/i.test(url)) { reject(url, 'pixel'); return false }
+    return true
+  }
+  const push = (raw: string) => {
+    const abs = toAbs(raw.trim())
+    if (!abs || !acceptable(abs)) return
+    if (seen.has(abs)) return
+    seen.add(abs)
+    out.push(abs)
+  }
+
+  // 1. og:image (name|property)
+  const metaRe = /<meta[^>]+(?:property|name)\s*=\s*["']([^"']+)["'][^>]*content\s*=\s*["']([^"']+)["'][^>]*>/gi
+  const metaReRev = /<meta[^>]+content\s*=\s*["']([^"']+)["'][^>]*(?:property|name)\s*=\s*["']([^"']+)["'][^>]*>/gi
+  const metaKey = (k: string) => /^(og:image(?::secure_url|:url)?|twitter:image(?::src)?)$/i.test(k)
+  for (const m of html.matchAll(metaRe)) {
+    if (metaKey(m[1])) push(m[2])
+  }
+  for (const m of html.matchAll(metaReRev)) {
+    if (metaKey(m[2])) push(m[1])
+  }
+
+  // 2. <link rel="image_src">
+  for (const m of html.matchAll(/<link[^>]+rel\s*=\s*["']image_src["'][^>]*href\s*=\s*["']([^"']+)["']/gi)) {
+    push(m[1])
+  }
+  for (const m of html.matchAll(/<link[^>]+href\s*=\s*["']([^"']+)["'][^>]*rel\s*=\s*["']image_src["']/gi)) {
+    push(m[1])
+  }
+
+  // 3. JSON-LD (Product.image et variantes)
+  const ldBlocks = [...html.matchAll(/<script[^>]+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+  const visit = (node: unknown): void => {
+    if (!node) return
+    if (Array.isArray(node)) { for (const n of node) visit(n); return }
+    if (typeof node !== 'object') return
+    const obj = node as Record<string, unknown>
+    const img = obj.image
+    if (typeof img === 'string') push(img)
+    else if (Array.isArray(img)) for (const v of img) { if (typeof v === 'string') push(v); else if (v && typeof v === 'object') visit(v) }
+    else if (img && typeof img === 'object') {
+      const url = (img as Record<string, unknown>).url
+      if (typeof url === 'string') push(url)
+    }
+    for (const v of Object.values(obj)) if (v && typeof v === 'object') visit(v)
+  }
+  for (const b of ldBlocks) {
+    try { visit(JSON.parse(b[1].trim())) } catch { /* JSON-LD invalide — ignorer */ }
+  }
+
+  if (out.length === 0) {
+    // Diagnostic : si rien n'a été trouvé, dumper un échantillon du <head> pour comprendre pourquoi
+    const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
+    const headStr = headMatch ? headMatch[1] : html.slice(0, 4000)
+    const metaMatches = [...headStr.matchAll(/<meta[^>]*>/gi)].map(m => m[0]).slice(0, 10)
+    console.log('[primary-images] ⚠ zero extracted — htmlLen=', html.length, 'head sample meta tags:', metaMatches)
+  } else {
+    console.log('[primary-images] extracted:', out.length, 'rejected:', rejected.length, 'sample:', out.slice(0, 3))
+  }
+  return out
+}
+
+/**
+ * Extrait un prix depuis le HTML (schema.org Product/Offer) puis depuis le markdown.
+ * Retourne le premier prix plausible trouvé, ou null.
+ *
+ * Stratégie :
+ *  1. JSON-LD : Product.offers.price / AggregateOffer.lowPrice
+ *  2. Markdown : "XXX,XX €", "€XXX.XX" ou "XXX EUR" proches de mots-clés TTC/HT
+ */
+export function extractProductPrice(
+  html: string | null,
+  markdown: string | null,
+): ProductPrice | null {
+  const CURRENCY_MAP: Record<string, string> = {
+    '€': 'EUR', 'eur': 'EUR',
+    '$': 'USD', 'usd': 'USD',
+    '£': 'GBP', 'gbp': 'GBP',
+    'tnd': 'TND',
+  }
+
+  const normalize = (raw: string): number | null => {
+    const cleaned = raw.replace(/\s+/g, '').replace(/\u00A0/g, '')
+    const m = cleaned.match(/^([0-9]+)([.,]([0-9]{1,3}))?$/)
+    if (m) {
+      const intPart = m[1]
+      const frac = m[3] ?? ''
+      return parseFloat(`${intPart}.${frac || '0'}`)
+    }
+    const numeric = parseFloat(cleaned.replace(',', '.'))
+    return Number.isFinite(numeric) ? numeric : null
+  }
+
+  // ── 1) JSON-LD ────────────────────────────────────────────────────────
+  if (html) {
+    const ldMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    for (const m of ldMatches) {
+      try {
+        const parsed = JSON.parse(m[1].trim())
+        const candidates = Array.isArray(parsed) ? parsed : [parsed]
+        for (const node of candidates) {
+          const offers = node?.offers
+          const offerList = Array.isArray(offers) ? offers : offers ? [offers] : []
+          for (const offer of offerList) {
+            const raw = offer?.price ?? offer?.lowPrice ?? offer?.highPrice
+            if (raw == null) continue
+            const amount = typeof raw === 'number' ? raw : normalize(String(raw))
+            if (amount == null || amount <= 0 || amount > 1_000_000) continue
+            const cur = String(offer?.priceCurrency ?? 'EUR').toUpperCase()
+            return { amount, currency: cur, source: 'schema.org' }
+          }
+        }
+      } catch { /* continue */ }
+    }
+  }
+
+  // ── 2) Markdown ──────────────────────────────────────────────────────
+  if (markdown) {
+    // Chercher motifs "123,45 €" ou "€123.45" dans les 40k premiers chars (zones de prix en début de page)
+    const scope = markdown.slice(0, 40000)
+    const re = /(?<![\w.-])(\d{1,4}(?:[ \u00A0.,]\d{2,3}){0,3}(?:[.,]\d{1,2})?)\s*(€|eur|\$|usd|£|gbp|tnd)\b/gi
+    const hits: Array<{ amount: number; currency: string; ttcScore: number; htScore: number; idx: number }> = []
+    for (const match of scope.matchAll(re)) {
+      const amount = normalize(match[1])
+      if (amount == null || amount < 1 || amount > 100_000) continue
+      const curRaw = match[2].toLowerCase()
+      const currency = CURRENCY_MAP[curRaw] ?? 'EUR'
+      const ctx = scope.slice(Math.max(0, match.index! - 40), match.index! + match[0].length + 40).toLowerCase()
+      const ttcScore = /ttc|tva\s*incl|incl\.\s*vat/i.test(ctx) ? 2 : 0
+      const htScore = /\bht\b|hors\s*taxe|excl\.\s*vat/i.test(ctx) ? 1 : 0
+      hits.push({ amount, currency, ttcScore, htScore, idx: match.index! })
+    }
+    if (hits.length > 0) {
+      // Préférer TTC, sinon premier match
+      hits.sort((a, b) => b.ttcScore - a.ttcScore || a.idx - b.idx)
+      const best = hits[0]
+      const priceType: ProductPrice['priceType'] = best.ttcScore > 0 ? 'TTC' : best.htScore > 0 ? 'HT' : 'unit'
+      return { amount: best.amount, currency: best.currency, priceType, source: 'markdown' }
+    }
+  }
+
+  return null
+}
+
+export function parseImagesFromMarkdown(md: string): string[] {
   // Limiter l'extraction au contenu avant les sections documents/associés/etc.
   md = truncateBeforeNonProductSections(md)
 
@@ -2895,7 +3725,7 @@ function parseImagesFromMarkdown(md: string): string[] {
   return deduped
 }
 
-function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: string }> {
+export function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: string }> {
   const advantages: Array<{ text: string; group?: string }> = []
   const seenTexts = new Set<string>()
 
@@ -2980,6 +3810,12 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
         currentGroup = extractGroupName(boldMatch[1])
         continue
       }
+      // Dans une zone features, un libellé bold isolé court est un sous-groupe
+      // plain-text (ex: **Performances**, **Installation**).
+      if (inFeatureZone && boldMatch[1].length > 1 && boldMatch[1].length < 50) {
+        currentGroup = extractGroupName(boldMatch[1])
+        continue
+      }
     }
 
     // Texte non-markdown qui matche les keywords
@@ -3050,48 +3886,15 @@ export function useProductEnrichment() {
       try {
         console.log('[enrichment] START', { sheetName, rowId, title, brand, reference: reference ?? sku, knownUrl })
         log(`Démarrage — ${title} ${brand ?? ''}`)
-        // ── Étape 0 : Vérifier le cache scraping (Re-générer réutilise les mêmes données) ──
-        const cached = getScrapeCache(sheetName, rowId)
-        let usedCache = false
+        // Cache scraping désactivé : chaque action fait un scrape frais.
+        const usedCache = false
 
         // ── Étape 1 : Trouver la page produit ─────────────────────────────
         let productUrl: string | null = knownUrl ?? null
         let additionalSources: string[] = []
         let searchErrorMsg: string | null = null
 
-        if (cached && !knownUrl) {
-          // Invalider le cache si la marque est connue mais l'URL cachée n'est PAS
-          // sur le site fabricant → force une nouvelle recherche pour trouver le site officiel
-          const brandSlugForCache = brand ? brand.toLowerCase().replace(/[^a-z0-9]/g, '') : ''
-          const cachedIsManufacturer = cached.productUrl ? detectManufacturerSite(cached.productUrl) : null
-          const brandHasKnownDomains = brandSlugForCache && Object.keys(MANUFACTURER_DOMAINS).includes(brandSlugForCache)
-          if (brandHasKnownDomains && !cachedIsManufacturer) {
-            // La marque a un site officiel connu mais le cache pointe vers un revendeur
-            // → invalider entièrement le cache pour forcer une nouvelle recherche
-            console.log('[enrichment] ⚠ cache URL', cached.productUrl, 'is NOT manufacturer site for brand', brand, '— invalidating cache for fresh search')
-            log(`Cache invalidé — ${cached.productUrl} n'est pas le site fabricant ${brand}`)
-            // Ne pas réutiliser le cache — laisser productUrl null pour déclencher la recherche
-          } else {
-          // Invalider le cache si le markdown a trop peu de specs
-          const cachedSpecCount = cached.markdownContent ? parseSpecsFromMarkdown(cached.markdownContent).length : 0
-          // Les sites fabricants ont généralement 15+ specs — seuil adapté
-          const cachedIsManufacturer = cached.productUrl ? detectManufacturerSite(cached.productUrl) !== null : false
-          const cacheMinSpecs = cachedIsManufacturer ? 10 : 5
-          if (cachedSpecCount >= cacheMinSpecs) {
-            productUrl = cached.productUrl
-            additionalSources = cached.additionalSources
-            usedCache = true
-            console.log('[enrichment] ★ using scrape cache →', { url: productUrl, specs: cachedSpecCount, mdLen: cached.markdownContent?.length })
-            log(`Cache réutilisé — ${cachedSpecCount} specs, ${cached.markdownContent?.length ?? 0} chars`)
-          } else {
-            // Cache pauvre — garder l'URL mais re-scraper
-            productUrl = cached.productUrl
-            additionalSources = cached.additionalSources
-            usedCache = false
-            console.log('[enrichment] ⚠ cache has only', cachedSpecCount, 'specs — will re-scrape and try fallbacks')
-          }
-          }
-        } else if (!productUrl) {
+        if (!productUrl) {
           setProgress(sheetName, rowId, {
             status: 'searching',
             message: 'Recherche de la page produit…',
@@ -3145,13 +3948,16 @@ export function useProductEnrichment() {
           const brandSlug = brand
             ? brand.toLowerCase().replace(/[^a-z0-9]/g, '')
             : ''
+          // Extraire le modèle / code produit du titre (ex: "DUH752Z", "M18 FPD3-502X")
+          // Utilisé pour : (a) construire des requêtes courtes site:fabricant,
+          // (b) scorer les URLs — les fiches produit fabricant contiennent toujours
+          // le code modèle dans le slug (ex: /product/duh752z.html).
+          const modelFromTitle = title.match(/[A-Z]{2,5}[\-\s]?\d{1,4}[\w\-]*/i)?.[0] ?? ''
           const brandSiteQueries: string[] = []
           if (brandSlug) {
             const frDomains = BRAND_DOMAINS_FR[brandSlug]
             const intlDomains = BRAND_DOMAINS_INTL[brandSlug]
             const allBrandDomains = [...(frDomains ?? []), ...(intlDomains ?? [])]
-            // Extraire juste le modèle / référence du titre (ex: "M18 FPD3-502X" de "Perceuse à percussion M18 FPD3-502X")
-            const modelFromTitle = title.match(/[A-Z]{1,5}[\-\s]?\d{1,4}[\w\-]*/i)?.[0] ?? ''
             const shortTerms = ref || modelFromTitle  // Préférer la ref, sinon extraire le modèle du titre
 
             if (allBrandDomains.length > 0) {
@@ -3205,7 +4011,7 @@ export function useProductEnrichment() {
             })
             if (clean.length === 0) return false
             const scored = clean
-              .map((r) => ({ r, score: scoreResult(r, sourceTokens, brand, reference ?? sku) }))
+              .map((r) => ({ r, score: scoreResult(r, sourceTokens, brand, reference ?? sku, modelFromTitle) }))
               .sort((a, b) => b.score - a.score)
             console.log('[enrichment] scored results:', scored.map((s) => ({ url: s.r.url, score: s.score })))
             const top = scored[0]
@@ -3225,7 +4031,7 @@ export function useProductEnrichment() {
           for (const q of queries) {
             try {
               console.log('[enrichment] [Jina] trying search query:', q)
-              log(`Recherche : ${q.length > 80 ? q.slice(0, 77) + '…' : q}`)
+              log(`🔷 JINA · Recherche : ${q.length > 80 ? q.slice(0, 77) + '…' : q}`)
               const results = await jinaSearch(q, 10)
               if (processSearchResults(results, q)) break
             } catch (err) {
@@ -3235,8 +4041,13 @@ export function useProductEnrichment() {
           }
 
           if (bestPick) {
-            productUrl = bestPick.url
-            additionalSources = bestPick.extras
+            const pickedUrl = bestPick.url
+            productUrl = preferFrenchUrl(pickedUrl)
+            additionalSources = bestPick.extras.map(preferFrenchUrl)
+            if (productUrl !== pickedUrl) {
+              console.log('[enrichment] 🌐 locale rewrite →', { from: pickedUrl, to: productUrl })
+              log(`🌐 Locale non-fr détecté — tentative sur ${productUrl}`)
+            }
             console.log('[enrichment] ✓ final pick →', { url: productUrl, score: bestPick.score, query: bestPick.query })
             log(`✓ URL trouvée : ${productUrl} (score ${bestPick.score})`)
           }
@@ -3250,7 +4061,6 @@ export function useProductEnrichment() {
               log(`URL n'est pas le site fabricant — recherche sur site officiel ${brandSlug}…`)
               const mfrDomains = MANUFACTURER_DOMAINS[brandSlug]
               if (mfrDomains) {
-                const modelFromTitle = title.match(/[A-Z]{1,5}[\-\s]?\d{1,4}[\w\-]*/i)?.[0] ?? ''
                 const probeTerms = ref || modelFromTitle || title
                 for (const domain of mfrDomains) {
                   try {
@@ -3261,7 +4071,7 @@ export function useProductEnrichment() {
                     const probeMfr = probeClean.filter((r) => detectManufacturerSite(r.url))
                     if (probeMfr.length > 0) {
                       const scored = probeMfr
-                        .map((r) => ({ r, score: scoreResult(r, sourceTokens, brand, reference ?? sku) }))
+                        .map((r) => ({ r, score: scoreResult(r, sourceTokens, brand, reference ?? sku, modelFromTitle) }))
                         .sort((a, b) => b.score - a.score)
                       if (scored[0].score > 0) {
                         // Remplacer bestPick par le résultat fabricant — mettre l'ancien bestPick dans extras
@@ -3292,7 +4102,8 @@ export function useProductEnrichment() {
         }
 
         // ── Étape 2 : Scraper la page via Jina Reader ──────────────────────
-        let markdownContent: string | null = usedCache ? (cached!.markdownContent ?? null) : null
+        let markdownContent: string | null = null
+        let primaryHtml: string | null = null
 
         /** Score la qualité du markdown : specs × 3 + avantages × 2 + bonus description */
         const scoreMd = (md: string | null): number => {
@@ -3317,7 +4128,7 @@ export function useProductEnrichment() {
           const multiEnabled = useEnrichmentStore.getState().multiUrlEnabled
           try {
             if (multiEnabled) {
-              log(`Multi-URL bundle (X-Engine: browser + onglets auto) → ${productUrl}`)
+              log(`🔷 JINA · Multi-URL bundle (X-Engine: browser + onglets auto) → ${productUrl}`)
               const bundle = await scrapeProductBundle(productUrl, {
                 deepScrape: async (url) => {
                   const r = await jinaScrapeMaufacturerPage(url)
@@ -3327,23 +4138,40 @@ export function useProductEnrichment() {
                 log,
               })
               markdownContent = bundle.mergedMarkdown || null
+              primaryHtml = bundle.primaryHtml
               if (bundle.sourcesScrapped.length > 1) {
-                log(`✓ Bundle : ${bundle.sourcesScrapped.length} sources fusionnées (${bundle.pdfsFound.length} PDFs)`)
+                log(`🔷 JINA · ✓ Bundle : ${bundle.sourcesScrapped.length} sources fusionnées (${bundle.pdfsFound.length} PDFs)`)
               }
               // Stocker sourcesScrapped dans le cache (géré plus bas)
               ;(bundle as unknown as { __forCache: { sourcesScrapped: string[] } }).__forCache = { sourcesScrapped: bundle.sourcesScrapped }
               ;(globalThis as unknown as { __lastBundle?: unknown }).__lastBundle = bundle
             } else {
-              log(`Scrape single-URL (multi-URL désactivé) → ${productUrl}`)
+              log(`🔷 JINA · Scrape single-URL (multi-URL désactivé) → ${productUrl}`)
               const r = await jinaScrapeMaufacturerPage(productUrl)
               markdownContent = r?.markdown ?? null
+              primaryHtml = r?.html ?? null
             }
           } catch (err) {
             console.warn('[enrichment] scrape failed', err)
-            log(`✗ Scrape échec : ${String(err).slice(0, 200)}`)
+            log(`🔷 JINA · ✗ Scrape échec : ${String(err).slice(0, 200)}`)
           }
           if (markdownContent) {
             console.log('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
+          }
+
+          // ── CORS-proxy fallback : si Jina n'a pas livré les blocs specs/docs, fetch HTML brut ──
+          if (markdownContent && productUrl) {
+            const hasSpecs = markdownContent.indexOf('JINA_EXTRACTED_SPECS_START') !== -1
+            const hasDocs = markdownContent.indexOf('JINA_EXTRACTED_DOCUMENTS_START') !== -1
+            if (!hasSpecs || !hasDocs) {
+              console.log('[enrichment] Jina blocks missing (specs:', hasSpecs, 'docs:', hasDocs, ') → CORS proxy fallback')
+              const extra = await fetchAndExtractFromRawHtml(productUrl)
+              if (extra) {
+                if (!hasSpecs && extra.specs) markdownContent += `\n\n${extra.specs}`
+                if (!hasDocs && extra.docs) markdownContent += `\n\n${extra.docs}`
+                log(`🔷 CORS proxy · ✓ Extraction HTML brut : specs ${extra.specs ? '✓' : '✗'}, docs ${extra.docs ? '✓' : '✗'}`)
+              }
+            }
           }
 
           // ── Fallback : si le markdown est trop court/pauvre, essayer des sources alternatives ──
@@ -3373,7 +4201,7 @@ export function useProductEnrichment() {
         const currentSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
         if (currentSpecCount < 5 && productUrl) {
           console.log('[enrichment] ⚡ only', currentSpecCount, 'specs — trying HTML fallback for accordion/hidden content…')
-          log(`Seulement ${currentSpecCount} specs — fallback HTML (accordéons/contenus cachés)…`)
+          log(`🔷 JINA · Seulement ${currentSpecCount} specs — fallback HTML (accordéons/contenus cachés)…`)
           setProgress(sheetName, rowId, {
             status: 'scraping',
             message: `Extraction des accordéons et contenus cachés…`,
@@ -3386,28 +4214,22 @@ export function useProductEnrichment() {
               if (htmlSpecs > currentSpecCount) {
                 markdownContent = (markdownContent ?? '') + '\n\n' + htmlMd
                 console.log('[enrichment] ✓ merged HTML fallback →', markdownContent.length, 'chars total')
-                log(`✓ HTML fallback : +${htmlSpecs} specs fusionnées`)
+                log(`🔷 JINA · ✓ HTML fallback : +${htmlSpecs} specs fusionnées`)
               }
             }
           } catch (err) {
             console.warn('[enrichment] HTML fallback failed:', err)
-            log(`✗ HTML fallback échoué`)
+            log(`🔷 JINA · ✗ HTML fallback échoué`)
           }
         }
 
-        // ── Sauvegarder le cache scraping pour les prochains Re-générer ──
-        if (!usedCache && productUrl) {
-          const lastBundle = (globalThis as unknown as { __lastBundle?: { sourcesScrapped?: string[] } }).__lastBundle
-          setScrapeCache(sheetName, rowId, {
-            productUrl,
-            additionalSources,
-            markdownContent,
-            scrapeProvider: 'Jina',
-            sourcesScrapped: lastBundle?.sourcesScrapped,
-          })
-          ;(globalThis as unknown as { __lastBundle?: unknown }).__lastBundle = undefined
-          console.log('[enrichment] ★ scrape cache saved for', enrichmentKey(sheetName, rowId))
+        // Images primaires extraites à chaque scrape (pas de cache)
+        const primaryImages = productUrl ? extractPrimaryImagesFromHtml(primaryHtml, productUrl) : []
+        const extractedPrice = productUrl ? extractProductPrice(primaryHtml, markdownContent) : null
+        if (extractedPrice) {
+          log(`💰 Prix détecté : ${extractedPrice.amount} ${extractedPrice.currency}${extractedPrice.priceType && extractedPrice.priceType !== 'unit' ? ' ' + extractedPrice.priceType : ''} (source: ${extractedPrice.source})`)
         }
+        ;(globalThis as unknown as { __lastBundle?: unknown }).__lastBundle = undefined
 
         // ── Étape 3 : Construction depuis les données scrapées ────────
         let enriched: EnrichedProduct
@@ -3416,7 +4238,10 @@ export function useProductEnrichment() {
         // Si le produit est sur un site fabricant officiel, on combine
         // le markdown Jina (bullet points, description) + données brutes
         // (REDUX_STORE, JSON-LD) pour les PDFs, variants, images.
-        const manufacturerBrand = productUrl ? detectManufacturerSite(productUrl) : null
+        // Refonte : on court-circuite le path fabricant (REDUX/JSON-LD) et le
+        // direct-build markdown. Un seul appel LLM avec schéma strict extrait
+        // tout (description, bullets, specs, variants, images, prix, hero).
+        const manufacturerBrand = null as string | null
         if (manufacturerBrand && productUrl) {
           console.log('[enrichment] ★ MANUFACTURER SITE DETECTED:', manufacturerBrand, '— pure scraping mode')
           log(`★ Site fabricant ${manufacturerBrand} détecté — mode scraping pur (0 IA)`)
@@ -3426,16 +4251,19 @@ export function useProductEnrichment() {
           })
 
           // Fetch raw HTML for embedded data (REDUX, JSON-LD, PDFs)
-          log(`Extraction HTML brut (REDUX_STORE, JSON-LD, PDFs)…`)
+          log(`🔷 JINA · Extraction HTML brut (REDUX_STORE, JSON-LD, PDFs)…`)
           const rawData = await scrapeManufacturerRawData(productUrl)
-          log(`HTML brut : ${rawData.downloads.length} PDFs, ${rawData.specs.length} specs, ${rawData.variants.length} variantes, ${rawData.images.length} images`)
+          log(`🔷 JINA · HTML brut : ${rawData.downloads.length} PDFs, ${rawData.specs.length} specs, ${rawData.variants.length} variantes, ${rawData.images.length} images`)
 
           setProgress(sheetName, rowId, {
             status: 'reasoning',
             message: 'Construction directe depuis les données scrapées du fabricant…',
           })
           log(`Construction de la fiche produit (markdown + HTML brut)…`)
-          const mfrBuild = buildManufacturerProduct(markdownContent, rawData, productUrl, additionalSources)
+          if (primaryImages.length > 0) {
+            log(`★ ${primaryImages.length} image(s) primaire(s) détectée(s) (og:image / JSON-LD / link)`)
+          }
+          const mfrBuild = buildManufacturerProduct(markdownContent, rawData, productUrl, additionalSources, primaryImages)
 
           console.log('[enrichment] ★ MANUFACTURER BUILD RESULT:', {
             specs: mfrBuild.specifications.length,
@@ -3448,14 +4276,14 @@ export function useProductEnrichment() {
 
           // Si le scraping fabricant a assez de specs, on utilise le résultat directement
           if (mfrBuild.specifications.length >= 3) {
-            enriched = mfrBuild
+            enriched = { ...mfrBuild, price: extractedPrice }
             log(`✓ Scraping fabricant complet — aucune IA nécessaire`)
           } else {
             // Scraping insuffisant (site SPA, lazy-loading, Jina sans crédits…)
             // → Basculer vers le LLM pour compléter les specs manquantes
             // tout en conservant les données scrapées (avantages, images, PDFs)
             console.log('[enrichment] ⚠ manufacturer scraping insufficient (', mfrBuild.specifications.length, 'specs) — falling back to LLM boost')
-            log(`⚠ Specs insuffisantes (${mfrBuild.specifications.length}) — complément via IA…`)
+            log(`🤖 IA · ⚠ Specs insuffisantes (${mfrBuild.specifications.length}) — complément via LLM…`)
             setProgress(sheetName, rowId, {
               status: 'reasoning',
               message: `Specs fabricant insuffisantes — complément IA pour ${manufacturerBrand}…`,
@@ -3566,6 +4394,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               variants: mergedVariants,
               images: mfrBuild.images, // garder les images scrapées
               documents: mfrBuild.documents, // garder les PDFs scrapés
+              price: extractedPrice,
               sourceUrl: productUrl,
               additionalSources,
               generatedAt: Date.now(),
@@ -3574,13 +4403,19 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               llmModel: mfrLlmModel,
             }
 
-            log(`✓ Résultat hybride fabricant+IA : ${enriched.specifications.length} specs, ${enriched.advantages.length} avantages, ${enriched.documents.length} PDFs`)
+            log(`🤖 IA · ✓ Résultat hybride JINA+LLM : ${enriched.specifications.length} specs, ${enriched.advantages.length} avantages, ${enriched.documents.length} PDFs`)
           }
         }
         // ══ PATH A : Construction directe depuis markdown (pas de LLM) ═
         else {
+        // Refonte : le direct-build TS est désactivé. Un seul appel LLM
+        // avec schéma strict (PATH B) extrait TOUT (description, bullets,
+        // specs groupées, variants, images, heroImage, prix) depuis le markdown Jina.
+        // Les parseurs markdown restent utilisés pour les images / PDFs / groupes
+        // via mergedImages / mergedDocs / enrichWithMarkdownGroups en post-processing.
         let directBuild: Partial<EnrichedProduct> | null = null
-        if (markdownContent && markdownContent.length > 200) {
+        const DIRECT_BUILD_DISABLED = true
+        if (!DIRECT_BUILD_DISABLED && markdownContent && markdownContent.length > 200) {
           const mdSpecs = parseSpecsFromMarkdown(markdownContent)
           const mdAdvantages = parseAdvantagesFromMarkdown(markdownContent)
           let mdDescription = parseDescriptionFromMarkdown(markdownContent)
@@ -3622,9 +4457,15 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             message: 'Construction directe depuis les données scrapées (sans IA)…',
           })
 
-          const mergedImages = Array.from(new Set(
-            (directBuild.images ?? []).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)),
-          ))
+          // Images : primaires (og:image / twitter:image / JSON-LD / link image_src) en tête,
+          // puis celles du markdown. Dédupliquées.
+          const mergedImages = Array.from(new Set([
+            ...primaryImages,
+            ...(directBuild.images ?? []).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)),
+          ]))
+          if (primaryImages.length > 0) {
+            log(`★ ${primaryImages.length} image(s) primaire(s) en tête (og:image / JSON-LD / link)`)
+          }
 
           enriched = {
             description: directBuild.description ?? '',
@@ -3633,6 +4474,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             variants: directBuild.variants ?? [],
             images: mergedImages,
             documents: directBuild.documents ?? [],
+            price: extractedPrice,
             sourceUrl: productUrl,
             additionalSources,
             generatedAt: Date.now(),
@@ -3642,7 +4484,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           }
         } else {
           // ══ PATH B : LLM classique ═══════════════════════════════════
-          log(`Synthèse IA (LLM) — données scrapées insuffisantes pour build direct`)
+          log(`🤖 IA · Synthèse LLM — données scrapées insuffisantes pour build direct`)
           setProgress(sheetName, rowId, {
             status: 'reasoning',
             message: 'Génération de la fiche enrichie par l\'IA…',
@@ -3672,7 +4514,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           const needsKnowledgeBoost = hasSomeData && finalSpecCount < 5
 
           const prompt = hasRichData
-            ? `Tu es un extracteur de données produit. Tu extrais et structures fidèlement les données trouvées dans les contenus ci-dessous.
+            ? `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
 
 ## Produit à identifier
 ${sourceContext}
@@ -3680,15 +4522,18 @@ ${sourceContext}
 ${dataSections.join('\n\n')}
 
 ## RÈGLES ABSOLUES
-1. COPIER VERBATIM — ne reformule jamais, ne résume jamais, n'embellis jamais
-2. Description : copie le texte descriptif trouvé TEL QUEL, mot pour mot
-3. Avantages : copie TOUS les bullet points / features TEL QUEL. SANS LIMITE de nombre
-4. Spécifications : extrais CHAQUE paire nom/valeur de CHAQUE section technique. SANS LIMITE de nombre
-5. Variantes : extrais TOUTES les déclinaisons/variantes du produit avec référence, libellé et properties
-6. Images : reprends toutes les URLs d'images (https://...) trouvées dans les données
-7. Documents : reprends toutes les URLs de fichiers PDF (.pdf) trouvées dans les données
-8. Si un champ n'existe pas dans les données → chaîne vide ou tableau vide. JAMAIS d'invention.
-9. NE TRADUIS PAS — garde la langue originale des données
+1. LANGUE DE SORTIE : TOUJOURS FRANÇAIS. Si la source est en anglais/allemand/autre, TRADUIS (description, noms de specs, libellés groupes, avantages, libellés variants). Les valeurs numériques + unités + références/SKU restent inchangées.
+2. Description : reprends le texte descriptif marketing ; si source non-FR, traduis fidèlement en français professionnel (2-4 phrases minimum).
+3. Avantages : reprends TOUS les bullet points / features / arguments commerciaux, traduits en FR. SANS LIMITE de nombre.
+4. Spécifications : extrais CHAQUE paire nom/valeur de CHAQUE section technique. SANS LIMITE. Le nom ET le group sont en FRANÇAIS (ex: "Poids", "Dimensions", "Puissance"). La valeur garde chiffres + unités (ex: "2.3 kg", "18 V").
+   EXCLURE : raccourcis clavier de players vidéo/audio (Play/Pause, Volume, Plein écran, Sous-titres, Avancer, Reculer, Shortcut, touches flèches directionnelles, "Espace", "c", "f", "m", "d", "t" seuls comme valeurs), éléments d'accessibilité/UI, prix, disponibilité/stock, délais de livraison, codes promo, notes/avis (étoiles, /5), noms d'accessoires vendus à part (chargeurs, coffrets, batteries en pack). Ne garder QUE les caractéristiques techniques du produit.
+5. Variantes : extrais TOUTES les déclinaisons avec référence (inchangée), libellé (FR) et properties (clés FR, valeurs inchangées sauf couleurs/matières traduites).
+6. Images : reprends TOUTES les URLs d'images produit (https://...) trouvées. Ignore logos, icônes, pub.
+7. heroImage : sélectionne UNE URL parmi images — la meilleure photo principale. Ne jamais inventer. Omettre si rien ne convient.
+8. price : si un prix est visible (JSON-LD Offer, balise <price>, texte "XX,XX €" / "$XX.XX"), extrais { amount, currency (code ISO 4217), priceType }. Sinon null. JAMAIS INVENTER.
+9. Documents : reprends toutes les URLs de fichiers PDF trouvées.
+10. Si un champ n'existe pas dans les données → chaîne vide / tableau vide / null. JAMAIS d'invention.
+11. FIDÉLITÉ chiffrée : les valeurs numériques doivent correspondre EXACTEMENT au source (pas d'arrondi, pas de conversion d'unité).
 
 Réponds UNIQUEMENT via l'outil emit_response.`
             : needsKnowledgeBoost
@@ -3758,15 +4603,37 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             },
             onRequestSent: (request) => {
               setLlmRequest(sheetName, rowId, request)
+              log(`🤖 IA · Requête LLM envoyée (${llmProviderUsed ?? '?'} / ${llmModelUsed ?? '?'})`)
             },
           })
+          log(`🤖 IA · ✓ Réponse LLM : ${(ai.specifications ?? []).length} specs, ${(ai.advantages ?? []).length} avantages, ${(ai.variants ?? []).length} variantes`)
 
           // Images : on se base UNIQUEMENT sur l'extraction directe du markdown, qui applique
           // les filtres junk + priorité /products/. Les URLs du LLM (souvent citées depuis le
           // haut de page tronqué à 20k chars = menus nav) contourneraient ce filtre.
           const mdImages = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
-          const mergedImages: string[] = [...mdImages]
-          console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
+          const mergedImages: string[] = Array.from(new Set([...primaryImages, ...mdImages]))
+          console.log('[enrichment-images] PATH=B(LLM) primaryImages=', primaryImages.length, 'mdImages=', mdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
+
+          // Hero image : priorité au choix LLM s'il figure dans les images scrapées,
+          // sinon premier primaryImage (og:image / JSON-LD), sinon première mergedImage.
+          const aiHero = typeof (ai as { heroImage?: unknown }).heroImage === 'string'
+            ? ((ai as { heroImage?: string }).heroImage ?? '').trim()
+            : ''
+          const heroImage = (aiHero && mergedImages.includes(aiHero))
+            ? aiHero
+            : (primaryImages[0] ?? mergedImages[0] ?? undefined)
+
+          // Prix : prioriser le LLM (qui voit TTC/HT contextuellement) sinon fallback
+          // sur extractedPrice (JSON-LD / regex). Null si ni l'un ni l'autre.
+          const aiPriceRaw = (ai as { price?: unknown }).price
+          const aiPrice = (aiPriceRaw && typeof aiPriceRaw === 'object'
+            && typeof (aiPriceRaw as { amount?: unknown }).amount === 'number'
+            && typeof (aiPriceRaw as { currency?: unknown }).currency === 'string')
+            ? { ...(aiPriceRaw as { amount: number; currency: string; priceType?: 'TTC' | 'HT' | 'unit' }), source: 'llm' }
+            : null
+          const finalPrice = aiPrice ?? extractedPrice
+          if (aiPrice) log(`🤖 IA · 💰 Prix LLM : ${aiPrice.amount} ${aiPrice.currency}${aiPrice.priceType && aiPrice.priceType !== 'unit' ? ' ' + aiPrice.priceType : ''}`)
 
           // Documents : LLM + extraction directe du markdown (URLs .pdf simples + liens titrés)
           const mdDocUrls = markdownContent
@@ -3776,11 +4643,37 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             ? [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s)]+\.pdf[^\s)]*)\)/gi)]
                 .map(m => `${m[1].trim()}##${m[2].trim()}`)
             : []
-          const mergedDocs = Array.from(new Set([
-            ...(ai.documents ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)),
-            ...mdDocTitled,
-            ...mdDocUrls,
-          ]))
+          // PDFs extraits côté DOM par le script d'injection (JINA_EXTRACTED_DOCUMENTS_*) —
+          // labels corrects via remontée au parent row (tr/li). C'est la source la plus fiable.
+          const domDocsMatch = markdownContent?.match(/JINA_EXTRACTED_DOCUMENTS_START\s*([\s\S]*?)\s*JINA_EXTRACTED_DOCUMENTS_END/)
+          const domDocs: string[] = domDocsMatch
+            ? domDocsMatch[1]
+                .split(/\r?\n/)
+                .map((l) => l.trim())
+                .filter((l) => l.includes(' | '))
+                .map((l) => {
+                  const idx = l.lastIndexOf(' | ')
+                  const name = l.slice(0, idx).trim()
+                  const url = l.slice(idx + 3).trim()
+                  return name ? `${name}##${url}` : url
+                })
+            : []
+          // PDFs découverts via relatedUrls.ts (HTML brut) — fallback si script DOM n'a rien capturé.
+          const bundlePdfs = ((globalThis as unknown as { __lastBundle?: { pdfsFound?: string[] } }).__lastBundle?.pdfsFound) ?? []
+          const docsByUrl = new Map<string, string>() // url → entry (titré de préférence)
+          const registerDoc = (raw: string) => {
+            const url = raw.includes('##') ? raw.split('##').slice(1).join('##') : raw
+            if (!/^https?:\/\//.test(url)) return
+            const existing = docsByUrl.get(url)
+            // Priorité : entrée titrée > entrée URL-seule. Ne pas écraser un titre existant par une URL nue.
+            if (!existing || (raw.includes('##') && !existing.includes('##'))) {
+              docsByUrl.set(url, raw)
+            }
+          }
+          // Ordre de priorité : DOM extraction (labels précis) > markdown titré > bundle HTML > URLs nues
+          ;[...domDocs, ...mdDocTitled, ...bundlePdfs, ...(ai.documents ?? []).filter((u): u is string => typeof u === 'string'), ...mdDocUrls]
+            .forEach(registerDoc)
+          const mergedDocs = Array.from(docsByUrl.values())
 
           const llmVariants: Array<{ reference: string; label: string; properties: Record<string, string> }> =
             Array.isArray(ai.variants) ? ai.variants.filter(
@@ -3796,7 +4689,9 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             specifications: ai.specifications,
             variants: llmVariants,
             images: mergedImages,
+            heroImage,
             documents: mergedDocs,
+            price: finalPrice,
             sourceUrl: productUrl,
             additionalSources,
             generatedAt: Date.now(),

@@ -25,6 +25,17 @@ export interface ProductVariant {
   properties: Record<string, string>
 }
 
+export interface ProductPrice {
+  /** Valeur numérique (ex: 323.44) */
+  amount: number
+  /** Code ISO 4217 (ex: "EUR", "USD", "TND") */
+  currency: string
+  /** TTC / HT / inconnu */
+  priceType?: 'TTC' | 'HT' | 'unit'
+  /** Source brute d'extraction (ex: "schema.org", "markdown:€") pour debug */
+  source?: string
+}
+
 export interface EnrichedProduct {
   /** Description marketing reformulée par l'IA */
   description: string
@@ -36,8 +47,12 @@ export interface EnrichedProduct {
   variants: ProductVariant[]
   /** URLs d'images produit trouvées lors du scraping */
   images: string[]
+  /** URL de l'image principale (hero shot) sélectionnée par l'IA parmi `images`. */
+  heroImage?: string
   /** URLs des documents PDF / notices / fiches techniques */
   documents: string[]
+  /** Prix produit extrait (schema.org Product/Offer ou markdown). */
+  price?: ProductPrice | null
   /** URL source principale d'où provient le scraping */
   sourceUrl: string | null
   /** URLs alternatives trouvées durant la recherche (pour info) */

@@ -74,6 +74,7 @@ interface EnrichmentColumnDef {
 
 const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_description',     label: 'IA — Description',   fieldType: 'text_long', width: 320 },
+  { key: 'ai_breadcrumb',      label: 'IA — Fil d\'Ariane', fieldType: 'text_long', width: 260 },
   { key: 'ai_advantages',      label: 'IA — Points forts',  fieldType: 'text_long', width: 280 },
   { key: 'ai_specifications',  label: 'IA — Spécifications', fieldType: 'text_long', width: 320 },
   { key: 'ai_variants',        label: 'IA — Variantes',     fieldType: 'text_long', width: 320 },
@@ -101,6 +102,7 @@ function serializeEnriched(
 ): Record<string, string | null> {
   return {
     ai_description: data.description || null,
+    ai_breadcrumb: (data.breadcrumb && data.breadcrumb.length > 0) ? data.breadcrumb.join(' › ') : null,
     ai_advantages: data.advantages.length > 0
       ? data.advantages.map(a => a.group ? `[${a.group}]${a.text}` : a.text).join(' | ')
       : null,

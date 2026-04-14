@@ -11,6 +11,8 @@ export interface ScrapeCache {
   scrapeProvider: string
   /** URLs effectivement scrapées par le bundle (onglets, PDFs…) — informatif pour l'UI. */
   sourcesScrapped?: string[]
+  /** Images « primaires » extraites des meta tags HTML (og:image, twitter:image, JSON-LD, link rel=image_src). */
+  primaryImages?: string[]
 }
 
 interface EnrichmentState {

@@ -22,6 +22,7 @@ export function deserializeEnrichedFromRow(
   if (!row) return null
 
   const description = typeof row.ai_description === 'string' ? row.ai_description : ''
+  const breadcrumbRaw = typeof row.ai_breadcrumb === 'string' ? row.ai_breadcrumb : ''
   const advantagesRaw = typeof row.ai_advantages === 'string' ? row.ai_advantages : ''
   const specsRaw = typeof row.ai_specifications === 'string' ? row.ai_specifications : ''
   const imagesRaw = typeof row.ai_images === 'string' ? row.ai_images : ''
@@ -110,9 +111,14 @@ export function deserializeEnrichedFromRow(
     try { variants = JSON.parse(variantsRaw) } catch { /* ignore */ }
   }
 
+  const breadcrumb = breadcrumbRaw
+    ? breadcrumbRaw.split(/\s*[›>/»·]\s*/).map(s => s.trim()).filter(Boolean)
+    : undefined
+
   return {
     product: {
       description,
+      breadcrumb: breadcrumb && breadcrumb.length > 0 ? breadcrumb : undefined,
       advantages,
       specifications,
       variants,

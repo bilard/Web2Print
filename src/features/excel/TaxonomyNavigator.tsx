@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react'
-import { ChevronRight, FolderTree, X, Package, ChevronDown } from 'lucide-react'
+import { ChevronRight, FolderTree, X, Package, ChevronDown, PanelLeftClose } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { getTaxoColumns } from './taxonomyBuilder'
 import { isRowEnriched } from './DataTable'
@@ -16,7 +16,7 @@ interface TreeNode {
   isExpanded: boolean
 }
 
-export function TaxonomyNavigator() {
+export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, aiFilter } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
 
@@ -127,15 +127,26 @@ export function TaxonomyNavigator() {
           <FolderTree className="w-3.5 h-3.5" />
           Navigation
         </h3>
-        {hasFilters && (
-          <button
-            onClick={handleClearAll}
-            className="text-[10px] text-white/30 hover:text-white/60 px-1.5 py-0.5 rounded hover:bg-white/5 transition-colors flex items-center gap-1"
-          >
-            <X className="w-2.5 h-2.5" />
-            Tout
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {hasFilters && (
+            <button
+              onClick={handleClearAll}
+              className="text-[10px] text-white/30 hover:text-white/60 px-1.5 py-0.5 rounded hover:bg-white/5 transition-colors flex items-center gap-1"
+            >
+              <X className="w-2.5 h-2.5" />
+              Tout
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 text-white/40 hover:text-white/80 hover:bg-white/10 rounded transition-colors"
+              title="Fermer la colonne"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Breadcrumb */}

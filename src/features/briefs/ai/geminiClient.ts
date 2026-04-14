@@ -22,6 +22,22 @@ interface GeminiResponse {
   candidates?: GeminiCandidate[]
 }
 
+/** Gemini `responseSchema` rejette certains mots-clés JSON Schema (ex:
+ *  `additionalProperties`, `$schema`, `definitions`). On strip récursivement
+ *  ces clés avant l'appel. Pour `additionalProperties: { type: 'string' }` sur
+ *  un object sans `properties` défini, on laisse Gemini inférer librement. */
+function sanitizeSchemaForGemini(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(sanitizeSchemaForGemini)
+  if (node === null || typeof node !== 'object') return node
+  const STRIP = new Set(['additionalProperties', '$schema', 'definitions', '$defs', '$ref', 'patternProperties', 'oneOf', 'anyOf', 'allOf', 'not'])
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(node)) {
+    if (STRIP.has(k)) continue
+    out[k] = sanitizeSchemaForGemini(v)
+  }
+  return out
+}
+
 async function callGemini(
   apiKey: string,
   model: string,
@@ -30,6 +46,7 @@ async function callGemini(
 ): Promise<string> {
   const ctrl = new AbortController()
   const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
+  const sanitized = sanitizeSchemaForGemini(schemaForGemini) as Record<string, unknown>
   const res = await fetch(`${ENDPOINT(model)}?key=${apiKey}`, {
     method: 'POST',
     signal: ctrl.signal,
@@ -38,7 +55,7 @@ async function callGemini(
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: schemaForGemini,
+        responseSchema: sanitized,
         temperature: 0.4,
       },
     }),
