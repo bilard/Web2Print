@@ -9,6 +9,8 @@ export interface ScrapeCache {
   additionalSources: string[]
   markdownContent: string | null
   scrapeProvider: string
+  /** URLs effectivement scrapées par le bundle (onglets, PDFs…) — informatif pour l'UI. */
+  sourcesScrapped?: string[]
 }
 
 interface EnrichmentState {
@@ -18,6 +20,9 @@ interface EnrichmentState {
   scrapeCache: Record<string, ScrapeCache>
   /** Logs temps réel par clé d'enrichissement */
   logs: Record<string, string[]>
+  /** Kill-switch : désactiver la découverte d'URLs liées (fallback scrape single-URL). */
+  multiUrlEnabled: boolean
+  setMultiUrlEnabled: (v: boolean) => void
 
   getEntry: (sheetName: string, rowId: string) => EnrichmentEntry | undefined
   getScrapeCache: (sheetName: string, rowId: string) => ScrapeCache | undefined
@@ -48,6 +53,8 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => {
   entries: {},
   scrapeCache: {},
   logs: {},
+  multiUrlEnabled: true,
+  setMultiUrlEnabled: (v) => set({ multiUrlEnabled: v }),
 
   getEntry: (sheetName, rowId) => get().entries[enrichmentKey(sheetName, rowId)],
 
