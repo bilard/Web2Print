@@ -71,6 +71,7 @@ export function EnrichmentPanel({ input }: Props) {
   const storeKey = `${input.sheetName}::${input.rowId}`
   const entry = useEnrichmentStore((s) => s.entries[storeKey])
   const logs = useEnrichmentStore((s) => s.logs[storeKey] ?? [])
+  const scrapeCache = useEnrichmentStore((s) => s.scrapeCache[storeKey])
   const setData = useEnrichmentStore((s) => s.setData)
   const { enrich, reset, running } = useProductEnrichment()
   const { save, isSaved, saving, error: saveError } = useSaveEnrichedProduct()
@@ -663,6 +664,22 @@ function DoneState({
                   </a>
                 ))}
               </div>
+            </details>
+          )}
+          {scrapeCache?.sourcesScrapped && scrapeCache.sourcesScrapped.length > 1 && (
+            <details className="mt-2">
+              <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-200">
+                {scrapeCache.sourcesScrapped.length} sources scrapées
+              </summary>
+              <ul className="mt-1 space-y-1">
+                {scrapeCache.sourcesScrapped.map((url, i) => (
+                  <li key={i} className="text-xs text-neutral-500 truncate">
+                    <a href={url} target="_blank" rel="noreferrer" className="hover:text-indigo-400">
+                      {url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </details>
           )}
         </div>
