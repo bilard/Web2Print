@@ -3,15 +3,32 @@ import type { LlmRequestInfo } from '@/features/ai/llmRouter'
 import type { EnrichmentEntry, EnrichmentProgress, EnrichedProduct } from './types'
 import { enrichmentKey } from './types'
 
+/** Cache des données scrapées — persiste entre les re-generates */
+export interface ScrapeCache {
+  productUrl: string
+  additionalSources: string[]
+  markdownContent: string | null
+  scrapeProvider: string
+}
+
 interface EnrichmentState {
   /** Cache en mémoire : `${sheetName}::${rowId}` → entry */
   entries: Record<string, EnrichmentEntry>
+  /** Cache scraping : survit au clear() pour éviter de re-scraper lors de Re-générer */
+  scrapeCache: Record<string, ScrapeCache>
+  /** Logs temps réel par clé d'enrichissement */
+  logs: Record<string, string[]>
 
   getEntry: (sheetName: string, rowId: string) => EnrichmentEntry | undefined
+  getScrapeCache: (sheetName: string, rowId: string) => ScrapeCache | undefined
+  setScrapeCache: (sheetName: string, rowId: string, cache: ScrapeCache) => void
+  clearScrapeCache: (sheetName: string, rowId: string) => void
   setProgress: (sheetName: string, rowId: string, progress: EnrichmentProgress) => void
   setData: (sheetName: string, rowId: string, data: EnrichedProduct) => void
   setError: (sheetName: string, rowId: string, error: string) => void
   setLlmRequest: (sheetName: string, rowId: string, request: LlmRequestInfo) => void
+  addLog: (sheetName: string, rowId: string, message: string) => void
+  clearLogs: (sheetName: string, rowId: string) => void
   clear: (sheetName: string, rowId: string) => void
 }
 
@@ -21,10 +38,33 @@ const emptyEntry: EnrichmentEntry = {
   error: null,
 }
 
-export const useEnrichmentStore = create<EnrichmentState>((set, get) => ({
+export const useEnrichmentStore = create<EnrichmentState>((set, get) => {
+  if (typeof window !== 'undefined' && import.meta.env?.DEV) {
+    queueMicrotask(() => {
+      ;(window as unknown as { __enrichStore?: unknown }).__enrichStore = useEnrichmentStore
+    })
+  }
+  return ({
   entries: {},
+  scrapeCache: {},
+  logs: {},
 
   getEntry: (sheetName, rowId) => get().entries[enrichmentKey(sheetName, rowId)],
+
+  getScrapeCache: (sheetName, rowId) => get().scrapeCache[enrichmentKey(sheetName, rowId)],
+
+  setScrapeCache: (sheetName, rowId, cache) =>
+    set((state) => ({
+      scrapeCache: { ...state.scrapeCache, [enrichmentKey(sheetName, rowId)]: cache },
+    })),
+
+  clearScrapeCache: (sheetName, rowId) =>
+    set((state) => {
+      const key = enrichmentKey(sheetName, rowId)
+      const next = { ...state.scrapeCache }
+      delete next[key]
+      return { scrapeCache: next }
+    }),
 
   setProgress: (sheetName, rowId, progress) =>
     set((state) => {
@@ -80,6 +120,21 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => ({
       }
     }),
 
+  addLog: (sheetName, rowId, message) =>
+    set((state) => {
+      const key = enrichmentKey(sheetName, rowId)
+      const prev = state.logs[key] ?? []
+      return { logs: { ...state.logs, [key]: [...prev, message] } }
+    }),
+
+  clearLogs: (sheetName, rowId) =>
+    set((state) => {
+      const key = enrichmentKey(sheetName, rowId)
+      const next = { ...state.logs }
+      delete next[key]
+      return { logs: next }
+    }),
+
   clear: (sheetName, rowId) =>
     set((state) => {
       const key = enrichmentKey(sheetName, rowId)
@@ -87,4 +142,5 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => ({
       delete next[key]
       return { entries: next }
     }),
-}))
+  })
+})

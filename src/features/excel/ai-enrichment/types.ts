@@ -54,8 +54,8 @@ export interface EnrichedProduct {
 
 export type EnrichmentStatus =
   | 'idle'
-  | 'searching'   // Firecrawl search pour trouver la page produit
-  | 'scraping'    // Firecrawl scrape sur la page trouvée
+  | 'searching'   // Recherche de la page produit via Jina
+  | 'scraping'    // Extraction du contenu via Jina Reader
   | 'reasoning'   // Claude reformule / structure les données
   | 'done'
   | 'error'

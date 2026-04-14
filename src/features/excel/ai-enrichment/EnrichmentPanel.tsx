@@ -15,8 +15,62 @@ interface Props {
   input: EnrichmentInput
 }
 
+/** Grille d'images avec expand/collapse — affiche 6 par défaut, toutes au clic.
+ *  Chaque tuile expose un bouton supprimer (X) au hover. */
+function ImageGrid({ images, onRemove }: { images: string[]; onRemove?: (url: string) => void }) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? images : images.slice(0, 6)
+  return (
+    <>
+      <div className="grid grid-cols-3 gap-1.5">
+        {visible.map((url, i) => (
+          <div
+            key={i}
+            className="group relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/[0.06] hover:border-indigo-400/40 transition-colors"
+          >
+            <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full">
+              <img
+                src={url}
+                alt=""
+                className="w-full h-full object-contain p-1"
+                onError={(e) => {
+                  ;(e.target as HTMLImageElement).style.display = 'none'
+                }}
+              />
+            </a>
+            {onRemove && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onRemove(url)
+                }}
+                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-white transition-all"
+                title="Supprimer cette image"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {images.length > 6 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+        >
+          <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          {expanded ? 'Réduire' : `Voir les ${images.length} images`}
+        </button>
+      )}
+    </>
+  )
+}
+
 export function EnrichmentPanel({ input }: Props) {
-  const entry = useEnrichmentStore((s) => s.entries[`${input.sheetName}::${input.rowId}`])
+  const storeKey = `${input.sheetName}::${input.rowId}`
+  const entry = useEnrichmentStore((s) => s.entries[storeKey])
+  const logs = useEnrichmentStore((s) => s.logs[storeKey] ?? [])
   const setData = useEnrichmentStore((s) => s.setData)
   const { enrich, reset, running } = useProductEnrichment()
   const { save, isSaved, saving, error: saveError } = useSaveEnrichedProduct()
@@ -72,14 +126,17 @@ export function EnrichmentPanel({ input }: Props) {
   const isDone = !isLoading && !isError && !!data
   const isIdle = !isLoading && !isError && !isDone
 
-  // Métadonnées du modèle LLM (affichées en haut à droite quand isDone)
+  // Métadonnées du modèle LLM ou mode scraping (affichées en haut à droite quand isDone)
+  const isManufacturerScrape = isDone && data && !data.llmProvider && data.scrapingProvider?.includes('Fabricant')
   const llmMeta = isDone && data
-    ? {
-        label: data.llmModel ?? data.llmProvider ?? 'Claude Opus 4.6',
-        title: data.llmProvider
-          ? `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`
-          : 'Raisonnement LLM via Claude Opus 4.6 (par défaut — provider exact non enregistré pour cette entrée)',
-      }
+    ? isManufacturerScrape
+      ? { label: 'Scraping pur', title: `Données extraites directement du site fabricant (${data.scrapingProvider}) — aucune IA utilisée` }
+      : {
+          label: data.llmModel ?? data.llmProvider ?? 'Claude Opus 4.6',
+          title: data.llmProvider
+            ? `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`
+            : 'Raisonnement LLM via Claude Opus 4.6 (par défaut — provider exact non enregistré pour cette entrée)',
+        }
     : null
 
   return (
@@ -104,10 +161,14 @@ export function EnrichmentPanel({ input }: Props) {
                     Modèle
                   </span>
                   <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tracking-normal bg-indigo-500/10 text-indigo-300/90 border border-indigo-500/20"
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tracking-normal border ${
+                      isManufacturerScrape
+                        ? 'bg-emerald-500/10 text-emerald-300/90 border-emerald-500/20'
+                        : 'bg-indigo-500/10 text-indigo-300/90 border-indigo-500/20'
+                    }`}
                     title={llmMeta.title}
                   >
-                    <Sparkles className="w-2.5 h-2.5" />
+                    {isManufacturerScrape ? <Globe className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5" />}
                     {llmMeta.label}
                   </span>
                 </div>
@@ -153,7 +214,7 @@ export function EnrichmentPanel({ input }: Props) {
 
         {/* Row 2 : sources scrapées (groupe unique, aligné avec le titre) */}
         {isDone && data && (() => {
-          const scrapingTool = data.scrapingProvider ?? 'Firecrawl'
+          const scrapingTool = data.scrapingProvider ?? 'Jina'
 
           const hostFromUrl = (u: string | null | undefined): string | null => {
             if (!u) return null
@@ -239,8 +300,11 @@ export function EnrichmentPanel({ input }: Props) {
       {/* ── Body (scrollable) ────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {isIdle && <IdleState onLaunch={launch} hasTitle={!!input.title} />}
-        {isLoading && <LoadingState status={status} message={entry?.progress.message ?? ''} />}
-        {isError && <ErrorState error={error!} onRetry={launch} />}
+        {isLoading && <LoadingState status={status} message={entry?.progress.message ?? ''} logs={logs} />}
+        {isError && <ErrorState error={error!} onRetry={launch} onRetryWithUrl={(url) => {
+          reset(input.sheetName, input.rowId)
+          void enrich({ ...input, knownUrl: url })
+        }} />}
         {isDone && data && <DoneState data={data} llmRequest={llmRequest} onUpdate={updateData} />}
       </div>
     </div>
@@ -280,17 +344,22 @@ function IdleState({ onLaunch, hasTitle }: { onLaunch: () => void; hasTitle: boo
 
 // ── Loading ───────────────────────────────────────────────────────────────
 
-function LoadingState({ status, message }: { status: string; message: string }) {
+function LoadingState({ status, message, logs }: { status: string; message: string; logs: string[] }) {
   const steps: { id: 'searching' | 'scraping' | 'reasoning'; label: string; icon: React.ElementType }[] = [
     { id: 'searching', label: 'Recherche web', icon: Globe },
     { id: 'scraping', label: 'Extraction page produit', icon: Zap },
     { id: 'reasoning', label: 'Synthèse IA', icon: Sparkles },
   ]
   const currentIdx = steps.findIndex((s) => s.id === status)
+  const logsEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [logs.length])
 
   return (
-    <div className="h-full flex flex-col items-center justify-center px-6 py-10">
-      <div className="w-full max-w-[280px] space-y-3">
+    <div className="h-full flex flex-col px-6 py-6">
+      <div className="w-full max-w-[280px] space-y-3 mx-auto">
         {steps.map((step, i) => {
           const done = currentIdx === -1 ? false : i < currentIdx
           const active = i === currentIdx
@@ -331,7 +400,39 @@ function LoadingState({ status, message }: { status: string; message: string }) 
         })}
       </div>
       {message && (
-        <p className="mt-5 text-[11px] text-white/40 text-center max-w-[280px]">{message}</p>
+        <p className="mt-4 text-[11px] text-white/40 text-center max-w-[280px] mx-auto">{message}</p>
+      )}
+
+      {/* Logs temps réel */}
+      {logs.length > 0 && (
+        <div className="mt-4 flex-1 min-h-0 max-h-[240px] overflow-y-auto rounded-lg bg-black/40 border border-white/[0.06] p-2.5">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Code2 className="w-3 h-3 text-white/20" />
+            <span className="text-[9px] font-semibold text-white/25 uppercase tracking-wider">Logs</span>
+          </div>
+          <div className="space-y-0.5 font-mono">
+            {logs.map((entry, i) => {
+              const isSuccess = entry.startsWith('✓') || entry.startsWith('★')
+              const isWarning = entry.startsWith('✗') || entry.includes('échoué') || entry.includes('invalidé') || entry.includes('insuffisant')
+              return (
+                <div
+                  key={i}
+                  className={`text-[10px] leading-relaxed px-1.5 py-0.5 rounded ${
+                    isSuccess
+                      ? 'text-emerald-400/70'
+                      : isWarning
+                        ? 'text-amber-400/70'
+                        : 'text-white/35'
+                  }`}
+                >
+                  <span className="text-white/15 select-none mr-1.5">{String(i + 1).padStart(2, '0')}</span>
+                  {entry}
+                </div>
+              )
+            })}
+            <div ref={logsEndRef} />
+          </div>
+        </div>
       )}
     </div>
   )
@@ -339,14 +440,47 @@ function LoadingState({ status, message }: { status: string; message: string }) 
 
 // ── Error ─────────────────────────────────────────────────────────────────
 
-function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
+function ErrorState({ error, onRetry, onRetryWithUrl }: {
+  error: string
+  onRetry: () => void
+  onRetryWithUrl: (url: string) => void
+}) {
+  const [manualUrl, setManualUrl] = useState('')
+  const isSearchError = /search|recherche|credits|cr[eé]dits|insufficient/i.test(error)
+
   return (
     <div className="h-full flex flex-col items-center justify-center px-6 py-10 text-center">
       <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-center mb-4">
         <AlertCircle className="w-5 h-5 text-red-400" />
       </div>
       <h3 className="text-[13px] font-semibold text-white/80 mb-2">Échec de l'enrichissement</h3>
-      <p className="text-[11px] text-white/50 leading-relaxed max-w-[260px] mb-4">{error}</p>
+      <p className="text-[11px] text-white/50 leading-relaxed max-w-[280px] mb-4">{error}</p>
+
+      {isSearchError && (
+        <div className="w-full max-w-[320px] mb-4">
+          <p className="text-[10px] text-white/40 mb-2">
+            Collez l'URL de la page produit pour enrichir sans recherche :
+          </p>
+          <div className="flex gap-1.5">
+            <input
+              type="url"
+              value={manualUrl}
+              onChange={(e) => setManualUrl(e.target.value)}
+              placeholder="https://www.marque.fr/produit..."
+              className="flex-1 px-2.5 py-1.5 rounded-md bg-white/[0.06] border border-white/[0.12] text-[11px] text-white/80 placeholder:text-white/25 focus:outline-none focus:border-indigo-500/50"
+            />
+            <button
+              type="button"
+              disabled={!manualUrl.startsWith('http')}
+              onClick={() => onRetryWithUrl(manualUrl.trim())}
+              className="px-2.5 py-1.5 rounded-md bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[11px] font-medium hover:bg-indigo-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              Enrichir
+            </button>
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={onRetry}
@@ -385,26 +519,10 @@ function DoneState({
             : 'Aucune image trouvée'}
         </p>
         {data.images.length > 0 ? (
-          <div className="grid grid-cols-3 gap-1.5">
-            {data.images.slice(0, 6).map((url, i) => (
-              <a
-                key={i}
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="aspect-square rounded-md overflow-hidden bg-white/5 border border-white/[0.06] hover:border-indigo-400/40 transition-colors"
-              >
-                <img
-                  src={url}
-                  alt=""
-                  className="w-full h-full object-contain p-1"
-                  onError={(e) => {
-                    ;(e.target as HTMLImageElement).style.display = 'none'
-                  }}
-                />
-              </a>
-            ))}
-          </div>
+          <ImageGrid
+            images={data.images}
+            onRemove={(url) => onUpdate({ images: data.images.filter((u) => u !== url) })}
+          />
         ) : (
           <p className="text-[11px] text-white/35 leading-relaxed">
             Le scraping n'a pas détecté d'images produit exploitables. Essayez{' '}
@@ -412,37 +530,6 @@ function DoneState({
           </p>
         )}
       </div>
-
-      {/* Documents PDF / notices */}
-      {data.documents.length > 0 && (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <FileDown className="w-3 h-3" />
-            Documents ({data.documents.length})
-          </p>
-          <div className="flex flex-col gap-1">
-            {data.documents.map((raw, i) => {
-              // Support format "titre##url" pour afficher le bon nom
-              const hasTitle = raw.includes('##')
-              const displayName = hasTitle ? raw.split('##')[0] : (raw.split('/').pop()?.split('?')[0] ?? raw)
-              const href = hasTitle ? raw.split('##').slice(1).join('##') : raw
-              return (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 hover:bg-indigo-500/5 transition-colors text-[11px] text-white/60 hover:text-white/90 truncate"
-                >
-                  <FileDown className="w-3 h-3 shrink-0 text-red-400/60" />
-                  <span className="truncate">{decodeURIComponent(displayName)}</span>
-                  <ExternalLink className="w-3 h-3 shrink-0 ml-auto text-white/20" />
-                </a>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Description générée — éditable */}
       <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
@@ -505,38 +592,37 @@ function DoneState({
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
             Variantes ({data.variants.length})
           </p>
-          <div className="rounded-lg border border-white/[0.08] overflow-hidden">
-            {/* Header */}
-            {(() => {
-              const allProps = new Set<string>()
-              data.variants.forEach(v => Object.keys(v.properties).forEach(k => allProps.add(k)))
-              const propCols = Array.from(allProps)
+          <VariantTable variants={data.variants} />
+        </div>
+      )}
+
+      {/* Documents PDF / notices — en fin de liste */}
+      {data.documents.length > 0 && (
+        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <FileDown className="w-3 h-3" />
+            Documents ({data.documents.length})
+          </p>
+          <div className="flex flex-col gap-1">
+            {data.documents.map((raw, i) => {
+              // Support format "titre##url" pour afficher le bon nom
+              const hasTitle = raw.includes('##')
+              const displayName = hasTitle ? raw.split('##')[0] : (raw.split('/').pop()?.split('?')[0] ?? raw)
+              const href = hasTitle ? raw.split('##').slice(1).join('##') : raw
               return (
-                <>
-                  <div className="flex items-stretch bg-white/[0.04] border-b border-white/[0.06] text-[9px] font-bold text-white/40 uppercase tracking-wider">
-                    <div className="w-[80px] px-2 py-1.5 shrink-0 border-r border-white/[0.05]">Réf.</div>
-                    <div className="flex-1 px-2 py-1.5 border-r border-white/[0.05]">Libellé</div>
-                    {propCols.map(col => (
-                      <div key={col} className="w-[70px] px-2 py-1.5 shrink-0 border-r border-white/[0.05] last:border-r-0">{col}</div>
-                    ))}
-                  </div>
-                  {data.variants.map((v, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-stretch text-[10px] ${
-                        i % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent'
-                      } ${i > 0 ? 'border-t border-white/[0.04]' : ''}`}
-                    >
-                      <div className="w-[80px] px-2 py-1.5 shrink-0 border-r border-white/[0.05] text-indigo-400/80 font-semibold">{v.reference}</div>
-                      <div className="flex-1 px-2 py-1.5 border-r border-white/[0.05] text-white/60 truncate">{v.label}</div>
-                      {propCols.map(col => (
-                        <div key={col} className="w-[70px] px-2 py-1.5 shrink-0 border-r border-white/[0.05] last:border-r-0 text-white/50">{v.properties[col] || '—'}</div>
-                      ))}
-                    </div>
-                  ))}
-                </>
+                <a
+                  key={i}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 hover:bg-indigo-500/5 transition-colors text-[11px] text-white/60 hover:text-white/90 truncate"
+                >
+                  <FileDown className="w-3 h-3 shrink-0 text-red-400/60" />
+                  <span className="truncate">{decodeURIComponent(displayName)}</span>
+                  <ExternalLink className="w-3 h-3 shrink-0 ml-auto text-white/20" />
+                </a>
               )
-            })()}
+            })}
           </div>
         </div>
       )}
@@ -941,6 +1027,142 @@ function SpecGroupAccordions({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ── Variant table ────────────────────────────────────────────────────────
+
+function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
+
+  // Séparer propriétés "tableau" (partagées par toutes/plupart des variantes, courtes)
+  // des specs détaillées (propres à chaque variante, nombreuses)
+  const allKeys: string[] = []
+  const keySet = new Set<string>()
+  for (const v of variants) {
+    for (const k of Object.keys(v.properties)) {
+      if (!keySet.has(k)) { keySet.add(k); allKeys.push(k) }
+    }
+  }
+  const activeKeys = allKeys.filter(k => variants.some(v => v.properties[k]?.trim()))
+
+  // Colonnes "discriminantes" = présentes chez >50% des variantes ET nom court (<20 car)
+  // Specs détaillées = le reste (spécifiques par variante)
+  const threshold = Math.max(1, Math.floor(variants.length * 0.5))
+  const tableKeys = activeKeys.filter(k => {
+    const count = variants.filter(v => v.properties[k]?.trim()).length
+    return count >= threshold && k.length < 25
+  })
+  // Limiter le tableau à 6 colonnes max pour rester lisible
+  const displayTableKeys = tableKeys.slice(0, 6)
+
+  // Pour chaque variante, les specs détaillées (pas dans les colonnes du tableau)
+  const getDetailSpecs = (v: typeof variants[0]) => {
+    const tableKeySet = new Set(displayTableKeys)
+    return Object.entries(v.properties)
+      .filter(([k, val]) => !tableKeySet.has(k) && val?.trim())
+      .map(([k, val]) => ({ name: k, value: val }))
+  }
+  const hasDetails = variants.some(v => getDetailSpecs(v).length > 0)
+
+  /** Supprime le préfixe du nom de colonne dans la valeur de la cellule.
+   *  Ex: colonne "Couleur" + valeur "Couleur Noir" → "Noir"
+   *      colonne "Libellé" + valeur "Libellé 1m caniv..." → "1m caniv..."
+   *      colonne "Emb." + valeur "Emb." → "—" (valeur = juste le header)
+   */
+  const stripHeaderPrefix = (colName: string, val: string | undefined): string => {
+    if (!val?.trim()) return ''
+    const v = val.trim()
+    // Normaliser pour la comparaison (ignorer accents, casse, ponctuation finale)
+    const normCol = colName.replace(/[.\s]+$/g, '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const normVal = v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    if (normVal.startsWith(normCol)) {
+      const rest = v.slice(colName.replace(/[.\s]+$/g, '').length).replace(/^[\s.:;,\-–—]+/, '').trim()
+      return rest || ''
+    }
+    return v
+  }
+
+  return (
+    <div className="rounded-lg border border-white/[0.08] overflow-x-auto">
+      <table className="w-full text-[10px]">
+        <thead>
+          <tr className="bg-white/[0.04] border-b border-white/[0.06]">
+            {hasDetails && (
+              <th className="w-6 px-1 py-2" />
+            )}
+            <th className="px-2.5 py-2 text-left text-[9px] font-bold text-white/40 uppercase tracking-wider whitespace-nowrap">
+              Réf.
+            </th>
+            <th className="px-2.5 py-2 text-left text-[9px] font-bold text-white/40 uppercase tracking-wider">
+              Libellé
+            </th>
+            {displayTableKeys.map(k => (
+              <th key={k} className="px-2.5 py-2 text-left text-[9px] font-bold text-white/40 uppercase tracking-wider whitespace-nowrap">
+                {k}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {variants.map((v, i) => {
+            const details = getDetailSpecs(v)
+            const isExpanded = expandedIdx === i
+            const colSpan = 2 + displayTableKeys.length + (hasDetails ? 1 : 0)
+            return (
+              <>
+                <tr
+                  key={`row-${i}`}
+                  className={`${
+                    i % 2 === 0 ? 'bg-white/[0.015]' : 'bg-transparent'
+                  } border-t border-white/[0.04] hover:bg-white/[0.04] transition-colors ${details.length > 0 ? 'cursor-pointer' : ''}`}
+                  onClick={() => details.length > 0 && setExpandedIdx(isExpanded ? null : i)}
+                >
+                  {hasDetails && (
+                    <td className="w-6 px-1 py-1.5 text-center text-white/30">
+                      {details.length > 0 && (
+                        <ChevronDown className={`w-3 h-3 inline transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
+                      )}
+                    </td>
+                  )}
+                  <td className="px-2.5 py-1.5 whitespace-nowrap font-semibold text-indigo-400/80">
+                    {stripHeaderPrefix('Référence', v.reference) || stripHeaderPrefix('Réf', v.reference) || v.reference}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-white/60 max-w-[200px] truncate" title={v.label}>
+                    {stripHeaderPrefix('Libellé', v.label) || v.label}
+                  </td>
+                  {displayTableKeys.map(k => {
+                    const cleaned = stripHeaderPrefix(k, v.properties[k])
+                    return (
+                      <td key={k} className="px-2.5 py-1.5 text-white/50 whitespace-nowrap">
+                        {cleaned || '—'}
+                      </td>
+                    )
+                  })}
+                </tr>
+                {isExpanded && details.length > 0 && (
+                  <tr key={`detail-${i}`} className="bg-white/[0.03]">
+                    <td colSpan={colSpan} className="px-4 py-2">
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[9px]">
+                        {details.map((s, si) => {
+                          const cleanedVal = stripHeaderPrefix(s.name, s.value)
+                          return (
+                            <div key={si} className="flex justify-between gap-2 py-0.5 border-b border-white/[0.04]">
+                              <span className="text-white/40">{s.name}</span>
+                              <span className="text-white/70 text-right font-medium">{cleanedVal || s.value}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
