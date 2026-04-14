@@ -56,3 +56,52 @@ describe('discoverRelatedUrls - tabs', () => {
     expect(tabs.every(u => !u.includes('/categories'))).toBe(true)
   })
 })
+
+const htmlWithPdfs = `
+<html><body>
+  <main>
+    <a href="/docs/datasheet-alpha1.pdf">Datasheet</a>
+    <a href="/docs/manual-fr.pdf?v=2">Manuel</a>
+    <a href="https://cdn.grundfos.com/api/binary/d123.pdf">Certificat</a>
+  </main>
+</body></html>
+`
+
+describe('discoverRelatedUrls - pdfs', () => {
+  const base = new URL('https://www.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186')
+
+  it('collects internal pdf links', () => {
+    const { pdfs } = discoverRelatedUrls(htmlWithPdfs, base)
+    expect(pdfs).toContain('https://www.grundfos.com/docs/datasheet-alpha1.pdf')
+    expect(pdfs.some(u => u.includes('manual-fr.pdf'))).toBe(true)
+  })
+
+  it('collects external pdf links from CDNs', () => {
+    const { pdfs } = discoverRelatedUrls(htmlWithPdfs, base)
+    expect(pdfs).toContain('https://cdn.grundfos.com/api/binary/d123.pdf')
+  })
+})
+
+const htmlWithSubpages = `
+<html><body>
+  <main>
+    <a href="/fr/products/alpha/alpha1-go/alpha1-go-25-40-180-93074187">Alpha1 GO 25-40 180</a>
+    <a href="/fr/products/scala">Scala</a>
+    <a href="/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186/specifications">Specs</a>
+  </main>
+</body></html>
+`
+
+describe('discoverRelatedUrls - subpages', () => {
+  const base = new URL('https://www.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186')
+
+  it('collects sibling pages at same depth', () => {
+    const { subpages } = discoverRelatedUrls(htmlWithSubpages, base)
+    expect(subpages.some(u => u.endsWith('/alpha1-go-25-40-180-93074187'))).toBe(true)
+  })
+
+  it('ignores pages outside the product slug root', () => {
+    const { subpages } = discoverRelatedUrls(htmlWithSubpages, base)
+    expect(subpages.every(u => !u.endsWith('/scala'))).toBe(true)
+  })
+})
