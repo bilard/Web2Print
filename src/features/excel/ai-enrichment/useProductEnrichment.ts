@@ -1081,12 +1081,18 @@ interface ManufacturerData {
 }
 
 
+export interface DeepScrapeResult {
+  markdown: string
+  html: string | null
+  source: 'post-browser' | 'get-fallback' | 'basic-merged'
+}
+
 /**
  * Scrape optimisé pour les sites fabricants via Jina Reader.
  * Utilise des headers avancés (X-Wait-For-Selector, X-Target-Selector, X-Engine)
  * pour forcer le rendu complet des accordéons / sections dynamiques.
  */
-async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<string | null> {
+async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeResult | null> {
   console.log('[jina-manufacturer] deep scraping →', pageUrl)
 
   // JavaScript injecté dans la page via Jina injectPageScript.
@@ -1563,7 +1569,8 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<string | null
     const jinaKey = getApiKey('jina')
     if (!jinaKey) {
       console.warn('[jina-manufacturer] ⚠ no Jina API key — falling back to basic scrape')
-      return jinaScrapeMarkdown(pageUrl)
+      const fallbackMd = await jinaScrapeMarkdown(pageUrl)
+      return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
     }
 
     // POST avec injectPageScript pour exécuter le JS d'expansion des accordéons
@@ -1579,6 +1586,9 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<string | null
         'X-No-Cache': 'true',
         'X-With-Links-Summary': 'all',
         'X-With-Images-Summary': 'all',
+        'X-With-Iframe': 'true',
+        'X-With-Shadow-Dom': 'true',
+        'X-Return-Format': 'html,markdown',
       },
       body: JSON.stringify({
         url: pageUrl,
@@ -1592,10 +1602,11 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<string | null
       return jinaScrapeMaufacturerPageFallback(pageUrl, jinaKey)
     }
 
-    const json = await res.json() as { data?: { content?: string; links?: Record<string, string>; images?: Record<string, string> } }
+    const json = await res.json() as { data?: { content?: string; html?: string; links?: Record<string, string>; images?: Record<string, string> } }
     let md = json?.data?.content || ''
     const postImages = json?.data?.images
     const postLinks = json?.data?.links
+    const capturedHtml: string | null = json?.data?.html ?? null
 
     if (!md || md.length < 100) {
       console.warn('[jina-manufacturer] POST returned empty content — falling back to GET')
@@ -1646,18 +1657,20 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<string | null
       }
     }
 
-    return md
+    return { markdown: md, html: capturedHtml, source: 'post-browser' as const }
   } catch (err) {
     console.warn('[jina-manufacturer] POST scrape failed:', err)
-    return jinaScrapeMarkdown(pageUrl)
+    const fallbackMd = await jinaScrapeMarkdown(pageUrl)
+    return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
   }
 }
 
 /** Fallback GET pour le scraping fabricant (sans injection JS) — utilise le mode JSON */
-async function jinaScrapeMaufacturerPageFallback(pageUrl: string, jinaKey: string): Promise<string | null> {
+async function jinaScrapeMaufacturerPageFallback(pageUrl: string, jinaKey: string): Promise<DeepScrapeResult | null> {
   // Réutilise jinaScrapeMarkdown qui est déjà en mode JSON avec images/links
   console.log('[jina-manufacturer-fallback] falling back to JSON mode scrape')
-  return jinaScrapeMarkdown(pageUrl)
+  const fallbackMd = await jinaScrapeMarkdown(pageUrl)
+  return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
 }
 
 /**
@@ -3306,7 +3319,9 @@ export function useProductEnrichment() {
             // avec suivi automatique des liens HATEOAS.
             // Fallback automatique vers GET si POST échoue ou pas de clé Jina.
             log(`Deep scrape (X-Engine: browser, tabs, window.*) → ${productUrl}`)
-            markdownContent = await jinaScrapeMaufacturerPage(productUrl)
+            const deepResult = await jinaScrapeMaufacturerPage(productUrl)
+            markdownContent = deepResult?.markdown ?? null
+            // deepResult.html sera utilisé par scrapeProductBundle (task 5)
             console.log('[enrichment] [Jina] markdown →', markdownContent ? `${markdownContent.length} chars` : 'null', '(deep scrape)')
             log(markdownContent
               ? `✓ Markdown reçu : ${markdownContent.length} caractères`
