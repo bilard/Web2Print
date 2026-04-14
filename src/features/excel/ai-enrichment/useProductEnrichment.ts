@@ -5,6 +5,7 @@ import { generateJson } from '@/features/ai/llmRouter'
 import { useEnrichmentStore } from './enrichmentStore'
 import type { EnrichedProduct } from './types'
 import { enrichmentKey } from './types'
+import { scrapeProductBundle } from './scrapeBundle'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -3313,21 +3314,33 @@ export function useProductEnrichment() {
               ? `Site fabricant ${earlyManufacturerBrand} — scraping avancé (accordéons, specs, PDFs)…`
               : `Deep scrape ${hostname} (onglets, accordéons, window.*)…`,
           })
+          const multiEnabled = useEnrichmentStore.getState().multiUrlEnabled
           try {
-            // Deep scrape pour TOUS les sites : JS injection pour ouvrir les onglets,
-            // développer les accordéons, et détecter les objets produit dans window.*
-            // avec suivi automatique des liens HATEOAS.
-            // Fallback automatique vers GET si POST échoue ou pas de clé Jina.
-            log(`Deep scrape (X-Engine: browser, tabs, window.*) → ${productUrl}`)
-            const deepResult = await jinaScrapeMaufacturerPage(productUrl)
-            markdownContent = deepResult?.markdown ?? null
-            // deepResult.html sera utilisé par scrapeProductBundle (task 5)
-            console.log('[enrichment] [Jina] markdown →', markdownContent ? `${markdownContent.length} chars` : 'null', '(deep scrape)')
-            log(markdownContent
-              ? `✓ Markdown reçu : ${markdownContent.length} caractères`
-              : `✗ Aucun contenu markdown reçu`)
+            if (multiEnabled) {
+              log(`Multi-URL bundle (X-Engine: browser + onglets auto) → ${productUrl}`)
+              const bundle = await scrapeProductBundle(productUrl, {
+                deepScrape: async (url) => {
+                  const r = await jinaScrapeMaufacturerPage(url)
+                  return r ? { markdown: r.markdown, html: r.html } : null
+                },
+                fastScrape: (url) => jinaScrapeMarkdown(url),
+                log,
+              })
+              markdownContent = bundle.mergedMarkdown || null
+              if (bundle.sourcesScrapped.length > 1) {
+                log(`✓ Bundle : ${bundle.sourcesScrapped.length} sources fusionnées (${bundle.pdfsFound.length} PDFs)`)
+              }
+              // Stocker sourcesScrapped dans le cache (géré plus bas)
+              ;(bundle as unknown as { __forCache: { sourcesScrapped: string[] } }).__forCache = { sourcesScrapped: bundle.sourcesScrapped }
+              ;(globalThis as unknown as { __lastBundle?: unknown }).__lastBundle = bundle
+            } else {
+              log(`Scrape single-URL (multi-URL désactivé) → ${productUrl}`)
+              const r = await jinaScrapeMaufacturerPage(productUrl)
+              markdownContent = r?.markdown ?? null
+            }
           } catch (err) {
-            console.warn('[enrichment] Jina markdown failed', err)
+            console.warn('[enrichment] scrape failed', err)
+            log(`✗ Scrape échec : ${String(err).slice(0, 200)}`)
           }
           if (markdownContent) {
             console.log('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
@@ -3384,12 +3397,15 @@ export function useProductEnrichment() {
 
         // ── Sauvegarder le cache scraping pour les prochains Re-générer ──
         if (!usedCache && productUrl) {
+          const lastBundle = (globalThis as unknown as { __lastBundle?: { sourcesScrapped?: string[] } }).__lastBundle
           setScrapeCache(sheetName, rowId, {
             productUrl,
             additionalSources,
             markdownContent,
             scrapeProvider: 'Jina',
+            sourcesScrapped: lastBundle?.sourcesScrapped,
           })
+          ;(globalThis as unknown as { __lastBundle?: unknown }).__lastBundle = undefined
           console.log('[enrichment] ★ scrape cache saved for', enrichmentKey(sheetName, rowId))
         }
 
