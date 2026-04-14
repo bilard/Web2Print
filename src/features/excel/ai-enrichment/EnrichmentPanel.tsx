@@ -306,7 +306,7 @@ export function EnrichmentPanel({ input }: Props) {
           reset(input.sheetName, input.rowId)
           void enrich({ ...input, knownUrl: url })
         }} />}
-        {isDone && data && <DoneState data={data} llmRequest={llmRequest} onUpdate={updateData} />}
+        {isDone && data && <DoneState data={data} llmRequest={llmRequest} onUpdate={updateData} scrapeCache={scrapeCache} />}
       </div>
     </div>
   )
@@ -500,10 +500,12 @@ function DoneState({
   data,
   llmRequest,
   onUpdate,
+  scrapeCache,
 }: {
   data: NonNullable<ReturnType<typeof useEnrichmentStore.getState>['entries'][string]>['data']
   llmRequest: LlmRequestInfo | null
   onUpdate: (patch: Partial<EnrichedProduct>) => void
+  scrapeCache?: { sourcesScrapped?: string[] }
 }) {
   if (!data) return null
   return (
