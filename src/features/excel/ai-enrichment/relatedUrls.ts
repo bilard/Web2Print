@@ -1,5 +1,31 @@
 /** Related-URL discovery utilities (pure, testable). */
 
+const TAB_QUERY_KEYS = ['tab', 'section', 'view', 'pane', 'content']
+
+function detectTabKeyFromUrl(baseUrl: URL): string | null {
+  for (const [k] of baseUrl.searchParams) {
+    if (TAB_QUERY_KEYS.includes(k.toLowerCase())) return k
+  }
+  return null
+}
+
+const TAB_ID_ATTRS = ['aria-controls', 'data-tab-id', 'data-tab', 'data-view', 'data-pane', 'data-section', 'data-qa']
+const TAB_ID_STRIP = /^(cmp-tab-|tab-|nav-item-|panel-)/i
+
+function extractTabId(el: Element): string | null {
+  for (const attr of TAB_ID_ATTRS) {
+    const raw = el.getAttribute(attr)
+    if (!raw) continue
+    const cleaned = raw.replace(TAB_ID_STRIP, '').trim()
+    if (cleaned && cleaned.length > 0 && cleaned.length < 80) return cleaned
+  }
+  const id = el.id
+  if (id && id.length < 80 && /tab|panel/i.test(id)) {
+    return id.replace(TAB_ID_STRIP, '')
+  }
+  return null
+}
+
 export interface RelatedUrls {
   tabs: string[]
   pdfs: string[]
@@ -78,6 +104,25 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
       if (sharedPrefix && resolved.pathname.startsWith('/' + sharedPrefix + '/')) {
         subpages.add(normalized)
       }
+    }
+  }
+
+  // ── ARIA role="tab" synthesis (for SPAs where tabs are buttons, not anchors) ──
+  const tabKey = detectTabKeyFromUrl(baseUrl)
+  if (tabKey) {
+    const currentValue = baseUrl.searchParams.get(tabKey)
+    const tabElements = doc.querySelectorAll('[role="tab"], [data-qa^="cmp-tab-"], [data-tab], [data-tab-id]')
+    for (const el of Array.from(tabElements)) {
+      if (isInsideNav(el)) continue
+      // Skip the currently selected tab
+      if (el.getAttribute('aria-selected') === 'true') continue
+      const tabId = extractTabId(el)
+      if (!tabId || tabId === currentValue) continue
+      const candidate = new URL(baseUrl.toString())
+      candidate.searchParams.set(tabKey, tabId)
+      candidate.hash = ''
+      const normalized = normalizeUrl(candidate.toString())
+      if (normalized && normalized !== baseKey) tabs.add(normalized)
     }
   }
 

@@ -105,3 +105,66 @@ describe('discoverRelatedUrls - subpages', () => {
     expect(subpages.every(u => !u.endsWith('/scala'))).toBe(true)
   })
 })
+
+const grundfosButtonHtml = `
+<html><body>
+  <main>
+    <div class="cmp-tabs__list-item">
+      <button data-qa="cmp-tab-variant-overview" aria-controls="variant-overview" type="button" role="tab" class="elm-tab-button">Vue d'ensemble</button>
+    </div>
+    <div class="cmp-tabs__list-item">
+      <button data-qa="cmp-tab-variants" aria-controls="variants" type="button" role="tab" class="elm-tab-button">Variantes</button>
+    </div>
+    <div class="cmp-tabs__list-item">
+      <button data-qa="cmp-tab-specifications" aria-controls="specifications" type="button" role="tab" class="elm-tab-button">Spécifications</button>
+    </div>
+    <div class="cmp-tabs__list-item">
+      <button data-qa="cmp-tab-variant-curves" aria-controls="variant-curves" type="button" role="tab" aria-selected="true" class="elm-tab-button">Courbes</button>
+    </div>
+    <div class="cmp-tabs__list-item">
+      <button data-qa="cmp-tab-documents" aria-controls="documents" type="button" role="tab" class="elm-tab-button">Documentations</button>
+    </div>
+  </main>
+</body></html>
+`
+
+describe('discoverRelatedUrls - ARIA tabs synthesis', () => {
+  const baseWithTab = new URL('https://product-selection.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186?pumpsystemid=28&tab=variant-curves')
+
+  it('synthesizes tab URLs from role="tab" buttons when baseUrl has tab query key', () => {
+    const { tabs } = discoverRelatedUrls(grundfosButtonHtml, baseWithTab)
+    // Must produce URLs for each non-current tab
+    expect(tabs.some(u => u.includes('tab=variant-overview'))).toBe(true)
+    expect(tabs.some(u => u.includes('tab=variants'))).toBe(true)
+    expect(tabs.some(u => u.includes('tab=specifications'))).toBe(true)
+    expect(tabs.some(u => u.includes('tab=documents'))).toBe(true)
+  })
+
+  it('excludes the current tab (aria-selected or equal to baseUrl value)', () => {
+    const { tabs } = discoverRelatedUrls(grundfosButtonHtml, baseWithTab)
+    expect(tabs.every(u => !u.endsWith('tab=variant-curves'))).toBe(true)
+  })
+
+  it('preserves other query params (e.g. pumpsystemid) when synthesizing', () => {
+    const { tabs } = discoverRelatedUrls(grundfosButtonHtml, baseWithTab)
+    // Expect pumpsystemid to be carried over
+    expect(tabs.every(u => u.includes('pumpsystemid=28'))).toBe(true)
+  })
+
+  it('does not synthesize tabs when baseUrl has no tab-like query key', () => {
+    const baseNoTab = new URL('https://product-selection.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186')
+    const { tabs } = discoverRelatedUrls(grundfosButtonHtml, baseNoTab)
+    // With no tab key in URL, we must not guess — no synthesized tabs
+    expect(tabs).toHaveLength(0)
+  })
+
+  it('strips common prefixes from data-qa (cmp-tab-, tab-)', () => {
+    const html = `<button role="tab" data-qa="cmp-tab-specifications" aria-controls="spec-panel">Specs</button>`
+    const base = new URL('https://x.com/p?tab=overview')
+    const { tabs } = discoverRelatedUrls(html, base)
+    // aria-controls preferred over data-qa, so we expect tab=spec-panel OR tab=specifications
+    // Check that prefix 'cmp-tab-' is NOT in the synthesized URL
+    expect(tabs.every(u => !u.includes('cmp-tab-'))).toBe(true)
+    expect(tabs.length).toBeGreaterThan(0)
+  })
+})
