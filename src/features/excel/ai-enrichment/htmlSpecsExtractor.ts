@@ -12,6 +12,15 @@
 const SKIP_TAGS = new Set(['TABLE', 'DL', 'TR', 'THEAD', 'TBODY', 'TFOOT', 'SCRIPT', 'STYLE', 'NOSCRIPT'])
 const GENERIC_DOC_LABEL = /^(pdf|download|t[eé]l[eé]charger|voir|view|open|ouvrir|link|file|document)\.?$/i
 
+/** Labels de raccourcis clavier / contrôles player vidéo rencontrés sur
+ *  YouTube, Vimeo, JW Player, Kaltura, Wistia… Pattern universel, s'applique
+ *  quel que soit le site produit (Bosch, Décathlon, Leroy Merlin…). */
+const VIDEO_PLAYER_SHORTCUT = /^(play\/?pause|lecture\/?pause|shortcuts?|raccourcis?|plein[-\s]?[eé]cran|fullscreen|muet|mute|volume|sous-?titres?|captions?|avancer|reculer|augmenter|diminuer|ouvrir\/?fermer|open\/?close|rewind|forward)\b/i
+
+/** Valeurs purement "décoratives" (touches clavier) qui trahissent un
+ *  raccourci vidéo même quand le label passe à travers les autres filtres. */
+const VIDEO_PLAYER_KEY_VALUE = /^(espace|space|↑|↓|←|→|esc|enter|tab|shift|ctrl|alt|[a-z]|[0-9]|[a-z]\s*\/\s*[a-z])$/i
+
 function nearestHeading(el: Element): string {
   let cur: Element | null = el
   for (let i = 0; i < 4 && cur; i++) {
@@ -34,9 +43,16 @@ function isJunkContext(el: Element): boolean {
     const tag = cur.tagName
     if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER') return true
     const cls = `${cur.className || ''} ${cur.id || ''}`
-    if (typeof cls === 'string' && /cookie|consent|gdpr|mega-?menu|navigation|breadcrumb|footer|cart|panier|newsletter|social/i.test(cls)) return true
+    if (typeof cls === 'string' && /cookie|consent|gdpr|mega-?menu|navigation|breadcrumb|footer|cart|panier|newsletter|social|video-?player|player|youtube|vimeo|jw-?player|kaltura|wistia|media-?player/i.test(cls)) return true
     cur = cur.parentElement
   }
+  return false
+}
+
+function isVideoShortcut(k: string, v: string): boolean {
+  if (VIDEO_PLAYER_SHORTCUT.test(k)) return true
+  // Label court + valeur = touche clavier isolée → raccourci
+  if (k.length <= 30 && VIDEO_PLAYER_KEY_VALUE.test(v)) return true
   return false
 }
 
@@ -61,11 +77,14 @@ function extractPairFromRow(row: Element): [string, string] | null {
     const k = (subs[0].textContent ?? '').replace(/\s+/g, ' ').trim()
     let v = (subs[1].textContent ?? '').replace(/\s+/g, ' ').trim()
     if (!v && subs[1].querySelector('svg,[class*="check"]')) v = 'Oui'
-    if (k && v && k !== v && k.length <= 80 && v.length <= 200) return [k, v]
+    if (k && v && k !== v && k.length <= 80 && v.length <= 200 && !isVideoShortcut(k, v)) return [k, v]
   }
   const flat = (row.textContent ?? '').replace(/\s+/g, ' ').trim()
   const m = flat.match(/^([^:：]{2,60})\s*[:：]\s*(.{1,200})$/)
-  if (m) return [m[1].trim(), m[2].trim()]
+  if (m) {
+    const k = m[1].trim(), v = m[2].trim()
+    if (!isVideoShortcut(k, v)) return [k, v]
+  }
   return null
 }
 
@@ -101,6 +120,7 @@ export function extractSpecsBlockFromHtml(html: string): string {
       let v = (cells[1].textContent ?? '').replace(/\s+/g, ' ').trim()
       if (!v && cells[1].querySelector('[class*="check"],svg')) v = 'Oui'
       if (!k || !v || k === v || k.length > 80 || v.length > 200) return
+      if (isVideoShortcut(k, v)) return
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) return
       seenPairs.add(pk)
@@ -124,6 +144,7 @@ export function extractSpecsBlockFromHtml(html: string): string {
       const k = (dts[i].textContent ?? '').replace(/\s+/g, ' ').trim()
       const v = (dds[i].textContent ?? '').replace(/\s+/g, ' ').trim()
       if (!k || !v || k.length > 80 || v.length > 200) continue
+      if (isVideoShortcut(k, v)) continue
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) continue
       seenPairs.add(pk)
