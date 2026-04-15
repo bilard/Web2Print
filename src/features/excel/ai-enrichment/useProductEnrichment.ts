@@ -732,11 +732,10 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           const finalSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
           const hasRichData = dataSections.length > 0 && finalMdScore >= 10 && finalSpecCount >= 5
           const hasSomeData = dataSections.length > 0
-          // Seuil binaire : specs ≥5 → extraction stricte (source fiable).
-          // Specs <5 → scraping partiel (SPA/accordéons/CORS). Mode knowledge-augmented :
-          // combine données scrapées (contexte de vérification) + connaissances LLM du
-          // produit spécifique. Rien par marque, prompt universel.
           const needsKnowledgeBoost = false
+          const promptMode = hasRichData ? 'rich' : needsKnowledgeBoost ? 'strict-partial' : 'knowledge-augmented'
+          console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore, '| hasSomeData:', hasSomeData)
+          log(`🎯 Prompt mode : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore})`)
 
           const prompt = hasRichData
             ? `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
@@ -791,28 +790,38 @@ ${dataSections.join('\n\n')}
 - Mieux vaut retourner moins de specs que d'en inventer
 
 Réponds UNIQUEMENT via l'outil emit_response.`
-            : `Tu es un expert produit. Le scraping web a retourné peu ou pas de données techniques structurées (site SPA / accordéons JS / contenu dynamique).
-Ta mission : générer une fiche produit COMPLÈTE en combinant les données scrapées (à utiliser en PRIORITÉ pour vérification) + tes connaissances publiques et factuelles du produit identifié par sa référence et sa marque.
+            : `Tu es un expert produit. Le scraping de la page web a retourné TRÈS PEU de données techniques (site SPA, accordéons JavaScript non exécutés, ou CORS bloqué). Les données scrapées sont donc INCOMPLÈTES.
+
+TA MISSION : livrer une fiche produit COMPLÈTE et DÉTAILLÉE. Pour cela tu DOIS combiner (1) les données scrapées si présentes, (2) tes CONNAISSANCES PUBLIQUES du produit identifié par sa référence/SKU + marque.
 
 ## Produit à identifier
 ${sourceContext}
 ${hasSomeData ? '\n' + dataSections.join('\n\n') : ''}
 
-## CE QUE TU DOIS FAIRE
-1. Description : rédige une description marketing professionnelle du produit en français (2-4 phrases), en t'appuyant sur la description scrapée si elle existe, sinon depuis tes connaissances.
-2. Avantages : liste les principaux points forts et caractéristiques clés (8-15 bullets). Reprends ceux visibles dans le markdown scrapé + complète depuis tes connaissances du produit.
-3. Spécifications : c'est le point CRITIQUE. Liste EXHAUSTIVEMENT toutes les spécifications techniques du produit, organisées en groupes cohérents. Exemples de groupes courants selon la catégorie : Informations (référence, gamme), Moteur / Puissance, Batterie, Vitesse, Dimensions, Poids, Niveau sonore, Vibrations, Matériaux, etc. Pour chaque spec, format { name, value, group? }.
-   - Si une spec apparaît dans les données scrapées → reprends sa valeur EXACTEMENT.
-   - Sinon → utilise tes connaissances publiques du produit (fiches techniques fabricant, catalogues).
-   - Vise 10-25 specs pour un produit outillage/électroménager/mobilier, proportionné à la complexité.
-4. Variantes : liste les déclinaisons connues du produit (par batterie, par pack, par couleur, par taille) avec référence + libellé + properties.
-5. Images / Documents : tableaux vides si rien dans le scraping ; sinon reprends ce qui est présent.
+## INSTRUCTIONS OBLIGATOIRES
 
-## IMPORTANT
-- TOUJOURS répondre en FRANÇAIS.
-- Base-toi sur tes connaissances RÉELLES et PUBLIQUES du produit. Ne jamais inventer de valeur spécifique que tu ne connais pas — préférer omettre une spec que donner un chiffre faux.
-- La référence/SKU identifie un produit précis : les caractéristiques techniques sont publiques (site fabricant, catalogues, revendeurs) — tu les connais pour les produits grand public bien référencés.
-- FIDÉLITÉ aux valeurs scrapées : si le markdown dit "Tension: 18 V", ne pas écrire "20V" depuis une autre source.
+**Description** : 2-4 phrases professionnelles en français.
+
+**Avantages** : 8-15 points forts réels et factuels, en français, combinant ceux du scraping + tes connaissances.
+
+**Spécifications** : C'EST LE POINT LE PLUS IMPORTANT. Tu DOIS retourner MINIMUM 10 spécifications techniques — idéalement 15-25 pour un produit d'outillage ou électroménager standard. Format : { name, value, group? }.
+
+Exemples de groupes : Informations, Moteur, Batterie / Énergie, Vitesse / Rotation, Couple, Perçage / Capacité, Dimensions, Poids, Niveau sonore, Vibrations, Éclairage, Ergonomie, etc.
+
+Règles de sourcing des valeurs :
+- Valeur présente dans le markdown scrapé → REPRENDS-LA EXACTEMENT (fidélité absolue aux valeurs mesurées).
+- Valeur absente du markdown → utilise tes connaissances PUBLIQUES du produit (site fabricant, catalogues, notices officielles). Les caractéristiques techniques d'un produit commercialisé par sa référence exacte sont des DONNÉES PUBLIQUES, pas de l'invention.
+- Si tu n'es pas SÛR d'une valeur précise, omets-la — mieux vaut 12 specs correctes que 20 avec des chiffres faux.
+- Retourner moins de 8 specs est CONSIDÉRÉ COMME UN ÉCHEC : il y a toujours plus d'information publiquement disponible pour un produit référencé.
+
+**Variantes** : liste les déclinaisons connues (batteries incluses/non, packs, couleurs, tailles) avec reference + label + properties.
+
+**Images / Documents** : reprends uniquement ce qui est dans le scraping. Pas d'invention d'URL.
+
+## RAPPELS
+- Langue : TOUJOURS FRANÇAIS (noms de specs, groupes, libellés).
+- Fidélité : les valeurs numériques scrapées ne se modifient pas.
+- Une référence/SKU précise identifie un produit précis dont les caractéristiques sont publiques → tu les connais pour les produits grand public documentés.
 
 Réponds UNIQUEMENT via l'outil emit_response.`
 
