@@ -732,9 +732,13 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           const finalSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
           const hasRichData = dataSections.length > 0 && finalMdScore >= 10 && finalSpecCount >= 5
           const hasSomeData = dataSections.length > 0
-          // Si on a des données scrapées mais très peu de specs (site SPA/accordéons),
-          // combiner données scrapées + connaissances LLM
-          const needsKnowledgeBoost = hasSomeData && finalSpecCount < 5
+          // Specs 3-4 : mode extraction stricte (scraping partiel, mais assez de contexte
+          // pour que le LLM ne soit pas tenté d'inventer).
+          // Specs <3 : scraping a vraisemblablement échoué (SPA/accordéons JS, CORS bloqué).
+          // Basculer sur le prompt knowledge-based pour que le LLM complète depuis ses
+          // connaissances du produit (ref + marque). Restera généraliste car le prompt
+          // est orienté "fiche produit complète" sans spécifique par marque.
+          const needsKnowledgeBoost = hasSomeData && finalSpecCount >= 3 && finalSpecCount < 5
 
           const prompt = hasRichData
             ? `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
