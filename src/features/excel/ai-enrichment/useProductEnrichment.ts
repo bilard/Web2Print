@@ -725,7 +725,36 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           const dataSections: string[] = []
           if (markdownContent) {
-            dataSections.push(`## Contenu de la page produit (markdown rendu)\n${markdownContent.slice(0, 20000)}`)
+            const extractBlock = (src: string, start: string, end: string): { block: string | null; rest: string } => {
+              const re = new RegExp(`${start}[\\s\\S]*?${end}`, 'g')
+              const m = src.match(re)
+              if (!m || m.length === 0) return { block: null, rest: src }
+              const block = m.join('\n')
+              const rest = src.replace(re, '').replace(/\n{3,}/g, '\n\n')
+              return { block, rest }
+            }
+            let working = markdownContent
+            const specsX = extractBlock(working, 'JINA_EXTRACTED_SPECS_START', 'JINA_EXTRACTED_SPECS_END')
+            working = specsX.rest
+            const docsX = extractBlock(working, 'JINA_EXTRACTED_DOCUMENTS_START', 'JINA_EXTRACTED_DOCUMENTS_END')
+            working = docsX.rest
+            const imagesX = extractBlock(working, 'JINA_EXTRACTED_IMAGES_START', 'JINA_EXTRACTED_IMAGES_END')
+            working = imagesX.rest
+
+            if (specsX.block) {
+              dataSections.push(`## Spécifications techniques structurées (extraites du HTML rendu)\n${specsX.block}`)
+            }
+            if (docsX.block) {
+              dataSections.push(`## Documents PDF détectés\n${docsX.block}`)
+            }
+            if (imagesX.block) {
+              dataSections.push(`## Images produit détectées\n${imagesX.block}`)
+            }
+            const narrativeBudget = specsX.block || docsX.block || imagesX.block ? 15000 : 20000
+            const narrative = working.trim()
+            if (narrative) {
+              dataSections.push(`## Contenu de la page produit (markdown rendu)\n${narrative.slice(0, narrativeBudget)}`)
+            }
           }
 
           const finalMdScore = scoreMd(markdownContent)

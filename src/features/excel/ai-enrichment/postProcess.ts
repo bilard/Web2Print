@@ -95,17 +95,23 @@ export function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownCont
     }
   }
 
-  // ── 2. Specs : LLM = source de vérité. Backfill UNIQUEMENT si LLM vide.
-  //    Pas de remplacement : si le LLM a retourné des specs, on les garde —
-  //    le TS-side extracteur est moins fiable (risque de capter des grilles UI).
-  //    Sinon, on complète les groupes par matching sur le markdown.
+  // ── 2. Specs : JINA block = source structurée fiable (extracteur DOM).
+  //    Le LLM tronque souvent (budget tokens, priorité mal placée). Dès que
+  //    le bloc JINA a STRICTEMENT plus de specs que le LLM, on préfère le
+  //    bloc (avec groupes). Sinon on garde le LLM.
   const mdSpecs = parseSpecsFromMarkdown(markdownContent)
-  if (specifications.length === 0) {
-    const cleanSpecs = parseCleanSpecsFromJinaBlock(markdownContent)
-    if (cleanSpecs.length > 0) {
-      specifications = cleanSpecs
-      console.log('[post-process] ✓ specs backfilled from JINA block:', specifications.length, 'items')
-    }
+  const cleanSpecs = parseCleanSpecsFromJinaBlock(markdownContent)
+  // Priorité : JINA block (DOM filtré) > LLM > markdown parser (dernier recours, peut gober du junk).
+  let chosen: Array<{ name: string; value: string; group?: string }> | null = null
+  let source = ''
+  if (cleanSpecs.length > 0 && cleanSpecs.length >= specifications.length) {
+    chosen = cleanSpecs; source = 'JINA block'
+  } else if (specifications.length === 0 && mdSpecs.length > 0) {
+    chosen = mdSpecs; source = 'markdown parser (fallback)'
+  }
+  if (chosen) {
+    console.log('[post-process] ✓ specs preferred from', source + ':', chosen.length, 'items (LLM had', specifications.length, ', JINA block:', cleanSpecs.length, ', md parser:', mdSpecs.length, ')')
+    specifications = chosen
   } else if (mdSpecs.length > 0 && mdSpecs.some(s => s.group) && !specifications.some(s => s.group)) {
     // Markdown a des groupes, pas le LLM → enrichir par matching
     specifications = specifications.map(spec => {
@@ -320,6 +326,13 @@ export function deduplicateDocuments(docs: string[]): string[] {
  * de récupérer les tables de cookies, accessoires, etc. Utilisé pour backfill
  * quand le LLM n'a rien retourné.
  */
+/** Libellés d'onglets / sections / CTAs qui ressemblent à des specs quand
+ *  une zone résumé produit a une structure 2-colonnes (Milwaukee, Leroy
+ *  Merlin, etc.). Filtre appliqué en post-extraction DOM : générique. */
+const UI_LABEL_KEY_RE = /^(documents?|t[eé]l[eé]chargements?|downloads?|sp[eé]cifications?|specs?|inclus|included|accessoires?|accessories|avis|reviews?|notes?(?:\s*[&et]+\s*avis)?|o[uù]\s*acheter|where\s*to\s*buy|choisir\s*(un\s*|le\s*)?mod[eè]le?|choose\s*(a\s*)?model|select\s*(a\s*)?model|services?|support|garantie|warranty|videos?|vid[eé]os?|galerie|gallery|questions?|faq|contact|partager|share|livraison|shipping|retour|return|stock|disponibilit[eé]|availability)$/i
+const UI_INDICATOR_VALUE_RE = /^(oui|non|yes|no|true|false|trouve[rz]?\s+un\s+(magasin|revendeur)|find\s+a\s+(store|dealer)|en\s+savoir\s+plus|learn\s+more|voir\s+(plus|tout)|see\s+(more|all)|donner\s+votre?\s+avis|write\s+a\s+review)\s*$/i
+const RATING_VALUE_RE = /^\d+[.,]?\d*\s*[\/(]\s*\d+\s*(avis|reviews?|\)|from)/i
+
 export function parseCleanSpecsFromJinaBlock(md: string): Array<{ name: string; value: string; group?: string }> {
   const specs: Array<{ name: string; value: string; group?: string }> = []
   const seen = new Set<string>()
@@ -338,6 +351,12 @@ export function parseCleanSpecsFromJinaBlock(md: string): Array<{ name: string; 
       const name = decodeHtml(trimmed.slice(0, eqIdx).trim())
       const value = decodeHtml(trimmed.slice(eqIdx + 3).trim())
       if (!name || !value) continue
+      // Filtrer libellés d'onglets/CTAs (faux-positifs des zones résumé produit)
+      if (UI_LABEL_KEY_RE.test(name)) continue
+      if (UI_INDICATOR_VALUE_RE.test(value)) continue
+      if (RATING_VALUE_RE.test(value)) continue
+      // Titre produit comme clé (long + marques commerciales ™®©) = ligne résumé, pas une spec
+      if (name.length > 45 && /[™®©]/.test(name)) continue
       const key = `${name.toLowerCase()}::${value.toLowerCase()}`
       if (seen.has(key)) continue
       seen.add(key)

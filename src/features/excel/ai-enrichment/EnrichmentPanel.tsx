@@ -967,9 +967,7 @@ function SpecGroupAccordions({
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   data: EnrichedProduct
 }) {
-  // Tous les groupes ouverts par défaut
   const [openGroups, setOpenGroups] = useState<Set<number>>(() => new Set())
-  const [initialized, setInitialized] = useState(false)
 
   // Regrouper les specs par group (conserver l'ordre d'apparition)
   const groups: Array<{ name: string | undefined; specs: Array<{ spec: typeof specifications[0]; globalIdx: number }> }> = []
@@ -984,13 +982,12 @@ function SpecGroupAccordions({
     }
   })
 
-  // Initialiser tous les groupes comme ouverts au premier rendu
+  // Rouvrir tous les groupes à chaque changement de composition
+  // (nouvelle enrichissement → nouveaux groupes → tout ouvert).
+  const groupsCount = groups.length
   useEffect(() => {
-    if (!initialized && groups.length > 0) {
-      setOpenGroups(new Set(groups.map((_, i) => i)))
-      setInitialized(true)
-    }
-  }, [groups.length, initialized])
+    if (groupsCount > 0) setOpenGroups(new Set(Array.from({ length: groupsCount }, (_, i) => i)))
+  }, [groupsCount])
 
   const toggleGroup = (idx: number) => {
     setOpenGroups((prev) => {
