@@ -7,10 +7,10 @@ import {
   parseVariantsFromMarkdown,
   parseAdvantagesFromMarkdown,
   parseImagesFromMarkdown,
-  extractPrimaryImagesFromHtml,
   isValidVariantRef,
   cleanMarkdownCell,
-} from './useProductEnrichment'
+} from './markdownParsers'
+import { extractPrimaryImagesFromHtml } from './useProductEnrichment'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const loadFixture = (name: string): string =>
