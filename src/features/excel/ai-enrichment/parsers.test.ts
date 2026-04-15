@@ -10,7 +10,7 @@ import {
   isValidVariantRef,
   cleanMarkdownCell,
 } from './markdownParsers'
-import { extractPrimaryImagesFromHtml } from './useProductEnrichment'
+import { extractPrimaryImagesFromHtml } from './htmlExtractors'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const loadFixture = (name: string): string =>
