@@ -13,6 +13,8 @@ export interface ScrapeCache {
   sourcesScrapped?: string[]
   /** Images « primaires » extraites des meta tags HTML (og:image, twitter:image, JSON-LD, link rel=image_src). */
   primaryImages?: string[]
+  /** HTML brut de la page principale (pour ré-extraire images/prix/breadcrumb sans re-hit Jina). */
+  primaryHtml?: string | null
 }
 
 interface EnrichmentState {

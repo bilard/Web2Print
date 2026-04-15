@@ -72,9 +72,35 @@ export function isJunkUrl(url: string): boolean {
     if (JUNK_DOMAINS.some((d) => host === d || host.endsWith('.' + d) || host.endsWith(d))) return true
     // PDFs + documents bureautiques
     if (/\.(pdf|doc|docx|ppt|pptx|xls|xlsx|txt|csv)(\?|$)/i.test(u.pathname)) return true
+    // Non-FR locale path : on rejette les URLs dont le 1er segment est une locale
+    // étrangère explicite (us, en, de, gb, int, …) pour ne scraper que la version FR.
+    // Règle générique : s'applique à tous les sites multi-locale.
+    const pathFirst = u.pathname.split('/').filter(Boolean)[0]?.toLowerCase() ?? ''
+    const NON_FR_LOCALE_RE = /^(us|en|en-[a-z]{2}|de|de-[a-z]{2}|es|es-[a-z]{2}|it|nl|pt|pl|ja|zh|ko|ru|tr|gb|au|nz|ca-en|mx|br|int|intl|global|world|row|emea|apac|amer)$/i
+    if (pathFirst && NON_FR_LOCALE_RE.test(pathFirst)) return true
+    // Subdomain non-FR explicite : en.example.com, us.example.com
+    const subdomain = host.split('.')[0]
+    if (NON_FR_LOCALE_RE.test(subdomain)) return true
     return false
   } catch {
     return true
+  }
+}
+
+/** Retourne true si l'URL présente un signal "français" (TLD .fr, segment /fr/,
+ *  /fr-fr/, sous-domaine fr.). Utilisé pour filtrer avant scraping. */
+export function isFrenchLocaleUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+    const path = u.pathname.toLowerCase()
+    if (host.endsWith('.fr')) return true
+    if (host.startsWith('fr.') || host.includes('.fr.')) return true
+    if (/^\/fr(?:-fr)?(\/|$)/i.test(path)) return true
+    if (path.includes('/fr-fr/')) return true
+    return false
+  } catch {
+    return false
   }
 }
 
@@ -150,6 +176,21 @@ export function scoreResult(r: SearchResult, sourceTokens: string[], brand?: str
     if (isTrustedEcom(host)) s += 10
   } catch {
     /* ignore */
+  }
+
+  // ── Gating locale FR : bonus fort pour version française, pénalité lourde pour
+  //    URL multi-locale sans signal FR (évite de scraper une page US/EN). ────
+  if (isFrenchLocaleUrl(url)) {
+    s += 15
+  } else {
+    try {
+      const u = new URL(url)
+      const pathFirst = u.pathname.split('/').filter(Boolean)[0]?.toLowerCase() ?? ''
+      if (pathFirst && KNOWN_LOCALE_SEGMENTS.test(pathFirst)) {
+        s -= 25
+        console.log('[scoring] non-FR locale segment! −25:', pathFirst, url)
+      }
+    } catch { /* ignore */ }
   }
   if (ECOM_POSITIVE_RE.test(url)) s += 5
   if (ECOM_NEGATIVE_RE.test(url)) s -= 3

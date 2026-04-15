@@ -1,6 +1,7 @@
 import { getApiKey } from '@/lib/apiKeys'
 import { extractSpecsBlockFromHtml, extractDocumentsBlockFromHtml } from './htmlSpecsExtractor'
 import { isGarbageContent, parseSpecsFromMarkdown } from './markdownParsers'
+import { extractSemantic } from './semanticExtractor'
 import type { SearchResult } from './urlScoring'
 
 // ── Jina Reader — scraping principal ────────────────────────────────────────
@@ -73,12 +74,18 @@ export async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null
   const jinaKey = getApiKey('jina')
 
   // Utiliser le mode JSON (comme useJina.ts) — retourne le markdown + images map + links map
+  // X-Engine: browser = rendu Chrome réel, exécute le JS et contourne la plupart
+  // des cookie walls (Kärcher, Decathlon, Leroy Merlin…). Sans ça, on reçoit
+  // souvent la modale de consentement au lieu du produit.
   const headers: Record<string, string> = {
     Accept: 'application/json',
+    'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.5',
+    'X-Locale': 'fr-FR',
+    'X-Engine': 'browser',
     'X-With-Links-Summary': 'true',
     'X-With-Images-Summary': 'true',
-    'X-Wait-For-Selector': 'body',
-    'X-Timeout': '30',
+    'X-Wait-For-Selector': 'main, article, [class*="product"], [class*="specification"], body',
+    'X-Timeout': '45',
     'X-No-Cache': 'true',
   }
   if (jinaKey) {
@@ -477,6 +484,24 @@ export async function fetchAndExtractFromRawHtml(pageUrl: string): Promise<{ spe
       const html = await res.text()
       if (!html || html.length < 2000) continue
       console.log('[cors-proxy-extract] got', html.length, 'chars from', proxy.split('?')[0])
+
+      // Garde URL↔contenu : si la page ne mentionne AUCUN token du slug URL
+      // (ex: Milwaukee SPA sert "Forets Multi-matériaux" sur m18-fpd3), on
+      // sait que le HTML n'est pas le bon produit → rejet.
+      const sem = extractSemantic(html, pageUrl)
+      const urlTokens = extractUrlProductTokensLocal(pageUrl)
+      if (urlTokens.length > 0) {
+        const haystack = [
+          sem.title.value ?? '',
+          sem.description.value ?? '',
+          ...sem.specs.map((s) => `${s.name} ${s.value}`),
+        ].join(' ').toLowerCase()
+        if (!urlTokens.some((t) => haystack.includes(t))) {
+          console.warn('[cors-proxy-extract] ⚠ URL/content mismatch — rejecting (no token of', urlTokens, 'found)')
+          continue
+        }
+      }
+
       const specs = extractSpecsBlockFromHtml(html)
       const docs = extractDocumentsBlockFromHtml(html, pageUrl)
       if (specs || docs) {
@@ -486,4 +511,32 @@ export async function fetchAndExtractFromRawHtml(pageUrl: string): Promise<{ spe
     } catch { /* try next */ }
   }
   return null
+}
+
+/** Duplicate local de `extractUrlProductTokens` (évite un cycle d'import
+ *  avec manufacturerScraper). Heuristique identique. */
+function extractUrlProductTokensLocal(pageUrl: string): string[] {
+  const STOP = new Set([
+    'products', 'product', 'produit', 'produits', 'catalog', 'catalogue',
+    'category', 'categories', 'categorie',
+    'detail', 'details', 'html', 'htm', 'php', 'index', 'page', 'pages',
+    'fiche', 'article', 'articles', 'item', 'items', 'ref', 'sku',
+    'shop', 'boutique', 'store', 'www', 'com', 'fr', 'be', 'eu', 'en', 'de',
+    'fr-fr', 'fr-be', 'en-gb', 'en-us', 'de-de',
+    'media', 'content', 'public', 'static', 'assets',
+  ])
+  try {
+    const u = new URL(pageUrl)
+    const raw = u.pathname.split(/[/\-_.]/).map((s) => s.toLowerCase().trim()).filter(Boolean)
+    const tokens: string[] = []
+    for (const t of raw) {
+      if (t.length < 3) continue
+      if (STOP.has(t)) continue
+      const hasDigit = /\d/.test(t)
+      if (hasDigit || t.length >= 5) tokens.push(t)
+    }
+    return tokens
+  } catch {
+    return []
+  }
 }

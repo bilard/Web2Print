@@ -67,6 +67,16 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
 }
 
+// Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
+const TASK_TEMPERATURE: Record<LLMTask, number> = {
+  'brief.dynamicQuestions': 0.4,
+  'brief.cartGeneration':   0.4,
+  'brief.deckStructure':    0.4,
+  'brief.imagePrompts':     0.4,
+  'brief.catalogKeywords':  0.4,
+  'product.enrichment':     0,
+}
+
 interface GenerateJsonOptions<T> {
   task: LLMTask
   prompt: string
@@ -174,7 +184,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     input_schema: opts.schemaForClaude ?? opts.schemaForLLM,
   }
 
-  const temperature = 0.4
+  const temperature = TASK_TEMPERATURE[opts.task]
   const max_tokens = 8192
 
   // Notifie l'UI du payload exact avant l'envoi (pour affichage debug).
@@ -247,7 +257,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     body: JSON.stringify({
       model,
       max_tokens: 8192,
-      temperature: 0.2,
+      temperature: Math.max(TASK_TEMPERATURE[opts.task], 0),
       tools: [tool],
       tool_choice: { type: 'tool', name: toolName },
       messages: [
@@ -292,7 +302,7 @@ async function callOpenAI<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     },
     body: JSON.stringify({
       model,
-      temperature: 0.4,
+      temperature: TASK_TEMPERATURE[opts.task],
       messages: [{ role: 'user', content: opts.prompt }],
       response_format: {
         type: 'json_schema',
