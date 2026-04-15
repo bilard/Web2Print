@@ -2757,7 +2757,7 @@ function buildManufacturerProduct(
  * de récupérer les tables de cookies, accessoires, etc. Utilisé pour backfill
  * quand le LLM n'a rien retourné.
  */
-export function parseCleanSpecsFromJinaBlock(md: string): Array<{ name: string; value: string; group?: string }> {
+function parseCleanSpecsFromJinaBlock(md: string): Array<{ name: string; value: string; group?: string }> {
   const specs: Array<{ name: string; value: string; group?: string }> = []
   const seen = new Set<string>()
   const start = md.indexOf('JINA_EXTRACTED_SPECS_START')
@@ -3522,7 +3522,7 @@ export function extractPrimaryImagesFromHtml(html: string | null, baseUrl: strin
  *  1. JSON-LD : Product.offers.price / AggregateOffer.lowPrice
  *  2. Markdown : "XXX,XX €", "€XXX.XX" ou "XXX EUR" proches de mots-clés TTC/HT
  */
-export function extractProductPrice(
+function extractProductPrice(
   html: string | null,
   markdown: string | null,
 ): ProductPrice | null {
