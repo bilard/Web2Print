@@ -979,11 +979,13 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           const finalMdScore = scoreMd(markdownContent)
           const finalSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
 
-          // Détection "scrape off-target" : le titre/description scrapés ne
-          // contiennent AUCUN token distinctif de la référence cible → le
-          // scraper a livré un mauvais produit (ex: Milwaukee /m18-fpd3/ qui
-          // rend par défaut un accessoire foret). Dans ce cas le contenu
-          // scrapé est inutilisable comme source — on force le knowledge mode.
+          // Détection "scrape off-target" : le TITLE et DESCRIPTION du
+          // SEMANTIC_EXTRACT ne contiennent AUCUN token distinctif de la
+          // référence cible → le scraper a livré un mauvais produit (ex:
+          // Milwaukee /m18-fpd3/ qui rend par défaut un accessoire foret ;
+          // son TITLE devient "Forets Multi-matériaux"). Dans ce cas le
+          // contenu scrapé est inutilisable comme source — on force le
+          // knowledge mode pour que le LLM s'appuie sur la ref+marque.
           const targetRef = (reference ?? sku ?? title ?? '').toString()
           const refTokens = targetRef
             .toLowerCase()
@@ -991,10 +993,15 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             .filter((t) => t.length >= 3 && /[a-z0-9]/i.test(t) && /\d/.test(t))
           let offTarget = false
           if (refTokens.length > 0 && markdownContent) {
-            // Chercher dans les 3000 premiers chars (SEMANTIC_EXTRACT + début
-            // de narrative) — le TITLE/DESCRIPTION y sont toujours.
-            const haystack = markdownContent.slice(0, 3000).toLowerCase()
-            offTarget = !refTokens.some((t) => haystack.includes(t))
+            // Extraire UNIQUEMENT les lignes TITLE/DESCRIPTION du bloc sémantique
+            // — c'est là que s'exprime le "bon produit". Les URLs/variantes plus
+            // bas peuvent contenir la ref sans que le produit affiché soit le bon.
+            const semMatch = markdownContent.match(/SEMANTIC_EXTRACT_START[\s\S]{0,3000}?SEMANTIC_EXTRACT_END/)
+            const semBlock = semMatch ? semMatch[0] : markdownContent.slice(0, 1500)
+            const titleLine = (semBlock.match(/^TITLE:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
+            const descLine = (semBlock.match(/^DESCRIPTION:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
+            const haystack = `${titleLine} ${descLine}`
+            offTarget = haystack.trim().length > 0 && !refTokens.some((t) => haystack.includes(t))
           }
 
           // Seuil binaire : scraping riche (specs ≥5 + score ≥10 + on-target)
@@ -1197,7 +1204,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           .filter((x): x is string => typeof x === 'string' && x.trim().length >= 3)
 
         // ── Post-processing : enrichir avec groupes markdown ──
-        enriched = enrichWithMarkdownGroups(enriched, markdownContent, productIds)
+        enriched = enrichWithMarkdownGroups(enriched, markdownContent, productIds, { trustLlmSpecs: needsKnowledgeBoost })
 
         enriched = enrichVariantsFromMarkdown(enriched, markdownContent)
 

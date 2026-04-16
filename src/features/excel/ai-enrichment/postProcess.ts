@@ -46,7 +46,7 @@ export function mergeGroupsIntoAdvantages(
  * Le markdown est la SOURCE DE VÉRITÉ pour les groupes, les items manquants et les variantes.
  * Le LLM retourne tout à plat — le markdown conserve la structure d'origine.
  */
-export function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: string | null, productIds: string[] = []): EnrichedProduct {
+export function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: string | null, productIds: string[] = [], opts: { trustLlmSpecs?: boolean } = {}): EnrichedProduct {
   if (!markdownContent || markdownContent.length < 100) {
     console.log('[post-process] no markdown content, skipping')
     return enriched
@@ -102,9 +102,15 @@ export function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownCont
   const mdSpecs = parseSpecsFromMarkdown(markdownContent)
   const cleanSpecs = parseCleanSpecsFromJinaBlock(markdownContent)
   // Priorité : JINA block (DOM filtré) > LLM > markdown parser (dernier recours, peut gober du junk).
+  // Exception : si le scrape est marqué off-target/knowledge (opts.trustLlmSpecs),
+  // on garde TOUJOURS les specs du LLM — il s'appuie sur ses connaissances
+  // publiques du produit, pas sur le markdown scrapé (qui décrit un autre
+  // produit que celui de la ligne Excel).
   let chosen: Array<{ name: string; value: string; group?: string }> | null = null
   let source = ''
-  if (cleanSpecs.length > 0 && cleanSpecs.length >= specifications.length) {
+  if (opts.trustLlmSpecs) {
+    console.log('[post-process] ⟳ trustLlmSpecs=true → keeping LLM specs (off-target scrape)')
+  } else if (cleanSpecs.length > 0 && cleanSpecs.length >= specifications.length) {
     chosen = cleanSpecs; source = 'JINA block'
   } else if (specifications.length === 0 && mdSpecs.length > 0) {
     chosen = mdSpecs; source = 'markdown parser (fallback)'
