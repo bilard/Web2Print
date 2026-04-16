@@ -370,6 +370,48 @@ function nearestHeading(el: Element): string {
   return ''
 }
 
+/**
+ * Détecte si un élément vit dans un conteneur piloté par un combobox/select
+ * avec plusieurs options **SKU-likes** (dropdown de variantes/accessoires avec
+ * codes produit). Dans ce cas les specs/docs affichés sont scopés à l'option
+ * active (souvent un accessoire par défaut, pas le produit principal) — les
+ * ignorer évite d'injecter les specs d'un foret/accessoire dans l'enrichissement
+ * d'une perceuse.
+ *
+ * Seuils combinés pour éviter les faux-positifs (ex: Bosch select de livraison
+ * avec 3 options textuelles) :
+ *   - au moins 5 options listées, OU
+ *   - au moins 3 options avec `data-key` numérique (pattern SKU).
+ */
+function hasVariantDropdownAncestor(el: Element): boolean {
+  let cur: Element | null = el
+  for (let i = 0; i < 10 && cur; i++) {
+    const combobox = cur.querySelector('[role="combobox"],select')
+    if (combobox) {
+      const skuLikeOptions = cur.querySelectorAll('[data-key][data-value]').length
+      const ariaOptions = cur.querySelector('[role="listbox"]')?.querySelectorAll('[role="option"]').length ?? 0
+      const selectOptions = combobox.tagName === 'SELECT' ? combobox.querySelectorAll('option').length : 0
+      if (skuLikeOptions >= 3) return true
+      if (ariaOptions >= 5) return true
+      if (selectOptions >= 5) return true
+    }
+    cur = cur.parentElement
+  }
+  return false
+}
+
+/** Valeur concat/garbage : longue séquence numérique sans unité ni espace,
+ *  avec plusieurs points décimaux. Signe d'une concat de valeurs multiples
+ *  (ex: "3455.566.5781012" = concat des diamètres de 20 forets).
+ *  Légitime (rejet = false) : "1,5 kg", "12.5 mm", "0 - 2,100 rpm". */
+function isGarbageConcatValue(v: string): boolean {
+  if (v.length < 8) return false
+  if (!/^[\d.,\s]+$/.test(v)) return false
+  const dots = (v.match(/\./g) || []).length
+  const commas = (v.match(/,/g) || []).length
+  return dots + commas >= 3
+}
+
 function isVariantTable(tbl: Element): boolean {
   const rows = tbl.querySelectorAll('tr')
   if (rows.length < 2) return false
@@ -398,6 +440,10 @@ function extractSpecs(doc: Document, jsonLd: JsonLdData): SemanticSpec[] {
     if (!k || seen.has(k)) return
     if (s.group && COOKIE_CATEGORY_RE.test(cleanText(s.group))) return
     if (SPEC_UI_LABEL_RE.test(s.name)) return
+    // Rejet universel : valeur manifestement concat/garbage (chiffres sans
+    // unité avec ≥3 séparateurs — typiquement une concat de valeurs multiples
+    // rassemblées par un dropdown de variantes/accessoires).
+    if (isGarbageConcatValue(s.value)) return
     // Filtres anti-junk appliqués aux paires issues du scan générique (body *).
     // Les sources structurées (json-ld, table, dl, grid) sont déjà fiables.
     if (s.source === 'generic-scan') {
@@ -415,6 +461,7 @@ function extractSpecs(doc: Document, jsonLd: JsonLdData): SemanticSpec[] {
   doc.querySelectorAll('table').forEach((tbl) => {
     if (isJunk(tbl)) return
     if (isVariantTable(tbl)) return
+    if (hasVariantDropdownAncestor(tbl)) return
     const rows = tbl.querySelectorAll('tr')
     if (rows.length < 2) return
     const group = cleanText(tbl.querySelector('caption')?.textContent || '') || nearestHeading(tbl) || 'Spécifications'
@@ -443,6 +490,7 @@ function extractSpecs(doc: Document, jsonLd: JsonLdData): SemanticSpec[] {
 
   doc.querySelectorAll('dl').forEach((dl) => {
     if (isJunk(dl)) return
+    if (hasVariantDropdownAncestor(dl)) return
     const dts = dl.querySelectorAll('dt')
     const dds = dl.querySelectorAll('dd')
     if (dts.length < 2 || dts.length !== dds.length) return
@@ -463,6 +511,7 @@ function extractSpecs(doc: Document, jsonLd: JsonLdData): SemanticSpec[] {
   let priorityHit = false
   doc.querySelectorAll(prioritySel).forEach((el) => {
     if (isJunk(el)) return
+    if (hasVariantDropdownAncestor(el)) return
     const pairs = extractGridPairs(el)
     if (pairs.length === 0) return
     priorityHit = true
@@ -485,6 +534,7 @@ function extractSpecs(doc: Document, jsonLd: JsonLdData): SemanticSpec[] {
     doc.querySelectorAll('body *').forEach((el) => {
       if (SKIP_TAGS.has(el.tagName)) return
       if (isJunk(el)) return
+      if (hasVariantDropdownAncestor(el)) return
       const kids = Array.from(el.children)
       if (kids.length < 3 || kids.length > 80) return
       const localPairs: Array<[string, string]> = []

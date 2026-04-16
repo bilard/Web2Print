@@ -28,6 +28,38 @@ const VIDEO_PLAYER_KEY_VALUE = /^(espace|space|↑|↓|←|→|esc|enter|tab|shi
  *  titres d'onglets — faux-positif produit par isVariantTable + checkmarks. */
 const UI_TAB_LABEL_RE = /^(documents?|t[eé]l[eé]chargements?|downloads?|sp[eé]cifications?|specs?|inclus|included|accessoires?|accessories|avis|reviews?|notes?(?:\s*[&et]+\s*avis)?|o[uù]\s*acheter|where\s*to\s*buy|services?|support|garantie|warranty|videos?|vid[eé]os?|galerie|gallery|questions?|faq|contact)$/i
 
+/** Ancêtre avec combobox/select multi-options **SKU-likes**.
+ *  Seuils combinés pour éviter les faux-positifs (ex: select de livraison avec
+ *  2-3 options textuelles) :
+ *   - ≥ 3 options avec `data-key` numérique (pattern SKU), OU
+ *   - ≥ 5 options listbox/option. */
+function hasVariantDropdownAncestor(el: Element): boolean {
+  let cur: Element | null = el
+  for (let i = 0; i < 10 && cur; i++) {
+    const combobox = cur.querySelector('[role="combobox"],select')
+    if (combobox) {
+      const skuLikeOptions = cur.querySelectorAll('[data-key][data-value]').length
+      const ariaOptions = cur.querySelector('[role="listbox"]')?.querySelectorAll('[role="option"]').length ?? 0
+      const selectOptions = combobox.tagName === 'SELECT' ? combobox.querySelectorAll('option').length : 0
+      if (skuLikeOptions >= 3) return true
+      if (ariaOptions >= 5) return true
+      if (selectOptions >= 5) return true
+    }
+    cur = cur.parentElement
+  }
+  return false
+}
+
+/** Valeur concat/garbage : chaîne numérique ≥8 chars sans unité avec ≥3
+ *  séparateurs — signe d'une concat de valeurs rassemblées depuis un dropdown. */
+function isGarbageConcatValue(v: string): boolean {
+  if (v.length < 8) return false
+  if (!/^[\d.,\s]+$/.test(v)) return false
+  const dots = (v.match(/\./g) || []).length
+  const commas = (v.match(/,/g) || []).length
+  return dots + commas >= 3
+}
+
 function nearestHeading(el: Element): string {
   let cur: Element | null = el
   for (let i = 0; i < 4 && cur; i++) {
@@ -170,6 +202,7 @@ export function extractSpecsBlockFromHtml(html: string): string {
   doc.querySelectorAll('table').forEach(tbl => {
     if (isJunkContext(tbl)) return
     if (isVariantTable(tbl)) return
+    if (hasVariantDropdownAncestor(tbl)) return
     const rows = tbl.querySelectorAll('tr')
     if (rows.length < 2) return
     // Récupérer les headers pour strip mobile-label
@@ -202,6 +235,7 @@ export function extractSpecsBlockFromHtml(html: string): string {
       // Rejet : paire où la valeur est un code produit / où la clé est un header brut
       if (PRODUCT_CODE_RE.test(k)) return
       if (VARIANT_HEADER_RE.test(k) && VARIANT_HEADER_RE.test(v)) return
+      if (isGarbageConcatValue(v)) return
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) return
       seenPairs.add(pk)
@@ -228,6 +262,7 @@ export function extractSpecsBlockFromHtml(html: string): string {
   // <dl>
   doc.querySelectorAll('dl').forEach(dl => {
     if (isJunkContext(dl)) return
+    if (hasVariantDropdownAncestor(dl)) return
     const dts = dl.querySelectorAll('dt')
     const dds = dl.querySelectorAll('dd')
     if (dts.length < 2 || dts.length !== dds.length) return
@@ -237,6 +272,7 @@ export function extractSpecsBlockFromHtml(html: string): string {
       const v = (dds[i].textContent ?? '').replace(/\s+/g, ' ').trim()
       if (!k || !v || k.length > 80 || v.length > 200) continue
       if (isVideoShortcut(k, v)) continue
+      if (isGarbageConcatValue(v)) continue
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) continue
       seenPairs.add(pk)
@@ -256,11 +292,13 @@ export function extractSpecsBlockFromHtml(html: string): string {
   )
   let priorityHit = false
   priority.forEach(el => {
+    if (hasVariantDropdownAncestor(el)) return
     const pairs = scanContainer(el, false)
     if (!pairs) return
     priorityHit = true
     const localPairs: string[] = []
     for (const [k, v] of pairs) {
+      if (isGarbageConcatValue(v)) continue
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) continue
       seenPairs.add(pk)
@@ -275,10 +313,12 @@ export function extractSpecsBlockFromHtml(html: string): string {
   // Générique uniquement si pre-scan sec
   if (!priorityHit) {
     doc.querySelectorAll('body *').forEach(el => {
+      if (hasVariantDropdownAncestor(el)) return
       const pairs = scanContainer(el, true)
       if (!pairs || pairs.length < 3) return
       const localPairs: string[] = []
       for (const [k, v] of pairs) {
+        if (isGarbageConcatValue(v)) continue
         const pk = k.toLowerCase()
         if (seenPairs.has(pk)) continue
         seenPairs.add(pk)
@@ -403,6 +443,10 @@ export function extractDocumentsBlockFromHtml(html: string, baseUrl?: string): s
     try { url = baseUrl ? new URL(href, baseUrl).toString() : href } catch { return }
     if (!/\.pdf($|\?|#)/i.test(url)) return
     if (seen.has(url)) return
+    // Skip documents issus d'un conteneur piloté par un dropdown multi-options :
+    // ce sont les docs d'un accessoire/variante sélectionné·e par défaut, pas
+    // du produit principal.
+    if (hasVariantDropdownAncestor(a)) return
     seen.add(url)
     const label = labelForAnchor(a, url)
     docs.push(`${label} | ${url}`)
