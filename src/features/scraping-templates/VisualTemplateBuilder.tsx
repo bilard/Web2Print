@@ -287,21 +287,28 @@ function AssignmentModal({
 
 /**
  * Prépare le HTML pour l'iframe srcdoc :
- *  1. Injecte <base href> pour résoudre les URLs relatives.
- *  2. Nettoie les <script> externes qui peuvent naviguer/casser l'iframe.
- *  3. Injecte notre script overlay de capture.
+ *  1. Injecte <base href> pour résoudre les URLs relatives (css, js, img, font).
+ *  2. Garde les scripts externes (nécessaires pour webfonts, icon fonts, lazy images).
+ *     L'iframe est sandboxée → pas de risque pour le reste de l'app.
+ *  3. Retire les redirects meta-refresh (navigation auto gênante).
+ *  4. Retire les handlers de navigation (target="_top", onclick nav).
+ *  5. Injecte notre script overlay de capture EN DERNIER (après que les
+ *     scripts de la page aient tourné).
  */
 function rewriteHtmlForIframe(html: string, baseUrl: string): string {
   let out = html
-  // Injecter <base>
+  // Injecter <base> — les CSS/JS/images/fonts chargent en absolu.
   if (!/<base\s/i.test(out)) {
     out = out.replace(/<head[^>]*>/i, (m) => `${m}\n<base href="${baseUrl}">`)
   }
-  // Retirer les scripts externes (gardent trop de risque de navigation / CSP)
-  out = out.replace(/<script[^>]*src=[^>]+><\/script>/gi, '')
-  // Retirer les noscript/meta refresh
+  // Retirer meta-refresh (redirections automatiques).
   out = out.replace(/<meta\s+http-equiv=["']?refresh[^>]*>/gi, '')
-  // Injecter notre overlay
+  // Neutraliser target="_top" et les liens qui navigueraient hors iframe.
+  out = out.replace(/target=["']_top["']/gi, 'target="_self"')
+  // Désactiver les formulaires (submit → navigation).
+  out = out.replace(/<form([^>]*)>/gi, (_m, attrs) => `<form${attrs} onsubmit="return false">`)
+  // Overlay capture : injecté en fin de body pour s'exécuter APRÈS les
+  // scripts de la page (qui installent les webfonts, etc.).
   const injection = `<script>${OVERLAY_SCRIPT}</script>`
   if (/<\/body>/i.test(out)) {
     out = out.replace(/<\/body>/i, `${injection}</body>`)
