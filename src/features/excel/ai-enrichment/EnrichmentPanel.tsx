@@ -348,11 +348,30 @@ function IdleState({ onLaunch, hasTitle }: { onLaunch: () => void; hasTitle: boo
 function LoadingState({ status, message, logs }: { status: string; message: string; logs: string[] }) {
   const steps: { id: 'searching' | 'scraping' | 'reasoning'; label: string; icon: React.ElementType }[] = [
     { id: 'searching', label: 'Recherche web', icon: Globe },
-    { id: 'scraping', label: 'Extraction page produit', icon: Zap },
+    { id: 'scraping', label: 'Extraction page', icon: Zap },
     { id: 'reasoning', label: 'Synthèse IA', icon: Sparkles },
   ]
   const currentIdx = steps.findIndex((s) => s.id === status)
   const logsEndRef = useRef<HTMLDivElement>(null)
+
+  // Pourcentage animé pour l'étape active : on ne connaît pas la durée réelle
+  // (dépend du site / du LLM), donc on approche 95% asymptotiquement via une
+  // courbe easing-out. Reset à chaque changement de status.
+  const [activePct, setActivePct] = useState(0)
+  useEffect(() => {
+    setActivePct(0)
+    if (currentIdx < 0) return
+    const startedAt = Date.now()
+    // Durée typique par étape (ms) — calibrée pour atteindre ~90% au bout de ce temps.
+    const typicalDurationMs = status === 'searching' ? 6000 : status === 'scraping' ? 25000 : 15000
+    const id = setInterval(() => {
+      const elapsed = Date.now() - startedAt
+      // Easing out exponentiel : progresse vite au début, ralentit vers 95%.
+      const pct = Math.min(95, Math.round(95 * (1 - Math.exp(-elapsed / (typicalDurationMs * 0.4)))))
+      setActivePct(pct)
+    }, 250)
+    return () => clearInterval(id)
+  }, [currentIdx, status])
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -360,15 +379,17 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
 
   return (
     <div className="h-full flex flex-col px-6 py-6">
-      <div className="w-full max-w-[280px] space-y-3 mx-auto">
+      {/* Barre horizontale : 3 étapes côte à côte avec % + thermomètre */}
+      <div className="w-full flex items-stretch gap-2">
         {steps.map((step, i) => {
           const done = currentIdx === -1 ? false : i < currentIdx
           const active = i === currentIdx
+          const pct = done ? 100 : active ? activePct : 0
           const Icon = step.icon
           return (
             <div
               key={step.id}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
+              className={`flex-1 flex flex-col gap-2 px-3 py-2.5 rounded-lg border transition-all ${
                 active
                   ? 'bg-indigo-500/10 border-indigo-400/40'
                   : done
@@ -376,32 +397,55 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
                     : 'bg-white/[0.02] border-white/[0.05]'
               }`}
             >
-              <div
-                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
-                  active ? 'bg-indigo-500/20' : done ? 'bg-emerald-500/15' : 'bg-white/5'
-                }`}
-              >
-                {active ? (
-                  <Loader2 className="w-3.5 h-3.5 text-indigo-300 animate-spin" />
-                ) : done ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Icon className="w-3.5 h-3.5 text-white/30" />
-                )}
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                    active ? 'bg-indigo-500/20' : done ? 'bg-emerald-500/15' : 'bg-white/5'
+                  }`}
+                >
+                  {active ? (
+                    <Loader2 className="w-3 h-3 text-indigo-300 animate-spin" />
+                  ) : done ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Icon className="w-3 h-3 text-white/30" />
+                  )}
+                </div>
+                <span
+                  className={`flex-1 min-w-0 truncate text-[10.5px] font-medium ${
+                    active ? 'text-white/90' : done ? 'text-emerald-300/80' : 'text-white/35'
+                  }`}
+                  title={step.label}
+                >
+                  {step.label}
+                </span>
+                <span
+                  className={`text-[10px] font-mono tabular-nums shrink-0 ${
+                    active ? 'text-indigo-200/90' : done ? 'text-emerald-300/80' : 'text-white/25'
+                  }`}
+                >
+                  {pct}%
+                </span>
               </div>
-              <span
-                className={`text-[12px] font-medium ${
-                  active ? 'text-white/90' : done ? 'text-emerald-300/80' : 'text-white/35'
-                }`}
-              >
-                {step.label}
-              </span>
+              {/* Thermomètre / barre de progression */}
+              <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-[width] duration-300 ${
+                    done
+                      ? 'bg-emerald-400/70'
+                      : active
+                        ? 'bg-gradient-to-r from-indigo-400/70 to-indigo-300/90'
+                        : 'bg-white/10'
+                  }`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
             </div>
           )
         })}
       </div>
       {message && (
-        <p className="mt-4 text-[11px] text-white/40 text-center max-w-[280px] mx-auto">{message}</p>
+        <p className="mt-4 text-[11px] text-white/40 text-center">{message}</p>
       )}
 
       {/* Logs temps réel */}
