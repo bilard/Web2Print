@@ -22,7 +22,7 @@ import { scrapeProductBundle } from './scrapeBundle'
 
 // ── Filtrage des contenus parasites (cookie banners, GDPR, reCAPTCHA) ───────
 
-const GARBAGE_RE = /\b(cookie[s ]?|gdpr|your privacy|recaptcha|captcha|consent manager|targeting cookies?|functional cookies?|performance cookies?|strictly necessary|necessary cookies?|checkbox.?label|onetrust|cookiebot|manage preferences|cookie settings|politique de confidentialit[eé]|param[eè]tres? des? cookies?|refuser les cookies?|accepter les cookies?|we use cookies|this site is exceeding|we and our partners store|non-sensitive information|personali[sz]ed ads|ad measurement|audience insights|legitimate interest|store and\/or access|advertising purposes?|consent purposes?|personalised content|accept all|reject all)\b/i
+const GARBAGE_RE = /\b(cookie[s ]?|gdpr|your privacy|recaptcha|captcha|consent manager|targeting cookies?|functional cookies?|performance cookies?|strictly necessary|strictement\s+n[eé]cessaire|necessary cookies?|checkbox.?label|onetrust|cookiebot|manage preferences|cookie settings|politique de confidentialit[eé]|param[eè]tres? des? cookies?|refuser les cookies?|accepter les cookies?|we use cookies|this site is exceeding|we and our partners store|non-sensitive information|personali[sz]ed ads|ad measurement|audience insights|legitimate interest|store and\/or access|advertising purposes?|consent purposes?|personalised content|accept all|reject all|aspsessionid[a-z]*|asp\.net|prestataire\s+de\s+traitement|dur[eé]e\s+de\s+conservation|finalit[eé]\s+du\s+traitement|statistique|analytique|pr[eé]f[eé]rences?|ciblage|publicit[eé]|marketing)\b/i
 
 /** Détecte si un texte est du contenu parasite (cookie banner, GDPR, reCAPTCHA) */
 function isGarbageContent(text: string): boolean {
@@ -318,29 +318,51 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
   const cleanedDocs = enriched.documents.map(doc => cleanDocumentName(doc))
   const documents = filterDocumentsByProductRef(cleanedDocs, productIds)
 
+  // Groupes entiers à rejeter : sections cookies-banner, widgets UI.
+  const JUNK_GROUP_RE = /^(strictement\s+n[eé]cessaire|fonctionnel|statistique|analytique|performance|pr[eé]f[eé]rences?|ciblage|publicit[eé]|marketing|technologie|articles?\s*:\s*\d+|fournisseur|general\s+power\s+tool\s+safety\s+warnings?|s[eé]curit[eé]\s+de\s+la\s+zone\s+de\s+travail|electrical\s+safety|personal\s+safety|work\s+area\s+safety|produits?\s*à\s*comparer|trouver\s+(vos\s+)?(pi[eè]ces?|parts?)|find\s+parts?\s+for)$/i
   // Specs : rejeter les paires qui mappent deux items de profil/navigation
-  // UI (Nicoll "Installateur | Prescripteur", "Plombier | Maçon", etc.) —
-  // ces blocs 2-colonnes sur les sites fabricants sont des formulaires de
-  // choix de métier, pas des caractéristiques produit.
+  // UI (Nicoll "Installateur | Prescripteur", "Plombier | Maçon", etc.),
+  // les cookies banner (name="Expiration", value="un an"), et les safety
+  // warnings (textes multi-lignes du type "Do not operate power tools…").
+  const SAFETY_TEXT_RE = /\b(power\s+tool|ne\s+pas\s+utiliser|earthed|grounded|unmodified\s+plug|electric\s+shock|lose\s+control|flammable|incendie|explosive\s+atmosphere|keep\s+work\s+area|stay\s+alert|personal\s+protective|dust\s+mask|hearing\s+protection|punho\s+adicional|ferramenta\s+el[eé]trica|sendo\s+cancer[íi]genos|preservadores\s+de\s+madeira)/i
+  const COOKIE_LABEL_RE = /^(expiration|dur[eé]e|finalit[eé]|nom|prestataire|fournisseur)$/i
   const keptSpecs: EnrichedProduct['specifications'] = []
   const rejectedSpecs: EnrichedProduct['specifications'] = []
   for (const s of enriched.specifications) {
     if (isGarbageContent(s.name) || isGarbageContent(s.value)) { rejectedSpecs.push(s); continue }
+    if (s.group && JUNK_GROUP_RE.test(s.group.trim())) { rejectedSpecs.push(s); continue }
     const bothProfile = UI_PROFILE_TERMS_RE.test(s.name) && UI_PROFILE_TERMS_RE.test(s.value)
     const nameIsProfile = UI_PROFILE_TERMS_RE.test(s.name) && s.value.length < 60
     if (bothProfile || nameIsProfile) { rejectedSpecs.push(s); continue }
+    // Paires cookies-banner : clé = "Expiration/Finalité/Nom/Prestataire", valeur courte.
+    if (COOKIE_LABEL_RE.test(s.name.replace(/^\*\s*/, '').trim()) && s.value.length < 80) {
+      rejectedSpecs.push(s); continue
+    }
+    // Safety warnings : valeur > 60 chars ET le texte ressemble à un extrait de
+    // manuel (anglais / portugais avec vocabulaire sécurité).
+    if (s.value.length > 60 && SAFETY_TEXT_RE.test(`${s.name} ${s.value}`)) {
+      rejectedSpecs.push(s); continue
+    }
     keptSpecs.push(s)
   }
-  if (rejectedSpecs.length > 0) {
-    console.log('[sanitize] filtered', rejectedSpecs.length, 'UI-profile specs; kept', keptSpecs.length)
+  // Safety net : si ≥50% des specs contiennent du vocabulaire safety/manuel,
+  // l'extraction a récupéré un manuel PDF, pas les vraies specs → tout jeter.
+  const safetyHits = keptSpecs.filter((s) => SAFETY_TEXT_RE.test(`${s.name} ${s.value}`)).length
+  let finalKept = keptSpecs
+  if (keptSpecs.length >= 10 && safetyHits / keptSpecs.length >= 0.5) {
+    console.log('[sanitize] ⚠ dropping ALL', keptSpecs.length, 'specs — manual/safety content (', safetyHits, 'hits)')
+    finalKept = []
+  }
+  if (rejectedSpecs.length > 0 || finalKept.length < keptSpecs.length) {
+    console.log('[sanitize] filtered', rejectedSpecs.length + (keptSpecs.length - finalKept.length), 'junk specs; kept', finalKept.length)
   }
 
   return {
     ...enriched,
     description,
     documents,
-    advantages: enriched.advantages.filter(a => !isGarbageContent(a.text)),
-    specifications: keptSpecs,
+    advantages: enriched.advantages.filter(a => !isGarbageContent(a.text) && !SAFETY_TEXT_RE.test(a.text)),
+    specifications: finalKept,
   }
 }
 
