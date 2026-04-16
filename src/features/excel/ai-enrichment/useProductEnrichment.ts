@@ -3453,6 +3453,58 @@ export function useProductEnrichment() {
           }
         }
 
+        // ── Étape 1bis : Template de scraping par fournisseur ─────────────
+        // Si un template personnalisé existe pour le domaine de cette URL, on
+        // l'applique directement — extraction déterministe, pas d'hallucination.
+        // Fallback LLM en dessous si template absent OU résultat trop faible.
+        if (productUrl) {
+          try {
+            const { listTemplates } = await import('@/features/scraping-templates/templatesStore')
+            const { applyTemplate, templateMatchesUrl, scoreApplyResult } = await import('@/features/scraping-templates/engine')
+            const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
+            const allTemplates = await listTemplates()
+            const matching = allTemplates.find((t) => templateMatchesUrl(t, productUrl!))
+            if (matching) {
+              log(`📐 Template détecté : ${matching.name} (${matching.vendorDomain})`)
+              setProgress(sheetName, rowId, { status: 'scraping', message: `Template ${matching.name} — extraction directe…` })
+              const html = await fetchSourceHtml(productUrl)
+              if (html) {
+                const applied = applyTemplate(matching, html, productUrl)
+                const score = scoreApplyResult(applied)
+                log(`📐 Template appliqué — score ${score}, ${applied.warnings.length} avertissement(s)`)
+                if (score >= 20) {
+                  const f = applied.fields
+                  const toStr = (v: unknown): string => typeof v === 'string' ? v : ''
+                  const toArr = (v: unknown): string[] => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+                  const built: EnrichedProduct = {
+                    description: toStr(f.description),
+                    advantages: toArr(f.advantages).map((text) => ({ text })),
+                    specifications: applied.specGroups.flatMap((g) => g.pairs.map((p) => ({ ...p, group: g.group }))),
+                    variants: [],
+                    images: toArr(f.images),
+                    documents: toArr(f.documents),
+                    price: null,
+                    sourceUrl: productUrl,
+                    additionalSources: [],
+                    generatedAt: Date.now(),
+                    scrapingProvider: `Template ${matching.name}`,
+                    llmProvider: undefined,
+                    llmModel: undefined,
+                  }
+                  setData(sheetName, rowId, built)
+                  log(`✓ Fiche produite depuis le template (sans IA)`)
+                  return built
+                }
+                log(`📐 Template score insuffisant (${score}) — fallback sur IA…`)
+              } else {
+                log(`📐 Impossible de récupérer le HTML (CORS) — fallback sur IA…`)
+              }
+            }
+          } catch (err) {
+            console.warn('[enrichment] template check failed', err)
+          }
+        }
+
         // ── Étape 2 : Scraper la page via Jina Reader ──────────────────────
         let markdownContent: string | null = usedCache ? (cached!.markdownContent ?? null) : null
 

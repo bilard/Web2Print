@@ -7,6 +7,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const EditorPage = lazy(() => import('@/pages/EditorPage'))
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
+const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
 
 function PageLoader() {
   return (
@@ -65,6 +66,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <EditorPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/scraping-templates',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <ScrapingTemplatesPage />
         </Suspense>
       </ProtectedRoute>
     ),

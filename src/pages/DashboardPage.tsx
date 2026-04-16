@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useProjects } from '@/features/projects/useProjects'
@@ -21,8 +21,9 @@ import { DamPage } from '../features/dam/components/DamPage'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
+const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
 
-type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'settings' | 'taxonomies'
+type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'settings' | 'taxonomies' | 'scraping-templates'
 
 const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }>; label: string; accent: string; activeBg: string; activeText: string }[] = [
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
@@ -31,6 +32,7 @@ const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }
   { id: 'images', icon: ImageIcon,      label: 'DAM',              accent: 'text-pink-400',    activeBg: 'bg-pink-500/[0.1]',    activeText: 'text-pink-300' },
   { id: 'data',   icon: FileSpreadsheet,label: 'PIM',              accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300' },
   { id: 'taxonomies', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300' },
+  { id: 'scraping-templates', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
 ]
 
 export default function DashboardPage() {
@@ -355,6 +357,16 @@ export default function DashboardPage() {
             </div>
           }>
             <TaxonomiesPage embedded />
+          </Suspense>
+        </div>
+      ) : activeSection === 'scraping-templates' ? (
+        <div className="flex-1 overflow-hidden">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+          }>
+            <ScrapingTemplatesPage />
           </Suspense>
         </div>
       ) : activeSection === 'images' ? (
