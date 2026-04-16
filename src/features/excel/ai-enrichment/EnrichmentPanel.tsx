@@ -7,6 +7,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useEnrichmentStore } from './enrichmentStore'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
 import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
+import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { useSaveEnrichedProduct } from './useSaveEnrichedProduct'
 import { deserializeEnrichedFromRow } from './deserializeEnriched'
 import type { EnrichedProduct } from './types'
@@ -107,9 +108,9 @@ export function EnrichmentPanel({ input }: Props) {
   const launch = (mode: 'auto' | 'template' = 'auto') => {
     void enrich({ ...input, mode })
   }
-  const redo = () => {
+  const redo = (mode: 'auto' | 'template' = 'auto') => {
     reset(input.sheetName, input.rowId)
-    void enrich(input)
+    void enrich({ ...input, mode })
   }
   const onSave = () => {
     if (data) void save(input.rowId, data)
@@ -121,6 +122,13 @@ export function EnrichmentPanel({ input }: Props) {
     },
     [data, setData, input.sheetName, input.rowId],
   )
+
+  // Template match pour ce produit (affiche un bouton Template dans le header Done).
+  const matchedTemplate = useMatchingTemplate({
+    url: input.knownUrl ?? null,
+    brand: input.brand ?? null,
+    title: input.title ?? null,
+  })
 
   const isLoading =
     running || status === 'searching' || status === 'scraping' || status === 'reasoning'
@@ -203,13 +211,7 @@ export function EnrichmentPanel({ input }: Props) {
                   </>
                 )}
               </button>
-              <button
-                onClick={redo}
-                className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-white/80 transition-colors px-2 py-1 rounded-md hover:bg-white/5"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Re-générer
-              </button>
+              <RegenerateMenu onRedo={redo} matchedTemplate={matchedTemplate} />
             </div>
           )}
         </div>
@@ -301,7 +303,7 @@ export function EnrichmentPanel({ input }: Props) {
 
       {/* ── Body (scrollable) ────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {isIdle && <IdleState onLaunch={(mode) => launch(mode)} hasTitle={!!input.title} input={input} />}
+        {isIdle && <IdleState onLaunch={(mode) => launch(mode)} hasTitle={!!input.title} input={input} matchedTemplate={matchedTemplate} />}
         {isLoading && <LoadingState status={status} message={entry?.progress.message ?? ''} logs={logs} />}
         {isError && <ErrorState error={error!} onRetry={launch} onRetryWithUrl={(url) => {
           reset(input.sheetName, input.rowId)
@@ -315,12 +317,70 @@ export function EnrichmentPanel({ input }: Props) {
 
 // ── Idle ──────────────────────────────────────────────────────────────────
 
-function IdleState({ onLaunch, hasTitle, input }: { onLaunch: (mode: 'auto' | 'template') => void; hasTitle: boolean; input: EnrichmentInput }) {
-  const matchedTemplate = useMatchingTemplate({
-    url: input.knownUrl ?? null,
-    brand: input.brand ?? null,
-    title: input.title ?? null,
-  })
+function RegenerateMenu({ onRedo, matchedTemplate }: { onRedo: (mode: 'auto' | 'template') => void; matchedTemplate: ScrapingTemplate | null }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  // Si pas de template, le bouton relance direct en AUTO.
+  if (!matchedTemplate) {
+    return (
+      <button
+        onClick={() => onRedo('auto')}
+        className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-white/80 transition-colors px-2 py-1 rounded-md hover:bg-white/5"
+      >
+        <RefreshCw className="w-3 h-3" />
+        Re-générer
+      </button>
+    )
+  }
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-white/80 transition-colors px-2 py-1 rounded-md hover:bg-white/5"
+      >
+        <RefreshCw className="w-3 h-3" />
+        Re-générer
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-64 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
+          <button
+            onClick={() => { setOpen(false); onRedo('auto') }}
+            className="w-full px-3 py-2 flex items-start gap-2 text-left hover:bg-indigo-500/10 transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-300 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-semibold text-white/90">Mode AUTO</div>
+              <div className="text-[10px] text-white/40 leading-snug">Recherche web + extraction + synthèse IA</div>
+            </div>
+          </button>
+          <div className="h-px bg-white/[0.06]" />
+          <button
+            onClick={() => { setOpen(false); onRedo('template') }}
+            className="w-full px-3 py-2 flex items-start gap-2 text-left hover:bg-emerald-500/10 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-semibold text-white/90">Mode TEMPLATE</div>
+              <div className="text-[10px] text-emerald-300/80 leading-snug truncate">📐 {matchedTemplate.name}</div>
+              <div className="text-[9px] text-white/30 leading-snug">Extraction déterministe, sans IA</div>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function IdleState({ onLaunch, hasTitle, input, matchedTemplate }: { onLaunch: (mode: 'auto' | 'template') => void; hasTitle: boolean; input: EnrichmentInput; matchedTemplate: ScrapingTemplate | null }) {
   return (
     <div className="h-full flex flex-col items-center justify-center px-6 py-10 text-center">
       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
