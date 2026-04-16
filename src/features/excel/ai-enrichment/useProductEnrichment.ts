@@ -226,38 +226,58 @@ const UI_PROFILE_TERMS_RE = /^(installateur|prescripteur|particulier|distributeu
  *  produit : rejetés quand ils apparaissent comme labels de PDF. */
 const GENERIC_DOC_LABEL_RE = /\b(cgv|cgu|mentions\s+l[eé]gales|politique|privacy|tarif|tarifs|price\s*list|catalogue\s*(g[eé]n[eé]ral|complet)?|newsletter|guide\s+(d['’]utilisation|utilisateur|installation)?|faq|mode\s+d['’]emploi\s+g[eé]n[eé]ral|declaration\s+(marque|produit)|fiche\s+s[eé]curit[eé]|msds|sds|plan\s+de\s+masse|garantie\s+g[eé]n[eé]rale|formation|pr[eé]sentation\s+(?:entreprise|soci[eé]t[eé])|rapport\s+(?:annuel|rse)|communiqu[eé])/i
 
-/** Filtre documents par référence produit : garde uniquement ceux dont le label,
- *  le nom de fichier (URL), OU une ancre contient au moins un token de la
- *  référence/SKU/titre. Rejette aussi les labels génériques (CGV, tarif, etc.).
- *  Retourne tous les docs si aucun token de référence n'est disponible. */
+/** Filtre documents par référence produit — approche prudente :
+ *  - TOUJOURS garder les docs sans code-produit identifiable (déclarations CE,
+ *    fact-tags, manuels génériques API-générés — ils décrivent le produit courant).
+ *  - REJETER UNIQUEMENT les docs qui contiennent un code-produit différent du
+ *    produit cible (ex: "FT dr101ch" quand la référence est "DR100CH" — l'URL/
+ *    label pointe vers un autre SKU de la gamme).
+ *  - Rejeter les labels clairement génériques (CGV, tarif, newsletter…).
+ */
 function filterDocumentsByProductRef(
   documents: string[],
   productIds: string[],
 ): string[] {
-  const tokens = productIds
-    .flatMap((id) => id.toLowerCase().split(/[\s\-_/.,]+/))
-    .filter((t) => t.length >= 4)
-  const uniqueTokens = Array.from(new Set(tokens))
-  if (uniqueTokens.length === 0) return documents
-  const matchesRef = (doc: string): boolean => {
-    const lower = doc.toLowerCase()
-    return uniqueTokens.some((t) => lower.includes(t))
-  }
-  const kept: string[] = []
+  const targetTokens = Array.from(new Set(
+    productIds
+      .flatMap((id) => id.toLowerCase().split(/[\s\-_/.,]+/))
+      .filter((t) => t.length >= 4 && /[a-z0-9]/i.test(t))
+  ))
+  // Pattern d'un code-produit dans un label/URL : alphanum 4-12 chars avec
+  // chiffre (ex: "dr100ch", "fpd3502x", "duh752z"). Ignore les timestamps purs.
+  const PRODUCT_CODE_RE = /\b([a-z]{1,5}\d[a-z0-9]{2,10}|\d[a-z]{1,5}\d{1,6}[a-z]{0,4})\b/gi
   const rejected: string[] = []
+  const kept: string[] = []
   for (const doc of documents) {
-    // Format possible: "Label | https://url" ou juste "https://url"
-    const label = (doc.split('|')[0] ?? '').trim()
-    if (GENERIC_DOC_LABEL_RE.test(label)) {
+    const parts = doc.split('|')
+    const label = (parts[0] ?? '').trim().toLowerCase()
+    const url = (parts[1] ?? '').trim().toLowerCase()
+    const haystack = `${label} ${url}`
+
+    if (GENERIC_DOC_LABEL_RE.test(label)) { rejected.push(doc); continue }
+
+    // Chercher les codes produit dans le label + URL (pas les queries longues).
+    // Se limiter au label + fragment final de l'URL (basename) pour éviter
+    // qu'un id interne (v=1725889503000) déclenche le rejet.
+    const urlTail = url.split(/[?#]/)[0].split('/').pop() ?? ''
+    const codePool = `${label} ${urlTail}`
+    const codes = Array.from(codePool.matchAll(PRODUCT_CODE_RE)).map((m) => m[0].toLowerCase())
+
+    if (codes.length === 0) {
+      // Pas de code-produit détecté → document générique (déclaration, fact-tag
+      // API, manuel) → on garde.
+      kept.push(doc); continue
+    }
+    // Si le doc exhibe un code produit, il doit correspondre à notre cible.
+    if (targetTokens.length > 0 && codes.every((c) => !targetTokens.some((t) => c === t || c.includes(t) || t.includes(c)))) {
+      // Tous les codes pointent vers d'autres produits → rejet.
       rejected.push(doc); continue
     }
-    if (!matchesRef(doc)) {
-      rejected.push(doc); continue
-    }
+    // Au moins un code matche (ou pas de token cible → on est indulgent).
     kept.push(doc)
   }
   if (rejected.length > 0) {
-    console.log('[sanitize] filterDocumentsByProductRef: kept', kept.length, '/ rejected', rejected.length)
+    console.log('[sanitize] filterDocumentsByProductRef: kept', kept.length, '/ rejected', rejected.length, '(other-SKU or generic)')
   }
   return kept
 }
@@ -3852,12 +3872,18 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             },
           })
 
-          // Images : on se base UNIQUEMENT sur l'extraction directe du markdown, qui applique
-          // les filtres junk + priorité /products/. Les URLs du LLM (souvent citées depuis le
-          // haut de page tronqué à 20k chars = menus nav) contourneraient ce filtre.
+          // Images : extraction directe du markdown (filtres junk + priorité /products/).
+          // Les URLs du LLM sont utilisées UNIQUEMENT comme fallback si le markdown n'en
+          // donne aucune (Nicoll et d'autres sites rendent parfois les images dans un
+          // carousel JS que Jina ne capture pas).
           const mdImages = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
-          const mergedImages: string[] = [...mdImages]
-          console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
+          const llmImages: string[] = Array.isArray(ai.images)
+            ? (ai.images as unknown[]).filter((u): u is string => typeof u === 'string' && /^https?:\/\//.test(u))
+            : []
+          const mergedImages: string[] = mdImages.length > 0
+            ? Array.from(new Set([...mdImages, ...llmImages]))
+            : llmImages
+          console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
 
           // Documents : LLM + extraction directe du markdown (URLs .pdf simples + liens titrés)
           const mdDocUrls = markdownContent
