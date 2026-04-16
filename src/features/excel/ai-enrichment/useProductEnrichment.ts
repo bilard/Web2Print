@@ -615,10 +615,28 @@ function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, re
           || host.startsWith('fr.')
           || fullUrl.includes('/fr-fr/')
           || fullUrl.includes('/fr/')
+          || fullUrl.includes('/fr-be/')
+          || fullUrl.includes('/fr-ch/')
         // Site officiel de la marque → bonus massif, surtout FR
         s += isFr ? 40 : 20
       }
     } catch { /* ignore */ }
+  }
+
+  // ── Pénalité locale non-FR : /id/, /en-us/, /de-de/, /es-es/, /ja-jp/, etc.
+  //    Les sites fabricants multilingues exposent le même produit sur plusieurs
+  //    paths localisés. On veut la version FR par défaut — un /id/ (Indonésie)
+  //    ou /en-us/ (États-Unis) renvoie un contenu + prix + specs en langue/marché
+  //    étrangers. Rejet par pénalité forte si aucun marqueur FR dans l'URL.
+  {
+    const lowUrl = url.toLowerCase()
+    const NON_FR_LOCALE_RE = /\/(id|de|es|it|pt|pl|ru|ja|ko|zh|nl|sv|no|da|fi|tr|ar|he|cs|sk|hu|ro|bg|hr|el|uk|vi|th|ms)(-[a-z]{2})?\//
+    const NON_FR_EN_US_RE = /\/(en-us|en-ca|en-au|en-in|en-za|en-ph|en-gb)\//
+    const hasFrMarker = /\/(fr|fr-fr|fr-be|fr-ch|fr-ca)\//.test(lowUrl) || /\.fr[\/$]/.test(lowUrl) || /\/\/fr\./.test(lowUrl)
+    if (!hasFrMarker) {
+      if (NON_FR_LOCALE_RE.test(lowUrl)) s -= 20
+      else if (NON_FR_EN_US_RE.test(lowUrl)) s -= 12
+    }
   }
 
   // ── CRITIQUE : la référence/SKU/modèle apparaît dans l'URL (+20) ────
@@ -2897,9 +2915,11 @@ function isJunkImageUrl(url: string): boolean {
     if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure|thumb|mini|icon|logo|picto|badge|flag)([-_]|$)/i.test(styleMatch[1])) return true
     // Path segment dédié aux documents/logos/icônes
     if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|icons?|icones?|pictos?|badges?|banners?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?)$/i.test(s))) return true
-    // Réseaux sociaux
-    const lastSegments = segments.slice(-2).join('/')
-    if (/\b(facebook|twitter|instagram|youtube|linkedin|tiktok|pinterest|whatsapp|telegram)\b/i.test(lastSegments)) return true
+    // Réseaux sociaux — tester TOUTE l'URL pas juste les 2 derniers segments
+    // (certains CDN placent le logo LinkedIn à /assets/social/logo/linkedin.png).
+    if (/\b(facebook|fb[-_]|twitter|instagram|youtube|linkedin|tiktok|pinterest|whatsapp|telegram|snapchat|reddit|vimeo|xing|discord)\b/i.test(url)) return true
+    // Chemins assets globaux (sans dossier produit/media identifiable).
+    if (/\/(assets|static|public|dist|build|common|shared)\/(images?|img|icons?|logos?|svg|media)\//i.test(path)) return true
     // URL très petite (< 2 segments = probable asset global)
     if (segments.length <= 1) return true
     return false
@@ -3226,10 +3246,15 @@ export function useProductEnrichment() {
             worx:       ['worx.com/fr'],
             aeg:        ['aeg-powertools.eu/fr'],
             einhell:    ['einhell.fr'],
-            karcher:    ['kaercher.com/fr'],
+            karcher:    ['kaercher.com/fr', 'karcher.fr'],
             facom:      ['facom.fr'],
             hilti:      ['hilti.fr'],
             flex:       ['flex-tools.com/fr-fr'],
+            grundfos:   ['product-selection.grundfos.com/fr', 'grundfos.com/fr'],
+            geberit:    ['geberit.fr'],
+            villeroy:   ['villeroy-boch.fr'],
+            roca:       ['roca.fr'],
+            ideal:      ['idealstandard.fr'],
           }
           const BRAND_DOMAINS_INTL: Record<string, string[]> = {
             milwaukee:  ['milwaukeetool.eu', 'milwaukeetool.com'],
@@ -3250,6 +3275,11 @@ export function useProductEnrichment() {
             facom:      ['facom.com'],
             hilti:      ['hilti.com'],
             flex:       ['flex-tools.com'],
+            grundfos:   ['grundfos.com', 'product-selection.grundfos.com'],
+            geberit:    ['geberit.com'],
+            villeroy:   ['villeroy-boch.com'],
+            roca:       ['roca.com'],
+            ideal:      ['idealstandard.com'],
           }
 
           const brandSlug = brand
