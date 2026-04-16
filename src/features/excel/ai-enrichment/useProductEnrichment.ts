@@ -528,6 +528,10 @@ export interface EnrichmentInput {
   category?: string
   /** URL d'origine déjà connue — si fournie, on saute l'étape de recherche */
   knownUrl?: string
+  /** Mode d'enrichissement :
+   *  - 'auto' (défaut) : flow IA classique (Jina + LLM), même si un template existe
+   *  - 'template' : force l'application du template par fournisseur ; fallback IA si le template échoue */
+  mode?: 'auto' | 'template'
 }
 
 // ── Types pour la recherche ─────────────────────────────────────────────────
@@ -3454,10 +3458,10 @@ export function useProductEnrichment() {
         }
 
         // ── Étape 1bis : Template de scraping par fournisseur ─────────────
-        // Si un template personnalisé existe pour le domaine de cette URL, on
-        // l'applique directement — extraction déterministe, pas d'hallucination.
-        // Fallback LLM en dessous si template absent OU résultat trop faible.
-        if (productUrl) {
+        // Appliqué UNIQUEMENT si mode === 'template'. En mode 'auto' (défaut),
+        // on skip directement vers le flow IA classique pour préserver le
+        // comportement historique éprouvé.
+        if (productUrl && input.mode === 'template') {
           try {
             const { listTemplates } = await import('@/features/scraping-templates/templatesStore')
             const { applyTemplate, templateMatchesUrl, scoreApplyResult } = await import('@/features/scraping-templates/engine')
