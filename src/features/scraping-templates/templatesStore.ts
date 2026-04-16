@@ -1,6 +1,7 @@
 import { collection, doc, getDocs, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { scrapingTemplateSchema, type ScrapingTemplate } from './types'
+import { invalidateTemplatesCache } from './useMatchingTemplate'
 
 const COLLECTION = 'scrapingTemplates'
 
@@ -23,10 +24,12 @@ export async function saveTemplate(template: ScrapingTemplate): Promise<void> {
   }
   const data = { ...parsed.data, updatedAt: Date.now() }
   await setDoc(doc(db, COLLECTION, template.id), data)
+  invalidateTemplatesCache()
 }
 
 export async function deleteTemplate(id: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, id))
+  invalidateTemplatesCache()
 }
 
 export function emptyTemplate(vendorDomain: string): ScrapingTemplate {

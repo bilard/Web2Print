@@ -6,6 +6,7 @@ import {
 import { useExcelStore } from '@/stores/excel.store'
 import { useEnrichmentStore } from './enrichmentStore'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
+import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { useSaveEnrichedProduct } from './useSaveEnrichedProduct'
 import { deserializeEnrichedFromRow } from './deserializeEnriched'
 import type { EnrichedProduct } from './types'
@@ -300,7 +301,7 @@ export function EnrichmentPanel({ input }: Props) {
 
       {/* ── Body (scrollable) ────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {isIdle && <IdleState onLaunch={launch} hasTitle={!!input.title} />}
+        {isIdle && <IdleState onLaunch={launch} hasTitle={!!input.title} input={input} />}
         {isLoading && <LoadingState status={status} message={entry?.progress.message ?? ''} logs={logs} />}
         {isError && <ErrorState error={error!} onRetry={launch} onRetryWithUrl={(url) => {
           reset(input.sheetName, input.rowId)
@@ -314,25 +315,51 @@ export function EnrichmentPanel({ input }: Props) {
 
 // ── Idle ──────────────────────────────────────────────────────────────────
 
-function IdleState({ onLaunch, hasTitle }: { onLaunch: () => void; hasTitle: boolean }) {
+function IdleState({ onLaunch, hasTitle, input }: { onLaunch: () => void; hasTitle: boolean; input: EnrichmentInput }) {
+  const matchedTemplate = useMatchingTemplate({
+    url: input.knownUrl ?? null,
+    brand: input.brand ?? null,
+    title: input.title ?? null,
+  })
+  const isTemplate = !!matchedTemplate
   return (
     <div className="h-full flex flex-col items-center justify-center px-6 py-10 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
-        <Sparkles className="w-6 h-6 text-indigo-400" />
-      </div>
-      <h3 className="text-[13px] font-semibold text-white/80 mb-2">Enrichissement en live</h3>
-      <p className="text-[11px] text-white/40 leading-relaxed max-w-[260px] mb-5">
-        Lance une recherche web + extraction de contenu + synthèse Claude pour générer une fiche
-        produit complète à partir des données source.
-      </p>
+      {isTemplate ? (
+        <>
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/15 border border-emerald-400/30 flex items-center justify-center mb-4">
+            <svg className="w-6 h-6 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg>
+          </div>
+          <h3 className="text-[13px] font-semibold text-white/80 mb-1">Template détecté</h3>
+          <div className="text-[12px] text-emerald-300 font-semibold mb-2">📐 {matchedTemplate.name}</div>
+          <p className="text-[11px] text-white/40 leading-relaxed max-w-[280px] mb-5">
+            Extraction déterministe via ton template <span className="text-emerald-400/80">{matchedTemplate.vendorDomain}</span> — pas d'IA, pas d'hallucination.
+            <br/><span className="text-white/30">Fallback IA automatique si le template échoue.</span>
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
+            <Sparkles className="w-6 h-6 text-indigo-400" />
+          </div>
+          <h3 className="text-[13px] font-semibold text-white/80 mb-2">Enrichissement en live</h3>
+          <p className="text-[11px] text-white/40 leading-relaxed max-w-[260px] mb-5">
+            Lance une recherche web + extraction de contenu + synthèse Claude pour générer une fiche
+            produit complète à partir des données source.
+          </p>
+        </>
+      )}
       <button
         type="button"
         onClick={onLaunch}
         disabled={!hasTitle}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white text-[12px] font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-[12px] font-semibold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+          isTemplate
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/20 hover:shadow-emerald-500/40'
+            : 'bg-gradient-to-r from-indigo-500 to-fuchsia-500 shadow-indigo-500/20 hover:shadow-indigo-500/40'
+        }`}
       >
         <Sparkles className="w-3.5 h-3.5" />
-        Enrichir avec l'IA
+        {isTemplate ? `Appliquer le template ${matchedTemplate.name}` : "Enrichir avec l'IA"}
       </button>
       {!hasTitle && (
         <p className="text-[10px] text-amber-400/80 mt-3">
