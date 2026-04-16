@@ -69,6 +69,10 @@ const DISMISS_COOKIES_SCRIPT = `
 // Pas de sélecteurs spécifiques à un fournisseur (contrainte projet).
 const EXPAND_SCRIPT = `
 (function() {
+  // WeakSet partagé entre passes : évite de re-cliquer le MÊME élément.
+  // Sans ça, un 2e pass referme les accordéons qu'on vient d'ouvrir (toggle).
+  window.__pupClicked = window.__pupClicked || new WeakSet();
+  var clickedSet = window.__pupClicked;
   function unhide(el) {
     if (!el || el.nodeType !== 1) return;
     el.style.setProperty('display', 'revert', 'important');
@@ -82,7 +86,12 @@ const EXPAND_SCRIPT = `
   // Dispatch une séquence pointer/mouse/click complète. Certains frameworks (SAP
   // Hybris, stencil-web, custom React) écoutent pointerdown ou mousedown et pas
   // le click classique — donc .click() seul ne suffit pas.
+  // Idempotent via WeakSet partagé — un élément n'est cliqué qu'UNE seule fois
+  // sur l'ensemble des passes (sinon on toggle back-and-forth).
   function fullClick(el) {
+    if (!el || el.nodeType !== 1) return;
+    if (clickedSet.has(el)) return;
+    clickedSet.add(el);
     try { el.click(); } catch(e) {}
     try {
       var r = el.getBoundingClientRect ? el.getBoundingClientRect() : { left: 0, top: 0, width: 1, height: 1 };
@@ -116,34 +125,36 @@ const EXPAND_SCRIPT = `
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEMPLATE') return;
     el.removeAttribute('hidden'); unhide(el);
   });
+  // Note : la gestion des sections lazy à état fermé (data-active="false",
+  // data-state="closed"…) est faite côté Node via page.mouse.click CDP
+  // (événements isTrusted=true, nécessaires pour contourner les checks anti-bot
+  // qui empêchent React d'enregistrer les synthetic events dispatchés ici).
+  // Voir la phase "trusted-click lazy sections" après le polling d'expansion.
   // 5) Click triggers standard (ARIA + Bootstrap/jQuery/SAP data-*)
   document.querySelectorAll('button[aria-controls],a[aria-controls],summary,[data-toggle],[data-bs-toggle],[data-target],[data-bs-target],[data-accordion-trigger],[data-a-accordion-toggle],[data-pa-kind*="accordion" i],[data-pa-kind*="expander" i]').forEach(fullClick);
-  // 6) Click éléments avec classes accordéon/collapse génériques (universel).
-  //    Liste enrichie avec patterns SAP Hybris (a-accordion, js-*, cmp-*),
-  //    BEM (__header, __toggle), emotion-css (css-xyz__title), headless (hds-*).
+  // 6) Click éléments avec classes accordéon/collapse génériques — UNIQUEMENT
+  //    sur les BOUTONS (pas les divs/spans). Les divs/spans avec class "Toggle"
+  //    génèrent souvent des re-instances à chaque re-render React ; les cliquer
+  //    une 2e fois (via un nouveau fiber node pas encore vu par le WeakSet)
+  //    referme les sections qu'on vient d'ouvrir. Les boutons natifs sont plus
+  //    stables (1 instance par pass) et leur click a un handler connu.
   var ACCORDION_CLASS_RE = /\\b(accordion|collapse|toggle|expand|expander|disclosure|panel-header|panel-trigger|card-header|spec-header|variant-header|show-more|see-more|a-accordion|js-accordion|cmp-accordion|hds-accordion|chakra-accordion|m-accordion|o-accordion|u-accordion|mod-accordion|accordion-header|accordion-toggle|accordion-button|accordion-trigger|__header|__toggle|__trigger)\\b/i;
-  document.querySelectorAll('[class]').forEach(function(el) {
-    var tag = el.tagName;
-    if (tag === 'DIV' || tag === 'BUTTON' || tag === 'A' || tag === 'LI' || tag === 'SPAN' || tag === 'H2' || tag === 'H3' || tag === 'H4' || tag === 'SECTION' || tag === 'ARTICLE') {
-      if (ACCORDION_CLASS_RE.test(el.className || '')) {
-        fullClick(el);
-      }
-    }
+  document.querySelectorAll('button[class],summary[class]').forEach(function(el) {
+    if (ACCORDION_CLASS_RE.test(el.className || '')) fullClick(el);
   });
-  // 6b) Heading (h2/h3/h4) contenant un bouton ou un <span> chevron : pattern
-  //     Kärcher/SAP où le heading EST le trigger. On clique le heading lui-même.
-  document.querySelectorAll('h2,h3,h4').forEach(function(h) {
-    var inside = h.querySelector('button,[role="button"],[class*="chevron" i],[class*="arrow" i],[class*="caret" i],[class*="toggle" i],svg');
-    var parentRole = h.parentElement && h.parentElement.getAttribute && h.parentElement.getAttribute('role');
-    if (inside || parentRole === 'button' || /button|trigger|toggle|accordion/i.test(h.className || '')) {
-      fullClick(h);
-      if (inside) fullClick(inside);
-    }
-  });
+  // 6b) [retiré] Cliquer les h2/h3/h4 à partir du pattern className produisait
+  //     un toggle back-and-forth entre passes (React re-crée les instances fiber
+  //     après re-render, notre WeakSet ne les reconnaît plus, et le 2e clic
+  //     referme ce qu'on a ouvert). La phase CDP trusted-click ci-dessous gère
+  //     les headings/accordéons avec état data-*, de façon plus sûre.
   // 7) Click boutons texte "Voir plus / Afficher / Caractéristiques / Détails /
   //    Spécifications / Équipement / Données techniques"
+  //    IMPORTANT : cible UNIQUEMENT les vrais boutons/role=button. Les h2/h3/h4/li
+  //    sont exclus car React re-crée souvent ces nœuds après expansion, et les
+  //    re-cliquer au pass suivant REFERMERAIT la section ouverte au pass précédent
+  //    (le WeakSet ne reconnaît pas les nouvelles instances fiber).
   var TRIGGER_TEXT_RE = /^\\s*(voir\\s+(plus|tout|détail|caract|fiche)|afficher(?:\\s+(plus|tout))?|show\\s+(more|all|details?)|d[eé]tails?|caract[eé]ristiques?(?:\\s+techniques?)?|sp[eé]cifications?(?:\\s+techniques?)?|donn[eé]es\\s+techniques?|[eé]quipement|fonctionnalit[eé]s?|inclus\\s+dans\\s+la\\s+livraison|en\\s+savoir\\s+plus|plus\\s+d'infos?|read\\s+more|technical\\s+(data|specs?)|features?)\\s*$/i;
-  document.querySelectorAll('button,a,[role="button"],div[onclick],span[onclick],h2,h3,h4,h5,li').forEach(function(el) {
+  document.querySelectorAll('button,[role="button"]').forEach(function(el) {
     var txt = (el.textContent || '').trim();
     if (txt.length > 0 && txt.length < 60 && TRIGGER_TEXT_RE.test(txt)) {
       fullClick(el);
@@ -276,12 +287,176 @@ export const scrapePage = onRequest(
       for (let pass = 1; pass <= PASSES; pass++) {
         const before = await page.evaluate(() => document.body.innerText.length).catch(() => 0)
         await page.evaluate(EXPAND_SCRIPT).catch(() => {})
-        await new Promise((r) => setTimeout(r, PASS_WAIT))
+        // Attendre d'abord que les XHR déclenchés par les clics retombent
+        // (les sections lazy fetchent leur contenu après click → networkidle).
+        // Fallback sur un wait fixe si idle ne vient pas.
+        await page
+          .waitForNetworkIdle({ idleTime: 800, timeout: PASS_WAIT })
+          .catch(() => new Promise((r) => setTimeout(r, PASS_WAIT)))
         const after = await page.evaluate(() => document.body.innerText.length).catch(() => 0)
         logger.info('[scrapePage] pass', { pass, before, after, delta: after - before })
         // Si plus aucun changement de contenu, inutile de boucler.
         if (after > 0 && after - before < 100) break
       }
+
+      // ── Phase trusted-click sur sections lazy (pattern React avec check
+      //    isTrusted) ────────────────────────────────────────────────────
+      // Certaines SPA (Milwaukee styled-components, etc.) contrôlent l'état
+      // d'expansion via React onClick bindé sur un wrapper avec cursor:pointer,
+      // et refusent les synthetic events dispatchés via page.evaluate
+      // (isTrusted=false). Il faut utiliser page.mouse.click CDP qui génère un
+      // vrai event utilisateur (isTrusted=true) au niveau du browser.
+      //
+      // Stratégie générique : pour chaque <section>/<div>/<article> avec un
+      // attribut d'état indiquant fermé (data-active=false, data-state=closed…)
+      // ET contenu quasi-vide (signe d'un lazy non encore chargé), on remonte
+      // depuis son premier heading h2/h3/h4 jusqu'au wrapper cursor:pointer
+      // (là où est probablement bindé le React onClick) puis on click via CDP.
+      //
+      // Scope restreint aux tags SECTION/ARTICLE/DIV + garde contenu vide pour
+      // éviter de faire n'importe quoi sur les ~600 data-active="false" qu'on
+      // trouve sur la navigation du site (menus UL/LI).
+      try {
+        const lazyTargets: Array<{ id: string; x: number; y: number }> = await page.evaluate(() => {
+          const SEL =
+            'section[data-active="false"],section[data-state="closed"],section[data-state="inactive"],' +
+            'section[data-open="false"],section[data-collapsed="true"],' +
+            'div[data-active="false"],div[data-state="closed"],div[data-state="inactive"],' +
+            'article[data-active="false"],article[data-state="closed"]'
+          const out: Array<{ id: string; x: number; y: number }> = []
+          document.querySelectorAll(SEL).forEach((el) => {
+            // Skip chrome du site (nav/header/footer)
+            if (el.closest('nav,header,footer')) return
+            const section = el as HTMLElement
+            const txt = (section.textContent || '').trim()
+            // Lazy encore fermé = très peu de contenu
+            if (txt.length > 500) return
+            const heading = section.querySelector('h2,h3,h4')
+            if (!heading) return
+            // Remonter vers le wrapper cursor:pointer (où React bind son onClick)
+            let wrapper: HTMLElement | null = heading.parentElement
+            let target: HTMLElement = heading as HTMLElement
+            while (wrapper && wrapper !== section) {
+              if (getComputedStyle(wrapper).cursor === 'pointer') {
+                target = wrapper; break
+              }
+              wrapper = wrapper.parentElement
+            }
+            if (target === heading && heading.parentElement) target = heading.parentElement as HTMLElement
+            // Id unique pour ré-scroll + re-compute après
+            const id = section.id || 'lazy-' + Math.random().toString(36).slice(2, 9)
+            if (!section.id) section.id = id
+            const r = target.getBoundingClientRect()
+            if (r.width < 10 || r.height < 10) return
+            out.push({ id, x: r.left + r.width / 2, y: r.top + r.height / 2 })
+          })
+          return out
+        })
+        if (lazyTargets.length > 0) {
+          logger.info('[scrapePage] lazy sections to trusted-click', {
+            count: lazyTargets.length,
+            ids: lazyTargets.map((t) => t.id),
+          })
+          // Pré-scroll sur TOUTES les sections pour forcer leur hydratation React
+          // via IntersectionObserver avant de commencer les clicks. Sans ça, la
+          // première section cliquée est encore SSR-only et n'a pas de handler
+          // onClick bindé → le click n'a aucun effet.
+          for (const t of lazyTargets) {
+            await page.evaluate((id) => {
+              const el = document.getElementById(id)
+              if (el) el.scrollIntoView({ block: 'center' })
+            }, t.id)
+            await new Promise((r) => setTimeout(r, 300))
+          }
+          // Revenir en haut puis laisser React finir son travail.
+          await page.evaluate(() => window.scrollTo(0, 0))
+          await page
+            .waitForNetworkIdle({ idleTime: 800, timeout: 3000 })
+            .catch(() => new Promise((r) => setTimeout(r, 1500)))
+        }
+        // Cap à 8 pour éviter le runaway (on s'attend à 4-6 sections produit).
+        for (const t of lazyTargets.slice(0, 8)) {
+          try {
+            // Scroll la section en haut du viewport (block:'start' + offset)
+            // pour s'assurer qu'elle est bien visible et pas masquée par le
+            // sticky header.
+            await page.evaluate((id) => {
+              const el = document.getElementById(id)
+              if (!el) return
+              el.scrollIntoView({ block: 'start' })
+              window.scrollBy(0, -150) // remonter sous le sticky header
+            }, t.id)
+            await new Promise((r) => setTimeout(r, 600))
+            // Utiliser un data-* temporaire pour cibler exactement le wrapper
+            // cursor:pointer avec un selector Puppeteer ($), puis cliquer via
+            // elementHandle.click() qui est trusted + auto-scroll + auto-retry.
+            const clickOk = await page.evaluate((id) => {
+              const el = document.getElementById(id)
+              if (!el) return false
+              if (el.getAttribute('data-active') === 'true' || el.getAttribute('data-state') === 'open') return 'already-open'
+              const h = el.querySelector('h2,h3,h4')
+              if (!h) return false
+              let w: Element | null = h.parentElement
+              let target: Element = h
+              while (w && w !== el) {
+                if (getComputedStyle(w as HTMLElement).cursor === 'pointer') { target = w; break }
+                w = w.parentElement
+              }
+              if (target === h && h.parentElement) target = h.parentElement as HTMLElement
+              ;(target as HTMLElement).setAttribute('data-lazy-click-target', '1')
+              return true
+            }, t.id)
+            if (clickOk === 'already-open') {
+              logger.info('[scrapePage] lazy section already open', { id: t.id })
+              continue
+            }
+            if (!clickOk) continue
+            // page.click utilise Input.dispatchMouseEvent CDP (trusted) et
+            // scrolle automatiquement l'élément en vue. Plus robuste que
+            // page.mouse.click(x,y) qui peut tomber à côté après un re-layout.
+            try {
+              await page.click('[data-lazy-click-target="1"]', { delay: 50 })
+            } catch (ce) {
+              logger.warn('[scrapePage] page.click failed, fallback to mouse.click', { id: t.id, msg: (ce as Error).message })
+              // Fallback : calcul coords + mouse.click (même logique qu'avant).
+              const rect = await page.evaluate(() => {
+                const el = document.querySelector('[data-lazy-click-target="1"]') as HTMLElement | null
+                if (!el) return null
+                const r = el.getBoundingClientRect()
+                return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+              })
+              if (rect && rect.x > 0 && rect.y > 0 && rect.y < 10000) {
+                await page.mouse.click(rect.x, rect.y)
+              }
+            }
+            // Nettoyer l'attribut temporaire.
+            await page.evaluate(() => {
+              document.querySelectorAll('[data-lazy-click-target]').forEach((el) => el.removeAttribute('data-lazy-click-target'))
+            })
+            // Attendre le render React + éventuel XHR.
+            await page
+              .waitForNetworkIdle({ idleTime: 700, timeout: 4000 })
+              .catch(() => new Promise((r) => setTimeout(r, 1500)))
+            const postState = await page.evaluate((id) => {
+              const el = document.getElementById(id)
+              return el ? { active: el.getAttribute('data-active'), textLen: (el.textContent || '').trim().length } : null
+            }, t.id)
+            logger.info('[scrapePage] post-click section state', { id: t.id, ...postState })
+          } catch (e) {
+            logger.warn('[scrapePage] trusted-click section failed', { id: t.id, msg: (e as Error).message })
+          }
+        }
+      } catch (e) {
+        logger.warn('[scrapePage] lazy-section phase failed', { msg: (e as Error).message })
+      }
+
+      // Attente finale : les sections lazy ouvertes déclenchent souvent des
+      // XHR cascadés (product data → specs → variants → downloads). On laisse
+      // encore 2s de networkidle + floor 2s avant de capturer le HTML final.
+      await page
+        .waitForNetworkIdle({ idleTime: 1000, timeout: 5000 })
+        .catch(() => {})
+      await new Promise((r) => setTimeout(r, 2000))
 
       // ── Phase click-through par variante ───────────────────────────────
       // Beaucoup de sites SPA (Nicoll, Makita, Bosch…) n'affichent qu'UNE
