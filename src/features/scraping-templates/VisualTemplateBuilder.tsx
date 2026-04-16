@@ -27,11 +27,21 @@ interface CaptureMessage {
  */
 export function VisualTemplateBuilder({ template, onChange }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [sourceUrl, setSourceUrl] = useState('')
+  // Pré-remplir avec la dernière URL testée du template (chargée depuis Firestore).
+  const [sourceUrl, setSourceUrl] = useState(template.lastTestUrl ?? '')
   const [rewrittenHtml, setRewrittenHtml] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [captureMode, setCaptureMode] = useState<'off' | 'single' | 'multiple'>('off')
   const [pendingCapture, setPendingCapture] = useState<CaptureMessage | null>(null)
+
+  // Quand on change de template dans la liste, re-synchroniser l'URL source
+  // et vider l'iframe pour forcer un rechargement avec la bonne page.
+  useEffect(() => {
+    setSourceUrl(template.lastTestUrl ?? '')
+    setRewrittenHtml(null)
+    setCaptureMode('off')
+    setPendingCapture(null)
+  }, [template.id])
 
   // Listen for postMessage from the iframe
   useEffect(() => {
@@ -64,6 +74,10 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
       const rewritten = rewriteHtmlForIframe(html, sourceUrl)
       setRewrittenHtml(rewritten)
       setCaptureMode('off')
+      // Persister l'URL dans le template pour auto-reload la prochaine fois.
+      if (sourceUrl !== template.lastTestUrl) {
+        onChange({ ...template, lastTestUrl: sourceUrl, updatedAt: Date.now() })
+      }
     } finally {
       setLoading(false)
     }
@@ -107,6 +121,49 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* État actuel du template — visible DÈS l'ouverture, avant l'iframe */}
+      <div className="p-3 bg-black/40 border border-white/10 rounded-lg">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">
+            Champs capturés ({template.fields.length})
+            {template.specGroups.length > 0 && ` · ${template.specGroups.length} groupe(s) de specs`}
+          </span>
+          {template.fields.length > 0 && (
+            <button
+              onClick={() => onChange({ ...template, fields: [], specGroups: [], updatedAt: Date.now() })}
+              className="text-[10px] text-red-400/70 hover:text-red-400"
+            >Tout effacer</button>
+          )}
+        </div>
+        {template.fields.length === 0 ? (
+          <div className="text-[11px] text-white/40 italic">
+            Aucun champ — charge une URL ci-dessous, active la capture, et clique sur les éléments de la page.
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {template.fields.map((f, i) => (
+              <div key={i} className="flex items-center justify-between gap-2 p-1.5 bg-white/[0.03] rounded text-[11px]">
+                <div className="flex-1 min-w-0">
+                  <span className="text-indigo-300 font-semibold">{f.field}</span>
+                  {f.multiple && <span className="ml-1 px-1 py-0.5 text-[9px] bg-white/10 rounded">liste</span>}
+                  <code className="ml-2 text-white/50 font-mono truncate">{f.strategies[0]?.expression}</code>
+                  {f.strategies[0]?.attr && <span className="ml-1 text-white/40">[{f.strategies[0].attr}]</span>}
+                </div>
+                <button
+                  onClick={() => previewSelector(f.strategies[0]?.expression ?? '')}
+                  className="text-emerald-400 hover:text-emerald-300"
+                  title="Prévisualiser dans la page (iframe doit être chargée)"
+                ><Eye className="w-3 h-3" /></button>
+                <button
+                  onClick={() => onChange({ ...template, fields: template.fields.filter((_, j) => j !== i), updatedAt: Date.now() })}
+                  className="text-red-400/60 hover:text-red-400"
+                ><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center gap-2 p-3 bg-black/40 border border-white/10 rounded-lg">
         <input
@@ -178,39 +235,6 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
         />
       )}
 
-      {/* État actuel du template (champs capturés) */}
-      <div className="p-3 bg-black/40 border border-white/10 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider">Champs capturés ({template.fields.length})</span>
-        </div>
-        {template.fields.length === 0 ? (
-          <div className="text-[11px] text-white/40 italic">
-            Active la capture puis clique sur un élément dans la page pour l'assigner à un champ.
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {template.fields.map((f, i) => (
-              <div key={i} className="flex items-center justify-between gap-2 p-1.5 bg-white/[0.03] rounded text-[11px]">
-                <div className="flex-1 min-w-0">
-                  <span className="text-indigo-300 font-semibold">{f.field}</span>
-                  {f.multiple && <span className="ml-1 px-1 py-0.5 text-[9px] bg-white/10 rounded">liste</span>}
-                  <code className="ml-2 text-white/50 font-mono truncate">{f.strategies[0]?.expression}</code>
-                  {f.strategies[0]?.attr && <span className="ml-1 text-white/40">[{f.strategies[0].attr}]</span>}
-                </div>
-                <button
-                  onClick={() => previewSelector(f.strategies[0]?.expression ?? '')}
-                  className="text-emerald-400 hover:text-emerald-300"
-                  title="Prévisualiser dans la page"
-                ><Eye className="w-3 h-3" /></button>
-                <button
-                  onClick={() => onChange({ ...template, fields: template.fields.filter((_, j) => j !== i), updatedAt: Date.now() })}
-                  className="text-red-400/60 hover:text-red-400"
-                ><X className="w-3 h-3" /></button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   )
 }

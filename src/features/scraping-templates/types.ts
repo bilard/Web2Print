@@ -88,6 +88,8 @@ export const scrapingTemplateSchema = z.object({
   specGroups: z.array(groupSelectorSchema).default([]),
   /** Prompt global pour reformater/traduire la sortie via LLM (optionnel). */
   globalPrompt: z.string().optional(),
+  /** Dernière URL utilisée pour tester/mapper le template — rechargée à l'ouverture. */
+  lastTestUrl: z.string().optional(),
   /** Metadata */
   createdAt: z.number(),
   updatedAt: z.number(),
