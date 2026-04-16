@@ -354,6 +354,13 @@ const VARIANT_HEADER_RE = /^(r[eé]f\.?|ref[eé]rence|sku|code(\s*(produit|artic
 const COOKIE_CATEGORY_RE =
   /^(strictement\s+n[eé]cessaire|fonctionnel|statistiques?|marketing|publicit(?:é|aire)|analytique|performance|pr[eé]f[eé]rences?|ciblage|targeting|essential|necessary|functional|analytics|advertising)$/i
 
+/** Groupes qui ne sont PAS des vraies sections de specs produit mais des
+ *  widgets de suggestion/recommandation/produits liés (counts de catégorie,
+ *  badges "vu récemment", etc.). Les paires qu'ils contiennent polluent
+ *  l'enrichissement avec des "specs" comme "Multi Material Drills = (0)". */
+const RELATED_GROUP_RE =
+  /\b(recommand(?:ation|ed)|suggestions?|related|associat(?:ed|ion)|vu\s+r[eé]cemment|recently\s+viewed|similar|vous\s+aimerez|you\s+may(?:\s+also)?\s+like|produits?\s+li[eé]s?|produits?\s+suggest|accessoires?\s+compatibles?|compatible\s+accessor)/i
+
 function nearestHeading(el: Element): string {
   let cur: Element | null = el
   for (let i = 0; i < 5 && cur; i++) {
@@ -397,16 +404,17 @@ function hasVariantDropdownAncestor(el: Element): boolean {
   return skuLikeOptions >= 3 || ariaOptions >= 5 || selectOptions >= 5
 }
 
-/** Valeur concat/garbage : longue séquence numérique sans unité ni espace,
- *  avec plusieurs points décimaux. Signe d'une concat de valeurs multiples
- *  (ex: "3455.566.5781012" = concat des diamètres de 20 forets).
- *  Légitime (rejet = false) : "1,5 kg", "12.5 mm", "0 - 2,100 rpm". */
+/** Valeur concat/garbage : longue séquence purement numérique (chiffres + .,)
+ *  SANS unité ni espace, avec ≥2 séparateurs. Signe d'une concat de valeurs
+ *  multiples (ex: "3455.566.5781012" = concat des diamètres de 21 forets).
+ *  Les valeurs légitimes contiennent presque toujours une unité ou un espace
+ *  ("1,5 kg", "12.5 mm", "0 - 2,100 rpm") donc passent le test
+ *  /^[\d.,\s]+$/ uniquement si très courtes (v.length < 8 exclut). */
 function isGarbageConcatValue(v: string): boolean {
   if (v.length < 8) return false
-  if (!/^[\d.,\s]+$/.test(v)) return false
-  const dots = (v.match(/\./g) || []).length
-  const commas = (v.match(/,/g) || []).length
-  return dots + commas >= 3
+  if (!/^[\d.,]+$/.test(v)) return false
+  const seps = (v.match(/[.,]/g) || []).length
+  return seps >= 2
 }
 
 function isVariantTable(tbl: Element): boolean {
@@ -436,9 +444,10 @@ function extractSpecs(doc: Document, jsonLd: JsonLdData): SemanticSpec[] {
     const k = norm(s.name)
     if (!k || seen.has(k)) return
     if (s.group && COOKIE_CATEGORY_RE.test(cleanText(s.group))) return
+    if (s.group && RELATED_GROUP_RE.test(s.group)) return
     if (SPEC_UI_LABEL_RE.test(s.name)) return
     // Rejet universel : valeur manifestement concat/garbage (chiffres sans
-    // unité avec ≥3 séparateurs — typiquement une concat de valeurs multiples
+    // unité avec ≥2 séparateurs — typiquement une concat de valeurs multiples
     // rassemblées par un dropdown de variantes/accessoires).
     if (isGarbageConcatValue(s.value)) return
     // Filtres anti-junk appliqués aux paires issues du scan générique (body *).

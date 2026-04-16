@@ -25,15 +25,21 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
   const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
   /** Noms de groupe / clés qui trahissent une section prix / tarif */
   const PRICE_GROUP_RE = /prix|price|tarif|co[uû]t|cost|tva|vat|ttc|ht\b|hors\s*taxe/i
-  /** Valeur concat/garbage : longue séquence numérique sans unité avec ≥3 séparateurs.
-   *  Signe d'une concat de valeurs multiples rassemblées depuis un dropdown de
-   *  variantes/accessoires (ex: "3455.566.5781012" = concat diamètres de 21 forets). */
+  /** Valeur concat/garbage : séquence purement numérique (chiffres + .,) sans
+   *  unité ni espace, avec ≥2 séparateurs. Les valeurs légitimes contiennent
+   *  presque toujours une unité (ex: "1,5 kg", "12.5 mm") donc passent le test
+   *  uniquement si très courtes. Signe d'une concat de valeurs multiples
+   *  rassemblées depuis un dropdown de variantes (ex: "3455.566.5781012"). */
   const isGarbageConcat = (v: string): boolean => {
     if (v.length < 8) return false
-    if (!/^[\d.,\s]+$/.test(v)) return false
+    if (!/^[\d.,]+$/.test(v)) return false
     const seps = (v.match(/[.,]/g) || []).length
-    return seps >= 3
+    return seps >= 2
   }
+  /** Groupes de specs issus de widgets "related/suggested/recommended" : leurs
+   *  paires (ex: "Multi Material Drills = (0)") sont des compteurs de
+   *  catégories liées, pas des vraies specs produit. */
+  const RELATED_GROUP_RE = /\b(recommand(?:ation|ed)|suggestions?|related|associat(?:ed|ion)|vu\s+r[eé]cemment|recently\s+viewed|similar|vous\s+aimerez|you\s+may(?:\s+also)?\s+like|produits?\s+li[eé]s?|produits?\s+suggest|accessoires?\s+compatibles?|compatible\s+accessor)/i
 
   // ── Parser rapide pour les blocs structurés injectés ──
   // Format : <TAG>_START\nGROUP: Titre\nNom = Valeur\n...\n<TAG>_END
@@ -62,6 +68,7 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
           if (FINANCIAL_VALUE_RE.test(value)) continue
           if (PRICE_GROUP_RE.test(currentGroup ?? '')) continue
           if (PRICE_GROUP_RE.test(name)) continue
+          if (RELATED_GROUP_RE.test(currentGroup ?? '')) continue
           if (isGarbageConcat(value)) continue
           const key = `${name.toLowerCase()}::${value.toLowerCase()}`
           if (!seen.has(key)) {

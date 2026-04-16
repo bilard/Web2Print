@@ -47,14 +47,15 @@ function hasVariantDropdownAncestor(el: Element): boolean {
   return skuLikeOptions >= 3 || ariaOptions >= 5 || selectOptions >= 5
 }
 
-/** Valeur concat/garbage : chaîne numérique ≥8 chars sans unité avec ≥3
- *  séparateurs — signe d'une concat de valeurs rassemblées depuis un dropdown. */
+/** Valeur concat/garbage : séquence purement numérique (chiffres + .,) sans
+ *  unité ni espace, avec ≥2 séparateurs. Les valeurs légitimes contiennent
+ *  presque toujours une unité (kg, mm, Nm, rpm, V…) donc passent le test
+ *  /^[\d.,]+$/ uniquement si très courtes (filtre par v.length < 8). */
 function isGarbageConcatValue(v: string): boolean {
   if (v.length < 8) return false
-  if (!/^[\d.,\s]+$/.test(v)) return false
-  const dots = (v.match(/\./g) || []).length
-  const commas = (v.match(/,/g) || []).length
-  return dots + commas >= 3
+  if (!/^[\d.,]+$/.test(v)) return false
+  const seps = (v.match(/[.,]/g) || []).length
+  return seps >= 2
 }
 
 function nearestHeading(el: Element): string {
