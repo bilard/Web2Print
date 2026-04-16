@@ -2877,6 +2877,37 @@ function canonicalizeImageUrl(url: string): string {
   }
 }
 
+/** Teste si une URL est une image junk (logo, picto, badge, miniature de PDF,
+ *  etc.). Partagé entre parseImagesFromMarkdown et le filtrage des images LLM. */
+function isJunkImageUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname
+    const filename = path.split('/').pop()?.toLowerCase() ?? ''
+    const segments = path.split('/').filter(Boolean)
+    // Extensions non-photo : SVG et ICO quasi toujours des pictos/icônes.
+    if (/\.(svg|ico)(\?|$)/i.test(url)) return true
+    // Noms de fichier de pictos/logos/ornements (start ou milieu de nom).
+    if (/^(logo|favicon|sprite|spacer|blank|pixel|transparent|1x1|beacon|icon|ico|picto|pictogram|badge|banner|bannière|flag|trust|seal|award|certif|cert|stamp|star|rating|review|note|etoile|medal|ribbon|bullet|check|tick|arrow|fleche|chevron|caret|cross|croix)\b/i.test(filename)) return true
+    if (/[-_](logo|icon|avatar|favicon|sprite|spacer|pixel|tracking|beacon|picto|pictogram|badge|banner|flag|trust|seal|award|certif|stamp|star|rating|medal|ribbon|thumb|thumbnail|miniature|preview|placeholder|overlay|watermark|social|share|heart|favorite|wish|cart|bag|compare|print|printer)[-_.\d]/i.test(filename)) return true
+    // Miniatures de PDF/docs
+    if (/\.pdf\.(jpe?g|png|webp|avif)$/i.test(filename)) return true
+    if (/^(fiche|notice|datasheet|tech[-_]?sheet|manual|doc|document|brochure|catalog|flyer)[-_.]/i.test(filename)) return true
+    // Drupal imagecache styles avec doc/thumb/icon
+    const styleMatch = path.match(/\/styles\/([^/]+)\//i)
+    if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure|thumb|mini|icon|logo|picto|badge|flag)([-_]|$)/i.test(styleMatch[1])) return true
+    // Path segment dédié aux documents/logos/icônes
+    if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|icons?|icones?|pictos?|badges?|banners?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?)$/i.test(s))) return true
+    // Réseaux sociaux
+    const lastSegments = segments.slice(-2).join('/')
+    if (/\b(facebook|twitter|instagram|youtube|linkedin|tiktok|pinterest|whatsapp|telegram)\b/i.test(lastSegments)) return true
+    // URL très petite (< 2 segments = probable asset global)
+    if (segments.length <= 1) return true
+    return false
+  } catch {
+    return false
+  }
+}
+
 function parseImagesFromMarkdown(md: string): string[] {
   // Limiter l'extraction au contenu avant les sections documents/associés/etc.
   md = truncateBeforeNonProductSections(md)
@@ -2884,41 +2915,9 @@ function parseImagesFromMarkdown(md: string): string[] {
   const seen = new Set<string>()
   const images: string[] = []
 
-  /** Teste si une URL est une image UI/junk (logo, icône, pixel, miniature de PDF, etc.) et pas un produit.
-   *  On teste uniquement le nom de fichier (dernier segment du path), pas l'URL entière,
-   *  pour éviter les faux positifs sur les chemins CMS (/sites/default/files/, /static/images/, etc.)
-   */
-  const isJunkImage = (url: string): boolean => {
-    try {
-      const path = new URL(url).pathname
-      const filename = path.split('/').pop()?.toLowerCase() ?? ''
-      // Petites images (< 3 segments de path = probablement un favicon/sprite inline)
-      const segments = path.split('/').filter(Boolean)
-      // Tester le nom de fichier uniquement
-      if (/^(logo|favicon|sprite|spacer|blank|pixel|transparent|1x1|beacon)\b/i.test(filename)) return true
-      if (/[-_](logo|icon|avatar|favicon|sprite|spacer|pixel|tracking|beacon)[-_.\d]/i.test(filename)) return true
-      // Miniatures de PDF/docs : filename ou path contient des marqueurs documentaires
-      if (/\.pdf\.(jpe?g|png|webp|avif)$/i.test(filename)) return true
-      if (/^(fiche|notice|datasheet|tech[-_]?sheet|manual|doc|document|brochure|catalog)[-_.]/i.test(filename)) return true
-      // Drupal imagecache styles avec "doc" (ex: product_doc_carousel_mobile, doc_preview_*)
-      const styleMatch = path.match(/\/styles\/([^/]+)\//i)
-      if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure)([-_]|$)/i.test(styleMatch[1])) return true
-      // Path segment dédié aux documents
-      if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?)$/i.test(s))) return true
-      // Tester le dernier segment de path pour les patterns sociaux/nav
-      const lastSegments = segments.slice(-2).join('/')
-      if (/\b(facebook|twitter|instagram|youtube|linkedin|tiktok|pinterest)\b/i.test(lastSegments)) return true
-      // Très petit fichier (souvent des icônes SVG en ligne)
-      if (/\bsvg\b/i.test(filename) && segments.length <= 2) return true
-      return false
-    } catch {
-      return false
-    }
-  }
-
   const addImg = (url: string) => {
     const raw = url.trim().replace(/[)>\]}\s]+$/, '')
-    if (!raw || !raw.startsWith('http') || isJunkImage(raw)) return
+    if (!raw || !raw.startsWith('http') || isJunkImageUrl(raw)) return
     // Canonicaliser les URLs Drupal styled → original (haute résolution)
     const u = canonicalizeImageUrl(raw)
     if (seen.has(u)) return
@@ -3791,15 +3790,15 @@ ${sourceContext}
 ${dataSections.join('\n\n')}
 
 ## RÈGLES ABSOLUES
-1. COPIER VERBATIM — ne reformule jamais, ne résume jamais, n'embellis jamais
-2. Description : copie le texte descriptif trouvé TEL QUEL, mot pour mot
-3. Avantages : copie TOUS les bullet points / features TEL QUEL. SANS LIMITE de nombre
-4. Spécifications : extrais CHAQUE paire nom/valeur de CHAQUE section technique. SANS LIMITE de nombre
-5. Variantes : extrais TOUTES les déclinaisons/variantes du produit avec référence, libellé et properties
-6. Images : reprends toutes les URLs d'images (https://...) trouvées dans les données
-7. Documents : reprends toutes les URLs de fichiers PDF (.pdf) trouvées dans les données
+1. LANGUE DE SORTIE : TOUJOURS FRANÇAIS. Si le contenu source est en anglais/allemand/autre, TRADUIS fidèlement (description, noms de specs, libellés groupes, avantages, libellés variants). Les valeurs numériques + unités + références/SKU restent inchangées.
+2. Description : reprends le texte descriptif ; traduis en français professionnel si la source n'est pas FR (2–4 phrases min).
+3. Avantages : reprends TOUS les bullet points / features, traduits en FR. SANS LIMITE de nombre.
+4. Spécifications : extrais CHAQUE paire nom/valeur de CHAQUE section technique. SANS LIMITE. Libellés et groupes en FR ; valeurs (chiffres+unités) inchangées.
+5. Variantes : extrais TOUTES les déclinaisons avec référence (inchangée), libellé (FR), et properties (clés FR).
+6. Images : reprends toutes les URLs d'images (https://...) trouvées dans les données.
+7. Documents : reprends toutes les URLs de fichiers PDF (.pdf) trouvées dans les données.
 8. Si un champ n'existe pas dans les données → chaîne vide ou tableau vide. JAMAIS d'invention.
-9. NE TRADUIS PAS — garde la langue originale des données
+9. FIDÉLITÉ chiffrée : aucune conversion d'unité, aucun arrondi.
 
 Réponds UNIQUEMENT via l'outil emit_response.`
             : needsKnowledgeBoost
@@ -3879,6 +3878,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           const mdImages = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
           const llmImages: string[] = Array.isArray(ai.images)
             ? (ai.images as unknown[]).filter((u): u is string => typeof u === 'string' && /^https?:\/\//.test(u))
+              .filter((u) => !isJunkImageUrl(u))
             : []
           const mergedImages: string[] = mdImages.length > 0
             ? Array.from(new Set([...mdImages, ...llmImages]))
