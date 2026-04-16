@@ -350,23 +350,47 @@
       sendResponse({ ok: true })
     }
     if (msg.type === 'pim-preview-selector') {
+      // Surbrillance PERSISTANTE (plus de setTimeout 3s) + suivi au scroll/resize.
+      window.__pimPersistentOverlays = window.__pimPersistentOverlays || []
+      const clearPersistent = () => {
+        (window.__pimPersistentOverlays || []).forEach((o) => o.remove())
+        window.__pimPersistentOverlays = []
+      }
       try {
         const matches = document.querySelectorAll(msg.selector)
-        const overlays = []
-        matches.forEach((m) => {
-          const r = m.getBoundingClientRect()
-          const o = document.createElement('div')
-          o.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border:2px solid #10b981;background:rgba(16,185,129,0.12);border-radius:3px;'
-          o.style.left = r.left + 'px'; o.style.top = r.top + 'px'
-          o.style.width = r.width + 'px'; o.style.height = r.height + 'px'
-          document.documentElement.appendChild(o)
-          overlays.push(o)
-        })
-        setTimeout(() => overlays.forEach((o) => o.remove()), 3000)
+        clearPersistent()
+        window.__pimPersistentNodes = Array.from(matches)
+        const render = () => {
+          clearPersistent()
+          if (!window.__pimPersistentNodes) return
+          window.__pimPersistentNodes.forEach((n) => {
+            if (!n || !n.getBoundingClientRect) return
+            const r = n.getBoundingClientRect()
+            if (r.width === 0 && r.height === 0) return
+            const o = document.createElement('div')
+            o.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border:2px solid #10b981;background:rgba(16,185,129,0.15);border-radius:3px;'
+            o.style.left = r.left + 'px'; o.style.top = r.top + 'px'
+            o.style.width = r.width + 'px'; o.style.height = r.height + 'px'
+            document.documentElement.appendChild(o)
+            window.__pimPersistentOverlays.push(o)
+          })
+        }
+        render()
+        if (!window.__pimPersistentListenersInstalled) {
+          window.addEventListener('scroll', render, { passive: true, capture: true })
+          window.addEventListener('resize', render, { passive: true })
+          window.__pimPersistentListenersInstalled = true
+        }
         sendResponse({ count: matches.length })
       } catch (err) {
         sendResponse({ count: 0, error: err.message })
       }
+    }
+    if (msg.type === 'pim-clear-preview') {
+      (window.__pimPersistentOverlays || []).forEach((o) => o.remove())
+      window.__pimPersistentOverlays = []
+      window.__pimPersistentNodes = null
+      sendResponse({ ok: true })
     }
     if (msg.type === 'pim-get-url') {
       sendResponse({ url: window.location.href, host: window.location.hostname.replace(/^www\./, '') })

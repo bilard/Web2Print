@@ -33,6 +33,9 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
   const [loading, setLoading] = useState(false)
   const [captureMode, setCaptureMode] = useState<'off' | 'single' | 'multiple'>('off')
   const [pendingCapture, setPendingCapture] = useState<CaptureMessage | null>(null)
+  // Index du champ dont le selector est actuellement prévisualisé (surbrillance
+  // persistante dans l'iframe). null = rien de sélectionné.
+  const [selectedFieldIdx, setSelectedFieldIdx] = useState<number | null>(null)
 
   // Quand on change de template dans la liste, re-synchroniser l'URL source
   // et vider l'iframe pour forcer un rechargement avec la bonne page.
@@ -43,6 +46,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     setRewrittenHtml(null)
     setCaptureMode('off')
     setPendingCapture(null)
+    setSelectedFieldIdx(null)
     if (url) {
       // Auto-load : fetch + injection en tâche de fond dès l'ouverture du template.
       ;(async () => {
@@ -110,6 +114,22 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     sendToIframe({ type: 'pim-preview-selector', selector })
   }
 
+  const clearPreview = () => {
+    sendToIframe({ type: 'pim-clear-preview' })
+    setSelectedFieldIdx(null)
+  }
+
+  const toggleFieldPreview = (idx: number) => {
+    if (selectedFieldIdx === idx) {
+      clearPreview()
+      return
+    }
+    const sel = template.fields[idx]?.strategies[0]?.expression ?? ''
+    if (!sel) return
+    previewSelector(sel)
+    setSelectedFieldIdx(idx)
+  }
+
   const assignTo = (fieldName: string, multiple: boolean) => {
     if (!pendingCapture) return
     // Pour les images/docs : utiliser la stratégie attr si pertinent
@@ -155,27 +175,34 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
           </div>
         ) : (
           <div className="space-y-1">
-            {template.fields.map((f, i) => (
-              <div
-                key={i}
-                onClick={() => previewSelector(f.strategies[0]?.expression ?? '')}
-                title="Clique pour surligner le bloc correspondant dans la page"
-                className="group flex items-center justify-between gap-2 p-1.5 bg-white/[0.03] hover:bg-emerald-500/[0.08] hover:border-emerald-400/30 border border-transparent rounded text-[11px] cursor-pointer transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <span className="text-indigo-300 font-semibold">{f.field}</span>
-                  {f.multiple && <span className="ml-1 px-1 py-0.5 text-[9px] bg-white/10 rounded">liste</span>}
-                  <code className="ml-2 text-white/50 font-mono truncate group-hover:text-emerald-300/80">{f.strategies[0]?.expression}</code>
-                  {f.strategies[0]?.attr && <span className="ml-1 text-white/40">[{f.strategies[0].attr}]</span>}
+            {template.fields.map((f, i) => {
+              const isSelected = selectedFieldIdx === i
+              return (
+                <div
+                  key={i}
+                  onClick={() => toggleFieldPreview(i)}
+                  title={isSelected ? 'Clique pour désélectionner' : 'Clique pour surligner le bloc dans la page'}
+                  className={`group flex items-center justify-between gap-2 p-1.5 border rounded text-[11px] cursor-pointer transition-colors ${
+                    isSelected
+                      ? 'bg-emerald-500/15 border-emerald-400/50'
+                      : 'bg-white/[0.03] hover:bg-emerald-500/[0.08] hover:border-emerald-400/30 border-transparent'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className={isSelected ? 'text-emerald-300 font-semibold' : 'text-indigo-300 font-semibold'}>{f.field}</span>
+                    {f.multiple && <span className="ml-1 px-1 py-0.5 text-[9px] bg-white/10 rounded">liste</span>}
+                    <code className={`ml-2 font-mono truncate ${isSelected ? 'text-emerald-200/90' : 'text-white/50 group-hover:text-emerald-300/80'}`}>{f.strategies[0]?.expression}</code>
+                    {f.strategies[0]?.attr && <span className="ml-1 text-white/40">[{f.strategies[0].attr}]</span>}
+                  </div>
+                  <Eye className={`w-3 h-3 shrink-0 ${isSelected ? 'text-emerald-300' : 'text-white/25 group-hover:text-emerald-300'}`} />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onChange({ ...template, fields: template.fields.filter((_, j) => j !== i), updatedAt: Date.now() }) }}
+                    className="text-red-400/60 hover:text-red-400 shrink-0"
+                    title="Supprimer ce champ"
+                  ><X className="w-3 h-3" /></button>
                 </div>
-                <Eye className="w-3 h-3 text-white/25 group-hover:text-emerald-300 shrink-0" />
-                <button
-                  onClick={(e) => { e.stopPropagation(); onChange({ ...template, fields: template.fields.filter((_, j) => j !== i), updatedAt: Date.now() }) }}
-                  className="text-red-400/60 hover:text-red-400 shrink-0"
-                  title="Supprimer ce champ"
-                ><X className="w-3 h-3" /></button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

@@ -14,6 +14,31 @@ export const OVERLAY_SCRIPT = `
   var currentHover = null
   var highlightEl = null
   var tooltipEl = null
+  // Overlays persistants (preview d'un selector stocké). Repositionnés au
+  // scroll et resize pour suivre le contenu.
+  window.__pimPersistentOverlays = window.__pimPersistentOverlays || []
+  window.__pimPersistentNodes = window.__pimPersistentNodes || null
+  function clearPersistentOverlays() {
+    (window.__pimPersistentOverlays || []).forEach(function(o) { o.remove() })
+    window.__pimPersistentOverlays = []
+  }
+  function renderPersistentOverlays() {
+    clearPersistentOverlays()
+    if (!window.__pimPersistentNodes || window.__pimPersistentNodes.length === 0) return
+    window.__pimPersistentNodes.forEach(function(n) {
+      if (!n || !n.getBoundingClientRect) return
+      var r = n.getBoundingClientRect()
+      if (r.width === 0 && r.height === 0) return
+      var o = document.createElement('div')
+      o.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border:2px solid #10b981;background:rgba(16,185,129,0.15);border-radius:3px;box-shadow:0 0 0 9999px rgba(0,0,0,0.0);'
+      o.style.left = r.left + 'px'; o.style.top = r.top + 'px'
+      o.style.width = r.width + 'px'; o.style.height = r.height + 'px'
+      document.documentElement.appendChild(o)
+      window.__pimPersistentOverlays.push(o)
+    })
+  }
+  window.addEventListener('scroll', renderPersistentOverlays, { passive: true, capture: true })
+  window.addEventListener('resize', renderPersistentOverlays, { passive: true })
 
   function ensureHighlight() {
     if (highlightEl) return highlightEl
@@ -139,27 +164,22 @@ export const OVERLAY_SCRIPT = `
       if (mode === 'off') removeHighlight()
     }
     if (msg.type === 'pim-preview-selector') {
-      // Surbriller un selector donné par le parent (pour voir ce qu'il matche)
+      // Surbriller en PERSISTANT le selector (reste jusqu'au prochain
+      // pim-preview-selector ou pim-clear-preview). Repositionné au scroll
+      // et resize pour suivre le contenu.
+      clearPersistentOverlays()
       try {
         var matches = document.querySelectorAll(msg.selector)
-        removeHighlight()
-        var overlays = []
-        matches.forEach(function(m, i) {
-          var r = m.getBoundingClientRect()
-          var o = document.createElement('div')
-          o.className = '__pim-preview'
-          o.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border:2px solid #10b981;background:rgba(16,185,129,0.12);border-radius:3px;'
-          o.style.left = r.left + 'px'; o.style.top = r.top + 'px'
-          o.style.width = r.width + 'px'; o.style.height = r.height + 'px'
-          document.documentElement.appendChild(o)
-          overlays.push(o)
-        })
-        // Cleanup after 3s
-        setTimeout(function() { overlays.forEach(function(o) { o.remove() }) }, 3000)
+        window.__pimPersistentNodes = Array.from(matches)
+        renderPersistentOverlays()
         window.parent.postMessage({ type: 'pim-preview-result', count: matches.length }, '*')
       } catch (err) {
         window.parent.postMessage({ type: 'pim-preview-result', count: 0, error: err.message }, '*')
       }
+    }
+    if (msg.type === 'pim-clear-preview') {
+      clearPersistentOverlays()
+      window.__pimPersistentNodes = null
     }
   }, false)
 
