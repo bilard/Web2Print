@@ -225,6 +225,28 @@ function sanitizeEnriched(enriched: EnrichedProduct): EnrichedProduct {
     console.log('[sanitize] garbage description detected, clearing')
     description = ''
   }
+  // Description : retirer les lignes qui sont des listes de téléchargements
+  // (format "Label | https://..." ou "Label ## https://..." — PDF, fact-tag,
+  // partlist…). Ce sont des documents mal injectés, pas du marketing.
+  if (description) {
+    const cleaned = description
+      .split(/\r?\n/)
+      .filter((line) => {
+        const t = line.trim()
+        if (!t) return true
+        // Rejet : ligne contenant une URL + séparateur ou juste une URL
+        if (/\s[|#]{1,2}\s*https?:\/\//.test(t)) return false
+        if (/https?:\/\/\S+/.test(t)) return false
+        return true
+      })
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+    if (cleaned !== description) {
+      console.log('[sanitize] stripped document/URL lines from description')
+      description = cleaned
+    }
+  }
 
   // Documents : nettoyer les noms génériques ("Télécharger", "Download", etc.)
   const documents = enriched.documents.map(doc => cleanDocumentName(doc))
@@ -2400,6 +2422,11 @@ function parseDescriptionFromMarkdown(md: string): string {
     && !/^\[.*\]\(.*\)$/.test(s) && !/^!\[/.test(s) && !s.startsWith('http')
     && !/^[-*•✓✔]\s/.test(s) && !isGarbageContent(s)
     && !/^\d+([.,]\d+)?\s*(b|kb|mb|gb|ko|mo|go|octets?|bytes?)\s*$/i.test(s)
+    // Rejet des lignes-documents (format "Label | URL" ou "Label ## URL") :
+    // label court suivi d'un séparateur puis d'une URL → c'est une ligne
+    // téléchargement, pas de la prose descriptive.
+    && !/\s[|#]{1,2}\s*https?:\/\//.test(s)
+    && !/https?:\/\/\S+/.test(s)
 
   const clean = (s: string) => s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim()
 
