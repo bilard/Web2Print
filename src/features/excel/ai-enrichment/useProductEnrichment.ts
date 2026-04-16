@@ -978,15 +978,34 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           const finalMdScore = scoreMd(markdownContent)
           const finalSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
-          // Seuil binaire : scraping riche (specs ≥5 + score ≥10) → extraction stricte.
-          // Sinon (SPA/accordéons, dropdown de variantes qui masque les vraies specs,
-          // contenu thin) → prompt knowledge-augmented : le LLM complète depuis les
-          // fiches publiques du produit identifié par sa référence+marque, tout en
-          // gardant la fidélité aux valeurs effectivement scrapées.
-          const needsKnowledgeBoost = !(finalSpecCount >= 5 && finalMdScore >= 10)
+
+          // Détection "scrape off-target" : le titre/description scrapés ne
+          // contiennent AUCUN token distinctif de la référence cible → le
+          // scraper a livré un mauvais produit (ex: Milwaukee /m18-fpd3/ qui
+          // rend par défaut un accessoire foret). Dans ce cas le contenu
+          // scrapé est inutilisable comme source — on force le knowledge mode.
+          const targetRef = (reference ?? sku ?? title ?? '').toString()
+          const refTokens = targetRef
+            .toLowerCase()
+            .split(/[\s\-_,./]+/)
+            .filter((t) => t.length >= 3 && /[a-z0-9]/i.test(t) && /\d/.test(t))
+          let offTarget = false
+          if (refTokens.length > 0 && markdownContent) {
+            // Chercher dans les 3000 premiers chars (SEMANTIC_EXTRACT + début
+            // de narrative) — le TITLE/DESCRIPTION y sont toujours.
+            const haystack = markdownContent.slice(0, 3000).toLowerCase()
+            offTarget = !refTokens.some((t) => haystack.includes(t))
+          }
+
+          // Seuil binaire : scraping riche (specs ≥5 + score ≥10 + on-target)
+          // → extraction stricte. Sinon (SPA, dropdown masquant les specs,
+          // off-target, contenu thin) → prompt knowledge-augmented : le LLM
+          // complète depuis les fiches publiques du produit identifié par sa
+          // référence+marque, tout en gardant la fidélité aux valeurs scrapées.
+          const needsKnowledgeBoost = offTarget || !(finalSpecCount >= 5 && finalMdScore >= 10)
           const promptMode = needsKnowledgeBoost ? 'knowledge-augmented' : 'extraction-only'
-          console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore)
-          log(`🎯 Prompt : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore})`)
+          console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore, '| offTarget:', offTarget)
+          log(`🎯 Prompt : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore}${offTarget ? ', off-target' : ''})`)
 
           const prompt = needsKnowledgeBoost
             ? `Tu es un expert produit. Le scraping web a retourné peu ou pas de spécifications techniques structurées (site SPA / accordéons JS / dropdown de variantes masquant les vraies specs). Ta mission : générer une fiche produit COMPLÈTE en combinant les données scrapées (à utiliser en PRIORITÉ pour vérifier les valeurs) + tes connaissances publiques et factuelles du produit identifié par sa référence et sa marque.
