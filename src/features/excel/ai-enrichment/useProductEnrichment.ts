@@ -495,6 +495,47 @@ export function useProductEnrichment() {
             console.log('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
           }
 
+          // ── Off-target detect + language fallback ──
+          // Certains sites SPA (Milwaukee .eu FR) rendent un mauvais produit par
+          // défaut sur certaines URLs localisées. Si le TITLE scrapé ne contient
+          // pas un token de la référence, tenter la version anglaise du même
+          // path (/fr-fr/ → /en-eu/) qui est souvent mieux rendue. Merge les
+          // deux markdowns pour que le LLM voie les bonnes valeurs.
+          if (markdownContent && productUrl) {
+            const refTokensEarly = (reference ?? sku ?? title ?? '')
+              .toLowerCase()
+              .split(/[\s\-_,./]+/)
+              .filter((t) => t.length >= 3 && /\d/.test(t))
+            const semMatch = markdownContent.match(/SEMANTIC_EXTRACT_START[\s\S]{0,3000}?SEMANTIC_EXTRACT_END/)
+            const titleLine = (semMatch?.[0].match(/^TITLE:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
+            const descLine = (semMatch?.[0].match(/^DESCRIPTION:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
+            const earlyOffTarget = refTokensEarly.length > 0 && titleLine.length > 0
+              && !refTokensEarly.some((t) => titleLine.includes(t) || descLine.includes(t))
+            if (earlyOffTarget) {
+              // Candidats locale-alternative : FR → EN, DE → EN, etc.
+              const altUrls: string[] = []
+              for (const [from, to] of [['/fr-fr/', '/en-eu/'], ['/fr-be/', '/en-eu/'], ['/de-de/', '/en-eu/']] as const) {
+                if (productUrl.includes(from)) altUrls.push(productUrl.replace(from, to))
+              }
+              for (const altUrl of altUrls.slice(0, 1)) {
+                console.log('[enrichment] ⟲ scrape off-target on', productUrl, '→ retry locale fallback:', altUrl)
+                log(`⟲ Scrape off-target — tentative version alternative : ${altUrl}`)
+                try {
+                  const altResult = await jinaScrapeMaufacturerPage(altUrl)
+                  if (altResult?.markdown && altResult.markdown.length > 500) {
+                    // Le scrape EN a (probablement) le bon title → le garder.
+                    markdownContent = altResult.markdown + '\n\n' + markdownContent
+                    primaryHtml = altResult.html ?? primaryHtml
+                    log(`⟲ ✓ Fallback ${altUrl} → ${altResult.markdown.length} chars ajoutés`)
+                    break
+                  }
+                } catch (err) {
+                  console.warn('[enrichment] locale fallback failed', err)
+                }
+              }
+            }
+          }
+
           // ── CORS-proxy fallback : si Jina n'a pas livré les blocs specs/docs, fetch HTML brut ──
           if (markdownContent && productUrl) {
             const hasSpecs = markdownContent.indexOf('JINA_EXTRACTED_SPECS_START') !== -1
