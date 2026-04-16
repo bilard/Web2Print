@@ -667,6 +667,10 @@ export function useProductEnrichment() {
 
         // ── Étape 3 : Construction depuis les données scrapées ────────
         let enriched: EnrichedProduct
+        // Déclaré AVANT les branches manufacturer/LLM pour être accessible par
+        // le post-processing (enrichWithMarkdownGroups) quel que soit le chemin.
+        // Mis à true si le scrape est off-target ou thin (voir PATH B ci-dessous).
+        let needsKnowledgeBoost = false
 
         // ══ PATH FABRICANT : scraping pur (AUCUN LLM) ═════════════════
         // Si le produit est sur un site fabricant officiel, on combine
@@ -849,10 +853,6 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         // Les parseurs markdown restent utilisés pour les images / PDFs / groupes
         // via mergedImages / mergedDocs / enrichWithMarkdownGroups en post-processing.
         let directBuild: Partial<EnrichedProduct> | null = null
-        // Déclaré hors du branch LLM pour être accessible par le post-processing
-        // (enrichWithMarkdownGroups). Mis à true si le scrape est off-target ou
-        // thin (voir le branch PATH B ci-dessous).
-        let needsKnowledgeBoost = false
         const DIRECT_BUILD_DISABLED = true
         if (!DIRECT_BUILD_DISABLED && markdownContent && markdownContent.length > 200) {
           const mdSpecs = parseSpecsFromMarkdown(markdownContent)
