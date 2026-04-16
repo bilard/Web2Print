@@ -434,17 +434,32 @@ export function extractDocumentsBlockFromHtml(html: string, baseUrl?: string): s
     return 'Document'
   }
 
+  // Patterns d'URL qui livrent un document sans extension .pdf mais dont le
+  // payload est un PDF (endpoints de génération / proxies de téléchargement).
+  const PDF_ENDPOINT_RE = /\/(download|partlist|fact-?tag|product-?download|datasheet|manual|factsheet|tech-?sheet|instruction)s?/i
+  // Patterns de texte/label qui trahissent un lien-document même sans PDF URL.
+  const DOWNLOAD_LABEL_RE = /^(t[eé]l[eé]charger|download|pdf|voir|view|open|ouvrir)(\s+(le\s+)?(fichier|document|manuel|fiche|notice))?$/i
+  const isPdfLike = (url: string, text: string): boolean => {
+    if (/\.pdf($|\?|#)/i.test(url)) return true
+    if (PDF_ENDPOINT_RE.test(url)) return true
+    if (text && DOWNLOAD_LABEL_RE.test(text.trim())) return true
+    return false
+  }
+
   doc.querySelectorAll('a[href]').forEach(a => {
     const href = a.getAttribute('href') ?? ''
     if (!href) return
     let url: string
     try { url = baseUrl ? new URL(href, baseUrl).toString() : href } catch { return }
-    if (!/\.pdf($|\?|#)/i.test(url)) return
+    const linkText = (a.textContent ?? '').trim()
+    if (!isPdfLike(url, linkText)) return
     if (seen.has(url)) return
-    // Skip documents issus d'un conteneur piloté par un dropdown multi-options :
-    // ce sont les docs d'un accessoire/variante sélectionné·e par défaut, pas
-    // du produit principal.
-    if (hasVariantDropdownAncestor(a)) return
+    // Pour les documents dans un conteneur piloté par dropdown multi-options,
+    // on accepte UNIQUEMENT les PDF explicites ou les endpoints manifestement
+    // spécifiques au produit (contiennent un SKU/article number). Les sections
+    // "Téléchargements" sur les sites fabricants listent fréquemment les docs
+    // par SKU même quand la sélection visible est un accessoire.
+    if (hasVariantDropdownAncestor(a) && !/\.pdf/i.test(url) && !/\b\d{7,}\b/.test(url)) return
     seen.add(url)
     const label = labelForAnchor(a, url)
     docs.push(`${label} | ${url}`)
