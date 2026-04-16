@@ -337,6 +337,10 @@
   }
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg.type === 'pim-ping') {
+      sendResponse({ ok: true, installed: true })
+      return true
+    }
     if (msg.type === 'pim-set-mode') {
       setMode(msg.mode || 'off')
       sendResponse({ ok: true })

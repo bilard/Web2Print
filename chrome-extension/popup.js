@@ -10,15 +10,34 @@ async function getActiveTab() {
   return tab
 }
 
+async function ensureContentScript(tabId) {
+  // Tenter un ping. Si ça échoue, injecter content.js programmatiquement
+  // (cas où l'onglet existait avant l'installation/rechargement de l'extension).
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: 'pim-ping' })
+    return
+  } catch {
+    /* fall through : on tente une injection */
+  }
+  try {
+    await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
+  } catch (err) {
+    throw new Error('Injection impossible (page chrome://, page store, ou restriction) : ' + (err && err.message ? err.message : ''))
+  }
+}
+
 async function setMode(nextOn) {
   const tab = await getActiveTab()
   if (!tab) return
   try {
+    await ensureContentScript(tab.id)
     await chrome.tabs.sendMessage(tab.id, { type: 'pim-set-mode', mode: nextOn ? 'single' : 'off' })
     isOn = nextOn
     render()
+    // Fermer le popup pour laisser la main au panneau flottant.
+    window.close()
   } catch (err) {
-    alert('Impossible d\'activer sur cet onglet — recharge la page (F5) et réessaie.\n\n' + (err && err.message ? err.message : ''))
+    alert('Impossible d\'activer sur cet onglet.\n\n' + (err && err.message ? err.message : 'Recharge la page et réessaie.'))
   }
 }
 
