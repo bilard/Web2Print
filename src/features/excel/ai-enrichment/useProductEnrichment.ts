@@ -978,10 +978,43 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           const finalMdScore = scoreMd(markdownContent)
           const finalSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
-          console.log('[enrichment] 🎯 prompt: extraction-only | specs:', finalSpecCount, '| score:', finalMdScore)
-          log(`🎯 Prompt : extraction-only (specs=${finalSpecCount}, score=${finalMdScore})`)
+          // Seuil binaire : scraping riche (specs ≥5 + score ≥10) → extraction stricte.
+          // Sinon (SPA/accordéons, dropdown de variantes qui masque les vraies specs,
+          // contenu thin) → prompt knowledge-augmented : le LLM complète depuis les
+          // fiches publiques du produit identifié par sa référence+marque, tout en
+          // gardant la fidélité aux valeurs effectivement scrapées.
+          const needsKnowledgeBoost = !(finalSpecCount >= 5 && finalMdScore >= 10)
+          const promptMode = needsKnowledgeBoost ? 'knowledge-augmented' : 'extraction-only'
+          console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore)
+          log(`🎯 Prompt : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore})`)
 
-          const prompt = `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
+          const prompt = needsKnowledgeBoost
+            ? `Tu es un expert produit. Le scraping web a retourné peu ou pas de spécifications techniques structurées (site SPA / accordéons JS / dropdown de variantes masquant les vraies specs). Ta mission : générer une fiche produit COMPLÈTE en combinant les données scrapées (à utiliser en PRIORITÉ pour vérifier les valeurs) + tes connaissances publiques et factuelles du produit identifié par sa référence et sa marque.
+
+## Produit à identifier
+${sourceContext}
+
+${dataSections.join('\n\n')}
+
+## CE QUE TU DOIS FAIRE
+1. Description : rédige une description marketing professionnelle en FRANÇAIS (2-4 phrases), en t'appuyant sur la description scrapée si elle existe, sinon depuis tes connaissances.
+2. Avantages : liste 8-15 points forts / caractéristiques clés en FR. Reprends ceux visibles dans le markdown scrapé + complète depuis tes connaissances publiques du produit.
+3. Spécifications : point CRITIQUE — liste EXHAUSTIVEMENT les spécifications techniques du produit, organisées en groupes cohérents. Exemples de groupes par catégorie : Informations (référence, gamme), Moteur / Puissance, Batterie, Vitesse, Capacités (acier, bois, mandrin), Couple, Dimensions, Poids, Niveau sonore (décibels), Vibrations, Matériaux, Connectique, etc. Format { name, value, group? }.
+   - Si une spec apparaît dans les données scrapées → reprends sa valeur EXACTEMENT (même unités, même formatage).
+   - Sinon → utilise tes connaissances publiques (fiches fabricant, catalogues grand public, sites revendeurs officiels).
+   - Vise 10-25 specs pour un produit outillage / électroménager / mobilier, proportionné à la complexité.
+   - Retourner <8 specs pour un produit techniquement complexe et bien référencé est un ÉCHEC.
+4. Variantes : liste les déclinaisons connues (par batterie, pack, couleur, taille…) avec reference + label + properties discriminantes.
+5. Images / Documents : reprends les URLs présentes dans le scraping ; sinon tableaux vides.
+
+## IMPORTANT
+- TOUJOURS répondre en FRANÇAIS.
+- Les caractéristiques techniques d'un produit grand public référencé sont des DONNÉES PUBLIQUES (fiches fabricant, catalogues, revendeurs officiels). Les fournir N'EST PAS "inventer" — c'est utiliser des données factuelles vérifiables.
+- Ne jamais inventer une valeur que tu ne connais pas précisément : préférer omettre une spec que donner un chiffre faux.
+- FIDÉLITÉ aux valeurs scrapées : si le markdown dit "Tension: 18 V", ne pas écrire "20V" depuis une autre source.
+
+Réponds UNIQUEMENT via l'outil emit_response.`
+            : `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
 
 ## Produit à identifier
 ${sourceContext}
