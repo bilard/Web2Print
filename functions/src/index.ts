@@ -1,11 +1,9 @@
 import { setGlobalOptions } from 'firebase-functions/v2'
 import { scrapeCatalogForBrief } from './scraper/scrapeCatalogForBrief'
-import { jinaScrape } from './scraper/jinaProxy'
-import { scrapePage } from './scraper/puppeteerScrape'
 
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
 
-export { scrapeCatalogForBrief, jinaScrape, scrapePage }
+export { scrapeCatalogForBrief }
 
 // --- DAM ---
 export { searchImages as damSearchImages } from './dam/searchImages'

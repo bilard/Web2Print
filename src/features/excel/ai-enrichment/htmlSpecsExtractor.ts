@@ -10,7 +10,7 @@
  */
 
 const SKIP_TAGS = new Set(['TABLE', 'DL', 'TR', 'THEAD', 'TBODY', 'TFOOT', 'SCRIPT', 'STYLE', 'NOSCRIPT'])
-const GENERIC_DOC_LABEL = /^(pdf|download|t[eé]l[eé]charger|voir|view|open|ouvrir|link|file|document|generate|index|get|fetch|asset|content|resource|uploads?)\.?$/i
+const GENERIC_DOC_LABEL = /^(pdf|download|t[eé]l[eé]charger|voir|view|open|ouvrir|link|file|document)\.?$/i
 
 /** Labels de raccourcis clavier / contrôles player vidéo rencontrés sur
  *  YouTube, Vimeo, JW Player, Kaltura, Wistia… Pattern universel, s'applique
@@ -20,43 +20,6 @@ const VIDEO_PLAYER_SHORTCUT = /^(play\/?pause|lecture\/?pause|shortcuts?|raccour
 /** Valeurs purement "décoratives" (touches clavier) qui trahissent un
  *  raccourci vidéo même quand le label passe à travers les autres filtres. */
 const VIDEO_PLAYER_KEY_VALUE = /^(espace|space|↑|↓|←|→|esc|enter|tab|shift|ctrl|alt|[a-z]|[0-9]|[a-z]\s*\/\s*[a-z])$/i
-
-/** Libellés d'onglets / sections / CTAs qui ressemblent à des specs quand
- *  une zone résumé produit a une structure 2-colonnes avec icônes check
- *  (Milwaukee, Leroy Merlin, etc.). Miroir de postProcess.UI_LABEL_KEY_RE.
- *  Utilisé pour rejeter une table entière dont toutes les clés sont des
- *  titres d'onglets — faux-positif produit par isVariantTable + checkmarks. */
-const UI_TAB_LABEL_RE = /^(documents?|t[eé]l[eé]chargements?|downloads?|sp[eé]cifications?|specs?|inclus|included|accessoires?|accessories|avis|reviews?|notes?(?:\s*[&et]+\s*avis)?|o[uù]\s*acheter|where\s*to\s*buy|services?|support|garantie|warranty|videos?|vid[eé]os?|galerie|gallery|questions?|faq|contact)$/i
-
-/** Ancêtre avec combobox/select multi-options **SKU-likes**.
- *  Seuils combinés pour éviter les faux-positifs (ex: select de livraison avec
- *  2-3 options textuelles) :
- *   - ≥ 3 options avec `data-key` numérique (pattern SKU), OU
- *   - ≥ 5 options listbox/option. */
-function hasVariantDropdownAncestor(el: Element): boolean {
-  // Recherche bornée au <section>/<article>/[role="region"] le plus proche
-  // pour éviter de frapper tout le <body> (ce qui tuerait l'extraction des
-  // variantes situées dans une autre section de la page).
-  const scope = el.closest('section, article, [role="region"]')
-  if (!scope) return false
-  const combobox = scope.querySelector('[role="combobox"],select')
-  if (!combobox) return false
-  const skuLikeOptions = scope.querySelectorAll('[data-key][data-value]').length
-  const ariaOptions = scope.querySelector('[role="listbox"]')?.querySelectorAll('[role="option"]').length ?? 0
-  const selectOptions = combobox.tagName === 'SELECT' ? combobox.querySelectorAll('option').length : 0
-  return skuLikeOptions >= 3 || ariaOptions >= 5 || selectOptions >= 5
-}
-
-/** Valeur concat/garbage : séquence purement numérique (chiffres + .,) sans
- *  unité ni espace, avec ≥2 séparateurs. Les valeurs légitimes contiennent
- *  presque toujours une unité (kg, mm, Nm, rpm, V…) donc passent le test
- *  /^[\d.,]+$/ uniquement si très courtes (filtre par v.length < 8). */
-function isGarbageConcatValue(v: string): boolean {
-  if (v.length < 8) return false
-  if (!/^[\d.,]+$/.test(v)) return false
-  const seps = (v.match(/[.,]/g) || []).length
-  return seps >= 2
-}
 
 function nearestHeading(el: Element): string {
   let cur: Element | null = el
@@ -93,12 +56,6 @@ function isVideoShortcut(k: string, v: string): boolean {
   return false
 }
 
-// Paires à rejeter : documents (label | Télécharger), codes produit,
-// valeurs génériques qui n'apportent rien.
-const DOC_VALUE_RE = /^(t[eé]l[eé]charger|download|pdf|voir|view)\.?$/i
-const FILENAME_KEY_RE = /^[a-z0-9._-]+\.(pdf|docx?|xlsx?|zip)$/i
-const PRODUCT_CODE_RE_GLOBAL = /^[A-Z][A-Z0-9]{3,}[A-Z0-9]$/
-
 function extractPairFromRow(row: Element): [string, string] | null {
   // Un "enfant significatif" a soit du texte, soit une icône check/svg
   // (les valeurs booléennes sont souvent rendues en icône sans texte).
@@ -120,22 +77,13 @@ function extractPairFromRow(row: Element): [string, string] | null {
     const k = (subs[0].textContent ?? '').replace(/\s+/g, ' ').trim()
     let v = (subs[1].textContent ?? '').replace(/\s+/g, ' ').trim()
     if (!v && subs[1].querySelector('svg,[class*="check"]')) v = 'Oui'
-    if (k && v && k !== v && k.length <= 80 && v.length <= 200 && !isVideoShortcut(k, v)) {
-      if (DOC_VALUE_RE.test(v)) return null
-      if (FILENAME_KEY_RE.test(k)) return null
-      if (PRODUCT_CODE_RE_GLOBAL.test(k)) return null
-      return [k, v]
-    }
+    if (k && v && k !== v && k.length <= 80 && v.length <= 200 && !isVideoShortcut(k, v)) return [k, v]
   }
   const flat = (row.textContent ?? '').replace(/\s+/g, ' ').trim()
   const m = flat.match(/^([^:：]{2,60})\s*[:：]\s*(.{1,200})$/)
   if (m) {
     const k = m[1].trim(), v = m[2].trim()
-    if (isVideoShortcut(k, v)) return null
-    if (DOC_VALUE_RE.test(v)) return null
-    if (FILENAME_KEY_RE.test(k)) return null
-    if (PRODUCT_CODE_RE_GLOBAL.test(k)) return null
-    return [k, v]
+    if (!isVideoShortcut(k, v)) return [k, v]
   }
   return null
 }
@@ -159,98 +107,26 @@ export function extractSpecsBlockFromHtml(html: string): string {
   const seenPairs = new Set<string>()
   let out = ''
 
-  // Détecte un tableau de variantes (dont le header contient Réf./Ref/SKU/Code)
-  // ou dont la 1re colonne ressemble à des codes produit (ALPHA+digits, 5+ chars).
-  // Ces tableaux ne sont PAS des specs techniques → on les exclut.
-  const VARIANT_HEADER_RE = /^(r[eé]f\.?|ref[eé]rence|sku|code(\s*(produit|article|ean))?|gencod|ean|gtin)$/i
-  const PRODUCT_CODE_RE = /^[A-Z][A-Z0-9]{3,}[A-Z0-9]$/
-  function isVariantTable(tbl: Element): boolean {
-    const rows = tbl.querySelectorAll('tr')
-    if (rows.length < 2) return false
-    const headerCells = rows[0].querySelectorAll('td,th')
-    if (headerCells.length >= 2) {
-      const h0 = (headerCells[0].textContent ?? '').replace(/\s+/g, ' ').trim()
-      if (VARIANT_HEADER_RE.test(h0)) return true
-    }
-    // 1re cellule des 2-3 premières lignes data : si codes produit (DR100CH, PR102CH…)
-    let codeHits = 0
-    for (let i = 1; i < Math.min(rows.length, 4); i++) {
-      const cells = rows[i].querySelectorAll('td,th')
-      if (cells.length < 2) continue
-      const k = (cells[0].textContent ?? '').replace(/\s+/g, ' ').trim()
-      // Retirer préfixe "Réf." si collé devant le code (responsive mobile label)
-      const kClean = k.replace(/^(r[eé]f\.?|ref[eé]rence|sku|code)\s*/i, '').trim()
-      if (PRODUCT_CODE_RE.test(kClean)) codeHits++
-    }
-    return codeHits >= 2
-  }
-  // Si une cellule contient un span mobile-hidden avec le label de colonne puis
-  // la valeur (ex: "Réf.DR100CH"), on retire le préfixe correspondant au header.
-  function stripMobileLabel(raw: string, headerText: string): string {
-    if (!headerText) return raw
-    const h = headerText.replace(/\s+/g, ' ').trim()
-    if (!h || h.length > 40) return raw
-    // Escape regex
-    const esc = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const re = new RegExp(`^${esc}\\s*`, 'i')
-    return raw.replace(re, '').trim()
-  }
-
-  // Tables 2-colonnes (specs only — on exclut les tables de variantes)
+  // Tables 2-colonnes
   doc.querySelectorAll('table').forEach(tbl => {
     if (isJunkContext(tbl)) return
-    if (isVariantTable(tbl)) return
-    if (hasVariantDropdownAncestor(tbl)) return
     const rows = tbl.querySelectorAll('tr')
     if (rows.length < 2) return
-    // Récupérer les headers pour strip mobile-label
-    const headerCells = rows[0].querySelectorAll('td,th')
-    const h0 = headerCells.length >= 1 ? (headerCells[0].textContent ?? '').replace(/\s+/g, ' ').trim() : ''
-    const h1 = headerCells.length >= 2 ? (headerCells[1].textContent ?? '').replace(/\s+/g, ' ').trim() : ''
     const localPairs: string[] = []
-    rows.forEach((tr, rowIdx) => {
-      // Skip la 1re ligne seulement si c'est un VRAI header de colonnes :
-      //   - toutes les cellules sont <th> (header complet), OU
-      //   - h0 est un intitulé de colonne générique (Ref/Libellé/Nom/…).
-      // Une ligne <th>label</th><td>valeur</td> est un libellé de ligne
-      // (ex: Kärcher "Tension (V) | 220 - 240"), PAS un header → on garde.
-      if (rowIdx === 0) {
-        const cellsRow0 = tr.querySelectorAll('td,th')
-        const thCount = tr.querySelectorAll('th').length
-        const allTh = cellsRow0.length >= 2 && thCount === cellsRow0.length
-        const headerLabel = /^(r[eé]f\.?|libell[eé]|nom|description|d[eé]signation|caract[eé]ristiques?|propri[eé]t[eé]s?|attribut|param[eè]tre)$/i.test(h0)
-        if (allTh || headerLabel) return
-      }
+    rows.forEach(tr => {
       const cells = tr.querySelectorAll('td,th')
       if (cells.length < 2) return
-      let k = (cells[0].textContent ?? '').replace(/\s+/g, ' ').trim()
+      const k = (cells[0].textContent ?? '').replace(/\s+/g, ' ').trim()
       let v = (cells[1].textContent ?? '').replace(/\s+/g, ' ').trim()
-      k = stripMobileLabel(k, h0)
-      v = stripMobileLabel(v, h1)
       if (!v && cells[1].querySelector('[class*="check"],svg')) v = 'Oui'
       if (!k || !v || k === v || k.length > 80 || v.length > 200) return
       if (isVideoShortcut(k, v)) return
-      // Rejet : paire où la valeur est un code produit / où la clé est un header brut
-      if (PRODUCT_CODE_RE.test(k)) return
-      if (VARIANT_HEADER_RE.test(k) && VARIANT_HEADER_RE.test(v)) return
-      if (isGarbageConcatValue(v)) return
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) return
       seenPairs.add(pk)
       localPairs.push(`${k} = ${v}`)
     })
     if (localPairs.length >= 2) {
-      // Rejet : table dont TOUTES les clés sont des libellés d'onglets UI
-      // (Milwaukee : "Spécifications/Inclus/NOTES & AVIS/Téléchargements" avec
-      // icônes check). Les vraies tables specs ont des clés techniques.
-      const allUiLabels = localPairs.every(p => {
-        const k = p.split(' = ')[0]
-        return UI_TAB_LABEL_RE.test(k)
-      })
-      if (allUiLabels) {
-        localPairs.forEach(p => seenPairs.delete(p.split(' = ')[0].toLowerCase()))
-        return
-      }
       const cap = tbl.querySelector('caption')
       const title = (cap?.textContent ?? '').trim() || nearestHeading(tbl) || 'Spécifications'
       out += `GROUP: ${title}\n${localPairs.join('\n')}\n`
@@ -260,7 +136,6 @@ export function extractSpecsBlockFromHtml(html: string): string {
   // <dl>
   doc.querySelectorAll('dl').forEach(dl => {
     if (isJunkContext(dl)) return
-    if (hasVariantDropdownAncestor(dl)) return
     const dts = dl.querySelectorAll('dt')
     const dds = dl.querySelectorAll('dd')
     if (dts.length < 2 || dts.length !== dds.length) return
@@ -270,7 +145,6 @@ export function extractSpecsBlockFromHtml(html: string): string {
       const v = (dds[i].textContent ?? '').replace(/\s+/g, ' ').trim()
       if (!k || !v || k.length > 80 || v.length > 200) continue
       if (isVideoShortcut(k, v)) continue
-      if (isGarbageConcatValue(v)) continue
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) continue
       seenPairs.add(pk)
@@ -290,13 +164,11 @@ export function extractSpecsBlockFromHtml(html: string): string {
   )
   let priorityHit = false
   priority.forEach(el => {
-    if (hasVariantDropdownAncestor(el)) return
     const pairs = scanContainer(el, false)
     if (!pairs) return
     priorityHit = true
     const localPairs: string[] = []
     for (const [k, v] of pairs) {
-      if (isGarbageConcatValue(v)) continue
       const pk = k.toLowerCase()
       if (seenPairs.has(pk)) continue
       seenPairs.add(pk)
@@ -311,12 +183,10 @@ export function extractSpecsBlockFromHtml(html: string): string {
   // Générique uniquement si pre-scan sec
   if (!priorityHit) {
     doc.querySelectorAll('body *').forEach(el => {
-      if (hasVariantDropdownAncestor(el)) return
       const pairs = scanContainer(el, true)
       if (!pairs || pairs.length < 3) return
       const localPairs: string[] = []
       for (const [k, v] of pairs) {
-        if (isGarbageConcatValue(v)) continue
         const pk = k.toLowerCase()
         if (seenPairs.has(pk)) continue
         seenPairs.add(pk)
@@ -338,112 +208,28 @@ export function extractDocumentsBlockFromHtml(html: string, baseUrl?: string): s
   const docs: string[] = []
   const seen = new Set<string>()
 
-  const HEADING_SEL = 'h1,h2,h3,h4,h5,h6,strong,b,[class*="title" i],[class*="heading" i],[class*="name" i],[class*="label" i]'
-  const SKU_ONLY_RE = /^[0-9]{4,}$/
-  const SKU_LINE_RE = /^(ref|r[eé]f[eé]rence|sku|code)\s*[:#]?\s*[0-9a-z-]{4,}$/i
-
-  function cleanLabel(raw: string): string {
-    const lines = raw
-      .split(/\n+/)
-      .map(l => l.replace(/\s+/g, ' ').trim())
-      .filter(l => l && !SKU_ONLY_RE.test(l) && !SKU_LINE_RE.test(l))
-    return lines[0] ?? ''
-  }
-  function isGoodLabel(t: string): boolean {
-    if (!t || t.length < 3 || t.length > 200) return false
-    if (GENERIC_DOC_LABEL.test(t)) return false
-    if (SKU_ONLY_RE.test(t)) return false
-    return true
-  }
-  /** Trouve le heading le plus proche de `a` dans `container` (ancêtre).
-   *  Priorité : (1) heading CONTENU dans `a`, (2) heading qui PRÉCÈDE `a` en
-   *  ordre document (le plus proche = le dernier preceding), (3) heading unique. */
-  function findNearestHeading(a: Element, container: Element): Element | null {
-    const all = Array.from(container.querySelectorAll(HEADING_SEL))
-    if (all.length === 0) return null
-    if (all.length === 1) return all[0]
-    let insideA: Element | null = null
-    let lastPreceding: Element | null = null
-    for (const h of all) {
-      const pos = a.compareDocumentPosition(h)
-      // eslint-disable-next-line no-bitwise
-      if (pos & Node.DOCUMENT_POSITION_CONTAINED_BY) { insideA = h; continue }
-      // eslint-disable-next-line no-bitwise
-      if (pos & Node.DOCUMENT_POSITION_CONTAINS) continue
-      // eslint-disable-next-line no-bitwise
-      if (pos & Node.DOCUMENT_POSITION_PRECEDING) lastPreceding = h
-    }
-    return insideA ?? lastPreceding ?? all[0]
-  }
   function labelForAnchor(a: Element, resolvedUrl: string): string {
-    // 0) aria-labelledby → lookup élément référencé
-    const labelledById = (a.getAttribute('aria-labelledby') ?? '').split(/\s+/)[0]
-    if (labelledById) {
-      const ref = (a.ownerDocument ?? doc).getElementById(labelledById)
-      if (ref) {
-        const t = cleanLabel(ref.textContent ?? '')
-        if (isGoodLabel(t)) return t
-      }
-    }
-    // 1) Attributs data-* explicites
-    for (const attr of ['data-title', 'data-name', 'data-file-title', 'data-document-name', 'data-label']) {
-      const v = a.getAttribute(attr) ?? ''
-      const t = cleanLabel(v)
-      if (isGoodLabel(t)) return t
-    }
-    // 2) Texte du <a> lui-même (cleanLabel retire les lignes SKU)
-    const aText = cleanLabel(a.textContent ?? '')
-    if (isGoodLabel(aText)) return aText
-    // 3) Walk up : chercher heading le plus proche de `a` dans chaque ancêtre
     let cur: Element | null = a.parentElement
     for (let d = 0; d < 5 && cur; d++) {
       const tag = cur.tagName
-      if (tag === 'BODY' || tag === 'HTML' || tag === 'MAIN') break
-      const h = findNearestHeading(a, cur)
-      if (h) {
-        const t = cleanLabel(h.textContent ?? '')
-        if (isGoodLabel(t)) return t
-      }
-      // Fallback : texte propre du parent (1re ligne non-SKU, conteneur serré)
+      if (tag === 'BODY' || tag === 'HTML' || tag === 'MAIN' || tag === 'SECTION' || tag === 'ARTICLE') break
       const clone = cur.cloneNode(true) as Element
       clone.querySelectorAll('a, button, img, svg, script, style, noscript').forEach(e => e.remove())
-      const parentTxt = cleanLabel(clone.textContent ?? '')
-      if (parentTxt && parentTxt.length >= 5 && parentTxt.length <= 120 && isGoodLabel(parentTxt)) return parentTxt
+      const parentTxt = (clone.textContent ?? '').replace(/\s+/g, ' ').trim()
+      if (parentTxt && parentTxt.length >= 5 && parentTxt.length <= 200 && !GENERIC_DOC_LABEL.test(parentTxt)) return parentTxt
       cur = cur.parentElement
     }
-    // 4) aria-label / title
+    const txt = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+    if (txt && !GENERIC_DOC_LABEL.test(txt) && txt.length <= 200) return txt
     const aria = a.getAttribute('aria-label') ?? ''
-    const ariaClean = cleanLabel(aria)
-    if (isGoodLabel(ariaClean)) return ariaClean
-    const titleAttr = a.getAttribute('title') ?? ''
-    const titleClean = cleanLabel(titleAttr)
-    if (isGoodLabel(titleClean)) return titleClean
-    // 5) URL : d'abord query params nommés (type/name/file/doc/title/format),
-    //    puis filename. Rejeter les noms d'endpoints génériques.
+    if (aria && !GENERIC_DOC_LABEL.test(aria)) return aria.trim()
+    const title = a.getAttribute('title') ?? ''
+    if (title && !GENERIC_DOC_LABEL.test(title)) return title.trim()
     try {
       const u = new URL(resolvedUrl)
-      for (const [k, v] of u.searchParams) {
-        if (!/^(type|name|file|doc|title|format|label|nom)$/i.test(k)) continue
-        const cleaned = decodeURIComponent(v.replace(/\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim()
-        if (isGoodLabel(cleaned)) return cleaned
-      }
       const fn = u.pathname.split('/').pop() ?? ''
-      const cleaned = decodeURIComponent(fn.replace(/\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim()
-      if (isGoodLabel(cleaned)) return cleaned
-    } catch { /* noop */ }
-    return 'Document'
-  }
-
-  // Patterns d'URL qui livrent un document sans extension .pdf mais dont le
-  // payload est un PDF (endpoints de génération / proxies de téléchargement).
-  const PDF_ENDPOINT_RE = /\/(download|partlist|fact-?tag|product-?download|datasheet|manual|factsheet|tech-?sheet|instruction)s?/i
-  // Patterns de texte/label qui trahissent un lien-document même sans PDF URL.
-  const DOWNLOAD_LABEL_RE = /^(t[eé]l[eé]charger|download|pdf|voir|view|open|ouvrir)(\s+(le\s+)?(fichier|document|manuel|fiche|notice))?$/i
-  const isPdfLike = (url: string, text: string): boolean => {
-    if (/\.pdf($|\?|#)/i.test(url)) return true
-    if (PDF_ENDPOINT_RE.test(url)) return true
-    if (text && DOWNLOAD_LABEL_RE.test(text.trim())) return true
-    return false
+      return decodeURIComponent(fn.replace(/\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim() || 'Document'
+    } catch { return 'Document' }
   }
 
   doc.querySelectorAll('a[href]').forEach(a => {
@@ -451,15 +237,8 @@ export function extractDocumentsBlockFromHtml(html: string, baseUrl?: string): s
     if (!href) return
     let url: string
     try { url = baseUrl ? new URL(href, baseUrl).toString() : href } catch { return }
-    const linkText = (a.textContent ?? '').trim()
-    if (!isPdfLike(url, linkText)) return
+    if (!/\.pdf($|\?|#)/i.test(url)) return
     if (seen.has(url)) return
-    // Pour les documents dans un conteneur piloté par dropdown multi-options,
-    // on accepte UNIQUEMENT les PDF explicites ou les endpoints manifestement
-    // spécifiques au produit (contiennent un SKU/article number). Les sections
-    // "Téléchargements" sur les sites fabricants listent fréquemment les docs
-    // par SKU même quand la sélection visible est un accessoire.
-    if (hasVariantDropdownAncestor(a) && !/\.pdf/i.test(url) && !/\b\d{7,}\b/.test(url)) return
     seen.add(url)
     const label = labelForAnchor(a, url)
     docs.push(`${label} | ${url}`)

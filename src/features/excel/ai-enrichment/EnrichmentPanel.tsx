@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, Fragment } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, ImageIcon, Globe, Save, Plus, X,
   Code2, ChevronDown, Copy, FileDown,
@@ -348,30 +348,11 @@ function IdleState({ onLaunch, hasTitle }: { onLaunch: () => void; hasTitle: boo
 function LoadingState({ status, message, logs }: { status: string; message: string; logs: string[] }) {
   const steps: { id: 'searching' | 'scraping' | 'reasoning'; label: string; icon: React.ElementType }[] = [
     { id: 'searching', label: 'Recherche web', icon: Globe },
-    { id: 'scraping', label: 'Extraction page', icon: Zap },
+    { id: 'scraping', label: 'Extraction page produit', icon: Zap },
     { id: 'reasoning', label: 'Synthèse IA', icon: Sparkles },
   ]
   const currentIdx = steps.findIndex((s) => s.id === status)
   const logsEndRef = useRef<HTMLDivElement>(null)
-
-  // Pourcentage animé pour l'étape active : on ne connaît pas la durée réelle
-  // (dépend du site / du LLM), donc on approche 95% asymptotiquement via une
-  // courbe easing-out. Reset à chaque changement de status.
-  const [activePct, setActivePct] = useState(0)
-  useEffect(() => {
-    setActivePct(0)
-    if (currentIdx < 0) return
-    const startedAt = Date.now()
-    // Durée typique par étape (ms) — calibrée pour atteindre ~90% au bout de ce temps.
-    const typicalDurationMs = status === 'searching' ? 6000 : status === 'scraping' ? 25000 : 15000
-    const id = setInterval(() => {
-      const elapsed = Date.now() - startedAt
-      // Easing out exponentiel : progresse vite au début, ralentit vers 95%.
-      const pct = Math.min(95, Math.round(95 * (1 - Math.exp(-elapsed / (typicalDurationMs * 0.4)))))
-      setActivePct(pct)
-    }, 250)
-    return () => clearInterval(id)
-  }, [currentIdx, status])
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -379,17 +360,15 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
 
   return (
     <div className="h-full flex flex-col px-6 py-6">
-      {/* Barre horizontale : 3 étapes côte à côte avec % + thermomètre */}
-      <div className="w-full flex items-stretch gap-2">
+      <div className="w-full max-w-[280px] space-y-3 mx-auto">
         {steps.map((step, i) => {
           const done = currentIdx === -1 ? false : i < currentIdx
           const active = i === currentIdx
-          const pct = done ? 100 : active ? activePct : 0
           const Icon = step.icon
           return (
             <div
               key={step.id}
-              className={`flex-1 flex flex-col gap-2 px-3 py-2.5 rounded-lg border transition-all ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
                 active
                   ? 'bg-indigo-500/10 border-indigo-400/40'
                   : done
@@ -397,55 +376,32 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
                     : 'bg-white/[0.02] border-white/[0.05]'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                    active ? 'bg-indigo-500/20' : done ? 'bg-emerald-500/15' : 'bg-white/5'
-                  }`}
-                >
-                  {active ? (
-                    <Loader2 className="w-3 h-3 text-indigo-300 animate-spin" />
-                  ) : done ? (
-                    <Check className="w-3 h-3 text-emerald-400" />
-                  ) : (
-                    <Icon className="w-3 h-3 text-white/30" />
-                  )}
-                </div>
-                <span
-                  className={`flex-1 min-w-0 truncate text-[10.5px] font-medium ${
-                    active ? 'text-white/90' : done ? 'text-emerald-300/80' : 'text-white/35'
-                  }`}
-                  title={step.label}
-                >
-                  {step.label}
-                </span>
-                <span
-                  className={`text-[10px] font-mono tabular-nums shrink-0 ${
-                    active ? 'text-indigo-200/90' : done ? 'text-emerald-300/80' : 'text-white/25'
-                  }`}
-                >
-                  {pct}%
-                </span>
+              <div
+                className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
+                  active ? 'bg-indigo-500/20' : done ? 'bg-emerald-500/15' : 'bg-white/5'
+                }`}
+              >
+                {active ? (
+                  <Loader2 className="w-3.5 h-3.5 text-indigo-300 animate-spin" />
+                ) : done ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                ) : (
+                  <Icon className="w-3.5 h-3.5 text-white/30" />
+                )}
               </div>
-              {/* Thermomètre / barre de progression */}
-              <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-[width] duration-300 ${
-                    done
-                      ? 'bg-emerald-400/70'
-                      : active
-                        ? 'bg-gradient-to-r from-indigo-400/70 to-indigo-300/90'
-                        : 'bg-white/10'
-                  }`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
+              <span
+                className={`text-[12px] font-medium ${
+                  active ? 'text-white/90' : done ? 'text-emerald-300/80' : 'text-white/35'
+                }`}
+              >
+                {step.label}
+              </span>
             </div>
           )
         })}
       </div>
       {message && (
-        <p className="mt-4 text-[11px] text-white/40 text-center">{message}</p>
+        <p className="mt-4 text-[11px] text-white/40 text-center max-w-[280px] mx-auto">{message}</p>
       )}
 
       {/* Logs temps réel */}
@@ -557,23 +513,6 @@ function DoneState({
       {/* Debug LLM : prompt + paramètres envoyés */}
       {llmRequest && <LlmRequestPanel request={llmRequest} />}
 
-      {/* Fil d'Ariane (remonté au-dessus des images) */}
-      {data.breadcrumb && data.breadcrumb.length > 0 && (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-            Fil d'Ariane
-          </p>
-          <div className="flex flex-wrap items-center gap-1 text-[11px] text-white/55">
-            {data.breadcrumb.map((seg, i) => (
-              <span key={i} className="flex items-center gap-1">
-                {i > 0 && <span className="text-white/20">›</span>}
-                <span className={i === data.breadcrumb!.length - 1 ? 'text-white/80 font-medium' : ''}>{seg}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Image principale (hero) — sélection IA */}
       {data.heroImage && (
         <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
@@ -613,27 +552,6 @@ function DoneState({
           </p>
         )}
       </div>
-
-      {/* Prix produit — juste après les images */}
-      {data.price && (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-            Prix
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-indigo-300">
-              {data.price.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              &nbsp;{data.price.currency === 'EUR' ? '€' : data.price.currency}
-            </span>
-            {data.price.priceType && data.price.priceType !== 'unit' && (
-              <span className="text-[11px] text-white/40">{data.price.priceType}</span>
-            )}
-            {data.price.source && (
-              <span className="text-[10px] text-white/25 ml-auto">source : {data.price.source}</span>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Avantages — éditable, groupés par section */}
       <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
@@ -675,6 +593,27 @@ function DoneState({
           <SpecGroupAccordions specifications={data.specifications} onUpdate={onUpdate} data={data} />
         )}
       </div>
+
+      {/* Prix produit */}
+      {data.price && (
+        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
+            Prix
+          </p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-indigo-300">
+              {data.price.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              &nbsp;{data.price.currency === 'EUR' ? '€' : data.price.currency}
+            </span>
+            {data.price.priceType && data.price.priceType !== 'unit' && (
+              <span className="text-[11px] text-white/40">{data.price.priceType}</span>
+            )}
+            {data.price.source && (
+              <span className="text-[10px] text-white/25 ml-auto">source : {data.price.source}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Variantes produit */}
       {data.variants && data.variants.length > 0 && (
@@ -1028,7 +967,9 @@ function SpecGroupAccordions({
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   data: EnrichedProduct
 }) {
+  // Tous les groupes ouverts par défaut
   const [openGroups, setOpenGroups] = useState<Set<number>>(() => new Set())
+  const [initialized, setInitialized] = useState(false)
 
   // Regrouper les specs par group (conserver l'ordre d'apparition)
   const groups: Array<{ name: string | undefined; specs: Array<{ spec: typeof specifications[0]; globalIdx: number }> }> = []
@@ -1043,12 +984,13 @@ function SpecGroupAccordions({
     }
   })
 
-  // Rouvrir tous les groupes à chaque changement de composition
-  // (nouvelle enrichissement → nouveaux groupes → tout ouvert).
-  const groupsCount = groups.length
+  // Initialiser tous les groupes comme ouverts au premier rendu
   useEffect(() => {
-    if (groupsCount > 0) setOpenGroups(new Set(Array.from({ length: groupsCount }, (_, i) => i)))
-  }, [groupsCount])
+    if (!initialized && groups.length > 0) {
+      setOpenGroups(new Set(groups.map((_, i) => i)))
+      setInitialized(true)
+    }
+  }, [groups.length, initialized])
 
   const toggleGroup = (idx: number) => {
     setOpenGroups((prev) => {
@@ -1150,45 +1092,15 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
   }
   const activeKeys = allKeys.filter(k => variants.some(v => v.properties[k]?.trim()))
 
-  // Colonnes "discriminantes" = celles dont les VALEURS diffèrent entre variantes.
-  // On montre dès que ≥ 2 variantes ont la clé ET qu'il y a ≥ 2 valeurs distinctes
-  // (sinon Hauteur intérieure qui n'est parsée que pour 2/9 variantes serait exclue).
-  const scored = activeKeys
-    .map(k => {
-      const values = variants
-        .map(v => v.properties[k]?.trim() ?? '')
-        .filter(Boolean)
-      const distinct = new Set(values.map(v => v.toLowerCase())).size
-      return { key: k, presence: values.length, distinct }
-    })
-    // Présent dans ≥ 2 variantes, nom court, ≥ 2 valeurs distinctes
-    .filter(s => s.presence >= 2 && s.key.length < 30 && s.distinct >= 2)
-    // Trier : + discriminant d'abord, puis + présent
-    .sort((a, b) => b.distinct - a.distinct || b.presence - a.presence)
-
-  // Déduplication "fuzzy" : Cond. ≈ Conditionnement, Couleur ≈ Coloris, etc.
-  // On garde la première occurrence (donc la plus discriminante).
-  const normalizeKey = (k: string) =>
-    k.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[.\s_-]+/g, '')
-      .replace(/s$/, '') // pluriels
-  const dedupedScored: typeof scored = []
-  const keySignatures = new Set<string>()
-  for (const s of scored) {
-    const sig = normalizeKey(s.key).slice(0, 8) // radical de 8 chars
-    // Fuzzy : si un radical existant est préfixe de celui-ci ou vice versa, skip
-    let dupe = false
-    for (const existing of keySignatures) {
-      if (sig.startsWith(existing) || existing.startsWith(sig)) { dupe = true; break }
-    }
-    if (dupe) continue
-    keySignatures.add(sig)
-    dedupedScored.push(s)
-  }
-
-  // Limite souple : 10 colonnes max pour éviter débordement horizontal extrême
-  const displayTableKeys = dedupedScored.slice(0, 10).map(s => s.key)
+  // Colonnes "discriminantes" = présentes chez >50% des variantes ET nom court (<20 car)
+  // Specs détaillées = le reste (spécifiques par variante)
+  const threshold = Math.max(1, Math.floor(variants.length * 0.5))
+  const tableKeys = activeKeys.filter(k => {
+    const count = variants.filter(v => v.properties[k]?.trim()).length
+    return count >= threshold && k.length < 25
+  })
+  // Limiter le tableau à 6 colonnes max pour rester lisible
+  const displayTableKeys = tableKeys.slice(0, 6)
 
   // Pour chaque variante, les specs détaillées (pas dans les colonnes du tableau)
   const getDetailSpecs = (v: typeof variants[0]) => {
@@ -1244,8 +1156,9 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
             const isExpanded = expandedIdx === i
             const colSpan = 2 + displayTableKeys.length + (hasDetails ? 1 : 0)
             return (
-              <Fragment key={`variant-${i}`}>
+              <>
                 <tr
+                  key={`row-${i}`}
                   className={`${
                     i % 2 === 0 ? 'bg-white/[0.015]' : 'bg-transparent'
                   } border-t border-white/[0.04] hover:bg-white/[0.04] transition-colors ${details.length > 0 ? 'cursor-pointer' : ''}`}
@@ -1274,7 +1187,7 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
                   })}
                 </tr>
                 {isExpanded && details.length > 0 && (
-                  <tr className="bg-white/[0.03]">
+                  <tr key={`detail-${i}`} className="bg-white/[0.03]">
                     <td colSpan={colSpan} className="px-4 py-2">
                       <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[9px]">
                         {details.map((s, si) => {
@@ -1290,7 +1203,7 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
                     </td>
                   </tr>
                 )}
-              </Fragment>
+              </>
             )
           })}
         </tbody>

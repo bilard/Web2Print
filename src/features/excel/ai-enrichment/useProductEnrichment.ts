@@ -6,7 +6,7 @@ import type { EnrichedProduct } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle } from './scrapeBundle'
 import { enrichedProductSchema, enrichedProductJsonSchema } from './schemas'
-import { extractPrimaryImagesFromHtml, extractProductPrice, extractBreadcrumbFromHtml } from './htmlExtractors'
+import { extractPrimaryImagesFromHtml, extractProductPrice } from './htmlExtractors'
 import {
   isGarbageContent,
   parseSpecsFromMarkdown,
@@ -40,14 +40,11 @@ import {
   parseDescriptionFromMarkdown,
   isMainlyGarbage,
 } from './postProcess'
-import { deriveVariantDiscriminants } from './deriveVariantDiscriminants'
-import { enrichVariantsFromMarkdown } from './enrichVariantsFromMarkdown'
 import {
   jinaScrapeMaufacturerPage,
   scrapeManufacturerRawData,
   buildManufacturerProduct,
 } from './manufacturerScraper'
-import { extractSpecsBlockFromHtml } from './htmlSpecsExtractor'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -112,44 +109,13 @@ export function useProductEnrichment() {
       try {
         console.log('[enrichment] START', { sheetName, rowId, title, brand, reference: reference ?? sku, knownUrl })
         log(`Démarrage — ${title} ${brand ?? ''}`)
+        // Cache scraping désactivé : chaque action fait un scrape frais.
+        const usedCache = false
 
         // ── Étape 1 : Trouver la page produit ─────────────────────────────
         let productUrl: string | null = knownUrl ?? null
         let additionalSources: string[] = []
         let searchErrorMsg: string | null = null
-
-        // Cache scraping : réutiliser le markdown Jina déjà récupéré pour cette ligne.
-        // Invalidé par reset(), si l'URL connue a changé, ou si le cache contient
-        // zéro spec utile (scrape raté → on redonne sa chance à Jina sans forcer un Reset manuel).
-        const cached = getScrapeCache(sheetName, rowId)
-        const cachedSpecCount = cached?.markdownContent
-          ? parseSpecsFromMarkdown(cached.markdownContent).length
-          : 0
-        // Détection 404 du cache : si la page cachée est "introuvable", invalider
-        // pour forcer une nouvelle recherche. Évite de boucler sur un mauvais URL.
-        const NOT_FOUND_RE_CACHE = /\b(introuvable|not\s*found|page\s*(non\s*)?(trouv[eé]e|introuvable)|page\s*not\s*found|404\b|indisponible|no\s*longer\s*available)\b/i
-        const cachedIsNotFound = cached?.markdownContent
-          ? NOT_FOUND_RE_CACHE.test(cached.markdownContent.slice(0, 1500).toLowerCase())
-          : false
-        const cacheValid = cached?.markdownContent
-          && cached.markdownContent.length > 200
-          && cachedSpecCount >= 3
-          && !cachedIsNotFound
-          && (!knownUrl || knownUrl === cached.productUrl)
-        let usedCache = false
-        if (cacheValid && cached) {
-          productUrl = cached.productUrl
-          additionalSources = cached.additionalSources ?? []
-          usedCache = true
-          console.log('[enrichment] ♻️ using cached scrape for', productUrl, '(', cached.markdownContent?.length, 'chars,', cachedSpecCount, 'specs)')
-          log(`♻️ Cache scraping utilisé (${cached.markdownContent?.length} chars, ${cachedSpecCount} specs, ${cached.sourcesScrapped?.length ?? 1} source(s))`)
-        } else if (cached) {
-          const reason = cachedIsNotFound ? 'page 404 "introuvable"' : `${cachedSpecCount} specs (trop pauvre)`
-          console.log('[enrichment] ⚠️ cache ignoré (', reason, ')')
-          log(`⚠️ Cache ignoré (${reason} — re-scrape)`)
-          // Cache pourri : l'effacer pour ne pas réessayer à chaque Re-générer
-          clearScrapeCache(sheetName, rowId)
-        }
 
         if (!productUrl) {
           setProgress(sheetName, rowId, {
@@ -261,10 +227,7 @@ export function useProductEnrichment() {
           let bestPick: { url: string; extras: string[]; query: string; score: number } | null = null
 
           const processSearchResults = (results: SearchResult[], q: string): boolean => {
-            // Réécriture locale FR avant scoring : si une page US/EN a un équivalent /fr/,
-            // on score la version française (meilleure pour les marques multi-locale).
-            const normalized = results.map((r) => ({ ...r, url: preferFrenchUrl(r.url) }))
-            const clean = normalized.filter((r) => {
+            const clean = results.filter((r) => {
               const junk = isJunkUrl(r.url)
               if (junk) console.log('[enrichment] rejecting junk URL:', r.url)
               return !junk
@@ -362,92 +325,16 @@ export function useProductEnrichment() {
         }
 
         // ── Étape 2 : Scraper la page via Jina Reader ──────────────────────
-        // Hydratation depuis le cache si disponible (évite de re-solliciter Jina).
-        let markdownContent: string | null = usedCache ? (cached?.markdownContent ?? null) : null
-        let primaryHtml: string | null = usedCache ? (cached?.primaryHtml ?? null) : null
+        let markdownContent: string | null = null
+        let primaryHtml: string | null = null
 
-        // Cache pré-fix : le bloc JINA_EXTRACTED_SPECS peut avoir manqué des
-        // lignes (première ligne <th>label</th><td>val</td> droppée). On
-        // ré-extrait localement depuis le HTML caché avec l'extracteur corrigé
-        // — zéro appel Jina, pas de coût token.
-        if (usedCache && primaryHtml && markdownContent) {
-          const freshBlock = extractSpecsBlockFromHtml(primaryHtml)
-          if (freshBlock) {
-            const start = markdownContent.indexOf('JINA_EXTRACTED_SPECS_START')
-            const endTag = 'JINA_EXTRACTED_SPECS_END'
-            const end = markdownContent.indexOf(endTag)
-            if (start >= 0 && end > start) {
-              const freshCount = (freshBlock.match(/ = /g) ?? []).length
-              const staleCount = (markdownContent.slice(start, end).match(/ = /g) ?? []).length
-              if (freshCount > staleCount) {
-                markdownContent = markdownContent.slice(0, start) + freshBlock + markdownContent.slice(end + endTag.length)
-                console.log('[enrichment] ♻️ JINA block refreshed from cached HTML (', staleCount, '→', freshCount, 'specs)')
-                log(`♻️ Bloc specs rafraîchi depuis HTML en cache (${staleCount} → ${freshCount} specs)`)
-              }
-            } else {
-              // Cache sans bloc JINA (version pre-injection) — l'injecter
-              markdownContent = markdownContent + '\n\n' + freshBlock
-              const freshCount = (freshBlock.match(/ = /g) ?? []).length
-              console.log('[enrichment] ♻️ JINA block injected from cached HTML (', freshCount, 'specs)')
-              log(`♻️ Bloc specs injecté depuis HTML en cache (${freshCount} specs)`)
-            }
-          }
-        }
-
-        /** Score la qualité du markdown : specs × 3 + avantages × 2 + bonus description.
-         *  Pénalise fortement les pages placeholder (bannière cookies dominante + pas de
-         *  mention de la référence produit). */
+        /** Score la qualité du markdown : specs × 3 + avantages × 2 + bonus description */
         const scoreMd = (md: string | null): number => {
           if (!md || md.length < 200) return 0
           const specs = parseSpecsFromMarkdown(md).length
           const advs = parseAdvantagesFromMarkdown(md).length
           const descLen = parseDescriptionFromMarkdown(md).length
-          const base = specs * 3 + advs * 2 + (descLen > 50 ? 5 : 0)
-
-          // Détection 404 / page "introuvable" : titre ou début contient un marqueur
-          // "produit non trouvé" (générique FR/EN). Le site renvoie son chrome complet
-          // avec bannière cookies → sans ce garde-fou, on cache une page inutile.
-          const topSlice = md.slice(0, 1500).toLowerCase()
-          const NOT_FOUND_RE = /\b(introuvable|not\s*found|page\s*(non\s*)?(trouv[eé]e|introuvable)|page\s*not\s*found|404\b|indisponible|no\s*longer\s*available)\b/i
-          if (NOT_FOUND_RE.test(topSlice)) {
-            console.log('[enrichment] scoreMd: 404/not-found page detected → score=0')
-            return 0
-          }
-
-          // Détection "page placeholder" : bannière cookies/consentement visible dans
-          // les 3000 premiers chars + aucune mention du produit (titre ni référence).
-          // Signale une page non hydratée ou un 404 déguisé.
-          const head = md.slice(0, 3000).toLowerCase()
-          const cookieMarkers = [
-            'paramètres des cookies',
-            'accepter tous les cookies',
-            'refuser les cookies',
-            'notre site internet utilise des cookies',
-            'accept all cookies',
-            'cookie settings',
-          ].filter(m => head.includes(m)).length
-          // Chercher la ref produit MAIS en excluant les lignes "Source:" / URL source
-          // (celles-ci contiennent toujours la ref via le slug, même sur une page placeholder).
-          const mdContentOnly = md
-            .split('\n')
-            .filter(l => !/^#+\s*\[Source:/i.test(l) && !/^Source\s*:/i.test(l))
-            .join('\n')
-            .toUpperCase()
-          const lookupTokens = [reference, sku]
-            .filter((s): s is string => typeof s === 'string' && s.length >= 3)
-            .flatMap(s => s.toUpperCase().split(/[\s\-_,]+/).filter(t => t.length >= 3))
-          const hasProductRef = lookupTokens.length === 0 || lookupTokens.some(t => mdContentOnly.includes(t))
-          if (cookieMarkers >= 2 && !hasProductRef) {
-            console.log('[enrichment] scoreMd: placeholder page detected (cookies banner + no product ref in body) → score=0')
-            return 0
-          }
-          // Signal additionnel : très peu de specs + pas de ref produit dans le corps
-          // → page générique de catégorie/série. Pénaliser aussi.
-          if (specs < 3 && !hasProductRef) {
-            console.log('[enrichment] scoreMd: generic page (no ref + <3 specs) → score=0')
-            return 0
-          }
-          return base
+          return specs * 3 + advs * 2 + (descLen > 50 ? 5 : 0)
         }
 
         // Détection anticipée du site fabricant pour adapter la stratégie de scraping
@@ -495,47 +382,6 @@ export function useProductEnrichment() {
             console.log('[enrichment] markdown preview (first 3000 chars):\n', markdownContent.slice(0, 3000))
           }
 
-          // ── Off-target detect + language fallback ──
-          // Certains sites SPA (Milwaukee .eu FR) rendent un mauvais produit par
-          // défaut sur certaines URLs localisées. Si le TITLE scrapé ne contient
-          // pas un token de la référence, tenter la version anglaise du même
-          // path (/fr-fr/ → /en-eu/) qui est souvent mieux rendue. Merge les
-          // deux markdowns pour que le LLM voie les bonnes valeurs.
-          if (markdownContent && productUrl) {
-            const refTokensEarly = (reference ?? sku ?? title ?? '')
-              .toLowerCase()
-              .split(/[\s\-_,./]+/)
-              .filter((t) => t.length >= 3 && /\d/.test(t))
-            const semMatch = markdownContent.match(/SEMANTIC_EXTRACT_START[\s\S]{0,3000}?SEMANTIC_EXTRACT_END/)
-            const titleLine = (semMatch?.[0].match(/^TITLE:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
-            const descLine = (semMatch?.[0].match(/^DESCRIPTION:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
-            const earlyOffTarget = refTokensEarly.length > 0 && titleLine.length > 0
-              && !refTokensEarly.some((t) => titleLine.includes(t) || descLine.includes(t))
-            if (earlyOffTarget) {
-              // Candidats locale-alternative : FR → EN, DE → EN, etc.
-              const altUrls: string[] = []
-              for (const [from, to] of [['/fr-fr/', '/en-eu/'], ['/fr-be/', '/en-eu/'], ['/de-de/', '/en-eu/']] as const) {
-                if (productUrl.includes(from)) altUrls.push(productUrl.replace(from, to))
-              }
-              for (const altUrl of altUrls.slice(0, 1)) {
-                console.log('[enrichment] ⟲ scrape off-target on', productUrl, '→ retry locale fallback:', altUrl)
-                log(`⟲ Scrape off-target — tentative version alternative : ${altUrl}`)
-                try {
-                  const altResult = await jinaScrapeMaufacturerPage(altUrl)
-                  if (altResult?.markdown && altResult.markdown.length > 500) {
-                    // Le scrape EN a (probablement) le bon title → le garder.
-                    markdownContent = altResult.markdown + '\n\n' + markdownContent
-                    primaryHtml = altResult.html ?? primaryHtml
-                    log(`⟲ ✓ Fallback ${altUrl} → ${altResult.markdown.length} chars ajoutés`)
-                    break
-                  }
-                } catch (err) {
-                  console.warn('[enrichment] locale fallback failed', err)
-                }
-              }
-            }
-          }
-
           // ── CORS-proxy fallback : si Jina n'a pas livré les blocs specs/docs, fetch HTML brut ──
           if (markdownContent && productUrl) {
             const hasSpecs = markdownContent.indexOf('JINA_EXTRACTED_SPECS_START') !== -1
@@ -547,33 +393,6 @@ export function useProductEnrichment() {
                 if (!hasSpecs && extra.specs) markdownContent += `\n\n${extra.specs}`
                 if (!hasDocs && extra.docs) markdownContent += `\n\n${extra.docs}`
                 log(`🔷 CORS proxy · ✓ Extraction HTML brut : specs ${extra.specs ? '✓' : '✗'}, docs ${extra.docs ? '✓' : '✗'}`)
-              }
-            }
-          }
-
-          // ── Refresh du bloc JINA_EXTRACTED_SPECS depuis primaryHtml (live) ──
-          // Le script d'injection Jina peut rendre un bloc partiel (onglets
-          // lazy-loaded, sections repliées). L'extracteur TS ignore CSS/JS et
-          // capture le DOM entier via DOMParser. Si freshCount > staleCount,
-          // on remplace — gain observé : Makita 9 → 17 specs.
-          if (primaryHtml && markdownContent) {
-            const freshBlock = extractSpecsBlockFromHtml(primaryHtml)
-            if (freshBlock) {
-              const start = markdownContent.indexOf('JINA_EXTRACTED_SPECS_START')
-              const endTag = 'JINA_EXTRACTED_SPECS_END'
-              const end = markdownContent.indexOf(endTag)
-              const freshCount = (freshBlock.match(/ = /g) ?? []).length
-              if (start >= 0 && end > start) {
-                const staleCount = (markdownContent.slice(start, end).match(/ = /g) ?? []).length
-                if (freshCount > staleCount) {
-                  markdownContent = markdownContent.slice(0, start) + freshBlock + markdownContent.slice(end + endTag.length)
-                  console.log('[enrichment] ♻️ JINA block refreshed from live HTML (', staleCount, '→', freshCount, 'specs)')
-                  log(`♻️ Bloc specs rafraîchi depuis HTML live (${staleCount} → ${freshCount} specs)`)
-                }
-              } else {
-                markdownContent = markdownContent + '\n\n' + freshBlock
-                console.log('[enrichment] ♻️ JINA block injected from live HTML (', freshCount, 'specs)')
-                log(`♻️ Bloc specs injecté depuis HTML live (${freshCount} specs)`)
               }
             }
           }
@@ -594,51 +413,9 @@ export function useProductEnrichment() {
                   console.log('[enrichment] ✓ alternative source is better:', altUrl)
                   log(`✓ Meilleure source alternative : ${new URL(altUrl).hostname}`)
                   markdownContent = altMd
-                  productUrl = altUrl
                   break
                 }
               } catch { /* ignorer */ }
-            }
-          }
-
-          // ── Sonde fabricant post-scrape : si on est toujours sur un score
-          // faible/0 (404 déguisé, page vide), on tente UNE recherche ciblée
-          // sur le domaine fabricant. Différent de la sonde pre-scrape : ici
-          // on sait que le scrape a échoué, pas juste que l'URL n'est pas
-          // fabricant.
-          const postScore = scoreMd(markdownContent)
-          if (postScore < 10 && brandSlug && Object.keys(MANUFACTURER_DOMAINS).includes(brandSlug)) {
-            const mfrDomains = MANUFACTURER_DOMAINS[brandSlug]
-            if (mfrDomains && mfrDomains.length > 0) {
-              console.log('[enrichment] ⚡ post-scrape score still low (', postScore, ') — running manufacturer probe')
-              log(`Scrape pauvre (score ${postScore}) — sonde fabricant sur ${mfrDomains[0]}…`)
-              const probeTerms = reference || sku || title
-              for (const domain of mfrDomains) {
-                try {
-                  const probeQuery = `${probeTerms} site:${domain}`
-                  const probeResults = await jinaSearch(probeQuery, 5)
-                  const probeClean = probeResults.filter((r) => !isJunkUrl(r.url) && r.url !== productUrl)
-                  const probeMfr = probeClean.filter((r) => detectManufacturerSite(r.url))
-                  if (probeMfr.length === 0) continue
-                  for (const cand of probeMfr.slice(0, 3)) {
-                    try {
-                      const candMd = await jinaScrapeMarkdown(cand.url)
-                      const candScore = scoreMd(candMd)
-                      console.log('[enrichment] [post-probe] candidate:', cand.url, '→ score', candScore)
-                      if (candScore > postScore) {
-                        console.log('[enrichment] ✓ post-probe candidate is better:', cand.url)
-                        log(`✓ Sonde fabricant : meilleure URL ${cand.url} (score ${candScore})`)
-                        markdownContent = candMd
-                        productUrl = cand.url
-                        break
-                      }
-                    } catch { /* ignorer */ }
-                  }
-                  if (scoreMd(markdownContent) > postScore) break
-                } catch (err) {
-                  console.warn('[enrichment] [post-probe] failed for', domain, err)
-                }
-              }
             }
           }
         }
@@ -669,38 +446,9 @@ export function useProductEnrichment() {
           }
         }
 
-        // Persister le scrape frais dans le cache — évite de re-solliciter Jina
-        // lors d'un Re-générer. On exige ≥3 specs pour ne pas cacher un scrape
-        // vide (cookie modal) qui bloquerait les itérations suivantes.
-        if (!usedCache && productUrl && markdownContent && markdownContent.length > 200) {
-          const freshSpecCount = parseSpecsFromMarkdown(markdownContent).length
-          if (freshSpecCount >= 3) {
-            const bundleInfo = (globalThis as unknown as { __lastBundle?: { sourcesScrapped?: string[] } }).__lastBundle
-            const primaryImagesForCache = productUrl ? extractPrimaryImagesFromHtml(primaryHtml, productUrl) : []
-            setScrapeCache(sheetName, rowId, {
-              productUrl,
-              additionalSources,
-              markdownContent,
-              scrapeProvider: 'Jina',
-              sourcesScrapped: bundleInfo?.sourcesScrapped,
-              primaryImages: primaryImagesForCache,
-              primaryHtml,
-            })
-            console.log('[enrichment] 💾 scrape cached (', markdownContent.length, 'chars,', freshSpecCount, 'specs)')
-            log(`💾 Scrape mis en cache (${freshSpecCount} specs) — Re-générer n'appellera plus Jina`)
-          } else {
-            console.log('[enrichment] ⚠️ scrape non mis en cache (specs:', freshSpecCount, '— trop pauvre)')
-            log(`⚠️ Scrape non caché (${freshSpecCount} specs — trop pauvre, on retentera au prochain Re-générer)`)
-          }
-        }
-
         // Images primaires extraites à chaque scrape (pas de cache)
         const primaryImages = productUrl ? extractPrimaryImagesFromHtml(primaryHtml, productUrl) : []
         const extractedPrice = productUrl ? extractProductPrice(primaryHtml, markdownContent) : null
-        const extractedBreadcrumb = extractBreadcrumbFromHtml(primaryHtml)
-        if (extractedBreadcrumb.length > 0) {
-          log(`🧭 Fil d'Ariane : ${extractedBreadcrumb.join(' › ')}`)
-        }
         if (extractedPrice) {
           log(`💰 Prix détecté : ${extractedPrice.amount} ${extractedPrice.currency}${extractedPrice.priceType && extractedPrice.priceType !== 'unit' ? ' ' + extractedPrice.priceType : ''} (source: ${extractedPrice.source})`)
         }
@@ -708,10 +456,6 @@ export function useProductEnrichment() {
 
         // ── Étape 3 : Construction depuis les données scrapées ────────
         let enriched: EnrichedProduct
-        // Déclaré AVANT les branches manufacturer/LLM pour être accessible par
-        // le post-processing (enrichWithMarkdownGroups) quel que soit le chemin.
-        // Mis à true si le scrape est off-target ou thin (voir PATH B ci-dessous).
-        let needsKnowledgeBoost = false
 
         // ══ PATH FABRICANT : scraping pur (AUCUN LLM) ═════════════════
         // Si le produit est sur un site fabricant officiel, on combine
@@ -755,7 +499,7 @@ export function useProductEnrichment() {
 
           // Si le scraping fabricant a assez de specs, on utilise le résultat directement
           if (mfrBuild.specifications.length >= 3) {
-            enriched = { ...mfrBuild, price: extractedPrice, breadcrumb: extractedBreadcrumb.length ? extractedBreadcrumb : undefined }
+            enriched = { ...mfrBuild, price: extractedPrice }
             log(`✓ Scraping fabricant complet — aucune IA nécessaire`)
           } else {
             // Scraping insuffisant (site SPA, lazy-loading, Jina sans crédits…)
@@ -778,7 +522,7 @@ export function useProductEnrichment() {
 
             const mfrDataSections: string[] = []
             if (markdownContent) {
-              mfrDataSections.push(`## Contenu de la page produit (markdown rendu)\n${markdownContent.slice(0, 60000)}`)
+              mfrDataSections.push(`## Contenu de la page produit (markdown rendu)\n${markdownContent.slice(0, 20000)}`)
             }
 
             const mfrPrompt = `Tu es un extracteur de données. Le scraping du site fabricant ${manufacturerBrand} a retourné un contenu partiellement structuré.
@@ -874,7 +618,6 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               images: mfrBuild.images, // garder les images scrapées
               documents: mfrBuild.documents, // garder les PDFs scrapés
               price: extractedPrice,
-              breadcrumb: extractedBreadcrumb.length ? extractedBreadcrumb : undefined,
               sourceUrl: productUrl,
               additionalSources,
               generatedAt: Date.now(),
@@ -955,7 +698,6 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             images: mergedImages,
             documents: directBuild.documents ?? [],
             price: extractedPrice,
-            breadcrumb: extractedBreadcrumb.length ? extractedBreadcrumb : undefined,
             sourceUrl: productUrl,
             additionalSources,
             generatedAt: Date.now(),
@@ -965,7 +707,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           }
         } else {
           // ══ PATH B : LLM classique ═══════════════════════════════════
-          log(`🤖 IA · Synthèse LLM (single-shot, schéma strict)`)
+          log(`🤖 IA · Synthèse LLM — données scrapées insuffisantes pour build direct`)
           setProgress(sheetName, rowId, {
             status: 'reasoning',
             message: 'Génération de la fiche enrichie par l\'IA…',
@@ -983,91 +725,78 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           const dataSections: string[] = []
           if (markdownContent) {
-            const extractBlock = (src: string, start: string, end: string): { block: string | null; rest: string } => {
-              const re = new RegExp(`${start}[\\s\\S]*?${end}`, 'g')
-              const m = src.match(re)
-              if (!m || m.length === 0) return { block: null, rest: src }
-              const block = m.join('\n')
-              const rest = src.replace(re, '').replace(/\n{3,}/g, '\n\n')
-              return { block, rest }
-            }
-            let working = markdownContent
-            const specsX = extractBlock(working, 'JINA_EXTRACTED_SPECS_START', 'JINA_EXTRACTED_SPECS_END')
-            working = specsX.rest
-            const docsX = extractBlock(working, 'JINA_EXTRACTED_DOCUMENTS_START', 'JINA_EXTRACTED_DOCUMENTS_END')
-            working = docsX.rest
-            const imagesX = extractBlock(working, 'JINA_EXTRACTED_IMAGES_START', 'JINA_EXTRACTED_IMAGES_END')
-            working = imagesX.rest
-
-            // Strip les marqueurs JINA_EXTRACTED_* du prompt LLM : le LLM les
-            // recopie sinon comme "specs" (clé = marqueur littéral). markdownContent
-            // reste intact pour les parseurs downstream (parseCleanSpecsFromJinaBlock).
-            const stripMarkers = (block: string) => block
-              .replace(/JINA_EXTRACTED_[A-Z_]+_(START|END)\n?/g, '')
-              .trim()
-            if (specsX.block) {
-              dataSections.push(`## Spécifications techniques structurées (extraites du HTML rendu)\n${stripMarkers(specsX.block)}`)
-            }
-            if (docsX.block) {
-              dataSections.push(`## Documents PDF détectés\n${stripMarkers(docsX.block)}`)
-            }
-            if (imagesX.block) {
-              dataSections.push(`## Images produit détectées\n${stripMarkers(imagesX.block)}`)
-            }
-            const narrativeBudget = specsX.block || docsX.block || imagesX.block ? 40000 : 60000
-            const narrative = working.trim()
-            if (narrative) {
-              dataSections.push(`## Contenu de la page produit (markdown rendu)\n${narrative.slice(0, narrativeBudget)}`)
-            }
+            dataSections.push(`## Contenu de la page produit (markdown rendu)\n${markdownContent.slice(0, 20000)}`)
           }
 
           const finalMdScore = scoreMd(markdownContent)
           const finalSpecCount = markdownContent ? parseSpecsFromMarkdown(markdownContent).length : 0
+          const hasRichData = dataSections.length > 0 && finalMdScore >= 10 && finalSpecCount >= 5
+          const hasSomeData = dataSections.length > 0
+          const needsKnowledgeBoost = false
+          const promptMode = hasRichData ? 'rich' : needsKnowledgeBoost ? 'strict-partial' : 'knowledge-augmented'
+          console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore, '| hasSomeData:', hasSomeData)
+          log(`🎯 Prompt mode : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore})`)
 
-          // Détection "scrape off-target" : le TITLE et DESCRIPTION du
-          // SEMANTIC_EXTRACT ne contiennent AUCUN token distinctif de la
-          // référence cible → le scraper a livré un mauvais produit (ex:
-          // Milwaukee /m18-fpd3/ qui rend par défaut un accessoire foret ;
-          // son TITLE devient "Forets Multi-matériaux"). Dans ce cas le
-          // contenu scrapé est inutilisable comme source — on force le
-          // knowledge mode pour que le LLM s'appuie sur la ref+marque.
-          const targetRef = (reference ?? sku ?? title ?? '').toString()
-          const refTokens = targetRef
-            .toLowerCase()
-            .split(/[\s\-_,./]+/)
-            .filter((t) => t.length >= 3 && /[a-z0-9]/i.test(t) && /\d/.test(t))
-          let offTarget = false
-          if (refTokens.length > 0 && markdownContent) {
-            // Extraire UNIQUEMENT les lignes TITLE/DESCRIPTION du bloc sémantique
-            // — c'est là que s'exprime le "bon produit". Les URLs/variantes plus
-            // bas peuvent contenir la ref sans que le produit affiché soit le bon.
-            const semMatch = markdownContent.match(/SEMANTIC_EXTRACT_START[\s\S]{0,3000}?SEMANTIC_EXTRACT_END/)
-            const semBlock = semMatch ? semMatch[0] : markdownContent.slice(0, 1500)
-            const titleLine = (semBlock.match(/^TITLE:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
-            const descLine = (semBlock.match(/^DESCRIPTION:\s*(.+)$/m)?.[1] ?? '').toLowerCase()
-            const haystack = `${titleLine} ${descLine}`
-            offTarget = haystack.trim().length > 0 && !refTokens.some((t) => haystack.includes(t))
-          }
-
-          // Seuil binaire : scraping riche (specs ≥5 + score ≥10 + on-target)
-          // → extraction stricte. Sinon (SPA, dropdown masquant les specs,
-          // off-target, contenu thin) → prompt knowledge-augmented : le LLM
-          // complète depuis les fiches publiques du produit identifié par sa
-          // référence+marque, tout en gardant la fidélité aux valeurs scrapées.
-          needsKnowledgeBoost = offTarget || !(finalSpecCount >= 5 && finalMdScore >= 10)
-          const promptMode = needsKnowledgeBoost ? 'knowledge-augmented' : 'extraction-only'
-          console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore, '| offTarget:', offTarget)
-          log(`🎯 Prompt : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore}${offTarget ? ', off-target' : ''})`)
-
-          const prompt = needsKnowledgeBoost
-            ? `Tu es un expert produit. Le scraping de la page web a retourné TRÈS PEU de données techniques exploitables (site SPA, accordéons JavaScript non exécutés, dropdown de variantes masquant les vraies specs, contenu off-target, ou CORS bloqué). Les données scrapées sont donc INCOMPLÈTES ou inutilisables comme source principale.
-
-TA MISSION : livrer une fiche produit COMPLÈTE et DÉTAILLÉE. Pour cela tu DOIS combiner (1) les données scrapées si présentes ET fiables, (2) tes CONNAISSANCES PUBLIQUES du produit identifié par sa référence/SKU + marque.
+          const prompt = hasRichData
+            ? `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
 
 ## Produit à identifier
 ${sourceContext}
 
 ${dataSections.join('\n\n')}
+
+## RÈGLES ABSOLUES
+1. LANGUE DE SORTIE : TOUJOURS FRANÇAIS. Si la source est en anglais/allemand/autre, TRADUIS (description, noms de specs, libellés groupes, avantages, libellés variants). Les valeurs numériques + unités + références/SKU restent inchangées.
+2. Description : reprends le texte descriptif marketing ; si source non-FR, traduis fidèlement en français professionnel (2-4 phrases minimum).
+3. Avantages : reprends TOUS les bullet points / features / arguments commerciaux, traduits en FR. SANS LIMITE de nombre.
+4. Spécifications : extrais CHAQUE paire nom/valeur de CHAQUE section technique. SANS LIMITE. Le nom ET le group sont en FRANÇAIS (ex: "Poids", "Dimensions", "Puissance"). La valeur garde chiffres + unités (ex: "2.3 kg", "18 V").
+   EXCLURE : raccourcis clavier de players vidéo/audio (Play/Pause, Volume, Plein écran, Sous-titres, Avancer, Reculer, Shortcut, touches flèches directionnelles, "Espace", "c", "f", "m", "d", "t" seuls comme valeurs), éléments d'accessibilité/UI, prix, disponibilité/stock, délais de livraison, codes promo, notes/avis (étoiles, /5), noms d'accessoires vendus à part (chargeurs, coffrets, batteries en pack). Ne garder QUE les caractéristiques techniques du produit.
+5. Variantes : extrais TOUTES les déclinaisons avec référence (inchangée), libellé (FR) et properties (clés FR, valeurs inchangées sauf couleurs/matières traduites).
+6. Images : reprends TOUTES les URLs d'images produit (https://...) trouvées. Ignore logos, icônes, pub.
+7. heroImage : sélectionne UNE URL parmi images — la meilleure photo principale. Ne jamais inventer. Omettre si rien ne convient.
+8. price : si un prix est visible (JSON-LD Offer, balise <price>, texte "XX,XX €" / "$XX.XX"), extrais { amount, currency (code ISO 4217), priceType }. Sinon null. JAMAIS INVENTER.
+9. Documents : reprends toutes les URLs de fichiers PDF trouvées.
+10. Si un champ n'existe pas dans les données → chaîne vide / tableau vide / null. JAMAIS d'invention.
+11. FIDÉLITÉ chiffrée : les valeurs numériques doivent correspondre EXACTEMENT au source (pas d'arrondi, pas de conversion d'unité).
+
+Réponds UNIQUEMENT via l'outil emit_response.`
+            : needsKnowledgeBoost
+            ? `Tu es un extracteur de données. Le scraping de la page web a retourné un contenu partiellement structuré.
+Tu dois UNIQUEMENT extraire et structurer les données PRÉSENTES dans le contenu markdown ci-dessous.
+
+## RÈGLE ABSOLUE
+NE JAMAIS inventer, deviner ou compléter des valeurs de spécifications.
+Si une spec n'est pas explicitement mentionnée dans le markdown, NE PAS l'inclure.
+Les valeurs numériques doivent correspondre EXACTEMENT au texte source.
+
+## Produit à identifier
+${sourceContext}
+
+${dataSections.join('\n\n')}
+
+## CE QUE TU DOIS FAIRE
+1. Description : rédige une description professionnelle en français basée UNIQUEMENT sur le contenu de la page
+2. Avantages : extrais TOUS les points forts / avantages mentionnés dans le markdown
+3. Spécifications : Parcours TOUT le markdown pour trouver les paires nom/valeur.
+   Organise-les en groupes selon les titres de section du texte.
+   NE PAS compléter avec des specs non présentes dans le texte — UNIQUEMENT ce qui est écrit.
+4. Variantes : extrais uniquement si présentes dans le markdown
+5. Images / Documents : reprends les URLs trouvées dans les données scrapées. NE PAS inventer d'URLs.
+
+## IMPORTANT
+- TOUJOURS répondre en FRANÇAIS
+- FIDÉLITÉ : chaque valeur doit être recopiée EXACTEMENT depuis le markdown source
+- Si tu ne trouves PAS une spec dans le texte, ne l'ajoute PAS
+- Mieux vaut retourner moins de specs que d'en inventer
+
+Réponds UNIQUEMENT via l'outil emit_response.`
+            : `Tu es un expert produit. Le scraping de la page web a retourné TRÈS PEU de données techniques (site SPA, accordéons JavaScript non exécutés, ou CORS bloqué). Les données scrapées sont donc INCOMPLÈTES.
+
+TA MISSION : livrer une fiche produit COMPLÈTE et DÉTAILLÉE. Pour cela tu DOIS combiner (1) les données scrapées si présentes, (2) tes CONNAISSANCES PUBLIQUES du produit identifié par sa référence/SKU + marque.
+
+## Produit à identifier
+${sourceContext}
+${hasSomeData ? '\n' + dataSections.join('\n\n') : ''}
 
 ## INSTRUCTIONS OBLIGATOIRES
 
@@ -1080,9 +809,8 @@ ${dataSections.join('\n\n')}
 Exemples de groupes : Informations, Moteur, Batterie / Énergie, Vitesse / Rotation, Couple, Perçage / Capacité, Dimensions, Poids, Niveau sonore, Vibrations, Éclairage, Ergonomie, etc.
 
 Règles de sourcing des valeurs :
-- Valeur présente dans le markdown scrapé ET correspondant réellement au produit cible → REPRENDS-LA EXACTEMENT (fidélité absolue aux valeurs mesurées).
-- Si le contenu scrapé décrit un autre produit (accessoire, foret) ou du junk UI → IGNORE-LE.
-- Valeur absente ou off-target dans le scraping → utilise tes connaissances PUBLIQUES du produit (site fabricant, catalogues, notices officielles). Les caractéristiques techniques d'un produit commercialisé par sa référence exacte sont des DONNÉES PUBLIQUES, pas de l'invention.
+- Valeur présente dans le markdown scrapé → REPRENDS-LA EXACTEMENT (fidélité absolue aux valeurs mesurées).
+- Valeur absente du markdown → utilise tes connaissances PUBLIQUES du produit (site fabricant, catalogues, notices officielles). Les caractéristiques techniques d'un produit commercialisé par sa référence exacte sont des DONNÉES PUBLIQUES, pas de l'invention.
 - Si tu n'es pas SÛR d'une valeur précise, omets-la — mieux vaut 12 specs correctes que 20 avec des chiffres faux.
 - Retourner moins de 8 specs est CONSIDÉRÉ COMME UN ÉCHEC : il y a toujours plus d'information publiquement disponible pour un produit référencé.
 
@@ -1092,51 +820,8 @@ Règles de sourcing des valeurs :
 
 ## RAPPELS
 - Langue : TOUJOURS FRANÇAIS (noms de specs, groupes, libellés).
-- Fidélité : les valeurs numériques scrapées fiables ne se modifient pas.
+- Fidélité : les valeurs numériques scrapées ne se modifient pas.
 - Une référence/SKU précise identifie un produit précis dont les caractéristiques sont publiques → tu les connais pour les produits grand public documentés.
-
-Réponds UNIQUEMENT via l'outil emit_response.`
-            : `Tu es un extracteur de données produit. Tu extrais fidèlement les données trouvées et produis une fiche EN FRANÇAIS.
-
-## Produit à identifier
-${sourceContext}
-
-${dataSections.join('\n\n')}
-
-## RÈGLES ABSOLUES
-1. LANGUE DE SORTIE : TOUJOURS FRANÇAIS. Si la source est en anglais/allemand/autre, TRADUIS (description, noms de specs, libellés groupes, avantages, libellés variants). Les valeurs numériques + unités + références/SKU restent inchangées.
-2. Description : reprends le texte descriptif marketing ; si source non-FR, traduis fidèlement en français professionnel (2-4 phrases minimum).
-3. Avantages : reprends TOUS les bullet points / features / arguments commerciaux, traduits en FR. SANS LIMITE de nombre.
-4. Spécifications : extrais 100% des lignes de CHAQUE tableau/section technique. ZÉRO OMISSION.
-   🔒 EXHAUSTIVITÉ : si la source contient une table "Données techniques" avec 11 lignes, tu en retournes 11 — pas 9, pas 10. Les valeurs NON numériques doivent AUSSI être incluses : Couleur (Jaune, Noir, Inox…), Matière, Finition, Type de moteur, Système de raccordement, Type de flexible, etc. Aucun filtrage subjectif (« cosmétique », « marketing », « non pertinent ») — si c'est dans le tableau source, c'est dans la sortie.
-   🔒 FIDÉLITÉ ABSOLUE AUX LABELS : le champ "name" DOIT reprendre EXACTEMENT le libellé tel qu'écrit dans la source (casse/ponctuation/parenthèses d'unité incluses). Ex: si la source affiche "Tension (V)" → name="Tension (V)" ; "Câble d'alimentation (m)" → name="Câble d'alimentation (m)" ; "Pression (bar)" → name="Pression (bar)". INTERDICTION de renommer ("Tension (V)" → "Tension d'alimentation"), de fusionner deux specs en une seule ("Tension (V)" + "Fréquence (Hz)" → "Tension/Fréquence"), ou de déplacer l'unité dans la valeur ("Puissance absorbée (W)" : "2100" → ne pas transformer en "Puissance" : "2100 W").
-   🔒 FIDÉLITÉ ABSOLUE AUX VALEURS : le champ "value" DOIT être la chaîne brute telle qu'écrite ("max. 500", "20 - max. 145", "Jaune", "220 - 240"). Ne pas normaliser les plages, ne pas ajouter/enlever d'unités, ne pas arrondir.
-   Traduction : uniquement si la source est en langue étrangère, traduis littéralement le label en gardant la même structure et les mêmes parenthèses d'unité (ex: "Voltage (V)" → "Tension (V)"). Sinon, aucune modification.
-   Groupes : réutilise les titres de section EXACTS de la source ("Données techniques", "Pression / Débit", "Moteur / Énergie", etc.). Ne jamais inventer un groupe standardisé si la source en propose un.
-   EXCLURE ABSOLUMENT — aucune spec produit ne peut provenir de :
-   • bandeaux cookies / consentement RGPD / GDPR / "Liste des cookies" / "Politique de confidentialité" / "Paramètres cookies" / "Consent / Leg.Interest" / "Accepter / Refuser / Personnaliser"
-   • noms de cookies ou trackers (Search Icon, Filter Icon, Apply Cancel, pixel, beacon, session_id, gtm, _ga, ads, adv)
-   • libellés d'UI / icônes / boutons de navigation ("Play/Pause", "Volume", "Plein écran", "Sous-titres", "Espace", "c", "f", "m", "d", "t" seuls comme valeurs, flèches directionnelles, raccourcis clavier)
-   • menus nav / liens sociaux / "Mon compte" / "Panier" / "S'inscrire" / "Newsletter"
-   • prix, disponibilité/stock, délais de livraison, codes promo, offres commerciales, notes/avis (étoiles, /5)
-   • noms d'accessoires vendus à part (chargeurs, coffrets, batteries en pack)
-   • bandeaux promotionnels ("Profitez des offres", "Soldes", "-20%")
-   Si le contenu ci-dessus NE contient PAS de vrai tableau technique produit (seulement cookies/nav/promo), retourne specifications=[] — ne force PAS une extraction.
-   Ne garder QUE les caractéristiques techniques du produit lui-même.
-5. Variantes : extrais TOUTES les déclinaisons.
-   - reference : code/SKU inchangé.
-   - label : libellé en FR.
-   - properties : détecte les AXES DISCRIMINANTS (les attributs qui DIFFÈRENT entre variantes) et expose-les comme colonnes du tableau.
-     Exemples : libellés qui varient par "prof.0/1/2/3/4" → properties.Profondeur="0/1/2/3/4". Variantes "Palette 40m" vs "Palette 28m" → properties.Conditionnement="Palette 40 m"/"Palette 28 m". Couleur/Taille/Classe/Longueur/Matière → properties.Couleur/Taille/Classe/Longueur/Matière.
-     RÈGLES : clés FR courtes (≤20 chars, ex: "Profondeur", "Conditionnement", "Couleur") ; NE PAS mettre dans properties ce qui est IDENTIQUE pour toutes les variantes (constantes du produit de base) ; chaque variante n'a QUE les clés qui lui sont applicables (les autres sont absentes). Minimum 1 clé par variante si les libellés diffèrent clairement.
-6. Images : reprends TOUTES les URLs d'images produit (https://...) trouvées. Ignore logos, icônes, pub.
-7. heroImage : sélectionne UNE URL parmi images — la meilleure photo principale. Ne jamais inventer. Omettre si rien ne convient.
-8. price : si un prix est visible (JSON-LD Offer, balise <price>, texte "XX,XX €" / "$XX.XX"), extrais { amount, currency (code ISO 4217), priceType }. Sinon null. JAMAIS INVENTER.
-9. Documents : reprends toutes les URLs de fichiers PDF trouvées.
-10. Si un champ n'existe pas dans les données → chaîne vide / tableau vide / null. JAMAIS d'invention.
-11. FIDÉLITÉ chiffrée : les valeurs numériques doivent correspondre EXACTEMENT au source (pas d'arrondi, pas de conversion d'unité).
-12. 🚫 ZÉRO CONNAISSANCE EXTERNE : ne complète JAMAIS avec tes connaissances publiques du produit. Tu extrais UNIQUEMENT ce qui est écrit dans le contenu ci-dessus. Si une spec n'est pas dans les données, elle n'est pas dans la sortie — même si tu "sais" sa valeur. Mieux vaut 5 specs correctes que 20 dont certaines sont inventées.
-13. 🚫 PAS DE DOUBLONS : une spec apparaît une seule fois. Ne pas retourner deux lignes dont l'une est une variante/reformulation de l'autre avec la même valeur.
 
 Réponds UNIQUEMENT via l'outil emit_response.`
 
@@ -1243,7 +928,6 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             heroImage,
             documents: mergedDocs,
             price: finalPrice,
-            breadcrumb: extractedBreadcrumb.length ? extractedBreadcrumb : undefined,
             sourceUrl: productUrl,
             additionalSources,
             generatedAt: Date.now(),
@@ -1254,19 +938,10 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         }
         } // fin du else (non-fabricant)
 
-        // ── Identifiants produit pour whitelist PDF (ref/SKU/modèle/brand/title) ──
-        const productModel = title.match(/[A-Z]{2,5}[\-\s]?\d{1,4}[\w\-]*/i)?.[0] ?? ''
-        const productIds = [reference, sku, productModel, brand, title]
-          .filter((x): x is string => typeof x === 'string' && x.trim().length >= 3)
-
         // ── Post-processing : enrichir avec groupes markdown ──
-        enriched = enrichWithMarkdownGroups(enriched, markdownContent, productIds, { trustLlmSpecs: needsKnowledgeBoost })
+        enriched = enrichWithMarkdownGroups(enriched, markdownContent)
 
-        enriched = enrichVariantsFromMarkdown(enriched, markdownContent)
-
-        enriched = deriveVariantDiscriminants(enriched)
-
-        enriched = sanitizeEnriched(enriched, productIds)
+        enriched = sanitizeEnriched(enriched)
         setData(sheetName, rowId, enriched)
         return enriched
       } catch (err) {

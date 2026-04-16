@@ -1,57 +1,7 @@
 import { getApiKey } from '@/lib/apiKeys'
 import type { EnrichedProduct } from './types'
 import { jinaScrapeMarkdown } from './jinaClient'
-
-const JINA_PROXY_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/jinaScrape'
-const PUPPETEER_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/scrapePage'
-
-interface JinaProxyResponse {
-  markdown: string
-  html: string
-  images: Record<string, string>
-  links: Record<string, string>
-  error?: string
-}
-
-interface PuppeteerResponse {
-  html: string
-  markdown: string
-  error?: string
-}
-
-async function callJinaProxy(params: {
-  url: string
-  apiKey: string
-  injectScript?: string
-  timeout?: number
-}): Promise<JinaProxyResponse> {
-  const res = await fetch(JINA_PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  })
-  if (!res.ok) throw new Error(`proxy HTTP ${res.status}`)
-  return (await res.json()) as JinaProxyResponse
-}
-
-/** Scrape via Puppeteer serveur (SPA hydratée + accordéons expandés).
- *  Contrairement à Jina qui capture à readyState=loading avant hydratation,
- *  Puppeteer contrôle exactement quand capturer : après networkidle + waitMs. */
-async function callPuppeteerScrape(params: {
-  url: string
-  waitMs?: number
-  injectScript?: string
-}): Promise<PuppeteerResponse> {
-  const res = await fetch(PUPPETEER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  })
-  if (!res.ok) throw new Error(`puppeteer HTTP ${res.status}`)
-  return (await res.json()) as PuppeteerResponse
-}
 import { extractSpecsBlockFromHtml, extractDocumentsBlockFromHtml } from './htmlSpecsExtractor'
-import { extractSemantic, type SemanticResult } from './semanticExtractor'
 import {
   isGarbageContent,
   parseSpecsFromMarkdown,
@@ -79,7 +29,7 @@ interface ManufacturerData {
 export interface DeepScrapeResult {
   markdown: string
   html: string | null
-  source: 'post-browser' | 'get-fallback' | 'basic-merged' | 'puppeteer'
+  source: 'post-browser' | 'get-fallback' | 'basic-merged'
 }
 
 /**
@@ -89,154 +39,14 @@ export interface DeepScrapeResult {
  * DOMParser et on ajoute les blocs manuellement. DOMParser ignore CSS donc
  * les panels `display:none` sont parcourus de toute façon.
  */
-/** Formate un SemanticResult en bloc texte taggué, compatible avec les
- *  parseurs existants (format "Nom = Valeur" + "GROUP: " + "url | label").
- *  La source primaire type-based est préfixée à l'ancien bloc ; les deux
- *  coexistent pour permettre une transition sans régression. */
-function formatSemanticBlock(sem: SemanticResult): string {
-  const lines: string[] = []
-  lines.push('SEMANTIC_EXTRACT_START')
-  if (sem.title.value) lines.push(`TITLE: ${sem.title.value}`)
-  if (sem.description.value) lines.push(`DESCRIPTION: ${sem.description.value}`)
-  if (sem.price.value) lines.push(`PRICE: ${sem.price.value.amount} ${sem.price.value.currency}`)
-  if (sem.specs.length > 0) {
-    const byGroup = new Map<string, string[]>()
-    for (const s of sem.specs) {
-      const g = s.group || 'Spécifications'
-      if (!byGroup.has(g)) byGroup.set(g, [])
-      byGroup.get(g)!.push(`${s.name} = ${s.value}`)
-    }
-    for (const [g, pairs] of byGroup) {
-      lines.push(`GROUP: ${g}`)
-      lines.push(...pairs)
-    }
-  }
-  if (sem.images.length > 0) {
-    lines.push('IMAGES:')
-    for (const img of sem.images.slice(0, 20)) {
-      lines.push(img.alt ? `${img.url} | ${img.alt}` : img.url)
-    }
-  }
-  if (sem.documents.length > 0) {
-    lines.push('DOCUMENTS:')
-    for (const doc of sem.documents) lines.push(`${doc.url} | ${doc.label}`)
-  }
-  if (sem.variants.length > 0) {
-    lines.push('VARIANTS:')
-    for (const v of sem.variants) {
-      const props = Object.entries(v.properties).map(([k, val]) => `${k}: ${val}`).join(', ')
-      lines.push(`${v.sku}${props ? ` | ${props}` : ''}`)
-    }
-  }
-  lines.push('SEMANTIC_EXTRACT_END')
-  return lines.join('\n')
-}
-
-/**
- * Extrait les tokens "produit" significatifs du path d'une URL.
- * Heuristique générique :
- *   • Split sur / - _ . puis garde les tokens ≥ 3 chars
- *   • Filtre les mots-stop courants (produit, catalogue, fr, be, html, etc.)
- *   • Garde uniquement les tokens qui contiennent un chiffre OU qui sont ≥ 5 chars
- *     (un nom de modèle produit est quasi toujours alphanum ou long)
- */
-function extractUrlProductTokens(pageUrl: string): string[] {
-  const STOP = new Set([
-    'products', 'product', 'produit', 'produits', 'catalog', 'catalogue',
-    'category', 'categories', 'categorie', 'categories',
-    'detail', 'details', 'html', 'htm', 'php', 'index', 'page', 'pages',
-    'fiche', 'article', 'articles', 'item', 'items', 'ref', 'sku',
-    'shop', 'boutique', 'store', 'www', 'com', 'fr', 'be', 'eu', 'en', 'de',
-    'fr-fr', 'fr-be', 'en-gb', 'en-us', 'de-de',
-    'media', 'content', 'public', 'static', 'assets',
-  ])
-  try {
-    const u = new URL(pageUrl)
-    const raw = u.pathname.split(/[/\-_.]/).map((s) => s.toLowerCase().trim()).filter(Boolean)
-    const tokens: string[] = []
-    for (const t of raw) {
-      if (t.length < 3) continue
-      if (STOP.has(t)) continue
-      const hasDigit = /\d/.test(t)
-      if (hasDigit || t.length >= 5) tokens.push(t)
-    }
-    return tokens
-  } catch {
-    return []
-  }
-}
-
-/** Vérifie que le contenu extrait mentionne le produit ciblé par l'URL.
- *
- *  Stratégie hiérarchique :
- *    • Si l'URL contient des tokens à CHIFFRE (ex: m18, fpd3, duh752z), au
- *      moins UN doit apparaître dans title+description+specs+docs+variants.
- *      Les codes produit à chiffre sont les identifiants réels ; les mots
- *      génériques (perceuse, percussion) peuvent leaker via des cross-sells.
- *    • Sinon, fallback : au moins un token alphabétique (≥5 chars) doit
- *      matcher (pour URLs comme /kenadrain sans code numérique).
- *
- *  Garde contre les SPA qui servent un contenu générique/wrong sur l'URL
- *  cible (ex: Milwaukee renvoyant "Forets Multi-matériaux" sur m18-fpd3). */
-function semanticMatchesUrl(sem: SemanticResult, urlTokens: string[]): boolean {
-  if (urlTokens.length === 0) return true // pas de signal → on ne bloque pas
-  const haystack = [
-    sem.title.value ?? '',
-    sem.description.value ?? '',
-    ...sem.specs.map((s) => `${s.name} ${s.value}`),
-    ...sem.documents.map((d) => `${d.url} ${d.label}`),
-    ...sem.variants.map((v) => v.sku),
-  ].join(' ').toLowerCase()
-  const digitTokens = urlTokens.filter((t) => /\d/.test(t))
-  if (digitTokens.length > 0) {
-    return digitTokens.some((tok) => haystack.includes(tok))
-  }
-  return urlTokens.some((tok) => haystack.includes(tok))
-}
-
 function enrichResultWithHtmlExtraction(result: DeepScrapeResult, pageUrl: string): DeepScrapeResult {
   let md = result.markdown
   if (result.html) {
-    // Source primaire type-based : extracteur sémantique (0 dépendance par
-    // fournisseur). Si un champ a une confiance ≥ 0.5 ou si des specs sont
-    // trouvées, on injecte le bloc SEMANTIC_EXTRACT en tête du markdown.
-    try {
-      const sem = extractSemantic(result.html, pageUrl)
-      const hasSignal =
-        !!sem.title.value || !!sem.description.value ||
-        sem.specs.length > 0 || sem.images.length > 0 || sem.documents.length > 0
-      if (hasSignal && md.indexOf('SEMANTIC_EXTRACT_START') === -1) {
-        const block = formatSemanticBlock(sem)
-        md = `${block}\n\n${md}`
-        console.log('[semantic-extractor] ✓ block injected — title:', !!sem.title.value,
-          'desc:', !!sem.description.value, 'specs:', sem.specs.length,
-          'images:', sem.images.length, 'docs:', sem.documents.length)
-      }
-    } catch (e) {
-      console.warn('[semantic-extractor] extraction failed:', e)
-    }
-
-    // TS-side specs extraction : TOUJOURS tenter, car DOMParser traverse même
-    // les accordéons display:none que le script injecté peut rater (Makita
-    // techspecs tab content). Si plus de specs que le bloc existant → remplacer.
-    const tsBlock = extractSpecsBlockFromHtml(result.html)
-    if (tsBlock) {
-      const startTag = 'JINA_EXTRACTED_SPECS_START'
-      const endTag = 'JINA_EXTRACTED_SPECS_END'
-      const start = md.indexOf(startTag)
-      const end = md.indexOf(endTag)
-      const countPairs = (s: string) => (s.match(/ = /g) ?? []).length
-      const tsCount = countPairs(tsBlock)
-      if (start === -1 || end <= start) {
-        md += `\n\n${tsBlock}`
-        console.log('[html-extractor] ✓ TS-side specs block appended (', tsBlock.length, 'chars,', tsCount, 'pairs)')
-      } else {
-        const existing = md.slice(start, end + endTag.length)
-        const existingCount = countPairs(existing)
-        if (tsCount > existingCount) {
-          md = md.slice(0, start) + tsBlock + md.slice(end + endTag.length)
-          console.log('[html-extractor] ✓ TS-side specs block REPLACED injected (', existingCount, '→', tsCount, 'pairs)')
-        }
+    if (md.indexOf('JINA_EXTRACTED_SPECS_START') === -1) {
+      const block = extractSpecsBlockFromHtml(result.html)
+      if (block) {
+        md += `\n\n${block}`
+        console.log('[html-extractor] ✓ TS-side specs block appended from Jina html (', block.length, 'chars)')
       }
     }
     if (md.indexOf('JINA_EXTRACTED_DOCUMENTS_START') === -1) {
@@ -658,85 +468,29 @@ export async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepSc
     var docs = [];
     var seen = {};
 
-    var GENERIC = /^(pdf|download|t[eé]l[eé]charger|voir|view|open|ouvrir|link|file|document|generate|index|get|fetch|asset|content|resource|uploads?)\\.?$/i;
-    var SKU_ONLY = /^[0-9]{4,}$/;
-    var SKU_LINE = /^(ref|r[eé]f[eé]rence|sku|code)\\s*[:#]?\\s*[0-9a-z-]{4,}$/i;
-    var HEADING_SEL = 'h1,h2,h3,h4,h5,h6,strong,b,[class*="title" i],[class*="heading" i],[class*="name" i],[class*="label" i]';
-    function cleanLabel(raw) {
-      var lines = String(raw).split(/\\n+/).map(function(l) { return l.replace(/\\s+/g, ' ').trim(); })
-        .filter(function(l) { return l && !SKU_ONLY.test(l) && !SKU_LINE.test(l); });
-      return lines[0] || '';
-    }
-    function isGood(t) {
-      return t && t.length >= 3 && t.length <= 200 && !GENERIC.test(t) && !SKU_ONLY.test(t);
-    }
-    function findNearestHeading(a, container) {
-      var all = Array.prototype.slice.call(container.querySelectorAll(HEADING_SEL));
-      if (all.length === 0) return null;
-      if (all.length === 1) return all[0];
-      var insideA = null, lastPreceding = null;
-      for (var i = 0; i < all.length; i++) {
-        var h = all[i];
-        var pos = a.compareDocumentPosition(h);
-        if (pos & Node.DOCUMENT_POSITION_CONTAINED_BY) { insideA = h; continue; }
-        if (pos & Node.DOCUMENT_POSITION_CONTAINS) continue;
-        if (pos & Node.DOCUMENT_POSITION_PRECEDING) lastPreceding = h;
-      }
-      return insideA || lastPreceding || all[0];
-    }
     function labelForAnchor(a) {
-      // 0) aria-labelledby
-      var labelledById = (a.getAttribute('aria-labelledby') || '').split(/\\s+/)[0];
-      if (labelledById) {
-        var ref = document.getElementById(labelledById);
-        if (ref) { var t0 = cleanLabel(ref.textContent || ''); if (isGood(t0)) return t0; }
-      }
-      // 1) data-* attributes
-      var dataAttrs = ['data-title','data-name','data-file-title','data-document-name','data-label'];
-      for (var i = 0; i < dataAttrs.length; i++) {
-        var v = a.getAttribute(dataAttrs[i]) || '';
-        var t1 = cleanLabel(v);
-        if (isGood(t1)) return t1;
-      }
-      // 2) Texte du <a> lui-meme
-      var aText = cleanLabel(a.textContent || '');
-      if (isGood(aText)) return aText;
-      // 3) Walk up : heading le plus proche de a dans chaque ancetre
+      var GENERIC = /^(pdf|download|t[eé]l[eé]charger|voir|view|open|ouvrir|link|file|document)\\.?$/i;
       var cur = a.parentElement;
       for (var d = 0; d < 5 && cur; d++) {
         var tag = cur.tagName;
-        if (tag === 'BODY' || tag === 'HTML' || tag === 'MAIN') break;
-        var h = findNearestHeading(a, cur);
-        if (h) {
-          var th = cleanLabel(h.textContent || '');
-          if (isGood(th)) return th;
-        }
+        if (tag === 'BODY' || tag === 'HTML' || tag === 'MAIN' || tag === 'SECTION' || tag === 'ARTICLE') break;
         var clone = cur.cloneNode(true);
         clone.querySelectorAll('a, button, img, svg, script, style, noscript').forEach(function(e) { e.remove(); });
-        var pt = cleanLabel(clone.textContent || '');
-        if (pt && pt.length >= 5 && pt.length <= 120 && isGood(pt)) return pt;
+        var parentTxt = (clone.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (parentTxt && parentTxt.length >= 5 && parentTxt.length <= 200 && !GENERIC.test(parentTxt)) return parentTxt;
         cur = cur.parentElement;
       }
-      // 4) aria-label / title
-      var aria = cleanLabel(a.getAttribute('aria-label') || '');
-      if (isGood(aria)) return aria;
-      var ttl = cleanLabel(a.getAttribute('title') || '');
-      if (isGood(ttl)) return ttl;
-      // 5) URL : query params nommés puis filename
+      var txt = (a.textContent || '').replace(/\\s+/g, ' ').trim();
+      if (txt && !GENERIC.test(txt) && txt.length <= 200) return txt;
+      var aria = a.getAttribute('aria-label') || '';
+      if (aria && !GENERIC.test(aria)) return aria.trim();
+      var title = a.getAttribute('title') || '';
+      if (title && !GENERIC.test(title)) return title.trim();
       try {
         var u = new URL(a.href);
-        var keys = ['type','name','file','doc','title','format','label','nom'];
-        for (var k = 0; k < keys.length; k++) {
-          var qv = u.searchParams.get(keys[k]);
-          if (!qv) continue;
-          var cq = decodeURIComponent(qv.replace(/\\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim();
-          if (isGood(cq)) return cq;
-        }
         var fn = u.pathname.split('/').pop() || '';
-        var cf = decodeURIComponent(fn.replace(/\\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim();
-        if (isGood(cf)) return cf;
-      } catch(e) { /* noop */ }
-      return 'Document';
+        return decodeURIComponent(fn.replace(/\\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim() || 'Document';
+      } catch(e) { return 'Document'; }
     }
 
     document.querySelectorAll('a[href]').forEach(function(a) {
@@ -1182,34 +936,6 @@ export async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepSc
 `
 
   try {
-    // 1) Puppeteer serveur : rend la page complètement (SPA + hydratation).
-    //    Contrairement à Jina (readyState=loading), Puppeteer attend networkidle2
-    //    puis waitMs pour laisser les API post-hydratation (Relay, Next) résoudre.
-    console.log('[manufacturer] puppeteer scrapePage with W3C expand + custom script')
-    try {
-      const pup = await callPuppeteerScrape({
-        url: pageUrl,
-        waitMs: 8000,
-        injectScript: EXPAND_ACCORDIONS_SCRIPT,
-      })
-      if (!pup.error && pup.html && pup.html.length > 500) {
-        let md = pup.markdown || ''
-        md = md
-          .replace(/#{1,4}\s*(Your Privacy|Cookie|GDPR|Manage Preferences|Bienvenue chez)[\s\S]*?(?=\n#{1,4}\s|\n\n---|\n\n\*\*|$)/gi, '')
-          .replace(/^[-*•]\s*.*?(cookie|privacy|captcha|recaptcha|consent|targeting|functional|necessary).*$/gim, '')
-          .replace(/\n{3,}/g, '\n\n')
-          .trim()
-        console.log('[manufacturer] puppeteer ✓', { htmlLen: pup.html.length, mdLen: md.length })
-        return enrichResultWithHtmlExtraction(
-          { markdown: md, html: pup.html, source: 'puppeteer' as const },
-          pageUrl,
-        )
-      }
-      console.warn('[manufacturer] puppeteer empty/error:', pup.error, '— falling back to Jina')
-    } catch (err) {
-      console.warn('[manufacturer] puppeteer failed:', err, '— falling back to Jina')
-    }
-
     const jinaKey = getApiKey('jina')
     if (!jinaKey) {
       console.warn('[jina-manufacturer] ⚠ no Jina API key — falling back to basic scrape')
@@ -1217,32 +943,40 @@ export async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepSc
       return fallbackMd ? { markdown: fallbackMd, html: null, source: 'get-fallback' as const } : null
     }
 
-    // POST avec injectPageScript via Cloud Function (bypass CORS).
-    // Le POST direct depuis le navigateur est bloqué par Cloudflare sur certaines
-    // réponses d'erreur → impossible d'utiliser injectPageScript côté client.
-    // La Cloud Function `jinaScrape` fait le POST côté serveur et relaie le résultat.
-    console.log('[jina-manufacturer] proxy jinaScrape with injectPageScript')
-    let callResult: JinaProxyResponse
-    try {
-      callResult = await callJinaProxy({
+    // POST avec injectPageScript pour exécuter le JS d'expansion des accordéons
+    console.log('[jina-manufacturer] POST with injectPageScript to expand accordions')
+    const res = await fetch('https://r.jina.ai/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${jinaKey}`,
+        'X-Engine': 'browser',
+        'X-Timeout': '90',
+        'X-No-Cache': 'true',
+        'X-With-Links-Summary': 'all',
+        'X-With-Images-Summary': 'all',
+        'X-With-Iframe': 'true',
+        'X-With-Shadow-Dom': 'true',
+        'X-Return-Format': 'html,markdown',
+      },
+      body: JSON.stringify({
         url: pageUrl,
-        apiKey: jinaKey,
-        injectScript: EXPAND_ACCORDIONS_SCRIPT,
-        timeout: 90,
-      })
-    } catch (err) {
-      console.warn('[jina-manufacturer] proxy failed:', err, '— falling back to GET browser')
-      return jinaScrapeMaufacturerPageFallback(pageUrl, jinaKey)
-    }
-    if (callResult.error || !callResult.markdown) {
-      console.warn('[jina-manufacturer] proxy returned error:', callResult.error, '— falling back')
+        injectPageScript: [EXPAND_ACCORDIONS_SCRIPT],
+      }),
+    })
+
+    if (!res.ok) {
+      console.warn('[jina-manufacturer] POST HTTP error', res.status, '— falling back to GET then basic')
+      // Fallback : essayer GET classique sans JS injection
       return jinaScrapeMaufacturerPageFallback(pageUrl, jinaKey)
     }
 
-    let md = callResult.markdown || ''
-    const postImages = callResult.images
-    const postLinks = callResult.links
-    const capturedHtml: string | null = callResult.html || null
+    const json = await res.json() as { data?: { content?: string; html?: string; links?: Record<string, string>; images?: Record<string, string> } }
+    let md = json?.data?.content || ''
+    const postImages = json?.data?.images
+    const postLinks = json?.data?.links
+    const capturedHtml: string | null = json?.data?.html ?? null
 
     if (!md || md.length < 100) {
       console.warn('[jina-manufacturer] POST returned empty content — falling back to GET')
@@ -1311,25 +1045,37 @@ export async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepSc
  *  par CORS mais que GET browser passe (SPA qui rend son contenu côté client).
  */
 async function jinaScrapeMaufacturerPageFallback(pageUrl: string, jinaKey: string): Promise<DeepScrapeResult | null> {
-  console.log('[jina-manufacturer-fallback] proxy jinaScrape (no JS injection)')
+  console.log('[jina-manufacturer-fallback] trying GET browser engine (no JS injection)')
   try {
-    const data = await callJinaProxy({
-      url: pageUrl,
-      apiKey: jinaKey,
-      timeout: 60,
+    const res = await fetch(`https://r.jina.ai/${pageUrl}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${jinaKey}`,
+        'X-Engine': 'browser',
+        'X-Timeout': '60',
+        'X-No-Cache': 'true',
+        'X-With-Links-Summary': 'all',
+        'X-With-Images-Summary': 'all',
+        'X-With-Iframe': 'true',
+        'X-With-Shadow-Dom': 'true',
+        'X-Return-Format': 'html,markdown',
+      },
     })
-    if (data.error) {
-      console.warn('[jina-manufacturer-fallback] proxy error:', data.error)
+    if (res.ok) {
+      const json = await res.json() as { data?: { content?: string; html?: string; links?: Record<string, string>; images?: Record<string, string> } }
+      const md = json?.data?.content || ''
+      const html = json?.data?.html ?? null
+      if (md && md.length > 500) {
+        console.log('[jina-manufacturer-fallback] ✓ GET browser got', md.length, 'chars')
+        return enrichResultWithHtmlExtraction({ markdown: md, html, source: 'get-fallback' as const }, pageUrl)
+      }
+      console.warn('[jina-manufacturer-fallback] GET browser returned thin content (', md.length, 'chars)')
+    } else {
+      console.warn('[jina-manufacturer-fallback] GET browser HTTP', res.status)
     }
-    const md = data.markdown || ''
-    const html = data.html || null
-    if (md && md.length > 500) {
-      console.log('[jina-manufacturer-fallback] ✓ got', md.length, 'chars (html:', html?.length ?? 0, ')')
-      return enrichResultWithHtmlExtraction({ markdown: md, html, source: 'get-fallback' as const }, pageUrl)
-    }
-    console.warn('[jina-manufacturer-fallback] proxy returned thin content (', md.length, 'chars)')
   } catch (e) {
-    console.warn('[jina-manufacturer-fallback] proxy threw:', e)
+    console.warn('[jina-manufacturer-fallback] GET browser threw:', e)
   }
 
   // Dernier recours : mode JSON classique

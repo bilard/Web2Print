@@ -53,8 +53,6 @@ export interface EnrichedProduct {
   documents: string[]
   /** Prix produit extrait (schema.org Product/Offer ou markdown). */
   price?: ProductPrice | null
-  /** Fil d'Ariane (breadcrumb) du plus général au plus spécifique. */
-  breadcrumb?: string[]
   /** URL source principale d'où provient le scraping */
   sourceUrl: string | null
   /** URLs alternatives trouvées durant la recherche (pour info) */

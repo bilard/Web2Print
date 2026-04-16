@@ -25,36 +25,15 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
   const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
   /** Noms de groupe / clés qui trahissent une section prix / tarif */
   const PRICE_GROUP_RE = /prix|price|tarif|co[uû]t|cost|tva|vat|ttc|ht\b|hors\s*taxe/i
-  /** Valeur concat/garbage : séquence purement numérique (chiffres + .,) sans
-   *  unité ni espace, avec ≥2 séparateurs. Les valeurs légitimes contiennent
-   *  presque toujours une unité (ex: "1,5 kg", "12.5 mm") donc passent le test
-   *  uniquement si très courtes. Signe d'une concat de valeurs multiples
-   *  rassemblées depuis un dropdown de variantes (ex: "3455.566.5781012"). */
-  const isGarbageConcat = (v: string): boolean => {
-    if (v.length < 8) return false
-    if (!/^[\d.,]+$/.test(v)) return false
-    const seps = (v.match(/[.,]/g) || []).length
-    return seps >= 2
-  }
-  /** Groupes de specs issus de widgets "related/suggested/recommended" : leurs
-   *  paires (ex: "Multi Material Drills = (0)") sont des compteurs de
-   *  catégories liées, pas des vraies specs produit. */
-  const RELATED_GROUP_RE = /\b(recommand(?:ation|ed)|suggestions?|related|associat(?:ed|ion)|vu\s+r[eé]cemment|recently\s+viewed|similar|vous\s+aimerez|you\s+may(?:\s+also)?\s+like|produits?\s+li[eé]s?|produits?\s+suggest|accessoires?\s+compatibles?|compatible\s+accessor)/i
 
-  // ── Parser rapide pour les blocs structurés injectés ──
-  // Format : <TAG>_START\nGROUP: Titre\nNom = Valeur\n...\n<TAG>_END
-  // Deux sources coexistent : SEMANTIC_EXTRACT (primaire, type-based) et
-  // JINA_EXTRACTED_SPECS (legacy). Les deux utilisent le même format de
-  // paires, on les parse en séquence — la déduplication par name+value
-  // évite les doublons si les deux contiennent les mêmes specs.
-  const decodeHtml = (s: string) => s.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c))).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
-  const parseBlock = (startTag: string, endTag: string, label: string) => {
-    const s = md.indexOf(startTag)
-    const e = md.indexOf(endTag)
-    if (s < 0 || e <= s) return
-    const block = md.slice(s, e)
+  // ── Parser rapide pour le format injecté par notre script Jina ──
+  // Format : JINA_EXTRACTED_SPECS_START\nGROUP: Titre\nNom = Valeur\n...\nJINA_EXTRACTED_SPECS_END
+  const jinaStart = md.indexOf('JINA_EXTRACTED_SPECS_START')
+  const jinaEnd = md.indexOf('JINA_EXTRACTED_SPECS_END')
+  if (jinaStart >= 0 && jinaEnd > jinaStart) {
+    const block = md.slice(jinaStart, jinaEnd)
     let currentGroup: string | undefined
-    let added = 0
+    const decodeHtml = (s: string) => s.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c))).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
     for (const line of block.split('\n')) {
       const trimmed = line.trim()
       if (trimmed.startsWith('GROUP:')) {
@@ -64,26 +43,23 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
         const name = decodeHtml(trimmed.slice(0, eqIdx).trim())
         const value = decodeHtml(trimmed.slice(eqIdx + 3).trim())
         if (name && value) {
+          // Appliquer les mêmes filtres financiers que add()
           if (FINANCIAL_NAME_RE.test(name)) continue
           if (FINANCIAL_VALUE_RE.test(value)) continue
           if (PRICE_GROUP_RE.test(currentGroup ?? '')) continue
           if (PRICE_GROUP_RE.test(name)) continue
-          if (RELATED_GROUP_RE.test(currentGroup ?? '')) continue
-          if (isGarbageConcat(value)) continue
           const key = `${name.toLowerCase()}::${value.toLowerCase()}`
           if (!seen.has(key)) {
             seen.add(key)
             specs.push({ name, value, group: currentGroup })
-            added++
           }
         }
       }
     }
-    if (added > 0) console.log(`[parseSpecs] ✓ ${label} specs: ${added}`)
+    if (specs.length > 0) {
+      console.log('[parseSpecs] ✓ Jina injected specs:', specs.length)
+    }
   }
-  // Priorité : SEMANTIC_EXTRACT d'abord (plus fiable), puis legacy JINA.
-  parseBlock('SEMANTIC_EXTRACT_START', 'SEMANTIC_EXTRACT_END', 'semantic')
-  parseBlock('JINA_EXTRACTED_SPECS_START', 'JINA_EXTRACTED_SPECS_END', 'Jina injected')
 
   /** Rejette les contenus parasites : métadonnées Jina, URLs, titres de page, liens markdown, etc. */
   const JUNK_NAME_RE = /^(title|url|source|markdown|favicon|description|og:|meta |statuscode|viewport|http)/i
@@ -126,9 +102,6 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
     if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return
     // Rejeter les contenus qui sont du garbage (cookies, GDPR, etc.)
     if (isGarbageContent(n) || isGarbageContent(v)) return
-    // Rejeter les valeurs concat/garbage (ex: "3455.566.5781012" = concat de
-    // diamètres de 21 accessoires rassemblés par un dropdown de variantes).
-    if (isGarbageConcat(v)) return
     seen.add(key)
     specs.push({ name: n, value: v, group: group || undefined })
   }
@@ -138,7 +111,7 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
   // Lignes Jina metadata à ignorer complètement
   const jinaMetaRe = /^(Title|URL|Markdown Content|Source|Published Time|StatusCode|Favicon|ViewportWidth)\s*:/i
 
-  const specSectionRe = /^#{1,4}\s*(sp[eé]cifications?|caract[eé]ristiques?\s*(?:techniques?|du\s*produit)?|descriptif\s*technique|donn[eé]es\s*techniques?|informations?\s*(?:techniques?)?|fiche\s*technique|d[eé]tails?\s*techniques?|[eé]quipement(?:s)?|outillage|fonctionnalit[eé]s?|options?|poids|puissance|d[eé]cibels?|vibrations?|dimensions?|batterie|general|g[eé]n[eé]ral|per[çc]age|vissage|couple|moteur|[eé]nergie|vitesse|mandrin|capacit[eé]s?|tension|autonomie|charge(?:ment)?|bruit|acoustique|emballage|inclus|contenu\s*(?:de\s*la\s*)?livr|accessoires?)/i
+  const specSectionRe = /^#{1,4}\s*(sp[eé]cifications?|caract[eé]ristiques?\s*(?:techniques?|du\s*produit)?|descriptif\s*technique|donn[eé]es\s*techniques?|informations?\s*(?:techniques?)?|fiche\s*technique|d[eé]tails?\s*techniques?|poids|puissance|d[eé]cibels?|vibrations?|dimensions?|batterie|general|g[eé]n[eé]ral|per[çc]age|vissage|couple|moteur|[eé]nergie|vitesse|mandrin|capacit[eé]s?|tension|autonomie|charge(?:ment)?|bruit|acoustique|emballage|inclus|contenu\s*(?:de\s*la\s*)?livr|accessoires?)/i
   let inSpecSection = false
   let currentGroup = ''
 
@@ -170,7 +143,7 @@ export function parseSpecsFromMarkdown(md: string): Array<{ name: string; value:
     if (subHeading) {
       const heading = subHeading[1].trim()
       const headingLc = heading.toLowerCase()
-      const isSpecGroup = /(information|poids|puissance|d[eé]cibels?|vibration|dimension|batterie|per[çc]age|vissage|couple|vitesse|mandrin|capacit|g[eé]n[eé]ral|technique|sp[eé]cification|donn[eé]es|important|emballage|inclus|livr[eé]|tension|autonomie|charge|bruit|acoustique|moteur|[eé]nergie|accessoire|r[eé]sistance|performance|mat[eé]riau|d[eé]bit|pression|hydraulique|certification|norme|classe|s[eé]rie|gamme|mod[eè]le|r[eé]f[eé]rence|connect|bluetooth|wireless|wifi|[eé]quipement|outillage|fonctionnalit|option|couleur|finition)/i.test(headingLc)
+      const isSpecGroup = /(information|poids|puissance|d[eé]cibels?|vibration|dimension|batterie|per[çc]age|vissage|couple|vitesse|mandrin|capacit|g[eé]n[eé]ral|technique|sp[eé]cification|donn[eé]es|important|emballage|inclus|livr[eé]|tension|autonomie|charge|bruit|acoustique|moteur|[eé]nergie|accessoire|r[eé]sistance|performance|mat[eé]riau|d[eé]bit|pression|hydraulique|certification|norme|classe|s[eé]rie|gamme|mod[eè]le|r[eé]f[eé]rence|connect|bluetooth|wireless|wifi)/i.test(headingLc)
       // Heading court tout en majuscules = très probable section de specs fabricant (Milwaukee, DeWalt, etc.)
       const isUpperCaseShort = heading.length <= 40 && heading === heading.toUpperCase() && /[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]{3,}/.test(heading)
       if (isSpecGroup || isUpperCaseShort) {
@@ -565,17 +538,9 @@ export function parseImagesFromMarkdown(md: string): string[] {
       const filename = path.split('/').pop()?.toLowerCase() ?? ''
       // Petites images (< 3 segments de path = probablement un favicon/sprite inline)
       const segments = path.split('/').filter(Boolean)
-      // Rejeter TOUS les SVG (quasi-jamais des photos produit — presque toujours icônes/logos)
-      if (/\.svg(\?|#|$)/i.test(filename)) return true
-      // Rejeter si un segment de path est dédié aux logos/pictos/icônes/badges/brands/features marketing
-      // (ex: /pictos/xxx.png, /logos/brand.svg, /icons/warning.png, /features/vario-power.jpg)
-      if (segments.some(s => /^(logos?|pictos?|pictogram[a-z]*|icons?|icones?|badges?|brands?|flags?|labels?|stickers?|favicons?|apple-touch-icons?|features?|benefits?|highlights?|usps?|advantages?|campaigns?|promos?|promotions?|marketing|banners?|heros?|overlays?|schemas?|schematics?|illustrations?)$/i.test(s))) return true
       // Tester le nom de fichier uniquement
-      if (/^(logo|picto|pictogram|favicon|sprite|spacer|blank|pixel|transparent|1x1|beacon|badge|flag|label|sticker|usp|feature|benefit|highlight|advantage|campaign|promo|banner|overlay|schema|schematic|illustration|icon|ic|ico)\b/i.test(filename)) return true
-      if (/[-_](logo|picto|pictogram|icon|avatar|favicon|sprite|spacer|pixel|tracking|beacon|badge|flag|label|sticker|brand|usp|feature|benefit|highlight|advantage|campaign|promo|banner|overlay|schema|schematic|illustration)(?:[-_.\d]|$)/i.test(filename)) return true
-      // Indice de réparabilité (France) / score badges marketing
-      if (/indice[-_]?(?:de[-_]?)?(?:reparabilit|durabilit|eco)/i.test(filename)) return true
-      if (/(?:^|[-_])(?:energy[-_]?label|ecolabel|eco[-_]?score|nutriscore)(?:[-_.]|$)/i.test(filename)) return true
+      if (/^(logo|favicon|sprite|spacer|blank|pixel|transparent|1x1|beacon)\b/i.test(filename)) return true
+      if (/[-_](logo|icon|avatar|favicon|sprite|spacer|pixel|tracking|beacon)[-_.\d]/i.test(filename)) return true
       // Miniatures de PDF/docs : filename ou path contient des marqueurs documentaires
       if (/\.pdf\.(jpe?g|png|webp|avif)$/i.test(filename)) return true
       if (/^(fiche|notice|datasheet|tech[-_]?sheet|manual|doc|document|brochure|catalog)[-_.]/i.test(filename)) return true

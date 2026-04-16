@@ -25,14 +25,6 @@ export function extractPrimaryImagesFromHtml(html: string | null, baseUrl: strin
     if (/^blob:/i.test(url)) { reject(url, 'blob'); return false }
     if (/[?&](?:utm_|ga_|gclid|fbclid)/i.test(url) && /\/(?:track|pixel|beacon|1x1|spacer)/i.test(url)) { reject(url, 'tracker'); return false }
     if (/(?:^|[/_-])(?:1x1|pixel|spacer|blank|transparent|beacon)[._-]/i.test(url)) { reject(url, 'pixel'); return false }
-    // Rejeter logos, pictos, icônes, favicons (souvent og:image par défaut ou éléments déco)
-    // On scanne TOUTE la pathname (segments dossiers + filename) car beaucoup de sites
-    // rangent ces assets sous /pictos/, /logos/, /brand/, /icons/, etc.
-    try {
-      const pathLower = new URL(url).pathname.toLowerCase()
-      const NOISE_RE = /(?:^|[\/_\-.])(?:logo|logos|picto|pictos|pictogram[a-z]*|icon|icons|icone|icones|favicon|apple-touch-icon|badge|badges|brand|brands|social|share|og-default|default|label|sticker|flag|flags)(?:[\/_\-.]|$)/i
-      if (NOISE_RE.test(pathLower)) { reject(url, 'logo-picto'); return false }
-    } catch { /* URL invalide — laisser passer */ }
     return true
   }
   const push = (raw: string) => {
@@ -82,42 +74,6 @@ export function extractPrimaryImagesFromHtml(html: string | null, baseUrl: strin
     try { visit(JSON.parse(b[1].trim())) } catch { /* JSON-LD invalide — ignorer */ }
   }
 
-  // 4. Fallback : <img> dans conteneurs produit/gallery/zoom
-  // (indispensable quand la page n'a pas de og:image ni JSON-LD Product)
-  if (out.length === 0) {
-    const galleryHtmlRe = /<(?:div|section|figure|ul|ol|picture)[^>]*(?:class|id)\s*=\s*["']([^"']*)["'][^>]*>([\s\S]{0,15000}?)<\/(?:div|section|figure|ul|ol|picture)>/gi
-    const GALLERY_TOKENS = /product[_-]?(?:image|photo|gallery|media)|gallery|zoom|main[_-]?image|hero[_-]?image|visual|carousel|slider|pdp[_-]?(?:image|media)|fiche[_-]?(?:image|produit)/i
-    const imgTagRe = /<img[^>]+(?:src|data-src|data-zoom-src|data-large|data-original|data-lazy)\s*=\s*["']([^"'#]+)["'][^>]*>/gi
-    const seenInGallery = new Set<string>()
-    for (const gm of html.matchAll(galleryHtmlRe)) {
-      if (!GALLERY_TOKENS.test(gm[1])) continue
-      for (const im of gm[2].matchAll(imgTagRe)) {
-        const src = im[1].trim()
-        if (!src || seenInGallery.has(src)) continue
-        seenInGallery.add(src)
-        // Rejeter SVG icônes et très petits (si dimensions visibles dans attrs)
-        if (/\.svg(\?|$)/i.test(src)) continue
-        const parent = im[0]
-        const wMatch = parent.match(/\bwidth\s*=\s*["']?(\d+)/i)
-        const hMatch = parent.match(/\bheight\s*=\s*["']?(\d+)/i)
-        if (wMatch && parseInt(wMatch[1], 10) < 150) continue
-        if (hMatch && parseInt(hMatch[1], 10) < 150) continue
-        push(src)
-      }
-    }
-  }
-
-  // 5. Dernier recours : <img> dont src pointe vers /products/, /product/, /media/, /assets/
-  if (out.length === 0) {
-    const productPathRe = /\/(products?|media|assets|uploads?|files|catalog)\/[^"']*\.(?:jpe?g|png|webp|avif)(?:\?[^"']*)?$/i
-    const imgAllRe = /<img[^>]+(?:src|data-src|data-zoom-src|data-original)\s*=\s*["']([^"'#]+)["'][^>]*>/gi
-    for (const m of html.matchAll(imgAllRe)) {
-      const src = m[1].trim()
-      if (productPathRe.test(src)) push(src)
-      if (out.length >= 8) break
-    }
-  }
-
   if (out.length === 0) {
     // Diagnostic : si rien n'a été trouvé, dumper un échantillon du <head> pour comprendre pourquoi
     const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
@@ -128,96 +84,6 @@ export function extractPrimaryImagesFromHtml(html: string | null, baseUrl: strin
     console.log('[primary-images] extracted:', out.length, 'rejected:', rejected.length, 'sample:', out.slice(0, 3))
   }
   return out
-}
-
-/**
- * Extrait le fil d'Ariane (breadcrumb) depuis le HTML.
- * Sources (par priorité) :
- *  1. JSON-LD BreadcrumbList
- *  2. <nav aria-label="breadcrumb"> / <ol class="breadcrumb">
- *  3. microdata [itemtype="BreadcrumbList"]
- * Retourne la liste des segments du plus général au plus spécifique.
- */
-/** Décode les entités HTML standard (&gt; &lt; &amp; &quot; &#39; &nbsp; &eacute; etc.)
- *  en utilisant un élément DOM temporaire (gère aussi les entités numériques &#NN; / &#xNN;). */
-function decodeHtmlEntities(s: string): string {
-  if (!s || !/&[a-z#0-9]+;/i.test(s)) return s
-  try {
-    const el = document.createElement('textarea')
-    el.innerHTML = s
-    return el.value
-  } catch {
-    return s
-      .replace(/&gt;/gi, '>')
-      .replace(/&lt;/gi, '<')
-      .replace(/&amp;/gi, '&')
-      .replace(/&quot;/gi, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/gi, ' ')
-  }
-}
-
-export function extractBreadcrumbFromHtml(html: string | null): string[] {
-  if (!html) return []
-  const segments: string[] = []
-  const seen = new Set<string>()
-  const push = (t: string) => {
-    const decoded = decodeHtmlEntities(t)
-    const s = decoded.replace(/\s+/g, ' ').trim()
-    if (!s || s.length > 80) return
-    if (seen.has(s.toLowerCase())) return
-    seen.add(s.toLowerCase())
-    segments.push(s)
-  }
-
-  // 1) JSON-LD BreadcrumbList
-  const ldBlocks = [...html.matchAll(/<script[^>]+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
-  for (const b of ldBlocks) {
-    try {
-      const parsed = JSON.parse(b[1].trim()) as unknown
-      const visit = (n: unknown): void => {
-        if (!n) return
-        if (Array.isArray(n)) { for (const x of n) visit(x); return }
-        if (typeof n !== 'object') return
-        const obj = n as Record<string, unknown>
-        const type = String(obj['@type'] ?? '')
-        if (type === 'BreadcrumbList' && Array.isArray(obj.itemListElement)) {
-          for (const it of obj.itemListElement as unknown[]) {
-            if (!it || typeof it !== 'object') continue
-            const rec = it as Record<string, unknown>
-            const name = typeof rec.name === 'string' ? rec.name : ''
-            const item = rec.item
-            const itemName = item && typeof item === 'object' ? String((item as Record<string, unknown>).name ?? '') : ''
-            push(name || itemName)
-          }
-        }
-        for (const v of Object.values(obj)) if (v && typeof v === 'object') visit(v)
-      }
-      visit(parsed)
-    } catch { /* ignore */ }
-  }
-  if (segments.length > 0) return segments
-
-  // 2) <nav/ol class*=breadcrumb> : extraire textes d'anchor + span terminal
-  try {
-    const doc = new DOMParser().parseFromString(html, 'text/html')
-    const containers = doc.querySelectorAll('[class*="breadcrumb" i],[id*="breadcrumb" i],nav[aria-label*="breadcrumb" i],nav[aria-label*="fil" i]')
-    for (const c of containers) {
-      // Items = <li>, <a>, <span>
-      const items = c.querySelectorAll('li, a, span')
-      if (items.length < 2) continue
-      const local: string[] = []
-      items.forEach(el => {
-        // Éviter les nodes wrappers (qui répètent tout le texte)
-        if (el.querySelector('li,a,span')) return
-        const t = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
-        if (t && t.length <= 80 && !/^[/>›»|,]$/.test(t)) local.push(t)
-      })
-      for (const t of local) push(t)
-      if (segments.length >= 2) break
-    }
-  } catch { /* ignore */ }
-  return segments
 }
 
 /**
