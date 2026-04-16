@@ -3480,11 +3480,22 @@ export function useProductEnrichment() {
                   const f = applied.fields
                   const toStr = (v: unknown): string => typeof v === 'string' ? v : ''
                   const toArr = (v: unknown): string[] => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+                  // Variants : support des champs "variants"/"variantes"/"Variantes"
+                  // qui peuvent arriver en string[] depuis l'engine.
+                  const rawVariants = (f.variants ?? f.variantes ?? f.Variantes ?? f.references) as unknown
+                  const variantsStrs = toArr(rawVariants)
+                  const variants = variantsStrs.map((s) => {
+                    // Split "REF — Label" ou "REF  Label" si possible, sinon tout dans label.
+                    const m = s.match(/^([A-Z0-9][A-Z0-9\-]{2,})\s*[-–—:|]\s*(.+)$/i)
+                    return m
+                      ? { reference: m[1].trim(), label: m[2].trim(), properties: {} }
+                      : { reference: s.trim(), label: s.trim(), properties: {} }
+                  })
                   const built: EnrichedProduct = {
                     description: toStr(f.description),
                     advantages: toArr(f.advantages).map((text) => ({ text })),
                     specifications: applied.specGroups.flatMap((g) => g.pairs.map((p) => ({ ...p, group: g.group }))),
-                    variants: [],
+                    variants,
                     images: toArr(f.images),
                     documents: toArr(f.documents),
                     price: null,
@@ -3496,7 +3507,7 @@ export function useProductEnrichment() {
                     llmModel: undefined,
                   }
                   setData(sheetName, rowId, built)
-                  log(`✓ Fiche produite depuis le template (sans IA)`)
+                  log(`✓ Fiche produite depuis le template — ${built.advantages.length} avantages, ${built.variants.length} variantes, ${built.images.length} images`)
                   return built
                 }
                 log(`📐 Template score insuffisant (${score}) — fallback sur IA…`)

@@ -116,6 +116,64 @@ function applyTransform(
   }
 }
 
+/**
+ * Si un champ multiple ne matche qu'un seul élément (le container parent),
+ * on tente d'extraire les items-frères intrinsèques (li, > div, > p) pour
+ * récupérer la liste réelle. Permet à un utilisateur d'écrire un simple
+ * `div.content-advantages` au lieu de `div.content-advantages > li`.
+ */
+function expandContainerToItems(
+  doc: Document,
+  strategy: SelectorStrategy,
+): string[] | null {
+  if (strategy.kind !== 'css') return null
+  let nodes: Element[]
+  try { nodes = Array.from(doc.querySelectorAll(strategy.expression)) }
+  catch { return null }
+  if (nodes.length !== 1) return null
+  const container = nodes[0]
+  // Stratégie : chercher les enfants répétés les plus probables (li, p, div,
+  // img, a). On prend la 1re liste non-triviale (≥ 2 items).
+  const candidates: Array<string> = []
+  const childSelectors = ['li', ':scope > p', ':scope > div', ':scope > a', ':scope > span', 'img']
+  for (const sel of childSelectors) {
+    try {
+      const kids = Array.from(container.querySelectorAll(sel))
+      if (kids.length < 2) continue
+      // Pour les img/a : prendre l'attribut src/href ; sinon textContent
+      const values = kids.map((k) => {
+        if (k.tagName === 'IMG') return (k as HTMLImageElement).getAttribute('src') ?? ''
+        if (k.tagName === 'A' && (k as HTMLAnchorElement).href) return (k as HTMLAnchorElement).getAttribute('href') ?? ''
+        return (k.textContent ?? '').replace(/\s+/g, ' ').trim()
+      }).filter((v) => v && v.length > 0)
+      if (values.length >= 2) {
+        return values
+      }
+    } catch { /* invalid selector */ }
+    if (candidates.length > 0) break
+  }
+  return null
+}
+
+/**
+ * Si aucune structure enfant n'est détectée, tenter un split textuel :
+ * bullets (•, ▪), tirets/em-dash répétés, ou lignes.
+ */
+function splitTextIntoItems(text: string): string[] | null {
+  const trimmed = text.trim()
+  if (trimmed.length < 40) return null
+  // Priorité 1 : bullets Unicode
+  const bulletSplit = trimmed.split(/\s*[•▪►▶]\s+|\s*[-–—]\s{2,}/).map((s) => s.trim()).filter(Boolean)
+  if (bulletSplit.length >= 3) return bulletSplit
+  // Priorité 2 : séparation par lignes non-vides
+  const lineSplit = trimmed.split(/\n+/).map((s) => s.trim()).filter((s) => s.length >= 8)
+  if (lineSplit.length >= 3) return lineSplit
+  // Priorité 3 : séparation par "Les + …" pattern marketing FR ou similaire
+  const marketingSplit = trimmed.split(/(?=\b(?:Les\s*\+|Advantages?|Points?\s*forts?|Features?)\b)/i).map((s) => s.trim()).filter(Boolean)
+  if (marketingSplit.length >= 2) return marketingSplit
+  return null
+}
+
 function applyField(
   doc: Document,
   field: FieldSelector,
@@ -123,9 +181,22 @@ function applyField(
 ): { value: unknown; warning: string | null } {
   for (const strategy of field.strategies) {
     const raw = resolveStrategy(doc, strategy)
-    const cleaned = raw
+    let cleaned = raw
       .map((v) => applyTransform(v, field.transform, baseUrl))
       .filter((v) => v && v.length > 0)
+    // Champs liste qui ne matchent qu'un seul élément : tenter d'exploser
+    // le conteneur en sous-items (LI, paragraphes) ou de splitter le texte.
+    if (field.multiple && cleaned.length === 1 && strategy.kind === 'css') {
+      const expanded = expandContainerToItems(doc, strategy)
+      if (expanded && expanded.length >= 2) {
+        cleaned = expanded
+          .map((v) => applyTransform(v, field.transform, baseUrl))
+          .filter((v) => v && v.length > 0)
+      } else {
+        const textSplit = splitTextIntoItems(cleaned[0])
+        if (textSplit && textSplit.length >= 2) cleaned = textSplit
+      }
+    }
     if (cleaned.length > 0) {
       return field.multiple
         ? { value: Array.from(new Set(cleaned)), warning: null }
