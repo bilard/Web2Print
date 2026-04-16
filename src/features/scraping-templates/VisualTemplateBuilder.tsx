@@ -141,6 +141,15 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
         )}
       </div>
 
+      {/* Limitations notice */}
+      {rewrittenHtml && (
+        <div className="px-3 py-2 bg-amber-500/[0.08] border border-amber-400/20 rounded text-[10px] text-amber-200/80">
+          <b>Rendu dégradé attendu</b> — les polices custom et icônes webfont ne chargent pas
+          (CORS sur <code className="text-amber-100">@font-face</code>). La structure HTML est correcte pour le pointer-and-click.
+          Pour un rendu 100% fidèle, utilise l'extension Chrome (Phase 2).
+        </div>
+      )}
+
       {/* Iframe */}
       <div className="relative bg-black/40 border border-white/10 rounded-lg overflow-hidden" style={{ minHeight: 500 }}>
         {rewrittenHtml ? (
@@ -303,10 +312,17 @@ function rewriteHtmlForIframe(html: string, baseUrl: string): string {
   }
   // Retirer meta-refresh (redirections automatiques).
   out = out.replace(/<meta\s+http-equiv=["']?refresh[^>]*>/gi, '')
+  // Retirer les Content-Security-Policy qui bloqueraient les scripts/styles.
+  out = out.replace(/<meta\s+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, '')
   // Neutraliser target="_top" et les liens qui navigueraient hors iframe.
   out = out.replace(/target=["']_top["']/gi, 'target="_self"')
   // Désactiver les formulaires (submit → navigation).
   out = out.replace(/<form([^>]*)>/gi, (_m, attrs) => `<form${attrs} onsubmit="return false">`)
+  // Retirer crossorigin="anonymous" sur les link CSS : le strict CORS bloque
+  // certaines stylesheets servies sans ACAO. On charge sans CORS — les fonts
+  // cross-origin ne chargeront pas (@font-face a besoin de CORS explicite),
+  // mais la structure + couleurs + tailles sont correctes pour la capture.
+  out = out.replace(/(<link[^>]*)\scrossorigin=["'][^"']*["']/gi, '$1')
   // Overlay capture : injecté en fin de body pour s'exécuter APRÈS les
   // scripts de la page (qui installent les webfonts, etc.).
   const injection = `<script>${OVERLAY_SCRIPT}</script>`
