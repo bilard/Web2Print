@@ -278,9 +278,9 @@
       const name = box.querySelector('#__pim-custom').value.trim()
       if (name) assign(name, false)
     })
-
-    // Empêche la capture de re-fire sur les clicks internes à la modale
-    assignModal.addEventListener('click', (e) => e.stopPropagation(), true)
+    // onClick capture-phase du document vérifie déjà `assignModal.contains(target)`
+    // et return early → pas besoin d'un stopPropagation supplémentaire (qui
+    // bloquerait au contraire les clicks sur les boutons enfants).
   }
 
   function closeAssignModal() {
