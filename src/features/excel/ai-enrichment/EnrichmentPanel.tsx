@@ -406,7 +406,7 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
 
       {/* Logs temps réel */}
       {logs.length > 0 && (
-        <div className="mt-4 flex-1 min-h-[400px] overflow-y-auto rounded-lg bg-black/40 border border-white/[0.06] p-2.5">
+        <div className="mt-4 flex-1 min-h-0 max-h-[240px] overflow-y-auto rounded-lg bg-black/40 border border-white/[0.06] p-2.5">
           <div className="flex items-center gap-1.5 mb-2">
             <Code2 className="w-3 h-3 text-white/20" />
             <span className="text-[9px] font-semibold text-white/25 uppercase tracking-wider">Logs</span>
@@ -513,25 +513,6 @@ function DoneState({
       {/* Debug LLM : prompt + paramètres envoyés */}
       {llmRequest && <LlmRequestPanel request={llmRequest} />}
 
-      {/* Image principale (hero) — sélection IA */}
-      {data.heroImage && (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <ImageIcon className="w-3 h-3 text-indigo-300/70" />
-            Image principale
-          </p>
-          <div className="relative rounded-md overflow-hidden bg-white/[0.02] border border-white/[0.06]">
-            <img
-              src={data.heroImage}
-              alt="Hero produit"
-              className="w-full max-h-64 object-contain"
-              loading="lazy"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Images scrapées */}
       <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
         <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -551,6 +532,20 @@ function DoneState({
             <span className="text-white/60">Re-générer</span> pour relancer la recherche.
           </p>
         )}
+      </div>
+
+      {/* Description générée — éditable */}
+      <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+        <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
+          Description enrichie
+        </p>
+        <EditableText
+          value={data.description}
+          onChange={(v) => onUpdate({ description: v })}
+          multiline
+          placeholder="Ajouter une description…"
+          className="text-[12.5px] text-white/75 leading-relaxed"
+        />
       </div>
 
       {/* Avantages — éditable, groupés par section */}
@@ -593,27 +588,6 @@ function DoneState({
           <SpecGroupAccordions specifications={data.specifications} onUpdate={onUpdate} data={data} />
         )}
       </div>
-
-      {/* Prix produit */}
-      {data.price && (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-            Prix
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-indigo-300">
-              {data.price.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              &nbsp;{data.price.currency === 'EUR' ? '€' : data.price.currency}
-            </span>
-            {data.price.priceType && data.price.priceType !== 'unit' && (
-              <span className="text-[11px] text-white/40">{data.price.priceType}</span>
-            )}
-            {data.price.source && (
-              <span className="text-[10px] text-white/25 ml-auto">source : {data.price.source}</span>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Variantes produit */}
       {data.variants && data.variants.length > 0 && (

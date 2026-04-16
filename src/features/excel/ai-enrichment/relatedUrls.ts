@@ -52,58 +52,6 @@ function isInsideNav(el: Element): boolean {
   return false
 }
 
-const GENERIC_LINK_TEXT = /^(pdf|download|t[ée]l[ée]charger|voir|view|open|ouvrir|link|file|document|more|plus)\.?$/i
-
-function isGoodLabel(s: string): boolean {
-  if (!s) return false
-  if (s.length < 5 || s.length > 200) return false
-  if (GENERIC_LINK_TEXT.test(s)) return false
-  if (/^https?:\/\//i.test(s)) return false
-  return true
-}
-
-function siblingLabel(a: Element): string | null {
-  // Cherche un label dans un conteneur "ligne" (tr, li, row, grid-item) en
-  // retirant le contenu de tous les liens/boutons/images pour isoler le texte.
-  let cur: Element | null = a.parentElement
-  for (let i = 0; i < 5 && cur; i++) {
-    const tag = cur.tagName
-    if (tag === 'BODY' || tag === 'HTML' || tag === 'MAIN' || tag === 'SECTION' || tag === 'ARTICLE') break
-    const clone = cur.cloneNode(true) as Element
-    clone.querySelectorAll('a, button, img, svg, script, style, noscript').forEach((e) => e.remove())
-    const txt = (clone.textContent ?? '').replace(/\s+/g, ' ').trim()
-    if (isGoodLabel(txt)) return txt
-    cur = cur.parentElement
-  }
-  return null
-}
-
-function extractAnchorName(a: Element, resolved: URL): string {
-  // 1) Texte visible direct de l'anchor — ignorer si générique ("PDF", "Télécharger"…)
-  const txt = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
-  if (isGoodLabel(txt)) return txt
-
-  // 2) aria-label puis title (meta accessibles)
-  const aria = a.getAttribute('aria-label')?.trim() ?? ''
-  if (isGoodLabel(aria)) return aria
-  const title = a.getAttribute('title')?.trim() ?? ''
-  if (isGoodLabel(title)) return title
-
-  // 3) Remonter dans les ancêtres pour trouver le label "ligne" (tr, li, row, card)
-  const sib = siblingLabel(a)
-  if (sib) return sib
-
-  // 4) Derniers recours : texte court direct (ex: "PDF") puis filename
-  if (txt && txt.length >= 2 && txt.length <= 120 && !/^https?:\/\//i.test(txt)) return txt
-  const filename = resolved.pathname.split('/').pop() ?? ''
-  return decodeURIComponent(filename.replace(/\.pdf$/i, '')).replace(/[_-]+/g, ' ').trim() || 'Document PDF'
-}
-
-function pdfEntry(url: string, name: string): string {
-  const cleanName = name.replace(/\s+/g, ' ').trim()
-  return cleanName ? `${cleanName}##${url}` : url
-}
-
 export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   const baseKey = normalizeUrl(baseUrl.toString())
@@ -111,8 +59,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
   const basePath = baseUrl.pathname
 
   const tabs = new Set<string>()
-  // Map : url normalisée → entry "nom##url" (pour dédupliquer par URL, pas par nom)
-  const pdfMap = new Map<string, string>()
+  const pdfs = new Set<string>()
   const subpages = new Set<string>()
 
   const anchors = doc.querySelectorAll('a[href]')
@@ -127,7 +74,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
       // PDFs externes sur CDN documentaire
       if (/\.pdf($|\?)/i.test(resolved.pathname + resolved.search)) {
         const n = normalizeUrl(resolved.toString())
-        if (n && !pdfMap.has(n)) pdfMap.set(n, pdfEntry(n, extractAnchorName(a, resolved)))
+        if (n) pdfs.add(n)
       }
       continue
     }
@@ -139,7 +86,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
 
     // PDFs
     if (/\.pdf($|\?)/i.test(resolved.pathname + resolved.search)) {
-      if (!pdfMap.has(normalized)) pdfMap.set(normalized, pdfEntry(normalized, extractAnchorName(a, resolved)))
+      pdfs.add(normalized)
       continue
     }
 
@@ -161,15 +108,12 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
   }
 
   // ── ARIA role="tab" synthesis (for SPAs where tabs are buttons, not anchors) ──
-  // Collect button-like tab elements (excludes anchors so we don't double-count the link case)
-  const tabElements = Array.from(doc.querySelectorAll(
-    'button[role="tab"], [role="tab"]:not(a), [data-qa^="cmp-tab-"], button[data-tab], button[data-tab-id]'
-  )).filter(el => !isInsideNav(el))
-  if (tabElements.length > 0) {
-    // Tab key: prefer an existing query key from the URL (tab, section, view…), otherwise default to 'tab'
-    const tabKey = detectTabKeyFromUrl(baseUrl) ?? 'tab'
+  const tabKey = detectTabKeyFromUrl(baseUrl)
+  if (tabKey) {
     const currentValue = baseUrl.searchParams.get(tabKey)
-    for (const el of tabElements) {
+    const tabElements = doc.querySelectorAll('[role="tab"], [data-qa^="cmp-tab-"], [data-tab], [data-tab-id]')
+    for (const el of Array.from(tabElements)) {
+      if (isInsideNav(el)) continue
       // Skip the currently selected tab
       if (el.getAttribute('aria-selected') === 'true') continue
       const tabId = extractTabId(el)
@@ -184,7 +128,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
 
   return {
     tabs: Array.from(tabs),
-    pdfs: Array.from(pdfMap.values()),
+    pdfs: Array.from(pdfs),
     subpages: Array.from(subpages),
   }
 }

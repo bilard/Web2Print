@@ -70,15 +70,15 @@ const htmlWithPdfs = `
 describe('discoverRelatedUrls - pdfs', () => {
   const base = new URL('https://www.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186')
 
-  it('collects internal pdf links with anchor name preserved (nom##url)', () => {
+  it('collects internal pdf links', () => {
     const { pdfs } = discoverRelatedUrls(htmlWithPdfs, base)
-    expect(pdfs.some(p => p === 'Datasheet##https://www.grundfos.com/docs/datasheet-alpha1.pdf')).toBe(true)
-    expect(pdfs.some(p => p.startsWith('Manuel##') && p.includes('manual-fr.pdf'))).toBe(true)
+    expect(pdfs).toContain('https://www.grundfos.com/docs/datasheet-alpha1.pdf')
+    expect(pdfs.some(u => u.includes('manual-fr.pdf'))).toBe(true)
   })
 
-  it('collects external pdf links from CDNs with anchor name', () => {
+  it('collects external pdf links from CDNs', () => {
     const { pdfs } = discoverRelatedUrls(htmlWithPdfs, base)
-    expect(pdfs.some(p => p === 'Certificat##https://cdn.grundfos.com/api/binary/d123.pdf')).toBe(true)
+    expect(pdfs).toContain('https://cdn.grundfos.com/api/binary/d123.pdf')
   })
 })
 
@@ -151,16 +151,11 @@ describe('discoverRelatedUrls - ARIA tabs synthesis', () => {
     expect(tabs.every(u => u.includes('pumpsystemid=28'))).toBe(true)
   })
 
-  it('synthesizes tabs with default "tab" key when baseUrl has no tab-like query key', () => {
+  it('does not synthesize tabs when baseUrl has no tab-like query key', () => {
     const baseNoTab = new URL('https://product-selection.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186')
     const { tabs } = discoverRelatedUrls(grundfosButtonHtml, baseNoTab)
-    // DOM has role="tab" buttons → infer 'tab' as default key and synthesize URLs
-    expect(tabs.some(u => u.includes('tab=variant-overview'))).toBe(true)
-    expect(tabs.some(u => u.includes('tab=variants'))).toBe(true)
-    expect(tabs.some(u => u.includes('tab=specifications'))).toBe(true)
-    expect(tabs.some(u => u.includes('tab=documents'))).toBe(true)
-    // aria-selected=true tab (variant-curves) is still the selected one → skipped
-    expect(tabs.every(u => !u.endsWith('tab=variant-curves'))).toBe(true)
+    // With no tab key in URL, we must not guess — no synthesized tabs
+    expect(tabs).toHaveLength(0)
   })
 
   it('strips common prefixes from data-qa (cmp-tab-, tab-)', () => {
