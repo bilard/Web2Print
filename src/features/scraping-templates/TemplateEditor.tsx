@@ -91,11 +91,18 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
   const save = async () => {
     setSaving(true)
     try {
+      console.log('[TemplateEditor] saving template', template)
       await saveTemplate(template)
       toast.success('Template enregistré')
       onSaved?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur de sauvegarde')
+      console.error('[TemplateEditor] save failed', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      if (/permission/i.test(msg) || /insufficient/i.test(msg)) {
+        toast.error('Sauvegarde refusée par Firestore — règles manquantes sur la collection "scrapingTemplates". Voir README.')
+      } else {
+        toast.error('Échec sauvegarde : ' + msg)
+      }
     } finally {
       setSaving(false)
     }
