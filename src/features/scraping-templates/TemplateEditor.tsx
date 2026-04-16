@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Plus, Trash2, Play, Save, FlaskConical, Loader2, Download, Upload } from 'lucide-react'
+import { Plus, Trash2, Play, Save, FlaskConical, Loader2, Download, Upload, MousePointer, Code2 } from 'lucide-react'
 import type { ScrapingTemplate, FieldSelector, GroupSelector, SelectorStrategy } from './types'
 import { STANDARD_FIELDS } from './types'
 import { applyTemplate, scoreApplyResult } from './engine'
 import { fetchSourceHtml } from './fetchSourceHtml'
 import { saveTemplate } from './templatesStore'
+import { VisualTemplateBuilder } from './VisualTemplateBuilder'
 import { toast } from 'sonner'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function TemplateEditor({ template, onChange, onSaved }: Props) {
+  const [tab, setTab] = useState<'visual' | 'advanced'>('visual')
   const [testUrl, setTestUrl] = useState('')
   const [testHtml, setTestHtml] = useState('')
   const [testing, setTesting] = useState(false)
@@ -122,6 +124,30 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#1a1a1a] border border-white/10 rounded-lg">
+      {/* Tabs visuel / avancé */}
+      <div className="flex items-center gap-1 border-b border-white/10 pb-0">
+        <button
+          onClick={() => setTab('visual')}
+          className={`px-3 py-2 text-[11px] font-semibold rounded-t inline-flex items-center gap-1.5 ${
+            tab === 'visual'
+              ? 'bg-indigo-500/15 text-indigo-200 border-b-2 border-indigo-400'
+              : 'text-white/50 hover:text-white/80'
+          }`}
+        >
+          <MousePointer className="w-3.5 h-3.5" /> Pointer & cliquer
+        </button>
+        <button
+          onClick={() => setTab('advanced')}
+          className={`px-3 py-2 text-[11px] font-semibold rounded-t inline-flex items-center gap-1.5 ${
+            tab === 'advanced'
+              ? 'bg-indigo-500/15 text-indigo-200 border-b-2 border-indigo-400'
+              : 'text-white/50 hover:text-white/80'
+          }`}
+        >
+          <Code2 className="w-3.5 h-3.5" /> Avancé (JSON)
+        </button>
+      </div>
+
       {/* Meta */}
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-xs">
@@ -150,6 +176,14 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
         </label>
       </div>
 
+      {/* Mode visuel */}
+      {tab === 'visual' && (
+        <VisualTemplateBuilder template={template} onChange={onChange} />
+      )}
+
+      {/* Mode avancé (JSON) */}
+      {tab === 'advanced' && (
+      <>
       {/* Champs simples */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
@@ -240,6 +274,8 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Actions */}
       <div className="flex gap-2 justify-end border-t border-white/10 pt-3">
