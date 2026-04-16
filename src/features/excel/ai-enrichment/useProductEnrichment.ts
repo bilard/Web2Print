@@ -217,8 +217,53 @@ function isMainlyGarbage(text: string): boolean {
   return garbageLines.length / lines.length > 0.3
 }
 
+/** Métiers/personae courants affichés sur les sites fabricants (menus "Mon profil"
+ *  style Nicoll) — si une spec mappe deux items de cette liste, c'est un form
+ *  de sélection de profil, pas une vraie caractéristique produit. */
+const UI_PROFILE_TERMS_RE = /^(installateur|prescripteur|particulier|distributeur|retour|plombier|ma[çc]on|couvreur|charpentier|carreleur|paysagiste|bureau\s+d['’]?\s*[eé]tudes?|architecte|constructeur|promoteur|ma[îi]tre\s+d['’]?\s*ouvrage|responsable\s+de\s+maintenance|nicoll\s+pour|votre\s+profil|ouvrir\s+la\s+recherche|fermer\s+la\s+recherche|affinez|mon\s+compte|se\s+connecter|s['’]?\s*inscrire|menu|recherche|retour\s+(en\s+)?haut)/i
+
+/** Labels financiers / commerciaux / génériques qui ne sont pas des fiches
+ *  produit : rejetés quand ils apparaissent comme labels de PDF. */
+const GENERIC_DOC_LABEL_RE = /\b(cgv|cgu|mentions\s+l[eé]gales|politique|privacy|tarif|tarifs|price\s*list|catalogue\s*(g[eé]n[eé]ral|complet)?|newsletter|guide\s+(d['’]utilisation|utilisateur|installation)?|faq|mode\s+d['’]emploi\s+g[eé]n[eé]ral|declaration\s+(marque|produit)|fiche\s+s[eé]curit[eé]|msds|sds|plan\s+de\s+masse|garantie\s+g[eé]n[eé]rale|formation|pr[eé]sentation\s+(?:entreprise|soci[eé]t[eé])|rapport\s+(?:annuel|rse)|communiqu[eé])/i
+
+/** Filtre documents par référence produit : garde uniquement ceux dont le label,
+ *  le nom de fichier (URL), OU une ancre contient au moins un token de la
+ *  référence/SKU/titre. Rejette aussi les labels génériques (CGV, tarif, etc.).
+ *  Retourne tous les docs si aucun token de référence n'est disponible. */
+function filterDocumentsByProductRef(
+  documents: string[],
+  productIds: string[],
+): string[] {
+  const tokens = productIds
+    .flatMap((id) => id.toLowerCase().split(/[\s\-_/.,]+/))
+    .filter((t) => t.length >= 4)
+  const uniqueTokens = Array.from(new Set(tokens))
+  if (uniqueTokens.length === 0) return documents
+  const matchesRef = (doc: string): boolean => {
+    const lower = doc.toLowerCase()
+    return uniqueTokens.some((t) => lower.includes(t))
+  }
+  const kept: string[] = []
+  const rejected: string[] = []
+  for (const doc of documents) {
+    // Format possible: "Label | https://url" ou juste "https://url"
+    const label = (doc.split('|')[0] ?? '').trim()
+    if (GENERIC_DOC_LABEL_RE.test(label)) {
+      rejected.push(doc); continue
+    }
+    if (!matchesRef(doc)) {
+      rejected.push(doc); continue
+    }
+    kept.push(doc)
+  }
+  if (rejected.length > 0) {
+    console.log('[sanitize] filterDocumentsByProductRef: kept', kept.length, '/ rejected', rejected.length)
+  }
+  return kept
+}
+
 /** Nettoie un EnrichedProduct en retirant les contenus parasites */
-function sanitizeEnriched(enriched: EnrichedProduct): EnrichedProduct {
+function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []): EnrichedProduct {
   // Description : vider si c'est du cookie/GDPR (court ou long)
   let description = enriched.description
   if (description && (isGarbageContent(description) || isMainlyGarbage(description))) {
@@ -248,15 +293,34 @@ function sanitizeEnriched(enriched: EnrichedProduct): EnrichedProduct {
     }
   }
 
-  // Documents : nettoyer les noms génériques ("Télécharger", "Download", etc.)
-  const documents = enriched.documents.map(doc => cleanDocumentName(doc))
+  // Documents : nettoyer les noms + filtrer par référence produit (retire
+  // CGV, tarifs, fiches d'autres produits de la gamme).
+  const cleanedDocs = enriched.documents.map(doc => cleanDocumentName(doc))
+  const documents = filterDocumentsByProductRef(cleanedDocs, productIds)
+
+  // Specs : rejeter les paires qui mappent deux items de profil/navigation
+  // UI (Nicoll "Installateur | Prescripteur", "Plombier | Maçon", etc.) —
+  // ces blocs 2-colonnes sur les sites fabricants sont des formulaires de
+  // choix de métier, pas des caractéristiques produit.
+  const keptSpecs: EnrichedProduct['specifications'] = []
+  const rejectedSpecs: EnrichedProduct['specifications'] = []
+  for (const s of enriched.specifications) {
+    if (isGarbageContent(s.name) || isGarbageContent(s.value)) { rejectedSpecs.push(s); continue }
+    const bothProfile = UI_PROFILE_TERMS_RE.test(s.name) && UI_PROFILE_TERMS_RE.test(s.value)
+    const nameIsProfile = UI_PROFILE_TERMS_RE.test(s.name) && s.value.length < 60
+    if (bothProfile || nameIsProfile) { rejectedSpecs.push(s); continue }
+    keptSpecs.push(s)
+  }
+  if (rejectedSpecs.length > 0) {
+    console.log('[sanitize] filtered', rejectedSpecs.length, 'UI-profile specs; kept', keptSpecs.length)
+  }
 
   return {
     ...enriched,
     description,
     documents,
     advantages: enriched.advantages.filter(a => !isGarbageContent(a.text)),
-    specifications: enriched.specifications.filter(s => !isGarbageContent(s.name) && !isGarbageContent(s.value)),
+    specifications: keptSpecs,
   }
 }
 
@@ -3837,7 +3901,12 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         // ── Post-processing : enrichir avec groupes markdown ──
         enriched = enrichWithMarkdownGroups(enriched, markdownContent)
 
-        enriched = sanitizeEnriched(enriched)
+        // IDs produit (ref/SKU/modèle) pour filtrer les docs non liés à ce produit.
+        const productModelForFilter = title.match(/[A-Z]{2,5}[\-\s]?\d{1,4}[\w\-]*/i)?.[0] ?? ''
+        const productIdsForSanitize = [reference, sku, productModelForFilter, title]
+          .filter((x): x is string => typeof x === 'string' && x.trim().length >= 3)
+
+        enriched = sanitizeEnriched(enriched, productIdsForSanitize)
         setData(sheetName, rowId, enriched)
         return enriched
       } catch (err) {
