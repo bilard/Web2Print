@@ -36,11 +36,25 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
 
   // Quand on change de template dans la liste, re-synchroniser l'URL source
   // et vider l'iframe pour forcer un rechargement avec la bonne page.
+  // Auto-charge l'iframe si le template a une lastTestUrl persistée.
   useEffect(() => {
-    setSourceUrl(template.lastTestUrl ?? '')
+    const url = template.lastTestUrl ?? ''
+    setSourceUrl(url)
     setRewrittenHtml(null)
     setCaptureMode('off')
     setPendingCapture(null)
+    if (url) {
+      // Auto-load : fetch + injection en tâche de fond dès l'ouverture du template.
+      ;(async () => {
+        setLoading(true)
+        try {
+          const html = await fetchSourceHtml(url)
+          if (html) setRewrittenHtml(rewriteHtmlForIframe(html, url))
+        } catch { /* silencieux — l'utilisateur peut cliquer Charger manuellement */ }
+        finally { setLoading(false) }
+      })()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template.id])
 
   // Listen for postMessage from the iframe
