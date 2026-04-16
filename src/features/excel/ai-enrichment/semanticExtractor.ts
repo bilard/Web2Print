@@ -384,20 +384,17 @@ function nearestHeading(el: Element): string {
  *   - au moins 3 options avec `data-key` numérique (pattern SKU).
  */
 function hasVariantDropdownAncestor(el: Element): boolean {
-  let cur: Element | null = el
-  for (let i = 0; i < 10 && cur; i++) {
-    const combobox = cur.querySelector('[role="combobox"],select')
-    if (combobox) {
-      const skuLikeOptions = cur.querySelectorAll('[data-key][data-value]').length
-      const ariaOptions = cur.querySelector('[role="listbox"]')?.querySelectorAll('[role="option"]').length ?? 0
-      const selectOptions = combobox.tagName === 'SELECT' ? combobox.querySelectorAll('option').length : 0
-      if (skuLikeOptions >= 3) return true
-      if (ariaOptions >= 5) return true
-      if (selectOptions >= 5) return true
-    }
-    cur = cur.parentElement
-  }
-  return false
+  // Restreindre la recherche au <section>/<article>/[role="region"] le plus
+  // proche, sinon on remonte jusqu'au body et on attrape le dropdown de TOUT le
+  // site (tuant l'extraction des variantes situées dans une autre section).
+  const scope = el.closest('section, article, [role="region"]')
+  if (!scope) return false
+  const combobox = scope.querySelector('[role="combobox"],select')
+  if (!combobox) return false
+  const skuLikeOptions = scope.querySelectorAll('[data-key][data-value]').length
+  const ariaOptions = scope.querySelector('[role="listbox"]')?.querySelectorAll('[role="option"]').length ?? 0
+  const selectOptions = combobox.tagName === 'SELECT' ? combobox.querySelectorAll('option').length : 0
+  return skuLikeOptions >= 3 || ariaOptions >= 5 || selectOptions >= 5
 }
 
 /** Valeur concat/garbage : longue séquence numérique sans unité ni espace,
