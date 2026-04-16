@@ -849,6 +849,10 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         // Les parseurs markdown restent utilisés pour les images / PDFs / groupes
         // via mergedImages / mergedDocs / enrichWithMarkdownGroups en post-processing.
         let directBuild: Partial<EnrichedProduct> | null = null
+        // Déclaré hors du branch LLM pour être accessible par le post-processing
+        // (enrichWithMarkdownGroups). Mis à true si le scrape est off-target ou
+        // thin (voir le branch PATH B ci-dessous).
+        let needsKnowledgeBoost = false
         const DIRECT_BUILD_DISABLED = true
         if (!DIRECT_BUILD_DISABLED && markdownContent && markdownContent.length > 200) {
           const mdSpecs = parseSpecsFromMarkdown(markdownContent)
@@ -1009,7 +1013,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           // off-target, contenu thin) → prompt knowledge-augmented : le LLM
           // complète depuis les fiches publiques du produit identifié par sa
           // référence+marque, tout en gardant la fidélité aux valeurs scrapées.
-          const needsKnowledgeBoost = offTarget || !(finalSpecCount >= 5 && finalMdScore >= 10)
+          needsKnowledgeBoost = offTarget || !(finalSpecCount >= 5 && finalMdScore >= 10)
           const promptMode = needsKnowledgeBoost ? 'knowledge-augmented' : 'extraction-only'
           console.log('[enrichment] 🎯 prompt mode:', promptMode, '| specs:', finalSpecCount, '| score:', finalMdScore, '| offTarget:', offTarget)
           log(`🎯 Prompt : ${promptMode} (specs=${finalSpecCount}, score=${finalMdScore}${offTarget ? ', off-target' : ''})`)
