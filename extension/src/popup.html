@@ -4,11 +4,26 @@
     <meta charset="utf-8" />
     <title>Web2Print Capture</title>
     <style>
-      body { width: 280px; padding: 16px; font: 13px -apple-system, sans-serif; background: #1a1a1a; color: #eee; margin: 0; }
+      body { width: 300px; padding: 14px; font: 13px -apple-system, Segoe UI, sans-serif; background: #1a1a1a; color: #eee; margin: 0; }
+      h1 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #a5b4fc; }
+      p { margin: 4px 0; color: #aaa; }
+      .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+      .ok { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+      .idle { background: rgba(148,163,184,0.15); color: #cbd5e1; }
+      code { background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px; font-size: 11px; color: #fcd34d; }
+      .muted { color: #666; font-size: 11px; margin-top: 12px; line-height: 1.5; }
+      a { color: #a5b4fc; }
     </style>
   </head>
   <body>
-    <div id="root">Chargement…</div>
+    <h1>Web2Print Capture</h1>
+    <p id="status" class="status idle">En attente</p>
+    <p class="muted">
+      Ouvre le <a href="http://localhost:5173" target="_blank">Scraping Hub</a> de Web2Print puis un template : le bouton « Ouvrir dans Chrome & tagger » apparaîtra dans l'éditeur visuel.
+    </p>
+    <p class="muted">
+      ID extension : <code id="ext-id"></code>
+    </p>
     <script type="module" src="./popup.ts"></script>
   </body>
 </html>

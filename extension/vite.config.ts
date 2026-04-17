@@ -38,6 +38,11 @@ export default defineConfig({
             if (existsSync(src)) copyFileSync(src, `dist/icons/${size}.png`)
           }
         }
+        // Vite with HTML input nests output under dist/src/. Move popup.html
+        // to the root dist/ so the manifest entry `"default_popup":"popup.html"` resolves.
+        if (existsSync('dist/src/popup.html')) {
+          copyFileSync('dist/src/popup.html', 'dist/popup.html')
+        }
       },
     },
   ],

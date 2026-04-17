@@ -33,6 +33,7 @@ chrome.runtime.onConnectExternal.addListener((port) => {
   if (port.name !== 'w2p-capture') return
   console.log('[w2p-bg] port connected')
   webPort = { port, activeTabId: null, tags: [] }
+  chrome.storage.local.set({ connected: true })
 
   port.onMessage.addListener((msg) => {
     handleWebMessage(msg).catch((err) => {
@@ -45,6 +46,7 @@ chrome.runtime.onConnectExternal.addListener((port) => {
     if (webPort?.activeTabId) {
       chrome.tabs.remove(webPort.activeTabId).catch(() => { /* déjà fermé */ })
     }
+    chrome.storage.local.set({ connected: false })
     webPort = null
   })
 })
