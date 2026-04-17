@@ -66,3 +66,30 @@ export function useMatchingTemplate(
 
   return match
 }
+
+/**
+ * Version impérative (non-hook) : retourne le template qui matche une URL donnée,
+ * ou null. Utilisée par les pipelines d'enrichissement hors contexte React.
+ * Partage le cache 30s avec le hook.
+ */
+export async function findMatchingTemplate(url: string): Promise<ScrapingTemplate | null> {
+  try {
+    const templates = await getCachedTemplates()
+    if (templates.length === 0) return null
+    // 1) match direct sur l'URL
+    const byUrl = templates.find((t) => templateMatchesUrl(t, url))
+    if (byUrl) return byUrl
+    // 2) fallback : match par domaine
+    const host = (() => {
+      try { return new URL(url).hostname.toLowerCase() } catch { return '' }
+    })()
+    if (!host) return null
+    const byDomain = templates.find((t) => {
+      const vd = t.vendorDomain.toLowerCase()
+      return host.includes(vd) || vd.includes(host)
+    })
+    return byDomain ?? null
+  } catch {
+    return null
+  }
+}

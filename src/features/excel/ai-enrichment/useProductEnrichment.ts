@@ -6,6 +6,8 @@ import { useEnrichmentStore } from './enrichmentStore'
 import type { EnrichedProduct } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle } from './scrapeBundle'
+import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
+import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -3887,9 +3889,11 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
             let mfrLlmProvider: string | undefined
             let mfrLlmModel: string | undefined
+            const matchedTemplateForLlm = productUrl ? await findMatchingTemplate(productUrl) : null
+            const wrappedMfrPrompt = buildEnrichmentPrompt(mfrPrompt, matchedTemplateForLlm)
             const mfrAi = await generateJson({
               task: 'product.enrichment',
-              prompt: mfrPrompt,
+              prompt: wrappedMfrPrompt,
               schema: enrichedProductSchema,
               schemaForLLM: enrichedProductJsonSchema as unknown as Record<string, unknown>,
               version: 'product.enrichment.v1',
@@ -4123,9 +4127,11 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
           let llmProviderUsed: string | undefined
           let llmModelUsed: string | undefined
+          const matchedTemplateForLlm2 = productUrl ? await findMatchingTemplate(productUrl) : null
+          const wrappedPromptForLlm2 = buildEnrichmentPrompt(prompt, matchedTemplateForLlm2)
           const ai = await generateJson({
             task: 'product.enrichment',
-            prompt,
+            prompt: wrappedPromptForLlm2,
             schema: enrichedProductSchema,
             schemaForLLM: enrichedProductJsonSchema as unknown as Record<string, unknown>,
             version: 'product.enrichment.v1',
