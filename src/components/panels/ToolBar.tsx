@@ -3,6 +3,7 @@ import { useUIStore, type ActiveTool } from '@/stores/ui.store'
 import { useDamStore } from '@/stores/dam.store'
 import type { DamTab } from '@/features/dam/types'
 import { useAddObject } from '@/features/editor/useAddObject'
+import { useHighlight } from '@/features/help/hooks/useHighlight'
 import {
   MousePointer2,
   Type,
@@ -36,15 +37,17 @@ interface ToolButtonProps {
   tool: ActiveTool
   icon: LucideIcon
   tooltip: string
+  highlightId?: string
 }
 
-function ToolButton({ tool, icon: Icon, tooltip }: ToolButtonProps) {
+function ToolButton({ tool, icon: Icon, tooltip, highlightId }: ToolButtonProps) {
   const activeTool = useUIStore((s) => s.activeTool)
   const setActiveTool = useUIStore((s) => s.setActiveTool)
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
   const rightPanels = useUIStore((s) => s.rightPanels)
   const { addObject } = useAddObject()
   const isActive = activeTool === tool
+  const highlight = useHighlight<HTMLButtonElement>(highlightId ?? '__none__')
 
   const handleClick = () => {
     setActiveTool(tool)
@@ -69,11 +72,12 @@ function ToolButton({ tool, icon: Icon, tooltip }: ToolButtonProps) {
 
   return (
     <button
+      ref={highlight.ref}
       className={`w-[34px] h-[34px] flex items-center justify-center rounded-md transition-colors ${
         isActive
           ? 'bg-indigo-500/20 text-indigo-400'
           : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-      }`}
+      } ${highlight.className}`}
       title={tooltip}
       onClick={handleClick}
     >
@@ -87,6 +91,7 @@ function ImageMenuButton() {
   const menuRef = useRef<HTMLDivElement>(null)
   const setDamPickerOpen = useUIStore((s) => s.setDamPickerOpen)
   const setActiveDamTab = useDamStore((s) => s.setActiveTab)
+  const highlight = useHighlight<HTMLButtonElement>('toolbar.image')
 
   useEffect(() => {
     if (!open) return
@@ -106,11 +111,12 @@ function ImageMenuButton() {
   return (
     <div className="relative" ref={menuRef}>
       <button
+        ref={highlight.ref}
         onClick={() => setOpen((prev) => !prev)}
         title="Image (I)"
         className={`w-8 h-8 flex items-center justify-center rounded transition ${
           open ? 'bg-indigo-500/20 text-indigo-400' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-        }`}
+        } ${highlight.className}`}
       >
         <ImageIcon className="w-4 h-4" />
       </button>
@@ -143,7 +149,7 @@ export function ToolBar() {
       <div className="w-6 h-px bg-white/10 my-1" />
 
       {/* Group 2: Creation */}
-      <ToolButton tool="text" icon={Type} tooltip="Texte (T)" />
+      <ToolButton tool="text" icon={Type} tooltip="Texte (T)" highlightId="toolbar.text" />
       <ToolButton tool="rect" icon={Square} tooltip="Rectangle (R)" />
       <ToolButton tool="ellipse" icon={Circle} tooltip="Ellipse (E)" />
       <ToolButton tool="line" icon={Minus} tooltip="Ligne (L)" />

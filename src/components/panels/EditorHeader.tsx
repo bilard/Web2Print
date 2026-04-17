@@ -7,6 +7,7 @@ import { globalUndo, globalRedo } from '@/features/editor/CanvasContainer'
 import { globalSave } from '@/features/editor/useAutoSave'
 import { ExportModal } from '@/features/export/ExportModal'
 import { EditorTaxonomyBreadcrumb } from './EditorTaxonomyBreadcrumb'
+import { useHighlight } from '@/features/help/hooks/useHighlight'
 
 export function EditorHeader() {
   const navigate = useNavigate()
@@ -15,6 +16,8 @@ export function EditorHeader() {
   const [editing, setEditing] = useState(false)
   const [titleDraft, setTitleDraft] = useState(projectTitle)
   const [showExport, setShowExport] = useState(false)
+  const saveHighlight = useHighlight<HTMLButtonElement>('editor-header.save')
+  const exportHighlight = useHighlight<HTMLButtonElement>('editor-header.export')
 
   const commitTitle = () => {
     setProjectTitle(titleDraft.trim() || 'Sans titre')
@@ -96,6 +99,7 @@ export function EditorHeader() {
 
       {/* Save */}
       <button
+        ref={saveHighlight.ref}
         onClick={() => globalSave?.()}
         disabled={saveStatus === 'saving'}
         className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
@@ -104,7 +108,7 @@ export function EditorHeader() {
             : saveStatus === 'saved'
               ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20'
               : 'bg-white/10 hover:bg-white/15 text-white/70 hover:text-white border border-transparent'
-        }`}
+        } ${saveHighlight.className}`}
         title="Sauvegarder (⌘S)"
       >
         {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -113,8 +117,9 @@ export function EditorHeader() {
 
       {/* Export */}
       <button
+        ref={exportHighlight.ref}
         onClick={() => setShowExport(true)}
-        className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+        className={`flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${exportHighlight.className}`}
       >
         <Download className="w-3.5 h-3.5" />
         <span className="hidden sm:block">Exporter</span>
