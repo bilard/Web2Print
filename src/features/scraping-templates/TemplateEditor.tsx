@@ -4,7 +4,7 @@ import type { ScrapingTemplate, FieldSelector, GroupSelector, SelectorStrategy }
 import { STANDARD_FIELDS } from './types'
 import { applyTemplate, scoreApplyResult } from './engine'
 import { fetchSourceHtml } from './fetchSourceHtml'
-import { saveTemplate } from './templatesStore'
+import { saveTemplateWithVendorSync } from './templatesStore'
 import { VisualTemplateBuilder } from './VisualTemplateBuilder'
 import { toast } from 'sonner'
 
@@ -92,8 +92,12 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
     setSaving(true)
     try {
       console.log('[TemplateEditor] saving template', template)
-      await saveTemplate(template)
-      toast.success('Template enregistré')
+      const { syncedCount } = await saveTemplateWithVendorSync(template)
+      if (syncedCount > 0) {
+        toast.success(`Template enregistré — prompt fournisseur propagé à ${syncedCount} autre(s) template(s)`)
+      } else {
+        toast.success('Template enregistré')
+      }
       onSaved?.()
     } catch (err) {
       console.error('[TemplateEditor] save failed', err)
@@ -215,6 +219,11 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       <GlobalPromptSection
         value={template.globalPrompt ?? ''}
         onChange={(v) => update({ globalPrompt: v || undefined })}
+      />
+      <VendorPromptSection
+        value={template.vendorPrompt ?? ''}
+        vendorDomain={template.vendorDomain}
+        onChange={(v) => update({ vendorPrompt: v || undefined })}
       />
 
       {/* Mode visuel */}
@@ -433,6 +442,51 @@ function GlobalPromptSection({ value, onChange }: { value: string; onChange: (v:
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-[9px] text-white/25">⌘+Entrée pour valider · sauvé automatiquement au blur</span>
             {isDirty && <span className="text-[9px] text-amber-400/60">non sauvé</span>}
+            {value && (
+              <button
+                onClick={() => { setDraft(''); onChange('') }}
+                className="text-[9px] text-red-400/60 hover:text-red-400 ml-2"
+              >Effacer</button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function VendorPromptSection({ value, vendorDomain, onChange }: { value: string; vendorDomain: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(!!value)
+  const [draft, setDraft] = useState(value)
+  const isDirty = draft.trim() !== (value ?? '')
+  const commit = () => { onChange(draft.trim()); }
+  return (
+    <div className="border border-white/10 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-black/30 hover:bg-black/40 transition-colors text-left"
+      >
+        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${value ? 'text-sky-400/70' : 'text-white/30'}`} />
+        <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider flex-1">
+          Prompt fournisseur — propagé à tous les templates de <code className="text-white/50 normal-case">{vendorDomain || '(aucun domaine)'}</code>
+        </span>
+        {value && <span className="text-[9px] text-sky-400/50 mr-1">actif</span>}
+        <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${open ? '' : '-rotate-90'}`} />
+      </button>
+      {open && (
+        <div className="px-3 py-2.5 bg-black/20 border-t border-white/[0.06]">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit() } }}
+            placeholder={"Prompt appliqué à TOUS les templates de ce fournisseur (partagé).\nExemples :\n• « Les prix sont TTC chez ce fournisseur, ne pas convertir. »\n• « Les images produit sont dans /media/catalog/, ignorer les autres. »\n• « La marque est toujours la même : écrire 'Milwaukee'. »"}
+            rows={4}
+            className="w-full bg-black/40 border border-white/10 rounded px-2.5 py-2 text-[11px] text-white/80 placeholder:text-white/20 resize-y outline-none focus:border-sky-400/40 leading-relaxed"
+          />
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[9px] text-white/25">Propagé aux autres templates au save · ⌘+Entrée pour valider</span>
+            {isDirty && <span className="text-[9px] text-sky-400/60">non sauvé</span>}
             {value && (
               <button
                 onClick={() => { setDraft(''); onChange('') }}
