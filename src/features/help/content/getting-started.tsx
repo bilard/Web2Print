@@ -1,4 +1,4 @@
-import { LayoutGrid, Pencil } from 'lucide-react'
+import { LayoutGrid } from 'lucide-react'
 import type { HelpSection } from './types'
 
 export const gettingStarted: HelpSection = {
@@ -56,13 +56,7 @@ La bibliothèque liste tous tes projets. Clic simple pour ouvrir, clic droit pou
     { type: 'shortcut', keys: ['⇧', '?'], label: 'Ouvrir / fermer le manuel' },
     {
       type: 'text',
-      md: `La section suivante, _L'éditeur_, détaille l'interface et les outils disponibles.`,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/editor' },
-      label: 'Ouvrir l\'éditeur',
-      icon: Pencil,
+      md: `La section suivante, _L'éditeur_, détaille l'interface et les outils disponibles une fois un projet ouvert.`,
     },
   ],
 }

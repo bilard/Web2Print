@@ -27,13 +27,13 @@ export const editorSection: HelpSection = {
     },
     {
       type: 'menu-link',
-      target: { path: '/editor', highlightId: 'toolbar.text' },
+      target: { path: '/editor/:id', highlightId: 'toolbar.text' },
       label: 'Outil Texte',
       icon: Type,
     },
     {
       type: 'menu-link',
-      target: { path: '/editor', highlightId: 'toolbar.image' },
+      target: { path: '/editor/:id', highlightId: 'toolbar.image' },
       label: 'Outil Image',
       icon: ImageIcon,
     },
@@ -44,7 +44,7 @@ export const editorSection: HelpSection = {
     },
     {
       type: 'menu-link',
-      target: { path: '/editor', highlightId: 'layers-panel' },
+      target: { path: '/editor/:id', highlightId: 'layers-panel' },
       label: 'Panneau Calques',
       icon: Layers,
     },
@@ -55,14 +55,14 @@ export const editorSection: HelpSection = {
     },
     {
       type: 'menu-link',
-      target: { path: '/editor', highlightId: 'editor-header.save' },
+      target: { path: '/editor/:id', highlightId: 'editor-header.save' },
       label: 'Bouton Sauvegarder',
       icon: Save,
     },
     { type: 'mockup', Component: ExportButtonMock },
     {
       type: 'menu-link',
-      target: { path: '/editor', highlightId: 'editor-header.export' },
+      target: { path: '/editor/:id', highlightId: 'editor-header.export' },
       label: 'Bouton Exporter',
       icon: Download,
     },

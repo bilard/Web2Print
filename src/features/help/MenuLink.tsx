@@ -23,8 +23,11 @@ export function MenuLink({ target, label, icon: Icon }: MenuLinkProps) {
       setHighlightTarget(target.highlightId)
     }
     if (!isCurrentRoute) {
-      navigate(resolveNavigatablePath(target.path))
-      closeDrawer()
+      const navigatable = resolveNavigatablePath(target.path)
+      if (navigatable !== null) {
+        navigate(navigatable)
+        closeDrawer()
+      }
     }
   }
 
@@ -52,10 +55,8 @@ function matchesRoute(current: string, target: string): boolean {
   return currentSegments[0] === targetSegments[0]
 }
 
-/** Pour /editor/:id on ne peut pas naviguer tel quel — on retourne / si placeholder. */
-function resolveNavigatablePath(path: string): string {
-  if (path.includes(':')) {
-    return path.split(':')[0].replace(/\/$/, '') || '/'
-  }
+/** Paths avec :id sont contextuels (ex /editor/:id) — on ne peut pas naviguer génériquement. */
+function resolveNavigatablePath(path: string): string | null {
+  if (path.includes(':')) return null
   return path
 }
