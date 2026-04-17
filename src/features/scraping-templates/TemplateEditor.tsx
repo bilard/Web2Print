@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Play, Save, FlaskConical, Loader2, Download, Upload, MousePointer, Code2 } from 'lucide-react'
+import { Plus, Trash2, Play, Save, FlaskConical, Loader2, Download, Upload, MousePointer, Code2, MessageSquare, ChevronDown } from 'lucide-react'
 import type { ScrapingTemplate, FieldSelector, GroupSelector, SelectorStrategy } from './types'
 import { STANDARD_FIELDS } from './types'
 import { applyTemplate, scoreApplyResult } from './engine'
@@ -131,28 +131,56 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#1a1a1a] border border-white/10 rounded-lg">
-      {/* Tabs visuel / avancé */}
-      <div className="flex items-center gap-1 border-b border-white/10 pb-0">
-        <button
-          onClick={() => setTab('visual')}
-          className={`px-3 py-2 text-[11px] font-semibold rounded-t inline-flex items-center gap-1.5 ${
-            tab === 'visual'
-              ? 'bg-indigo-500/15 text-indigo-200 border-b-2 border-indigo-400'
-              : 'text-white/50 hover:text-white/80'
-          }`}
-        >
-          <MousePointer className="w-3.5 h-3.5" /> Pointer & cliquer
-        </button>
-        <button
-          onClick={() => setTab('advanced')}
-          className={`px-3 py-2 text-[11px] font-semibold rounded-t inline-flex items-center gap-1.5 ${
-            tab === 'advanced'
-              ? 'bg-indigo-500/15 text-indigo-200 border-b-2 border-indigo-400'
-              : 'text-white/50 hover:text-white/80'
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5" /> Avancé (JSON)
-        </button>
+      {/* Barre sticky : onglets à gauche + actions (Importer / Exporter / Enregistrer) à droite.
+          Reste accrochée en haut du scroll pour toujours avoir Enregistrer sous la main. */}
+      <div className="sticky top-0 z-30 bg-[#1a1a1a] -mx-4 px-4 -mt-4 pt-4 pb-2 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTab('visual')}
+            className={`px-3 py-2 text-[11px] font-semibold rounded-t inline-flex items-center gap-1.5 ${
+              tab === 'visual'
+                ? 'bg-indigo-500/15 text-indigo-200 border-b-2 border-indigo-400'
+                : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <MousePointer className="w-3.5 h-3.5" /> Pointer & cliquer
+          </button>
+          <button
+            onClick={() => setTab('advanced')}
+            className={`px-3 py-2 text-[11px] font-semibold rounded-t inline-flex items-center gap-1.5 ${
+              tab === 'advanced'
+                ? 'bg-indigo-500/15 text-indigo-200 border-b-2 border-indigo-400'
+                : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Code2 className="w-3.5 h-3.5" /> Avancé (JSON)
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <label className="px-3 py-1.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 text-xs inline-flex items-center gap-1.5 cursor-pointer">
+            <Upload className="w-3.5 h-3.5" /> Importer
+            <input
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f) }}
+            />
+          </label>
+          <button
+            onClick={exportJson}
+            className="px-3 py-1.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 text-xs inline-flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> Exporter JSON
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Enregistrer
+          </button>
+        </div>
       </div>
 
       {/* Meta */}
@@ -182,6 +210,12 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
           />
         </label>
       </div>
+
+      {/* Prompt global — instructions de scraping pour tout le fournisseur */}
+      <GlobalPromptSection
+        value={template.globalPrompt ?? ''}
+        onChange={(v) => update({ globalPrompt: v || undefined })}
+      />
 
       {/* Mode visuel */}
       {tab === 'visual' && (
@@ -284,32 +318,6 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
       </>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-2 justify-end border-t border-white/10 pt-3">
-        <label className="px-3 py-1.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 text-xs inline-flex items-center gap-1.5 cursor-pointer">
-          <Upload className="w-3.5 h-3.5" /> Importer
-          <input
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f) }}
-          />
-        </label>
-        <button
-          onClick={exportJson}
-          className="px-3 py-1.5 rounded bg-white/5 text-white/60 hover:bg-white/10 border border-white/10 text-xs inline-flex items-center gap-1.5"
-        >
-          <Download className="w-3.5 h-3.5" /> Exporter JSON
-        </button>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          Enregistrer
-        </button>
-      </div>
     </div>
   )
 }
@@ -389,6 +397,51 @@ function GroupRow({ group, onChange, onRemove }: { group: GroupSelector; onChang
       <input className="px-1.5 py-1 bg-black/40 border border-white/10 rounded font-mono" placeholder="keySelector" value={group.keySelector.expression} onChange={(e) => setSel('keySelector', e.target.value)} />
       <input className="px-1.5 py-1 bg-black/40 border border-white/10 rounded font-mono" placeholder="valueSelector" value={group.valueSelector.expression} onChange={(e) => setSel('valueSelector', e.target.value)} />
       <button onClick={onRemove} className="text-red-400/60 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+    </div>
+  )
+}
+
+function GlobalPromptSection({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(!!value)
+  const [draft, setDraft] = useState(value)
+  const isDirty = draft.trim() !== (value ?? '')
+  const commit = () => { onChange(draft.trim()); }
+  return (
+    <div className="border border-white/10 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-black/30 hover:bg-black/40 transition-colors text-left"
+      >
+        <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${value ? 'text-amber-400/70' : 'text-white/30'}`} />
+        <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider flex-1">
+          Instructions globales de scraping
+        </span>
+        {value && <span className="text-[9px] text-amber-400/50 mr-1">actif</span>}
+        <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${open ? '' : '-rotate-90'}`} />
+      </button>
+      {open && (
+        <div className="px-3 py-2.5 bg-black/20 border-t border-white/[0.06]">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit() } }}
+            placeholder={"Prompt global appliqué à tous les produits de ce fournisseur.\nExemples :\n• « Toujours retirer le heading H1 de la description. »\n• « Les specs sont dans les accordéons, pas dans le tableau principal. »\n• « Ignorer les lignes 'CARTON A/B/C' dans les variantes. »"}
+            rows={4}
+            className="w-full bg-black/40 border border-white/10 rounded px-2.5 py-2 text-[11px] text-white/80 placeholder:text-white/20 resize-y outline-none focus:border-amber-400/40 leading-relaxed"
+          />
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[9px] text-white/25">⌘+Entrée pour valider · sauvé automatiquement au blur</span>
+            {isDirty && <span className="text-[9px] text-amber-400/60">non sauvé</span>}
+            {value && (
+              <button
+                onClick={() => { setDraft(''); onChange('') }}
+                className="text-[9px] text-red-400/60 hover:text-red-400 ml-2"
+              >Effacer</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

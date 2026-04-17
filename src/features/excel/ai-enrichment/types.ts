@@ -50,6 +50,10 @@ export interface EnrichedProduct {
   llmProvider?: string
   /** Modèle LLM exact utilisé */
   llmModel?: string
+  /** Champs custom issus d'un template utilisateur (hors champs standards).
+   *  Clé = nom du champ défini dans le template (ex: "Titres court"),
+   *  valeur = string pour champ unique, string[] pour champ liste. */
+  customFields?: Record<string, string | string[]>
 }
 
 export type EnrichmentStatus =

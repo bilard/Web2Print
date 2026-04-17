@@ -3464,7 +3464,7 @@ export function useProductEnrichment() {
         if (productUrl && input.mode === 'template') {
           try {
             const { listTemplates } = await import('@/features/scraping-templates/templatesStore')
-            const { applyTemplate, templateMatchesUrl, scoreApplyResult } = await import('@/features/scraping-templates/engine')
+            const { applyTemplate, templateMatchesUrl, scoreApplyResult, applyAdvantagesWithGroups, applyVariantsFromHtml, applyDocumentsFromHtml } = await import('@/features/scraping-templates/engine')
             const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
             const allTemplates = await listTemplates()
             const matching = allTemplates.find((t) => templateMatchesUrl(t, productUrl!))
@@ -3480,24 +3480,145 @@ export function useProductEnrichment() {
                   const f = applied.fields
                   const toStr = (v: unknown): string => typeof v === 'string' ? v : ''
                   const toArr = (v: unknown): string[] => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
-                  // Variants : support des champs "variants"/"variantes"/"Variantes"
-                  // qui peuvent arriver en string[] depuis l'engine.
-                  const rawVariants = (f.variants ?? f.variantes ?? f.Variantes ?? f.references) as unknown
-                  const variantsStrs = toArr(rawVariants)
-                  const variants = variantsStrs.map((s) => {
-                    // Split "REF — Label" ou "REF  Label" si possible, sinon tout dans label.
-                    const m = s.match(/^([A-Z0-9][A-Z0-9\-]{2,})\s*[-–—:|]\s*(.+)$/i)
-                    return m
-                      ? { reference: m[1].trim(), label: m[2].trim(), properties: {} }
-                      : { reference: s.trim(), label: s.trim(), properties: {} }
-                  })
-                  const built: EnrichedProduct = {
+                  // Variants : privilégier l'extraction structurée depuis le <table> du container
+                  // (mêmes heuristiques que parseVariantsFromMarkdown : colonne Réf. + Libellé +
+                  // reste en propriétés). Fallback sur le split string REF — Label si le container
+                  // capturé n'est pas une table HTML (liste simple, bullets, etc.).
+                  const variantsField = matching.fields.find((fld) =>
+                    fld.field === 'variants' || fld.field === 'variantes'
+                    || fld.field === 'Variantes' || fld.field === 'references',
+                  )
+                  let variants: Array<{ reference: string; label: string; properties: Record<string, string> }> = []
+                  if (variantsField) {
+                    variants = applyVariantsFromHtml(html, variantsField, productUrl)
+                    if (variants.length > 0) {
+                      log(`📐 Variantes extraites du <table> : ${variants.length} ligne(s)`)
+                    }
+                  }
+                  if (variants.length === 0) {
+                    const rawVariants = (f.variants ?? f.variantes ?? f.Variantes ?? f.references) as unknown
+                    const variantsStrs = toArr(rawVariants)
+                    variants = variantsStrs.map((s) => {
+                      // Split "REF — Label" ou "REF  Label" si possible, sinon tout dans label.
+                      const m = s.match(/^([A-Z0-9][A-Z0-9\-]{2,})\s*[-–—:|]\s*(.+)$/i)
+                      return m
+                        ? { reference: m[1].trim(), label: m[2].trim(), properties: {} }
+                        : { reference: s.trim(), label: s.trim(), properties: {} }
+                    })
+                  }
+                  // Avantages : associer chaque item à son heading H1-H6 précédent
+                  // (ex: "Les + Nicoll performance" → group "Nicoll performance").
+                  // Fallback sur la liste plate si le template ne matche pas de groupes.
+                  const advantagesField = matching.fields.find((fld) => fld.field === 'advantages')
+                  const flatAdvantages = toArr(f.advantages).map((text) => ({ text }))
+                  let advantages: Array<{ text: string; group?: string }> = flatAdvantages
+                  if (advantagesField) {
+                    const grouped = applyAdvantagesWithGroups(html, advantagesField, productUrl)
+                    const distinctGroups = new Set(grouped.map((a) => a.group).filter(Boolean))
+                    if (grouped.length > 0 && distinctGroups.size >= 2) {
+                      advantages = grouped
+                      log(`📐 Avantages structurés par heading : ${distinctGroups.size} groupe(s) détecté(s)`)
+                    }
+                  }
+                  // Champs custom : tout champ défini dans le template qui n'est PAS
+                  // mappé sur un champ standard EnrichedProduct est conservé ici.
+                  // Permet à l'utilisateur de créer des champs libres type "Titres court".
+                  const STANDARD_FIELD_NAMES = new Set([
+                    'title', 'description', 'brand', 'reference', 'price', 'ean',
+                    'images', 'documents', 'advantages',
+                    'variants', 'variantes', 'Variantes', 'references',
+                  ])
+                  const customFields: Record<string, string | string[]> = {}
+                  for (const [key, value] of Object.entries(f)) {
+                    if (STANDARD_FIELD_NAMES.has(key)) continue
+                    if (Array.isArray(value)) {
+                      const arr = value.filter((x): x is string => typeof x === 'string' && x.length > 0)
+                      if (arr.length > 0) customFields[key] = arr
+                    } else if (typeof value === 'string' && value.length > 0) {
+                      customFields[key] = value
+                    }
+                  }
+                  // Documents : extraire les <a href> depuis le container plutôt que le textContent.
+                  const docsField = matching.fields.find((fld) => fld.field === 'documents')
+                  let documents = toArr(f.documents)
+                  if (docsField) {
+                    const htmlDocs = applyDocumentsFromHtml(html, docsField, productUrl)
+                    if (htmlDocs.length > 0) {
+                      documents = htmlDocs
+                      log(`📐 Documents extraits via <a href> : ${htmlDocs.length} lien(s)`)
+                    }
+                  }
+
+                  // ── Appliquer les prompts par champ (filtre keyword) ────────
+                  // Pour chaque champ qui a un prompt, on filtre/transforme la
+                  // valeur extraite. Supporte :
+                  //   • guillemets "X" → garder les items contenant X
+                  //   • "sans/exclut/pas" + "X" → retirer les items contenant X
+                  //   • prompt sans guillemets → garder les items matchant un mot
+                  for (const fld of matching.fields) {
+                    if (!fld.prompt) continue
+                    const prompt = fld.prompt
+                    const fieldKey = fld.field
+                    const quoted = [...prompt.matchAll(/"([^"]+)"/g)].map((m) => m[1])
+                    const isExclude = /\b(sans|exclut|exclure|pas|ne\s+pas|retir|supprim|ignor)\b/i.test(prompt)
+                    const keywords = quoted.length > 0
+                      ? quoted
+                      : prompt.replace(/\b(charge|seulement|uniquement|garder?|filtr|contient?|inclut?|avec|les?|la|le|des?|du|qui|que|un|une)\b/gi, '')
+                          .split(/[\s,;]+/)
+                          .map((w) => w.trim())
+                          .filter((w) => w.length >= 3)
+                    if (keywords.length === 0) continue
+                    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    const match = (text: string) => {
+                      const t = norm(text)
+                      return keywords.some((kw) => t.includes(norm(kw)))
+                    }
+
+                    // Champ standard — filtrer la valeur
+                    if (fieldKey === 'documents') {
+                      const before = documents.length
+                      documents = isExclude
+                        ? documents.filter((d) => !match(d))
+                        : documents.filter((d) => match(d))
+                      if (documents.length !== before) log(`📝 Prompt "${fieldKey}" : ${before} → ${documents.length} documents`)
+                    } else if (fieldKey === 'images') {
+                      const before = (f.images as string[] ?? []).length
+                      f.images = isExclude
+                        ? (f.images as string[]).filter((u: string) => !match(u))
+                        : (f.images as string[]).filter((u: string) => match(u))
+                      if ((f.images as string[]).length !== before) log(`📝 Prompt "${fieldKey}" : ${before} → ${(f.images as string[]).length} images`)
+                    } else if (fieldKey === 'advantages') {
+                      const before = advantages.length
+                      advantages = isExclude
+                        ? advantages.filter((a) => !match(a.text))
+                        : advantages.filter((a) => match(a.text))
+                      if (advantages.length !== before) log(`📝 Prompt "${fieldKey}" : ${before} → ${advantages.length} avantages`)
+                    } else if (fieldKey === 'description') {
+                      // Pour description : si exclude, retirer les lignes matchant ; sinon garder celles matchant
+                      const lines = toStr(f.description).split('\n')
+                      if (lines.length > 1) {
+                        f.description = isExclude
+                          ? lines.filter((l) => !match(l)).join('\n')
+                          : lines.filter((l) => match(l) || l.trim().length === 0).join('\n')
+                        log(`📝 Prompt "${fieldKey}" appliqué sur ${lines.length} lignes`)
+                      }
+                    } else if (fieldKey in customFields) {
+                      const val = customFields[fieldKey]
+                      if (Array.isArray(val)) {
+                        customFields[fieldKey] = isExclude
+                          ? val.filter((v) => !match(v))
+                          : val.filter((v) => match(v))
+                      }
+                    }
+                  }
+
+                  const rawBuilt: EnrichedProduct = {
                     description: toStr(f.description),
-                    advantages: toArr(f.advantages).map((text) => ({ text })),
+                    advantages,
                     specifications: applied.specGroups.flatMap((g) => g.pairs.map((p) => ({ ...p, group: g.group }))),
                     variants,
                     images: toArr(f.images),
-                    documents: toArr(f.documents),
+                    documents,
                     price: null,
                     sourceUrl: productUrl,
                     additionalSources: [],
@@ -3505,6 +3626,28 @@ export function useProductEnrichment() {
                     scrapingProvider: `Template ${matching.name}`,
                     llmProvider: undefined,
                     llmModel: undefined,
+                    customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
+                  }
+                  // Appliquer les règles de sanitization du scraping par défaut :
+                  //   - GARBAGE_RE (cookies, GDPR, bannières, widgets UI)
+                  //   - SAFETY_TEXT_RE (extraits de manuels sécurité)
+                  //   - UI_PROFILE_TERMS_RE (menus "Installateur/Prescripteur/Plombier")
+                  //   - COOKIE_LABEL_RE (paires Expiration/Finalité/Prestataire…)
+                  //   - JUNK_GROUP_RE (sections inutiles)
+                  //   - filterDocumentsByProductRef (retire docs d'autres SKU)
+                  //   - cleanDocumentName (titres "Télécharger" → nom URL)
+                  //   - nettoyage description (URLs, garbage, isMainlyGarbage)
+                  const productIdsForSanitize = [
+                    toStr(f.reference), toStr(f.sku), toStr(f.ean), toStr(f.title),
+                  ].filter((x) => x.trim().length >= 3)
+                  const built = sanitizeEnriched(rawBuilt, productIdsForSanitize)
+                  const dropped = {
+                    specs: rawBuilt.specifications.length - built.specifications.length,
+                    docs: rawBuilt.documents.length - built.documents.length,
+                    advs: rawBuilt.advantages.length - built.advantages.length,
+                  }
+                  if (dropped.specs + dropped.docs + dropped.advs > 0) {
+                    log(`🧹 Sanitize : −${dropped.specs} specs · −${dropped.advs} avantages · −${dropped.docs} docs (règles par défaut)`)
                   }
                   setData(sheetName, rowId, built)
                   log(`✓ Fiche produite depuis le template — ${built.advantages.length} avantages, ${built.variants.length} variantes, ${built.images.length} images`)

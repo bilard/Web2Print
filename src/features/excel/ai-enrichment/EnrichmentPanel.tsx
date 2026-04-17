@@ -309,7 +309,7 @@ export function EnrichmentPanel({ input }: Props) {
           reset(input.sheetName, input.rowId)
           void enrich({ ...input, knownUrl: url })
         }} />}
-        {isDone && data && <DoneState data={data} llmRequest={llmRequest} onUpdate={updateData} scrapeCache={scrapeCache} />}
+        {isDone && data && <DoneState data={data} llmRequest={llmRequest} onUpdate={updateData} scrapeCache={scrapeCache} templateFieldOrder={matchedTemplate?.fields.map(f => f.field)} />}
       </div>
     </div>
   )
@@ -532,7 +532,7 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
 
       {/* Logs temps réel */}
       {logs.length > 0 && (
-        <div className="mt-4 flex-1 min-h-0 max-h-[240px] overflow-y-auto rounded-lg bg-black/40 border border-white/[0.06] p-2.5">
+        <div className="mt-4 flex-1 min-h-[320px] max-h-[60vh] overflow-y-auto rounded-lg bg-black/40 border border-white/[0.06] p-2.5">
           <div className="flex items-center gap-1.5 mb-2">
             <Code2 className="w-3 h-3 text-white/20" />
             <span className="text-[9px] font-semibold text-white/25 uppercase tracking-wider">Logs</span>
@@ -627,13 +627,55 @@ function DoneState({
   llmRequest,
   onUpdate,
   scrapeCache,
+  templateFieldOrder,
 }: {
   data: NonNullable<ReturnType<typeof useEnrichmentStore.getState>['entries'][string]>['data']
   llmRequest: LlmRequestInfo | null
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   scrapeCache?: { sourcesScrapped?: string[] }
+  templateFieldOrder?: string[]
 }) {
   if (!data) return null
+
+  // Mapping nom-de-champ-template → clé de section du panneau.
+  // Permet de respecter l'ordre des champs défini par l'utilisateur dans le template.
+  const FIELD_TO_SECTION: Record<string, string> = {
+    title: 'title',
+    description: 'description',
+    advantages: 'advantages',
+    images: 'images',
+    documents: 'documents',
+    variants: 'variants', variantes: 'variants', Variantes: 'variants', references: 'variants',
+  }
+  const DEFAULT_ORDER = ['images', 'description', 'advantages', 'specifications', 'variants', 'custom', 'documents']
+
+  const sectionOrder: string[] = []
+  if (templateFieldOrder && templateFieldOrder.length > 0) {
+    const seen = new Set<string>()
+    for (const fieldName of templateFieldOrder) {
+      const section = FIELD_TO_SECTION[fieldName]
+      if (section && !seen.has(section)) { sectionOrder.push(section); seen.add(section) }
+      else if (!section && !seen.has(`custom:${fieldName}`)) {
+        sectionOrder.push(`custom:${fieldName}`)
+        seen.add(`custom:${fieldName}`)
+      }
+    }
+    for (const s of DEFAULT_ORDER) {
+      if (!seen.has(s)) {
+        if (s === 'custom') {
+          const customKeys = Object.keys(data.customFields ?? {})
+          for (const k of customKeys) {
+            if (!seen.has(`custom:${k}`)) sectionOrder.push(`custom:${k}`)
+          }
+        } else {
+          sectionOrder.push(s)
+        }
+      }
+    }
+  } else {
+    sectionOrder.push(...DEFAULT_ORDER)
+  }
+
   return (
     <div>
       {/* Debug LLM : prompt + paramètres envoyés */}
@@ -660,73 +702,92 @@ function DoneState({
         )}
       </div>
 
-      {/* Description générée — éditable */}
-      <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-        <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-          Description enrichie
-        </p>
-        <EditableText
-          value={data.description}
-          onChange={(v) => onUpdate({ description: v })}
-          multiline
-          placeholder="Ajouter une description…"
-          className="text-[12.5px] text-white/75 leading-relaxed"
-        />
-      </div>
-
-      {/* Avantages — éditable, groupés par section */}
-      <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
-            <Zap className="w-3 h-3 text-amber-400/60" />
-            Points forts
-          </p>
-          <button
-            onClick={() => onUpdate({ advantages: [...data.advantages, { text: '' }] })}
-            className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
-          >
-            <Plus className="w-3 h-3" /> Ajouter
-          </button>
-        </div>
-        {data.advantages.length === 0 ? (
-          <p className="text-[11px] text-white/30 italic">Aucun point fort</p>
-        ) : (
-          <AdvantageGroupList advantages={data.advantages} onUpdate={onUpdate} data={data} />
-        )}
-      </div>
-
-      {/* Spécifications — éditable, groupées par section en accordéons */}
-      <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">
-            Spécifications clés
-          </p>
-          <button
-            onClick={() => onUpdate({ specifications: [...data.specifications, { name: '', value: '' }] })}
-            className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
-          >
-            <Plus className="w-3 h-3" /> Ajouter
-          </button>
-        </div>
-        {data.specifications.length === 0 ? (
-          <p className="text-[11px] text-white/30 italic">Aucune spécification</p>
-        ) : (
-          <SpecGroupAccordions specifications={data.specifications} onUpdate={onUpdate} data={data} />
-        )}
-      </div>
-
-      {/* Variantes produit */}
-      {data.variants && data.variants.length > 0 && (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-          <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
-            Variantes ({data.variants.length})
-          </p>
-          <VariantTable variants={data.variants} />
-        </div>
-      )}
-
-      {/* Documents PDF / notices — en fin de liste */}
-      {data.documents.length > 0 && (
+      {/* Sections ordonnées selon le template (si template match) ou ordre par défaut */}
+      {sectionOrder.map((sectionKey) => {
+        if (sectionKey === 'description') return (
+          <div key="description" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+            <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
+              Description enrichie
+            </p>
+            <EditableText
+              value={data.description}
+              onChange={(v) => onUpdate({ description: v })}
+              multiline
+              placeholder="Ajouter une description…"
+              className="text-[12.5px] text-white/75 leading-relaxed"
+            />
+          </div>
+        )
+        if (sectionKey === 'advantages') return (
+          <div key="advantages" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
+                <Zap className="w-3 h-3 text-amber-400/60" />
+                Points forts
+              </p>
+              <button
+                onClick={() => onUpdate({ advantages: [...data.advantages, { text: '' }] })}
+                className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
+              >
+                <Plus className="w-3 h-3" /> Ajouter
+              </button>
+            </div>
+            {data.advantages.length === 0 ? (
+              <p className="text-[11px] text-white/30 italic">Aucun point fort</p>
+            ) : (
+              <AdvantageGroupList advantages={data.advantages} onUpdate={onUpdate} data={data} />
+            )}
+          </div>
+        )
+        if (sectionKey === 'specifications') return (
+          <div key="specifications" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">
+                Spécifications clés
+              </p>
+              <button
+                onClick={() => onUpdate({ specifications: [...data.specifications, { name: '', value: '' }] })}
+                className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
+              >
+                <Plus className="w-3 h-3" /> Ajouter
+              </button>
+            </div>
+            {data.specifications.length === 0 ? (
+              <p className="text-[11px] text-white/30 italic">Aucune spécification</p>
+            ) : (
+              <SpecGroupAccordions specifications={data.specifications} onUpdate={onUpdate} data={data} />
+            )}
+          </div>
+        )
+        if (sectionKey === 'variants') return data.variants && data.variants.length > 0 ? (
+          <div key="variants" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+            <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
+              Variantes ({data.variants.length})
+            </p>
+            <VariantTable variants={data.variants} />
+          </div>
+        ) : null
+        // Champ custom individuel (template-specific)
+        if (sectionKey.startsWith('custom:')) {
+          const fieldName = sectionKey.slice(7)
+          const value = data.customFields?.[fieldName]
+          if (!value) return null
+          return (
+            <div key={sectionKey} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+              <p className="text-[10px] text-indigo-300/70 font-semibold uppercase tracking-wider mb-1">{fieldName}</p>
+              {Array.isArray(value) ? (
+                <ul className="space-y-0.5">
+                  {value.map((v, i) => (
+                    <li key={i} className="text-[12px] text-white/75 leading-relaxed">• {v}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="text-[12px] text-white/75 leading-relaxed whitespace-pre-line block">{value}</span>
+              )}
+            </div>
+          )
+        }
+        if (sectionKey === 'documents') return data.documents.length > 0 ? (
         <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <FileDown className="w-3 h-3" />
@@ -754,7 +815,9 @@ function DoneState({
             })}
           </div>
         </div>
-      )}
+        ) : null
+        return null
+      })}
 
       {/* Source URL */}
       {data.sourceUrl && (
@@ -1406,9 +1469,9 @@ function EditableText({
   return (
     <span
       onClick={() => setEditing(true)}
-      className={`cursor-text hover:bg-white/[0.03] rounded px-1 -mx-1 transition-colors inline-block ${className} ${
-        isEmpty ? 'text-white/25 italic' : ''
-      }`}
+      className={`cursor-text hover:bg-white/[0.03] rounded px-1 -mx-1 transition-colors ${
+        multiline ? 'block whitespace-pre-line' : 'inline-block'
+      } ${className} ${isEmpty ? 'text-white/25 italic' : ''}`}
       title="Cliquer pour éditer"
     >
       {isEmpty ? placeholder || 'Cliquer pour éditer…' : value}

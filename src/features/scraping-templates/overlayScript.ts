@@ -172,6 +172,13 @@ export const OVERLAY_SCRIPT = `
         var matches = document.querySelectorAll(msg.selector)
         window.__pimPersistentNodes = Array.from(matches)
         renderPersistentOverlays()
+        // Scroll sur le 1er match pour qu'il soit visible dans l'iframe.
+        // Repositionne les overlays ensuite (scroll-induced shifts).
+        var first = matches[0]
+        if (first && first.scrollIntoView) {
+          first.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+          setTimeout(renderPersistentOverlays, 350)
+        }
         window.parent.postMessage({ type: 'pim-preview-result', count: matches.length }, '*')
       } catch (err) {
         window.parent.postMessage({ type: 'pim-preview-result', count: 0, error: err.message }, '*')

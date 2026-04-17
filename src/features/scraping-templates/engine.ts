@@ -66,13 +66,52 @@ function resolveStrategy(
   return []
 }
 
+/**
+ * Tags qui introduisent une cassure de ligne visuelle. On insère un \n à l'entrée
+ * ET à la sortie pour que le texte extrait conserve la structure des paragraphes
+ * (sans quoi `<h2>Titre</h2><p>Corps</p>` devient "TitreCorps" — textContent
+ * ne sépare pas les enfants).
+ */
+const BLOCK_TAGS = new Set([
+  'ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'BR', 'DD', 'DETAILS', 'DIALOG',
+  'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM',
+  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR', 'LI', 'MAIN',
+  'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'TR', 'UL',
+])
+
+function extractRichText(el: Element): string {
+  const parts: string[] = []
+  const walk = (node: Node): void => {
+    if (node.nodeType === 3 /* TEXT */) {
+      const t = (node.nodeValue ?? '').replace(/\s+/g, ' ')
+      if (t) parts.push(t)
+      return
+    }
+    if (node.nodeType !== 1 /* ELEMENT */) return
+    const elNode = node as Element
+    const tag = elNode.tagName
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return
+    if (tag === 'BR') { parts.push('\n'); return }
+    const isBlock = BLOCK_TAGS.has(tag)
+    if (isBlock) parts.push('\n')
+    for (const child of Array.from(elNode.childNodes)) walk(child)
+    if (isBlock) parts.push('\n')
+  }
+  walk(el)
+  return parts.join('')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function readValue(node: Node, strategy: SelectorStrategy): string {
   const el = node as Element
   let raw: string
   if (strategy.attr) {
     raw = el.getAttribute(strategy.attr) ?? ''
   } else {
-    raw = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
+    raw = extractRichText(el)
   }
   if (strategy.regex) {
     try {
@@ -288,6 +327,309 @@ export function templateMatchesUrl(template: ScrapingTemplate, url: string): boo
   } catch {
     return false
   }
+}
+
+/**
+ * Regex des sections "avantages" (mêmes keywords que la parseuse markdown).
+ * Si un heading les matche, on considère qu'un groupe peut en être extrait.
+ */
+const FEATURE_HEADING_RE = /(?:avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+|atouts?|plus\s+produit|caract[eé]ristiques?)/i
+
+/** Extrait le libellé de groupe en retirant le préfixe marketing ("Les + "). */
+function extractGroupLabel(raw: string): string | undefined {
+  const cleaned = raw
+    .replace(/\s+/g, ' ')
+    .replace(/\*\*/g, '')
+    .replace(/^les\s*\+\s*/i, '')
+    .replace(/^(avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|atouts?|plus\s+produit|caract[eé]ristiques?)\s*[:\-–—]?\s*/i, '')
+    .trim()
+  return cleaned.length >= 2 && cleaned.length < 80 ? cleaned : undefined
+}
+
+/**
+ * Pour un élément matché, remonte les ancêtres et scanne les siblings
+ * précédents à la recherche du heading (H1–H6) qui introduit la section.
+ * On ne retient que les headings qui matchent FEATURE_HEADING_RE, et on
+ * strip le préfixe marketing ("Les + Nicoll performance" → "Nicoll performance").
+ */
+function findPrecedingFeatureHeading(el: Element): string | undefined {
+  let cur: Element | null = el
+  while (cur && cur.parentElement) {
+    let sib: Element | null = cur.previousElementSibling
+    while (sib) {
+      const candidates: Element[] = []
+      if (/^H[1-6]$/.test(sib.tagName)) candidates.push(sib)
+      const nested = sib.querySelectorAll('h1, h2, h3, h4, h5, h6')
+      if (nested.length > 0) candidates.push(nested[nested.length - 1])
+      for (const h of candidates) {
+        const text = (h.textContent ?? '').replace(/\s+/g, ' ').trim()
+        if (!text || !FEATURE_HEADING_RE.test(text)) continue
+        const group = extractGroupLabel(text)
+        if (group) return group
+      }
+      sib = sib.previousElementSibling
+    }
+    cur = cur.parentElement
+    if (cur?.tagName === 'BODY') break
+  }
+  return undefined
+}
+
+/**
+ * Variante spécialisée pour le champ `advantages` : extrait chaque item AVEC
+ * son groupe issu du heading H1–H6 qui le précède dans le DOM. Respecte
+ * l'expansion automatique d'un container unique en enfants (li/p/div) — comme
+ * applyField — pour supporter les selectors génériques type `ul.advantages`.
+ *
+ * Retourne [] si aucun node ne matche — l'appelant fera un fallback sur la
+ * liste plate du champ.
+ */
+export function applyAdvantagesWithGroups(
+  html: string,
+  field: FieldSelector,
+  baseUrl?: string,
+): Array<{ text: string; group?: string }> {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  for (const strategy of field.strategies) {
+    if (strategy.kind !== 'css') continue
+    let nodes: Element[]
+    try { nodes = Array.from(doc.querySelectorAll(strategy.expression)) } catch { continue }
+    if (nodes.length === 0) continue
+    // Si un seul match et champ multiple : expand le container en items-frères
+    if (nodes.length === 1 && field.multiple) {
+      const container = nodes[0]
+      const childSels = ['li', ':scope > p', ':scope > div', ':scope > a', ':scope > span']
+      for (const sel of childSels) {
+        try {
+          const kids = Array.from(container.querySelectorAll(sel))
+          if (kids.length >= 2) { nodes = kids; break }
+        } catch { /* skip */ }
+      }
+    }
+    const out: Array<{ text: string; group?: string }> = []
+    const seen = new Set<string>()
+    for (const node of nodes) {
+      const raw = readValue(node, strategy)
+      const text = applyTransform(raw, field.transform, baseUrl).replace(/\s+/g, ' ').trim()
+      if (!text || seen.has(text)) continue
+      seen.add(text)
+      const group = findPrecedingFeatureHeading(node)
+      out.push(group ? { text, group } : { text })
+    }
+    if (out.length > 0) return out
+  }
+  return []
+}
+
+/**
+ * Extrait des variantes depuis un `<table>` du container capturé.
+ * Reproduit la logique de `parseVariantsFromMarkdown` directement sur le DOM :
+ * détecte la colonne Réf. (r[eé]f / code / sku / article / model), la colonne
+ * Libellé (libell[eé] / d[eé]signation / description / nom / produit / name),
+ * et les autres colonnes deviennent des propriétés.
+ *
+ * Retourne [] si le container ne contient pas de table reconnaissable —
+ * l'appelant fallback sur la logique string-split classique.
+ */
+export function applyVariantsFromHtml(
+  html: string,
+  field: FieldSelector,
+  _baseUrl?: string,
+): Array<{ reference: string; label: string; properties: Record<string, string> }> {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  for (const strategy of field.strategies) {
+    if (strategy.kind !== 'css') continue
+    let containers: Element[]
+    try { containers = Array.from(doc.querySelectorAll(strategy.expression)) } catch { continue }
+    if (containers.length === 0) continue
+    const variants: Array<{ reference: string; label: string; properties: Record<string, string> }> = []
+    for (const container of containers) {
+      const tables = container.tagName === 'TABLE'
+        ? [container]
+        : Array.from(container.querySelectorAll('table'))
+      for (const table of tables) variants.push(...extractVariantsFromTable(table))
+    }
+    if (variants.length > 0) return dedupeByRef(variants)
+  }
+  return []
+}
+
+const REF_HEADER_RE = /^r[eé]f|^code|^sku|^article|^part\s*n|^model/i
+const LABEL_HEADER_RE = /^(libell[eé]|d[eé]signation|description|nom|produit|name|product)/i
+const JUNK_CELL_RE = /^[-–—:\s]*$/
+const ACCORDION_NOISE_RE = /caract[eé]ristiques|voir\s+moins|voir\s+plus|\+\s*×|description\s+d[eé]taill/i
+
+/** Parse un blob "K1 : V1 K2 : V2 …" (rendu Jina-like) en paires nom/valeur.
+ *  Utilise le même lookahead que parseCharacteristicsBlob dans useProductEnrichment. */
+function parseCharacteristicsInline(blob: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  const cleaned = blob
+    .replace(/caract[eé]ristiques/gi, ' ')
+    .replace(/voir\s+(moins|plus)/gi, ' ')
+    .replace(/\+\s*×/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const pat = /([A-ZÉÈÊÀÂÎÔÛÇ][A-Za-zÀ-ÿ'’\- ]*?)\s*:\s*(.+?)(?=\s+[A-ZÉÈÊÀÂÎÔÛÇ][A-Za-zÀ-ÿ'’\- ]*?\s*:\s|\s*$)/g
+  let m: RegExpExecArray | null
+  while ((m = pat.exec(cleaned)) !== null) {
+    const key = m[1].trim()
+    const value = m[2].trim()
+    if (!key || !value) continue
+    if (key.length < 2 || key.length > 60) continue
+    if (/tarif|prix|price/i.test(key)) continue
+    out[key] = value
+  }
+  return out
+}
+
+function extractVariantsFromTable(
+  table: Element,
+): Array<{ reference: string; label: string; properties: Record<string, string> }> {
+  const cellText = (c: Element) => (c.textContent ?? '').replace(/\s+/g, ' ').trim()
+  let headers: string[] = []
+  const thead = table.querySelector('thead')
+  if (thead) {
+    headers = Array.from(thead.querySelectorAll('th, td')).map(cellText)
+  }
+  if (headers.length === 0) {
+    const firstTr = table.querySelector('tr')
+    if (firstTr) {
+      const thCells = firstTr.querySelectorAll('th')
+      if (thCells.length > 0) headers = Array.from(thCells).map(cellText)
+    }
+  }
+  const refIdx = headers.findIndex((h) => REF_HEADER_RE.test(h))
+  if (refIdx < 0) return []
+  const labelIdx = headers.findIndex((h) => LABEL_HEADER_RE.test(h))
+  const minCells = Math.max(2, Math.floor(headers.length * 0.6))
+  const tbody = table.querySelector('tbody') ?? table
+  const rows = Array.from(tbody.querySelectorAll('tr'))
+  const out: Array<{ reference: string; label: string; properties: Record<string, string> }> = []
+  let lastVariant: (typeof out)[number] | null = null
+  for (const row of rows) {
+    const tds = Array.from(row.querySelectorAll('td'))
+    if (tds.length === 0) continue
+    const cells = tds.map(cellText)
+    const rowText = cells.join(' ')
+
+    // Ligne accordéon / détail : colspan condensé en 1-2 cellules, contenu
+    // "Caractéristiques … Voir moins" ou similaire. On merge les paires K:V
+    // dans la variante précédente au lieu de créer une fausse variante.
+    const isAccordion =
+      cells.length < minCells
+      && lastVariant !== null
+      && (ACCORDION_NOISE_RE.test(rowText) || /\s:\s/.test(rowText))
+    if (isAccordion) {
+      const parsed = parseCharacteristicsInline(rowText)
+      for (const [k, v] of Object.entries(parsed)) {
+        if (!lastVariant!.properties[k]) lastVariant!.properties[k] = v
+      }
+      continue
+    }
+
+    // Sinon, ligne de variante : elle doit avoir ~autant de cellules que le header
+    // et un ref valide.
+    if (cells.length < minCells) continue
+    if (cells.length <= refIdx) continue
+    const ref = cells[refIdx]
+    if (!ref || JUNK_CELL_RE.test(ref) || ACCORDION_NOISE_RE.test(ref)) continue
+    // Filtre défensif : la ref doit ressembler à une ref produit (pattern alphanum court).
+    // Permissif : on accepte aussi d'autres formats mais jamais > 40 car (exclut les blobs).
+    if (ref.length > 40) continue
+
+    const label = labelIdx >= 0 && labelIdx < cells.length ? cells[labelIdx] : ''
+    const properties: Record<string, string> = {}
+    headers.forEach((h, idx) => {
+      if (idx === refIdx || idx === labelIdx || idx >= cells.length) return
+      const val = cells[idx]
+      if (val && !JUNK_CELL_RE.test(val)) properties[h] = val
+    })
+    const variant = { reference: ref, label, properties }
+    out.push(variant)
+    lastVariant = variant
+  }
+
+  // Phase 2 : scanner les blocs "Caractéristiques … Voir moins" *hors* table
+  // (certains thèmes mettent l'accordéon dans un <div> frère du <tr>).
+  // On les associe à la variante correspondante par index d'apparition.
+  if (out.length > 0) {
+    const rootText = (table.parentElement ?? table).textContent ?? ''
+    const blobRe = /Caract[eé]ristiques\s+([\s\S]+?)\s+Voir\s+moins/gi
+    const blobs: string[] = []
+    let bm: RegExpExecArray | null
+    while ((bm = blobRe.exec(rootText)) !== null) {
+      const content = bm[1].replace(/\s+/g, ' ').trim()
+      if (content.length > 20 && content.includes(' : ')) blobs.push(content)
+    }
+    for (let i = 0; i < Math.min(blobs.length, out.length); i++) {
+      const parsed = parseCharacteristicsInline(blobs[i])
+      for (const [k, v] of Object.entries(parsed)) {
+        if (!out[i].properties[k]) out[i].properties[k] = v
+      }
+    }
+  }
+
+  // Retirer les refs qui commencent par "Réf." (doublon avec le header de colonne)
+  for (const v of out) {
+    v.reference = v.reference.replace(/^r[eé]f\.?\s*/i, '').trim()
+  }
+  return out
+}
+
+function dedupeByRef<T extends { reference: string }>(arr: T[]): T[] {
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const v of arr) {
+    const k = v.reference.trim().toUpperCase()
+    if (!k || seen.has(k)) continue
+    seen.add(k)
+    out.push(v)
+  }
+  return out
+}
+
+/**
+ * Extraction spécialisée pour le champ `documents` : au lieu de prendre le
+ * textContent des enfants (qui donne "Fiche technique" au lieu de l'URL),
+ * on scanne tous les `<a href>` du container et on retourne les liens
+ * au format `titre##url` (supporté par EnrichmentPanel).
+ *
+ * Heuristique : on priorise les liens PDF, puis tous les autres liens du
+ * container si le prompt contient "tous" ou pas de filtre PDF.
+ */
+export function applyDocumentsFromHtml(
+  html: string,
+  field: FieldSelector,
+  baseUrl?: string,
+): string[] {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  for (const strategy of field.strategies) {
+    if (strategy.kind !== 'css') continue
+    let containers: Element[]
+    try { containers = Array.from(doc.querySelectorAll(strategy.expression)) } catch { continue }
+    if (containers.length === 0) continue
+    const results: string[] = []
+    const seen = new Set<string>()
+    for (const container of containers) {
+      const anchors = Array.from(container.querySelectorAll('a[href]')) as HTMLAnchorElement[]
+      for (const a of anchors) {
+        let href = a.getAttribute('href') ?? ''
+        if (!href || href === '#' || href.startsWith('javascript:')) continue
+        if (baseUrl) {
+          try { href = new URL(href, baseUrl).toString() } catch { /* keep as-is */ }
+        }
+        if (seen.has(href)) continue
+        seen.add(href)
+        const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+        results.push(title && title.length > 2 ? `${title}##${href}` : href)
+      }
+    }
+    if (results.length > 0) return results
+  }
+  return []
 }
 
 /**
