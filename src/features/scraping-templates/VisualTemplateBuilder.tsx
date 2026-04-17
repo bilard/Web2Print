@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MousePointer, Loader2, Eye, X, Plus, GripVertical, MessageSquare } from 'lucide-react'
+import { MousePointer, Loader2, Eye, X, Plus, GripVertical, MessageSquare, Chrome } from 'lucide-react'
+import { useChromeExtension } from './useChromeExtension'
 import {
   DndContext, closestCenter, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -46,6 +47,8 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
   // persistante dans l'iframe). null = rien de sélectionné.
   const [selectedFieldIdx, setSelectedFieldIdx] = useState<number | null>(null)
   const [showAllTags, setShowAllTags] = useState(true)
+
+  const ext = useChromeExtension()
 
   // Quand on change de template dans la liste, re-synchroniser l'URL source
   // et vider l'iframe pour forcer un rechargement avec la bonne page.
@@ -110,6 +113,28 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     }
   }, [rewrittenHtml, template.fields, showAllTags, syncTags])
 
+  useEffect(() => {
+    if (!ext.tabOpen) return
+    if (showAllTags) {
+      ext.syncTags(template.fields
+        .map((f) => ({ selector: f.strategies[0]?.expression ?? '', label: f.field }))
+        .filter((t) => t.selector))
+    } else {
+      ext.syncTags([])
+    }
+  }, [ext, ext.tabOpen, template.fields, showAllTags])
+
+  useEffect(() => {
+    if (!ext.lastCapture) return
+    setPendingCapture({
+      type: 'pim-capture',
+      selectors: ext.lastCapture.selectors,
+      attr: ext.lastCapture.attr,
+      tag: ext.lastCapture.tag,
+      text: ext.lastCapture.text,
+    })
+  }, [ext.lastCapture])
+
   const load = async () => {
     if (!sourceUrl) { toast.error('Entre une URL'); return }
     setLoading(true)
@@ -137,12 +162,14 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
   const toggleFieldPreview = (idx: number) => {
     if (selectedFieldIdx === idx) {
       sendToIframe({ type: 'pim-set-active-selector', selector: null })
+      if (ext.tabOpen) ext.setActiveSelector(null)
       setSelectedFieldIdx(null)
       return
     }
     const sel = template.fields[idx]?.strategies[0]?.expression ?? ''
     if (!sel) return
     sendToIframe({ type: 'pim-set-active-selector', selector: sel })
+    if (ext.tabOpen) ext.setActiveSelector(sel)
     setSelectedFieldIdx(idx)
   }
 
@@ -248,6 +275,25 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
         />
+        {ext.isAvailable && (
+          <button
+            onClick={() => {
+              if (!sourceUrl) { toast.error('Entre une URL'); return }
+              ext.openAndCapture(sourceUrl, template.fields
+                .map((f) => ({ selector: f.strategies[0]?.expression ?? '', label: f.field }))
+                .filter((t) => t.selector))
+              if (sourceUrl !== template.lastTestUrl) {
+                onChange({ ...template, lastTestUrl: sourceUrl, updatedAt: Date.now() })
+              }
+              ext.setMode('single')
+            }}
+            className="px-3 py-2 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/40 text-xs inline-flex items-center gap-2"
+            title="Ouvrir l'URL dans un onglet Chrome et activer la capture"
+          >
+            <Chrome className="w-3.5 h-3.5" />
+            Ouvrir dans Chrome & tagger
+          </button>
+        )}
         <button
           onClick={load}
           disabled={loading}
@@ -286,6 +332,20 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
           </>
         )}
       </div>
+
+      {ext.tabOpen && (
+        <div className="px-3 py-2 bg-emerald-500/[0.08] border border-emerald-400/20 rounded text-[10px] text-emerald-200/80 flex items-center justify-between">
+          <span>
+            <b>Onglet Chrome actif</b> — double-clique sur la page source pour capturer. Les surbrillances suivent tes fields.
+          </span>
+          <button
+            onClick={() => ext.closeCaptureTab()}
+            className="text-emerald-200/70 hover:text-emerald-200 underline"
+          >
+            Fermer l'onglet
+          </button>
+        </div>
+      )}
 
       {/* Limitations notice */}
       {rewrittenHtml && (
