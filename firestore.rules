@@ -156,5 +156,13 @@ service cloud.firestore {
       allow update: if request.auth != null;
       allow delete: if request.auth != null;
     }
+
+    // ── Scraping Rules ──────────────────────────────────────────────────────
+    // Document unique `scrapingRules/global` : markdown partagé décrivant les
+    // règles rédactionnelles du scraping. Lecture/écriture pour tous les users
+    // authentifiés (édité via l'onglet Règles du Scraping Hub).
+    match /scrapingRules/{docId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
