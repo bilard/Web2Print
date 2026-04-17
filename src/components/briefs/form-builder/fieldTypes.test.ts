@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { FIELD_TYPE_REGISTRY, createEmptyField, ALL_FIELD_TYPES } from './fieldTypes'
 
 describe('FIELD_TYPE_REGISTRY', () => {
-  it('covers all 9 ClientFormFieldType values', () => {
-    expect(ALL_FIELD_TYPES).toHaveLength(9)
+  it('covers all 10 ClientFormFieldType values', () => {
+    expect(ALL_FIELD_TYPES).toHaveLength(10)
     expect(ALL_FIELD_TYPES).toEqual(
       expect.arrayContaining([
         'text', 'textarea', 'number', 'email', 'select',
-        'color', 'logo_upload', 'budget_range', 'address',
+        'color', 'logo_upload', 'budget_range', 'address', 'brand_kit_upload',
       ]),
     )
   })

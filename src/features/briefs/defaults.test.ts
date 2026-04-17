@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { createDefaultFormTemplate } from './defaults'
 
 describe('createDefaultFormTemplate', () => {
-  it('returns the 11 builtin fields', () => {
+  it('returns the 12 builtin fields', () => {
     const fields = createDefaultFormTemplate()
-    expect(fields).toHaveLength(11)
+    expect(fields).toHaveLength(12)
   })
 
   it('marks all default fields as builtin', () => {
