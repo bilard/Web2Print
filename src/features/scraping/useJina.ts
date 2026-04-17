@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 import { getApiKey } from '@/lib/apiKeys'
+import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 
 const JINA_READER = 'https://r.jina.ai'
 
@@ -399,16 +400,53 @@ async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean
   // Forcer le rendu JS complet pour les accordéons dynamiques
   extra['X-Wait-For-Selector'] = 'body'
 
-  const res = await fetch(`${JINA_READER}/${url}`, { headers: jinaHeaders(extra) })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`Jina Reader: HTTP ${res.status}${text ? ` — ${text.slice(0, 200)}` : ''}`)
+  const headers = jinaHeaders(extra)
+  const startedAt = performance.now()
+  const entryBase = {
+    id: genId(),
+    timestamp: Date.now(),
+    kind: 'jina' as const,
+    url,
+    method: 'GET' as const,
+    headers: sanitizeHeaders(headers),
   }
-  const json = await res.json() as JinaReaderResponse
-  if (!json.data?.content && !json.data?.title) {
-    throw new Error('Jina Reader n\'a retourné aucun contenu — le site bloque peut-être le scraping')
+
+  try {
+    const res = await fetch(`${JINA_READER}/${url}`, { headers })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      const error = `Jina Reader: HTTP ${res.status}${text ? ` — ${text.slice(0, 200)}` : ''}`
+      appendDebugEntry({ ...entryBase, durationMs: Math.round(performance.now() - startedAt), error })
+      throw new Error(error)
+    }
+    const json = await res.json() as JinaReaderResponse
+    if (!json.data?.content && !json.data?.title) {
+      const error = 'Jina Reader n\'a retourné aucun contenu — le site bloque peut-être le scraping'
+      appendDebugEntry({ ...entryBase, durationMs: Math.round(performance.now() - startedAt), error })
+      throw new Error(error)
+    }
+    appendDebugEntry({
+      ...entryBase,
+      durationMs: Math.round(performance.now() - startedAt),
+      response: json.data.content ?? '',
+    })
+    return json.data
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (!/Jina Reader:/.test(msg) && !/n'a retourné aucun contenu/.test(msg)) {
+      appendDebugEntry({ ...entryBase, durationMs: Math.round(performance.now() - startedAt), error: msg })
+    }
+    throw err
   }
-  return json.data
+}
+
+/** Masque la clé d'API Jina dans les headers loggés. */
+function sanitizeHeaders(h: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(h)) {
+    out[k] = /authorization/i.test(k) ? 'Bearer ***' : v
+  }
+  return out
 }
 
 // ─── LLM extraction (Gemini Flash) ──────────────────────────────────────────
