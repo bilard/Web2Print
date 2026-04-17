@@ -268,7 +268,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
               }`}
             >
               <MousePointer className="w-3.5 h-3.5" />
-              {captureMode === 'off' ? 'Activer capture' : 'Arrêter capture'}
+              {captureMode === 'off' ? 'Activer capture (double-clic)' : 'Arrêter capture'}
             </button>
             <div className="h-6 w-px bg-white/10" />
             <button
@@ -291,8 +291,8 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
       {rewrittenHtml && (
         <div className="px-3 py-2 bg-amber-500/[0.08] border border-amber-400/20 rounded text-[10px] text-amber-200/80">
           <b>Rendu dégradé attendu</b> — les polices custom et icônes webfont ne chargent pas
-          (CORS sur <code className="text-amber-100">@font-face</code>). La structure HTML est correcte pour le pointer-and-click.
-          Pour un rendu 100% fidèle, utilise l'extension Chrome (Phase 2).
+          (CORS sur <code className="text-amber-100">@font-face</code>). <b>Double-clic</b> pour capturer un élément,
+          <b> simple-clic</b> pour naviguer (accordéons, onglets).
         </div>
       )}
       </div>
