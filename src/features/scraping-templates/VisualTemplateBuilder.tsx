@@ -45,6 +45,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
   // Index du champ dont le selector est actuellement prévisualisé (surbrillance
   // persistante dans l'iframe). null = rien de sélectionné.
   const [selectedFieldIdx, setSelectedFieldIdx] = useState<number | null>(null)
+  const [showAllTags, setShowAllTags] = useState(true)
 
   // Quand on change de template dans la liste, re-synchroniser l'URL source
   // et vider l'iframe pour forcer un rechargement avec la bonne page.
@@ -70,26 +71,44 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template.id])
 
+  const sendToIframe = (message: unknown) => {
+    iframeRef.current?.contentWindow?.postMessage(message, '*')
+  }
+
+  const syncTags = useCallback(() => {
+    const tags = template.fields
+      .map((f) => ({ selector: f.strategies[0]?.expression ?? '', label: f.field }))
+      .filter((t) => t.selector)
+    iframeRef.current?.contentWindow?.postMessage({ type: 'pim-set-persistent-tags', tags }, '*')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template.fields])
+
   // Listen for postMessage from the iframe
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       const msg = e.data as { type?: string } | null
       if (!msg || typeof msg !== 'object') return
       if (msg.type === 'pim-ready') {
-        // iframe prête → on peut activer le mode
+        if (showAllTags) syncTags()
       }
       if (msg.type === 'pim-capture') {
         setPendingCapture(msg as unknown as CaptureMessage)
       }
-      if (msg.type === 'pim-preview-result') {
-        const result = msg as { type: string; count: number; error?: string }
-        if (result.error) toast.error(`Selector invalide : ${result.error}`)
-        else toast.info(`Selector matche ${result.count} élément(s)`)
-      }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [])
+  }, [showAllTags, syncTags])
+
+  // Re-envoyer les tags persistants dès que les fields changent ou que l'iframe
+  // est prête (pim-ready déclenche déjà un render initial).
+  useEffect(() => {
+    if (!rewrittenHtml) return
+    if (showAllTags) {
+      syncTags()
+    } else {
+      sendToIframe({ type: 'pim-clear-persistent-tags' })
+    }
+  }, [rewrittenHtml, template.fields, showAllTags, syncTags])
 
   const load = async () => {
     if (!sourceUrl) { toast.error('Entre une URL'); return }
@@ -110,32 +129,20 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     }
   }
 
-  const sendToIframe = (message: unknown) => {
-    iframeRef.current?.contentWindow?.postMessage(message, '*')
-  }
-
   const toggleMode = (mode: 'off' | 'single' | 'multiple') => {
     setCaptureMode(mode)
     sendToIframe({ type: 'pim-set-mode', mode })
   }
 
-  const previewSelector = (selector: string) => {
-    sendToIframe({ type: 'pim-preview-selector', selector })
-  }
-
-  const clearPreview = () => {
-    sendToIframe({ type: 'pim-clear-preview' })
-    setSelectedFieldIdx(null)
-  }
-
   const toggleFieldPreview = (idx: number) => {
     if (selectedFieldIdx === idx) {
-      clearPreview()
+      sendToIframe({ type: 'pim-set-active-selector', selector: null })
+      setSelectedFieldIdx(null)
       return
     }
     const sel = template.fields[idx]?.strategies[0]?.expression ?? ''
     if (!sel) return
-    previewSelector(sel)
+    sendToIframe({ type: 'pim-set-active-selector', selector: sel })
     setSelectedFieldIdx(idx)
   }
 
@@ -263,6 +270,19 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
               <MousePointer className="w-3.5 h-3.5" />
               {captureMode === 'off' ? 'Activer capture' : 'Arrêter capture'}
             </button>
+            <div className="h-6 w-px bg-white/10" />
+            <button
+              onClick={() => setShowAllTags((s) => !s)}
+              title={showAllTags ? 'Masquer les surbrillances' : 'Afficher les surbrillances'}
+              className={`px-3 py-2 rounded text-xs inline-flex items-center gap-2 border ${
+                showAllTags
+                  ? 'bg-white/5 text-white/80 border-white/10 hover:bg-white/10'
+                  : 'bg-white/[0.02] text-white/40 border-white/5 hover:bg-white/5'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              {showAllTags ? 'Masquer tags' : 'Afficher tags'}
+            </button>
           </>
         )}
       </div>
@@ -300,7 +320,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
         <AssignmentModal
           capture={pendingCapture}
           onAssign={assignTo}
-          onPreview={previewSelector}
+          onPreview={(sel) => sendToIframe({ type: 'pim-set-active-selector', selector: sel })}
           onClose={() => setPendingCapture(null)}
         />
       )}
