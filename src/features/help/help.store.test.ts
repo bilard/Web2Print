@@ -3,6 +3,7 @@ import { useHelpStore } from './help.store'
 
 describe('help.store', () => {
   beforeEach(() => {
+    useHelpStore.getState().setHighlightTarget(null)
     useHelpStore.setState({
       open: false,
       currentSectionId: null,
@@ -45,9 +46,10 @@ describe('help.store', () => {
 
   it('setHighlightTarget(null) cancels pending reset', () => {
     useHelpStore.getState().setHighlightTarget('toolbar.text')
-    useHelpStore.getState().setHighlightTarget(null)
+    expect(vi.getTimerCount()).toBe(1)
 
-    vi.advanceTimersByTime(3000)
+    useHelpStore.getState().setHighlightTarget(null)
+    expect(vi.getTimerCount()).toBe(0)
     expect(useHelpStore.getState().highlightTarget).toBe(null)
   })
 
