@@ -203,7 +203,24 @@ export const OVERLAY_SCRIPT = `
   }
 
   document.addEventListener('mouseover', onMouseOver, true)
-  document.addEventListener('click', onClick, true)
+  document.addEventListener('dblclick', onClick, true)
+
+  // Simple-clic : laisser passer pour permettre la navigation dans l'iframe
+  // (ouverture d'accordéons, onglets), MAIS bloquer les ancres qui navigueraient
+  // hors iframe ou vers une URL différente du document courant.
+  document.addEventListener('click', function(e) {
+    if (mode === 'off') return
+    var tgt = e.target
+    // Remonter jusqu'à la 1re ancre parente s'il y en a
+    while (tgt && tgt !== document.body && tgt.tagName !== 'A') tgt = tgt.parentElement
+    if (!tgt || tgt.tagName !== 'A') return
+    var href = tgt.getAttribute('href') || ''
+    // Bloquer les liens externes qui feraient quitter l'iframe
+    if (/^https?:/.test(href) || tgt.target === '_blank' || tgt.target === '_top') {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+  }, true)
 
   // Intercepter les clics sur les ancres/submits (évite navigation)
   document.addEventListener('submit', function(e) { if (mode !== 'off') e.preventDefault() }, true)
