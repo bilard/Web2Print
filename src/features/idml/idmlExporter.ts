@@ -1643,10 +1643,6 @@ export async function exportIdmlModified(
       const cropY0 = imageObj.data?.idmlCropY0
       const fw0 = imageObj.data?.idmlCropW0
       const fh0 = imageObj.data?.idmlCropH0
-      console.log(
-        `[IDML Export][crop] id=${fabricId} now=(cropX=${cropX} cropY=${cropY} fw=${fw} fh=${fh} sx=${sx} sy=${sy}) ` +
-        `init=(cropX0=${cropX0} cropY0=${cropY0} fw0=${fw0} fh0=${fh0})`,
-      )
       if (cropX0 != null && cropY0 != null && fw0 != null && fh0 != null) {
         const el = (imageObj as unknown as { getElement?: () => HTMLImageElement | HTMLCanvasElement }).getElement?.()
         const natW = (el as HTMLImageElement | undefined)?.naturalWidth ?? (el as HTMLCanvasElement | undefined)?.width ?? 0
@@ -1759,7 +1755,6 @@ export async function exportIdmlModified(
       console.warn(`[IDML Export] ❌ Impossible d'extraire l'image fill pour "${id}"`)
       continue
     }
-    console.log(`[IDML Export] Fill image "${id}": ${imgBytes.byteLength} bytes`)
 
     // Use original filename if available, otherwise generate one
     const originalName = fab.data?.fillImageName
@@ -1938,8 +1933,6 @@ export async function exportIdmlModified(
   if (graphicPath && graphicXml && graphicModified) {
     zip.file(graphicPath, graphicXml)
   }
-
-  console.log(`[IDML Export] ${storyPatchCount} story(ies) patchée(s), ${fillImageCount} fill image(s)`)
 
   void colorPatchCount
   void posPatchCount

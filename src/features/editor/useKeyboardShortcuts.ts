@@ -57,7 +57,6 @@ export function useKeyboardShortcuts() {
       if (e.key === 's') {
         e.preventDefault()
         import('./useAutoSave').then((mod) => {
-          console.log('[Save] Ctrl+S pressed, globalSave =', mod.globalSave ? 'function' : 'null')
           mod.globalSave?.()
         })
         return

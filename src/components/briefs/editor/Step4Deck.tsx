@@ -44,7 +44,6 @@ export function Step4Deck({ brief, onAdvance }: Props) {
   }
 
   const handleNext = async () => {
-    console.log('[Step4Deck] handleNext called, briefId=', brief.id)
     if (slideCount === 0) {
       toast.error('Le deck est vide. Génère la structure avant de continuer.')
       return
@@ -54,7 +53,6 @@ export function Step4Deck({ brief, onAdvance }: Props) {
         briefId: brief.id,
         patch: { currentStep: 5 } as never,
       })
-      console.log('[Step4Deck] update OK → onAdvance')
       onAdvance()
     } catch (err) {
       console.error('[Step4Deck] update FAILED', err)

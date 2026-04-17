@@ -196,7 +196,6 @@ export function CanvasContainer() {
           }
         }
         if (!target) {
-          console.info('[Canvas] Font drop: no text object under cursor')
           return
         }
 

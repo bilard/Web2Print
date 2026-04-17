@@ -14,16 +14,13 @@ async function deleteFilesInFolder(folderPath: string): Promise<number> {
   let count = 0
   try {
     const folderRef = ref(storage, folderPath)
-    console.log(`[Delete] listAll("${folderPath}")...`)
     const result = await listAll(folderRef)
-    console.log(`[Delete] "${folderPath}" → ${result.items.length} files, ${result.prefixes.length} subfolders`)
 
     if (result.items.length > 0) {
       const results = await Promise.allSettled(
         result.items.map((itemRef) =>
           deleteObject(itemRef).then(() => {
             count++
-            console.log(`[Delete] ✓ ${itemRef.fullPath}`)
           })
         )
       )
@@ -80,7 +77,6 @@ export async function cleanupOrphanLinksInTaxonomies(userId: string, projectId: 
 
     if (touched > 0) {
       await batch.commit()
-      console.log(`[Delete] Cleaned orphan link in ${touched} taxonomy(ies)`)
     }
   } catch (err: any) {
     console.error('[Delete] ERROR cleaning taxonomy orphans:', err?.code, err?.message || err)
@@ -88,8 +84,6 @@ export async function cleanupOrphanLinksInTaxonomies(userId: string, projectId: 
 }
 
 async function deleteProjectWithAssets(projectId: string): Promise<void> {
-  console.log(`[Delete] Starting deletion of project "${projectId}" assets...`)
-
   let totalDeleted = 0
 
   // Strategy 1: Delete known subfolders directly (works even if parent listAll fails)
@@ -101,11 +95,8 @@ async function deleteProjectWithAssets(projectId: string): Promise<void> {
   // Strategy 2: Also try listing the project root (catches any other files)
   totalDeleted += await deleteFilesInFolder(`projects/${projectId}`)
 
-  console.log(`[Delete] Storage cleanup done: ${totalDeleted} files deleted`)
-
   // Delete Firestore document
   await deleteDoc(doc(db, 'projects', projectId))
-  console.log(`[Delete] Project "${projectId}" fully deleted (${totalDeleted} storage files removed)`)
 }
 
 export function useDeleteProject() {

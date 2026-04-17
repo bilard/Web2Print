@@ -23,7 +23,6 @@ export function setGlobalIdmlSource(
   projectId: string | null = null,
 ): void {
   globalIdmlSource = { rawBuffer: buffer.slice(0), fileName, projectId }
-  console.log(`[IDML Source] Stocké en mémoire: "${fileName}" (${(buffer.byteLength / 1024).toFixed(1)} KB)`)
 }
 
 /** Upload le fichier IDML vers Firebase Storage pour persistance entre sessions */
@@ -35,7 +34,6 @@ export async function uploadIdmlToStorage(
   const idmlRef = ref(storage, `projects/${projectId}/source/${fileName}`)
   await uploadBytes(idmlRef, buffer)
   const url = await getDownloadURL(idmlRef)
-  console.log(`[IDML Source] Uploadé vers Storage: projects/${projectId}/source/${fileName}`)
   return url
 }
 
@@ -61,7 +59,6 @@ export async function downloadIdmlFromStorage(
         const response = await fetch(url)
         if (response.ok) {
           const buffer = await response.arrayBuffer()
-          console.log(`[IDML Source] Téléchargé depuis Storage: ${name} (${(buffer.byteLength / 1024).toFixed(1)} KB)`)
           // Restaurer le singleton en mémoire
           setGlobalIdmlSource(buffer, name, projectId)
           return buffer
@@ -71,7 +68,6 @@ export async function downloadIdmlFromStorage(
       }
     }
 
-    console.warn('[IDML Source] Aucun fichier IDML trouvé dans Storage')
     return null
   } catch (err) {
     console.warn('[IDML Source] Erreur téléchargement Storage:', err)

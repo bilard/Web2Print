@@ -25,13 +25,6 @@ async function writeSheetsToFirestore(fileName: string, sheets: ExcelSheet[]): P
   }
   const serialized = JSON.stringify(sheets)
   const byteSize = new Blob([serialized]).size
-  console.log('[save-enriched] firestore write →', {
-    fileName,
-    uid: user.uid,
-    sheetCount: sheets.length,
-    totalRows: sheets.reduce((a, s) => a + s.rows.length, 0),
-    byteSize,
-  })
   if (byteSize > FIRESTORE_MAX_BYTES) {
     throw new Error(
       `Document trop gros pour Firestore (${(byteSize / 1024).toFixed(0)} Ko > 1024 Ko). ` +
@@ -130,7 +123,6 @@ export function useSaveEnrichedProduct() {
 
   const save = useCallback(
     async (rowId: string, data: EnrichedProduct): Promise<boolean> => {
-      console.log('[save-enriched] START', { rowId, hasData: !!data })
       // Snapshot frais du store à chaque appel
       const { sheets, activeSheetIndex, currentFileName } = useExcelStore.getState()
       const sheet = sheets[activeSheetIndex]
@@ -162,7 +154,6 @@ export function useSaveEnrichedProduct() {
             addedCols.push(def.key)
           }
         }
-        console.log('[save-enriched] cols added:', addedCols)
 
         // 2. Écrire les valeurs dans la ligne courante
         // Récupérer le llmRequest depuis le store d'enrichissement
@@ -176,24 +167,19 @@ export function useSaveEnrichedProduct() {
           updateCell(activeSheetIndex, rowId, key, value)
           updatedFields.push(key)
         }
-        console.log('[save-enriched] cells updated:', updatedFields)
 
         // 3. Relire le snapshot post-mutations
         const freshState = useExcelStore.getState()
         const freshSheets = freshState.sheets
-        const freshRow = freshSheets[activeSheetIndex]?.rows.find((r) => r._id === rowId)
-        console.log('[save-enriched] fresh row after updates:', freshRow)
 
         const effectiveFileName =
           currentFileName ?? freshSheets[activeSheetIndex]?.name ?? 'data_enrichi'
         if (!currentFileName) {
-          console.log('[save-enriched] no currentFileName, setting to:', effectiveFileName)
           setCurrentFileName(effectiveFileName)
         }
 
         // 4. Écriture Firestore explicite (ne dépend plus de l'auto-save debounced)
         await writeSheetsToFirestore(effectiveFileName, freshSheets)
-        console.log('[save-enriched] firestore write OK')
 
         setSavedRowIds((prev) => {
           const next = new Set(prev)

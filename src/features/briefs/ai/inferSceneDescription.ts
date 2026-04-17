@@ -73,7 +73,6 @@ Respond with the sentence only, no preamble.`
       .replace(/^["'«»]+|["'«»]+$/g, '')
       .split(/\n/)[0]
       .trim()
-    console.log('[inferSceneDescription]', clean)
     return clean || 'a professional environment'
   } catch (err) {
     console.warn('[inferSceneDescription] échec', err)

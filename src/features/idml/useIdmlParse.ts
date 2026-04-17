@@ -88,7 +88,6 @@ export function useIdmlParse() {
         idmlContents.masterSpreads,
       )
 
-      console.log(`[IDML Parse] ${idmlDoc.objects.length} objects, page ${idmlDoc.pageWidth}x${idmlDoc.pageHeight}`)
       setState((s) => ({ ...s, step: 'converting', idmlDoc }))
       await new Promise((r) => setTimeout(r, 20))
 
@@ -98,7 +97,6 @@ export function useIdmlParse() {
       const pid = useEditorStore.getState().projectId
       if (pid && upload.assembly.imageFiles.length > 0) {
         try {
-          console.log('[IDML Parse] Uploading images to Storage before creating Fabric objects...')
           const storageUrls = await uploadImagesToStorage(pid, upload.assembly.imageFiles)
           if (storageUrls.size > 0) {
             // Merge: for each blob URL entry, if we have a Storage URL for the same filename, use it
@@ -114,7 +112,6 @@ export function useIdmlParse() {
               }
             }
             imageMap = mergedMap
-            console.log(`[IDML Parse] Using ${storageUrls.size / 2} permanent Storage URLs for images`)
           }
         } catch (err) {
           console.warn('[IDML Parse] Image upload failed, using blob URLs:', err)
@@ -126,7 +123,6 @@ export function useIdmlParse() {
 
       // 4. Convert to Fabric objects (using permanent Storage URLs when available)
       const fabricObjects = await idmlToFabricObjects(idmlDoc.objects, imageMap)
-      console.log(`[IDML Parse] ${fabricObjects.length} Fabric objects created`)
 
       setState((s) => ({ ...s, step: 'rendering', fabricObjects, objectCount: fabricObjects.length }))
       await new Promise((r) => setTimeout(r, 20))
@@ -134,7 +130,6 @@ export function useIdmlParse() {
       // 5. Add to canvas — wait for it to be ready (race condition with mount)
       let canvas = globalFabricCanvas
       if (!canvas) {
-        console.log('[IDML Parse] Waiting for globalFabricCanvas...')
         canvas = await waitForCanvas(5000)
       }
       if (!canvas) {
@@ -196,9 +191,7 @@ export function useIdmlParse() {
 
       // 6. Force save canvas data to Firestore (images already in Storage)
       setTimeout(() => {
-        globalSave?.().then(() => {
-          console.log('[IDML Parse] Canvas saved to Firestore after import')
-        }).catch((err) => {
+        globalSave?.().catch((err) => {
           console.warn('[IDML Parse] Post-import save failed:', err)
         })
       }, 500)

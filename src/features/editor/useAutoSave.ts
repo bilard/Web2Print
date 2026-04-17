@@ -37,8 +37,6 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
   }
 
   if (liveImages.length > 0) {
-    console.log(`[Save] ${liveImages.length} images with non-permanent URLs, uploading to Storage...`)
-
     await Promise.allSettled(liveImages.map(async (img) => {
       try {
         const el = (img as any).getElement() as HTMLImageElement | HTMLCanvasElement | undefined
@@ -86,8 +84,6 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
 
         // Restore crop/position props that setSrc may have reset
         img.set(savedProps)
-
-        console.log(`[Save] Uploaded "${storageName}" → Storage OK, replaced live src`)
       } catch (err) {
         console.error(`[Save] FAILED to upload image:`, err)
       }

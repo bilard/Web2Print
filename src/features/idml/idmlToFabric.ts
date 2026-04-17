@@ -446,10 +446,6 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
       // Fabric.js has a single lineHeight for the whole Textbox (= ratio of baseFontSize).
       // InDesign allows per-paragraph leading — each line's leading determines its
       // distance from the previous baseline. For Fabric.js, we must pick one value.
-      paras.forEach((p, i) => {
-        console.log(`[idmlToFabric] PARA[${i}] "${p.text.slice(0,15)}" fSize=${p.fontSize} leading=${p.lineHeight ?? 'auto'} autoLead=${p.autoLeading ?? 'default'}`)
-      })
-
       let fabricLineHeight: number
       // InDesign convention: the 2nd paragraph's leading controls the gap from line 1 to 2.
       const leadingPara = paras.length >= 2 ? paras[1] : firstPara
@@ -505,7 +501,6 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
 
       try {
         const resolvedFont = resolveAvailableFont(firstPara.fontFamily) || 'Arial'
-        console.log(`[idmlToFabric] Text "${fullText.slice(0, 20)}" → font="${resolvedFont}" w=${firstPara.fontWeight} hScale=${hScale ?? 100}% tracking=${tracking} lH=${fabricLineHeight.toFixed(2)} fSize=${fontSize} autoLead=${firstPara.autoLeading ?? 'default'}% inset=${insT}/${insR}/${insB}/${insL} vJust=${obj.verticalJustification ?? 'top'}`)
 
         const textbox = new Textbox(fullText, {
           left: 0, top: 0, originX: 'center', originY: 'center',
@@ -578,7 +573,6 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           const contentWidth = maxLineW + fontSize * 0.3
           if (contentWidth > 10 && contentWidth < adjustedWidth * 0.95) {
             textbox.set({ width: contentWidth })
-            console.log(`[idmlToFabric] Shrink-wrap "${fullText.slice(0, 20)}" width: ${adjustedWidth.toFixed(0)} → ${contentWidth.toFixed(0)}`)
           }
         }
 
@@ -619,8 +613,6 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
         const rad = (angle * Math.PI) / 180
         const finalCx = cx + localDx * Math.cos(rad) - localDy * Math.sin(rad)
         const finalCy = cy + localDx * Math.sin(rad) + localDy * Math.cos(rad)
-
-        console.log(`[idmlToFabric] OFFSET "${fullText.slice(0,20)}" vjust=${vjust} displayH=${displayH.toFixed(1)} textH=${textH.toFixed(1)} posTextH=${posTextH.toFixed(1)} insT=${insT.toFixed(1)} insB=${insB.toFixed(1)} insL=${insL.toFixed(1)} insR=${insR.toFixed(1)} localDx=${localDx.toFixed(1)} localDy=${localDy.toFixed(1)} cx=${cx.toFixed(1)}→${finalCx.toFixed(1)} cy=${cy.toFixed(1)}→${finalCy.toFixed(1)}`)
 
         textbox.set({ left: finalCx, top: finalCy, angle })
         // Override idmlCx/idmlCy to match the actual Fabric position (which includes inset
@@ -705,7 +697,6 @@ export async function idmlToFabricObjects(
   objects: IdmlObject[],
   imageMap?: Map<string, string>,
 ): Promise<FabricObject[]> {
-  console.log(`[idmlToFabric] imageMap has ${imageMap?.size ?? 0} entries:`, imageMap ? [...imageMap.keys()] : [])
   const result: FabricObject[] = []
   for (const obj of objects) {
     try {
@@ -799,8 +790,6 @@ export async function idmlToFabricObjects(
                 const cosA = Math.cos(rad), sinA = Math.sin(rad)
                 imgLeft = obj.cx + (cosA * dxLocal * sX - sinA * dyLocal * sY)
                 imgTop  = obj.cy + (sinA * dxLocal * sX + cosA * dyLocal * sY)
-
-                console.log(`[idmlToFabric] Image IDML: ${obj.imagePath} vis=(${visLeft.toFixed(1)},${visTop.toFixed(1)} ${(visRight-visLeft).toFixed(1)}x${(visBottom-visTop).toFixed(1)}) → crop=(${cropX.toFixed(0)},${cropY.toFixed(0)} ${cropW.toFixed(0)}x${cropH.toFixed(0)}) center=(${imgLeft.toFixed(1)},${imgTop.toFixed(1)}) fabScale=(${fabScaleX.toFixed(4)},${fabScaleY.toFixed(4)})`)
               } else {
                 // Image complètement hors cadre → placeholder
                 cropX = 0; cropY = 0; cropW = imgNatW; cropH = imgNatH
@@ -815,7 +804,6 @@ export async function idmlToFabricObjects(
               cropY = Math.max(0, (imgNatH - cropH) / 2)
               fabScaleX = coverScale
               fabScaleY = coverScale
-              console.log(`[idmlToFabric] Image cover-crop (fallback): ${obj.imagePath} nat=${imgNatW}x${imgNatH} crop=(${cropX.toFixed(0)},${cropY.toFixed(0)} ${cropW.toFixed(0)}x${cropH.toFixed(0)}) scale=${coverScale.toFixed(4)}`)
             }
 
             img.set({
@@ -857,7 +845,6 @@ export async function idmlToFabricObjects(
         // Image couldn't be loaded → always create a visible placeholder
         const placeholders = createImagePlaceholder(obj)
         result.push(...placeholders)
-        console.log(`[idmlToFabric] Image placeholder: "${obj.imagePath}" → ${placeholders.length} objects at (${obj.cx.toFixed(0)},${obj.cy.toFixed(0)})`)
         continue
       }
 
@@ -865,18 +852,13 @@ export async function idmlToFabricObjects(
       if (fabricObj) {
         if (Array.isArray(fabricObj)) {
           result.push(...fabricObj)
-          console.log(`[idmlToFabric] ${obj.type} ${obj.id} → ${fabricObj.length} objects at (${obj.cx.toFixed(0)},${obj.cy.toFixed(0)})`)
         } else {
           result.push(fabricObj)
-          console.log(`[idmlToFabric] ${obj.type} ${obj.id} → 1 object at (${obj.cx.toFixed(0)},${obj.cy.toFixed(0)})`)
         }
-      } else {
-        console.log(`[idmlToFabric] ${obj.type} ${obj.id} → SKIPPED (null) at (${obj.cx.toFixed(0)},${obj.cy.toFixed(0)})`)
       }
     } catch (e) {
       console.warn(`[idmlToFabric] Error converting ${obj.type} ${obj.id}:`, e)
     }
   }
-  console.log(`[idmlToFabric] ${result.length} / ${objects.length} objects converted`)
   return result
 }

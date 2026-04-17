@@ -38,9 +38,9 @@ interface SelectedBlockInfo {
 function getSelectedBlock(): SelectedBlockInfo | null {
   try {
     const canvas = globalFabricCanvas
-    if (!canvas) { console.log('[GenerateTab] no canvas'); return null }
+    if (!canvas) { return null }
     const obj = canvas.getActiveObject()
-    if (!obj) { console.log('[GenerateTab] no active object'); return null }
+    if (!obj) { return null }
     // Skip page background, grid, and multi-selection
     if (obj.data?.isGrid || obj.data?.isPageBg) return null
     if (obj.type === 'activeselection') return null
@@ -64,7 +64,6 @@ function getSelectedBlock(): SelectedBlockInfo | null {
       }
     }
 
-    console.log('[GenerateTab] detected block:', objType, displayWidth, 'x', displayHeight)
     return info
   } catch (e) {
     console.error('[GenerateTab] getSelectedBlock error:', e)
@@ -89,7 +88,6 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
   // Listen for canvas selection changes
   const refreshSelection = useCallback(() => {
     const block = getSelectedBlock()
-    console.log('[GenerateTab] refreshSelection:', block?.objectType, block?.name, block?.displayWidth, block?.displayHeight)
     setSelectedBlock(block)
   }, [])
 

@@ -46,7 +46,6 @@ export function detectAssemblyFiles(files: FileList | File[]): AssemblyFiles {
       result.pdfFile = file
     } else if (name.startsWith('adobefnt') && name.endsWith('.lst')) {
       result.fontListFile = file
-      console.log(`[Assembly] Found font list: ${file.name}`)
     }
   }
 
@@ -171,7 +170,6 @@ export async function loadFontsFromFiles(fontFiles: File[], fontListFile?: File 
       const lstContent = await fontListFile.text()
       const entries = parseAdobeFntList(lstContent)
       fntLookup = buildFontLookup(entries)
-      console.log(`[Font] AdobeFnt parsed: ${entries.length} entries`, entries.map(e => `${e.familyName} / ${e.styleName}`))
     } catch (err) {
       console.warn('[Font] Failed to parse AdobeFnt.lst', err)
     }
@@ -212,7 +210,6 @@ export async function loadFontsFromFiles(fontFiles: File[], fontListFile?: File 
       document.fonts.add(fontFace)
       registerDynamicFontVariant(family, weight, style, file.name, styleLabel)
       loaded.push({ name: file.name, family, file })
-      console.log(`[Font] "${file.name}" → family="${family}" weight=${weight} style=${style} label="${styleLabel ?? 'auto'}"`)
 
 
       if (!familyBuffers.has(family)) familyBuffers.set(family, [])
@@ -235,7 +232,6 @@ export async function loadFontsFromFiles(fontFiles: File[], fontListFile?: File 
         const fallback = new FontFace(family, lightest.buffer, { weight: '400', style: 'normal' })
         await fallback.load()
         document.fonts.add(fallback)
-        console.log(`[Font] Fallback: "${family}" weight=400 (from ${lightest.weight})`)
       } catch { /* ignore */ }
     }
   }
@@ -256,7 +252,6 @@ export function buildImageBlobMap(imageFiles: File[]): Map<string, string> {
     // Also store with original case
     map.set(file.name, url)
   }
-  console.log(`[Images] ${map.size / 2} image blob URLs created from assembly`)
   return map
 }
 
@@ -272,7 +267,6 @@ export async function uploadImagesToStorage(
   const urlMap = new Map<string, string>()
   if (imageFiles.length === 0) return urlMap
 
-  console.log(`[Images] Uploading ${imageFiles.length} images to Storage...`)
   await Promise.allSettled(imageFiles.map(async (file) => {
     try {
       const buffer = await file.arrayBuffer()
@@ -281,7 +275,6 @@ export async function uploadImagesToStorage(
       const url = await getDownloadURL(imgRef)
       urlMap.set(file.name, url)
       urlMap.set(file.name.toLowerCase(), url)
-      console.log(`[Image] Uploaded "${file.name}" → Storage OK`)
     } catch (err) {
       console.error(`[Image] FAILED to upload ${file.name}:`, err)
     }
@@ -304,10 +297,7 @@ export async function unzipIdml(idmlFile: File): Promise<IdmlZipContents> {
     designMap: '',
   }
 
-  const allPaths: string[] = []
-
   for (const [path, zipEntry] of Object.entries(zip.files)) {
-    allPaths.push(path + (zipEntry.dir ? '/' : ''))
     if (zipEntry.dir) continue
     const text = await zipEntry.async('text')
 
@@ -323,13 +313,6 @@ export async function unzipIdml(idmlFile: File): Promise<IdmlZipContents> {
       contents.designMap = text
     }
   }
-
-  console.log('[IDML ZIP] All paths:', allPaths)
-  console.log('[IDML ZIP] Spreads:', Object.keys(contents.spreads).length)
-  console.log('[IDML ZIP] Stories:', Object.keys(contents.stories).length)
-  console.log('[IDML ZIP] Resources:', Object.keys(contents.resources).length)
-  console.log('[IDML ZIP] MasterSpreads:', Object.keys(contents.masterSpreads).length)
-  console.log('[IDML ZIP] DesignMap length:', contents.designMap.length)
 
   return contents
 }
@@ -355,7 +338,6 @@ export async function uploadFontsToStorage(
     } catch { /* ignore */ }
   }
 
-  console.log(`[Fonts] Uploading ${fontFiles.length} fonts to Storage...`)
   for (const file of fontFiles) {
     try {
       const buffer = await file.arrayBuffer()
@@ -389,7 +371,6 @@ export async function uploadFontsToStorage(
 
       const fontRef = ref(storage, `projects/${projectId}/fonts/${storageName}`)
       await uploadBytes(fontRef, buffer)
-      console.log(`[Font] Uploaded "${storageName}"`)
     } catch (err) {
       console.warn(`[Font] Failed to upload ${file.name}:`, err)
     }

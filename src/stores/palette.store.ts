@@ -79,19 +79,14 @@ export function savePaletteToFirestore() {
       const { db } = await import('@/lib/firebase/config')
 
       const pid = useEditorStore.getState().projectId
-      if (!pid) {
-        console.warn('[Palette] No projectId, skip save')
-        return
-      }
+      if (!pid) return
 
       const { colors, gradients } = usePaletteStore.getState()
-      console.log('[Palette] Saving…', colors.length, 'colors,', gradients.length, 'gradients, pid:', pid)
       await updateDoc(doc(db, 'projects', pid), {
         paletteColors: JSON.stringify(colors),
         paletteGradients: JSON.stringify(gradients),
         updatedAt: Date.now(),
       })
-      console.log('[Palette] Saved OK')
     } catch (err) {
       console.error('[Palette] Save error', err)
     }

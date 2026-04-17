@@ -297,9 +297,6 @@ function computeWorldTransform(el: Element): Mat {
     if (nodeName === 'Spread' || nodeName.includes('Spread')) break
     parentNode = parentNode.parentNode as Element | null
   }
-  if (groupChain.length > 0) {
-    console.log(`[IDML] computeWorldTransform ${selfId}: ownTf=${ownTfStr} groups=[${groupChain.join(' > ')}] → worldTf=[${tf.map(n => n.toFixed(3)).join(', ')}]`)
-  }
   return tf
 }
 
@@ -827,7 +824,6 @@ function buildStyleMaps(resources: Record<string, string>): {
             }
           }
         }
-        console.log(`[IDML Style] ${id}:`, JSON.stringify(allAttrs))
         const def = parseStyleDef(el)
         // Parse AllGREPStyles from <Properties><AllGREPStyles>
         const propsArr = directChildren(el, 'Properties')
@@ -874,7 +870,6 @@ function buildStyleMaps(resources: Record<string, string>): {
             }
             if (nested.length > 0) {
               def.nestedStyles = nested
-              console.log(`[IDML] Nested styles for ${id}:`, JSON.stringify(nested))
             }
           }
         }
@@ -909,7 +904,6 @@ function buildStyleMaps(resources: Record<string, string>): {
     charStyles.set(id, resolveChain(charStyles, id))
   }
 
-  console.log(`[IDML] Styles: ${paraStyles.size} paragraph, ${charStyles.size} character`)
   return { paraStyles, charStyles }
 }
 
@@ -1242,7 +1236,6 @@ function parseStory(
         }
 
         cursor = delimEnd
-        console.log(`[IDML Nested] Rule "${rule.charStyleId}" delim="${rule.delimiter}" → chars ${cursor > delimEnd ? delimEnd : cursor - (delimEnd - cursor)}..${delimEnd} of "${combinedText.slice(0, 30)}"`)
       }
     } catch (nestedErr) {
       console.warn('[IDML] Nested styles error:', nestedErr)
@@ -1444,7 +1437,6 @@ function processAnchoredFrames(
     if (paragraphs.length === 0 && !fill) continue
 
     results.push(obj)
-    console.log(`[IDML] Anchored TextFrame ${af.self}: story=${af.parentStory} paras=${paragraphs.length} center=(${cx.toFixed(0)},${cy.toFixed(0)}) ${(displayW).toFixed(0)}x${(displayH).toFixed(0)} anchored=${af.anchoredPosition ?? 'inline'}`)
 
     // Recursively process anchored frames — pass the CORRECTED cx/cy as parent center
     processAnchoredFrames(worldTf, af.bounds, cx, cy, af.parentStory, pageOffsetX, pageOffsetY, colorMap, storiesMap, objStyleMap, anchoredFrameMap, results, depth + 1)
@@ -1524,7 +1516,6 @@ export function parseIdml(
   const colorMap = buildColorMap(resources)
   const { paraStyles, charStyles } = buildStyleMaps(resources)
   const objStyleMap = buildObjectStyleMap(resources)
-  console.log(`[IDML] Colors: ${colorMap.size}, ObjStyles: ${objStyleMap.size}, page: ${pageWidth.toFixed(1)}×${pageHeight.toFixed(1)} pt`)
 
   // Build anchored frame map: storyId → anchored TextFrames within that story
   const anchoredFrameMap = new Map<string, AnchoredFrameRef[]>()
@@ -1538,7 +1529,6 @@ export function parseIdml(
       const anchored = extractAnchoredFrames(xml)
       if (anchored.length > 0) {
         anchoredFrameMap.set(storyId, anchored)
-        console.log(`[IDML] Story ${storyId} has ${anchored.length} anchored frame(s): ${anchored.map(a => `${a.self}→${a.parentStory}`).join(', ')}`)
       }
     } catch { /* skip */ }
   }
@@ -1554,8 +1544,6 @@ export function parseIdml(
       if (!storyId) continue
       const paras = parseStory(xml, colorMap, paraStyles, charStyles)
       storiesMap.set(storyId, paras)
-      const preview = paras.map(p => p.text).join(' ').slice(0, 40)
-      console.log(`[IDML] Story ${storyId}: ${paras.length} para(s) "${preview}"`)
     } catch (err) {
       console.error(`[IDML] Error story ${path}:`, err)
     }
@@ -1571,7 +1559,6 @@ export function parseIdml(
 
     const pages = doc.getElementsByTagName('Page')
     const { offsetX: pageOffsetX, offsetY: pageOffsetY } = selectPageOffset(pages)
-    console.log(`[IDML] Spread pages: ${pages.length}, pageOffset=(${pageOffsetX.toFixed(1)}, ${pageOffsetY.toFixed(1)})`)
 
     // Walk elements in document order (= InDesign z-order, back to front)
     const spreadEl = doc.getElementsByTagName('Spread')[0]
@@ -1583,48 +1570,17 @@ export function parseIdml(
   // Parse MasterSpreads — their objects appear on every page (template background)
   const masterCount = Object.keys(masterSpreads).length
   if (masterCount > 0) {
-    console.log(`[IDML] Parsing ${masterCount} MasterSpread(s)...`)
     for (const [, masterXml] of Object.entries(masterSpreads)) {
       const doc = parseXml(masterXml)
 
       const pages = doc.getElementsByTagName('Page')
       const { offsetX: pageOffsetX, offsetY: pageOffsetY } = selectPageOffset(pages)
-      console.log(`[IDML] MasterSpread page offset: (${pageOffsetX.toFixed(1)}, ${pageOffsetY.toFixed(1)})`)
 
       const masterSpreadEl = doc.getElementsByTagName('MasterSpread')[0]
       if (masterSpreadEl) {
         walkElementsInOrder(masterSpreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap)
       }
     }
-  }
-
-  console.log(`[IDML] Total: ${allObjects.length} objects (${spreadCount} spread(s) + ${masterCount} master(s))`)
-
-  // Compute actual content bounding box for diagnostics
-  if (allObjects.length > 0) {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    for (const obj of allObjects) {
-      // Account for rotation when computing visual bounding box
-      const w = obj.width * Math.abs(obj.scaleX)
-      const h = obj.height * Math.abs(obj.scaleY)
-      const rad = (obj.rotation ?? 0) * Math.PI / 180
-      const cosR = Math.abs(Math.cos(rad))
-      const sinR = Math.abs(Math.sin(rad))
-      const hw = (w * cosR + h * sinR) / 2
-      const hh = (w * sinR + h * cosR) / 2
-      minX = Math.min(minX, obj.cx - hw)
-      minY = Math.min(minY, obj.cy - hh)
-      maxX = Math.max(maxX, obj.cx + hw)
-      maxY = Math.max(maxY, obj.cy + hh)
-    }
-    const contentW = maxX - minX
-    const contentH = maxY - minY
-    console.log(`[IDML] Content bbox: (${minX.toFixed(1)}, ${minY.toFixed(1)}) → (${maxX.toFixed(1)}, ${maxY.toFixed(1)}) = ${contentW.toFixed(1)}×${contentH.toFixed(1)}`)
-    console.log(`[IDML] DocumentPreference page: ${pageWidth.toFixed(1)}×${pageHeight.toFixed(1)}`)
-
-    // Page offset already positions objects in page-relative coordinates.
-    // Do NOT re-center content — it would displace elements when the design
-    // is asymmetric or when images extend beyond the frame (clipped in InDesign).
   }
 
   return { pageWidth, pageHeight, objects: allObjects, spreadCount }
@@ -1641,11 +1597,6 @@ function parseElement(
 ): IdmlObject | null {
   const parsed = parseBounds(el)
   if (!parsed) {
-    if (type === 'TextFrame') {
-      const storyId = attr(el, 'ParentStory')
-      const selfId = attr(el, 'Self')
-      console.warn(`[IDML] TextFrame ${selfId} story=${storyId} → no bounds, skipped`)
-    }
     return null
   }
 
@@ -1663,12 +1614,6 @@ function parseElement(
   const center = tfPoint(localCx, localCy, tf)
   const cx = center.x - pageOffsetX
   const cy = center.y - pageOffsetY
-
-  const selfId = attr(el, 'Self') || '?'
-  const parentTag = (el.parentNode as Element)?.tagName ?? ''
-  if (parentTag === 'Group') {
-    console.log(`[IDML] parseElement GROUPED ${type} ${selfId}: localCenter=(${localCx.toFixed(1)},${localCy.toFixed(1)}) spreadCenter=(${center.x.toFixed(1)},${center.y.toFixed(1)}) pageOffset=(${pageOffsetX.toFixed(1)},${pageOffsetY.toFixed(1)}) → canvas=(${cx.toFixed(1)},${cy.toFixed(1)})`)
-  }
 
   const { scaleX, scaleY, angle } = decompose(tf)
 
@@ -1899,8 +1844,6 @@ function parseElement(
       if (nlb === 'true') noLineBreaks = true
     }
 
-    console.log(`[IDML] TextFrame ${id}: story=${storyId} paras=${paragraphs.length} center=(${cx.toFixed(0)},${cy.toFixed(0)}) ${(localW*scaleX).toFixed(0)}x${(localH*scaleY).toFixed(0)} fill=${fillRef} inset=${insetTop.toFixed(2)}/${insetRight.toFixed(2)}/${insetBottom.toFixed(2)}/${insetLeft.toFixed(2)} vJust=${verticalJustification}`)
-
     // Detect non-rectangular TextFrame (Oval, custom shape) by checking PathGeometry curves
     const framePts = parsePathPoints(el)
     let isOvalFrame = false
@@ -1926,7 +1869,6 @@ function parseElement(
           }
         })
         frameSvgPath = pathPointsToSvg(bakedPts)
-        console.log(`[IDML] TextFrame ${id} has curved PathGeometry (${framePts.length} pts, isOval=${isOvalFrame})`)
       }
     }
 
@@ -1981,6 +1923,5 @@ function parseElement(
     }
   }
 
-  console.log(`[IDML] ${type} ${id}: center=(${cx.toFixed(0)},${cy.toFixed(0)}) ${(localW*scaleX).toFixed(0)}x${(localH*scaleY).toFixed(0)} fill=${fillRef}${hasImage ? ' IMAGE='+imagePath : ''}`)
   return base
 }

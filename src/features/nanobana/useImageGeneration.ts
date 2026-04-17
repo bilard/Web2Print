@@ -101,7 +101,6 @@ export function useImageGeneration() {
         let response: Response | null = null
         let lastError = ''
         for (const model of NANO_BANANA_MODELS) {
-          console.log(`[NanoBana] Trying model: ${model}`)
           response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
             {
@@ -111,7 +110,6 @@ export function useImageGeneration() {
             },
           )
           if (response.ok) {
-            console.log(`[NanoBana] Success with model: ${model}`)
             break
           }
           lastError = await response.text()
@@ -147,7 +145,6 @@ export function useImageGeneration() {
         }
 
         const data = await response.json()
-        console.log('[NanoBana] API response:', JSON.stringify(data).slice(0, 500))
 
         // Check for blocked content
         const blockReason = data.candidates?.[0]?.finishReason

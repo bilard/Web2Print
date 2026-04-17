@@ -114,7 +114,6 @@ Now write the Nano Banana prompt:`
       .trim()
     if (!text) return verbatimFallback()
     const clean = text.replace(/^["'«»]+|["'«»]+$/g, '').trim()
-    console.log('[composeImagePrompt]', target.kind, '→', clean)
     return clean
   } catch (err) {
     console.warn('[composeImagePrompt] échec', err)

@@ -106,7 +106,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       try {
         await saveToFirebase(currentFileName, sheets)
         setSaveStatus('saved')
-        console.log(`[DataPage] Auto-saved "${currentFileName}"`)
       } catch (err) {
         console.error('[DataPage] Auto-save error:', err)
         setSaveStatus('error')
@@ -120,7 +119,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const handleSave = async () => {
     const name = currentFileName ?? sheet?.name ?? 'data'
     if (!name) return
-    console.log(`[DataPage] Manual save "${name}"`)
     setSaving(true)
     try {
       await saveToFirebase(name, sheets)

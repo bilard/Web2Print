@@ -87,7 +87,6 @@ export function usePptxParse() {
       // 1. Parser le PPTX
       await new Promise((r) => setTimeout(r, 50))
       const slide = await parsePptx(file)
-      console.log(`[PPTX] Slide ${slide.widthEmu}×${slide.heightEmu} EMU, ${slide.elements.length} éléments`)
 
       setState((s) => ({ ...s, step: 'converting' }))
       await new Promise((r) => setTimeout(r, 20))
@@ -117,7 +116,6 @@ export function usePptxParse() {
       // 5. Convertir en Fabric objects (dans les coords du canvas redimensionné)
       await document.fonts.ready
       const fabricObjects = await pptxToFabricObjects(slide, canvasW, canvasH)
-      console.log(`[PPTX] ${fabricObjects.length} Fabric objects créés`)
       setState((s) => ({ ...s, step: 'rendering', objectCount: fabricObjects.length }))
 
       // 6. Vider le canvas et ajouter les objets
@@ -158,7 +156,6 @@ export function usePptxParse() {
             canvas!.requestRenderAll()
             return globalSave?.()
           })
-          .then(() => console.log('[PPTX] Sauvegardé après import'))
           .catch((err) => console.warn('[PPTX] Erreur post-import:', err))
       } else {
         setTimeout(() => {

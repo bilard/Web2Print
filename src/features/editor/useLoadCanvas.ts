@@ -161,8 +161,6 @@ async function loadProjectFonts(projectId: string, canvas?: Canvas): Promise<voi
     const result = await listAll(fontsRef)
     if (result.items.length === 0) return
 
-    console.log(`[Fonts] Loading ${result.items.length} project fonts...`)
-
     const familyBuffers = new Map<string, { buffer: ArrayBuffer; weight: string; style: string }[]>()
 
     await Promise.allSettled(result.items.map(async (itemRef) => {
@@ -181,7 +179,6 @@ async function loadProjectFonts(projectId: string, canvas?: Canvas): Promise<voi
         await fontFace.load()
         document.fonts.add(fontFace)
         registerDynamicFontVariant(family, weight, style, name, styleName)
-        console.log(`[Font] Restored "${family}" weight=${weight} style=${style} label="${styleName ?? 'auto'}"`)
 
 
         if (!familyBuffers.has(family)) familyBuffers.set(family, [])
@@ -203,7 +200,6 @@ async function loadProjectFonts(projectId: string, canvas?: Canvas): Promise<voi
           const fallback = new FontFace(family, lightest.buffer, { weight: '400', style: 'normal' })
           await fallback.load()
           document.fonts.add(fallback)
-          console.log(`[Font] Fallback: "${family}" weight=400 (from ${lightest.weight})`)
         } catch { /* ignore */ }
       }
     }
@@ -236,7 +232,6 @@ async function loadProjectImages(projectId: string): Promise<Map<string, string>
     const result = await listAll(linksRef)
     if (result.items.length === 0) return urlMap
 
-    console.log(`[Images] Loading ${result.items.length} project images from links/...`)
     await Promise.allSettled(result.items.map(async (itemRef) => {
       try {
         const url = await getDownloadURL(itemRef)
@@ -246,7 +241,6 @@ async function loadProjectImages(projectId: string): Promise<Map<string, string>
         console.warn(`[Image] Failed to load ${itemRef.name}:`, err)
       }
     }))
-    console.log(`[Images] ${urlMap.size / 2} project images loaded from Storage`)
   } catch (err) {
     if ((err as any)?.code !== 'storage/object-not-found') {
       console.warn('[Images] Error loading project images:', err)
@@ -361,7 +355,6 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
               if (permUrl) {
                 obj.src = permUrl
-                console.log(`[Load] Image "${imgName}" → Storage URL`)
               } else if (obj.src.startsWith('blob:')) {
                 // Blob URLs expire on page refresh → transparent pixel fallback
                 console.warn(`[Load] Image "${imgName}" has expired blob URL, using placeholder`)
@@ -369,13 +362,6 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
               }
             }
           }
-
-          // Log object types being loaded
-          const typeCounts: Record<string, number> = {}
-          for (const obj of canvasJson.objects ?? []) {
-            typeCounts[obj.type] = (typeCounts[obj.type] || 0) + 1
-          }
-          console.log(`[Load] Loading ${canvasJson.objects?.length ?? 0} objects from canvasData:`, typeCounts)
 
           try {
             await canvas.loadFromJSON(canvasJson)
@@ -395,12 +381,6 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
           // Verify and repair loaded objects
           const loadedObjs = canvas.getObjects()
-          const loadedTypes: Record<string, number> = {}
-          for (const obj of loadedObjs) {
-            const t = obj.type ?? 'unknown'
-            loadedTypes[t] = (loadedTypes[t] || 0) + 1
-          }
-          console.log(`[Load] After loadFromJSON: ${loadedObjs.length} objects on canvas:`, loadedTypes)
 
           // Check images: if any FabricImage has no element or zero dimensions, retry loading
           for (const obj of loadedObjs) {
@@ -431,13 +411,10 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
                     canvas.remove(obj)
                     canvas.add(reloaded)
                     if (obj.data?.isBackground) canvas.sendObjectToBack(reloaded)
-                    console.log(`[Load] Image "${imgName}" re-loaded successfully (${docW}x${docH})`)
                   } catch (reloadErr) {
                     console.error(`[Load] Image "${imgName}" re-load failed:`, reloadErr)
                   }
                 }
-              } else {
-                console.log(`[Load] Image "${imgName}" loaded OK (${el?.naturalWidth || el?.width}x${el?.naturalHeight || el?.height})`)
               }
             }
           }

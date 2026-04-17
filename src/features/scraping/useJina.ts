@@ -510,9 +510,7 @@ export function useJina() {
       const isSingle = target === 'single'
 
       // 1. Lire la page avec Jina Reader
-      console.log('[Jina] reading →', url)
       const page = await jinaRead(url, { timeout: opts.waitFor, noCache: opts.noCache })
-      console.log('[Jina] content length →', page.content.length, 'links →', Object.keys(page.links ?? {}).length, 'images →', Object.keys(page.images ?? {}).length)
 
       // 2. Construire le prompt contextuel
       const extractPrompt = prompt.trim() || (
@@ -537,7 +535,6 @@ export function useJina() {
           }
 
       // 4. Extraction LLM avec tout le contexte (contenu + images + liens docs)
-      console.log('[Jina] extracting with Gemini →', { target, mode, hasFields })
       const extracted = await llmExtract(page.content, schema, extractPrompt, page.images, page.links) as Record<string, unknown>
 
       // 5. Compléter les documents depuis les liens Jina si l'IA les a manqués
@@ -557,8 +554,6 @@ export function useJina() {
         }
       }
 
-      console.log('[Jina] raw extract →', extracted)
-
       // 6. Détecter les données hallucinées
       const allValues = Object.values(extracted).filter(v => typeof v === 'string').map(v => String(v))
       const hallucinationPatterns = /^(produit principal|marque x|nom du produit|product name|example|lorem ipsum|n\/a|non disponible|non spécifié|not available|your product|test product)$/i
@@ -569,7 +564,6 @@ export function useJina() {
       }
 
       const { rows, columns } = normalizeToRows(extracted, fields, target)
-      console.log('[Jina] normalized →', { rows: rows.length, columns, target })
       if (rows.length === 0) throw new Error('Aucune ligne extraite — affine le schéma ou le prompt')
       return { rows, columns }
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); return null }
@@ -580,7 +574,6 @@ export function useJina() {
   const map = useCallback(async (url: string, search?: string): Promise<MapLink[] | null> => {
     setLoading(true); reset()
     try {
-      console.log('[Jina] mapping →', url)
       const page = await jinaRead(url)
 
       if (!page.links || Object.keys(page.links).length === 0) {
@@ -608,7 +601,6 @@ export function useJina() {
         return true
       })
 
-      console.log('[Jina] found links →', links.length)
       return links
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); return null }
     finally { setLoading(false) }

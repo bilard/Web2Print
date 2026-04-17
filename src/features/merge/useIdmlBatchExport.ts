@@ -39,7 +39,6 @@ export function useIdmlBatchExport() {
     const selectedRows = rows.slice(start, end + 1)
 
     if (selectedRows.length === 0) {
-      console.warn('[IDML Export] Aucune ligne à exporter')
       return
     }
 
@@ -91,7 +90,6 @@ export function useIdmlBatchExport() {
       )
 
       if (cancelledRef.current) {
-        console.log('[IDML Export] Annulé par l\'utilisateur')
         return
       }
 
@@ -109,8 +107,6 @@ export function useIdmlBatchExport() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-
-      console.log(`[IDML Export] Terminé: ${selectedRows.length} pages → ${baseName}.idml`)
     } catch (err) {
       console.error('[IDML Export] Erreur:', err)
       throw err

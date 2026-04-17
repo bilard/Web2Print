@@ -19,14 +19,11 @@ export function useExcelFirebase() {
   const saveToFirebase = async (fileName: string, sheets: ExcelSheet[]) => {
     const user = auth.currentUser
     if (!user) {
-      console.warn('[Excel Firebase] No authenticated user, skipping save')
       return
     }
 
     const docId = getDocId(fileName)
     const ref = doc(db, COLLECTION, `${user.uid}_${docId}`)
-
-    console.log(`[Excel Firebase] Saving "${fileName}" (docId: ${docId}) — ${sheets.length} sheet(s), ${sheets.reduce((a, s) => a + s.rows.length, 0)} rows`)
 
     await setDoc(ref, {
       userId: user.uid,
@@ -39,15 +36,12 @@ export function useExcelFirebase() {
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     }, { merge: true })
-
-    console.log(`[Excel Firebase] Saved "${fileName}" successfully`)
   }
 
   /** Load a specific file from Firestore */
   const loadFromFirebase = async (fileName: string): Promise<ExcelSheet[] | null> => {
     const user = auth.currentUser
     if (!user) {
-      console.warn('[Excel Firebase] No authenticated user, skipping load')
       return null
     }
 
@@ -55,18 +49,15 @@ export function useExcelFirebase() {
     try {
       const docId = getDocId(fileName)
       const ref = doc(db, COLLECTION, `${user.uid}_${docId}`)
-      console.log(`[Excel Firebase] Loading "${fileName}" (docId: ${docId})`)
       const snap = await getDoc(ref)
 
       if (!snap.exists()) {
-        console.log(`[Excel Firebase] "${fileName}" not found`)
         return null
       }
 
       const data = snap.data()
       const sheets: ExcelSheet[] = JSON.parse(data.sheets)
       setSheets(sheets)
-      console.log(`[Excel Firebase] Loaded "${fileName}" — ${sheets.length} sheet(s)`)
       return sheets
     } finally {
       setDetecting(false)
@@ -96,7 +87,6 @@ export function useExcelFirebase() {
         return b.updatedAt.getTime() - a.updatedAt.getTime()
       })
 
-    console.log(`[Excel Firebase] Listed ${files.length} saved file(s)`)
     return files
   }
 
@@ -108,7 +98,6 @@ export function useExcelFirebase() {
     const docId = getDocId(fileName)
     const ref = doc(db, COLLECTION, `${user.uid}_${docId}`)
     await deleteDoc(ref)
-    console.log(`[Excel Firebase] Deleted "${fileName}"`)
   }
 
   return { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase }

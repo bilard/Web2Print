@@ -48,8 +48,6 @@ export function useExportIdml() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-
-      console.log(`[IDML Export] Téléchargé: "${folderName}.zip" (IDML + ${fillImages.length} image(s) dans Links/)`)
     } else {
       // Pas de fill images → export IDML simple
       const exportName = `${baseName}_modified.idml`
@@ -61,8 +59,6 @@ export function useExportIdml() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-
-      console.log(`[IDML Export] Téléchargé: "${exportName}"`)
     }
 
   }, [projectTitle, projectId])

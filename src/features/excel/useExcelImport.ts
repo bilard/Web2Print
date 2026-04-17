@@ -47,7 +47,6 @@ export function useExcelImport() {
       const baseName = file.name.replace(/\.[^.]+$/, '')
       setCurrentFileName(baseName)
       setSheets(sheets)
-      console.log(`[Excel Import] Imported "${file.name}" — ${sheets.length} sheet(s), ${sheets.reduce((a, s) => a + s.rows.length, 0)} rows`)
       return sheets
     } finally {
       setDetecting(false)
