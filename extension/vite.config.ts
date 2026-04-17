@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         background: path.resolve(__dirname, 'src/background.ts'),
         content: path.resolve(__dirname, 'src/content.ts'),
+        overlay: path.resolve(__dirname, 'src/overlay-main.ts'),
         popup: path.resolve(__dirname, 'src/popup.html'),
       },
       output: {

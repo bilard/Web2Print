@@ -120,17 +120,27 @@ async function openCaptureTab(url: string, tags: Array<{ selector: string; label
 }
 
 // ─── Injection auto du content script au chargement de l'onglet capture ────
-chrome.tabs.onUpdated.addListener(async (tabId, info) => {
-  if (info.status !== 'complete') return
+const injectedTabs = new Set<number>()
+
+chrome.webNavigation.onDOMContentLoaded.addListener(async ({ tabId, frameId }) => {
+  if (frameId !== 0) return // main frame seulement
   if (!webPort || webPort.activeTabId !== tabId) return
+  if (injectedTabs.has(tabId)) return
+  injectedTabs.add(tabId)
   try {
+    // 1. Content script en ISOLATED world (bridge vers le background).
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ['content.js'],
     })
-    // Le content script répondra avec 'ready' → on relaie à Web2Print
-    // via relayFromTab ci-dessous.
+    // 2. Overlay en MAIN world (accès au DOM réel, évite la CSP inline).
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['overlay.js'],
+      world: 'MAIN',
+    })
   } catch (err) {
+    injectedTabs.delete(tabId)
     webPort.port.postMessage({ type: 'error', message: `Injection impossible : ${String((err as Error)?.message)}` })
   }
 })
@@ -149,8 +159,8 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     }
   } else if (m.type === 'pim-capture') {
     webPort.port.postMessage({
-      type: 'capture',
       ...(msg as Record<string, unknown>),
+      type: 'capture',
     })
   }
   return false
@@ -158,6 +168,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 // ─── Détection fermeture onglet ────────────────────────────────────────────
 chrome.tabs.onRemoved.addListener((tabId) => {
+  injectedTabs.delete(tabId)
   if (webPort && webPort.activeTabId === tabId) {
     webPort.activeTabId = null
     webPort.port.postMessage({ type: 'tab-closed', tabId })

@@ -122,7 +122,8 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     } else {
       ext.syncTags([])
     }
-  }, [ext, ext.tabOpen, template.fields, showAllTags])
+    ext.setMode(captureMode)
+  }, [ext, ext.tabOpen, template.fields, showAllTags, captureMode])
 
   useEffect(() => {
     if (!ext.lastCapture) return
@@ -157,6 +158,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
   const toggleMode = (mode: 'off' | 'single' | 'multiple') => {
     setCaptureMode(mode)
     sendToIframe({ type: 'pim-set-mode', mode })
+    if (ext.tabOpen) ext.setMode(mode)
   }
 
   const toggleFieldPreview = (idx: number) => {
@@ -285,7 +287,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
               if (sourceUrl !== template.lastTestUrl) {
                 onChange({ ...template, lastTestUrl: sourceUrl, updatedAt: Date.now() })
               }
-              ext.setMode('single')
+              setCaptureMode('single')
             }}
             className="px-3 py-2 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/40 text-xs inline-flex items-center gap-2"
             title="Ouvrir l'URL dans un onglet Chrome et activer la capture"
