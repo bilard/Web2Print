@@ -8,6 +8,7 @@ import { enrichmentKey } from './types'
 import { scrapeProductBundle } from './scrapeBundle'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
+import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -21,6 +22,26 @@ import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingT
  * les infos de la ligne source pour qu'il génère un enrichissement basé
  * sur ses connaissances.
  */
+
+// ── LLM debug logging ────────────────────────────────────────────────────────
+
+function logLlmRequest(
+  request: { provider: string; model: string; task: string; temperature: number; messages: Array<{ role: string; content: string }>; tool_name?: string },
+  startedAt: number,
+): void {
+  appendDebugEntry({
+    id: genId(),
+    timestamp: Date.now(),
+    kind: 'llm',
+    provider: request.provider,
+    model: request.model,
+    task: request.task,
+    temperature: request.temperature,
+    messages: request.messages,
+    tool_name: request.tool_name,
+    durationMs: Math.round(performance.now() - startedAt),
+  })
+}
 
 // ── Filtrage des contenus parasites (cookie banners, GDPR, reCAPTCHA) ───────
 
@@ -3903,6 +3924,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               },
               onRequestSent: (request) => {
                 setLlmRequest(sheetName, rowId, request)
+                logLlmRequest(request, performance.now())
               },
             })
 
@@ -4141,6 +4163,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             },
             onRequestSent: (request) => {
               setLlmRequest(sheetName, rowId, request)
+              logLlmRequest(request, performance.now())
             },
           })
 
