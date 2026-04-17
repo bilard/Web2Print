@@ -38,5 +38,9 @@ function BlockRenderer({ block }: { block: HelpBlock }) {
       return <MenuLink target={block.target} label={block.label} icon={block.icon} />
     case 'shortcut':
       return <ShortcutBlock keys={block.keys} label={block.label} />
+    default: {
+      const _exhaustive: never = block
+      return _exhaustive
+    }
   }
 }
