@@ -1,8 +1,15 @@
-// src/features/help/content/types.ts
 import type { ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
-export type HelpCategory = 'Démarrage' | 'Édition' | 'Import' | 'Données' | 'Export'
+export const HELP_CATEGORIES = [
+  'Démarrage',
+  'Édition',
+  'Import',
+  'Données',
+  'Export',
+] as const
+
+export type HelpCategory = (typeof HELP_CATEGORIES)[number]
 
 export type MenuTarget = {
   path: string
@@ -23,11 +30,3 @@ export type HelpSection = {
   intro: string
   blocks: HelpBlock[]
 }
-
-export const HELP_CATEGORIES: HelpCategory[] = [
-  'Démarrage',
-  'Édition',
-  'Import',
-  'Données',
-  'Export',
-]
