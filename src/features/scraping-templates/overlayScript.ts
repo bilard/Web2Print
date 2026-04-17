@@ -14,29 +14,80 @@ export const OVERLAY_SCRIPT = `
   var currentHover = null
   var highlightEl = null
   var tooltipEl = null
-  // Overlays persistants (preview d'un selector stocké). Repositionnés au
-  // scroll et resize pour suivre le contenu.
+  // Tags persistants : tous les fields taggés, chacun avec son label et sa couleur.
+  // Structure : [{ selector, label, color, nodes: Element[] }]
+  window.__pimPersistentTags = window.__pimPersistentTags || []
+  // Selector actif (clic dans la liste des fields) — teinte renforcée.
+  window.__pimActiveSelector = window.__pimActiveSelector || null
   window.__pimPersistentOverlays = window.__pimPersistentOverlays || []
-  window.__pimPersistentNodes = window.__pimPersistentNodes || null
+
+  var PALETTE = [
+    '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6',
+    '#14b8a6', '#f97316', '#06b6d4', '#a855f7', '#22c55e',
+  ]
+
+  function colorFor(index) {
+    return PALETTE[index % PALETTE.length]
+  }
+
   function clearPersistentOverlays() {
     (window.__pimPersistentOverlays || []).forEach(function(o) { o.remove() })
     window.__pimPersistentOverlays = []
   }
+
   function renderPersistentOverlays() {
     clearPersistentOverlays()
-    if (!window.__pimPersistentNodes || window.__pimPersistentNodes.length === 0) return
-    window.__pimPersistentNodes.forEach(function(n) {
-      if (!n || !n.getBoundingClientRect) return
-      var r = n.getBoundingClientRect()
-      if (r.width === 0 && r.height === 0) return
-      var o = document.createElement('div')
-      o.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483645;border:2px solid #10b981;background:rgba(16,185,129,0.15);border-radius:3px;box-shadow:0 0 0 9999px rgba(0,0,0,0.0);'
-      o.style.left = r.left + 'px'; o.style.top = r.top + 'px'
-      o.style.width = r.width + 'px'; o.style.height = r.height + 'px'
-      document.documentElement.appendChild(o)
-      window.__pimPersistentOverlays.push(o)
+    var tags = window.__pimPersistentTags || []
+    if (tags.length === 0) return
+    tags.forEach(function(tag) {
+      var isActive = tag.selector === window.__pimActiveSelector
+      var alpha = isActive ? 0.28 : 0.12
+      var borderAlpha = isActive ? 1.0 : 0.65
+      var nodes = tag.nodes || []
+      nodes.forEach(function(n) {
+        if (!n || !n.getBoundingClientRect) return
+        var r = n.getBoundingClientRect()
+        if (r.width === 0 && r.height === 0) return
+        // Box
+        var box = document.createElement('div')
+        box.style.cssText =
+          'position:fixed;pointer-events:none;z-index:2147483645;' +
+          'border:2px solid ' + tag.color + ';' +
+          'background:' + hexToRgba(tag.color, alpha) + ';' +
+          'border-radius:3px;' +
+          'opacity:' + borderAlpha + ';'
+        box.style.left = r.left + 'px'
+        box.style.top = r.top + 'px'
+        box.style.width = r.width + 'px'
+        box.style.height = r.height + 'px'
+        document.documentElement.appendChild(box)
+        window.__pimPersistentOverlays.push(box)
+        // Label
+        var label = document.createElement('div')
+        label.textContent = tag.label
+        label.style.cssText =
+          'position:fixed;pointer-events:none;z-index:2147483644;' +
+          'background:' + tag.color + ';color:#fff;' +
+          'font:11px -apple-system,Segoe UI,sans-serif;font-weight:600;' +
+          'padding:1px 5px;border-radius:3px 3px 3px 0;' +
+          'white-space:nowrap;'
+        label.style.left = r.left + 'px'
+        label.style.top = Math.max(r.top - 16, 2) + 'px'
+        document.documentElement.appendChild(label)
+        window.__pimPersistentOverlays.push(label)
+      })
     })
   }
+
+  function hexToRgba(hex, alpha) {
+    var h = hex.replace('#', '')
+    var bigint = parseInt(h, 16)
+    var r = (bigint >> 16) & 255
+    var g = (bigint >> 8) & 255
+    var b = bigint & 255
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')'
+  }
+
   window.addEventListener('scroll', renderPersistentOverlays, { passive: true, capture: true })
   window.addEventListener('resize', renderPersistentOverlays, { passive: true })
 
@@ -163,30 +214,36 @@ export const OVERLAY_SCRIPT = `
       mode = msg.mode || 'off'
       if (mode === 'off') removeHighlight()
     }
-    if (msg.type === 'pim-preview-selector') {
-      // Surbriller en PERSISTANT le selector (reste jusqu'au prochain
-      // pim-preview-selector ou pim-clear-preview). Repositionné au scroll
-      // et resize pour suivre le contenu.
-      clearPersistentOverlays()
-      try {
-        var matches = document.querySelectorAll(msg.selector)
-        window.__pimPersistentNodes = Array.from(matches)
-        renderPersistentOverlays()
-        // Scroll sur le 1er match pour qu'il soit visible dans l'iframe.
-        // Repositionne les overlays ensuite (scroll-induced shifts).
-        var first = matches[0]
-        if (first && first.scrollIntoView) {
-          first.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    if (msg.type === 'pim-set-persistent-tags') {
+      // msg.tags : Array<{ selector: string, label: string }>
+      var tags = Array.isArray(msg.tags) ? msg.tags : []
+      window.__pimPersistentTags = tags.map(function(t, i) {
+        var nodes = []
+        try {
+          nodes = Array.from(document.querySelectorAll(t.selector))
+        } catch (err) {
+          // Selector invalide — on ignore, pas de crash
+        }
+        return { selector: t.selector, label: t.label, color: colorFor(i), nodes: nodes }
+      })
+      renderPersistentOverlays()
+    }
+    if (msg.type === 'pim-set-active-selector') {
+      window.__pimActiveSelector = msg.selector || null
+      // Re-calcul des nodes et re-scroll sur le field actif
+      if (window.__pimActiveSelector) {
+        var active = (window.__pimPersistentTags || []).find(function(t) { return t.selector === window.__pimActiveSelector })
+        if (active && active.nodes[0] && active.nodes[0].scrollIntoView) {
+          active.nodes[0].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
           setTimeout(renderPersistentOverlays, 350)
         }
-        window.parent.postMessage({ type: 'pim-preview-result', count: matches.length }, '*')
-      } catch (err) {
-        window.parent.postMessage({ type: 'pim-preview-result', count: 0, error: err.message }, '*')
       }
+      renderPersistentOverlays()
     }
-    if (msg.type === 'pim-clear-preview') {
+    if (msg.type === 'pim-clear-persistent-tags') {
+      window.__pimPersistentTags = []
+      window.__pimActiveSelector = null
       clearPersistentOverlays()
-      window.__pimPersistentNodes = null
     }
   }, false)
 
