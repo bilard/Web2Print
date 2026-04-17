@@ -18,6 +18,7 @@ import type { ImportSelection } from '@/components/shared/ImportPanel'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { LibraryTaxonomyFilter } from '@/components/shared/LibraryTaxonomyFilter'
 import { DamPage } from '../features/dam/components/DamPage'
+import { useHighlight } from '@/features/help/hooks/useHighlight'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -86,6 +87,8 @@ export default function DashboardPage() {
   const duplicateProject = useDuplicateProject()
   const setPendingImport = useProjectStore((s) => s.setPendingImport)
   const { importFile: importExcel } = useExcelImport()
+
+  const newProjectHighlight = useHighlight<HTMLButtonElement>('dashboard.new-project')
 
   const { data: taxonomies } = useTaxonomies()
   const projectTaxonomyLabel = useMemo<Record<string, string>>(() => {
@@ -230,6 +233,7 @@ export default function DashboardPage() {
             return (
               <button
                 id={`menu-${id}`}
+                ref={id === 'blank' ? newProjectHighlight.ref : undefined}
                 key={id}
                 role="menuitem"
                 tabIndex={isActive ? 0 : -1}
@@ -242,7 +246,7 @@ export default function DashboardPage() {
                   isActive
                     ? `${activeBg} ${activeText} font-medium`
                     : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04]'
-                }`}
+                } ${id === 'blank' ? newProjectHighlight.className : ''}`}
               >
                 <Icon className={`w-4 h-4 shrink-0 ${isActive ? accent : 'opacity-50'}`} aria-hidden="true" />
                 {sidebarOpen && (

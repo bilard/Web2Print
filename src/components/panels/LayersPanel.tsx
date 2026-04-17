@@ -18,6 +18,7 @@ import { useTextSegments } from '@/features/editor/useTextSegments'
 import { TextSegmentRow } from './TextSegmentRow'
 import type { CanvasObjectProps } from '@/stores/editor.store'
 import type { TextSegment } from '@/features/editor/useTextSegments'
+import { useHighlight } from '@/features/help/hooks/useHighlight'
 
 const typeIcons: Partial<Record<CanvasObjectProps['type'], React.ComponentType<{ className?: string }>>> = {
   rect: Square, ellipse: Circle, text: Type, image: ImageIcon,
@@ -200,6 +201,7 @@ export function LayersPanel() {
   const { reorderLayers } = useLayers()
   const textSegments = useTextSegments()
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const layersHighlight = useHighlight<HTMLDivElement>('layers-panel')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const displayOrder = [...canvasObjects].reverse()
@@ -225,7 +227,10 @@ export function LayersPanel() {
 
   if (canvasObjects.length === 0) {
     return (
-      <div className="p-4 flex flex-col items-center justify-center gap-2 text-white/20 py-12">
+      <div
+        ref={layersHighlight.ref}
+        className={`p-4 flex flex-col items-center justify-center gap-2 text-white/20 py-12 ${layersHighlight.className}`}
+      >
         <p className="text-sm">Aucun calque</p>
         <p className="text-xs text-center">Ajoutez des éléments depuis le panel Éléments</p>
       </div>
@@ -233,7 +238,7 @@ export function LayersPanel() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div ref={layersHighlight.ref} className={`flex flex-col ${layersHighlight.className}`}>
       <p className="text-xs font-medium text-white/40 uppercase tracking-wider px-3 pt-3 pb-2">
         {canvasObjects.length} calque{canvasObjects.length > 1 ? 's' : ''}
       </p>
