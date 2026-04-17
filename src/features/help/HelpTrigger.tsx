@@ -2,13 +2,14 @@ import { useEffect } from 'react'
 import { HelpCircle } from 'lucide-react'
 import { useHelpStore } from './help.store'
 import { HelpDrawer } from './HelpDrawer'
+import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 
 export function HelpTrigger() {
   const toggleDrawer = useHelpStore((s) => s.toggleDrawer)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === '?' && !isEditable(e.target)) {
+      if (e.key === '?' && !isEditable(e.target) && !isFabricTextEditing()) {
         e.preventDefault()
         toggleDrawer()
       }
@@ -44,4 +45,9 @@ function isEditable(target: EventTarget | null): boolean {
   const tag = target.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
   return target.isContentEditable
+}
+
+function isFabricTextEditing(): boolean {
+  const active = globalFabricCanvas?.getActiveObject() as { isEditing?: boolean } | undefined
+  return active?.isEditing === true
 }
