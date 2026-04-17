@@ -19,8 +19,26 @@ interface WebPort {
 
 let webPort: WebPort | null = null
 
+/**
+ * Défense en profondeur : `externally_connectable.matches` filtre déjà côté
+ * Chrome, mais on re-valide l'origine des senders ici pour attraper une
+ * éventuelle coquille dans le manifest.
+ */
+const ALLOWED_ORIGINS = new Set([
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://web2print-6fe5a.web.app',
+  'https://web2print-6fe5a.firebaseapp.com',
+])
+
+function isTrustedSender(sender: chrome.runtime.MessageSender): boolean {
+  const origin = sender.origin ?? (sender.url ? new URL(sender.url).origin : '')
+  return ALLOWED_ORIGINS.has(origin)
+}
+
 // ─── Messaging one-shot (ping) ─────────────────────────────────────────────
-chrome.runtime.onMessageExternal.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
+  if (!isTrustedSender(sender)) return false
   if (msg?.type === 'ping') {
     sendResponse({ type: 'pong', version: chrome.runtime.getManifest().version })
     return true
@@ -31,6 +49,10 @@ chrome.runtime.onMessageExternal.addListener((msg, _sender, sendResponse) => {
 // ─── Connexion port persistant ─────────────────────────────────────────────
 chrome.runtime.onConnectExternal.addListener((port) => {
   if (port.name !== 'w2p-capture') return
+  if (!port.sender || !isTrustedSender(port.sender)) {
+    port.disconnect()
+    return
+  }
   console.log('[w2p-bg] port connected')
   webPort = { port, activeTabId: null, tags: [] }
   chrome.storage.local.set({ connected: true })
@@ -130,8 +152,6 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
       type: 'capture',
       ...(msg as Record<string, unknown>),
     })
-  } else if (m.type === 'pim-preview-result') {
-    // Ignoré — le protocole multi-tags n'en a plus besoin, mais on évite le warning.
   }
   return false
 })
