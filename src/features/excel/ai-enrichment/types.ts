@@ -28,6 +28,10 @@ export interface ProductVariant {
 export interface EnrichedProduct {
   /** Description marketing reformulée par l'IA */
   description: string
+  /** Fil d'Ariane / catégorisation (ex: ["Outillage", "Perceuses", "Visseuses à chocs"]) */
+  breadcrumb?: string[]
+  /** Prix indicatif extrait — type ouvert car parfois string (ex: "À partir de 99€") */
+  price?: string | number | null
   /** Liste d'avantages / points forts (bullet points), avec groupe optionnel */
   advantages: EnrichedAdvantage[]
   /** Spécifications techniques consolidées */

@@ -2507,7 +2507,7 @@ function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string
     if (inSpecSection && trimmed.length > 2 && trimmed.length < 80
         && !trimmed.startsWith('-') && !trimmed.startsWith('*') && !trimmed.startsWith('[')
         && !trimmed.startsWith('#') && !trimmed.startsWith('|') && !trimmed.startsWith('http')
-        && !trimmed.startsWith('!') && !/^[-:=]+$/.test(trimmed)) {
+        && !trimmed.startsWith('!') && !/^[=:\-]+$/.test(trimmed)) {
       // Chercher la prochaine ligne non-vide (skip max 2 lignes vides — format Bosch/Nicoll)
       let nextIdx = i + 1
       while (nextIdx < lines.length && nextIdx <= i + 3 && !lines[nextIdx].trim()) nextIdx++
@@ -3361,7 +3361,11 @@ export function useProductEnrichment() {
             .map((q) => q.trim())
             .filter((q, i, arr) => q && arr.indexOf(q) === i)
 
-          let bestPick: { url: string; extras: string[]; query: string; score: number } | null = null
+          // Wrapper .current : TS ne track pas les ré-assignements d'une `let`
+          // faits depuis l'intérieur d'une closure, ce qui transforme le type en
+          // `never` après narrow. L'objet-box contourne ça (property-access).
+          type Pick = { url: string; extras: string[]; query: string; score: number }
+          const pickBox: { current: Pick | null } = { current: null }
 
           const processSearchResults = (results: SearchResult[], q: string): boolean => {
             const clean = results.filter((r) => {
@@ -3376,15 +3380,15 @@ export function useProductEnrichment() {
             console.log('[enrichment] scored results:', scored.map((s) => ({ url: s.r.url, score: s.score })))
             const top = scored[0]
             if (top.score <= 0) return false
-            if (!bestPick || top.score > bestPick.score) {
-              bestPick = {
+            if (!pickBox.current || top.score > pickBox.current.score) {
+              pickBox.current = {
                 url: top.r.url,
                 extras: scored.slice(1, 5).filter((s) => s.score > 0).map((s) => s.r.url),
                 query: q,
                 score: top.score,
               }
             }
-            return bestPick.score >= 20
+            return pickBox.current.score >= 20
           }
 
           // ── Recherche via Jina (DuckDuckGo) ──
@@ -3400,17 +3404,18 @@ export function useProductEnrichment() {
             }
           }
 
-          if (bestPick) {
-            productUrl = bestPick.url
-            additionalSources = bestPick.extras
-            console.log('[enrichment] ✓ final pick →', { url: productUrl, score: bestPick.score, query: bestPick.query })
-            log(`✓ URL trouvée : ${productUrl} (score ${bestPick.score})`)
+          const finalPick = pickBox.current
+          if (finalPick) {
+            productUrl = finalPick.url
+            additionalSources = finalPick.extras
+            console.log('[enrichment] ✓ final pick →', { url: productUrl, score: finalPick.score, query: finalPick.query })
+            log(`✓ URL trouvée : ${productUrl} (score ${finalPick.score})`)
           }
 
-          // ── Essai final fabricant : si bestPick n'est pas un site fabricant ──
+          // ── Essai final fabricant : si finalPick n'est pas un site fabricant ──
           // mais la marque est connue, essayer une dernière recherche ultra-ciblée
-          if (bestPick && brandSlug && Object.keys(MANUFACTURER_DOMAINS).includes(brandSlug)) {
-            const isAlreadyManufacturer = detectManufacturerSite(bestPick.url)
+          if (finalPick && brandSlug && Object.keys(MANUFACTURER_DOMAINS).includes(brandSlug)) {
+            const isAlreadyManufacturer = detectManufacturerSite(finalPick.url)
             if (!isAlreadyManufacturer) {
               console.log('[enrichment] ⚡ best pick is NOT manufacturer site — trying final manufacturer probe for', brandSlug)
               log(`URL n'est pas le site fabricant — recherche sur site officiel ${brandSlug}…`)
@@ -3430,12 +3435,12 @@ export function useProductEnrichment() {
                         .map((r) => ({ r, score: scoreResult(r, sourceTokens, brand, reference ?? sku) }))
                         .sort((a, b) => b.score - a.score)
                       if (scored[0].score > 0) {
-                        // Remplacer bestPick par le résultat fabricant — mettre l'ancien bestPick dans extras
+                        // Remplacer le pick par le résultat fabricant — mettre l'ancien dans extras
                         console.log('[enrichment] ✓ manufacturer probe found:', scored[0].r.url, 'score:', scored[0].score)
                         log(`✓ Site fabricant trouvé : ${scored[0].r.url}`)
-                        additionalSources = [bestPick.url, ...bestPick.extras]
+                        additionalSources = [finalPick.url, ...finalPick.extras]
                         productUrl = scored[0].r.url
-                        bestPick = { url: scored[0].r.url, extras: additionalSources, query: probeQuery, score: scored[0].score }
+                        pickBox.current = { url: scored[0].r.url, extras: additionalSources, query: probeQuery, score: scored[0].score }
                         break
                       }
                     }
