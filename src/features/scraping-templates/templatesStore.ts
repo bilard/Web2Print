@@ -56,6 +56,14 @@ export async function saveTemplateWithVendorSync(template: ScrapingTemplate): Pr
     throw new Error(`Template invalide : ${parsed.error.issues.map((i) => i.message).join(', ')}`)
   }
 
+  // Sécurité : sans domaine identifiable, refuser la propagation. Un
+  // vendorDomain vide matcherait TOUS les templates orphelins (créés sans
+  // domaine) et écraserait leur vendorPrompt — bug grave de contamination.
+  if (!template.vendorDomain?.trim()) {
+    await saveTemplate(template)
+    return { syncedCount: 0 }
+  }
+
   const batch = writeBatch(db)
   let syncedCount = 0
 

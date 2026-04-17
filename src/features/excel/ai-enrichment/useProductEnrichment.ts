@@ -27,7 +27,6 @@ import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 
 function logLlmRequest(
   request: { provider: string; model: string; task: string; temperature: number; messages: Array<{ role: string; content: string }>; tool_name?: string },
-  startedAt: number,
 ): void {
   appendDebugEntry({
     id: genId(),
@@ -39,7 +38,6 @@ function logLlmRequest(
     temperature: request.temperature,
     messages: request.messages,
     tool_name: request.tool_name,
-    durationMs: Math.round(performance.now() - startedAt),
   })
 }
 
@@ -3924,7 +3922,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               },
               onRequestSent: (request) => {
                 setLlmRequest(sheetName, rowId, request)
-                logLlmRequest(request, performance.now())
+                logLlmRequest(request)
               },
             })
 
@@ -4163,7 +4161,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             },
             onRequestSent: (request) => {
               setLlmRequest(sheetName, rowId, request)
-              logLlmRequest(request, performance.now())
+              logLlmRequest(request)
             },
           })
 

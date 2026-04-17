@@ -59,7 +59,7 @@ export function DebugTab() {
                   {e.kind === 'jina' ? e.url : `${e.provider}/${e.model} — ${e.task}`}
                 </span>
                 <span className="text-[10px] text-white/40">{new Date(e.timestamp).toLocaleTimeString()}</span>
-                {e.error && <span className="text-[10px] text-red-400">error</span>}
+                {e.kind === 'jina' && e.error && <span className="text-[10px] text-red-400">error</span>}
               </button>
               {isOpen && (
                 <div className="px-3 pb-3 space-y-2 text-[11px]">
@@ -89,7 +89,6 @@ export function DebugTab() {
                           </div>
                         ))}
                       </Section>
-                      {e.error && <Section title="Erreur" error>{e.error}</Section>}
                     </>
                   )}
                 </div>

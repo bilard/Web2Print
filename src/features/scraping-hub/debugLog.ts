@@ -28,9 +28,6 @@ export type DebugEntry =
       temperature: number
       messages: Array<{ role: string; content: string }>
       tool_name?: string
-      response?: string // JSON stringifié, tronqué à 50 Ko
-      durationMs: number
-      error?: string
     }
 
 function truncate(s: string, max = 50_000): string {
@@ -51,7 +48,7 @@ export function readDebugLog(): DebugEntry[] {
 
 export function appendDebugEntry(entry: DebugEntry): void {
   const current = readDebugLog()
-  if (entry.response) entry.response = truncate(entry.response)
+  if (entry.kind === 'jina' && entry.response) entry.response = truncate(entry.response)
   if (entry.kind === 'llm') {
     entry.messages = entry.messages.map((m) => ({ role: m.role, content: truncate(m.content) }))
   }
