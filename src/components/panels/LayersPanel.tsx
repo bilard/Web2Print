@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable,
-  type DragEndEvent,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable, DragOverlay,
+  type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
@@ -13,6 +13,7 @@ import { useTextSegments } from '@/features/editor/useTextSegments'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { LayerTree } from './layers/LayerTree'
 import { LayerSearchBar } from './layers/LayerSearchBar'
+import { LayerDragPreview } from './layers/LayerDragPreview'
 import { useLayerFilter } from '@/features/editor/useLayerFilter'
 
 function collectAllIds(objects: CanvasObjectProps[]): string[] {
@@ -24,6 +25,17 @@ function collectAllIds(objects: CanvasObjectProps[]): string[] {
   return ids
 }
 
+function findObjById(objects: CanvasObjectProps[], id: string): CanvasObjectProps | null {
+  for (const o of objects) {
+    if (o.id === id) return o
+    if (o.children) {
+      const found = findObjById(o.children, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
 export function LayersPanel() {
   const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore()
   const columns = useMergeStore((s) => s.columns)
@@ -31,6 +43,7 @@ export function LayersPanel() {
   const textSegments = useTextSegments()
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const layersHighlight = useHighlight<HTMLDivElement>('layers-panel')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
@@ -39,7 +52,12 @@ export function LayersPanel() {
   const effectiveExpandedIds = new Set([...expandedIds, ...forceExpandedIds])
   const rootDroppable = useDroppable({ id: 'drop-root' })
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id))
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -107,7 +125,7 @@ export function LayersPanel() {
           searchQuery={searchQuery}
         />
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragCancel={() => setActiveDragId(null)} onDragEnd={handleDragEnd}>
           <div ref={rootDroppable.setNodeRef} className={`pb-12 ${rootDroppable.isOver ? 'bg-white/5' : ''}`}>
             <SortableContext items={collectAllIds(displayOrder)} strategy={verticalListSortingStrategy}>
               <LayerTree
@@ -121,6 +139,12 @@ export function LayersPanel() {
               />
             </SortableContext>
           </div>
+          <DragOverlay>
+            {activeDragId ? (() => {
+              const obj = findObjById(canvasObjects, activeDragId)
+              return obj ? <LayerDragPreview obj={obj} columns={columns} /> : null
+            })() : null}
+          </DragOverlay>
         </DndContext>
       )}
     </div>
