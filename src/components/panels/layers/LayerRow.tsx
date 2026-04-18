@@ -6,6 +6,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useLayers } from '@/features/editor/useLayers'
+import { highlightMatch } from '@/features/editor/highlightMatch'
 import type { CanvasObjectProps } from '@/stores/editor.store'
 import type { TextSegment } from '@/features/editor/useTextSegments'
 import { LayerSwatch } from './LayerSwatch'
@@ -21,11 +22,12 @@ interface Props {
   onToggleExpand: () => void
   depth?: number
   isDraggable?: boolean
+  searchQuery?: string
 }
 
 export function LayerRow({
   obj, displayName, isSelected, segments, expanded, onToggleExpand,
-  depth = 0, isDraggable = true,
+  depth = 0, isDraggable = true, searchQuery = '',
 }: Props) {
   const { selectLayer, renameLayer } = useLayers()
   const [isEditing, setIsEditing] = useState(false)
@@ -102,7 +104,7 @@ export function LayerRow({
             !obj.name ? 'italic text-white/50' : ''
           }`}
         >
-          {displayName}
+          {searchQuery ? highlightMatch(displayName, searchQuery) : displayName}
         </span>
       )}
 

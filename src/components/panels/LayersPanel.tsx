@@ -104,6 +104,7 @@ export function LayersPanel() {
           expandedIds={effectiveExpandedIds}
           onToggleExpand={toggleExpand}
           isDraggable={false}
+          searchQuery={searchQuery}
         />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -116,6 +117,7 @@ export function LayersPanel() {
                 textSegments={textSegments}
                 expandedIds={effectiveExpandedIds}
                 onToggleExpand={toggleExpand}
+                searchQuery={searchQuery}
               />
             </SortableContext>
           </div>

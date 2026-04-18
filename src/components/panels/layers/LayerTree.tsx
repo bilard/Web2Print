@@ -13,11 +13,12 @@ interface Props {
   onToggleExpand: (id: string) => void
   depth?: number
   isDraggable?: boolean
+  searchQuery?: string
 }
 
 export function LayerTree({
   objects, selectedObjectId, columns, textSegments,
-  expandedIds, onToggleExpand, depth = 0, isDraggable = true,
+  expandedIds, onToggleExpand, depth = 0, isDraggable = true, searchQuery = '',
 }: Props) {
   return (
     <>
@@ -38,6 +39,7 @@ export function LayerTree({
               onToggleExpand={() => onToggleExpand(obj.id)}
               depth={depth}
               isDraggable={isDraggable}
+              searchQuery={searchQuery}
             />
 
             {isGroup && expanded && obj.children && obj.children.length > 0 && (
@@ -51,6 +53,7 @@ export function LayerTree({
                   onToggleExpand={onToggleExpand}
                   depth={depth + 1}
                   isDraggable
+                  searchQuery={searchQuery}
                 />
               </div>
             )}
