@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable,
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
-import { useEditorStore } from '@/stores/editor.store'
+import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { useLayers } from '@/features/editor/useLayers'
 import { useTextSegments } from '@/features/editor/useTextSegments'
@@ -15,10 +15,19 @@ import { LayerTree } from './layers/LayerTree'
 import { LayerSearchBar } from './layers/LayerSearchBar'
 import { useLayerFilter } from '@/features/editor/useLayerFilter'
 
+function collectAllIds(objects: CanvasObjectProps[]): string[] {
+  const ids: string[] = []
+  for (const o of objects) {
+    ids.push(o.id)
+    if (o.children) ids.push(...collectAllIds(o.children))
+  }
+  return ids
+}
+
 export function LayersPanel() {
   const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore()
   const columns = useMergeStore((s) => s.columns)
-  const { reorderLayers } = useLayers()
+  const { reorderLayers, moveLayerToGroup } = useLayers()
   const textSegments = useTextSegments()
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
@@ -28,12 +37,32 @@ export function LayersPanel() {
   const { filtered, forceExpandedIds } = useLayerFilter(canvasObjects, searchQuery, columns)
   const displayOrder = [...filtered].reverse()
   const effectiveExpandedIds = new Set([...expandedIds, ...forceExpandedIds])
+  const rootDroppable = useDroppable({ id: 'drop-root' })
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    const oldIndex = displayOrder.findIndex((o) => o.id === active.id)
-    const newIndex = displayOrder.findIndex((o) => o.id === over.id)
+
+    const overId = String(over.id)
+    const activeId = String(active.id)
+
+    // Drop sur la racine (fond du panneau) → sortir du groupe
+    if (overId === 'drop-root') {
+      moveLayerToGroup(activeId, null)
+      return
+    }
+
+    // Drop sur un header de groupe
+    if (overId.startsWith('drop-')) {
+      const groupId = overId.slice(5)
+      if (groupId !== activeId) moveLayerToGroup(activeId, groupId)
+      return
+    }
+
+    // Réordonnancement top-level (si les deux sont top-level)
+    const oldIndex = displayOrder.findIndex((o) => o.id === activeId)
+    const newIndex = displayOrder.findIndex((o) => o.id === overId)
+    if (oldIndex < 0 || newIndex < 0) return  // enfant de groupe ou cible invalide
     const newDisplay = arrayMove(displayOrder, oldIndex, newIndex)
     setCanvasObjects([...newDisplay].reverse())
     reorderLayers(newDisplay.map((o) => o.id))
@@ -78,16 +107,18 @@ export function LayersPanel() {
         />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={displayOrder.map((o) => o.id)} strategy={verticalListSortingStrategy}>
-            <LayerTree
-              objects={displayOrder}
-              selectedObjectId={selectedObjectId}
-              columns={columns}
-              textSegments={textSegments}
-              expandedIds={effectiveExpandedIds}
-              onToggleExpand={toggleExpand}
-            />
-          </SortableContext>
+          <div ref={rootDroppable.setNodeRef} className={`pb-12 ${rootDroppable.isOver ? 'bg-white/5' : ''}`}>
+            <SortableContext items={collectAllIds(displayOrder)} strategy={verticalListSortingStrategy}>
+              <LayerTree
+                objects={displayOrder}
+                selectedObjectId={selectedObjectId}
+                columns={columns}
+                textSegments={textSegments}
+                expandedIds={effectiveExpandedIds}
+                onToggleExpand={toggleExpand}
+              />
+            </SortableContext>
+          </div>
         </DndContext>
       )}
     </div>

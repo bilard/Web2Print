@@ -50,7 +50,7 @@ export function LayerTree({
                   expandedIds={expandedIds}
                   onToggleExpand={onToggleExpand}
                   depth={depth + 1}
-                  isDraggable={false}
+                  isDraggable
                 />
               </div>
             )}

@@ -3,6 +3,7 @@ import {
   GripVertical, ChevronRight, ChevronDown,
 } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
+import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useLayers } from '@/features/editor/useLayers'
 import type { CanvasObjectProps } from '@/stores/editor.store'
@@ -29,8 +30,13 @@ export function LayerRow({
   const { selectLayer, renameLayer } = useLayers()
   const [isEditing, setIsEditing] = useState(false)
   const sortable = useSortable({ id: obj.id, disabled: !isDraggable || obj.locked })
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable
   const isGroup = obj.type === 'group'
+  const droppable = useDroppable({
+    id: `drop-${obj.id}`,
+    data: { groupId: obj.id },
+    disabled: !isGroup,
+  })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable
   const hasMixedStyles = !isGroup && segments !== null && (segments.length > 1 || segments.some((s) => s.isPlaceholder))
   const isExpandable = isGroup || hasMixedStyles
   const paddingLeft = 8 + depth * 14
@@ -41,16 +47,21 @@ export function LayerRow({
     opacity: isDragging ? 0.5 : 1,
   } : {}
 
+  const setCombinedRef = (el: HTMLElement | null) => {
+    if (isDraggable) setNodeRef(el)
+    if (isGroup) droppable.setNodeRef(el)
+  }
+
   return (
     <div
-      ref={isDraggable ? setNodeRef : undefined}
+      ref={setCombinedRef}
       style={{ ...style, paddingLeft, paddingRight: 8 }}
       onClick={() => selectLayer(obj.id)}
       className={`flex items-center gap-1.5 py-1.5 cursor-pointer transition-colors group ${
         isSelected
           ? 'bg-indigo-500/20 border-l-2 border-indigo-500'
           : 'hover:bg-white/5 border-l-2 border-transparent'
-      } ${obj.locked ? 'opacity-60' : ''}`}
+      } ${obj.locked ? 'opacity-60' : ''} ${droppable.isOver ? 'ring-2 ring-indigo-500/60' : ''}`}
     >
       {isDraggable ? (
         <button

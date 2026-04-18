@@ -165,5 +165,45 @@ export function useLayers() {
     canvas.requestRenderAll()
   }, [selectLayer, selectedObjectIds, setSelectedObjectIds, setSelectedObjectId])
 
-  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer, renameLayer, toggleSelectionTarget }
+  const moveLayerToGroup = useCallback((childId: string, groupId: string | null) => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    const allObjs = canvas.getObjects()
+    const child = findById(allObjs, childId)
+    if (!child) return
+    const currentParent = findParentGroup(allObjs, childId)
+
+    // No-op : child déjà dans le groupe cible (ou déjà top-level)
+    const currentParentId = currentParent ? (currentParent as any).data?.id ?? null : null
+    if (currentParentId === groupId) return
+
+    // Retrait du parent actuel
+    if (currentParent) {
+      currentParent.remove(child)
+      // Cleanup : si le groupe est maintenant vide, le supprimer
+      if (currentParent.getObjects().length === 0) {
+        canvas.remove(currentParent)
+      }
+    } else {
+      canvas.remove(child)
+    }
+
+    // Ajout dans la cible
+    if (groupId === null) {
+      canvas.add(child)
+    } else {
+      const targetGroup = findById(allObjs, groupId)
+      if (targetGroup && (targetGroup as any).type === 'group') {
+        ;(targetGroup as any).add(child)
+      } else {
+        // Groupe cible introuvable : re-remettre en top-level par sécurité
+        canvas.add(child)
+      }
+    }
+
+    canvas.requestRenderAll()
+    syncToStore(canvas)
+  }, [])
+
+  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer, renameLayer, toggleSelectionTarget, moveLayerToGroup }
 }
