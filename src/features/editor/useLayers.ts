@@ -185,13 +185,9 @@ export function useLayers() {
       if (descendantTargets) return
     }
 
-    // Retrait du parent actuel
+    // Retrait du parent actuel — les groupes vides sont conservés (comportement Illustrator)
     if (currentParent) {
       currentParent.remove(child)
-      // Cleanup : si le groupe est maintenant vide, le supprimer
-      if (currentParent.getObjects().length === 0) {
-        canvas.remove(currentParent)
-      }
     } else {
       canvas.remove(child)
     }
