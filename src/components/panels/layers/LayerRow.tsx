@@ -99,7 +99,7 @@ export function LayerRow({
         <span className="text-[9px] text-indigo-400/60 shrink-0 font-medium">Aa</span>
       )}
 
-      <LayerRowControls obj={obj} />
+      <LayerRowControls obj={obj} isSelected={isSelected} />
     </div>
   )
 }

@@ -30,7 +30,7 @@ function findParentGroup(objects: FabricObject[], id: string): Group | undefined
 }
 
 export function useLayers() {
-  const { setSelectedObjectId, setCanvasObjects } = useEditorStore()
+  const { setSelectedObjectId, setCanvasObjects, selectedObjectIds, setSelectedObjectIds } = useEditorStore()
 
   const selectLayer = useCallback((id: string) => {
     const canvas = globalFabricCanvas
@@ -144,5 +144,26 @@ export function useLayers() {
     syncToStore(canvas)
   }, [])
 
-  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer, renameLayer }
+  const toggleSelectionTarget = useCallback((id: string, additive: boolean) => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    if (!additive) {
+      selectLayer(id)
+      setSelectedObjectIds([id])
+      return
+    }
+    const current = selectedObjectIds ?? []
+    const next = current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+    setSelectedObjectIds(next)
+    if (next.length === 0) {
+      canvas.discardActiveObject()
+      setSelectedObjectId(null)
+    } else {
+      const lastId = next[next.length - 1]
+      selectLayer(lastId)
+    }
+    canvas.requestRenderAll()
+  }, [selectLayer, selectedObjectIds, setSelectedObjectIds, setSelectedObjectId])
+
+  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer, renameLayer, toggleSelectionTarget }
 }

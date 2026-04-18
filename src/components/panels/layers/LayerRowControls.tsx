@@ -1,13 +1,14 @@
-import { Eye, EyeOff, Trash2, Lock, Unlock } from 'lucide-react'
+import { Eye, EyeOff, Trash2, Lock, Unlock, Circle, CircleDot } from 'lucide-react'
 import { useLayers } from '@/features/editor/useLayers'
 import type { CanvasObjectProps } from '@/stores/editor.store'
 
 interface Props {
   obj: CanvasObjectProps
+  isSelected: boolean
 }
 
-export function LayerRowControls({ obj }: Props) {
-  const { deleteLayer, toggleVisibility, lockLayer } = useLayers()
+export function LayerRowControls({ obj, isSelected }: Props) {
+  const { deleteLayer, toggleVisibility, lockLayer, toggleSelectionTarget } = useLayers()
 
   return (
     <>
@@ -29,6 +30,14 @@ export function LayerRowControls({ obj }: Props) {
         title={obj.locked ? 'Déverrouiller' : 'Verrouiller'}
       >
         {obj.locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+      </button>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); toggleSelectionTarget(obj.id, e.shiftKey || e.metaKey || e.ctrlKey) }}
+        className={`p-0.5 transition-colors shrink-0 ${isSelected ? 'text-indigo-400' : 'text-white/30 hover:text-white/60'}`}
+        title="Cibler / multi-sélectionner (Shift ou Cmd)"
+      >
+        {isSelected ? <CircleDot className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
       </button>
 
       <button
