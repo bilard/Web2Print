@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Rect, Group } from 'fabric'
+import type { FabricObject } from 'fabric'
 import { findById, findParentGroup, wouldCreateCycle } from './layerTreeOps'
 
 function makeRect(id: string): Rect {
@@ -8,7 +9,7 @@ function makeRect(id: string): Rect {
   return r
 }
 
-function makeGroup(id: string, children: Rect[] = []): Group {
+function makeGroup(id: string, children: FabricObject[] = []): Group {
   const g = new Group(children)
   ;(g as unknown as { data: Record<string, unknown> }).data = { id, type: 'group' }
   return g
