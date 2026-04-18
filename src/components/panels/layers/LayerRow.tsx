@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   GripVertical, ChevronRight, ChevronDown,
 } from 'lucide-react'
@@ -8,6 +9,7 @@ import type { CanvasObjectProps } from '@/stores/editor.store'
 import type { TextSegment } from '@/features/editor/useTextSegments'
 import { LayerSwatch } from './LayerSwatch'
 import { LayerRowControls } from './LayerRowControls'
+import { LayerNameInput } from './LayerNameInput'
 
 interface Props {
   obj: CanvasObjectProps
@@ -24,7 +26,8 @@ export function LayerRow({
   obj, displayName, isSelected, segments, expanded, onToggleExpand,
   depth = 0, isDraggable = true,
 }: Props) {
-  const { selectLayer } = useLayers()
+  const { selectLayer, renameLayer } = useLayers()
+  const [isEditing, setIsEditing] = useState(false)
   const sortable = useSortable({ id: obj.id, disabled: !isDraggable || obj.locked })
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable
   const isGroup = obj.type === 'group'
@@ -75,13 +78,22 @@ export function LayerRow({
       )}
 
       <LayerSwatch obj={obj} />
-      <span
-        className={`text-xs truncate flex-1 ${isGroup ? 'text-white/90 font-medium' : 'text-white/70'} ${
-          !obj.name ? 'italic text-white/50' : ''
-        }`}
-      >
-        {displayName}
-      </span>
+      {isEditing ? (
+        <LayerNameInput
+          initial={obj.name}
+          onCommit={(v) => { renameLayer(obj.id, v); setIsEditing(false) }}
+          onCancel={() => setIsEditing(false)}
+        />
+      ) : (
+        <span
+          onDoubleClick={(e) => { e.stopPropagation(); setIsEditing(true) }}
+          className={`text-xs truncate flex-1 ${isGroup ? 'text-white/90 font-medium' : 'text-white/70'} ${
+            !obj.name ? 'italic text-white/50' : ''
+          }`}
+        >
+          {displayName}
+        </span>
+      )}
 
       {hasMixedStyles && (
         <span className="text-[9px] text-indigo-400/60 shrink-0 font-medium">Aa</span>

@@ -135,5 +135,14 @@ export function useLayers() {
     syncToStore(canvas)
   }, [])
 
-  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer }
+  const renameLayer = useCallback((id: string, name: string) => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    const obj = findById(canvas.getObjects(), id)
+    if (!obj) return
+    ;(obj as any).data = { ...((obj as any).data ?? {}), name }
+    syncToStore(canvas)
+  }, [])
+
+  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer, renameLayer }
 }
