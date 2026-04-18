@@ -133,7 +133,7 @@ export function useObjectOperations() {
     if (objs.length < 2) return
     const id = `group_${Date.now()}`
     const group = new Group(objs)
-    ;(group as any).data = { id, type: 'group', name: 'Groupe' }
+    ;(group as any).data = { id, type: 'group', name: '' }
     objs.forEach((o) => canvas.remove(o))
     canvas.discardActiveObject()
     canvas.add(group)
