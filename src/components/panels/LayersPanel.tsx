@@ -12,6 +12,8 @@ import { useLayers } from '@/features/editor/useLayers'
 import { useTextSegments } from '@/features/editor/useTextSegments'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { LayerTree } from './layers/LayerTree'
+import { LayerSearchBar } from './layers/LayerSearchBar'
+import { useLayerFilter } from '@/features/editor/useLayerFilter'
 
 export function LayersPanel() {
   const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore()
@@ -19,10 +21,13 @@ export function LayersPanel() {
   const { reorderLayers } = useLayers()
   const textSegments = useTextSegments()
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
   const layersHighlight = useHighlight<HTMLDivElement>('layers-panel')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-  const displayOrder = [...canvasObjects].reverse()
+  const { filtered, forceExpandedIds } = useLayerFilter(canvasObjects, searchQuery, columns)
+  const displayOrder = [...filtered].reverse()
+  const effectiveExpandedIds = new Set([...expandedIds, ...forceExpandedIds])
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -57,21 +62,34 @@ export function LayersPanel() {
 
   return (
     <div ref={layersHighlight.ref} className={`flex flex-col ${layersHighlight.className}`}>
+      <LayerSearchBar value={searchQuery} onChange={setSearchQuery} />
       <p className="text-xs font-medium text-white/40 uppercase tracking-wider px-3 pt-3 pb-2">
         {canvasObjects.length} calque{canvasObjects.length > 1 ? 's' : ''}
       </p>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={displayOrder.map((o) => o.id)} strategy={verticalListSortingStrategy}>
-          <LayerTree
-            objects={displayOrder}
-            selectedObjectId={selectedObjectId}
-            columns={columns}
-            textSegments={textSegments}
-            expandedIds={expandedIds}
-            onToggleExpand={toggleExpand}
-          />
-        </SortableContext>
-      </DndContext>
+      {searchQuery ? (
+        <LayerTree
+          objects={displayOrder}
+          selectedObjectId={selectedObjectId}
+          columns={columns}
+          textSegments={textSegments}
+          expandedIds={effectiveExpandedIds}
+          onToggleExpand={toggleExpand}
+          isDraggable={false}
+        />
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={displayOrder.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+            <LayerTree
+              objects={displayOrder}
+              selectedObjectId={selectedObjectId}
+              columns={columns}
+              textSegments={textSegments}
+              expandedIds={effectiveExpandedIds}
+              onToggleExpand={toggleExpand}
+            />
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   )
 }
