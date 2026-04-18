@@ -10,75 +10,8 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { useLayers } from '@/features/editor/useLayers'
 import { useTextSegments } from '@/features/editor/useTextSegments'
-import { TextSegmentRow } from './TextSegmentRow'
-import type { CanvasObjectProps } from '@/stores/editor.store'
-import type { TextSegment } from '@/features/editor/useTextSegments'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
-import { getDisplayName } from '@/features/editor/getDisplayName'
-import { LayerRow } from './layers/LayerRow'
-
-interface LayerTreeProps {
-  objects: CanvasObjectProps[]
-  selectedObjectId: string | null
-  columns: { key: string; label: string }[]
-  textSegments: Record<string, TextSegment[]>
-  expandedIds: Set<string>
-  onToggleExpand: (id: string) => void
-  depth?: number
-  isDraggable?: boolean
-}
-
-function LayerTree({
-  objects, selectedObjectId, columns, textSegments,
-  expandedIds, onToggleExpand, depth = 0, isDraggable = true,
-}: LayerTreeProps) {
-  return (
-    <>
-      {objects.map((obj) => {
-        const segments = textSegments[obj.id] ?? null
-        const expanded = expandedIds.has(obj.id)
-        const isGroup = obj.type === 'group'
-        const displayName = getDisplayName(obj, columns)
-
-        return (
-          <div key={obj.id}>
-            <LayerRow
-              obj={obj}
-              displayName={displayName}
-              isSelected={obj.id === selectedObjectId}
-              segments={segments}
-              expanded={expanded}
-              onToggleExpand={() => onToggleExpand(obj.id)}
-              depth={depth}
-              isDraggable={isDraggable}
-            />
-
-            {/* Enfants de groupe */}
-            {isGroup && expanded && obj.children && obj.children.length > 0 && (
-              <div className="border-l border-white/10 ml-5">
-                <LayerTree
-                  objects={[...obj.children].reverse()}
-                  selectedObjectId={selectedObjectId}
-                  columns={columns}
-                  textSegments={textSegments}
-                  expandedIds={expandedIds}
-                  onToggleExpand={onToggleExpand}
-                  depth={depth + 1}
-                  isDraggable={false}
-                />
-              </div>
-            )}
-
-            {/* Segments de texte (styles mixtes) */}
-            {!isGroup && expanded && segments && segments.map((seg, i) => (
-              <TextSegmentRow key={i} segment={seg} index={i} objectId={obj.id} />
-            ))}
-          </div>
-        )
-      })}
-    </>
-  )
-}
+import { LayerTree } from './layers/LayerTree'
 
 export function LayersPanel() {
   const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore()
