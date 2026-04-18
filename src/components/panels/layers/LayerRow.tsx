@@ -25,7 +25,7 @@ export function LayerRow({
   depth = 0, isDraggable = true,
 }: Props) {
   const { selectLayer } = useLayers()
-  const sortable = useSortable({ id: obj.id, disabled: !isDraggable })
+  const sortable = useSortable({ id: obj.id, disabled: !isDraggable || obj.locked })
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable
   const isGroup = obj.type === 'group'
   const hasMixedStyles = !isGroup && segments !== null && (segments.length > 1 || segments.some((s) => s.isPlaceholder))
@@ -47,7 +47,7 @@ export function LayerRow({
         isSelected
           ? 'bg-indigo-500/20 border-l-2 border-indigo-500'
           : 'hover:bg-white/5 border-l-2 border-transparent'
-      }`}
+      } ${obj.locked ? 'opacity-60' : ''}`}
     >
       {isDraggable ? (
         <button

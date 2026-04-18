@@ -109,5 +109,31 @@ export function useLayers() {
     syncToStore(canvas)
   }, [])
 
-  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers }
+  const lockLayer = useCallback((id: string, locked: boolean) => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    const obj = findById(canvas.getObjects(), id)
+    if (!obj) return
+    // Si l'objet est en édition texte, on sort du mode édition d'abord
+    if ((obj as any).isEditing === true && typeof (obj as any).exitEditing === 'function') {
+      ;(obj as any).exitEditing()
+    }
+    ;(obj as any).data = { ...((obj as any).data ?? {}), locked }
+    obj.set({
+      selectable: !locked,
+      evented: !locked,
+      lockMovementX: locked,
+      lockMovementY: locked,
+      lockScalingX: locked,
+      lockScalingY: locked,
+      lockRotation: locked,
+    })
+    if (locked && canvas.getActiveObject() === obj) {
+      canvas.discardActiveObject()
+    }
+    canvas.requestRenderAll()
+    syncToStore(canvas)
+  }, [])
+
+  return { selectLayer, deleteLayer, toggleVisibility, reorderLayers, lockLayer }
 }
