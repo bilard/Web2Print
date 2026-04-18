@@ -177,6 +177,12 @@ export function useLayers() {
     const currentParentId = currentParent ? (currentParent as any).data?.id ?? null : null
     if (currentParentId === groupId) return
 
+    // Anti-cycle: un groupe ne peut pas être déplacé dans l'un de ses descendants
+    if (groupId !== null && child instanceof Group) {
+      const descendantTargets = findById(child.getObjects(), groupId)
+      if (descendantTargets) return
+    }
+
     // Retrait du parent actuel
     if (currentParent) {
       currentParent.remove(child)
