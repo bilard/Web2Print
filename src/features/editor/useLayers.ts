@@ -1,33 +1,8 @@
 import { useCallback } from 'react'
-import { Group } from 'fabric'
 import { globalFabricCanvas } from './CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
-import type { FabricObject } from 'fabric'
-
-/** Cherche un objet par id récursivement (top-level + enfants de groupes) */
-function findById(objects: FabricObject[], id: string): FabricObject | undefined {
-  for (const o of objects) {
-    if ((o as any).data?.id === id) return o
-    if (o instanceof Group) {
-      const found = findById(o.getObjects(), id)
-      if (found) return found
-    }
-  }
-  return undefined
-}
-
-/** Cherche le groupe parent contenant l'objet avec cet id */
-function findParentGroup(objects: FabricObject[], id: string): Group | undefined {
-  for (const o of objects) {
-    if (o instanceof Group) {
-      if (o.getObjects().some((c) => (c as any).data?.id === id)) return o
-      const found = findParentGroup(o.getObjects(), id)
-      if (found) return found
-    }
-  }
-  return undefined
-}
+import { findById, findParentGroup, wouldCreateCycle } from './layerTreeOps'
 
 export function useLayers() {
   const { setSelectedObjectId, setCanvasObjects, selectedObjectIds, setSelectedObjectIds } = useEditorStore()
@@ -180,10 +155,7 @@ export function useLayers() {
     if (currentParentId === groupId) return
 
     // Anti-cycle: un groupe ne peut pas être déplacé dans l'un de ses descendants
-    if (groupId !== null && child instanceof Group) {
-      const descendantTargets = findById(child.getObjects(), groupId)
-      if (descendantTargets) return
-    }
+    if (groupId !== null && wouldCreateCycle(child, groupId)) return
 
     // Retrait du parent actuel — les groupes vides sont conservés (comportement Illustrator)
     if (currentParent) {
