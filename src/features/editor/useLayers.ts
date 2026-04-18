@@ -64,6 +64,7 @@ export function useLayers() {
       canvas.requestRenderAll()
       syncToStore(canvas)
       setSelectedObjectId(null)
+      setSelectedObjectIds((selectedObjectIds ?? []).filter((x) => x !== id))
       return
     }
     // Suppression d'un enfant de groupe
@@ -74,9 +75,10 @@ export function useLayers() {
         parentGroup.remove(child)
         canvas.requestRenderAll()
         syncToStore(canvas)
+        setSelectedObjectIds((selectedObjectIds ?? []).filter((x) => x !== id))
       }
     }
-  }, [setSelectedObjectId])
+  }, [setSelectedObjectId, setSelectedObjectIds, selectedObjectIds])
 
   const toggleVisibility = useCallback((id: string) => {
     const canvas = globalFabricCanvas
