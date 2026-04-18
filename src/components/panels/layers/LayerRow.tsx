@@ -1,17 +1,12 @@
 import {
-  Eye, EyeOff, Trash2, GripVertical, Square, Circle, Type,
-  Image as ImageIcon, Minus, ChevronRight, ChevronDown, Layers,
+  Eye, EyeOff, Trash2, GripVertical, ChevronRight, ChevronDown,
 } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useLayers } from '@/features/editor/useLayers'
 import type { CanvasObjectProps } from '@/stores/editor.store'
 import type { TextSegment } from '@/features/editor/useTextSegments'
-
-const typeIcons: Partial<Record<CanvasObjectProps['type'], React.ComponentType<{ className?: string }>>> = {
-  rect: Square, ellipse: Circle, text: Type, image: ImageIcon,
-  path: Square, line: Minus, group: Layers, polygon: Square, triangle: Square,
-}
+import { LayerSwatch } from './LayerSwatch'
 
 interface Props {
   obj: CanvasObjectProps
@@ -31,7 +26,6 @@ export function LayerRow({
   const { selectLayer, deleteLayer, toggleVisibility } = useLayers()
   const sortable = useSortable({ id: obj.id, disabled: !isDraggable })
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable
-  const Icon = typeIcons[obj.type] ?? Square
   const isGroup = obj.type === 'group'
   const hasMixedStyles = !isGroup && segments !== null && (segments.length > 1 || segments.some((s) => s.isPlaceholder))
   const isExpandable = isGroup || hasMixedStyles
@@ -79,8 +73,12 @@ export function LayerRow({
         <div className="w-4 shrink-0" />
       )}
 
-      <Icon className={`w-3.5 h-3.5 shrink-0 ${isGroup ? 'text-indigo-400/70' : 'text-white/40'}`} />
-      <span className={`text-xs truncate flex-1 ${isGroup ? 'text-white/90 font-medium' : 'text-white/70'}`}>
+      <LayerSwatch obj={obj} />
+      <span
+        className={`text-xs truncate flex-1 ${isGroup ? 'text-white/90 font-medium' : 'text-white/70'} ${
+          !obj.name ? 'italic text-white/50' : ''
+        }`}
+      >
         {displayName}
       </span>
 
