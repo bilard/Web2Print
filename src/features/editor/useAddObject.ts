@@ -109,13 +109,20 @@ function fabricObjToProps(o: FabricObject, index: number, parentId?: string): Ca
     children = o.getObjects().map((child, i) => fabricObjToProps(child, i, groupId))
   }
 
-  // Type : si c'est une instance Group Fabric, forcer 'group' même si data.type est absent
-  const resolvedType = isFabricGroup ? 'group' : ((d.type ?? 'rect') as CanvasObjectProps['type'])
+  // Type : si c'est une instance Group Fabric, forcer 'group' même si data.type est absent.
+  // Pour les imports SVG, détecter les textes via instanceof faute de data.type pré-rempli.
+  const resolvedType = isFabricGroup
+    ? 'group'
+    : d.type
+      ? (d.type as CanvasObjectProps['type'])
+      : (o instanceof IText || o instanceof Textbox)
+        ? 'text'
+        : 'rect'
 
   return {
     id: d.id ?? `obj_${index}`,
     type: resolvedType,
-    name: d.name ?? `Calque ${index + 1}`,
+    name: d.name ?? '',
     visible: o.visible ?? true,
     locked: d.locked ?? false,
     x: Math.round(posX),
@@ -227,56 +234,56 @@ export function useAddObject() {
       obj = new Rect({
         left: docX - 75, top: docY - 50, width: 150, height: 100,
         fill: '#6366f1', strokeWidth: 0,
-        data: { id, type: 'rect', name: 'Rectangle' },
+        data: { id, type: 'rect' },
       })
     } else if (type === 'ellipse') {
       obj = new Ellipse({
         left: docX - 60, top: docY - 60, rx: 60, ry: 60,
         fill: '#6366f1', strokeWidth: 0,
-        data: { id, type: 'ellipse', name: 'Ellipse' },
+        data: { id, type: 'ellipse' },
       })
     } else if (type === 'text') {
       obj = new Textbox('Double-cliquez pour éditer', {
         left: docX - 120, top: docY - 12,
         width: 240,
         fontSize: 24, fontFamily: 'Inter', fill: '#ffffff',
-        data: { id, type: 'text', name: 'Texte' },
+        data: { id, type: 'text' },
       })
     } else if (type === 'line') {
       obj = new Line([docX - 80, docY, docX + 80, docY], {
         stroke: '#ffffff', strokeWidth: 2, fill: '',
-        data: { id, type: 'line', name: 'Ligne' },
+        data: { id, type: 'line' },
       })
     } else if (type === 'triangle') {
       obj = new Triangle({
         left: docX - 75, top: docY - 65, width: 150, height: 130,
         fill: '#6366f1', strokeWidth: 0,
-        data: { id, type: 'triangle', name: 'Triangle' },
+        data: { id, type: 'triangle' },
       })
     } else if (type === 'star') {
       const pts = starPoints(0, 0, 65, 30, 5)
       const p = new Polygon(pts, { left: docX - 65, top: docY - 65, fill: '#6366f1', strokeWidth: 0 })
-      ;(p as any).data = { id, type: 'star', name: 'Étoile' }
+      ;(p as any).data = { id, type: 'star' }
       obj = p
     } else if (type === 'arrow') {
       const pts = arrowPoints()
       const p = new Polygon(pts, { left: docX - 75, top: docY - 50, fill: '#6366f1', strokeWidth: 0 })
-      ;(p as any).data = { id, type: 'arrow', name: 'Flèche' }
+      ;(p as any).data = { id, type: 'arrow' }
       obj = p
     } else if (type === 'hexagon') {
       const pts = hexagonPoints(0, 0, 60)
       const p = new Polygon(pts, { left: docX - 60, top: docY - 60, fill: '#6366f1', strokeWidth: 0 })
-      ;(p as any).data = { id, type: 'hexagon', name: 'Hexagone' }
+      ;(p as any).data = { id, type: 'hexagon' }
       obj = p
     } else if (type === 'diamond') {
       const pts = diamondPoints(120, 120)
       const p = new Polygon(pts, { left: docX - 60, top: docY - 60, fill: '#6366f1', strokeWidth: 0 })
-      ;(p as any).data = { id, type: 'diamond', name: 'Losange' }
+      ;(p as any).data = { id, type: 'diamond' }
       obj = p
     } else if (type === 'callout') {
       const pts = calloutPoints(180, 130)
       const p = new Polygon(pts, { left: docX - 90, top: docY - 65, fill: '#6366f1', strokeWidth: 0 })
-      ;(p as any).data = { id, type: 'callout', name: 'Bulle' }
+      ;(p as any).data = { id, type: 'callout' }
       obj = p
     } else {
       return

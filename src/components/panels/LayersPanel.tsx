@@ -19,16 +19,11 @@ import { TextSegmentRow } from './TextSegmentRow'
 import type { CanvasObjectProps } from '@/stores/editor.store'
 import type { TextSegment } from '@/features/editor/useTextSegments'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
+import { getDisplayName } from '@/features/editor/getDisplayName'
 
 const typeIcons: Partial<Record<CanvasObjectProps['type'], React.ComponentType<{ className?: string }>>> = {
   rect: Square, ellipse: Circle, text: Type, image: ImageIcon,
   path: Square, line: Minus, group: Layers, polygon: Square, triangle: Square,
-}
-
-/** Résout le nom d'affichage d'un objet : si le nom est une clé de colonne merge, affiche le label */
-function resolveDisplayName(name: string, columns: { key: string; label: string }[]): string {
-  const col = columns.find((c) => c.key === name)
-  return col ? col.label : name
 }
 
 interface LayerItemProps {
@@ -153,7 +148,7 @@ function LayerTree({
         const segments = textSegments[obj.id] ?? null
         const expanded = expandedIds.has(obj.id)
         const isGroup = obj.type === 'group'
-        const displayName = resolveDisplayName(obj.name, columns)
+        const displayName = getDisplayName(obj, columns)
 
         return (
           <div key={obj.id}>
