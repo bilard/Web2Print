@@ -70,15 +70,25 @@ export async function saveTemplateWithVendorSync(template: ScrapingTemplate): Pr
   // 1. Lire les autres templates du même vendorDomain
   const q = query(collection(db, COLLECTION), where('vendorDomain', '==', template.vendorDomain))
   const snap = await getDocs(q)
+  const arraysEq = (a?: string[], b?: string[]) => {
+    if (!a && !b) return true
+    if (!a || !b) return false
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+    return true
+  }
   for (const d of snap.docs) {
     if (d.id === template.id) continue
     const otherParsed = scrapingTemplateSchema.safeParse({ ...d.data(), id: d.id })
     if (!otherParsed.success) continue
     const other = otherParsed.data
-    if ((other.vendorPrompt ?? '') !== (template.vendorPrompt ?? '')) {
+    const promptChanged = (other.vendorPrompt ?? '') !== (template.vendorPrompt ?? '')
+    const orderChanged = !arraysEq(other.vendorFieldOrder, template.vendorFieldOrder)
+    if (promptChanged || orderChanged) {
       const updated = stripUndefined({
         ...other,
         vendorPrompt: template.vendorPrompt,
+        vendorFieldOrder: template.vendorFieldOrder,
         updatedAt: Date.now(),
       })
       batch.set(doc(db, COLLECTION, d.id), updated)

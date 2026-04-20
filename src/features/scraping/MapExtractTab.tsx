@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Map, Sparkles, Loader2, CheckSquare, Square, Globe, Search } from 'lucide-react'
+import { Map as MapIcon, Sparkles, Loader2, CheckSquare, Square, Globe, Search } from 'lucide-react'
 import type { ScrapingField, MapLink, ScrapeResult } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
 import { FIELD_TEMPLATES } from './useJina'
@@ -57,7 +57,7 @@ export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props)
             disabled={!url || loading}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/20 text-blue-300 text-sm font-medium transition-colors disabled:opacity-40"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Map className="w-4 h-4" />}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapIcon className="w-4 h-4" />}
             Mapper le site
           </button>
         </div>

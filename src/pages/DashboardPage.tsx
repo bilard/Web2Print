@@ -142,6 +142,7 @@ export default function DashboardPage() {
         idml: { w: 794, h: 1123 },
         pptx: { w: 1920, h: 1080 },
         image: { w: 1920, h: 1080 },
+        svg: { w: 1920, h: 1080 },
       }
       const { w, h } = defaults[selection.type] ?? { w: 1920, h: 1080 }
 

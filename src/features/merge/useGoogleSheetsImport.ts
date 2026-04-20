@@ -95,14 +95,11 @@ export function useGoogleSheetsImport() {
       const sheets = await parseExcelFile(fakeFile)
       if (sheets.length === 0) throw new Error('Aucune donnée trouvée dans le document')
 
-      await saveToFirebase(fileName, sheets)
+      const docId = await saveToFirebase(fileName, sheets)
+      if (!docId) throw new Error('Échec de la sauvegarde Firebase')
 
-      const base = fileName
-        .replace(/\.[^.]+$/, '')
-        .replace(/[^a-zA-Z0-9_-]/g, '_')
-        .toLowerCase()
       const source: DataSourceRef = {
-        excelDocId: `${user.uid}_${base}`,
+        excelDocId: docId,
         sheetIndex: 0,
         fileName,
       }

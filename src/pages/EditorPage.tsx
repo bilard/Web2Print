@@ -15,6 +15,7 @@ import { usePreloadFonts } from '@/features/assets/useFonts'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { useIdmlParse } from '@/features/idml/useIdmlParse'
 import { usePptxParse } from '@/features/pptx/usePptxParse'
+import { useSvgParse } from '@/features/svg/useSvgParse'
 import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 
@@ -27,6 +28,7 @@ export default function EditorPage() {
   const { processFiles: processIdmlFiles } = useIdmlUpload()
   const { parseAndRender: parseIdml } = useIdmlParse()
   const { parseAndRender: parsePptx, state: pptxState } = usePptxParse()
+  const { parseAndRender: parseSvg, state: svgState } = useSvgParse()
   const [idmlImporting, setIdmlImporting] = useState(false)
   usePreloadFonts()
 
@@ -63,6 +65,10 @@ export default function EditorPage() {
 
       if (type === 'pptx' && files.length > 0) {
         await parsePptx(files[0])
+      }
+
+      if (type === 'svg' && files.length > 0) {
+        await parseSvg(files[0])
       }
 
       if (type === 'image' && files.length > 0) {
@@ -119,6 +125,16 @@ export default function EditorPage() {
               <p className="text-orange-200 font-medium">Import PowerPoint en cours...</p>
               {pptxState.objectCount > 0 && (
                 <p className="text-orange-200/60 text-sm">{pptxState.objectCount} objets</p>
+              )}
+            </div>
+          )}
+
+          {(svgState.step === 'reading' || svgState.step === 'parsing' || svgState.step === 'rendering') && (
+            <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-3 pointer-events-none">
+              <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
+              <p className="text-purple-200 font-medium">Import SVG en cours...</p>
+              {svgState.objectCount > 0 && (
+                <p className="text-purple-200/60 text-sm">{svgState.objectCount} objets</p>
               )}
             </div>
           )}

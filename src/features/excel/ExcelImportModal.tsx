@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   X, Upload, FileSpreadsheet, Loader2, MonitorUp, Plus,
   Check, ChevronDown, ChevronRight, Layers,
@@ -8,17 +8,20 @@ import { useExcelImport } from './useExcelImport'
 import { parseExcelFile } from './useExcelImport'
 import { FieldTypeIcon } from './FieldTypeIcon'
 import { FIELD_TYPES, type ExcelSheet, type ExcelColumn, type FieldTypeId, type TaxonomyLevelMap } from './types'
-import { buildTaxonomyFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
+import { buildTaxonomyFromLevels, buildTaxNodesFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
+import { useCreateTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 
 interface Props {
   open: boolean
   onClose: () => void
+  /** Chemin cible dans l'arbre de bases de données (racine = []). */
+  targetPath?: string[]
 }
 
 type Source = 'local' | 'url' | 'new'
 
 
-export function ExcelImportModal({ open, onClose }: Props) {
+export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   const [source, setSource] = useState<Source>('local')
   const [dragActive, setDragActive] = useState(false)
   const [urlValue, setUrlValue] = useState('')
@@ -26,6 +29,7 @@ export function ExcelImportModal({ open, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { detecting } = useExcelStore()
   const { importFile, createEmpty } = useExcelImport()
+  const createTaxonomy = useCreateTaxonomy()
 
   // Step 2 state: parsed sheets awaiting configuration
   const [parsedSheets, setParsedSheets] = useState<ExcelSheet[] | null>(null)
@@ -81,9 +85,9 @@ export function ExcelImportModal({ open, onClose }: Props) {
     onClose()
   }
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     if (!parsedSheets) return
-    const { setSheets, setCurrentFileName } = useExcelStore.getState()
+    const { setSheets, setCurrentFileName, setCurrentPath, setCurrentDocId, setSheetRowId } = useExcelStore.getState()
 
     // Apply configured types and build taxonomy
     const finalSheets = parsedSheets.map((sheet) => {
@@ -97,8 +101,25 @@ export function ExcelImportModal({ open, onClose }: Props) {
       return { ...sheet, columns, taxonomy, taxonomyLevels: taxoLevels }
     })
 
+    // Import depuis le bouton "+" (targetPath défini) → nouvelle BDD :
+    // reset docId pour forcer la création d'un nouveau doc Firebase.
+    if (targetPath !== undefined) {
+      setCurrentDocId(null)
+      setSheetRowId(null)
+    }
     setCurrentFileName(parsedFileName)
+    if (targetPath) setCurrentPath(targetPath)
     setSheets(finalSheets)
+
+    // Si des niveaux de taxonomie sont assignés, créer la taxonomie dans
+    // la liste des Taxonomies (prend la 1re feuille comme source).
+    if (Object.values(taxoLevels).some((lvl) => lvl > 0) && finalSheets[0]) {
+      const taxNodes = buildTaxNodesFromLevels(finalSheets[0], taxoLevels)
+      if (Object.keys(taxNodes).length > 0) {
+        createTaxonomy.mutate({ name: parsedFileName, nodes: taxNodes })
+      }
+    }
+
     resetConfig()
     onClose()
   }
@@ -106,6 +127,22 @@ export function ExcelImportModal({ open, onClose }: Props) {
   const setColumnType = (key: string, type: FieldTypeId) => {
     setColumnTypes((prev) => ({ ...prev, [key]: type }))
   }
+
+  // Valider l'import avec la touche Entrée sur l'écran Configuration
+  useEffect(() => {
+    if (!open || !parsedSheets) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return
+      // Ignore si l'utilisateur tape dans un champ texte/select
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      e.preventDefault()
+      handleConfirmImport()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, parsedSheets, columnTypes, taxoLevels, parsedFileName, targetPath])
 
   const setTaxoLevel = (key: string, level: number) => {
     setTaxoLevels((prev) => {

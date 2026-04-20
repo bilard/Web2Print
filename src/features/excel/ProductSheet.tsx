@@ -1,13 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   X, ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
-  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database,
+  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers,
 } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
+import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
+import {
+  PRODUCT_TAXONOMY_ID_KEY,
+  PRODUCT_TAXONOMY_NODE_ID_KEY,
+  resolveProductTaxonomy,
+} from '@/features/taxonomy/productTaxonomy'
+import { ProductTaxonomyPicker } from '@/components/taxonomy/ProductTaxonomyPicker'
 import { evaluateFormula } from './formulaEngine'
-import { getLevelColor } from './taxonomyBuilder'
+import { getLevelColor, getTaxoColumns } from './taxonomyBuilder'
 import type { ExcelColumn, CellValue, FieldTypeId } from './types'
 import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
+import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
 
 interface Props {
   rowId: string
@@ -18,13 +26,17 @@ interface Props {
 
 const NUMERIC_TYPES: FieldTypeId[] = ['number', 'currency', 'percent', 'rating']
 const IMG_EXTS = /\.(jpe?g|png|webp|gif|avif|svg)(\?.*)?$/i
+// CDN d'images sans extension dans le path (Scene7, Cloudinary, Imgix…).
+// Indispensable pour Boulanger/Darty dont les URLs produit sont de la forme
+// `https://boulanger.scene7.com/is/image/Boulanger/1207575_0?$preset$`.
+const IMG_CDN = /scene7\.com|cloudinary\.com|imgix\.net|akamaized\.net|cdninstagram|fbcdn\.net|\/is\/image\/|\/image\/upload\/|\/image\/fetch\//i
 const PDF_EXT  = /\.pdf(\?.*)?$/i
 const VIDEO_EXT = /\.(mp4|webm|mov|avi)(\?.*)?$/i
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const isImageUrl = (v: CellValue): v is string =>
-  typeof v === 'string' && v.startsWith('http') && IMG_EXTS.test(v)
+  typeof v === 'string' && v.startsWith('http') && (IMG_EXTS.test(v) || IMG_CDN.test(v))
 
 const isImageCol = (col: ExcelColumn, rows: Record<string, CellValue>[]): boolean => {
   if (col.fieldType === 'image') return true
@@ -32,7 +44,10 @@ const isImageCol = (col: ExcelColumn, rows: Record<string, CellValue>[]): boolea
   if (!sample) return false
   const v = String(sample[col.key])
   // Tester chaque partie si la valeur est une liste pipe-séparée
-  return v.split(' | ').some(p => p.startsWith('http') && IMG_EXTS.test(p.trim()))
+  return v.split(' | ').some(p => {
+    const s = p.trim()
+    return s.startsWith('http') && (IMG_EXTS.test(s) || IMG_CDN.test(s))
+  })
 }
 
 const parseImageList = (v: CellValue): string[] => {
@@ -97,6 +112,8 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [taxoPickerOpen, setTaxoPickerOpen] = useState(false)
+  const { data: taxonomies } = useTaxonomies()
 
   // Split resizable entre panneau source (gauche) et enrichissement IA (droite)
   const splitContainerRef = useRef<HTMLDivElement>(null)
@@ -350,6 +367,29 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             })}
           </div>
         )}
+        {/* Bouton taxonomie globale : affiche le classement courant (ou « Non classé ») */}
+        {(() => {
+          const resolved = resolveProductTaxonomy(row, taxonomies)
+          return (
+            <button
+              type="button"
+              onClick={() => setTaxoPickerOpen(true)}
+              className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-md bg-indigo-500/[0.08] hover:bg-indigo-500/[0.15] border border-indigo-500/20 hover:border-indigo-500/40 text-indigo-300 transition-colors max-w-full"
+              title={resolved ? `Classé dans « ${resolved.taxonomy.name} » — cliquer pour modifier` : 'Classer ce produit dans une taxonomie'}
+            >
+              <Layers className="w-3 h-3 shrink-0" />
+              {resolved ? (
+                <>
+                  <span className="text-white/40 uppercase tracking-wider text-[9px]">{resolved.taxonomy.name}</span>
+                  <span className="text-white/20">·</span>
+                  <span className="truncate">{resolved.pathString}</span>
+                </>
+              ) : (
+                <span>Non classé dans une taxonomie globale — cliquer pour classer</span>
+              )}
+            </button>
+          )
+        })()}
         <h2 className="text-[16px] font-bold text-white leading-snug">{title || '—'}</h2>
         <div className="flex flex-wrap items-center gap-2 mt-2">
           {contentCols.filter(c => isRefKey(c.key)).map(col => {
@@ -455,9 +495,18 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto min-h-0">
 
-        {/* ── GÉNÉRAL ── */}
+        {/* ── GÉNÉRAL ── En tête : liste des champs scrapés (si un template
+             fournisseur matche) avec drag-and-drop pour réordonner l'affichage
+             du panneau droit. Sans template, le composant retourne null et on
+             voit directement les champs Excel plus bas. */}
         {tab === 'general' && (
           <div className="py-1">
+            <ScrapedFieldsTab
+              sheetName={sheet.name}
+              rowId={rowId}
+              brand={enrichmentInput.brand}
+              title={enrichmentInput.title}
+            />
             {/* Description */}
             {generalCols.filter(c => isDescKey(c.key)).map(col => {
               const v = getValue(col); if (!v || v === '—') return null
@@ -496,52 +545,76 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             })}
 
 
-            {/* Remaining general fields — inclut les champs méta (ref, marque,
-               EAN, prix, dispo) pour qu'ils soient tous visibles et éditables
-               dans le panneau source. Les chips en en-tête en sont un résumé
-               visuel, les lignes ici sont la version labellisée/modifiable. */}
-            {generalCols.filter(c => !isDescKey(c.key) && !isAdvKey(c.key) && !isPriceKey(c.key)).map(col => {
-              const v = getValue(col)
-              if (v === null || v === undefined || v === '') return null
+            {/* Champs Excel — toutes les colonnes de la ligne avec une valeur,
+               sauf celles déjà rendues ailleurs (images, specs/docs qui ont
+               leurs propres onglets, description/avantages qui ont leur section
+               dédiée, colonnes IA qui apparaissent dans le panneau d'enrichissement).
+               Inclut donc : colonne primaire (Nom/Titre), taxonomie (Categorie),
+               Marque, Référence, EAN, Prix, et tout autre champ custom. */}
+            {(() => {
+              const specKeys = new Set(specCols.map(c => c.key))
+              const docKeys = new Set(docCols.map(c => c.key))
+              const imgKeys = new Set(imageCols.map(c => c.key))
+              const remainingCols = visibleCols
+                .filter(c => !c.key.startsWith('ai_'))
+                .filter(c => !imgKeys.has(c.key))
+                .filter(c => !specKeys.has(c.key))
+                .filter(c => !docKeys.has(c.key))
+                .filter(c => !isDescKey(c.key))
+                .filter(c => !isAdvKey(c.key))
+                .filter(c => {
+                  const v = getValue(c)
+                  return v !== null && v !== undefined && v !== ''
+                })
+              if (remainingCols.length === 0) return null
               return (
-                <div key={col.key} className="group flex items-start gap-3 px-5 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
-                  <span className="text-[11px] text-white/35 w-28 shrink-0 pt-[1px] truncate">{col.label}</span>
-                  <div className="flex-1 min-w-0">
-                    {editingField === col.key ? (
-                      <textarea autoFocus value={editValue} rows={1}
-                        ref={(el) => {
-                          if (!el) return
-                          // Auto-resize à l'ouverture pour afficher tout le contenu
-                          el.style.height = 'auto'
-                          el.style.height = `${el.scrollHeight}px`
-                        }}
-                        onChange={e => {
-                          setEditValue(e.target.value)
-                          // Auto-resize pendant la saisie
-                          e.currentTarget.style.height = 'auto'
-                          e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
-                        }}
-                        onBlur={() => commitEdit(col.key)}
-                        onKeyDown={e => {
-                          // Entrée valide, Shift+Entrée = nouvelle ligne
-                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(col.key) }
-                          if (e.key === 'Escape') setEditingField(null)
-                        }}
-                        className="w-full bg-white/[0.04] border border-indigo-500/40 rounded px-2 py-1 text-[12px] text-white outline-none resize-none leading-relaxed break-words" />
-                    ) : (
-                      <p className="text-[12px] text-white/65 leading-relaxed break-words cursor-pointer hover:text-white/90 transition-colors"
-                        onClick={() => { setEditingField(col.key); setEditValue(v != null ? String(v) : '') }}>
-                        {fmt(v, col)}
-                      </p>
-                    )}
+                <>
+                  <div className="px-5 pt-4 pb-1.5">
+                    <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">
+                      Champs Excel
+                    </p>
                   </div>
-                  <button onClick={() => copy(String(v), col.key)}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 text-white/20 hover:text-white/60 transition-colors shrink-0 mt-[1px]">
-                    {copiedField === col.key ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  </button>
-                </div>
+                  {remainingCols.map(col => {
+                    const v = getValue(col)
+                    return (
+                      <div key={col.key} className="group flex items-start gap-3 px-5 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                        <span className="text-[11px] text-white/35 w-28 shrink-0 pt-[1px] truncate">{col.label}</span>
+                        <div className="flex-1 min-w-0">
+                          {editingField === col.key ? (
+                            <textarea autoFocus value={editValue} rows={1}
+                              ref={(el) => {
+                                if (!el) return
+                                el.style.height = 'auto'
+                                el.style.height = `${el.scrollHeight}px`
+                              }}
+                              onChange={e => {
+                                setEditValue(e.target.value)
+                                e.currentTarget.style.height = 'auto'
+                                e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
+                              }}
+                              onBlur={() => commitEdit(col.key)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(col.key) }
+                                if (e.key === 'Escape') setEditingField(null)
+                              }}
+                              className="w-full bg-white/[0.04] border border-indigo-500/40 rounded px-2 py-1 text-[12px] text-white outline-none resize-none leading-relaxed break-words" />
+                          ) : (
+                            <p className="text-[12px] text-white/65 leading-relaxed break-words cursor-pointer hover:text-white/90 transition-colors"
+                              onClick={() => { setEditingField(col.key); setEditValue(v != null ? String(v) : '') }}>
+                              {fmt(v, col)}
+                            </p>
+                          )}
+                        </div>
+                        <button onClick={() => copy(String(v), col.key)}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 text-white/20 hover:text-white/60 transition-colors shrink-0 mt-[1px]">
+                          {copiedField === col.key ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </>
               )
-            })}
+            })()}
           </div>
         )}
 
@@ -694,6 +767,41 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       </div>
       </div>
       {/* ── /Split layout ─────────────────────────────────────────────────── */}
+
+      <ProductTaxonomyPicker
+        open={taxoPickerOpen}
+        currentTaxonomyId={(row[PRODUCT_TAXONOMY_ID_KEY] as string | null | undefined) ?? null}
+        currentNodeId={(row[PRODUCT_TAXONOMY_NODE_ID_KEY] as string | null | undefined) ?? null}
+        onClose={() => setTaxoPickerOpen(false)}
+        onPick={(taxId, nodeId) => {
+          updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_ID_KEY, taxId)
+          updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_NODE_ID_KEY, nodeId)
+          // Miroir dans les colonnes-taxo de la feuille, pour que la ligne
+          // apparaisse au bon endroit de l'arbre du tableau.
+          const tax = taxonomies?.find((t) => t.id === taxId)
+          if (tax && tax.nodes[nodeId]) {
+            const pathLabels: string[] = []
+            let current = tax.nodes[nodeId]
+            while (current) {
+              pathLabels.unshift(current.label)
+              current = current.parentId ? tax.nodes[current.parentId] : undefined as never
+            }
+            const sheetTaxoCols = getTaxoColumns(sheet).sort((a, b) => a.level - b.level)
+            sheetTaxoCols.forEach((tc, i) => {
+              updateCell(activeSheetIndex, rowId, tc.col.key, pathLabels[i] ?? null)
+            })
+          }
+        }}
+        onClear={() => {
+          updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_ID_KEY, null)
+          updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_NODE_ID_KEY, null)
+          // Vider aussi les colonnes-taxo miroir
+          const sheetTaxoCols = getTaxoColumns(sheet)
+          for (const tc of sheetTaxoCols) {
+            updateCell(activeSheetIndex, rowId, tc.col.key, null)
+          }
+        }}
+      />
     </div>
   )
 }

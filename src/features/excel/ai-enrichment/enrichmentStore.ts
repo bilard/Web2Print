@@ -13,6 +13,13 @@ export interface ScrapeCache {
   sourcesScrapped?: string[]
 }
 
+export type HiddenGroupSection = 'specifications' | 'advantages'
+
+export interface HiddenGroups {
+  specifications: string[]
+  advantages: string[]
+}
+
 interface EnrichmentState {
   /** Cache en mémoire : `${sheetName}::${rowId}` → entry */
   entries: Record<string, EnrichmentEntry>
@@ -20,6 +27,8 @@ interface EnrichmentState {
   scrapeCache: Record<string, ScrapeCache>
   /** Logs temps réel par clé d'enrichissement */
   logs: Record<string, string[]>
+  /** Groupes cachés par section et par clé (session-only, non persisté) */
+  hiddenGroups: Record<string, HiddenGroups>
   /** Kill-switch : désactiver la découverte d'URLs liées (fallback scrape single-URL). */
   multiUrlEnabled: boolean
   setMultiUrlEnabled: (v: boolean) => void
@@ -34,6 +43,7 @@ interface EnrichmentState {
   setLlmRequest: (sheetName: string, rowId: string, request: LlmRequestInfo) => void
   addLog: (sheetName: string, rowId: string, message: string) => void
   clearLogs: (sheetName: string, rowId: string) => void
+  toggleHiddenGroup: (sheetName: string, rowId: string, section: HiddenGroupSection, groupName: string) => void
   clear: (sheetName: string, rowId: string) => void
 }
 
@@ -53,6 +63,7 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => {
   entries: {},
   scrapeCache: {},
   logs: {},
+  hiddenGroups: {},
   multiUrlEnabled: true,
   setMultiUrlEnabled: (v) => set({ multiUrlEnabled: v }),
 
@@ -142,12 +153,30 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => {
       return { logs: next }
     }),
 
+  toggleHiddenGroup: (sheetName, rowId, section, groupName) =>
+    set((state) => {
+      const key = enrichmentKey(sheetName, rowId)
+      const current = state.hiddenGroups[key] ?? { specifications: [], advantages: [] }
+      const list = current[section]
+      const nextList = list.includes(groupName)
+        ? list.filter((g) => g !== groupName)
+        : [...list, groupName]
+      return {
+        hiddenGroups: {
+          ...state.hiddenGroups,
+          [key]: { ...current, [section]: nextList },
+        },
+      }
+    }),
+
   clear: (sheetName, rowId) =>
     set((state) => {
       const key = enrichmentKey(sheetName, rowId)
-      const next = { ...state.entries }
-      delete next[key]
-      return { entries: next }
+      const nextEntries = { ...state.entries }
+      delete nextEntries[key]
+      const nextHidden = { ...state.hiddenGroups }
+      delete nextHidden[key]
+      return { entries: nextEntries, hiddenGroups: nextHidden }
     }),
   })
 })

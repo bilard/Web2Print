@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Plus, X, Tag, ChevronDown, ChevronRight, Palette, Layers, RefreshCw } from 'lucide-react'
+import { Plus, X, Tag, ChevronDown, ChevronRight, Palette, Layers, RefreshCw, FolderTree } from 'lucide-react'
+import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { FieldTypeIcon } from './FieldTypeIcon'
-import { buildTaxonomyFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
+import { buildTaxonomyFromLevels, buildTaxNodesFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
+import { useCreateTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import type { TaxonomyCategory, TaxonomyTag, TaxonomyLevelMap } from './types'
 
 const TAG_COLORS = [
@@ -12,11 +14,12 @@ const TAG_COLORS = [
 
 export function TaxonomyManager() {
   const {
-    sheets, activeSheetIndex,
+    sheets, activeSheetIndex, currentFileName,
     addTaxonomyCategory, updateTaxonomyCategory, deleteTaxonomyCategory,
     addTaxonomyTag, deleteTaxonomyTag,
     setTaxonomyFromLevels,
   } = useExcelStore()
+  const createTaxonomy = useCreateTaxonomy()
   const sheet = sheets[activeSheetIndex]
   const [newCatName, setNewCatName] = useState('')
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
@@ -42,6 +45,21 @@ export function TaxonomyManager() {
   const handleRegenerateTaxonomy = () => {
     const taxonomy = buildTaxonomyFromLevels(sheet, levels)
     setTaxonomyFromLevels(activeSheetIndex, levels, taxonomy)
+  }
+
+  const handleSaveToTaxonomies = async () => {
+    const taxNodes = buildTaxNodesFromLevels(sheet, levels)
+    if (Object.keys(taxNodes).length === 0) {
+      toast.error('Aucun niveau assigné')
+      return
+    }
+    const name = currentFileName ?? sheet.name ?? 'Nouvelle taxonomie'
+    try {
+      await createTaxonomy.mutateAsync({ name, nodes: taxNodes })
+      toast.success(`Taxonomie « ${name} » créée (${Object.keys(taxNodes).length} nœuds)`)
+    } catch {
+      toast.error('Erreur lors de la création de la taxonomie')
+    }
   }
 
   const handleAddCategory = () => {
@@ -113,15 +131,26 @@ export function TaxonomyManager() {
           })}
         </div>
 
-        {/* Regenerate button if levels are assigned */}
+        {/* Regenerate + Save buttons if levels are assigned */}
         {taxoColKeys.length > 0 && (
-          <button
-            onClick={handleRegenerateTaxonomy}
-            className="flex items-center justify-center gap-1.5 text-[10px] px-2 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 transition-colors"
-          >
-            <RefreshCw className="w-3 h-3" />
-            Regenerer la taxonomie
-          </button>
+          <div className="flex flex-col gap-1.5">
+            <button
+              onClick={handleRegenerateTaxonomy}
+              className="flex items-center justify-center gap-1.5 text-[10px] px-2 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Regenerer la taxonomie
+            </button>
+            <button
+              onClick={handleSaveToTaxonomies}
+              disabled={createTaxonomy.isPending}
+              className="flex items-center justify-center gap-1.5 text-[10px] px-2 py-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed border border-teal-500/20 text-teal-400 transition-colors"
+              title="Créer une taxonomie dans la liste des Taxonomies"
+            >
+              <FolderTree className="w-3 h-3" />
+              Créer dans Taxonomies
+            </button>
+          </div>
         )}
       </div>
 

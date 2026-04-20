@@ -752,12 +752,41 @@ function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, re
 // ── Jina Reader — scraping principal ────────────────────────────────────────
 
 /**
- * Recherche web via DuckDuckGo Lite + Jina Reader (gratuit, sans clé API).
- * Scrape la page de résultats DuckDuckGo Lite via r.jina.ai et parse les URLs.
+ * Recherche web. Essaie d'abord s.jina.ai (API dédiée, meilleurs résultats si clé)
+ * puis DuckDuckGo Lite via r.jina.ai (gratuit, sans clé) en fallback.
  */
 async function jinaSearch(query: string, limit = 10): Promise<SearchResult[]> {
   console.log('[jina-search] →', { query, limit })
   const jinaKey = getApiKey('jina')
+
+  // ── Tentative 1 : endpoint de recherche dédié s.jina.ai ──
+  //    Bien plus fiable que de scraper DDG Lite. Fonctionne sans clé (rate-limité),
+  //    beaucoup mieux avec clé.
+  try {
+    const sjinaHeaders: Record<string, string> = {
+      Accept: 'application/json',
+      'X-Retain-Images': 'none',
+      'X-No-Cache': 'true',
+    }
+    if (jinaKey) sjinaHeaders.Authorization = `Bearer ${jinaKey}`
+    const res = await fetch(`https://s.jina.ai/?q=${encodeURIComponent(query)}`, { headers: sjinaHeaders })
+    if (res.ok) {
+      const json = await res.json() as { data?: Array<{ url?: string; title?: string; description?: string }> }
+      const data = Array.isArray(json.data) ? json.data : []
+      const results: SearchResult[] = data
+        .filter((d): d is { url: string; title?: string; description?: string } => typeof d.url === 'string' && d.url.startsWith('http'))
+        .slice(0, limit)
+        .map((d) => ({ url: d.url, title: d.title, description: d.description }))
+      console.log('[jina-search] [s.jina.ai] parsed', results.length, 'results')
+      if (results.length > 0) return results
+    } else {
+      console.warn('[jina-search] [s.jina.ai] HTTP', res.status, '— fallback DDG Lite')
+    }
+  } catch (err) {
+    console.warn('[jina-search] [s.jina.ai] failed — fallback DDG Lite', err)
+  }
+
+  // ── Tentative 2 : DDG Lite scrapé via r.jina.ai ──
   const ddgUrl = `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
   const headers: Record<string, string> = {
     Accept: 'text/markdown',
@@ -783,7 +812,6 @@ async function jinaSearch(query: string, limit = 10): Promise<SearchResult[]> {
       const url = decodeURIComponent(match[1])
       if (!url.startsWith('http') || seen.has(url)) continue
       seen.add(url)
-      // Extraire le titre depuis le markdown (lien précédant l'uddg)
       const titleRe = new RegExp(`\\[([^\\]]+)\\]\\([^)]*uddg=${match[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
       const titleMatch = md.match(titleRe)
       results.push({
@@ -806,7 +834,7 @@ async function jinaSearch(query: string, limit = 10): Promise<SearchResult[]> {
     }
   }
 
-  console.log('[jina-search] parsed', results.length, 'results:', results.map((r) => r.url))
+  console.log('[jina-search] [ddg-lite] parsed', results.length, 'results:', results.map((r) => r.url))
   return results
 }
 
@@ -3215,11 +3243,12 @@ export function useProductEnrichment() {
   const enrich = useCallback(
     async (input: EnrichmentInput): Promise<EnrichedProduct | null> => {
       const { sheetName, rowId, title, brand, sku, reference, description, category, knownUrl } = input
-      if (!title.trim()) {
-        setError(sheetName, rowId, 'Titre du produit manquant, impossible de lancer la recherche.')
+      const hasIdentifier = !!(title?.trim() || reference?.trim() || sku?.trim() || brand?.trim())
+      if (!hasIdentifier) {
+        setError(sheetName, rowId, 'Aucun identifiant (titre, référence ou marque) — impossible de lancer la recherche.')
         return null
       }
-      const sourceTokens = tokenizeTitle(`${title} ${brand ?? ''} ${description ?? ''}`)
+      const sourceTokens = tokenizeTitle(`${title ?? ''} ${brand ?? ''} ${description ?? ''}`)
 
       setRunning(true)
       clearLogs(sheetName, rowId)
@@ -3387,6 +3416,10 @@ export function useProductEnrichment() {
           // `never` après narrow. L'objet-box contourne ça (property-access).
           type Pick = { url: string; extras: string[]; query: string; score: number }
           const pickBox: { current: Pick | null } = { current: null }
+          // Meilleur résultat "propre" vu toutes requêtes confondues, indépendamment
+          // du score. Sert de filet de secours si aucune requête ne franchit le seuil
+          // score > 0 (ex. marques pas dans notre whitelist, pénalités locale non-FR).
+          const fallbackBox: { current: Pick | null } = { current: null }
 
           const processSearchResults = (results: SearchResult[], q: string): boolean => {
             const clean = results.filter((r) => {
@@ -3400,6 +3433,15 @@ export function useProductEnrichment() {
               .sort((a, b) => b.score - a.score)
             console.log('[enrichment] scored results:', scored.map((s) => ({ url: s.r.url, score: s.score })))
             const top = scored[0]
+            // Mémoriser le top même si score <= 0 pour servir de filet de secours
+            if (!fallbackBox.current || top.score > fallbackBox.current.score) {
+              fallbackBox.current = {
+                url: top.r.url,
+                extras: scored.slice(1, 5).map((s) => s.r.url),
+                query: q,
+                score: top.score,
+              }
+            }
             if (top.score <= 0) return false
             if (!pickBox.current || top.score > pickBox.current.score) {
               pickBox.current = {
@@ -3423,6 +3465,15 @@ export function useProductEnrichment() {
               searchErrorMsg = err instanceof Error ? err.message : String(err)
               console.error('[enrichment] [Jina] search FAILED for query:', q, err)
             }
+          }
+
+          // Filet de secours : aucune requête n'a franchi le seuil score > 0, mais
+          // des résultats "propres" existent (ex. marque non whitelistée, URL non-FR
+          // pénalisée). Accepter le meilleur plutôt que d'échouer complètement.
+          if (!pickBox.current && fallbackBox.current) {
+            pickBox.current = fallbackBox.current
+            console.log('[enrichment] ⚠ using fallback pick (score ≤ 0) →', fallbackBox.current.url, 'score:', fallbackBox.current.score)
+            log(`⚠ Filet de secours : ${fallbackBox.current.url} (score ${fallbackBox.current.score})`)
           }
 
           const finalPick = pickBox.current
@@ -3575,67 +3626,87 @@ export function useProductEnrichment() {
                     }
                   }
 
-                  // ── Appliquer les prompts par champ (filtre keyword) ────────
-                  // Pour chaque champ qui a un prompt, on filtre/transforme la
-                  // valeur extraite. Supporte :
-                  //   • guillemets "X" → garder les items contenant X
-                  //   • "sans/exclut/pas" + "X" → retirer les items contenant X
-                  //   • prompt sans guillemets → garder les items matchant un mot
-                  for (const fld of matching.fields) {
-                    if (!fld.prompt) continue
-                    const prompt = fld.prompt
-                    const fieldKey = fld.field
-                    const quoted = [...prompt.matchAll(/"([^"]+)"/g)].map((m) => m[1])
-                    const isExclude = /\b(sans|exclut|exclure|pas|ne\s+pas|retir|supprim|ignor)\b/i.test(prompt)
-                    const keywords = quoted.length > 0
-                      ? quoted
-                      : prompt.replace(/\b(charge|seulement|uniquement|garder?|filtr|contient?|inclut?|avec|les?|la|le|des?|du|qui|que|un|une)\b/gi, '')
-                          .split(/[\s,;]+/)
-                          .map((w) => w.trim())
-                          .filter((w) => w.length >= 3)
-                    if (keywords.length === 0) continue
-                    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                    const match = (text: string) => {
-                      const t = norm(text)
-                      return keywords.some((kw) => t.includes(norm(kw)))
+                  // ── Appliquer les prompts par champ (transformation LLM) ────
+                  // Un prompt par champ peut demander filtrage, reformatage
+                  // (one-line + séparateur, markdown→HTML…), traduction ou
+                  // nettoyage. On route TOUT au LLM via un appel batché unique
+                  // car les heuristiques keyword ratent le reformatage (ex:
+                  // "affiche sur une seule ligne avec '>'" n'est pas un filtre).
+                  try {
+                    const { applyFieldPrompts } = await import('@/features/scraping-templates/applyFieldPrompts')
+                    type PromptSink = {
+                      name: string
+                      prompt: string
+                      read: () => string | string[]
+                      write: (v: string | string[]) => void
                     }
-
-                    // Champ standard — filtrer la valeur
-                    if (fieldKey === 'documents') {
-                      const before = documents.length
-                      documents = isExclude
-                        ? documents.filter((d) => !match(d))
-                        : documents.filter((d) => match(d))
-                      if (documents.length !== before) log(`📝 Prompt "${fieldKey}" : ${before} → ${documents.length} documents`)
-                    } else if (fieldKey === 'images') {
-                      const before = (f.images as string[] ?? []).length
-                      f.images = isExclude
-                        ? (f.images as string[]).filter((u: string) => !match(u))
-                        : (f.images as string[]).filter((u: string) => match(u))
-                      if ((f.images as string[]).length !== before) log(`📝 Prompt "${fieldKey}" : ${before} → ${(f.images as string[]).length} images`)
-                    } else if (fieldKey === 'advantages') {
-                      const before = advantages.length
-                      advantages = isExclude
-                        ? advantages.filter((a) => !match(a.text))
-                        : advantages.filter((a) => match(a.text))
-                      if (advantages.length !== before) log(`📝 Prompt "${fieldKey}" : ${before} → ${advantages.length} avantages`)
-                    } else if (fieldKey === 'description') {
-                      // Pour description : si exclude, retirer les lignes matchant ; sinon garder celles matchant
-                      const lines = toStr(f.description).split('\n')
-                      if (lines.length > 1) {
-                        f.description = isExclude
-                          ? lines.filter((l) => !match(l)).join('\n')
-                          : lines.filter((l) => match(l) || l.trim().length === 0).join('\n')
-                        log(`📝 Prompt "${fieldKey}" appliqué sur ${lines.length} lignes`)
-                      }
-                    } else if (fieldKey in customFields) {
-                      const val = customFields[fieldKey]
-                      if (Array.isArray(val)) {
-                        customFields[fieldKey] = isExclude
-                          ? val.filter((v) => !match(v))
-                          : val.filter((v) => match(v))
+                    const sinks: PromptSink[] = []
+                    for (const fld of matching.fields) {
+                      if (!fld.prompt?.trim()) continue
+                      const key = fld.field
+                      if (key === 'documents') {
+                        sinks.push({
+                          name: key, prompt: fld.prompt,
+                          read: () => documents,
+                          write: (v) => { documents = Array.isArray(v) ? v : v.split('\n').map((s) => s.trim()).filter(Boolean) },
+                        })
+                      } else if (key === 'images') {
+                        sinks.push({
+                          name: key, prompt: fld.prompt,
+                          read: () => toArr(f.images),
+                          write: (v) => { f.images = Array.isArray(v) ? v : [v] },
+                        })
+                      } else if (key === 'advantages') {
+                        const originalGroups = advantages.map((a) => a.group)
+                        sinks.push({
+                          name: key, prompt: fld.prompt,
+                          read: () => advantages.map((a) => a.text),
+                          write: (v) => {
+                            const arr = Array.isArray(v) ? v : [v]
+                            // Même cardinalité : remap par position, conserve les groupes.
+                            // Sinon (filtre qui change le nombre) : drop les groupes.
+                            advantages = arr.length === originalGroups.length
+                              ? arr.map((text, i) => originalGroups[i] ? { text, group: originalGroups[i] } : { text })
+                              : arr.map((text) => ({ text }))
+                          },
+                        })
+                      } else if (key === 'description') {
+                        sinks.push({
+                          name: key, prompt: fld.prompt,
+                          read: () => toStr(f.description),
+                          write: (v) => { f.description = Array.isArray(v) ? v.join('\n') : v },
+                        })
+                      } else if (key in customFields) {
+                        sinks.push({
+                          name: key, prompt: fld.prompt,
+                          read: () => customFields[key],
+                          write: (v) => { customFields[key] = v },
+                        })
+                      } else if (typeof f[key] === 'string' || Array.isArray(f[key])) {
+                        sinks.push({
+                          name: key, prompt: fld.prompt,
+                          read: () => Array.isArray(f[key])
+                            ? (f[key] as unknown[]).filter((x): x is string => typeof x === 'string')
+                            : toStr(f[key]),
+                          write: (v) => { f[key] = v },
+                        })
                       }
                     }
+                    if (sinks.length > 0) {
+                      const targets = sinks.map((s) => ({ name: s.name, prompt: s.prompt, value: s.read() }))
+                      const results = await applyFieldPrompts(targets)
+                      const byName = new Map(results.map((r) => [r.name, r.value] as const))
+                      let applied = 0
+                      for (const s of sinks) {
+                        const out = byName.get(s.name)
+                        if (out === undefined) continue
+                        s.write(out)
+                        applied++
+                      }
+                      if (applied > 0) log(`📝 Prompts champs : ${applied}/${sinks.length} transformés par LLM`)
+                    }
+                  } catch (err) {
+                    log(`⚠️ Prompts champs : transformation LLM échouée (${err instanceof Error ? err.message : String(err)})`)
                   }
 
                   const rawBuilt: EnrichedProduct = {

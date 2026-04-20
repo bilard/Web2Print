@@ -91,6 +91,17 @@ export const scrapingTemplateSchema = z.object({
   /** Prompt commun à tous les templates du même vendorDomain.
    *  Propagé automatiquement lors de la sauvegarde (cf. saveTemplateWithVendorSync). */
   vendorPrompt: z.string().optional(),
+  /** Ordre d'affichage des champs au niveau fournisseur (liste de noms de
+   *  champs). Partagé entre tous les templates du même vendorDomain via
+   *  saveTemplateWithVendorSync. Prime sur l'ordre insertion des `fields`
+   *  dans l'EnrichmentPanel. Les champs absents de cette liste sont
+   *  appendés dans l'ordre insertion. */
+  vendorFieldOrder: z.array(z.string()).optional(),
+  /** Alias de marque pour matcher explicitement une valeur `Marque` de
+   *  la source Excel quand l'auto-match (brand ⇔ vendorDomain) échoue.
+   *  Exemple : vendorDomain=`somatherm-outillage.fr` + brandAliases=['Somatherm']
+   *  pour que les produits dont Marque="Somatherm" matchent ce template. */
+  brandAliases: z.array(z.string()).optional(),
   /** Dernière URL utilisée pour tester/mapper le template — rechargée à l'ouverture. */
   lastTestUrl: z.string().optional(),
   /** Metadata */

@@ -66,6 +66,7 @@ export function TextToolbar() {
     canvas.on('text:selection:changed' as any, update)
     canvas.on('text:editing:entered' as any, update)
     canvas.on('text:editing:exited' as any, update)
+    canvas.on('object:modified' as any, update)
     return () => {
       canvas.off('selection:created' as any, update)
       canvas.off('selection:updated' as any, update)
@@ -73,6 +74,7 @@ export function TextToolbar() {
       canvas.off('text:selection:changed' as any, update)
       canvas.off('text:editing:entered' as any, update)
       canvas.off('text:editing:exited' as any, update)
+      canvas.off('object:modified' as any, update)
     }
   }, [selectedObjectId])
 

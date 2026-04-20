@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { FolderOpen, Presentation, Upload, Loader2, ImageIcon, FileSpreadsheet } from 'lucide-react'
+import { FolderOpen, Presentation, Upload, Loader2, ImageIcon, FileSpreadsheet, Shapes } from 'lucide-react'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
 
 export interface ImportSelection {
-  type: 'idml' | 'pptx' | 'image' | 'xlsx'
+  type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx'
   files: File[]
 }
 
@@ -23,6 +23,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   const pptxInputRef = useRef<HTMLInputElement>(null)
   const idmlInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const svgInputRef = useRef<HTMLInputElement>(null)
   const xlsxInputRef = useRef<HTMLInputElement>(null)
 
   const showIdmlModal = idmlProcessing || idmlState.step === 'ready' || !!idmlError
@@ -67,6 +68,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
     onImport({ type: 'image', files: [file] })
   }, [onImport])
 
+  const handleSvgFile = useCallback((file: File) => {
+    if (!file.name.toLowerCase().endsWith('.svg')) return
+    onImport({ type: 'svg', files: [file] })
+  }, [onImport])
+
   const handleXlsxFile = useCallback((file: File) => {
     if (!file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) return
     onImport({ type: 'xlsx', files: [file] })
@@ -78,6 +84,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
     if (type === 'pptx' && e.dataTransfer.files[0]) handlePptxFile(e.dataTransfer.files[0])
     if (type === 'idml') handleIdmlFiles(Array.from(e.dataTransfer.files))
     if (type === 'image' && e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0])
+    if (type === 'svg' && e.dataTransfer.files[0]) handleSvgFile(e.dataTransfer.files[0])
     if (type === 'xlsx' && e.dataTransfer.files[0]) handleXlsxFile(e.dataTransfer.files[0])
   }
 
@@ -91,8 +98,8 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* IDML Assembly Import */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('idml') }}
@@ -189,6 +196,39 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             accept="image/*"
             className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = '' }}
+          />
+        </div>
+
+        {/* SVG Import — éditable */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver('svg') }}
+          onDragLeave={() => setDragOver(null)}
+          onDrop={onDrop('svg')}
+          onClick={() => svgInputRef.current?.click()}
+          className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+            dragOver === 'svg'
+              ? 'border-purple-500 bg-purple-500/10'
+              : 'border-white/10 hover:border-purple-500/40 bg-[#1a1a1a] hover:bg-[#1e1e1e]'
+          }`}
+        >
+          <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center">
+            <Shapes className="w-7 h-7 text-purple-400" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-white">Importer SVG</p>
+            <p className="text-xs text-white/30 mt-1">Vectoriel éditable</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-white/20">
+            <Upload className="w-3 h-3" />
+            Glisser ou cliquer
+          </div>
+          <p className="text-[10px] text-white/15">.svg (Illustrator)</p>
+          <input
+            ref={svgInputRef}
+            type="file"
+            accept=".svg,image/svg+xml"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSvgFile(f); e.target.value = '' }}
           />
         </div>
 

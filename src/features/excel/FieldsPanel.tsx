@@ -38,9 +38,10 @@ interface SortableFieldProps {
   isExpanded: boolean
   onToggleExpand: () => void
   onToggleVisibility: () => void
+  onSetPrimary: () => void
 }
 
-function SortableField({ col, isHidden, isExpanded, onToggleExpand, onToggleVisibility }: SortableFieldProps) {
+function SortableField({ col, isHidden, isExpanded, onToggleExpand, onToggleVisibility, onSetPrimary }: SortableFieldProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: col.key })
   const hasStats = !!col.stats
 
@@ -80,11 +81,19 @@ function SortableField({ col, isHidden, isExpanded, onToggleExpand, onToggleVisi
         </button>
         <FieldTypeIcon fieldType={col.fieldType} className="w-3.5 h-3.5 text-white/30 shrink-0" />
         <span className="text-xs text-white/70 flex-1 truncate">{col.label}</span>
-        {col.isPrimary && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-            Clé
-          </span>
-        )}
+        <button
+          onClick={onSetPrimary}
+          title={col.isPrimary
+            ? 'Clé primaire — utilisée comme identifiant pour la mise à jour au re-scraping'
+            : 'Définir comme clé primaire (identifiant pour le re-scraping)'}
+          className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors shrink-0 ${
+            col.isPrimary
+              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+              : 'bg-white/[0.02] text-white/25 border-white/10 hover:bg-amber-500/10 hover:text-amber-400/80 hover:border-amber-500/25'
+          }`}
+        >
+          Clé
+        </button>
         <button
           onClick={onToggleVisibility}
           className="shrink-0 p-0.5 rounded hover:bg-white/10 transition-colors"
@@ -102,7 +111,7 @@ function SortableField({ col, isHidden, isExpanded, onToggleExpand, onToggleVisi
 }
 
 export function FieldsPanel() {
-  const { sheets, activeSheetIndex, toggleColumnVisibility, showAllColumns, hideAllColumns, reorderColumns } = useExcelStore()
+  const { sheets, activeSheetIndex, toggleColumnVisibility, showAllColumns, hideAllColumns, reorderColumns, setColumnPrimary } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
 
@@ -179,6 +188,7 @@ export function FieldsPanel() {
                 isExpanded={expandedKey === col.key}
                 onToggleExpand={() => setExpandedKey(expandedKey === col.key ? null : (col.stats ? col.key : null))}
                 onToggleVisibility={() => toggleColumnVisibility(activeSheetIndex, col.key)}
+                onSetPrimary={() => setColumnPrimary(activeSheetIndex, col.key)}
               />
             ))}
           </div>

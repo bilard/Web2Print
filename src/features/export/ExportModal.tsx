@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package } from 'lucide-react'
+import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes } from 'lucide-react'
 import { useExportPng } from './useExportPng'
 import { useExportPdf } from './useExportPdf'
 import { useExportPptx } from './useExportPptx'
 import { useExportHtml } from './useExportHtml'
+import { useExportSvg } from './useExportSvg'
 import { useExportIdml } from '@/features/idml/useExportIdml'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 import type { PngDpi } from './useExportPng'
 
-type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'idml'
+type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml'
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
 
 interface ExportModalProps {
@@ -20,6 +21,7 @@ const ALL_FORMATS: { id: Format; label: string; icon: React.ComponentType<{ clas
   { id: 'pdf',  label: 'PDF',       icon: FileText,     desc: 'Document imprimable',     color: 'text-red-400'     },
   { id: 'pptx', label: 'PowerPoint',icon: Presentation, desc: 'Présentation éditable',  color: 'text-orange-400'  },
   { id: 'html', label: 'HTML',      icon: Code2,        desc: 'Dossier web complet',     color: 'text-sky-400'     },
+  { id: 'svg',  label: 'SVG',       icon: Shapes,       desc: 'Vectoriel éditable',      color: 'text-purple-400'  },
   { id: 'idml', label: 'IDML',      icon: Package,      desc: 'InDesign modifié',        color: 'text-violet-400', idmlOnly: true },
 ]
 
@@ -36,6 +38,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
   const { exportPdf } = useExportPdf()
   const { exportPptx } = useExportPptx()
   const { exportHtml } = useExportHtml()
+  const { exportSvg } = useExportSvg()
   const { exportIdml } = useExportIdml()
 
   const handleExport = async () => {
@@ -46,6 +49,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
       else if (format === 'pdf') await exportPdf()
       else if (format === 'pptx') await exportPptx()
       else if (format === 'html') await exportHtml()
+      else if (format === 'svg') await exportSvg()
       else if (format === 'idml') await exportIdml()
       setStatus('done')
       setTimeout(onClose, 1500)
@@ -58,7 +62,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
@@ -75,7 +79,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
           {/* Format selector */}
           <div>
             <p className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Format</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className={`grid ${formats.length >= 6 ? 'grid-cols-3' : 'grid-cols-5'} gap-2`}>
               {formats.map(({ id, label, icon: Icon, desc, color }) => (
                 <button
                   key={id}
@@ -142,6 +146,18 @@ export function ExportModal({ onClose }: ExportModalProps) {
             <div className="bg-white/3 border border-white/5 rounded-xl p-3 flex flex-col gap-1.5">
               <p className="text-xs text-white/40">
                 Archive ZIP contenant <span className="text-white/60">index.html</span>, <span className="text-white/60">style.css</span> et un dossier <span className="text-white/60">assets/</span> avec les images. Textes sélectionnables, formes en CSS.
+              </p>
+            </div>
+          )}
+
+          {/* Info SVG */}
+          {format === 'svg' && (
+            <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 flex flex-col gap-1.5">
+              <p className="text-xs text-white/50">
+                Fichier <span className="text-purple-300 font-medium">.svg</span> vectoriel réimportable et éditable dans Illustrator, Figma ou ce même éditeur.
+              </p>
+              <p className="text-[10px] text-white/30">
+                Textes, formes et chemins sont conservés sans perte de qualité.
               </p>
             </div>
           )}

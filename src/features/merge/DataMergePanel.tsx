@@ -8,6 +8,8 @@ import { useDataMerge } from './useDataMerge'
 import { hasPlaceholders, evaluateFormula, formatFormulaResult } from './mergeEngine'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { DataSourcePicker } from './DataSourcePicker'
+import { SourceSwitcher } from './SourceSwitcher'
+import { VendorStatusPanel } from './VendorStatusPanel'
 import { ExportModal } from './ExportModal'
 
 /** Convertit les clés [col_key] → [col_label] pour l'affichage */
@@ -57,27 +59,28 @@ export function DataMergePanel() {
 
   return (
     <div className="text-sm">
-      {/* Source info + mode badge */}
-      <div className="px-3 py-2 flex items-center justify-between border-b border-white/5">
-        <span className="text-white/70 truncate flex-1">
-          <span className="text-indigo-400 font-medium">{dataSource?.fileName}</span>
-        </span>
+      {/* Source info + mode badge — nom cliquable pour switcher vers un autre dataset */}
+      <div className="px-3 py-2 flex items-center gap-2 border-b border-white/5">
+        <SourceSwitcher />
         {/* IDML badge — shown when IDML export is available */}
         {hasIdmlSource && (
-          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded mr-1 bg-emerald-500/20 text-emerald-400">
+          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 shrink-0">
             IDML
           </span>
         )}
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-indigo-400 transition-colors disabled:opacity-50"
+          className="p-1 rounded hover:bg-white/10 text-white/30 hover:text-indigo-400 transition-colors disabled:opacity-50 shrink-0"
           title="Reconnecter la source"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
-        <span className="text-xs text-white/30 ml-1 shrink-0">{totalRows} lignes</span>
+        <span className="text-xs text-white/30 shrink-0">{totalRows} lignes</span>
       </div>
+
+      {/* Fournisseurs de la source */}
+      <VendorStatusPanel />
 
       {/* Navigation */}
       <div className="px-3 py-2 border-b border-white/5">

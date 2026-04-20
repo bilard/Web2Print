@@ -1,7 +1,18 @@
 import { useState, useCallback, useRef } from 'react'
+import { httpsCallable } from 'firebase/functions'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import { getApiKey } from '@/lib/apiKeys'
+import { functions } from '@/lib/firebase/config'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
+
+/** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
+ *  e-commerce (contourne les protections anti-bot qui servent aux crawlers
+ *  une version SEO différente du HTML visible). */
+const extractBreadcrumbCloudFn = httpsCallable<
+  { url: string },
+  { items: string[]; selector: string | null; images: string[] }
+>(functions, 'extractBreadcrumb')
 
 const JINA_READER = 'https://r.jina.ai'
 
@@ -79,6 +90,14 @@ export type ScrapingMode = 'auto' | 'schema'
 
 // ─── Templates ────────────────────────────────────────────────────────────────
 
+const BREADCRUMB_DESCRIPTION =
+  'Fil d\'Ariane (breadcrumb) de la page, recopié VERBATIM depuis la source. ' +
+  'Il s\'agit de la séquence de liens courte affichée juste sous le header (chevrons ">", slashes "/" ou flèches) qui indique la position de la page dans le site. ' +
+  'Exemples : ["Homme", "Chaussures", "Baskets"] pour une page Decathlon ; ["Outillage", "Perceuses"] pour une page bricolage. ' +
+  'Règles : recopie chaque libellé EXACTEMENT tel qu\'il est écrit (pas de traduction, pas de reformulation). ' +
+  'Si la page affiche un breadcrumb plus détaillé dans le JSON-LD (schema.org BreadcrumbList) que celui rendu visuellement, privilégie celui qui est le plus court et qui correspond au chemin affiché à l\'utilisateur. ' +
+  'Ignore le méga-menu principal et les menus latéraux de navigation — ce ne sont pas des breadcrumbs.'
+
 export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingField[] }> = {
   product: {
     label: 'Produit',
@@ -88,6 +107,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
       { key: 'price', label: 'Prix', description: 'Prix de vente TTC affiché (ex: 299,00 €)', type: 'string' },
       { key: 'description', label: 'Description', description: 'Description ou accroche principale du produit, en français, pas les accessoires', type: 'string' },
       { key: 'category', label: 'Catégorie', description: 'Catégorie ou famille de produit, en français', type: 'string' },
+      { key: 'breadcrumb', label: 'Fil d\'Ariane', description: BREADCRUMB_DESCRIPTION, type: 'strings' },
       { key: 'brand', label: 'Marque', description: 'Marque ou fabricant', type: 'string' },
       { key: 'availability', label: 'Disponibilité', description: 'Disponibilité ou état du stock', type: 'string' },
       { key: 'ean', label: 'EAN', description: 'Code EAN ou code-barres du produit', type: 'string' },
@@ -102,6 +122,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
       { key: 'reference', label: 'Référence', description: 'Code référence (ex: DUH752Z)', type: 'string' },
       { key: 'price', label: 'Prix', description: 'Prix de vente affiché', type: 'string' },
       { key: 'description', label: 'Description', description: 'Description courte du produit principal uniquement, EN FRANÇAIS', type: 'string' },
+      { key: 'breadcrumb', label: 'Fil d\'Ariane', description: BREADCRUMB_DESCRIPTION, type: 'strings' },
       { key: 'brand', label: 'Marque', description: 'Marque ou fabricant', type: 'string' },
       { key: 'availability', label: 'Disponibilité', description: 'Stock ou disponibilité', type: 'string' },
       { key: 'ean', label: 'EAN', description: 'Code EAN ou code-barres', type: 'string' },
@@ -116,6 +137,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
       { key: 'reference', label: 'Référence', description: 'Code référence ou SKU (ex: DUH752Z, M18 FMTIW2F12-502X)', type: 'string' },
       { key: 'subtitle', label: 'Sous-titre', description: 'Sous-titre ou accroche courte du produit (ex: "18 V Li-Ion - 75 cm - Produit seul"), EN FRANÇAIS', type: 'string' },
       { key: 'description', label: 'Description', description: 'Description complète du produit principal EN FRANÇAIS : toutes les phrases descriptives, accroche, caractéristiques principales. NE PAS tronquer. Si le texte source est en anglais, TRADUIRE en français.', type: 'string' },
+      { key: 'breadcrumb', label: 'Fil d\'Ariane', description: BREADCRUMB_DESCRIPTION, type: 'strings' },
       { key: 'advantages', label: 'Avantages', description: 'Liste de TOUS les avantages/caractéristiques clés mentionnés (chaque bullet point, chaque USP), EN FRANÇAIS. Chercher dans les sections "Avantages", "Points forts", "Caractéristiques clés", "Features", etc. Tableau de strings.', type: 'strings' },
       { key: 'brand', label: 'Marque', description: 'Marque ou fabricant', type: 'string' },
       { key: 'availability', label: 'Disponibilité', description: 'Stock ou disponibilité (ex: "En stock", "En rupture de stock")', type: 'string' },
@@ -130,6 +152,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
     fields: [
       { key: 'name', label: 'Nom', description: 'Nom du produit ou article, EN FRANÇAIS', type: 'string' },
       { key: 'price', label: 'Prix', description: 'Prix affiché', type: 'string' },
+      { key: 'breadcrumb', label: 'Fil d\'Ariane', description: BREADCRUMB_DESCRIPTION, type: 'strings' },
       { key: 'url', label: 'URL', description: 'Lien vers la page détail', type: 'string' },
       { key: 'image', label: 'Image', description: "URL de l'image principale", type: 'string' },
     ],
@@ -141,6 +164,7 @@ export const FIELD_TEMPLATES: Record<string, { label: string; fields: ScrapingFi
       { key: 'date', label: 'Date', description: 'Date de publication', type: 'string' },
       { key: 'author', label: 'Auteur', description: "Nom de l'auteur", type: 'string' },
       { key: 'summary', label: 'Résumé', description: "Résumé ou extrait de l'article, EN FRANÇAIS", type: 'string' },
+      { key: 'breadcrumb', label: 'Fil d\'Ariane', description: BREADCRUMB_DESCRIPTION, type: 'strings' },
       { key: 'url', label: 'URL', description: "Lien vers l'article", type: 'string' },
     ],
   },
@@ -310,24 +334,62 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
     }
   }
 
-  // Helper: détecter si une colonne contient des URLs d'images
+  // Helper: détecter si une colonne contient des URLs d'images.
+  // Heuristiques cumulatives :
+  //   1. Nom de champ explicitement "image/photo/picture" (ex: `image_url`, `images`)
+  //   2. URL avec extension image classique
+  //   3. URL sur un CDN d'images connu (Scene7, Cloudinary, Imgix, Akamai…) —
+  //      ces CDN ne mettent pas d'extension dans le path (ex: Boulanger Scene7
+  //      `https://boulanger.scene7.com/is/image/Boulanger/1207575_0?...`)
   const IMG_EXTS = /\.(jpe?g|png|webp|gif|avif|svg)(\?.*)?$/i
+  const IMG_CDN = /scene7\.com|cloudinary\.com|imgix\.net|akamaized\.net|cdninstagram|fbcdn\.net|\/is\/image\/|\/image\/upload\/|\/image\/fetch\//i
+  const isImageUrl = (s: string): boolean =>
+    s.startsWith('http') && (IMG_EXTS.test(s) || IMG_CDN.test(s))
   const isImageCol = (key: string): boolean => {
+    if (/image|photo|picture/i.test(key)) return true
     for (const r of result.rows) {
       const v = r[key]
-      if (typeof v === 'string' && v.startsWith('http')) return IMG_EXTS.test(v)
+      if (typeof v === 'string' && isImageUrl(v)) return true
       if (Array.isArray(v) && v.length > 0) {
-        const first = v.find(x => typeof x === 'string' && (x as string).startsWith('http'))
-        if (first) return IMG_EXTS.test(first as string)
+        const first = v.find((x) => typeof x === 'string' && isImageUrl(x as string))
+        if (first) return true
       }
     }
     return false
   }
 
-  // 2. Colonnes standard (sauf celles expansées en specs)
+  // 2. Expansion du fil d'Ariane en colonnes taxonomie hiérarchiques
+  const BREADCRUMB_KEY = 'breadcrumb'
+  const hasBreadcrumbField = fields.some((f) => f.key === BREADCRUMB_KEY)
+  let breadcrumbDepth = 0
+  if (hasBreadcrumbField) {
+    for (const r of result.rows) {
+      const v = r[BREADCRUMB_KEY]
+      if (Array.isArray(v)) breadcrumbDepth = Math.max(breadcrumbDepth, v.length)
+    }
+  }
+  const taxonomyColumns: ExcelColumn[] = []
+  const taxonomyLevels: Record<string, number> = {}
+  for (let lvl = 1; lvl <= breadcrumbDepth; lvl++) {
+    const key = `taxonomie_n${lvl}`
+    taxonomyColumns.push({
+      key,
+      label: `Taxonomie Niveau ${lvl}`,
+      fieldType: 'text' as const,
+      detectedType: 'text' as const,
+      isPrimary: false,
+      width: 160,
+    })
+    taxonomyLevels[key] = lvl
+  }
+
+  // 3. Colonnes standard (sauf celles expansées en specs ou en taxonomie).
+  //    La colonne primaire reste le premier champ standard (ex: `name`) — les
+  //    colonnes taxonomie sont annexes et ne doivent jamais devenir le titre
+  //    de la fiche produit.
   const specsKeys = new Set(specsColumns.map((s) => s.key))
   const baseColumns: ExcelColumn[] = result.columns
-    .filter((key) => !isSpecsArray(result.rows[0]?.[key]) && !(isStringsArray(result.rows[0]?.[key]) && specsKeys.has(key)))
+    .filter((key) => key !== BREADCRUMB_KEY && !isSpecsArray(result.rows[0]?.[key]) && !(isStringsArray(result.rows[0]?.[key]) && specsKeys.has(key)))
     .map((key, i) => {
       const imgCol = isImageCol(key)
       return {
@@ -339,18 +401,23 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
       }
     })
 
-  const columns = [...baseColumns, ...specsColumns]
-  if (columns.length > 0) columns[0].isPrimary = true
+  // Ordre : colonnes standard (name en primary) → taxonomie → specs.
+  const columns = [...baseColumns, ...taxonomyColumns, ...specsColumns]
 
-  // 3. Lignes
+  // 4. Lignes
   const rows: ExcelRow[] = result.rows.map((r, i) => {
     const base: ExcelRow = {
       _id: `scraped_${i}`,
       ...Object.fromEntries(
         result.columns
-          .filter((k) => !isSpecsArray(r[k]))
+          .filter((k) => k !== BREADCRUMB_KEY && !isSpecsArray(r[k]))
           .map((k) => [k, serializeCell(r[k])])
       ),
+    }
+    const crumb = Array.isArray(r[BREADCRUMB_KEY]) ? (r[BREADCRUMB_KEY] as unknown[]) : []
+    for (let lvl = 1; lvl <= breadcrumbDepth; lvl++) {
+      const v = crumb[lvl - 1]
+      base[`taxonomie_n${lvl}`] = typeof v === 'string' && v.trim() ? v.trim() : null
     }
     for (const [key, values] of specsData.entries()) {
       base[key] = values[i] ?? null
@@ -358,7 +425,12 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
     return base
   })
 
-  return { name, columns, rows, taxonomy: [] }
+  const sheet: ExcelSheet = { name, columns, rows, taxonomy: [] }
+  if (breadcrumbDepth > 0) {
+    sheet.taxonomyLevels = taxonomyLevels
+    sheet.taxonomy = buildTaxonomyFromLevels(sheet, taxonomyLevels)
+  }
+  return sheet
 }
 
 export function crawlPagesToSheet(pages: CrawlPage[], name: string): ExcelSheet {
@@ -393,12 +465,28 @@ interface JinaReaderResponse {
 
 async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean } = {}): Promise<JinaReaderResponse['data']> {
   const extra: Record<string, string> = {}
-  // Timeout minimum 10s pour les sites fournisseurs (SPA, accordéons JS)
-  const timeout = Math.max(opts.timeout ?? 0, 10000)
+
+  // Les gros revendeurs FR (Darty, Boulanger, Fnac, Leroy Merlin…) sont derrière
+  // DataDome/Akamai. Le moteur Jina par défaut reçoit une page challenge vide →
+  // Gemini n'a rien à extraire. Forcer `X-Engine: browser` (Chromium headless
+  // Jina) + timeout 30s + selector produit permet de traverser le challenge.
+  let isProtected = false
+  try {
+    isProtected = RESELLER_HOSTS.test(new URL(url).hostname)
+  } catch { /* URL invalide — on garde les defaults */ }
+
+  const timeout = Math.max(opts.timeout ?? 0, isProtected ? 30000 : 10000)
   extra['X-Timeout'] = String(Math.ceil(timeout / 1000))
   if (opts.noCache) extra['X-No-Cache'] = 'true'
-  // Forcer le rendu JS complet pour les accordéons dynamiques
-  extra['X-Wait-For-Selector'] = 'body'
+
+  if (isProtected) {
+    extra['X-Engine'] = 'browser'
+    // Attendre qu'un conteneur produit (pas seulement <body>) soit hydraté.
+    extra['X-Wait-For-Selector'] = 'main, [itemtype*="Product" i], [class*="product" i]'
+  } else {
+    // Forcer le rendu JS complet pour les accordéons dynamiques
+    extra['X-Wait-For-Selector'] = 'body'
+  }
 
   const headers = jinaHeaders(extra)
   const startedAt = performance.now()
@@ -438,6 +526,182 @@ async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean
     }
     throw err
   }
+}
+
+/** Récupère le HTML brut de la page via Jina Reader (header `X-Return-Format: html`).
+ *  Utilisé pour extraire de façon déterministe le fil d'Ariane depuis les
+ *  éléments `<nav class*=breadcrumb>` / `<li class*=breadcrumb>`, sans passer
+ *  par l'interprétation LLM. Silencieux en cas d'échec (fallback sur Gemini). */
+async function jinaReadHtml(url: string, opts: { timeout?: number; noCache?: boolean } = {}): Promise<string | null> {
+  const timeout = Math.max(opts.timeout ?? 0, 25000)
+  const extra: Record<string, string> = {
+    'X-Timeout': String(Math.ceil(timeout / 1000)),
+    'X-Return-Format': 'html',
+    // Attendre spécifiquement les structures BEM hydratées côté client
+    // (double underscore = pattern React/Vue post-hydration typique).
+    'X-Wait-For-Selector': '[class*="breadcrumbs__"], [class*="breadcrumb__"], [class*="Breadcrumb__"], body',
+    'X-Engine': 'browser',
+  }
+  if (opts.noCache) extra['X-No-Cache'] = 'true'
+  try {
+    const res = await fetch(`${JINA_READER}/${url}`, { headers: jinaHeaders(extra) })
+    if (!res.ok) {
+      console.warn('[jinaReadHtml] HTTP', res.status)
+      return null
+    }
+    const contentType = res.headers.get('content-type') ?? ''
+    let html: string | null = null
+    if (contentType.includes('json')) {
+      const json = await res.json() as { data?: { html?: string; content?: string } }
+      html = json.data?.html ?? json.data?.content ?? null
+    } else {
+      html = await res.text()
+    }
+    console.log('[jinaReadHtml] length:', html?.length ?? 0)
+    if (html) {
+      // Diagnostic : est-ce que la classe BEM du breadcrumb visible est présente ?
+      const hasBemBreadcrumb = /breadcrumbs__breadcrumb-item|breadcrumb__item/i.test(html)
+      const hasHomme = />Homme</.test(html)
+      const hasBaskets = />Baskets</.test(html)
+      const hasTriathlon = />Triathlon</.test(html)
+      const hasHommeSlash = html.includes('href="/homme"') || html.includes("href='/homme'")
+      console.log(
+        `[jinaReadHtml] diagnostic: BEM=${hasBemBreadcrumb} Homme=${hasHomme} Baskets=${hasBaskets} Triathlon=${hasTriathlon} hrefHomme=${hasHommeSlash}`,
+      )
+    }
+    return html
+  } catch (e) {
+    console.warn('[jinaReadHtml] error:', e)
+    return null
+  }
+}
+
+/** Extrait les libellés d'un conteneur breadcrumb : priorité aux `<a>` puis
+ *  aux `[itemprop=name]` (microdata), puis aux `<li>` directs en dernier
+ *  recours. Nettoyage + dédup ordonnée. */
+function extractItemsFromContainer(container: Element): string[] {
+  const anchors = Array.from(container.querySelectorAll('a'))
+  const microdata = Array.from(container.querySelectorAll('[itemprop="name"]'))
+  let nodes: Element[]
+  if (anchors.length > 0) nodes = anchors
+  else if (microdata.length > 0) nodes = microdata
+  else nodes = Array.from(container.querySelectorAll('li'))
+  const items = nodes
+    .map((n) => (n.textContent ?? '').replace(/\s+/g, ' ').trim())
+    .filter((t) => t.length > 0 && t.length < 80 && !/^[>›/\\|]+$/.test(t))
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const it of items) {
+    if (seen.has(it.toLowerCase())) continue
+    seen.add(it.toLowerCase())
+    out.push(it)
+  }
+  return out
+}
+
+/** Extrait le fil d'Ariane d'une page HTML. Stratégie :
+ *  1. Collecter TOUS les conteneurs breadcrumb candidats (nav, ol, ul, div avec
+ *     classe/aria-label/data-testid contenant "breadcrumb").
+ *  2. Filtrer ceux qui sont cachés (aria-hidden, style display:none).
+ *  3. Retourner le candidat le PLUS COURT avec ≥ 2 items — les sites ont
+ *     souvent un breadcrumb visible (3-4 items) + un breadcrumb SEO/catégorie
+ *     plus long (5+ items) ; l'utilisateur attend le visible. */
+function extractBreadcrumbFromHtml(html: string): string[] {
+  if (!html || typeof DOMParser === 'undefined') return []
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(html, 'text/html')
+  } catch (e) {
+    console.warn('[extractBreadcrumbFromHtml] DOMParser error:', e)
+    return []
+  }
+
+  const containerSelectors = [
+    'nav[aria-label*="breadcrumb" i]',
+    'nav[aria-label*="fil d" i]',
+    '[data-testid*="breadcrumb" i]',
+    '[itemtype*="BreadcrumbList" i]',
+    'nav[class*="breadcrumb" i]',
+    'ol[class*="breadcrumb" i]',
+    'ul[class*="breadcrumb" i]',
+    '[class*="breadcrumbs__list" i]',
+    '[class*="breadcrumb" i]',
+  ]
+
+  const candidates: { items: string[]; selector: string }[] = []
+  const containerSet = new Set<Element>()
+  for (const sel of containerSelectors) {
+    let nodes: Element[]
+    try {
+      nodes = Array.from(doc.querySelectorAll(sel))
+    } catch {
+      continue
+    }
+    for (const container of nodes) {
+      if (containerSet.has(container)) continue
+      containerSet.add(container)
+      // Exclure les conteneurs cachés (aria-hidden=true ou style display:none).
+      if (container.getAttribute('aria-hidden') === 'true') continue
+      const style = container.getAttribute('style') ?? ''
+      if (/display\s*:\s*none/i.test(style)) continue
+      const items = extractItemsFromContainer(container)
+      if (items.length >= 2) candidates.push({ items, selector: sel })
+    }
+  }
+
+  // Stratégie BEM : collecter tous les `<li>` ou `<a>` dont la classe matche le
+  // pattern `breadcrumb*item` (ex: `breadcrumbs__breadcrumb-item`, `breadcrumb-item`).
+  // Ces éléments sont souvent des frères dans un conteneur qui ne matche aucun de
+  // nos sélecteurs principaux (quand Decathlon n'enveloppe pas le breadcrumb
+  // visible dans un nav/ul typé).
+  const bemItems = Array.from(
+    doc.querySelectorAll(
+      '[class*="breadcrumb" i][class*="item" i], [class*="BreadcrumbItem"]',
+    ),
+  )
+  if (bemItems.length >= 2) {
+    // Grouper par parent — on peut avoir plusieurs breadcrumbs indépendants.
+    const byParent = new Map<Element | null, Element[]>()
+    for (const it of bemItems) {
+      const p = it.parentElement
+      if (!byParent.has(p)) byParent.set(p, [])
+      byParent.get(p)!.push(it)
+    }
+    for (const [parent, siblings] of byParent.entries()) {
+      if (siblings.length < 2) continue
+      if (parent && parent.getAttribute('aria-hidden') === 'true') continue
+      const items = siblings
+        .map((el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim())
+        .filter((t) => t.length > 0 && t.length < 80 && !/^[>›/\\|]+$/.test(t))
+      const seen = new Set<string>()
+      const out: string[] = []
+      for (const it of items) {
+        if (seen.has(it.toLowerCase())) continue
+        seen.add(it.toLowerCase())
+        out.push(it)
+      }
+      if (out.length >= 2) candidates.push({ items: out, selector: 'bem-items[parent]' })
+    }
+  }
+
+  if (candidates.length === 0) {
+    console.log('[extractBreadcrumbFromHtml] no candidate found — HTML preview:', html.slice(0, 500))
+    return []
+  }
+
+  // Log détaillé (sortir chaque candidat séparément pour que les items soient
+  // visibles dans la console Chrome, qui collapse `Array(5)` sinon).
+  console.log('[extractBreadcrumbFromHtml] total candidates:', candidates.length)
+  candidates.forEach((c, i) => {
+    console.log(`  candidate #${i} (n=${c.items.length}, sel="${c.selector}") :`, JSON.stringify(c.items))
+  })
+
+  // Le breadcrumb visible est typiquement le plus court ; le SEO/catégorie est
+  // plus long. À égalité de longueur, garder l'ordre de découverte.
+  candidates.sort((a, b) => a.items.length - b.items.length)
+  const picked = candidates[0]
+  console.log(`[extractBreadcrumbFromHtml] picked (shortest): ${picked.items.length} items from "${picked.selector}"`, picked.items)
+  return picked.items
 }
 
 /** Masque la clé d'API Jina dans les headers loggés. */
@@ -498,7 +762,7 @@ async function llmExtract(
   ].join('')
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${geminiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -539,7 +803,8 @@ export function useJina() {
   // ── Scrape (single URL) ────────────────────────────────────────────────────
   const scrape = useCallback(async (
     url: string, mode: ScrapingMode, fields: ScrapingField[],
-    prompt: string, opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean } = {},
+    prompt: string,
+    opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean; manualBreadcrumb?: string[] } = {},
   ): Promise<ScrapeResult | null> => {
     setLoading(true); reset()
     try {
@@ -547,17 +812,55 @@ export function useJina() {
       const target = opts.target ?? 'multiple'
       const isSingle = target === 'single'
 
-      // 1. Lire la page avec Jina Reader
-      const page = await jinaRead(url, { timeout: opts.waitFor, noCache: opts.noCache })
+      // 1. Lire la page (markdown pour Gemini + extraction breadcrumb/images
+      //    côté serveur via Cloud Function Puppeteer, qui voit la version
+      //    hydratée de la page avec scroll déclenché — indispensable pour les
+      //    revendeurs en lazy-load React (Boulanger, Darty, Fnac).
+      //    Si l'utilisateur a fourni un breadcrumb manuel ET qu'aucun champ
+      //    image n'est demandé, on SKIP la Cloud Function (pas de latence).
+      const wantsBreadcrumb = fields.some((f) => f.key === 'breadcrumb')
+      const wantsImages = fields.some((f) => f.key === 'image_url' || f.key === 'images')
+      const manualCrumb = opts.manualBreadcrumb ?? []
+      const hasManualCrumb = manualCrumb.length >= 2
+      const needsCloud = (wantsBreadcrumb && !hasManualCrumb) || wantsImages
+      const emptyCloud = { items: [] as string[], selector: null as string | null, images: [] as string[] }
+      const [page, cloudResult] = await Promise.all([
+        jinaRead(url, { timeout: opts.waitFor, noCache: opts.noCache }),
+        needsCloud
+          ? extractBreadcrumbCloudFn({ url }).then(
+              (r) => r.data,
+              (err: unknown) => {
+                console.warn('[scrape] extractBreadcrumb cloud function failed:', err)
+                return emptyCloud
+              },
+            )
+          : Promise.resolve(emptyCloud),
+      ])
+      // Le manuel a la priorité absolue, sinon on prend le résultat Cloud.
+      const finalBreadcrumb = hasManualCrumb ? manualCrumb : cloudResult.items
+      const cloudImages = cloudResult.images ?? []
+      if (wantsBreadcrumb) {
+        console.log(
+          '[scrape] breadcrumb source:',
+          hasManualCrumb ? 'manual' : 'cloud',
+          finalBreadcrumb,
+        )
+      }
+      if (wantsImages) {
+        console.log('[scrape] cloud images count:', cloudImages.length)
+      }
 
-      // 2. Construire le prompt contextuel
-      const extractPrompt = prompt.trim() || (
-        isSingle
-          ? `Extrais UNIQUEMENT les données du produit PRINCIPAL visible sur cette page. Ignore les produits similaires, accessoires, navigation et footer. Retourne un objet unique (PAS une liste). Vérifie que TOUTES les sections de spécifications (y compris accordéons) sont couvertes.`
-          : hasFields
-            ? `Extrais TOUS les éléments de la liste sur cette page sous forme de tableau "items". Ignore menus et footer.`
-            : `Extrais les données structurées PRINCIPALES de cette page sous forme de tableau "items".`
-      )
+      // 2. Construire le prompt contextuel : instructions par défaut + prompt
+      // utilisateur (concaténé, pas remplacé — l'utilisateur affine le comportement).
+      const defaultPrompt = isSingle
+        ? `Extrais UNIQUEMENT les données du produit PRINCIPAL visible sur cette page. Ignore les produits similaires, accessoires, navigation et footer. Retourne un objet unique (PAS une liste). Vérifie que TOUTES les sections de spécifications (y compris accordéons) sont couvertes.`
+        : hasFields
+          ? `Extrais TOUS les éléments de la liste sur cette page sous forme de tableau "items". Ignore menus et footer.`
+          : `Extrais les données structurées PRINCIPALES de cette page sous forme de tableau "items".`
+      const userPrompt = prompt.trim()
+      const extractPrompt = userPrompt
+        ? `${defaultPrompt}\n\nCONSIGNES UTILISATEUR (prioritaires sur les consignes ci-dessus en cas de conflit) :\n${userPrompt}`
+        : defaultPrompt
 
       // 3. Construire le schema
       const schema = hasFields
@@ -592,7 +895,47 @@ export function useJina() {
         }
       }
 
-      // 6. Détecter les données hallucinées
+      // 6. Override déterministe du breadcrumb. Priorité :
+      //    1) saisie manuelle (pour les sites anti-bot style Decathlon)
+      //    2) Cloud Function Puppeteer (sites non protégés)
+      //    3) fallback Gemini (souvent le JSON-LD / SEO, peu fiable)
+      if (finalBreadcrumb.length > 0) {
+        if (target === 'single') {
+          extracted.breadcrumb = finalBreadcrumb
+        } else if (Array.isArray(extracted.items)) {
+          for (const item of extracted.items as Record<string, unknown>[]) {
+            item.breadcrumb = finalBreadcrumb
+          }
+        }
+      }
+
+      // 6b. Fallback images via Cloud Function Puppeteer quand Jina/Gemini
+      //     n'ont rien remonté (typique des revendeurs en lazy-load React —
+      //     Boulanger, Darty, Fnac). Respecte le choix de Gemini quand il a
+      //     trouvé quelque chose.
+      if (cloudImages.length > 0) {
+        const fillItem = (item: Record<string, unknown>) => {
+          if (fields.some((f) => f.key === 'image_url')) {
+            const existing = item.image_url
+            const isEmpty = existing == null || (typeof existing === 'string' && existing.trim() === '')
+            if (isEmpty) item.image_url = cloudImages[0]
+          }
+          if (fields.some((f) => f.key === 'images')) {
+            const existing = item.images
+            const isEmpty = !Array.isArray(existing) || existing.length === 0
+            if (isEmpty) item.images = cloudImages
+          }
+        }
+        if (target === 'single') {
+          fillItem(extracted)
+        } else if (Array.isArray(extracted.items)) {
+          for (const item of extracted.items as Record<string, unknown>[]) {
+            fillItem(item)
+          }
+        }
+      }
+
+      // 7. Détecter les données hallucinées
       const allValues = Object.values(extracted).filter(v => typeof v === 'string').map(v => String(v))
       const hallucinationPatterns = /^(produit principal|marque x|nom du produit|product name|example|lorem ipsum|n\/a|non disponible|non spécifié|not available|your product|test product)$/i
       const fakeEan = /^(1234567890123|0000000000000|9999999999999)$/

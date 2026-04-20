@@ -9,11 +9,21 @@ interface Props {
   loading: boolean
   onScrape: (
     mode: ScrapingMode, fields: ScrapingField[], prompt: string,
-    opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean }
+    opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean; manualBreadcrumb?: string[] }
   ) => void
   result: ScrapeResult | null
   /** Appelé quand l'utilisateur clique sur la suggestion de site officiel */
   onUrlSuggestion?: (url: string) => void
+}
+
+/** Parse une chaîne breadcrumb saisie à la main en tableau de niveaux.
+ *  Accepte les séparateurs courants : `>`, `/`, `›`, `|`. Trim + dédoublonnage. */
+function parseManualBreadcrumb(raw: string): string[] {
+  if (!raw.trim()) return []
+  return raw
+    .split(/[>›/|]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && s.length < 80)
 }
 
 export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: Props) {
@@ -23,19 +33,42 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [target, setTarget] = useState<ExtractionTarget>('single')
   const [noCache, setNoCache] = useState(false)
-  const [waitFor, setWaitFor] = useState(0)
+  const [waitFor, setWaitFor] = useState<number>(() => {
+    // Restaure la préférence utilisateur (0 = auto-détection par URL).
+    if (typeof window === 'undefined') return 0
+    const saved = window.localStorage.getItem('ds-scrape-wait-for')
+    return saved ? Number(saved) || 0 : 0
+  })
+  const [manualBreadcrumb, setManualBreadcrumb] = useState('')
+
+  /** Met à jour waitFor + persiste en localStorage. Valeur 0 = réinitialise
+   *  la préférence (auto-détection réactivée). */
+  const updateWaitFor = (v: number) => {
+    setWaitFor(v)
+    if (v > 0) window.localStorage.setItem('ds-scrape-wait-for', String(v))
+    else window.localStorage.removeItem('ds-scrape-wait-for')
+  }
+
+  const hasBreadcrumbField = fields.some((f) => f.key === 'breadcrumb')
+  const parsedManualBreadcrumb = parseManualBreadcrumb(manualBreadcrumb)
 
   // Détection de marque → suggestion site officiel
   const brandSuggestion = useMemo(() => detectBrandFromUrl(url), [url])
 
-  // Auto-détection des sites SPA/JS-heavy → active waitFor par défaut
+  // Auto-détection des sites SPA/JS-heavy → active waitFor par défaut.
+  // Skip si l'utilisateur a déjà une préférence persistée (localStorage) pour
+  // ne pas écraser son choix à chaque changement d'URL.
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage.getItem('ds-scrape-wait-for')) return
     try {
       const host = new URL(url).hostname
       const isSpa = /milwaukeetool|dewalt|metabo|bosch|stanley|hikoki|festool|makita|stihl|husqvarna|worx|ryobi|aeg-powertools/i.test(host)
+      // Revendeurs protégés DataDome/Akamai — Jina `X-Engine: browser` nécessite
+      // un timeout long (challenge + hydratation React ~20-25s).
       const needsWait = /leroymerlin|castorama|boulanger|fnac|darty|amazon|cdiscount|manomano|conforama|ikea|leroy/i.test(host)
-      setWaitFor(isSpa || needsWait ? 10000 : 0)
-      if (!isSpa && !needsWait) setWaitFor(0)
+      if (needsWait) setWaitFor(30000)
+      else if (isSpa) setWaitFor(10000)
+      else setWaitFor(0)
     } catch { /* URL invalide */ }
   }, [url])
 
@@ -138,6 +171,30 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
         />
       </div>
 
+      {/* Fil d'Ariane manuel — override pour les sites protégés anti-bot */}
+      {hasBreadcrumbField && (
+        <div>
+          <label className="text-[10px] text-white/30 uppercase tracking-wider flex items-center justify-between mb-1.5">
+            <span>Fil d'Ariane (manuel, override)</span>
+            {parsedManualBreadcrumb.length > 0 && (
+              <span className="text-[10px] text-emerald-400/80 normal-case tracking-normal">
+                {parsedManualBreadcrumb.length} niveau{parsedManualBreadcrumb.length > 1 ? 'x' : ''}
+              </span>
+            )}
+          </label>
+          <input
+            type="text"
+            value={manualBreadcrumb}
+            onChange={(e) => setManualBreadcrumb(e.target.value)}
+            placeholder="Ex : Homme > Chaussures > Baskets"
+            className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none transition-colors font-mono"
+          />
+          <p className="text-[10px] text-white/25 mt-1">
+            Sépare par <code className="text-white/40">&gt;</code>, <code className="text-white/40">/</code> ou <code className="text-white/40">|</code>. Si rempli, écrase l'extraction automatique.
+          </p>
+        </div>
+      )}
+
       {/* Advanced options */}
       <div>
         <button
@@ -164,7 +221,7 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
               <Timer className={`w-3 h-3 ${waitFor > 0 ? 'text-amber-400/70' : 'text-white/30'}`} />
               <select
                 value={waitFor}
-                onChange={(e) => setWaitFor(Number(e.target.value))}
+                onChange={(e) => updateWaitFor(Number(e.target.value))}
                 className={`bg-white/5 border rounded px-2 py-0.5 text-[11px] focus:outline-none ${waitFor > 0 ? 'border-amber-500/30 text-amber-300 focus:border-amber-500/50' : 'border-white/10 text-white/60 focus:border-indigo-500/50'}`}
               >
                 <option value={0}>Timeout : défaut (10s)</option>
@@ -180,7 +237,12 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
 
       {/* Action */}
       <button
-        onClick={() => onScrape(mode, fields, prompt, { target, waitFor: waitFor > 0 ? waitFor : undefined, noCache })}
+        onClick={() => onScrape(mode, fields, prompt, {
+          target,
+          waitFor: waitFor > 0 ? waitFor : undefined,
+          noCache,
+          manualBreadcrumb: parsedManualBreadcrumb.length > 0 ? parsedManualBreadcrumb : undefined,
+        })}
         disabled={!url || loading}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >

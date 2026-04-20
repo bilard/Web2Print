@@ -9,6 +9,12 @@ interface ExcelState {
   detecting: boolean
   searchQuery: string
   currentFileName: string | null
+  /** docId Firestore stable de la base actuellement chargée. Null si rien chargé
+   *  ou si la base en mémoire n'a pas encore été sauvegardée (import local). */
+  currentDocId: string | null
+  /** Chemin courant dans l'arbre hiérarchique des bases de données (ex: ["B2B", "Perceuses"]).
+   *  Utilisé comme path cible pour les imports et scrapes lancés depuis un nœud. */
+  currentPath: string[]
   /** Active taxonomy filter: { colKey, value } to filter rows by taxonomy value */
   taxonomyFilter: { colKey: string; value: string } | null
   /** Multi-level taxonomy navigation filter: map of colKey → selected value */
@@ -31,6 +37,8 @@ interface ExcelState {
   setTaxonomyNavFilter: (filter: Record<string, string>) => void
   setSheetRowId: (id: string | null) => void
   setCurrentFileName: (name: string | null) => void
+  setCurrentDocId: (id: string | null) => void
+  setCurrentPath: (path: string[]) => void
   setGroupByTaxonomy: (v: boolean) => void
   setAiFilter: (v: 'all' | 'enriched' | 'raw') => void
 
@@ -83,6 +91,8 @@ export const useExcelStore = create<ExcelState>((set) => ({
   detecting: false,
   searchQuery: '',
   currentFileName: null,
+  currentDocId: null,
+  currentPath: [],
   taxonomyFilter: null,
   taxonomyNavFilter: {},
   sheetRowId: null,
@@ -116,6 +126,8 @@ export const useExcelStore = create<ExcelState>((set) => ({
   setTaxonomyNavFilter: (taxonomyNavFilter) => set({ taxonomyNavFilter }),
   setSheetRowId: (sheetRowId) => set({ sheetRowId }),
   setCurrentFileName: (currentFileName) => set({ currentFileName }),
+  setCurrentDocId: (currentDocId) => set({ currentDocId }),
+  setCurrentPath: (currentPath) => set({ currentPath }),
   setGroupByTaxonomy: (groupByTaxonomy) => set({ groupByTaxonomy }),
   setAiFilter: (aiFilter) => set({ aiFilter }),
 
@@ -402,5 +414,7 @@ export const useExcelStore = create<ExcelState>((set) => ({
       detecting: false,
       searchQuery: '',
       currentFileName: null,
+      currentDocId: null,
+      currentPath: [],
     }),
 }))

@@ -11,6 +11,10 @@ let cachedTemplates: ScrapingTemplate[] | null = null
 let cacheTimestamp = 0
 const CACHE_TTL_MS = 30_000
 
+/** Listeners notifiés à chaque invalidation : permet aux hooks actifs de
+ *  refetch sans avoir à bump manuellement un refreshKey. */
+const invalidationListeners = new Set<() => void>()
+
 async function getCachedTemplates(): Promise<ScrapingTemplate[]> {
   const now = Date.now()
   if (cachedTemplates && (now - cacheTimestamp) < CACHE_TTL_MS) return cachedTemplates
@@ -24,10 +28,13 @@ async function getCachedTemplates(): Promise<ScrapingTemplate[]> {
   }
 }
 
-/** Invalide le cache (appelé quand un template est créé/modifié/supprimé). */
+/** Invalide le cache ET notifie tous les hooks actifs pour qu'ils refetch. */
 export function invalidateTemplatesCache() {
   cachedTemplates = null
   cacheTimestamp = 0
+  invalidationListeners.forEach((fn) => {
+    try { fn() } catch { /* swallow listener errors */ }
+  })
 }
 
 /**
@@ -36,9 +43,16 @@ export function invalidateTemplatesCache() {
  * on n'a que brand/title mais pas encore d'URL).
  */
 export function useMatchingTemplate(
-  input: { url?: string | null; brand?: string | null; title?: string | null },
+  input: { url?: string | null; brand?: string | null; title?: string | null; refreshKey?: number },
 ): ScrapingTemplate | null {
   const [match, setMatch] = useState<ScrapingTemplate | null>(null)
+  // Bump automatique quand invalidateTemplatesCache() est appelé de n'importe où.
+  const [autoVersion, setAutoVersion] = useState(0)
+  useEffect(() => {
+    const fn = () => setAutoVersion((v) => v + 1)
+    invalidationListeners.add(fn)
+    return () => { invalidationListeners.delete(fn) }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -58,11 +72,16 @@ export function useMatchingTemplate(
           return vendorKey.includes(needle) || needle.includes(vendorKey.split('.')[0])
         })
         if (byBrand) { setMatch(byBrand); return }
+        // 3) fallback : match par alias explicite (brandAliases)
+        const byAlias = templates.find((t) =>
+          (t.brandAliases ?? []).some((a) => a.toLowerCase().replace(/[^a-z0-9]/g, '') === needle),
+        )
+        if (byAlias) { setMatch(byAlias); return }
       }
       setMatch(null)
     })()
     return () => { cancelled = true }
-  }, [input.url, input.brand, input.title])
+  }, [input.url, input.brand, input.title, input.refreshKey, autoVersion])
 
   return match
 }

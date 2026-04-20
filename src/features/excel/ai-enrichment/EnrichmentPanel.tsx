@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, ImageIcon, Globe, Save, Plus, X,
-  Code2, ChevronDown, Copy, FileDown,
+  Code2, ChevronDown, Copy, FileDown, ListOrdered,
 } from 'lucide-react'
+import { VendorFieldOrderModal } from '@/features/scraping-templates/VendorFieldOrderModal'
 import { useExcelStore } from '@/stores/excel.store'
 import { useEnrichmentStore } from './enrichmentStore'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
@@ -74,6 +75,7 @@ export function EnrichmentPanel({ input }: Props) {
   const entry = useEnrichmentStore((s) => s.entries[storeKey])
   const logs = useEnrichmentStore((s) => s.logs[storeKey] ?? [])
   const scrapeCache = useEnrichmentStore((s) => s.scrapeCache[storeKey])
+  const hiddenGroups = useEnrichmentStore((s) => s.hiddenGroups[storeKey])
   const setData = useEnrichmentStore((s) => s.setData)
   const { enrich, reset, running } = useProductEnrichment()
   const { save, isSaved, saving, error: saveError } = useSaveEnrichedProduct()
@@ -123,12 +125,15 @@ export function EnrichmentPanel({ input }: Props) {
     [data, setData, input.sheetName, input.rowId],
   )
 
-  // Template match pour ce produit (affiche un bouton Template dans le header Done).
+  // Template match pour ce produit. Le hook écoute les invalidations de
+  // cache global, donc les sauvegardes depuis n'importe où (modal ou panneau
+  // Source) déclenchent automatiquement un refetch.
   const matchedTemplate = useMatchingTemplate({
     url: input.knownUrl ?? null,
     brand: input.brand ?? null,
     title: input.title ?? null,
   })
+  const [orderModalOpen, setOrderModalOpen] = useState(false)
 
   const isLoading =
     running || status === 'searching' || status === 'scraping' || status === 'reasoning'
@@ -295,6 +300,16 @@ export function EnrichmentPanel({ input }: Props) {
                     </a>
                   )
                 })}
+                {matchedTemplate && (
+                  <button
+                    onClick={() => setOrderModalOpen(true)}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-white/55 bg-white/[0.03] border border-white/[0.08] hover:bg-indigo-500/10 hover:text-indigo-200 hover:border-indigo-400/30 transition-colors"
+                    title={`Réordonner les champs affichés pour ${matchedTemplate.vendorDomain}`}
+                  >
+                    <ListOrdered className="w-2.5 h-2.5" />
+                    Ordre des champs
+                  </button>
+                )}
               </div>
             </div>
           )
@@ -303,14 +318,35 @@ export function EnrichmentPanel({ input }: Props) {
 
       {/* ── Body (scrollable) ────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {isIdle && <IdleState onLaunch={(mode) => launch(mode)} hasTitle={!!input.title} input={input} matchedTemplate={matchedTemplate} />}
+        {isIdle && <IdleState onLaunch={(mode) => launch(mode)} canSearch={hasSearchableData(input)} input={input} matchedTemplate={matchedTemplate} />}
         {isLoading && <LoadingState status={status} message={entry?.progress.message ?? ''} logs={logs} />}
         {isError && <ErrorState error={error!} onRetry={launch} onRetryWithUrl={(url) => {
           reset(input.sheetName, input.rowId)
           void enrich({ ...input, knownUrl: url })
         }} />}
-        {isDone && data && <DoneState data={data} llmRequest={llmRequest} onUpdate={updateData} scrapeCache={scrapeCache} templateFieldOrder={matchedTemplate?.fields.map(f => f.field)} />}
+        {isDone && data && (
+          <DoneState
+            data={data}
+            llmRequest={llmRequest}
+            onUpdate={updateData}
+            scrapeCache={scrapeCache}
+            hiddenGroups={hiddenGroups}
+            templateFieldOrder={
+              matchedTemplate?.vendorFieldOrder && matchedTemplate.vendorFieldOrder.length > 0
+                ? matchedTemplate.vendorFieldOrder
+                : matchedTemplate?.fields.map((f) => f.field)
+            }
+          />
+        )}
       </div>
+      {orderModalOpen && matchedTemplate && (
+        <VendorFieldOrderModal
+          matchedTemplate={matchedTemplate}
+          enriched={data}
+          onClose={() => setOrderModalOpen(false)}
+          onSaved={() => { /* refetch auto via invalidationListeners */ }}
+        />
+      )}
     </div>
   )
 }
@@ -380,7 +416,20 @@ function RegenerateMenu({ onRedo, matchedTemplate }: { onRedo: (mode: 'auto' | '
   )
 }
 
-function IdleState({ onLaunch, hasTitle, input, matchedTemplate }: { onLaunch: (mode: 'auto' | 'template') => void; hasTitle: boolean; input: EnrichmentInput; matchedTemplate: ScrapingTemplate | null }) {
+/** Y a-t-il assez de données identifiantes pour lancer une recherche ?
+ *  Accepte : titre OU référence/SKU OU marque. */
+function hasSearchableData(input: EnrichmentInput): boolean {
+  return !!(input.title?.trim() || input.reference?.trim() || input.sku?.trim() || input.brand?.trim())
+}
+
+function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: (mode: 'auto' | 'template') => void; canSearch: boolean; input: EnrichmentInput; matchedTemplate: ScrapingTemplate | null }) {
+  const signals = [
+    input.title?.trim() && 'titre',
+    (input.reference?.trim() || input.sku?.trim()) && 'réf',
+    input.brand?.trim() && 'marque',
+    input.description?.trim() && 'description',
+    input.category?.trim() && 'catégorie',
+  ].filter(Boolean) as string[]
   return (
     <div className="h-full flex flex-col items-center justify-center px-6 py-10 text-center">
       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-fuchsia-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
@@ -400,11 +449,16 @@ function IdleState({ onLaunch, hasTitle, input, matchedTemplate }: { onLaunch: (
           </span>
         ) : null}
       </p>
+      {signals.length > 0 && (
+        <p className="text-[10px] text-white/40 mb-3">
+          Signaux utilisés : <span className="text-white/60">{signals.join(' · ')}</span>
+        </p>
+      )}
       <div className="flex flex-col gap-2 w-full max-w-[280px]">
         <button
           type="button"
           onClick={() => onLaunch('auto')}
-          disabled={!hasTitle}
+          disabled={!canSearch}
           className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white text-[12px] font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -414,7 +468,7 @@ function IdleState({ onLaunch, hasTitle, input, matchedTemplate }: { onLaunch: (
           <button
             type="button"
             onClick={() => onLaunch('template')}
-            disabled={!hasTitle}
+            disabled={!canSearch}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[12px] font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg>
@@ -422,9 +476,9 @@ function IdleState({ onLaunch, hasTitle, input, matchedTemplate }: { onLaunch: (
           </button>
         )}
       </div>
-      {!hasTitle && (
+      {!canSearch && (
         <p className="text-[10px] text-amber-400/80 mt-3">
-          Le produit doit avoir un titre pour lancer la recherche.
+          Il faut au moins un titre, une référence/SKU ou une marque pour lancer la recherche.
         </p>
       )}
     </div>
@@ -627,15 +681,24 @@ function DoneState({
   llmRequest,
   onUpdate,
   scrapeCache,
+  hiddenGroups,
   templateFieldOrder,
 }: {
   data: NonNullable<ReturnType<typeof useEnrichmentStore.getState>['entries'][string]>['data']
   llmRequest: LlmRequestInfo | null
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   scrapeCache?: { sourcesScrapped?: string[] }
+  hiddenGroups?: { specifications: string[]; advantages: string[] }
   templateFieldOrder?: string[]
 }) {
   if (!data) return null
+
+  const hiddenSpecs = hiddenGroups?.specifications ?? []
+  const hiddenAdv = hiddenGroups?.advantages ?? []
+  const hiddenSpecsSet = new Set(hiddenSpecs)
+  const hiddenAdvSet = new Set(hiddenAdv)
+  const visibleSpecsCount = data.specifications.filter((s) => !hiddenSpecsSet.has(s.group ?? '')).length
+  const visibleAdvantagesCount = data.advantages.filter((a) => !hiddenAdvSet.has(a.group ?? '')).length
 
   // Mapping nom-de-champ-template → clé de section du panneau.
   // Permet de respecter l'ordre des champs défini par l'utilisateur dans le template.
@@ -646,6 +709,7 @@ function DoneState({
     images: 'images',
     documents: 'documents',
     variants: 'variants', variantes: 'variants', Variantes: 'variants', references: 'variants',
+    specifications: 'specifications', specs: 'specifications',
   }
   const DEFAULT_ORDER = ['images', 'description', 'advantages', 'specifications', 'variants', 'custom', 'documents']
 
@@ -681,29 +745,31 @@ function DoneState({
       {/* Debug LLM : prompt + paramètres envoyés */}
       {llmRequest && <LlmRequestPanel request={llmRequest} />}
 
-      {/* Images scrapées */}
-      <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-        <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <ImageIcon className="w-3 h-3" />
-          {data.images.length > 0
-            ? `Images trouvées (${data.images.length})`
-            : 'Aucune image trouvée'}
-        </p>
-        {data.images.length > 0 ? (
-          <ImageGrid
-            images={data.images}
-            onRemove={(url) => onUpdate({ images: data.images.filter((u) => u !== url) })}
-          />
-        ) : (
-          <p className="text-[11px] text-white/35 leading-relaxed">
-            Le scraping n'a pas détecté d'images produit exploitables. Essayez{' '}
-            <span className="text-white/60">Re-générer</span> pour relancer la recherche.
-          </p>
-        )}
-      </div>
-
-      {/* Sections ordonnées selon le template (si template match) ou ordre par défaut */}
+      {/* Sections ordonnées selon le template (si template match) ou ordre par défaut.
+          L'ordre `images` est lui-même géré dans la boucle, ce qui permet à
+          `vendorFieldOrder` de le déplacer à n'importe quelle position. */}
       {sectionOrder.map((sectionKey) => {
+        if (sectionKey === 'images') return (
+          <div key="images" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+            <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <ImageIcon className="w-3 h-3" />
+              {data.images.length > 0
+                ? `Images trouvées (${data.images.length})`
+                : 'Aucune image trouvée'}
+            </p>
+            {data.images.length > 0 ? (
+              <ImageGrid
+                images={data.images}
+                onRemove={(url) => onUpdate({ images: data.images.filter((u) => u !== url) })}
+              />
+            ) : (
+              <p className="text-[11px] text-white/35 leading-relaxed">
+                Le scraping n'a pas détecté d'images produit exploitables. Essayez{' '}
+                <span className="text-white/60">Re-générer</span> pour relancer la recherche.
+              </p>
+            )}
+          </div>
+        )
         if (sectionKey === 'description') return (
           <div key="description" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
@@ -732,10 +798,12 @@ function DoneState({
                 <Plus className="w-3 h-3" /> Ajouter
               </button>
             </div>
-            {data.advantages.length === 0 ? (
-              <p className="text-[11px] text-white/30 italic">Aucun point fort</p>
+            {visibleAdvantagesCount === 0 ? (
+              <p className="text-[11px] text-white/30 italic">
+                {data.advantages.length === 0 ? 'Aucun point fort' : 'Tous les groupes sont cachés'}
+              </p>
             ) : (
-              <AdvantageGroupList advantages={data.advantages} onUpdate={onUpdate} data={data} />
+              <AdvantageGroupList advantages={data.advantages} hiddenGroups={hiddenAdv} onUpdate={onUpdate} data={data} />
             )}
           </div>
         )
@@ -752,10 +820,12 @@ function DoneState({
                 <Plus className="w-3 h-3" /> Ajouter
               </button>
             </div>
-            {data.specifications.length === 0 ? (
-              <p className="text-[11px] text-white/30 italic">Aucune spécification</p>
+            {visibleSpecsCount === 0 ? (
+              <p className="text-[11px] text-white/30 italic">
+                {data.specifications.length === 0 ? 'Aucune spécification' : 'Tous les groupes sont cachés'}
+              </p>
             ) : (
-              <SpecGroupAccordions specifications={data.specifications} onUpdate={onUpdate} data={data} />
+              <SpecGroupAccordions specifications={data.specifications} hiddenGroups={hiddenSpecs} onUpdate={onUpdate} data={data} />
             )}
           </div>
         )
@@ -1010,18 +1080,22 @@ const ADVANTAGE_GROUP_COLORS = [
 
 function AdvantageGroupList({
   advantages,
+  hiddenGroups = [],
   onUpdate,
   data,
 }: {
   advantages: EnrichedProduct['advantages']
+  hiddenGroups?: string[]
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   data: EnrichedProduct
 }) {
-  // Regrouper par group (conserver l'ordre d'apparition)
+  const hiddenSet = new Set(hiddenGroups)
+  // Regrouper par group (conserver l'ordre d'apparition + globalIdx réel)
   const groups: Array<{ name: string | undefined; items: Array<{ adv: typeof advantages[0]; globalIdx: number }> }> = []
   const groupMap = new Map<string | undefined, number>()
   advantages.forEach((adv, globalIdx) => {
     const key = adv.group || undefined
+    if (hiddenSet.has(adv.group ?? '')) return
     if (groupMap.has(key)) {
       groups[groupMap.get(key)!].items.push({ adv, globalIdx })
     } else {
@@ -1123,22 +1197,26 @@ const GROUP_COLORS = [
 
 function SpecGroupAccordions({
   specifications,
+  hiddenGroups = [],
   onUpdate,
   data,
 }: {
   specifications: EnrichedProduct['specifications']
+  hiddenGroups?: string[]
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   data: EnrichedProduct
 }) {
+  const hiddenSet = new Set(hiddenGroups)
   // Tous les groupes ouverts par défaut
   const [openGroups, setOpenGroups] = useState<Set<number>>(() => new Set())
   const [initialized, setInitialized] = useState(false)
 
-  // Regrouper les specs par group (conserver l'ordre d'apparition)
+  // Regrouper les specs par group (conserver l'ordre d'apparition + globalIdx réel)
   const groups: Array<{ name: string | undefined; specs: Array<{ spec: typeof specifications[0]; globalIdx: number }> }> = []
   const groupMap = new Map<string | undefined, number>()
   specifications.forEach((spec, globalIdx) => {
     const key = spec.group || undefined
+    if (hiddenSet.has(spec.group ?? '')) return
     if (groupMap.has(key)) {
       groups[groupMap.get(key)!].specs.push({ spec, globalIdx })
     } else {

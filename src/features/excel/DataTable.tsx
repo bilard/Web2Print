@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo, Fragment, type RefObject, type MouseEvent as ReactMouseEvent } from 'react'
 import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, Expand, ChevronRight, ChevronDown, Sparkles } from 'lucide-react'
+import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { FieldTypeSelector } from './FieldTypeSelector'
 import { StatsBadges } from './StatsBadges'
@@ -223,6 +224,22 @@ export function DataTable() {
     })
   }, [])
 
+  const [dropGroupKey, setDropGroupKey] = useState<string | null>(null)
+
+  // Drop d'un produit sur un header de groupe : applique toute la chaîne de
+  // valeurs (root → groupe) et vide les niveaux plus profonds.
+  const handleDropOnGroup = useCallback((rowId: string, group: RowGroup) => {
+    if (group.path.length === 0) return // dropping sur "(vide)" = no-op
+    for (const step of group.path) {
+      updateCell(activeSheetIndex, rowId, step.colKey, step.value)
+    }
+    for (const tc of taxoCols) {
+      if (tc.level > group.level) updateCell(activeSheetIndex, rowId, tc.col.key, null)
+    }
+    const pathLabel = group.path.map((p) => p.value).join(' > ')
+    toast.success(`Produit classé sous ${pathLabel}`)
+  }, [activeSheetIndex, updateCell, taxoCols])
+
   // Build grouped rows structure
   // Skip taxonomy levels that are already selected in the nav filter —
   // start grouping from the first level AFTER the deepest selected filter
@@ -243,7 +260,12 @@ export function DataTable() {
     // If all levels are filtered, show flat rows
     if (startIdx >= taxoCols.length) return sortedRows
 
-    const buildGroups = (rows: ExcelRow[], levelIdx: number, parentKey: string): (RowGroup | ExcelRow)[] => {
+    const buildGroups = (
+      rows: ExcelRow[],
+      levelIdx: number,
+      parentKey: string,
+      parentPath: { colKey: string; value: string; level: number }[],
+    ): (RowGroup | ExcelRow)[] => {
       if (levelIdx >= taxoCols.length) return rows
 
       const { col, level, color } = taxoCols[levelIdx]
@@ -267,19 +289,22 @@ export function DataTable() {
       return order.map((val) => {
         const groupRows = groups.get(val)!
         const groupKey = parentKey ? `${parentKey}>${val}` : `${level}:${val}`
+        const path = val === '(vide)' ? parentPath : [...parentPath, { colKey: col.key, value: val, level }]
         return {
           key: groupKey,
           value: val,
           level,
           color,
           colLabel: col.label,
+          colKey: col.key,
+          path,
           count: groupRows.length,
-          children: buildGroups(groupRows, levelIdx + 1, groupKey),
+          children: buildGroups(groupRows, levelIdx + 1, groupKey, path),
         } as RowGroup
       })
     }
 
-    return buildGroups(sortedRows, startIdx, '')
+    return buildGroups(sortedRows, startIdx, '', [])
   }, [sortedRows, taxoCols, taxonomyNavFilter])
 
   const handleSort = (colKey: string) => {
@@ -528,6 +553,7 @@ export function DataTable() {
             <th className="sticky top-0 z-20 w-10 bg-[#141414] border-b-2 border-white/[0.08] align-middle">
               <AddColumnMenu onAdd={handleAddColumn} />
             </th>
+            <th className="sticky top-0 right-0 z-30 w-10 bg-[#141414] border-b-2 border-l border-white/[0.08]" />
           </tr>
 
           {/* Row 2: Type + Stats — sticky below row 1 (top ~37px) */}
@@ -565,6 +591,7 @@ export function DataTable() {
               </th>
             ))}
             <th className="sticky top-[37px] z-20 w-10 bg-[#111111] border-b border-white/[0.06]" />
+            <th className="sticky top-[37px] right-0 z-30 w-10 bg-[#111111] border-b border-l border-white/[0.06]" />
           </tr>
         </thead>
 
@@ -591,6 +618,9 @@ export function DataTable() {
               getCellColorStyle={getCellColorStyle}
               dragColIdx={dragColIdx}
               rowCounter={{ current: 0 }}
+              dropGroupKey={dropGroupKey}
+              setDropGroupKey={setDropGroupKey}
+              onDropOnGroup={handleDropOnGroup}
             />
           ) : (
             sortedRows.map((row, rowIdx) => (
@@ -693,6 +723,9 @@ interface RowGroup {
   level: number
   color: string
   colLabel: string
+  colKey: string
+  /** Chaîne ancêtres → ce groupe (inclus) pour classer un produit déposé. */
+  path: { colKey: string; value: string; level: number }[]
   count: number
   children: (RowGroup | ExcelRow)[]
 }
@@ -732,8 +765,15 @@ function DataRow({
       className={`group transition-colors hover:bg-white/[0.07] cursor-pointer ${rowIdx % 2 === 1 ? 'bg-white/[0.025]' : ''}`}
     >
       <td
-        className={`sticky left-0 z-10 relative px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a]`}
+        className={`sticky left-0 z-10 relative px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a] cursor-grab active:cursor-grabbing`}
         onClick={() => setSheetRowId(row._id)}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = 'move'
+          e.dataTransfer.setData('application/x-product-row', row._id)
+          e.dataTransfer.setData('text/plain', row._id)
+        }}
+        title="Glisser vers un nœud de la taxonomie pour classer ce produit"
       >
         {/* Accent gauche indigo si ligne enrichie par l'IA */}
         {enriched && (
@@ -822,13 +862,16 @@ function DataRow({
         )
       })}
 
-      <td className="px-1 py-1.5 border-b border-white/5 text-center">
+      <td
+        className={`sticky right-0 z-10 px-1 py-1.5 border-b border-l border-white/[0.05] text-center ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a]`}
+      >
         <button
           onClick={(e) => { e.stopPropagation(); deleteRow(activeSheetIndex, row._id) }}
-          className="opacity-0 group-hover:opacity-100 p-1 text-white/20 hover:text-red-400 transition-all"
+          className="p-1 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
           title="Supprimer la ligne"
+          aria-label="Supprimer la ligne"
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </td>
     </tr>
@@ -894,9 +937,12 @@ interface GroupedRowsProps extends Omit<DataRowProps, 'row' | 'rowIdx'> {
   collapsedGroups: Set<string>
   toggleGroup: (key: string) => void
   rowCounter: { current: number }
+  dropGroupKey: string | null
+  setDropGroupKey: (k: string | null) => void
+  onDropOnGroup: (rowId: string, group: RowGroup) => void
 }
 
-function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, ...rowProps }: GroupedRowsProps) {
+function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, dropGroupKey, setDropGroupKey, onDropOnGroup, ...rowProps }: GroupedRowsProps) {
   const totalCols = rowProps.visibleColumns.length + 2 // +2 for # col and action col
 
   return (
@@ -916,6 +962,8 @@ function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, ...rowPr
 
         const isCollapsed = collapsedGroups.has(item.key)
         const indent = (item.level - 1) * 24
+        const isDroppable = item.path.length > 0 // "(vide)" non-droppable
+        const isDropTarget = dropGroupKey === item.key
 
         // Hiérarchie visuelle par niveau
         const levelStyles = getGroupLevelStyles(item.level)
@@ -924,15 +972,35 @@ function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, ...rowPr
           <Fragment key={item.key}>
             {/* Group header row */}
             <tr
-              className={`cursor-pointer transition-colors ${levelStyles.hoverBg}`}
+              className={`cursor-pointer transition-colors ${levelStyles.hoverBg} ${isDropTarget ? 'ring-2 ring-inset ring-indigo-400' : ''}`}
               onClick={() => toggleGroup(item.key)}
+              onDragOver={(e) => {
+                if (!isDroppable) return
+                if (!e.dataTransfer.types.includes('application/x-product-row')) return
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                if (dropGroupKey !== item.key) setDropGroupKey(item.key)
+              }}
+              onDragLeave={(e) => {
+                if (e.currentTarget.contains(e.relatedTarget as Node)) return
+                if (dropGroupKey === item.key) setDropGroupKey(null)
+              }}
+              onDrop={(e) => {
+                const rowId = e.dataTransfer.getData('application/x-product-row')
+                if (!rowId || !isDroppable) return
+                e.preventDefault()
+                setDropGroupKey(null)
+                onDropOnGroup(rowId, item)
+              }}
             >
               <td
                 colSpan={totalCols}
                 className={`${levelStyles.borderClass} p-0`}
                 style={{
                   borderLeft: `3px solid ${item.color}${item.level <= 2 ? '' : '60'}`,
-                  backgroundColor: `${item.color}${levelStyles.bgOpacity}`,
+                  backgroundColor: isDropTarget
+                    ? `${item.color}40`
+                    : `${item.color}${levelStyles.bgOpacity}`,
                 }}
               >
                 <div
@@ -950,9 +1018,6 @@ function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, ...rowPr
                     className={`${levelStyles.dotSize} rounded-sm shrink-0 mr-2`}
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className={`${levelStyles.labelSize} font-semibold uppercase tracking-wider shrink-0 mr-2`} style={{ color: `${item.color}90` }}>
-                    {item.colLabel}
-                  </span>
                   <span className={`${levelStyles.valueSize} ${levelStyles.valueWeight}`} style={{ color: item.color }}>
                     {item.value}
                   </span>
@@ -970,6 +1035,9 @@ function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, ...rowPr
                 collapsedGroups={collapsedGroups}
                 toggleGroup={toggleGroup}
                 rowCounter={rowCounter}
+                dropGroupKey={dropGroupKey}
+                setDropGroupKey={setDropGroupKey}
+                onDropOnGroup={onDropOnGroup}
                 {...rowProps}
               />
             )}

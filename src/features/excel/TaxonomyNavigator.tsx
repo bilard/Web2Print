@@ -1,9 +1,16 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import { ChevronRight, FolderTree, X, Package, ChevronDown, PanelLeftClose } from 'lucide-react'
+import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { getTaxoColumns } from './taxonomyBuilder'
 import { isRowEnriched } from './DataTable'
 import type { ExcelRow } from './types'
+
+interface NodePath {
+  colKey: string
+  value: string
+  level: number
+}
 
 interface TreeNode {
   value: string
@@ -14,11 +21,14 @@ interface TreeNode {
   children: TreeNode[]
   isSelected: boolean
   isExpanded: boolean
+  /** Chemin ancêtres → ce nœud (inclus), utilisé pour le drop product→taxonomy. */
+  path: NodePath[]
 }
 
 export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
-  const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, aiFilter } = useExcelStore()
+  const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, aiFilter, updateCell } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null)
 
   const taxoCols = useMemo(() => {
     if (!sheet) return []
@@ -32,6 +42,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     const buildLevel = (
       levelIdx: number,
       parentRows: ExcelRow[],
+      parentPath: NodePath[],
     ): TreeNode[] => {
       if (levelIdx >= taxoCols.length) return []
 
@@ -50,6 +61,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
         const matchingRows = parentRows.filter((r) => String(r[colKey]) === val)
         const isSelected = selectedValue === val
         const isExpanded = isSelected
+        const path: NodePath[] = [...parentPath, { colKey, value: val, level }]
 
         return {
           value: val,
@@ -59,7 +71,8 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
           color,
           isSelected,
           isExpanded,
-          children: isExpanded ? buildLevel(levelIdx + 1, matchingRows) : [],
+          path,
+          children: isExpanded ? buildLevel(levelIdx + 1, matchingRows, path) : [],
         }
       })
     }
@@ -68,8 +81,23 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     if (aiFilter === 'enriched') initialRows = initialRows.filter(isRowEnriched)
     else if (aiFilter === 'raw') initialRows = initialRows.filter((r) => !isRowEnriched(r))
 
-    return buildLevel(0, initialRows)
+    return buildLevel(0, initialRows, [])
   }, [sheet, taxoCols, taxonomyNavFilter, aiFilter])
+
+  // Drop d'un produit sur un nœud : assigne toute la chaîne de valeurs (root → nœud)
+  // et vide les niveaux plus profonds pour éviter des valeurs orphelines.
+  const handleDropOnNode = useCallback((rowId: string, node: TreeNode) => {
+    if (!sheet) return
+    for (const step of node.path) {
+      updateCell(activeSheetIndex, rowId, step.colKey, step.value)
+    }
+    const deeperCols = taxoCols.filter((tc) => tc.level > node.level)
+    for (const tc of deeperCols) {
+      updateCell(activeSheetIndex, rowId, tc.col.key, null)
+    }
+    const pathLabel = node.path.map((p) => p.value).join(' > ')
+    toast.success(`Produit classé sous ${pathLabel}`)
+  }, [sheet, activeSheetIndex, updateCell, taxoCols])
 
   const handleSelect = useCallback((colKey: string, value: string, level: number) => {
     const newFilter = { ...taxonomyNavFilter }
@@ -176,68 +204,74 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
 
       {/* Tree */}
       <div className="flex-1 overflow-y-auto py-1">
-        <TreeLevel nodes={rootNodes} onSelect={handleSelect} />
+        <TreeLevel
+          nodes={rootNodes}
+          onSelect={handleSelect}
+          dropTargetKey={dropTargetKey}
+          setDropTargetKey={setDropTargetKey}
+          onDropRow={handleDropOnNode}
+        />
       </div>
     </div>
   )
 }
 
-function TreeLevel({ nodes, onSelect }: {
+/** Clé stable pour identifier un nœud dans l'état de drag (colKey+value+level+parent) */
+function nodeKey(node: TreeNode): string {
+  return node.path.map((p) => `${p.colKey}::${p.value}`).join('/')
+}
+
+interface TreeLevelProps {
   nodes: TreeNode[]
   onSelect: (colKey: string, value: string, level: number) => void
-}) {
-  if (nodes.length === 0) return null
+  dropTargetKey: string | null
+  setDropTargetKey: (k: string | null) => void
+  onDropRow: (rowId: string, node: TreeNode) => void
+}
 
-  // Group label from first node
-  const { level, color, colKey } = nodes[0]
+function TreeLevel({ nodes, onSelect, dropTargetKey, setDropTargetKey, onDropRow }: TreeLevelProps) {
+  if (nodes.length === 0) return null
 
   return (
     <div>
-      {/* Level label */}
-      <div
-        className="flex items-center gap-2 px-3 mt-1 mb-0.5"
-        style={{
-          paddingLeft: `${(level - 1) * 16 + 12}px`,
-          paddingTop: level === 1 ? '8px' : '4px',
-          paddingBottom: level === 1 ? '4px' : '2px',
-        }}
-      >
-        <div
-          className="shrink-0 rounded-full"
-          style={{
-            backgroundColor: color,
-            width: level === 1 ? '7px' : '5px',
-            height: level === 1 ? '7px' : '5px',
-          }}
-        />
-        <span
-          className="font-bold uppercase tracking-wider"
-          style={{
-            fontSize: level === 1 ? '10px' : '9px',
-            color: `${color}${level === 1 ? 'cc' : '80'}`,
-          }}
-        >
-          <LevelLabel colKey={colKey} />
-        </span>
-        <span
-          className="tabular-nums bg-white/[0.06] px-1 rounded-full"
-          style={{ fontSize: level === 1 ? '9px' : '8px', color: 'rgba(255,255,255,0.25)' }}
-        >
-          {nodes.length}
-        </span>
-      </div>
-
       {/* Items */}
-      {nodes.map((node) => (
+      {nodes.map((node) => {
+        const key = nodeKey(node)
+        const isDropTarget = dropTargetKey === key
+        return (
         <div key={node.value}>
           <button
             onClick={() => onSelect(node.colKey, node.value, node.level)}
+            onDragOver={(e) => {
+              if (!e.dataTransfer.types.includes('application/x-product-row')) return
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+              if (dropTargetKey !== key) setDropTargetKey(key)
+            }}
+            onDragLeave={(e) => {
+              // Seulement reset si on quitte vraiment (pas un child element)
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return
+              if (dropTargetKey === key) setDropTargetKey(null)
+            }}
+            onDrop={(e) => {
+              const rowId = e.dataTransfer.getData('application/x-product-row')
+              if (!rowId) return
+              e.preventDefault()
+              setDropTargetKey(null)
+              onDropRow(rowId, node)
+            }}
             className={`w-full text-left flex items-center gap-2 py-[5px] transition-colors group ${
-              node.isSelected
-                ? 'bg-white/[0.06]'
-                : 'hover:bg-white/[0.03]'
+              isDropTarget
+                ? 'ring-2 ring-inset'
+                : node.isSelected
+                  ? 'bg-white/[0.06]'
+                  : 'hover:bg-white/[0.03]'
             }`}
-            style={{ paddingLeft: `${(node.level - 1) * 16 + 12}px`, paddingRight: 12 }}
+            style={{
+              paddingLeft: `${(node.level - 1) * 16 + 12}px`,
+              paddingRight: 12,
+              ...(isDropTarget ? { backgroundColor: `${node.color}20`, boxShadow: `inset 0 0 0 2px ${node.color}` } : {}),
+            }}
           >
             {/* Expand/collapse indicator */}
             <span className="w-3.5 shrink-0 flex items-center justify-center">
@@ -278,19 +312,18 @@ function TreeLevel({ nodes, onSelect }: {
 
           {/* Children (nested sub-level) */}
           {node.isExpanded && node.children.length > 0 && (
-            <TreeLevel nodes={node.children} onSelect={onSelect} />
+            <TreeLevel
+              nodes={node.children}
+              onSelect={onSelect}
+              dropTargetKey={dropTargetKey}
+              setDropTargetKey={setDropTargetKey}
+              onDropRow={onDropRow}
+            />
           )}
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
-/** Helper to get column label from store */
-function LevelLabel({ colKey }: { colKey: string }) {
-  const sheets = useExcelStore((s) => s.sheets)
-  const idx = useExcelStore((s) => s.activeSheetIndex)
-  const sheet = sheets[idx]
-  const col = sheet?.columns.find((c) => c.key === colKey)
-  return <>{col?.label ?? colKey}</>
-}

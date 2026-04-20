@@ -33,4 +33,26 @@ describe('getDisplayName', () => {
     const obj = make({ type: 'group', name: '' })
     expect(getDisplayName(obj, [])).toBe('<Groupe>')
   })
+
+  it('retourne le contenu du texte pour un text sans nom', () => {
+    const obj = make({ type: 'text', name: '', text: 'Nathalie' })
+    expect(getDisplayName(obj, [])).toBe('Nathalie')
+  })
+
+  it('tronque un texte long et garde seulement la première ligne', () => {
+    const long = 'Ligne un\nLigne deux'
+    const obj = make({ type: 'text', name: '', text: long })
+    expect(getDisplayName(obj, [])).toBe('Ligne un')
+  })
+
+  it('tronque à 40 caractères avec ellipse', () => {
+    const long = 'a'.repeat(60)
+    const obj = make({ type: 'text', name: '', text: long })
+    expect(getDisplayName(obj, [])).toBe('a'.repeat(40) + '…')
+  })
+
+  it('retombe sur <Texte> si le texte est vide', () => {
+    const obj = make({ type: 'text', name: '', text: '   ' })
+    expect(getDisplayName(obj, [])).toBe('<Texte>')
+  })
 })

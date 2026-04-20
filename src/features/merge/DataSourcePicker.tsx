@@ -70,11 +70,6 @@ export function DataSourcePicker() {
     await connectSource(source)
   }
 
-  const getFirebaseDocId = (fileName: string) => {
-    const base = fileName.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
-    return `${user!.uid}_${base}`
-  }
-
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -82,9 +77,10 @@ export function DataSourcePicker() {
     try {
       const sheets = await importFile(file)
       if (sheets && sheets.length > 0) {
-        await saveToFirebase(file.name, sheets)
+        const docId = await saveToFirebase(file.name, sheets)
+        if (!docId) return
         const source: DataSourceRef = {
-          excelDocId: getFirebaseDocId(file.name),
+          excelDocId: docId,
           sheetIndex: 0,
           fileName: file.name,
         }

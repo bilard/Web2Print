@@ -1,4 +1,5 @@
 import type { ExcelSheet, ExcelColumn, TaxonomyCategory, TaxonomyTag, TaxonomyLevelMap } from './types'
+import type { TaxonomyNode as TaxNode } from '@/features/taxonomy/types'
 
 const LEVEL_COLORS = [
   '#6366f1', '#3b82f6', '#06b6d4', '#22c55e', '#eab308',
@@ -87,4 +88,57 @@ export function getTaxoColumns(sheet: ExcelSheet): { col: ExcelColumn; level: nu
 /** Get max assigned level */
 export function getMaxLevel(levels: TaxonomyLevelMap): number {
   return Math.max(0, ...Object.values(levels))
+}
+
+/** Convertit les colonnes avec niveau d'une ExcelSheet en taxonomie hiérarchique
+ *  (format `Record<string, TaxNode>` compatible avec la page Taxonomies).
+ *  Parcourt chaque ligne et crée les nœuds uniques par chemin (level1/level2/...),
+ *  le parent étant le nœud du niveau précédent dans la même ligne. */
+export function buildTaxNodesFromLevels(
+  sheet: ExcelSheet,
+  levels: TaxonomyLevelMap
+): Record<string, TaxNode> {
+  const taxoCols = sheet.columns
+    .filter((c) => (levels[c.key] ?? 0) > 0)
+    .sort((a, b) => (levels[a.key] ?? 0) - (levels[b.key] ?? 0))
+
+  if (taxoCols.length === 0) return {}
+
+  const nodes: Record<string, TaxNode> = {}
+  const pathToId = new Map<string, string>()
+  const orderByParent = new Map<string | null, number>()
+
+  for (const row of sheet.rows) {
+    let parentId: string | null = null
+    const pathSegments: string[] = []
+
+    for (let i = 0; i < taxoCols.length; i++) {
+      const col = taxoCols[i]
+      const value = row[col.key]
+      if (value === null || value === '' || value === undefined) break
+
+      const label = String(value)
+      pathSegments.push(label)
+      const pathKey = pathSegments.join('\u0001')
+
+      let nodeId = pathToId.get(pathKey)
+      if (!nodeId) {
+        nodeId = crypto.randomUUID()
+        pathToId.set(pathKey, nodeId)
+        const order = orderByParent.get(parentId) ?? 0
+        orderByParent.set(parentId, order + 1)
+        nodes[nodeId] = {
+          id: nodeId,
+          label,
+          parentId,
+          order,
+          level: i,
+          linkedProjectIds: [],
+        }
+      }
+      parentId = nodeId
+    }
+  }
+
+  return nodes
 }

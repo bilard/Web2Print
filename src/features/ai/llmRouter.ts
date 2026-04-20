@@ -104,7 +104,7 @@ interface GenerateJsonOptions<T> {
  */
 const DEFAULT_MODEL: Record<LLMProviderId, string> = {
   claude: 'claude-opus-4-6',
-  gemini: 'gemini-2.0-flash',
+  gemini: 'gemini-3.1-pro-preview',
   openai: 'gpt-4o',
 }
 
