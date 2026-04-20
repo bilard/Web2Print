@@ -37,10 +37,9 @@ function makeBleedRect(w: number, h: number, bleed: number): FabricObject {
   return tag(r, 'bleed-rect')
 }
 
-function makeCropMarks(w: number, h: number, bleed: number, length: number): FabricObject[] {
+function makeCropMarks(w: number, h: number, offset: number, length: number): FabricObject[] {
   const color = '#000000'
   const sw = 0.5
-  const offset = bleed
   const lines: FabricObject[] = []
 
   // Coin haut-gauche
@@ -82,7 +81,7 @@ export function buildPrintMarks(opts: PrintMarksOptions): FabricObject[] {
   if (opts.showPrintMarks && opts.bleedPx > 0) {
     objs.push(makeBleedRect(opts.canvasWidthPx, opts.canvasHeightPx, opts.bleedPx))
     objs.push(
-      ...makeCropMarks(opts.canvasWidthPx, opts.canvasHeightPx, opts.bleedPx, opts.cropMarkLengthPx),
+      ...makeCropMarks(opts.canvasWidthPx, opts.canvasHeightPx, opts.cropMarkOffsetPx, opts.cropMarkLengthPx),
     )
   }
 
