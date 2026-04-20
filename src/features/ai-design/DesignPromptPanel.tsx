@@ -48,12 +48,7 @@ export function DesignPromptPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 w-[320px] bg-[#0f0f0f] text-neutral-200 overflow-y-auto h-full">
-      <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-indigo-400" />
-        <h2 className="text-sm font-semibold">Claude Design</h2>
-      </div>
-
+    <div className="flex flex-col gap-4 p-4 text-neutral-200">
       <div className="space-y-1">
         <label className="text-xs uppercase tracking-wide text-neutral-400">Votre brief</label>
         <textarea

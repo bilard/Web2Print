@@ -103,6 +103,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
+    { id: 'claude-design', collapsed: false },
     { id: 'data',    collapsed: true },
     { id: 'layers',  collapsed: true },
     { id: 'images',  collapsed: true },
