@@ -6,7 +6,7 @@ import {
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
-import { Layers, ImagePlus, Palette, FolderOpen, Database } from 'lucide-react'
+import { Layers, ImagePlus, Palette, FolderOpen, Database, Sparkles } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { PropertiesPanel } from '@/components/panels/PropertiesPanel'
 import { CollapsiblePanel } from '@/components/panels/CollapsiblePanel'
@@ -15,8 +15,10 @@ import { NanoBanaPanel } from '@/features/nanobana/NanoBanaPanel'
 import { PalettePanel } from '@/components/panels/PalettePanel'
 import { AssetsPanel } from '@/components/panels/AssetsPanel'
 import { DataMergePanel } from '@/features/merge/DataMergePanel'
+import { DesignPromptPanel } from '@/features/ai-design/DesignPromptPanel'
 
 const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode }> = {
+  'claude-design': { title: 'Claude Design', icon: Sparkles, content: <DesignPromptPanel /> },
   data:   { title: 'Données', icon: Database,  content: <DataMergePanel /> },
   layers: { title: 'Calques', icon: Layers,    content: <LayersPanel /> },
   images: { title: 'Images',  icon: ImagePlus, content: <NanoBanaPanel /> },

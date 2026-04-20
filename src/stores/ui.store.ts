@@ -20,6 +20,15 @@ interface UIState {
   canvasBgType: CanvasBgType
   canvasBgGradient: GradientConfig
   canvasBgImage: string | null
+  // --- Print ---
+  dpi: number
+  bleedMm: number
+  showPrintMarks: boolean
+  showSafeArea: boolean
+  setDpi: (dpi: number) => void
+  setBleedMm: (mm: number) => void
+  setShowPrintMarks: (v: boolean) => void
+  setShowSafeArea: (v: boolean) => void
   setRightPanelOpen: (open: boolean) => void
   setSettingsOpen: (open: boolean) => void
   setPageSettingsOpen: (open: boolean) => void
@@ -81,9 +90,20 @@ export const useUIStore = create<UIState>((set, get) => ({
   setCanvasBgGradient: (canvasBgGradient) => set({ canvasBgGradient }),
   setCanvasBgImage: (canvasBgImage) => set({ canvasBgImage }),
 
+  // --- Print defaults ---
+  dpi: 300,
+  bleedMm: 0,
+  showPrintMarks: false,
+  showSafeArea: false,
+  setDpi: (dpi) => set({ dpi: Math.max(72, Math.min(600, dpi)) }),
+  setBleedMm: (bleedMm) => set({ bleedMm: Math.max(0, Math.min(10, bleedMm)) }),
+  setShowPrintMarks: (showPrintMarks) => set({ showPrintMarks }),
+  setShowSafeArea: (showSafeArea) => set({ showSafeArea }),
+
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
+    { id: 'claude-design', collapsed: false },
     { id: 'data',    collapsed: true },
     { id: 'layers',  collapsed: true },
     { id: 'images',  collapsed: true },

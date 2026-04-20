@@ -20,6 +20,8 @@ import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
+import { buildPrintMarks } from '@/features/print/printMarks'
+import { mmToPx } from '@/features/print/dimensions'
 
 export let globalFabricCanvas: Canvas | null = null
 export let globalUndo: (() => void) | null = null
@@ -88,6 +90,36 @@ export function CanvasContainer() {
     }
     return () => { globalFitCanvas = null }
   }, [fitToContainer])
+
+  // --- Print marks overlay (synced with UI store) ---
+  const dpi = useUIStore((s) => s.dpi)
+  const bleedMm = useUIStore((s) => s.bleedMm)
+  const showPrintMarks = useUIStore((s) => s.showPrintMarks)
+  const showSafeArea = useUIStore((s) => s.showSafeArea)
+
+  useEffect(() => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+
+    const old = canvas.getObjects().filter((o) => o.data?.isPrintMark === true)
+    for (const o of old) canvas.remove(o)
+
+    const marks = buildPrintMarks({
+      canvasWidthPx: canvasWidth,
+      canvasHeightPx: canvasHeight,
+      bleedPx: mmToPx(bleedMm, dpi),
+      cropMarkLengthPx: mmToPx(5, dpi),
+      cropMarkOffsetPx: mmToPx(bleedMm, dpi),
+      safeAreaPx: mmToPx(5, dpi),
+      showPrintMarks,
+      showSafeArea,
+    })
+
+    for (const m of marks) canvas.add(m)
+    for (const m of marks) canvas.bringObjectToFront(m)
+
+    canvas.requestRenderAll()
+  }, [canvasReady, canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
 
   // Sync zoom from footer buttons
   useEffect(() => {

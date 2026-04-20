@@ -167,7 +167,7 @@ export function syncToStore(canvas: NonNullable<typeof globalFabricCanvas>) {
   const { setCanvasObjects } = useEditorStore.getState()
   const objects: CanvasObjectProps[] = canvas
     .getObjects()
-    .filter((o) => !o.data?.isGrid && !o.data?.isPageBg)
+    .filter((o) => !o.data?.isGrid && !o.data?.isPageBg && !o.data?.isPrintMark)
     .map((o, i) => fabricObjToProps(o, i))
   setCanvasObjects(objects)
 }
