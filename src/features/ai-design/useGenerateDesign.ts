@@ -15,14 +15,6 @@ import { getFormatById } from '@/features/print/PRINT_FORMATS'
 import { mmToPx } from '@/features/print/dimensions'
 import { AVAILABLE_FONTS } from '@/features/assets/useFonts'
 
-function parseViewBox(svgText: string): { x: number; y: number; w: number; h: number } | null {
-  const match = svgText.match(/viewBox\s*=\s*"([^"]+)"/i)
-  if (!match) return null
-  const parts = match[1].trim().split(/[\s,]+/).map(Number)
-  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null
-  return { x: parts[0], y: parts[1], w: parts[2], h: parts[3] }
-}
-
 type Step = 'idle' | 'generating' | 'sanitizing' | 'rendering' | 'done' | 'error'
 
 interface State {
@@ -67,6 +59,12 @@ export function useGenerateDesign() {
 
     const { bleedMm: storeBleed, dpi } = useUIStore.getState()
     const effectiveBleed = req.includeBleed ? Math.max(storeBleed, 3) : 0
+
+    // Garde le store UI synchro pour que l'overlay de repères (useEffect dans CanvasContainer)
+    // dessine des traits de coupe correspondant au bleed réellement utilisé dans le SVG.
+    if (useUIStore.getState().bleedMm !== effectiveBleed) {
+      useUIStore.getState().setBleedMm(effectiveBleed)
+    }
 
     const availableFonts = AVAILABLE_FONTS.map((f) => f.family)
 
@@ -130,15 +128,13 @@ export function useGenerateDesign() {
       return
     }
 
-    // Lecture du viewBox réel (peut inclure le fond perdu via une origine négative)
-    const vb = parseViewBox(cleanSvg) ?? { x: 0, y: 0, w: widthMm, h: heightMm }
-
-    // Le canvas couvre toute la zone d'impression (bleed compris si présent)
-    const canvasWidthPx = Math.round(mmToPx(vb.w, dpi))
-    const canvasHeightPx = Math.round(mmToPx(vb.h, dpi))
+    // Canvas = format fini (trimmed). Le contenu débordant (bleed) s'étend
+    // naturellement en coordonnées négatives, là où l'overlay de repères
+    // (buildPrintMarks) dessine déjà le rectangle de fond perdu.
+    const canvasWidthPx = Math.round(mmToPx(widthMm, dpi))
+    const canvasHeightPx = Math.round(mmToPx(heightMm, dpi))
     useUIStore.getState().setCanvasSize(canvasWidthPx, canvasHeightPx, '#ffffff')
 
-    // Retire TOUT sauf grid / pageBg / print-marks (ces derniers seront regénérés par l'effet du CanvasContainer)
     const toRemove = canvas.getObjects().filter((o) => {
       return !o.data?.isGrid && !o.data?.isPageBg && !o.data?.isPrintMark
     })
@@ -147,14 +143,15 @@ export function useGenerateDesign() {
     try {
       const { objects } = await parseSvgToFabric(cleanSvg)
 
-      // Scale des unités viewBox (mm) vers px, et translate pour que l'origine du viewBox tombe en (0,0).
-      const scaleX = canvasWidthPx / vb.w
-      const scaleY = canvasHeightPx / vb.h
+      // Les unités SVG sont en mm (viewBox en mm par contrat de prompt).
+      // Scale uniforme mm → px. Pas de translation — les coordonnées SVG
+      // utilisent déjà le format fini comme origine ; le bleed est en coords négatives.
+      const scale = canvasWidthPx / widthMm
       for (const obj of objects) {
-        obj.left = ((obj.left ?? 0) - vb.x) * scaleX
-        obj.top = ((obj.top ?? 0) - vb.y) * scaleY
-        obj.scaleX = (obj.scaleX ?? 1) * scaleX
-        obj.scaleY = (obj.scaleY ?? 1) * scaleY
+        obj.left = (obj.left ?? 0) * scale
+        obj.top = (obj.top ?? 0) * scale
+        obj.scaleX = (obj.scaleX ?? 1) * scale
+        obj.scaleY = (obj.scaleY ?? 1) * scale
         obj.setCoords()
         canvas.add(obj)
       }
