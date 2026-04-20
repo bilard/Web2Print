@@ -14,7 +14,7 @@ export interface TextStyle {
   fontWeight?: string
   fontStyle?: string
   textDecoration?: string
-  baselineShift?: number
+  baselineShift?: string | number
   letterSpacing?: number
 }
 
@@ -53,24 +53,60 @@ const STYLE_ATTRIBUTE_MAP: Record<string, keyof TextStyle> = {
 /**
  * Attributes that should be parsed as numbers
  */
-const NUMERIC_ATTRIBUTES = new Set(['font-size', 'baseline-shift', 'letter-spacing'])
+const NUMERIC_ATTRIBUTES = new Set(['font-size', 'letter-spacing'])
 
 /**
- * Extract style attributes from an SVG element
+ * Extract style attributes from an SVG element, including computed styles
+ * SVG attributes take precedence over computed CSS styles.
  * @param el - The XML element to extract styles from
  * @returns TextStyle object with all extracted styles
  */
 function extractStyles(el: Element): TextStyle {
   const styles: TextStyle = {}
 
-  // Extract all attributes that map to TextStyle
+  // Try to get computed styles (if available in DOM context)
+  let computedStyleMap: Record<string, string> = {}
+  try {
+    if (typeof window !== 'undefined' && window.getComputedStyle) {
+      const computed = window.getComputedStyle(el)
+      // Map CSS properties to TextStyle properties
+      computedStyleMap = {
+        fill: computed.fill || '',
+        fontFamily: computed.fontFamily || '',
+        fontSize: computed.fontSize || '',
+        fontWeight: computed.fontWeight || '',
+        fontStyle: computed.fontStyle || '',
+        textDecoration: computed.textDecoration || '',
+        baselineShift: computed.baselineShift || '',
+        letterSpacing: computed.letterSpacing || '',
+      }
+    }
+  } catch {
+    // If getComputedStyle fails, continue with attribute extraction
+  }
+
+  // Extract attributes (takes precedence over computed styles)
   for (const [attrName, styleProp] of Object.entries(STYLE_ATTRIBUTE_MAP)) {
-    const value = el.getAttribute(attrName)
-    if (value !== null) {
+    let value = el.getAttribute(attrName)
+
+    // Fall back to computed style if attribute not set
+    if (value === null && computedStyleMap[styleProp]) {
+      value = computedStyleMap[styleProp]
+    }
+
+    if (value !== null && value !== '') {
       if (NUMERIC_ATTRIBUTES.has(attrName)) {
         const numValue = parseFloat(value)
         if (!isNaN(numValue)) {
           ;(styles[styleProp] as unknown) = numValue
+        }
+      } else if (attrName === 'baseline-shift') {
+        // baselineShift can be a string ("super", "sub") or a number
+        const numValue = parseFloat(value)
+        if (!isNaN(numValue)) {
+          ;(styles[styleProp] as unknown) = numValue
+        } else {
+          ;(styles[styleProp] as unknown) = value
         }
       } else {
         ;(styles[styleProp] as unknown) = value
@@ -82,7 +118,29 @@ function extractStyles(el: Element): TextStyle {
 }
 
 /**
+ * Recursively extract all tspan elements from a parent element
+ * @param el - Parent element to search
+ * @returns Array of tspan elements in document order
+ */
+function getAllTspanDescendants(el: Element): Element[] {
+  const tspans: Element[] = []
+  const stack = Array.from(el.children)
+
+  while (stack.length > 0) {
+    const current = stack.shift()!
+    if (current.tagName.toLowerCase() === 'tspan') {
+      tspans.push(current)
+    }
+    // Add children to stack for recursive traversal
+    stack.unshift(...Array.from(current.children))
+  }
+
+  return tspans
+}
+
+/**
  * Parse SVG string and extract all text elements that have a width attribute
+ * Recursively extracts all tspan descendants and their styles.
  * @param svgText - SVG as string
  * @returns Array of TextMetadata objects with parsed tspans
  */
@@ -108,8 +166,8 @@ export function parseTextElements(svgText: string): TextMetadata[] {
     const tspans: TspanInfo[] = []
     let cumulativePos = 0
 
-    // Get all child tspan elements
-    const tspanElements = Array.from(textEl.querySelectorAll(':scope > tspan'))
+    // Get all tspan descendants (recursively)
+    const tspanElements = getAllTspanDescendants(textEl)
 
     if (tspanElements.length === 0) {
       // If no tspan children, treat the text element itself as one tspan
@@ -122,7 +180,7 @@ export function parseTextElements(svgText: string): TextMetadata[] {
         cumulativeEnd: textContent.length,
       })
     } else {
-      // Process each tspan child
+      // Process each tspan descendant
       tspanElements.forEach((tspanEl) => {
         const textContent = tspanEl.textContent || ''
         const styles = extractStyles(tspanEl)

@@ -105,4 +105,106 @@ describe('svgTextParser', () => {
     expect(result).toHaveLength(1)
     expect(result[0].tspans[0].textContent).toBe('Has Width')
   })
+
+  it('recursively extracts nested tspan elements', () => {
+    const svg = `
+      <svg viewBox="0 0 200 200">
+        <text width="150">
+          <tspan fill="red">
+            Outer
+            <tspan fill="blue">Inner</tspan>
+            More
+          </tspan>
+        </text>
+      </svg>
+    `
+    const result = parseTextElements(svg)
+    expect(result).toHaveLength(1)
+    // Should find all tspan descendants recursively
+    expect(result[0].tspans).toHaveLength(2)
+    expect(result[0].tspans[0].textContent).toContain('Outer')
+    expect(result[0].tspans[0].styles.fill).toBe('red')
+    expect(result[0].tspans[1].textContent).toBe('Inner')
+    expect(result[0].tspans[1].styles.fill).toBe('blue')
+  })
+
+  it('deeply nested tspans maintain cumulative positions', () => {
+    const svg = `
+      <svg viewBox="0 0 200 200">
+        <text width="200">
+          <tspan>A</tspan>
+          <tspan>
+            B
+            <tspan>C</tspan>
+          </tspan>
+        </text>
+      </svg>
+    `
+    const result = parseTextElements(svg)
+    expect(result[0].tspans).toHaveLength(3)
+    // First tspan: "A"
+    expect(result[0].tspans[0].textContent).toContain('A')
+    expect(result[0].tspans[0].cumulativeStart).toBe(0)
+    expect(result[0].tspans[0].cumulativeEnd).toBeGreaterThanOrEqual(1)
+    // Second tspan should start where first ended
+    expect(result[0].tspans[1].cumulativeStart).toBeGreaterThanOrEqual(1)
+    // Third nested tspan should follow
+    expect(result[0].tspans[2].cumulativeStart).toBeGreaterThanOrEqual(result[0].tspans[1].cumulativeEnd)
+  })
+
+  it('handles baselineShift as string (super/sub keywords)', () => {
+    const svg = `
+      <svg viewBox="0 0 200 200">
+        <text width="100">
+          <tspan baseline-shift="super">Super</tspan>
+          <tspan baseline-shift="sub">Sub</tspan>
+        </text>
+      </svg>
+    `
+    const result = parseTextElements(svg)
+    expect(result[0].tspans[0].styles.baselineShift).toBe('super')
+    expect(result[0].tspans[1].styles.baselineShift).toBe('sub')
+  })
+
+  it('handles baselineShift as numeric value', () => {
+    const svg = `
+      <svg viewBox="0 0 200 200">
+        <text width="100">
+          <tspan baseline-shift="2.5">Numeric Shift</tspan>
+        </text>
+      </svg>
+    `
+    const result = parseTextElements(svg)
+    expect(result[0].tspans[0].styles.baselineShift).toBe(2.5)
+  })
+
+  it('attributes take precedence over inherited values', () => {
+    const svg = `
+      <svg viewBox="0 0 200 200">
+        <text width="100" fill="black">
+          <tspan fill="red">Red Text</tspan>
+        </text>
+      </svg>
+    `
+    const result = parseTextElements(svg)
+    // tspan attribute should override text element style
+    expect(result[0].tspans[0].styles.fill).toBe('red')
+  })
+
+  it('preserves empty and whitespace-only tspans', () => {
+    const svg = `
+      <svg viewBox="0 0 200 200">
+        <text width="100">
+          <tspan>Text</tspan>
+          <tspan>   </tspan>
+          <tspan></tspan>
+        </text>
+      </svg>
+    `
+    const result = parseTextElements(svg)
+    expect(result[0].tspans).toHaveLength(3)
+    expect(result[0].tspans[0].textContent).toBe('Text')
+    expect(result[0].tspans[1].textContent).toBe('   ')
+    expect(result[0].tspans[2].textContent).toBe('')
+  })
 })
