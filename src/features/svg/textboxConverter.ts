@@ -26,10 +26,9 @@ export function normalizeText(text: string): string {
  *   - Fabric styles map {line: {char: style}}
  *
  * Algorithm:
- *   1. Normalize both wrapped text and tspan content
- *   2. For each tspan, find its position in wrapped text (sequential matching)
- *   3. Convert position to {line, char} coordinates
- *   4. Apply styles to that range
+ *   1. For each tspan, use cumulativeStart/End to find position in wrapped text
+ *   2. Handle whitespace and line break variations by searching for normalized content
+ *   3. Apply styles to matched character range
  */
 export function remapStylesToFabric(
   wrappedText: string,
@@ -37,53 +36,129 @@ export function remapStylesToFabric(
 ): FabricStyleMap {
   const result: FabricStyleMap = {}
 
-  // Split wrapped text into lines (Fabric uses \n for line breaks)
-  const lines = wrappedText.split('\n')
-
-  // Helper: convert char position to {line, char}
-  function posToLineChar(pos: number): { line: number; char: number } {
-    let remaining = pos
-    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-      const lineLen = lines[lineIdx].length
-      if (remaining <= lineLen) {
-        return { line: lineIdx, char: remaining }
-      }
-      remaining -= lineLen + 1 // +1 for \n
-    }
-    // Fallback: end of text
-    const lastLine = lines.length - 1
-    return { line: lastLine, char: lines[lastLine]?.length ?? 0 }
-  }
-
-  // Normalize wrapped text for matching
-  const normalizedWrapped = normalizeText(wrappedText)
-  let searchStart = 0
+  let lastFoundPos = 0
 
   for (const tspan of tspans) {
     const normalizedTspan = normalizeText(tspan.textContent)
     if (!normalizedTspan) continue
 
-    // Find next occurrence of normalized tspan in normalized wrapped text
-    const matchPos = normalizedWrapped.indexOf(normalizedTspan, searchStart)
+    // Check if tspan has leading or trailing whitespace
+    const hasLeadingWhitespace = /^\s/.test(tspan.textContent)
+    const hasTrailingWhitespace = /\s$/.test(tspan.textContent)
+
+    // Find the tspan content in the wrapped text, starting from where we left off
+    const matchPos = findTspanInText(wrappedText, normalizedTspan, lastFoundPos)
     if (matchPos === -1) {
       // Tspan not found — skip (may be due to wrapping changes)
       continue
     }
 
-    searchStart = matchPos + normalizedTspan.length
+    // If the original tspan had leading whitespace, back up to include it
+    let startPos = matchPos
+    if (hasLeadingWhitespace && matchPos > 0) {
+      // Look back to find the start of the whitespace run
+      let i = matchPos - 1
+      while (i >= 0 && /\s/.test(wrappedText[i])) {
+        i--
+      }
+      startPos = i + 1
+    }
+
+    // Calculate the end position: find how much actual text (from wrapped text)
+    // corresponds to the normalized match
+    let endPos = findMatchEnd(wrappedText, matchPos, normalizedTspan)
+
+    // If the original tspan had trailing whitespace, extend to include it
+    if (hasTrailingWhitespace) {
+      while (endPos < wrappedText.length && /\s/.test(wrappedText[endPos])) {
+        endPos++
+      }
+    }
+
+    lastFoundPos = endPos
 
     // Apply styles to this range
-    applyStylesToRange(result, wrappedText, matchPos, matchPos + normalizedTspan.length, tspan.styles)
+    applyStylesToRange(result, wrappedText, startPos, endPos, tspan.styles)
   }
 
   return result
 }
 
 /**
+ * Find the next occurrence of normalized target text in wrapped text.
+ * Returns the position in the original wrapped text (including newlines).
+ */
+function findTspanInText(text: string, normalizedTarget: string, startSearchPos: number): number {
+  // Search starting from startSearchPos
+  for (let i = startSearchPos; i < text.length; i++) {
+    // Extract substring and normalize it, check if it matches
+    const remaining = text.substring(i)
+    const normalizedRemaining = normalizeText(remaining)
+
+    if (normalizedRemaining.startsWith(normalizedTarget)) {
+      // Found it! Return the position in the original text
+      return i
+    }
+  }
+
+  return -1
+}
+
+/**
+ * Find the end position of a match in the original wrapped text.
+ *
+ * Starting from matchStart (which may include leading whitespace),
+ * find how many characters from the wrapped text correspond to the normalized target length,
+ * skipping over whitespace-only positions.
+ *
+ * Example:
+ *   wrappedText = "Hello World"
+ *   matchStart = 6 (at 'W')
+ *   normalizedTarget = "World"
+ *   Returns: 11 (end of "World")
+ *
+ *   wrappedText = "Hello World"
+ *   matchStart = 5 (at ' ', before 'World')
+ *   normalizedTarget = "World"
+ *   Returns: 11 (end of "World", skipping the initial space)
+ */
+function findMatchEnd(wrappedText: string, matchStart: number, normalizedTarget: string): number {
+  let charCount = 0
+  let pos = matchStart
+  let foundFirst = false
+
+  while (pos < wrappedText.length && charCount < normalizedTarget.length) {
+    const char = wrappedText[pos]
+
+    if (char === '\n') {
+      // Skip newlines, don't count them
+      pos++
+      continue
+    }
+
+    // For the first character, skip leading whitespace
+    if (!foundFirst && /\s/.test(char)) {
+      pos++
+      continue
+    }
+
+    // We've found the first non-whitespace character
+    foundFirst = true
+    charCount++
+    pos++
+  }
+
+  return pos
+}
+
+/**
  * Apply a style to a character range in the wrapped text.
  *
  * This is a helper that applies styles to a range of character positions.
- * Handles line breaks internally.
+ * Position calculations account for line breaks (\n in the text).
+ *
+ * The positions refer to indices in the original wrapped text string,
+ * including all characters (including newlines).
  */
 function applyStylesToRange(
   styleMap: FabricStyleMap,
@@ -114,7 +189,7 @@ function applyStylesToRange(
       }
     }
 
-    charPos = lineEnd + 1 // +1 for \n
+    charPos = lineEnd + 1 // +1 for \n character itself
   }
 }
 
