@@ -326,43 +326,11 @@ function decorateAll(objects: FabricObject[]): void {
 }
 
 /**
- * Augment SVG by adding missing width attributes to text elements
- * based on tspan positioning (when Illustrator exports without width)
+ * Augment SVG - placeholder for future enhancements.
+ * SVG files should be pre-consolidated with proper width attributes.
  */
 function augmentSvgWithTextWidths(svgText: string): string {
-  let result = svgText
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(svgText, 'image/svg+xml')
-
-  // Find all text elements without width
-  const textElements = doc.querySelectorAll('text:not([width])')
-  textElements.forEach((textEl) => {
-    const tspans = textEl.querySelectorAll('tspan')
-    if (tspans.length > 0) {
-      // Calculate bounding box from tspan positions
-      let maxRight = 0
-      tspans.forEach((tspan) => {
-        const x = parseFloat(tspan.getAttribute('x') ?? '0')
-        const text = tspan.textContent ?? ''
-        // Estimate: each character ~50 units wide in SVG coordinates
-        const right = x + text.length * 50
-        maxRight = Math.max(maxRight, right)
-      })
-
-      if (maxRight > 0) {
-        // Add width attribute to the text element
-        const id = textEl.getAttribute('id') || ''
-        const className = textEl.getAttribute('class') || ''
-        // Build a selector to find and replace
-        if (className) {
-          const pattern = new RegExp(`(<text[^>]*class=["']${className}["'][^>]*)>`, 'g')
-          result = result.replace(pattern, `$1 width="${Math.round(maxRight)}">`)
-        }
-      }
-    }
-  })
-
-  return result
+  return svgText
 }
 
 export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult> {
