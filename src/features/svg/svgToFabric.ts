@@ -95,6 +95,32 @@ function fabricTextToEditableText(
   }
 
   if (metadata?.width) {
+    // Preserve top-left corner of the original FabricText (SVG-parsed).
+    // Fabric parses raw text as single-line and positions via originX='center'
+    // using the text's natural width. When we create a Textbox with a fixed
+    // wrap width, the rendered width changes, which would shift the center.
+    // Lock originX/originY to 'left'/'top' with the original bbox top-left.
+    const srcScaleX = src.scaleX ?? 1
+    const srcScaleY = src.scaleY ?? 1
+    const srcWidth = src.width ?? 0
+    const srcHeight = src.height ?? 0
+    const bbLeft =
+      src.originX === 'center'
+        ? (src.left ?? 0) - (srcWidth * srcScaleX) / 2
+        : src.originX === 'right'
+        ? (src.left ?? 0) - srcWidth * srcScaleX
+        : src.left ?? 0
+    const bbTop =
+      src.originY === 'center'
+        ? (src.top ?? 0) - (srcHeight * srcScaleY) / 2
+        : src.originY === 'bottom'
+        ? (src.top ?? 0) - srcHeight * srcScaleY
+        : src.top ?? 0
+
+    opts.left = bbLeft
+    opts.top = bbTop
+    opts.originX = 'left'
+    opts.originY = 'top'
     opts.width = metadata.width
 
     // Reconstruct text with line breaks between tspans to preserve original SVG layout
