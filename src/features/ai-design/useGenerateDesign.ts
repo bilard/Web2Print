@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { generateJson } from '@/features/ai/llmRouter'
@@ -15,6 +15,14 @@ import { getFormatById } from '@/features/print/PRINT_FORMATS'
 import { mmToPx } from '@/features/print/dimensions'
 import { AVAILABLE_FONTS } from '@/features/assets/useFonts'
 
+function parseViewBox(svgText: string): { x: number; y: number; w: number; h: number } | null {
+  const match = svgText.match(/viewBox\s*=\s*"([^"]+)"/i)
+  if (!match) return null
+  const parts = match[1].trim().split(/[\s,]+/).map(Number)
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null
+  return { x: parts[0], y: parts[1], w: parts[2], h: parts[3] }
+}
+
 type Step = 'idle' | 'generating' | 'sanitizing' | 'rendering' | 'done' | 'error'
 
 interface State {
@@ -27,9 +35,13 @@ interface State {
 const PROMPT_VERSION = 'design.generate.v1'
 
 export function useGenerateDesign() {
+  const runningRef = useRef(false)
   const [state, setState] = useState<State>({ step: 'idle', progress: '', error: null, lastResult: null })
 
   const generate = useCallback(async (req: DesignRequest) => {
+    if (runningRef.current) return
+    runningRef.current = true
+    try {
     setState({ step: 'generating', progress: 'Envoi du brief à Claude…', error: null, lastResult: null })
 
     // Résolution du format
@@ -118,9 +130,12 @@ export function useGenerateDesign() {
       return
     }
 
-    // Redimensionne le canvas aux dimensions du design (en px au dpi courant)
-    const canvasWidthPx = Math.round(mmToPx(widthMm, dpi))
-    const canvasHeightPx = Math.round(mmToPx(heightMm, dpi))
+    // Lecture du viewBox réel (peut inclure le fond perdu via une origine négative)
+    const vb = parseViewBox(cleanSvg) ?? { x: 0, y: 0, w: widthMm, h: heightMm }
+
+    // Le canvas couvre toute la zone d'impression (bleed compris si présent)
+    const canvasWidthPx = Math.round(mmToPx(vb.w, dpi))
+    const canvasHeightPx = Math.round(mmToPx(vb.h, dpi))
     useUIStore.getState().setCanvasSize(canvasWidthPx, canvasHeightPx, '#ffffff')
 
     // Retire TOUT sauf grid / pageBg / print-marks (ces derniers seront regénérés par l'effet du CanvasContainer)
@@ -132,13 +147,12 @@ export function useGenerateDesign() {
     try {
       const { objects } = await parseSvgToFabric(cleanSvg)
 
-      // Les objets parsés viennent à l'échelle du viewBox SVG (en mm).
-      // On les scale pour qu'ils remplissent le canvas en px.
-      const scaleX = canvasWidthPx / widthMm
-      const scaleY = canvasHeightPx / heightMm
+      // Scale des unités viewBox (mm) vers px, et translate pour que l'origine du viewBox tombe en (0,0).
+      const scaleX = canvasWidthPx / vb.w
+      const scaleY = canvasHeightPx / vb.h
       for (const obj of objects) {
-        obj.left = (obj.left ?? 0) * scaleX
-        obj.top = (obj.top ?? 0) * scaleY
+        obj.left = ((obj.left ?? 0) - vb.x) * scaleX
+        obj.top = ((obj.top ?? 0) - vb.y) * scaleY
         obj.scaleX = (obj.scaleX ?? 1) * scaleX
         obj.scaleY = (obj.scaleY ?? 1) * scaleY
         obj.setCoords()
@@ -155,6 +169,9 @@ export function useGenerateDesign() {
     }
 
     setState({ step: 'done', progress: '', error: null, lastResult: result })
+    } finally {
+      runningRef.current = false
+    }
   }, [])
 
   const reset = useCallback(() => {
