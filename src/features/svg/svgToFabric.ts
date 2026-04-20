@@ -96,11 +96,17 @@ function fabricTextToEditableText(
 
   if (metadata?.width) {
     opts.width = metadata.width
-    const styles = remapStylesToFabric(text, metadata.tspans)
+
+    // Reconstruct text with line breaks between tspans to preserve original SVG layout
+    const reconstructedText = metadata.tspans
+      .map((tspan) => tspan.textContent)
+      .join('\n')
+
+    const styles = remapStylesToFabric(reconstructedText, metadata.tspans)
     if (Object.keys(styles).length > 0) {
       opts.styles = styles
     }
-    const textbox = new Textbox(text, opts as any)
+    const textbox = new Textbox(reconstructedText, opts as any)
     const anyTextbox = textbox as FabricObject & { data?: Record<string, unknown> }
     anyTextbox.data = {
       ...(anyTextbox.data ?? {}),

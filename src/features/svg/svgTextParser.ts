@@ -181,7 +181,8 @@ export function parseTextElements(svgText: string): TextMetadata[] {
       })
     } else {
       // Process each tspan descendant
-      tspanElements.forEach((tspanEl) => {
+      // Join with \n to preserve original SVG line breaks
+      tspanElements.forEach((tspanEl, idx) => {
         const textContent = tspanEl.textContent || ''
         const styles = extractStyles(tspanEl)
 
@@ -193,6 +194,10 @@ export function parseTextElements(svgText: string): TextMetadata[] {
         })
 
         cumulativePos += textContent.length
+        // Add newline between tspans to preserve multi-line layout (except after last)
+        if (idx < tspanElements.length - 1) {
+          cumulativePos += 1
+        }
       })
     }
 
