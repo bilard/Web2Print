@@ -358,11 +358,193 @@ function decorateAll(objects: FabricObject[]): void {
 }
 
 /**
- * Augment SVG - placeholder for future enhancements.
- * SVG files should be pre-consolidated with proper width attributes.
+ * Augment un SVG Illustrator brut pour qu'il soit consommé par le pipeline Textbox.
+ *
+ * Illustrator exporte ses <text> sans attribut `width`, en positionnant chaque ligne
+ * via des tspans avec `y` progressifs (une ligne visuelle par tspan). `parseTextElements`
+ * exige un `width` pour produire de la métadonnée — sinon le texte devient un IText
+ * non-wrappé.
+ *
+ * Cette fonction infère, pour chaque <text> sans `width` :
+ *   - frame width : max(x_tspan + largeur_estimée_du_tspan) sur chaque ligne visuelle
+ *   - line-height : moyenne des deltas de y entre tspans successifs
+ *   - text-align  : déduit du pattern (startSpread vs endSpread par ligne)
+ *
+ * La largeur de caractère est estimée via un ratio constant (≈ 0.52 × fontSize) —
+ * suffisant pour reproduire l'enveloppe du cadre original, le reflow exact étant
+ * ensuite assuré par Fabric.Textbox au rendu.
  */
+const APPROX_CHAR_WIDTH_RATIO = 0.52
+
 function augmentSvgWithTextWidths(svgText: string): string {
-  return svgText
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+  } catch {
+    return svgText
+  }
+  if (doc.getElementsByTagName('parsererror').length > 0) return svgText
+
+  const cssRules = parseAugmentStyleRules(doc)
+  const textEls = Array.from(doc.querySelectorAll('text'))
+  let modified = false
+
+  for (const textEl of textEls) {
+    if (textEl.getAttribute('width')) continue
+
+    const fontSize = getCascadedNumber(textEl, 'font-size', cssRules) ?? 16
+    const tspans = Array.from(textEl.querySelectorAll('tspan'))
+    if (tspans.length === 0) continue
+
+    const groups = groupTspansByY(tspans)
+    if (groups.length === 0) continue
+
+    const charWidth = fontSize * APPROX_CHAR_WIDTH_RATIO
+
+    const lineMetrics = groups.map((group) => {
+      let minX = Number.POSITIVE_INFINITY
+      let maxEnd = 0
+      for (const t of group) {
+        const x = parseFloat(t.getAttribute('x') ?? '0')
+        const chars = (t.textContent ?? '').length
+        const end = x + chars * charWidth
+        if (x < minX) minX = x
+        if (end > maxEnd) maxEnd = end
+      }
+      if (!Number.isFinite(minX)) minX = 0
+      return { minX, maxEnd }
+    })
+
+    const frameWidth = Math.max(...lineMetrics.map((m) => m.maxEnd))
+    if (!(frameWidth > 0)) continue
+
+    // Infer line-height from tspan y deltas (consecutive groups).
+    const ys = groups.map((g) => parseFloat(g[0].getAttribute('y') ?? '0'))
+    let lineHeightPx: number | undefined
+    if (ys.length >= 2) {
+      const deltas: number[] = []
+      for (let i = 1; i < ys.length; i++) deltas.push(ys[i] - ys[i - 1])
+      const avg = deltas.reduce((a, b) => a + b, 0) / deltas.length
+      if (avg > 0) lineHeightPx = avg
+    }
+
+    // Infer text-align: compare how much line-starts vs line-ends spread.
+    let textAlign: 'left' | 'center' | 'right' | undefined
+    if (lineMetrics.length >= 2) {
+      const starts = lineMetrics.map((m) => m.minX)
+      const ends = lineMetrics.map((m) => m.maxEnd)
+      const startSpread = Math.max(...starts) - Math.min(...starts)
+      const endSpread = Math.max(...ends) - Math.min(...ends)
+      const centers = lineMetrics.map((m) => (m.minX + m.maxEnd) / 2)
+      const centerSpread = Math.max(...centers) - Math.min(...centers)
+
+      if (endSpread < startSpread * 0.5 && endSpread < fontSize) {
+        textAlign = 'right'
+      } else if (startSpread < endSpread * 0.5 && startSpread < fontSize) {
+        textAlign = 'left'
+      } else if (
+        centerSpread < startSpread * 0.5 &&
+        centerSpread < endSpread * 0.5
+      ) {
+        textAlign = 'center'
+      }
+    }
+
+    textEl.setAttribute('width', String(Math.round(frameWidth)))
+
+    const existingStyle = textEl.getAttribute('style') ?? ''
+    const additions: string[] = []
+    if (lineHeightPx !== undefined && !/(?:^|;)\s*line-height\s*:/i.test(existingStyle)) {
+      additions.push(`line-height:${lineHeightPx}px`)
+    }
+    if (textAlign && !/(?:^|;)\s*text-align\s*:/i.test(existingStyle)) {
+      additions.push(`text-align:${textAlign}`)
+    }
+    if (additions.length > 0) {
+      const sep = existingStyle.trim() && !existingStyle.trim().endsWith(';') ? ';' : ''
+      textEl.setAttribute('style', existingStyle + sep + additions.join(';'))
+    }
+
+    modified = true
+  }
+
+  if (!modified) return svgText
+  return new XMLSerializer().serializeToString(doc)
+}
+
+function groupTspansByY(tspans: Element[]): Element[][] {
+  const map = new Map<number, Element[]>()
+  const order: number[] = []
+  let lastY = 0
+  for (const t of tspans) {
+    const yAttr = t.getAttribute('y')
+    const y = yAttr !== null && yAttr !== '' ? parseFloat(yAttr) : lastY
+    if (!Number.isFinite(y)) continue
+    lastY = y
+    if (!map.has(y)) {
+      map.set(y, [])
+      order.push(y)
+    }
+    map.get(y)!.push(t)
+  }
+  return order.sort((a, b) => a - b).map((y) => map.get(y)!)
+}
+
+function parseAugmentStyleRules(doc: Document): Record<string, Record<string, string>> {
+  const rules: Record<string, Record<string, string>> = {}
+  const styleEls = Array.from(doc.getElementsByTagName('style'))
+  for (const styleEl of styleEls) {
+    const css = styleEl.textContent ?? ''
+    const ruleRe = /([^{}]+)\{([^}]+)\}/g
+    let match: RegExpExecArray | null
+    while ((match = ruleRe.exec(css))) {
+      const selectors = match[1].split(',').map((s) => s.trim()).filter(Boolean)
+      const body = match[2]
+      const props: Record<string, string> = {}
+      for (const decl of body.split(';')) {
+        const idx = decl.indexOf(':')
+        if (idx === -1) continue
+        const prop = decl.slice(0, idx).trim().toLowerCase()
+        const value = decl.slice(idx + 1).trim()
+        if (prop) props[prop] = value
+      }
+      for (const sel of selectors) {
+        rules[sel] = { ...(rules[sel] ?? {}), ...props }
+      }
+    }
+  }
+  return rules
+}
+
+function getCascadedNumber(
+  el: Element,
+  name: string,
+  rules: Record<string, Record<string, string>>
+): number | undefined {
+  const direct = el.getAttribute(name)
+  if (direct) {
+    const n = parseFloat(direct)
+    if (Number.isFinite(n)) return n
+  }
+  const inlineStyle = el.getAttribute('style')
+  if (inlineStyle) {
+    const m = new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`, 'i').exec(inlineStyle)
+    if (m) {
+      const n = parseFloat(m[1])
+      if (Number.isFinite(n)) return n
+    }
+  }
+  const classAttr = el.getAttribute('class')
+  if (classAttr) {
+    for (const cls of classAttr.split(/\s+/)) {
+      const val = rules[`.${cls}`]?.[name]
+      if (val) {
+        const n = parseFloat(val)
+        if (Number.isFinite(n)) return n
+      }
+    }
+  }
+  return undefined
 }
 
 export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult> {
