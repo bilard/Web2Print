@@ -100,7 +100,7 @@ export function CanvasContainer() {
     const canvas = globalFabricCanvas
     if (!canvas) return
 
-    const old = canvas.getObjects().filter((o: any) => o.data?.isPrintMark === true)
+    const old = canvas.getObjects().filter((o) => o.data?.isPrintMark === true)
     for (const o of old) canvas.remove(o)
 
     const marks = buildPrintMarks({
@@ -118,7 +118,7 @@ export function CanvasContainer() {
     for (const m of marks) canvas.bringObjectToFront(m)
 
     canvas.requestRenderAll()
-  }, [canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
+  }, [canvasReady, canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
 
   // Sync zoom from footer buttons
   useEffect(() => {
