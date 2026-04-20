@@ -1,4 +1,4 @@
-import '@/types/fabric'
+/// <reference path="../../types/fabric.d.ts" />
 import { useEffect } from 'react'
 import { IText, Textbox } from 'fabric'
 import type { Canvas, FabricObject } from 'fabric'
