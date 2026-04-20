@@ -33,6 +33,8 @@ export interface TspanInfo {
  */
 export interface TextMetadata {
   width?: number
+  lineHeight?: number
+  textAlign?: 'left' | 'center' | 'right' | 'justify'
   tspans: TspanInfo[]
 }
 
@@ -146,8 +148,9 @@ function getAllTspanDescendants(el: Element): Element[] {
  */
 export function parseTextElements(svgText: string): TextMetadata[] {
   const parser = new DOMParser()
-  const doc = parser.parseFromString(svgText, 'text/xml')
+  const doc = parser.parseFromString(svgText, 'image/svg+xml')
 
+  const cssRules = parseStyleRules(doc)
   const results: TextMetadata[] = []
 
   // Find all <text> elements
@@ -201,11 +204,98 @@ export function parseTextElements(svgText: string): TextMetadata[] {
       })
     }
 
+    // Extract text-level paragraph properties.
+    // text-anchor is native SVG; line-height and text-align ride via CSS or inline style.
+    const textAnchor = getCascadedAttr(textEl, 'text-anchor', cssRules)
+    const textAnchorToAlign: Record<string, 'left' | 'center' | 'right'> = {
+      start: 'left',
+      middle: 'center',
+      end: 'right',
+    }
+    const cssTextAlign = getCascadedAttr(textEl, 'text-align', cssRules)
+    const textAlign =
+      (cssTextAlign as 'left' | 'center' | 'right' | 'justify' | null) ??
+      (textAnchor ? textAnchorToAlign[textAnchor] : undefined)
+
+    const lineHeightStr = getCascadedAttr(textEl, 'line-height', cssRules)
+    let lineHeight: number | undefined
+    if (lineHeightStr) {
+      const parsed = parseFloat(lineHeightStr)
+      if (!isNaN(parsed)) {
+        // When given as a px value matching font-size, convert to ratio via font-size.
+        const fontSizeStr = getCascadedAttr(textEl, 'font-size', cssRules)
+        const fontSize = fontSizeStr ? parseFloat(fontSizeStr) : NaN
+        lineHeight = Number.isFinite(fontSize) && fontSize > 0 && parsed >= fontSize / 2
+          ? parsed / fontSize
+          : parsed
+      }
+    }
+
     results.push({
       width,
+      lineHeight,
+      textAlign,
       tspans,
     })
   })
 
   return results
+}
+
+/**
+ * Parse an SVG <style> block into a map of { "selector": { "prop": "value" } }.
+ * Supports simple class selectors (".cls-6") — enough for Illustrator exports.
+ */
+function parseStyleRules(doc: Document): Record<string, Record<string, string>> {
+  const rules: Record<string, Record<string, string>> = {}
+  const styleEls = doc.getElementsByTagName('style')
+  for (const styleEl of Array.from(styleEls)) {
+    const css = styleEl.textContent ?? ''
+    const ruleRe = /([^{}]+)\{([^}]+)\}/g
+    let match: RegExpExecArray | null
+    while ((match = ruleRe.exec(css))) {
+      const selectors = match[1].split(',').map((s) => s.trim()).filter(Boolean)
+      const body = match[2]
+      const props: Record<string, string> = {}
+      for (const decl of body.split(';')) {
+        const idx = decl.indexOf(':')
+        if (idx === -1) continue
+        const prop = decl.slice(0, idx).trim().toLowerCase()
+        const value = decl.slice(idx + 1).trim()
+        if (prop) props[prop] = value
+      }
+      for (const sel of selectors) {
+        rules[sel] = { ...(rules[sel] ?? {}), ...props }
+      }
+    }
+  }
+  return rules
+}
+
+/**
+ * Resolve an attribute or CSS property for an element, checking:
+ *   1. the inline attribute, 2. the inline style="...", 3. <style> class rules.
+ */
+function getCascadedAttr(
+  el: Element,
+  name: string,
+  cssRules: Record<string, Record<string, string>>
+): string | null {
+  const direct = el.getAttribute(name)
+  if (direct !== null && direct !== '') return direct
+
+  const inlineStyle = el.getAttribute('style')
+  if (inlineStyle) {
+    const m = new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`, 'i').exec(inlineStyle)
+    if (m) return m[1].trim()
+  }
+
+  const classAttr = el.getAttribute('class')
+  if (classAttr) {
+    for (const cls of classAttr.split(/\s+/)) {
+      const fromRule = cssRules[`.${cls}`]?.[name]
+      if (fromRule) return fromRule
+    }
+  }
+  return null
 }

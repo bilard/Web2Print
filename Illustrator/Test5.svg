@@ -18,6 +18,8 @@
         fill: #e3e3e3;
         font-family: HelveticaNeueLTPro-Bd, 'Helvetica Neue LT Pro';
         font-size: 500px;
+        line-height: 500px;
+        text-align: right;
       }
 
       .cls-7 {

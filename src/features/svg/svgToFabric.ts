@@ -122,6 +122,8 @@ function fabricTextToEditableText(
     opts.originX = 'left'
     opts.originY = 'top'
     opts.width = metadata.width
+    if (metadata.textAlign) opts.textAlign = metadata.textAlign
+    if (metadata.lineHeight !== undefined) opts.lineHeight = metadata.lineHeight
 
     // Reconstruct text with line breaks between tspans to preserve original SVG layout
     const reconstructedText = metadata.tspans
