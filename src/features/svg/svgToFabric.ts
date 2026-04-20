@@ -13,6 +13,9 @@ import {
   type FabricObject,
 } from 'fabric'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
+import { parseTextElements } from './svgTextParser'
+import { remapStylesToFabric } from './textboxConverter'
+import type { TextMetadata } from './svgTextParser'
 
 export interface SvgParseResult {
   objects: FabricObject[]
@@ -46,14 +49,16 @@ function cleanFontFamily(ff: unknown): string | undefined {
 }
 
 /**
- * Convertit un FabricText (produit par le parser SVG) en IText éditable.
+ * Convertit un FabricText (produit par le parser SVG) en IText ou Textbox éditable.
  *
- * Note : FabricText.toObject() sérialise styles en format tableau [{start, end, style}],
- * mais le constructeur IText attend le format imbriqué {line: {char: style}}. On écarte
- * donc les per-char styles — les classes CSS SVG s'appliquent uniformément et sont déjà
- * reflétées dans les props racine (fontSize/fontFamily/fill).
+ * Si metadata contient une width, crée un Textbox avec styles remappés.
+ * Sinon, crée un IText.
+ * Stocke metadata dans obj.data pour utilisation ultérieure.
  */
-function fabricTextToIText(src: FabricText): IText {
+function fabricTextToEditableText(
+  src: FabricText,
+  metadata?: TextMetadata
+): IText | Textbox {
   const anySrc = src as unknown as Record<string, unknown>
   const text = typeof src.text === 'string' ? src.text : String(anySrc.text ?? '')
 
@@ -87,24 +92,47 @@ function fabricTextToIText(src: FabricText): IText {
     shadow: src.shadow,
     textBackgroundColor: src.textBackgroundColor,
     direction: src.direction,
-    // styles: volontairement omis (voir note plus haut)
+  }
+
+  if (metadata?.width) {
+    opts.width = metadata.width
+    const styles = remapStylesToFabric(text, metadata.tspans)
+    if (Object.keys(styles).length > 0) {
+      opts.styles = styles
+    }
+    const textbox = new Textbox(text, opts as any)
+    const anyTextbox = textbox as FabricObject & { data?: Record<string, unknown> }
+    anyTextbox.data = {
+      ...(anyTextbox.data ?? {}),
+      originalWidth: metadata.width,
+      svgTextMetadata: metadata,
+    }
+    return textbox
   }
 
   return new IText(text, opts as any)
 }
 
-/** Remplace récursivement chaque FabricText non-IText par un IText éditable. */
-function upgradeTextsInPlace(objects: FabricObject[]): FabricObject[] {
+/** Remplace récursivement chaque FabricText non-IText par un IText ou Textbox éditable. */
+function upgradeTextsInPlace(
+  objects: FabricObject[],
+  textMetadataMap: Map<number, TextMetadata>
+): FabricObject[] {
+  let textIndex = 0
+
   return objects.map((obj) => {
     if (obj instanceof Group) {
       const children = (obj._objects ?? []) as FabricObject[]
-      const upgraded = upgradeTextsInPlace(children)
+      const upgraded = upgradeTextsInPlace(children, textMetadataMap)
       // Remplace les enfants en conservant les dimensions du groupe
       obj._objects = upgraded
       return obj
     }
-    if (obj instanceof FabricText && !(obj instanceof IText)) {
-      return fabricTextToIText(obj)
+    if (obj instanceof FabricText && !(obj instanceof IText) && !(obj instanceof Textbox)) {
+      const metadata = textMetadataMap.get(textIndex)
+      const result = fabricTextToEditableText(obj, metadata)
+      textIndex++
+      return result
     }
     return obj
   })
@@ -292,9 +320,16 @@ function decorateAll(objects: FabricObject[]): void {
 }
 
 export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult> {
+  // Phase 1: XML parse to extract text metadata
+  const textMetadataList = parseTextElements(svgText)
+  const textMetadataMap = new Map(textMetadataList.map((m, i) => [i, m]))
+
+  // Phase 2: Fabric parse (normal)
   const parsed = await loadSVGFromString(svgText)
   const rawObjects = (parsed.objects ?? []).filter((o): o is FabricObject => !!o)
-  const flatObjects = upgradeTextsInPlace(rawObjects)
+
+  // Phase 3: Upgrade texts with metadata
+  const flatObjects = upgradeTextsInPlace(rawObjects, textMetadataMap)
   registerUsedFonts(flatObjects)
 
   // Reconstruit la hiérarchie des <g> depuis le XML source. Fallback : liste plate.
