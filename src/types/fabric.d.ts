@@ -1,4 +1,5 @@
 import 'fabric'
+import type { TextMetadata } from '@/features/svg/svgTextParser'
 
 declare module 'fabric' {
   interface FabricObject {
@@ -8,6 +9,8 @@ declare module 'fabric' {
       name?: string
       isGrid?: boolean
       isPageBg?: boolean
+      originalWidth?: number
+      svgTextMetadata?: TextMetadata
       [key: string]: unknown
     }
   }
