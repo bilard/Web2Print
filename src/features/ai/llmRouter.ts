@@ -45,6 +45,7 @@ type LLMTask =
   | 'brief.imagePrompts'
   | 'brief.catalogKeywords'
   | 'product.enrichment'
+  | 'design.generate'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -65,6 +66,7 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
   'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
+  'design.generate':        { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -75,6 +77,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'brief.imagePrompts':     0.4,
   'brief.catalogKeywords':  0.4,
   'product.enrichment':     0,
+  'design.generate':        0.6,
 }
 
 interface GenerateJsonOptions<T> {
@@ -185,7 +188,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   }
 
   const temperature = TASK_TEMPERATURE[opts.task]
-  const max_tokens = 8192
+  const max_tokens = opts.task === 'design.generate' ? 16384 : 8192
 
   // Notifie l'UI du payload exact avant l'envoi (pour affichage debug).
   opts.onRequestSent?.({
@@ -256,7 +259,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     },
     body: JSON.stringify({
       model,
-      max_tokens: 8192,
+      max_tokens,
       temperature: Math.max(TASK_TEMPERATURE[opts.task], 0),
       tools: [tool],
       tool_choice: { type: 'tool', name: toolName },
