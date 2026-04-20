@@ -1,3 +1,4 @@
+import '@/types/fabric'
 import { IText, Textbox } from 'fabric'
 import type { Canvas, FabricObject } from 'fabric'
 
