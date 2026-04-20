@@ -125,10 +125,14 @@ function fabricTextToEditableText(
     if (metadata.textAlign) opts.textAlign = metadata.textAlign
     if (metadata.lineHeight !== undefined) opts.lineHeight = metadata.lineHeight
 
-    // Reconstruct text with line breaks between tspans to preserve original SVG layout
+    // Reconstruct text as a continuous string — Illustrator exports one tspan
+    // per visual line with trailing whitespace, so join without adding breaks.
+    // Fabric's Textbox then reflows inside metadata.width like an editable text frame.
     const reconstructedText = metadata.tspans
       .map((tspan) => tspan.textContent)
-      .join('\n')
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim()
 
     const styles = remapStylesToFabric(reconstructedText, metadata.tspans)
     if (Object.keys(styles).length > 0) {
