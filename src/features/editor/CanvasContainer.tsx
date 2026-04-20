@@ -15,6 +15,7 @@ import { useObjectOperations, setGlobalObjOps } from './useObjectOperations'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 import { usePageNavigation } from './usePageNavigation'
 import { syncToStore } from './useAddObject'
+import { useTextEditMode } from './useTextEditMode'
 import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { useUIStore } from '@/stores/ui.store'
@@ -145,6 +146,7 @@ export function CanvasContainer() {
   useSyncPropertiesToCanvas(fabricRef)
   useSnapGuides(fabricRef, setSnapGuides)
   useImageMask(fabricRef)
+  useTextEditMode(fabricRef)
 
   const { undo, redo, snapshot } = useHistory(fabricRef)
   useAutoSave(fabricRef)
