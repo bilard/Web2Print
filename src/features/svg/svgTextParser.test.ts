@@ -46,8 +46,9 @@ describe('svgTextParser', () => {
     const result = parseTextElements(svg)
     expect(result[0].tspans[0].cumulativeStart).toBe(0)
     expect(result[0].tspans[0].cumulativeEnd).toBe(5) // "Hello".length
-    expect(result[0].tspans[1].cumulativeStart).toBe(5)
-    expect(result[0].tspans[1].cumulativeEnd).toBe(11) // "Hello World".length
+    // Account for \n separator between tspans
+    expect(result[0].tspans[1].cumulativeStart).toBe(6) // 5 (Hello) + 1 (\n)
+    expect(result[0].tspans[1].cumulativeEnd).toBe(12) // 6 + " World".length
   })
 
   it('handles text without tspan children', () => {
