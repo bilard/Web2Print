@@ -324,6 +324,13 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           if (data.canvasBgImage !== undefined) uiStore.setCanvasBgImage(data.canvasBgImage)
         }
 
+        // Restore print settings (DPI, bleed, marks, safe area)
+        const uiStoreRef = useUIStore.getState()
+        if (typeof data.dpi === 'number') uiStoreRef.setDpi(data.dpi)
+        if (typeof data.bleedMm === 'number') uiStoreRef.setBleedMm(data.bleedMm)
+        if (typeof data.showPrintMarks === 'boolean') uiStoreRef.setShowPrintMarks(data.showPrintMarks)
+        if (typeof data.showSafeArea === 'boolean') uiStoreRef.setShowSafeArea(data.showSafeArea)
+
         // Restore project palette
         try {
           const palette = usePaletteStore.getState()
@@ -436,6 +443,13 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           }
 
           fixAndReattach(canvas)
+
+          // Purge tout print mark / safe-area / bleed mark hérité d'une sauvegarde
+          // antérieure (versions du code sans `excludeFromExport: true`).
+          // L'overlay fresh est rebâti par `CanvasContainer` via son useEffect.
+          const { removeAllPrintMarks } = await import('@/features/print/printMarks')
+          const orphanMarks = removeAllPrintMarks(canvas.getObjects(), 'aggressive')
+          for (const m of orphanMarks) canvas.remove(m)
 
           // Re-apply per-character charSpacing (tracking IDML) from separate Firestore field
           try {

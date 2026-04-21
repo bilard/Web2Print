@@ -194,7 +194,7 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
     try {
       // Upload non-permanent images to Storage, then serialize
       const json = await persistImagesAndSerialize(canvas, projectId)
-      const { canvasWidth, canvasHeight, canvasBg, canvasBgType, canvasBgGradient, canvasBgImage } = useUIStore.getState()
+      const { canvasWidth, canvasHeight, canvasBg, canvasBgType, canvasBgGradient, canvasBgImage, dpi, bleedMm, showPrintMarks, showSafeArea } = useUIStore.getState()
       const { colors: paletteColors, gradients: paletteGradients } = usePaletteStore.getState()
 
       // Generate thumbnail
@@ -246,6 +246,10 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         canvasBgType,
         canvasBgGradient: JSON.stringify(canvasBgGradient),
         canvasBgImage,
+        dpi,
+        bleedMm,
+        showPrintMarks,
+        showSafeArea,
         paletteColors: JSON.stringify(paletteColors),
         paletteGradients: JSON.stringify(paletteGradients),
         claudeDesignBrief: useDesignBriefStore.getState().brief
@@ -316,6 +320,23 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
     if (!projectId) return
     const unsub = useDesignBriefStore.subscribe((state, prevState) => {
       if (state.brief === prevState.brief) return
+      if (_loadingInProgressRef()) return
+      setSaveStatus('unsaved')
+    })
+    return unsub
+  }, [projectId, setSaveStatus])
+
+  // Mark project as unsaved when print settings change (dpi/bleed/marks/safe area).
+  // Like the brief watcher, gated by _loadingInProgress to avoid dirty-on-hydrate.
+  useEffect(() => {
+    if (!projectId) return
+    const unsub = useUIStore.subscribe((state, prevState) => {
+      if (
+        state.dpi === prevState.dpi &&
+        state.bleedMm === prevState.bleedMm &&
+        state.showPrintMarks === prevState.showPrintMarks &&
+        state.showSafeArea === prevState.showSafeArea
+      ) return
       if (_loadingInProgressRef()) return
       setSaveStatus('unsaved')
     })
