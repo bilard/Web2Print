@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { GradientConfig } from './editor.store'
+import { useDesignBriefStore } from './designBrief.store'
 
 export type CanvasBgType = 'solid' | 'gradient' | 'image'
 export type ActiveTool = 'select' | 'text' | 'rect' | 'ellipse' | 'line' | 'image' | 'hand' | 'zoom'
@@ -142,11 +143,13 @@ export const useUIStore = create<UIState>((set, get) => ({
   isClaudeDesignModalOpen: false,
   claudeDesignActiveTab: 'brief',
   isOptimizingPrompt: false,
-  openClaudeDesignModal: () =>
-    set((state) => ({
+  openClaudeDesignModal: () => {
+    const { brief } = useDesignBriefStore.getState()
+    return set({
       isClaudeDesignModalOpen: true,
-      claudeDesignActiveTab: (state as any).designBrief?.prompt?.trim() ? 'style' : 'brief',
-    })),
+      claudeDesignActiveTab: brief?.prompt?.trim() ? 'style' : 'brief',
+    })
+  },
   closeClaudeDesignModal: () => set({ isClaudeDesignModalOpen: false }),
   setClaudeDesignActiveTab: (tab) => set({ claudeDesignActiveTab: tab }),
   setOptimizingPrompt: (isOptimizing) => set({ isOptimizingPrompt: isOptimizing }),
