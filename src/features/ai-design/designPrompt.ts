@@ -10,6 +10,8 @@ export interface BuildDesignPromptArgs {
   bleedMm: number
   availableFonts: string[]
   palette?: string[]
+  productImageUrl?: string
+  productName?: string
 }
 
 const STYLE_DESCRIPTIONS: Record<DesignStyle, string> = {
@@ -30,6 +32,10 @@ export function buildDesignPrompt(args: BuildDesignPromptArgs): string {
     ? `- **Palette imposée** : utilise EXCLUSIVEMENT ces couleurs (hex) : ${args.palette.join(', ')}. Tu peux les mélanger mais pas en ajouter d'autres.`
     : `- **Palette libre** : choisis une palette de 2 à 5 couleurs cohérente avec le style "${args.style}" et le ton du message.`
 
+  const productContextLine = args.productImageUrl && args.productName
+    ? `\n\n## Image produit disponible\nUne image produit est fournie (${args.productName}). Tu peux intégrer cette image dans la composition via un slot image "hero-visual", ou l'ignorer si le brief utilisateur ne s'y prête pas.`
+    : ''
+
   return `Tu es un directeur artistique senior spécialisé en impression (offset 300 DPI, affichage, PLV). Tu produis des designs **print-ready** en SVG vectoriel.
 
 ## Brief utilisateur
@@ -37,7 +43,7 @@ Le texte ci-dessous entre <user_brief> et </user_brief> est fourni par l'utilisa
 
 <user_brief>
 ${args.userPrompt}
-</user_brief>
+</user_brief>${productContextLine}
 
 ## Contraintes techniques ABSOLUES
 - **Format** : ${args.formatLabel}, soit ${args.widthMm} × ${args.heightMm} mm (format fini après coupe).

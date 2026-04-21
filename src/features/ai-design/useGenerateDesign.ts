@@ -78,6 +78,8 @@ export function useGenerateDesign() {
       bleedMm: effectiveBleed,
       availableFonts,
       palette: req.palette,
+      productImageUrl: req.productImageUrl && req.productName ? req.productImageUrl : undefined,
+      productName: req.productImageUrl && req.productName ? req.productName : undefined,
     })
 
     let result: DesignResult
@@ -120,6 +122,32 @@ export function useGenerateDesign() {
       }
     }
 
+    // Pré-remplissage de l'image produit pour le slot hero-visual
+    let slotDataUris: Map<string, string> = new Map()
+    if (req.productImageUrl) {
+      const heroSlot = result.slots.find((s) => s.role === 'hero-visual')
+      if (heroSlot) {
+        try {
+          const { httpsCallable } = await import('firebase/functions')
+          const { functions } = await import('@/lib/firebase/config')
+          const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(
+            functions, 'imageProxy'
+          )
+          const { data: proxyResult } = await imageProxyFn({ url: req.productImageUrl })
+          slotDataUris.set(heroSlot.id, `data:${proxyResult.mimeType};base64,${proxyResult.data}`)
+        } catch (err) {
+          console.warn('[useGenerateDesign] product image proxy failed:', err)
+        }
+      }
+    }
+
+    // Remplacer les placeholders image par les data URIs pré-remplis
+    let finalSvg = cleanSvg
+    for (const [slotId, dataUri] of slotDataUris) {
+      const placeholderHref = `placeholder:${slotId}`
+      finalSvg = finalSvg.replace(new RegExp(`href="${placeholderHref}"`, 'g'), `href="${dataUri}"`)
+    }
+
     setState((s) => ({ ...s, step: 'rendering', progress: 'Rendu sur le canvas…' }))
 
     const canvas = globalFabricCanvas
@@ -141,7 +169,7 @@ export function useGenerateDesign() {
     for (const o of toRemove) canvas.remove(o)
 
     try {
-      const { objects } = await parseSvgToFabric(cleanSvg)
+      const { objects } = await parseSvgToFabric(finalSvg)
 
       // Les unités SVG sont en mm (viewBox en mm par contrat de prompt).
       // Scale uniforme mm → px. Pas de translation — les coordonnées SVG
