@@ -67,6 +67,24 @@ export function DesignPromptPanel() {
   // matche LinkedIn Banner (96 DPI), pas un format print arbitraire.
   useEffect(() => {
     const uiDpi = useUIStore.getState().dpi
+    // If the hydrated brief already matches the canvas dims, don't rewrite it.
+    // Prevents silent clobber on project load (e.g. 'pos-a6-counter' → 'a6'
+    // because they share 105×148mm, or a deliberate 'custom' at A4 dims).
+    if (brief.formatId === 'custom') {
+      if (brief.customWidthMm && brief.customHeightMm) {
+        const wPx = Math.round(mmToPx(brief.customWidthMm, uiDpi))
+        const hPx = Math.round(mmToPx(brief.customHeightMm, uiDpi))
+        if (Math.abs(wPx - canvasWidth) <= 2 && Math.abs(hPx - canvasHeight) <= 2) return
+      }
+    } else {
+      const current = getFormatById(brief.formatId)
+      if (current) {
+        const dpi = current.nativeDpi ?? uiDpi
+        const wPx = Math.round(mmToPx(current.widthMm, dpi))
+        const hPx = Math.round(mmToPx(current.heightMm, dpi))
+        if (Math.abs(wPx - canvasWidth) <= 2 && Math.abs(hPx - canvasHeight) <= 2) return
+      }
+    }
     const match = PRINT_FORMATS.find((f) => {
       const dpi = f.nativeDpi ?? uiDpi
       const wPx = Math.round(mmToPx(f.widthMm, dpi))
