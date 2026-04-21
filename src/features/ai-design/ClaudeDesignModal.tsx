@@ -38,13 +38,13 @@ export function ClaudeDesignModal() {
   // Close modal on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isClaudeDesignModalOpen) {
+      if (e.key === 'Escape') {
         closeClaudeDesignModal()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isClaudeDesignModalOpen, closeClaudeDesignModal])
+  }, [closeClaudeDesignModal])
 
   if (!isClaudeDesignModalOpen) return null
 
@@ -75,6 +75,8 @@ export function ClaudeDesignModal() {
       <div
         className="fixed inset-0 bg-black/60 z-50"
         onClick={closeClaudeDesignModal}
+        role="presentation"
+        aria-hidden="true"
       />
 
       {/* Modal */}
@@ -92,11 +94,15 @@ export function ClaudeDesignModal() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-neutral-800 bg-[#0f0f0f] px-4 shrink-0">
+        <div className="flex border-b border-neutral-800 bg-[#0f0f0f] px-4 shrink-0" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setClaudeDesignActiveTab(tab.id as any)}
+              id={`${tab.id}-tab`}
+              onClick={() => setClaudeDesignActiveTab(tab.id)}
+              role="tab"
+              aria-selected={claudeDesignActiveTab === tab.id}
+              aria-controls={`${tab.id}-panel`}
               className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
                 claudeDesignActiveTab === tab.id
                   ? 'text-indigo-400 border-indigo-500 bg-indigo-500/10'
@@ -110,10 +116,38 @@ export function ClaudeDesignModal() {
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {claudeDesignActiveTab === 'brief' && <ClaudeDesignBriefTab />}
-          {claudeDesignActiveTab === 'style' && <ClaudeDesignStyleTab />}
-          {claudeDesignActiveTab === 'options' && <ClaudeDesignOptionsTab />}
-          {claudeDesignActiveTab === 'avance' && <ClaudeDesignAdvancedTab />}
+          <div
+            id="brief-panel"
+            role="tabpanel"
+            aria-labelledby="brief-tab"
+            hidden={claudeDesignActiveTab !== 'brief'}
+          >
+            {claudeDesignActiveTab === 'brief' && <ClaudeDesignBriefTab />}
+          </div>
+          <div
+            id="style-panel"
+            role="tabpanel"
+            aria-labelledby="style-tab"
+            hidden={claudeDesignActiveTab !== 'style'}
+          >
+            {claudeDesignActiveTab === 'style' && <ClaudeDesignStyleTab />}
+          </div>
+          <div
+            id="options-panel"
+            role="tabpanel"
+            aria-labelledby="options-tab"
+            hidden={claudeDesignActiveTab !== 'options'}
+          >
+            {claudeDesignActiveTab === 'options' && <ClaudeDesignOptionsTab />}
+          </div>
+          <div
+            id="avance-panel"
+            role="tabpanel"
+            aria-labelledby="avance-tab"
+            hidden={claudeDesignActiveTab !== 'avance'}
+          >
+            {claudeDesignActiveTab === 'avance' && <ClaudeDesignAdvancedTab />}
+          </div>
         </div>
 
         {/* Footer */}
