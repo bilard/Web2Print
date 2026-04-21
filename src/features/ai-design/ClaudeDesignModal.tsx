@@ -3,6 +3,7 @@ import { X, Loader2, Sparkles } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
 import { useGenerateDesign } from './useGenerateDesign'
+import { DesignProgress } from './DesignProgress'
 
 // Tab stubs - will be imported from Task 4-7
 import { ClaudeDesignBriefTab } from './ClaudeDesignBriefTab'
@@ -31,9 +32,10 @@ export function ClaudeDesignModal() {
   }))
 
   const brief = useDesignBrief()
-  const { state, generate } = useGenerateDesign()
+  const { state, generate, reset } = useGenerateDesign()
 
   const isRunning = state.step !== 'idle' && state.step !== 'done' && state.step !== 'error'
+  const isGenerating = state.step !== 'idle'
 
   // Close modal on Escape
   useEffect(() => {
@@ -46,7 +48,24 @@ export function ClaudeDesignModal() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [closeClaudeDesignModal])
 
+  // Close modal when generation completes
+  useEffect(() => {
+    if ((state.step === 'done' || state.step === 'error') && isClaudeDesignModalOpen) {
+      setTimeout(() => closeClaudeDesignModal(), 500)
+    }
+  }, [state.step, isClaudeDesignModalOpen, closeClaudeDesignModal])
+
   if (!isClaudeDesignModalOpen) return null
+
+  const handleProgressClose = () => {
+    reset()
+    closeClaudeDesignModal()
+  }
+
+  const handleProgressRetry = () => {
+    reset()
+    // The modal stays open so user can modify settings before retrying
+  }
 
   const onGenerate = () => {
     if (!brief.prompt.trim()) return
@@ -66,7 +85,21 @@ export function ClaudeDesignModal() {
       palette: palette.length > 0 ? palette : undefined,
     }
     generate(req)
-    closeClaudeDesignModal()
+  }
+
+  // Show DesignProgress when generation is running or has completed/errored
+  if (isGenerating) {
+    return (
+      <DesignProgress
+        step={state.step}
+        progress={state.progress}
+        error={state.error}
+        lastResult={state.lastResult}
+        lastPlan={state.lastPlan}
+        onClose={handleProgressClose}
+        onRetry={handleProgressRetry}
+      />
+    )
   }
 
   return (
