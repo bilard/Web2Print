@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
 import { useUIStore } from '@/stores/ui.store'
+import { useBriefUIStore } from '@/stores/brief.store'
+import { useBrief } from '@/features/briefs/useBrief'
 import { optimizePrompt } from './optimizePrompt'
 
 export function ClaudeDesignBriefTab() {
@@ -12,6 +14,17 @@ export function ClaudeDesignBriefTab() {
 
   const isOptimizing = useUIStore((s) => s.isOptimizingPrompt)
   const [optimizedResult, setOptimizedResult] = useState('')
+
+  const currentBriefId = useBriefUIStore((s) => s.currentBriefId)
+  const { data: linkedBrief } = useBrief(currentBriefId)
+  const cartImageUrl = linkedBrief?.cart?.items?.[0]?.imageUrl
+  const cartProductName = linkedBrief?.cart?.items?.[0]?.name
+
+  useEffect(() => {
+    if (!brief.productImageUrl && cartImageUrl) {
+      setBrief({ productImageUrl: cartImageUrl })
+    }
+  }, [cartImageUrl, brief.productImageUrl, setBrief])
 
   const handleOptimize = async () => {
     if (!brief.prompt.trim()) {
@@ -62,6 +75,37 @@ export function ClaudeDesignBriefTab() {
             className="w-full bg-[#0a0a0a] border border-neutral-700 rounded px-3 py-2 text-sm resize-none text-neutral-400 placeholder-neutral-600 cursor-default"
           />
         </div>
+      </div>
+
+      {/* Product image input */}
+      <div className="space-y-1">
+        <label className="text-xs uppercase tracking-wide text-neutral-400">
+          Image produit (optionnel)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={brief.productImageUrl ?? ''}
+            onChange={(e) => setBrief({ productImageUrl: e.target.value })}
+            placeholder="https://… (panier ou URL manuelle)"
+            className="flex-1 bg-[#0f0f0f] border border-neutral-800 rounded px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600"
+          />
+          {cartImageUrl && (
+            <button
+              type="button"
+              onClick={() => setBrief({ productImageUrl: cartImageUrl })}
+              className="shrink-0 px-3 py-2 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-400 text-xs transition-colors"
+              title={cartProductName}
+            >
+              Panier
+            </button>
+          )}
+        </div>
+        {brief.productImageUrl && (
+          <p className="text-[10px] text-indigo-400">
+            ✓ La photo produit remplacera le slot hero-visual
+          </p>
+        )}
       </div>
 
       {/* Optimize button */}
