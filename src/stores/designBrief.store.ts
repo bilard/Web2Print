@@ -6,6 +6,7 @@ interface DesignBriefStore {
   setBrief: (patch: Partial<DesignBriefState>) => void
   resetBrief: () => void
   hydrateBrief: (brief: DesignBriefState | null) => void
+  setPromptOptimized: (optimized: string) => void
 }
 
 export const useDesignBriefStore = create<DesignBriefStore>((set) => ({
@@ -17,6 +18,11 @@ export const useDesignBriefStore = create<DesignBriefStore>((set) => ({
     }),
   resetBrief: () => set({ brief: null }),
   hydrateBrief: (brief) => set({ brief }),
+  setPromptOptimized: (optimized) =>
+    set((s) => {
+      const base = s.brief ?? DEFAULT_DESIGN_BRIEF
+      return { brief: { ...base, promptOptimized: optimized, updatedAt: Date.now() } }
+    }),
 }))
 
 /**

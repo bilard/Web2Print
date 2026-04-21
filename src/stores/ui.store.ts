@@ -50,6 +50,14 @@ interface UIState {
   damPickerTargetId: string | null
   openDamPickerForReplace: (targetId: string) => void
   openDamPickerForFill: (targetId: string) => void
+  // --- Claude Design Modal ---
+  isClaudeDesignModalOpen: boolean
+  claudeDesignActiveTab: 'brief' | 'style' | 'options' | 'avance'
+  isOptimizingPrompt: boolean
+  openClaudeDesignModal: () => void
+  closeClaudeDesignModal: () => void
+  setClaudeDesignActiveTab: (tab: 'brief' | 'style' | 'options' | 'avance') => void
+  setOptimizingPrompt: (isOptimizing: boolean) => void
 }
 
 const DEFAULT_BG_GRADIENT: GradientConfig = {
@@ -129,4 +137,17 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ damPickerOpen: true, damPickerMode: 'replace', damPickerTargetId: targetId }),
   openDamPickerForFill: (targetId) =>
     set({ damPickerOpen: true, damPickerMode: 'fill', damPickerTargetId: targetId }),
+
+  // --- Claude Design Modal ---
+  isClaudeDesignModalOpen: false,
+  claudeDesignActiveTab: 'brief',
+  isOptimizingPrompt: false,
+  openClaudeDesignModal: () =>
+    set((state) => ({
+      isClaudeDesignModalOpen: true,
+      claudeDesignActiveTab: (state as any).designBrief?.prompt?.trim() ? 'style' : 'brief',
+    })),
+  closeClaudeDesignModal: () => set({ isClaudeDesignModalOpen: false }),
+  setClaudeDesignActiveTab: (tab) => set({ claudeDesignActiveTab: tab }),
+  setOptimizingPrompt: (isOptimizing) => set({ isOptimizingPrompt: isOptimizing }),
 }))

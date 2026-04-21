@@ -43,6 +43,7 @@ export interface DesignBriefState {
   /** Raw text of the palette input — NOT parsed. Validation happens at submit time. */
   paletteText: string
   updatedAt: number
+  promptOptimized?: string // Optimized version of the prompt
 }
 
 export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
@@ -54,4 +55,5 @@ export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
   includeBleed: true,
   paletteText: '',
   updatedAt: 0,
+  promptOptimized: '',
 }
