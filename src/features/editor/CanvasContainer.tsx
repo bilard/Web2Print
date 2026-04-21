@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Canvas, Point, IText, FabricImage } from 'fabric'
+import { Canvas, Point, IText, FabricImage, type FabricObject } from 'fabric'
 import { useCanvas } from './useCanvas'
 import { setIsInteracting } from './useAddObject'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
@@ -20,7 +20,7 @@ import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
-import { buildPrintMarks } from '@/features/print/printMarks'
+import { buildPrintMarks, removeAllPrintMarks } from '@/features/print/printMarks'
 import { mmToPx } from '@/features/print/dimensions'
 
 export let globalFabricCanvas: Canvas | null = null
@@ -50,28 +50,65 @@ export function CanvasContainer() {
     setCanvasReady(fabricRef.current)
     fitToContainer(containerRef.current)
 
-    // Prevent text deformation on resize: convert scale to width change
+    // Empêche la déformation des blocs texte au resize. Déclenché sur
+    // `object:modified` (fin de drag) et PAS `object:scaling` (pendant le
+    // drag) — sinon on réinitialise scaleX à mi-geste et Fabric recalcule
+    // mal, ce qui fait rétrécir le texte jusqu'à disparaître.
     const canvas = fabricRef.current
-    const handleTextScaling = (e: any) => {
+    const SIDE_CORNERS = new Set(['ml', 'mr'])
+    const VERT_CORNERS = new Set(['mt', 'mb'])
+    const handleTextModified = (e: any) => {
       const target = e.target
-      if (target instanceof IText) {
-        const newWidth = target.width * target.scaleX
-        target.set({
-          width: newWidth,
-          scaleX: 1,
-          scaleY: 1,
-        })
+      if (!target) return
+      const corner = e.transform?.corner as string | undefined
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const t = target as any
+
+      const rewriteText = (txt: any) => {
+        const sx = txt.scaleX ?? 1
+        const sy = txt.scaleY ?? 1
+        if (sx === 1 && sy === 1) return
+        if (corner && SIDE_CORNERS.has(corner)) {
+          // handle latéral : on étend la largeur sans changer le fontSize
+          txt.set({ width: (txt.width ?? 100) * sx, scaleX: 1, scaleY: 1 })
+        } else if (corner && VERT_CORNERS.has(corner)) {
+          // handle vertical : Textbox se re-layoute seul via width, rien à faire
+          txt.set({ scaleX: 1, scaleY: 1 })
+        } else {
+          // coin (tl/tr/bl/br) : scale uniforme → on bake le scale dans
+          // fontSize + width pour garder la lisibilité
+          const scale = Math.min(sx, sy)
+          const newFontSize = (txt.fontSize ?? 16) * scale
+          txt.set({
+            fontSize: newFontSize,
+            width: (txt.width ?? 100) * sx,
+            scaleX: 1,
+            scaleY: 1,
+          })
+        }
+        if (typeof txt.initDimensions === 'function') txt.initDimensions()
+        txt.dirty = true
       }
+
+      if (target instanceof IText) {
+        rewriteText(t)
+      } else if (t.type === 'group' && Array.isArray(t._objects)) {
+        // Groupe : propage le scale du groupe aux enfants texte puis reset
+        for (const child of t._objects) {
+          if (child instanceof IText) rewriteText(child)
+        }
+      }
+      canvas.requestRenderAll()
     }
     // Track active manipulation to prevent store→canvas feedback loop
     const onTransformStart = () => setIsInteracting(true)
     const onTransformEnd = () => setIsInteracting(false)
 
-    canvas.on('object:scaling', handleTextScaling)
+    canvas.on('object:modified', handleTextModified)
     canvas.on('mouse:down', onTransformStart)
     canvas.on('mouse:up', onTransformEnd)
     return () => {
-      canvas.off('object:scaling', handleTextScaling)
+      canvas.off('object:modified', handleTextModified)
       canvas.off('mouse:down', onTransformStart)
       canvas.off('mouse:up', onTransformEnd)
     }
@@ -98,15 +135,34 @@ export function CanvasContainer() {
   const showSafeArea = useUIStore((s) => s.showSafeArea)
 
   useEffect(() => {
-    const canvas = globalFabricCanvas
-    if (!canvas) return
+    if (!canvasReady) return
 
-    const old = canvas.getObjects().filter((o) => o.data?.isPrintMark === true)
-    for (const o of old) canvas.remove(o)
+    const old = removeAllPrintMarks(canvasReady.getObjects(), 'aggressive')
+    for (const o of old) canvasReady.remove(o)
+
+    // Ancre les marks sur le pageBg réel présent sur le canvas (et pas sur
+    // les valeurs du store), pour éviter tout désalignement si le pageBg a
+    // dérivé (ex: scaleX ≠ 1 hérité d'une sauvegarde, ou changement de
+    // format pas encore propagé à l'objet Fabric).
+    // Ancre sur les propriétés brutes Fabric du pageBg (left/top/width×scale)
+    // PAS `getBoundingRect()` qui applique le viewportTransform et donnerait
+    // des coords double-transformées une fois le rect ajouté au canvas.
+    const pageBg = canvasReady.getObjects().find((o) => (o as any).data?.isPageBg) as
+      | (FabricObject & { scaleX?: number; scaleY?: number })
+      | undefined
+    let pageLeft = 0, pageTop = 0, pageW = canvasWidth, pageH = canvasHeight
+    if (pageBg) {
+      pageLeft = pageBg.left ?? 0
+      pageTop = pageBg.top ?? 0
+      pageW = (pageBg.width ?? canvasWidth) * (pageBg.scaleX ?? 1)
+      pageH = (pageBg.height ?? canvasHeight) * (pageBg.scaleY ?? 1)
+    }
 
     const marks = buildPrintMarks({
-      canvasWidthPx: canvasWidth,
-      canvasHeightPx: canvasHeight,
+      canvasWidthPx: pageW,
+      canvasHeightPx: pageH,
+      pageLeftPx: pageLeft,
+      pageTopPx: pageTop,
       bleedPx: mmToPx(bleedMm, dpi),
       cropMarkLengthPx: mmToPx(5, dpi),
       cropMarkOffsetPx: mmToPx(bleedMm, dpi),
@@ -115,10 +171,18 @@ export function CanvasContainer() {
       showSafeArea,
     })
 
-    for (const m of marks) canvas.add(m)
-    for (const m of marks) canvas.bringObjectToFront(m)
+    for (const m of marks) canvasReady.add(m)
+    // Si un handler global (`object:added`) a forcé originX/Y à 'center',
+    // on le rétablit explicitement après ajout pour que le rect soit
+    // positionné par son coin top-left, comme prévu.
+    for (const m of marks) {
+      ;(m as FabricObject & { originX?: string; originY?: string }).originX = 'left'
+      ;(m as FabricObject & { originX?: string; originY?: string }).originY = 'top'
+      m.setCoords()
+    }
+    for (const m of marks) canvasReady.bringObjectToFront(m)
 
-    canvas.requestRenderAll()
+    canvasReady.requestRenderAll()
   }, [canvasReady, canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
 
   // Sync zoom from footer buttons
