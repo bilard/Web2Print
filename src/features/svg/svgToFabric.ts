@@ -16,6 +16,7 @@ import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { parseTextElements } from './svgTextParser'
 import { remapStylesToFabric } from './textboxConverter'
 import type { TextMetadata } from './svgTextParser'
+import { neutralizePlaceholderImages } from './neutralizePlaceholderImages'
 
 export interface SvgParseResult {
   objects: FabricObject[]
@@ -548,18 +549,22 @@ function getCascadedNumber(
 }
 
 export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult> {
-  // Phase 0: Augment SVG with missing width attributes
-  const augmentedSvg = augmentSvgWithTextWidths(svgText)
+  // Phase 0: Neutralise placeholder images before Fabric parsing
+  // (Fabric v6 crashes on <image href="placeholder:XXX">)
+  const neutralizedSvg = neutralizePlaceholderImages(svgText)
 
-  // Phase 1: XML parse to extract text metadata
+  // Phase 1: Augment SVG with missing width attributes
+  const augmentedSvg = augmentSvgWithTextWidths(neutralizedSvg)
+
+  // Phase 2: XML parse to extract text metadata
   const textMetadataList = parseTextElements(augmentedSvg)
   const textMetadataMap = new Map(textMetadataList.map((m, i) => [i, m]))
 
-  // Phase 2: Fabric parse (normal)
+  // Phase 3: Fabric parse (normal)
   const parsed = await loadSVGFromString(augmentedSvg)
   const rawObjects = (parsed.objects ?? []).filter((o): o is FabricObject => !!o)
 
-  // Phase 3: Upgrade texts with metadata
+  // Phase 4: Upgrade texts with metadata
   const flatObjects = upgradeTextsInPlace(rawObjects, textMetadataMap)
   registerUsedFonts(flatObjects)
 

@@ -4,7 +4,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
 import { useGenerateDesign } from './useGenerateDesign'
 import { DesignProgress } from './DesignProgress'
-import { PRINT_FORMATS, mmToPx } from '@/features/print/dimensions'
+import { PRINT_FORMATS } from '@/features/print/PRINT_FORMATS'
 
 // Tab stubs - will be imported from Task 4-7
 import { ClaudeDesignBriefTab } from './ClaudeDesignBriefTab'
