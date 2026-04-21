@@ -1,10 +1,14 @@
-import { useState } from 'react'
-import { Sparkles, Loader2, AlertTriangle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Sparkles, Loader2 } from 'lucide-react'
 import { FormatSelector } from './FormatSelector'
 import { PrintSettingsPanel } from './PrintSettingsPanel'
+import { DesignProgress } from './DesignProgress'
 import { useGenerateDesign } from './useGenerateDesign'
 import type { DesignStyle, DesignRequest } from './types'
-import { DEFAULT_FORMAT_ID } from '@/features/print/PRINT_FORMATS'
+import { PRINT_FORMATS, getFormatById } from '@/features/print/PRINT_FORMATS'
+import { useUIStore } from '@/stores/ui.store'
+import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
+import { mmToPx, pxToMm } from '@/features/print/dimensions'
 
 const STYLES: Array<{ id: DesignStyle; label: string; emoji: string }> = [
   { id: 'corporate',   label: 'Corporate',    emoji: '🏢' },
@@ -16,34 +20,89 @@ const STYLES: Array<{ id: DesignStyle; label: string; emoji: string }> = [
 ]
 
 export function DesignPromptPanel() {
-  const [prompt, setPrompt] = useState('')
-  const [formatId, setFormatId] = useState(DEFAULT_FORMAT_ID)
-  const [customWidthMm, setCustomWidthMm] = useState<number | undefined>()
-  const [customHeightMm, setCustomHeightMm] = useState<number | undefined>()
-  const [style, setStyle] = useState<DesignStyle>('corporate')
-  const [includeBleed, setIncludeBleed] = useState(true)
-  const [paletteText, setPaletteText] = useState('')
+  const brief = useDesignBrief()
+  const setBrief = useDesignBriefStore((s) => s.setBrief)
+  const [progressDismissed, setProgressDismissed] = useState(false)
 
   const { state, generate } = useGenerateDesign()
   const isRunning = state.step !== 'idle' && state.step !== 'done' && state.step !== 'error'
+  const showProgress = !progressDismissed && state.step !== 'idle'
+
+  const canvasWidth = useUIStore((s) => s.canvasWidth)
+  const canvasHeight = useUIStore((s) => s.canvasHeight)
+  // Distingue « l'utilisateur a changé le dropdown » vs « la dropdown a été
+  // resync depuis le canvas externe ». Évite de boucler / d'écraser le format
+  // choisi via « Créer un document » ou un import.
+  const userChangedFormatRef = useRef(false)
+
+  // (1) Push : seulement quand l'utilisateur change le dropdown.
+  // Utilise le `nativeDpi` du format pour la conversion mm → px (300 print, 96 écran/social).
+  useEffect(() => {
+    if (!userChangedFormatRef.current) return
+    userChangedFormatRef.current = false
+    let widthMm: number | undefined
+    let heightMm: number | undefined
+    let dpiToUse = useUIStore.getState().dpi
+    if (brief.formatId === 'custom') {
+      widthMm = brief.customWidthMm
+      heightMm = brief.customHeightMm
+    } else {
+      const f = getFormatById(brief.formatId)
+      if (f) {
+        widthMm = f.widthMm
+        heightMm = f.heightMm
+        dpiToUse = f.nativeDpi ?? dpiToUse
+      }
+    }
+    if (!widthMm || !heightMm) return
+    const wPx = Math.round(mmToPx(widthMm, dpiToUse))
+    const hPx = Math.round(mmToPx(heightMm, dpiToUse))
+    if (canvasWidth !== wPx || canvasHeight !== hPx) {
+      useUIStore.getState().setCanvasSize(wPx, hPx, useUIStore.getState().canvasBg)
+    }
+  }, [brief.formatId, brief.customWidthMm, brief.customHeightMm, canvasWidth, canvasHeight])
+
+  // (2) Pull : reflète passivement le canvas réel dans la dropdown.
+  // Test chaque format avec son `nativeDpi` propre — un canvas 1584×396 px
+  // matche LinkedIn Banner (96 DPI), pas un format print arbitraire.
+  useEffect(() => {
+    const uiDpi = useUIStore.getState().dpi
+    const match = PRINT_FORMATS.find((f) => {
+      const dpi = f.nativeDpi ?? uiDpi
+      const wPx = Math.round(mmToPx(f.widthMm, dpi))
+      const hPx = Math.round(mmToPx(f.heightMm, dpi))
+      return Math.abs(wPx - canvasWidth) <= 2 && Math.abs(hPx - canvasHeight) <= 2
+    })
+    if (match) {
+      if (match.id !== brief.formatId) setBrief({ formatId: match.id })
+    } else {
+      const wMm = Math.round(pxToMm(canvasWidth, uiDpi))
+      const hMm = Math.round(pxToMm(canvasHeight, uiDpi))
+      if (brief.formatId !== 'custom' || brief.customWidthMm !== wMm || brief.customHeightMm !== hMm) {
+        setBrief({ formatId: 'custom', customWidthMm: wMm, customHeightMm: hMm })
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasWidth, canvasHeight])
 
   const onSubmit = () => {
-    if (!prompt.trim() || isRunning) return
+    if (!brief.prompt.trim() || isRunning) return
 
-    const palette = paletteText
+    const palette = brief.paletteText
       .split(/[\s,]+/)
       .map((c) => c.trim())
       .filter((c) => /^#[0-9a-fA-F]{6}$/.test(c))
 
     const req: DesignRequest = {
-      prompt: prompt.trim(),
-      formatId,
-      customWidthMm,
-      customHeightMm,
-      style,
-      includeBleed,
+      prompt: brief.prompt.trim(),
+      formatId: brief.formatId,
+      customWidthMm: brief.customWidthMm,
+      customHeightMm: brief.customHeightMm,
+      style: brief.style,
+      includeBleed: brief.includeBleed,
       palette: palette.length > 0 ? palette : undefined,
     }
+    setProgressDismissed(false)
     generate(req)
   }
 
@@ -52,8 +111,8 @@ export function DesignPromptPanel() {
       <div className="space-y-1">
         <label className="text-xs uppercase tracking-wide text-neutral-400">Votre brief</label>
         <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          value={brief.prompt}
+          onChange={(e) => setBrief({ prompt: e.target.value })}
           placeholder="Ex : Affiche promo soldes d'été -30% pour magasin de chaussures, ambiance bord de mer"
           rows={4}
           className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1.5 text-sm resize-none"
@@ -61,13 +120,16 @@ export function DesignPromptPanel() {
       </div>
 
       <FormatSelector
-        formatId={formatId}
-        customWidthMm={customWidthMm}
-        customHeightMm={customHeightMm}
+        formatId={brief.formatId}
+        customWidthMm={brief.customWidthMm}
+        customHeightMm={brief.customHeightMm}
         onChange={(v) => {
-          setFormatId(v.formatId)
-          setCustomWidthMm(v.customWidthMm)
-          setCustomHeightMm(v.customHeightMm)
+          userChangedFormatRef.current = true
+          setBrief({
+            formatId: v.formatId,
+            customWidthMm: v.customWidthMm,
+            customHeightMm: v.customHeightMm,
+          })
         }}
       />
 
@@ -78,9 +140,9 @@ export function DesignPromptPanel() {
             <button
               key={s.id}
               type="button"
-              onClick={() => setStyle(s.id)}
+              onClick={() => setBrief({ style: s.id })}
               className={`text-xs py-2 rounded border transition-colors ${
-                style === s.id
+                brief.style === s.id
                   ? 'bg-indigo-500/20 border-indigo-500 text-indigo-200'
                   : 'bg-[#1a1a1a] border-neutral-800 hover:border-neutral-700'
               }`}
@@ -95,8 +157,8 @@ export function DesignPromptPanel() {
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input
           type="checkbox"
-          checked={includeBleed}
-          onChange={(e) => setIncludeBleed(e.target.checked)}
+          checked={brief.includeBleed}
+          onChange={(e) => setBrief({ includeBleed: e.target.checked })}
           className="accent-indigo-500"
         />
         <span>Inclure fond perdu (recommandé si impression)</span>
@@ -106,8 +168,8 @@ export function DesignPromptPanel() {
         <label className="text-xs uppercase tracking-wide text-neutral-400">Palette (optionnel)</label>
         <input
           type="text"
-          value={paletteText}
-          onChange={(e) => setPaletteText(e.target.value)}
+          value={brief.paletteText}
+          onChange={(e) => setBrief({ paletteText: e.target.value })}
           placeholder="#ff6b35, #1a1a1a, #ffffff"
           className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1 text-sm font-mono"
         />
@@ -119,30 +181,26 @@ export function DesignPromptPanel() {
       <button
         type="button"
         onClick={onSubmit}
-        disabled={isRunning || !prompt.trim()}
+        disabled={isRunning || !brief.prompt.trim()}
         className="flex items-center justify-center gap-2 py-2 rounded bg-indigo-500 text-white font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-400 transition-colors"
       >
         {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-        {isRunning ? state.progress || 'Génération…' : 'Générer'}
+        {isRunning ? 'Génération…' : 'Générer'}
       </button>
 
-      {state.step === 'error' && (
-        <div className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-300">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <div>{state.error}</div>
-        </div>
-      )}
-
-      {state.step === 'done' && state.lastResult && (
-        <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded text-xs text-emerald-300 space-y-1">
-          <div className="font-medium">Design prêt sur le canvas</div>
-          <div className="text-neutral-400 text-[11px]">{state.lastResult.rationale}</div>
-          {state.lastResult.slots.length > 0 && (
-            <div className="text-[11px]">
-              {state.lastResult.slots.length} slot(s) image à remplir manuellement
-            </div>
-          )}
-        </div>
+      {showProgress && (
+        <DesignProgress
+          step={state.step}
+          progress={state.progress}
+          error={state.error}
+          lastResult={state.lastResult}
+          lastPlan={state.lastPlan}
+          onClose={() => setProgressDismissed(true)}
+          onRetry={() => {
+            setProgressDismissed(true)
+            setTimeout(onSubmit, 50)
+          }}
+        />
       )}
     </div>
   )
