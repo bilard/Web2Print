@@ -16,7 +16,7 @@ export const DesignResultSchema = z.object({
   palette: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).min(1).max(8),
   fontsUsed: z.array(z.string()).max(4),
   slots: z.array(ImageSlotSchema).max(8),
-  rationale: z.string().min(10).max(500),
+  rationale: z.string().min(10).max(2000),
 })
 
 // Note : le type `DesignResult` est défini dans `./types.ts` comme interface
