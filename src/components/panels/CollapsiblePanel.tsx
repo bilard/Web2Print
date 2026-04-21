@@ -8,10 +8,11 @@ interface CollapsiblePanelProps {
   icon: React.ComponentType<{ className?: string }>
   collapsed: boolean
   onToggle: () => void
+  onHeaderClick?: () => void
   children: React.ReactNode
 }
 
-export function CollapsiblePanel({ id, title, icon: Icon, collapsed, onToggle, children }: CollapsiblePanelProps) {
+export function CollapsiblePanel({ id, title, icon: Icon, collapsed, onToggle, onHeaderClick, children }: CollapsiblePanelProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
 
   const style = {
@@ -19,11 +20,19 @@ export function CollapsiblePanel({ id, title, icon: Icon, collapsed, onToggle, c
     transition,
   }
 
+  const handleHeaderClick = () => {
+    if (onHeaderClick) {
+      onHeaderClick()
+    } else {
+      onToggle()
+    }
+  }
+
   return (
     <div ref={setNodeRef} style={style} className="border-b border-white/5">
       {/* Header — clickable to toggle, drag handle via listeners */}
       <button
-        onClick={onToggle}
+        onClick={handleHeaderClick}
         className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/50 uppercase tracking-wider hover:bg-white/5 transition-colors"
         {...attributes}
         {...listeners}

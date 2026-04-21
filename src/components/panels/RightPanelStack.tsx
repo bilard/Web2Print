@@ -15,10 +15,15 @@ import { NanoBanaPanel } from '@/features/nanobana/NanoBanaPanel'
 import { PalettePanel } from '@/components/panels/PalettePanel'
 import { AssetsPanel } from '@/components/panels/AssetsPanel'
 import { DataMergePanel } from '@/features/merge/DataMergePanel'
-import { DesignPromptPanel } from '@/features/ai-design/DesignPromptPanel'
+import { ClaudeDesignModal } from '@/features/ai-design/ClaudeDesignModal'
 
-const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode }> = {
-  'claude-design': { title: 'Claude Design', icon: Sparkles, content: <DesignPromptPanel /> },
+const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode; onHeaderClick?: () => void }> = {
+  'claude-design': {
+    title: 'Claude Design',
+    icon: Sparkles,
+    content: <div className="text-xs text-neutral-400 text-center py-4">Cliquez sur l'en-tête pour ouvrir Claude Design Studio</div>,
+    onHeaderClick: () => useUIStore.getState().openClaudeDesignModal(),
+  },
   data:   { title: 'Données', icon: Database,  content: <DataMergePanel /> },
   layers: { title: 'Calques', icon: Layers,    content: <LayersPanel /> },
   images: { title: 'Images',  icon: ImagePlus, content: <NanoBanaPanel /> },
@@ -44,38 +49,44 @@ export function RightPanelStack() {
   }
 
   return (
-    <div className="w-[300px] bg-[#1a1a1a] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
-      {/* Properties always on top */}
-      <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '70%' }}>
-        <PropertiesPanel />
+    <>
+      <div className="w-[300px] bg-[#1a1a1a] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
+        {/* Properties always on top */}
+        <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '70%' }}>
+          <PropertiesPanel />
+        </div>
+
+        {/* Separator */}
+        <div className="h-px bg-white/10 shrink-0" />
+
+        {/* Draggable accordion panels */}
+        <div className="flex-1 overflow-y-auto">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={rightPanels.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              {rightPanels.map((panel) => {
+                const config = panelConfig[panel.id]
+                if (!config) return null
+                return (
+                  <CollapsiblePanel
+                    key={panel.id}
+                    id={panel.id}
+                    title={config.title}
+                    icon={config.icon}
+                    collapsed={panel.collapsed}
+                    onToggle={() => toggleRightPanel(panel.id)}
+                    onHeaderClick={config.onHeaderClick}
+                  >
+                    {config.content}
+                  </CollapsiblePanel>
+                )
+              })}
+            </SortableContext>
+          </DndContext>
+        </div>
       </div>
 
-      {/* Separator */}
-      <div className="h-px bg-white/10 shrink-0" />
-
-      {/* Draggable accordion panels */}
-      <div className="flex-1 overflow-y-auto">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={rightPanels.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-            {rightPanels.map((panel) => {
-              const config = panelConfig[panel.id]
-              if (!config) return null
-              return (
-                <CollapsiblePanel
-                  key={panel.id}
-                  id={panel.id}
-                  title={config.title}
-                  icon={config.icon}
-                  collapsed={panel.collapsed}
-                  onToggle={() => toggleRightPanel(panel.id)}
-                >
-                  {config.content}
-                </CollapsiblePanel>
-              )
-            })}
-          </SortableContext>
-        </DndContext>
-      </div>
-    </div>
+      {/* Claude Design Modal at root level */}
+      <ClaudeDesignModal />
+    </>
   )
 }
