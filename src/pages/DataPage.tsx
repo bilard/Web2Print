@@ -1004,7 +1004,7 @@ function TreeLevel(props: TreeLevelProps) {
         <FolderRow key={`folder-${pathKey(f.path)}`} folder={f} {...props} />
       ))}
       {files.map((f) => (
-        <FileRow key={f.docId} file={f} depth={depth} {...props} />
+        <FileRow key={f.docId} file={f} {...props} />
       ))}
     </div>
   )
