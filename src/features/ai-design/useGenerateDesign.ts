@@ -122,11 +122,11 @@ export function useGenerateDesign() {
       }
     }
 
-    // Pré-remplissage de l'image produit pour le slot hero-visual
+    // Pré-remplissage de l'image produit pour le slot product-image
     let slotDataUris: Map<string, string> = new Map()
     if (req.productImageUrl) {
-      const heroSlot = result.slots.find((s) => s.role === 'hero-visual')
-      if (heroSlot) {
+      const productSlot = result.slots.find((s) => s.id === 'product-image')
+      if (productSlot) {
         try {
           const { httpsCallable } = await import('firebase/functions')
           const { functions } = await import('@/lib/firebase/config')
@@ -134,7 +134,7 @@ export function useGenerateDesign() {
             functions, 'imageProxy'
           )
           const { data: proxyResult } = await imageProxyFn({ url: req.productImageUrl })
-          slotDataUris.set(heroSlot.id, `data:${proxyResult.mimeType};base64,${proxyResult.data}`)
+          slotDataUris.set(productSlot.id, `data:${proxyResult.mimeType};base64,${proxyResult.data}`)
         } catch (err) {
           console.warn('[useGenerateDesign] product image proxy failed:', err)
         }
