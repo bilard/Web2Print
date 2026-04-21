@@ -10,6 +10,8 @@ export interface DesignRequest {
   style: DesignStyle
   includeBleed: boolean
   palette?: string[]        // hex codes optionnels imposés par l'utilisateur
+  productImageUrl?: string
+  productName?: string
 }
 
 export interface ImageSlot {
@@ -44,6 +46,7 @@ export interface DesignBriefState {
   paletteText: string
   updatedAt: number
   promptOptimized?: string // Optimized version of the prompt
+  productImageUrl?: string
 }
 
 export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
@@ -56,4 +59,5 @@ export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
   paletteText: '',
   updatedAt: 0,
   promptOptimized: '',
+  productImageUrl: '',
 }
