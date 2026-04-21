@@ -4,6 +4,22 @@ import type {
   DynamicQuestion,
 } from '@/features/taxonomy/types'
 
+// ─── Événement de génération du panier (log persisté) ──────────────────────
+export interface CartProgressEvent {
+  step:
+    | 'taxonomy'
+    | 'keywords'
+    | 'scraping'
+    | 'fallback'
+    | 'ai-select'
+    | 'ai-retry'
+    | 'save'
+    | 'done'
+    | 'error'
+  message: string
+  data?: Record<string, unknown>
+}
+
 // ─── Item du panier ─────────────────────────────────────────────────────────
 export interface CartItem {
   sku: string
@@ -109,6 +125,9 @@ export interface Brief {
     discount?: CartDiscount
     totalEstimate?: number
     aiReasoning?: string
+    /** Persistance du Journal de génération pour l'afficher quand on revient
+     *  sur le step Panier plus tard (sans relancer une génération). */
+    generationLog?: CartProgressEvent[]
   }
 
   deck?: {

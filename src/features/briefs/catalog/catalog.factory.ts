@@ -26,7 +26,7 @@ export function getProductCatalog(ctx: CatalogContext = {}): ProductCatalogProvi
     return new ScrapedCatalogProvider(
       ctx.sourceUrl.trim(),
       ctx.keywords ?? [],
-      ctx.maxProducts ?? 50,
+      ctx.maxProducts ?? 200,
     )
   }
   return new MockCatalogProvider()

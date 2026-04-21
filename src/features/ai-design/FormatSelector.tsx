@@ -12,6 +12,8 @@ const GROUPS: Array<{ category: PrintFormat['category']; label: string }> = [
   { category: 'flyer',  label: 'Flyers' },
   { category: 'poster', label: 'Affiches' },
   { category: 'pos',    label: 'PLV / POS' },
+  { category: 'screen', label: 'Écran' },
+  { category: 'social', label: 'Réseaux sociaux' },
 ]
 
 export function FormatSelector({ formatId, customWidthMm, customHeightMm, onChange }: Props) {

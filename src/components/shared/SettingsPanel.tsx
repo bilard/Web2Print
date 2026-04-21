@@ -304,7 +304,7 @@ function AiTab() {
   return (
     <div className="flex flex-col gap-2">
       <ApiKeyRow id="gemini" label="Nano Banana (Gemini)" description="Génération d'images IA via Google Gemini" logo={<GeminiLogo />} />
-      <ApiKeyRow id="anthropic" label="Claude (Anthropic)" description="Claude Opus 4.6 — raisonnement briefs, panier, deck" placeholder="sk-ant-..." />
+      <ApiKeyRow id="anthropic" label="Claude (Anthropic)" description="Claude Opus 4.7 — raisonnement briefs, panier, deck" placeholder="sk-ant-..." />
       <ApiKeyRow id="openai" label="OpenAI" description="GPT — fallback ou tâches spécifiques (optionnel)" placeholder="sk-..." />
     </div>
   )

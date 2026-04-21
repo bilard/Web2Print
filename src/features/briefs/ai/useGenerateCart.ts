@@ -29,21 +29,8 @@ import type { Brief, CartItem } from '@/features/briefs/types'
 import type { Taxonomy } from '@/features/taxonomy/types'
 import { computeSubtotal } from '@/features/briefs/cart/cartMath'
 
-export interface CartProgressEvent {
-  step:
-    | 'taxonomy'
-    | 'keywords'
-    | 'scraping'
-    | 'fallback'
-    | 'ai-select'
-    | 'ai-retry'
-    | 'save'
-    | 'done'
-    | 'error'
-  message: string
-  /** Données contextuelles utiles pour l'affichage (ex: liste de keywords, nb produits). */
-  data?: Record<string, unknown>
-}
+export type { CartProgressEvent } from '@/features/briefs/types'
+import type { CartProgressEvent } from '@/features/briefs/types'
 
 interface Args {
   brief: Brief
@@ -55,7 +42,9 @@ export function useGenerateCart() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ brief, onProgress }: Args) => {
+      const log: CartProgressEvent[] = []
       const emit = (e: CartProgressEvent) => {
+        log.push(e)
         try { onProgress?.(e) } catch { /* ignore */ }
       }
 
@@ -175,17 +164,33 @@ export function useGenerateCart() {
       // Garde-fou contextuel : on rejette tout SKU dont la famille n'a pas été
       // déclarée pertinente par le LLM lui-même. Évite que le LLM "complète"
       // avec des produits hors-sujet (drapeaux pour un brief garage, etc.).
+      //
+      // IMPORTANT : ce garde-fou ne s'applique QUE si le catalogue a de vraies
+      // familles (nomenclature structurée). Pour un catalogue scrapé où tous
+      // les produits portent la même famille générique "Catalogue scrapé",
+      // l'appliquer rejette systématiquement 100% du panier.
+      const catalogFamilies = new Set(
+        catalog
+          .map((p) => (p.attributes as { family?: string } | undefined)?.family)
+          .filter((f): f is string => !!f),
+      )
+      const hasStructuredFamilies =
+        catalogFamilies.size > 1 ||
+        (catalogFamilies.size === 1 && !catalogFamilies.has('Catalogue scrapé'))
+
       const relevantFamilies = new Set(response.relevantFamilies ?? [])
       const offTopicSkus: string[] = []
-      const filteredKept = guard.kept.filter((s) => {
-        const product = catalog.find((c) => c.sku === s.sku)
-        const family = (product?.attributes as { family?: string } | undefined)?.family
-        if (family && relevantFamilies.size > 0 && !relevantFamilies.has(family)) {
-          offTopicSkus.push(s.sku)
-          return false
-        }
-        return true
-      })
+      const filteredKept = hasStructuredFamilies
+        ? guard.kept.filter((s) => {
+            const product = catalog.find((c) => c.sku === s.sku)
+            const family = (product?.attributes as { family?: string } | undefined)?.family
+            if (family && relevantFamilies.size > 0 && !relevantFamilies.has(family)) {
+              offTopicSkus.push(s.sku)
+              return false
+            }
+            return true
+          })
+        : guard.kept
 
       if (offTopicSkus.length > 0) {
         console.warn(
@@ -223,6 +228,7 @@ export function useGenerateCart() {
         'cart.items': cartItems,
         'cart.subtotal': subtotal,
         'cart.aiReasoning': response.reasoning,
+        'cart.generationLog': [...log, { step: 'done' as const, message: `Terminé — ${cartItems.length} produits dans le panier` }],
         'aiVersions.cart': VERSION,
         updatedAt: serverTimestamp(),
       })

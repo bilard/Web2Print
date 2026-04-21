@@ -48,6 +48,8 @@ Be specific and visually concrete: include the actual venue architecture/atmosph
 
 Respond with the sentence only, no preamble.`
 
+  const ctrl = new AbortController()
+  const timeoutId = setTimeout(() => ctrl.abort(), 45_000)
   try {
     const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
@@ -57,6 +59,7 @@ Respond with the sentence only, no preamble.`
         tools: [{ google_search: {} }],
         generationConfig: { temperature: 0.5 },
       }),
+      signal: ctrl.signal,
     })
     if (!res.ok) {
       console.warn('[inferSceneDescription] HTTP', res.status, (await res.text()).slice(0, 200))
@@ -75,7 +78,13 @@ Respond with the sentence only, no preamble.`
       .trim()
     return clean || 'a professional environment'
   } catch (err) {
-    console.warn('[inferSceneDescription] échec', err)
+    if ((err as Error).name === 'AbortError') {
+      console.warn('[inferSceneDescription] timeout 45s — fallback générique')
+    } else {
+      console.warn('[inferSceneDescription] échec', err)
+    }
     return 'a professional environment'
+  } finally {
+    clearTimeout(timeoutId)
   }
 }

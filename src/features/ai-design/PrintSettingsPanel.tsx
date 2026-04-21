@@ -73,7 +73,8 @@ export function PrintSettingsPanel() {
 
       <p className="text-[11px] text-neutral-500 leading-relaxed">
         Les repères sont purement visuels et n'apparaissent pas dans l'export standard.
-        Pour un export avec traits de coupe intégrés, utilisez l'option "Export print" (à venir).
+        Pour un PDF prêt à imprimer, ouvre <span className="text-neutral-300">Exporter → PDF</span> et coche
+        <span className="text-neutral-300"> « Export print (traits de coupe + bleed) »</span>.
       </p>
     </div>
   )

@@ -24,7 +24,7 @@ export const API_KEYS: ApiKeyConfig[] = [
     id: 'anthropic',
     label: 'Claude (Anthropic)',
     envVar: 'VITE_ANTHROPIC_API_KEY',
-    description: 'Clé API Anthropic — Claude Opus 4.6 pour le raisonnement (briefs, panier, deck)',
+    description: 'Clé API Anthropic — Claude Opus 4.7 pour le raisonnement (briefs, panier, deck)',
   },
   {
     id: 'openai',

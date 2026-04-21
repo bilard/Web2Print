@@ -27,15 +27,23 @@ export function CartTable({ items, onChange }: Props) {
 
   return (
     <div className="border border-white/[0.06] rounded-md overflow-hidden">
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[12px] table-fixed">
+        <colgroup>
+          <col className="w-[180px]" />
+          <col />
+          <col className="w-14" />
+          <col className="w-24" />
+          <col className="w-24" />
+          <col className="w-8" />
+        </colgroup>
         <thead className="bg-[#161616] text-white/40 uppercase text-[10px] tracking-wide">
           <tr>
             <th className="text-left px-3 py-2">SKU</th>
             <th className="text-left px-3 py-2">Nom</th>
-            <th className="text-right px-3 py-2 w-20">Qté</th>
-            <th className="text-right px-3 py-2 w-28">Prix</th>
-            <th className="text-right px-3 py-2 w-28">Total</th>
-            <th className="w-10" />
+            <th className="text-right px-3 py-2">Qté</th>
+            <th className="text-right px-3 py-2">Prix</th>
+            <th className="text-right px-3 py-2">Total</th>
+            <th />
           </tr>
         </thead>
         <tbody>
@@ -44,21 +52,23 @@ export function CartTable({ items, onChange }: Props) {
             const total = price * it.quantity
             return (
               <tr key={`${it.sku}-${idx}`} className="border-t border-white/[0.06]">
-                <td className="px-3 py-2 text-white/60 font-mono text-[11px]">
+                <td className="px-3 py-2 text-white/60 font-mono text-[11px] truncate" title={it.sku}>
                   <input
                     type="text"
                     value={it.sku}
                     onChange={(e) => updateItem(idx, { sku: e.target.value })}
-                    className="bg-transparent w-full focus:outline-none"
+                    className="bg-transparent w-full focus:outline-none truncate"
+                    title={it.sku}
                   />
                 </td>
                 <td className="px-3 py-2 text-white/80">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <input
                       type="text"
                       value={it.name}
                       onChange={(e) => updateItem(idx, { name: e.target.value })}
-                      className="bg-transparent flex-1 focus:outline-none"
+                      className="bg-transparent flex-1 min-w-0 focus:outline-none"
+                      title={it.name}
                     />
                     {it.sourceUrl && (
                       <a

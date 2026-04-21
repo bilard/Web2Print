@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { CatalogProduct } from '@/features/briefs/catalog/ProductCatalogProvider'
 
-export const VERSION = 'cart-generation-2026-04-08-2'
+export const VERSION = 'cart-generation-2026-04-21-diversity'
 
 const CartItemSuggestionSchema = z.object({
   sku: z.string().min(1),
@@ -129,20 +129,22 @@ ${catalogSummary}
 PROCÉDURE OBLIGATOIRE en 3 étapes :
 
 ÉTAPE 1 — relevantFamilies
-   Identifie 1 à 4 familles de la nomenclature qui correspondent VRAIMENT au besoin client.
-   Sois sélectif : un brief "garage" ne doit cocher que "Mobilier urbain" et éventuellement "Balisage - Sécurité".
-   Un brief "mairie élections" ne doit cocher que "Élections - Cérémonies".
+   Identifie 3 à 8 familles de la nomenclature qui correspondent VRAIMENT au besoin client.
+   Vise la LARGEUR utile : un événement sportif mobilise typiquement barrières, arches, oriflammes, beach flags, habillages barrières, podiums, signalétique de circulation, accueil public — liste TOUTES les familles qui jouent un rôle dans le dispositif, pas seulement les plus visibles.
+   Reste néanmoins pertinent : un brief "garage" n'a RIEN à voir avec des oriflammes d'événement.
 
 ÉTAPE 2 — rejectedFamilies
    Liste au moins 2 familles que tu écartes explicitement, avec une raison courte (1 phrase).
    Ce raisonnement par exclusion t'oblige à justifier la pertinence.
 
-ÉTAPE 3 — items (3 à 8 produits)
+ÉTAPE 3 — items (8 à 15 produits, viser ~12)
    Pour chaque produit choisi :
    • le SKU DOIT exister exactement dans le catalogue ci-dessus (n'invente RIEN)
    • la famille du produit DOIT figurer dans relevantFamilies
    • la justification (aiJustification) DOIT relier explicitement le produit au contexte client (ex : "Pour signaler les places PMR du parking du garage")
    • la quantité doit être cohérente (nombre de places, surface, points de vente, etc.)
+
+   DIVERSITÉ OBLIGATOIRE : couvre AU MOINS une ligne par famille listée dans relevantFamilies (tant que le catalogue fournit un candidat pertinent). Ne concentre pas le panier sur une seule famille — un dispositif événementiel complet juxtapose barrières, arches, oriflammes, etc.
 
 reasoning : 2-3 phrases qui décrivent ton raisonnement global de construction du panier.
 

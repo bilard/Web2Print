@@ -1,7 +1,7 @@
 /**
  * LLM Router — point d'entrée unique pour toutes les générations JSON structurées.
  *
- * Stratégie : Claude Opus 4.6 au centre du raisonnement, Gemini en fallback (et
+ * Stratégie : Claude Opus 4.7 au centre du raisonnement, Gemini en fallback (et
  * pour les tâches rapides où la latence prime). Nano Banana reste géré séparément
  * dans `geminiImageClient.ts` pour la génération d'images.
  *
@@ -46,6 +46,8 @@ type LLMTask =
   | 'brief.catalogKeywords'
   | 'product.enrichment'
   | 'design.generate'
+  | 'design.plan'
+  | 'design.emit'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -56,17 +58,21 @@ interface RouteConfig {
 
 /**
  * Table de routage : chaque tâche cible un provider primaire et un fallback.
- * Les tâches de raisonnement structuré vont sur Claude Opus 4.6 ; les tâches
+ * Les tâches de raisonnement structuré vont sur Claude Opus 4.7 ; les tâches
  * rapides ou massives sur Gemini Flash.
  */
 const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
-  'brief.dynamicQuestions': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
-  'brief.cartGeneration':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
-  'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
+  'brief.dynamicQuestions': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'brief.cartGeneration':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
-  'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
-  'design.generate':        { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-6' },
+  'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'design.generate':        { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  // Art Director / SVG Engineer : Sonnet 4.6 suffit largement pour du JSON
+  // structuré et est 3–5× plus rapide qu'Opus (gain ~10–20 s par run).
+  'design.plan':            { primary: 'claude', fallback: 'gemini', model: 'claude-sonnet-4-6' },
+  'design.emit':            { primary: 'claude', fallback: 'gemini', model: 'claude-sonnet-4-6' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -78,6 +84,8 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'brief.catalogKeywords':  0.4,
   'product.enrichment':     0,
   'design.generate':        0.6,
+  'design.plan':            0.75,
+  'design.emit':            0.2,
 }
 
 interface GenerateJsonOptions<T> {
@@ -106,7 +114,7 @@ interface GenerateJsonOptions<T> {
  * Throws seulement si TOUS les providers configurés échouent.
  */
 const DEFAULT_MODEL: Record<LLMProviderId, string> = {
-  claude: 'claude-opus-4-6',
+  claude: 'claude-opus-4-7',
   gemini: 'gemini-3.1-pro-preview',
   openai: 'gpt-4o',
 }
@@ -138,7 +146,7 @@ async function callProvider<T>(
   modelOverride?: string,
 ): Promise<T> {
   if (provider === 'claude') {
-    return await callClaude(opts, modelOverride ?? 'claude-opus-4-6')
+    return await callClaude(opts, modelOverride ?? 'claude-opus-4-7')
   }
   if (provider === 'gemini') {
     return await geminiGenerateJson({
@@ -180,15 +188,27 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   // Tool-use forcé : on déclare un outil dont l'input_schema EST le schéma attendu,
   // et on force Claude à l'appeler. C'est la méthode officielle pour obtenir un
   // JSON strictement conforme avec Claude.
+  //
+  // `cache_control: ephemeral` sur le tool permet à l'API de mettre le schéma
+  // en cache 5 min. Sur les runs répétés (re-génération de design), la phase
+  // Art Director / SVG Engineer économise ~30–50% du prompt-processing time.
   const toolName = 'emit_response'
   const tool = {
     name: toolName,
     description: 'Émet la réponse structurée conforme au schéma demandé.',
     input_schema: opts.schemaForClaude ?? opts.schemaForLLM,
+    cache_control: { type: 'ephemeral' as const },
   }
 
   const temperature = TASK_TEMPERATURE[opts.task]
-  const max_tokens = opts.task === 'design.generate' ? 16384 : 8192
+  // Les tâches design sont plus bavardes mais 16k est souvent excessif — on
+  // garde 16k pour design.emit (SVG complet) et on abaisse pour les plans JSON.
+  const max_tokens =
+    opts.task === 'design.emit' || opts.task === 'design.generate'
+      ? 16384
+      : opts.task === 'design.plan'
+        ? 8192
+        : 8192
 
   // Notifie l'UI du payload exact avant l'envoi (pour affichage debug).
   opts.onRequestSent?.({
@@ -221,7 +241,6 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
       body: JSON.stringify({
         model,
         max_tokens,
-        temperature,
         tools: [tool],
         tool_choice: { type: 'tool', name: toolName },
         messages: [{ role: 'user', content: opts.prompt }],
@@ -260,7 +279,6 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     body: JSON.stringify({
       model,
       max_tokens,
-      temperature: Math.max(TASK_TEMPERATURE[opts.task], 0),
       tools: [tool],
       tool_choice: { type: 'tool', name: toolName },
       messages: [

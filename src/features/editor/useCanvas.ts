@@ -41,13 +41,16 @@ export function ensurePageBgRect(canvas: Canvas) {
     })
     canvas.add(pageRect)
   } else {
-    // Force origin back to left/top — something in the pipeline (e.g. a
-    // global object:added handler) can flip it to 'center', which would
-    // center the pageBg at (0,0) and make it overlap the content wrong.
+    // Force origin/scale/angle/flip aux valeurs neutres — sinon un changement
+    // de format (ex: A4 → LinkedIn Banner) laisse le pageBg à sa taille/échelle
+    // précédente et les print marks (qui utilisent canvasWidth/Height bruts)
+    // se retrouvent désalignés avec la page blanche visible.
     pageRect.set({
       left: 0, top: 0,
       originX: 'left', originY: 'top',
       width: docW, height: docH,
+      scaleX: 1, scaleY: 1, angle: 0, flipX: false, flipY: false,
+      skewX: 0, skewY: 0,
       fill: fill as any,
     })
     pageRect.setCoords()

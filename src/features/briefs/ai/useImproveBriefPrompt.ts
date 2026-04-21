@@ -3,7 +3,7 @@ import { getApiKey } from '@/lib/apiKeys'
 
 const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
-const MODEL = 'claude-opus-4-6'
+const MODEL = 'claude-opus-4-7'
 
 interface AnthropicTextResponse {
   content?: Array<{ type: string; text?: string }>
@@ -35,7 +35,6 @@ async function improvePrompt(current: string): Promise<string> {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
-      temperature: 0.6,
       system,
       messages: [{ role: 'user', content: user }],
     }),

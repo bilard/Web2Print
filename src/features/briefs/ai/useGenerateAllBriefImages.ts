@@ -53,61 +53,71 @@ export function useGenerateAllBriefImages() {
       // grounding pour décrire précisément l'événement/lieu du brief.
       const scene = await inferSceneDescription(brief)
 
-      const runOne = async (
-        id: string,
-        label: string,
-        type: 'hero' | 'product' | 'staging_scene',
-        prompt: string,
-        productSku?: string,
-      ) => {
+      interface Job {
+        id: string
+        label: string
+        type: 'hero' | 'product' | 'staging_scene'
+        productSku?: string
+        buildPrompt: () => Promise<string>
+      }
+
+      const jobs: Job[] = [
+        {
+          id: 'hero',
+          label: 'Image hero',
+          type: 'hero',
+          buildPrompt: () => composeImagePrompt(brief, { kind: 'hero' }, scene),
+        },
+        ...items.map<Job>((item) => ({
+          id: `product_${item.sku}`,
+          label: item.name,
+          type: 'product',
+          productSku: item.sku,
+          buildPrompt: () => composeImagePrompt(brief, { kind: 'product', item }, scene),
+        })),
+        ...(items.length > 0
+          ? [
+              {
+                id: 'staging_scene',
+                label: 'Mise en situation 3D',
+                type: 'staging_scene' as const,
+                buildPrompt: () =>
+                  composeImagePrompt(brief, { kind: 'staging_scene', items }, scene),
+              },
+            ]
+          : []),
+      ]
+
+      const runOne = async (job: Job) => {
         try {
+          const prompt = await job.buildPrompt()
           const { blob, mimeType } = await generateImage(prompt, refs)
-          const url = await uploadBriefImage(brief.id, id, blob, mimeType)
-          await setDoc(doc(db, 'briefs', brief.id, 'images', id), {
-            id,
-            type,
-            productSku: productSku ?? null,
+          const url = await uploadBriefImage(brief.id, job.id, blob, mimeType)
+          await setDoc(doc(db, 'briefs', brief.id, 'images', job.id), {
+            id: job.id,
+            type: job.type,
+            productSku: job.productSku ?? null,
             prompt,
             url,
             updatedAt: serverTimestamp(),
           })
-          generated.push(id)
+          generated.push(job.id)
         } catch (err) {
-          console.error(`[generateAllImages] échec ${id}:`, err)
-          failed.push({ id, error: (err as Error).message })
+          console.error(`[generateAllImages] échec ${job.id}:`, err)
+          failed.push({ id: job.id, error: (err as Error).message })
         } finally {
           done += 1
-          onProgress?.({ done, total, currentLabel: label })
+          onProgress?.({ done, total, currentLabel: job.label })
         }
       }
 
-      // 1) Hero
-      await runOne(
-        'hero',
-        'Image hero',
-        'hero',
-        await composeImagePrompt(brief, { kind: 'hero' }, scene),
-      )
-
-      // 2) Une image par produit
-      for (const item of items) {
-        await runOne(
-          `product_${item.sku}`,
-          item.name,
-          'product',
-          await composeImagePrompt(brief, { kind: 'product', item }, scene),
-          item.sku,
-        )
-      }
-
-      // 3) Mise en situation 3D globale (une seule image)
-      if (items.length > 0) {
-        await runOne(
-          'staging_scene',
-          'Mise en situation 3D',
-          'staging_scene',
-          await composeImagePrompt(brief, { kind: 'staging_scene', items }, scene),
-        )
+      // Exécution par vagues parallèles (concurrence 3) — reste sous les rate
+      // limits Gemini Image (qui autorisent plus mais 3 est un plafond safe
+      // même en comptes gratuits) et divise le temps total par ~3.
+      const CONCURRENCY = 3
+      for (let i = 0; i < jobs.length; i += CONCURRENCY) {
+        const batch = jobs.slice(i, i + CONCURRENCY)
+        await Promise.allSettled(batch.map(runOne))
       }
 
       return { generated, failed }

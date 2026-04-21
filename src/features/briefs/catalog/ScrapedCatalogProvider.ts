@@ -43,7 +43,7 @@ export class ScrapedCatalogProvider implements ProductCatalogProvider {
   constructor(
     private readonly sourceUrl: string,
     private readonly keywords: string[],
-    private readonly maxProducts = 50,
+    private readonly maxProducts = 200,
   ) {}
 
   async search(filter: CatalogSearchFilter): Promise<CatalogProduct[]> {

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 
 const KeywordsSchema = z.object({
-  keywords: z.array(z.string()).min(1).max(8),
+  keywords: z.array(z.string()).min(1).max(12),
 })
 
 const SCHEMA_FOR_LLM = {
@@ -12,7 +12,7 @@ const SCHEMA_FOR_LLM = {
       type: 'array',
       items: { type: 'string' },
       minItems: 1,
-      maxItems: 8,
+      maxItems: 12,
     },
   },
   required: ['keywords'],
@@ -25,7 +25,7 @@ interface Args {
 }
 
 /**
- * Extrait 3 à 6 mots-clés produit à partir du contexte d'un brief.
+ * Extrait 6 à 12 mots-clés produit à partir du contexte d'un brief.
  * Ces mots-clés servent au scraper à cibler les bonnes catégories sur
  * le site source de la nomenclature.
  */
@@ -44,7 +44,7 @@ ${JSON.stringify(clientValues, null, 2)}
 Réponses au formulaire dynamique :
 ${JSON.stringify(answers, null, 2)}
 
-Extrais entre 3 et 6 mots-clés courts (1 à 3 mots chacun) décrivant les FAMILLES DE PRODUITS les plus pertinentes à proposer dans ce brief. Les mots-clés doivent cibler des catégories de catalogue e-commerce, pas des attributs. Exemples : "drapeaux", "oriflammes", "mats télescopiques", "signalétique extérieure".
+Extrais entre 6 et 12 mots-clés courts (1 à 3 mots chacun) décrivant les FAMILLES DE PRODUITS les plus pertinentes à proposer dans ce brief. Couvre large pour offrir de la diversité dans le panier (si le brief évoque un événement extérieur, pense à la signalétique, aux supports gonflables, aux textiles, aux stands, aux habillages de mobilier, etc. — pas seulement 1-2 familles). Les mots-clés doivent cibler des catégories de catalogue e-commerce, pas des attributs. Exemples : "drapeaux", "oriflammes", "mats télescopiques", "signalétique extérieure", "bâches", "kakemonos", "stands événementiels", "totems".
 
 Réponds UNIQUEMENT avec un JSON { "keywords": [...] }.`
 

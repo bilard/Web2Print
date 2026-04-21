@@ -20,7 +20,9 @@ export function Step3Cart({ brief, onAdvance }: Props) {
   const update = useUpdateBrief()
   const [items, setItems] = useState<CartItem[]>(brief.cart?.items ?? [])
   const [discount, setDiscount] = useState<CartDiscount | undefined>(brief.cart?.discount)
-  const [logEvents, setLogEvents] = useState<CartProgressEvent[]>([])
+  const [logEvents, setLogEvents] = useState<CartProgressEvent[]>(
+    () => brief.cart?.generationLog ?? [],
+  )
   const autoGenStartedRef = useRef(false)
 
   // resync si Firestore renvoie de nouveaux items après generation
@@ -33,13 +35,17 @@ export function Step3Cart({ brief, onAdvance }: Props) {
   const total = useMemo(() => computeTotal(items, discount), [items, discount])
   const hasItems = items.length > 0
 
-  // Auto-génération à l'arrivée si panier vide
+  // Auto-génération UNIQUEMENT à la toute première visite (panier vide + aucun
+  // journal de génération préalable). Une génération qui a déjà tourné — même
+  // si elle a produit 0 item — laisse une trace dans `generationLog` et NE doit
+  // PAS se relancer automatiquement quand l'utilisateur revient sur l'étape.
   useEffect(() => {
-    if (!hasItems && !generate.isPending && !autoGenStartedRef.current) {
+    const alreadyTried = (brief.cart?.generationLog ?? []).length > 0
+    if (!hasItems && !alreadyTried && !generate.isPending && !autoGenStartedRef.current) {
       autoGenStartedRef.current = true
       handleGenerate()
     }
-     
+
   }, [])
 
   const handleGenerate = async () => {
@@ -115,7 +121,7 @@ export function Step3Cart({ brief, onAdvance }: Props) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-[14px] font-semibold text-white/80">Panier produits</h2>

@@ -32,8 +32,8 @@ export function buildDesignPrompt(args: BuildDesignPromptArgs): string {
     ? `- **Palette imposée** : utilise EXCLUSIVEMENT ces couleurs (hex) : ${args.palette.join(', ')}. Tu peux les mélanger mais pas en ajouter d'autres.`
     : `- **Palette libre** : choisis une palette de 2 à 5 couleurs cohérente avec le style "${args.style}" et le ton du message.`
 
-  const productContextLine = args.productImageUrl && args.productName
-    ? `\n\n## Image produit disponible\nUne image produit est fournie (${args.productName}). Tu peux intégrer cette image dans la composition via un slot image "hero-visual", ou l'ignorer si le brief utilisateur ne s'y prête pas.`
+  const productContextLine = args.productImageUrl
+    ? `\n\n## Image produit disponible\nUne image produit est fournie${args.productName ? ` (${args.productName})` : ''}. Tu peux intégrer cette image dans la composition via un slot image "hero-visual", ou l'ignorer si le brief utilisateur ne s'y prête pas.`
     : ''
 
   return `Tu es un directeur artistique senior spécialisé en impression (offset 300 DPI, affichage, PLV). Tu produis des designs **print-ready** en SVG vectoriel.

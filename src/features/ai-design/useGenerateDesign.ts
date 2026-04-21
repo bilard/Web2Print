@@ -78,8 +78,8 @@ export function useGenerateDesign() {
       bleedMm: effectiveBleed,
       availableFonts,
       palette: req.palette,
-      productImageUrl: req.productImageUrl && req.productName ? req.productImageUrl : undefined,
-      productName: req.productImageUrl && req.productName ? req.productName : undefined,
+      productImageUrl: req.productImageUrl,
+      productName: req.productName,
     })
 
     let result: DesignResult

@@ -31,6 +31,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
 
   const [format, setFormat] = useState<Format>('png')
   const [dpi, setDpi] = useState<PngDpi>(150)
+  const [pdfWithMarks, setPdfWithMarks] = useState(false)
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -46,7 +47,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
     setError(null)
     try {
       if (format === 'png') await exportPng(dpi)
-      else if (format === 'pdf') await exportPdf()
+      else if (format === 'pdf') await exportPdf({ withPrintMarks: pdfWithMarks })
       else if (format === 'pptx') await exportPptx()
       else if (format === 'html') await exportHtml()
       else if (format === 'svg') await exportSvg()
@@ -123,12 +124,28 @@ export function ExportModal({ onClose }: ExportModalProps) {
             </div>
           )}
 
-          {/* Info PDF */}
+          {/* Options PDF */}
           {format === 'pdf' && (
-            <div className="bg-white/3 border border-white/5 rounded-xl p-3">
-              <p className="text-xs text-white/40">
-                Export PDF avec image vectorisée haute qualité + textes sélectionnables en couche invisible.
-              </p>
+            <div className="space-y-2">
+              <label className="flex items-start gap-2 bg-white/3 border border-white/5 rounded-xl p-3 cursor-pointer hover:border-white/10 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={pdfWithMarks}
+                  onChange={(e) => setPdfWithMarks(e.target.checked)}
+                  className="mt-0.5 accent-indigo-500"
+                />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-white/80">Export print (traits de coupe + bleed)</p>
+                  <p className="text-[11px] text-white/40 leading-relaxed mt-0.5">
+                    Étend le canvas au fond perdu défini dans Impression et ajoute des traits de coupe en L aux 4 coins. À cocher pour l'impression offset/numérique.
+                  </p>
+                </div>
+              </label>
+              <div className="bg-white/3 border border-white/5 rounded-xl p-3">
+                <p className="text-xs text-white/40">
+                  PDF avec image haute qualité + textes sélectionnables en couche invisible.
+                </p>
+              </div>
             </div>
           )}
 
