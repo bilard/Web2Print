@@ -122,10 +122,10 @@ export function useGenerateDesign() {
       }
     }
 
-    // Pré-remplissage de l'image produit pour le slot product-image (optionnel)
+    // Pré-remplissage de l'image produit pour le slot avec role "product" (optionnel)
     let slotDataUris: Map<string, string> = new Map()
     if (req.productImageUrl) {
-      const productSlot = result.slots.find((s) => s.id === 'product-image')
+      const productSlot = result.slots.find((s) => s.role === 'product')
       if (productSlot) {
         try {
           const { httpsCallable } = await import('firebase/functions')

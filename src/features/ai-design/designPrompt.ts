@@ -33,7 +33,7 @@ export function buildDesignPrompt(args: BuildDesignPromptArgs): string {
     : `- **Palette libre** : choisis une palette de 2 à 5 couleurs cohérente avec le style "${args.style}" et le ton du message.`
 
   const productContextLine = args.productImageUrl
-    ? `\n\n## Image produit disponible\nUne image produit est fournie${args.productName ? ` (${args.productName})` : ''}. Si pertinent, tu peux créer un emplacement image avec l'ID **"product-image"** et le rôle **"product"** pour cette image, sinon ignore-la.`
+    ? `\n\n## Image produit disponible\nUne image produit est fournie${args.productName ? ` (${args.productName})` : ''}. **Tu DOIS créer EXACTEMENT UN emplacement image avec le rôle "product"** (le système remplacera automatiquement ce placeholder par la vraie photo). Cet emplacement doit être prominent et occuper une zone importante du design. Si l'image produit n'est pas pertinente au design, tu peux l'ignorer, mais privilégie l'inclusion si possible.`
     : ''
 
   return `Tu es un directeur artistique senior spécialisé en impression (offset 300 DPI, affichage, PLV). Tu produis des designs **print-ready** en SVG vectoriel.
