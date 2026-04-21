@@ -8,6 +8,8 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { usePaletteStore } from '@/stores/palette.store'
 import { useMergeStore, type FormulaConfig } from '@/stores/merge.store'
+import { useDesignBriefStore } from '@/stores/designBrief.store'
+import type { DesignBriefState } from '@/features/ai-design/types'
 import { syncToStore } from './useAddObject'
 import { ensurePageBgRect } from './useCanvas'
 import { setLoadingInProgress } from './useAutoSave'
@@ -281,12 +283,26 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
       const pid = projectId!
       // Block auto-save during load to prevent overwriting good data
       setLoadingInProgress(true)
+      // Prevent a previous project's brief from leaking into this load window.
+      useDesignBriefStore.getState().resetBrief()
       try {
         const snap = await getDoc(doc(db, 'projects', pid))
         if (!snap.exists()) return
         const data = snap.data()
 
         if (data.title) setProjectTitle(data.title)
+
+        // Restore Claude Design brief (form state of the AI design panel).
+        try {
+          const raw = data.claudeDesignBrief
+          const parsed = typeof raw === 'string' && raw.length > 0
+            ? JSON.parse(raw) as DesignBriefState
+            : null
+          useDesignBriefStore.getState().hydrateBrief(parsed)
+        } catch (err) {
+          console.warn('[Load] claudeDesignBrief parse error:', err)
+          useDesignBriefStore.getState().hydrateBrief(null)
+        }
 
         // Restore canvas/page dimensions if saved
         if (data.canvasWidth && data.canvasHeight) {
