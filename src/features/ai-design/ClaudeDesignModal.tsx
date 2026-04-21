@@ -4,6 +4,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
 import { useGenerateDesign } from './useGenerateDesign'
 import { DesignProgress } from './DesignProgress'
+import { PRINT_FORMATS, mmToPx } from '@/features/print/dimensions'
 
 // Tab stubs - will be imported from Task 4-7
 import { ClaudeDesignBriefTab } from './ClaudeDesignBriefTab'
@@ -17,6 +18,25 @@ const TABS = [
   { id: 'options', label: 'Options' },
   { id: 'avance', label: 'Avancé' },
 ] as const
+
+// Derive format from canvas dimensions (find closest match)
+function findFormatByDimensions(widthPx: number, heightPx: number, dpi: number): string {
+  const widthMm = (widthPx * 25.4) / dpi
+  const heightMm = (heightPx * 25.4) / dpi
+
+  let bestMatch = 'a4'
+  let bestDistance = Infinity
+
+  for (const fmt of PRINT_FORMATS) {
+    const distance = Math.abs(fmt.widthMm - widthMm) + Math.abs(fmt.heightMm - heightMm)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      bestMatch = fmt.id
+    }
+  }
+
+  return bestMatch
+}
 
 export function ClaudeDesignModal() {
   const {
@@ -37,6 +57,17 @@ export function ClaudeDesignModal() {
   const isRunning = state.step !== 'idle' && state.step !== 'done' && state.step !== 'error'
   const isGenerating = state.step !== 'idle'
 
+  // Initialize format from canvas dimensions when modal opens
+  useEffect(() => {
+    if (isClaudeDesignModalOpen && !brief.formatId) {
+      const dpi = useUIStore.getState().dpi
+      const { canvasWidth, canvasHeight } = useUIStore.getState()
+      const derivedFormatId = findFormatByDimensions(canvasWidth, canvasHeight, dpi)
+      const { setBrief } = useDesignBriefStore.getState()
+      setBrief({ formatId: derivedFormatId })
+    }
+  }, [isClaudeDesignModalOpen, brief.formatId])
+
   // Close modal on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,12 +79,7 @@ export function ClaudeDesignModal() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [closeClaudeDesignModal])
 
-  // Close modal when generation completes
-  useEffect(() => {
-    if ((state.step === 'done' || state.step === 'error') && isClaudeDesignModalOpen) {
-      setTimeout(() => closeClaudeDesignModal(), 500)
-    }
-  }, [state.step, isClaudeDesignModalOpen, closeClaudeDesignModal])
+  // Keep modal open after generation completes — user can review and retry
 
   if (!isClaudeDesignModalOpen) return null
 
