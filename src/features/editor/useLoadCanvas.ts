@@ -446,9 +446,10 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
           // Purge tout print mark / safe-area / bleed mark hérité d'une sauvegarde
           // antérieure (versions du code sans `excludeFromExport: true`).
-          // L'overlay fresh est rebâti par `CanvasContainer` via son useEffect.
+          // Utilise 'tagged' mode pour ne supprimer que les vraies marques orphelines,
+          // pas les nouvelles marques créées par l'effet CanvasContainer.
           const { removeAllPrintMarks } = await import('@/features/print/printMarks')
-          const orphanMarks = removeAllPrintMarks(canvas.getObjects(), 'aggressive')
+          const orphanMarks = removeAllPrintMarks(canvas.getObjects(), 'tagged')
           for (const m of orphanMarks) canvas.remove(m)
 
           // Re-apply per-character charSpacing (tracking IDML) from separate Firestore field
