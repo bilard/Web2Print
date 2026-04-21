@@ -131,8 +131,10 @@ export function buildPrintMarks(opts: PrintMarksOptions): FabricObject[] {
   const w = opts.canvasWidthPx
   const h = opts.canvasHeightPx
 
-  if (opts.showPrintMarks && opts.bleedPx > 0) {
-    objs.push(makeBleedRect(x, y, w, h, opts.bleedPx))
+  if (opts.showPrintMarks) {
+    if (opts.bleedPx > 0) {
+      objs.push(makeBleedRect(x, y, w, h, opts.bleedPx))
+    }
     objs.push(...makeCropMarks(x, y, w, h, opts.cropMarkOffsetPx, opts.cropMarkLengthPx))
   }
 
