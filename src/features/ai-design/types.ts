@@ -1,3 +1,5 @@
+import { DEFAULT_FORMAT_ID } from '@/features/print/PRINT_FORMATS'
+
 export type DesignStyle = 'corporate' | 'minimaliste' | 'bold' | 'elegant' | 'playful' | 'retro'
 
 export interface DesignRequest {
@@ -25,4 +27,31 @@ export interface DesignResult {
   fontsUsed: string[]      // liste des font-family référencées
   slots: ImageSlot[]       // slots image détectés, à remplir via DAM/Nano Banana
   rationale: string        // courte note explicative du LLM sur les choix de design
+}
+
+/**
+ * Persisted state of the Claude Design form. Stored on
+ * `projects/{projectId}.claudeDesignBrief` as a JSON string.
+ */
+export interface DesignBriefState {
+  prompt: string
+  formatId: string
+  customWidthMm?: number
+  customHeightMm?: number
+  style: DesignStyle
+  includeBleed: boolean
+  /** Raw text of the palette input — NOT parsed. Validation happens at submit time. */
+  paletteText: string
+  updatedAt: number
+}
+
+export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
+  prompt: '',
+  formatId: DEFAULT_FORMAT_ID,
+  customWidthMm: undefined,
+  customHeightMm: undefined,
+  style: 'corporate',
+  includeBleed: true,
+  paletteText: '',
+  updatedAt: 0,
 }
