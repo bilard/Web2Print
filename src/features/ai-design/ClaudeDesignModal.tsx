@@ -83,6 +83,7 @@ export function ClaudeDesignModal() {
       style: brief.style,
       includeBleed: brief.includeBleed,
       palette: palette.length > 0 ? palette : undefined,
+      productImageUrl: brief.productImageUrl?.trim() || undefined,
     }
     generate(req)
   }
