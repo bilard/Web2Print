@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { usePaletteStore } from '@/stores/palette.store'
 import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
+import { useDesignBriefStore } from '@/stores/designBrief.store'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
@@ -16,6 +17,9 @@ export let globalSave: (() => Promise<void>) | null = null
 /** Block auto-save during initial canvas load to prevent overwriting good data */
 let _loadingInProgress = false
 export function setLoadingInProgress(v: boolean) { _loadingInProgress = v }
+function _loadingInProgressRef(): boolean {
+  return _loadingInProgress
+}
 
 /**
  * Before serializing, scan all LIVE canvas objects for non-permanent image URLs.
@@ -244,6 +248,9 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         canvasBgImage,
         paletteColors: JSON.stringify(paletteColors),
         paletteGradients: JSON.stringify(paletteGradients),
+        claudeDesignBrief: useDesignBriefStore.getState().brief
+          ? JSON.stringify(useDesignBriefStore.getState().brief)
+          : null,
         thumbnail,
         idmlSourceFileName: globalIdmlSource?.fileName ?? null,
         updatedAt: Date.now(),
@@ -301,7 +308,19 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
       canvas.off('object:added', markUnsaved)
       canvas.off('object:removed', markUnsaved)
     }
-  }, [fabricRef.current, projectId])  
+  }, [fabricRef.current, projectId])
+
+  // Mark project as unsaved whenever the Claude Design brief changes.
+  // Respects _loadingInProgress so hydration during load doesn't mark dirty.
+  useEffect(() => {
+    if (!projectId) return
+    const unsub = useDesignBriefStore.subscribe((state, prevState) => {
+      if (state.brief === prevState.brief) return
+      if (_loadingInProgressRef()) return
+      setSaveStatus('unsaved')
+    })
+    return unsub
+  }, [projectId, setSaveStatus])
 
   // Save title immediately when it changes — but only after initial load
   useEffect(() => {
