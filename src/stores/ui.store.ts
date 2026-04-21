@@ -93,8 +93,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   // --- Print defaults ---
   dpi: 300,
   bleedMm: 0,
-  showPrintMarks: false,
-  showSafeArea: false,
+  showPrintMarks: true,
+  showSafeArea: true,
   setDpi: (dpi) => set({ dpi: Math.max(72, Math.min(600, dpi)) }),
   setBleedMm: (bleedMm) => set({ bleedMm: Math.max(0, Math.min(10, bleedMm)) }),
   setShowPrintMarks: (showPrintMarks) => set({ showPrintMarks }),
