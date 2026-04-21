@@ -135,10 +135,11 @@ export function CanvasContainer() {
   const showSafeArea = useUIStore((s) => s.showSafeArea)
 
   useEffect(() => {
-    if (!canvasReady) return
+    const canvas = fabricRef.current
+    if (!canvas) return
 
-    const old = removeAllPrintMarks(canvasReady.getObjects(), 'aggressive')
-    for (const o of old) canvasReady.remove(o)
+    const old = removeAllPrintMarks(canvas.getObjects(), 'aggressive')
+    for (const o of old) canvas.remove(o)
 
     // Ancre les marks sur le pageBg réel présent sur le canvas (et pas sur
     // les valeurs du store), pour éviter tout désalignement si le pageBg a
@@ -147,7 +148,7 @@ export function CanvasContainer() {
     // Ancre sur les propriétés brutes Fabric du pageBg (left/top/width×scale)
     // PAS `getBoundingRect()` qui applique le viewportTransform et donnerait
     // des coords double-transformées une fois le rect ajouté au canvas.
-    const pageBg = canvasReady.getObjects().find((o) => (o as any).data?.isPageBg) as
+    const pageBg = canvas.getObjects().find((o) => (o as any).data?.isPageBg) as
       | (FabricObject & { scaleX?: number; scaleY?: number })
       | undefined
     let pageLeft = 0, pageTop = 0, pageW = canvasWidth, pageH = canvasHeight
@@ -171,7 +172,7 @@ export function CanvasContainer() {
       showSafeArea,
     })
 
-    for (const m of marks) canvasReady.add(m)
+    for (const m of marks) canvas.add(m)
     // Si un handler global (`object:added`) a forcé originX/Y à 'center',
     // on le rétablit explicitement après ajout pour que le rect soit
     // positionné par son coin top-left, comme prévu.
@@ -180,10 +181,10 @@ export function CanvasContainer() {
       ;(m as FabricObject & { originX?: string; originY?: string }).originY = 'top'
       m.setCoords()
     }
-    for (const m of marks) canvasReady.bringObjectToFront(m)
+    for (const m of marks) canvas.bringObjectToFront(m)
 
-    canvasReady.requestRenderAll()
-  }, [canvasReady, canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
+    canvas.requestRenderAll()
+  }, [fabricRef, canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
 
   // Sync zoom from footer buttons
   useEffect(() => {
