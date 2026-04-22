@@ -60,13 +60,15 @@ export function buildSvgEngineerPrompt(args: BuildSvgEngineerPromptArgs): string
 3. Comparaison visuelle: l'image vs le plan
 
 ## Output
-Un SVG qui :
-- Injecte l'image Nano Banana comme background avec <image href="placeholder:nanobanana" />
-- Ajoute des zones texte éditables POSITIONNÉES EXACTEMENT selon la composition visuelle de l'image
-- Respecte la hiérarchie visuelle, l'alignement, et l'espacement observés dans l'image
-- Zones restent semi-transparentes/invisibles en tant que "slots" pour édition future
+Un SVG ENTIÈREMENT ÉDITABLE qui :
+- **Layer 1 (bottom)** : Image Nano Banana comme background (href="placeholder:nanobanana")
+- **Layer 2 (middle)** : Blocs structurels du plan (rectangles de fond, zones de couleur)
+- **Layer 3 (top)** : Zones texte éditables avec TEXTE VISIBLE (opacity=1, pas 0.01)
+- **Layer 4 (top)** : Slots d'images (placeholder rectangles, href="placeholder:<id>")
 
-⚠️ **SUCCÈS = l'image est visible en background + zones texte aux positions EXACTES observées dans l'image Nano Banana**.
+✓ Tous les éléments doivent être VISIBLES et ÉDITABLES (sélectionnables dans Fabric.js)
+⚠️ **L'image Nano Banana est une RÉFÉRENCE VISUELLE, pas le produit final** — elle guide la composition mais le SVG doit contenir la structure vectorielle complète.
+⚠️ **SUCCÈS = utilisateur voit image + texte + blocs structurels superposés, tous éditables**.
 
 ## Analyse visuelle CRITIQUE
 
@@ -110,26 +112,40 @@ Tu ne vectorises PAS l'image (impossible). Tu UTILISES l'image comme asset + tu 
    - Crée un élément <image x="0" y="0" width="${args.widthMm}" height="${args.heightMm}" href="placeholder:nanobanana" />
    - Cet élément occupe toute la canvas
 
-3. **Layer 2 : Zones éditables (BASÉES SUR L'IMAGE)**
-   Pour CHAQUE zone du plan :
+3. **Layer 2 : Blocs structurels du plan (rectangles de fond)**
+   Pour CHAQUE zone du plan avec un role="background" ou role="accent" :
+   - Créer un <rect x, y, width, height> avec les dimensions EXACTES du plan
+   - Remplir avec la couleur fill du plan (hex #RRGGBB)
+   - **opacity=1 (DOIT ÊTRE VISIBLE)**
+   - Le texte se superposera par-dessus ces blocs
+
+   EXEMPLE : Si plan dit "zone title-block à x=5, y=8, w=155, h=48, fill=#1A2B3C"
+   → <rect x="5" y="8" width="155" height="48" fill="#1A2B3C" opacity="1" />
+
+4. **Layer 3 : Zones texte éditables (BASÉES SUR L'IMAGE)**
+   Pour CHAQUE zone du plan avec du contenu texte :
    - Vérifier visuellement sa position dans l'image
    - Si le plan dit x=10 mais l'image montre x=20, utiliser x=20
    - Créer un élément <text> aux positions VALIDÉES visuellement
    - Position ABSOLUE : zone.bboxMm.x, .y (ajustées si nécessaire)
-   - Dimensions ABSOLUES : zone.bboxMm.w, .h
+   - Dimensions ABSOLUTES : zone.bboxMm.w, .h
+   - **opacity=1 (TEXTE DOIT ÊTRE VISIBLE ET ÉDITABLE)**
    - Utiliser les styles du plan (couleurs, police, poids)
+   - Texte peut avoir des <tspan> pour multi-lignes
 
-4. **Zones semi-transparentes**
-   - Les zones texte peuvent avoir un opacity="0.9" pour être visibles en édition
-   - Les slots image peuvent avoir un fill="placeholder" ou rester vides
+5. **Layer 4 : Slots d'images (image-slot, hero-visual)**
+   Pour CHAQUE zone du plan avec role contenant "image" :
+   - Créer <image href="placeholder:<zone.id>" /> avec dimensions du plan
+   - Position et dimensions exactes du plan
 
 ## Directives critiques
 
-- **FIDÉLITÉ VISUELLE ABSOLUE** : L'image Nano Banana EST la SOURCE DE VÉRITÉ. Si l'image montre une composition différente du plan, RESPECTER L'IMAGE.
-- **Position EXACTE** : Mesurer visuellement où se trouvent les zones dans l'image, pas seulement faire confiance au plan.
-- **Image background first** : l'image Nano Banana est le star, elle occupe tout.
-- **Zones par-dessus** : textes et slots sont positionnés sur l'image selon ce que tu observes.
-- **Éditable** : <text> avec <tspan>, jamais rasterisé. Slots = <image href="placeholder:<id>" />.
+- **L'IMAGE EST UNE RÉFÉRENCE, PAS LE PRODUIT FINAL** : L'image Nano Banana guide la composition visuelle, MAIS le SVG doit générer la structure complète (blocs + texte + slots). L'utilisateur verra l'image + la structure superposée dans le canvas Fabric.
+- **STRUCTURE VECTORIELLE COMPLÈTE** : Générer TOUS les blocs du plan (rectangles de fond), pas seulement du texte invisible. Pas d'opacity=0.01 - tout doit être visible et éditable.
+- **FIDÉLITÉ VISUELLE** : Si l'image montre une composition différente du plan (décalage position/taille), utiliser ce que tu vois dans l'IMAGE. L'image prime sur le plan.
+- **Position EXACTE** : Mesurer visuellement où se trouvent les zones dans l'image, puis les reproduire dans le SVG.
+- **Zones par-dessus l'image** : textes et blocs structurels se superposent à l'image (Layer order: image bottom, blocs middle, texte top).
+- **ÉDITABLE PARTOUT** : <text> avec <tspan>, jamais rasterisé. Blocs = <rect> avec couleurs solides. Slots = <image href="placeholder:<id>" />. Tous opacity=1.
 - **Couleurs** : utilise palette du plan (hex #RRGGBB).
 - **Fonts** : uniquement les fonts disponibles.
 
