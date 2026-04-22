@@ -12,17 +12,18 @@
  * avec les mêmes attributs de position/taille et un attribut data-role conservé.
  */
 export function neutralizePlaceholderImages(svgText: string): string {
-  // Regex pour trouver tous les <image> avec href="placeholder:..."
-  const imageRegex = /<image\s+([^>]*href\s*=\s*"placeholder:[^"]*"[^>]*)\s*\/?\s*>/gi
+  // Regex pour trouver tous les <image> avec href="placeholder:..." ou href='placeholder:...'
+  // Couvre à la fois double et single quotes
+  const imageRegex = /<image\s+([^>]*(href|xlink:href)\s*=\s*['"]placeholder:[^'"]*['"][^>]*)\s*\/?\s*>/gi
 
   return svgText.replace(imageRegex, (match, attrs) => {
-    // Extraire les attributs pertinents
-    const xMatch = attrs.match(/x\s*=\s*"([^"]*)"/i)
-    const yMatch = attrs.match(/y\s*=\s*"([^"]*)"/i)
-    const widthMatch = attrs.match(/width\s*=\s*"([^"]*)"/i)
-    const heightMatch = attrs.match(/height\s*=\s*"([^"]*)"/i)
-    const dataRoleMatch = attrs.match(/data-role\s*=\s*"([^"]*)"/i)
-    const dataIdMatch = attrs.match(/data-id\s*=\s*"([^"]*)"/i)
+    // Extraire les attributs pertinents (couvrir à la fois double et single quotes)
+    const xMatch = attrs.match(/x\s*=\s*['"]([^'"]*)['"]/i)
+    const yMatch = attrs.match(/y\s*=\s*['"]([^'"]*)['"]/i)
+    const widthMatch = attrs.match(/width\s*=\s*['"]([^'"]*)['"]/i)
+    const heightMatch = attrs.match(/height\s*=\s*['"]([^'"]*)['"]/i)
+    const dataRoleMatch = attrs.match(/data-role\s*=\s*['"]([^'"]*)['"]/i)
+    const dataIdMatch = attrs.match(/data-id\s*=\s*['"]([^'"]*)['"]/i)
 
     const x = xMatch?.[1] || '0'
     const y = yMatch?.[1] || '0'
