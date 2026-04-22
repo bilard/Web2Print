@@ -48,6 +48,7 @@ type LLMTask =
   | 'design.generate'
   | 'design.plan'
   | 'design.emit'
+  | 'design.validate.visual'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -73,6 +74,8 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // structuré et est 3–5× plus rapide qu'Opus (gain ~10–20 s par run).
   'design.plan':            { primary: 'claude', fallback: 'gemini', model: 'claude-sonnet-4-6' },
   'design.emit':            { primary: 'claude', fallback: 'gemini', model: 'claude-sonnet-4-6' },
+  // Vision validation : Opus 4.7 pour vision multimodal
+  'design.validate.visual': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -86,6 +89,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.generate':        0.6,
   'design.plan':            0.75,
   'design.emit':            0.2,
+  'design.validate.visual': 0,
 }
 
 interface GenerateJsonOptions<T> {

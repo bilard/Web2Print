@@ -316,10 +316,11 @@ export function useGenerateDesign() {
       // SVG Fidelity validation - ensure SVG faithfully represents the Nano Banana image
       console.log('[Claude Design] Step 3b/4: Validating SVG fidelity')
       setState((s) => ({ ...s, progress: 'Validation de la fidélité visuelle…' }))
-      const validationResult = validateSvgFidelity(cleanSvg, result)
+      const validationResult = await validateSvgFidelity(cleanSvg, result, nanobananaImageUri)
       console.log('[Claude Design] Fidelity validation result:', {
         isValid: validationResult.isValid,
         score: validationResult.score,
+        visualScore: validationResult.visualFidelityScore,
         issues: validationResult.issues,
       })
       if (validationResult.score < 75) {
