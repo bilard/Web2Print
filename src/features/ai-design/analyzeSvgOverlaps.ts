@@ -71,9 +71,12 @@ export function extractTextZones(svgString: string): TextZone[] {
 
     if (tspans.length > 0) {
       // Si y a des tspan, utiliser leurs coordonnées individuelles
+      let cumulativeY = isNaN(parentY) ? 0 : parentY
+
       tspans.forEach((tspan, tspanIdx) => {
         const tspanX = parseFloat(tspan.getAttribute('x') || '')
         const tspanY = parseFloat(tspan.getAttribute('y') || '')
+        const tspanDy = parseFloat(tspan.getAttribute('dy') || '0')
         const tspanFontSize = parseFloat(tspan.getAttribute('font-size') || parentFontSize)
 
         const text = tspan.textContent || ''
@@ -81,7 +84,16 @@ export function extractTextZones(svgString: string): TextZone[] {
         const estimatedHeight = tspanFontSize * 1.2
 
         let adjustedX = isNaN(tspanX) ? (isNaN(parentX) ? 0 : parentX) : tspanX
-        const adjustedY = isNaN(tspanY) ? (isNaN(parentY) ? 0 : parentY) : tspanY
+
+        // Calculer Y: utiliser tspanY si présent, sinon accumuler dy
+        let adjustedY: number
+        if (!isNaN(tspanY)) {
+          adjustedY = tspanY
+          cumulativeY = tspanY + tspanDy // Reset pour les tspan suivants
+        } else {
+          adjustedY = cumulativeY
+          cumulativeY += tspanDy
+        }
 
         // Ajuster X selon text-anchor
         if (textAnchor === 'middle') {
