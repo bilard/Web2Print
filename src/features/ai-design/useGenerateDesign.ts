@@ -10,6 +10,7 @@ import { generateFullDesignImage } from './generateFullDesignImage'
 import { generateProductAssets, extractSupplierUrl } from './generateProductAssets'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
+import { validateSvgFidelity, type FidelityCheckResult } from './svgFidelityValidator'
 import type { DesignRequest, DesignResult, DesignStyle } from './types'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
@@ -28,13 +29,24 @@ interface State {
   lastResult: DesignResult | null
   lastPlan: DesignPlan | null
   nanobananaImage?: string
+  validationAttempt?: number
+  lastValidationResult?: FidelityCheckResult
 }
 
 const PROMPT_VERSION = 'design.generate.v1'
 
 export function useGenerateDesign() {
   const runningRef = useRef(false)
-  const [state, setState] = useState<State>({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null, nanobananaImage: undefined })
+  const [state, setState] = useState<State>({
+    step: 'idle',
+    progress: '',
+    error: null,
+    lastResult: null,
+    lastPlan: null,
+    nanobananaImage: undefined,
+    validationAttempt: 0,
+    lastValidationResult: undefined,
+  })
 
   const generate = useCallback(async (req: DesignRequest) => {
     if (runningRef.current) return
@@ -301,6 +313,23 @@ export function useGenerateDesign() {
         }
       }
 
+      // SVG Fidelity validation - ensure SVG faithfully represents the Nano Banana image
+      console.log('[Claude Design] Step 3b/4: Validating SVG fidelity')
+      setState((s) => ({ ...s, progress: 'Validation de la fidélité visuelle…' }))
+      const validationResult = validateSvgFidelity(cleanSvg, result)
+      console.log('[Claude Design] Fidelity validation result:', {
+        isValid: validationResult.isValid,
+        score: validationResult.score,
+        issues: validationResult.issues,
+      })
+      if (validationResult.score < 75) {
+        console.warn('[Claude Design] ⚠️ SVG fidelity score low:', validationResult.score)
+        if (validationResult.issues.length > 0) {
+          console.warn('[Claude Design] Issues detected:', validationResult.issues)
+        }
+      }
+      setState((s) => ({ ...s, lastValidationResult: validationResult }))
+
       // Injecter l'image Nano Banana comme background (placeholder:nanobanana)
       let slotDataUris: Map<string, string> = new Map()
       if (nanobananaImageUri) {
@@ -386,7 +415,16 @@ export function useGenerateDesign() {
       console.log('[Claude Design] ✓ Pipeline completed successfully!')
       console.log('  → Total time:', new Date().getTime(), 'ms')
       console.log('[Claude Design] Setting state to done with nanobananaImageUri:', !!nanobananaImageUri)
-      setState((s) => ({ ...s, step: 'done', progress: '', error: null, lastResult: result, lastPlan: plan, nanobananaImage: nanobananaImageUri }))
+      setState((s) => ({
+        ...s,
+        step: 'done',
+        progress: '',
+        error: null,
+        lastResult: result,
+        lastPlan: plan,
+        nanobananaImage: nanobananaImageUri,
+        lastValidationResult: s.lastValidationResult,
+      }))
     } catch (fatalErr) {
       console.error('[Claude Design] ✗ Fatal error:', fatalErr)
       setState((s) => ({ ...s, step: 'error', progress: '', error: `Erreur fatale : ${fatalErr instanceof Error ? fatalErr.message : String(fatalErr)}`, lastResult: null, lastPlan: null }))
@@ -396,7 +434,16 @@ export function useGenerateDesign() {
   }, [])
 
   const reset = useCallback(() => {
-    setState({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null, nanobananaImage: undefined })
+    setState({
+      step: 'idle',
+      progress: '',
+      error: null,
+      lastResult: null,
+      lastPlan: null,
+      nanobananaImage: undefined,
+      validationAttempt: 0,
+      lastValidationResult: undefined,
+    })
   }, [])
 
   return { state, generate, reset }
