@@ -42,23 +42,47 @@ function buildFullDesignPrompt(args: GenerateFullDesignImageArgs): string {
   const formatRatio = (args.widthMm / args.heightMm).toFixed(2)
   const parts: string[] = []
 
-  parts.push(`Create a professional retail/print advertising design image.`)
-  parts.push(`User brief: ${args.userPrompt}`)
-  parts.push(
-    `Composition strategy: ${args.plan.mainDevice}. Concept: ${args.plan.concept}. Colors (ONLY use these): ${args.plan.palette.join(', ')}.`,
-  )
+  parts.push(`CREATE A PROFESSIONAL RETAIL FLYER/POSTER WITH STRICT STRUCTURAL COMPOSITION.`)
 
-  parts.push(
-    `Visual hierarchy: Title large/bold, subtitle medium, body readable, CTA prominent. NO text overlaps. Clear separation between zones.`,
-  )
+  parts.push(`COMPOSITION REQUIREMENTS (MANDATORY):
+- Clearly distinct zones: Product/Image area (30-40%), Text/Info area (60-70%)
+- Product zone: Large, prominent, clear visual element (photo/illustration/solid color block)
+- Text zone: Information, pricing, details - CLEARLY SEPARATED from product zone
+- NO text overlapping product image or vice versa
+- Minimum 10mm visual separation between major zones
+- Solid or gradient background (no busy patterns)
+- Maximum 3 text sizes for clear hierarchy
+- Alignment: All text left-aligned, right-aligned, or centered (NO random placement)`)
 
-  parts.push(`Style: ${args.style} — professional, clean, print-ready.`)
-  parts.push(`Dimensions: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1).`)
-  parts.push(
-    `Output: High-quality retail poster/flyer suitable for printing. Professional photo or illustration if needed. Solid background (white, color, or gradient). NO watermark, grid, or technical artifacts.`,
-  )
+  parts.push(`CONTENT STRUCTURE:
+Title/Headline: Large, bold, top or center (15-20% of area)
+Subtitle/Features: Medium size (10-15% of area)
+Body text/Details: Small, readable (15-20% of area)
+Price/CTA: Prominent, distinct styling (10-15% of area)
+Logo/Brand: Small, corner placement (5-10% of area)`)
 
-  return parts.join(' ')
+  parts.push(`PROFESSIONAL REQUIREMENTS:
+- Style: ${args.style} (corporate, bold, minimal - but ALWAYS professional)
+- Colors: EXCLUSIVELY ${args.plan.palette.join(', ')}
+- No gradients except subtle backgrounds
+- No decorative flourishes - function over form
+- Spacing: Generous margins (15% minimum on all sides)
+- Typography: Maximum 3 distinct typefaces
+- Photo quality if used: High resolution, relevant to product
+- Concept: ${args.plan.concept}
+- Composition strategy: ${args.plan.mainDevice}`)
+
+  parts.push(`BRIEF: ${args.userPrompt}`)
+
+  parts.push(`DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1)`)
+
+  parts.push(`OUTPUT SPECIFICATION:
+High-resolution retail flyer suitable for professional printing.
+Structure: Clear visual zones with distinct boundaries.
+NO watermarks, grids, or technical artifacts.
+Ready for direct offset/digital printing.`)
+
+  return parts.join('\n\n')
 }
 
 function pickAspectRatio(widthMm: number, heightMm: number): string {
