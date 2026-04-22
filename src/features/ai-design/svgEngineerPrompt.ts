@@ -102,7 +102,8 @@ ${args.productAssets.map((a) => `- ${a.type}: ${a.title || '(sans titre)'}`).joi
 
 ## Contraintes techniques
 
-- **SVG root** : \`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${args.widthMm} ${args.heightMm}">\` (unités en mm)
+- **SVG root** : \`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${args.widthMm} ${args.heightMm}">\` (unités en mm, SANS width/height en pixels)
+  - ⚠️ N'ajoute JAMAIS d'attributs width/height en pixels. Garde UNIQUEMENT le viewBox en mm.
 - **Fonts autorisées** (tu ne peux RÉFÉRENCER que celles-ci) :
 ${args.availableFonts.map((f) => `  • ${f}`).join('\n')}
 - **Couleurs** : hex \`#RRGGBB\` uniquement (pas de named colors comme "red")
