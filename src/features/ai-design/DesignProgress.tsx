@@ -177,7 +177,7 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, on
             )}
             {lastPlan && (
               <p className="text-[10px] text-neutral-600">
-                {lastPlan.composition?.zones?.length ?? 0} zones · {lastPlan.typography?.hierarchy?.length ?? 0} textes · {lastPlan.composition?.decorativeElements?.length ?? 0} éléments décoratifs
+                {lastPlan.zones?.length ?? 0} zones · {lastPlan.typography?.hierarchy?.length ?? 0} textes · {lastPlan.slots?.length ?? 0} slots images
               </p>
             )}
           </div>

@@ -107,6 +107,9 @@ interface GenerateJsonOptions<T> {
    *  des paramètres effectifs (modèle, temperature, prompt, tool schema…).
    *  Permet à l'UI d'afficher le prompt et les paramètres exacts en mode debug. */
   onRequestSent?: (info: LlmRequestInfo) => void
+  /** Images base64 à inclure dans le prompt (vision multimodal, pour Claude).
+   *  Format : data URIs (data:image/png;base64,<base64-string>) */
+  imageDataUris?: string[]
 }
 
 /**
@@ -210,6 +213,37 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
         ? 8192
         : 8192
 
+  // Construit le content du message user : texte seul OU multimodal (images + texte)
+  type MessageContent = string | Array<{ type: string; [key: string]: unknown }>
+  const buildMessageContent = (): MessageContent => {
+    if (!opts.imageDataUris || opts.imageDataUris.length === 0) {
+      return opts.prompt
+    }
+    const content: Array<{ type: string; [key: string]: unknown }> = []
+    for (const dataUri of opts.imageDataUris) {
+      const match = dataUri.match(/^data:([^;]+);base64,(.+)$/)
+      if (match) {
+        const mediaType = match[1]
+        const data = match[2]
+        content.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mediaType,
+            data,
+          },
+        })
+      }
+    }
+    content.push({
+      type: 'text',
+      text: opts.prompt,
+    })
+    return content
+  }
+
+  const messageContent = buildMessageContent()
+
   // Notifie l'UI du payload exact avant l'envoi (pour affichage debug).
   opts.onRequestSent?.({
     provider: 'claude',
@@ -217,7 +251,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     model,
     temperature,
     max_tokens,
-    messages: [{ role: 'user', content: opts.prompt }],
+    messages: [{ role: 'user', content: typeof messageContent === 'string' ? messageContent : '[multimodal: images + text]' }],
     tool_name: toolName,
     input_schema: tool.input_schema as Record<string, unknown>,
     task: opts.task,
@@ -243,7 +277,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
         max_tokens,
         tools: [tool],
         tool_choice: { type: 'tool', name: toolName },
-        messages: [{ role: 'user', content: opts.prompt }],
+        messages: [{ role: 'user', content: messageContent }],
       }),
     })
   } finally {
@@ -268,6 +302,28 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   const errorMessage = validation.error.issues
     .map((i) => `${i.path.join('.')}: ${i.message}`)
     .join(' ; ')
+  const retryErrorText = `\n\nTa précédente tentative a échoué la validation : ${errorMessage}. Renvoie un JSON strictement conforme au schéma de l'outil ${toolName}.`
+
+  // Construire le retry content : si multimodal, ajouter texte d'erreur au dernier élément text
+  type RetryMessageContent = string | Array<{ type: string; [key: string]: unknown }>
+  const buildRetryMessageContent = (): RetryMessageContent => {
+    if (typeof messageContent === 'string') {
+      return messageContent + retryErrorText
+    }
+    // messageContent est un array avec images + text
+    const retryContent = [...messageContent] as Array<{ type: string; [key: string]: unknown }>
+    const lastTextIndex = retryContent.findIndex((c, i) => c.type === 'text' && i === retryContent.length - 1)
+    if (lastTextIndex !== -1 && retryContent[lastTextIndex].type === 'text') {
+      retryContent[lastTextIndex] = {
+        type: 'text',
+        text: (retryContent[lastTextIndex].text as string) + retryErrorText,
+      }
+    }
+    return retryContent
+  }
+
+  const retryMessageContent = buildRetryMessageContent()
+
   const retryRes = await fetch(ANTHROPIC_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -284,9 +340,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
       messages: [
         {
           role: 'user',
-          content:
-            opts.prompt +
-            `\n\nTa précédente tentative a échoué la validation : ${errorMessage}. Renvoie un JSON strictement conforme au schéma de l'outil ${toolName}.`,
+          content: retryMessageContent,
         },
       ],
     }),

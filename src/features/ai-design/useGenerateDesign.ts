@@ -7,6 +7,7 @@ import { buildDesignPrompt } from './designPrompt'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
 import type { DesignRequest, DesignResult } from './types'
+import type { DesignPlan } from './artDirectorSchema'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -15,32 +16,33 @@ import { getFormatById } from '@/features/print/PRINT_FORMATS'
 import { mmToPx } from '@/features/print/dimensions'
 import { AVAILABLE_FONTS } from '@/features/assets/useFonts'
 
-type Step = 'idle' | 'generating' | 'sanitizing' | 'rendering' | 'done' | 'error'
+export type Step = 'idle' | 'planning' | 'illustrating' | 'sanitizing' | 'rendering' | 'done' | 'error'
 
 interface State {
   step: Step
   progress: string
   error: string | null
   lastResult: DesignResult | null
+  lastPlan: DesignPlan | null
 }
 
 const PROMPT_VERSION = 'design.generate.v1'
 
 export function useGenerateDesign() {
   const runningRef = useRef(false)
-  const [state, setState] = useState<State>({ step: 'idle', progress: '', error: null, lastResult: null })
+  const [state, setState] = useState<State>({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null })
 
   const generate = useCallback(async (req: DesignRequest) => {
     if (runningRef.current) return
     runningRef.current = true
     try {
-    setState({ step: 'generating', progress: 'Envoi du brief à Claude…', error: null, lastResult: null })
+    setState({ step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null })
 
     // Résolution du format
     let widthMm: number, heightMm: number, formatLabel: string
     if (req.formatId === 'custom') {
       if (!req.customWidthMm || !req.customHeightMm) {
-        setState({ step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null })
+        setState({ step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null })
         return
       }
       widthMm = req.customWidthMm
@@ -49,7 +51,7 @@ export function useGenerateDesign() {
     } else {
       const f = getFormatById(req.formatId)
       if (!f) {
-        setState({ step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null })
+        setState({ step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null, lastPlan: null })
         return
       }
       widthMm = f.widthMm
@@ -94,7 +96,7 @@ export function useGenerateDesign() {
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setState({ step: 'error', progress: '', error: `Génération LLM échouée : ${msg}`, lastResult: null })
+      setState({ step: 'error', progress: '', error: `Génération LLM échouée : ${msg}`, lastResult: null, lastPlan: null })
       return
     }
 
@@ -105,7 +107,7 @@ export function useGenerateDesign() {
       cleanSvg = sanitizeSvg(result.svg)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setState({ step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null })
+      setState({ step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null, lastPlan: null })
       return
     }
 
@@ -152,7 +154,7 @@ export function useGenerateDesign() {
 
     const canvas = globalFabricCanvas
     if (!canvas) {
-      setState({ step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null })
+      setState({ step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null, lastPlan: null })
       return
     }
 
@@ -189,18 +191,18 @@ export function useGenerateDesign() {
       requestAnimationFrame(() => globalFitCanvas?.())
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setState({ step: 'error', progress: '', error: `Parse SVG échoué : ${msg}`, lastResult: null })
+      setState({ step: 'error', progress: '', error: `Parse SVG échoué : ${msg}`, lastResult: null, lastPlan: null })
       return
     }
 
-    setState({ step: 'done', progress: '', error: null, lastResult: result })
+    setState({ step: 'done', progress: '', error: null, lastResult: result, lastPlan: null })
     } finally {
       runningRef.current = false
     }
   }, [])
 
   const reset = useCallback(() => {
-    setState({ step: 'idle', progress: '', error: null, lastResult: null })
+    setState({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null })
   }, [])
 
   return { state, generate, reset }
