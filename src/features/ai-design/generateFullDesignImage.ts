@@ -91,10 +91,11 @@ function pickAspectRatio(widthMm: number, heightMm: number): string {
 
 function pickImageSize(widthMm: number, heightMm: number, dpi: number): string {
   const pxMax = Math.max(widthMm, heightMm) * (dpi / 25.4)
+  // Réduire pour respecter limite 5MB Claude multimodal
   if (pxMax <= 512) return '512'
   if (pxMax <= 1024) return '1K'
-  if (pxMax <= 2048) return '2K'
-  return '4K'
+  if (pxMax <= 1536) return '1K' // Cap at 1K pour éviter 2K/4K → trop lourd
+  return '1K' // Max 1K pour multimodal Claude
 }
 
 /**
@@ -175,6 +176,8 @@ export async function generateFullDesignImage(args: GenerateFullDesignImageArgs)
       const b64 = inline?.data
 
       if (mimeType?.startsWith('image/') && b64) {
+        const b64Size = b64.length
+        console.log(`[generateFullDesignImage] Image generated: ${Math.round(b64Size / 1024 / 1024)}MB`)
         return { ok: true, dataUri: `data:${mimeType};base64,${b64}` }
       }
     }

@@ -23,25 +23,12 @@ const STYLE_DIRECTION: Record<DesignStyle, string> = {
   retro: `palette vintage (orange brûlé, crème, kaki), typographies display anciennes (slab, tuscan, shadow), trames pointillées, cadres bordés, ornements géométriques. Inspirations : pub US 50s-60s, Coca-Cola vintage.`,
 }
 
-const DEVICES_CATALOG = `## Devices compositionnels à ta disposition
+const DEVICES_CATALOG = `## Device : choisis UNE composition principale
 
-- **diagonal-split** : canvas coupé en 2 blocs de couleurs inégales (ex: 55/45), séparés par une diagonale dynamique.
-- **asymmetric-blocks** : 3-4 aplats colorés rectangulaires de tailles inégales empilés/juxtaposés.
-- **full-bleed-hero** : le visuel hero (produit, photo, forme) occupe 60%+ du canvas et déborde hors-bord.
-- **typographic-wall** : titre empilé sur 2-4 lignes occupant 30-55% de la surface, font condensée grasse 120-220 pt, mix outline + solide.
-- **grid-axial** : grille orthogonale stricte, axée sur un centre de gravité (pour corporate/elegant).
-- **center-stack** : tout empilé verticalement au centre, hierarchy par taille (pour minimaliste).
-- **corner-anchors** : ancre les 4 coins (logo TL, tags TR, prix BL, spec BR) pour éviter le vide plat.
-
-## Recettes compositionnelles à combiner
-
-- **Meta line** : bande all-caps avec bullets (•), 2-3 tags (ex: "GAMME PRO · SANS FIL").
-- **Ribbon / tag** : fanion coloré 2-5 mots all-caps (ex: "OFFRE PRO", "NOUVEAUTÉ", "-24%").
-- **Price stack** : prix barré + prix promo grand format + label "ÉCONOMISEZ X€" en accent.
-- **Spec grid** : rangée de 3-4 cartes au pied du canvas, chacune avec icône + label + valeur.
-- **Decorative stroke** : trait fin coloré (diagonale, zigzag) traversant la compo.
-- **Dashed outline box** : cadre pointillé (stroke-dasharray) autour d'un élément hero.
-- **Size contrast extrême** : ratio 15-20× entre plus grande et plus petite typo.
+- **diagonal-split** : bloc coloré diagonal (ex: 55% bleu / 45% blanc), produit et texte des deux côtés.
+- **full-bleed-hero** : produit/photo en grand (50-70% canvas), texte en bas/coin.
+- **typographic-wall** : titre énorme (80-140pt) + image petite + prix/meta en corner.
+- **center-stack** : tout centré verticalement, image → titre → prix → CTA (minimaliste).
 `
 
 export function buildArtDirectorPrompt(args: BuildArtDirectorPromptArgs): string {
@@ -76,15 +63,26 @@ ${paletteLine}
 
 ${DEVICES_CATALOG}
 
-## Ambition créative
+## Zones : contrainte stricte
 
-Ton plan doit produire un design digne d'un studio professionnel, pas un gabarit générique. Vise :
-- **6 à 12 zones** visuellement distinctes (pas 3 éléments plats).
-- **3-4 niveaux de hiérarchie typographique** (display 120-220 pt, intermédiaire 40-60 pt, body 12-16 pt, meta 8-10 pt).
-- **Un concept compositionnel fort** (mainDevice bien choisi).
-- **Des détails qui ancrent la marque** : filets décoratifs, meta lines, ornements, pictogrammes.
+⚠️ **EXACTEMENT 4-6 zones DISJOINTES**. Pas moins, pas plus.
 
-Un design sobre de 3 éléments = échec. 8+ zones hiérarchisées avec concept fort = réussite.
+- **1 zone background** (couvre 100% du canvas ou avec bleed)
+- **1-2 zones hero-visual** (image produit, photo, logo)
+- **2-4 zones texte** (titre, subtitle, body, prix, CTA, meta)
+
+Exemple « Makita 234,99€ » :
+1. Background bleu acier diagonal
+2. Hero-visual : photo tronçonneuse 40%
+3. Titre « TAILLE-HAIE 18V » en gros blanc
+4. Price stack « 435,99€ barré + 234,99€ TTC + badge »
+5. Meta + specs footer
+(= 5 zones clairement séparées)
+
+**Hiérarchie typo** : 2-3 niveaux max (pas 4-5).
+- Display/hero : 60-120 pt, gras
+- Body : 14-24 pt
+- Meta : 8-12 pt
 
 ## Règles de layout NON NÉGOCIABLES
 

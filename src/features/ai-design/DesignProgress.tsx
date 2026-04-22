@@ -68,7 +68,7 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-xl bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-2xl overflow-hidden">
+      <div className="w-full max-w-4xl bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800 bg-[#0f0f0f]">
           <div className="flex items-center gap-2">
             {step === 'done' ? (
