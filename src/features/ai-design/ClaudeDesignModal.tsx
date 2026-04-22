@@ -57,14 +57,17 @@ export function ClaudeDesignModal() {
   const isRunning = state.step !== 'idle' && state.step !== 'done' && state.step !== 'error'
   const isGenerating = state.step !== 'idle'
 
-  // Initialize format from canvas dimensions when modal opens
+  // Always sync format to canvas dimensions when modal opens
   useEffect(() => {
-    if (isClaudeDesignModalOpen && !brief.formatId) {
+    if (isClaudeDesignModalOpen) {
       const dpi = useUIStore.getState().dpi
       const { canvasWidth, canvasHeight } = useUIStore.getState()
       const derivedFormatId = findFormatByDimensions(canvasWidth, canvasHeight, dpi)
-      const { setBrief } = useDesignBriefStore.getState()
-      setBrief({ formatId: derivedFormatId })
+      // Always sync format to canvas dimensions, even if brief.formatId exists
+      if (derivedFormatId !== brief.formatId) {
+        const { setBrief } = useDesignBriefStore.getState()
+        setBrief({ formatId: derivedFormatId })
+      }
     }
   }, [isClaudeDesignModalOpen, brief.formatId])
 

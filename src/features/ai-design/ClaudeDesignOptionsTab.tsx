@@ -1,27 +1,30 @@
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
-import { FormatSelector } from './FormatSelector'
+import { getFormatById } from '@/features/print/PRINT_FORMATS'
 
 export function ClaudeDesignOptionsTab() {
   const brief = useDesignBrief()
   const setBrief = useDesignBriefStore((s) => s.setBrief)
 
+  // Get format label and dimensions for display
+  let formatDisplay = 'Personnalisé'
+  if (brief.formatId !== 'custom') {
+    const fmt = getFormatById(brief.formatId)
+    if (fmt) {
+      formatDisplay = `${fmt.label} — ${fmt.widthMm} × ${fmt.heightMm} mm`
+    }
+  } else {
+    formatDisplay = `Personnalisé — ${brief.customWidthMm ?? 0} × ${brief.customHeightMm ?? 0} mm`
+  }
+
   return (
     <div className="space-y-6">
-      {/* Format section */}
+      {/* Format section - read-only display */}
       <div className="space-y-2">
         <label className="text-xs uppercase tracking-wide text-neutral-400">Format</label>
-        <FormatSelector
-          formatId={brief.formatId}
-          customWidthMm={brief.customWidthMm}
-          customHeightMm={brief.customHeightMm}
-          onChange={(v) => {
-            setBrief({
-              formatId: v.formatId,
-              customWidthMm: v.customWidthMm,
-              customHeightMm: v.customHeightMm,
-            })
-          }}
-        />
+        <div className="px-3 py-2 bg-[#0f0f0f] border border-neutral-800 rounded text-sm text-neutral-300 flex items-center gap-2">
+          <span>📄</span>
+          <span>{formatDisplay}</span>
+        </div>
       </div>
 
       {/* Palette section */}

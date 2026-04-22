@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
-import { FormatSelector } from './FormatSelector'
 import { PrintSettingsPanel } from './PrintSettingsPanel'
 import { DesignProgress } from './DesignProgress'
 import { useGenerateDesign } from './useGenerateDesign'
@@ -30,39 +29,8 @@ export function DesignPromptPanel() {
 
   const canvasWidth = useUIStore((s) => s.canvasWidth)
   const canvasHeight = useUIStore((s) => s.canvasHeight)
-  // Distingue « l'utilisateur a changé le dropdown » vs « la dropdown a été
-  // resync depuis le canvas externe ». Évite de boucler / d'écraser le format
-  // choisi via « Créer un document » ou un import.
-  const userChangedFormatRef = useRef(false)
 
-  // (1) Push : seulement quand l'utilisateur change le dropdown.
-  // Utilise le `nativeDpi` du format pour la conversion mm → px (300 print, 96 écran/social).
-  useEffect(() => {
-    if (!userChangedFormatRef.current) return
-    userChangedFormatRef.current = false
-    let widthMm: number | undefined
-    let heightMm: number | undefined
-    let dpiToUse = useUIStore.getState().dpi
-    if (brief.formatId === 'custom') {
-      widthMm = brief.customWidthMm
-      heightMm = brief.customHeightMm
-    } else {
-      const f = getFormatById(brief.formatId)
-      if (f) {
-        widthMm = f.widthMm
-        heightMm = f.heightMm
-        dpiToUse = f.nativeDpi ?? dpiToUse
-      }
-    }
-    if (!widthMm || !heightMm) return
-    const wPx = Math.round(mmToPx(widthMm, dpiToUse))
-    const hPx = Math.round(mmToPx(heightMm, dpiToUse))
-    if (canvasWidth !== wPx || canvasHeight !== hPx) {
-      useUIStore.getState().setCanvasSize(wPx, hPx, useUIStore.getState().canvasBg)
-    }
-  }, [brief.formatId, brief.customWidthMm, brief.customHeightMm, canvasWidth, canvasHeight])
-
-  // (2) Pull : reflète passivement le canvas réel dans la dropdown.
+  // Pull : reflète passivement le canvas réel dans la dropdown.
   // Test chaque format avec son `nativeDpi` propre — un canvas 1584×396 px
   // matche LinkedIn Banner (96 DPI), pas un format print arbitraire.
   useEffect(() => {
@@ -138,19 +106,20 @@ export function DesignPromptPanel() {
       </div>
 
       {!isRunning && (
-        <FormatSelector
-          formatId={brief.formatId}
-          customWidthMm={brief.customWidthMm}
-          customHeightMm={brief.customHeightMm}
-          onChange={(v) => {
-            userChangedFormatRef.current = true
-            setBrief({
-              formatId: v.formatId,
-              customWidthMm: v.customWidthMm,
-              customHeightMm: v.customHeightMm,
-            })
-          }}
-        />
+        <div className="space-y-1">
+          <label className="text-xs uppercase tracking-wide text-neutral-400">Format</label>
+          <div className="px-2 py-1.5 bg-[#1a1a1a] border border-neutral-800 rounded text-sm text-neutral-300 flex items-center gap-2">
+            <span>📄</span>
+            <span>
+              {brief.formatId === 'custom'
+                ? `Personnalisé — ${brief.customWidthMm} × ${brief.customHeightMm} mm`
+                : (() => {
+                    const f = getFormatById(brief.formatId)
+                    return f ? `${f.label} — ${f.widthMm} × ${f.heightMm} mm` : brief.formatId
+                  })()}
+            </span>
+          </div>
+        </div>
       )}
 
       <div className="space-y-1">
@@ -215,12 +184,44 @@ export function DesignPromptPanel() {
           error={state.error}
           lastResult={state.lastResult}
           lastPlan={state.lastPlan}
+          nanobananaImage={state.nanobananaImage}
           onClose={() => setProgressDismissed(true)}
           onRetry={() => {
             setProgressDismissed(true)
             setTimeout(onSubmit, 50)
           }}
         />
+      )}
+
+      {state.nanobananaImage && state.step === 'done' ? (
+        <div className="mt-4 p-4 bg-neutral-900 border border-neutral-800 rounded space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-neutral-200">📷 Référence créative (Nano Banana)</h3>
+            <button
+              type="button"
+              onClick={() => {}}
+              className="text-[10px] px-2 py-1 bg-neutral-800 hover:bg-neutral-700 rounded text-neutral-400 transition-colors"
+            >
+              Comparer avec le canvas
+            </button>
+          </div>
+          <img
+            src={state.nanobananaImage}
+            alt="Nano Banana reference"
+            className="w-full rounded border border-neutral-700 object-contain max-h-96"
+            onError={(e) => console.error('[DesignPromptPanel] Image load failed:', e)}
+            onLoad={() => console.log('[DesignPromptPanel] Image loaded successfully')}
+          />
+          <p className="text-[11px] text-neutral-500">
+            Cette image a été générée par Nano Banana (Gemini) et sert de référence créative. Le SVG vectoriel sur le canvas reproduit la composition et les styles de cette image.
+          </p>
+        </div>
+      ) : (
+        state.step === 'done' && (
+          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded">
+            <p className="text-xs text-red-400">[DEBUG] nanobananaImage exists: {!!state.nanobananaImage}, step: {state.step}</p>
+          </div>
+        )
       )}
     </div>
   )
