@@ -3,11 +3,13 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { generateJson } from '@/features/ai/llmRouter'
 import { DesignResultSchema, DesignResultJsonSchema } from './designSchema'
-import { buildDesignPrompt } from './designPrompt'
+import { buildArtDirectorPrompt } from './artDirectorPrompt'
+import { designPlanSchema, type DesignPlan } from './artDirectorSchema'
+import { buildSvgEngineerPrompt } from './svgEngineerPrompt'
+import { generateFullDesignImage } from './generateFullDesignImage'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
-import type { DesignRequest, DesignResult } from './types'
-import type { DesignPlan } from './artDirectorSchema'
+import type { DesignRequest, DesignResult, DesignStyle } from './types'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -36,166 +38,276 @@ export function useGenerateDesign() {
     if (runningRef.current) return
     runningRef.current = true
     try {
-    setState({ step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null })
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 1 : Planning (Art Director)
+      // ─────────────────────────────────────────────────────────────────────────────
+      setState({ step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null })
 
-    // Résolution du format
-    let widthMm: number, heightMm: number, formatLabel: string
-    if (req.formatId === 'custom') {
-      if (!req.customWidthMm || !req.customHeightMm) {
-        setState({ step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null })
-        return
+      // Résolution du format
+      let widthMm: number, heightMm: number, formatLabel: string
+      if (req.formatId === 'custom') {
+        if (!req.customWidthMm || !req.customHeightMm) {
+          setState({ step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null })
+          return
+        }
+        widthMm = req.customWidthMm
+        heightMm = req.customHeightMm
+        formatLabel = `Custom ${widthMm} × ${heightMm} mm`
+      } else {
+        const f = getFormatById(req.formatId)
+        if (!f) {
+          setState({ step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null, lastPlan: null })
+          return
+        }
+        widthMm = f.widthMm
+        heightMm = f.heightMm
+        formatLabel = f.label
       }
-      widthMm = req.customWidthMm
-      heightMm = req.customHeightMm
-      formatLabel = `Custom ${widthMm} × ${heightMm} mm`
-    } else {
-      const f = getFormatById(req.formatId)
-      if (!f) {
-        setState({ step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null, lastPlan: null })
-        return
+
+      const { bleedMm: storeBleed, dpi } = useUIStore.getState()
+      const effectiveBleed = req.includeBleed ? Math.max(storeBleed, 3) : 0
+
+      // Garde le store UI synchro pour que l'overlay de repères (useEffect dans CanvasContainer)
+      // dessine des traits de coupe correspondant au bleed réellement utilisé dans le SVG.
+      if (useUIStore.getState().bleedMm !== effectiveBleed) {
+        useUIStore.getState().setBleedMm(effectiveBleed)
       }
-      widthMm = f.widthMm
-      heightMm = f.heightMm
-      formatLabel = f.label
-    }
 
-    const { bleedMm: storeBleed, dpi } = useUIStore.getState()
-    const effectiveBleed = req.includeBleed ? Math.max(storeBleed, 3) : 0
+      const availableFonts = AVAILABLE_FONTS.map((f) => f.family)
 
-    // Garde le store UI synchro pour que l'overlay de repères (useEffect dans CanvasContainer)
-    // dessine des traits de coupe correspondant au bleed réellement utilisé dans le SVG.
-    if (useUIStore.getState().bleedMm !== effectiveBleed) {
-      useUIStore.getState().setBleedMm(effectiveBleed)
-    }
-
-    const availableFonts = AVAILABLE_FONTS.map((f) => f.family)
-
-    const prompt = buildDesignPrompt({
-      userPrompt: req.prompt,
-      widthMm,
-      heightMm,
-      formatLabel,
-      style: req.style,
-      includeBleed: req.includeBleed,
-      bleedMm: effectiveBleed,
-      availableFonts,
-      palette: req.palette,
-      productImageUrl: req.productImageUrl,
-      productName: req.productName,
-    })
-
-    let result: DesignResult
-    try {
-      result = await generateJson<DesignResult>({
-        task: 'design.generate',
-        prompt,
-        schema: DesignResultSchema as unknown as z.ZodSchema<DesignResult>,
-        schemaForLLM: DesignResultJsonSchema as unknown as Record<string, unknown>,
-        schemaForClaude: DesignResultJsonSchema as unknown as Record<string, unknown>,
-        version: PROMPT_VERSION,
+      // Art Director: génère le DesignPlan structuré
+      const artDirectorPrompt = buildArtDirectorPrompt({
+        userPrompt: req.prompt,
+        widthMm,
+        heightMm,
+        formatLabel,
+        style: req.style as DesignStyle,
+        includeBleed: req.includeBleed,
+        bleedMm: effectiveBleed,
+        availableFonts,
+        palette: req.palette,
+        productImageUrl: req.productImageUrl,
+        productName: req.productName,
       })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setState({ step: 'error', progress: '', error: `Génération LLM échouée : ${msg}`, lastResult: null, lastPlan: null })
-      return
-    }
 
-    setState((s) => ({ ...s, step: 'sanitizing', progress: 'Validation du SVG…' }))
-
-    let cleanSvg: string
-    try {
-      cleanSvg = sanitizeSvg(result.svg)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setState({ step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null, lastPlan: null })
-      return
-    }
-
-    // Validation des fonts
-    const fontCheck = validateSvgFonts(cleanSvg, availableFonts)
-    if (fontCheck.missingFonts.length > 0) {
-      toast.warning(
-        `Fonts non disponibles : ${fontCheck.missingFonts.join(', ')}. Remplacées par Inter.`,
-      )
-      for (const missing of fontCheck.missingFonts) {
-        const reDouble = new RegExp(`font-family\\s*=\\s*"${missing}[^"]*"`, 'g')
-        const reSingle = new RegExp(`font-family\\s*=\\s*'${missing}[^']*'`, 'g')
-        cleanSvg = cleanSvg.replace(reDouble, 'font-family="Inter"').replace(reSingle, 'font-family="Inter"')
+      let plan: DesignPlan
+      try {
+        plan = await generateJson<DesignPlan>({
+          task: 'design.plan',
+          prompt: artDirectorPrompt,
+          schema: designPlanSchema,
+          schemaForLLM: require('./artDirectorSchema').designPlanJsonSchema,
+          schemaForClaude: require('./artDirectorSchema').designPlanJsonSchema,
+          version: 'design.plan.v1',
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setState({ step: 'error', progress: '', error: `Art Director échoué : ${msg}`, lastResult: null, lastPlan: null })
+        return
       }
-    }
 
-    // Pré-remplissage de l'image produit pour le slot avec role "product" (optionnel)
-    let slotDataUris: Map<string, string> = new Map()
-    if (req.productImageUrl) {
-      const productSlot = result.slots.find((s) => s.role === 'product')
-      if (productSlot) {
-        try {
-          const { httpsCallable } = await import('firebase/functions')
-          const { functions } = await import('@/lib/firebase/config')
-          const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(
-            functions, 'imageProxy'
-          )
-          const { data: proxyResult } = await imageProxyFn({ url: req.productImageUrl })
-          slotDataUris.set(productSlot.id, `data:${proxyResult.mimeType};base64,${proxyResult.data}`)
-        } catch (err) {
-          console.warn('[useGenerateDesign] product image proxy failed:', err)
+      setState((s) => ({ ...s, lastPlan: plan }))
+
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 2 : Illustration (Nano Banana + SVG Engineer)
+      // ─────────────────────────────────────────────────────────────────────────────
+      setState((s) => ({ ...s, step: 'illustrating', progress: 'Génération créative (Nano Banana)…', lastPlan: plan }))
+
+      // Génère l'image de référence via Nano Banana
+      const designImageResult = await generateFullDesignImage({
+        userPrompt: req.prompt,
+        plan,
+        widthMm,
+        heightMm,
+        style: req.style as DesignStyle,
+        dpi,
+      })
+
+      if (!designImageResult.ok || !designImageResult.dataUri) {
+        console.warn('[useGenerateDesign] Nano Banana full canvas failed:', designImageResult.error)
+        // Continue sans image de référence
+      }
+
+      // SVG Engineer avec multimodal (image + plan)
+      setState((s) => ({ ...s, progress: 'Vectorisation du design (SVG Engineer)…' }))
+
+      const svgEngineerPrompt = buildSvgEngineerPrompt({
+        plan,
+        widthMm,
+        heightMm,
+        formatLabel,
+        includeBleed: req.includeBleed,
+        bleedMm: effectiveBleed,
+        availableFonts,
+      })
+
+      interface SVGEngineResult {
+        svg: string
+        rationale?: string
+        slots?: Array<{ id: string; role: string; promptSuggestion?: string }>
+      }
+
+      let engineResult: SVGEngineResult
+      try {
+        engineResult = await generateJson<SVGEngineResult>({
+          task: 'design.emit',
+          prompt: svgEngineerPrompt,
+          schema: z.object({
+            svg: z.string(),
+            rationale: z.string().optional(),
+            slots: z.array(z.object({
+              id: z.string(),
+              role: z.string(),
+              promptSuggestion: z.string().optional(),
+            })).optional(),
+          }) as unknown as z.ZodSchema<SVGEngineResult>,
+          schemaForLLM: {
+            type: 'object',
+            properties: {
+              svg: { type: 'string', description: 'SVG vectoriel complet en string' },
+              rationale: { type: 'string', description: 'Explication des choix (1-2 phrases)' },
+              slots: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    role: { type: 'string' },
+                    promptSuggestion: { type: 'string' },
+                  },
+                },
+              },
+            },
+            required: ['svg'],
+          } as Record<string, unknown>,
+          version: 'design.emit.v1',
+          imageDataUris: designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : undefined,
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setState({ step: 'error', progress: '', error: `SVG Engineer échoué : ${msg}`, lastResult: null, lastPlan: plan })
+        return
+      }
+
+      // Mappe le résultat SVG Engineer → DesignResult
+      const fontsUsed = Array.from(new Set([plan.typography.heroFont, plan.typography.bodyFont]))
+      const result: DesignResult = {
+        svg: engineResult.svg,
+        widthMm,
+        heightMm,
+        bleedMm: effectiveBleed,
+        palette: plan.palette,
+        fontsUsed,
+        rationale: engineResult.rationale || '',
+        slots: plan.slots.map((slot) => ({
+          id: slot.id,
+          role: slot.role,
+          promptSuggestion: slot.description,
+        })),
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 3 : Sanitizing
+      // ─────────────────────────────────────────────────────────────────────────────
+      setState((s) => ({ ...s, step: 'sanitizing', progress: 'Validation du SVG…', lastPlan: plan }))
+
+      let cleanSvg: string
+      try {
+        cleanSvg = sanitizeSvg(result.svg)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setState({ step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null, lastPlan: plan })
+        return
+      }
+
+      // Validation des fonts
+      const fontCheck = validateSvgFonts(cleanSvg, availableFonts)
+      if (fontCheck.missingFonts.length > 0) {
+        toast.warning(
+          `Fonts non disponibles : ${fontCheck.missingFonts.join(', ')}. Remplacées par Inter.`,
+        )
+        for (const missing of fontCheck.missingFonts) {
+          const reDouble = new RegExp(`font-family\\s*=\\s*"${missing}[^"]*"`, 'g')
+          const reSingle = new RegExp(`font-family\\s*=\\s*'${missing}[^']*'`, 'g')
+          cleanSvg = cleanSvg.replace(reDouble, 'font-family="Inter"').replace(reSingle, 'font-family="Inter"')
         }
       }
-    }
 
-    // Remplacer les placeholders image par les data URIs pré-remplis
-    let finalSvg = cleanSvg
-    for (const [slotId, dataUri] of slotDataUris) {
-      const placeholderHref = `placeholder:${slotId}`
-      finalSvg = finalSvg.replace(new RegExp(`href="${placeholderHref}"`, 'g'), `href="${dataUri}"`)
-    }
-
-    setState((s) => ({ ...s, step: 'rendering', progress: 'Rendu sur le canvas…' }))
-
-    const canvas = globalFabricCanvas
-    if (!canvas) {
-      setState({ step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null, lastPlan: null })
-      return
-    }
-
-    // Canvas = format fini (trimmed). Le contenu débordant (bleed) s'étend
-    // naturellement en coordonnées négatives, là où l'overlay de repères
-    // (buildPrintMarks) dessine déjà le rectangle de fond perdu.
-    const canvasWidthPx = Math.round(mmToPx(widthMm, dpi))
-    const canvasHeightPx = Math.round(mmToPx(heightMm, dpi))
-    useUIStore.getState().setCanvasSize(canvasWidthPx, canvasHeightPx, '#ffffff')
-
-    const toRemove = canvas.getObjects().filter((o) => {
-      return !o.data?.isGrid && !o.data?.isPageBg && !o.data?.isPrintMark
-    })
-    for (const o of toRemove) canvas.remove(o)
-
-    try {
-      const { objects } = await parseSvgToFabric(finalSvg)
-
-      // Les unités SVG sont en mm (viewBox en mm par contrat de prompt).
-      // Scale uniforme mm → px. Pas de translation — les coordonnées SVG
-      // utilisent déjà le format fini comme origine ; le bleed est en coords négatives.
-      const scale = canvasWidthPx / widthMm
-      for (const obj of objects) {
-        obj.left = (obj.left ?? 0) * scale
-        obj.top = (obj.top ?? 0) * scale
-        obj.scaleX = (obj.scaleX ?? 1) * scale
-        obj.scaleY = (obj.scaleY ?? 1) * scale
-        obj.setCoords()
-        canvas.add(obj)
+      // Pré-remplissage de l'image produit pour le slot avec role "product" (optionnel)
+      let slotDataUris: Map<string, string> = new Map()
+      if (req.productImageUrl) {
+        const productSlot = result.slots.find((s) => s.role === 'product')
+        if (productSlot) {
+          try {
+            const { httpsCallable } = await import('firebase/functions')
+            const { functions } = await import('@/lib/firebase/config')
+            const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(
+              functions, 'imageProxy'
+            )
+            const { data: proxyResult } = await imageProxyFn({ url: req.productImageUrl })
+            slotDataUris.set(productSlot.id, `data:${proxyResult.mimeType};base64,${proxyResult.data}`)
+          } catch (err) {
+            console.warn('[useGenerateDesign] product image proxy failed:', err)
+          }
+        }
       }
 
-      canvas.requestRenderAll()
-      syncToStore(canvas)
-      requestAnimationFrame(() => globalFitCanvas?.())
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setState({ step: 'error', progress: '', error: `Parse SVG échoué : ${msg}`, lastResult: null, lastPlan: null })
-      return
-    }
+      // Remplacer les placeholders image par les data URIs pré-remplis
+      let finalSvg = cleanSvg
+      for (const [slotId, dataUri] of slotDataUris) {
+        const placeholderHref = `placeholder:${slotId}`
+        finalSvg = finalSvg.replace(new RegExp(`href="${placeholderHref}"`, 'g'), `href="${dataUri}"`)
+      }
 
-    setState({ step: 'done', progress: '', error: null, lastResult: result, lastPlan: null })
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 4 : Rendering
+      // ─────────────────────────────────────────────────────────────────────────────
+      setState((s) => ({ ...s, step: 'rendering', progress: 'Rendu sur le canvas…', lastPlan: plan }))
+
+      const canvas = globalFabricCanvas
+      if (!canvas) {
+        setState({ step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null, lastPlan: plan })
+        return
+      }
+
+      // Canvas = format fini (trimmed). Le contenu débordant (bleed) s'étend
+      // naturellement en coordonnées négatives, là où l'overlay de repères
+      // (buildPrintMarks) dessine déjà le rectangle de fond perdu.
+      const canvasWidthPx = Math.round(mmToPx(widthMm, dpi))
+      const canvasHeightPx = Math.round(mmToPx(heightMm, dpi))
+      useUIStore.getState().setCanvasSize(canvasWidthPx, canvasHeightPx, '#ffffff')
+
+      const toRemove = canvas.getObjects().filter((o) => {
+        return !o.data?.isGrid && !o.data?.isPageBg && !o.data?.isPrintMark
+      })
+      for (const o of toRemove) canvas.remove(o)
+
+      try {
+        const { objects } = await parseSvgToFabric(finalSvg)
+
+        // Les unités SVG sont en mm (viewBox en mm par contrat de prompt).
+        // Scale uniforme mm → px. Pas de translation — les coordonnées SVG
+        // utilisent déjà le format fini comme origine ; le bleed est en coords négatives.
+        const scale = canvasWidthPx / widthMm
+        for (const obj of objects) {
+          obj.left = (obj.left ?? 0) * scale
+          obj.top = (obj.top ?? 0) * scale
+          obj.scaleX = (obj.scaleX ?? 1) * scale
+          obj.scaleY = (obj.scaleY ?? 1) * scale
+          obj.setCoords()
+          canvas.add(obj)
+        }
+
+        canvas.requestRenderAll()
+        syncToStore(canvas)
+        requestAnimationFrame(() => globalFitCanvas?.())
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setState({ step: 'error', progress: '', error: `Parse SVG échoué : ${msg}`, lastResult: null, lastPlan: plan })
+        return
+      }
+
+      setState({ step: 'done', progress: '', error: null, lastResult: result, lastPlan: plan })
     } finally {
       runningRef.current = false
     }
