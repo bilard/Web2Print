@@ -23,6 +23,19 @@ export async function validateSvgVisualFidelity(
   svgContent: string,
 ): Promise<{ score: number; issues: string[] }> {
   try {
+    // Extract key structural info from SVG for analysis
+    const textElementsMatch = svgContent.match(/<text[^>]*>[\s\S]*?<\/text>/g) || []
+    const textCount = textElementsMatch.length
+    const hasBgImage = svgContent.includes('placeholder:nanobanana')
+
+    const svgSummary = `SVG Structure:
+- Background image: ${hasBgImage ? 'YES (Nano Banana)' : 'NO'}
+- Text elements: ${textCount}
+- SVG size: Uses viewBox (mm-based, not pixels)
+
+First 2000 chars of SVG:
+${svgContent.substring(0, 2000)}`
+
     const response = await generateJson<{
       fidelityScore: number
       compositionMatch: string
@@ -32,32 +45,32 @@ export async function validateSvgVisualFidelity(
       task: 'design.validate.visual',
       prompt: `Analyze the fidelity of an SVG layout compared to a reference image.
 
-You will see:
-1. A reference image (Nano Banana) — the SOURCE OF TRUTH for visual composition
-2. SVG source code that should faithfully represent the composition
+REFERENCE IMAGE (Nano Banana):
+You are shown a reference image that represents the ideal visual composition.
 
-Your task: Assess how well the SVG layout matches the visual composition of the reference image.
+SVG ANALYSIS:
+Below is the SVG source code that should faithfully reproduce the composition from the reference image.
 
-Analyze:
-- **Text positioning**: Are text zones positioned exactly where they appear in the reference image?
-- **Text sizing**: Do text zones have appropriate dimensions matching the reference?
+${svgSummary}
+
+YOUR TASK:
+Compare the visual composition shown in the reference image with the SVG structure. Assess how faithfully the SVG represents the reference.
+
+Evaluate:
+- **Text positioning**: Do the text zones in the SVG align with where text appears in the reference image?
+- **Text sizing**: Are text zone dimensions proportional to the reference?
 - **Alignment and spacing**: Does the SVG preserve the alignment and spacing observed in the reference?
 - **Visual hierarchy**: Does the layout maintain the same visual hierarchy as the reference?
-- **No overlaps**: Are text zones and elements properly separated (no overlapping)?
+- **No overlaps**: Are text zones properly separated (no overlapping text)?
+- **Background**: Is the Nano Banana image properly injected as background?
 
-Output a JSON score 0-100:
-- 90-100: Exact match, faithful reproduction of reference composition
-- 75-89: Good match, minor positioning variations acceptable
-- 60-74: Acceptable but has noticeable differences
-- <60: Poor match, significant layout differences
+SCORING:
+- 90-100: Perfect match — faithfully reproduces reference composition
+- 75-89: Good match — minor positioning variations acceptable
+- 60-74: Acceptable — noticeable differences but functional
+- <60: Poor match — significant layout differences, composition broken
 
-Respond with JSON:
-{
-  "fidelityScore": <number 0-100>,
-  "compositionMatch": "<brief description of how well composition matches>",
-  "positioningAccuracy": "<how accurate are text positions>",
-  "issues": ["<specific composition issues if any>"]
-}`,
+Respond with JSON only:`,
       schema: z.object({
         fidelityScore: z.number().min(0).max(100),
         compositionMatch: z.string(),
