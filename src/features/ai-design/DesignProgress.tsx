@@ -176,6 +176,17 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
           </div>
         )}
 
+        {nanobananaImage && (step === 'done') && (
+          <div className="px-5 py-3 border-t border-neutral-800 bg-neutral-900">
+            <p className="text-xs text-neutral-400 mb-2">🎨 Référence créative (Nano Banana)</p>
+            <img
+              src={nanobananaImage}
+              alt="Nano Banana reference"
+              className="w-full rounded border border-neutral-700 object-contain max-h-64"
+            />
+          </div>
+        )}
+
         {step === 'done' && lastResult && (
           <div className="px-5 py-3 border-t border-neutral-800 bg-emerald-500/5 space-y-1">
             <p className="text-xs text-emerald-300 font-medium">Design prêt sur le canvas</p>
