@@ -112,94 +112,96 @@ export const designPlanSchema = z.object({
 }) satisfies z.ZodSchema<DesignPlan>
 
 // JSON Schema pour le LLM (Gemini responseSchema / Claude input_schema)
+// Note: DO NOT use 'as Record<string, unknown>' - it breaks Anthropic API validation
 export const designPlanJsonSchema = {
-  type: 'object',
+  type: 'object' as const,
   properties: {
     concept: {
-      type: 'string',
+      type: 'string' as const,
       description: 'Concept créatif en 1-2 phrases : intention, ambiance, style du design',
     },
     mainDevice: {
-      type: 'string',
+      type: 'string' as const,
       description: 'Device compositional : diagonal-split | asymmetric-blocks | full-bleed-hero | typographic-wall | grid-axial | center-stack | corner-anchors',
     },
     zones: {
-      type: 'array',
+      type: 'array' as const,
       minItems: 4,
       maxItems: 6,
       items: {
-        type: 'object',
+        type: 'object' as const,
         properties: {
-          id: { type: 'string' },
+          id: { type: 'string' as const },
           role: {
-            type: 'string',
-            enum: ['background', 'title', 'subtitle', 'body', 'cta', 'accent', 'price', 'logo-slot', 'image-slot'],
+            type: 'string' as const,
+            enum: ['background', 'title', 'subtitle', 'body', 'cta', 'accent', 'price', 'logo-slot', 'image-slot'] as const,
           },
           bboxMm: {
-            type: 'object',
+            type: 'object' as const,
             properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              w: { type: 'number' },
-              h: { type: 'number' },
+              x: { type: 'number' as const },
+              y: { type: 'number' as const },
+              w: { type: 'number' as const },
+              h: { type: 'number' as const },
             },
-            required: ['x', 'y', 'w', 'h'],
+            required: ['x', 'y', 'w', 'h'] as const,
           },
-          fill: { type: 'string', description: 'Couleur hex #RRGGBB ou null' },
-          content: { type: 'string', description: 'Contenu texte si applicable' },
-          fontSize: { type: 'number', description: 'Taille police en points si applicable' },
+          fill: { type: 'string' as const, description: 'Couleur hex #RRGGBB' },
+          content: { type: 'string' as const, description: 'Contenu texte si applicable' },
+          fontSize: { type: 'number' as const, description: 'Taille police en points si applicable' },
         },
-        required: ['id', 'role', 'bboxMm'],
+        required: ['id', 'role', 'bboxMm'] as const,
       },
       description: 'EXACTEMENT 4-6 zones disjointes (background + 1-2 images + 2-4 textes)',
     },
     typography: {
-      type: 'object',
+      type: 'object' as const,
       properties: {
-        heroFont: { type: 'string', description: 'Font family pour les titres (MUST be in availableFonts list)' },
-        bodyFont: { type: 'string', description: 'Font family pour le body (MUST be in availableFonts list)' },
+        heroFont: { type: 'string' as const, description: 'Font family pour les titres (MUST be in availableFonts list)' },
+        bodyFont: { type: 'string' as const, description: 'Font family pour le body (MUST be in availableFonts list)' },
         hierarchy: {
-          type: 'array',
+          type: 'array' as const,
           items: {
-            type: 'object',
+            type: 'object' as const,
             properties: {
-              role: { type: 'string' },
-              size: { type: 'number', description: 'Taille en pt' },
-              weight: { type: 'number' },
-              color: { type: 'string', description: 'Hex #RRGGBB' },
+              role: { type: 'string' as const },
+              size: { type: 'number' as const, description: 'Taille en pt' },
+              weight: { type: 'number' as const },
+              color: { type: 'string' as const, description: 'Hex #RRGGBB' },
             },
+            required: ['role', 'size', 'weight', 'color'] as const,
           },
         },
       },
-      required: ['heroFont', 'bodyFont'],
+      required: ['heroFont', 'bodyFont'] as const,
     },
     palette: {
-      type: 'array',
-      items: { type: 'string', pattern: '^#[0-9A-Fa-f]{6}$' },
+      type: 'array' as const,
+      items: { type: 'string' as const, pattern: '^#[0-9A-Fa-f]{6}$' },
       description: '3-5 couleurs hex #RRGGBB',
     },
     slots: {
-      type: 'array',
+      type: 'array' as const,
       items: {
-        type: 'object',
+        type: 'object' as const,
         properties: {
-          id: { type: 'string' },
-          role: { type: 'string' },
+          id: { type: 'string' as const },
+          role: { type: 'string' as const },
           bboxMm: {
-            type: 'object',
+            type: 'object' as const,
             properties: {
-              x: { type: 'number' },
-              y: { type: 'number' },
-              w: { type: 'number' },
-              h: { type: 'number' },
+              x: { type: 'number' as const },
+              y: { type: 'number' as const },
+              w: { type: 'number' as const },
+              h: { type: 'number' as const },
             },
-            required: ['x', 'y', 'w', 'h'],
+            required: ['x', 'y', 'w', 'h'] as const,
           },
-          description: { type: 'string', description: '1 phrase pour Nano Banana' },
+          description: { type: 'string' as const, description: '1 phrase pour Nano Banana' },
         },
-        required: ['id', 'role', 'bboxMm', 'description'],
+        required: ['id', 'role', 'bboxMm', 'description'] as const,
       },
     },
   },
-  required: ['concept', 'mainDevice', 'zones', 'typography', 'palette', 'slots'],
-} as Record<string, unknown>
+  required: ['concept', 'mainDevice', 'zones', 'typography', 'palette', 'slots'] as const,
+}
