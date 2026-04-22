@@ -4,6 +4,7 @@ interface Props {
   formatId: string
   customWidthMm?: number
   customHeightMm?: number
+  disabled?: boolean
   onChange: (v: { formatId: string; customWidthMm?: number; customHeightMm?: number }) => void
 }
 
@@ -16,7 +17,7 @@ const GROUPS: Array<{ category: PrintFormat['category']; label: string }> = [
   { category: 'social', label: 'Réseaux sociaux' },
 ]
 
-export function FormatSelector({ formatId, customWidthMm, customHeightMm, onChange }: Props) {
+export function FormatSelector({ formatId, customWidthMm, customHeightMm, disabled, onChange }: Props) {
   const isCustom = formatId === 'custom'
 
   return (
@@ -25,7 +26,8 @@ export function FormatSelector({ formatId, customWidthMm, customHeightMm, onChan
       <select
         value={formatId}
         onChange={(e) => onChange({ formatId: e.target.value, customWidthMm, customHeightMm })}
-        className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1.5 text-sm"
+        disabled={disabled}
+        className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {GROUPS.map((g) => (
           <optgroup key={g.category} label={g.label}>
@@ -45,9 +47,10 @@ export function FormatSelector({ formatId, customWidthMm, customHeightMm, onChan
               type="number"
               min={10}
               max={2000}
+              disabled={disabled}
               value={customWidthMm ?? 210}
               onChange={(e) => onChange({ formatId: 'custom', customWidthMm: Number(e.target.value), customHeightMm })}
-              className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1 text-sm"
+              className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           <div>
@@ -56,9 +59,10 @@ export function FormatSelector({ formatId, customWidthMm, customHeightMm, onChan
               type="number"
               min={10}
               max={2000}
+              disabled={disabled}
               value={customHeightMm ?? 297}
               onChange={(e) => onChange({ formatId: 'custom', customWidthMm, customHeightMm: Number(e.target.value) })}
-              className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1 text-sm"
+              className="w-full bg-[#1a1a1a] border border-neutral-800 rounded px-2 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>

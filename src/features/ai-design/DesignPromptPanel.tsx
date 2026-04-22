@@ -141,6 +141,7 @@ export function DesignPromptPanel() {
         formatId={brief.formatId}
         customWidthMm={brief.customWidthMm}
         customHeightMm={brief.customHeightMm}
+        disabled={isRunning}
         onChange={(v) => {
           userChangedFormatRef.current = true
           setBrief({

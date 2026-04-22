@@ -105,7 +105,7 @@ const typographySchema = z.object({
 export const designPlanSchema = z.object({
   concept: z.string().min(10).max(500),
   mainDevice: z.string(),
-  zones: z.array(designZoneSchema).min(1).max(20),
+  zones: z.array(designZoneSchema).min(4).max(6),
   typography: typographySchema,
   palette: z.array(z.string().regex(/^#[0-9A-Fa-f]{6}$/)).min(1).max(8),
   slots: z.array(designSlotSchema).min(0).max(8),
@@ -125,6 +125,8 @@ export const designPlanJsonSchema = {
     },
     zones: {
       type: 'array',
+      minItems: 4,
+      maxItems: 6,
       items: {
         type: 'object',
         properties: {
@@ -149,6 +151,7 @@ export const designPlanJsonSchema = {
         },
         required: ['id', 'role', 'bboxMm'],
       },
+      description: 'EXACTEMENT 4-6 zones disjointes (background + 1-2 images + 2-4 textes)',
     },
     typography: {
       type: 'object',

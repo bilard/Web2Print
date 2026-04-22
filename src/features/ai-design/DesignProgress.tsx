@@ -68,7 +68,7 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-4xl bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-2xl overflow-hidden">
+      <div className="w-full max-w-4xl bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800 bg-[#0f0f0f]">
           <div className="flex items-center gap-2">
             {step === 'done' ? (
@@ -109,7 +109,7 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
           </div>
         </div>
 
-        <ul className="px-5 pb-4 space-y-3">
+        <ul className="px-5 pb-4 space-y-3 flex-1 overflow-y-auto">
           {PIPELINE.map((p, i) => {
             const isDone = step === 'done' || i < currentIdx
             const isActive = i === currentIdx && isRunning
@@ -171,7 +171,7 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
             <img
               src={nanobananaImage}
               alt="Nano Banana reference"
-              className="w-full rounded border border-neutral-700 object-cover max-h-48"
+              className="w-full rounded border border-neutral-700 object-contain max-h-96"
             />
           </div>
         )}
