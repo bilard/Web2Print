@@ -17,7 +17,7 @@ import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasCon
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useUIStore } from '@/stores/ui.store'
 import { getFormatById } from '@/features/print/PRINT_FORMATS'
-import { mmToPx } from '@/features/print/dimensions'
+import { mmToPx, pxToMm } from '@/features/print/dimensions'
 import { AVAILABLE_FONTS } from '@/features/assets/useFonts'
 
 export type Step = 'idle' | 'planning' | 'illustrating' | 'sanitizing' | 'rendering' | 'done' | 'error'
@@ -57,31 +57,38 @@ export function useGenerateDesign() {
       // ─────────────────────────────────────────────────────────────────────────────
       setState((s) => ({ ...s, step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null }))
 
-      // Résolution du format
-      let widthMm: number, heightMm: number, formatLabel: string, formatNativeDpi: number | undefined
-      if (req.formatId === 'custom') {
-        if (!req.customWidthMm || !req.customHeightMm) {
-          setState((s) => ({ ...s, step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null }))
-          return
-        }
-        widthMm = req.customWidthMm
-        heightMm = req.customHeightMm
-        formatLabel = `Custom ${widthMm} × ${heightMm} mm`
-        formatNativeDpi = undefined
-      } else {
+      // Le CANVAS est la source de vérité pour les dimensions (évite race conditions
+      // entre le brief persisté et les dimensions réelles du document ouvert).
+      // Le brief ne sert qu'à déterminer le formatLabel (affichage UI).
+      const { canvasWidth, canvasHeight, bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
+
+      // Choix du DPI : si le brief pointe sur un format connu ET que ses dimensions
+      // matchent le canvas (± 2 px), on utilise son nativeDpi (96 pour écran/social,
+      // 300 pour print). Sinon on retombe sur le DPI du store.
+      let formatLabel = `Custom ${canvasWidth} × ${canvasHeight} px`
+      let formatNativeDpi: number | undefined
+      if (req.formatId !== 'custom') {
         const f = getFormatById(req.formatId)
-        if (!f) {
-          setState((s) => ({ ...s, step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null, lastPlan: null }))
-          return
+        if (f) {
+          const fDpi = f.nativeDpi ?? storeDpi
+          const wPxExpected = Math.round(mmToPx(f.widthMm, fDpi))
+          const hPxExpected = Math.round(mmToPx(f.heightMm, fDpi))
+          if (Math.abs(wPxExpected - canvasWidth) <= 2 && Math.abs(hPxExpected - canvasHeight) <= 2) {
+            formatLabel = f.label
+            formatNativeDpi = f.nativeDpi
+          }
         }
-        widthMm = f.widthMm
-        heightMm = f.heightMm
-        formatLabel = f.label
-        formatNativeDpi = f.nativeDpi
       }
 
-      const { bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
       const dpi = formatNativeDpi ?? storeDpi
+      const widthMm = pxToMm(canvasWidth, dpi)
+      const heightMm = pxToMm(canvasHeight, dpi)
+      console.log('[Claude Design] Source de vérité = canvas:', {
+        canvasPx: `${canvasWidth}×${canvasHeight}`,
+        dimsMm: `${widthMm.toFixed(1)}×${heightMm.toFixed(1)}`,
+        dpi,
+        formatLabel,
+      })
       const effectiveBleed = req.includeBleed ? Math.max(storeBleed, 3) : 0
 
       // Garde le store UI synchro pour que l'overlay de repères (useEffect dans CanvasContainer)
@@ -376,12 +383,9 @@ export function useGenerateDesign() {
         return
       }
 
-      // Canvas = format fini (trimmed). Le contenu débordant (bleed) s'étend
-      // naturellement en coordonnées négatives, là où l'overlay de repères
-      // (buildPrintMarks) dessine déjà le rectangle de fond perdu.
-      const canvasWidthPx = Math.round(mmToPx(widthMm, dpi))
-      const canvasHeightPx = Math.round(mmToPx(heightMm, dpi))
-      useUIStore.getState().setCanvasSize(canvasWidthPx, canvasHeightPx, '#ffffff')
+      // Canvas déjà à la bonne taille (on l'a utilisé pour dériver widthMm/heightMm).
+      // On ne redimensionne PAS — le canvas est la source de vérité.
+      const canvasWidthPx = canvasWidth
 
       const toRemove = canvas.getObjects().filter((o) => {
         return !o.data?.isGrid && !o.data?.isPageBg && !o.data?.isPrintMark
