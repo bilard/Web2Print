@@ -26,6 +26,7 @@ interface State {
   error: string | null
   lastResult: DesignResult | null
   lastPlan: DesignPlan | null
+  nanobananaImage?: string
 }
 
 const PROMPT_VERSION = 'design.generate.v1'
@@ -92,6 +93,10 @@ export function useGenerateDesign() {
 
       let plan: DesignPlan
       try {
+        console.log('[Claude Design] Art Director — Step 1/4: Planning')
+        console.log('  → Prompt length:', artDirectorPrompt.length)
+        console.log('  → Format:', `${widthMm}×${heightMm}mm, style: ${req.style}`)
+
         plan = await generateJson<DesignPlan>({
           task: 'design.plan',
           prompt: artDirectorPrompt,
@@ -100,8 +105,16 @@ export function useGenerateDesign() {
           schemaForClaude: designPlanJsonSchema,
           version: 'design.plan.v1',
         })
+
+        console.log('[Claude Design] ✓ Art Director completed')
+        console.log('  → Concept:', plan.concept)
+        console.log('  → Device:', plan.mainDevice)
+        console.log('  → Zones:', plan.zones.length)
+        console.log('  → Palette:', plan.palette)
+        console.log('  → Slots:', plan.slots.length)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
+        console.error('[Claude Design] ✗ Art Director failed:', msg)
         setState({ step: 'error', progress: '', error: `Art Director échoué : ${msg}`, lastResult: null, lastPlan: null })
         return
       }
@@ -114,6 +127,7 @@ export function useGenerateDesign() {
       setState((s) => ({ ...s, step: 'illustrating', progress: 'Génération créative (Nano Banana)…', lastPlan: plan }))
 
       // Génère l'image de référence via Nano Banana
+      console.log('[Claude Design] Step 2a/4: Nano Banana image generation')
       const designImageResult = await generateFullDesignImage({
         userPrompt: req.prompt,
         plan,
@@ -123,12 +137,18 @@ export function useGenerateDesign() {
         dpi,
       })
 
-      if (!designImageResult.ok || !designImageResult.dataUri) {
-        console.warn('[useGenerateDesign] Nano Banana full canvas failed:', designImageResult.error)
+      if (designImageResult.ok && designImageResult.dataUri) {
+        console.log('[Claude Design] ✓ Nano Banana image generated')
+        console.log('  → Data URI length:', designImageResult.dataUri.length)
+        // Store image for UI display
+        setState((s) => ({ ...s, nanobananaImage: designImageResult.dataUri }))
+      } else {
+        console.warn('[Claude Design] ✗ Nano Banana failed:', designImageResult.error)
         // Continue sans image de référence
       }
 
       // SVG Engineer avec multimodal (image + plan)
+      console.log('[Claude Design] Step 2b/4: SVG Engineer vectorization')
       setState((s) => ({ ...s, progress: 'Vectorisation du design (SVG Engineer)…' }))
 
       const svgEngineerPrompt = buildSvgEngineerPrompt({
@@ -149,6 +169,10 @@ export function useGenerateDesign() {
 
       let engineResult: SVGEngineResult
       try {
+        console.log('[Claude Design] SVG Engineer prompt length:', svgEngineerPrompt.length)
+        console.log('  → Image reference:', designImageResult.ok ? 'YES' : 'NO')
+        console.log('  → Multimodal mode:', designImageResult.ok && designImageResult.dataUri ? 'YES' : 'NO')
+
         engineResult = await generateJson<SVGEngineResult>({
           task: 'design.emit',
           prompt: svgEngineerPrompt,
@@ -183,8 +207,13 @@ export function useGenerateDesign() {
           version: 'design.emit.v1',
           imageDataUris: designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : undefined,
         })
+
+        console.log('[Claude Design] ✓ SVG Engineer completed')
+        console.log('  → SVG length:', engineResult.svg.length)
+        console.log('  → Rationale:', engineResult.rationale?.substring(0, 80))
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
+        console.error('[Claude Design] ✗ SVG Engineer failed:', msg)
         setState({ step: 'error', progress: '', error: `SVG Engineer échoué : ${msg}`, lastResult: null, lastPlan: plan })
         return
       }
@@ -209,13 +238,18 @@ export function useGenerateDesign() {
       // ─────────────────────────────────────────────────────────────────────────────
       // PHASE 3 : Sanitizing
       // ─────────────────────────────────────────────────────────────────────────────
+      console.log('[Claude Design] Step 3/4: Sanitizing')
       setState((s) => ({ ...s, step: 'sanitizing', progress: 'Validation du SVG…', lastPlan: plan }))
 
       let cleanSvg: string
       try {
         cleanSvg = sanitizeSvg(result.svg)
+        console.log('[Claude Design] ✓ SVG sanitized')
+        console.log('  → Original length:', result.svg.length)
+        console.log('  → Cleaned length:', cleanSvg.length)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
+        console.error('[Claude Design] ✗ SVG sanitization failed:', msg)
         setState({ step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null, lastPlan: plan })
         return
       }
@@ -262,10 +296,12 @@ export function useGenerateDesign() {
       // ─────────────────────────────────────────────────────────────────────────────
       // PHASE 4 : Rendering
       // ─────────────────────────────────────────────────────────────────────────────
+      console.log('[Claude Design] Step 4/4: Rendering on canvas')
       setState((s) => ({ ...s, step: 'rendering', progress: 'Rendu sur le canvas…', lastPlan: plan }))
 
       const canvas = globalFabricCanvas
       if (!canvas) {
+        console.error('[Claude Design] ✗ Canvas not initialized')
         setState({ step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null, lastPlan: plan })
         return
       }
@@ -307,14 +343,19 @@ export function useGenerateDesign() {
         return
       }
 
+      console.log('[Claude Design] ✓ Pipeline completed successfully!')
+      console.log('  → Total time:', new Date().getTime(), 'ms')
       setState({ step: 'done', progress: '', error: null, lastResult: result, lastPlan: plan })
+    } catch (fatalErr) {
+      console.error('[Claude Design] ✗ Fatal error:', fatalErr)
+      setState({ step: 'error', progress: '', error: `Erreur fatale : ${fatalErr instanceof Error ? fatalErr.message : String(fatalErr)}`, lastResult: null, lastPlan: null })
     } finally {
       runningRef.current = false
     }
   }, [])
 
   const reset = useCallback(() => {
-    setState({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null })
+    setState({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null, nanobananaImage: undefined })
   }, [])
 
   return { state, generate, reset }

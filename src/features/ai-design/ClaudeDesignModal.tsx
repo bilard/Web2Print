@@ -123,6 +123,7 @@ export function ClaudeDesignModal() {
         error={state.error}
         lastResult={state.lastResult}
         lastPlan={state.lastPlan}
+        nanobananaImage={state.nanobananaImage}
         onClose={handleProgressClose}
         onRetry={handleProgressRetry}
       />

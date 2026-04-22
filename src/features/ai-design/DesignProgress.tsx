@@ -9,6 +9,7 @@ interface Props {
   error: string | null
   lastResult: DesignResult | null
   lastPlan: DesignPlan | null
+  nanobananaImage?: string
   onClose: () => void
   onRetry: () => void
 }
@@ -47,7 +48,7 @@ const PIPELINE: StepDef[] = [
   },
 ]
 
-export function DesignProgress({ step, progress, error, lastResult, lastPlan, onClose, onRetry }: Props) {
+export function DesignProgress({ step, progress, error, lastResult, lastPlan, nanobananaImage, onClose, onRetry }: Props) {
   if (step === 'idle') return null
 
   const guessErrorStep = (msg: string): StepDef['id'] => {
@@ -163,6 +164,17 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, on
             )
           })}
         </ul>
+
+        {nanobananaImage && (step === 'illustrating' || step === 'sanitizing' || step === 'rendering' || step === 'done') && (
+          <div className="px-5 py-3 border-t border-neutral-800 bg-neutral-900">
+            <p className="text-xs text-neutral-400 mb-2">📷 Référence créative (Nano Banana)</p>
+            <img
+              src={nanobananaImage}
+              alt="Nano Banana reference"
+              className="w-full rounded border border-neutral-700 object-cover max-h-48"
+            />
+          </div>
+        )}
 
         {step === 'done' && lastResult && (
           <div className="px-5 py-3 border-t border-neutral-800 bg-emerald-500/5 space-y-1">
