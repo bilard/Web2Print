@@ -34,7 +34,7 @@ const PROMPT_VERSION = 'design.generate.v1'
 
 export function useGenerateDesign() {
   const runningRef = useRef(false)
-  const [state, setState] = useState<State>({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null })
+  const [state, setState] = useState<State>({ step: 'idle', progress: '', error: null, lastResult: null, lastPlan: null, nanobananaImage: undefined })
 
   const generate = useCallback(async (req: DesignRequest) => {
     if (runningRef.current) return
@@ -43,13 +43,13 @@ export function useGenerateDesign() {
       // ─────────────────────────────────────────────────────────────────────────────
       // PHASE 1 : Planning (Art Director)
       // ─────────────────────────────────────────────────────────────────────────────
-      setState({ step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null })
+      setState((s) => ({ ...s, step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null }))
 
       // Résolution du format
       let widthMm: number, heightMm: number, formatLabel: string, formatNativeDpi: number | undefined
       if (req.formatId === 'custom') {
         if (!req.customWidthMm || !req.customHeightMm) {
-          setState({ step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null })
+          setState((s) => ({ ...s, step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null }))
           return
         }
         widthMm = req.customWidthMm
@@ -59,7 +59,7 @@ export function useGenerateDesign() {
       } else {
         const f = getFormatById(req.formatId)
         if (!f) {
-          setState({ step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null, lastPlan: null })
+          setState((s) => ({ ...s, step: 'error', progress: '', error: `Format inconnu : ${req.formatId}`, lastResult: null, lastPlan: null }))
           return
         }
         widthMm = f.widthMm
@@ -119,7 +119,7 @@ export function useGenerateDesign() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error('[Claude Design] ✗ Art Director failed:', msg)
-        setState({ step: 'error', progress: '', error: `Art Director échoué : ${msg}`, lastResult: null, lastPlan: null })
+        setState((s) => ({ ...s, step: 'error', progress: '', error: `Art Director échoué : ${msg}`, lastResult: null, lastPlan: null }))
         return
       }
 
@@ -136,6 +136,9 @@ export function useGenerateDesign() {
       const supplierUrl = extractSupplierUrl(req.prompt, req.productImageUrl)
       const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
 
+      // Variable locale pour capturer l'image Nano Banana (ne pas compter sur setState asynchrone)
+      let nanobananaImageUri: string | undefined
+
       const [designImageResult, productAssetsResult] = await Promise.all([
         generateFullDesignImage({
           userPrompt: req.prompt,
@@ -151,8 +154,7 @@ export function useGenerateDesign() {
       if (designImageResult.ok && designImageResult.dataUri) {
         console.log('[Claude Design] ✓ Nano Banana image generated')
         console.log('  → Data URI length:', designImageResult.dataUri.length)
-        // Store image for UI display
-        setState((s) => ({ ...s, nanobananaImage: designImageResult.dataUri }))
+        nanobananaImageUri = designImageResult.dataUri
       } else {
         console.warn('[Claude Design] ✗ Nano Banana failed:', designImageResult.error)
         // Continue sans image de référence
@@ -168,8 +170,8 @@ export function useGenerateDesign() {
       }
 
       // SVG Engineer avec multimodal (image + plan)
-      console.log('[Claude Design] Step 2b/4: SVG Engineer vectorization')
-      setState((s) => ({ ...s, progress: 'Vectorisation du design (SVG Engineer)…' }))
+      console.log('[Claude Design] Step 2b/4: SVG Engineer structure generation')
+      setState((s) => ({ ...s, progress: 'Structure SVG (Claude)…' }))
 
       const svgEngineerPrompt = buildSvgEngineerPrompt({
         plan,
@@ -244,9 +246,11 @@ export function useGenerateDesign() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error('[Claude Design] ✗ SVG Engineer failed:', msg)
-        setState({ step: 'error', progress: '', error: `SVG Engineer échoué : ${msg}`, lastResult: null, lastPlan: plan })
+        setState((s) => ({ ...s, step: 'error', progress: '', error: `SVG Engineer échoué : ${msg}`, lastResult: null, lastPlan: plan }))
         return
       }
+
+      console.log('[Claude Design] Image injection strategy: Nano Banana as Layer 1 background')
 
       // Mappe le résultat SVG Engineer → DesignResult
       const fontsUsed = Array.from(new Set([plan.typography.heroFont, plan.typography.bodyFont]))
@@ -269,7 +273,7 @@ export function useGenerateDesign() {
       // PHASE 3 : Sanitizing
       // ─────────────────────────────────────────────────────────────────────────────
       console.log('[Claude Design] Step 3/4: Sanitizing')
-      setState((s) => ({ ...s, step: 'sanitizing', progress: 'Validation du SVG…', lastPlan: plan }))
+      setState((s) => ({ ...s, step: 'sanitizing', progress: 'Validation du SVG…', lastPlan: plan, nanobananaImage: nanobananaImageUri }))
 
       let cleanSvg: string
       try {
@@ -280,7 +284,7 @@ export function useGenerateDesign() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error('[Claude Design] ✗ SVG sanitization failed:', msg)
-        setState({ step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null, lastPlan: plan })
+        setState((s) => ({ ...s, step: 'error', progress: '', error: `SVG invalide : ${msg}`, lastResult: null, lastPlan: plan }))
         return
       }
 
@@ -297,8 +301,14 @@ export function useGenerateDesign() {
         }
       }
 
-      // Pré-remplissage de l'image produit pour le slot avec role "product" (optionnel)
+      // Injecter l'image Nano Banana comme background (placeholder:nanobanana)
       let slotDataUris: Map<string, string> = new Map()
+      if (nanobananaImageUri) {
+        slotDataUris.set('nanobanana', nanobananaImageUri)
+        console.log('[Claude Design] Injecting Nano Banana image as background asset')
+      }
+
+      // Pré-remplissage de l'image produit pour le slot avec role "product" (optionnel)
       if (req.productImageUrl) {
         const productSlot = result.slots.find((s) => s.role === 'product')
         if (productSlot) {
@@ -316,7 +326,7 @@ export function useGenerateDesign() {
         }
       }
 
-      // Remplacer les placeholders image par les data URIs pré-remplis
+      // Remplacer tous les placeholders image par les data URIs pré-remplis
       let finalSvg = cleanSvg
       for (const [slotId, dataUri] of slotDataUris) {
         const placeholderHref = `placeholder:${slotId}`
@@ -332,7 +342,7 @@ export function useGenerateDesign() {
       const canvas = globalFabricCanvas
       if (!canvas) {
         console.error('[Claude Design] ✗ Canvas not initialized')
-        setState({ step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null, lastPlan: plan })
+        setState((s) => ({ ...s, step: 'error', progress: '', error: 'Canvas non initialisé', lastResult: null, lastPlan: plan }))
         return
       }
 
@@ -369,16 +379,17 @@ export function useGenerateDesign() {
         requestAnimationFrame(() => globalFitCanvas?.())
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        setState({ step: 'error', progress: '', error: `Parse SVG échoué : ${msg}`, lastResult: null, lastPlan: plan })
+        setState((s) => ({ ...s, step: 'error', progress: '', error: `Parse SVG échoué : ${msg}`, lastResult: null, lastPlan: plan }))
         return
       }
 
       console.log('[Claude Design] ✓ Pipeline completed successfully!')
       console.log('  → Total time:', new Date().getTime(), 'ms')
-      setState({ step: 'done', progress: '', error: null, lastResult: result, lastPlan: plan })
+      console.log('[Claude Design] Setting state to done with nanobananaImageUri:', !!nanobananaImageUri)
+      setState((s) => ({ ...s, step: 'done', progress: '', error: null, lastResult: result, lastPlan: plan, nanobananaImage: nanobananaImageUri }))
     } catch (fatalErr) {
       console.error('[Claude Design] ✗ Fatal error:', fatalErr)
-      setState({ step: 'error', progress: '', error: `Erreur fatale : ${fatalErr instanceof Error ? fatalErr.message : String(fatalErr)}`, lastResult: null, lastPlan: null })
+      setState((s) => ({ ...s, step: 'error', progress: '', error: `Erreur fatale : ${fatalErr instanceof Error ? fatalErr.message : String(fatalErr)}`, lastResult: null, lastPlan: null }))
     } finally {
       runningRef.current = false
     }
