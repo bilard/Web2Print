@@ -28,6 +28,9 @@ export interface BuildSvgEngineerPromptArgs {
 
   /** Fonts disponibles */
   availableFonts: string[]
+
+  /** Assets du fournisseur (logos, pictos) */
+  productAssets?: Array<{ type: string; title?: string }>
 }
 
 export function buildSvgEngineerPrompt(args: BuildSvgEngineerPromptArgs): string {
@@ -90,6 +93,12 @@ ${zoneDescriptions}
 
 **Image slots** :
 ${slotDescriptions}
+
+${args.productAssets && args.productAssets.length > 0 ? `**Assets du fournisseur disponibles** :
+${args.productAssets.map((a) => `- ${a.type}: ${a.title || '(sans titre)'}`).join('\n')}
+
+⚠️ Ces assets seront fournis comme images dans le message multimodal. Intègre-les dans le SVG si pertinent (logo en coin, pictos techniques, etc.).
+` : ''}
 
 ## Contraintes techniques
 

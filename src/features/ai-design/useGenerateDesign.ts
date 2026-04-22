@@ -7,6 +7,7 @@ import { buildArtDirectorPrompt } from './artDirectorPrompt'
 import { designPlanSchema, designPlanJsonSchema, type DesignPlan } from './artDirectorSchema'
 import { buildSvgEngineerPrompt } from './svgEngineerPrompt'
 import { generateFullDesignImage } from './generateFullDesignImage'
+import { generateProductAssets, extractSupplierUrl } from './generateProductAssets'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
 import type { DesignRequest, DesignResult, DesignStyle } from './types'
@@ -125,20 +126,27 @@ export function useGenerateDesign() {
       setState((s) => ({ ...s, lastPlan: plan }))
 
       // ─────────────────────────────────────────────────────────────────────────────
-      // PHASE 2 : Illustration (Nano Banana + SVG Engineer)
+      // PHASE 2 : Illustration (Nano Banana + Product Assets + SVG Engineer)
       // ─────────────────────────────────────────────────────────────────────────────
-      setState((s) => ({ ...s, step: 'illustrating', progress: 'Génération créative (Nano Banana)…', lastPlan: plan }))
+      setState((s) => ({ ...s, step: 'illustrating', progress: 'Génération créative (Nano Banana + Assets)…', lastPlan: plan }))
 
-      // Génère l'image de référence via Nano Banana
-      console.log('[Claude Design] Step 2a/4: Nano Banana image generation')
-      const designImageResult = await generateFullDesignImage({
-        userPrompt: req.prompt,
-        plan,
-        widthMm,
-        heightMm,
-        style: req.style as DesignStyle,
-        dpi,
-      })
+      // Parallèle: Nano Banana image generation + Product assets scraping
+      console.log('[Claude Design] Step 2a/4: Nano Banana image generation + Product assets scraping')
+
+      const supplierUrl = extractSupplierUrl(req.prompt, req.productImageUrl)
+      const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
+
+      const [designImageResult, productAssetsResult] = await Promise.all([
+        generateFullDesignImage({
+          userPrompt: req.prompt,
+          plan,
+          widthMm,
+          heightMm,
+          style: req.style as DesignStyle,
+          dpi,
+        }),
+        supplierUrl && productName ? generateProductAssets(supplierUrl, productName) : Promise.resolve({ ok: true, assets: [] }),
+      ])
 
       if (designImageResult.ok && designImageResult.dataUri) {
         console.log('[Claude Design] ✓ Nano Banana image generated')
@@ -148,6 +156,15 @@ export function useGenerateDesign() {
       } else {
         console.warn('[Claude Design] ✗ Nano Banana failed:', designImageResult.error)
         // Continue sans image de référence
+      }
+
+      if (productAssetsResult.ok && productAssetsResult.assets?.length) {
+        console.log('[Claude Design] ✓ Product assets extracted:', productAssetsResult.assets.length)
+        productAssetsResult.assets.forEach((a) => {
+          console.log(`  → ${a.type}: ${a.title || '(no title)'}`)
+        })
+      } else if (!productAssetsResult.ok) {
+        console.warn('[Claude Design] Product assets failed:', (productAssetsResult as any).error)
       }
 
       // SVG Engineer avec multimodal (image + plan)
@@ -162,6 +179,7 @@ export function useGenerateDesign() {
         includeBleed: req.includeBleed,
         bleedMm: effectiveBleed,
         availableFonts,
+        productAssets: productAssetsResult.assets,
       })
 
       interface SVGEngineResult {
@@ -208,7 +226,15 @@ export function useGenerateDesign() {
             required: ['svg'],
           } as Record<string, unknown>,
           version: 'design.emit.v1',
-          imageDataUris: designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : undefined,
+          imageDataUris: [
+            ...(designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : []),
+            ...(productAssetsResult.assets?.map((a) => a.dataUri) ?? []),
+          ].filter(Boolean).length > 0
+            ? [
+                ...(designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : []),
+                ...(productAssetsResult.assets?.map((a) => a.dataUri) ?? []),
+              ]
+            : undefined,
         })
 
         console.log('[Claude Design] ✓ SVG Engineer completed')
