@@ -21,13 +21,15 @@ const TABS = [
 
 // Derive format from canvas dimensions (find closest match)
 function findFormatByDimensions(widthPx: number, heightPx: number, dpi: number): string {
-  const widthMm = (widthPx * 25.4) / dpi
-  const heightMm = (heightPx * 25.4) / dpi
-
   let bestMatch = 'a4'
   let bestDistance = Infinity
 
   for (const fmt of PRINT_FORMATS) {
+    // Use format's native DPI if available, otherwise use provided dpi
+    const formatDpi = fmt.nativeDpi ?? dpi
+    const widthMm = (widthPx * 25.4) / formatDpi
+    const heightMm = (heightPx * 25.4) / formatDpi
+
     const distance = Math.abs(fmt.widthMm - widthMm) + Math.abs(fmt.heightMm - heightMm)
     if (distance < bestDistance) {
       bestDistance = distance
