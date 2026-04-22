@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { generateJson } from '@/features/ai/llmRouter'
 import { DesignResultSchema, DesignResultJsonSchema } from './designSchema'
 import { buildArtDirectorPrompt } from './artDirectorPrompt'
-import { designPlanSchema, type DesignPlan } from './artDirectorSchema'
+import { designPlanSchema, designPlanJsonSchema, type DesignPlan } from './artDirectorSchema'
 import { buildSvgEngineerPrompt } from './svgEngineerPrompt'
 import { generateFullDesignImage } from './generateFullDesignImage'
 import { sanitizeSvg } from './sanitizeSvg'
@@ -96,8 +96,8 @@ export function useGenerateDesign() {
           task: 'design.plan',
           prompt: artDirectorPrompt,
           schema: designPlanSchema,
-          schemaForLLM: require('./artDirectorSchema').designPlanJsonSchema,
-          schemaForClaude: require('./artDirectorSchema').designPlanJsonSchema,
+          schemaForLLM: designPlanJsonSchema,
+          schemaForClaude: designPlanJsonSchema,
           version: 'design.plan.v1',
         })
       } catch (err) {
