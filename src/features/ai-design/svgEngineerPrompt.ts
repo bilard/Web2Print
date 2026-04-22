@@ -49,15 +49,22 @@ export function buildSvgEngineerPrompt(args: BuildSvgEngineerPromptArgs): string
     )
     .join('\n')
 
-  return `Tu es un **SVG Engineer Senior** spécialisé en design print vectoriel. Tu as reçu :
-1. Une IMAGE de référence (générée par Nano Banana) montrant le design créatif complet.
+  return `Tu es un **SVG Engineer Senior** spécialisé en vectorisation de designs print haute-fidélité. Tu as reçu :
+1. Une IMAGE de référence (générée par Nano Banana) montrant le design créatif PROFESSIONNEL complet.
 2. Un PLAN structuré détaillant zones, typographie, palette, slots images.
 
-Ta mission : **reproduire le design de l'image en SVG vectoriel éditable**.
+Ta mission CRITIQUE : **reproduire FIDÈLEMENT le design de l'IMAGE en SVG vectoriel éditable**.
+
+⚠️ SUCCÈS = l'image référence et le SVG final ressemblent visuellement (composition, hiérarchie, spacing, lisibilité).
 
 ## Directives critiques
 
-- **Respecte le design visuel de l'image** : composition, hiérarchie, spacing, couleurs, typographie.
+- **VISUAL FIDELITY FIRST** : L'image référence EST la source de vérité. Reproduis-la précisément :
+  - Composition générale, position des éléments, overlaps, angles
+  - Hiérarchie visuelle (titres grands/gras, body petit/léger, accents colorés)
+  - Espacement blanc, marges, alignements
+  - Couleurs exactes selon palette (le plan est une contrainte supplémentaire, pas l'inverse)
+- **Lisibilité maximale** : Chaque élément texte DOIT être lisible sans chevauchement. Si textes se chevauchent dans l'image, maîtrise le spacing.
 - **TOUT texte DOIT être éditable** : utilise \`<text>\`, \`<tspan>\` avec attributs position/style, PAS de rasterization.
 - **Image slots** : place \`<image href="placeholder:<id>" ... />\` pour chaque slot — l'UI remplira ces placeholders plus tard.
 - **Pas de script, pas d'event handlers** (\`on*\`), pas de \`<foreignObject>\`.
@@ -92,6 +99,16 @@ ${args.availableFonts.map((f) => `  • ${f}`).join('\n')}
 - **Couleurs** : hex \`#RRGGBB\` uniquement (pas de named colors comme "red")
 - **Zone de sécurité** : aucun texte à moins de 5 mm du bord fini (si pas de bleed)
 
+## Avant d'émettre ton SVG : Auto-check
+
+1. L'image référence et mon SVG ont-ils la MÊME composition générale ? (positions, overlaps, angles)
+2. TOUS les textes sont-ils lisibles et non chevauchés ?
+3. La hiérarchie visuelle est-elle respectée ? (titres en grand, body en petit, accents colorés)
+4. Les couleurs correspondent-elles au palette ?
+5. Les zones d'image slots sont-elles bien plac ées ?
+
+Si tu réponds NON à l'une de ces questions, revise ton SVG AVANT d'émettre.
+
 ## Output format
 
 Produis le SVG via l'outil \`emit_response\` (tool-use forcé) avec ce JSON :
@@ -110,9 +127,9 @@ Produis le SVG via l'outil \`emit_response\` (tool-use forcé) avec ce JSON :
       promptSuggestion: s.description,
     })),
   )},
-  "rationale": "Explication brève des choix layout/typo (1-2 phrases)"
+  "rationale": "Note : comment tu as reproduit l'image référence (1-2 phrases)"
 }
 \`\`\`
 
-Sois ambitieux sur la typographie, la hiérarchie visuelle, et la présentation print.`
+**Rappel final** : C'est pas un prompt créatif, c'est une VECTORISATION. Suis l'image.`
 }
