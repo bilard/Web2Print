@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { Step } from './useGenerateDesign'
 import type { DesignResult } from './types'
 import type { DesignPlan } from './artDirectorSchema'
-import { analyzeAndReport } from './analyzeSvgOverlaps'
+import { analyzeAndReport, compareWithPlan } from './analyzeSvgOverlaps'
 
 interface Props {
   step: Step
@@ -86,6 +86,20 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
             'W (mm)': z.bboxMm.w.toFixed(2),
             'H (mm)': z.bboxMm.h.toFixed(2),
             'Fill': z.fill || 'transparent',
+          }))
+        )
+        console.groupEnd()
+
+        // Comparer avec le SVG généré
+        const planVsSvg = compareWithPlan(lastResult.svg, lastPlan)
+        console.group('[SVG Debug] Plan vs SVG Comparison')
+        console.table(
+          planVsSvg.map((comp) => ({
+            'Zone': comp.plannedZone.id,
+            'Planned X,Y': `${comp.plannedZone.x.toFixed(1)},${comp.plannedZone.y.toFixed(1)}`,
+            'Matched': comp.matched ? '✓' : '✗',
+            'Δx,Δy': comp.deviation ? `${comp.deviation.dx.toFixed(1)},${comp.deviation.dy.toFixed(1)}` : 'N/A',
+            'Δw,Δh': comp.deviation ? `${comp.deviation.dw.toFixed(1)},${comp.deviation.dh.toFixed(1)}` : 'N/A',
           }))
         )
         console.groupEnd()

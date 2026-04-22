@@ -2,6 +2,8 @@
  * Analyse le SVG généré pour identifier les zones de texte qui se chevauchent
  */
 
+import type { DesignPlan } from './artDirectorSchema'
+
 export interface TextZone {
   id: string
   x: number
@@ -18,6 +20,25 @@ export interface Overlap {
   overlapArea: number
 }
 
+export interface PlanVsSvgComparison {
+  plannedZone: {
+    id: string
+    role: string
+    x: number
+    y: number
+    w: number
+    h: number
+  }
+  actualZone: TextZone | null
+  matched: boolean
+  deviation?: {
+    dx: number
+    dy: number
+    dw: number
+    dh: number
+  }
+}
+
 /**
  * Extrait toutes les zones de texte du SVG
  */
@@ -31,34 +52,61 @@ export function extractTextZones(svgString: string): TextZone[] {
   }
 
   const zones: TextZone[] = []
-  const textElements = doc.querySelectorAll('text, tspan')
+  const textElements = doc.querySelectorAll('text')
 
-  textElements.forEach((el, idx) => {
-    const x = parseFloat(el.getAttribute('x') || '0')
-    const y = parseFloat(el.getAttribute('y') || '0')
-    const dx = parseFloat(el.getAttribute('dx') || '0')
-    const dy = parseFloat(el.getAttribute('dy') || '0')
-    const text = el.textContent || ''
+  textElements.forEach((textEl, idx) => {
+    // Récupérer la position du <text>
+    let x = parseFloat(textEl.getAttribute('x') || '0')
+    let y = parseFloat(textEl.getAttribute('y') || '0')
+    const dx = parseFloat(textEl.getAttribute('dx') || '0')
+    const dy = parseFloat(textEl.getAttribute('dy') || '0')
 
-    // Estimer la largeur et la hauteur du texte
-    // Font size: défaut 12 si absent
-    const fontSize = parseFloat(el.getAttribute('font-size') || '12')
-    const fontWeight = el.getAttribute('font-weight') || 'normal'
+    x += dx
+    y += dy
 
-    // Approximation: 1 caractère ≈ 0.5 * fontSize en largeur
-    const estimatedWidth = text.length * (fontSize * 0.5)
-    const estimatedHeight = fontSize * 1.2 // line-height factor
+    // Récupérer la taille de police
+    const fontSize = parseFloat(textEl.getAttribute('font-size') || '12')
+    const textAnchor = textEl.getAttribute('text-anchor') || 'start'
 
-    const zoneId = el.id || `text-${idx}`
+    // Récupérer tout le contenu texte (inclure les tspan)
+    const tspans = Array.from(textEl.querySelectorAll('tspan'))
+    const allText = tspans.length > 0
+      ? tspans.map(ts => ts.textContent || '').join('\n')
+      : (textEl.textContent || '')
+
+    // Estimer les dimensions
+    // Approximation plus réaliste:
+    // - En monospace, 1 char ≈ 0.6 * fontSize
+    // - En sans-serif, 1 char ≈ 0.5 * fontSize
+    // - Prendre la ligne la plus longue pour la largeur
+    const fontFamily = textEl.getAttribute('font-family') || 'Arial'
+    const isMonospace = fontFamily.toLowerCase().includes('mono') || fontFamily.toLowerCase().includes('courier')
+    const charWidth = isMonospace ? fontSize * 0.6 : fontSize * 0.5
+
+    const lines = allText.split('\n')
+    const maxLineLength = Math.max(...lines.map(l => l.length), 0)
+    const estimatedWidth = maxLineLength * charWidth
+    const estimatedHeight = lines.length * (fontSize * 1.3) // line-height incluant spacing
+
+    // Ajuster X selon text-anchor
+    let adjustedX = x
+    if (textAnchor === 'middle') {
+      adjustedX = x - (estimatedWidth / 2)
+    } else if (textAnchor === 'end') {
+      adjustedX = x - estimatedWidth
+    }
+
+    // Ne pas inclure les <tspan> individuels si on a déjà le <text>
+    const zoneId = textEl.id || `text-${idx}`
 
     zones.push({
       id: zoneId,
-      x: x + dx,
-      y: y + dy,
-      width: estimatedWidth,
-      height: estimatedHeight,
-      text: text.trim().substring(0, 50),
-      element: el,
+      x: adjustedX,
+      y: y,
+      width: Math.max(estimatedWidth, 1), // minimum 1 pour éviter division par zéro
+      height: Math.max(estimatedHeight, fontSize * 0.8),
+      text: allText.substring(0, 60).replace(/\n/g, ' '),
+      element: textEl,
     })
   })
 
@@ -178,4 +226,46 @@ export function analyzeAndReport(svgString: string): {
     overlaps,
     hasIssues: overlaps.length > 0,
   }
+}
+
+/**
+ * Compar le plan Art Director avec le SVG généré pour identifier les déviation
+ */
+export function compareWithPlan(svgString: string, plan: DesignPlan): PlanVsSvgComparison[] {
+  const svgZones = extractTextZones(svgString)
+
+  return plan.zones.map((plannedZone) => {
+    // Chercher une zone correspondante dans le SVG (par proximité de coordonnées)
+    // Tolérance: 5mm de déviation
+    const tolerance = 5
+    const matchedZone = svgZones.find(
+      (z) =>
+        Math.abs(z.x - plannedZone.bboxMm.x) < tolerance &&
+        Math.abs(z.y - plannedZone.bboxMm.y) < tolerance
+    )
+
+    const comparison: PlanVsSvgComparison = {
+      plannedZone: {
+        id: plannedZone.id,
+        role: plannedZone.role,
+        x: plannedZone.bboxMm.x,
+        y: plannedZone.bboxMm.y,
+        w: plannedZone.bboxMm.w,
+        h: plannedZone.bboxMm.h,
+      },
+      actualZone: matchedZone || null,
+      matched: !!matchedZone,
+    }
+
+    if (matchedZone) {
+      comparison.deviation = {
+        dx: matchedZone.x - plannedZone.bboxMm.x,
+        dy: matchedZone.y - plannedZone.bboxMm.y,
+        dw: matchedZone.width - plannedZone.bboxMm.w,
+        dh: matchedZone.height - plannedZone.bboxMm.h,
+      }
+    }
+
+    return comparison
+  })
 }
