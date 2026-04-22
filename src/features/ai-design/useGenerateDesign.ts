@@ -240,6 +240,7 @@ export function useGenerateDesign() {
         console.log('[Claude Design] ✓ SVG Engineer completed')
         console.log('  → SVG length:', engineResult.svg.length)
         console.log('  → Rationale:', engineResult.rationale?.substring(0, 80))
+        console.log('  → SVG first 500 chars:', engineResult.svg.substring(0, 500))
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error('[Claude Design] ✗ SVG Engineer failed:', msg)
