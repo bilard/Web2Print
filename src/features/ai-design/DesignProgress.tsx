@@ -176,17 +176,6 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
           </div>
         )}
 
-        {nanobananaImage && (step === 'done') && (
-          <div className="px-5 py-3 border-t border-neutral-800 bg-neutral-900">
-            <p className="text-xs text-neutral-400 mb-2">🎨 Référence créative (Nano Banana)</p>
-            <img
-              src={nanobananaImage}
-              alt="Nano Banana reference"
-              className="w-full rounded border border-neutral-700 object-contain max-h-64"
-            />
-          </div>
-        )}
-
         {step === 'done' && lastResult && (
           <div className="px-5 py-3 border-t border-neutral-800 bg-emerald-500/5 space-y-1">
             <p className="text-xs text-emerald-300 font-medium">Design prêt sur le canvas</p>
@@ -212,39 +201,52 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-neutral-800 bg-[#0f0f0f]">
-          {step === 'done' && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-colors"
-            >
-              Voir le résultat
-            </button>
-          )}
-          {step === 'error' && (
-            <>
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-3 py-1.5 rounded border border-neutral-700 text-neutral-300 text-sm hover:bg-neutral-800 transition-colors"
-              >
-                Fermer
-              </button>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="px-3 py-1.5 rounded bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-colors"
-              >
-                Réessayer
-              </button>
-            </>
-          )}
-          {isRunning && (
-            <span className="text-[11px] text-neutral-500">
-              Ne ferme pas cette fenêtre pendant la génération
-            </span>
-          )}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-neutral-800 bg-[#0f0f0f]">
+          <div>
+            {isRunning && (
+              <span className="text-[11px] text-neutral-500">
+                Ne ferme pas cette fenêtre pendant la génération
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            {step === 'done' && (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 py-1.5 rounded border border-neutral-700 text-neutral-300 text-sm hover:bg-neutral-800 transition-colors"
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 py-1.5 rounded bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-colors"
+                >
+                  Voir le résultat
+                </button>
+              </>
+            )}
+            {step === 'error' && (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 py-1.5 rounded border border-neutral-700 text-neutral-300 text-sm hover:bg-neutral-800 transition-colors"
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="px-3 py-1.5 rounded bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-400 transition-colors"
+                >
+                  Réessayer
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
