@@ -137,20 +137,21 @@ export function DesignPromptPanel() {
         />
       </div>
 
-      <FormatSelector
-        formatId={brief.formatId}
-        customWidthMm={brief.customWidthMm}
-        customHeightMm={brief.customHeightMm}
-        disabled={isRunning}
-        onChange={(v) => {
-          userChangedFormatRef.current = true
-          setBrief({
-            formatId: v.formatId,
-            customWidthMm: v.customWidthMm,
-            customHeightMm: v.customHeightMm,
-          })
-        }}
-      />
+      {!isRunning && (
+        <FormatSelector
+          formatId={brief.formatId}
+          customWidthMm={brief.customWidthMm}
+          customHeightMm={brief.customHeightMm}
+          onChange={(v) => {
+            userChangedFormatRef.current = true
+            setBrief({
+              formatId: v.formatId,
+              customWidthMm: v.customWidthMm,
+              customHeightMm: v.customHeightMm,
+            })
+          }}
+        />
+      )}
 
       <div className="space-y-1">
         <label className="text-xs uppercase tracking-wide text-neutral-400">Style</label>
