@@ -45,7 +45,7 @@ export function useGenerateDesign() {
       setState({ step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null })
 
       // Résolution du format
-      let widthMm: number, heightMm: number, formatLabel: string
+      let widthMm: number, heightMm: number, formatLabel: string, formatNativeDpi: number | undefined
       if (req.formatId === 'custom') {
         if (!req.customWidthMm || !req.customHeightMm) {
           setState({ step: 'error', progress: '', error: 'Dimensions custom manquantes', lastResult: null, lastPlan: null })
@@ -54,6 +54,7 @@ export function useGenerateDesign() {
         widthMm = req.customWidthMm
         heightMm = req.customHeightMm
         formatLabel = `Custom ${widthMm} × ${heightMm} mm`
+        formatNativeDpi = undefined
       } else {
         const f = getFormatById(req.formatId)
         if (!f) {
@@ -63,9 +64,11 @@ export function useGenerateDesign() {
         widthMm = f.widthMm
         heightMm = f.heightMm
         formatLabel = f.label
+        formatNativeDpi = f.nativeDpi
       }
 
-      const { bleedMm: storeBleed, dpi } = useUIStore.getState()
+      const { bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
+      const dpi = formatNativeDpi ?? storeDpi
       const effectiveBleed = req.includeBleed ? Math.max(storeBleed, 3) : 0
 
       // Garde le store UI synchro pour que l'overlay de repères (useEffect dans CanvasContainer)
