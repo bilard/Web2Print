@@ -55,59 +55,81 @@ export function extractTextZones(svgString: string): TextZone[] {
   const textElements = doc.querySelectorAll('text')
 
   textElements.forEach((textEl, idx) => {
-    // Récupérer la position du <text>
-    let x = parseFloat(textEl.getAttribute('x') || '0')
-    let y = parseFloat(textEl.getAttribute('y') || '0')
-    const dx = parseFloat(textEl.getAttribute('dx') || '0')
-    const dy = parseFloat(textEl.getAttribute('dy') || '0')
-
-    x += dx
-    y += dy
+    // Récupérer la position du <text> parent
+    let parentX = parseFloat(textEl.getAttribute('x') || '')
+    let parentY = parseFloat(textEl.getAttribute('y') || '')
 
     // Récupérer la taille de police
-    const fontSize = parseFloat(textEl.getAttribute('font-size') || '12')
+    const parentFontSize = parseFloat(textEl.getAttribute('font-size') || '12')
     const textAnchor = textEl.getAttribute('text-anchor') || 'start'
-
-    // Récupérer tout le contenu texte (inclure les tspan)
-    const tspans = Array.from(textEl.querySelectorAll('tspan'))
-    const allText = tspans.length > 0
-      ? tspans.map(ts => ts.textContent || '').join('\n')
-      : (textEl.textContent || '')
-
-    // Estimer les dimensions
-    // Approximation plus réaliste:
-    // - En monospace, 1 char ≈ 0.6 * fontSize
-    // - En sans-serif, 1 char ≈ 0.5 * fontSize
-    // - Prendre la ligne la plus longue pour la largeur
     const fontFamily = textEl.getAttribute('font-family') || 'Arial'
     const isMonospace = fontFamily.toLowerCase().includes('mono') || fontFamily.toLowerCase().includes('courier')
-    const charWidth = isMonospace ? fontSize * 0.6 : fontSize * 0.5
+    const charWidth = isMonospace ? parentFontSize * 0.6 : parentFontSize * 0.5
 
-    const lines = allText.split('\n')
-    const maxLineLength = Math.max(...lines.map(l => l.length), 0)
-    const estimatedWidth = maxLineLength * charWidth
-    const estimatedHeight = lines.length * (fontSize * 1.3) // line-height incluant spacing
+    // Récupérer les tspan
+    const tspans = Array.from(textEl.querySelectorAll('tspan'))
 
-    // Ajuster X selon text-anchor
-    let adjustedX = x
-    if (textAnchor === 'middle') {
-      adjustedX = x - (estimatedWidth / 2)
-    } else if (textAnchor === 'end') {
-      adjustedX = x - estimatedWidth
+    if (tspans.length > 0) {
+      // Si y a des tspan, utiliser leurs coordonnées individuelles
+      tspans.forEach((tspan, tspanIdx) => {
+        const tspanX = parseFloat(tspan.getAttribute('x') || '')
+        const tspanY = parseFloat(tspan.getAttribute('y') || '')
+        const tspanFontSize = parseFloat(tspan.getAttribute('font-size') || parentFontSize)
+
+        const text = tspan.textContent || ''
+        const estimatedWidth = text.length * charWidth
+        const estimatedHeight = tspanFontSize * 1.2
+
+        let adjustedX = isNaN(tspanX) ? (isNaN(parentX) ? 0 : parentX) : tspanX
+        const adjustedY = isNaN(tspanY) ? (isNaN(parentY) ? 0 : parentY) : tspanY
+
+        // Ajuster X selon text-anchor
+        if (textAnchor === 'middle') {
+          adjustedX = adjustedX - (estimatedWidth / 2)
+        } else if (textAnchor === 'end') {
+          adjustedX = adjustedX - estimatedWidth
+        }
+
+        const zoneId = tspan.id || `${textEl.id || `text-${idx}`}-tspan${tspanIdx}`
+
+        zones.push({
+          id: zoneId,
+          x: adjustedX,
+          y: adjustedY,
+          width: Math.max(estimatedWidth, 1),
+          height: Math.max(estimatedHeight, tspanFontSize * 0.8),
+          text: text.substring(0, 60),
+          element: tspan,
+        })
+      })
+    } else {
+      // Si pas de tspan, utiliser le texte du parent
+      const allText = textEl.textContent || ''
+      const estimatedWidth = allText.length * charWidth
+      const estimatedHeight = parentFontSize * 1.2
+
+      let adjustedX = isNaN(parentX) ? 0 : parentX
+      const adjustedY = isNaN(parentY) ? 0 : parentY
+
+      // Ajuster X selon text-anchor
+      if (textAnchor === 'middle') {
+        adjustedX = adjustedX - (estimatedWidth / 2)
+      } else if (textAnchor === 'end') {
+        adjustedX = adjustedX - estimatedWidth
+      }
+
+      const zoneId = textEl.id || `text-${idx}`
+
+      zones.push({
+        id: zoneId,
+        x: adjustedX,
+        y: adjustedY,
+        width: Math.max(estimatedWidth, 1),
+        height: Math.max(estimatedHeight, parentFontSize * 0.8),
+        text: allText.substring(0, 60).replace(/\n/g, ' '),
+        element: textEl,
+      })
     }
-
-    // Ne pas inclure les <tspan> individuels si on a déjà le <text>
-    const zoneId = textEl.id || `text-${idx}`
-
-    zones.push({
-      id: zoneId,
-      x: adjustedX,
-      y: y,
-      width: Math.max(estimatedWidth, 1), // minimum 1 pour éviter division par zéro
-      height: Math.max(estimatedHeight, fontSize * 0.8),
-      text: allText.substring(0, 60).replace(/\n/g, ' '),
-      element: textEl,
-    })
   })
 
   return zones
