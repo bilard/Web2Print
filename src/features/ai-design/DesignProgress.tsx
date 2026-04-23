@@ -20,28 +20,28 @@ interface StepDef {
 
 const PIPELINE: StepDef[] = [
   {
-    id: 'planning',
-    agent: 'Art Director',
-    role: 'Planification',
-    description: 'Analyse du brief et composition de la structure visuelle (zones, typographie, palette, slots images).',
+    id: 'illustrating',
+    agent: 'Scraper',
+    role: 'Assets produit',
+    description: 'Récupération des assets depuis le site fournisseur (logo, pictos, photos produit).',
   },
   {
-    id: 'illustrating',
-    agent: 'SVG Engineer + Nano Banana',
-    role: 'Génération',
-    description: 'Construction du SVG vectoriel et génération des images IA des slots, en parallèle.',
+    id: 'planning',
+    agent: 'Template Filler',
+    role: 'Copy & template',
+    description: 'Sélection du template adapté au format et rédaction du copy (titre, features, prix, CTA).',
   },
   {
     id: 'sanitizing',
-    agent: 'Sanitizer',
-    role: 'Validation',
-    description: 'Nettoyage et validation du SVG pour assurer la compatibilité avec Fabric.js.',
+    agent: 'Assembler',
+    role: 'SVG vectoriel',
+    description: 'Projection du template sur les dimensions canvas, substitution palette, injection des assets.',
   },
   {
     id: 'rendering',
     agent: 'Canvas',
     role: 'Rendu',
-    description: 'Import du design sur le canvas, ajustement à la taille du document.',
+    description: 'Import du design sur le canvas comme objets Fabric éditables.',
   },
 ]
 
