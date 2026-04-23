@@ -99,11 +99,11 @@ describe('assembleSvgFromTemplate', () => {
       heightMm: 200,
       bleedMm: 0,
     })
-    // logo bbox = {0.04, 0.025, 0.24, 0.065} → (4, 5, 24, 13) mm
-    expect(svg).toMatch(/id="logo"[^>]*x="4"[^>]*y="5"[^>]*width="24"[^>]*height="13"/)
+    // logo bbox = {0.03, 0.02, 0.20, 0.10} → (3, 4, 20, 20) mm sur 100×200mm
+    expect(svg).toMatch(/id="logo"[^>]*x="3"[^>]*y="4"[^>]*width="20"[^>]*height="20"/)
   })
 
-  it('emits cta with background rect', () => {
+  it('emits cta as text (no bg in new portrait — CTA is a link next to the price block)', () => {
     const svg = assembleSvgFromTemplate({
       template: retailProductPortrait,
       fillData,
@@ -111,7 +111,6 @@ describe('assembleSvgFromTemplate', () => {
       heightMm: 297,
       bleedMm: 0,
     })
-    expect(svg).toContain('id="cta-bg"')
     expect(svg).toContain('id="cta"')
     expect(svg).toMatch(/data-content="ACHETER MAINTENANT"/)
   })
@@ -157,7 +156,10 @@ describe('assembleSvgFromTemplate', () => {
     expect(svg).toMatch(/<circle id="feature-1-picto-bg"/)
   })
 
-  it('emits tagline when copy.tagline is provided', () => {
+  it('omits tagline when template has no taglineHeader slot', () => {
+    // Le template portrait actuel n'a pas de slot taglineHeader (titre dans
+    // le header remplace cette fonction). Même avec une tagline dans fillData,
+    // rien ne doit être émis.
     const withTagline = {
       ...fillData,
       copy: { ...fillData.copy, tagline: 'PROFITEZ DE L\'OFFRE MAKITA !' },
@@ -169,22 +171,10 @@ describe('assembleSvgFromTemplate', () => {
       heightMm: 297,
       bleedMm: 0,
     })
-    expect(svg).toContain('id="taglineHeader"')
-    expect(svg).toMatch(/data-content="PROFITEZ DE L&#39;OFFRE MAKITA !"|data-content="PROFITEZ DE L'OFFRE MAKITA !"/)
-  })
-
-  it('omits tagline when copy.tagline is absent', () => {
-    const svg = assembleSvgFromTemplate({
-      template: retailProductPortrait,
-      fillData, // no tagline in base fillData
-      widthMm: 210,
-      heightMm: 297,
-      bleedMm: 0,
-    })
     expect(svg).not.toContain('id="taglineHeader"')
   })
 
-  it('emits price labels with hardcoded content', () => {
+  it('emits priceOldLabel with hardcoded content', () => {
     const svg = assembleSvgFromTemplate({
       template: retailProductPortrait,
       fillData,
@@ -193,12 +183,10 @@ describe('assembleSvgFromTemplate', () => {
       bleedMm: 0,
     })
     expect(svg).toContain('id="priceOldLabel"')
-    expect(svg).toContain('id="priceNewLabel"')
     expect(svg).toMatch(/data-content="PRIX PUBLIC CONSEILL[ÉE&#201;]/)
-    expect(svg).toMatch(/data-content="PRIX PROMO T\.T\.C\.">/)
   })
 
-  it('cta background rect is rounded (has rx attribute)', () => {
+  it('priceNew background rect is rounded (has rx attribute)', () => {
     const svg = assembleSvgFromTemplate({
       template: retailProductPortrait,
       fillData,
@@ -206,11 +194,11 @@ describe('assembleSvgFromTemplate', () => {
       heightMm: 297,
       bleedMm: 0,
     })
-    // CTA a backgroundRef='primary' → rect de fond avec rx
-    expect(svg).toMatch(/<rect id="cta-bg"[^>]*rx="/)
+    // priceNew a backgroundRef='primary' → rect rounded.
+    expect(svg).toMatch(/<rect id="priceNew-bg"[^>]*rx="/)
   })
 
-  it('scaleFontSize scales proportionally to fit bbox on small formats (47×67mm)', () => {
+  it('scaleFontSize scales proportionally on small formats (47×67mm)', () => {
     const svg = assembleSvgFromTemplate({
       template: retailProductPortrait,
       fillData,
@@ -218,17 +206,15 @@ describe('assembleSvgFromTemplate', () => {
       heightMm: 67,
       bleedMm: 0,
     })
-    // Scale = min(47/210, 67/297) ≈ 0.224. Title 48pt × 0.224 ≈ 10.75pt ≈ 3.79mm.
-    // La bbox title h = 0.12 × 67mm = 8mm → le texte à 3.79mm tient bien dedans.
+    // Scale = min(47/210, 67/297) ≈ 0.224. Title 32pt × 0.224 ≈ 7.17pt ≈ 2.53mm.
+    // La bbox title h = 0.10 × 67mm = 6.7mm → le texte à 2.53mm tient largement dedans.
     const titleMatch = svg.match(/id="title"[^>]*font-size="([0-9.]+)"/)
     expect(titleMatch).not.toBeNull()
     const fontSizeMm = parseFloat(titleMatch![1])
-    expect(fontSizeMm).toBeGreaterThan(3)
-    expect(fontSizeMm).toBeLessThan(5)
-    // Vérifie que le texte tient dans la bbox (h title = 0.12 * 67 = 8.04mm).
-    // fontSize pour single line ≤ bbox.h garantit pas d'overflow vertical pour
-    // un titre à 1-2 lignes.
-    expect(fontSizeMm).toBeLessThan(8)
+    expect(fontSizeMm).toBeGreaterThan(2)
+    expect(fontSizeMm).toBeLessThan(4)
+    // Vérifie que le texte tient dans la bbox (h title = 0.10 * 67 = 6.7mm).
+    expect(fontSizeMm).toBeLessThan(7)
   })
 
   it('scaleFontSize caps at 1.5× on very large formats (A2 420×594mm)', () => {
