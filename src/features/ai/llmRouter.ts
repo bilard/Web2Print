@@ -51,6 +51,7 @@ type LLMTask =
   | 'design.vectorize'
   | 'design.validate.visual'
   | 'design.critic.vision'
+  | 'design.templateFill'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -82,6 +83,8 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'design.validate.visual': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   // Vision Critic : compare rendu SVG vs ref Nano Banana, produit patch structuré
   'design.critic.vision':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
+  'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -98,6 +101,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.vectorize':       0,
   'design.validate.visual': 0,
   'design.critic.vision':   0,
+  'design.templateFill':    0.5,
 }
 
 interface GenerateJsonOptions<T> {
