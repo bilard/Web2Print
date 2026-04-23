@@ -53,11 +53,11 @@ interface UIState {
   openDamPickerForFill: (targetId: string) => void
   // --- Claude Design Modal ---
   isClaudeDesignModalOpen: boolean
-  claudeDesignActiveTab: 'brief' | 'style' | 'options' | 'avance'
+  claudeDesignActiveTab: 'brief' | 'image' | 'style' | 'options' | 'avance'
   isOptimizingPrompt: boolean
   openClaudeDesignModal: () => void
   closeClaudeDesignModal: () => void
-  setClaudeDesignActiveTab: (tab: 'brief' | 'style' | 'options' | 'avance') => void
+  setClaudeDesignActiveTab: (tab: 'brief' | 'image' | 'style' | 'options' | 'avance') => void
   setOptimizingPrompt: (isOptimizing: boolean) => void
 }
 

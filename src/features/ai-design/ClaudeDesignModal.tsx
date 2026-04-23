@@ -11,9 +11,11 @@ import { ClaudeDesignBriefTab } from './ClaudeDesignBriefTab'
 import { ClaudeDesignStyleTab } from './ClaudeDesignStyleTab'
 import { ClaudeDesignOptionsTab } from './ClaudeDesignOptionsTab'
 import { ClaudeDesignAdvancedTab } from './ClaudeDesignAdvancedTab'
+import { ImageDesignPanel } from './ImageDesignPanel'
 
 const TABS = [
   { id: 'brief', label: 'Brief' },
+  { id: 'image', label: 'Image → SVG' },
   { id: 'style', label: 'Style' },
   { id: 'options', label: 'Options' },
   { id: 'avance', label: 'Avancé' },
@@ -188,6 +190,14 @@ export function ClaudeDesignModal() {
             hidden={claudeDesignActiveTab !== 'brief'}
           >
             {claudeDesignActiveTab === 'brief' && <ClaudeDesignBriefTab />}
+          </div>
+          <div
+            id="image-panel"
+            role="tabpanel"
+            aria-labelledby="image-tab"
+            hidden={claudeDesignActiveTab !== 'image'}
+          >
+            {claudeDesignActiveTab === 'image' && <ImageDesignPanel />}
           </div>
           <div
             id="style-panel"
