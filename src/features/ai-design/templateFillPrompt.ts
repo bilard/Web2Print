@@ -72,6 +72,7 @@ Choisis cohérent avec la marque du produit.
 
 - **title** : 3-6 mots, en MAJUSCULES pour l'impact. Max 60 caractères, y compris espaces.
   - Exemples : "TAILLE-HAIE À BATTERIE", "PERFUSEUR 18V LXT", "PUISSANCE ET PRÉCISION".
+- **tagline** (optionnel) : accroche promo courte dans le header, max 40 caractères. Ex: "PROFITEZ DE L'OFFRE MAKITA !", "NOUVELLE GAMME 18V LXT", "JUSQU'À -30 % CETTE SEMAINE". En MAJUSCULES avec point d'exclamation.
 - **subtitle** : 1 ligne, nom produit + modèle. Max 80 caractères. Ex: "DUH752Z — Lame 75 cm".
 - **features** : 4-7 items. Pour chacun :
   - \`title\` : 2-4 mots, capitalisation normale, **sans deux-points final**. Max 40 caractères. Ex: "Puissance Équivalente", "Conception Ergonomique".

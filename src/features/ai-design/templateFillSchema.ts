@@ -26,6 +26,7 @@ export const templateFillSchema = z.object({
   }),
   copy: z.object({
     title: z.string().min(3).max(60),
+    tagline: z.string().max(40).optional(),
     subtitle: z.string().max(80).optional(),
     features: z.array(featureSchema).min(0).max(8),
     priceNew: z.string().max(20).optional(),
@@ -65,6 +66,7 @@ export const templateFillJsonSchema = {
       type: 'object' as const,
       properties: {
         title: { type: 'string' as const, minLength: 3, maxLength: 60, description: 'Titre display MAJ, 3-6 mots max' },
+        tagline: { type: 'string' as const, maxLength: 40, description: 'Accroche promo courte affichée dans le header. Ex: "PROFITEZ DE L\'OFFRE MAKITA !"' },
         subtitle: { type: 'string' as const, maxLength: 80, description: 'Sous-titre 1 ligne (nom produit + modèle)' },
         features: {
           type: 'array' as const,

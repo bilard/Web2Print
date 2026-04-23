@@ -62,4 +62,20 @@ describe('templateFillSchema', () => {
     }
     expect(() => templateFillSchema.parse(tooMany)).toThrow()
   })
+
+  it('accepts tagline under 40 chars', () => {
+    const withTagline = { ...valid, copy: { ...valid.copy, tagline: 'PROFITEZ DE L\'OFFRE MAKITA !' } }
+    expect(() => templateFillSchema.parse(withTagline)).not.toThrow()
+  })
+
+  it('rejects tagline over 40 chars', () => {
+    const tooLong = { ...valid, copy: { ...valid.copy, tagline: 'A'.repeat(41) } }
+    expect(() => templateFillSchema.parse(tooLong)).toThrow()
+  })
+
+  it('accepts missing tagline (optional)', () => {
+    const { tagline: _, ...copyWithoutTagline } = valid.copy as { tagline?: string } & typeof valid.copy
+    const withoutTagline = { ...valid, copy: copyWithoutTagline }
+    expect(() => templateFillSchema.parse(withoutTagline)).not.toThrow()
+  })
 })
