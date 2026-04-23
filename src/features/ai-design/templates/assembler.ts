@@ -67,17 +67,17 @@ function substitutePalette(svg: string, palette: Palette): string {
 }
 
 /**
- * Scale une taille pt selon la surface du canvas par rapport à la surface A4.
- * Un template est designé pour A4 (210×297 mm) ; pour un canvas plus petit/grand,
- * on scale les fontSize au pro-rata de la racine carrée du ratio de surfaces
- * (préserve la proportion visuelle sans créer des textes démesurés sur grand format).
+ * Scale une taille pt selon la dimension du canvas par rapport à l'A4.
+ * On prend le ratio MIN entre largeur et hauteur (pour éviter qu'un format
+ * très allongé n'élargisse disproportionnellement les polices). Plancher à
+ * 0.6 pour que les petits formats (ex: 47×67mm) gardent une typo lisible,
+ * plafond à 1.5 pour éviter des textes gigantesques sur grands formats.
  */
-const A4_AREA_MM2 = 210 * 297
-
 function scaleFontSize(baseSizePt: number, widthMm: number, heightMm: number): number {
-  const area = widthMm * heightMm
-  const ratio = Math.sqrt(area / A4_AREA_MM2)
-  return baseSizePt * ratio
+  const widthRatio = widthMm / 210
+  const heightRatio = heightMm / 297
+  const scale = Math.max(0.6, Math.min(1.5, Math.min(widthRatio, heightRatio)))
+  return baseSizePt * scale
 }
 
 function escapeAttr(v: string): string {
@@ -139,9 +139,10 @@ function emitTextSlot(
   // Rect de fond pour les slots CTA/price-badge qui en définissent un.
   if (slot.backgroundRef) {
     const bgColor = resolveColor(slot.backgroundRef, palette)
+    const cornerRadius = Math.min(box.w, box.h) * 0.20
     parts.push({
       zIndex: 20,
-      svg: `<rect id="${escapeAttr(id)}-bg" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" fill="${escapeAttr(bgColor)}" stroke="none" data-role="slot-background"/>`,
+      svg: `<rect id="${escapeAttr(id)}-bg" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${cornerRadius}" fill="${escapeAttr(bgColor)}" stroke="none" data-role="slot-background"/>`,
     })
   }
 
@@ -208,9 +209,41 @@ function emitFeatureList(
       const py = itemOriginY + pb.y * itemH
       const pw = pb.w * itemW
       const ph = pb.h * itemH
+
+      // Background shape (cercle ou carré) — style Makita/Milwaukee.
+      const shape = templateItem.picto.shape ?? 'none'
+      const bgRef = templateItem.picto.backgroundRef
+      if (shape !== 'none' && bgRef) {
+        const bgColor = resolveColor(bgRef, palette)
+        if (shape === 'circle') {
+          const cx = px + pw / 2
+          const cy = py + ph / 2
+          const r = Math.min(pw, ph) / 2
+          parts.push({
+            zIndex: 55,
+            svg: `<circle id="feature-${i}-picto-bg" cx="${cx}" cy="${cy}" r="${r}" fill="${escapeAttr(bgColor)}" data-role="slot-background"/>`,
+          })
+        } else if (shape === 'square') {
+          parts.push({
+            zIndex: 55,
+            svg: `<rect id="feature-${i}-picto-bg" x="${px}" y="${py}" width="${pw}" height="${ph}" rx="${Math.min(pw, ph) * 0.15}" fill="${escapeAttr(bgColor)}" data-role="slot-background"/>`,
+          })
+        }
+      }
+
+      // Foreground picto : padding 20 % si background présent pour que le
+      // picto respire dans son cercle.
+      const fgRef = templateItem.picto.foregroundRef ?? 'text'
+      const hasBg = shape !== 'none' && !!bgRef
+      const pad = hasBg ? 0.20 : 0
+      const innerX = px + pw * pad / 2
+      const innerY = py + ph * pad / 2
+      const innerW = pw * (1 - pad)
+      const innerH = ph * (1 - pad)
+
       parts.push({
         zIndex: 60,
-        svg: `<svg id="feature-${i}-picto" x="${px}" y="${py}" width="${pw}" height="${ph}" viewBox="0 0 24 24" color="${resolveColor('primary', palette)}">${picto.content}</svg>`,
+        svg: `<svg id="feature-${i}-picto" x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" viewBox="0 0 24 24" color="${resolveColor(fgRef, palette)}">${picto.content}</svg>`,
       })
     }
 
@@ -292,14 +325,23 @@ export function assembleSvgFromTemplate(args: AssembleArgs): string {
   if (template.slots.title) {
     parts.push(...emitTextSlot('title', template.slots.title, fillData.copy.title, palette, widthMm, heightMm, resolveFont(template.slots.title.fontFamily)))
   }
+  if (template.slots.taglineHeader && fillData.copy.tagline) {
+    parts.push(...emitTextSlot('taglineHeader', template.slots.taglineHeader, fillData.copy.tagline, palette, widthMm, heightMm, resolveFont(template.slots.taglineHeader.fontFamily)))
+  }
   if (template.slots.subtitle && fillData.copy.subtitle) {
     parts.push(...emitTextSlot('subtitle', template.slots.subtitle, fillData.copy.subtitle, palette, widthMm, heightMm, resolveFont(template.slots.subtitle.fontFamily)))
   }
   if (template.slots.priceNew && fillData.copy.priceNew) {
     parts.push(...emitTextSlot('priceNew', template.slots.priceNew, fillData.copy.priceNew, palette, widthMm, heightMm, resolveFont(template.slots.priceNew.fontFamily)))
   }
+  if (template.slots.priceNewLabel && template.slots.priceNewLabel.hardcodedContent) {
+    parts.push(...emitTextSlot('priceNewLabel', template.slots.priceNewLabel, template.slots.priceNewLabel.hardcodedContent, palette, widthMm, heightMm, resolveFont(template.slots.priceNewLabel.fontFamily)))
+  }
   if (template.slots.priceOld && fillData.copy.priceOld) {
     parts.push(...emitTextSlot('priceOld', template.slots.priceOld, fillData.copy.priceOld, palette, widthMm, heightMm, resolveFont(template.slots.priceOld.fontFamily)))
+  }
+  if (template.slots.priceOldLabel && template.slots.priceOldLabel.hardcodedContent) {
+    parts.push(...emitTextSlot('priceOldLabel', template.slots.priceOldLabel, template.slots.priceOldLabel.hardcodedContent, palette, widthMm, heightMm, resolveFont(template.slots.priceOldLabel.fontFamily)))
   }
   if (template.slots.cta && fillData.copy.cta) {
     parts.push(...emitTextSlot('cta', template.slots.cta, fillData.copy.cta, palette, widthMm, heightMm, resolveFont(template.slots.cta.fontFamily)))
