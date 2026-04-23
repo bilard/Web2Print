@@ -183,45 +183,12 @@ export function DesignPromptPanel() {
           progress={state.progress}
           error={state.error}
           lastResult={state.lastResult}
-          lastPlan={state.lastPlan}
-          nanobananaImage={state.nanobananaImage}
           onClose={() => setProgressDismissed(true)}
           onRetry={() => {
             setProgressDismissed(true)
             setTimeout(onSubmit, 50)
           }}
         />
-      )}
-
-      {state.nanobananaImage && state.step === 'done' ? (
-        <div className="mt-4 p-4 bg-neutral-900 border border-neutral-800 rounded space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-neutral-200">📷 Référence créative (Nano Banana)</h3>
-            <button
-              type="button"
-              onClick={() => {}}
-              className="text-[10px] px-2 py-1 bg-neutral-800 hover:bg-neutral-700 rounded text-neutral-400 transition-colors"
-            >
-              Comparer avec le canvas
-            </button>
-          </div>
-          <img
-            src={state.nanobananaImage}
-            alt="Nano Banana reference"
-            className="w-full rounded border border-neutral-700 object-contain max-h-96"
-            onError={(e) => console.error('[DesignPromptPanel] Image load failed:', e)}
-            onLoad={() => console.log('[DesignPromptPanel] Image loaded successfully')}
-          />
-          <p className="text-[11px] text-neutral-500">
-            Cette image a été générée par Nano Banana (Gemini) et sert de référence créative. Le SVG vectoriel sur le canvas reproduit la composition et les styles de cette image.
-          </p>
-        </div>
-      ) : (
-        state.step === 'done' && (
-          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded">
-            <p className="text-xs text-red-400">[DEBUG] nanobananaImage exists: {!!state.nanobananaImage}, step: {state.step}</p>
-          </div>
-        )
       )}
     </div>
   )
