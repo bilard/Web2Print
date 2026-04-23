@@ -55,3 +55,36 @@ export const DEFAULT_FORMAT_ID = 'a4'
 export function getFormatById(id: string): PrintFormat | undefined {
   return PRINT_FORMATS.find((f) => f.id === id)
 }
+
+/** Convertir pixels → millimètres en utilisant un DPI spécifique. */
+export function pxToMm(px: number, dpi: number): number {
+  return Math.round((px * 25.4) / dpi * 100) / 100
+}
+
+/**
+ * Table de mapping: dimensions internes du canvas (px) → format ID.
+ * Ces dimensions correspondent aux presets dans PageSettingsPopover.
+ */
+const CANVAS_SIZE_TO_FORMAT: Record<string, string> = {
+  '794x1123': 'a4',      // A4 Portrait
+  '1123x794': 'a4',      // A4 Paysage
+  '1123x1587': 'a3',     // A3 Portrait
+  '1587x1123': 'a3',     // A3 Paysage
+  '559x794': 'a5',       // A5 Portrait
+  '794x559': 'a5',       // A5 Paysage
+  '1920x1080': 'fullhd', // Full HD
+  '3840x2160': '4k',     // 4K
+  '1280x720': 'pres-16-9', // Présentation 16:9
+  '1080x1080': 'ig-post', // Instagram Post
+  '1080x1920': 'ig-story', // Instagram Story
+  '820x312': 'fb-cover', // Facebook Cover
+}
+
+/**
+ * Trouver le format correspondant aux dimensions internes du canvas.
+ * Utilise une table de mapping directe (plus fiable que la conversion mm).
+ */
+export function findFormatIdByPixelDimensions(widthPx: number, heightPx: number): string {
+  const key = `${widthPx}x${heightPx}`
+  return CANVAS_SIZE_TO_FORMAT[key] ?? 'custom'
+}
