@@ -131,13 +131,15 @@ export const retailProductPortrait: Template = {
     },
   },
   decorativeSvg: `
-    <!-- Header band -->
-    <rect x="0" y="0" width="100%" height="12%" fill="{{palette.primary}}" data-role="background-decor"/>
-    <!-- Decorative lines top-right -->
-    <path d="M 85% 1% L 99% 1% M 87% 3% L 99% 3% M 89% 5% L 99% 5% M 91% 7% L 99% 7%" stroke="{{palette.neutral}}" stroke-width="0.5mm" stroke-opacity="0.4" fill="none" data-role="background-decor"/>
-    <!-- Divider sous le subtitle -->
-    <rect x="4%" y="39.5%" width="92%" height="0.4%" fill="{{palette.primary}}" data-role="background-decor"/>
-    <!-- Bottom bar decoration -->
-    <rect x="0" y="97%" width="100%" height="0.4%" fill="{{palette.primary}}" data-role="background-decor"/>
+    <svg x="0" y="0" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <!-- Header band -->
+      <rect x="0" y="0" width="100" height="12" fill="{{palette.primary}}" data-role="background-decor"/>
+      <!-- Decorative lines top-right -->
+      <path d="M 85 1 L 99 1 M 87 3 L 99 3 M 89 5 L 99 5 M 91 7 L 99 7" stroke="{{palette.neutral}}" stroke-width="0.3" stroke-opacity="0.4" fill="none" data-role="background-decor"/>
+      <!-- Divider sous le subtitle -->
+      <rect x="4" y="39.5" width="92" height="0.4" fill="{{palette.primary}}" data-role="background-decor"/>
+      <!-- Bottom bar decoration -->
+      <rect x="0" y="97" width="100" height="0.4" fill="{{palette.primary}}" data-role="background-decor"/>
+    </svg>
   `.trim(),
 }
