@@ -127,6 +127,7 @@ export function ClaudeDesignModal() {
         progress={state.progress}
         error={state.error}
         lastResult={state.lastResult}
+        nanobananaRef={state.nanobananaRef}
         onClose={handleProgressClose}
         onRetry={handleProgressRetry}
       />

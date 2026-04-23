@@ -183,6 +183,7 @@ export function DesignPromptPanel() {
           progress={state.progress}
           error={state.error}
           lastResult={state.lastResult}
+          nanobananaRef={state.nanobananaRef}
           onClose={() => setProgressDismissed(true)}
           onRetry={() => {
             setProgressDismissed(true)

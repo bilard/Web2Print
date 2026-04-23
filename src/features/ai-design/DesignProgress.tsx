@@ -7,6 +7,10 @@ interface Props {
   progress: string
   error: string | null
   lastResult: DesignResult | null
+  /** Ref visuelle générée par Nano Banana en parallèle, affichée en preview.
+   *  N'influence pas le rendu final — uniquement un aperçu créatif pour
+   *  comparer avec le design template produit. */
+  nanobananaRef?: string | null
   onClose: () => void
   onRetry: () => void
 }
@@ -45,7 +49,7 @@ const PIPELINE: StepDef[] = [
   },
 ]
 
-export function DesignProgress({ step, progress, error, lastResult, onClose, onRetry }: Props) {
+export function DesignProgress({ step, progress, error, lastResult, nanobananaRef, onClose, onRetry }: Props) {
   if (step === 'idle') return null
 
   const handleExportSvg = () => {
@@ -172,6 +176,24 @@ export function DesignProgress({ step, progress, error, lastResult, onClose, onR
             )
           })}
         </ul>
+
+        {nanobananaRef && (
+          <div className="px-5 py-3 border-t border-neutral-800 bg-[#0f0f0f] space-y-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+              <p className="text-xs font-medium text-indigo-200">Aperçu créatif Nano Banana</p>
+              <span className="text-[10px] uppercase tracking-wide text-neutral-500">référence visuelle</span>
+            </div>
+            <p className="text-[11px] text-neutral-500 leading-relaxed">
+              Image IA générée en parallèle. Sert de référence pour comparer — n'influence pas le rendu template final.
+            </p>
+            <img
+              src={nanobananaRef}
+              alt="Référence Nano Banana"
+              className="w-full max-h-64 object-contain rounded border border-neutral-800 bg-black"
+            />
+          </div>
+        )}
 
         {step === 'done' && lastResult && (
           <div className="px-5 py-3 border-t border-neutral-800 bg-emerald-500/5 space-y-1">

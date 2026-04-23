@@ -6,10 +6,11 @@ import { templateFillSchema, templateFillJsonSchema, type TemplateFillData } fro
 import { listTemplates, getTemplate, pickTemplateByAspect } from './templates'
 import { assembleSvgFromTemplate } from './templates/assembler'
 import { generateProductAssets, extractSupplierUrl } from './generateProductAssets'
+import { generateNanoBananaRef } from './generateNanoBananaRef'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
 import { scaleObjectForCanvas } from './scaleFabricObjects'
-import type { DesignRequest, DesignResult } from './types'
+import type { DesignRequest, DesignResult, DesignStyle } from './types'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -26,6 +27,10 @@ interface State {
   error: string | null
   lastResult: DesignResult | null
   lastFillData: TemplateFillData | null
+  /** Data URI PNG d'une ref créative générée par Nano Banana en parallèle du
+   *  pipeline principal. Affichée pour comparaison visuelle — n'influence PAS
+   *  le template ni le SVG final. */
+  nanobananaRef: string | null
 }
 
 export function useGenerateDesign() {
@@ -36,13 +41,14 @@ export function useGenerateDesign() {
     error: null,
     lastResult: null,
     lastFillData: null,
+    nanobananaRef: null,
   })
 
   const generate = useCallback(async (req: DesignRequest) => {
     if (runningRef.current) return
     runningRef.current = true
     try {
-      setState((s) => ({ ...s, error: null, lastResult: null, lastFillData: null }))
+      setState((s) => ({ ...s, error: null, lastResult: null, lastFillData: null, nanobananaRef: null }))
 
       // ─── Dimensions canvas ─────────────────────────────────────────────────
       const { canvasWidth, canvasHeight, bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
@@ -73,19 +79,39 @@ export function useGenerateDesign() {
 
       console.log('[Claude Design] Canvas:', `${widthMm.toFixed(0)}×${heightMm.toFixed(0)}mm (bleed ${effectiveBleed}mm)`, 'format:', formatLabel)
 
-      // ─── Phase 1 : scraping des assets produit ─────────────────────────────
+      // ─── Phase 1 : scraping + Nano Banana ref en parallèle ─────────────────
+      // La ref Nano Banana sert uniquement d'aperçu visuel dans l'UI. Elle
+      // tourne en parallèle du scraping pour ne pas rallonger le pipeline.
+      // Si elle échoue, le design est produit quand même.
       setState((s) => ({ ...s, step: 'illustrating', progress: 'Récupération des assets produit…' }))
 
       const supplierUrl = extractSupplierUrl(req.prompt, req.productImageUrl)
       const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
 
-      const productAssetsResult = supplierUrl && productName
-        ? await generateProductAssets(supplierUrl, productName)
-        : { ok: true, assets: [] as Array<{ type: string; title?: string; dataUri: string }> }
+      const [productAssetsResult, nanobananaResult] = await Promise.all([
+        supplierUrl && productName
+          ? generateProductAssets(supplierUrl, productName)
+          : Promise.resolve({ ok: true, assets: [] as Array<{ type: string; title?: string; dataUri: string }> }),
+        generateNanoBananaRef({
+          userPrompt: req.prompt,
+          widthMm,
+          heightMm,
+          style: req.style as DesignStyle,
+          dpi,
+          palette: req.palette,
+        }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) })),
+      ])
 
       const scrapedAssets = productAssetsResult.ok ? (productAssetsResult.assets ?? []) : []
       console.log(`[Claude Design] ✓ ${scrapedAssets.length} assets scrapés`)
       scrapedAssets.forEach((a, i) => console.log(`  → [${i}] ${a.type}: ${a.title ?? ''}`))
+
+      if (nanobananaResult.ok && nanobananaResult.dataUri) {
+        console.log('[Claude Design] ✓ Nano Banana ref générée')
+        setState((s) => ({ ...s, nanobananaRef: nanobananaResult.dataUri ?? null }))
+      } else {
+        console.warn('[Claude Design] Nano Banana ref échouée :', nanobananaResult.error)
+      }
 
       // ─── Phase 2 : LLM template fill ──────────────────────────────────────
       setState((s) => ({ ...s, step: 'planning', progress: 'Sélection du template et rédaction…' }))
@@ -229,7 +255,7 @@ export function useGenerateDesign() {
   }, [])
 
   const reset = useCallback(() => {
-    setState({ step: 'idle', progress: '', error: null, lastResult: null, lastFillData: null })
+    setState({ step: 'idle', progress: '', error: null, lastResult: null, lastFillData: null, nanobananaRef: null })
   }, [])
 
   return { state, generate, reset }
