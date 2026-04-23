@@ -47,9 +47,9 @@ export interface DesignAnalysis {
  * Extrait layout, typography, colors, éléments et structure pour générer un SVG fidèle.
  */
 export async function analyzeDesignImage(imageBase64: string): Promise<DesignAnalysis> {
-  const apiKey = getApiKey('claude')
+  const apiKey = getApiKey('anthropic')
   if (!apiKey) {
-    throw new Error('Claude API key missing')
+    throw new Error('Anthropic API key missing')
   }
 
   // Déterminer le media type
