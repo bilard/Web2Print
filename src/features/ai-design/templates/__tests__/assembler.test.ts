@@ -142,4 +142,89 @@ describe('assembleSvgFromTemplate', () => {
     })
     expect(svg).toContain('viewBox="-3 -3 216 303"')
   })
+
+  it('emits circle background behind picto when shape=circle', () => {
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData,
+      widthMm: 210,
+      heightMm: 297,
+      bleedMm: 0,
+    })
+    // Portrait template : itemTemplate.picto.shape='circle', backgroundRef='primary'
+    // → expect un <circle> de fond pour chaque feature rendu
+    expect(svg).toMatch(/<circle id="feature-0-picto-bg"[^>]*fill="#0A6E7C"/)
+    expect(svg).toMatch(/<circle id="feature-1-picto-bg"/)
+  })
+
+  it('emits tagline when copy.tagline is provided', () => {
+    const withTagline = {
+      ...fillData,
+      copy: { ...fillData.copy, tagline: 'PROFITEZ DE L\'OFFRE MAKITA !' },
+    }
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData: withTagline,
+      widthMm: 210,
+      heightMm: 297,
+      bleedMm: 0,
+    })
+    expect(svg).toContain('id="taglineHeader"')
+    expect(svg).toMatch(/data-content="PROFITEZ DE L&#39;OFFRE MAKITA !"|data-content="PROFITEZ DE L'OFFRE MAKITA !"/)
+  })
+
+  it('omits tagline when copy.tagline is absent', () => {
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData, // no tagline in base fillData
+      widthMm: 210,
+      heightMm: 297,
+      bleedMm: 0,
+    })
+    expect(svg).not.toContain('id="taglineHeader"')
+  })
+
+  it('emits price labels with hardcoded content', () => {
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData,
+      widthMm: 210,
+      heightMm: 297,
+      bleedMm: 0,
+    })
+    expect(svg).toContain('id="priceOldLabel"')
+    expect(svg).toContain('id="priceNewLabel"')
+    expect(svg).toMatch(/data-content="PRIX PUBLIC CONSEILL[ÉE&#201;]/)
+    expect(svg).toMatch(/data-content="PRIX PROMO T\.T\.C\.">/)
+  })
+
+  it('cta background rect is rounded (has rx attribute)', () => {
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData,
+      widthMm: 210,
+      heightMm: 297,
+      bleedMm: 0,
+    })
+    // CTA a backgroundRef='primary' → rect de fond avec rx
+    expect(svg).toMatch(/<rect id="cta-bg"[^>]*rx="/)
+  })
+
+  it('scaleFontSize keeps readable sizes on small formats (47×67mm)', () => {
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData,
+      widthMm: 47,
+      heightMm: 67,
+      bleedMm: 0,
+    })
+    // Avec l'ancien scaling sqrt(area/A4), title 48pt → ~10.7pt → ~3.8mm
+    // Avec le nouveau (min ratio, floor 0.6), title 48pt → 28.8pt → ~10.2mm
+    const titleMatch = svg.match(/id="title"[^>]*font-size="([0-9.]+)"/)
+    expect(titleMatch).not.toBeNull()
+    const fontSizeMm = parseFloat(titleMatch![1])
+    // Plancher attendu : floor 0.6 * 48pt * 0.3528 = ~10.16 mm. Tolérance ±1mm.
+    expect(fontSizeMm).toBeGreaterThan(9)
+    expect(fontSizeMm).toBeLessThan(12)
+  })
 })
