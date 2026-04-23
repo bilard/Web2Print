@@ -12,8 +12,9 @@ interface GenerateFullDesignImageArgs {
   /** Brief utilisateur original */
   userPrompt: string
 
-  /** Plan structuré produit par l'Art Director */
-  plan: DesignPlan
+  /** Plan structuré produit par l'Art Director (optionnel — si absent, Nano Banana
+   *  travaille sur le seul brief utilisateur + style) */
+  plan?: DesignPlan
 
   /** Dimensions du design */
   widthMm: number
@@ -24,6 +25,9 @@ interface GenerateFullDesignImageArgs {
 
   /** DPI pour estimer la résolution requise */
   dpi: number
+
+  /** Palette imposée par l'utilisateur (si pas de plan) */
+  palette?: string[]
 }
 
 interface FullDesignImageResult {
@@ -42,45 +46,39 @@ function buildFullDesignPrompt(args: GenerateFullDesignImageArgs): string {
   const formatRatio = (args.widthMm / args.heightMm).toFixed(2)
   const parts: string[] = []
 
-  parts.push(`CREATE A PROFESSIONAL RETAIL FLYER/POSTER WITH STRICT STRUCTURAL COMPOSITION.`)
+  parts.push(`Create a COMPLETE, ready-to-print retail banner. Beautiful typography, product photo, color composition — everything final.`)
 
-  parts.push(`COMPOSITION REQUIREMENTS (MANDATORY):
-- Clearly distinct zones: Product/Image area (30-40%), Text/Info area (60-70%)
-- Product zone: Large, prominent, clear visual element (photo/illustration/solid color block)
-- Text zone: Information, pricing, details - CLEARLY SEPARATED from product zone
-- NO text overlapping product image or vice versa
-- Minimum 10mm visual separation between major zones
-- Solid or gradient background (no busy patterns)
-- Maximum 3 text sizes for clear hierarchy
-- Alignment: All text left-aligned, right-aligned, or centered (NO random placement)`)
+  parts.push(`CONTENT TO INCLUDE (render as visible graphics):
+Title: render the headline as large bold display type
+Subtitle / features: medium typography with good hierarchy
+Body text / specs: readable text blocks
+Price + CTA: prominent, distinct styling (price badge, button)
+Logo: corner placement if relevant
+Product photo: large, crisp, clean cutout if product-based`)
 
-  parts.push(`CONTENT STRUCTURE:
-Title/Headline: Large, bold, top or center (15-20% of area)
-Subtitle/Features: Medium size (10-15% of area)
-Body text/Details: Small, readable (15-20% of area)
-Price/CTA: Prominent, distinct styling (10-15% of area)
-Logo/Brand: Small, corner placement (5-10% of area)`)
+  const paletteSrc = args.plan?.palette ?? args.palette ?? []
+  const paletteLine = paletteSrc.length > 0
+    ? `- Color palette (use EXCLUSIVELY): ${paletteSrc.join(', ')}`
+    : `- Color palette: cohérente avec le style ${args.style}, 3-5 couleurs max`
+  const conceptLine = args.plan?.concept ? `- Concept: ${args.plan.concept}` : ''
+  const deviceLine = args.plan?.mainDevice ? `- Composition device: ${args.plan.mainDevice}` : ''
 
-  parts.push(`PROFESSIONAL REQUIREMENTS:
-- Style: ${args.style} (corporate, bold, minimal - but ALWAYS professional)
-- Colors: EXCLUSIVELY ${args.plan.palette.join(', ')}
-- No gradients except subtle backgrounds
-- No decorative flourishes - function over form
-- Spacing: Generous margins (15% minimum on all sides)
-- Typography: Maximum 3 distinct typefaces
-- Photo quality if used: High resolution, relevant to product
-- Concept: ${args.plan.concept}
-- Composition strategy: ${args.plan.mainDevice}`)
+  parts.push(`DESIGN QUALITY:
+- Style: ${args.style}
+${conceptLine}
+${deviceLine}
+${paletteLine}
+- Typography: bold hierarchy, maximum 3 typefaces, premium retail aesthetic
+- Spacing: generous, professional margins
+- Strict alignment — no random placement`)
 
   parts.push(`BRIEF: ${args.userPrompt}`)
 
   parts.push(`DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1)`)
 
-  parts.push(`OUTPUT SPECIFICATION:
-High-resolution retail flyer suitable for professional printing.
-Structure: Clear visual zones with distinct boundaries.
-NO watermarks, grids, or technical artifacts.
-Ready for direct offset/digital printing.`)
+  parts.push(`OUTPUT:
+High-resolution complete retail banner, press-ready, with all text/prices/CTAs rendered in place.
+NO watermarks, grids, or technical artifacts.`)
 
   return parts.join('\n\n')
 }

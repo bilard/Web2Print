@@ -14,6 +14,11 @@ export interface DesignSlot {
     h: number
   }
   description: string
+  /** Index (0-based) de l'asset scrapé à injecter dans ce slot, tel que fourni
+   *  dans la liste scrapedAssets du prompt Art Director. Permet un matching
+   *  déterministe et sémantiquement correct (logo sur slot logo, photo sur
+   *  slot produit…) au lieu d'un matching par ordre en aval. */
+  assetIndex?: number
 }
 
 /**
@@ -40,6 +45,13 @@ export interface DesignPlan {
     fill?: string
     content?: string
     fontSize?: number
+    /** Couleur explicite du texte en hex (prioritaire sur la palette). Utile
+     *  pour forcer blanc sur fond navy, noir sur fond blanc, etc. */
+    textColor?: string
+    /** Décoration du texte : 'line-through' pour un prix barré. */
+    decoration?: 'none' | 'underline' | 'line-through'
+    /** Alignement du texte dans la zone. */
+    align?: 'left' | 'center' | 'right'
   }>
 
   /** Hiérarchie typographique et fonts autorisés */
@@ -73,6 +85,7 @@ const designSlotSchema = z.object({
     h: z.number(),
   }),
   description: z.string(),
+  assetIndex: z.number().int().min(0).optional(),
 })
 
 const designZoneSchema = z.object({
@@ -87,6 +100,9 @@ const designZoneSchema = z.object({
   fill: z.string().optional(),
   content: z.string().optional(),
   fontSize: z.number().optional(),
+  textColor: z.string().optional(),
+  decoration: z.enum(['none', 'underline', 'line-through']).optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
 })
 
 const typographySchema = z.object({
@@ -105,10 +121,10 @@ const typographySchema = z.object({
 export const designPlanSchema = z.object({
   concept: z.string().min(10).max(500),
   mainDevice: z.string(),
-  zones: z.array(designZoneSchema).min(4).max(6),
+  zones: z.array(designZoneSchema).min(4).max(20),
   typography: typographySchema,
   palette: z.array(z.string().regex(/^#[0-9A-Fa-f]{6}$/)).min(1).max(8),
-  slots: z.array(designSlotSchema).min(0).max(8),
+  slots: z.array(designSlotSchema).min(0).max(12),
 }) satisfies z.ZodSchema<DesignPlan>
 
 // JSON Schema pour le LLM (Gemini responseSchema / Claude input_schema)
@@ -127,7 +143,7 @@ export const designPlanJsonSchema = {
     zones: {
       type: 'array' as const,
       minItems: 4,
-      maxItems: 6,
+      maxItems: 20,
       items: {
         type: 'object' as const,
         properties: {
@@ -146,13 +162,16 @@ export const designPlanJsonSchema = {
             },
             required: ['x', 'y', 'w', 'h'] as const,
           },
-          fill: { type: 'string' as const, description: 'Couleur hex #RRGGBB' },
-          content: { type: 'string' as const, description: 'Contenu texte si applicable' },
-          fontSize: { type: 'number' as const, description: 'Taille police en points si applicable' },
+          fill: { type: 'string' as const, description: 'Couleur hex #RRGGBB de fond (rect rempli) — utilisée pour background, accent, cta, price, logo-slot' },
+          content: { type: 'string' as const, description: 'Contenu texte si applicable (peut contenir \\n pour multi-lignes)' },
+          fontSize: { type: 'number' as const, description: 'Taille police en points (pt) si applicable' },
+          textColor: { type: 'string' as const, description: 'Couleur hex #RRGGBB du TEXTE (prioritaire sur la palette) — pour forcer blanc sur navy, noir sur blanc, etc.' },
+          decoration: { type: 'string' as const, enum: ['none', 'underline', 'line-through'] as const, description: 'line-through pour un prix barré' },
+          align: { type: 'string' as const, enum: ['left', 'center', 'right'] as const, description: 'Alignement du texte dans la zone' },
         },
         required: ['id', 'role', 'bboxMm'] as const,
       },
-      description: 'EXACTEMENT 4-6 zones disjointes (background + 1-2 images + 2-4 textes)',
+      description: 'Toutes les zones visibles de l\'image : background, accents, chaque bloc de texte (titre, bullets, prix barré, prix promo, TTC, CTA, mentions, footer…). Minimum 4, jusqu\'à 20 pour retranscrire fidèlement.',
     },
     typography: {
       type: 'object' as const,
@@ -197,7 +216,8 @@ export const designPlanJsonSchema = {
             },
             required: ['x', 'y', 'w', 'h'] as const,
           },
-          description: { type: 'string' as const, description: '1 phrase pour Nano Banana' },
+          description: { type: 'string' as const, description: '1 phrase décrivant le rôle visuel' },
+          assetIndex: { type: 'number' as const, description: 'Index 0-based de l\'asset scrapé à injecter dans ce slot (voir liste scrapedAssets du prompt)' },
         },
         required: ['id', 'role', 'bboxMm', 'description'] as const,
       },

@@ -126,19 +126,38 @@ function fabricTextToEditableText(
     if (metadata.textAlign) opts.textAlign = metadata.textAlign
     if (metadata.lineHeight !== undefined) opts.lineHeight = metadata.lineHeight
 
-    // Reconstruct text as a continuous string — Illustrator exports one tspan
-    // per visual line with trailing whitespace, so join without adding breaks.
-    // Fabric's Textbox then reflows inside metadata.width like an editable text frame.
-    const reconstructedText = metadata.tspans
-      .map((tspan) => tspan.textContent)
-      .join('')
-      .replace(/\s+/g, ' ')
-      .trim()
+    // Reconstruct text : trois stratégies selon la source.
+    //   - metadata.content (data-content, buildSvgFromPlan) : texte ORIGINAL
+    //     non pré-wrappé. Le Textbox re-wrappe naturellement à sa largeur → pas
+    //     de lignes forcées issues de l'auto-wrap SVG.
+    //   - paragraph=true sans data-content : chaque tspan = une ligne distincte
+    //     d'un paragraphe unique → join avec \n (cas legacy).
+    //   - sinon (Illustrator & co) : join sans séparateur + collapse whitespace
+    //     simple.
+    const reconstructedText = metadata.content !== undefined
+      ? metadata.content
+      : metadata.paragraph
+      ? metadata.tspans
+          .map((tspan) => tspan.textContent.replace(/[^\S\n]+/g, ' ').trim())
+          .filter((line) => line.length > 0)
+          .join('\n')
+      : metadata.tspans
+          .map((tspan) => tspan.textContent)
+          .join('')
+          .replace(/\s+/g, ' ')
+          .trim()
 
-    const styles = remapStylesToFabric(reconstructedText, metadata.tspans)
-    if (Object.keys(styles).length > 0) {
-      opts.styles = styles
+    // Styles char-level : uniquement si les tspans apportent une information
+    // qui n'est pas déjà dans le texte simple (ex: portion en couleur différente).
+    // Avec data-content, les tspans sont juste de l'auto-wrap — pas de styles
+    // char-level à préserver.
+    if (metadata.content === undefined) {
+      const styles = remapStylesToFabric(reconstructedText, metadata.tspans)
+      if (Object.keys(styles).length > 0) {
+        opts.styles = styles
+      }
     }
+    opts.editable = true
     const textbox = new Textbox(reconstructedText, opts as any)
     const anyTextbox = textbox as FabricObject & { data?: Record<string, unknown> }
     anyTextbox.data = {
@@ -209,8 +228,8 @@ function humanName(_type: LayerType, _i: number): string {
  * ----------------------------------------------------------------------- */
 
 type StructNode =
-  | { kind: 'leaf'; index: number; name?: string }
-  | { kind: 'group'; children: StructNode[]; name?: string }
+  | { kind: 'leaf'; index: number; name?: string; role?: string }
+  | { kind: 'group'; children: StructNode[]; name?: string; role?: string }
 
 const RENDERABLE = new Set([
   'path', 'rect', 'circle', 'ellipse', 'line', 'polygon', 'polyline',
@@ -252,7 +271,8 @@ function parseSvgStructure(svgText: string): StructNode[] {
       }
       if (children.length === 0) return null
       const name = el.getAttribute('id') ?? undefined
-      return { kind: 'group', children, name }
+      const role = el.getAttribute('data-role') ?? undefined
+      return { kind: 'group', children, name, role }
     }
 
     if (RENDERABLE.has(tag)) {
@@ -262,7 +282,8 @@ function parseSvgStructure(svgText: string): StructNode[] {
       }
       const idx = leafIndex++
       const name = el.getAttribute('id') ?? undefined
-      return { kind: 'leaf', index: idx, name }
+      const role = el.getAttribute('data-role') ?? undefined
+      return { kind: 'leaf', index: idx, name, role }
     }
 
     // Autre conteneur non skip (rare) : traverser
@@ -288,9 +309,12 @@ function buildHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObjec
     if (node.kind === 'leaf') {
       const obj = flat[node.index]
       if (!obj) return null
-      if (node.name) {
-        const anyObj = obj as FabricObject & { data?: Record<string, unknown> }
-        anyObj.data = { ...(anyObj.data ?? {}), name: node.name }
+      const anyObj = obj as FabricObject & { data?: Record<string, unknown> }
+      const existing = anyObj.data ?? {}
+      anyObj.data = {
+        ...existing,
+        ...(node.name ? { name: node.name } : {}),
+        ...(node.role ? { role: node.role } : {}),
       }
       return obj
     }
@@ -304,6 +328,7 @@ function buildHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObjec
       ...(anyGroup.data ?? {}),
       type: 'group',
       name: node.name ?? '',
+      ...(node.role ? { role: node.role } : {}),
     }
     return group
   }
@@ -338,18 +363,24 @@ function decorateAll(objects: FabricObject[]): void {
     const kind = layerTypeFor(obj)
     const anyObj = obj as FabricObject & { data?: Record<string, unknown> }
     const existing = anyObj.data ?? {}
+    // data-role="background-decor" : rects de fond émis par buildSvgFromPlan
+    // qui couvrent tout le canvas. Les garder sélectionnables vole les clics
+    // et affiche une frame qui fait toute la page (effet "bloc transparent géant").
+    const role = (existing.role as string | undefined) ?? (existing['data-role'] as string | undefined)
+    const isBackgroundDecor = role === 'background-decor'
     anyObj.data = {
       ...existing,
       id: (existing.id as string | undefined) ?? svgId(),
       type: kind,
       name: (existing.name as string | undefined) ?? humanName(kind, 0),
+      role,
     }
     obj.set({
       objectCaching: true,
-      selectable: true,
-      evented: true,
-      hasControls: true,
-      hasBorders: true,
+      selectable: !isBackgroundDecor,
+      evented: !isBackgroundDecor,
+      hasControls: !isBackgroundDecor,
+      hasBorders: !isBackgroundDecor,
     })
     if (obj instanceof Group) {
       const children = (obj._objects ?? []) as FabricObject[]

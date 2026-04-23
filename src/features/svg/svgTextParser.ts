@@ -36,6 +36,15 @@ export interface TextMetadata {
   lineHeight?: number
   textAlign?: 'left' | 'center' | 'right' | 'justify'
   tspans: TspanInfo[]
+  /** True if the <text> has data-paragraph="true" (emitted by buildSvgFromPlan).
+   *  Signale que les tspans représentent des lignes distinctes d'un paragraphe
+   *  unique — la reconstruction doit les joindre par \n plutôt que les concaténer. */
+  paragraph?: boolean
+  /** Contenu ORIGINAL fourni par l'émetteur (attribut `data-content`). Présent
+   *  pour les SVG générés par `buildSvgFromPlan` — permet de passer le texte
+   *  non-wrappé à Fabric.Textbox afin qu'il re-wrappe naturellement à sa largeur
+   *  plutôt que de subir les sauts de ligne forcés issus des tspans auto-wrappées. */
+  content?: string
 }
 
 /**
@@ -231,11 +240,17 @@ export function parseTextElements(svgText: string): TextMetadata[] {
       }
     }
 
+    const paragraph = textEl.getAttribute('data-paragraph') === 'true'
+    const dataContent = textEl.getAttribute('data-content')
+    const content = dataContent !== null ? dataContent : undefined
+
     results.push({
       width,
       lineHeight,
       textAlign,
       tspans,
+      paragraph,
+      content,
     })
   })
 

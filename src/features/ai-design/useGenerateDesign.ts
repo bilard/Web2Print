@@ -1,24 +1,32 @@
 import { useState, useCallback, useRef } from 'react'
-import { z } from 'zod'
 import { toast } from 'sonner'
 import { generateJson } from '@/features/ai/llmRouter'
-import { DesignResultSchema, DesignResultJsonSchema } from './designSchema'
 import { buildArtDirectorPrompt } from './artDirectorPrompt'
 import { designPlanSchema, designPlanJsonSchema, type DesignPlan } from './artDirectorSchema'
-import { buildSvgEngineerPrompt } from './svgEngineerPrompt'
+import { buildSvgFromPlan } from './buildSvgFromPlan'
+import { vectorizeImage } from './vectorizeImage'
+import { renderVectorPlan } from './renderVectorPlan'
 import { generateFullDesignImage } from './generateFullDesignImage'
 import { generateProductAssets, extractSupplierUrl } from './generateProductAssets'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
-import { validateSvgFidelity, type FidelityCheckResult } from './svgFidelityValidator'
+import { rasterizeSvgForCritic } from './rasterizeSvg'
+import { runVisionCritic } from './visionCritic'
+import { applyCriticPatch } from './applyCriticPatch'
+import { clampPlanToCanvas } from './clampPlanToCanvas'
+import { scaleObjectForCanvas } from './scaleFabricObjects'
+import type { FidelityCheckResult } from './svgFidelityValidator'
 import type { DesignRequest, DesignResult, DesignStyle } from './types'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useUIStore } from '@/stores/ui.store'
+import { useEditorStore } from '@/stores/editor.store'
+import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { getFormatById } from '@/features/print/PRINT_FORMATS'
 import { mmToPx, pxToMm } from '@/features/print/dimensions'
 import { AVAILABLE_FONTS } from '@/features/assets/useFonts'
+import { saveRefImageToGallery } from './saveRefImageToGallery'
 
 export type Step = 'idle' | 'planning' | 'illustrating' | 'sanitizing' | 'rendering' | 'done' | 'error'
 
@@ -34,6 +42,76 @@ interface State {
 }
 
 const PROMPT_VERSION = 'design.generate.v1'
+
+/**
+ * Trace par rôle : liste chaque zone du plan avec son role, la présence de
+ * fill/content et les 40 premiers caractères du content. Permet de voir en un
+ * coup d'œil si l'Art Director (ou le Critic) a bien planté les zones
+ * texte attendues (features, description, CTA text, badges).
+ */
+function logZoneContents(label: string, plan: DesignPlan): void {
+  try {
+    const rows = plan.zones.map((z) => ({
+      id: z.id,
+      role: z.role,
+      fill: z.fill ?? '',
+      contentSnippet: z.content
+        ? z.content.length > 40
+          ? z.content.slice(0, 40) + '…'
+          : z.content
+        : '',
+      hasContent: !!z.content && z.content.trim() !== '',
+    }))
+    console.groupCollapsed(`[Claude Design] Zones (${label}) — ${rows.length}`)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(console as any).table?.(rows) ?? console.log(rows)
+    const textCapable = rows.filter((r) => r.hasContent).length
+    console.log(`→ ${textCapable} zones portent du texte, ${rows.length - textCapable} sans content`)
+
+    // Signal les "rectangles muets" : zones cta/price/accent avec fill mais sans
+    // content, qui apparaîtront comme des blocs de couleur vides (symptôme
+    // historique du CTA "ACHETER MAINTENANT" absent + badges sans label).
+    const mutedRects = plan.zones.filter(
+      (z) =>
+        (z.role === 'cta' || z.role === 'price' || z.role === 'accent') &&
+        !!z.fill &&
+        (!z.content || z.content.trim() === ''),
+    )
+    if (mutedRects.length > 0) {
+      console.warn(
+        `[Claude Design] ⚠️ ${mutedRects.length} zone(s) avec fill mais sans content (${label}) — rectangle muet probable :`,
+        mutedRects.map((z) => `${z.id} (${z.role})`),
+      )
+    }
+
+    // Alerte sur les zones dont la fontSize planifiée est sous le seuil de
+    // lisibilité — le rendu les produira mais elles seront illisibles. Signal
+    // fort que le Critic shrinke trop au lieu d'élargir les bboxes.
+    const readabilityFloor: Record<string, number> = {
+      title: 10,
+      subtitle: 7,
+      body: 5,
+      cta: 6,
+      price: 7,
+      accent: 3,
+    }
+    const tooSmall = plan.zones.filter((z) => {
+      if (!z.content || z.content.trim() === '') return false
+      const floor = readabilityFloor[z.role] ?? 5
+      const size = z.fontSize ?? plan.typography.hierarchy.find((h) => h.role === z.role)?.size ?? 10
+      return size < floor
+    })
+    if (tooSmall.length > 0) {
+      console.warn(
+        `[Claude Design] ⚠️ ${tooSmall.length} zone(s) avec fontSize < plancher lisible (${label}) :`,
+        tooSmall.map((z) => `${z.id} (${z.role}, ${z.fontSize}pt)`),
+      )
+    }
+    console.groupEnd()
+  } catch (err) {
+    console.warn('[Claude Design] logZoneContents failed:', err)
+  }
+}
 
 export function useGenerateDesign() {
   const runningRef = useRef(false)
@@ -52,10 +130,7 @@ export function useGenerateDesign() {
     if (runningRef.current) return
     runningRef.current = true
     try {
-      // ─────────────────────────────────────────────────────────────────────────────
-      // PHASE 1 : Planning (Art Director)
-      // ─────────────────────────────────────────────────────────────────────────────
-      setState((s) => ({ ...s, step: 'planning', progress: 'Planification du design (Art Director)…', error: null, lastResult: null, lastPlan: null }))
+      setState((s) => ({ ...s, error: null, lastResult: null, lastPlan: null }))
 
       // Le CANVAS est la source de vérité pour les dimensions (évite race conditions
       // entre le brief persisté et les dimensions réelles du document ouvert).
@@ -99,7 +174,72 @@ export function useGenerateDesign() {
 
       const availableFonts = AVAILABLE_FONTS.map((f) => f.family)
 
-      // Art Director: génère le DesignPlan structuré
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 1 : Nano Banana (image de référence) + Scraper (assets fournisseur)
+      // ─────────────────────────────────────────────────────────────────────────────
+      setState((s) => ({ ...s, step: 'illustrating', progress: 'Génération créative (Nano Banana + Assets)…' }))
+      console.log('[Claude Design] Step 1/3: Nano Banana image generation + Product assets scraping')
+
+      const supplierUrl = extractSupplierUrl(req.prompt, req.productImageUrl)
+      const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
+
+      let nanobananaImageUri: string | undefined
+
+      const [designImageResult, productAssetsResult] = await Promise.all([
+        generateFullDesignImage({
+          userPrompt: req.prompt,
+          widthMm,
+          heightMm,
+          style: req.style as DesignStyle,
+          dpi,
+          palette: req.palette,
+        }),
+        supplierUrl && productName ? generateProductAssets(supplierUrl, productName) : Promise.resolve({ ok: true, assets: [] }),
+      ])
+
+      if (designImageResult.ok && designImageResult.dataUri) {
+        console.log('[Claude Design] ✓ Nano Banana image generated')
+        nanobananaImageUri = designImageResult.dataUri
+
+        // Fire-and-forget : sauvegarde dans la galerie pour comparaison visuelle
+        // par l'utilisateur et pour que le Vision Critic puisse y puiser si besoin.
+        const projectId = useEditorStore.getState().projectId
+        if (projectId) {
+          const refName = `Ref Nano Banana — ${productName.slice(0, 60)} — ${new Date().toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}`
+          void saveRefImageToGallery({
+            dataUri: nanobananaImageUri,
+            projectId,
+            name: refName,
+            tags: ['design-ref', req.style],
+          }).then((img) => {
+            if (img) useNanoBanaStore.getState().addImage(img)
+          })
+        }
+      } else {
+        console.warn('[Claude Design] ✗ Nano Banana failed:', designImageResult.error)
+      }
+
+      if (productAssetsResult.ok && productAssetsResult.assets?.length) {
+        console.log('[Claude Design] ✓ Product assets extracted:', productAssetsResult.assets.length)
+        productAssetsResult.assets.forEach((a) => {
+          console.log(`  → ${a.type}: ${a.title || '(no title)'}`)
+        })
+      } else if (!productAssetsResult.ok) {
+        console.warn('[Claude Design] Product assets failed:', (productAssetsResult as any).error)
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 2 : Art Director multimodal — analyse l'image + liste les assets scrapés,
+      //          produit un plan RICHE qui retranscrit la composition Gemini.
+      // ─────────────────────────────────────────────────────────────────────────────
+      setState((s) => ({ ...s, step: 'planning', progress: 'Analyse et plan éditorial (Opus 4.7)…' }))
+      console.log('[Claude Design] Step 2/3: Art Director — multimodal planning')
+
+      const scrapedAssetsMeta = (productAssetsResult.assets ?? []).map((a) => ({
+        type: a.type,
+        title: a.title,
+      }))
+
       const artDirectorPrompt = buildArtDirectorPrompt({
         userPrompt: req.prompt,
         widthMm,
@@ -112,29 +252,35 @@ export function useGenerateDesign() {
         palette: req.palette,
         productImageUrl: req.productImageUrl,
         productName: req.productName,
+        hasReferenceImage: !!nanobananaImageUri,
+        scrapedAssets: scrapedAssetsMeta.length > 0 ? scrapedAssetsMeta : undefined,
       })
 
       let plan: DesignPlan
       try {
-        console.log('[Claude Design] Art Director — Step 1/4: Planning')
-        console.log('  → Prompt length:', artDirectorPrompt.length)
-        console.log('  → Format:', `${widthMm}×${heightMm}mm, style: ${req.style}`)
-
         plan = await generateJson<DesignPlan>({
           task: 'design.plan',
           prompt: artDirectorPrompt,
           schema: designPlanSchema,
           schemaForLLM: designPlanJsonSchema,
           schemaForClaude: designPlanJsonSchema,
-          version: 'design.plan.v1',
+          version: 'design.plan.v2',
+          imageDataUris: nanobananaImageUri ? [nanobananaImageUri] : undefined,
         })
 
         console.log('[Claude Design] ✓ Art Director completed')
         console.log('  → Concept:', plan.concept)
-        console.log('  → Device:', plan.mainDevice)
-        console.log('  → Zones:', plan.zones.length)
-        console.log('  → Palette:', plan.palette)
-        console.log('  → Slots:', plan.slots.length)
+        console.log('  → Zones:', plan.zones.length, '| Slots:', plan.slots.length)
+
+        // Clamp déterministe : prévient les titres qui bleed hors canvas, les CTA
+        // placés en y > heightMm, etc. Le LLM ne respecte pas systématiquement
+        // les bornes même avec des prompts explicites, on enforce en code.
+        plan = clampPlanToCanvas(plan, { widthMm, heightMm, bleedMm: effectiveBleed })
+
+        console.groupCollapsed('[Claude Design] Plan JSON (Art Director initial, post-clamp)')
+        console.log(JSON.stringify(plan, null, 2))
+        console.groupEnd()
+        logZoneContents('Art Director initial', plan)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         console.error('[Claude Design] ✗ Art Director failed:', msg)
@@ -144,149 +290,116 @@ export function useGenerateDesign() {
 
       setState((s) => ({ ...s, lastPlan: plan }))
 
-      // ─────────────────────────────────────────────────────────────────────────────
-      // PHASE 2 : Illustration (Nano Banana + Product Assets + SVG Engineer)
-      // ─────────────────────────────────────────────────────────────────────────────
-      setState((s) => ({ ...s, step: 'illustrating', progress: 'Génération créative (Nano Banana + Assets)…', lastPlan: plan }))
+      // Assemblage 100 % vectoriel : tout vient du plan Art Director (zones
+      // structurelles + slots image + textes). L'image Nano Banana ne sert QUE
+      // d'inspiration multimodale pour Opus — elle n'est JAMAIS injectée dans
+      // le SVG ni le canvas.
+      console.log('[Claude Design] Step 2b/4: Pure vector SVG assembly')
+      setState((s) => ({ ...s, progress: 'Assemblage vectoriel…' }))
 
-      // Parallèle: Nano Banana image generation + Product assets scraping
-      console.log('[Claude Design] Step 2a/4: Nano Banana image generation + Product assets scraping')
-
-      const supplierUrl = extractSupplierUrl(req.prompt, req.productImageUrl)
-      const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
-
-      // Variable locale pour capturer l'image Nano Banana (ne pas compter sur setState asynchrone)
-      let nanobananaImageUri: string | undefined
-
-      const [designImageResult, productAssetsResult] = await Promise.all([
-        generateFullDesignImage({
-          userPrompt: req.prompt,
-          plan,
-          widthMm,
-          heightMm,
-          style: req.style as DesignStyle,
-          dpi,
-        }),
-        supplierUrl && productName ? generateProductAssets(supplierUrl, productName) : Promise.resolve({ ok: true, assets: [] }),
-      ])
-
-      if (designImageResult.ok && designImageResult.dataUri) {
-        console.log('[Claude Design] ✓ Nano Banana image generated')
-        console.log('  → Data URI length:', designImageResult.dataUri.length)
-        nanobananaImageUri = designImageResult.dataUri
-      } else {
-        console.warn('[Claude Design] ✗ Nano Banana failed:', designImageResult.error)
-        // Continue sans image de référence
-      }
-
-      if (productAssetsResult.ok && productAssetsResult.assets?.length) {
-        console.log('[Claude Design] ✓ Product assets extracted:', productAssetsResult.assets.length)
-        productAssetsResult.assets.forEach((a) => {
-          console.log(`  → ${a.type}: ${a.title || '(no title)'}`)
-        })
-      } else if (!productAssetsResult.ok) {
-        console.warn('[Claude Design] Product assets failed:', (productAssetsResult as any).error)
-      }
-
-      // SVG Engineer avec multimodal (image + plan)
-      console.log('[Claude Design] Step 2b/4: SVG Engineer structure generation')
-      setState((s) => ({ ...s, progress: 'Structure SVG (Claude)…' }))
-
-      const svgEngineerPrompt = buildSvgEngineerPrompt({
+      let assembledSvg = buildSvgFromPlan({
         plan,
         widthMm,
         heightMm,
-        formatLabel,
         includeBleed: req.includeBleed,
         bleedMm: effectiveBleed,
-        availableFonts,
-        productAssets: productAssetsResult.assets,
       })
+      console.log('[Claude Design] ✓ SVG assembled (pure vector), length:', assembledSvg.length)
 
-      interface SVGEngineResult {
-        svg: string
-        rationale?: string
-        slots?: Array<{ id: string; role: string; promptSuggestion?: string }>
+      // ─────────────────────────────────────────────────────────────────────────────
+      // PHASE 2c : Vision Critic (boucle max 2 itérations)
+      // Compare le rendu SVG à la référence Nano Banana, émet un patch structuré,
+      // on l'applique et on ré-assemble. Convergence garantie par ops discrètes
+      // (pas de rewrite complet) + plafond d'itérations.
+      // ─────────────────────────────────────────────────────────────────────────────
+      if (nanobananaImageUri) {
+        const MAX_CRITIC_ITERATIONS = 2
+        for (let iter = 0; iter < MAX_CRITIC_ITERATIONS; iter++) {
+          setState((s) => ({ ...s, progress: `Vision Critic (passe ${iter + 1}/${MAX_CRITIC_ITERATIONS})…` }))
+          console.log(`[Claude Design] Vision Critic pass ${iter + 1}/${MAX_CRITIC_ITERATIONS}`)
+
+          let renderedDataUri: string
+          try {
+            renderedDataUri = await rasterizeSvgForCritic(assembledSvg, widthMm, heightMm)
+          } catch (err) {
+            console.warn('[Claude Design] Rasterize failed, skipping critic:', err)
+            break
+          }
+
+          let patch
+          try {
+            patch = await runVisionCritic({
+              plan,
+              widthMm,
+              heightMm,
+              referenceImage: nanobananaImageUri,
+              renderedImage: renderedDataUri,
+            })
+          } catch (err) {
+            console.warn('[Claude Design] Critic failed, keeping current render:', err)
+            break
+          }
+
+          console.log(`[Claude Design] Critic verdict: ${patch.verdict} (score=${patch.fidelityScore}), ops=${patch.ops.length}`)
+          console.log(`  → Summary: ${patch.summary}`)
+          console.groupCollapsed(`[Claude Design] Critic ops détaillés (pass ${iter + 1})`)
+          patch.ops.forEach((op, i) => {
+            const content = 'content' in op && op.content ? ` content="${op.content.slice(0, 60)}${op.content.length > 60 ? '…' : ''}"` : ''
+            const role = 'role' in op && op.role ? ` role=${op.role}` : ''
+            console.log(`#${i} ${op.op} id=${op.id}${role}${content} — ${op.reason}`)
+          })
+          console.groupEnd()
+
+          if (patch.verdict === 'pass') {
+            console.log('[Claude Design] ✓ Critic pass — fidelity ≥ 85, stopping loop')
+            break
+          }
+          if (patch.verdict === 'fail' && patch.ops.length === 0) {
+            console.warn(`[Claude Design] ✗ Critic fail (score=${patch.fidelityScore}) sans ops — design non réparable, on garde le rendu courant`)
+            break
+          }
+          if (patch.ops.length === 0) {
+            console.log('[Claude Design] ⊘ Critic returned no ops — stopping loop')
+            break
+          }
+
+          plan = applyCriticPatch(plan, patch)
+          // Re-clamp après chaque patch — le Critic peut réintroduire des
+          // débordements que l'AD avait initialement évités.
+          plan = clampPlanToCanvas(plan, { widthMm, heightMm, bleedMm: effectiveBleed })
+          setState((s) => ({ ...s, lastPlan: plan }))
+
+          assembledSvg = buildSvgFromPlan({
+            plan,
+            widthMm,
+            heightMm,
+            includeBleed: req.includeBleed,
+            bleedMm: effectiveBleed,
+          })
+          console.log(`[Claude Design] ✓ Re-assembled after patch (${plan.zones.length} zones, ${plan.slots.length} slots)`)
+          logZoneContents(`après Critic pass ${iter + 1}`, plan)
+        }
       }
 
-      let engineResult: SVGEngineResult
-      try {
-        console.log('[Claude Design] SVG Engineer prompt length:', svgEngineerPrompt.length)
-        console.log('  → Image reference:', designImageResult.ok ? 'YES' : 'NO')
-        console.log('  → Multimodal mode:', designImageResult.ok && designImageResult.dataUri ? 'YES' : 'NO')
+      console.groupCollapsed('[Claude Design] Plan JSON final (avant sanitize)')
+      console.log(JSON.stringify(plan, null, 2))
+      console.groupEnd()
 
-        engineResult = await generateJson<SVGEngineResult>({
-          task: 'design.emit',
-          prompt: svgEngineerPrompt,
-          schema: z.object({
-            svg: z.string(),
-            rationale: z.string().optional(),
-            slots: z.array(z.object({
-              id: z.string(),
-              role: z.string(),
-              promptSuggestion: z.string().optional(),
-            })).optional(),
-          }) as unknown as z.ZodSchema<SVGEngineResult>,
-          schemaForLLM: {
-            type: 'object',
-            properties: {
-              svg: { type: 'string', description: 'SVG vectoriel complet en string' },
-              rationale: { type: 'string', description: 'Explication des choix (1-2 phrases)' },
-              slots: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string' },
-                    role: { type: 'string' },
-                    promptSuggestion: { type: 'string' },
-                  },
-                },
-              },
-            },
-            required: ['svg'],
-          } as Record<string, unknown>,
-          version: 'design.emit.v1',
-          imageDataUris: [
-            ...(designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : []),
-            ...(productAssetsResult.assets?.map((a) => a.dataUri) ?? []),
-          ].filter(Boolean).length > 0
-            ? [
-                ...(designImageResult.ok && designImageResult.dataUri ? [designImageResult.dataUri] : []),
-                ...(productAssetsResult.assets?.map((a) => a.dataUri) ?? []),
-              ]
-            : undefined,
-        })
-
-        console.log('[Claude Design] ✓ SVG Engineer completed')
-        console.log('  → SVG length:', engineResult.svg.length)
-        console.log('  → Rationale:', engineResult.rationale?.substring(0, 80))
-        console.log('  → SVG first 500 chars:', engineResult.svg.substring(0, 500))
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        console.error('[Claude Design] ✗ SVG Engineer failed:', msg)
-        setState((s) => ({ ...s, step: 'error', progress: '', error: `SVG Engineer échoué : ${msg}`, lastResult: null, lastPlan: plan }))
-        return
-      }
-
-      console.log('[Claude Design] Image injection strategy: Nano Banana as Layer 1 background')
-
-      // Mappe le résultat SVG Engineer → DesignResult
       const fontsUsed = Array.from(new Set([plan.typography.heroFont, plan.typography.bodyFont]))
       const result: DesignResult = {
-        svg: engineResult.svg,
+        svg: assembledSvg,
         widthMm,
         heightMm,
         bleedMm: effectiveBleed,
         palette: plan.palette,
         fontsUsed,
-        rationale: engineResult.rationale || '',
-        slots: plan.slots.map((slot) => ({
-          id: slot.id,
-          role: slot.role,
-          promptSuggestion: slot.description,
-        })),
+        rationale: `${plan.concept} — SVG 100% éditable (${plan.zones.length} zones, ${plan.slots.length} slots)`,
+        slots: plan.slots.map((s) => ({ id: s.id, role: s.role, promptSuggestion: s.description })),
       }
+      void formatLabel
+      void designImageResult
+      void vectorizeImage
+      void renderVectorPlan
 
       // ─────────────────────────────────────────────────────────────────────────────
       // PHASE 3 : Sanitizing
@@ -320,45 +433,58 @@ export function useGenerateDesign() {
         }
       }
 
-      // SVG Fidelity validation - ensure SVG faithfully represents the Nano Banana image
-      console.log('[Claude Design] Step 3b/4: Validating SVG fidelity')
-      setState((s) => ({ ...s, progress: 'Validation de la fidélité visuelle…' }))
-      const validationResult = await validateSvgFidelity(cleanSvg, result, nanobananaImageUri)
-      console.log('[Claude Design] Fidelity validation result:', {
-        isValid: validationResult.isValid,
-        score: validationResult.score,
-        visualScore: validationResult.visualFidelityScore,
-        issues: validationResult.issues,
-      })
-      if (validationResult.score < 75) {
-        console.warn('[Claude Design] ⚠️ SVG fidelity score low:', validationResult.score)
-        if (validationResult.issues.length > 0) {
-          console.warn('[Claude Design] Issues detected:', validationResult.issues)
+      // Injection des assets scrapés : l'Art Director a assigné explicitement
+      // chaque asset à un slot via assetIndex. On respecte cette assignation en
+      // priorité. Fallback (si pas d'assetIndex) : matching par type / rôle.
+      const slotDataUris: Map<string, string> = new Map()
+      const scrapedAssets = productAssetsResult.assets ?? []
+
+      if (scrapedAssets.length > 0) {
+        const usedIndices = new Set<number>()
+
+        // Passe 1 : respecter les assetIndex explicites du plan
+        for (const slot of plan.slots) {
+          const idx = slot.assetIndex
+          if (idx === undefined || idx < 0 || idx >= scrapedAssets.length) continue
+          if (usedIndices.has(idx)) {
+            console.warn(`[Claude Design] assetIndex ${idx} déjà utilisé, ignoré pour slot ${slot.id}`)
+            continue
+          }
+          slotDataUris.set(slot.id, scrapedAssets[idx].dataUri)
+          usedIndices.add(idx)
+          console.log(`[Claude Design] Slot "${slot.id}" ← asset #${idx} (${scrapedAssets[idx].type}: ${scrapedAssets[idx].title ?? ''})`)
         }
-      }
-      setState((s) => ({ ...s, lastValidationResult: validationResult }))
 
-      // Injecter l'image Nano Banana comme background (placeholder:nanobanana)
-      let slotDataUris: Map<string, string> = new Map()
-      if (nanobananaImageUri) {
-        slotDataUris.set('nanobanana', nanobananaImageUri)
-        console.log('[Claude Design] Injecting Nano Banana image as background asset')
-      }
+        // Passe 2 : fallback type-based pour les slots sans assetIndex (ou avec
+        // un index invalide). N'utilise que les assets non encore consommés.
+        const availableByType: Record<string, number[]> = {}
+        scrapedAssets.forEach((a, i) => {
+          if (usedIndices.has(i)) return
+          if (!availableByType[a.type]) availableByType[a.type] = []
+          availableByType[a.type].push(i)
+        })
+        const takeFromType = (type: string): number | null => {
+          const q = availableByType[type]
+          if (q && q.length > 0) return q.shift()!
+          return null
+        }
 
-      // Pré-remplissage de l'image produit pour le slot avec role "product" (optionnel)
-      if (req.productImageUrl) {
-        const productSlot = result.slots.find((s) => s.role === 'product')
-        if (productSlot) {
-          try {
-            const { httpsCallable } = await import('firebase/functions')
-            const { functions } = await import('@/lib/firebase/config')
-            const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(
-              functions, 'imageProxy'
-            )
-            const { data: proxyResult } = await imageProxyFn({ url: req.productImageUrl })
-            slotDataUris.set(productSlot.id, `data:${proxyResult.mimeType};base64,${proxyResult.data}`)
-          } catch (err) {
-            console.warn('[useGenerateDesign] product image proxy failed:', err)
+        for (const slot of plan.slots) {
+          if (slotDataUris.has(slot.id)) continue
+          const role = slot.role.toLowerCase()
+          const id = slot.id.toLowerCase()
+          let idx: number | null = null
+          if (role.includes('logo') || id.includes('logo')) {
+            idx = takeFromType('logo') ?? takeFromType('picto')
+          } else if (role.includes('picto') || id.includes('picto') || role === 'accent') {
+            idx = takeFromType('picto') ?? takeFromType('logo')
+          } else {
+            idx = takeFromType('image') ?? takeFromType('picto') ?? takeFromType('logo')
+          }
+          if (idx !== null) {
+            slotDataUris.set(slot.id, scrapedAssets[idx].dataUri)
+            usedIndices.add(idx)
+            console.log(`[Claude Design] Slot "${slot.id}" ← asset #${idx} (fallback type match)`)
           }
         }
       }
@@ -398,13 +524,13 @@ export function useGenerateDesign() {
         // Les unités SVG sont en mm (viewBox en mm par contrat de prompt).
         // Scale uniforme mm → px. Pas de translation — les coordonnées SVG
         // utilisent déjà le format fini comme origine ; le bleed est en coords négatives.
+        // Pour les textes, le scaling se fait sur les propriétés intrinsèques
+        // (fontSize, width, styles char-level) au lieu de scaleX/Y — sinon les
+        // handles latéraux de Textbox changent width puis initDimensions reflow
+        // avec la fontSize mm (minuscule) → perte de formatage à l'édition.
         const scale = canvasWidthPx / widthMm
         for (const obj of objects) {
-          obj.left = (obj.left ?? 0) * scale
-          obj.top = (obj.top ?? 0) * scale
-          obj.scaleX = (obj.scaleX ?? 1) * scale
-          obj.scaleY = (obj.scaleY ?? 1) * scale
-          obj.setCoords()
+          scaleObjectForCanvas(obj, scale)
           canvas.add(obj)
         }
 

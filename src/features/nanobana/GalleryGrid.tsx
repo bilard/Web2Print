@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Trash2, Plus, Loader2, ImageIcon, RotateCcw, Sparkles, Eraser } from 'lucide-react'
+import { Trash2, Plus, Loader2, ImageIcon, RotateCcw, Sparkles, Eraser, X, ZoomIn } from 'lucide-react'
 import { FabricImage, Rect } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
@@ -172,6 +172,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
   const [swapping, setSwapping] = useState<string | null>(null)
   const { removeBg, loading: removingBg, error: removeBgError } = useRemoveBg()
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [lightboxSrc, setLightboxSrc] = useState<{ src: string; label: string } | null>(null)
 
   const canvasImages = useMemo(() => getCanvasImages(), [canvasObjects])
 
@@ -311,17 +312,32 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                     {allVersions.map((v) => {
                       const isSwapping = swapping === `${ci.id}_${v.src}`
                       return (
-                        <button
+                        <div
                           key={v.src}
-                          onClick={() => !v.isCurrent && handleSwap(ci.id, v.src)}
-                          disabled={v.isCurrent || !!swapping}
-                          className={`relative rounded-md overflow-hidden aspect-square transition-all ${
+                          className={`group/ver relative rounded-md overflow-hidden aspect-square transition-all ${
                             v.isCurrent
                               ? 'ring-2 ring-indigo-500 opacity-100'
                               : 'opacity-60 hover:opacity-100 hover:ring-1 hover:ring-white/20'
                           }`}
                         >
-                          <img src={v.src} alt={v.label} className="w-full h-full object-cover" loading="lazy" />
+                          <button
+                            type="button"
+                            onClick={() => !v.isCurrent && !swapping && handleSwap(ci.id, v.src)}
+                            disabled={v.isCurrent || !!swapping}
+                            onDoubleClick={() => setLightboxSrc({ src: v.src, label: v.label })}
+                            className="absolute inset-0 w-full h-full"
+                            title={v.isCurrent ? 'Double-clic pour zoomer' : 'Clic pour appliquer · double-clic pour zoomer'}
+                          >
+                            <img src={v.src} alt={v.label} className="w-full h-full object-cover" loading="lazy" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setLightboxSrc({ src: v.src, label: v.label }) }}
+                            className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover/ver:opacity-100 hover:bg-black/80 transition-opacity"
+                            title="Zoomer"
+                          >
+                            <ZoomIn className="w-3 h-3 text-white" />
+                          </button>
                           {isSwapping && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                               <Loader2 className="w-4 h-4 text-white animate-spin" />
@@ -343,7 +359,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                               </span>
                             )}
                           </span>
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -394,6 +410,11 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                 key={img.id}
                 className="group relative bg-white/5 border border-white/10 rounded-lg overflow-hidden aspect-square cursor-pointer hover:border-indigo-500/40 transition-all"
                 onClick={() => onAddToCanvas(img)}
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  if (img.url) setLightboxSrc({ src: img.url, label: img.name })
+                }}
+                title="Clic pour ajouter au canvas · double-clic pour zoomer"
               >
                 {img.thumbnailUrl && !brokenIds.has(img.id) ? (
                   <img
@@ -426,6 +447,17 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                   <Plus className="w-6 h-6 text-white" />
                 </div>
+                {/* Zoom button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (img.url) setLightboxSrc({ src: img.url, label: img.name })
+                  }}
+                  className="absolute top-1 right-8 w-6 h-6 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/80 transition-all"
+                  title="Voir en grand"
+                >
+                  <ZoomIn className="w-3 h-3 text-white" />
+                </button>
                 {/* Delete button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDelete(img) }}
@@ -449,6 +481,30 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-8"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-lg transition-colors"
+            title="Fermer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={lightboxSrc.src}
+              alt={lightboxSrc.label}
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+            <p className="text-center text-xs text-white/60 mt-3">{lightboxSrc.label}</p>
           </div>
         </div>
       )}

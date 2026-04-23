@@ -48,23 +48,76 @@ export async function extractProductAssets(
   }
 
   try {
-    // Step 1: Scrape via Jina AI (fast HTML extraction)
+    // Step 1: Scrape via Jina AI. Headers importants :
+    //  - Accept: application/json → format structuré
+    //  - X-With-Images-Summary: all → récupère toutes les images
+    //  - X-Return-Format: markdown + images → combine les deux
+    //  - X-Engine: browser → rend le JS (indispensable pour Makita et autres sites SPA)
     console.log('[generateProductAssets] Scraping:', supplierUrl)
     const jinaUrl = `https://r.jina.ai/${supplierUrl}`
-    const jinaRes = await fetch(jinaUrl, { headers: { Accept: 'application/json' } })
+    const jinaRes = await fetch(jinaUrl, {
+      headers: {
+        Accept: 'application/json',
+        'X-With-Images-Summary': 'all',
+        'X-Return-Format': 'markdown',
+        'X-Engine': 'browser',
+      },
+    })
 
     if (!jinaRes.ok) {
       return { ok: false, error: `Jina scrape failed: ${jinaRes.status}` }
     }
 
-    const jinaData = (await jinaRes.json()) as { data?: { markdown?: string; images?: Array<{ url: string; alt?: string }> } }
-    const markdown = jinaData.data?.markdown || ''
-    const scrapedImages = jinaData.data?.images || []
+    const jinaData = (await jinaRes.json()) as {
+      data?: {
+        markdown?: string
+        content?: string
+        images?: Array<{ url: string; alt?: string }> | Record<string, string>
+      }
+    }
+    const markdown = jinaData.data?.markdown || jinaData.data?.content || ''
+    // Jina retourne "images" sous forme de dict { alt: url } OU d'array [{url, alt}]
+    const rawImages = jinaData.data?.images
+    const scrapedImages: Array<{ url: string; alt?: string }> = Array.isArray(rawImages)
+      ? rawImages
+      : rawImages
+        ? Object.entries(rawImages).map(([alt, url]) => ({ url, alt }))
+        : []
 
     console.log('[generateProductAssets] Jina returned:', {
       markdownLength: markdown.length,
       imageCount: scrapedImages.length,
     })
+
+    // Fallback : si Jina ne renvoie rien, tente un fetch HTML direct
+    // et extrait les <img src> manuellement (pour les sites simples).
+    let fallbackImages: Array<{ url: string; alt?: string }> = []
+    if (scrapedImages.length === 0) {
+      try {
+        const htmlRes = await fetch(supplierUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Web2PrintScraper/1.0)' } })
+        if (htmlRes.ok) {
+          const html = await htmlRes.text()
+          const imgRe = /<img[^>]+src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi
+          const base = new URL(supplierUrl)
+          const seen = new Set<string>()
+          let m: RegExpExecArray | null
+          while ((m = imgRe.exec(html))) {
+            let url = m[1]
+            if (url.startsWith('//')) url = base.protocol + url
+            else if (url.startsWith('/')) url = base.origin + url
+            else if (!url.startsWith('http')) continue
+            if (seen.has(url)) continue
+            seen.add(url)
+            fallbackImages.push({ url, alt: m[2] })
+            if (fallbackImages.length >= 20) break
+          }
+          console.log('[generateProductAssets] HTML fallback extracted:', fallbackImages.length, 'images')
+        }
+      } catch (err) {
+        console.warn('[generateProductAssets] HTML fallback failed:', err)
+      }
+    }
+    const allImages = scrapedImages.length > 0 ? scrapedImages : fallbackImages
 
     // Step 2: Gemini LLM to identify relevant assets for the product
     const extractPrompt = `
@@ -76,7 +129,7 @@ Produit: ${productName}
 ${markdown.substring(0, 2000)}
 
 **Images trouvées:**
-${scrapedImages.slice(0, 10).map((img, i) => `${i + 1}. URL: ${img.url}${img.alt ? ` | Alt: ${img.alt}` : ''}`).join('\n')}
+${allImages.slice(0, 15).map((img, i) => `${i + 1}. URL: ${img.url}${img.alt ? ` | Alt: ${img.alt}` : ''}`).join('\n')}
 
 **Identifiez UNIQUEMENT les assets pertinents (logo, pictos techniques, images du produit).**
 

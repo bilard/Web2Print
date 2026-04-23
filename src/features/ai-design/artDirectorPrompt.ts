@@ -12,6 +12,12 @@ export interface BuildArtDirectorPromptArgs {
   palette?: string[]
   productImageUrl?: string
   productName?: string
+  /** Si true, une image de référence Nano Banana est jointe au prompt multimodal.
+   *  L'Art Director DOIT l'analyser et en extraire la composition + le contenu texte. */
+  hasReferenceImage?: boolean
+  /** Assets scrapés sur le site fournisseur, pour que l'Art Director prévoie
+   *  des slots correspondants. */
+  scrapedAssets?: Array<{ type: string; title?: string }>
 }
 
 const STYLE_DIRECTION: Record<DesignStyle, string> = {
@@ -44,13 +50,93 @@ export function buildArtDirectorPrompt(args: BuildArtDirectorPromptArgs): string
     ? `\n## Image produit fournie\n\nL'utilisateur a fourni une photo du produit : \`${args.productImageUrl}\`\n- Crée exactement une zone \`role="hero-visual"\` occupant ≥40% du canvas.\n- Dans la description du slot, indique que la photo réelle sera injectée automatiquement.\n- N'invente PAS de scène générée par IA pour ce slot.${args.productName ? `\n- Nom du produit : **${args.productName}**` : ''}`
     : ''
 
-  return `Tu es un **Art Director éditorial senior** (Makita, Apple, Muji, Ducati selon le style). Ta mission : produire un PLAN de design print structuré en JSON, **pas encore le SVG**. Un SVG Engineer exécutera ton plan ensuite — ne laisse rien d'ambigu.
+  const referenceImageSection = args.hasReferenceImage
+    ? `\n## Image de référence Nano Banana (jointe en multimodal)
+
+Une image créative a été générée par Nano Banana (Gemini) pour INSPIRER ce design. **Elle N'EST PAS intégrée dans le SVG final** — elle te sert UNIQUEMENT de référence visuelle pour décider de la composition, des couleurs, des tailles, des typos et des contenus textes. Le SVG final sera 100 % vectoriel : chaque forme, chaque couleur, chaque texte que tu décris devient un objet éditable.
+
+Ton travail : **retranscrire l'image en plan vectoriel structuré**. Tu décomposes TOUT ce que tu vois :
+
+### Étape 1 — Bandes / panneaux structurels (role=background ou accent)
+Identifie les GRANDES MASSES DE COULEUR :
+- Header coloré (bande navy/noir/vert en haut) → zone \`role="background"\` couvrant cette bande
+- Split vertical / diagonal → 2 zones \`role="background"\`
+- Footer coloré → zone \`role="background"\` ou \`role="accent"\`
+- Badge prix coloré → zone \`role="price"\` avec \`fill\` = couleur du badge
+- Bouton CTA coloré → zone \`role="cta"\` avec \`fill\` = couleur du bouton **ET** \`content\` = label exact ("ACHETER MAINTENANT", "EN SAVOIR PLUS", etc.)
+- Pennant / flag / ribbon décoratif PUR (sans texte) → zone \`role="accent"\` avec \`fill\` uniquement
+- **Badge étiquette AVEC TEXTE** (pastille "LITHIUM-ION", "LXT", "18v", "XPT", "NEW", "-20 %"…) → zone \`role="accent"\` avec \`fill\` = couleur du badge **ET** \`content\` = texte exact. Le texte sera centré automatiquement sur le rect.
+
+### Étape 2 — Visuels photographiques / logos (slots)
+Chaque IMAGE visible (photo produit, logo marque, picto) = 1 slot :
+- Photo produit/hero → \`slots[]\` avec role \`hero-visual\` ou \`product\`, position et taille observées
+- Logo marque → slot role \`logo\`, dimension typique 30-60 mm de large
+- Picto / icon → slot role \`picto\`, 10-20 mm
+- Si une liste \`scrapedAssets\` t'est fournie, utilise \`assetIndex\` pour assigner chaque slot à l'asset scrapé le plus pertinent (logo sur slot logo, photo sur slot produit)
+
+### Étape 3 — Tous les textes (role=title/subtitle/body/cta/price/accent)
+
+⚠️ **CHECK-LIST OBLIGATOIRE** — pour un packshot produit (fiche, affiche retail, flyer promo), vérifie que tu as PRÉVU une zone pour chacun des éléments visibles dans la référence :
+- [ ] **titre** produit (role=title, ex: "HEDGE TRIMMER DUH752Z")
+- [ ] **accroche/subtitle** (role=subtitle, ex: "PUISSANT. EFFICACE. SANS FIL.")
+- [ ] **liste de features/bullets** AVEC LEURS VALEURS — \`role="body"\` UNE SEULE zone, \`content\` multi-ligne avec \`\\n\`, ex: \`"• LONGUEUR DE COUPE : 75 cm\\n• AUTONOMIE OPTIMISÉE (18V)\\n• SYSTÈME ANTI-VIBRATIONS"\`. Si une feature a un picto associé à gauche, le picto est un slot séparé (type=picto) mais le texte de la feature reste dans la zone body unique.
+- [ ] **paragraphe de description** (role=body) — si un bloc de texte courant est présent (2-5 lignes), c'est OBLIGATOIRE ; ne saute JAMAIS un paragraphe visible.
+- [ ] **prix barré** (role=price, decoration=line-through) si applicable
+- [ ] **prix promo** (role=price) avec fontSize ~2× le prix barré
+- [ ] **CTA** (role=cta) avec \`fill\` ET \`content\` — le texte du bouton fait PARTIE de la zone, pas séparé
+- [ ] **chaque badge/pastille** visible (role=accent avec fill ET content)
+
+**Règle de groupement (CRUCIALE)** :
+- **Un paragraphe / une liste de bullets / un bloc de specs = UNE SEULE zone**, pas N zones. Sépare les lignes avec \`\\n\` dans \`content\`.
+  - Exemple : 6 bullets de features → 1 seule zone \`role="body"\` avec \`content="• Bullet 1\\n• Bullet 2\\n• Bullet 3..."\`.
+  - Exemple : un bloc "specs techniques" avec 4 lignes de caractéristiques → 1 seule zone \`role="body"\`.
+- **Un titre multi-ligne = 1 zone** avec \`\\n\` entre les lignes. Ne découpe jamais un titre en 2 zones "title1"/"title2".
+- **Exceptions** (vraiment 2 zones distinctes) : un prix barré (line-through) ET un prix promo (deux zones). Un CTA est toujours sa propre zone. Chaque badge avec un texte différent est sa propre zone accent.
+
+⚠️ **INTERDIT** : créer une zone \`role="cta"\`, \`role="price"\` ou \`role="accent"\` avec \`fill\` sans \`content\`. Le rect vide laisserait un rectangle de couleur muet à la place du bouton/badge. Si c'est un badge purement décoratif (sans texte), utilise \`role="accent"\` sans confusion.
+
+Pour chaque zone :
+- \`content\` : le TEXTE EXACT tel qu'il apparaît (casse, ponctuation, accents). Multi-lignes avec \`\\n\`.
+- \`bboxMm\` : position ET TAILLE du bloc ENTIER (toutes les lignes groupées comprises) :
+  - **largeur** : ajoute ~15-20 % de marge à droite pour que l'auto-fit ne shrinke pas un bold/display trop tôt
+  - **hauteur** : calcule \`nbLignes × fontSize_mm × 1.3\` + marge. Un bloc de 6 bullets à 11pt fait ~35-40 mm de haut minimum.
+- \`fontSize\` (pt) : taille estimée à partir de la hauteur en mm des majuscules (1 pt ≈ 0,353 mm). **Un titre sur une bannière de 100 mm de haut fait typiquement 30-50 pt**. Pour les BOLD/BLACK/condensed (wordmark style Makita), ATTENTION à la largeur : estime 0.55-0.62 mm par caractère × fontSize_mm et élargis la bbox en conséquence.
+- \`textColor\` : couleur hex du texte observé.
+- \`fill\` (optionnel, uniquement si le texte est sur un rect coloré non décrit ailleurs) : laisse \`undefined\` si le texte se pose sur un background/accent déjà listé.
+- \`decoration: "line-through"\` si le prix est barré.
+- \`align: "left" | "center" | "right"\`
+
+⚠️ **Aucune invention, aucune omission** : tout ce qui est visible dans l'image doit être dans ton plan. Rien de plus, rien de moins.
+`
+    : ''
+
+  const scrapedAssetsSection = args.scrapedAssets && args.scrapedAssets.length > 0
+    ? `\n## Assets scrapés disponibles (numérotés)
+
+Le site fournisseur a été scrapé. Voici la liste INDEXÉE des assets prêts à être injectés. Pour chaque asset que tu veux utiliser, crée un slot dédié et mets son index dans le champ \`assetIndex\` du slot :
+
+${args.scrapedAssets
+  .map((a, i) => `- **index=${i}** — type=\`${a.type}\` — "${a.title || '(sans titre)'}"`)
+  .join('\n')}
+
+### Règles d'assignation
+- \`type=logo\` → crée un slot \`role="logo-slot"\`, 30-60 mm de large, coin/entête.
+- \`type=picto\` → slot \`role="accent"\`, 10-20 mm, badge/corner.
+- \`type=image\` → slot \`role="hero-visual"\` ou \`role="product"\`, 40-60 % du canvas.
+
+Chaque asset utilisé = 1 slot avec \`assetIndex\` explicite. Ne réutilise jamais le même index.
+`
+    : ''
+
+  return `Tu es un **Art Director éditorial senior** (Makita, Apple, Muji, Ducati selon le style). Ta mission : produire un PLAN de design print structuré en JSON, **pas encore le SVG**. Un SVG Engineer exécutera ton plan ensuite et produira un SVG **100 % vectoriel éditable** — ne laisse rien d'ambigu, et retranscris TOUT ce que tu vois en éléments vectoriels (rects pour les fonds, slots pour les photos, zones texte pour les textes).
 
 ## Brief utilisateur
 <user_brief>
 ${args.userPrompt}
 </user_brief>
 ${productImageLine}
+${referenceImageSection}
+${scrapedAssetsSection}
 
 ## Contraintes techniques
 - **Format** : ${args.formatLabel} — ${args.widthMm} × ${args.heightMm} mm (format fini après coupe).
@@ -63,26 +149,24 @@ ${paletteLine}
 
 ${DEVICES_CATALOG}
 
-## Zones : contrainte stricte
+## Zones (vectorielles éditables)
 
-⚠️ **EXACTEMENT 4-6 zones DISJOINTES**. Pas moins, pas plus.
+Si une image de référence est jointe (voir section ci-dessus), retranscris-la fidèlement en zones. Sinon, compose from-scratch selon le brief :
+- **1 zone background** couvrant le canvas
+- **1-2 zones hero-visual**
+- **3-6 zones texte** bien séparées
 
-- **1 zone background** (couvre 100% du canvas ou avec bleed)
-- **1-2 zones hero-visual** (image produit, photo, logo)
-- **2-4 zones texte** (titre, subtitle, body, prix, CTA, meta)
+**Minimum 4 zones, aucun plafond haut.** Si l'image a 10+ éléments distincts, ton plan a 10+ zones.
 
-Exemple « Makita 234,99€ » :
-1. Background bleu acier diagonal
-2. Hero-visual : photo tronçonneuse 40%
-3. Titre « TAILLE-HAIE 18V » en gros blanc
-4. Price stack « 435,99€ barré + 234,99€ TTC + badge »
-5. Meta + specs footer
-(= 5 zones clairement séparées)
+**Hiérarchie typo indicative** (adapte selon l'image) :
+- Display/hero : 30-80 pt, gras
+- Subtitle : 14-24 pt
+- Body : 9-14 pt
+- Meta/disclaimer : 7-10 pt
 
-**Hiérarchie typo** : 2-3 niveaux max (pas 4-5).
-- Display/hero : 60-120 pt, gras
-- Body : 14-24 pt
-- Meta : 8-12 pt
+**IMPORTANT — tailles généreuses** : nos estimateurs de police prévoient ~15 % de marge. Si tu observes un titre à ~40 pt dans l'image, écris \`fontSize: 40\` (pas 30). Bbox aussi généreuses (ajoute 15-20 % de marge).
+
+**Planchers lisibles absolus** (tailles minimum, JAMAIS en-dessous) : body ≥ 5 pt, subtitle ≥ 7 pt, title ≥ 10 pt, price ≥ 7 pt, cta ≥ 6 pt, accent ≥ 3 pt. Un texte à 2-4 pt est illisible et sera invisible. Si la bbox semble trop petite pour ton texte, **agrandis la bbox** au lieu de réduire la police.
 
 ## Règles de layout NON NÉGOCIABLES
 
