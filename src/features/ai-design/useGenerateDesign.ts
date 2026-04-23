@@ -7,6 +7,7 @@ import { listTemplates, getTemplate, pickTemplateByAspect } from './templates'
 import { assembleSvgFromTemplate } from './templates/assembler'
 import { generateProductAssets, extractSupplierUrl } from './generateProductAssets'
 import { generateNanoBananaRef } from './generateNanoBananaRef'
+import { saveRefImageToGallery } from './saveRefImageToGallery'
 import { sanitizeSvg } from './sanitizeSvg'
 import { validateSvgFonts } from './fontsValidator'
 import { scaleObjectForCanvas } from './scaleFabricObjects'
@@ -15,6 +16,8 @@ import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useUIStore } from '@/stores/ui.store'
+import { useEditorStore } from '@/stores/editor.store'
+import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { getFormatById } from '@/features/print/PRINT_FORMATS'
 import { mmToPx, pxToMm } from '@/features/print/dimensions'
 import { AVAILABLE_FONTS } from '@/features/assets/useFonts'
@@ -107,10 +110,38 @@ export function useGenerateDesign() {
       scrapedAssets.forEach((a, i) => console.log(`  → [${i}] ${a.type}: ${a.title ?? ''}`))
 
       if (nanobananaResult.ok && nanobananaResult.dataUri) {
-        console.log('[Claude Design] ✓ Nano Banana ref générée')
-        setState((s) => ({ ...s, nanobananaRef: nanobananaResult.dataUri ?? null }))
+        const refUri = nanobananaResult.dataUri
+        console.log('[Claude Design] ✓ Nano Banana ref générée — affichée dans la modale + sauvée en galerie')
+        setState((s) => ({ ...s, nanobananaRef: refUri }))
+
+        // Sauvegarde persistante dans la galerie du projet. Fire-and-forget :
+        // l'utilisateur retrouve la ref dans son DAM Nano Banana même après
+        // fermeture de la modale DesignProgress.
+        const projectId = useEditorStore.getState().projectId
+        if (projectId) {
+          const shortName = productName.slice(0, 60).trim()
+          const dateLabel = new Date().toLocaleString('fr-FR', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+          })
+          const refName = `Ref Nano Banana — ${shortName || 'Design'} — ${dateLabel}`
+          void saveRefImageToGallery({
+            dataUri: refUri,
+            projectId,
+            name: refName,
+            tags: ['design-ref', req.style],
+          }).then((img) => {
+            if (img) {
+              useNanoBanaStore.getState().addImage(img)
+              toast.success('Ref Nano Banana sauvée dans la galerie')
+            }
+          })
+        } else {
+          console.warn('[Claude Design] Pas de projectId — ref NB non sauvée en galerie')
+        }
       } else {
-        console.warn('[Claude Design] Nano Banana ref échouée :', nanobananaResult.error)
+        const errMsg = 'error' in nanobananaResult ? nanobananaResult.error : 'inconnu'
+        console.warn('[Claude Design] ✗ Nano Banana ref échouée :', errMsg)
+        toast.warning(`Ref Nano Banana non générée : ${errMsg?.slice(0, 80) ?? 'inconnu'}`)
       }
 
       // ─── Phase 2 : LLM template fill ──────────────────────────────────────
