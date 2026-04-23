@@ -67,16 +67,20 @@ function substitutePalette(svg: string, palette: Palette): string {
 }
 
 /**
- * Scale une taille pt selon la dimension du canvas par rapport à l'A4.
- * On prend le ratio MIN entre largeur et hauteur (pour éviter qu'un format
- * très allongé n'élargisse disproportionnellement les polices). Plancher à
- * 0.6 pour que les petits formats (ex: 47×67mm) gardent une typo lisible,
- * plafond à 1.5 pour éviter des textes gigantesques sur grands formats.
+ * Scale une taille pt proportionnellement à la dimension du canvas.
+ *
+ * Le ratio MIN entre largeur et hauteur garantit que le texte reste inscrit
+ * dans sa bbox (qui scale elle-même proportionnellement au canvas). Plafond à
+ * 1.5 pour éviter des textes gigantesques sur très grands formats (A2+).
+ *
+ * PAS de plancher : sur un canvas 47×67mm (~0.22×A4), le texte est petit mais
+ * tient dans sa bbox. Mettre un plancher ferait overflow des textes 2-3× plus
+ * grands que leur bbox et recouvrant les zones adjacentes.
  */
 function scaleFontSize(baseSizePt: number, widthMm: number, heightMm: number): number {
   const widthRatio = widthMm / 210
   const heightRatio = heightMm / 297
-  const scale = Math.max(0.6, Math.min(1.5, Math.min(widthRatio, heightRatio)))
+  const scale = Math.min(1.5, Math.min(widthRatio, heightRatio))
   return baseSizePt * scale
 }
 

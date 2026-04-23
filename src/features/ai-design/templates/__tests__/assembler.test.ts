@@ -210,7 +210,7 @@ describe('assembleSvgFromTemplate', () => {
     expect(svg).toMatch(/<rect id="cta-bg"[^>]*rx="/)
   })
 
-  it('scaleFontSize keeps readable sizes on small formats (47×67mm)', () => {
+  it('scaleFontSize scales proportionally to fit bbox on small formats (47×67mm)', () => {
     const svg = assembleSvgFromTemplate({
       template: retailProductPortrait,
       fillData,
@@ -218,13 +218,33 @@ describe('assembleSvgFromTemplate', () => {
       heightMm: 67,
       bleedMm: 0,
     })
-    // Avec l'ancien scaling sqrt(area/A4), title 48pt → ~10.7pt → ~3.8mm
-    // Avec le nouveau (min ratio, floor 0.6), title 48pt → 28.8pt → ~10.2mm
+    // Scale = min(47/210, 67/297) ≈ 0.224. Title 48pt × 0.224 ≈ 10.75pt ≈ 3.79mm.
+    // La bbox title h = 0.12 × 67mm = 8mm → le texte à 3.79mm tient bien dedans.
     const titleMatch = svg.match(/id="title"[^>]*font-size="([0-9.]+)"/)
     expect(titleMatch).not.toBeNull()
     const fontSizeMm = parseFloat(titleMatch![1])
-    // Plancher attendu : floor 0.6 * 48pt * 0.3528 = ~10.16 mm. Tolérance ±1mm.
-    expect(fontSizeMm).toBeGreaterThan(9)
-    expect(fontSizeMm).toBeLessThan(12)
+    expect(fontSizeMm).toBeGreaterThan(3)
+    expect(fontSizeMm).toBeLessThan(5)
+    // Vérifie que le texte tient dans la bbox (h title = 0.12 * 67 = 8.04mm).
+    // fontSize pour single line ≤ bbox.h garantit pas d'overflow vertical pour
+    // un titre à 1-2 lignes.
+    expect(fontSizeMm).toBeLessThan(8)
+  })
+
+  it('scaleFontSize caps at 1.5× on very large formats (A2 420×594mm)', () => {
+    const svg = assembleSvgFromTemplate({
+      template: retailProductPortrait,
+      fillData,
+      widthMm: 420,
+      heightMm: 594,
+      bleedMm: 0,
+    })
+    // Scale = min(420/210, 594/297) = min(2, 2) = 2, plafonné à 1.5.
+    // Title 48pt × 1.5 = 72pt ≈ 25.4mm. On vérifie qu'on ne dépasse pas 1.5×.
+    const titleMatch = svg.match(/id="title"[^>]*font-size="([0-9.]+)"/)
+    expect(titleMatch).not.toBeNull()
+    const fontSizeMm = parseFloat(titleMatch![1])
+    // 48pt × 1.5 × 0.3528 = 25.4mm (plafonné). Sans plafond ce serait 33.87mm.
+    expect(fontSizeMm).toBeLessThan(26)
   })
 })
