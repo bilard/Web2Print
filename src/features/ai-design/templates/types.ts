@@ -63,7 +63,17 @@ export interface ImageSlot {
 
 export interface FeatureItemSlot {
   /** bbox relative au conteneur du feature-list (coordonnées 0-1 dans l'item). */
-  picto: { bbox: NormalizedBbox; fallbackPictoKey: string }
+  picto: {
+    bbox: NormalizedBbox
+    fallbackPictoKey: string
+    /** Forme de fond du picto (cercle teal style Makita, carré rouge style Milwaukee, ou rien). */
+    shape?: 'circle' | 'square' | 'none'
+    /** Référence palette pour le fond (primary/secondary/neutral). */
+    backgroundRef?: ColorRef
+    /** Couleur du picto lui-même (par défaut 'text'). Quand backgroundRef est défini,
+     *  utiliser 'neutral' pour contraster sur le fond coloré. */
+    foregroundRef?: ColorRef
+  }
   title: {
     bbox: NormalizedBbox
     fontSize: number
@@ -111,9 +121,15 @@ export interface Template {
     heroProduct: ImageSlot
     title: TextSlot
     subtitle?: TextSlot
+    /** Accroche promo dans le header (ex: "PROFITEZ DE L'OFFRE MAKITA !"). Rempli via copy.tagline. */
+    taglineHeader?: TextSlot
     features?: FeatureListSlot
     priceNew?: TextSlot
     priceOld?: TextSlot
+    /** Label sous le prix barré (ex: "PRIX PUBLIC CONSEILLÉ"). Contenu hardcodé. */
+    priceOldLabel?: TextSlot
+    /** Label sous le prix promo (ex: "PRIX PROMO T.T.C."). Contenu hardcodé. */
+    priceNewLabel?: TextSlot
     cta?: TextSlot
     mentions?: TextSlot
   }
