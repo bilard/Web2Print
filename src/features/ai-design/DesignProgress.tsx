@@ -1,17 +1,12 @@
-import { Check, Loader2, AlertTriangle, Sparkles, X, Bug } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Loader2, AlertTriangle, Sparkles, X } from 'lucide-react'
 import type { Step } from './useGenerateDesign'
 import type { DesignResult } from './types'
-import type { DesignPlan } from './artDirectorSchema'
-import { analyzeAndReport, compareWithPlan } from './analyzeSvgOverlaps'
 
 interface Props {
   step: Step
   progress: string
   error: string | null
   lastResult: DesignResult | null
-  lastPlan: DesignPlan | null
-  nanobananaImage?: string
   onClose: () => void
   onRetry: () => void
 }
@@ -50,64 +45,8 @@ const PIPELINE: StepDef[] = [
   },
 ]
 
-export function DesignProgress({ step, progress, error, lastResult, lastPlan, nanobananaImage, onClose, onRetry }: Props) {
-  const [showDebug, setShowDebug] = useState(false)
-  const [debugReport, setDebugReport] = useState<ReturnType<typeof analyzeAndReport> | null>(null)
-
+export function DesignProgress({ step, progress, error, lastResult, onClose, onRetry }: Props) {
   if (step === 'idle') return null
-
-  const handleDebugSvg = () => {
-    if (!lastResult?.svg) return
-    try {
-      const report = analyzeAndReport(lastResult.svg)
-      setDebugReport(report)
-      setShowDebug(true)
-
-      // Aussi afficher le SVG brut dans la console
-      console.group('[SVG Debug] Full SVG Output')
-      console.log(lastResult.svg)
-      console.log(`SVG Length: ${lastResult.svg.length} chars`)
-      console.log(`Format: ${lastResult.widthMm} × ${lastResult.heightMm} mm (bleed: ${lastResult.bleedMm}mm)`)
-      console.log(`Fonts used: ${lastResult.fontsUsed.join(', ')}`)
-      console.log(`Palette: ${lastResult.palette.join(', ')}`)
-      console.groupEnd()
-
-      // Afficher le plan si disponible
-      if (lastPlan) {
-        console.group('[SVG Debug] Art Director Plan (Planned Zones)')
-        console.log('Concept:', lastPlan.concept)
-        console.log('Main Device:', lastPlan.mainDevice)
-        console.table(
-          lastPlan.zones.map((z) => ({
-            'Zone ID': z.id,
-            'Role': z.role,
-            'X (mm)': z.bboxMm.x.toFixed(2),
-            'Y (mm)': z.bboxMm.y.toFixed(2),
-            'W (mm)': z.bboxMm.w.toFixed(2),
-            'H (mm)': z.bboxMm.h.toFixed(2),
-            'Fill': z.fill || 'transparent',
-          }))
-        )
-        console.groupEnd()
-
-        // Comparer avec le SVG généré
-        const planVsSvg = compareWithPlan(lastResult.svg, lastPlan)
-        console.group('[SVG Debug] Plan vs SVG Comparison')
-        console.table(
-          planVsSvg.map((comp) => ({
-            'Zone': comp.plannedZone.id,
-            'Planned X,Y': `${comp.plannedZone.x.toFixed(1)},${comp.plannedZone.y.toFixed(1)}`,
-            'Matched': comp.matched ? '✓' : '✗',
-            'Δx,Δy': comp.deviation ? `${comp.deviation.dx.toFixed(1)},${comp.deviation.dy.toFixed(1)}` : 'N/A',
-            'Δw,Δh': comp.deviation ? `${comp.deviation.dw.toFixed(1)},${comp.deviation.dh.toFixed(1)}` : 'N/A',
-          }))
-        )
-        console.groupEnd()
-      }
-    } catch (err) {
-      console.error('[DesignProgress] Debug analysis failed:', err)
-    }
-  }
 
   const handleExportSvg = () => {
     if (!lastResult?.svg) return
@@ -234,17 +173,6 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
           })}
         </ul>
 
-        {nanobananaImage && (step === 'illustrating' || step === 'sanitizing' || step === 'rendering' || step === 'done') && (
-          <div className="px-5 py-3 border-t border-neutral-800 bg-neutral-900">
-            <p className="text-xs text-neutral-400 mb-2">📷 Référence créative (Nano Banana)</p>
-            <img
-              src={nanobananaImage}
-              alt="Nano Banana reference"
-              className="w-full rounded border border-neutral-700 object-contain max-h-96"
-            />
-          </div>
-        )}
-
         {step === 'done' && lastResult && (
           <div className="px-5 py-3 border-t border-neutral-800 bg-emerald-500/5 space-y-1">
             <p className="text-xs text-emerald-300 font-medium">Design prêt sur le canvas</p>
@@ -256,73 +184,12 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
                 {lastResult.slots.length} slot(s) image à remplir manuellement
               </p>
             )}
-            {lastPlan && (
-              <p className="text-[10px] text-neutral-600">
-                {lastPlan.zones?.length ?? 0} zones · {lastPlan.typography?.hierarchy?.length ?? 0} textes · {lastPlan.slots?.length ?? 0} slots images
-              </p>
-            )}
           </div>
         )}
 
         {step === 'error' && error && (
           <div className="px-5 py-3 border-t border-neutral-800 bg-red-500/5">
             <p className="text-xs text-red-300 leading-relaxed">{error}</p>
-          </div>
-        )}
-
-        {showDebug && debugReport && (
-          <div className="px-5 py-3 border-t border-neutral-800 bg-amber-500/5 space-y-2 max-h-64 overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-amber-300 font-medium">SVG Debug Analysis</p>
-              <button
-                type="button"
-                onClick={() => setShowDebug(false)}
-                className="text-neutral-500 hover:text-neutral-200 text-xs"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-2">
-              <p className="text-[10px] text-neutral-400">
-                <span className="font-semibold">{debugReport.zones.length}</span> text zones détectées
-              </p>
-              {debugReport.zones.length > 0 && (
-                <table className="w-full text-[9px] text-neutral-300">
-                  <thead>
-                    <tr className="border-b border-neutral-700">
-                      <th className="text-left px-2 py-1 text-neutral-500">Zone</th>
-                      <th className="text-left px-2 py-1 text-neutral-500">X</th>
-                      <th className="text-left px-2 py-1 text-neutral-500">Y</th>
-                      <th className="text-left px-2 py-1 text-neutral-500">W×H</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {debugReport.zones.slice(0, 5).map((z) => (
-                      <tr key={z.id} className="border-b border-neutral-800">
-                        <td className="px-2 py-1 font-mono">{z.id.substring(0, 12)}</td>
-                        <td className="px-2 py-1">{z.x.toFixed(1)}</td>
-                        <td className="px-2 py-1">{z.y.toFixed(1)}</td>
-                        <td className="px-2 py-1">{z.width.toFixed(1)}×{z.height.toFixed(1)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {debugReport.overlaps.length > 0 ? (
-                <div className="bg-red-500/10 border border-red-500/30 rounded p-2 mt-2">
-                  <p className="text-red-300 font-semibold text-[10px] mb-1">⚠️ {debugReport.overlaps.length} chevauchement(s) détecté(s)</p>
-                  {debugReport.overlaps.slice(0, 3).map((o, i) => (
-                    <p key={i} className="text-[9px] text-red-200">
-                      {o.zone1Id.substring(0, 10)} ↔ {o.zone2Id.substring(0, 10)} ({o.overlapArea.toFixed(1)}mm²)
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2 mt-2">
-                  <p className="text-emerald-300 text-[10px] font-semibold">✓ Aucun chevauchement détecté</p>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -339,15 +206,6 @@ export function DesignProgress({ step, progress, error, lastResult, lastPlan, na
               <>
                 {lastResult && (
                   <>
-                    <button
-                      type="button"
-                      onClick={handleDebugSvg}
-                      className="px-3 py-1.5 rounded border border-amber-700 text-amber-300 text-sm hover:bg-amber-500/10 transition-colors flex items-center gap-2"
-                      title="Analyser le SVG pour les chevauchements"
-                    >
-                      <Bug className="w-3.5 h-3.5" />
-                      Analyser
-                    </button>
                     <button
                       type="button"
                       onClick={handleExportSvg}

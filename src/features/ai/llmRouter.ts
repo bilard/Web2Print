@@ -45,12 +45,6 @@ type LLMTask =
   | 'brief.imagePrompts'
   | 'brief.catalogKeywords'
   | 'product.enrichment'
-  | 'design.generate'
-  | 'design.plan'
-  | 'design.emit'
-  | 'design.vectorize'
-  | 'design.validate.visual'
-  | 'design.critic.vision'
   | 'design.templateFill'
 
 interface RouteConfig {
@@ -72,17 +66,6 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
   'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  'design.generate':        { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  // Art Director : Opus 4.7 pour un raisonnement créatif de haut niveau sur la composition
-  'design.plan':            { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  // SVG Engineer : DOIT être Opus 4.7 pour traiter l'image Nano Banana (vision multimodal)
-  'design.emit':            { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  // Vectorisation multimodale : Opus 4.7 pour lire texte + mesurer positions
-  'design.vectorize':       { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  // Vision validation : Opus 4.7 pour vision multimodal
-  'design.validate.visual': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  // Vision Critic : compare rendu SVG vs ref Nano Banana, produit patch structuré
-  'design.critic.vision':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
   'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
 }
@@ -95,12 +78,6 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'brief.imagePrompts':     0.4,
   'brief.catalogKeywords':  0.4,
   'product.enrichment':     0,
-  'design.generate':        0.6,
-  'design.plan':            0.75,
-  'design.emit':            0.2,
-  'design.vectorize':       0,
-  'design.validate.visual': 0,
-  'design.critic.vision':   0,
   'design.templateFill':    0.5,
 }
 
@@ -243,17 +220,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   }
 
   const temperature = TASK_TEMPERATURE[opts.task]
-  // Les tâches design sont plus bavardes mais 16k est souvent excessif — on
-  // garde 16k pour design.emit (SVG complet) et on abaisse pour les plans JSON.
-  // Plans riches (20 zones + typo + slots + concept) et critic patches détaillés
-  // (15 ops × bbox + content + reason) peuvent dépasser 8k tokens. On passe à 16k
-  // pour toutes les tâches design structurées.
-  const max_tokens =
-    opts.task === 'design.emit' || opts.task === 'design.generate' || opts.task === 'design.vectorize'
-      ? 16384
-      : opts.task === 'design.plan' || opts.task === 'design.critic.vision'
-        ? 16384
-        : 8192
+  const max_tokens = 8192
 
   // Construit le content du message user : texte seul OU multimodal (images + texte)
   type MessageContent = string | Array<{ type: string; [key: string]: unknown }>
