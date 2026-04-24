@@ -70,7 +70,15 @@ export function useGenerateDesign() {
       setState({ ...INITIAL_STATE, step: 'illustrating', progress: 'Génération de l\'image Nano Banana…' })
 
       // ─── Dimensions canvas ─────────────────────────────────────────────────
-      const { canvasWidth, canvasHeight, bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
+      let { canvasWidth, canvasHeight, bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
+
+      // GUARD: Si les dimensions sont 0 ou invalides, utiliser un default
+      if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
+        console.warn('[useGenerateDesign] Canvas dimensions invalid (0 or null), using default banner format')
+        canvasWidth = 1584  // Standard banner width (16:9 ratio)
+        canvasHeight = 900  // Standard banner height
+      }
+
       const dpi = resolveFormatDpi(req, canvasWidth, canvasHeight, storeDpi)
       const widthMm = pxToMm(canvasWidth, dpi)
       const heightMm = pxToMm(canvasHeight, dpi)
