@@ -49,42 +49,35 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
     : `- Color palette: coherent with ${args.style} style, 3-5 colors max`
 
   return [
-    `Create a COMPLETE, ready-to-print retail banner with PIXEL-PERFECT GRID-BASED LAYOUT.`,
-    `MANDATORY LAYOUT (STRICT 60/40 SPLIT – NO EXCEPTIONS):
-LEFT COLUMN: 0% to 60% of canvas width
-  - Margin: 12% left, 6% right (internal), 12% top, 12% bottom
-  - 12%: Logo (left, white background behind it if needed)
-  - 18%: "OFFRE EXCLUSIVE" label (green box, white text, LEFT-aligned)
-  - 30%: Product title (bold sans-serif, 5-6% fontsize, dark color, NO truncation)
-  - 48%: Features (3-5 items, EACH item = green circle + text right-of-circle; text LARGE 2.5-3% fontsize, fully visible, 6% vertical gap between items)
-  - 67%: Rating (stars ★★★★☆ + number + "X AVIS CLIENTS" in ONE line, centered, 2% fontsize)
-  - 82%: PRICE SECTION (old price strikethrough, 2% fontsize; new price LARGE bold 6% fontsize in black box with white text; "J'EN PROFITE" button GREEN next to or below black box, right-aligned)
-  - NO extra elements, NO percentages, NO page numbers, ZERO parasitic content
+    `Create a COMPLETE, ready-to-print retail promotional banner. Professional, clean, organized layout.`,
+    `LAYOUT STRUCTURE (APPROXIMATE 60/40 SPLIT):
+LEFT SECTION (APPROXIMATELY 55-65% width): TEXT & BRAND INFO
+  - Top area: Brand logo (top-left corner) + "OFFRE EXCLUSIVE" label (bright green)
+  - Upper section: Product title (large, bold, dark color, complete text)
+  - Middle section: 3-5 feature bullets (GREEN CIRCLES with checkmarks INSIDE + text right-aligned)
+  - Lower-middle: Star rating + customer reviews (ex: ★★★★☆ 4.3 · 128 AVIS)
+  - Bottom: Price section (old price strikethrough + NEW PRICE in large black box with white text) + GREEN "J'EN PROFITE" button
 
-RIGHT COLUMN: 60% to 100% of canvas width
-  - 10% margin from right edge (vertical center of right column)
-  - Product photo: centered within 60-100% band, positioned 30%-70% vertically
-  - ONLY product photo: no text, no overlays, no decorations
-  - Sharp quality, fully visible product, professional product shot`,
-    `CRITICAL PRECISION RULES:
-- Canvas: 12% margin ALL edges, SAFE ZONE for text/logos only
-- LEFT column: 0-60% width, NEVER extends beyond 60%
-- RIGHT column: 60-100% width, NEVER extends before 60%
-- ZERO overflow between columns, ZERO overlap
-- FORBIDDEN ELEMENTS: NO percentages (like "25%"), NO page numbers, NO badges outside specified zones, NO decorative overlays, NO extra text, NO borders, NO shadows
-- Feature items: circle diameter = 4-5% canvas height, text positioned RIGHT of circle, 2.5-3% fontsize
-- Vertical spacing: minimum 6% gap between feature items, minimum 8% gaps before/after sections
-- Product photo: SHARP, CLEAN, product fully visible, NO cropping, NO watermarks, centered in right column
-- All text: dark color on light background, NO color overlays, NO transparency effects
-- ZERO truncation: every word fully visible, no "..." ellipsis`,
-    `CONTENT (render all as visible graphics):
-- Brand logo: top-left corner, FULLY VISIBLE, crisp edges
-- "OFFRE EXCLUSIVE": bright green label, center-aligned
-- Title: large bold condensed sans-serif, dark color, no truncation
-- Features: 3-5 bullets with GREEN FILLED CIRCLES (each circle contains white checkmark ✓ or star ★ INSIDE the circle, not beside it)
-- Rating: stars visually rendered (★★★★☆) + rating number + customer count in same line
-- Price section: Old price with strikethrough (dark gray, smaller) on first line; New price LARGE bold white text on BLACK badge; "J'EN PROFITE" CTA button GREEN with white text
-- Product photo: professional quality, product centered and complete, no truncation`,
+RIGHT SECTION (APPROXIMATELY 35-45% width): PRODUCT PHOTO
+  - Centered, high-quality product image
+  - Vertically centered on the page
+  - NO text overlays, NO decorations`,
+    `CRITICAL RULES:
+- NO parasitic elements: NO percentage discounts, NO page numbers, NO extra badges
+- Logo: FULLY VISIBLE, crisp, top-left
+- Product photo: SHARP, COMPLETE, no cropping
+- Text: LEGIBLE, FULLY VISIBLE, no truncation
+- Spacing: GENEROUS, consistent, professional
+- Colors: Match ${args.style} style + palette ${args.palette?.length ? '(use provided colors)' : '(3-5 colors, coherent)'}
+- NO borders, NO shadows, NO gradients unless essential`,
+    `CONTENT (render all visible, organized):
+- Brand logo: top-left, fully visible
+- "OFFRE EXCLUSIVE": green banner or label, prominent
+- Product title: large bold text, complete, readable
+- Feature bullets: 3-5 items with green circles (✓ checkmarks or icons INSIDE circles) + descriptive text
+- Star rating: rendered as stars (★★★★☆) with numerical rating + customer count (ex: 4.3 · 128 AVIS)
+- Price block: Old price (strikethrough) above or left of new price; new price LARGE (white text on BLACK background); "J'EN PROFITE" button in GREEN (right of price or below)
+- Product image: professional quality, complete product visible, centered on right side`,
     `DESIGN QUALITY:
 - Style: ${args.style} — ${STYLE_HINTS[args.style]}
 ${paletteLine}
