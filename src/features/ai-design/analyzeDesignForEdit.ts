@@ -81,6 +81,12 @@ const PROMPT = `Décompose cette image promotionnelle en éléments éditables (
 
 RÈGLE PRIMAIRE: Ne vectorise que les formes géométriques simples. TOUTES les images, photos, logos, icônes complexes RESTENT comme zones images (imageSlots) — jamais vectorisées.
 
+RECONNAISSANCE OBLIGATOIRE DE LOGOS ET PRODUITS:
+- CHAQUE logo (marque, brand) = TOUJOURS imageSlot avec role="logo" (jamais vectoriel)
+- CHAQUE produit photograph (même partiellement visible) = TOUJOURS imageSlot avec role="productPhoto"
+- NE JAMAIS fusionner 2 imageSlots en 1 zone géante
+- CHAQUE imageSlot DOIT avoir une bbox PRÉCISE et INDÉPENDANTE
+
 Retourne un JSON avec exactement 4 clés : background, decorativeShapes, texts, imageSlots.
 
 ## 1. background (objet)
@@ -145,24 +151,29 @@ Exemple prix (avec fontFamily) :
 - {"id":"price_old", "text":"90,99€", "bbox":{"x":74,"y":61,"w":9,"h":3.5}, "fontSizePct":2.5, "fontFamily":"Montserrat", "color":"#ffffff", "bold":false, "italic":false, "strikethrough":true, "align":"left"}
 
 ## 4. imageSlots (tableau) — zones PHOTOGRAPHIQUES remplaçables
-STRATÉGIE STRICT:
-Crée une imageSlot pour CHAQUE élément photographique/réaliste/complexe. Ne vectorise JAMAIS les photos :
+STRATÉGIE STRICT – CHAQUE ÉLEMENT PHOTOGRAPHIQUE = IMAGESL INDÉPENDANT:
+
+**RÈGLES ABSOLUES:**
+- JAMAIS fusionner 2 logos/photos en une zone → chaque est indépendant
+- Logo visible = imageSlot séparé avec role="logo" (bbox doit englober TOUT le logo)
+- Produit visible = imageSlot séparé avec role="productPhoto" (bbox doit englober TOUT le produit)
+- Badge/illustration = imageSlot séparé avec role="badge"
 
 **TOUJOURS imageSlot (jamais vectoriel):**
-- Photos de produits réalistes (même partiellement visibles) → role="productPhoto"
-- Logos de marques/marques déposées (Jardiland, RYOBI, Bosch, DeWalt, etc.) → role="logo"
-- Photos de badges, timbres, illustrations réalistes, rendus 3D → role="badge" ou "other"
-- Icônes complexes/détaillées (plus de 5 formes) → role="other" (si la simplicité le permet, sinon imageSlot)
+- Photos de produits réalistes (même partiellement) → role="productPhoto"
+- Logos marques (Jardiland, RYOBI, Bosch, Apple, etc.) → role="logo" SÉPARÉ
+- Illustrations réalistes, rendus 3D, photos de badges → role="badge" ou "other"
+- Icônes photo-réalistes avec gradients/ombres → role="other"
 
-**Uniquement decorativeShape (vectoriel):**
-- Formes géométriques simples (1-2 couleurs) : rectangles, cercles, carrés
-- Silhouettes monochrome simples (batterie, jauge, clé anglaise)
-- Bandeaux colorés, arrière-plans
+**UNIQUEMENT decorativeShape (vectoriel):**
+- Formes GÉOMÉTRIQUES PURES: rectangles, cercles, carrés, ellipses (1-2 couleurs max)
+- Silhouettes monochrome SIMPLES sans gradient: batterie, jauge, clé anglaise
+- Bandeaux colorés arrière-plans, formes SVG dessinées
 
-**REGLES DE COMPOSITION:**
-- Ne fragmente JAMAIS une photo de produit : si le produit est visible (entier ou partiellement), crée UNE imageSlot qui l'englobe
-- Logo = TOUJOURS une imageSlot séparée (sauf si c'est un texte simple sans style spécial)
-- Chaque badge/illustration réaliste = sa propre imageSlot
+**EXEMPLE CORRECT - LOGO + PRODUCT:**
+- Slot 1: logo Jardiland (role="logo", bbox x=0, y=0, w=15, h=8)
+- Slot 2: tondeuse RYOBI (role="productPhoto", bbox x=60, y=20, w=30, h=60)
+- JAMAIS une seule zone fusionnée contenant les 2
 
 Chaque slot :
 - id : snake_case
