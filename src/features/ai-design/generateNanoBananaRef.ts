@@ -49,22 +49,29 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
     : `- Color palette: coherent with ${args.style} style, 3-5 colors max`
 
   return [
-    `Create a COMPLETE, ready-to-print retail banner. Beautiful typography, product photo, color composition — everything final.`,
+    `Create a COMPLETE, ready-to-print retail banner with ZERO TEXT CROPPING. All text fully visible, readable, perfectly framed.`,
+    `CRITICAL SPACING RULES (MUST FOLLOW):
+- 15% minimum margin from all edges (left/right/top/bottom)
+- No element touches or overlaps canvas borders
+- All text COMPLETELY INSIDE bounds (never cut off, never clipped)
+- Minimum 12% vertical gap between text elements
+- Product photo centered with breathing room around it`,
     `CONTENT TO INCLUDE (render as visible graphics):
-- Title: large bold display type
-- Subtitle / features with pictos: medium typography, good hierarchy
-- Price + CTA: prominent, distinct styling (price badge, button)
-- Logo: corner placement if relevant
-- Product photo: large, crisp, clean cutout`,
+- Title: large bold display type, FULLY READABLE, no truncation
+- Subtitle / features with pictos: medium typography, good hierarchy, COMPLETE text
+- Price + CTA: prominent, distinct styling (price badge, button), NO CUTTING
+- Logo: corner placement if relevant, FULLY VISIBLE
+- Product photo: large, crisp, clean cutout, centered`,
     `DESIGN QUALITY:
 - Style: ${args.style} — ${STYLE_HINTS[args.style]}
 ${paletteLine}
 - Typography: bold hierarchy, max 3 typefaces, premium retail aesthetic
-- Spacing: generous, professional margins
-- Strict alignment, no random placement`,
+- Strict alignment, perfect centering, generous professional spacing
+- EVERY WORD must be completely visible and readable
+- NO clipping, NO truncation, NO overflowing text`,
     `BRIEF: ${args.userPrompt}`,
     `DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1)`,
-    `OUTPUT: high-resolution complete retail banner, press-ready, with all text/prices/CTAs rendered in place. NO watermarks, grids, or technical artifacts.`,
+    `OUTPUT: high-resolution complete retail banner, press-ready. ALL TEXT MUST BE FULLY VISIBLE. All elements perfectly framed with safe margins. NO watermarks, grids, or technical artifacts.`,
   ].join('\n\n')
 }
 
