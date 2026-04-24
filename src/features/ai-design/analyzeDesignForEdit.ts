@@ -87,6 +87,13 @@ RECONNAISSANCE OBLIGATOIRE DE LOGOS ET PRODUITS:
 - NE JAMAIS fusionner 2 imageSlots en 1 zone géante
 - CHAQUE imageSlot DOIT avoir une bbox PRÉCISE et INDÉPENDANTE
 
+**RÈGLE CRITIQUE — BBOX SERRÉES (TIGHT BOUNDING BOX):**
+Les bboxes des imageSlots doivent englober UNIQUEMENT l'objet lui-même (le logo SANS espace autour, la photo du produit SANS fond ni textes adjacents).
+- Si le logo fait 8% × 5%, la bbox doit être ~8% × 5%, PAS 20% × 15%
+- Si la tondeuse occupe 25% × 40%, la bbox doit être ~25% × 40%, PAS 50% × 80%
+- JAMAIS inclure du fond coloré, du texte, ou des éléments adjacents dans la bbox d'un imageSlot
+- La bbox doit être le CONTOUR SERRÉ de l'objet visible, rien de plus
+
 Retourne un JSON avec exactement 4 clés : background, decorativeShapes, texts, imageSlots.
 
 ## 1. background (objet)
