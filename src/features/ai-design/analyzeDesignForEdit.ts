@@ -77,7 +77,9 @@ export interface DesignAnalysis {
   imageSlots: ImageSlot[]
 }
 
-const PROMPT = `Décompose cette image promotionnelle en éléments vectoriels SVG complets. Recrée 100% du design en vectoriel pur — l'image ne sera PAS placée en fond.
+const PROMPT = `Décompose cette image promotionnelle en éléments éditables (vectoriel + zones images).
+
+RÈGLE PRIMAIRE: Ne vectorise que les formes géométriques simples. TOUTES les images, photos, logos, icônes complexes RESTENT comme zones images (imageSlots) — jamais vectorisées.
 
 Retourne un JSON avec exactement 4 clés : background, decorativeShapes, texts, imageSlots.
 
