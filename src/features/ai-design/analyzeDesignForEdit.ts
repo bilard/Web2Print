@@ -143,22 +143,30 @@ Exemple prix (avec fontFamily) :
 - {"id":"price_old", "text":"90,99€", "bbox":{"x":74,"y":61,"w":9,"h":3.5}, "fontSizePct":2.5, "fontFamily":"Montserrat", "color":"#ffffff", "bold":false, "italic":false, "strikethrough":true, "align":"left"}
 
 ## 4. imageSlots (tableau) — zones PHOTOGRAPHIQUES remplaçables
-STRATÉGIE:
-- S'il existe une PHOTO DE PRODUIT CENTRAL/PRINCIPALE → créer UNE SEULE imageSlot pour elle (role="productPhoto")
-- Cette bbox doit englober la photo entière + ses ombres/reflets
-- Si le design contient d'AUTRES photos (logo séparé, badge, éléments additionnels) → créer des slots additionnels avec role="logo", "badge", "other"
-- Ne fragmente JAMAIS une photo de produit en plusieurs slots (ex: ne pas séparer la poignée du corps du produit)
+STRATÉGIE STRICT:
+Crée une imageSlot pour CHAQUE élément photographique/réaliste/complexe. Ne vectorise JAMAIS les photos :
 
-Ne confonds PAS une photo avec une forme dessinable. Si c'est une vraie photo (rendu réaliste) → imageSlot. Si c'est un picto simple (silhouette, icône monochrome) → decorativeShape.
+**TOUJOURS imageSlot (jamais vectoriel):**
+- Photos de produits réalistes (même partiellement visibles) → role="productPhoto"
+- Logos de marques/marques déposées (Jardiland, RYOBI, Bosch, DeWalt, etc.) → role="logo"
+- Photos de badges, timbres, illustrations réalistes, rendus 3D → role="badge" ou "other"
+- Icônes complexes/détaillées (plus de 5 formes) → role="other" (si la simplicité le permet, sinon imageSlot)
+
+**Uniquement decorativeShape (vectoriel):**
+- Formes géométriques simples (1-2 couleurs) : rectangles, cercles, carrés
+- Silhouettes monochrome simples (batterie, jauge, clé anglaise)
+- Bandeaux colorés, arrière-plans
+
+**REGLES DE COMPOSITION:**
+- Ne fragmente JAMAIS une photo de produit : si le produit est visible (entier ou partiellement), crée UNE imageSlot qui l'englobe
+- Logo = TOUJOURS une imageSlot séparée (sauf si c'est un texte simple sans style spécial)
+- Chaque badge/illustration réaliste = sa propre imageSlot
 
 Chaque slot :
 - id : snake_case
 - role : "logo" | "productPhoto" | "badge" | "other"
-- bbox : {x, y, w, h} en % — ATTENTION à la précision, la photo sera recadrée à ces coordonnées
-- description : courte (ex: "photo taille-haies RYOBI jaune-noir avec ombrage")
-
-RÈGLE PRODUIT UNIQUE:
-Si l'image contient une seule photo de produit dominant (type e-commerce, affiche promotionnelle), crée une SEULE imageSlot qui englobe le produit ENTIER, pas des zones fragmentées.
+- bbox : {x, y, w, h} en % — ATTENTION à la précision
+- description : ex: "photo RYOBI tondeuse jaune-noir", "logo Jardiland orange"
 
 ## Règles finales
 - Réponds UNIQUEMENT en JSON, sans markdown ni narration

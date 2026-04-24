@@ -212,9 +212,9 @@ export function addEditableTextOverlays(
 }
 
 /**
- * Ajoute la source image complète + zones éditables overlay:
- * 1. Si sourceDataUri existe, place l'image Nano Banana complète en fond (UNE SEULE FOIS)
- * 2. Pour chaque imageSlot, crée une zone semi-transparente sélectionnable/éditable par-dessus
+ * Pour chaque imageSlot, découpe la zone correspondante dans l'image Nano Banana
+ * source et la place comme FabricImage sélectionnable / remplaçable. L'image
+ * source n'est décodée qu'une seule fois, et tous les crops se font en parallèle.
  */
 export async function addEditableImageSlots(
   canvas: Canvas,
@@ -223,59 +223,54 @@ export async function addEditableImageSlots(
   canvasHeight: number,
   sourceDataUri: string | null
 ): Promise<FabricObject[]> {
-  const created: FabricObject[] = []
+  const sourceImg = sourceDataUri ? await decodeImage(sourceDataUri) : null
 
-  // Étape 1: Placer l'image source complète EN ARRIÈRE-PLAN (une seule fois)
-  if (sourceDataUri) {
-    try {
-      const sourceImg = await FabricImage.fromURL(sourceDataUri, { crossOrigin: 'anonymous' })
-      const imgW = sourceImg.width || canvasWidth
-      const imgH = sourceImg.height || canvasHeight
-      sourceImg.set({
-        left: 0,
-        top: 0,
-        scaleX: canvasWidth / imgW,
-        scaleY: canvasHeight / imgH,
+  const built = await Promise.all(
+    slots.map(async (s) => {
+      const { xPx, yPx, wPx, hPx } = bboxToPx(s.bbox, canvasWidth, canvasHeight)
+
+      if (sourceImg) {
+        try {
+          const cropDataUri = cropFromDecoded(sourceImg, s.bbox)
+          const img = await FabricImage.fromURL(cropDataUri, { crossOrigin: 'anonymous' })
+          const imgW = img.width || wPx
+          const imgH = img.height || hPx
+          img.set({
+            left: xPx,
+            top: yPx,
+            scaleX: wPx / imgW,
+            scaleY: hPx / imgH,
+            originX: 'left',
+            originY: 'top',
+            selectable: true,
+          })
+          img.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
+          return img as FabricObject
+        } catch (err) {
+          console.warn(`[createDesign] Crop failed for slot ${s.id}, falling back to placeholder`, err)
+        }
+      }
+
+      const rect = new Rect({
+        left: xPx,
+        top: yPx,
+        width: wPx,
+        height: hPx,
+        fill: 'rgba(99, 102, 241, 0.08)',
+        stroke: 'rgba(99, 102, 241, 0.6)',
+        strokeDashArray: [6, 4],
+        strokeWidth: 1,
         originX: 'left',
         originY: 'top',
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default',
+        selectable: true,
       })
-      sourceImg.data = { isSourceImage: true }
-      canvas.add(sourceImg)
-      // Envoyer l'image source en arrière-plan pour que les zones restent visibles par-dessus
-      canvas.sendObjectToBack(sourceImg)
-    } catch (err) {
-      console.warn('[createDesign] Failed to load source image', err)
-    }
-  }
-
-  // Étape 2: Créer les zones overlay éditables pour chaque slot
-  // Ces zones sont des rectangles semi-transparents qui peuvent être modifiés
-  for (const s of slots) {
-    const { xPx, yPx, wPx, hPx } = bboxToPx(s.bbox, canvasWidth, canvasHeight)
-
-    const rect = new Rect({
-      left: xPx,
-      top: yPx,
-      width: wPx,
-      height: hPx,
-      fill: 'rgba(99, 102, 241, 0.15)',
-      stroke: 'rgba(99, 102, 241, 0.8)',
-      strokeDashArray: [8, 4],
-      strokeWidth: 2,
-      originX: 'left',
-      originY: 'top',
-      selectable: true,
-      hoverCursor: 'pointer',
+      rect.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
+      return rect as FabricObject
     })
-    rect.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
-    canvas.add(rect)
-    created.push(rect)
-  }
+  )
 
-  return created
+  for (const obj of built) canvas.add(obj)
+  return built
 }
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
