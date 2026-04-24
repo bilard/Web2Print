@@ -94,16 +94,14 @@ ${paletteLine}
 }
 
 function pickAspectRatio(widthMm: number, heightMm: number): string {
+  // Professonal retail standard ratios ONLY (avoid extreme panoramic formats)
   const ratios: Array<{ r: number; label: string }> = [
-    { r: 1 / 4, label: '1:4' },
-    { r: 2 / 3, label: '2:3' },
-    { r: 3 / 4, label: '3:4' },
-    { r: 9 / 16, label: '9:16' },
-    { r: 1, label: '1:1' },
-    { r: 4 / 3, label: '4:3' },
-    { r: 3 / 2, label: '3:2' },
-    { r: 16 / 9, label: '16:9' },
-    { r: 21 / 9, label: '21:9' },
+    { r: 3 / 4, label: '3:4' },     // Vertical
+    { r: 9 / 16, label: '9:16' },   // Vertical
+    { r: 1, label: '1:1' },         // Square
+    { r: 4 / 3, label: '4:3' },     // Landscape (standard)
+    { r: 3 / 2, label: '3:2' },     // Landscape (standard)
+    { r: 16 / 9, label: '16:9' },   // Landscape (widescreen, NOT extreme)
   ]
   const target = widthMm / heightMm
   let best = ratios[0]
