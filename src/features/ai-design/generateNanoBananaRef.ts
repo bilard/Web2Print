@@ -48,36 +48,50 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
     ? `- Color palette (use EXCLUSIVELY): ${args.palette.join(', ')}`
     : `- Color palette: coherent with ${args.style} style, 3-5 colors max`
 
-  return [
-    `Create a COMPLETE, ready-to-print retail promotional banner. Professional, clean, organized layout.`,
-    `LAYOUT STRUCTURE (APPROXIMATE 60/40 SPLIT):
-LEFT SECTION (APPROXIMATELY 55-65% width): TEXT & BRAND INFO
-  - Top area: Brand logo (top-left corner) + "OFFRE EXCLUSIVE" label (bright green)
-  - Upper section: Product title (large, bold, dark color, complete text)
-  - Middle section: 3-5 feature bullets (GREEN CIRCLES with checkmarks INSIDE + text right-aligned)
-  - Lower-middle: Star rating + customer reviews (ex: ★★★★☆ 4.3 · 128 AVIS)
-  - Bottom: Price section (old price strikethrough + NEW PRICE in large black box with white text) + GREEN "J'EN PROFITE" button
+  // PIXEL-PERFECT LAYOUT: Assume 1584×900 canvas (standard banner ratio)
+  // LEFT column: 0-950px, RIGHT column: 950-1584px
+  const leftMax = 950
+  const rightStart = 950
+  const canvasW = 1584
+  const canvasH = 900
 
-RIGHT SECTION (APPROXIMATELY 35-45% width): PRODUCT PHOTO
-  - Centered, high-quality product image
-  - Vertically centered on the page
-  - NO text overlays, NO decorations`,
-    `CRITICAL RULES:
-- NO parasitic elements: NO percentage discounts, NO page numbers, NO extra badges
-- Logo: FULLY VISIBLE, crisp, top-left
-- Product photo: SHARP, COMPLETE, no cropping
-- Text: LEGIBLE, FULLY VISIBLE, no truncation
-- Spacing: GENEROUS, consistent, professional
-- Colors: Match ${args.style} style + palette ${args.palette?.length ? '(use provided colors)' : '(3-5 colors, coherent)'}
-- NO borders, NO shadows, NO gradients unless essential`,
-    `CONTENT (render all visible, organized):
-- Brand logo: top-left, fully visible
-- "OFFRE EXCLUSIVE": green banner or label, prominent
-- Product title: large bold text, complete, readable
-- Feature bullets: 3-5 items with green circles (✓ checkmarks or icons INSIDE circles) + descriptive text
-- Star rating: rendered as stars (★★★★☆) with numerical rating + customer count (ex: 4.3 · 128 AVIS)
-- Price block: Old price (strikethrough) above or left of new price; new price LARGE (white text on BLACK background); "J'EN PROFITE" button in GREEN (right of price or below)
-- Product image: professional quality, complete product visible, centered on right side`,
+  return [
+    `Create a PROFESSIONAL RETAIL PROMOTIONAL BANNER — ${canvasW}×${canvasH}px, pixel-perfect layout.`,
+    `MANDATORY PIXEL-EXACT LAYOUT:
+BACKGROUND: Light neutral (white or light gray), FULL CANVAS
+
+LEFT COLUMN (0px to ${leftMax}px width):
+  • 40px margin on all sides within this column
+  • 60px from top: LOGO (40-300px from left, 60-140px from top) — brand logo FULLY VISIBLE
+  • 170px from top: "OFFRE EXCLUSIVE" label (50px tall, bright green, white text, left-aligned at 40px)
+  • 280px from top: PRODUCT TITLE (bold, dark, 60px tall, left-aligned at 40px, RIGHT edge at ${leftMax - 40}px)
+  • 370px from top: FEATURES SECTION (3-5 bullets, each 60px tall, green circles + text, starting at 40px)
+  • 650px from top: RATING (40px tall, stars + number + reviews, left-aligned at 40px)
+  • 730px from top: PRICE BLOCK (100px tall: old price (30px) + new price (60px bold black bg) + CTA button, layout left→right)
+
+RIGHT COLUMN (${rightStart}px to ${canvasW}px width):
+  • 100px margin from edges (internal padding)
+  • PRODUCT PHOTO: centered horizontally (${rightStart + 100}px to ${canvasW - 100}px), vertically centered (${Math.round(canvasH / 2 - 150)}px to ${Math.round(canvasH / 2 + 150)}px)
+  • ONLY product image: NO text, NO overlays`,
+    `PIXEL-PERFECT RULES:
+- Canvas EXACTLY ${canvasW}×${canvasH}px
+- LEFT column EXACTLY 0-${leftMax}px
+- RIGHT column EXACTLY ${rightStart}-${canvasW}px
+- NO overflow between columns
+- All elements positioned at EXACT pixel coordinates listed above
+- NO parasitic content: NO discount %, NO page numbers, NO extra elements
+- Logo: FULLY VISIBLE, sharp quality
+- Product photo: SHARP, COMPLETE, no cropping or artifacts
+- Text: LEGIBLE, fully visible, no truncation
+- Colors: ${args.style === 'corporate' ? 'muted 2-4 tone' : args.style === 'bold' ? 'dramatic split colors' : 'coherent 3-5 colors'},${args.palette?.length ? ` use ONLY: ${args.palette.join(', ')}` : ''}`,
+    `CONTENT:
+- Logo: top-left, crisp edges
+- "OFFRE EXCLUSIVE": bright green, prominent
+- Title: large bold, dark, complete text
+- Features: 3-5 bullets, GREEN circles with checkmarks INSIDE + descriptive text
+- Rating: ★★★★☆ style + number + customer count (ex: 4.3 · 128 AVIS CLIENTS)
+- Price: Old price (strikethrough) + NEW PRICE (large, white on black) + "J'EN PROFITE" (green button)
+- Product: professional quality, fully visible, centered right`,
     `DESIGN QUALITY:
 - Style: ${args.style} — ${STYLE_HINTS[args.style]}
 ${paletteLine}
