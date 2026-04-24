@@ -50,30 +50,33 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
 
   return [
     `Create a COMPLETE, ready-to-print retail banner with PIXEL-PERFECT GRID-BASED LAYOUT.`,
-    `MANDATORY WIDTH CONSTRAINTS (STRICT 60/40 split):
-LEFT COLUMN: 0% to 60% of canvas width (TEXT & INFO ONLY)
-  - 12% margin-left from canvas edge
-  - Top (12% from top): Brand logo (left-aligned) + "OFFRE EXCLUSIVE" label (right of logo or on separate row)
-  - Upper-middle (35%): Product title (large, bold, dark color, condensed font)
-  - Middle (52%): 3-5 feature bullets (green circle pictos with white checkmarks/symbols INSIDE, not next to text)
-  - Lower-middle (68%): Customer rating (stars integrated with text, ex: "★★★★☆ (4.2/5) 128 AVIS")
-  - Bottom (82%): PRICE SECTION: strikethrough old price + LARGE new price badge (black bg, white text) + CTA button (green, right-aligned within LEFT column)
-  - All text ends at 58% canvas width (2% breathing room before RIGHT column starts)
+    `MANDATORY LAYOUT (STRICT 60/40 SPLIT – NO EXCEPTIONS):
+LEFT COLUMN: 0% to 60% of canvas width
+  - Margin: 12% left, 6% right (internal), 12% top, 12% bottom
+  - 12%: Logo (left, white background behind it if needed)
+  - 18%: "OFFRE EXCLUSIVE" label (green box, white text, LEFT-aligned)
+  - 30%: Product title (bold sans-serif, 5-6% fontsize, dark color, NO truncation)
+  - 48%: Features (3-5 items, EACH item = green circle + text right-of-circle; text LARGE 2.5-3% fontsize, fully visible, 6% vertical gap between items)
+  - 67%: Rating (stars ★★★★☆ + number + "X AVIS CLIENTS" in ONE line, centered, 2% fontsize)
+  - 82%: PRICE SECTION (old price strikethrough, 2% fontsize; new price LARGE bold 6% fontsize in black box with white text; "J'EN PROFITE" button GREEN next to or below black box, right-aligned)
+  - NO extra elements, NO percentages, NO page numbers, ZERO parasitic content
 
-RIGHT COLUMN: 60% to 100% of canvas width (PRODUCT PHOTO ONLY)
-  - Vertical center: product image positioned 25% from top, extends to 75% from top
-  - Horizontal: product CENTERED within 60-100% band (20% margin from 100% edge)
-  - Product photo: SHARP, clean, professional quality
-  - NO text, NO overlays inside RIGHT column`,
+RIGHT COLUMN: 60% to 100% of canvas width
+  - 10% margin from right edge (vertical center of right column)
+  - Product photo: centered within 60-100% band, positioned 30%-70% vertically
+  - ONLY product photo: no text, no overlays, no decorations
+  - Sharp quality, fully visible product, professional product shot`,
     `CRITICAL PRECISION RULES:
-- Canvas has 12% margin on all edges (safe zone for text)
-- LEFT column bounded STRICTLY at 60% horizontal
-- RIGHT column bounded STRICTLY at 60% start
-- ZERO pixel overflow between columns
-- All vertical gaps: minimum 6% canvas-height
-- Text hierarchy: title > features > rating > price
-- Product photo: highest quality, product fully visible, no clipping
-- ZERO truncation: all text ends with visible characters`,
+- Canvas: 12% margin ALL edges, SAFE ZONE for text/logos only
+- LEFT column: 0-60% width, NEVER extends beyond 60%
+- RIGHT column: 60-100% width, NEVER extends before 60%
+- ZERO overflow between columns, ZERO overlap
+- FORBIDDEN ELEMENTS: NO percentages (like "25%"), NO page numbers, NO badges outside specified zones, NO decorative overlays, NO extra text, NO borders, NO shadows
+- Feature items: circle diameter = 4-5% canvas height, text positioned RIGHT of circle, 2.5-3% fontsize
+- Vertical spacing: minimum 6% gap between feature items, minimum 8% gaps before/after sections
+- Product photo: SHARP, CLEAN, product fully visible, NO cropping, NO watermarks, centered in right column
+- All text: dark color on light background, NO color overlays, NO transparency effects
+- ZERO truncation: every word fully visible, no "..." ellipsis`,
     `CONTENT (render all as visible graphics):
 - Brand logo: top-left corner, FULLY VISIBLE, crisp edges
 - "OFFRE EXCLUSIVE": bright green label, center-aligned
