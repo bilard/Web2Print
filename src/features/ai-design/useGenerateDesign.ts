@@ -170,7 +170,7 @@ export function useGenerateDesign() {
 
         await fontsReady
         addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
-        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri)
+        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri, req.productImageUrl)
         canvas.requestRenderAll()
         syncToStore(canvas)
         requestAnimationFrame(() => globalFitCanvas?.())

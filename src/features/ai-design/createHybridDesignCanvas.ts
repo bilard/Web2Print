@@ -221,25 +221,29 @@ export async function addEditableImageSlots(
   slots: DesignAnalysis['imageSlots'],
   canvasWidth: number,
   canvasHeight: number,
-  sourceDataUri: string | null
+  sourceDataUri: string | null,
+  productImageUrl?: string
 ): Promise<FabricObject[]> {
-  const sourceImg = sourceDataUri ? await decodeImage(sourceDataUri) : null
-
   const built = await Promise.all(
     slots.map(async (s) => {
       const { xPx, yPx, wPx, hPx } = bboxToPx(s.bbox, canvasWidth, canvasHeight)
 
-      if (sourceImg) {
+      // Pour le productPhoto, utiliser l'URL du produit réel (pas un crop Nano Banana)
+      // Ça évite le doublement visuel avec les Textboxes éditables
+      if (s.role === 'productPhoto' && productImageUrl) {
         try {
-          const cropDataUri = cropFromDecoded(sourceImg, s.bbox)
-          const img = await FabricImage.fromURL(cropDataUri, { crossOrigin: 'anonymous' })
+          const img = await FabricImage.fromURL(productImageUrl, { crossOrigin: 'anonymous' })
           const imgW = img.width || wPx
           const imgH = img.height || hPx
+          // Fit contain: préserver ratio natif sans déformation
+          const scale = Math.min(wPx / imgW, hPx / imgH)
+          const displayW = imgW * scale
+          const displayH = imgH * scale
           img.set({
-            left: xPx,
-            top: yPx,
-            scaleX: wPx / imgW,
-            scaleY: hPx / imgH,
+            left: xPx + (wPx - displayW) / 2,
+            top: yPx + (hPx - displayH) / 2,
+            scaleX: scale,
+            scaleY: scale,
             originX: 'left',
             originY: 'top',
             selectable: true,
@@ -247,17 +251,19 @@ export async function addEditableImageSlots(
           img.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
           return img as FabricObject
         } catch (err) {
-          console.warn(`[createDesign] Crop failed for slot ${s.id}, falling back to placeholder`, err)
+          console.warn(`[createDesign] Real product image failed for slot ${s.id}`, err)
         }
       }
 
+      // Placeholder vectoriel pour tous les autres slots (logo, badges, etc.)
+      // L'utilisateur peut le remplacer avec un vrai asset par drag & drop
       const rect = new Rect({
         left: xPx,
         top: yPx,
         width: wPx,
         height: hPx,
-        fill: 'rgba(99, 102, 241, 0.08)',
-        stroke: 'rgba(99, 102, 241, 0.6)',
+        fill: 'rgba(99, 102, 241, 0.05)',
+        stroke: 'rgba(99, 102, 241, 0.4)',
         strokeDashArray: [6, 4],
         strokeWidth: 1,
         originX: 'left',
