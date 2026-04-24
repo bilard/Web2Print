@@ -38,13 +38,19 @@ describe('buildPrintMarks', () => {
     expect(bleedRect!.top).toBeCloseTo(-baseOpts.bleedPx, 1)
   })
 
-  it('dessine 8 traits de coupe (2 par coin × 4 coins)', () => {
+  it('dessine 8 traits de coupe trim (2 par coin × 4 coins)', () => {
     const objs = buildPrintMarks(baseOpts)
     const cropLines = objs.filter((o) => (o as any).data?.markType === 'crop-mark')
     expect(cropLines).toHaveLength(8)
     for (const l of cropLines) {
       expect(l).toBeInstanceOf(Line)
     }
+  })
+
+  it('n\'émet plus de bleed-mark (simplification : trim only)', () => {
+    const objs = buildPrintMarks(baseOpts)
+    const bleedLines = objs.filter((o) => (o as any).data?.markType === 'bleed-mark')
+    expect(bleedLines).toHaveLength(0)
   })
 
   it('dessine un rect de zone de sécurité si showSafeArea', () => {
@@ -55,9 +61,9 @@ describe('buildPrintMarks', () => {
     expect(safe!.top).toBeCloseTo(baseOpts.safeAreaPx, 1)
   })
 
-  it('n\'émet pas de bleed-rect si bleedPx === 0', () => {
+  it('n\'émet pas de bleed-rect si bleedPx === 0 mais conserve les traits de coupe', () => {
     const objs = buildPrintMarks({ ...baseOpts, bleedPx: 0 })
     expect(objs.find((o) => (o as any).data?.markType === 'bleed-rect')).toBeUndefined()
-    expect(objs.find((o) => (o as any).data?.markType === 'crop-mark')).toBeUndefined()
+    expect(objs.filter((o) => (o as any).data?.markType === 'crop-mark')).toHaveLength(8)
   })
 })

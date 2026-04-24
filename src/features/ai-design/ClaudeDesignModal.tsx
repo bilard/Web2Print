@@ -4,43 +4,20 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
 import { useGenerateDesign } from './useGenerateDesign'
 import { DesignProgress } from './DesignProgress'
-import { PRINT_FORMATS } from '@/features/print/PRINT_FORMATS'
+import { PRINT_FORMATS, findFormatIdByPixelDimensions } from '@/features/print/PRINT_FORMATS'
 
-// Tab stubs - will be imported from Task 4-7
 import { ClaudeDesignBriefTab } from './ClaudeDesignBriefTab'
 import { ClaudeDesignStyleTab } from './ClaudeDesignStyleTab'
 import { ClaudeDesignOptionsTab } from './ClaudeDesignOptionsTab'
 import { ClaudeDesignAdvancedTab } from './ClaudeDesignAdvancedTab'
-import { ImageDesignPanel } from './ImageDesignPanel'
 
 const TABS = [
   { id: 'brief', label: 'Brief' },
-  { id: 'image', label: 'Image → SVG' },
   { id: 'style', label: 'Style' },
   { id: 'options', label: 'Options' },
   { id: 'avance', label: 'Avancé' },
 ] as const
 
-// Derive format from canvas dimensions (find closest match)
-function findFormatByDimensions(widthPx: number, heightPx: number, dpi: number): string {
-  let bestMatch = 'a4'
-  let bestDistance = Infinity
-
-  for (const fmt of PRINT_FORMATS) {
-    // Use format's native DPI if available, otherwise use provided dpi
-    const formatDpi = fmt.nativeDpi ?? dpi
-    const widthMm = (widthPx * 25.4) / formatDpi
-    const heightMm = (heightPx * 25.4) / formatDpi
-
-    const distance = Math.abs(fmt.widthMm - widthMm) + Math.abs(fmt.heightMm - heightMm)
-    if (distance < bestDistance) {
-      bestDistance = distance
-      bestMatch = fmt.id
-    }
-  }
-
-  return bestMatch
-}
 
 export function ClaudeDesignModal() {
   const {
@@ -48,11 +25,17 @@ export function ClaudeDesignModal() {
     closeClaudeDesignModal,
     claudeDesignActiveTab,
     setClaudeDesignActiveTab,
+    canvasWidth,
+    canvasHeight,
+    dpi,
   } = useUIStore((s) => ({
     isClaudeDesignModalOpen: s.isClaudeDesignModalOpen,
     closeClaudeDesignModal: s.closeClaudeDesignModal,
     claudeDesignActiveTab: s.claudeDesignActiveTab,
     setClaudeDesignActiveTab: s.setClaudeDesignActiveTab,
+    canvasWidth: s.canvasWidth,
+    canvasHeight: s.canvasHeight,
+    dpi: s.dpi,
   }))
 
   const brief = useDesignBrief()
@@ -61,19 +44,17 @@ export function ClaudeDesignModal() {
   const isRunning = state.step !== 'idle' && state.step !== 'done' && state.step !== 'error'
   const isGenerating = state.step !== 'idle'
 
-  // Always sync format to canvas dimensions when modal opens
+  // Sync format to canvas dimensions whenever they change or modal opens
   useEffect(() => {
     if (isClaudeDesignModalOpen) {
-      const dpi = useUIStore.getState().dpi
-      const { canvasWidth, canvasHeight } = useUIStore.getState()
-      const derivedFormatId = findFormatByDimensions(canvasWidth, canvasHeight, dpi)
+      const derivedFormatId = findFormatIdByPixelDimensions(canvasWidth, canvasHeight)
       // Always sync format to canvas dimensions, even if brief.formatId exists
       if (derivedFormatId !== brief.formatId) {
         const { setBrief } = useDesignBriefStore.getState()
         setBrief({ formatId: derivedFormatId })
       }
     }
-  }, [isClaudeDesignModalOpen, brief.formatId])
+  }, [isClaudeDesignModalOpen, canvasWidth, canvasHeight, brief.formatId])
 
   // Close modal on Escape
   useEffect(() => {
@@ -128,6 +109,7 @@ export function ClaudeDesignModal() {
         step={state.step}
         progress={state.progress}
         error={state.error}
+        failedStep={state.failedStep}
         lastResult={state.lastResult}
         nanobananaRef={state.nanobananaRef}
         onClose={handleProgressClose}
@@ -190,14 +172,6 @@ export function ClaudeDesignModal() {
             hidden={claudeDesignActiveTab !== 'brief'}
           >
             {claudeDesignActiveTab === 'brief' && <ClaudeDesignBriefTab />}
-          </div>
-          <div
-            id="image-panel"
-            role="tabpanel"
-            aria-labelledby="image-tab"
-            hidden={claudeDesignActiveTab !== 'image'}
-          >
-            {claudeDesignActiveTab === 'image' && <ImageDesignPanel />}
           </div>
           <div
             id="style-panel"

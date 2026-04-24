@@ -14,21 +14,11 @@ export interface DesignRequest {
   productName?: string
 }
 
-export interface ImageSlot {
-  id: string
-  role: string             // 'hero' | 'background' | 'product' …
-  promptSuggestion: string // ce que l'utilisateur peut envoyer à Nano Banana plus tard
-}
-
 export interface DesignResult {
-  svg: string              // SVG complet, viewBox en unités internes du design
-  widthMm: number          // largeur fini
-  heightMm: number         // hauteur finie
-  bleedMm: number          // 0 si pas demandé
-  palette: string[]        // palette effectivement utilisée
-  fontsUsed: string[]      // liste des font-family référencées
-  slots: ImageSlot[]       // slots image détectés, à remplir via DAM/Nano Banana
-  rationale: string        // courte note explicative du LLM sur les choix de design
+  widthMm: number
+  heightMm: number
+  bleedMm: number
+  rationale: string
 }
 
 /**

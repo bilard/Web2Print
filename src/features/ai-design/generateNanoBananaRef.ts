@@ -49,37 +49,39 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
     : `- Color palette: coherent with ${args.style} style, 3-5 colors max`
 
   return [
-    `Create a COMPLETE, ready-to-print retail banner with PROFESSIONAL GRID-BASED LAYOUT. Every element in its precise zone.`,
-    `STRICT LAYOUT STRUCTURE (60/40 or 50/50 split):
-LEFT SIDE (Text & Info):
-  - Top (20%): Brand logo + "OFFRE EXCLUSIVE" label
-  - Upper-middle (20%): Product title (large, bold, single color)
-  - Middle (15%): 3-5 feature bullets with pictos (left-aligned)
-  - Lower-middle (15%): Customer rating + review count
-  - Bottom (15%): Price badge (large, contrasting color) + CTA button
-  - Safe zone: 12% padding from all edges
+    `Create a COMPLETE, ready-to-print retail banner with PIXEL-PERFECT GRID-BASED LAYOUT.`,
+    `MANDATORY WIDTH CONSTRAINTS (STRICT 60/40 split):
+LEFT COLUMN: 0% to 60% of canvas width (TEXT & INFO ONLY)
+  - 12% margin-left from canvas edge
+  - Top (12% from top): Brand logo (left-aligned) + "OFFRE EXCLUSIVE" label (right of logo or on separate row)
+  - Upper-middle (35%): Product title (large, bold, dark color, condensed font)
+  - Middle (52%): 3-5 feature bullets (green circle pictos with white checkmarks/symbols INSIDE, not next to text)
+  - Lower-middle (68%): Customer rating (stars integrated with text, ex: "★★★★☆ (4.2/5) 128 AVIS")
+  - Bottom (82%): PRICE SECTION: strikethrough old price + LARGE new price badge (black bg, white text) + CTA button (green, right-aligned within LEFT column)
+  - All text ends at 58% canvas width (2% breathing room before RIGHT column starts)
 
-RIGHT SIDE (Product Photo):
-  - Vertical center placement
-  - Large, clean product cutout
-  - 10% breathing room from right edge
-  - No text overlapping the image`,
-    `CRITICAL RULES:
-- 12% minimum margin from ALL edges
-- Text zones stacked vertically, NO overlap
-- Each text block has 8% vertical gap minimum
-- Product photo: perfectly centered, no clipping
-- Grid-based alignment: no random placements
-- ZERO truncation: all text FULLY VISIBLE
-- Professional, organized, press-ready appearance`,
+RIGHT COLUMN: 60% to 100% of canvas width (PRODUCT PHOTO ONLY)
+  - Vertical center: product image positioned 25% from top, extends to 75% from top
+  - Horizontal: product CENTERED within 60-100% band (20% margin from 100% edge)
+  - Product photo: SHARP, clean, professional quality
+  - NO text, NO overlays inside RIGHT column`,
+    `CRITICAL PRECISION RULES:
+- Canvas has 12% margin on all edges (safe zone for text)
+- LEFT column bounded STRICTLY at 60% horizontal
+- RIGHT column bounded STRICTLY at 60% start
+- ZERO pixel overflow between columns
+- All vertical gaps: minimum 6% canvas-height
+- Text hierarchy: title > features > rating > price
+- Product photo: highest quality, product fully visible, no clipping
+- ZERO truncation: all text ends with visible characters`,
     `CONTENT (render all as visible graphics):
-- Brand logo: top-left corner, FULLY VISIBLE
-- "OFFRE EXCLUSIVE": prominent label
-- Title: large bold type, complete, readable
-- Features: clear bullets with icons (✓ for specs, ★ for ratings)
-- Price: LARGE, contrasting badge color
-- CTA button: prominent, actionable
-- Product photo: large, centered, high-quality cutout`,
+- Brand logo: top-left corner, FULLY VISIBLE, crisp edges
+- "OFFRE EXCLUSIVE": bright green label, center-aligned
+- Title: large bold condensed sans-serif, dark color, no truncation
+- Features: 3-5 bullets with GREEN FILLED CIRCLES (each circle contains white checkmark ✓ or star ★ INSIDE the circle, not beside it)
+- Rating: stars visually rendered (★★★★☆) + rating number + customer count in same line
+- Price section: Old price with strikethrough (dark gray, smaller) on first line; New price LARGE bold white text on BLACK badge; "J'EN PROFITE" CTA button GREEN with white text
+- Product photo: professional quality, product centered and complete, no truncation`,
     `DESIGN QUALITY:
 - Style: ${args.style} — ${STYLE_HINTS[args.style]}
 ${paletteLine}

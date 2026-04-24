@@ -101,7 +101,16 @@ export function TaxonomyManager() {
 
         {/* Column list with level selectors */}
         <div className="flex flex-col gap-1">
-          {sheet.columns.map((col) => {
+          {[...sheet.columns]
+            .sort((a, b) => {
+              const la = levels[a.key] ?? 0
+              const lb = levels[b.key] ?? 0
+              if (la > 0 && lb > 0) return la - lb
+              if (la > 0) return -1
+              if (lb > 0) return 1
+              return 0
+            })
+            .map((col) => {
             const lvl = levels[col.key] ?? 0
             const isTaxo = lvl > 0
             return (

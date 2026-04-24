@@ -68,7 +68,6 @@ export function DesignPromptPanel() {
         setBrief({ formatId: 'custom', customWidthMm: wMm, customHeightMm: hMm })
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasWidth, canvasHeight])
 
   const onSubmit = () => {
@@ -182,6 +181,7 @@ export function DesignPromptPanel() {
           step={state.step}
           progress={state.progress}
           error={state.error}
+          failedStep={state.failedStep}
           lastResult={state.lastResult}
           nanobananaRef={state.nanobananaRef}
           onClose={() => setProgressDismissed(true)}

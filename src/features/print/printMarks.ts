@@ -1,4 +1,4 @@
-import { Rect, Line, type FabricObject } from 'fabric'
+import { Rect, Line, Circle, type FabricObject } from 'fabric'
 
 export interface PrintMarksOptions {
   canvasWidthPx: number
@@ -8,13 +8,15 @@ export interface PrintMarksOptions {
   pageTopPx?: number
   bleedPx: number
   cropMarkLengthPx: number
+  /** Distance (px) entre le bord du bleed et l'extrémité interne des traits. */
   cropMarkOffsetPx: number
   safeAreaPx: number
   showPrintMarks: boolean
   showSafeArea: boolean
+  showRegistrationMarks?: boolean
 }
 
-type MarkType = 'bleed-rect' | 'crop-mark' | 'safe-area'
+type MarkType = 'bleed-rect' | 'crop-mark' | 'bleed-mark' | 'safe-area' | 'registration-mark'
 
 function tag(obj: FabricObject, markType: MarkType): FabricObject {
   const o = obj as FabricObject & { data?: Record<string, unknown>; excludeFromExport?: boolean }
@@ -23,12 +25,19 @@ function tag(obj: FabricObject, markType: MarkType): FabricObject {
   o.evented = false
   o.hoverCursor = 'default'
   o.excludeFromExport = true
-  // Contre-mesure : un handler `object:added` global peut basculer originX/Y
-  // à 'center' — on les rétablit après ajout via setCoords() dans l'effet.
-  ;(o as FabricObject & { originX?: string; originY?: string }).originX = 'left'
-  ;(o as FabricObject & { originX?: string; originY?: string }).originY = 'top'
+  // IMPORTANT : ne PAS toucher originX/originY après construction.
+  // Line v6 utilise 'center' par défaut et calcule left/top comme centroïde.
+  // Forcer 'left'/'top' ici changerait l'interprétation de left sans recalculer
+  // sa valeur → décalage visuel de width/2 (bug confirmé par dump console).
   return obj
 }
+
+const BLEED_COLOR = '#e53935'
+// Gris moyen : reste lisible à la fois sur le fond sombre de l'éditeur
+// (autour de la page) et sur la page blanche (où les traits entrent).
+// Les repères sont `excludeFromExport: true` → couleur purement visuelle.
+const CROP_COLOR = '#888888'
+const SAFE_COLOR = '#c026d3'
 
 function makeBleedRect(x: number, y: number, w: number, h: number, bleed: number): FabricObject {
   const r = new Rect({
@@ -39,36 +48,113 @@ function makeBleedRect(x: number, y: number, w: number, h: number, bleed: number
     width: w + bleed * 2,
     height: h + bleed * 2,
     fill: 'transparent',
-    stroke: '#ff3b30',
-    strokeWidth: 2.5,
-    strokeDashArray: [8, 5],
+    stroke: BLEED_COLOR,
+    strokeWidth: 1,
+    strokeUniform: true,
   })
   return tag(r, 'bleed-rect')
 }
 
-function makeCropMarks(x: number, y: number, w: number, h: number, offset: number, length: number): FabricObject[] {
-  const color = '#ff9500'
-  const sw = 2
-  const lines: FabricObject[] = []
-  const x1 = x, y1 = y, x2 = x + w, y2 = y + h
+/**
+ * Traits de coupe simples à chaque coin — 2 traits par coin, L-shape alignée
+ * sur le trim, à l'extérieur du bleed. Formule unique, les 4 coins sont
+ * identiques par construction (seuls les signes de direction changent).
+ *
+ * @param x,y,w,h  trim box (page)
+ * @param bleed    épaisseur du bleed (px)
+ * @param offset   écart entre le bord du bleed et l'extrémité intérieure des traits
+ * @param length   longueur de chaque trait
+ */
+function makeCornerMarks(
+  x: number, y: number, w: number, h: number,
+  bleed: number, offset: number, length: number,
+): FabricObject[] {
+  const lineOpts = {
+    stroke: CROP_COLOR,
+    strokeWidth: 1,
+    strokeUniform: true,
+    strokeLineCap: 'butt' as const,
+  }
 
-  // Coin haut-gauche
-  lines.push(new Line([x1 - offset - length, y1, x1 - offset, y1], { stroke: color, strokeWidth: sw }))
-  lines.push(new Line([x1, y1 - offset - length, x1, y1 - offset], { stroke: color, strokeWidth: sw }))
+  // Plage outward partagée par les 4 coins : de `inner` à `outer` depuis le trim.
+  const inner = Math.round(bleed + offset)
+  const outer = Math.round(bleed + offset + length)
 
-  // Coin haut-droit
-  lines.push(new Line([x2 + offset, y1, x2 + offset + length, y1], { stroke: color, strokeWidth: sw }))
-  lines.push(new Line([x2, y1 - offset - length, x2, y1 - offset], { stroke: color, strokeWidth: sw }))
+  // Coordonnées entières des 4 coins du trim box
+  const L = Math.round(x)
+  const R = Math.round(x + w)
+  const T = Math.round(y)
+  const B = Math.round(y + h)
 
-  // Coin bas-gauche
-  lines.push(new Line([x1 - offset - length, y2, x1 - offset, y2], { stroke: color, strokeWidth: sw }))
-  lines.push(new Line([x1, y2 + offset, x1, y2 + offset + length], { stroke: color, strokeWidth: sw }))
+  const marks: FabricObject[] = []
 
-  // Coin bas-droit
-  lines.push(new Line([x2 + offset, y2, x2 + offset + length, y2], { stroke: color, strokeWidth: sw }))
-  lines.push(new Line([x2, y2 + offset, x2, y2 + offset + length], { stroke: color, strokeWidth: sw }))
+  // Pour chaque coin : 1 trait horizontal (aligné sur le trim edge horizontal)
+  // + 1 trait vertical (aligné sur le trim edge vertical). Tous les 4 coins
+  // utilisent exactement la même formule, seuls les signes changent.
 
-  return lines.map((l) => tag(l, 'crop-mark'))
+  // TOP-LEFT : traits vers la gauche et vers le haut
+  marks.push(tag(new Line([L - outer, T, L - inner, T], lineOpts), 'crop-mark'))
+  marks.push(tag(new Line([L, T - outer, L, T - inner], lineOpts), 'crop-mark'))
+
+  // TOP-RIGHT : traits vers la droite et vers le haut
+  marks.push(tag(new Line([R + inner, T, R + outer, T], lineOpts), 'crop-mark'))
+  marks.push(tag(new Line([R, T - outer, R, T - inner], lineOpts), 'crop-mark'))
+
+  // BOTTOM-LEFT : traits vers la gauche et vers le bas
+  marks.push(tag(new Line([L - outer, B, L - inner, B], lineOpts), 'crop-mark'))
+  marks.push(tag(new Line([L, B + inner, L, B + outer], lineOpts), 'crop-mark'))
+
+  // BOTTOM-RIGHT : traits vers la droite et vers le bas
+  marks.push(tag(new Line([R + inner, B, R + outer, B], lineOpts), 'crop-mark'))
+  marks.push(tag(new Line([R, B + inner, R, B + outer], lineOpts), 'crop-mark'))
+
+  return marks
+}
+
+/**
+ * Hirondelles simples (repères de montage) aux 4 milieux de côté :
+ * cercle + croix intérieure, forme classique minimaliste.
+ */
+function makeRegistrationMarks(
+  x: number, y: number, w: number, h: number,
+  bleed: number, offset: number, length: number, dpi: number,
+): FabricObject[] {
+  const lineOpts = {
+    stroke: CROP_COLOR,
+    strokeWidth: 1,
+    strokeUniform: true,
+    strokeLineCap: 'butt' as const,
+  }
+  const mmToPx = (mm: number) => (mm * dpi) / 25.4
+  const radius = mmToPx(1.5)
+
+  const markDistance = bleed + offset + length / 2
+
+  const makeMark = (cx: number, cy: number): FabricObject[] => [
+    tag(new Circle({
+      left: cx - radius,
+      top: cy - radius,
+      originX: 'left',
+      originY: 'top',
+      radius,
+      fill: 'transparent',
+      stroke: CROP_COLOR,
+      strokeWidth: 1,
+      strokeUniform: true,
+    }), 'registration-mark'),
+    tag(new Line([cx - radius, cy, cx + radius, cy], lineOpts), 'registration-mark'),
+    tag(new Line([cx, cy - radius, cx, cy + radius], lineOpts), 'registration-mark'),
+  ]
+
+  const centerX = x + w / 2
+  const centerY = y + h / 2
+
+  return [
+    ...makeMark(centerX, y - markDistance),        // haut
+    ...makeMark(centerX, y + h + markDistance),    // bas
+    ...makeMark(x - markDistance, centerY),        // gauche
+    ...makeMark(x + w + markDistance, centerY),    // droite
+  ]
 }
 
 function makeSafeArea(x: number, y: number, w: number, h: number, margin: number): FabricObject {
@@ -80,9 +166,10 @@ function makeSafeArea(x: number, y: number, w: number, h: number, margin: number
     width: w - margin * 2,
     height: h - margin * 2,
     fill: 'transparent',
-    stroke: '#00d9ff',
-    strokeWidth: 2.5,
-    strokeDashArray: [8, 5],
+    stroke: SAFE_COLOR,
+    strokeWidth: 1.5,
+    strokeUniform: true,
+    strokeDashArray: [6, 4],
   })
   return tag(r, 'safe-area')
 }
@@ -124,22 +211,34 @@ export function removeAllPrintMarks(
   return removed
 }
 
-export function buildPrintMarks(opts: PrintMarksOptions): FabricObject[] {
+export function buildPrintMarks(opts: PrintMarksOptions & { dpi?: number }): FabricObject[] {
   const objs: FabricObject[] = []
   const x = opts.pageLeftPx ?? 0
   const y = opts.pageTopPx ?? 0
   const w = opts.canvasWidthPx
   const h = opts.canvasHeightPx
+  const dpi = opts.dpi ?? 300
 
   if (opts.showPrintMarks) {
     if (opts.bleedPx > 0) {
       objs.push(makeBleedRect(x, y, w, h, opts.bleedPx))
     }
-    objs.push(...makeCropMarks(x, y, w, h, opts.cropMarkOffsetPx, opts.cropMarkLengthPx))
+    objs.push(
+      ...makeCornerMarks(x, y, w, h, opts.bleedPx, opts.cropMarkOffsetPx, opts.cropMarkLengthPx),
+    )
   }
 
   if (opts.showSafeArea && opts.safeAreaPx > 0) {
     objs.push(makeSafeArea(x, y, w, h, opts.safeAreaPx))
+  }
+
+  if (opts.showRegistrationMarks) {
+    objs.push(
+      ...makeRegistrationMarks(
+        x, y, w, h,
+        opts.bleedPx, opts.cropMarkOffsetPx, opts.cropMarkLengthPx, dpi,
+      ),
+    )
   }
 
   return objs

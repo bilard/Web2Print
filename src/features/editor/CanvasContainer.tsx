@@ -131,8 +131,12 @@ export function CanvasContainer() {
   // --- Print marks overlay (synced with UI store) ---
   const dpi = useUIStore((s) => s.dpi)
   const bleedMm = useUIStore((s) => s.bleedMm)
+  const safeAreaMm = useUIStore((s) => s.safeAreaMm)
+  const cropMarkLengthMm = useUIStore((s) => s.cropMarkLengthMm)
+  const cropMarkOffsetMm = useUIStore((s) => s.cropMarkOffsetMm)
   const showPrintMarks = useUIStore((s) => s.showPrintMarks)
   const showSafeArea = useUIStore((s) => s.showSafeArea)
+  const showRegistrationMarks = useUIStore((s) => s.showRegistrationMarks)
 
   useEffect(() => {
     const canvas = fabricRef.current
@@ -159,32 +163,32 @@ export function CanvasContainer() {
       pageH = (pageBg.height ?? canvasHeight) * (pageBg.scaleY ?? 1)
     }
 
+    // Standard InDesign : les traits de coupe sont dessinés À L'EXTÉRIEUR du
+    // bleed. `cropMarkOffsetMm` est la distance entre le bord du bleed et
+    // l'extrémité interne des traits (équivalent du « Décalage » d'InDesign).
     const marks = buildPrintMarks({
       canvasWidthPx: pageW,
       canvasHeightPx: pageH,
       pageLeftPx: pageLeft,
       pageTopPx: pageTop,
       bleedPx: mmToPx(bleedMm, dpi),
-      cropMarkLengthPx: mmToPx(5, dpi),
-      cropMarkOffsetPx: mmToPx(bleedMm, dpi),
-      safeAreaPx: mmToPx(5, dpi),
+      cropMarkLengthPx: mmToPx(cropMarkLengthMm, dpi),
+      cropMarkOffsetPx: mmToPx(cropMarkOffsetMm, dpi),
+      safeAreaPx: mmToPx(safeAreaMm, dpi),
+      dpi,
       showPrintMarks,
       showSafeArea,
+      showRegistrationMarks,
     })
 
     for (const m of marks) canvas.add(m)
-    // Si un handler global (`object:added`) a forcé originX/Y à 'center',
-    // on le rétablit explicitement après ajout pour que le rect soit
-    // positionné par son coin top-left, comme prévu.
-    for (const m of marks) {
-      ;(m as FabricObject & { originX?: string; originY?: string }).originX = 'left'
-      ;(m as FabricObject & { originX?: string; originY?: string }).originY = 'top'
-      m.setCoords()
-    }
+    // Ne JAMAIS toucher originX/originY ici : ça déplace visuellement les Line
+    // de width/2 (left stocké = centroïde, pas bord gauche).
+    for (const m of marks) m.setCoords()
     for (const m of marks) canvas.bringObjectToFront(m)
 
     canvas.requestRenderAll()
-  }, [fabricRef, canvasWidth, canvasHeight, dpi, bleedMm, showPrintMarks, showSafeArea])
+  }, [fabricRef, canvasWidth, canvasHeight, dpi, bleedMm, safeAreaMm, cropMarkLengthMm, cropMarkOffsetMm, showPrintMarks, showSafeArea, showRegistrationMarks])
 
   // Sync zoom from footer buttons
   useEffect(() => {

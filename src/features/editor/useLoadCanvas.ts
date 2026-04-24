@@ -346,17 +346,13 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           useDesignBriefStore.getState().hydrateBrief({ ...DEFAULT_DESIGN_BRIEF, formatId: correctFormatId })
         }
 
-        // Restore print settings (DPI, bleed, marks, safe area)
+        // Restore print settings (DPI, bleed, marks, safe area) — écrit dans
+        // le store, l'effet `CanvasContainer` dessinera les marques.
         const uiStoreRef = useUIStore.getState()
-        let dpiToUse = uiStoreRef.dpi
-        let bleedToUse = uiStoreRef.bleedMm
-        let showMarksToUse = uiStoreRef.showPrintMarks
-        let showSafeAreaToUse = uiStoreRef.showSafeArea
-
-        if (typeof data.dpi === 'number') { uiStoreRef.setDpi(data.dpi); dpiToUse = data.dpi }
-        if (typeof data.bleedMm === 'number') { uiStoreRef.setBleedMm(data.bleedMm); bleedToUse = data.bleedMm }
-        if (typeof data.showPrintMarks === 'boolean') { uiStoreRef.setShowPrintMarks(data.showPrintMarks); showMarksToUse = data.showPrintMarks }
-        if (typeof data.showSafeArea === 'boolean') { uiStoreRef.setShowSafeArea(data.showSafeArea); showSafeAreaToUse = data.showSafeArea }
+        if (typeof data.dpi === 'number') uiStoreRef.setDpi(data.dpi)
+        if (typeof data.bleedMm === 'number') uiStoreRef.setBleedMm(data.bleedMm)
+        if (typeof data.showPrintMarks === 'boolean') uiStoreRef.setShowPrintMarks(data.showPrintMarks)
+        if (typeof data.showSafeArea === 'boolean') uiStoreRef.setShowSafeArea(data.showSafeArea)
 
         // Restore project palette
         try {
@@ -472,30 +468,13 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           fixAndReattach(canvas)
 
           // Purge tout print mark / safe-area / bleed mark hérité d'une sauvegarde
-          // antérieure (versions du code sans `excludeFromExport: true`).
-          const { removeAllPrintMarks, buildPrintMarks } = await import('@/features/print/printMarks')
+          // antérieure (versions du code sans `excludeFromExport: true`). Les
+          // nouvelles marques sont créées par l'effet `CanvasContainer` une fois
+          // le canvas monté — c'est la source unique de vérité, évite les
+          // doublons avec des valeurs hard-codées divergentes.
+          const { removeAllPrintMarks } = await import('@/features/print/printMarks')
           const orphanMarks = removeAllPrintMarks(canvas.getObjects(), 'tagged')
           for (const m of orphanMarks) canvas.remove(m)
-
-          // Créer les marques d'impression avec les valeurs restaurées
-          const { mmToPx } = await import('@/features/print/dimensions')
-          const marks = buildPrintMarks({
-            canvasWidthPx: canvasJson.width || uiStoreRef.canvasWidth,
-            canvasHeightPx: canvasJson.height || uiStoreRef.canvasHeight,
-            bleedPx: mmToPx(bleedToUse, dpiToUse),
-            cropMarkLengthPx: mmToPx(5, dpiToUse),
-            cropMarkOffsetPx: mmToPx(bleedToUse, dpiToUse),
-            safeAreaPx: mmToPx(5, dpiToUse),
-            showPrintMarks: showMarksToUse,
-            showSafeArea: showSafeAreaToUse,
-          })
-          for (const m of marks) canvas.add(m)
-          for (const m of marks) {
-            ;(m as any).originX = 'left'
-            ;(m as any).originY = 'top'
-            m.setCoords()
-          }
-          for (const m of marks) canvas.bringObjectToFront(m)
 
           // Re-apply per-character charSpacing (tracking IDML) from separate Firestore field
           try {

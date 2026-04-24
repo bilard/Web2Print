@@ -220,5 +220,13 @@ export async function analyzeDesignForEdit(imageBase64: string): Promise<DesignA
     imageSlots: Array.isArray(parsed.imageSlots) ? parsed.imageSlots : [],
   }
 
+  console.log('[analyzeDesignForEdit] Analysis complete:', {
+    background: result.background,
+    shapes: result.decorativeShapes.length,
+    texts: result.texts.length,
+    imageSlots: result.imageSlots.length,
+    imageSlotDetails: result.imageSlots.map(s => ({ id: s.id, role: s.role, bbox: s.bbox })),
+  })
+
   return result
 }

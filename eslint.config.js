@@ -19,6 +19,7 @@ export default tseslint.config(
       'scripts/**',
       'public/**',
       '*.config.{js,cjs,ts}',
+      'api-server.js',
     ],
   },
   js.configs.recommended,

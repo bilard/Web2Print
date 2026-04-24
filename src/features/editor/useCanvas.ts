@@ -199,7 +199,9 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
     ensurePageBgRect(canvas)
   }, [canvasWidth, canvasHeight, canvasBg, canvasBgType, canvasBgGradient, canvasBgImage])
 
-  // Fit canvas to container, centering the document
+  // Fit canvas to container, centering the document.
+  // Le padding de 160 px (2×80) laisse de la place pour les repères d'impression
+  // (bleed rect + traits de coupe + hirondelles) qui débordent autour de la page.
   const fitToContainer = useCallback(
     (containerEl: HTMLElement) => {
       const canvas = fabricRef.current
@@ -208,8 +210,8 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
 
       // Use fresh values from store to avoid stale closure
       const { canvasWidth: docW, canvasHeight: docH } = useUIStore.getState()
-      const scaleX = (cw - 80) / docW
-      const scaleY = (ch - 80) / docH
+      const scaleX = (cw - 160) / docW
+      const scaleY = (ch - 160) / docH
       const scale = Math.min(scaleX, scaleY)
 
       canvas.setDimensions({ width: cw, height: ch })

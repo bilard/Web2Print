@@ -11,7 +11,6 @@ interface UIState {
   activeLeftPanel: LeftPanelId | null
   toggleLeftPanel: (id: LeftPanelId) => void
   settingsOpen: boolean
-  pageSettingsOpen: boolean
   zoom: number
   gridVisible: boolean
   snapEnabled: boolean
@@ -24,15 +23,22 @@ interface UIState {
   // --- Print ---
   dpi: number
   bleedMm: number
+  safeAreaMm: number
+  cropMarkLengthMm: number
+  cropMarkOffsetMm: number
   showPrintMarks: boolean
   showSafeArea: boolean
+  showRegistrationMarks: boolean
   setDpi: (dpi: number) => void
   setBleedMm: (mm: number) => void
+  setSafeAreaMm: (mm: number) => void
+  setCropMarkLengthMm: (mm: number) => void
+  setCropMarkOffsetMm: (mm: number) => void
   setShowPrintMarks: (v: boolean) => void
   setShowSafeArea: (v: boolean) => void
+  setShowRegistrationMarks: (v: boolean) => void
   setRightPanelOpen: (open: boolean) => void
   setSettingsOpen: (open: boolean) => void
-  setPageSettingsOpen: (open: boolean) => void
   setZoom: (zoom: number) => void
   setGridVisible: (v: boolean) => void
   setSnapEnabled: (v: boolean) => void
@@ -76,7 +82,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleLeftPanel: (id) =>
     set((s) => ({ activeLeftPanel: s.activeLeftPanel === id ? null : id })),
   settingsOpen: false,
-  pageSettingsOpen: false,
   zoom: 100,
   gridVisible: false,
   snapEnabled: false,
@@ -89,7 +94,6 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
-  setPageSettingsOpen: (open) => set({ pageSettingsOpen: open }),
   setZoom: (zoom) => set({ zoom: Math.min(400, Math.max(10, zoom)) }),
   setGridVisible: (gridVisible) => set({ gridVisible }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
@@ -101,18 +105,28 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   // --- Print defaults ---
   dpi: 300,
-  bleedMm: 0,
+  bleedMm: 2,
+  safeAreaMm: 2,
+  cropMarkLengthMm: 3.5,
+  cropMarkOffsetMm: 1,
   showPrintMarks: true,
   showSafeArea: true,
+  showRegistrationMarks: true,
   setDpi: (dpi) => set({ dpi: Math.max(72, Math.min(600, dpi)) }),
   setBleedMm: (bleedMm) => set({ bleedMm: Math.max(0, Math.min(10, bleedMm)) }),
+  setSafeAreaMm: (safeAreaMm) => set({ safeAreaMm: Math.max(0, Math.min(30, safeAreaMm)) }),
+  setCropMarkLengthMm: (cropMarkLengthMm) => set({ cropMarkLengthMm: Math.max(2, Math.min(10, cropMarkLengthMm)) }),
+  setCropMarkOffsetMm: (cropMarkOffsetMm) => set({ cropMarkOffsetMm: Math.max(0, Math.min(10, cropMarkOffsetMm)) }),
   setShowPrintMarks: (showPrintMarks) => set({ showPrintMarks }),
   setShowSafeArea: (showSafeArea) => set({ showSafeArea }),
+  setShowRegistrationMarks: (showRegistrationMarks) => set({ showRegistrationMarks }),
 
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
     { id: 'claude-design', collapsed: false },
+    { id: 'page',    collapsed: true },
+    { id: 'print',   collapsed: true },
     { id: 'data',    collapsed: true },
     { id: 'layers',  collapsed: true },
     { id: 'images',  collapsed: true },
