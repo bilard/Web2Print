@@ -1,0 +1,45 @@
+import { describe, it, expect, beforeEach } from 'vitest'
+import {
+  useAiSettingsStore,
+  getSelectedModel,
+  getEffectiveModelList,
+} from './aiSettings.store'
+
+describe('aiSettings.store', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useAiSettingsStore.setState({
+      selectedModel: { claude: 'claude-opus-4-7', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o' },
+      fetchedModels: { claude: [], gemini: [], openai: [] },
+    })
+  })
+
+  it('initialises selectedModel with catalog defaults', () => {
+    expect(getSelectedModel('claude')).toBe('claude-opus-4-7')
+    expect(getSelectedModel('gemini')).toBe('gemini-3.1-pro-preview')
+    expect(getSelectedModel('openai')).toBe('gpt-4o')
+  })
+
+  it('setSelectedModel updates selection', () => {
+    useAiSettingsStore.getState().setSelectedModel('claude', 'claude-sonnet-4-6')
+    expect(getSelectedModel('claude')).toBe('claude-sonnet-4-6')
+  })
+
+  it('getSelectedModel falls back to default if stored id is unknown', () => {
+    useAiSettingsStore.setState({
+      selectedModel: { claude: 'ghost-model', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o' },
+      fetchedModels: { claude: [], gemini: [], openai: [] },
+    })
+    expect(getSelectedModel('claude')).toBe('claude-opus-4-7')
+  })
+
+  it('getEffectiveModelList merges catalog + fetchedModels (catalog wins on dedup)', () => {
+    useAiSettingsStore.getState().setFetchedModels('claude', [
+      { id: 'claude-opus-4-7', label: 'OVERRIDDEN', pricing: { input: 0, output: 0 } },
+      { id: 'claude-future-99', label: 'Claude Future', pricing: { input: 0, output: 0 } },
+    ])
+    const list = getEffectiveModelList('claude')
+    expect(list.find((m) => m.id === 'claude-opus-4-7')?.label).toBe('Claude Opus 4.7')
+    expect(list.find((m) => m.id === 'claude-future-99')?.label).toBe('Claude Future')
+  })
+})
