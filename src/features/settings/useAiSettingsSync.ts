@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAiSettingsStore, initialSelected } from '@/stores/aiSettings.store'
-import type { AiProvider } from '@/lib/aiModels'
+import type { AiProvider, AiModelInfo } from '@/lib/aiModels'
 
 const DEBOUNCE_MS = 500
 
@@ -16,12 +16,18 @@ export function useAiSettingsSync() {
   useEffect(() => {
     hydratedRef.current = false
     if (!user) {
-      useAiSettingsStore.setState({ selectedModel: initialSelected() })
+      useAiSettingsStore.setState({
+        selectedModel: initialSelected(),
+        fetchedModels: { claude: [], gemini: [], openai: [] },
+      })
       return
     }
 
     // Reset to defaults BEFORE hydration so we never inherit a previous user's state.
-    useAiSettingsStore.setState({ selectedModel: initialSelected() })
+    useAiSettingsStore.setState({
+      selectedModel: initialSelected(),
+      fetchedModels: { claude: [], gemini: [], openai: [] },
+    })
     // Snapshot the post-reset baseline; any divergence after this is a user click during hydration.
     const baseline = useAiSettingsStore.getState().selectedModel
 
@@ -30,20 +36,38 @@ export function useAiSettingsSync() {
     getDoc(ref)
       .then((snap) => {
         if (cancelled) return
-        const remote = snap.data()?.aiSettings?.selectedModel as
-          | Partial<Record<AiProvider, string>>
+        const ai = snap.data()?.aiSettings as
+          | {
+              selectedModel?: Partial<Record<AiProvider, string>>
+              fetchedModels?: Partial<Record<AiProvider, AiModelInfo[]>>
+            }
           | undefined
-        if (!remote) return
-        // For each provider: take remote unless the user already changed the value during the in-flight window.
-        const live = useAiSettingsStore.getState().selectedModel
-        const next = { ...live }
-        for (const key of Object.keys(remote) as AiProvider[]) {
-          if (live[key] === baseline[key]) {
-            // User hasn't touched this provider during hydration → safe to apply remote.
-            next[key] = remote[key]!
-          }
+        if (!ai) return
+
+        // Hydrate fetchedModels first so the UI has metadata when applying selectedModel.
+        if (ai.fetchedModels) {
+          const current = useAiSettingsStore.getState().fetchedModels
+          useAiSettingsStore.setState({
+            fetchedModels: {
+              claude: ai.fetchedModels.claude ?? current.claude,
+              gemini: ai.fetchedModels.gemini ?? current.gemini,
+              openai: ai.fetchedModels.openai ?? current.openai,
+            },
+          })
         }
-        useAiSettingsStore.setState({ selectedModel: next })
+
+        if (ai.selectedModel) {
+          // For each provider: take remote unless the user already changed the value during the in-flight window.
+          const live = useAiSettingsStore.getState().selectedModel
+          const next = { ...live }
+          for (const key of Object.keys(ai.selectedModel) as AiProvider[]) {
+            if (live[key] === baseline[key]) {
+              // User hasn't touched this provider during hydration → safe to apply remote.
+              next[key] = ai.selectedModel[key]!
+            }
+          }
+          useAiSettingsStore.setState({ selectedModel: next })
+        }
       })
       .catch((e) => console.warn('[useAiSettingsSync] hydrate failed:', e))
       .finally(() => { if (!cancelled) hydratedRef.current = true })
@@ -57,7 +81,10 @@ export function useAiSettingsSync() {
 
     const unsubscribe = useAiSettingsStore.subscribe((state, prev) => {
       if (!hydratedRef.current) return
-      if (state.selectedModel === prev.selectedModel) return
+      if (
+        state.selectedModel === prev.selectedModel &&
+        state.fetchedModels === prev.fetchedModels
+      ) return
 
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current)
@@ -66,7 +93,12 @@ export function useAiSettingsSync() {
         const ref = doc(db, 'users', user.uid)
         setDoc(
           ref,
-          { aiSettings: { selectedModel: state.selectedModel } },
+          {
+            aiSettings: {
+              selectedModel: state.selectedModel,
+              fetchedModels: state.fetchedModels,
+            },
+          },
           { merge: true },
         ).catch((e) => console.warn('[useAiSettingsSync] sync failed:', e))
       }, DEBOUNCE_MS)

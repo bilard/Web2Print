@@ -87,7 +87,9 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, n
     const seen = new Set(catalog.map((m) => m.id))
     return [...catalog, ...fetched.filter((m) => !seen.has(m.id))]
   }, [provider, fetched])
-  const selected = models.find((m) => m.id === selectedId) ?? models[0]
+  const selected =
+    models.find((m) => m.id === selectedId) ??
+    { id: selectedId, label: selectedId, pricing: { input: 0, output: 0 } }
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
