@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi,
   ChevronDown, RefreshCw, Info,
@@ -8,8 +8,8 @@ import {
   getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey,
   type ApiTestResult,
 } from '@/lib/apiKeys'
-import { type AiProvider, type AiModelInfo } from '@/lib/aiModels'
-import { useAiSettingsStore, getEffectiveModelList } from '@/stores/aiSettings.store'
+import { AI_MODELS, type AiProvider, type AiModelInfo } from '@/lib/aiModels'
+import { useAiSettingsStore } from '@/stores/aiSettings.store'
 
 interface AiProviderCardProps {
   provider: AiProvider
@@ -61,7 +61,10 @@ async function fetchModelsFromProvider(
   if (!res.ok) throw new Error(`OpenAI ${res.status}`)
   const data = await res.json() as { data?: Array<{ id: string }> }
   return (data.data ?? [])
-    .filter((m) => m.id.startsWith('gpt-') && !/(audio|realtime|search|tts|whisper|image)/i.test(m.id))
+    .filter((m) =>
+      (m.id.startsWith('gpt-') || /^o\d/.test(m.id)) &&
+      !/(audio|realtime|search|tts|whisper|image|moderation)/i.test(m.id)
+    )
     .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
 }
 
@@ -75,16 +78,15 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, n
   const overridden = isApiKeyOverridden(apiKeyId)
 
   // ── Model selection state
-  // Subscribe to both selectedModel[provider] and fetchedModels[provider] so the
-  // component re-renders after `Rafraîchir` populates new entries. We don't use
-  // the subscribed `fetched` directly — `getEffectiveModelList` re-reads it at
-  // render time — but the selector is what triggers the re-render.
   const selectedId = useAiSettingsStore((s) => s.selectedModel[provider])
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const fetchedSubscribe = useAiSettingsStore((s) => s.fetchedModels[provider])
+  const fetched = useAiSettingsStore((s) => s.fetchedModels[provider])
   const setSelectedModel = useAiSettingsStore((s) => s.setSelectedModel)
   const setFetchedModels = useAiSettingsStore((s) => s.setFetchedModels)
-  const models = getEffectiveModelList(provider)
+  const models = useMemo(() => {
+    const catalog = AI_MODELS[provider]
+    const seen = new Set(catalog.map((m) => m.id))
+    return [...catalog, ...fetched.filter((m) => !seen.has(m.id))]
+  }, [provider, fetched])
   const selected = models.find((m) => m.id === selectedId) ?? models[0]
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -111,6 +113,7 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, n
     setApiKey(apiKeyId, keyValue)
     setEditing(false)
     setTestStatus('testing')
+    setTestMessage('')
     testApiKey(apiKeyId).then((r) => { setTestStatus(r.status); setTestMessage(r.message) })
   }
   const handleResetKey = () => {
