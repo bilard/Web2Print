@@ -25,7 +25,7 @@ export const useAiSettingsStore = create<AiSettingsState>()(
       setFetchedModels: (provider, models) =>
         set((s) => ({ fetchedModels: { ...s.fetchedModels, [provider]: models } })),
     }),
-    { name: 'designstudio_ai_settings' },
+    { name: 'designstudio_ai_settings', partialize: (s) => ({ selectedModel: s.selectedModel }) },
   ),
 )
 

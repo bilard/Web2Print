@@ -42,4 +42,13 @@ describe('aiSettings.store', () => {
     expect(list.find((m) => m.id === 'claude-opus-4-7')?.label).toBe('Claude Opus 4.7')
     expect(list.find((m) => m.id === 'claude-future-99')?.label).toBe('Claude Future')
   })
+
+  it('persist does not serialise fetchedModels (must stay ephemeral per spec)', () => {
+    useAiSettingsStore.getState().setFetchedModels('claude', [
+      { id: 'claude-future-99', label: 'Claude Future', pricing: { input: 0, output: 0 } },
+    ])
+    const raw = JSON.parse(localStorage.getItem('designstudio_ai_settings') ?? '{}')
+    expect(raw.state?.fetchedModels).toBeUndefined()
+    expect(raw.state?.selectedModel).toBeDefined()
+  })
 })
