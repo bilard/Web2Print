@@ -5,6 +5,7 @@ import type {
   BackgroundDef,
   DecorativeShape,
 } from './analyzeDesignForEdit'
+import { resolveBrandLogoUrl } from './brandLogos'
 
 type Bbox = { x: number; y: number; w: number; h: number }
 
@@ -258,6 +259,41 @@ export async function addEditableImageSlots(
           return img as FabricObject
         } catch (err) {
           console.error(`[createDesign] Real product image failed for slot ${s.id}:`, err instanceof Error ? err.message : String(err))
+        }
+      }
+
+      // Pour les logos, résoudre et charger via brandLogos registry
+      if (s.role === 'logo') {
+        const logoUrl = resolveBrandLogoUrl(s.description)
+        if (logoUrl) {
+          try {
+            console.log(`[createDesign] Loading brand logo for slot ${s.id}:`, logoUrl.slice(0, 100))
+            const logo = await FabricImage.fromURL(logoUrl, { crossOrigin: 'anonymous' })
+            if (!logo || !logo.width || !logo.height) {
+              console.warn(`[createDesign] Logo loaded but invalid dimensions for slot ${s.id}`)
+              throw new Error('Invalid logo dimensions')
+            }
+            const logoW = logo.width
+            const logoH = logo.height
+            // Fit contain: préserver ratio natif
+            const scale = Math.min(wPx / logoW, hPx / logoH)
+            const displayW = logoW * scale
+            const displayH = logoH * scale
+            logo.set({
+              left: xPx + (wPx - displayW) / 2,
+              top: yPx + (hPx - displayH) / 2,
+              scaleX: scale,
+              scaleY: scale,
+              originX: 'left',
+              originY: 'top',
+              selectable: true,
+            })
+            logo.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
+            console.log(`[createDesign] Brand logo loaded successfully for slot ${s.id}`)
+            return logo as FabricObject
+          } catch (err) {
+            console.error(`[createDesign] Brand logo failed for slot ${s.id}:`, err instanceof Error ? err.message : String(err))
+          }
         }
       }
 
