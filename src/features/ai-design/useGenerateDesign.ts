@@ -89,9 +89,37 @@ export function useGenerateDesign() {
         useUIStore.getState().setBleedMm(effectiveBleed)
       }
 
+      // ─── Scraping produit (AVANT Nano Banana pour enrichir le brief) ────────
+      let productImageUrl = req.productImageUrl
+      let scrapedProductData = null
+      let enrichedPrompt = req.prompt
+
+      if (!productImageUrl && req.siteUrl) {
+        setState((s) => ({ ...s, progress: 'Scraping données produit depuis la source…' }))
+        try {
+          scrapedProductData = await scrapeProductForDesign(req.siteUrl)
+          if (scrapedProductData) {
+            productImageUrl = scrapedProductData.imageUrl || undefined
+            // Enrichir le prompt avec les vraies données du produit
+            const specs = [
+              scrapedProductData.price ? `Prix: ${scrapedProductData.price}` : null,
+              scrapedProductData.brand ? `Marque: ${scrapedProductData.brand}` : null,
+              scrapedProductData.features?.length ? `Caractéristiques: ${scrapedProductData.features.join(', ')}` : null,
+              scrapedProductData.rating ? `Avis: ${scrapedProductData.rating}/5 (${scrapedProductData.reviewCount} avis)` : null,
+            ].filter(Boolean).join(' | ')
+
+            enrichedPrompt = `${req.prompt}\n\nDONNÉES PRODUIT RÉELLES À INTÉGRER:\n${scrapedProductData.title}\n${specs}`
+            console.log('[Claude Design] Enriched prompt for Nano Banana:', enrichedPrompt)
+          }
+        } catch (err) {
+          console.warn('[Claude Design] Scraping failed, continuing with original prompt:', err)
+          toast.warning('Scraping échoué — utilisation du prompt sans données produit')
+        }
+      }
+
       // ─── Phase 1 : génération Nano Banana ──────────────────────────────────
       const nanobananaResult = await generateNanoBananaRef({
-        userPrompt: req.prompt,
+        userPrompt: enrichedPrompt,
         widthMm,
         heightMm,
         style: req.style as DesignStyle,
@@ -148,30 +176,6 @@ export function useGenerateDesign() {
         return
       }
 
-      // ─── Scraping produit (auto-remplissage images si siteUrl fourni) ───────
-      let productImageUrl = req.productImageUrl
-      if (!productImageUrl && req.siteUrl) {
-        setState((s) => ({ ...s, progress: 'Extraction des images depuis la source…' }))
-        try {
-          const scrapedData = await scrapeProductForDesign(req.siteUrl)
-          if (scrapedData?.imageUrl) {
-            productImageUrl = scrapedData.imageUrl
-            console.log('[Claude Design] Scraped product image:', productImageUrl)
-            console.log('[Claude Design] Scraped product data:', {
-              title: scrapedData.title,
-              brand: scrapedData.brand,
-              price: scrapedData.price,
-              hasImage: !!scrapedData.imageUrl,
-            })
-          } else {
-            console.warn('[Claude Design] Scraping succeeded but no image URL extracted')
-            toast.warning('Impossible d\'extraire l\'image du produit depuis cette URL')
-          }
-        } catch (err) {
-          console.warn('[Claude Design] Scraping failed:', err)
-          toast.warning('Extraction du produit échouée — continuons sans image')
-        }
-      }
 
       // ─── Phase 3 : reconstruction 100% vectorielle sur canvas ──────────────
       setState((s) => ({ ...s, step: 'rendering', progress: 'Reconstruction vectorielle du design…' }))
