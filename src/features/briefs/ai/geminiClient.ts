@@ -13,6 +13,8 @@ interface GenerateJsonOptions<T> {
   model?: string
   /** Identifiant du prompt pour traçabilité (stocké dans brief.aiVersions). */
   version: string
+  /** Callback invoqué après chaque appel réussi avec les compteurs de tokens. */
+  onUsage?: (u: { input: number; output: number }) => void
 }
 
 interface GeminiCandidate {
@@ -20,6 +22,10 @@ interface GeminiCandidate {
 }
 interface GeminiResponse {
   candidates?: GeminiCandidate[]
+  usageMetadata?: {
+    promptTokenCount?: number
+    candidatesTokenCount?: number
+  }
 }
 
 /** Gemini `responseSchema` rejette certains mots-clés JSON Schema (ex:
@@ -43,7 +49,7 @@ async function callGemini(
   model: string,
   prompt: string,
   schemaForGemini: Record<string, unknown>,
-): Promise<string> {
+): Promise<{ text: string; usage: { input: number; output: number } }> {
   const ctrl = new AbortController()
   const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
   const sanitized = sanitizeSchemaForGemini(schemaForGemini) as Record<string, unknown>
@@ -70,7 +76,13 @@ async function callGemini(
   const data = (await res.json()) as GeminiResponse
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) throw new Error('Gemini : réponse vide')
-  return text
+  return {
+    text,
+    usage: {
+      input: data.usageMetadata?.promptTokenCount ?? 0,
+      output: data.usageMetadata?.candidatesTokenCount ?? 0,
+    },
+  }
 }
 
 /**
@@ -83,8 +95,9 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   const model = opts.model ?? DEFAULT_MODEL
 
   // 1er essai
-  const firstText = await callGemini(apiKey, model, opts.prompt, opts.schemaForGemini)
-  const firstParsed = safeJsonParse(firstText)
+  const first = await callGemini(apiKey, model, opts.prompt, opts.schemaForGemini)
+  opts.onUsage?.(first.usage)
+  const firstParsed = safeJsonParse(first.text)
   const firstValidation = opts.schema.safeParse(firstParsed)
   if (firstValidation.success) return firstValidation.data
 
@@ -95,8 +108,9 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   const retryPrompt =
     opts.prompt +
     `\n\nErreur précédente : ${errorMessage}. Renvoie un JSON strictement conforme au schéma demandé.`
-  const secondText = await callGemini(apiKey, model, retryPrompt, opts.schemaForGemini)
-  const secondParsed = safeJsonParse(secondText)
+  const second = await callGemini(apiKey, model, retryPrompt, opts.schemaForGemini)
+  opts.onUsage?.(second.usage)
+  const secondParsed = safeJsonParse(second.text)
   const secondValidation = opts.schema.safeParse(secondParsed)
   if (secondValidation.success) return secondValidation.data
 
