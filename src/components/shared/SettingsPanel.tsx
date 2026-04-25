@@ -7,6 +7,19 @@ import { useGDriveStore } from '@/stores/gdrive.store'
 import { useGDriveSettings } from '@/features/gdrive/useGDriveSettings'
 import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey, type ApiTestResult } from '@/lib/apiKeys'
 import { AiProviderCard } from './AiProviderCard'
+import type { AiProvider } from '@/lib/aiModels'
+
+const PROVIDER_LABELS: Record<AiProvider, string> = {
+  claude: 'Claude',
+  gemini: 'Gemini',
+  openai: 'OpenAI',
+}
+
+function formatUsd(n: number): string {
+  if (n === 0) return '$0.00'
+  if (n < 0.01) return '< $0.01'
+  return `$${n.toFixed(2)}`
+}
 
 type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'stats' | 'about'
 
@@ -368,17 +381,44 @@ function StatsTab() {
   if (!stats) {
     return <p className="text-xs text-white/30">Impossible de charger les statistiques</p>
   }
+
+  const providers: AiProvider[] = ['claude', 'gemini', 'openai']
+
   return (
     <div className="flex flex-col gap-2">
       <div className="bg-white/[0.03] rounded-xl p-4">
         <StatRow label="Projets" value={String(stats.projectCount)} />
         <StatRow label="Exports ce mois" value={stats.exportCount === 0 ? '—' : String(stats.exportCount)} />
       </div>
+
       <div className="bg-white/[0.03] rounded-xl p-4 flex flex-col gap-2">
         <div className="flex items-center gap-1.5 text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-1">
           <HardDrive className="w-3 h-3" /> Stockage Firestore
         </div>
         <StorageBar used={stats.storageUsedMb} quota={stats.storageQuotaMb} />
+      </div>
+
+      <div className="bg-white/[0.03] rounded-xl p-4 flex flex-col gap-2">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-white/30 uppercase tracking-wider">
+            <Sparkles className="w-3 h-3" /> Coût IA estimé ce mois
+          </div>
+          <span className="text-[9px] text-white/20 uppercase">estimation</span>
+        </div>
+        <p className="text-2xl font-mono text-white/90">{formatUsd(stats.aiCost.total)}</p>
+        <div className="flex flex-col gap-1 mt-2">
+          {providers.map((p) => {
+            const u = stats.aiCost.byProvider[p]
+            return (
+              <div key={p} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
+                <span className="text-xs text-white/50">{PROVIDER_LABELS[p]}</span>
+                <span className="text-[10px] font-mono text-white/40">
+                  {u.tokensIn.toLocaleString()} in · {u.tokensOut.toLocaleString()} out · {formatUsd(u.costUsd)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
