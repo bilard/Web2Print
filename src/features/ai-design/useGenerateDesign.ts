@@ -157,9 +157,19 @@ export function useGenerateDesign() {
           if (scrapedData?.imageUrl) {
             productImageUrl = scrapedData.imageUrl
             console.log('[Claude Design] Scraped product image:', productImageUrl)
+            console.log('[Claude Design] Scraped product data:', {
+              title: scrapedData.title,
+              brand: scrapedData.brand,
+              price: scrapedData.price,
+              hasImage: !!scrapedData.imageUrl,
+            })
+          } else {
+            console.warn('[Claude Design] Scraping succeeded but no image URL extracted')
+            toast.warning('Impossible d\'extraire l\'image du produit depuis cette URL')
           }
         } catch (err) {
-          console.warn('[Claude Design] Scraping failed, continuing without product image:', err)
+          console.warn('[Claude Design] Scraping failed:', err)
+          toast.warning('Extraction du produit échouée — continuons sans image')
         }
       }
 

@@ -152,14 +152,40 @@ function normalizeFeatures(raw: unknown): string[] {
     .slice(0, 6)
 }
 
+function isValidUrl(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export async function scrapeProductForDesign(url: string): Promise<ScrapedProductData | null> {
+  if (!isValidUrl(url)) {
+    console.warn('[scrapeProductForDesign] Invalid URL format:', url)
+    return null
+  }
+
   console.log('[scrapeProductForDesign] scraping', url)
 
   const markdown = await fetchJinaMarkdown(url)
-  if (!markdown) return null
+  if (!markdown) {
+    console.warn('[scrapeProductForDesign] Jina returned empty markdown')
+    return null
+  }
 
   const extracted = await extractWithClaude(markdown)
-  if (!extracted) return null
+  if (!extracted) {
+    console.warn('[scrapeProductForDesign] Claude extraction failed')
+    return null
+  }
+
+  // Valider que nous avons au minimum un titre et une image
+  if (!extracted.title?.trim() || !extracted.imageUrl?.trim()) {
+    console.warn('[scrapeProductForDesign] Missing required fields (title or imageUrl)')
+    return null
+  }
 
   const brandDomain = extractBrandDomain(url)
 

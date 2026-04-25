@@ -232,9 +232,14 @@ export async function addEditableImageSlots(
       // Ça évite le doublement visuel avec les Textboxes éditables
       if (s.role === 'productPhoto' && productImageUrl) {
         try {
+          console.log(`[createDesign] Loading product image from URL:`, productImageUrl.slice(0, 100))
           const img = await FabricImage.fromURL(productImageUrl, { crossOrigin: 'anonymous' })
-          const imgW = img.width || wPx
-          const imgH = img.height || hPx
+          if (!img || !img.width || !img.height) {
+            console.warn(`[createDesign] Product image loaded but invalid dimensions for slot ${s.id}`)
+            throw new Error('Invalid image dimensions')
+          }
+          const imgW = img.width
+          const imgH = img.height
           // Fit contain: préserver ratio natif sans déformation
           const scale = Math.min(wPx / imgW, hPx / imgH)
           const displayW = imgW * scale
@@ -249,9 +254,10 @@ export async function addEditableImageSlots(
             selectable: true,
           })
           img.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
+          console.log(`[createDesign] Product image loaded successfully for slot ${s.id}`)
           return img as FabricObject
         } catch (err) {
-          console.warn(`[createDesign] Real product image failed for slot ${s.id}`, err)
+          console.error(`[createDesign] Real product image failed for slot ${s.id}:`, err instanceof Error ? err.message : String(err))
         }
       }
 
