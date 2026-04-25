@@ -21,7 +21,7 @@ interface UsageStats {
   }
 }
 
-const EMPTY_PROVIDER: AiProviderUsage = { tokensIn: 0, tokensOut: 0, costUsd: 0 }
+const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0 })
 
 async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   const month = new Date().toISOString().slice(0, 7)
@@ -29,7 +29,7 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   if (!snap.exists()) {
     return {
       total: 0,
-      byProvider: { claude: EMPTY_PROVIDER, gemini: EMPTY_PROVIDER, openai: EMPTY_PROVIDER },
+      byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider() },
     }
   }
   const data = snap.data() as {
@@ -49,7 +49,15 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
 
 async function fetchStats(userId: string): Promise<UsageStats> {
   const q = query(collection(db, 'projects'), where('ownerId', '==', userId))
-  const [snap, aiCost] = await Promise.all([getDocs(q), fetchAiCost(userId)])
+  const safeAiCost = (): Promise<UsageStats['aiCost']> =>
+    fetchAiCost(userId).catch((e) => {
+      console.warn('[useUsageStats] fetchAiCost failed:', e)
+      return {
+        total: 0,
+        byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider() },
+      }
+    })
+  const [snap, aiCost] = await Promise.all([getDocs(q), safeAiCost()])
 
   let totalBytes = 0
   snap.docs.forEach((d) => {
