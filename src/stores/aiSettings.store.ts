@@ -9,7 +9,7 @@ interface AiSettingsState {
   setFetchedModels: (provider: AiProvider, models: AiModelInfo[]) => void
 }
 
-const initialSelected = (): Record<AiProvider, string> => ({
+export const initialSelected = (): Record<AiProvider, string> => ({
   claude: getDefaultModel('claude').id,
   gemini: getDefaultModel('gemini').id,
   openai: getDefaultModel('openai').id,
