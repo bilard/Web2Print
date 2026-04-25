@@ -12,6 +12,9 @@
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson as geminiGenerateJson } from '@/features/briefs/ai/geminiClient'
+import { getSelectedModel } from '@/stores/aiSettings.store'
+import { recordAiUsage } from '@/features/stats/aiUsageTracking'
+import type { AiProvider } from '@/lib/aiModels'
 
 export type LLMProviderId = 'claude' | 'gemini' | 'openai'
 
@@ -109,10 +112,9 @@ interface GenerateJsonOptions<T> {
  * Point d'entrée unique. Essaie le provider primaire, fallback en cas d'échec.
  * Throws seulement si TOUS les providers configurés échouent.
  */
-const DEFAULT_MODEL: Record<LLMProviderId, string> = {
-  claude: 'claude-opus-4-7',
-  gemini: 'gemini-3.1-pro-preview',
-  openai: 'gpt-4o',
+function defaultModelFor(provider: LLMProviderId): string {
+  // LLMProviderId values are also valid AiProvider values.
+  return getSelectedModel(provider as AiProvider)
 }
 
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
@@ -122,7 +124,7 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
 
   try {
     const result = await callProvider(primary, opts, route.model)
-    opts.onProviderUsed?.({ provider: primary, model: route.model ?? DEFAULT_MODEL[primary] })
+    opts.onProviderUsed?.({ provider: primary, model: route.model ?? defaultModelFor(primary) })
     return result
   } catch (err) {
     if (!fallback) throw err
@@ -131,7 +133,7 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
       err,
     )
     const result = await callProvider(fallback, opts)
-    opts.onProviderUsed?.({ provider: fallback, model: DEFAULT_MODEL[fallback] })
+    opts.onProviderUsed?.({ provider: fallback, model: defaultModelFor(fallback) })
     return result
   }
 }
@@ -141,8 +143,9 @@ async function callProvider<T>(
   opts: GenerateJsonOptions<T>,
   modelOverride?: string,
 ): Promise<T> {
+  const model = modelOverride ?? defaultModelFor(provider)
   if (provider === 'claude') {
-    return await callClaude(opts, modelOverride ?? 'claude-opus-4-7')
+    return await callClaude(opts, model)
   }
   if (provider === 'gemini') {
     return await geminiGenerateJson({
@@ -150,11 +153,12 @@ async function callProvider<T>(
       schema: opts.schema,
       schemaForGemini: opts.schemaForLLM,
       version: opts.version,
-      model: modelOverride,
+      model,
+      onUsage: (u) => recordAiUsage({ provider: 'gemini', model, inputTokens: u.input, outputTokens: u.output }),
     })
   }
   if (provider === 'openai') {
-    return await callOpenAI(opts, modelOverride ?? 'gpt-5')
+    return await callOpenAI(opts, model)
   }
   throw new Error(`Provider inconnu : ${provider}`)
 }
@@ -175,6 +179,7 @@ interface AnthropicContentBlock {
 interface AnthropicResponse {
   content?: AnthropicContentBlock[]
   stop_reason?: string
+  usage?: { input_tokens?: number; output_tokens?: number }
 }
 
 // Utility: Deep clean object to remove null/undefined values that break API validation
@@ -334,6 +339,14 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   }
 
   const data = (await res.json()) as AnthropicResponse
+  if (data.usage) {
+    recordAiUsage({
+      provider: 'claude',
+      model,
+      inputTokens: data.usage.input_tokens ?? 0,
+      outputTokens: data.usage.output_tokens ?? 0,
+    })
+  }
   const toolUse = data.content?.find((b) => b.type === 'tool_use')
   if (!toolUse?.input) {
     throw new Error('Claude : pas de tool_use dans la réponse')
@@ -394,6 +407,14 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     throw new Error(`Anthropic API retry ${retryRes.status} : ${body.slice(0, 300)}`)
   }
   const retryData = (await retryRes.json()) as AnthropicResponse
+  if (retryData.usage) {
+    recordAiUsage({
+      provider: 'claude',
+      model,
+      inputTokens: retryData.usage.input_tokens ?? 0,
+      outputTokens: retryData.usage.output_tokens ?? 0,
+    })
+  }
   const retryTool = retryData.content?.find((b) => b.type === 'tool_use')
   if (!retryTool?.input) throw new Error('Claude retry : pas de tool_use')
   const retryValidation = opts.schema.safeParse(retryTool.input)
@@ -439,6 +460,15 @@ async function callOpenAI<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   }
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string } }>
+    usage?: { prompt_tokens?: number; completion_tokens?: number }
+  }
+  if (data.usage) {
+    recordAiUsage({
+      provider: 'openai',
+      model,
+      inputTokens: data.usage.prompt_tokens ?? 0,
+      outputTokens: data.usage.completion_tokens ?? 0,
+    })
   }
   const text = data.choices?.[0]?.message?.content
   if (!text) throw new Error('OpenAI : réponse vide')
