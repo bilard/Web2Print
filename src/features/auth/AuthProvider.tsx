@@ -1,5 +1,6 @@
 import { useAuthInit } from './useAuth'
 import { useAuthStore } from '@/stores/auth.store'
+import { useAiSettingsSync } from '@/features/settings/useAiSettingsSync'
 
 interface AuthProviderProps {
   children: React.ReactNode
@@ -7,6 +8,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   useAuthInit()
+  useAiSettingsSync()
   const loading = useAuthStore((s) => s.loading)
 
   if (loading) {
