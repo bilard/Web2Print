@@ -59,11 +59,11 @@ interface UIState {
   openDamPickerForFill: (targetId: string) => void
   // --- Claude Design Modal ---
   isClaudeDesignModalOpen: boolean
-  claudeDesignActiveTab: 'brief' | 'image' | 'style' | 'options' | 'avance'
+  claudeDesignActiveTab: 'brief' | 'style' | 'avance'
   isOptimizingPrompt: boolean
   openClaudeDesignModal: () => void
   closeClaudeDesignModal: () => void
-  setClaudeDesignActiveTab: (tab: 'brief' | 'image' | 'style' | 'options' | 'avance') => void
+  setClaudeDesignActiveTab: (tab: 'brief' | 'style' | 'avance') => void
   setOptimizingPrompt: (isOptimizing: boolean) => void
 }
 
@@ -105,13 +105,13 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   // --- Print defaults ---
   dpi: 300,
-  bleedMm: 2,
+  bleedMm: 0,
   safeAreaMm: 2,
   cropMarkLengthMm: 3.5,
   cropMarkOffsetMm: 1,
-  showPrintMarks: true,
-  showSafeArea: true,
-  showRegistrationMarks: true,
+  showPrintMarks: false,
+  showSafeArea: false,
+  showRegistrationMarks: false,
   setDpi: (dpi) => set({ dpi: Math.max(72, Math.min(600, dpi)) }),
   setBleedMm: (bleedMm) => set({ bleedMm: Math.max(0, Math.min(10, bleedMm)) }),
   setSafeAreaMm: (safeAreaMm) => set({ safeAreaMm: Math.max(0, Math.min(30, safeAreaMm)) }),

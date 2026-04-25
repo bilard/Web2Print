@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { generateNanoBananaRef } from './generateNanoBananaRef'
 import { saveRefImageToGallery } from './saveRefImageToGallery'
 import { analyzeDesignForEdit } from './analyzeDesignForEdit'
+import { scrapeProductForDesign } from './scrapeProductForDesign'
 import {
   renderBackground,
   renderDecorativeShapes,
@@ -147,6 +148,21 @@ export function useGenerateDesign() {
         return
       }
 
+      // ─── Scraping produit (auto-remplissage images si siteUrl fourni) ───────
+      let productImageUrl = req.productImageUrl
+      if (!productImageUrl && req.siteUrl) {
+        setState((s) => ({ ...s, progress: 'Extraction des images depuis la source…' }))
+        try {
+          const scrapedData = await scrapeProductForDesign(req.siteUrl)
+          if (scrapedData?.imageUrl) {
+            productImageUrl = scrapedData.imageUrl
+            console.log('[Claude Design] Scraped product image:', productImageUrl)
+          }
+        } catch (err) {
+          console.warn('[Claude Design] Scraping failed, continuing without product image:', err)
+        }
+      }
+
       // ─── Phase 3 : reconstruction 100% vectorielle sur canvas ──────────────
       setState((s) => ({ ...s, step: 'rendering', progress: 'Reconstruction vectorielle du design…' }))
 
@@ -170,7 +186,7 @@ export function useGenerateDesign() {
 
         await fontsReady
         addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
-        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri, req.productImageUrl)
+        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri, productImageUrl)
         canvas.requestRenderAll()
         syncToStore(canvas)
         requestAnimationFrame(() => globalFitCanvas?.())

@@ -12,6 +12,9 @@ export interface DesignRequest {
   palette?: string[]        // hex codes optionnels imposés par l'utilisateur
   productImageUrl?: string
   productName?: string
+  siteLogoUrl?: string
+  siteUrl?: string
+  brandGuideUrl?: string
 }
 
 export interface DesignResult {
@@ -37,6 +40,9 @@ export interface DesignBriefState {
   updatedAt: number
   promptOptimized?: string // Optimized version of the prompt
   productImageUrl?: string
+  siteLogoUrl?: string
+  siteUrl?: string
+  brandGuideUrl?: string
 }
 
 export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
@@ -45,9 +51,12 @@ export const DEFAULT_DESIGN_BRIEF: DesignBriefState = {
   customWidthMm: undefined,
   customHeightMm: undefined,
   style: 'corporate',
-  includeBleed: true,
+  includeBleed: false,
   paletteText: '',
   updatedAt: 0,
   promptOptimized: '',
   productImageUrl: '',
+  siteLogoUrl: '',
+  siteUrl: '',
+  brandGuideUrl: '',
 }

@@ -4,17 +4,15 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDesignBrief, useDesignBriefStore } from '@/stores/designBrief.store'
 import { useGenerateDesign } from './useGenerateDesign'
 import { DesignProgress } from './DesignProgress'
-import { PRINT_FORMATS, findFormatIdByPixelDimensions } from '@/features/print/PRINT_FORMATS'
+import { PRINT_FORMATS, findFormatIdByPixelDimensions, getFormatById } from '@/features/print/PRINT_FORMATS'
 
 import { ClaudeDesignBriefTab } from './ClaudeDesignBriefTab'
 import { ClaudeDesignStyleTab } from './ClaudeDesignStyleTab'
-import { ClaudeDesignOptionsTab } from './ClaudeDesignOptionsTab'
 import { ClaudeDesignAdvancedTab } from './ClaudeDesignAdvancedTab'
 
 const TABS = [
   { id: 'brief', label: 'Brief' },
   { id: 'style', label: 'Style' },
-  { id: 'options', label: 'Options' },
   { id: 'avance', label: 'Avancé' },
 ] as const
 
@@ -98,6 +96,9 @@ export function ClaudeDesignModal() {
       includeBleed: brief.includeBleed,
       palette: palette.length > 0 ? palette : undefined,
       productImageUrl: brief.productImageUrl?.trim() || undefined,
+      siteLogoUrl: brief.siteLogoUrl?.trim() || undefined,
+      siteUrl: brief.siteUrl?.trim() || undefined,
+      brandGuideUrl: brief.brandGuideUrl?.trim() || undefined,
     }
     generate(req)
   }
@@ -129,10 +130,26 @@ export function ClaudeDesignModal() {
       />
 
       {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-xl max-h-[85vh] w-[90vw] max-w-[550px] flex flex-col">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1a1a1a] border border-neutral-800 rounded-lg shadow-xl max-h-[85vh] w-[90vw] max-w-[700px] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
-          <h2 className="text-lg font-semibold text-white">Claude Design Studio</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-white">Claude Design Studio</h2>
+            <span className="text-xs text-neutral-500 font-mono bg-neutral-800/50 px-2 py-1 rounded">
+              {(() => {
+                let fmt = 'Personnalisé'
+                if (brief.formatId !== 'custom') {
+                  const f = getFormatById(brief.formatId)
+                  if (f) {
+                    fmt = `${f.label} — ${f.widthMm} × ${f.heightMm} mm`
+                  }
+                } else {
+                  fmt = `Personnalisé — ${brief.customWidthMm ?? 0} × ${brief.customHeightMm ?? 0} mm`
+                }
+                return fmt
+              })()}
+            </span>
+          </div>
           <button
             onClick={closeClaudeDesignModal}
             className="p-1 hover:bg-neutral-800 rounded transition-colors"
@@ -180,14 +197,6 @@ export function ClaudeDesignModal() {
             hidden={claudeDesignActiveTab !== 'style'}
           >
             {claudeDesignActiveTab === 'style' && <ClaudeDesignStyleTab />}
-          </div>
-          <div
-            id="options-panel"
-            role="tabpanel"
-            aria-labelledby="options-tab"
-            hidden={claudeDesignActiveTab !== 'options'}
-          >
-            {claudeDesignActiveTab === 'options' && <ClaudeDesignOptionsTab />}
           </div>
           <div
             id="avance-panel"

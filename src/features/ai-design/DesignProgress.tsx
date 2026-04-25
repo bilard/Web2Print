@@ -30,7 +30,7 @@ const PIPELINE: StepDef[] = [
   },
   {
     id: 'analyzing',
-    agent: 'Claude Vision',
+    agent: 'Traitement',
     role: 'Vectorisation complète',
     description: 'Décompose l\'image en éléments vectoriels : fond, formes décoratives, textes, zones image.',
   },
@@ -173,7 +173,7 @@ export function DesignProgress({ step, progress, error, failedStep, lastResult, 
               <span className="text-[10px] uppercase tracking-wide text-neutral-500">référence vectorisée</span>
             </div>
             <p className="text-[11px] text-neutral-500 leading-relaxed">
-              Image cible générée par Nano Banana. Claude Vision la décompose en éléments vectoriels éditables.
+              Image cible générée par Nano Banana. Le traitement la décompose en éléments vectoriels éditables.
             </p>
             <img
               src={nanobananaRef}
