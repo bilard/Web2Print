@@ -4,11 +4,12 @@ import { useImageGallery } from './useImageGallery'
 import { getApiKey } from '@/lib/apiKeys'
 import type { GenerationRequest } from './types'
 
-// Nano Banana 2, fallback to original Nano Banana if not available
+// Nano Banana 2, fallback to other live image models if not available
 const NANO_BANANA_MODELS = [
+  'gemini-2.5-flash-image',
   'gemini-3.1-flash-image-preview',
-  'gemini-2.0-flash-exp',
-  'gemini-2.5-flash-preview-image-generation',
+  'gemini-3-pro-image-preview',
+  'nano-banana-pro-preview',
 ] as const
 
 /** Map target dimensions to the best Nano Banana imageSize */

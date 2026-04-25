@@ -3,7 +3,9 @@ import { toast } from 'sonner'
 import { generateNanoBananaRef } from './generateNanoBananaRef'
 import { saveRefImageToGallery } from './saveRefImageToGallery'
 import { analyzeDesignForEdit } from './analyzeDesignForEdit'
-import { scrapeProductForDesign } from './scrapeProductForDesign'
+import { scrapeProductForDesign, detectUrlInPrompt, type ScrapedProductData } from './scrapeProductForDesign'
+import { composeDesignFromScrapedData } from './composeDesignFromScrapedData'
+import type { TextElement } from './analyzeDesignForEdit'
 import {
   renderBackground,
   renderDecorativeShapes,
@@ -42,6 +44,47 @@ const INITIAL_STATE: State = {
   failedStep: null,
   lastResult: null,
   nanobananaRef: null,
+}
+
+/**
+ * Remplace les textes hallucinés par Nano Banana (relus par Claude Vision)
+ * par les vraies valeurs scrapées depuis la source. Indispensable pour les
+ * prix, prix barrés, rating et nombre d'avis qui doivent être exacts.
+ */
+function overrideTextsWithScrapedData(
+  texts: TextElement[],
+  scraped: ScrapedProductData
+): TextElement[] {
+  const PRICE_RE = /\d[\d\s ]*[,.]?\d*\s*€/
+  const RATING_RE = /^\s*\d[.,]\d+\s*(\/\s*5)?\s*$/
+  const REVIEWS_RE = /(\d+)\s*avis/i
+
+  return texts.map((t) => {
+    const txt = t.text || ''
+
+    // Prix barré (oldPrice) → strikethrough
+    if (t.strikethrough && PRICE_RE.test(txt) && scraped.oldPrice) {
+      return { ...t, text: scraped.oldPrice }
+    }
+
+    // Prix actuel → contient € sans strikethrough
+    if (!t.strikethrough && PRICE_RE.test(txt) && scraped.price) {
+      return { ...t, text: scraped.price }
+    }
+
+    // Rating "4.3" / "4.3/5"
+    if (RATING_RE.test(txt) && scraped.rating) {
+      const hasOutOf5 = /\/\s*5/.test(txt)
+      return { ...t, text: hasOutOf5 ? `${scraped.rating}/5` : scraped.rating }
+    }
+
+    // Review count "128 avis", "128 AVIS CLIENTS"
+    if (REVIEWS_RE.test(txt) && scraped.reviewCount) {
+      return { ...t, text: txt.replace(/\d+/, scraped.reviewCount) }
+    }
+
+    return t
+  })
 }
 
 function resolveFormatDpi(req: DesignRequest, canvasWidth: number, canvasHeight: number, storeDpi: number): number {
@@ -89,18 +132,44 @@ export function useGenerateDesign() {
         useUIStore.getState().setBleedMm(effectiveBleed)
       }
 
-      // ─── Scraping produit (AVANT Nano Banana pour enrichir le brief) ────────
+      // ─── Normalisation des URLs : auto-détection page produit vs image ──────
+      // Si l'utilisateur colle une URL de page produit dans "IMAGE PRODUIT",
+      // on la déplace vers siteUrl pour permettre le scraping.
+      const looksLikeImageUrl = (u: string) => /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(u)
+      const looksLikeProductPage = (u: string) => /^https?:\/\//i.test(u) && !looksLikeImageUrl(u)
+
       let productImageUrl = req.productImageUrl
+      let siteUrl = req.siteUrl
+
+      if (productImageUrl && !siteUrl && looksLikeProductPage(productImageUrl)) {
+        console.log('[Claude Design] Auto-detected product page URL in productImageUrl field, moving to siteUrl')
+        siteUrl = productImageUrl
+        productImageUrl = undefined
+      }
+
+      // Auto-detect : URL collée dans le PROMPT lui-même
+      if (!siteUrl) {
+        const urlInPrompt = detectUrlInPrompt(req.prompt)
+        if (urlInPrompt && looksLikeProductPage(urlInPrompt)) {
+          console.log('[Claude Design] Auto-detected URL in prompt, will scrape:', urlInPrompt)
+          siteUrl = urlInPrompt
+        }
+      }
+
+      // ─── Scraping produit : TOUJOURS si on a une siteUrl ─────────────────────
       let scrapedProductData = null
       let enrichedPrompt = req.prompt
 
-      if (!productImageUrl && req.siteUrl) {
+      if (siteUrl) {
         setState((s) => ({ ...s, progress: 'Scraping données produit depuis la source…' }))
+        console.log('[Claude Design] Scraping siteUrl:', siteUrl)
         try {
-          scrapedProductData = await scrapeProductForDesign(req.siteUrl)
+          scrapedProductData = await scrapeProductForDesign(siteUrl)
           if (scrapedProductData) {
-            productImageUrl = scrapedProductData.imageUrl || undefined
-            // Enrichir le prompt avec les vraies données du produit
+            // L'image scrapée override l'image manuelle (sauf si l'utilisateur en a fourni une explicitement et qu'elle ressemble bien à une image)
+            if (!productImageUrl) {
+              productImageUrl = scrapedProductData.imageUrl || undefined
+            }
             const specs = [
               scrapedProductData.price ? `Prix: ${scrapedProductData.price}` : null,
               scrapedProductData.brand ? `Marque: ${scrapedProductData.brand}` : null,
@@ -109,7 +178,18 @@ export function useGenerateDesign() {
             ].filter(Boolean).join(' | ')
 
             enrichedPrompt = `${req.prompt}\n\nDONNÉES PRODUIT RÉELLES À INTÉGRER:\n${scrapedProductData.title}\n${specs}`
-            console.log('[Claude Design] Enriched prompt for Nano Banana:', enrichedPrompt)
+            console.log('[Claude Design] Scraping OK:', {
+              title: scrapedProductData.title?.slice(0, 60),
+              price: scrapedProductData.price,
+              oldPrice: scrapedProductData.oldPrice,
+              imageUrl: scrapedProductData.imageUrl?.slice(0, 80),
+              rating: scrapedProductData.rating,
+              reviewCount: scrapedProductData.reviewCount,
+              features: scrapedProductData.features?.length,
+            })
+          } else {
+            console.warn('[Claude Design] Scraping returned null — Jina or Claude extraction failed')
+            toast.warning('Scraping a retourné aucune donnée — bascule sur Nano Banana')
           }
         } catch (err) {
           console.warn('[Claude Design] Scraping failed, continuing with original prompt:', err)
@@ -117,63 +197,83 @@ export function useGenerateDesign() {
         }
       }
 
-      // ─── Phase 1 : génération Nano Banana ──────────────────────────────────
-      const nanobananaResult = await generateNanoBananaRef({
-        userPrompt: enrichedPrompt,
-        widthMm,
-        heightMm,
-        style: req.style as DesignStyle,
-        dpi,
-        palette: req.palette,
-      }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) }))
-
-      if (!nanobananaResult.ok || !nanobananaResult.dataUri) {
-        const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
-        failAt('illustrating', `Échec génération Nano Banana : ${errMsg}`, `Nano Banana a échoué : ${errMsg ?? 'inconnue'}`)
-        return
-      }
-
-      const dataUri = nanobananaResult.dataUri
-      setState((s) => ({ ...s, nanobananaRef: dataUri }))
-
-      // Sauvegarde persistante en galerie (fire-and-forget)
-      const projectId = useEditorStore.getState().projectId
-      if (projectId) {
-        const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
-        const shortName = productName.slice(0, 60).trim()
-        const dateLabel = new Date().toLocaleString('fr-FR', {
-          day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-        })
-        const refName = `Ref Nano Banana — ${shortName || 'Design'} — ${dateLabel}`
-        void saveRefImageToGallery({
-          dataUri,
-          projectId,
-          name: refName,
-          tags: ['design-ref', req.style],
-        }).then((img) => {
-          if (img) {
-            useNanoBanaStore.getState().addImage(img)
-            toast.success('Ref Nano Banana sauvée dans la galerie')
-          }
-        })
-      }
-
-      // ─── Phase 2 : analyse Claude Vision (structure éditable) ──────────────
-      setState((s) => ({ ...s, step: 'analyzing', progress: 'Analyse des zones éditables (Claude Vision)…' }))
-
-      const base64Data = dataUri.split(',')[1]
-      if (!base64Data) {
-        failAt('analyzing', 'Format dataUri Nano Banana invalide')
-        return
-      }
-
+      // ─── Branche : compose direct si on a des données scrapées valides ──
+      // Sinon : pipeline Nano Banana + Claude Vision (créatif mais hallucinant)
       let analysis
-      try {
-        analysis = await analyzeDesignForEdit(base64Data)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        failAt('analyzing', `Analyse Claude Vision échouée : ${msg}`, `Claude Vision a échoué : ${msg}`)
-        return
+      let dataUri: string | null = null
+
+      if (scrapedProductData && scrapedProductData.title && scrapedProductData.imageUrl) {
+        setState((s) => ({ ...s, step: 'rendering', progress: 'Composition directe depuis les données produit…' }))
+        analysis = composeDesignFromScrapedData(scrapedProductData)
+        console.log('[Claude Design] Compose direct: bypass Nano Banana, using scraped data')
+      } else {
+        // ─── Phase 1 : génération Nano Banana ─────────────────────────────────
+        const nanobananaResult = await generateNanoBananaRef({
+          userPrompt: enrichedPrompt,
+          widthMm,
+          heightMm,
+          style: req.style as DesignStyle,
+          dpi,
+          palette: req.palette,
+        }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) }))
+
+        if (!nanobananaResult.ok || !nanobananaResult.dataUri) {
+          const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
+          failAt('illustrating', `Échec génération Nano Banana : ${errMsg}`, `Nano Banana a échoué : ${errMsg ?? 'inconnue'}`)
+          return
+        }
+
+        dataUri = nanobananaResult.dataUri
+        setState((s) => ({ ...s, nanobananaRef: dataUri }))
+
+        // Sauvegarde persistante en galerie (fire-and-forget)
+        const projectId = useEditorStore.getState().projectId
+        if (projectId) {
+          const productName = req.productName || req.prompt.split('\n')[0].substring(0, 100)
+          const shortName = productName.slice(0, 60).trim()
+          const dateLabel = new Date().toLocaleString('fr-FR', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+          })
+          const refName = `Ref Nano Banana — ${shortName || 'Design'} — ${dateLabel}`
+          void saveRefImageToGallery({
+            dataUri,
+            projectId,
+            name: refName,
+            tags: ['design-ref', req.style],
+          }).then((img) => {
+            if (img) {
+              useNanoBanaStore.getState().addImage(img)
+              toast.success('Ref Nano Banana sauvée dans la galerie')
+            }
+          })
+        }
+
+        // ─── Phase 2 : analyse Claude Vision (structure éditable) ──────────
+        setState((s) => ({ ...s, step: 'analyzing', progress: 'Analyse des zones éditables (Claude Vision)…' }))
+
+        const base64Data = dataUri.split(',')[1]
+        if (!base64Data) {
+          failAt('analyzing', 'Format dataUri Nano Banana invalide')
+          return
+        }
+
+        try {
+          analysis = await analyzeDesignForEdit(base64Data)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          failAt('analyzing', `Analyse Claude Vision échouée : ${msg}`, `Claude Vision a échoué : ${msg}`)
+          return
+        }
+
+        // Override valeurs hallucinées par les vraies données scrapées (si dispo)
+        if (scrapedProductData) {
+          const before = analysis.texts.map(t => t.text)
+          analysis.texts = overrideTextsWithScrapedData(analysis.texts, scrapedProductData)
+          const overridden = analysis.texts.filter((t, i) => t.text !== before[i])
+          if (overridden.length > 0) {
+            console.log('[Claude Design] Overrode hallucinated texts:', overridden.map(t => `"${t.text}" (${t.id})`))
+          }
+        }
       }
 
 
@@ -200,7 +300,7 @@ export function useGenerateDesign() {
 
         await fontsReady
         addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
-        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri, productImageUrl)
+        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri, productImageUrl, scrapedProductData?.brandDomain)
         canvas.requestRenderAll()
         syncToStore(canvas)
         requestAnimationFrame(() => globalFitCanvas?.())

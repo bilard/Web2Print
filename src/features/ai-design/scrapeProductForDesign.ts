@@ -76,20 +76,33 @@ async function fetchJinaMarkdown(url: string): Promise<string | null> {
   }
 }
 
-const EXTRACTION_PROMPT = `Tu es un extracteur de données produit. À partir du markdown scrapé d'une page produit e-commerce, extrait un JSON strict avec les infos clés pour générer une affiche promotionnelle.
+const EXTRACTION_PROMPT = `Tu es un extracteur strict de données produit e-commerce. À partir du markdown scrapé d'une page produit, extrait UNIQUEMENT les valeurs réellement présentes dans le texte fourni.
 
-Règles :
-- N'invente rien. Si un champ est absent, retourne null.
-- title : titre COMPLET du produit (ex: "Tondeuse électrique 1800 W 40 cm RLM18E40H - RYOBI").
-- brand : nom de la marque PRINCIPALE du produit (pas le revendeur). Ex: "RYOBI", pas "Jardiland".
-- price : prix actuel promo avec le symbole (ex: "169,99€").
-- oldPrice : prix barré d'origine si présent (ex: "199,99€"). null sinon.
-- features : 3-6 bullets courts et factuels extraits des specs/caractéristiques produit (ex: "Puissance 1800 W", "Largeur de coupe 40 cm"). Pas de marketing vague.
-- imageUrl : URL ABSOLUE (https://…) de la photo produit principale, haute résolution si possible. Choisis l'image héro, pas une miniature ou une bannière de site.
-- rating : note sur 5 (ex: "4.3"). null si absent.
-- reviewCount : nombre d'avis client (ex: "128"). null si absent.
+RÈGLES ABSOLUES :
+- N'invente JAMAIS. Si une valeur n'est pas littéralement dans le markdown, retourne null.
+- N'invente JAMAIS de prix, de note, ou de nombre d'avis. Recopie verbatim ce qui est dans le markdown.
+- Ne déduis pas, ne calcule pas, ne suppose pas.
+- Si tu hésites, retourne null plutôt qu'une valeur approximative.
 
-Retourne UNIQUEMENT le JSON, pas de markdown, pas de narration :
+Champs à extraire :
+
+- title : titre COMPLET et exact du produit tel qu'il apparaît dans le markdown (généralement le H1 ou la première ligne sous "Title:").
+
+- brand : nom de la marque PRINCIPALE (fabricant), PAS du revendeur. Repérable dans le titre ou les specs. Si non identifiable, retourne null.
+
+- price : prix actuel exact, format "XXX,XX €" ou "XX,XX€". Localise-le près du titre produit ou dans la zone "Points forts" / "promo". Si plusieurs prix sont visibles (offres partenaires, etc.), prends le PREMIER affiché à proximité du titre principal. Recopie EXACTEMENT (espaces et symbole inclus). null si absent.
+
+- oldPrice : prix d'origine barré (avant promo). Apparaît juste à côté du prix actuel, souvent suivi d'un montant de réduction (ex: "- 11,00 €"). Recopie EXACTEMENT. null si pas de promo visible.
+
+- features : 3-6 caractéristiques courtes extraites de la section "Points forts" / "Caractéristiques" / "Description". Recopie textuellement les bullets. Pas de paraphrasage marketing.
+
+- imageUrl : la PREMIÈRE URL d'image produit dans le markdown (format markdown ![alt](url)). Vérifie que l'URL commence par https:// et pointe vers un CDN d'image (jpg/png/webp). Si la page contient plusieurs images du même produit, prends la PREMIÈRE listée.
+
+- rating : note moyenne du produit, format "X.X" ou "X.XX". Cherche un pattern "X.X/5", "X.XX/5", ou phrase type "Note moyenne". Recopie le chiffre tel quel. ATTENTION : ne confonds pas avec une note d'un avis individuel ("5/5" d'un client unique) ; cherche la moyenne globale. null si absente.
+
+- reviewCount : nombre total d'avis clients. Cherche un pattern type "Note moyenne sur X de nos clients" ou "X avis". Extrais l'entier. null si absent.
+
+Retourne UNIQUEMENT le JSON valide, sans markdown ni narration :
 {"title":"...","brand":"...","price":"...","oldPrice":"...","features":["...","..."],"imageUrl":"...","rating":"...","reviewCount":"..."}`
 
 interface RawExtraction {
@@ -161,6 +174,23 @@ function isValidUrl(urlStr: string): boolean {
   }
 }
 
+/** Fallback regex : extrait la PREMIÈRE URL d'image du markdown si Claude a raté. */
+function extractFirstImageUrlFromMarkdown(markdown: string): string | null {
+  // Format markdown: ![alt](https://...jpg|png|webp)
+  const re = /!\[[^\]]*\]\((https?:\/\/[^\s)]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s)]*)?)\)/i
+  const match = markdown.match(re)
+  return match ? match[1] : null
+}
+
+/** Fallback : extrait le titre depuis "Title:" header ou premier H1 du markdown. */
+function extractTitleFromMarkdown(markdown: string): string | null {
+  const titleMatch = markdown.match(/^Title:\s*(.+)$/m)
+  if (titleMatch) return titleMatch[1].trim()
+  const h1Match = markdown.match(/^#\s+(.+)$/m)
+  if (h1Match) return h1Match[1].trim()
+  return null
+}
+
 export async function scrapeProductForDesign(url: string): Promise<ScrapedProductData | null> {
   if (!isValidUrl(url)) {
     console.warn('[scrapeProductForDesign] Invalid URL format:', url)
@@ -176,29 +206,34 @@ export async function scrapeProductForDesign(url: string): Promise<ScrapedProduc
   }
 
   const extracted = await extractWithClaude(markdown)
-  if (!extracted) {
-    console.warn('[scrapeProductForDesign] Claude extraction failed')
-    return null
-  }
+  // On NE bloque pas si extracted est null — on utilise les fallbacks regex pour title/imageUrl
 
-  // Valider que nous avons au minimum un titre et une image
-  if (!extracted.title?.trim() || !extracted.imageUrl?.trim()) {
-    console.warn('[scrapeProductForDesign] Missing required fields (title or imageUrl)')
+  // Fallback regex pour les champs critiques si Claude a manqué
+  const finalTitle = extracted?.title?.trim() || extractTitleFromMarkdown(markdown) || ''
+  const finalImageUrl = extracted?.imageUrl?.trim() || extractFirstImageUrlFromMarkdown(markdown) || undefined
+
+  if (!finalTitle || !finalImageUrl) {
+    console.warn('[scrapeProductForDesign] Missing required fields after fallback (title or imageUrl)', {
+      claudeTitle: extracted?.title,
+      regexTitle: extractTitleFromMarkdown(markdown),
+      claudeImage: extracted?.imageUrl,
+      regexImage: extractFirstImageUrlFromMarkdown(markdown),
+    })
     return null
   }
 
   const brandDomain = extractBrandDomain(url)
 
   const result: ScrapedProductData = {
-    title: extracted.title?.trim() || '',
-    brand: extracted.brand?.trim() || '',
+    title: finalTitle,
+    brand: extracted?.brand?.trim() || '',
     brandDomain,
-    price: extracted.price?.trim() || undefined,
-    oldPrice: extracted.oldPrice?.trim() || undefined,
-    features: normalizeFeatures(extracted.features),
-    imageUrl: extracted.imageUrl?.trim() || undefined,
-    rating: extracted.rating?.trim() || undefined,
-    reviewCount: extracted.reviewCount?.trim() || undefined,
+    price: extracted?.price?.trim() || undefined,
+    oldPrice: extracted?.oldPrice?.trim() || undefined,
+    features: normalizeFeatures(extracted?.features),
+    imageUrl: finalImageUrl,
+    rating: extracted?.rating?.trim() || undefined,
+    reviewCount: extracted?.reviewCount?.trim() || undefined,
     sourceUrl: url,
   }
 

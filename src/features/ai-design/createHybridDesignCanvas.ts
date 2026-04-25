@@ -223,7 +223,8 @@ export async function addEditableImageSlots(
   canvasWidth: number,
   canvasHeight: number,
   sourceDataUri: string | null,
-  productImageUrl?: string
+  productImageUrl?: string,
+  brandDomain?: string,
 ): Promise<FabricObject[]> {
   const built = await Promise.all(
     slots.map(async (s) => {
@@ -262,9 +263,10 @@ export async function addEditableImageSlots(
         }
       }
 
-      // Pour les logos, résoudre et charger via brandLogos registry
+      // Pour les logos, résoudre via brandDomain scrapé (priorité) ou description
       if (s.role === 'logo') {
-        const logoUrl = resolveBrandLogoUrl(s.description)
+        const logoUrl = (brandDomain ? resolveBrandLogoUrl(brandDomain) : null)
+                     || resolveBrandLogoUrl(s.description)
         if (logoUrl) {
           try {
             console.log(`[createDesign] Loading brand logo for slot ${s.id}:`, logoUrl.slice(0, 100))
