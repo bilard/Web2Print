@@ -37,10 +37,16 @@ export async function recordAiUsage(params: RecordParams): Promise<void> {
       {
         ownerId: userId,
         month,
-        [`byProvider.${params.provider}.tokensIn`]: increment(params.inputTokens),
-        [`byProvider.${params.provider}.tokensOut`]: increment(params.outputTokens),
-        [`byProvider.${params.provider}.costUsd`]: increment(costUsd),
-        'total.costUsd': increment(costUsd),
+        byProvider: {
+          [params.provider]: {
+            tokensIn:  increment(params.inputTokens),
+            tokensOut: increment(params.outputTokens),
+            costUsd:   increment(costUsd),
+          },
+        },
+        total: {
+          costUsd: increment(costUsd),
+        },
       },
       { merge: true },
     )
