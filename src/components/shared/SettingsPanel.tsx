@@ -6,6 +6,7 @@ import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { useGDriveSettings } from '@/features/gdrive/useGDriveSettings'
 import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey, type ApiTestResult } from '@/lib/apiKeys'
+import { AiProviderCard } from './AiProviderCard'
 
 type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'stats' | 'about'
 
@@ -303,9 +304,26 @@ function ProfileTab() {
 function AiTab() {
   return (
     <div className="flex flex-col gap-2">
-      <ApiKeyRow id="gemini" label="Nano Banana (Gemini)" description="Génération d'images IA via Google Gemini" logo={<GeminiLogo />} />
-      <ApiKeyRow id="anthropic" label="Claude (Anthropic)" description="Claude Opus 4.7 — raisonnement briefs, panier, deck" placeholder="sk-ant-..." />
-      <ApiKeyRow id="openai" label="OpenAI" description="GPT — fallback ou tâches spécifiques (optionnel)" placeholder="sk-..." />
+      <AiProviderCard
+        provider="gemini"
+        apiKeyId="gemini"
+        label="Nano Banana (Gemini)"
+        description="Génération d'images IA et raisonnement via Google Gemini"
+        logo={<GeminiLogo />}
+        noteForGemini
+      />
+      <AiProviderCard
+        provider="claude"
+        apiKeyId="anthropic"
+        label="Claude (Anthropic)"
+        description="Raisonnement briefs, panier, deck, design"
+      />
+      <AiProviderCard
+        provider="openai"
+        apiKeyId="openai"
+        label="OpenAI"
+        description="GPT — fallback ou tâches spécifiques (optionnel)"
+      />
     </div>
   )
 }
