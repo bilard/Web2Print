@@ -522,20 +522,30 @@ export async function renderNanoBananaTemplate(
   // 4. Textes éditables
   addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
 
-  // 5. Image slots — pivot 2+3 specific:
-  //    - Le NB2 montre DÉJÀ le produit dans son contexte (lifestyle photo).
-  //      Poser une 2e image produit par-dessus = redondance + chevauchement
-  //      visuel. On skip TOUJOURS le slot productPhoto, peu importe l'URL.
-  //    - Le logo reste, géré par sa cascade Clearbit/Google/KNOWN.
-  //    - On passe null en sourceDataUri pour empêcher tout crop NB2 résiduel.
-  const slotsToRender = analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
+  // 5. Image slots — pivot 2+3 (révision : NB2 ambient + vraie photo produit) :
+  //    - NB2 génère un fond AMBIANT sans le produit (prompt anti-product).
+  //    - On pose la VRAIE photo produit scrappée par-dessus dans la zone
+  //      droite/bas, avec validation isLikelyProductImage pour rejeter
+  //      sliders promo et didomi cookies banners.
+  //    - Le logo passe par sa cascade Clearbit/Google/KNOWN.
+  //    - On passe null en sourceDataUri pour empêcher tout crop NB2 résiduel
+  //      (NB2 n'a pas le produit, donc rien à cropper de pertinent).
+  const productImageUrl = scrapedData.imageUrl && isLikelyProductImage(scrapedData.imageUrl)
+    ? scrapedData.imageUrl
+    : undefined
+  // Si l'URL produit est invalide (slider/banner rejeté), on retire le slot
+  // productPhoto pour laisser le NB2 ambient seul, plutôt que de poser un
+  // placeholder dashed visible.
+  const slotsToRender = productImageUrl
+    ? analysis.imageSlots
+    : analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
   await addEditableImageSlots(
     canvas,
     slotsToRender,
     canvasWidth,
     canvasHeight,
     null,
-    undefined,
+    productImageUrl,
     scrapedData.brandDomain,
   )
 }
