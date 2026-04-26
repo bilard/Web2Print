@@ -164,6 +164,9 @@ export function isLikelyProductImage(url: string): boolean {
     'slider', '_slider_', 'promo_', 'promotion',  // sliders promo home page
     'schema', 'diagram', 'exploded', 'annotation', 'feature_',
     'hero_banner', 'cover_',
+    // Visualisations techniques / scènes lifestyle (cas Sunseeker RTK, etc.)
+    '_rtk_', '-rtk-', '_lifestyle_', '-lifestyle-', '_scene_', '-scene-',
+    '_use_', '-use-', '_video_', '-video-',
   ]
   if (exclusionPatterns.some((p) => lower.includes(p))) return false
   // Exclure les URLs avec dimensions petites (icônes 16x16 → 100x100)
@@ -303,12 +306,18 @@ function isValidUrl(urlStr: string): boolean {
   }
 }
 
-/** Fallback regex : extrait la PREMIÈRE URL d'image du markdown si Claude a raté. */
+/** Fallback regex : itère TOUTES les images du markdown et prend la PREMIÈRE
+ *  qui passe `isLikelyProductImage`. Évite de retomber sur un slider promo /
+ *  diagramme RTK / scène lifestyle quand la 1re URL brute n'est pas le packshot.
+ */
 function extractFirstImageUrlFromMarkdown(markdown: string): string | null {
   // Format markdown: ![alt](https://...jpg|png|webp)
-  const re = /!\[[^\]]*\]\((https?:\/\/[^\s)]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s)]*)?)\)/i
-  const match = markdown.match(re)
-  return match ? match[1] : null
+  const re = /!\[[^\]]*\]\((https?:\/\/[^\s)]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s)]*)?)\)/gi
+  for (const match of markdown.matchAll(re)) {
+    const url = match[1]
+    if (isLikelyProductImage(url)) return url
+  }
+  return null
 }
 
 /** Fallback : extrait le titre depuis "Title:" header ou premier H1 du markdown. */

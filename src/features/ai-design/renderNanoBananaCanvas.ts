@@ -217,8 +217,11 @@ export function addEditableTextOverlays(
       editable: true,
       padding: 2,
       shadow: new Shadow({
-        color: t.color && /^#?(?:f[a-f0-9]|e[a-f0-9])/i.test(t.color) ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.85)',
-        blur: 4,
+        // Halo blanc fort autour du texte foncé (typique sur fond NB2 photographique
+        // varié : herbe sombre, ombres, gradient). Inversé pour les rares textes
+        // blancs sur pill (dans ce cas un halo noir contraste mieux).
+        color: t.color && /^#?(?:f[a-f0-9]|e[a-f0-9])/i.test(t.color) ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)',
+        blur: 8,
         offsetX: 0,
         offsetY: 0,
       }),
