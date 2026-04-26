@@ -54,105 +54,54 @@ const STYLE_HINTS: Record<DesignStyle, string> = {
   retro: 'Vintage palette (burnt orange/cream/khaki), old display typefaces, dot screens, bordered frames.',
 }
 
-// Lookup des grandes enseignes retail françaises : convertit le brandDomain
-// (= site qui PUBLIE le flyer) en nom de marque lisible pour NB2. Le user de
-// Web2Print attend le LOGO DU DISTRIBUTEUR en haut du flyer (pas la marque
-// fabricant du produit).
-const KNOWN_DISTRIBUTOR_NAMES: Record<string, string> = {
-  'bricodepot.fr': 'BRICO DÉPÔT',
-  'castorama.fr': 'CASTORAMA',
-  'leroymerlin.fr': 'LEROY MERLIN',
-  'mr-bricolage.fr': 'MR.BRICOLAGE',
-  'jardiland.com': 'JARDILAND',
-  'truffaut.com': 'TRUFFAUT',
-  'gammvert.fr': 'GAMM VERT',
-  'amazon.fr': 'AMAZON',
-  'darty.com': 'DARTY',
-  'fnac.com': 'FNAC',
-  'boulanger.com': 'BOULANGER',
-  'cdiscount.com': 'CDISCOUNT',
-  'decathlon.fr': 'DECATHLON',
-  'auchan.fr': 'AUCHAN',
-  'carrefour.fr': 'CARREFOUR',
-}
-
-function distributorNameFromDomain(domain: string | undefined): string | null {
-  if (!domain) return null
-  const key = domain.toLowerCase().trim()
-  if (KNOWN_DISTRIBUTOR_NAMES[key]) return KNOWN_DISTRIBUTOR_NAMES[key]
-  // Fallback : nom de domaine title-case sans extension
-  const stem = key.replace(/^www\./, '').replace(/\.[a-z]{2,4}(?:\.[a-z]{2,4})?$/, '')
-  if (!stem) return null
-  return stem
-    .split(/[-.]/)
-    .filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(' ')
-    .toUpperCase()
-}
-
 function buildPrompt(args: GenerateNanoBananaRefArgs): string {
   const formatRatio = (args.widthMm / args.heightMm).toFixed(2)
   const paletteLine = args.palette && args.palette.length > 0
     ? `Color palette (use EXCLUSIVELY): ${args.palette.join(', ')}`
     : `Color palette: coherent with ${args.style} style, 3-5 colors max`
 
-  // Distributeur (= retailer qui publie le flyer) déduit du brandDomain.
-  // C'est le LOGO PRIMAIRE en haut du flyer (Brico Dépôt, Castorama, etc.).
-  // La marque fabricant (data.brand = Sunseeker, Parkside, etc.) reste
-  // SECONDAIRE — visible sur le produit lui-même mais PAS comme logo du flyer.
-  const distributor = distributorNameFromDomain(args.scrapedData?.brandDomain)
-
   // Si on a des données scrapées Jina, on les injecte EXACTEMENT dans le prompt
-  // pour que NB2 rende les vraies valeurs (titre, prix, features) au lieu
-  // d'halluciner. Si pas de scrapedData, le brief utilisateur libre fait foi.
-  const productDataBlock = args.scrapedData ? buildProductDataBlock(args.scrapedData, distributor) : ''
+  // pour que NB2 rende les vraies valeurs (titre, prix, features, marque) au
+  // lieu d'halluciner. Si pas de scrapedData, le brief utilisateur libre fait
+  // foi.
+  const productDataBlock = args.scrapedData ? buildProductDataBlock(args.scrapedData) : ''
 
   return [
-    `Create a COMPLETE, READY-TO-PRINT RETAIL PROMOTIONAL FLYER for a French retailer. The image you generate IS the final deliverable — render every element (typography, hero photo, badges, prices, CTAs) directly inside the image, press-quality.`,
+    `Create a COMPLETE, READY-TO-PRINT RETAIL PROMOTIONAL FLYER. The image you generate IS the final design — it will be placed full-canvas as the deliverable. Render every element of the flyer (typography, photo, badges, prices, CTA) directly inside the image.`,
     productDataBlock || `BRIEF: ${args.userPrompt}`,
-    `VISUAL REFERENCE STYLE — produce a flyer in the same caliber as a real Brico Dépôt / Castorama / Leroy Merlin retail print:
-- Bold red banner header at the very top with the DISTRIBUTOR logo (large, sharp, fully visible) on the left and a punchy promo tagline on the right.
-- Hero zone : large product photograph dominating the upper-right, sitting on a manicured lawn / interior context (use the attached reference image as the EXACT source of product appearance — match its color, materials, branding marks pixel-faithfully).
-- Left column under header : product title (BOLD, ALL CAPS, dark, on a black tag block), a few short technical specs.
-- Bold red price block (or yellow-on-red pill) for the headline price — large numerals, "PRIX DÉPÔT" / "PRIX CHOC" / similar retail tag.
-- Optional financing pill ("Payez en 4X"), warranty pill ("GARANTIE 3 ANS").
-- Grid of 4-6 feature icons in circular badges (filled black or filled brand-color) with short heading + 2-line description below each.
-- Footer : red bandeau with 3-4 quick benefit pills and small legal mentions.`,
+    `LAYOUT (FLEXIBLE 60/40 SPLIT — adapt to format):
+LEFT SECTION (~55-65%): TEXT & BRAND
+  - TOP-LEFT: Brand logo (crisp, fully visible — NOT cropped, NOT blurred)
+  - TOP-RIGHT (next to logo): green pill "OFFRE EXCLUSIVE"
+  - UPPER: Product title (bold, large, dark, complete — NO truncation, NO ellipsis)
+  - MIDDLE: Bullet features (3-5 items, each with a green filled circle containing a white ✓, then the feature text)
+  - BOTTOM: Price block — old price strikethrough (small grey) above NEW PRICE in large white-on-black; followed by green pill CTA "J'EN PROFITE"
+
+RIGHT SECTION (~35-45%): PRODUCT PHOTO
+  - The product centered, sharp, professionally lit, full visibility, no cropping, no decorations.`,
     `STYLE: ${args.style} — ${STYLE_HINTS[args.style]}`,
     `${paletteLine}`,
     `CRITICAL RULES — STRICTLY ENFORCED:
-- DISTRIBUTOR LOGO TOP-LEFT : render the retailer name "${distributor ?? '[DISTRIBUTOR]'}" as the dominant logo. Do NOT use the manufacturer brand (${args.scrapedData?.brand ?? 'unknown'}) as the main flyer logo — that's the product's brand, not the seller's brand.
-- Render ALL TEXTUAL ELEMENTS sharply legible — NO blur on logo or text, NO ellipsis, NO partial letters, NO low-resolution rasterization.
-- Use the EXACT TITLE, PRICE, FEATURES from the PRODUCT DATA block above. Do NOT rephrase, do NOT shorten, do NOT add fictional discounts or invented numbers. If no oldPrice is in the data block, do NOT show any strikethrough price.
-- Product photograph fidelity is non-negotiable: copy shape, color, branding marks, wheels, sensors from the attached reference image. Do NOT invent a different-looking product.
-- Spacing : generous, grid-based, NO chaotic placement, NO overlapping text, NO elements running off-canvas.
-- ZERO parasitic elements: no random "10€ OFFERTS" stickers, no extra promotional badges that aren't in the data block, no markdown syntax (### or [Image: ...]).`,
+- Render ALL TEXTUAL ELEMENTS sharply legible — NO blur on logo or text, NO ellipsis, NO partial letters, NO low-resolution.
+- Use the EXACT TITLE, PRICE, FEATURES from the PRODUCT DATA block above. Do NOT rephrase, do NOT shorten, do NOT add fictional discounts or numbers.
+- Logo top-left — pristine, fully visible, sharp.
+- Product photo — accurate to the real product (use the reference image as the source of truth for shape, color, materials, branding details).
+- Spacing — generous and balanced. NO chaotic placement, NO elements running off-canvas.
+- ZERO parasitic elements: no random "10€ OFFERTS" stickers, no extra promotional badges beyond OFFRE EXCLUSIVE, no overlapping text.`,
     `DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1).`,
-    `OUTPUT: A single, complete, ready-to-print French retail flyer image. Press-quality. Distributor logo dominant top-left. Product photo faithful to attached reference. Real prices from data block. NO artifacts.`,
+    `OUTPUT: A single, complete, ready-to-print retail flyer image. Press-quality. Every element in its right place. NO artifacts.`,
   ].filter(Boolean).join('\n\n')
 }
 
-function buildProductDataBlock(data: ScrapedProductData, distributor: string | null): string {
+function buildProductDataBlock(data: ScrapedProductData): string {
   const lines: string[] = ['PRODUCT DATA — RENDER EXACTLY THESE VALUES (do not invent, do not rephrase) :']
-  if (distributor) {
-    lines.push(`- DISTRIBUTOR (retailer publishing the flyer — render its name as the LOGO TOP-LEFT, dominant) : ${distributor}`)
-  }
-  if (data.brand) {
-    lines.push(`- Manufacturer brand (the product's maker — secondary, only visible on the product itself, NOT the flyer's main logo) : ${data.brand}`)
-  }
+  if (data.brand) lines.push(`- Brand (logo to render top-left): ${data.brand}`)
   if (data.title) lines.push(`- Product title (render verbatim, full string, no truncation): "${data.title}"`)
-  if (data.price) {
-    lines.push(`- Current price (render LARGE on a red or black price block): ${data.price}`)
-  }
-  if (data.oldPrice) {
-    lines.push(`- Old price (render strikethrough, small, grey, ABOVE current price): ${data.oldPrice}`)
-  } else {
-    lines.push(`- Old price : NONE — DO NOT render any strikethrough/old/crossed-out price. The current price stands alone.`)
-  }
+  if (data.price) lines.push(`- Current price (render large white-on-black): ${data.price}`)
+  if (data.oldPrice) lines.push(`- Old price (render strikethrough, small, grey): ${data.oldPrice}`)
   if (data.features && data.features.length > 0) {
-    lines.push(`- Features (render as a 4-6 icon grid OR a bullet list with ✓ marks, EXACTLY these items, no rephrasing) :`)
-    for (const f of data.features.slice(0, 6)) lines.push(`    • ${f}`)
+    lines.push(`- Features (render as bullet list with green ✓ marks, EXACTLY these items, no rephrasing) :`)
+    for (const f of data.features.slice(0, 5)) lines.push(`    • ${f}`)
   }
   if (data.rating) {
     const reviewSuffix = data.reviewCount ? ` · ${data.reviewCount} avis` : ''

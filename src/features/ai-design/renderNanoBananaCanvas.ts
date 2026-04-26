@@ -495,10 +495,7 @@ export async function renderNanoBananaTemplate(
   canvasHeight: number,
   _productImageUrl?: string,
 ): Promise<void> {
-  // 1. NB2 PNG plein canvas — SÉLECTIONNABLE pour permettre à l'utilisateur de
-  //    le supprimer / déplacer / scale / remplacer s'il veut corriger ce que
-  //    NB2 a halluciné (mauvais prix, mauvaise photo, etc.) et reconstruire
-  //    par-dessus avec les outils canvas standards (Fabric Textbox, Image, ...).
+  // 1. Background NB2 plein canvas, locked
   const bg = await FabricImage.fromURL(nanoBananaDataUri, { crossOrigin: 'anonymous' })
   if (!bg || !bg.width || !bg.height) {
     throw new Error('Nano Banana background image failed to load')
@@ -508,15 +505,19 @@ export async function renderNanoBananaTemplate(
     top: 0,
     scaleX: canvasWidth / bg.width,
     scaleY: canvasHeight / bg.height,
-    selectable: true,
-    evented: true,
+    selectable: false,
+    evented: false,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
+    hoverCursor: 'default',
     originX: 'left',
     originY: 'top',
   })
   bg.data = { isNanoBananaBg: true }
   canvas.add(bg)
-  // Z-order : NB2 juste au-dessus du pageBg (et donc sous toute édition future
-  // de l'utilisateur — Textbox, autres images, formes ajoutées manuellement).
   const pageBg = canvas.getObjects().find((o) => o.data?.isPageBg)
   if (pageBg) {
     const idx = canvas.getObjects().indexOf(pageBg)
@@ -525,9 +526,9 @@ export async function renderNanoBananaTemplate(
     canvas.sendObjectToBack(bg)
   }
 
-  // Pas d'overlays automatiques. Le NB2 a généré le flyer complet (logo
-  // distributeur, photo produit fidèle à la référence attachée, prix réels
-  // injectés dans le prompt, features, CTA). L'utilisateur édite directement
-  // le canvas s'il veut corriger ou augmenter le rendu.
+  // C'EST TOUT.
+  // Pas d'overlays, pas de masking, pas de Claude Vision.
+  // Le NB2 a tout généré dans son image. L'utilisateur édite manuellement
+  // le canvas s'il veut corriger / ajouter / déplacer des éléments.
 }
 
