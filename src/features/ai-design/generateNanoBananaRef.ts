@@ -11,7 +11,6 @@
 
 import { getApiKey } from '@/lib/apiKeys'
 import type { DesignStyle } from './types'
-import type { ScrapedProductData } from './scrapeProductForDesign'
 
 interface GenerateNanoBananaRefArgs {
   userPrompt: string
@@ -20,14 +19,6 @@ interface GenerateNanoBananaRefArgs {
   style: DesignStyle
   dpi: number
   palette?: string[]
-  /** Données produit scrapées Jina — injectées dans le prompt pour que NB2
-   *  rende les VRAIES valeurs (titre, prix, features, marque) plutôt que
-   *  d'halluciner. Si absent, NB2 invente librement. */
-  scrapedData?: ScrapedProductData
-  /** URL de l'image produit packshot — Nano Banana Pro/3 supporte
-   *  l'attachment d'images sources (REFERENCE_IMAGE) pour préserver la
-   *  ressemblance visuelle exacte du produit. */
-  productImageUrl?: string
 }
 
 interface NanoBananaRefResult {
@@ -60,88 +51,24 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
     ? `Color palette (use EXCLUSIVELY): ${args.palette.join(', ')}`
     : `Color palette: coherent with ${args.style} style, 3-5 colors max`
 
-  // Si on a des données scrapées Jina, on les injecte EXACTEMENT dans le prompt
-  // pour que NB2 rende les vraies valeurs (titre, prix, features, marque) au
-  // lieu d'halluciner. Si pas de scrapedData, le brief utilisateur libre fait
-  // foi.
-  const productDataBlock = args.scrapedData ? buildProductDataBlock(args.scrapedData) : ''
-
   return [
-    `Create a COMPLETE, READY-TO-PRINT RETAIL PROMOTIONAL FLYER. The image you generate IS the final design — it will be placed full-canvas as the deliverable. Render every element of the flyer (typography, photo, badges, prices, CTA) directly inside the image.`,
-    productDataBlock || `BRIEF: ${args.userPrompt}`,
-    `LAYOUT (FLEXIBLE 60/40 SPLIT — adapt to format):
-LEFT SECTION (~55-65%): TEXT & BRAND
-  - TOP-LEFT: Brand logo (crisp, fully visible — NOT cropped, NOT blurred)
-  - TOP-RIGHT (next to logo): green pill "OFFRE EXCLUSIVE"
-  - UPPER: Product title (bold, large, dark, complete — NO truncation, NO ellipsis)
-  - MIDDLE: Bullet features (3-5 items, each with a green filled circle containing a white ✓, then the feature text)
-  - BOTTOM: Price block — old price strikethrough (small grey) above NEW PRICE in large white-on-black; followed by green pill CTA "J'EN PROFITE"
-
-RIGHT SECTION (~35-45%): PRODUCT PHOTO
-  - The product centered, sharp, professionally lit, full visibility, no cropping, no decorations.`,
+    `Generate a CLEAN PHOTOGRAPHIC BACKGROUND for a retail flyer. The image will be used as a backdrop — TYPOGRAPHY AND PRICE LABELS WILL BE ADDED IN A LATER EDITING STEP.`,
+    `BRIEF (visual context only — do NOT spell anything in the image): ${args.userPrompt}`,
     `STYLE: ${args.style} — ${STYLE_HINTS[args.style]}`,
     `${paletteLine}`,
-    `CRITICAL RULES — STRICTLY ENFORCED:
-- Render ALL TEXTUAL ELEMENTS sharply legible — NO blur on logo or text, NO ellipsis, NO partial letters, NO low-resolution.
-- Use the EXACT TITLE, PRICE, FEATURES from the PRODUCT DATA block above. Do NOT rephrase, do NOT shorten, do NOT add fictional discounts or numbers.
-- Logo top-left — pristine, fully visible, sharp.
-- Product photo — accurate to the real product (use the reference image as the source of truth for shape, color, materials, branding details).
-- Spacing — generous and balanced. NO chaotic placement, NO elements running off-canvas.
-- ZERO parasitic elements: no random "10€ OFFERTS" stickers, no extra promotional badges beyond OFFRE EXCLUSIVE, no overlapping text.`,
+    `ABSOLUTE REQUIREMENTS — STRICTLY ENFORCED:
+- ZERO TEXT in the image. No typography, no letters, no numbers, no symbols, no characters from any language.
+- NO PRICE TAGS, NO BADGES, NO LABELS, NO STICKERS, NO LOGOS, NO BRAND NAMES, NO WATERMARKS.
+- NO callouts, NO annotations, NO captions, NO speech bubbles.
+- The image must be 100% TEXT-FREE so typography will be added cleanly in a later editing step.`,
+    `COMPOSITION:
+- Lifestyle product photography mood: clean, ambient, professional retouching, soft lighting, cinematic.
+- The product (the main subject of the BRIEF) should be visible in context (in its natural environment) but NOT the only element. Show it nicely placed within a scene.
+- Leave generous NEGATIVE SPACE on the canvas for text overlays to be added later. Avoid filling the entire frame with the product or with busy decoration. The viewer's eye should rest on uncluttered areas.
+- Use ambient elements (gradients, subtle shadows, environmental cues, depth-of-field blur) instead of textual or graphical clutter.`,
     `DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1).`,
-    `OUTPUT: A single, complete, ready-to-print retail flyer image. Press-quality. Every element in its right place. NO artifacts.`,
-  ].filter(Boolean).join('\n\n')
-}
-
-function buildProductDataBlock(data: ScrapedProductData): string {
-  const lines: string[] = ['PRODUCT DATA — RENDER EXACTLY THESE VALUES (do not invent, do not rephrase) :']
-  if (data.brand) lines.push(`- Brand (logo to render top-left): ${data.brand}`)
-  if (data.title) lines.push(`- Product title (render verbatim, full string, no truncation): "${data.title}"`)
-  if (data.price) lines.push(`- Current price (render large white-on-black): ${data.price}`)
-  if (data.oldPrice) lines.push(`- Old price (render strikethrough, small, grey): ${data.oldPrice}`)
-  if (data.features && data.features.length > 0) {
-    lines.push(`- Features (render as bullet list with green ✓ marks, EXACTLY these items, no rephrasing) :`)
-    for (const f of data.features.slice(0, 5)) lines.push(`    • ${f}`)
-  }
-  if (data.rating) {
-    const reviewSuffix = data.reviewCount ? ` · ${data.reviewCount} avis` : ''
-    lines.push(`- Rating (render as ★★★★☆ visual stars + text): ${data.rating}/5${reviewSuffix}`)
-  }
-  return lines.join('\n')
-}
-
-/**
- * Télécharge l'image produit (via le proxy local pour CORS) et la convertit
- * en inline_data part pour l'API Nano Banana. Renvoie [] si pas d'URL ou en
- * cas d'échec — le prompt seul fait foi.
- */
-async function fetchProductImagePart(
-  productImageUrl: string | undefined,
-): Promise<Array<{ inline_data: { mime_type: string; data: string } }>> {
-  if (!productImageUrl) return []
-  try {
-    const proxied = productImageUrl.startsWith('http')
-      ? `/api/image-proxy?url=${encodeURIComponent(productImageUrl)}`
-      : productImageUrl
-    const res = await fetch(proxied)
-    if (!res.ok) {
-      console.warn('[generateNanoBananaRef] productImageUrl fetch failed:', res.status)
-      return []
-    }
-    const buf = await res.arrayBuffer()
-    const mimeType = res.headers.get('content-type') || 'image/jpeg'
-    if (!mimeType.startsWith('image/')) return []
-    // Base64 encode
-    const bytes = new Uint8Array(buf)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-    const data = btoa(binary)
-    console.log(`[generateNanoBananaRef] Attached product reference image: ${Math.round(buf.byteLength / 1024)}KB ${mimeType}`)
-    return [{ inline_data: { mime_type: mimeType, data } }]
-  } catch (err) {
-    console.warn('[generateNanoBananaRef] productImageUrl fetch error:', err)
-    return []
-  }
+    `OUTPUT: a single high-quality, text-free background image, ready to receive editable typography overlays in post-production.`,
+  ].join('\n\n')
 }
 
 function pickAspectRatio(widthMm: number, heightMm: number): string {
@@ -176,18 +103,8 @@ export async function generateNanoBananaRef(
   const aspectRatio = pickAspectRatio(args.widthMm, args.heightMm)
   const prompt = buildPrompt(args)
 
-  // Nano Banana Pro supporte les images de référence en input multipart pour
-  // préserver la ressemblance produit. On télécharge l'image (via le proxy
-  // pour gérer les CDN sans CORS) et l'attache en inline_data.
-  const imageParts = await fetchProductImagePart(args.productImageUrl)
-
   const requestBody = {
-    contents: [{
-      parts: [
-        ...imageParts,
-        { text: prompt },
-      ],
-    }],
+    contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       responseModalities: ['TEXT', 'IMAGE'],
       imageConfig: { aspectRatio, imageSize: '1K' },

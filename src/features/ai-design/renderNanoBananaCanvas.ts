@@ -8,6 +8,7 @@ import type {
 } from './analyzeDesignForEdit'
 import { resolveBrandLogoCandidates } from './brandLogos'
 import { isLikelyProductImage } from './scrapeProductForDesign'
+import { composeDesignFromScrapedData } from './composeDesignFromScrapedData'
 import type { ScrapedProductData } from './scrapeProductForDesign'
 
 /**
@@ -477,23 +478,18 @@ function cropFromDecoded(img: HTMLImageElement, bbox: Bbox): string {
 // ─── Pipeline pivot 2+3 ──────────────────────────────────────────────────────
 
 /**
- * Pipeline radical (Job M) : place le PNG Nano Banana 2 plein canvas locked
- * comme rendu final du flyer. AUCUN overlay, AUCUN masking, AUCUNE
- * reconstruction vectorielle. Le NB2 a généré le flyer complet (logo + titre
- * + photo produit + features + prix + CTA) directement dans l'image grâce au
- * prompt enrichi avec les données scrapées Jina + l'image produit attachée
- * comme référence visuelle.
- *
- * L'utilisateur édite manuellement le canvas (ajouter du texte, des objets,
- * supprimer le NB2 et reconstruire) si le rendu NB2 ne convient pas.
+ * Pipeline pivot 2+3 : place le PNG Nano Banana 2 plein canvas locked comme
+ * fond visuel pur (NB2 a généré sans texte). Pose ensuite le layout template
+ * issu de composeDesignFromScrapedData (pills critiques + textes + images
+ * data) par-dessus, sans masquage car il n'y a aucun texte à masquer.
  */
 export async function renderNanoBananaTemplate(
   canvas: Canvas,
   nanoBananaDataUri: string,
-  _scrapedData: ScrapedProductData,
+  scrapedData: ScrapedProductData,
   canvasWidth: number,
   canvasHeight: number,
-  _productImageUrl?: string,
+  productImageUrl?: string,
 ): Promise<void> {
   // 1. Background NB2 plein canvas, locked
   const bg = await FabricImage.fromURL(nanoBananaDataUri, { crossOrigin: 'anonymous' })
@@ -526,9 +522,38 @@ export async function renderNanoBananaTemplate(
     canvas.sendObjectToBack(bg)
   }
 
-  // C'EST TOUT.
-  // Pas d'overlays, pas de masking, pas de Claude Vision.
-  // Le NB2 a tout généré dans son image. L'utilisateur édite manuellement
-  // le canvas s'il veut corriger / ajouter / déplacer des éléments.
+  // 2. Layout template depuis Jina
+  const analysis = composeDesignFromScrapedData(scrapedData)
+
+  // 3. Pills critiques uniquement (filtrer les autres decorativeShapes éventuelles)
+  const CRITICAL_SHAPE_IDS = new Set(['badge_bg', 'price_block', 'cta_bg'])
+  const criticalShapes = (analysis.decorativeShapes ?? []).filter((s) => CRITICAL_SHAPE_IDS.has(s.id))
+  renderDecorativeShapes(canvas, criticalShapes, canvasWidth, canvasHeight)
+
+  // 4. Textes éditables
+  addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
+
+  // 5. Image slots — pivot 2+3 :
+  //    - Le NB2 montre le produit en lifestyle (prompt qui demande visibilité
+  //      du produit en contexte) — c'est la source visuelle principale.
+  //    - SI une productImageUrl est fournie (manuelle ou scraping ok), on
+  //      l'overlay quand même : laisser à l'utilisateur le choix de garder la
+  //      vraie photo produit ou de la supprimer si elle ne s'intègre pas.
+  //    - SINON skip le slot productPhoto (pas de placeholder dashed visible).
+  //    - Le logo reste, géré par sa cascade Clearbit/Google/KNOWN.
+  //    - sourceDataUri = null pour empêcher tout crop NB2 du logo (la cascade
+  //      brand a déjà ce qu'il faut).
+  const slotsToRender = productImageUrl
+    ? analysis.imageSlots
+    : analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
+  await addEditableImageSlots(
+    canvas,
+    slotsToRender,
+    canvasWidth,
+    canvasHeight,
+    null,
+    productImageUrl,
+    scrapedData.brandDomain,
+  )
 }
 
