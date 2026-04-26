@@ -5,7 +5,20 @@ import type {
   BackgroundDef,
   DecorativeShape,
 } from './analyzeDesignForEdit'
-import { resolveBrandLogoUrl } from './brandLogos'
+import { resolveBrandLogoCandidates } from './brandLogos'
+import { isLikelyProductImage } from './scrapeProductForDesign'
+
+/**
+ * Route les URLs http(s) externes via le proxy image local pour gagner les
+ * en-têtes CORS et éviter de tainter le canvas (les CDN e-commerce ne servent
+ * souvent pas Access-Control-Allow-Origin). Les data: et blob: passent direct.
+ */
+function proxiedImageUrl(url: string): string {
+  if (!url) return url
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url
+  if (!/^https?:\/\//i.test(url)) return url
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`
+}
 
 type Bbox = { x: number; y: number; w: number; h: number }
 
@@ -226,77 +239,120 @@ export async function addEditableImageSlots(
   productImageUrl?: string,
   brandDomain?: string,
 ): Promise<FabricObject[]> {
+  // Décode la ref Nano Banana une seule fois pour tous les fallbacks crop
+  const sourceDecoded = sourceDataUri
+    ? await decodeImage(sourceDataUri).catch(() => null)
+    : null
+
+  // Limite à UN seul slot logo (le plus petit, typiquement le vrai logo marque
+  // top-left). Évite que Claude Vision identifie plusieurs zones comme logo
+  // et qu'on pollue le design avec des copies de la marque.
+  const logoSlots = slots.filter((s) => s.role === 'logo')
+  let dedupedLogoId: string | null = null
+  if (logoSlots.length > 1) {
+    logoSlots.sort((a, b) => a.bbox.w * a.bbox.h - b.bbox.w * b.bbox.h)
+    dedupedLogoId = logoSlots[0].id
+    console.log(`[createDesign] ${logoSlots.length} logo slots détectés, garde uniquement ${dedupedLogoId} (le plus petit)`)
+  }
+
+  // Log des slots reçus pour diagnostic
+  console.log('[createDesign] imageSlots from analysis:', slots.map((s) => ({ id: s.id, role: s.role, bbox: s.bbox, description: s.description?.slice(0, 50) })))
+  console.log('[createDesign] productImageUrl:', productImageUrl?.slice(0, 100), '| brandDomain:', brandDomain)
+
   const built = await Promise.all(
     slots.map(async (s) => {
       const { xPx, yPx, wPx, hPx } = bboxToPx(s.bbox, canvasWidth, canvasHeight)
 
-      // Pour le productPhoto, utiliser l'URL du produit réel (pas un crop Nano Banana)
-      // Ça évite le doublement visuel avec les Textboxes éditables
-      if (s.role === 'productPhoto' && productImageUrl) {
+      // Si Claude Vision a classé une zone produit comme "logo" (typique des
+      // designs où la photo produit côtoie la marque), on garde le plus petit
+      // slot logo comme vrai logo et on crop la ref Nano Banana pour les
+      // autres (probablement des photos produit ou des illustrations).
+      const isDemotedLogo = s.role === 'logo' && dedupedLogoId !== null && s.id !== dedupedLogoId
+      if (isDemotedLogo && sourceDecoded) {
         try {
-          console.log(`[createDesign] Loading product image from URL:`, productImageUrl.slice(0, 100))
-          const img = await FabricImage.fromURL(productImageUrl, { crossOrigin: 'anonymous' })
-          if (!img || !img.width || !img.height) {
-            console.warn(`[createDesign] Product image loaded but invalid dimensions for slot ${s.id}`)
-            throw new Error('Invalid image dimensions')
+          const cropped = cropFromDecoded(sourceDecoded, s.bbox)
+          const img = await FabricImage.fromURL(cropped, { crossOrigin: 'anonymous' })
+          if (img && img.width && img.height) {
+            console.log(`[createDesign] Demoted logo ${s.id} → crop Nano Banana ref`)
+            return placeFabricImage(img, { ...s, role: 'productPhoto' }, xPx, yPx, wPx, hPx)
           }
-          const imgW = img.width
-          const imgH = img.height
-          // Fit contain: préserver ratio natif sans déformation
-          const scale = Math.min(wPx / imgW, hPx / imgH)
-          const displayW = imgW * scale
-          const displayH = imgH * scale
-          img.set({
-            left: xPx + (wPx - displayW) / 2,
-            top: yPx + (hPx - displayH) / 2,
-            scaleX: scale,
-            scaleY: scale,
-            originX: 'left',
-            originY: 'top',
-            selectable: true,
-          })
-          img.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
-          console.log(`[createDesign] Product image loaded successfully for slot ${s.id}`)
-          return img as FabricObject
         } catch (err) {
-          console.error(`[createDesign] Real product image failed for slot ${s.id}:`, err instanceof Error ? err.message : String(err))
+          console.warn(`[createDesign] Demoted logo crop failed for ${s.id}:`, err instanceof Error ? err.message : String(err))
         }
       }
 
-      // Pour les logos, résoudre via brandDomain scrapé (priorité) ou description
-      if (s.role === 'logo') {
-        const logoUrl = (brandDomain ? resolveBrandLogoUrl(brandDomain) : null)
-                     || resolveBrandLogoUrl(s.description)
-        if (logoUrl) {
+      // ─── productPhoto : URL réelle scrapée → ref Nano Banana → placeholder ──
+      if (s.role === 'productPhoto') {
+        // Tentative 1 : URL produit scrapée (la meilleure)
+        // Défense en profondeur : si une URL "logo/didomi/banner" a fuité jusque-là,
+        // on la rejette ici pour ne pas la coller à la place de la photo produit.
+        const validProductUrl = productImageUrl && isLikelyProductImage(productImageUrl)
+          ? productImageUrl
+          : undefined
+        if (productImageUrl && !validProductUrl) {
+          console.warn(`[createDesign] productImageUrl rejected at canvas builder (looks like logo/banner):`, productImageUrl.slice(0, 100))
+        }
+        if (validProductUrl) {
           try {
-            console.log(`[createDesign] Loading brand logo for slot ${s.id}:`, logoUrl.slice(0, 100))
-            const logo = await FabricImage.fromURL(logoUrl, { crossOrigin: 'anonymous' })
-            if (!logo || !logo.width || !logo.height) {
-              console.warn(`[createDesign] Logo loaded but invalid dimensions for slot ${s.id}`)
-              throw new Error('Invalid logo dimensions')
+            const proxied = proxiedImageUrl(validProductUrl)
+            console.log(`[createDesign] Loading product image from URL:`, validProductUrl.slice(0, 100), proxied !== validProductUrl ? '(via proxy)' : '')
+            const img = await FabricImage.fromURL(proxied, { crossOrigin: 'anonymous' })
+            if (img && img.width && img.height) {
+              return placeFabricImage(img, s, xPx, yPx, wPx, hPx)
             }
-            const logoW = logo.width
-            const logoH = logo.height
-            // Fit contain: préserver ratio natif
-            const scale = Math.min(wPx / logoW, hPx / logoH)
-            const displayW = logoW * scale
-            const displayH = logoH * scale
-            logo.set({
-              left: xPx + (wPx - displayW) / 2,
-              top: yPx + (hPx - displayH) / 2,
-              scaleX: scale,
-              scaleY: scale,
-              originX: 'left',
-              originY: 'top',
-              selectable: true,
-            })
-            logo.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
-            console.log(`[createDesign] Brand logo loaded successfully for slot ${s.id}`)
-            return logo as FabricObject
+            console.warn(`[createDesign] Product image dimensions invalid for slot ${s.id}`)
           } catch (err) {
-            console.error(`[createDesign] Brand logo failed for slot ${s.id}:`, err instanceof Error ? err.message : String(err))
+            console.error(`[createDesign] Real product image failed for slot ${s.id}:`, err instanceof Error ? err.message : String(err))
           }
         }
+        // Tentative 2 : crop depuis la ref Nano Banana (toujours mieux que le logo marque)
+        if (sourceDecoded) {
+          try {
+            const cropped = cropFromDecoded(sourceDecoded, s.bbox)
+            const img = await FabricImage.fromURL(cropped, { crossOrigin: 'anonymous' })
+            if (img && img.width && img.height) {
+              console.log(`[createDesign] productPhoto fallback: crop depuis ref Nano Banana pour ${s.id}`)
+              return placeFabricImage(img, s, xPx, yPx, wPx, hPx)
+            }
+          } catch (err) {
+            console.warn(`[createDesign] Nano Banana crop fallback failed for ${s.id}:`, err instanceof Error ? err.message : String(err))
+          }
+        }
+      }
+
+      // ─── logo : KNOWN → Clearbit → Google Favicon → crop Nano Banana ─────
+      if (s.role === 'logo') {
+        const candidates = brandDomain
+          ? resolveBrandLogoCandidates(brandDomain)
+          : resolveBrandLogoCandidates(s.description)
+
+        for (const candidate of candidates) {
+          try {
+            const proxied = proxiedImageUrl(candidate)
+            console.log(`[createDesign] Trying logo candidate for ${s.id}:`, candidate.slice(0, 80))
+            const logo = await FabricImage.fromURL(proxied, { crossOrigin: 'anonymous' })
+            if (logo && logo.width && logo.height && logo.width >= 16 && logo.height >= 16) {
+              console.log(`[createDesign] Brand logo loaded successfully for slot ${s.id}`)
+              return placeFabricImage(logo, s, xPx, yPx, wPx, hPx)
+            }
+          } catch (err) {
+            console.warn(`[createDesign] Logo candidate failed (${candidate.slice(0, 60)}):`, err instanceof Error ? err.message : String(err))
+          }
+        }
+        // Fallback : crop la zone du logo dans la ref Nano Banana
+        if (sourceDecoded) {
+          try {
+            const cropped = cropFromDecoded(sourceDecoded, s.bbox)
+            const logo = await FabricImage.fromURL(cropped, { crossOrigin: 'anonymous' })
+            if (logo && logo.width && logo.height) {
+              console.log(`[createDesign] logo fallback: crop depuis ref Nano Banana pour ${s.id}`)
+              return placeFabricImage(logo, s, xPx, yPx, wPx, hPx)
+            }
+          } catch (err) {
+            console.warn(`[createDesign] Nano Banana crop fallback (logo) failed for ${s.id}:`, err instanceof Error ? err.message : String(err))
+          }
+        }
+        console.warn(`[createDesign] All logo strategies failed for slot ${s.id}`)
       }
 
       // Placeholder vectoriel pour tous les autres slots (logo, badges, etc.)
@@ -345,6 +401,36 @@ function computeLinearGradientCoords(angleDeg: number, w: number, h: number) {
 function clamp01(v: number): number {
   if (!Number.isFinite(v)) return 0
   return Math.max(0, Math.min(1, v))
+}
+
+/**
+ * Positionne et scale une FabricImage pour qu'elle remplisse la bbox cible
+ * en mode "fit contain" (préserve le ratio natif).
+ */
+function placeFabricImage(
+  img: FabricImage,
+  slot: { id: string; role: string; description?: string },
+  xPx: number,
+  yPx: number,
+  wPx: number,
+  hPx: number,
+): FabricObject {
+  const imgW = img.width!
+  const imgH = img.height!
+  const scale = Math.min(wPx / imgW, hPx / imgH)
+  const displayW = imgW * scale
+  const displayH = imgH * scale
+  img.set({
+    left: xPx + (wPx - displayW) / 2,
+    top: yPx + (hPx - displayH) / 2,
+    scaleX: scale,
+    scaleY: scale,
+    originX: 'left',
+    originY: 'top',
+    selectable: true,
+  })
+  img.data = { id: slot.id, editableImageSlot: true, role: slot.role, description: slot.description }
+  return img as FabricObject
 }
 
 function decodeImage(src: string): Promise<HTMLImageElement> {

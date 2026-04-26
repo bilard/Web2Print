@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { generateNanoBananaRef } from './generateNanoBananaRef'
 import { saveRefImageToGallery } from './saveRefImageToGallery'
 import { analyzeDesignForEdit } from './analyzeDesignForEdit'
-import { scrapeProductForDesign, detectUrlInPrompt, type ScrapedProductData } from './scrapeProductForDesign'
+import { scrapeProductForDesign, detectUrlInPrompt, isLikelyProductImage, type ScrapedProductData } from './scrapeProductForDesign'
 import { composeDesignFromScrapedData } from './composeDesignFromScrapedData'
 import type { TextElement } from './analyzeDesignForEdit'
 import {
@@ -11,7 +11,7 @@ import {
   renderDecorativeShapes,
   addEditableTextOverlays,
   addEditableImageSlots,
-} from './createHybridDesignCanvas'
+} from './renderNanoBananaCanvas'
 import { ensureGoogleFontsLoaded } from '@/features/assets/useFonts'
 import type { DesignRequest, DesignResult, DesignStyle } from './types'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
@@ -47,44 +47,73 @@ const INITIAL_STATE: State = {
 }
 
 /**
- * Remplace les textes hallucinés par Nano Banana (relus par Claude Vision)
- * par les vraies valeurs scrapées depuis la source. Indispensable pour les
- * prix, prix barrés, rating et nombre d'avis qui doivent être exacts.
+ * Remplace les textes hallucinés par Nano Banana par les vraies valeurs
+ * scrapées. Si la donnée scrapée est ABSENTE (ex: produit sans avis),
+ * SUPPRIME les éléments hallucinés correspondants au lieu de les laisser
+ * mentir. Garantit zéro fausse info sur le design final.
  */
 function overrideTextsWithScrapedData(
   texts: TextElement[],
   scraped: ScrapedProductData
 ): TextElement[] {
-  const PRICE_RE = /\d[\d\s ]*[,.]?\d*\s*€/
+  // Reconnaît "699€00" (Brico Dépôt) ET "699,00 €" / "1 234,56 €"
+  const PRICE_RE = /\d{1,4}\s*€\s*\d{2}|\d[\d\s ]*[,.]\d{2}\s*€/
   const RATING_RE = /^\s*\d[.,]\d+\s*(\/\s*5)?\s*$/
   const REVIEWS_RE = /(\d+)\s*avis/i
+  const STARS_RE = /[★☆⭐]/
+  const RATING_KEYWORDS = /\b(avis client|note moyenne|étoile|rating|évaluation)\b/i
 
-  return texts.map((t) => {
+  const out: TextElement[] = []
+
+  for (const t of texts) {
     const txt = t.text || ''
 
-    // Prix barré (oldPrice) → strikethrough
-    if (t.strikethrough && PRICE_RE.test(txt) && scraped.oldPrice) {
-      return { ...t, text: scraped.oldPrice }
+    // Prix barré (oldPrice) — supprime si pas de promo réelle
+    if (t.strikethrough && PRICE_RE.test(txt)) {
+      if (scraped.oldPrice) out.push({ ...t, text: scraped.oldPrice })
+      else console.log('[Override] Drop hallucinated oldPrice:', txt)
+      continue
     }
 
-    // Prix actuel → contient € sans strikethrough
-    if (!t.strikethrough && PRICE_RE.test(txt) && scraped.price) {
-      return { ...t, text: scraped.price }
+    // Prix actuel — remplace si scraped, sinon supprime
+    if (!t.strikethrough && PRICE_RE.test(txt) && !RATING_RE.test(txt)) {
+      if (scraped.price) out.push({ ...t, text: scraped.price })
+      else console.log('[Override] Drop hallucinated price:', txt)
+      continue
     }
 
-    // Rating "4.3" / "4.3/5"
-    if (RATING_RE.test(txt) && scraped.rating) {
-      const hasOutOf5 = /\/\s*5/.test(txt)
-      return { ...t, text: hasOutOf5 ? `${scraped.rating}/5` : scraped.rating }
+    // Étoiles ★★★★★ — supprime si pas de rating réel
+    if (STARS_RE.test(txt)) {
+      if (scraped.rating) out.push(t)
+      else console.log('[Override] Drop hallucinated stars:', txt)
+      continue
     }
 
-    // Review count "128 avis", "128 AVIS CLIENTS"
-    if (REVIEWS_RE.test(txt) && scraped.reviewCount) {
-      return { ...t, text: txt.replace(/\d+/, scraped.reviewCount) }
+    // Rating numérique "4.3" / "4.3/5"
+    if (RATING_RE.test(txt)) {
+      if (scraped.rating) {
+        const hasOutOf5 = /\/\s*5/.test(txt)
+        out.push({ ...t, text: hasOutOf5 ? `${scraped.rating}/5` : scraped.rating })
+      } else {
+        console.log('[Override] Drop hallucinated rating:', txt)
+      }
+      continue
     }
 
-    return t
-  })
+    // Nombre d'avis ou phrase qui mentionne les avis (AVIS CLIENTS, etc.)
+    if (REVIEWS_RE.test(txt) || RATING_KEYWORDS.test(txt)) {
+      if (scraped.reviewCount && scraped.rating) {
+        out.push({ ...t, text: txt.replace(/\d+/, scraped.reviewCount) })
+      } else {
+        console.log('[Override] Drop hallucinated review/avis text:', txt)
+      }
+      continue
+    }
+
+    out.push(t)
+  }
+
+  return out
 }
 
 function resolveFormatDpi(req: DesignRequest, canvasWidth: number, canvasHeight: number, storeDpi: number): number {
@@ -166,10 +195,26 @@ export function useGenerateDesign() {
         try {
           scrapedProductData = await scrapeProductForDesign(siteUrl)
           if (scrapedProductData) {
-            // L'image scrapée override l'image manuelle (sauf si l'utilisateur en a fourni une explicitement et qu'elle ressemble bien à une image)
-            if (!productImageUrl) {
-              productImageUrl = scrapedProductData.imageUrl || undefined
+            // Validation : si l'URL fournie (manuelle OU scrapée) ressemble à un
+            // logo/banner/didomi/etc., on la rejette plutôt que de l'afficher
+            // comme photo produit. C'est la cause #1 de "logo géant à la place
+            // de la photo" — Brico Dépôt sert un logo cookies didomi qui peut
+            // fuiter via certains chemins d'extraction.
+            const manualBeforeOverride = productImageUrl
+            if (productImageUrl && !isLikelyProductImage(productImageUrl)) {
+              console.warn('[Claude Design] Manual productImageUrl rejected (looks like logo/banner):', productImageUrl)
+              productImageUrl = undefined
             }
+            if (!productImageUrl && scrapedProductData.imageUrl && isLikelyProductImage(scrapedProductData.imageUrl)) {
+              productImageUrl = scrapedProductData.imageUrl
+            } else if (!productImageUrl && scrapedProductData.imageUrl) {
+              console.warn('[Claude Design] Scraped imageUrl rejected (looks like logo/banner):', scrapedProductData.imageUrl)
+            }
+            console.log('[Claude Design] productImageUrl resolution:', {
+              manual_input: manualBeforeOverride ?? '(none)',
+              scraped: scrapedProductData.imageUrl ?? '(none)',
+              final: productImageUrl ?? '(none)',
+            })
             const specs = [
               scrapedProductData.price ? `Prix: ${scrapedProductData.price}` : null,
               scrapedProductData.brand ? `Marque: ${scrapedProductData.brand}` : null,
@@ -197,32 +242,26 @@ export function useGenerateDesign() {
         }
       }
 
-      // ─── Branche : compose direct si on a des données scrapées valides ──
-      // Sinon : pipeline Nano Banana + Claude Vision (créatif mais hallucinant)
+      // ─── Architecture : Nano Banana 2 (créativité) + Jina (data véridique) ──
+      // L'image générative apporte la créativité du layout, la typographie, les
+      // couleurs et la composition. Les données scrapées (prix, features, rating,
+      // logo, photo produit) sont injectées dans le prompt ET overridées en
+      // post-render pour garantir l'exactitude. Compose-direct n'est conservé
+      // que comme fallback si Nano Banana échoue (toutes versions).
       let analysis
       let dataUri: string | null = null
 
-      if (scrapedProductData && scrapedProductData.title && scrapedProductData.imageUrl) {
-        setState((s) => ({ ...s, step: 'rendering', progress: 'Composition directe depuis les données produit…' }))
-        analysis = composeDesignFromScrapedData(scrapedProductData)
-        console.log('[Claude Design] Compose direct: bypass Nano Banana, using scraped data')
-      } else {
-        // ─── Phase 1 : génération Nano Banana ─────────────────────────────────
-        const nanobananaResult = await generateNanoBananaRef({
-          userPrompt: enrichedPrompt,
-          widthMm,
-          heightMm,
-          style: req.style as DesignStyle,
-          dpi,
-          palette: req.palette,
-        }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) }))
+      // ─── Phase 1 : génération Nano Banana (Pro en priorité) ─────────────────
+      const nanobananaResult = await generateNanoBananaRef({
+        userPrompt: enrichedPrompt,
+        widthMm,
+        heightMm,
+        style: req.style as DesignStyle,
+        dpi,
+        palette: req.palette,
+      }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) }))
 
-        if (!nanobananaResult.ok || !nanobananaResult.dataUri) {
-          const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
-          failAt('illustrating', `Échec génération Nano Banana : ${errMsg}`, `Nano Banana a échoué : ${errMsg ?? 'inconnue'}`)
-          return
-        }
-
+      if (nanobananaResult.ok && nanobananaResult.dataUri) {
         dataUri = nanobananaResult.dataUri
         setState((s) => ({ ...s, nanobananaRef: dataUri }))
 
@@ -265,7 +304,8 @@ export function useGenerateDesign() {
           return
         }
 
-        // Override valeurs hallucinées par les vraies données scrapées (si dispo)
+        // Override des valeurs hallucinées par les vraies données scrapées (si dispo).
+        // Couvre prix, oldPrice, rating, reviewCount ET features (bullets).
         if (scrapedProductData) {
           const before = analysis.texts.map(t => t.text)
           analysis.texts = overrideTextsWithScrapedData(analysis.texts, scrapedProductData)
@@ -274,6 +314,18 @@ export function useGenerateDesign() {
             console.log('[Claude Design] Overrode hallucinated texts:', overridden.map(t => `"${t.text}" (${t.id})`))
           }
         }
+      } else if (scrapedProductData && scrapedProductData.title) {
+        // Fallback si Nano Banana est indisponible : compose-direct depuis Jina.
+        // Garantit qu'on livre toujours quelque chose, même sans IA visuelle.
+        const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
+        console.warn(`[Claude Design] Nano Banana indisponible (${errMsg}) — fallback compose-direct`)
+        toast.warning('Image IA indisponible — design composé depuis les données produit')
+        setState((s) => ({ ...s, step: 'rendering', progress: 'Composition directe (fallback Nano Banana)…' }))
+        analysis = composeDesignFromScrapedData(scrapedProductData)
+      } else {
+        const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
+        failAt('illustrating', `Échec génération Nano Banana : ${errMsg}`, `Nano Banana a échoué : ${errMsg ?? 'inconnue'}`)
+        return
       }
 
 
