@@ -160,11 +160,12 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
 
   // Sub-titre "AVANTAGES" en bold au-dessus de la liste, pour structurer
   // visuellement la zone features (même si feature liste vide on l'omet).
+  // Position resserrée juste sous le titre (y=33 au lieu de 35).
   if (features.length > 0) {
     texts.push({
       id: 'features_heading',
       text: 'AVANTAGES',
-      bbox: { x: 5, y: 35, w: 50, h: 4 },
+      bbox: { x: 5, y: 33, w: 50, h: 3.5 },
       fontSizePct: 2,
       fontFamily: 'Inter',
       color: PALETTE.white,  // blanc sur halo noir : visibilité maximale sur tout fond NB2
@@ -178,14 +179,16 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   }
 
   features.forEach((feat, i) => {
-    const y = 40 + i * 7  // step augmenté à 7 (vs 5.5) pour donner de l'air aux features plus grandes
+    // Step 4.5 (vs 7) : interligne plus serré, look "bullet list" compact
+    // type flyer Brico Dépôt (cf. screenshot référence utilisateur).
+    const y = 37 + i * 4.5
 
     // Texte feature (pastilles vertes remplacées par ✓ unicode)
     texts.push({
       id: `feature_${i}`,
       text: `✓ ${feat}`,
-      bbox: { x: 5, y: y, w: 50, h: 6 },
-      fontSizePct: 2.2,
+      bbox: { x: 5, y: y, w: 50, h: 4 },
+      fontSizePct: 2,
       fontFamily: 'Inter',
       color: PALETTE.white,  // blanc sur halo noir : visibilité maximale sur tout fond NB2
       bold: false,
@@ -202,8 +205,8 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   // Base : si features rendues, démarre après bloc heading + features (+ marge).
   // Sinon démarre à y=39 (zone juste après le titre).
   let cursorY = features.length > 0
-    ? 40 + features.length * 7 + 4
-    : 39
+    ? 37 + features.length * 4.5 + 3
+    : 37
 
   // ─── 6. Rating (étoiles + nb avis) — uniquement si data.rating ───────────
   if (data.rating) {

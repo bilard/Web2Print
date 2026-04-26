@@ -489,6 +489,7 @@ export async function renderNanoBananaTemplate(
   scrapedData: ScrapedProductData,
   canvasWidth: number,
   canvasHeight: number,
+  productImageUrl?: string,
 ): Promise<void> {
   // 1. Background NB2 plein canvas, locked
   const bg = await FabricImage.fromURL(nanoBananaDataUri, { crossOrigin: 'anonymous' })
@@ -534,19 +535,24 @@ export async function renderNanoBananaTemplate(
 
   // 5. Image slots — pivot 2+3 :
   //    - Le NB2 montre le produit en lifestyle (prompt qui demande visibilité
-  //      du produit en contexte). On NE pose PAS de photo produit overlay
-  //      pour éviter la redondance / l'image scrappée parfois moche
-  //      (sliders promo, diagrammes RTK, scènes lifestyle, etc.).
+  //      du produit en contexte) — c'est la source visuelle principale.
+  //    - SI une productImageUrl est fournie (manuelle ou scraping ok), on
+  //      l'overlay quand même : laisser à l'utilisateur le choix de garder la
+  //      vraie photo produit ou de la supprimer si elle ne s'intègre pas.
+  //    - SINON skip le slot productPhoto (pas de placeholder dashed visible).
   //    - Le logo reste, géré par sa cascade Clearbit/Google/KNOWN.
-  //    - On passe null en sourceDataUri pour empêcher tout crop NB2 résiduel.
-  const slotsToRender = analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
+  //    - sourceDataUri = null pour empêcher tout crop NB2 du logo (la cascade
+  //      brand a déjà ce qu'il faut).
+  const slotsToRender = productImageUrl
+    ? analysis.imageSlots
+    : analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
   await addEditableImageSlots(
     canvas,
     slotsToRender,
     canvasWidth,
     canvasHeight,
     null,
-    undefined,
+    productImageUrl,
     scrapedData.brandDomain,
   )
 }

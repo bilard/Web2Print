@@ -268,7 +268,7 @@ export function useGenerateDesign() {
         if (dataUri && scrapedProductData) {
           // Pipeline pivot 2+3 : NB2 fond visuel + layout template Jina
           await ensureGoogleFontsLoaded(['Inter'])
-          await renderNanoBananaTemplate(canvas, dataUri, scrapedProductData, canvasWidth, canvasHeight)
+          await renderNanoBananaTemplate(canvas, dataUri, scrapedProductData, canvasWidth, canvasHeight, productImageUrl)
         } else if (scrapedProductData) {
           // Fallback NB2 KO + Jina OK : ancien pipeline creative complet (avec fond crème)
           const analysis = composeDesignFromScrapedData(scrapedProductData)
