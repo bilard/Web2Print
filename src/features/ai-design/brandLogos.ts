@@ -39,12 +39,30 @@ function normalizeBrandKey(description: string): string | null {
 }
 
 /**
- * Résout une description de slot logo (fournie par Claude Vision) vers une
- * URL d'image chargeable. null si rien de plausible ne peut être extrait.
+ * Liste de candidats pour un logo, par ordre de qualité décroissante. Le
+ * canvas essaie chaque URL jusqu'à ce qu'une se charge correctement. Permet
+ * de tomber proprement sur Google Favicon (toujours disponible) quand
+ * Clearbit n'a pas la marque ou est injoignable.
+ */
+export function resolveBrandLogoCandidates(description: string | undefined): string[] {
+  if (!description) return []
+  const key = normalizeBrandKey(description)
+  if (!key) return []
+  const candidates: string[] = []
+  if (KNOWN_BRAND_LOGOS[key]) candidates.push(KNOWN_BRAND_LOGOS[key])
+  // Clearbit : logos transparents haute qualité, ~80% des marques connues
+  candidates.push(`https://logo.clearbit.com/${key}`)
+  // Google Favicon V2 : toujours disponible, retombe sur favicon basse-res si
+  // pas mieux. Ultime garantie d'avoir quelque chose à afficher.
+  candidates.push(`https://www.google.com/s2/favicons?domain=${key}&sz=256`)
+  return candidates
+}
+
+/**
+ * Résout une description de slot logo vers la première URL candidate.
+ * @deprecated Utiliser resolveBrandLogoCandidates pour un fallback robuste.
  */
 export function resolveBrandLogoUrl(description: string | undefined): string | null {
-  if (!description) return null
-  const key = normalizeBrandKey(description)
-  if (!key) return null
-  return KNOWN_BRAND_LOGOS[key] ?? `https://logo.clearbit.com/${key}`
+  const candidates = resolveBrandLogoCandidates(description)
+  return candidates[0] ?? null
 }

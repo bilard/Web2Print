@@ -76,6 +76,107 @@ async function fetchJinaMarkdown(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * Récupère le HTML brut via Jina (X-Return-Format: html). Utilisé en fallback
+ * quand le markdown Jina filtre les images (Brico Dépôt, etc.) — le HTML conserve
+ * les balises <img> et meta tags qui contiennent l'URL produit.
+ */
+async function fetchJinaHtml(url: string): Promise<string | null> {
+  const jinaKey = getApiKey('jina')
+  const headers: Record<string, string> = {
+    Accept: 'text/html',
+    'X-Return-Format': 'html',
+  }
+  if (jinaKey) headers['Authorization'] = `Bearer ${jinaKey}`
+
+  try {
+    const res = await fetch(`https://r.jina.ai/${url}`, { headers })
+    if (!res.ok) {
+      console.warn(`[scrapeProductForDesign] Jina HTML ${res.status}`)
+      return null
+    }
+    return await res.text()
+  } catch (err) {
+    console.warn('[scrapeProductForDesign] Jina HTML fetch failed', err)
+    return null
+  }
+}
+
+/**
+ * Extrait l'URL d'image produit depuis le HTML brut, par ordre de fiabilité :
+ *  1. <img itemprop="image"> — microdata schema.org Product
+ *  2. <meta property="og:image"> — Open Graph
+ *  3. JSON-LD "image" — JSON structuré schema.org
+ *  4. Première <img> avec URL "produit-like" (.jpg/.png/.webp, hors logos/banners)
+ *
+ * Retourne null si aucun candidat plausible. Aucun matching vendor-spécifique.
+ */
+export function extractImageFromHtml(html: string): string | null {
+  // 1. Schema.org microdata
+  const microdataMatch = html.match(/<img[^>]+itemprop=["']image["'][^>]*\bsrc=["']([^"']+)["']/i)
+                       || html.match(/<img[^>]+\bsrc=["']([^"']+)["'][^>]+itemprop=["']image["']/i)
+  if (microdataMatch && isLikelyProductImage(microdataMatch[1])) {
+    return cleanImageUrl(microdataMatch[1])
+  }
+
+  // 2. Open Graph
+  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+  if (ogMatch && isLikelyProductImage(ogMatch[1])) {
+    return cleanImageUrl(ogMatch[1])
+  }
+
+  // 3. JSON-LD "image" (peut être une string ou un array de strings)
+  const jsonLdMatch = html.match(/"image"\s*:\s*"([^"]+)"/)
+                    || html.match(/"image"\s*:\s*\[\s*"([^"]+)"/)
+  if (jsonLdMatch && isLikelyProductImage(jsonLdMatch[1])) {
+    return cleanImageUrl(jsonLdMatch[1])
+  }
+
+  // 4. Heuristique : première <img> avec extension image et URL "longue"
+  // (filtre logos courts et trackers).
+  const imgRe = /<img[^>]+\bsrc=["']([^"']+\.(?:jpg|jpeg|png|webp)(?:\?[^"']*)?)["']/gi
+  let m: RegExpExecArray | null
+  while ((m = imgRe.exec(html)) !== null) {
+    if (isLikelyProductImage(m[1])) {
+      return cleanImageUrl(m[1])
+    }
+  }
+
+  return null
+}
+
+/**
+ * Filtre les URLs qui ressemblent à des logos, trackers, banners, icons.
+ * Heuristique générique sans liste de marques.
+ */
+export function isLikelyProductImage(url: string): boolean {
+  if (!url || !url.startsWith('http')) return false
+  const lower = url.toLowerCase()
+  // Exclure logos, favicons, bannières, trackers, badges, illustrations annexes.
+  // Couvre EN + FR : "banner"/"bandeau"/"bannière", "logo"/"didomi", etc.
+  const exclusionPatterns = [
+    'logo', 'favicon', 'sprite', 'pixel', 'tracker', 'analytics',
+    'didomi', 'cookies', 'banner', 'bandeau', 'banniere', 'bannière',
+    'placeholder', '.svg', 'arrivages',
+  ]
+  if (exclusionPatterns.some((p) => lower.includes(p))) return false
+  // Exclure les URLs avec dimensions petites (icônes 16x16 → 100x100)
+  if (lower.match(/\b(100x100|50x50|32x32|16x16|24x24|74x74)\b/)) return false
+  // Exclure les fichiers trop petits identifiables par taille typique de logo (≤120px)
+  if (lower.match(/\b(\d{2,3})x(\d{2,3})\b/)) {
+    const [, w, h] = lower.match(/\b(\d{2,3})x(\d{2,3})\b/)!
+    if (parseInt(w, 10) <= 120 && parseInt(h, 10) <= 120) return false
+  }
+  return true
+}
+
+function cleanImageUrl(url: string): string {
+  // Garde les query strings (souvent des cache busters utiles)
+  // mais trim espaces accidentels.
+  return url.trim()
+}
+
 const EXTRACTION_PROMPT = `Tu es un extracteur strict de données produit e-commerce. À partir du markdown scrapé d'une page produit, extrait UNIQUEMENT les valeurs réellement présentes dans le texte fourni.
 
 RÈGLES ABSOLUES :
@@ -191,6 +292,44 @@ function extractTitleFromMarkdown(markdown: string): string | null {
   return null
 }
 
+/**
+ * Fallback regex pour le prix. Couvre les principaux formats français :
+ *  - "699€00" (Brico Dépôt)
+ *  - "699,00 €" / "699,00€" (Jardiland, Castorama, Leroy Merlin)
+ *  - "1 299,99 €" (chiffres avec espace)
+ * Cherche la PREMIÈRE occurrence (la plus proche du titre dans le markdown).
+ */
+function extractPriceFromMarkdown(markdown: string): string | null {
+  // Format Brico Dépôt : 699€00
+  const m1 = markdown.match(/\b(\d{1,4})€(\d{2})\b/)
+  if (m1) return `${m1[1]}€${m1[2]}`
+  // Format standard : 699,00 € ou 699,00€ ou 1 299,99 €
+  const m2 = markdown.match(/\b(\d{1,3}(?:[\s ]\d{3})*),(\d{2})\s*€/)
+  if (m2) return `${m2[1]},${m2[2]} €`
+  // Format simple : 699 € (sans cents)
+  const m3 = markdown.match(/\b(\d{2,5})\s*€\b/)
+  if (m3) return `${m3[1]} €`
+  return null
+}
+
+/**
+ * Fallback regex pour features. Beaucoup de pages e-commerce listent les
+ * caractéristiques sans bullet markdown. On extrait les lignes courtes (< 200
+ * chars) après les sections typiques. Heuristique générique sans vendor-spécifique.
+ */
+function extractFeaturesFromMarkdown(markdown: string): string[] {
+  const sectionRe = /(?:^|\n)\s*(?:Description|Caractéristiques|Points forts|Spécifications|Points-clés|Points cl[ée]s)\s*:?\s*\n+([\s\S]+?)(?:\n\n[A-Z][^\n]{0,40}\n|$)/i
+  const m = markdown.match(sectionRe)
+  if (!m) return []
+  const block = m[1]
+  return block
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && l.length < 200)
+    .filter((l) => !l.startsWith('*') && !l.match(/^\(\d/) && !l.match(/^https?:\/\//))
+    .slice(0, 6)
+}
+
 export async function scrapeProductForDesign(url: string): Promise<ScrapedProductData | null> {
   if (!isValidUrl(url)) {
     console.warn('[scrapeProductForDesign] Invalid URL format:', url)
@@ -210,27 +349,86 @@ export async function scrapeProductForDesign(url: string): Promise<ScrapedProduc
 
   // Fallback regex pour les champs critiques si Claude a manqué
   const finalTitle = extracted?.title?.trim() || extractTitleFromMarkdown(markdown) || ''
-  const finalImageUrl = extracted?.imageUrl?.trim() || extractFirstImageUrlFromMarkdown(markdown) || undefined
 
-  if (!finalTitle || !finalImageUrl) {
-    console.warn('[scrapeProductForDesign] Missing required fields after fallback (title or imageUrl)', {
+  // Image URL : pipeline avec VALIDATION à chaque étape.
+  // Claude peut halluciner des URLs (logos cookie banners, assets génériques) —
+  // on ne lui fait pas confiance aveuglément, on filtre via isLikelyProductImage.
+  let finalImageUrl: string | undefined
+  let finalImageSource: 'claude' | 'markdown-regex' | 'html-fallback' | 'none' = 'none'
+  const claudeImg = extracted?.imageUrl?.trim()
+  if (claudeImg && isLikelyProductImage(claudeImg)) {
+    finalImageUrl = claudeImg
+    finalImageSource = 'claude'
+    console.log('[scrapeProductForDesign] Image source: Claude extraction →', claudeImg)
+  } else if (claudeImg) {
+    console.warn('[scrapeProductForDesign] Claude returned suspicious imageUrl, rejected:', claudeImg)
+  }
+
+  if (!finalImageUrl) {
+    const regexImg = extractFirstImageUrlFromMarkdown(markdown)
+    if (regexImg && isLikelyProductImage(regexImg)) {
+      finalImageUrl = regexImg
+      finalImageSource = 'markdown-regex'
+      console.log('[scrapeProductForDesign] Image source: markdown regex →', regexImg)
+    } else if (regexImg) {
+      console.warn('[scrapeProductForDesign] Markdown regex returned suspicious imageUrl, rejected:', regexImg)
+    }
+  }
+
+  // Fallback HTML : Jina filtre parfois les images du markdown (Brico Dépôt).
+  // Le HTML brut contient encore les <img itemprop="image">, og:image, JSON-LD.
+  if (!finalImageUrl) {
+    console.log('[scrapeProductForDesign] No image in markdown, trying HTML fallback')
+    const html = await fetchJinaHtml(url)
+    if (html) {
+      const fromHtml = extractImageFromHtml(html)
+      if (fromHtml && isLikelyProductImage(fromHtml)) {
+        finalImageUrl = fromHtml
+        finalImageSource = 'html-fallback'
+        console.log('[scrapeProductForDesign] Image source: HTML fallback →', fromHtml)
+      } else if (fromHtml) {
+        console.warn('[scrapeProductForDesign] HTML fallback returned suspicious imageUrl, rejected:', fromHtml)
+      }
+    }
+  }
+
+  // Garde-fou final : si une URL fautive a fuité (regex bug, branche manquante,
+  // etc.), on la bloque ici. Mieux vaut undefined que "logo géant à la place
+  // de la photo produit".
+  if (finalImageUrl && !isLikelyProductImage(finalImageUrl)) {
+    console.error('[scrapeProductForDesign] FINAL imageUrl failed isLikelyProductImage check, dropping:', finalImageUrl)
+    finalImageUrl = undefined
+    finalImageSource = 'none'
+  }
+  console.log('[scrapeProductForDesign] resolved imageUrl:', { source: finalImageSource, url: finalImageUrl ?? '(none)' })
+
+  // Le titre est le seul champ vraiment indispensable. Sans titre, on ne peut
+  // rien composer. Sans imageUrl, compose-direct peut quand même rendre le
+  // design avec un placeholder image (price/features/avis sont alors visibles).
+  if (!finalTitle) {
+    console.warn('[scrapeProductForDesign] Missing required field: title', {
       claudeTitle: extracted?.title,
       regexTitle: extractTitleFromMarkdown(markdown),
-      claudeImage: extracted?.imageUrl,
-      regexImage: extractFirstImageUrlFromMarkdown(markdown),
     })
     return null
   }
 
   const brandDomain = extractBrandDomain(url)
 
+  // Fallbacks regex pour prix et features si Claude extraction a manqué.
+  // En production opus-4-7 peut renvoyer null sur certains formats non
+  // standards (Brico Dépôt 699€00) ou être quota-limited.
+  const finalPrice = extracted?.price?.trim() || extractPriceFromMarkdown(markdown) || undefined
+  const claudeFeatures = normalizeFeatures(extracted?.features)
+  const finalFeatures = claudeFeatures.length > 0 ? claudeFeatures : extractFeaturesFromMarkdown(markdown)
+
   const result: ScrapedProductData = {
     title: finalTitle,
     brand: extracted?.brand?.trim() || '',
     brandDomain,
-    price: extracted?.price?.trim() || undefined,
+    price: finalPrice,
     oldPrice: extracted?.oldPrice?.trim() || undefined,
-    features: normalizeFeatures(extracted?.features),
+    features: finalFeatures,
     imageUrl: finalImageUrl,
     rating: extracted?.rating?.trim() || undefined,
     reviewCount: extracted?.reviewCount?.trim() || undefined,
@@ -242,7 +440,12 @@ export async function scrapeProductForDesign(url: string): Promise<ScrapedProduc
     brand: result.brand,
     brandDomain: result.brandDomain,
     price: result.price,
+    priceSource: extracted?.price ? 'claude' : (finalPrice ? 'regex' : 'none'),
+    oldPrice: result.oldPrice,
+    rating: result.rating,
+    reviewCount: result.reviewCount,
     features: result.features.length,
+    featuresSource: claudeFeatures.length > 0 ? 'claude' : (finalFeatures.length > 0 ? 'regex' : 'none'),
     imageUrl: result.imageUrl ? result.imageUrl.slice(0, 80) + '…' : '(none)',
   })
 
