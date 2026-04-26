@@ -45,6 +45,31 @@ const INITIAL_STATE: State = {
   nanobananaRef: null,
 }
 
+/**
+ * Construit un brief visuel pour Nano Banana 2 SANS strings prix/marque/avis.
+ * Critique : NB2 a tendance à rendre tout texte qui apparaît dans son prompt,
+ * même avec l'instruction "do NOT spell anything in the image". On retire donc
+ * agressivement les strings de données (prix, ratings, unités, chiffres) et on
+ * ne garde que la catégorie produit comme indice visuel. Toutes les valeurs
+ * scrapées seront posées en overlays par composeDesignFromScrapedData.
+ */
+function buildVisualBriefForNB2(userPrompt: string, scraped: ScrapedProductData | null): string {
+  if (!scraped) return userPrompt
+  const productCategory = scraped.title
+    ? scraped.title
+        .replace(/\d+[\d,.\s€$£%]*/g, '')          // retire prix et chiffres
+        .replace(/\b(watt|w|kg|cm|mm|ml|l|kw|hp)\b/gi, '') // retire unités
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(/[-,–]/)[0]                          // garde la première partie avant tiret/virgule
+        .trim()
+    : ''
+  const visualHints = productCategory
+    ? `Sujet visuel : ${productCategory}. NE PAS écrire ce nom dans l'image — juste représenter visuellement le produit.`
+    : ''
+  return [userPrompt, visualHints].filter(Boolean).join('\n\n')
+}
+
 function resolveFormatDpi(req: DesignRequest, canvasWidth: number, canvasHeight: number, storeDpi: number): number {
   if (req.formatId === 'custom') return storeDpi
   const f = getFormatById(req.formatId)
@@ -176,21 +201,17 @@ export function useGenerateDesign() {
         }
       }
 
-      // ─── Phase 1 : génération Nano Banana (flyer COMPLET, pas un fond) ──────
-      // NB2 produit le design entier — logo, titre, photo produit, features,
-      // prix, CTA — directement rendu dans l'image. On lui passe les données
-      // scrapées EXACTES pour qu'il rende les vraies valeurs au lieu d'halluciner.
-      // L'image produit (URL) est attachée comme reference visuelle pour
-      // préserver la ressemblance exacte du produit (couleur, forme, branding).
+      // ─── Phase 1 : génération Nano Banana (fond visuel sans texte) ──────────
+      // Brief visuel "propre" sans strings prix/marque/avis pour éviter que NB2
+      // les rende dans l'image malgré la consigne "ZERO TEXT" du prompt.
+      const visualBrief = buildVisualBriefForNB2(req.prompt, scrapedProductData)
       const nanobananaResult = await generateNanoBananaRef({
-        userPrompt: req.prompt,
+        userPrompt: visualBrief,
         widthMm,
         heightMm,
         style: req.style as DesignStyle,
         dpi,
         palette: req.palette,
-        scrapedData: scrapedProductData ?? undefined,
-        productImageUrl,
       }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) }))
 
       let dataUri: string | null = null
