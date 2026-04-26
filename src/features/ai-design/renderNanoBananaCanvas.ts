@@ -523,22 +523,19 @@ export async function renderNanoBananaTemplate(
   addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
 
   // 5. Image slots — pivot 2+3 specific:
-  //    - le NB2 montre déjà le produit dans son contexte → pas besoin de crop NB2 pour productPhoto
-  //    - si productImageUrl absente, on skip carrément le slot productPhoto (laisse le NB2 visible)
-  //    - le logo passe par sa cascade Clearbit/Google/KNOWN (n'utilise pas le crop NB2)
-  const productImageUrl = scrapedData.imageUrl && isLikelyProductImage(scrapedData.imageUrl)
-    ? scrapedData.imageUrl
-    : undefined
-  const slotsToRender = productImageUrl
-    ? analysis.imageSlots
-    : analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
+  //    - Le NB2 montre DÉJÀ le produit dans son contexte (lifestyle photo).
+  //      Poser une 2e image produit par-dessus = redondance + chevauchement
+  //      visuel. On skip TOUJOURS le slot productPhoto, peu importe l'URL.
+  //    - Le logo reste, géré par sa cascade Clearbit/Google/KNOWN.
+  //    - On passe null en sourceDataUri pour empêcher tout crop NB2 résiduel.
+  const slotsToRender = analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
   await addEditableImageSlots(
     canvas,
     slotsToRender,
     canvasWidth,
     canvasHeight,
-    null,  // PAS de NB2 dataUri en pivot 2+3 : le NB2 est le visuel, on ne le crop jamais
-    productImageUrl,
+    null,
+    undefined,
     scrapedData.brandDomain,
   )
 }

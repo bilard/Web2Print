@@ -98,7 +98,14 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   })
 
   // ─── 5. Features (bullets verts à gauche) ────────────────────────────────
-  const features = data.features.slice(0, 5)
+  // Defensive layer : même si normalizeFeatures (scrapeProductForDesign.ts)
+  // est censé filtrer les parasites, on re-filtre ici au cas où des features
+  // hallucinées par Claude (markdown headings, UI labels avis/filtres, etc.)
+  // bypassent la couche scraping.
+  const PARASITE_RE = /^#+\s|^★+|\bAvis\s+clients?\b|\bAucun(?:e)?\s+(?:valeur|avis|note)\b|\bNote\s+moyenne\b|\bFiltrer\s+par\b|\b[Éé]valuation\b|^\s*\d+\s*$|^(?:Caractéristiques?|Description|Spécifications?|Détails)\s*:?\s*$/i
+  const features = data.features
+    .filter((f) => f && f.trim().length > 0 && !PARASITE_RE.test(f.trim()))
+    .slice(0, 5)
   features.forEach((feat, i) => {
     const y = 35 + i * 5.5
 
