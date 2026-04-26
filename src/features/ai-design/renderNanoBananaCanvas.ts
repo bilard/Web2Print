@@ -1,4 +1,4 @@
-import { Canvas, Rect, Circle, Ellipse, Path, Textbox, Image as FabricImage, Gradient } from 'fabric'
+import { Canvas, Rect, Circle, Ellipse, Path, Textbox, Image as FabricImage, Gradient, Shadow } from 'fabric'
 import type { FabricObject } from 'fabric'
 import type {
   Bbox,
@@ -216,6 +216,12 @@ export function addEditableTextOverlays(
       selectable: true,
       editable: true,
       padding: 2,
+      shadow: new Shadow({
+        color: t.color && /^#?(?:f[a-f0-9]|e[a-f0-9])/i.test(t.color) ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.85)',
+        blur: 4,
+        offsetX: 0,
+        offsetY: 0,
+      }),
     })
     tb.data = { id: t.id, editableText: true }
 
@@ -516,16 +522,22 @@ export async function renderNanoBananaTemplate(
   // 4. Textes éditables
   addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
 
-  // 5. Image slots (logo + photo produit, avec fallback NB2 crop si manque)
+  // 5. Image slots — pivot 2+3 specific:
+  //    - le NB2 montre déjà le produit dans son contexte → pas besoin de crop NB2 pour productPhoto
+  //    - si productImageUrl absente, on skip carrément le slot productPhoto (laisse le NB2 visible)
+  //    - le logo passe par sa cascade Clearbit/Google/KNOWN (n'utilise pas le crop NB2)
   const productImageUrl = scrapedData.imageUrl && isLikelyProductImage(scrapedData.imageUrl)
     ? scrapedData.imageUrl
     : undefined
+  const slotsToRender = productImageUrl
+    ? analysis.imageSlots
+    : analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
   await addEditableImageSlots(
     canvas,
-    analysis.imageSlots,
+    slotsToRender,
     canvasWidth,
     canvasHeight,
-    nanoBananaDataUri,
+    null,  // PAS de NB2 dataUri en pivot 2+3 : le NB2 est le visuel, on ne le crop jamais
     productImageUrl,
     scrapedData.brandDomain,
   )

@@ -257,12 +257,29 @@ async function extractWithClaude(markdown: string): Promise<RawExtraction | null
   }
 }
 
+const FEATURE_BLACKLIST_PATTERNS: RegExp[] = [
+  /^#+\s/,                                      // markdown headings
+  /^★+/,                                        // strings starting with stars only
+  /\bAvis\s+clients?\b/i,                       // "Avis client" / "Avis clients"
+  /\bAucun(?:e)?\s+(?:valeur|avis|note)\b/i,    // "Aucune valeur de notation", "Aucun avis"
+  /\bNote\s+moyenne\b/i,                        // "Note moyenne"
+  /\bFiltrer\s+par\b/i,                         // "Filtrer par Note"
+  /\b[Éé]valuation\b/i,                         // "Évaluation"
+  /^\s*\d+\s*$/,                                // lines that are JUST numbers
+  /^(?:Caractéristiques?|Description|Spécifications?|Détails)\s*:?\s*$/i,  // section labels alone
+]
+
+function isParasiticFeature(s: string): boolean {
+  return FEATURE_BLACKLIST_PATTERNS.some((re) => re.test(s))
+}
+
 function normalizeFeatures(raw: unknown): string[] {
   if (!Array.isArray(raw)) return []
   return raw
     .filter((v): v is string => typeof v === 'string')
     .map((s) => s.trim())
     .filter((s) => s.length > 0 && s.length < 200)
+    .filter((s) => !isParasiticFeature(s))
     .slice(0, 6)
 }
 
