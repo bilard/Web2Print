@@ -155,10 +155,15 @@ export function isLikelyProductImage(url: string): boolean {
   const lower = url.toLowerCase()
   // Exclure logos, favicons, bannières, trackers, badges, illustrations annexes.
   // Couvre EN + FR : "banner"/"bandeau"/"bannière", "logo"/"didomi", etc.
+  // Exclure aussi les visualisations techniques (schema 3D, RTK/laser annotations,
+  // exploded view) qui ne sont pas la "hero shot" du produit.
   const exclusionPatterns = [
     'logo', 'favicon', 'sprite', 'pixel', 'tracker', 'analytics',
     'didomi', 'cookies', 'banner', 'bandeau', 'banniere', 'bannière',
     'placeholder', '.svg', 'arrivages',
+    'slider', '_slider_', 'promo_', 'promotion',  // sliders promo home page
+    'schema', 'diagram', 'exploded', 'annotation', 'feature_',
+    'hero_banner', 'cover_',
   ]
   if (exclusionPatterns.some((p) => lower.includes(p))) return false
   // Exclure les URLs avec dimensions petites (icônes 16x16 → 100x100)
@@ -197,7 +202,13 @@ Champs à extraire :
 
 - features : 3-6 caractéristiques courtes extraites de la section "Points forts" / "Caractéristiques" / "Description". Recopie textuellement les bullets. Pas de paraphrasage marketing.
 
-- imageUrl : la PREMIÈRE URL d'image produit dans le markdown (format markdown ![alt](url)). Vérifie que l'URL commence par https:// et pointe vers un CDN d'image (jpg/png/webp). Si la page contient plusieurs images du même produit, prends la PREMIÈRE listée.
+- imageUrl : la PREMIÈRE image de la GALERIE PRODUIT — c'est-à-dire la "hero shot" packshot du produit isolé sur fond uniforme (souvent blanc) située directement à côté du titre/prix. Format markdown ![alt](url), https:// vers un CDN d'image (jpg/png/webp).
+  ⚠️ NE PAS prendre :
+    • un slider promo de la home page (URLs contenant "slider", "promo", "banner", "bandeau", "arrivages")
+    • un diagramme/schéma technique avec annotations textuelles (RTK, STONE, STEP, vues 3D explosées, dessins de fonctions)
+    • une vue lifestyle / scène d'ambiance (le produit dans un jardin avec mobilier)
+    • une miniature ou icon (<200px de côté)
+  Cherche la PHOTOGRAPHIE PRODUIT EN PACKSHOT : produit centré, fond neutre, sans annotation, idéalement en orientation portrait ou carrée. Si plusieurs images de galerie produit, prends la PREMIÈRE (vue principale, généralement de 3/4 face).
 
 - rating : note moyenne du produit, format "X.X" ou "X.XX". Cherche un pattern "X.X/5", "X.XX/5", ou phrase type "Note moyenne". Recopie le chiffre tel quel. ATTENTION : ne confonds pas avec une note d'un avis individuel ("5/5" d'un client unique) ; cherche la moyenne globale. null si absente.
 

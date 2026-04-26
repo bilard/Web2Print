@@ -164,8 +164,8 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     texts.push({
       id: 'features_heading',
       text: 'AVANTAGES',
-      bbox: { x: 5, y: 35, w: 50, h: 3 },
-      fontSizePct: 1.4,
+      bbox: { x: 5, y: 35, w: 50, h: 4 },
+      fontSizePct: 2,
       fontFamily: 'Inter',
       color: PALETTE.accent,
       bold: true,
@@ -178,14 +178,14 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   }
 
   features.forEach((feat, i) => {
-    const y = 39 + i * 5.5  // shifted from 35 to 39 to leave room for AVANTAGES heading
+    const y = 40 + i * 7  // step augmenté à 7 (vs 5.5) pour donner de l'air aux features plus grandes
 
     // Texte feature (pastilles vertes remplacées par ✓ unicode)
     texts.push({
       id: `feature_${i}`,
       text: `✓ ${feat}`,
-      bbox: { x: 5, y: y, w: 50, h: 4.5 },
-      fontSizePct: 1.6,
+      bbox: { x: 5, y: y, w: 50, h: 6 },
+      fontSizePct: 2.2,
       fontFamily: 'Inter',
       color: PALETTE.textDark,
       bold: false,
@@ -202,7 +202,7 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   // Base : si features rendues, démarre après bloc heading + features (+ marge).
   // Sinon démarre à y=39 (zone juste après le titre).
   let cursorY = features.length > 0
-    ? 39 + features.length * 5.5 + 4
+    ? 40 + features.length * 7 + 4
     : 39
 
   // ─── 6. Rating (étoiles + nb avis) — uniquement si data.rating ───────────
