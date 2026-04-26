@@ -153,20 +153,18 @@ export function extractImageFromHtml(html: string): string | null {
 export function isLikelyProductImage(url: string): boolean {
   if (!url || !url.startsWith('http')) return false
   const lower = url.toLowerCase()
-  // Exclure logos, favicons, bannières, trackers, badges, illustrations annexes.
-  // Couvre EN + FR : "banner"/"bandeau"/"bannière", "logo"/"didomi", etc.
-  // Exclure aussi les visualisations techniques (schema 3D, RTK/laser annotations,
-  // exploded view) qui ne sont pas la "hero shot" du produit.
+  // Exclure UNIQUEMENT ce qui ne peut JAMAIS être un packshot produit :
+  // logos, favicons, sprites UI, trackers, didomi cookies, bannières home page.
+  // On NE filtre PAS sur "rtk", "lifestyle", "scene" — ce sont des mots qui
+  // peuvent apparaître dans des noms d'images produit légitimes. Le pipeline
+  // d'extraction prend la 1re image du markdown / og:image, qui est par
+  // convention la hero shot — pas besoin de surfiltrer.
   const exclusionPatterns = [
     'logo', 'favicon', 'sprite', 'pixel', 'tracker', 'analytics',
-    'didomi', 'cookies', 'banner', 'bandeau', 'banniere', 'bannière',
-    'placeholder', '.svg', 'arrivages',
-    'slider', '_slider_', 'promo_', 'promotion',  // sliders promo home page
-    'schema', 'diagram', 'exploded', 'annotation', 'feature_',
-    'hero_banner', 'cover_',
-    // Visualisations techniques / scènes lifestyle (cas Sunseeker RTK, etc.)
-    '_rtk_', '-rtk-', '_lifestyle_', '-lifestyle-', '_scene_', '-scene-',
-    '_use_', '-use-', '_video_', '-video-',
+    'didomi', 'cookies',
+    'banner_home', 'bandeau_home', 'home_banner', 'header_banner',
+    'arrivages',
+    'placeholder', '.svg',
   ]
   if (exclusionPatterns.some((p) => lower.includes(p))) return false
   // Exclure les URLs avec dimensions petites (icônes 16x16 → 100x100)
@@ -387,20 +385,31 @@ export async function scrapeProductForDesign(url: string): Promise<ScrapedProduc
   // Fallback regex pour les champs critiques si Claude a manqué
   const finalTitle = extracted?.title?.trim() || extractTitleFromMarkdown(markdown) || ''
 
-  // Image URL : pipeline avec VALIDATION à chaque étape.
-  // Claude peut halluciner des URLs (logos cookie banners, assets génériques) —
-  // on ne lui fait pas confiance aveuglément, on filtre via isLikelyProductImage.
+  // Image URL : pipeline INVERSÉ — HTML structured EN PREMIER (og:image,
+  // microdata itemprop="image", JSON-LD). Sur les pages produit retail, ces
+  // sources pointent VRAIMENT vers le packshot hero (configuré explicitement
+  // par les CMS pour le partage social et le SEO).
+  // Claude extraction du markdown souffre du fait que Jina liste toutes les
+  // images de la page sans hiérarchie : Claude peut donc piocher dans des
+  // diagrammes RTK, vues lifestyle, ou thumbnails au lieu du packshot.
   let finalImageUrl: string | undefined
-  let finalImageSource: 'claude' | 'markdown-regex' | 'html-fallback' | 'none' = 'none'
-  const claudeImg = extracted?.imageUrl?.trim()
-  if (claudeImg && isLikelyProductImage(claudeImg)) {
-    finalImageUrl = claudeImg
-    finalImageSource = 'claude'
-    console.log('[scrapeProductForDesign] Image source: Claude extraction →', claudeImg)
-  } else if (claudeImg) {
-    console.warn('[scrapeProductForDesign] Claude returned suspicious imageUrl, rejected:', claudeImg)
+  let finalImageSource: 'html-structured' | 'markdown-regex' | 'claude' | 'none' = 'none'
+
+  // 1) HTML STRUCTURED — la source la plus fiable pour la hero shot.
+  console.log('[scrapeProductForDesign] Trying HTML structured (og:image / microdata) first')
+  const html = await fetchJinaHtml(url)
+  if (html) {
+    const fromHtml = extractImageFromHtml(html)
+    if (fromHtml && isLikelyProductImage(fromHtml)) {
+      finalImageUrl = fromHtml
+      finalImageSource = 'html-structured'
+      console.log('[scrapeProductForDesign] Image source: HTML structured →', fromHtml)
+    } else if (fromHtml) {
+      console.warn('[scrapeProductForDesign] HTML structured returned suspicious imageUrl, rejected:', fromHtml)
+    }
   }
 
+  // 2) Markdown regex — la 1re image listée dans le markdown qui passe filter.
   if (!finalImageUrl) {
     const regexImg = extractFirstImageUrlFromMarkdown(markdown)
     if (regexImg && isLikelyProductImage(regexImg)) {
@@ -412,26 +421,19 @@ export async function scrapeProductForDesign(url: string): Promise<ScrapedProduc
     }
   }
 
-  // Fallback HTML : Jina filtre parfois les images du markdown (Brico Dépôt).
-  // Le HTML brut contient encore les <img itemprop="image">, og:image, JSON-LD.
+  // 3) Claude extraction — dernier recours (peut halluciner ou prendre la mauvaise image).
   if (!finalImageUrl) {
-    console.log('[scrapeProductForDesign] No image in markdown, trying HTML fallback')
-    const html = await fetchJinaHtml(url)
-    if (html) {
-      const fromHtml = extractImageFromHtml(html)
-      if (fromHtml && isLikelyProductImage(fromHtml)) {
-        finalImageUrl = fromHtml
-        finalImageSource = 'html-fallback'
-        console.log('[scrapeProductForDesign] Image source: HTML fallback →', fromHtml)
-      } else if (fromHtml) {
-        console.warn('[scrapeProductForDesign] HTML fallback returned suspicious imageUrl, rejected:', fromHtml)
-      }
+    const claudeImg = extracted?.imageUrl?.trim()
+    if (claudeImg && isLikelyProductImage(claudeImg)) {
+      finalImageUrl = claudeImg
+      finalImageSource = 'claude'
+      console.log('[scrapeProductForDesign] Image source: Claude extraction →', claudeImg)
+    } else if (claudeImg) {
+      console.warn('[scrapeProductForDesign] Claude returned suspicious imageUrl, rejected:', claudeImg)
     }
   }
 
-  // Garde-fou final : si une URL fautive a fuité (regex bug, branche manquante,
-  // etc.), on la bloque ici. Mieux vaut undefined que "logo géant à la place
-  // de la photo produit".
+  // Garde-fou final : si une URL fautive a fuité, on la bloque.
   if (finalImageUrl && !isLikelyProductImage(finalImageUrl)) {
     console.error('[scrapeProductForDesign] FINAL imageUrl failed isLikelyProductImage check, dropping:', finalImageUrl)
     finalImageUrl = undefined
