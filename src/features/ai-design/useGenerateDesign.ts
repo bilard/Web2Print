@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { generateNanoBananaRef } from './generateNanoBananaRef'
 import { saveRefImageToGallery } from './saveRefImageToGallery'
-import { scrapeProductForDesign, detectUrlInPrompt, isLikelyProductImage } from './scrapeProductForDesign'
+import { scrapeProductForDesign, detectUrlInPrompt, isLikelyProductImage, type ScrapedProductData } from './scrapeProductForDesign'
 import { composeDesignFromScrapedData } from './composeDesignFromScrapedData'
 import {
   renderBackground,
@@ -43,6 +43,31 @@ const INITIAL_STATE: State = {
   failedStep: null,
   lastResult: null,
   nanobananaRef: null,
+}
+
+/**
+ * Construit un brief visuel pour Nano Banana 2 SANS strings prix/marque/avis.
+ * Critique : NB2 a tendance à rendre tout texte qui apparaît dans son prompt,
+ * même avec l'instruction "do NOT spell anything in the image". On retire donc
+ * agressivement les strings de données (prix, ratings, unités, chiffres) et on
+ * ne garde que la catégorie produit comme indice visuel. Toutes les valeurs
+ * scrapées seront posées en overlays par composeDesignFromScrapedData.
+ */
+function buildVisualBriefForNB2(userPrompt: string, scraped: ScrapedProductData | null): string {
+  if (!scraped) return userPrompt
+  const productCategory = scraped.title
+    ? scraped.title
+        .replace(/\d+[\d,.\s€$£%]*/g, '')          // retire prix et chiffres
+        .replace(/\b(watt|w|kg|cm|mm|ml|l|kw|hp)\b/gi, '') // retire unités
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(/[-,–]/)[0]                          // garde la première partie avant tiret/virgule
+        .trim()
+    : ''
+  const visualHints = productCategory
+    ? `Sujet visuel : ${productCategory}. NE PAS écrire ce nom dans l'image — juste représenter visuellement le produit.`
+    : ''
+  return [userPrompt, visualHints].filter(Boolean).join('\n\n')
 }
 
 function resolveFormatDpi(req: DesignRequest, canvasWidth: number, canvasHeight: number, storeDpi: number): number {
@@ -115,9 +140,21 @@ export function useGenerateDesign() {
         }
       }
 
+      // Guard upfront : le pipeline pivot 2+3 nécessite des données scrapées
+      // pour composer les overlays. Sans siteUrl ni productImageUrl, on refuse
+      // ici plutôt que de gaspiller un appel NB2 + sauver une orphan image en
+      // galerie + échouer plus tard avec un message générique.
+      if (!siteUrl && !productImageUrl) {
+        failAt(
+          'illustrating',
+          'Cette version nécessite une URL produit pour scraper les données. Ajoute une URL site.',
+          'Une URL produit est requise pour générer le design',
+        )
+        return
+      }
+
       // ─── Scraping produit : TOUJOURS si on a une siteUrl ─────────────────────
-      let scrapedProductData = null
-      let enrichedPrompt = req.prompt
+      let scrapedProductData: ScrapedProductData | null = null
 
       if (siteUrl) {
         setState((s) => ({ ...s, progress: 'Scraping données produit depuis la source…' }))
@@ -145,14 +182,6 @@ export function useGenerateDesign() {
               scraped: scrapedProductData.imageUrl ?? '(none)',
               final: productImageUrl ?? '(none)',
             })
-            const specs = [
-              scrapedProductData.price ? `Prix: ${scrapedProductData.price}` : null,
-              scrapedProductData.brand ? `Marque: ${scrapedProductData.brand}` : null,
-              scrapedProductData.features?.length ? `Caractéristiques: ${scrapedProductData.features.join(', ')}` : null,
-              scrapedProductData.rating ? `Avis: ${scrapedProductData.rating}/5 (${scrapedProductData.reviewCount} avis)` : null,
-            ].filter(Boolean).join(' | ')
-
-            enrichedPrompt = `${req.prompt}\n\nDONNÉES PRODUIT RÉELLES À INTÉGRER:\n${scrapedProductData.title}\n${specs}`
             console.log('[Claude Design] Scraping OK:', {
               title: scrapedProductData.title?.slice(0, 60),
               price: scrapedProductData.price,
@@ -173,8 +202,11 @@ export function useGenerateDesign() {
       }
 
       // ─── Phase 1 : génération Nano Banana (fond visuel sans texte) ──────────
+      // Brief visuel "propre" sans strings prix/marque/avis pour éviter que NB2
+      // les rende dans l'image malgré la consigne "ZERO TEXT" du prompt.
+      const visualBrief = buildVisualBriefForNB2(req.prompt, scrapedProductData)
       const nanobananaResult = await generateNanoBananaRef({
-        userPrompt: enrichedPrompt,
+        userPrompt: visualBrief,
         widthMm,
         heightMm,
         style: req.style as DesignStyle,
