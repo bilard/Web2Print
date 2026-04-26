@@ -12,35 +12,53 @@
 
 import { getApiKey } from '@/lib/apiKeys'
 
+export type TextRole =
+  | 'price'
+  | 'oldPrice'
+  | 'title'
+  | 'feature'
+  | 'rating'
+  | 'reviewCount'
+  | 'badge'
+  | 'cta'
+  | 'other'
+
 export interface TextElement {
   id: string
   text: string
   /** Position et taille en POURCENTAGES (0-100) du canvas */
   bbox: { x: number; y: number; w: number; h: number }
+  /** Rôle data : sert au routing override + détection retail */
+  role: TextRole
   /** Taille de police en % de la hauteur du canvas (ex: 6 = 6% de canvasHeight) */
   fontSizePct: number
-  /** Nom exact d'une famille Google Fonts (ex: "Montserrat", "Oswald", "Inter") */
+  /** Nom exact d'une famille Google Fonts */
   fontFamily: string
   /** Couleur du texte (hex) */
   color: string
-  /** Gras ou normal */
   bold: boolean
-  /** Italique */
   italic?: boolean
   /** Barré (pour les prix d'origine barrés) */
   strikethrough?: boolean
-  /** Alignement dans la bbox */
   align: 'left' | 'center' | 'right'
+  /** Couleur du fond local sous le texte (hex). Utilisée pour masquer le texte
+   *  NB2 sous-jacent quand on overlay un Textbox éditable par-dessus. */
+  backgroundColor: string
+  /** false si le fond local est un gradient/photo/dégradé. Dans ce cas, le
+   *  renderer fallback sur sample pixel client-side. */
+  backgroundIsUniform: boolean
 }
 
 export type ImageSlotRole = 'logo' | 'productPhoto' | 'badge' | 'other'
 
 export interface ImageSlot {
   id: string
-  /** Rôle du slot : permet d'injecter le bon asset scrapé */
   role: ImageSlotRole
   bbox: { x: number; y: number; w: number; h: number }
   description: string
+  /** Couleur du fond local sous le slot (hex). Voir TextElement.backgroundColor. */
+  backgroundColor: string
+  backgroundIsUniform: boolean
 }
 
 export interface BackgroundDef {
@@ -70,14 +88,38 @@ export interface DecorativeShape {
   opacity?: number
 }
 
+export type DesignMode = 'retail' | 'creative'
+
 export interface DesignAnalysis {
-  background: BackgroundDef
-  decorativeShapes: DecorativeShape[]
+  /** Décide quel renderer utiliser. retail = NB2 lockée + overlays. creative = reconstruction vectorielle complète (ancien pipeline + fallback compose-direct). */
+  mode: DesignMode
   texts: TextElement[]
   imageSlots: ImageSlot[]
+  /** Présent uniquement si mode='creative'. Optionnel sinon. */
+  background?: BackgroundDef
+  /** Présent uniquement si mode='creative'. Optionnel sinon. */
+  decorativeShapes?: DecorativeShape[]
 }
 
 const PROMPT = `Décompose cette image promotionnelle en éléments éditables (vectoriel + zones images).
+
+## ÉTAPE 0 — DÉCISION DE MODE
+
+Avant tout, décide si l'image est :
+- "retail" : produit avec prix + titre + photo produit clairement identifiables (flyer commerce, promo, carte produit)
+- "creative" : poster artistique, invitation, affiche événementielle, design typographique sans data produit explicite
+
+Retourne \`mode\` dans ta réponse JSON.
+
+## CONTRAT DE SORTIE
+
+Si mode = "retail" :
+  Retourne EXACTEMENT { mode, texts, imageSlots }. NE retourne PAS background NI decorativeShapes (ils ne sont pas utilisés).
+
+Si mode = "creative" :
+  Retourne EXACTEMENT { mode, background, decorativeShapes, texts, imageSlots }.
+
+Dans les deux cas, chaque texte/slot doit inclure \`backgroundColor\` (couleur du fond local hex) + \`backgroundIsUniform\` (true si fond local plat, false si gradient/photo/dégradé).
 
 RÈGLE PRIMAIRE: Ne vectorise que les formes géométriques simples. TOUTES les images, photos, logos, icônes complexes RESTENT comme zones images (imageSlots) — jamais vectorisées.
 
@@ -94,7 +136,7 @@ Les bboxes des imageSlots doivent englober UNIQUEMENT l'objet lui-même (le logo
 - JAMAIS inclure du fond coloré, du texte, ou des éléments adjacents dans la bbox d'un imageSlot
 - La bbox doit être le CONTOUR SERRÉ de l'objet visible, rien de plus
 
-Retourne un JSON avec exactement 4 clés : background, decorativeShapes, texts, imageSlots.
+Retourne un JSON selon le contrat de sortie défini dans ÉTAPE 0 ci-dessus.
 
 ## 1. background (objet)
 Fond global du canvas :
@@ -123,9 +165,23 @@ Chaque shape :
 ## 3. texts (tableau) — TRÈS IMPORTANT
 Chaque texte avec une taille/style cohérent = UN élément. Un texte multi-lignes de même taille = un seul élément.
 
+**RÈGLE TITRE — INVIOLABLE :**
+Le titre principal du produit (la grosse phrase headline en haut, ex: "Robot tondeuse V3PLUS 1000m² 20V 4Ah coupe 18 cm Wi-Fi Bluetooth") = **UN SEUL texte unique**, JAMAIS fragmenté. Même s'il s'étale sur 2-4 lignes visuelles dans l'image, c'est UN seul élément "text" avec la phrase complète et une bbox englobante. Le retour à la ligne sera géré par Fabric Textbox automatiquement via la "width" de la bbox. Ne crée JAMAIS plusieurs textes pour des morceaux d'un même titre.
+
+**RÈGLE COCHES/PUCES :**
+Les coches "✓" / "✔" / picto check à côté de chaque feature ne sont PAS des paths SVG. Ce sont :
+  - soit des "decorativeShape" de type "circle" (cercle de couleur)
+  - soit incluses dans le "text" de la feature elle-même (préfixe "✓ Surface de tonte..." ou caractère unicode dans le texte)
+  - JAMAIS un "path" avec pathData inventé (ça produit des triangles noirs aléatoires).
+Si tu vois un cercle de couleur (vert/orange) avec un ✓ blanc dedans : crée UN "decorativeShape" type=circle pour le rond, puis UN "text" avec "✓" à côté ou par-dessus. Pas de path.
+
 - id : snake_case (ex: "title", "price_euros", "price_cents", "cta")
 - text : contenu exact
 - bbox : {x, y, w, h} en % — délimite précisément la zone où le texte s'affiche
+- role : "price" | "oldPrice" | "title" | "feature" | "rating" | "reviewCount" | "badge" | "cta" | "other"
+  Choisis le rôle qui correspond le mieux. "title" pour le headline produit. "price" pour le prix gros chiffres. "oldPrice" pour le prix barré. "feature" pour les bullets. "rating" pour la note "4.3" ou "4.3/5". "reviewCount" pour "127 avis". "badge" pour "OFFRE EXCLUSIVE", "PROMO", etc. "cta" pour "J'EN PROFITE", "ACHETER", etc. "other" sinon.
+- backgroundColor : couleur hex du fond local SOUS ce texte (échantillonne autour de la bbox, pas dedans).
+- backgroundIsUniform : true si fond local plat (couleur unie), false si gradient, photo, ou dégradé visible.
 - fontSizePct : taille de police en % de la hauteur du canvas, grille indicative :
   • Titre principal (headline) : 4-6
   • Sous-titre : 2.5-3.5
@@ -187,6 +243,8 @@ Chaque slot :
 - role : "logo" | "productPhoto" | "badge" | "other"
 - bbox : {x, y, w, h} en % — ATTENTION à la précision
 - description : ex: "photo RYOBI tondeuse jaune-noir", "logo Jardiland orange"
+- backgroundColor : couleur hex du fond local AUTOUR de l'imageSlot (pas dans la bbox).
+- backgroundIsUniform : true si fond local plat, false sinon.
 
 ## Règles finales
 - Réponds UNIQUEMENT en JSON, sans markdown ni narration
@@ -231,19 +289,44 @@ export async function analyzeDesignForEdit(imageBase64: string): Promise<DesignA
   clean = clean.slice(start, end + 1)
 
   const parsed = JSON.parse(clean) as Partial<DesignAnalysis>
+
+  // Mode obligatoire — défaut retail si absent (backward compat)
+  const mode: DesignMode = parsed.mode === 'creative' ? 'creative' : 'retail'
+
+  // Normalise texts : role défaut 'other', backgroundColor défaut '#ffffff', backgroundIsUniform défaut true
+  const texts: TextElement[] = (Array.isArray(parsed.texts) ? parsed.texts : []).map((t) => ({
+    ...t,
+    role: t.role ?? 'other',
+    backgroundColor: t.backgroundColor ?? '#ffffff',
+    backgroundIsUniform: t.backgroundIsUniform ?? true,
+  })) as TextElement[]
+
+  const imageSlots: ImageSlot[] = (Array.isArray(parsed.imageSlots) ? parsed.imageSlots : []).map((s) => ({
+    ...s,
+    backgroundColor: s.backgroundColor ?? '#ffffff',
+    backgroundIsUniform: s.backgroundIsUniform ?? true,
+  })) as ImageSlot[]
+
   const result: DesignAnalysis = {
-    background: parsed.background ?? { type: 'solid', color: '#ffffff' },
-    decorativeShapes: Array.isArray(parsed.decorativeShapes) ? parsed.decorativeShapes : [],
-    texts: Array.isArray(parsed.texts) ? parsed.texts : [],
-    imageSlots: Array.isArray(parsed.imageSlots) ? parsed.imageSlots : [],
+    mode,
+    texts,
+    imageSlots,
+  }
+
+  if (mode === 'creative') {
+    result.background = parsed.background
+    result.decorativeShapes = Array.isArray(parsed.decorativeShapes) ? parsed.decorativeShapes : []
   }
 
   console.log('[analyzeDesignForEdit] Analysis complete:', {
+    mode: result.mode,
     background: result.background,
-    shapes: result.decorativeShapes.length,
+    shapes: result.decorativeShapes?.length ?? 0,
     texts: result.texts.length,
     imageSlots: result.imageSlots.length,
     imageSlotDetails: result.imageSlots.map(s => ({ id: s.id, role: s.role, bbox: s.bbox })),
+    textIds: result.texts.map(t => ({ id: t.id, role: t.role, text: t.text.slice(0, 40), bbox: t.bbox })),
+    pathShapes: result.decorativeShapes?.filter(s => s.type === 'path').map(s => ({ id: s.id, fill: s.fill, bbox: s.bbox, pathData: s.pathData?.slice(0, 60) })) ?? [],
   })
 
   return result

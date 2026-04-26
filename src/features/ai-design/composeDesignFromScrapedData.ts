@@ -43,6 +43,8 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     role: 'logo',
     bbox: { x: 5, y: 3, w: 22, h: 7 },
     description: data.brandDomain || data.brand || '',
+    backgroundColor: PALETTE.bg,
+    backgroundIsUniform: true,
   })
 
   // ─── 2. Badge "OFFRE EXCLUSIVE" (vert, à droite du logo) ────────────────
@@ -63,6 +65,9 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     bold: true,
     italic: false,
     align: 'center',
+    role: 'badge',
+    backgroundColor: PALETTE.accent,
+    backgroundIsUniform: true,
   })
 
   // ─── 3. Titre produit (multi-ligne) ──────────────────────────────────────
@@ -77,6 +82,9 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     bold: true,
     italic: false,
     align: 'left',
+    role: 'title',
+    backgroundColor: PALETTE.bg,
+    backgroundIsUniform: true,
   })
 
   // ─── 4. Photo produit (right side, héro) ─────────────────────────────────
@@ -85,6 +93,8 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     role: 'productPhoto',
     bbox: { x: 58, y: 14, w: 38, h: 50 },
     description: data.title,
+    backgroundColor: PALETTE.bg,
+    backgroundIsUniform: true,
   })
 
   // ─── 5. Features (bullets verts à gauche) ────────────────────────────────
@@ -111,47 +121,57 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
       bold: false,
       italic: false,
       align: 'left',
+      role: 'feature',
+      backgroundColor: PALETTE.bg,
+      backgroundIsUniform: true,
     })
   })
 
-  // ─── 6. Rating (étoiles + nb avis) ───────────────────────────────────────
-  const ratingY = 35 + features.length * 5.5 + 4
+  // Curseur Y qui n'avance que si on rend réellement du contenu — évite les
+  // gros vides sur produits sans rating ni oldPrice (typique Brico Dépôt).
+  let cursorY = 35 + features.length * 5.5 + 4
 
+  // ─── 6. Rating (étoiles + nb avis) — uniquement si data.rating ───────────
   if (data.rating) {
     texts.push({
       id: 'rating_stars',
       text: '★★★★★',
-      bbox: { x: 5, y: ratingY, w: 16, h: 4 },
+      bbox: { x: 5, y: cursorY, w: 16, h: 4 },
       fontSizePct: 2.6,
       fontFamily: 'Inter',
       color: PALETTE.textDark,
       bold: false,
       italic: false,
       align: 'left',
+      role: 'rating',
+      backgroundColor: PALETTE.bg,
+      backgroundIsUniform: true,
     })
 
     const reviewSuffix = data.reviewCount ? ` · ${data.reviewCount} AVIS CLIENTS` : ''
     texts.push({
       id: 'rating_text',
       text: `${data.rating}${reviewSuffix}`,
-      bbox: { x: 5, y: ratingY + 4, w: 50, h: 3 },
+      bbox: { x: 5, y: cursorY + 4, w: 50, h: 3 },
       fontSizePct: 1.4,
       fontFamily: 'Inter',
       color: PALETTE.textDark,
       bold: true,
       italic: false,
       align: 'left',
+      role: 'rating',
+      backgroundColor: PALETTE.bg,
+      backgroundIsUniform: true,
     })
+    cursorY += 9 // hauteur étoiles (4) + texte (3) + marge (2)
   }
 
-  // ─── 7. Prix barré (petit, sous le rating) ───────────────────────────────
-  const priceY = ratingY + 9
-
+  // ─── 7. Prix barré (petit) — uniquement si data.oldPrice ─────────────────
   if (data.oldPrice) {
     texts.push({
       id: 'price_old',
       text: `Ancien prix ${data.oldPrice}`,
-      bbox: { x: 5, y: priceY, w: 30, h: 3 },
+      bbox: { x: 5, y: cursorY, w: 30, h: 3 },
       fontSizePct: 1.3,
       fontFamily: 'Inter',
       color: PALETTE.textMuted,
@@ -159,7 +179,11 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
       italic: false,
       strikethrough: true,
       align: 'left',
+      role: 'oldPrice',
+      backgroundColor: PALETTE.bg,
+      backgroundIsUniform: true,
     })
+    cursorY += 3.5
   }
 
   // ─── 8. Prix actuel (gros, sur bloc noir) ────────────────────────────────
@@ -167,45 +191,53 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     decorativeShapes.push({
       id: 'price_block',
       type: 'rect',
-      bbox: { x: 5, y: priceY + 3.5, w: 30, h: 9 },
+      bbox: { x: 5, y: cursorY, w: 30, h: 9 },
       fill: PALETTE.priceBlock,
     })
     texts.push({
       id: 'price_current',
       text: data.price,
-      bbox: { x: 6, y: priceY + 5, w: 28, h: 6 },
+      bbox: { x: 6, y: cursorY + 1.5, w: 28, h: 6 },
       fontSizePct: 5,
       fontFamily: 'Inter',
       color: PALETTE.white,
       bold: true,
       italic: false,
       align: 'left',
+      role: 'price',
+      backgroundColor: PALETTE.priceBlock,
+      backgroundIsUniform: true,
     })
+    cursorY += 11
   }
 
-  // ─── 9. CTA "J'EN PROFITE" (pill verte, en bas) ──────────────────────────
+  // ─── 9. CTA "J'EN PROFITE" (pill verte) ──────────────────────────────────
   decorativeShapes.push({
     id: 'cta_bg',
     type: 'rect',
-    bbox: { x: 5, y: priceY + 14, w: 30, h: 6 },
+    bbox: { x: 5, y: cursorY, w: 30, h: 6 },
     rx: 50,
     fill: PALETTE.accent,
   })
   texts.push({
     id: 'cta_label',
     text: "J'EN PROFITE",
-    bbox: { x: 5, y: priceY + 15.5, w: 30, h: 3.5 },
+    bbox: { x: 5, y: cursorY + 1.5, w: 30, h: 3.5 },
     fontSizePct: 1.8,
     fontFamily: 'Inter',
     color: PALETTE.white,
     bold: true,
     italic: false,
     align: 'center',
+    role: 'cta',
+    backgroundColor: PALETTE.accent,
+    backgroundIsUniform: true,
   })
 
   const background: BackgroundDef = { type: 'solid', color: PALETTE.bg }
 
   return {
+    mode: 'creative',
     background,
     decorativeShapes,
     texts,
