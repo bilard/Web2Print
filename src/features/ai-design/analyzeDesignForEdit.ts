@@ -138,14 +138,14 @@ Les bboxes des imageSlots doivent englober UNIQUEMENT l'objet lui-même (le logo
 
 Retourne un JSON selon le contrat de sortie défini dans ÉTAPE 0 ci-dessus.
 
-## 1. background (objet)
+## 1. background (objet) — uniquement si mode='creative'
 Fond global du canvas :
 - type : "solid" | "linearGradient" | "radialGradient"
 - color : hex (pour solid)
 - stops : [{offset: 0-1, color: hex}] (pour gradients)
 - angle : degrés (pour linearGradient, 0=horizontal, 90=vertical)
 
-## 2. decorativeShapes (tableau, ordre = z-order, premier = derrière)
+## 2. decorativeShapes (tableau, ordre = z-order, premier = derrière) — uniquement si mode='creative'
 Éléments visuels NON-photo et NON-texte :
 - bandeaux colorés, boîtes de fond, cartouches arrondies
 - cercles/ellipses/rectangles colorés (ex: cercles de pictos)
@@ -293,18 +293,21 @@ export async function analyzeDesignForEdit(imageBase64: string): Promise<DesignA
   // Mode obligatoire — défaut retail si absent (backward compat)
   const mode: DesignMode = parsed.mode === 'creative' ? 'creative' : 'retail'
 
-  // Normalise texts : role défaut 'other', backgroundColor défaut '#ffffff', backgroundIsUniform défaut true
+  // Normalise texts : role défaut 'other', backgroundColor défaut '#ffffff',
+  // backgroundIsUniform défaut false (force le futur fallback M2 sample-pixel
+  // plutôt que de peindre un masque blanc à l'aveugle sur fond sombre/gradient)
   const texts: TextElement[] = (Array.isArray(parsed.texts) ? parsed.texts : []).map((t) => ({
     ...t,
     role: t.role ?? 'other',
     backgroundColor: t.backgroundColor ?? '#ffffff',
-    backgroundIsUniform: t.backgroundIsUniform ?? true,
+    backgroundIsUniform: t.backgroundIsUniform ?? false,
   })) as TextElement[]
 
   const imageSlots: ImageSlot[] = (Array.isArray(parsed.imageSlots) ? parsed.imageSlots : []).map((s) => ({
     ...s,
+    role: s.role ?? 'other',
     backgroundColor: s.backgroundColor ?? '#ffffff',
-    backgroundIsUniform: s.backgroundIsUniform ?? true,
+    backgroundIsUniform: s.backgroundIsUniform ?? false,
   })) as ImageSlot[]
 
   const result: DesignAnalysis = {
