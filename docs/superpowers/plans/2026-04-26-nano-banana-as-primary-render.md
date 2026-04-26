@@ -1,5 +1,7 @@
 # Nano Banana 2 as Primary Render — Implementation Plan
 
+> **⚠️ DEPRECATED 2026-04-26** — plan d'une architecture (β1 retail) abandonnée après E2E. Code implémenté puis supprimé dans le commit `bd37b31`. Spec correspondant : [`2026-04-26-nano-banana-as-primary-render-design.md`](../specs/2026-04-26-nano-banana-as-primary-render-design.md). Pour le plan courant, voir `2026-04-26-nano-banana-text-free-template.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Préserver la richesse créative du PNG Nano Banana 2 en l'utilisant comme rendu principal lockée sur le canvas, et ajouter des overlays éditables Fabric (Textbox + FabricImage) uniquement sur les zones data critiques (prix, titre, features, photo, logo) via masquage couleur.

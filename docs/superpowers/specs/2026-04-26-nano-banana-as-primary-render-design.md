@@ -1,8 +1,14 @@
 # Nano Banana 2 comme rendu principal + overlays Jina
 
+> **⚠️ DEPRECATED 2026-04-26** — superseded by [`2026-04-26-nano-banana-text-free-template-design.md`](./2026-04-26-nano-banana-text-free-template-design.md).
+>
+> Architecture failed E2E validation : les bboxes Claude Vision ne sont pas pixel-perfectly alignées avec le rendu NB2, fontSize calculée décalée, mask 4px insuffisant pour couvrir l'antialiasing → doublons texte visibles partout. L'approche entière (β1 retail) a été abandonnée. Code dead-supprimé dans le commit `bd37b31`.
+>
+> Document conservé pour la valeur historique du diagnostic. Pour l'architecture courante (NB2 sans texte + template overlays), voir le spec qui le remplace.
+
 **Date** : 2026-04-26
 **Auteur** : ibs.studio + Claude
-**Statut** : Spec en attente de validation
+**Statut** : Deprecated (architecture abandonnée après E2E)
 
 ## Contexte et problème
 
