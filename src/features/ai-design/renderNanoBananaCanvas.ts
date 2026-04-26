@@ -542,6 +542,7 @@ export function buildEditableTextbox(
  * Résout l'image à charger pour un imageSlot, dans l'ordre :
  *  1. productPhoto : URL scrapée (validée) → crop NB2 → null
  *  2. logo : Clearbit/Google Favicon (via brandDomain ou description) → crop NB2 → null
+ *  3. badge / other : crop NB2 (fallback générique) → null
  *
  * Retourne une FabricImage prête à placer, ou null si tout a échoué (le caller
  * pose alors un Rect placeholder).
@@ -602,6 +603,19 @@ export async function resolveImageForSlot(
       }
     }
     return null
+  }
+
+  // Fallback générique : pour les rôles non-productPhoto/non-logo (badge, other),
+  // crop la zone correspondante du PNG NB2 pour que l'utilisateur puisse au moins
+  // la déplacer, la masquer ou la remplacer par drag&drop.
+  if (decoded) {
+    try {
+      const cropped = cropFromDecoded(decoded, slot.bbox)
+      const img = await FabricImage.fromURL(cropped, { crossOrigin: 'anonymous' })
+      if (img && img.width && img.height) return img
+    } catch (err) {
+      console.warn(`[renderNB] generic crop fallback failed for ${slot.id}:`, err)
+    }
   }
 
   return null
@@ -669,17 +683,27 @@ export async function renderNanoBananaWithOverlays(
     canvas.add(buildEditableTextbox(t, xPx, yPx, wPx, canvasHeight))
   }
 
-  // 4. Overlays image (logo + productPhoto)
-  for (const s of analysis.imageSlots) {
-    const { xPx, yPx, wPx, hPx } = bboxToPx(s.bbox, canvasWidth, canvasHeight)
-    const maskColor = pickMaskColor(s, decoded)
-    canvas.add(buildMaskRect(maskColor, xPx, yPx, wPx, hPx))
-
-    const img = await resolveImageForSlot(s, productImageUrl, brandDomain, decoded)
+  // 4. Overlays image (logo + productPhoto + badge/other crops) — résolutions
+  //    parallélisées via Promise.all pour ne pas accumuler le wall-time réseau.
+  const slotsWithBbox = analysis.imageSlots.map((s) => ({
+    s,
+    bbox: bboxToPx(s.bbox, canvasWidth, canvasHeight),
+  }))
+  const resolvedImages = await Promise.all(
+    slotsWithBbox.map(({ s }) => resolveImageForSlot(s, productImageUrl, brandDomain, decoded))
+  )
+  for (let i = 0; i < slotsWithBbox.length; i++) {
+    const { s, bbox } = slotsWithBbox[i]
+    const { xPx, yPx, wPx, hPx } = bbox
+    const img = resolvedImages[i]
     if (img) {
+      // Image to place → mask the NB2 underneath, then place the image on top
+      const maskColor = pickMaskColor(s, decoded)
+      canvas.add(buildMaskRect(maskColor, xPx, yPx, wPx, hPx))
       canvas.add(placeFabricImage(img, s, xPx, yPx, wPx, hPx))
     } else {
-      // Placeholder dashé — l'utilisateur peut drag&drop dedans
+      // No image resolved → keep the NB2 visual visible underneath, just lay a
+      // transparent dashed placeholder rect for drag&drop targeting.
       const ph = new Rect({
         left: xPx,
         top: yPx,
