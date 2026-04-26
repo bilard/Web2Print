@@ -11,6 +11,8 @@ import type {
 import { resolveBrandLogoCandidates } from './brandLogos'
 import { isLikelyProductImage } from './scrapeProductForDesign'
 import { sampleAvgColorAroundBbox } from './sampleColor'
+import { composeDesignFromScrapedData } from './composeDesignFromScrapedData'
+import type { ScrapedProductData } from './scrapeProductForDesign'
 
 /**
  * Route les URLs http(s) externes via le proxy image local pour gagner les
@@ -458,6 +460,78 @@ function cropFromDecoded(img: HTMLImageElement, bbox: Bbox): string {
   if (!ctx) throw new Error('2D context unavailable')
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
   return c.toDataURL('image/png')
+}
+
+// ─── Pipeline pivot 2+3 ──────────────────────────────────────────────────────
+
+/**
+ * Pipeline pivot 2+3 : place le PNG Nano Banana 2 plein canvas locked comme
+ * fond visuel pur (NB2 a généré sans texte). Pose ensuite le layout template
+ * issu de composeDesignFromScrapedData (pills critiques + textes + images
+ * data) par-dessus, sans masquage car il n'y a aucun texte à masquer.
+ */
+export async function renderNanoBananaTemplate(
+  canvas: Canvas,
+  nanoBananaDataUri: string,
+  scrapedData: ScrapedProductData,
+  canvasWidth: number,
+  canvasHeight: number,
+): Promise<void> {
+  // 1. Background NB2 plein canvas, locked
+  const bg = await FabricImage.fromURL(nanoBananaDataUri, { crossOrigin: 'anonymous' })
+  if (!bg || !bg.width || !bg.height) {
+    throw new Error('Nano Banana background image failed to load')
+  }
+  bg.set({
+    left: 0,
+    top: 0,
+    scaleX: canvasWidth / bg.width,
+    scaleY: canvasHeight / bg.height,
+    selectable: false,
+    evented: false,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
+    hoverCursor: 'default',
+    originX: 'left',
+    originY: 'top',
+  })
+  bg.data = { isNanoBananaBg: true }
+  canvas.add(bg)
+  const pageBg = canvas.getObjects().find((o) => o.data?.isPageBg)
+  if (pageBg) {
+    const idx = canvas.getObjects().indexOf(pageBg)
+    canvas.moveObjectTo(bg, idx + 1)
+  } else {
+    canvas.sendObjectToBack(bg)
+  }
+
+  // 2. Layout template depuis Jina
+  const analysis = composeDesignFromScrapedData(scrapedData)
+
+  // 3. Pills critiques uniquement (filtrer les autres decorativeShapes éventuelles)
+  const CRITICAL_SHAPE_IDS = new Set(['badge_bg', 'price_block', 'cta_bg'])
+  const criticalShapes = (analysis.decorativeShapes ?? []).filter((s) => CRITICAL_SHAPE_IDS.has(s.id))
+  renderDecorativeShapes(canvas, criticalShapes, canvasWidth, canvasHeight)
+
+  // 4. Textes éditables
+  addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
+
+  // 5. Image slots (logo + photo produit, avec fallback NB2 crop si manque)
+  const productImageUrl = scrapedData.imageUrl && isLikelyProductImage(scrapedData.imageUrl)
+    ? scrapedData.imageUrl
+    : undefined
+  await addEditableImageSlots(
+    canvas,
+    analysis.imageSlots,
+    canvasWidth,
+    canvasHeight,
+    nanoBananaDataUri,
+    productImageUrl,
+    scrapedData.brandDomain,
+  )
 }
 
 // ─── Helpers overlay retail (β1) ─────────────────────────────────────────────

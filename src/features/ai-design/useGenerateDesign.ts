@@ -2,16 +2,14 @@ import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { generateNanoBananaRef } from './generateNanoBananaRef'
 import { saveRefImageToGallery } from './saveRefImageToGallery'
-import { analyzeDesignForEdit } from './analyzeDesignForEdit'
-import { scrapeProductForDesign, detectUrlInPrompt, isLikelyProductImage, type ScrapedProductData } from './scrapeProductForDesign'
+import { scrapeProductForDesign, detectUrlInPrompt, isLikelyProductImage } from './scrapeProductForDesign'
 import { composeDesignFromScrapedData } from './composeDesignFromScrapedData'
-import type { TextElement } from './analyzeDesignForEdit'
 import {
   renderBackground,
   renderDecorativeShapes,
   addEditableTextOverlays,
   addEditableImageSlots,
-  renderNanoBananaWithOverlays,
+  renderNanoBananaTemplate,
 } from './renderNanoBananaCanvas'
 import { ensureGoogleFontsLoaded } from '@/features/assets/useFonts'
 import type { DesignRequest, DesignResult, DesignStyle } from './types'
@@ -47,76 +45,6 @@ const INITIAL_STATE: State = {
   nanobananaRef: null,
 }
 
-/**
- * Remplace les textes hallucinés par Nano Banana par les vraies valeurs
- * scrapées. Si la donnée scrapée est ABSENTE (ex: produit sans avis),
- * SUPPRIME les éléments hallucinés correspondants au lieu de les laisser
- * mentir. Garantit zéro fausse info sur le design final.
- */
-function overrideTextsWithScrapedData(
-  texts: TextElement[],
-  scraped: ScrapedProductData
-): TextElement[] {
-  // Reconnaît "699€00" (Brico Dépôt) ET "699,00 €" / "1 234,56 €"
-  const PRICE_RE = /\d{1,4}\s*€\s*\d{2}|\d[\d\s ]*[,.]\d{2}\s*€/
-  const RATING_RE = /^\s*\d[.,]\d+\s*(\/\s*5)?\s*$/
-  const REVIEWS_RE = /(\d+)\s*avis/i
-  const STARS_RE = /[★☆⭐]/
-  const RATING_KEYWORDS = /\b(avis client|note moyenne|étoile|rating|évaluation)\b/i
-
-  const out: TextElement[] = []
-
-  for (const t of texts) {
-    const txt = t.text || ''
-
-    // Prix barré (oldPrice) — supprime si pas de promo réelle
-    if (t.strikethrough && PRICE_RE.test(txt)) {
-      if (scraped.oldPrice) out.push({ ...t, text: scraped.oldPrice })
-      else console.log('[Override] Drop hallucinated oldPrice:', txt)
-      continue
-    }
-
-    // Prix actuel — remplace si scraped, sinon supprime
-    if (!t.strikethrough && PRICE_RE.test(txt) && !RATING_RE.test(txt)) {
-      if (scraped.price) out.push({ ...t, text: scraped.price })
-      else console.log('[Override] Drop hallucinated price:', txt)
-      continue
-    }
-
-    // Étoiles ★★★★★ — supprime si pas de rating réel
-    if (STARS_RE.test(txt)) {
-      if (scraped.rating) out.push(t)
-      else console.log('[Override] Drop hallucinated stars:', txt)
-      continue
-    }
-
-    // Rating numérique "4.3" / "4.3/5"
-    if (RATING_RE.test(txt)) {
-      if (scraped.rating) {
-        const hasOutOf5 = /\/\s*5/.test(txt)
-        out.push({ ...t, text: hasOutOf5 ? `${scraped.rating}/5` : scraped.rating })
-      } else {
-        console.log('[Override] Drop hallucinated rating:', txt)
-      }
-      continue
-    }
-
-    // Nombre d'avis ou phrase qui mentionne les avis (AVIS CLIENTS, etc.)
-    if (REVIEWS_RE.test(txt) || RATING_KEYWORDS.test(txt)) {
-      if (scraped.reviewCount && scraped.rating) {
-        out.push({ ...t, text: txt.replace(/\d+/, scraped.reviewCount) })
-      } else {
-        console.log('[Override] Drop hallucinated review/avis text:', txt)
-      }
-      continue
-    }
-
-    out.push(t)
-  }
-
-  return out
-}
-
 function resolveFormatDpi(req: DesignRequest, canvasWidth: number, canvasHeight: number, storeDpi: number): number {
   if (req.formatId === 'custom') return storeDpi
   const f = getFormatById(req.formatId)
@@ -144,7 +72,8 @@ export function useGenerateDesign() {
       setState({ ...INITIAL_STATE, step: 'illustrating', progress: 'Génération de l\'image Nano Banana…' })
 
       // ─── Dimensions canvas ─────────────────────────────────────────────────
-      let { canvasWidth, canvasHeight, bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
+      let { canvasWidth, canvasHeight } = useUIStore.getState()
+      const { bleedMm: storeBleed, dpi: storeDpi } = useUIStore.getState()
 
       // GUARD: Si les dimensions sont 0 ou invalides, utiliser un default
       if (!canvasWidth || !canvasHeight || canvasWidth <= 0 || canvasHeight <= 0) {
@@ -243,16 +172,7 @@ export function useGenerateDesign() {
         }
       }
 
-      // ─── Architecture : Nano Banana 2 (créativité) + Jina (data véridique) ──
-      // L'image générative apporte la créativité du layout, la typographie, les
-      // couleurs et la composition. Les données scrapées (prix, features, rating,
-      // logo, photo produit) sont injectées dans le prompt ET overridées en
-      // post-render pour garantir l'exactitude. Compose-direct n'est conservé
-      // que comme fallback si Nano Banana échoue (toutes versions).
-      let analysis
-      let dataUri: string | null = null
-
-      // ─── Phase 1 : génération Nano Banana (Pro en priorité) ─────────────────
+      // ─── Phase 1 : génération Nano Banana (fond visuel sans texte) ──────────
       const nanobananaResult = await generateNanoBananaRef({
         userPrompt: enrichedPrompt,
         widthMm,
@@ -261,6 +181,8 @@ export function useGenerateDesign() {
         dpi,
         palette: req.palette,
       }).catch((err) => ({ ok: false as const, error: err instanceof Error ? err.message : String(err) }))
+
+      let dataUri: string | null = null
 
       if (nanobananaResult.ok && nanobananaResult.dataUri) {
         dataUri = nanobananaResult.dataUri
@@ -287,58 +209,19 @@ export function useGenerateDesign() {
             }
           })
         }
-
-        // ─── Phase 2 : analyse Claude Vision (structure éditable) ──────────
-        setState((s) => ({ ...s, step: 'analyzing', progress: 'Analyse des zones éditables (Claude Vision)…' }))
-
-        const base64Data = dataUri.split(',')[1]
-        if (!base64Data) {
-          failAt('analyzing', 'Format dataUri Nano Banana invalide')
-          return
-        }
-
-        try {
-          analysis = await analyzeDesignForEdit(base64Data)
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err)
-          failAt('analyzing', `Analyse Claude Vision échouée : ${msg}`, `Claude Vision a échoué : ${msg}`)
-          return
-        }
-
-        // Override des valeurs hallucinées par les vraies données scrapées (si dispo).
-        // Couvre prix, oldPrice, rating, reviewCount ET features (bullets).
-        if (scrapedProductData) {
-          const before = analysis.texts.map(t => t.text)
-          analysis.texts = overrideTextsWithScrapedData(analysis.texts, scrapedProductData)
-          const overridden = analysis.texts.filter((t, i) => t.text !== before[i])
-          if (overridden.length > 0) {
-            console.log('[Claude Design] Overrode hallucinated texts:', overridden.map(t => `"${t.text}" (${t.id})`))
-          }
-
-          // Si scrape produit OK, on est explicitement en mode retail (override sécurité
-          // au cas où Claude Vision aurait choisi 'creative' à tort sur un flyer produit).
-          if (analysis.mode !== 'retail') {
-            console.log('[Claude Design] Forcing mode=retail because scrapedProductData is present')
-            analysis = { ...analysis, mode: 'retail' }
-          }
-        }
-      } else if (scrapedProductData && scrapedProductData.title) {
-        // Fallback si Nano Banana est indisponible : compose-direct depuis Jina.
-        // Garantit qu'on livre toujours quelque chose, même sans IA visuelle.
-        const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
-        console.warn(`[Claude Design] Nano Banana indisponible (${errMsg}) — fallback compose-direct`)
-        toast.warning('Image IA indisponible — design composé depuis les données produit')
-        setState((s) => ({ ...s, step: 'rendering', progress: 'Composition directe (fallback Nano Banana)…' }))
-        analysis = composeDesignFromScrapedData(scrapedProductData)
-      } else {
+      } else if (!scrapedProductData?.title) {
         const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
         failAt('illustrating', `Échec génération Nano Banana : ${errMsg}`, `Nano Banana a échoué : ${errMsg ?? 'inconnue'}`)
         return
+      } else {
+        // NB2 KO mais scraping OK : fallback compose-direct
+        const errMsg = nanobananaResult.ok ? 'inconnue' : nanobananaResult.error
+        console.warn(`[Claude Design] Nano Banana indisponible (${errMsg}) — fallback compose-direct`)
+        toast.warning('Image IA indisponible — design composé depuis les données produit')
       }
 
-
-      // ─── Phase 3 : reconstruction 100% vectorielle sur canvas ──────────────
-      setState((s) => ({ ...s, step: 'rendering', progress: 'Reconstruction vectorielle du design…' }))
+      // ─── Phase 2 : composition du design sur canvas ───────────────────────────
+      setState((s) => ({ ...s, step: 'rendering', progress: 'Composition du design (NB2 + données)…' }))
 
       const canvas = globalFabricCanvas
       if (!canvas) {
@@ -350,45 +233,33 @@ export function useGenerateDesign() {
       if (toRemove.length) canvas.remove(...toRemove)
 
       try {
-        if (analysis.mode === 'retail') {
-          // Pipeline β1 : NB2 background lockée + overlays data masqués
-          if (!dataUri) {
-            // Cas impossible normalement (retail implique NB2 OK), mais guard de sécurité
-            failAt('rendering', 'Mode retail mais image NB2 absente')
-            return
-          }
-          // Charge les fonts utilisées par les Textbox overlay AVANT le rendu
-          const fontsReady = ensureGoogleFontsLoaded(analysis.texts.map((t) => t.fontFamily))
-          await fontsReady
-          await renderNanoBananaWithOverlays(
-            canvas,
-            dataUri,
-            { texts: analysis.texts, imageSlots: analysis.imageSlots },
-            canvasWidth,
-            canvasHeight,
-            productImageUrl,
-            scrapedProductData?.brandDomain,
-          )
-        } else {
-          // Pipeline β2 : reconstruction vectorielle complète (ancien path)
+        if (dataUri && scrapedProductData) {
+          // Pipeline pivot 2+3 : NB2 fond visuel + layout template Jina
+          await ensureGoogleFontsLoaded(['Inter'])
+          await renderNanoBananaTemplate(canvas, dataUri, scrapedProductData, canvasWidth, canvasHeight)
+        } else if (scrapedProductData) {
+          // Fallback NB2 KO + Jina OK : ancien pipeline creative complet (avec fond crème)
+          const analysis = composeDesignFromScrapedData(scrapedProductData)
           if (!analysis.background || !analysis.decorativeShapes) {
-            failAt('rendering', 'Mode creative mais background/decorativeShapes absents')
+            failAt('rendering', 'compose-direct fallback : background/decorativeShapes absents')
             return
           }
-          const fontsReady = ensureGoogleFontsLoaded(analysis.texts.map((t) => t.fontFamily))
+          await ensureGoogleFontsLoaded(analysis.texts.map((t) => t.fontFamily))
           renderBackground(canvas, analysis.background, canvasWidth, canvasHeight)
           renderDecorativeShapes(canvas, analysis.decorativeShapes, canvasWidth, canvasHeight)
-          await fontsReady
           addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
           await addEditableImageSlots(
             canvas,
             analysis.imageSlots,
             canvasWidth,
             canvasHeight,
-            dataUri,
-            productImageUrl,
-            scrapedProductData?.brandDomain,
+            null,
+            undefined,
+            scrapedProductData.brandDomain,
           )
+        } else {
+          failAt('rendering', 'Ni NB2 ni scrapedProductData disponibles — rien à rendre')
+          return
         }
         canvas.requestRenderAll()
         syncToStore(canvas)
@@ -403,7 +274,9 @@ export function useGenerateDesign() {
         widthMm,
         heightMm,
         bleedMm: effectiveBleed,
-        rationale: `${analysis.decorativeShapes?.length ?? 0} formes + ${analysis.texts.length} textes + ${analysis.imageSlots.length} zones image — 100% vectoriel, tout éditable`,
+        rationale: dataUri && scrapedProductData
+          ? 'Nano Banana 2 fond visuel + overlays template (pivot 2+3)'
+          : 'Composition directe depuis Jina (fallback NB2 KO)',
       }
 
       setState((s) => ({ ...s, step: 'done', progress: '', error: null, lastResult: result }))

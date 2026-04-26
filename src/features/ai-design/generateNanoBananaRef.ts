@@ -27,11 +27,13 @@ interface NanoBananaRefResult {
   error?: string
 }
 
+// Nano Banana 2 / Pro en premier (créativité maximale demandée par l'utilisateur).
+// Les modèles flash sont des fallbacks si Pro est indisponible ou quota épuisé.
 const NANO_BANANA_MODELS = [
-  'gemini-2.5-flash-image',
-  'gemini-3.1-flash-image-preview',
-  'gemini-3-pro-image-preview',
   'nano-banana-pro-preview',
+  'gemini-3-pro-image-preview',
+  'gemini-3.1-flash-image-preview',
+  'gemini-2.5-flash-image',
 ] as const
 
 const STYLE_HINTS: Record<DesignStyle, string> = {
@@ -46,49 +48,26 @@ const STYLE_HINTS: Record<DesignStyle, string> = {
 function buildPrompt(args: GenerateNanoBananaRefArgs): string {
   const formatRatio = (args.widthMm / args.heightMm).toFixed(2)
   const paletteLine = args.palette && args.palette.length > 0
-    ? `- Color palette (use EXCLUSIVELY): ${args.palette.join(', ')}`
-    : `- Color palette: coherent with ${args.style} style, 3-5 colors max`
+    ? `Color palette (use EXCLUSIVELY): ${args.palette.join(', ')}`
+    : `Color palette: coherent with ${args.style} style, 3-5 colors max`
 
   return [
-    `Create a PROFESSIONAL RETAIL PROMOTIONAL BANNER — clean, organized, ready-to-print.`,
-    `LAYOUT STRUCTURE (FLEXIBLE 60/40 SPLIT):
-LEFT SECTION (approximately 55-65% width): TEXT & BRAND
-  - TOP: Brand logo (crisp, fully visible) + "OFFRE EXCLUSIVE" green label
-  - UPPER: Product title (bold, large, dark color, complete text, no truncation)
-  - MIDDLE: Features (3-5 bullets with GREEN CIRCLES containing checkmarks INSIDE + descriptive text)
-  - LOWER: Star rating (★★★★☆ + number + customer count, e.g., 4.3 · 128 AVIS CLIENTS)
-  - BOTTOM: Price section (old price strikethrough + NEW PRICE large white-on-black + green "J'EN PROFITE" button)
-
-RIGHT SECTION (approximately 35-45% width): PRODUCT PHOTO
-  - Centered, high-quality professional product image
-  - Vertically balanced on the page
-  - NO text overlays, NO decorations`,
-    `CRITICAL RULES:
-- NO parasitic elements: NO discount percentages, NO page numbers, NO extra badges, NO artifacts
-- Logo: FULLY VISIBLE, sharp, top-left positioning
-- Product photo: SHARP, COMPLETE, no cropping
-- Text: ALL LEGIBLE, FULLY VISIBLE, no truncation or ellipsis
-- Spacing: GENEROUS, balanced, professional appearance
-- Colors: ${args.style === 'corporate' ? 'muted 2-4 tone palette' : args.style === 'bold' ? 'dramatic split, contrasting' : 'coherent 3-5 colors'}${args.palette?.length ? ` — use ONLY: ${args.palette.join(', ')}` : ''}
-- Layout: clean grid-based, LEFT text section + RIGHT product section, ZERO overlap`,
-    `CONTENT:
-- Logo: brand logo top-left corner, fully visible
-- "OFFRE EXCLUSIVE": bright green banner or label, prominent positioning
-- Title: large bold text, complete product name, dark color
-- Features: 3-5 feature bullets, each with GREEN FILLED CIRCLE (contains checkmark ✓ INSIDE) + feature description text
-- Rating: stars rendered visually (★★★★☆) with number rating + customer review count
-- Price: Old price with strikethrough (smaller, gray) above or left of new price; new price LARGE bold (white text on BLACK background); "J'EN PROFITE" CTA button (green, prominent)
-- Product image: professional quality, product fully visible and centered in right section`,
-    `DESIGN QUALITY:
-- Style: ${args.style} — ${STYLE_HINTS[args.style]}
-${paletteLine}
-- Typography: max 3 fonts, clear hierarchy, professional retail
-- Spacing: generous, grid-based, no chaotic placement
-- Alignment: perfect horizontal/vertical alignment
-- Structure: LEFT text / RIGHT image. NO exceptions.`,
-    `BRIEF: ${args.userPrompt}`,
-    `DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1)`,
-    `OUTPUT: Professional, grid-based retail banner. All text fully visible. Perfect left-right balance. Press-ready, NO artifacts.`,
+    `Generate a CLEAN PHOTOGRAPHIC BACKGROUND for a retail flyer. The image will be used as a backdrop — TYPOGRAPHY AND PRICE LABELS WILL BE ADDED IN A LATER EDITING STEP.`,
+    `BRIEF (visual context only — do NOT spell anything in the image): ${args.userPrompt}`,
+    `STYLE: ${args.style} — ${STYLE_HINTS[args.style]}`,
+    `${paletteLine}`,
+    `ABSOLUTE REQUIREMENTS — STRICTLY ENFORCED:
+- ZERO TEXT in the image. No typography, no letters, no numbers, no symbols, no characters from any language.
+- NO PRICE TAGS, NO BADGES, NO LABELS, NO STICKERS, NO LOGOS, NO BRAND NAMES, NO WATERMARKS.
+- NO callouts, NO annotations, NO captions, NO speech bubbles.
+- The image must be 100% TEXT-FREE so typography will be added cleanly in a later editing step.`,
+    `COMPOSITION:
+- Lifestyle product photography mood: clean, ambient, professional retouching, soft lighting, cinematic.
+- The product (the main subject of the BRIEF) should be visible in context (in its natural environment) but NOT the only element. Show it nicely placed within a scene.
+- Leave generous NEGATIVE SPACE on the canvas for text overlays to be added later. Avoid filling the entire frame with the product or with busy decoration. The viewer's eye should rest on uncluttered areas.
+- Use ambient elements (gradients, subtle shadows, environmental cues, depth-of-field blur) instead of textual or graphical clutter.`,
+    `DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1).`,
+    `OUTPUT: a single high-quality, text-free background image, ready to receive editable typography overlays in post-production.`,
   ].join('\n\n')
 }
 

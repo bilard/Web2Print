@@ -102,19 +102,11 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   features.forEach((feat, i) => {
     const y = 35 + i * 5.5
 
-    // Pastille verte
-    decorativeShapes.push({
-      id: `feature_dot_${i}`,
-      type: 'circle',
-      bbox: { x: 5.5, y: y + 0.5, w: 1.8, h: 1.8 },
-      fill: PALETTE.accent,
-    })
-
-    // Texte feature
+    // Texte feature (pastilles vertes remplacées par ✓ unicode)
     texts.push({
       id: `feature_${i}`,
-      text: feat,
-      bbox: { x: 9, y: y, w: 45, h: 4.5 },
+      text: `✓ ${feat}`,
+      bbox: { x: 5, y: y, w: 50, h: 4.5 },
       fontSizePct: 1.6,
       fontFamily: 'Inter',
       color: PALETTE.textDark,
