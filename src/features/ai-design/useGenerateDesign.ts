@@ -258,7 +258,7 @@ export function useGenerateDesign() {
             scrapedProductData.brandDomain,
           )
         } else {
-          failAt('rendering', 'Ni NB2 ni scrapedProductData disponibles — rien à rendre')
+          failAt('rendering', 'Pas de données scrapées — design template impossible sans source produit')
           return
         }
         canvas.requestRenderAll()
