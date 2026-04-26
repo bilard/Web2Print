@@ -112,38 +112,46 @@ async function fetchJinaHtml(url: string): Promise<string | null> {
  * Retourne null si aucun candidat plausible. Aucun matching vendor-spécifique.
  */
 export function extractImageFromHtml(html: string): string | null {
-  // 1. Schema.org microdata
+  // 1. Schema.org microdata <img itemprop="image"> — la SOURCE LA PLUS FIABLE
+  // pour le packshot hero. Les CMS retail (Brico Dépôt, Castorama, Decathlon)
+  // mettent toujours leur photo principale sur ce tag pour SEO/structured-data.
   const microdataMatch = html.match(/<img[^>]+itemprop=["']image["'][^>]*\bsrc=["']([^"']+)["']/i)
                        || html.match(/<img[^>]+\bsrc=["']([^"']+)["'][^>]+itemprop=["']image["']/i)
   if (microdataMatch && isLikelyProductImage(microdataMatch[1])) {
+    console.log('[extractImageFromHtml] microdata itemprop="image" hit →', microdataMatch[1])
     return cleanImageUrl(microdataMatch[1])
   }
 
-  // 2. Open Graph
+  // 2. Open Graph (généralement le packshot officiel pour le partage social)
   const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
   if (ogMatch && isLikelyProductImage(ogMatch[1])) {
+    console.log('[extractImageFromHtml] og:image hit →', ogMatch[1])
     return cleanImageUrl(ogMatch[1])
   }
 
-  // 3. JSON-LD "image" (peut être une string ou un array de strings)
+  // 3. JSON-LD "image" (string ou array)
   const jsonLdMatch = html.match(/"image"\s*:\s*"([^"]+)"/)
                     || html.match(/"image"\s*:\s*\[\s*"([^"]+)"/)
   if (jsonLdMatch && isLikelyProductImage(jsonLdMatch[1])) {
+    console.log('[extractImageFromHtml] JSON-LD image hit →', jsonLdMatch[1])
     return cleanImageUrl(jsonLdMatch[1])
   }
 
-  // 4. Heuristique : première <img> avec extension image et URL "longue"
-  // (filtre logos courts et trackers).
+  // 4. Heuristique : itère TOUS les <img>, filtre + score, prend la mieux notée
   const imgRe = /<img[^>]+\bsrc=["']([^"']+\.(?:jpg|jpeg|png|webp)(?:\?[^"']*)?)["']/gi
+  const candidates: Array<{ url: string; score: number; index: number }> = []
   let m: RegExpExecArray | null
+  let i = 0
   while ((m = imgRe.exec(html)) !== null) {
-    if (isLikelyProductImage(m[1])) {
-      return cleanImageUrl(m[1])
-    }
+    const url = m[1]
+    if (!isLikelyProductImage(url)) continue
+    candidates.push({ url, score: scoreProductImage(url), index: i++ })
   }
-
-  return null
+  if (candidates.length === 0) return null
+  candidates.sort((a, b) => b.score - a.score || a.index - b.index)
+  console.log('[extractImageFromHtml] <img> candidates ranked:', candidates.slice(0, 5).map((c) => ({ score: c.score, url: c.url.slice(-80) })))
+  return cleanImageUrl(candidates[0].url)
 }
 
 /**
@@ -304,18 +312,50 @@ function isValidUrl(urlStr: string): boolean {
   }
 }
 
-/** Fallback regex : itère TOUTES les images du markdown et prend la PREMIÈRE
- *  qui passe `isLikelyProductImage`. Évite de retomber sur un slider promo /
- *  diagramme RTK / scène lifestyle quand la 1re URL brute n'est pas le packshot.
+/** Score une URL d'image selon sa probabilité d'être le PACKSHOT HERO du
+ *  produit (la 1re photo de la galerie, fond uniforme, vue principale).
+ *  Les patterns sont génériques (page_prod, product, packshot, _main_, _1.)
+ *  et fonctionnent sur la plupart des CMS retail (Brico Dépôt, Castorama,
+ *  Decathlon, etc.) — pas de logique vendor-spécifique.
+ */
+function scoreProductImage(url: string): number {
+  const lower = url.toLowerCase()
+  let score = 0
+  // Patterns positifs — schéma URL packshot officiel
+  if (/\bpage_prod/.test(lower)) score += 50
+  if (/\bproduct[_-]?(?:img|image|photo|main|big|gallery)/.test(lower)) score += 30
+  if (/\b(?:pack|packshot|product_pack)/.test(lower)) score += 30
+  if (/[_-]hero[_.-]/.test(lower)) score += 20
+  if (/[_-]main[_.-]/.test(lower)) score += 20
+  if (/[_-]primary[_.-]/.test(lower)) score += 20
+  if (/[_-]1\.(?:jpg|jpeg|png|webp)/.test(lower)) score += 15  // suffix _1 = 1ère image gallery
+  if (/\b(?:big|large|hd|2x|hires)/.test(lower)) score += 10   // résolutions élevées
+  // Patterns négatifs — vues secondaires, lifestyle, diagrammes, vidéos
+  if (/[_-](?:lifestyle|scene|use|video|annotation|exploded|schema|diagram|rtk|vue|view)[_.-]/.test(lower)) score -= 25
+  if (/[_-][2-9]\.(?:jpg|jpeg|png|webp)/.test(lower)) score -= 10   // _2, _3 = vues secondaires
+  if (/[_-]thumb|thumbnail|small|tiny|mini|miniature/.test(lower)) score -= 30
+  if (/[_-]desktop|mobile|tablet/.test(lower)) score -= 5            // sliders responsive promo
+  return score
+}
+
+/** Itère TOUTES les images du markdown, applique isLikelyProductImage, score
+ *  chaque candidate, et retourne la mieux notée. Privilégie le packshot hero
+ *  même si une image lifestyle ou un diagramme apparait avant dans le DOM.
  */
 function extractFirstImageUrlFromMarkdown(markdown: string): string | null {
-  // Format markdown: ![alt](https://...jpg|png|webp)
   const re = /!\[[^\]]*\]\((https?:\/\/[^\s)]+\.(?:jpg|jpeg|png|webp)(?:\?[^\s)]*)?)\)/gi
+  const candidates: Array<{ url: string; score: number; index: number }> = []
+  let i = 0
   for (const match of markdown.matchAll(re)) {
     const url = match[1]
-    if (isLikelyProductImage(url)) return url
+    if (!isLikelyProductImage(url)) continue
+    candidates.push({ url, score: scoreProductImage(url), index: i++ })
   }
-  return null
+  if (candidates.length === 0) return null
+  // Tri : meilleur score d'abord, puis ordre du markdown (1re trouvée gagne en cas d'égalité)
+  candidates.sort((a, b) => b.score - a.score || a.index - b.index)
+  console.log('[scrapeProductForDesign] Image candidates ranked:', candidates.slice(0, 5).map((c) => ({ score: c.score, url: c.url.slice(-80) })))
+  return candidates[0].url
 }
 
 /** Fallback : extrait le titre depuis "Title:" header ou premier H1 du markdown. */
