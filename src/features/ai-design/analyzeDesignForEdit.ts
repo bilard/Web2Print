@@ -12,6 +12,8 @@
 
 import { getApiKey } from '@/lib/apiKeys'
 
+export type Bbox = { x: number; y: number; w: number; h: number }
+
 export type TextRole =
   | 'price'
   | 'oldPrice'

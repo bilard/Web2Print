@@ -1,12 +1,16 @@
 import { Canvas, Rect, Circle, Ellipse, Path, Textbox, Image as FabricImage, Gradient } from 'fabric'
 import type { FabricObject } from 'fabric'
 import type {
+  Bbox,
   DesignAnalysis,
   BackgroundDef,
   DecorativeShape,
+  TextElement,
+  ImageSlot,
 } from './analyzeDesignForEdit'
 import { resolveBrandLogoCandidates } from './brandLogos'
 import { isLikelyProductImage } from './scrapeProductForDesign'
+import { sampleAvgColorAroundBbox } from './sampleColor'
 
 /**
  * Route les URLs http(s) externes via le proxy image local pour gagner les
@@ -19,8 +23,6 @@ function proxiedImageUrl(url: string): string {
   if (!/^https?:\/\//i.test(url)) return url
   return `/api/image-proxy?url=${encodeURIComponent(url)}`
 }
-
-type Bbox = { x: number; y: number; w: number; h: number }
 
 function bboxToPx(bbox: Bbox, canvasWidth: number, canvasHeight: number) {
   return {
@@ -456,4 +458,243 @@ function cropFromDecoded(img: HTMLImageElement, bbox: Bbox): string {
   if (!ctx) throw new Error('2D context unavailable')
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
   return c.toDataURL('image/png')
+}
+
+// ─── Helpers overlay retail (β1) ─────────────────────────────────────────────
+
+/**
+ * Détermine la couleur de masque sous une zone overlay :
+ *  - M1 : couleur fournie par Claude Vision si backgroundIsUniform=true
+ *  - M2 (fallback) : sample pixel client-side si Claude Vision a flagué
+ *    backgroundIsUniform=false ou si backgroundColor est manquant
+ */
+export function pickMaskColor(
+  zone: Pick<TextElement | ImageSlot, 'bbox' | 'backgroundColor' | 'backgroundIsUniform'>,
+  decoded: HTMLImageElement | null
+): string {
+  if (zone.backgroundIsUniform && zone.backgroundColor) return zone.backgroundColor
+  if (decoded) return sampleAvgColorAroundBbox(decoded, zone.bbox)
+  return zone.backgroundColor || '#ffffff'
+}
+
+/**
+ * Construit un Rect Fabric servant de masque opaque sous une zone overlay.
+ * Padding clamp à 4px max pour ne pas grignoter le design adjacent.
+ */
+export function buildMaskRect(
+  color: string,
+  xPx: number,
+  yPx: number,
+  wPx: number,
+  hPx: number
+): Rect {
+  const PAD = 4
+  const rect = new Rect({
+    left: xPx - PAD,
+    top: yPx - PAD,
+    width: wPx + PAD * 2,
+    height: hPx + PAD * 2,
+    fill: color,
+    selectable: false,
+    evented: false,
+    hoverCursor: 'default',
+    originX: 'left',
+    originY: 'top',
+  })
+  rect.data = { isMaskRect: true }
+  return rect
+}
+
+/**
+ * Construit un Textbox Fabric éditable pour overlay data. Style typographique
+ * exactement aligné sur ce que Claude Vision a détecté dans le PNG NB2.
+ */
+export function buildEditableTextbox(
+  t: TextElement,
+  xPx: number,
+  yPx: number,
+  wPx: number,
+  canvasHeight: number
+): Textbox {
+  const fontSize = Math.max(8, ((t.fontSizePct ?? 2) / 100) * canvasHeight)
+  const tb = new Textbox(t.text, {
+    left: xPx,
+    top: yPx,
+    width: Math.max(wPx, 40),
+    fontSize,
+    fontFamily: t.fontFamily?.trim() || 'Inter',
+    fill: t.color || '#111111',
+    fontWeight: t.bold ? 'bold' : 'normal',
+    fontStyle: t.italic ? 'italic' : 'normal',
+    linethrough: !!t.strikethrough,
+    textAlign: t.align || 'left',
+    originX: 'left',
+    originY: 'top',
+    selectable: true,
+    editable: true,
+    padding: 2,
+  })
+  tb.data = { id: t.id, role: t.role, editableText: true }
+  return tb
+}
+
+/**
+ * Résout l'image à charger pour un imageSlot, dans l'ordre :
+ *  1. productPhoto : URL scrapée (validée) → crop NB2 → null
+ *  2. logo : Clearbit/Google Favicon (via brandDomain ou description) → crop NB2 → null
+ *
+ * Retourne une FabricImage prête à placer, ou null si tout a échoué (le caller
+ * pose alors un Rect placeholder).
+ */
+export async function resolveImageForSlot(
+  slot: ImageSlot,
+  productImageUrl: string | undefined,
+  brandDomain: string | undefined,
+  decoded: HTMLImageElement | null
+): Promise<FabricImage | null> {
+  // ─── productPhoto ────────────────────────────────────────────────────────
+  if (slot.role === 'productPhoto') {
+    const validProductUrl = productImageUrl && isLikelyProductImage(productImageUrl)
+      ? productImageUrl
+      : undefined
+    if (validProductUrl) {
+      try {
+        const proxied = proxiedImageUrl(validProductUrl)
+        const img = await FabricImage.fromURL(proxied, { crossOrigin: 'anonymous' })
+        if (img && img.width && img.height) return img
+      } catch (err) {
+        console.warn(`[renderNB] productPhoto URL failed for ${slot.id}:`, err)
+      }
+    }
+    if (decoded) {
+      try {
+        const cropped = cropFromDecoded(decoded, slot.bbox)
+        const img = await FabricImage.fromURL(cropped, { crossOrigin: 'anonymous' })
+        if (img && img.width && img.height) return img
+      } catch (err) {
+        console.warn(`[renderNB] productPhoto crop fallback failed for ${slot.id}:`, err)
+      }
+    }
+    return null
+  }
+
+  // ─── logo ────────────────────────────────────────────────────────────────
+  if (slot.role === 'logo') {
+    const candidates = brandDomain
+      ? resolveBrandLogoCandidates(brandDomain)
+      : resolveBrandLogoCandidates(slot.description)
+    for (const candidate of candidates) {
+      try {
+        const proxied = proxiedImageUrl(candidate)
+        const logo = await FabricImage.fromURL(proxied, { crossOrigin: 'anonymous' })
+        if (logo && logo.width && logo.height && logo.width >= 16 && logo.height >= 16) return logo
+      } catch (err) {
+        console.warn(`[renderNB] logo candidate failed for ${slot.id} (${candidate.slice(0, 60)})`, err)
+      }
+    }
+    if (decoded) {
+      try {
+        const cropped = cropFromDecoded(decoded, slot.bbox)
+        const logo = await FabricImage.fromURL(cropped, { crossOrigin: 'anonymous' })
+        if (logo && logo.width && logo.height) return logo
+      } catch (err) {
+        console.warn(`[renderNB] logo crop fallback failed for ${slot.id}:`, err)
+      }
+    }
+    return null
+  }
+
+  return null
+}
+
+/**
+ * Pipeline retail (β1) : place le PNG Nano Banana 2 plein canvas comme background
+ * lockée, puis pour chaque zone data critique (text + image) :
+ *   - pose un masque opaque (M1 backgroundColor → M2 sample pixel fallback)
+ *   - pose l'overlay éditable par-dessus (Textbox / FabricImage)
+ *
+ * Si une zone n'a aucune image résoluble (productPhoto sans URL ni crop, etc.),
+ * un Rect placeholder dashé est posé pour permettre le drag & drop ultérieur.
+ */
+export async function renderNanoBananaWithOverlays(
+  canvas: Canvas,
+  nanoBananaDataUri: string,
+  analysis: { texts: TextElement[]; imageSlots: ImageSlot[] },
+  canvasWidth: number,
+  canvasHeight: number,
+  productImageUrl?: string,
+  brandDomain?: string
+): Promise<void> {
+  // 1. Background NB2 plein canvas, lockée
+  const bg = await FabricImage.fromURL(nanoBananaDataUri, { crossOrigin: 'anonymous' })
+  if (!bg || !bg.width || !bg.height) {
+    throw new Error('Nano Banana background image failed to load')
+  }
+  bg.set({
+    left: 0,
+    top: 0,
+    scaleX: canvasWidth / bg.width,
+    scaleY: canvasHeight / bg.height,
+    selectable: false,
+    evented: false,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
+    hoverCursor: 'default',
+    originX: 'left',
+    originY: 'top',
+  })
+  bg.data = { isNanoBananaBg: true }
+  canvas.add(bg)
+
+  // Place juste au-dessus du pageBg (sous tous les overlays et marques d'impression)
+  const pageBg = canvas.getObjects().find((o) => o.data?.isPageBg)
+  if (pageBg) {
+    const idx = canvas.getObjects().indexOf(pageBg)
+    canvas.moveObjectTo(bg, idx + 1)
+  } else {
+    canvas.sendObjectToBack(bg)
+  }
+
+  // 2. Pré-décode pour M2 sample pixel fallback
+  const decoded = await decodeImage(nanoBananaDataUri).catch(() => null)
+
+  // 3. Overlays texte
+  for (const t of analysis.texts) {
+    const { xPx, yPx, wPx, hPx } = bboxToPx(t.bbox, canvasWidth, canvasHeight)
+    const maskColor = pickMaskColor(t, decoded)
+    canvas.add(buildMaskRect(maskColor, xPx, yPx, wPx, hPx))
+    canvas.add(buildEditableTextbox(t, xPx, yPx, wPx, canvasHeight))
+  }
+
+  // 4. Overlays image (logo + productPhoto)
+  for (const s of analysis.imageSlots) {
+    const { xPx, yPx, wPx, hPx } = bboxToPx(s.bbox, canvasWidth, canvasHeight)
+    const maskColor = pickMaskColor(s, decoded)
+    canvas.add(buildMaskRect(maskColor, xPx, yPx, wPx, hPx))
+
+    const img = await resolveImageForSlot(s, productImageUrl, brandDomain, decoded)
+    if (img) {
+      canvas.add(placeFabricImage(img, s, xPx, yPx, wPx, hPx))
+    } else {
+      // Placeholder dashé — l'utilisateur peut drag&drop dedans
+      const ph = new Rect({
+        left: xPx,
+        top: yPx,
+        width: wPx,
+        height: hPx,
+        fill: 'rgba(99, 102, 241, 0.05)',
+        stroke: 'rgba(99, 102, 241, 0.4)',
+        strokeDashArray: [6, 4],
+        strokeWidth: 1,
+        originX: 'left',
+        originY: 'top',
+        selectable: true,
+      })
+      ph.data = { id: s.id, editableImageSlot: true, role: s.role, description: s.description }
+      canvas.add(ph)
+    }
+  }
 }

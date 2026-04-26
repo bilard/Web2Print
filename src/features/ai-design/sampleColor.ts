@@ -1,4 +1,4 @@
-type Bbox = { x: number; y: number; w: number; h: number }
+import type { Bbox } from './analyzeDesignForEdit'
 
 /**
  * Échantillonne la couleur moyenne d'une couronne autour de la bbox dans
@@ -21,15 +21,15 @@ export function sampleAvgColorAroundBbox(
   options: { ringPx?: number; samplesPerSide?: number } = {}
 ): string {
   const ringPx = options.ringPx ?? 6
-  const samplesPerSide = options.samplesPerSide ?? 8
+  const samplesPerSide = Math.max(1, options.samplesPerSide ?? 8)
 
   const W = img.naturalWidth || img.width
   const H = img.naturalHeight || img.height
 
-  const bx = clamp(0, W, (bbox.x / 100) * W)
-  const by = clamp(0, H, (bbox.y / 100) * H)
-  const bw = clamp(0, W - bx, (bbox.w / 100) * W)
-  const bh = clamp(0, H - by, (bbox.h / 100) * H)
+  const bx = clamp((bbox.x / 100) * W, 0, W)
+  const by = clamp((bbox.y / 100) * H, 0, H)
+  const bw = clamp((bbox.w / 100) * W, 0, W - bx)
+  const bh = clamp((bbox.h / 100) * H, 0, H - by)
 
   // Dans les tests jsdom, on injecte le canvas source via __testCanvas pour
   // contourner le fait que jsdom ne décode pas vraiment l'image src=data:.
@@ -63,8 +63,8 @@ export function sampleAvgColorAroundBbox(
 
   let r = 0, g = 0, b = 0, n = 0
   for (const [px, py] of points) {
-    const cx = clamp(0, W - 1, Math.round(px))
-    const cy = clamp(0, H - 1, Math.round(py))
+    const cx = clamp(Math.round(px), 0, W - 1)
+    const cy = clamp(Math.round(py), 0, H - 1)
     const data = ctx.getImageData(cx, cy, 1, 1).data
     r += data[0]
     g += data[1]
@@ -75,7 +75,7 @@ export function sampleAvgColorAroundBbox(
   return rgbToHex(Math.round(r / n), Math.round(g / n), Math.round(b / n))
 }
 
-function clamp(min: number, max: number, v: number): number {
+function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v))
 }
 

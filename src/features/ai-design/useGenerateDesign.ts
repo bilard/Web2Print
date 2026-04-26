@@ -11,6 +11,7 @@ import {
   renderDecorativeShapes,
   addEditableTextOverlays,
   addEditableImageSlots,
+  renderNanoBananaWithOverlays,
 } from './renderNanoBananaCanvas'
 import { ensureGoogleFontsLoaded } from '@/features/assets/useFonts'
 import type { DesignRequest, DesignResult, DesignStyle } from './types'
@@ -313,6 +314,13 @@ export function useGenerateDesign() {
           if (overridden.length > 0) {
             console.log('[Claude Design] Overrode hallucinated texts:', overridden.map(t => `"${t.text}" (${t.id})`))
           }
+
+          // Si scrape produit OK, on est explicitement en mode retail (override sécurité
+          // au cas où Claude Vision aurait choisi 'creative' à tort sur un flyer produit).
+          if (analysis.mode !== 'retail') {
+            console.log('[Claude Design] Forcing mode=retail because scrapedProductData is present')
+            analysis = { ...analysis, mode: 'retail' }
+          }
         }
       } else if (scrapedProductData && scrapedProductData.title) {
         // Fallback si Nano Banana est indisponible : compose-direct depuis Jina.
@@ -342,17 +350,46 @@ export function useGenerateDesign() {
       if (toRemove.length) canvas.remove(...toRemove)
 
       try {
-        // Les fonts doivent être chargées AVANT la création des Textbox (sinon
-        // Fabric mesure avec le fallback système). On démarre le chargement en
-        // parallèle du rendu fond + formes, puis on attend juste avant les textes.
-        const fontsReady = ensureGoogleFontsLoaded(analysis.texts.map((t) => t.fontFamily))
-
-        renderBackground(canvas, analysis.background, canvasWidth, canvasHeight)
-        renderDecorativeShapes(canvas, analysis.decorativeShapes, canvasWidth, canvasHeight)
-
-        await fontsReady
-        addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
-        await addEditableImageSlots(canvas, analysis.imageSlots, canvasWidth, canvasHeight, dataUri, productImageUrl, scrapedProductData?.brandDomain)
+        if (analysis.mode === 'retail') {
+          // Pipeline β1 : NB2 background lockée + overlays data masqués
+          if (!dataUri) {
+            // Cas impossible normalement (retail implique NB2 OK), mais guard de sécurité
+            failAt('rendering', 'Mode retail mais image NB2 absente')
+            return
+          }
+          // Charge les fonts utilisées par les Textbox overlay AVANT le rendu
+          const fontsReady = ensureGoogleFontsLoaded(analysis.texts.map((t) => t.fontFamily))
+          await fontsReady
+          await renderNanoBananaWithOverlays(
+            canvas,
+            dataUri,
+            { texts: analysis.texts, imageSlots: analysis.imageSlots },
+            canvasWidth,
+            canvasHeight,
+            productImageUrl,
+            scrapedProductData?.brandDomain,
+          )
+        } else {
+          // Pipeline β2 : reconstruction vectorielle complète (ancien path)
+          if (!analysis.background || !analysis.decorativeShapes) {
+            failAt('rendering', 'Mode creative mais background/decorativeShapes absents')
+            return
+          }
+          const fontsReady = ensureGoogleFontsLoaded(analysis.texts.map((t) => t.fontFamily))
+          renderBackground(canvas, analysis.background, canvasWidth, canvasHeight)
+          renderDecorativeShapes(canvas, analysis.decorativeShapes, canvasWidth, canvasHeight)
+          await fontsReady
+          addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
+          await addEditableImageSlots(
+            canvas,
+            analysis.imageSlots,
+            canvasWidth,
+            canvasHeight,
+            dataUri,
+            productImageUrl,
+            scrapedProductData?.brandDomain,
+          )
+        }
         canvas.requestRenderAll()
         syncToStore(canvas)
         requestAnimationFrame(() => globalFitCanvas?.())
@@ -366,7 +403,7 @@ export function useGenerateDesign() {
         widthMm,
         heightMm,
         bleedMm: effectiveBleed,
-        rationale: `${analysis.decorativeShapes.length} formes + ${analysis.texts.length} textes + ${analysis.imageSlots.length} zones image — 100% vectoriel, tout éditable`,
+        rationale: `${analysis.decorativeShapes?.length ?? 0} formes + ${analysis.texts.length} textes + ${analysis.imageSlots.length} zones image — 100% vectoriel, tout éditable`,
       }
 
       setState((s) => ({ ...s, step: 'done', progress: '', error: null, lastResult: result }))
