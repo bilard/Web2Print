@@ -32,16 +32,60 @@ const PALETTE = {
   white: '#ffffff',
 }
 
+/**
+ * Extrait des features auto-générées depuis le titre du produit, quand le
+ * scrape n'a renvoyé aucune feature exploitable. Détecte les specs courantes
+ * du retail outillage / électroménager (surface, voltage, ampérage, largeur
+ * de coupe, connectivité). Évite un canvas vide visuellement.
+ */
+function extractFeaturesFromTitle(title: string): string[] {
+  if (!title) return []
+  const features: string[] = []
+
+  const surfaceMatch = title.match(/(\d+)\s*m²/i)
+  if (surfaceMatch) features.push(`Surface jusqu'à ${surfaceMatch[1]} m²`)
+
+  const voltMatch = title.match(/(\d+)\s*V\b/i)
+  const ahMatch = title.match(/(\d+(?:[,.]\d+)?)\s*Ah\b/i)
+  if (voltMatch && ahMatch) {
+    features.push(`Batterie ${voltMatch[1]}V ${ahMatch[1]}Ah`)
+  } else if (voltMatch) {
+    features.push(`Alimentation ${voltMatch[1]}V`)
+  } else if (ahMatch) {
+    features.push(`Capacité ${ahMatch[1]}Ah`)
+  }
+
+  const cutMatch = title.match(/coupe\s*(\d+(?:[,.]\d+)?)\s*cm/i)
+  if (cutMatch) features.push(`Largeur de coupe ${cutMatch[1]} cm`)
+
+  const wifi = /Wi-?Fi/i.test(title)
+  const bluetooth = /Bluetooth/i.test(title)
+  if (wifi && bluetooth) features.push('Connectivité Wi-Fi & Bluetooth')
+  else if (wifi) features.push('Wi-Fi intégré')
+  else if (bluetooth) features.push('Bluetooth intégré')
+
+  if (/\bRTK\b/i.test(title)) features.push('Précision GPS RTK')
+  else if (/\bGPS\b/i.test(title)) features.push('GPS intégré')
+
+  if (/\bsans fil\b/i.test(title)) features.push('Sans fil')
+  if (/\bbrushless\b/i.test(title)) features.push('Moteur brushless')
+
+  return features.slice(0, 5)
+}
+
 export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAnalysis {
   const texts: TextElement[] = []
   const decorativeShapes: DecorativeShape[] = []
   const imageSlots: ImageSlot[] = []
 
-  // ─── 1. Logo Jardiland (top-left) ────────────────────────────────────────
+  // ─── 1. Logo marque (top-left, agrandi pour visibilité retail) ──────────
+  // Hauteur portée de 7 à 12 : avec fit-contain et un logo souvent carré
+  // (Brico Dépôt, Castorama, etc.), augmenter h donne directement un logo
+  // plus grand sans empiéter sur le badge OFFRE EXCLUSIVE qui reste à x=30.
   imageSlots.push({
     id: 'brand_logo',
     role: 'logo',
-    bbox: { x: 5, y: 3, w: 22, h: 7 },
+    bbox: { x: 3, y: 2, w: 26, h: 12 },
     description: data.brandDomain || data.brand || '',
     backgroundColor: PALETTE.bg,
     backgroundIsUniform: true,
@@ -72,10 +116,11 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
 
   // ─── 3. Titre produit (multi-ligne) ──────────────────────────────────────
   // Le titre scrapé peut être long ; on lui laisse 4 lignes virtuelles via h=18
+  // Décalé y=16 (vs 14) pour laisser respirer le logo agrandi qui descend à y=14
   texts.push({
     id: 'product_title',
     text: data.title,
-    bbox: { x: 5, y: 14, w: 50, h: 18 },
+    bbox: { x: 5, y: 16, w: 50, h: 18 },
     fontSizePct: 4,
     fontFamily: 'Inter',
     color: PALETTE.textDark,
@@ -98,16 +143,42 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
   })
 
   // ─── 5. Features (bullets verts à gauche) ────────────────────────────────
-  // Defensive layer : même si normalizeFeatures (scrapeProductForDesign.ts)
-  // est censé filtrer les parasites, on re-filtre ici au cas où des features
-  // hallucinées par Claude (markdown headings, UI labels avis/filtres, etc.)
-  // bypassent la couche scraping.
+  // Defensive layer : filtrer les parasites au cas où normalizeFeatures
+  // (scrapeProductForDesign.ts) en aurait laissé passer.
   const PARASITE_RE = /^#+\s|^★+|\bAvis\s+clients?\b|\bAucun(?:e)?\s+(?:valeur|avis|note)\b|\bNote\s+moyenne\b|\bFiltrer\s+par\b|\b[Éé]valuation\b|^\s*\d+\s*$|^(?:Caractéristiques?|Description|Spécifications?|Détails)\s*:?\s*$/i
-  const features = data.features
+  let features = data.features
     .filter((f) => f && f.trim().length > 0 && !PARASITE_RE.test(f.trim()))
     .slice(0, 5)
+
+  // Fallback : si le scrape n'a renvoyé aucune feature exploitable, on en
+  // extrait depuis le titre du produit (specs courantes en retail outillage).
+  // Évite un design vide quand la page produit n'a pas de section
+  // "Caractéristiques" claire (cas Brico Dépôt et autres SSR sites).
+  if (features.length === 0 && data.title) {
+    features = extractFeaturesFromTitle(data.title)
+  }
+
+  // Sub-titre "AVANTAGES" en bold au-dessus de la liste, pour structurer
+  // visuellement la zone features (même si feature liste vide on l'omet).
+  if (features.length > 0) {
+    texts.push({
+      id: 'features_heading',
+      text: 'AVANTAGES',
+      bbox: { x: 5, y: 35, w: 50, h: 3 },
+      fontSizePct: 1.4,
+      fontFamily: 'Inter',
+      color: PALETTE.accent,
+      bold: true,
+      italic: false,
+      align: 'left',
+      role: 'other',
+      backgroundColor: PALETTE.bg,
+      backgroundIsUniform: true,
+    })
+  }
+
   features.forEach((feat, i) => {
-    const y = 35 + i * 5.5
+    const y = 39 + i * 5.5  // shifted from 35 to 39 to leave room for AVANTAGES heading
 
     // Texte feature (pastilles vertes remplacées par ✓ unicode)
     texts.push({
@@ -128,7 +199,11 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
 
   // Curseur Y qui n'avance que si on rend réellement du contenu — évite les
   // gros vides sur produits sans rating ni oldPrice (typique Brico Dépôt).
-  let cursorY = 35 + features.length * 5.5 + 4
+  // Base : si features rendues, démarre après bloc heading + features (+ marge).
+  // Sinon démarre à y=39 (zone juste après le titre).
+  let cursorY = features.length > 0
+    ? 39 + features.length * 5.5 + 4
+    : 39
 
   // ─── 6. Rating (étoiles + nb avis) — uniquement si data.rating ───────────
   if (data.rating) {
