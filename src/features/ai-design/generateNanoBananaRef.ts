@@ -52,24 +52,22 @@ function buildPrompt(args: GenerateNanoBananaRefArgs): string {
     : `Color palette: coherent with ${args.style} style, 3-5 colors max`
 
   return [
-    `Generate an AMBIENT BACKGROUND SCENE for a retail flyer — NOT a product shot. The actual product photograph will be composited on top of your image in a later editing step. Your job is to create the SETTING / ENVIRONMENT only.`,
-    `CONTEXT (for ambient mood only — DO NOT depict the actual product, do not spell anything): ${args.userPrompt}`,
+    `Generate a CLEAN PHOTOGRAPHIC BACKGROUND for a retail flyer. The image will be used as a backdrop — TYPOGRAPHY AND PRICE LABELS WILL BE ADDED IN A LATER EDITING STEP.`,
+    `BRIEF (visual context only — do NOT spell anything in the image): ${args.userPrompt}`,
     `STYLE: ${args.style} — ${STYLE_HINTS[args.style]}`,
     `${paletteLine}`,
     `ABSOLUTE REQUIREMENTS — STRICTLY ENFORCED:
-- DO NOT depict the product itself. No invented product, no stand-in object, no "similar-looking" item. The real product photo will be added on top later.
 - ZERO TEXT in the image. No typography, no letters, no numbers, no symbols, no characters from any language.
 - NO PRICE TAGS, NO BADGES, NO LABELS, NO STICKERS, NO LOGOS, NO BRAND NAMES, NO WATERMARKS.
 - NO callouts, NO annotations, NO captions, NO speech bubbles.
-- The image must be 100% TEXT-FREE and 100% PRODUCT-FREE.`,
+- The image must be 100% TEXT-FREE so typography will be added cleanly in a later editing step.`,
     `COMPOSITION:
-- Show only the AMBIENT ENVIRONMENT or SETTING that's appropriate for the product context. Examples: a manicured garden lawn (for outdoor tools), a modern kitchen counter (for cookware), a workshop background (for tools), a clean minimal studio gradient (universal fallback).
-- Lifestyle photography mood: soft natural lighting, cinematic shallow depth-of-field, professional retouching, ambient gradients.
-- Leave the LOWER-RIGHT or RIGHT THIRD as relatively clean space (slightly out of focus, soft gradient) so the product photo can be cleanly composited on top there.
-- Leave the LEFT SIDE with a calm, slightly out-of-focus area so text overlays (title, features, price) read clearly.
-- Use ambient elements (gradients, depth-of-field blur, environmental textures) — never depict the actual product.`,
+- Lifestyle product photography mood: clean, ambient, professional retouching, soft lighting, cinematic.
+- The product (the main subject of the BRIEF) should be visible in context (in its natural environment) but NOT the only element. Show it nicely placed within a scene.
+- Leave generous NEGATIVE SPACE on the canvas for text overlays to be added later. Avoid filling the entire frame with the product or with busy decoration. The viewer's eye should rest on uncluttered areas.
+- Use ambient elements (gradients, subtle shadows, environmental cues, depth-of-field blur) instead of textual or graphical clutter.`,
     `DIMENSIONS: ${args.widthMm}mm × ${args.heightMm}mm (ratio ${formatRatio}:1).`,
-    `OUTPUT: a single high-quality, text-free, product-free ambient background scene, ready to receive a product photo and typography in post-production.`,
+    `OUTPUT: a single high-quality, text-free background image, ready to receive editable typography overlays in post-production.`,
   ].join('\n\n')
 }
 

@@ -123,7 +123,7 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
     bbox: { x: 5, y: 16, w: 50, h: 18 },
     fontSizePct: 4,
     fontFamily: 'Inter',
-    color: PALETTE.textDark,
+    color: PALETTE.white,  // blanc sur halo noir : visibilité maximale sur tout fond NB2 photographique
     bold: true,
     italic: false,
     align: 'left',
@@ -167,7 +167,7 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
       bbox: { x: 5, y: 35, w: 50, h: 4 },
       fontSizePct: 2,
       fontFamily: 'Inter',
-      color: PALETTE.accent,
+      color: PALETTE.white,  // blanc sur halo noir : visibilité maximale sur tout fond NB2
       bold: true,
       italic: false,
       align: 'left',
@@ -187,7 +187,7 @@ export function composeDesignFromScrapedData(data: ScrapedProductData): DesignAn
       bbox: { x: 5, y: y, w: 50, h: 6 },
       fontSizePct: 2.2,
       fontFamily: 'Inter',
-      color: PALETTE.textDark,
+      color: PALETTE.white,  // blanc sur halo noir : visibilité maximale sur tout fond NB2
       bold: false,
       italic: false,
       align: 'left',

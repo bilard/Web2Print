@@ -200,6 +200,13 @@ export function addEditableTextOverlays(
 
     const fontSize = Math.max(8, ((t.fontSizePct ?? 2) / 100) * canvasHeight)
 
+    // Halo de visibilité : pour les textes blancs (titre, AVANTAGES, features
+    // posés sur le NB2 photographique), on combine un halo noir flou (Shadow)
+    // avec un fin contour noir (stroke). Cette combinaison reproduit le look
+    // "texte blanc bord noir" classique des flyers retail print et garantit
+    // la lisibilité sur n'importe quel fond NB2 (clair, sombre, varié).
+    // Pour les textes foncés (rares ici), halo blanc symétrique.
+    const isLightText = !!t.color && /^#?(?:f[a-f0-9]|e[a-f0-9])/i.test(t.color)
     const tb = new Textbox(t.text, {
       left: xPx,
       top: yPx,
@@ -216,11 +223,11 @@ export function addEditableTextOverlays(
       selectable: true,
       editable: true,
       padding: 2,
+      stroke: isLightText ? 'rgba(0,0,0,0.85)' : undefined,
+      strokeWidth: isLightText ? Math.max(1, fontSize * 0.04) : 0,
+      paintFirst: 'stroke',
       shadow: new Shadow({
-        // Halo blanc fort autour du texte foncé (typique sur fond NB2 photographique
-        // varié : herbe sombre, ombres, gradient). Inversé pour les rares textes
-        // blancs sur pill (dans ce cas un halo noir contraste mieux).
-        color: t.color && /^#?(?:f[a-f0-9]|e[a-f0-9])/i.test(t.color) ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.95)',
+        color: isLightText ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.95)',
         blur: 8,
         offsetX: 0,
         offsetY: 0,
@@ -525,30 +532,21 @@ export async function renderNanoBananaTemplate(
   // 4. Textes éditables
   addEditableTextOverlays(canvas, analysis.texts, canvasWidth, canvasHeight)
 
-  // 5. Image slots — pivot 2+3 (révision : NB2 ambient + vraie photo produit) :
-  //    - NB2 génère un fond AMBIANT sans le produit (prompt anti-product).
-  //    - On pose la VRAIE photo produit scrappée par-dessus dans la zone
-  //      droite/bas, avec validation isLikelyProductImage pour rejeter
-  //      sliders promo et didomi cookies banners.
-  //    - Le logo passe par sa cascade Clearbit/Google/KNOWN.
-  //    - On passe null en sourceDataUri pour empêcher tout crop NB2 résiduel
-  //      (NB2 n'a pas le produit, donc rien à cropper de pertinent).
-  const productImageUrl = scrapedData.imageUrl && isLikelyProductImage(scrapedData.imageUrl)
-    ? scrapedData.imageUrl
-    : undefined
-  // Si l'URL produit est invalide (slider/banner rejeté), on retire le slot
-  // productPhoto pour laisser le NB2 ambient seul, plutôt que de poser un
-  // placeholder dashed visible.
-  const slotsToRender = productImageUrl
-    ? analysis.imageSlots
-    : analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
+  // 5. Image slots — pivot 2+3 :
+  //    - Le NB2 montre le produit en lifestyle (prompt qui demande visibilité
+  //      du produit en contexte). On NE pose PAS de photo produit overlay
+  //      pour éviter la redondance / l'image scrappée parfois moche
+  //      (sliders promo, diagrammes RTK, scènes lifestyle, etc.).
+  //    - Le logo reste, géré par sa cascade Clearbit/Google/KNOWN.
+  //    - On passe null en sourceDataUri pour empêcher tout crop NB2 résiduel.
+  const slotsToRender = analysis.imageSlots.filter((s) => s.role !== 'productPhoto')
   await addEditableImageSlots(
     canvas,
     slotsToRender,
     canvasWidth,
     canvasHeight,
     null,
-    productImageUrl,
+    undefined,
     scrapedData.brandDomain,
   )
 }
