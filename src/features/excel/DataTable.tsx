@@ -16,7 +16,7 @@ type SortDir = 'asc' | 'desc' | 'color' | null
 const numericTypes: FieldTypeId[] = ['number', 'currency', 'percent', 'rating']
 
 /** Clés des colonnes d'enrichissement IA (cf. useSaveEnrichedProduct.ENRICHMENT_COLUMNS) */
-export const AI_ENRICHMENT_KEYS = [
+const AI_ENRICHMENT_KEYS = [
   'ai_description',
   'ai_advantages',
   'ai_specifications',

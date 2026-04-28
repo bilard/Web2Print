@@ -1,16 +1,4 @@
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/lib/firebase/config'
 import type { ReferenceImage } from './geminiImageClient'
-
-const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(
-  functions,
-  'imageProxy',
-)
-
-async function fetchViaProxy(url: string): Promise<{ data: string; mimeType: string }> {
-  const { data } = await imageProxyFn({ url })
-  return data
-}
 
 interface BrandKitFile {
   url: string
@@ -126,34 +114,3 @@ export async function loadBrandKitReferences(
   return refs
 }
 
-/**
- * Charge en références Nano Banana 2 les photos catalogue des produits du
- * panier. Sans ces refs, NB doit deviner à quoi ressemble un "Barnum" ou un
- * "Oriflamme" et converge vers un générique branded (tente rouge). Avec la
- * photo du produit en ref, il sait produire la bonne forme physique.
- *
- * Tolérant : échecs CORS/404 ignorés (la génération continue sans cette ref).
- */
-export async function loadProductImageReferences(
-  items: Array<{ imageUrl?: string; name?: string }>,
-  maxRefs = MAX_REFS,
-): Promise<ReferenceImage[]> {
-  const withImage = items.filter((i) => i.imageUrl).slice(0, maxRefs)
-  const refs: ReferenceImage[] = []
-  for (const item of withImage) {
-    try {
-      // Les URLs produit viennent de sites externes scrapés (doublet.fr…) qui
-      // ne renvoient pas les headers CORS. On passe obligatoirement par la
-      // Cloud Function `imageProxy` qui fetch server-side.
-      const { data, mimeType } = await fetchViaProxy(item.imageUrl as string)
-      refs.push({
-        data,
-        mimeType,
-        label: item.name ? `Produit — ${item.name}` : 'Produit',
-      })
-    } catch (err) {
-      console.warn(`[loadProductImageReferences] échec ${item.name ?? item.imageUrl}:`, err)
-    }
-  }
-  return refs
-}

@@ -12,7 +12,7 @@ export interface ProductTaxonomyLink {
   nodeId: string
 }
 
-export function getProductTaxonomyLink(row: ExcelRow): ProductTaxonomyLink | null {
+function getProductTaxonomyLink(row: ExcelRow): ProductTaxonomyLink | null {
   const taxonomyId = row[PRODUCT_TAXONOMY_ID_KEY]
   const nodeId = row[PRODUCT_TAXONOMY_NODE_ID_KEY]
   if (typeof taxonomyId !== 'string' || !taxonomyId) return null

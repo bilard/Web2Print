@@ -9,7 +9,7 @@ import { z } from 'zod'
  * il remplace le scraping aveugle + LLM par une extraction déterministe.
  */
 
-export const selectorStrategySchema = z.object({
+const selectorStrategySchema = z.object({
   /** Type de sélecteur : CSS (le plus courant), XPath, ou lookup par attribut. */
   kind: z.enum(['css', 'xpath', 'attr', 'text']),
   /** Expression du sélecteur. */
@@ -21,7 +21,7 @@ export const selectorStrategySchema = z.object({
 })
 export type SelectorStrategy = z.infer<typeof selectorStrategySchema>
 
-export const fieldSelectorSchema = z.object({
+const fieldSelectorSchema = z.object({
   /** Nom du champ cible (title, description, price, image, …). */
   field: z.string(),
   /** Liste de sélecteurs testés dans l'ordre : on garde la 1re valeur non-vide.
@@ -40,7 +40,7 @@ export const fieldSelectorSchema = z.object({
 export type FieldSelector = z.infer<typeof fieldSelectorSchema>
 
 /** Pour les groupes de paires (specs organisées par section). */
-export const groupSelectorSchema = z.object({
+const groupSelectorSchema = z.object({
   /** Nom du groupe (ex: "Moteur", "Dimensions"). */
   field: z.literal('specs-group'),
   /** Sélecteur du conteneur du groupe. */
@@ -56,7 +56,7 @@ export const groupSelectorSchema = z.object({
 })
 export type GroupSelector = z.infer<typeof groupSelectorSchema>
 
-export const preActionSchema = z.object({
+const preActionSchema = z.object({
   /** Type d'action à exécuter avant la capture. */
   kind: z.enum([
     'click',         // cliquer un selector (accordéon, onglet)

@@ -193,23 +193,3 @@ function applyStylesToRange(
   }
 }
 
-/**
- * Convert a Fabric text object with tspan metadata to a Textbox with applied styles.
- *
- * This is called after Fabric parses SVG and you have enriched data.
- * It's a higher-level function that orchestrates the remapping.
- */
-export function createStyledTextbox(
-  text: string,
-  width: number,
-  tspans: TspanInfo[],
-  baseProps?: Record<string, unknown>
-) {
-  const styles = remapStylesToFabric(text, tspans)
-  return {
-    text,
-    width,
-    styles,
-    ...baseProps,
-  }
-}

@@ -7,7 +7,7 @@ import { AI_MODELS, getModel, getDefaultModel, type AiProvider, type AiModelInfo
  *  providers de cette liste sont câblés dans les fonctions concernées. */
 export type ReasoningProvider = 'gemini' | 'claude' | 'deepseek' | 'qwen'
 
-export const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'deepseek', 'qwen']
+const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'deepseek', 'qwen']
 
 interface AiSettingsState {
   selectedModel: Record<AiProvider, string>
@@ -74,11 +74,6 @@ export const useAiSettingsStore = create<AiSettingsState>()(
     },
   ),
 )
-
-/** Lecture synchrone de la cascade. Utilisable hors React. */
-export function getReasoningCascade(): ReasoningProvider[] {
-  return useAiSettingsStore.getState().reasoningCascade
-}
 
 export function getSelectedModel(provider: AiProvider): string {
   const id = useAiSettingsStore.getState().selectedModel[provider]

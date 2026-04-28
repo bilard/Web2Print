@@ -148,63 +148,6 @@ export async function loadFont(font: FontDef): Promise<void> {
   })
 }
 
-const pendingFontLoads = new Map<string, Promise<void>>()
-
-/**
- * Injecte la feuille Google Fonts pour une famille arbitraire (nom choisi par
- * un LLM par exemple) et attend que les variantes regular/bold/italic soient
- * réellement prêtes à peindre — nécessaire avant de créer des Fabric Textbox,
- * sinon Fabric mesure avec le fallback système.
- *
- * Partage `loadedFonts` avec `loadFont` pour éviter les registres dupliqués.
- */
-export async function ensureGoogleFontLoaded(family: string): Promise<void> {
-  const key = family?.trim()
-  if (!key) return
-  if (loadedFonts.has(key)) return
-  const existing = pendingFontLoads.get(key)
-  if (existing) return existing
-
-  const loadPromise = (async () => {
-    const familyUrl = key.replace(/\s+/g, '+')
-    const href = `https://fonts.googleapis.com/css2?family=${familyUrl}:ital,wght@0,400;0,700;1,400;1,700&display=swap`
-    const linkId = `google-font-${key.replace(/\s+/g, '-').toLowerCase()}`
-    if (!document.getElementById(linkId)) {
-      const link = document.createElement('link')
-      link.id = linkId
-      link.rel = 'stylesheet'
-      link.href = href
-      document.head.appendChild(link)
-    }
-    try {
-      await Promise.all([
-        document.fonts.load(`400 16px "${key}"`),
-        document.fonts.load(`700 16px "${key}"`),
-        document.fonts.load(`italic 400 16px "${key}"`),
-        document.fonts.load(`italic 700 16px "${key}"`),
-      ])
-    } catch (err) {
-      console.warn(`[useFonts] Variantes de "${key}" indisponibles :`, err)
-    }
-    loadedFonts.add(key)
-  })()
-
-  pendingFontLoads.set(key, loadPromise)
-  try {
-    await loadPromise
-  } finally {
-    pendingFontLoads.delete(key)
-  }
-}
-
-/** Charge en parallèle plusieurs familles Google Fonts. Dédoublonne et ignore vides. */
-export async function ensureGoogleFontsLoaded(families: Array<string | undefined>): Promise<void> {
-  const unique = Array.from(
-    new Set(families.map((f) => (f ?? '').trim()).filter((f) => f.length > 0))
-  )
-  await Promise.all(unique.map((f) => ensureGoogleFontLoaded(f)))
-}
-
 export function usePreloadFonts() {
   const [ready, setReady] = useState(false)
 
