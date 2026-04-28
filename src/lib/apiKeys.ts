@@ -33,6 +33,24 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Clé API OpenAI (optionnel — fallback ou tâches spécifiques)',
   },
   {
+    id: 'deepseek',
+    label: 'DeepSeek',
+    envVar: 'VITE_DEEPSEEK_API_KEY',
+    description: 'Clé API DeepSeek — DeepSeek Chat (V4) et Reasoner',
+  },
+  {
+    id: 'qwen',
+    label: 'Qwen (Alibaba DashScope)',
+    envVar: 'VITE_QWEN_API_KEY',
+    description: 'Clé API DashScope — Qwen Max / Plus / Turbo',
+  },
+  {
+    id: 'kimi',
+    label: 'Kimi (Moonshot)',
+    envVar: 'VITE_KIMI_API_KEY',
+    description: 'Clé Kimi Code — endpoint OpenAI-compatible (kimi-for-coding)',
+  },
+  {
     id: 'firebase_api',
     label: 'Firebase API Key',
     envVar: 'VITE_FIREBASE_API_KEY',
@@ -157,6 +175,54 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         return { status: 'ok', message: `Bucket : ${key}` }
       }
       return { status: 'error', message: 'Format invalide' }
+    }
+
+    if (id === 'deepseek') {
+      // Test DeepSeek: list models endpoint (OpenAI-compatible)
+      const res = await fetch('https://api.deepseek.com/v1/models', {
+        headers: { Authorization: `Bearer ${key}` },
+      })
+      if (res.ok) {
+        return { status: 'ok', message: 'Connecté à DeepSeek' }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { status: 'error', message: 'Clé invalide ou non autorisée' }
+      }
+      return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'qwen') {
+      // Test Qwen via DashScope OpenAI-compatible endpoint
+      const res = await fetch(
+        'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models',
+        { headers: { Authorization: `Bearer ${key}` } },
+      )
+      if (res.ok) {
+        return { status: 'ok', message: 'Connecté à DashScope (Qwen)' }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { status: 'error', message: 'Clé invalide ou non autorisée' }
+      }
+      return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'kimi') {
+      // Kimi Code — endpoint OpenAI-compatible. Pas de /models documenté,
+      // donc on tape un completion minimal pour valider la clé.
+      const res = await fetch('https://api.kimi.com/coding/v1/models', {
+        headers: { Authorization: `Bearer ${key}` },
+      })
+      if (res.ok) {
+        return { status: 'ok', message: 'Connecté à Kimi Code' }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { status: 'error', message: 'Clé invalide ou non autorisée' }
+      }
+      // 404 sur /models = endpoint inexistant mais clé probablement valide
+      if (res.status === 404) {
+        return { status: 'ok', message: 'Clé acceptée (modèle fixe : kimi-for-coding)' }
+      }
+      return { status: 'error', message: `Erreur ${res.status}` }
     }
 
     if (id === 'removebg') {

@@ -17,17 +17,22 @@ interface RecordParams {
   outputTokens: number
 }
 
-export async function recordAiUsage(params: RecordParams): Promise<void> {
+/**
+ * Persiste l'usage en Firestore (agrégat mensuel par provider) et retourne le
+ * coût USD calculé. Le coût est retourné même si Firestore échoue (offline,
+ * non authentifié, etc.) pour permettre un affichage live côté UI.
+ */
+export async function recordAiUsage(params: RecordParams): Promise<number> {
+  const info = getModel(params.provider, params.model)
+  const pricing = info?.pricing ?? { input: 0, output: 0 }
+  const costUsd = computeCost(
+    { input: params.inputTokens, output: params.outputTokens },
+    pricing,
+  )
+
   try {
     const userId = useAuthStore.getState().user?.uid
-    if (!userId) return
-
-    const info = getModel(params.provider, params.model)
-    const pricing = info?.pricing ?? { input: 0, output: 0 }
-    const costUsd = computeCost(
-      { input: params.inputTokens, output: params.outputTokens },
-      pricing,
-    )
+    if (!userId) return costUsd
 
     const month = new Date().toISOString().slice(0, 7)
     const docId = `${userId}_${month}`
@@ -53,4 +58,5 @@ export async function recordAiUsage(params: RecordParams): Promise<void> {
   } catch (e) {
     console.warn('[aiUsageTracking] recordAiUsage failed:', e)
   }
+  return costUsd
 }

@@ -164,5 +164,17 @@ service cloud.firestore {
     match /scrapingRules/{docId} {
       allow read, write: if request.auth != null;
     }
+
+    // ── AI Usage tracking — agrégat mensuel par user ────────────────────────
+    // Document `aiUsage/{uid}_{YYYY-MM}` accumulant tokens/coût par provider.
+    // Lecture autorisée uniquement si docId préfixé par l'UID du caller (cf
+    // useUsageStats qui fait getDoc(`${uid}_${month}`)). Écriture (create/update
+    // via setDoc merge depuis recordAiUsage) requiert ownerId === auth.uid.
+    match /aiUsage/{docId} {
+      allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
+                                            && request.resource.data.ownerId == request.auth.uid;
+    }
   }
 }

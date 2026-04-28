@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { GradientConfig } from './editor.store'
-import { useDesignBriefStore } from './designBrief.store'
 
 export type CanvasBgType = 'solid' | 'gradient' | 'image'
 export type ActiveTool = 'select' | 'text' | 'rect' | 'ellipse' | 'line' | 'image' | 'hand' | 'zoom'
@@ -57,14 +56,6 @@ interface UIState {
   damPickerTargetId: string | null
   openDamPickerForReplace: (targetId: string) => void
   openDamPickerForFill: (targetId: string) => void
-  // --- Claude Design Modal ---
-  isClaudeDesignModalOpen: boolean
-  claudeDesignActiveTab: 'brief' | 'style' | 'avance'
-  isOptimizingPrompt: boolean
-  openClaudeDesignModal: () => void
-  closeClaudeDesignModal: () => void
-  setClaudeDesignActiveTab: (tab: 'brief' | 'style' | 'avance') => void
-  setOptimizingPrompt: (isOptimizing: boolean) => void
 }
 
 const DEFAULT_BG_GRADIENT: GradientConfig = {
@@ -124,8 +115,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
-    { id: 'claude-design', collapsed: false },
-    { id: 'page',    collapsed: true },
+    { id: 'page',    collapsed: false },
     { id: 'print',   collapsed: true },
     { id: 'data',    collapsed: true },
     { id: 'layers',  collapsed: true },
@@ -153,18 +143,4 @@ export const useUIStore = create<UIState>((set, get) => ({
   openDamPickerForFill: (targetId) =>
     set({ damPickerOpen: true, damPickerMode: 'fill', damPickerTargetId: targetId }),
 
-  // --- Claude Design Modal ---
-  isClaudeDesignModalOpen: false,
-  claudeDesignActiveTab: 'brief',
-  isOptimizingPrompt: false,
-  openClaudeDesignModal: () => {
-    const { brief } = useDesignBriefStore.getState()
-    return set({
-      isClaudeDesignModalOpen: true,
-      claudeDesignActiveTab: brief?.prompt?.trim() ? 'style' : 'brief',
-    })
-  },
-  closeClaudeDesignModal: () => set({ isClaudeDesignModalOpen: false }),
-  setClaudeDesignActiveTab: (tab) => set({ claudeDesignActiveTab: tab }),
-  setOptimizingPrompt: (isOptimizing) => set({ isOptimizingPrompt: isOptimizing }),
 }))

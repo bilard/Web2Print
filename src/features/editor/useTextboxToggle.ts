@@ -1,4 +1,3 @@
-/// <reference path="../../types/fabric.d.ts" />
 import { IText, Textbox } from 'fabric'
 import type { Canvas, FabricObject } from 'fabric'
 

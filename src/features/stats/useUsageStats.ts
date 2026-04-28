@@ -29,7 +29,7 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   if (!snap.exists()) {
     return {
       total: 0,
-      byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider() },
+      byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider() },
     }
   }
   const data = snap.data() as {
@@ -43,7 +43,7 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   })
   return {
     total: data.total?.costUsd ?? 0,
-    byProvider: { claude: merge('claude'), gemini: merge('gemini'), openai: merge('openai') },
+    byProvider: { claude: merge('claude'), gemini: merge('gemini'), openai: merge('openai'), deepseek: merge('deepseek'), qwen: merge('qwen'), kimi: merge('kimi') },
   }
 }
 
@@ -54,7 +54,7 @@ async function fetchStats(userId: string): Promise<UsageStats> {
       console.warn('[useUsageStats] fetchAiCost failed:', e)
       return {
         total: 0,
-        byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider() },
+        byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider() },
       }
     })
   const [snap, aiCost] = await Promise.all([getDocs(q), safeAiCost()])

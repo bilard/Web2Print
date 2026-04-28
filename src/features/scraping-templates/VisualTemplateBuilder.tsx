@@ -71,7 +71,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
         finally { setLoading(false) }
       })()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [template.id])
 
   const sendToIframe = (message: unknown) => {
@@ -83,7 +83,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
       .map((f) => ({ selector: f.strategies[0]?.expression ?? '', label: f.field }))
       .filter((t) => t.selector)
     iframeRef.current?.contentWindow?.postMessage({ type: 'pim-set-persistent-tags', tags }, '*')
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [template.fields])
 
   // Listen for postMessage from the iframe

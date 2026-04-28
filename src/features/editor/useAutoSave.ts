@@ -8,7 +8,6 @@ import { useUIStore } from '@/stores/ui.store'
 import { usePaletteStore } from '@/stores/palette.store'
 import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
-import { useDesignBriefStore } from '@/stores/designBrief.store'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
@@ -252,9 +251,6 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         showSafeArea,
         paletteColors: JSON.stringify(paletteColors),
         paletteGradients: JSON.stringify(paletteGradients),
-        claudeDesignBrief: useDesignBriefStore.getState().brief
-          ? JSON.stringify(useDesignBriefStore.getState().brief)
-          : null,
         thumbnail,
         idmlSourceFileName: globalIdmlSource?.fileName ?? null,
         updatedAt: Date.now(),
@@ -313,18 +309,6 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
       canvas.off('object:removed', markUnsaved)
     }
   }, [fabricRef.current, projectId])
-
-  // Mark project as unsaved whenever the Claude Design brief changes.
-  // Respects _loadingInProgress so hydration during load doesn't mark dirty.
-  useEffect(() => {
-    if (!projectId) return
-    const unsub = useDesignBriefStore.subscribe((state, prevState) => {
-      if (state.brief === prevState.brief) return
-      if (_loadingInProgressRef()) return
-      setSaveStatus('unsaved')
-    })
-    return unsub
-  }, [projectId, setSaveStatus])
 
   // Mark project as unsaved when print settings change (dpi/bleed/marks/safe area).
   // Like the brief watcher, gated by _loadingInProgress to avoid dirty-on-hydrate.

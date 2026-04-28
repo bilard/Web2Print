@@ -61,7 +61,7 @@ export function CanvasContainer() {
       const target = e.target
       if (!target) return
       const corner = e.transform?.corner as string | undefined
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const t = target as any
 
       const rewriteText = (txt: any) => {

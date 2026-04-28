@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, Copy, ChevronRight, Database } from 'lucide-react'
 import { TemplateEditor } from '@/features/scraping-templates/TemplateEditor'
-import { emptyTemplate, listTemplates, deleteTemplate, saveTemplate } from '@/features/scraping-templates/templatesStore'
+import { emptyTemplate, listTemplates, deleteTemplate } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { toast } from 'sonner'
 

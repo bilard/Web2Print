@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, Info } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, Info, ChevronUp, ChevronDown, X, Plus } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
@@ -8,11 +8,15 @@ import { useGDriveSettings } from '@/features/gdrive/useGDriveSettings'
 import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey, type ApiTestResult } from '@/lib/apiKeys'
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
+import { useAiSettingsStore, type ReasoningProvider } from '@/stores/aiSettings.store'
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   claude: 'Claude',
   gemini: 'Gemini',
   openai: 'OpenAI',
+  deepseek: 'DeepSeek',
+  qwen: 'Qwen',
+  kimi: 'Kimi',
 }
 
 function formatUsd(n: number): string {
@@ -62,6 +66,52 @@ const GeminiLogo = () => (
         <stop offset="100%" stopColor="#E84B7D"/>
       </linearGradient>
     </defs>
+  </svg>
+)
+
+const ClaudeLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <path
+      fill="#D97757"
+      d="M12 2.4c.4 3.7 2.5 5.8 6.2 6.2l.4.04v.7l-.4.04c-3.7.4-5.8 2.5-6.2 6.2l-.04.4-.7-.04-.04-.4c-.4-3.7-2.5-5.8-6.2-6.2l-.4-.04v-.7l.4-.04c3.7-.4 5.8-2.5 6.2-6.2l.04-.4.7.04.04.4z"
+    />
+  </svg>
+)
+
+const OpenAILogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <path
+      fill="#FFFFFF"
+      d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9A6 6 0 0 0 4.98 4.18a5.98 5.98 0 0 0-3.99 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .52 4.92 6.05 6.05 0 0 0 6.51 2.9 5.98 5.98 0 0 0 4.51 2.01 6.05 6.05 0 0 0 5.77-4.18 5.98 5.98 0 0 0 3.99-2.9 6.05 6.05 0 0 0-.74-7.1zm-9.02 12.6a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.78.78 0 0 0 .39-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.06v5.58a4.5 4.5 0 0 1-4.5 4.49zM3.6 18.51a4.48 4.48 0 0 1-.54-3l.14.08 4.78 2.76a.78.78 0 0 0 .79 0L14.61 15v2.34a.08.08 0 0 1-.03.06l-4.83 2.79a4.5 4.5 0 0 1-6.15-1.65zm-1.26-10.4a4.48 4.48 0 0 1 2.34-1.97V12.36a.78.78 0 0 0 .39.68l5.84 3.37-2.02 1.17a.07.07 0 0 1-.07 0l-4.83-2.8a4.5 4.5 0 0 1-1.65-6.15zm16.6 3.86l-5.84-3.39 2.02-1.16a.07.07 0 0 1 .07 0l4.83 2.79a4.5 4.5 0 0 1-.68 8.12v-5.69a.78.78 0 0 0-.4-.67zm2.01-3.02l-.14-.09-4.77-2.78a.78.78 0 0 0-.79 0L9.39 9v-2.34a.07.07 0 0 1 .03-.06l4.83-2.78a4.5 4.5 0 0 1 6.69 4.66zM8.29 12.85L6.27 11.69a.07.07 0 0 1-.04-.06V6.05a4.5 4.5 0 0 1 7.38-3.46l-.14.08-4.78 2.76a.78.78 0 0 0-.39.68zm1.1-2.36L12 8.97l2.6 1.5v3l-2.6 1.5-2.6-1.5z"
+    />
+  </svg>
+)
+
+const DeepSeekLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <path
+      fill="#4D6BFE"
+      d="M22.4 5.32c-.21-.1-.3.09-.42.18-.05.04-.08.08-.13.13-.36.39-.78.65-1.36.62-.85-.05-1.57.22-2.21.87-.13-.79-.58-1.27-1.26-1.57-.36-.16-.72-.31-.97-.65-.18-.24-.23-.51-.32-.78-.05-.16-.11-.33-.3-.36-.21-.03-.29.14-.37.29-.34.62-.47 1.3-.46 1.99.04 1.55.69 2.78 1.99 3.66.15.1.18.21.14.35-.09.31-.19.61-.29.92-.06.2-.16.24-.37.16-.74-.31-1.39-.78-1.95-1.34-.95-.93-1.81-1.95-2.89-2.78-.25-.2-.5-.38-.77-.55-1.13-1.1.41-2 .77-2.13.37-.13.13-.59-1.06-.58-1.19 0-2.27.4-3.66.93-.2.08-.41.14-.62.19-1.21-.23-2.46-.28-3.77-.13-2.46.27-4.42 1.43-5.86 3.42C-.13 9.16-.39 11.69.34 14.31c.77 2.76 2.43 4.83 5.04 6.16 2.7 1.38 5.61 1.45 8.5.59 2.6-.78 4.6-2.42 5.93-4.84.07.04.14.07.21.11 1.18.66 1.51 2.17.71 3.27-.06.08-.13.15-.06.26.06.09.16.05.24.04.45-.05.78-.3 1.08-.62.86-.92 1.07-2.04.94-3.24-.07-.69-.36-1.32-.36-2.02 0-.62.11-1.16.59-1.57.45-.39.94-.46 1.42-.66.57-.24 1.07-.57 1.41-1.13.04-.07.08-.14.06-.23-.01-.13-.13-.16-.21-.18-.29-.07-.55-.18-.81-.29-.27-.11-.45-.36-.43-.65zM11.4 19.85c-3.55 0-6.43-2.92-6.43-6.51s2.88-6.51 6.43-6.51c3.55 0 6.43 2.92 6.43 6.51s-2.88 6.51-6.43 6.51zm.06-9.75c-1.74 0-3.16 1.41-3.16 3.16s1.42 3.16 3.16 3.16c1.74 0 3.16-1.41 3.16-3.16s-1.42-3.16-3.16-3.16zm0 4.97c-.99 0-1.81-.81-1.81-1.81s.81-1.81 1.81-1.81c.99 0 1.81.81 1.81 1.81s-.81 1.81-1.81 1.81z"
+    />
+  </svg>
+)
+
+const KimiLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="#1F1F1F" />
+    <path
+      fill="#FFFFFF"
+      d="M7.5 7.75h2v3.4l3.4-3.4h2.55l-3.55 3.55 3.7 4.95H13l-2.7-3.7-.8.8v2.9h-2v-8.5zm9 0h2v8.5h-2z"
+    />
+  </svg>
+)
+
+const QwenLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <path
+      fill="#615CED"
+      d="M12 2.25 4.5 6.5v8.5L12 19.25 19.5 15V6.5L12 2.25zm0 2.31 5.5 3.12-5.5 3.12-5.5-3.12L12 4.56zM6 9.39l5 2.84v6.27L6 15.66V9.39zm12 0v6.27l-5 2.84v-6.27l5-2.84z"
+    />
   </svg>
 )
 
@@ -314,15 +364,154 @@ function ProfileTab() {
   )
 }
 
+const CASCADE_PROVIDER_INFO: Record<ReasoningProvider, { label: string; sub: string; logo: React.ReactNode }> = {
+  gemini:   { label: 'Gemini',      sub: 'free tier · économique',       logo: <GeminiLogo /> },
+  claude:   { label: 'Claude Opus', sub: 'pay-as-you-go · qualité max',  logo: <ClaudeLogo /> },
+  deepseek: { label: 'DeepSeek',    sub: 'low cost · JSON natif',        logo: <DeepSeekLogo /> },
+  qwen:     { label: 'Qwen',        sub: 'multilingue · alternatif',     logo: <QwenLogo /> },
+}
+
+const ALL_REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'deepseek', 'qwen']
+
+function ReasoningCascadeSelector() {
+  const cascade = useAiSettingsStore((s) => s.reasoningCascade)
+  const setCascade = useAiSettingsStore((s) => s.setReasoningCascade)
+  const [adding, setAdding] = useState(false)
+  const available = ALL_REASONING_PROVIDERS.filter((p) => !cascade.includes(p))
+
+  const moveUp = (i: number) => {
+    if (i === 0) return
+    const next = [...cascade]
+    ;[next[i - 1], next[i]] = [next[i], next[i - 1]]
+    setCascade(next)
+  }
+  const moveDown = (i: number) => {
+    if (i === cascade.length - 1) return
+    const next = [...cascade]
+    ;[next[i + 1], next[i]] = [next[i], next[i + 1]]
+    setCascade(next)
+  }
+  const remove = (i: number) => {
+    if (cascade.length <= 1) return
+    setCascade(cascade.filter((_, idx) => idx !== i))
+  }
+  const add = (p: ReasoningProvider) => {
+    setCascade([...cascade, p])
+    setAdding(false)
+  }
+
+  return (
+    <div className="bg-white/[0.03] rounded-xl p-3 flex flex-col gap-2">
+      <div className="flex items-start gap-2">
+        <Sparkles className="w-3.5 h-3.5 text-violet-400 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white tracking-tight">Cascade de raisonnement (texte/JSON)</p>
+          <p className="text-[10px] text-white/40">
+            Pour le scraping produit, la composition Art Director et l'amélioration de prompt. Premier provider essayé en priorité, suivants en fallback automatique.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5 mt-1">
+        {cascade.map((p, i) => {
+          const info = CASCADE_PROVIDER_INFO[p]
+          const canRemove = cascade.length > 1
+          return (
+            <div
+              key={p}
+              className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 rounded-lg px-2.5 py-2 transition-colors"
+            >
+              <span className="w-5 h-5 rounded bg-violet-500/15 text-violet-300 text-[10px] font-mono font-semibold flex items-center justify-center shrink-0">
+                {i + 1}
+              </span>
+              {info.logo}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white">{info.label}</p>
+                <p className="text-[10px] text-white/40">{info.sub}</p>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  onClick={() => moveUp(i)}
+                  disabled={i === 0}
+                  title="Monter"
+                  className="text-white/40 hover:text-violet-300 disabled:opacity-20 disabled:cursor-not-allowed p-1 rounded hover:bg-white/5"
+                >
+                  <ChevronUp className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => moveDown(i)}
+                  disabled={i === cascade.length - 1}
+                  title="Descendre"
+                  className="text-white/40 hover:text-violet-300 disabled:opacity-20 disabled:cursor-not-allowed p-1 rounded hover:bg-white/5"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => remove(i)}
+                  disabled={!canRemove}
+                  title={canRemove ? 'Retirer' : 'Au moins un provider requis'}
+                  className="text-white/40 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed p-1 rounded hover:bg-white/5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {available.length > 0 && !adding && (
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center justify-center gap-1.5 text-xs text-white/50 hover:text-violet-300 bg-white/[0.02] hover:bg-white/[0.04] border border-dashed border-white/10 hover:border-violet-500/30 rounded-lg px-3 py-2 transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          Ajouter un provider en fallback
+        </button>
+      )}
+
+      {adding && (
+        <div className="flex flex-col gap-1 bg-white/[0.04] border border-violet-500/20 rounded-lg p-1">
+          {available.map((p) => {
+            const info = CASCADE_PROVIDER_INFO[p]
+            return (
+              <button
+                key={p}
+                onClick={() => add(p)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors"
+              >
+                {info.logo}
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-xs font-semibold text-white/80">{info.label}</p>
+                  <p className="text-[10px] text-white/40">{info.sub}</p>
+                </div>
+                <Plus className="w-3 h-3 text-violet-400" />
+              </button>
+            )
+          })}
+          <button
+            onClick={() => setAdding(false)}
+            className="text-[10px] text-white/30 hover:text-white/60 px-2 py-1"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AiTab() {
   return (
     <div className="flex flex-col gap-2">
+      <ReasoningCascadeSelector />
       <AiProviderCard
         provider="gemini"
         apiKeyId="gemini"
         label="Nano Banana (Gemini)"
         description="Génération d'images IA et raisonnement via Google Gemini"
         logo={<GeminiLogo />}
+        apiKeyUrl="https://aistudio.google.com/app/apikey"
         noteForGemini
       />
       <AiProviderCard
@@ -330,12 +519,40 @@ function AiTab() {
         apiKeyId="anthropic"
         label="Claude (Anthropic)"
         description="Raisonnement briefs, panier, deck, design"
+        logo={<ClaudeLogo />}
+        apiKeyUrl="https://console.anthropic.com/settings/keys"
       />
       <AiProviderCard
         provider="openai"
         apiKeyId="openai"
         label="OpenAI"
         description="GPT — fallback ou tâches spécifiques (optionnel)"
+        logo={<OpenAILogo />}
+        apiKeyUrl="https://platform.openai.com/api-keys"
+      />
+      <AiProviderCard
+        provider="deepseek"
+        apiKeyId="deepseek"
+        label="DeepSeek"
+        description="DeepSeek V4 — raisonnement à faible coût (optionnel)"
+        logo={<DeepSeekLogo />}
+        apiKeyUrl="https://platform.deepseek.com/api_keys"
+      />
+      <AiProviderCard
+        provider="qwen"
+        apiKeyId="qwen"
+        label="Qwen (Alibaba)"
+        description="Qwen Max / Plus / Turbo via DashScope (optionnel)"
+        logo={<QwenLogo />}
+        apiKeyUrl="https://dashscope.console.aliyun.com/apiKey"
+      />
+      <AiProviderCard
+        provider="kimi"
+        apiKeyId="kimi"
+        label="Kimi (Moonshot)"
+        description="Kimi Code — endpoint OpenAI-compatible (optionnel)"
+        logo={<KimiLogo />}
+        apiKeyUrl="https://www.kimi.com/code/console"
       />
     </div>
   )
@@ -382,7 +599,7 @@ function StatsTab() {
     return <p className="text-xs text-white/30">Impossible de charger les statistiques</p>
   }
 
-  const providers: AiProvider[] = ['claude', 'gemini', 'openai']
+  const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi']
 
   return (
     <div className="flex flex-col gap-2">

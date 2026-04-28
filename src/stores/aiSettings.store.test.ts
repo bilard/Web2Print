@@ -9,8 +9,8 @@ describe('aiSettings.store', () => {
   beforeEach(() => {
     localStorage.clear()
     useAiSettingsStore.setState({
-      selectedModel: { claude: 'claude-opus-4-7', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o' },
-      fetchedModels: { claude: [], gemini: [], openai: [] },
+      selectedModel: { claude: 'claude-opus-4-7', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o', deepseek: 'deepseek-chat', qwen: 'qwen-max', kimi: 'kimi-for-coding' },
+      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [] },
     })
   })
 
@@ -18,6 +18,9 @@ describe('aiSettings.store', () => {
     expect(getSelectedModel('claude')).toBe('claude-opus-4-7')
     expect(getSelectedModel('gemini')).toBe('gemini-3.1-pro-preview')
     expect(getSelectedModel('openai')).toBe('gpt-4o')
+    expect(getSelectedModel('deepseek')).toBe('deepseek-chat')
+    expect(getSelectedModel('qwen')).toBe('qwen-max')
+    expect(getSelectedModel('kimi')).toBe('kimi-for-coding')
   })
 
   it('setSelectedModel updates selection', () => {
@@ -27,8 +30,8 @@ describe('aiSettings.store', () => {
 
   it('getSelectedModel falls back to default if stored id is unknown', () => {
     useAiSettingsStore.setState({
-      selectedModel: { claude: 'ghost-model', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o' },
-      fetchedModels: { claude: [], gemini: [], openai: [] },
+      selectedModel: { claude: 'ghost-model', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o', deepseek: 'deepseek-chat', qwen: 'qwen-max', kimi: 'kimi-for-coding' },
+      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [] },
     })
     expect(getSelectedModel('claude')).toBe('claude-opus-4-7')
   })

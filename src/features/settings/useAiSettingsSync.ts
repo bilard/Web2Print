@@ -18,7 +18,7 @@ export function useAiSettingsSync() {
     if (!user) {
       useAiSettingsStore.setState({
         selectedModel: initialSelected(),
-        fetchedModels: { claude: [], gemini: [], openai: [] },
+        fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [] },
       })
       return
     }
@@ -26,7 +26,7 @@ export function useAiSettingsSync() {
     // Reset to defaults BEFORE hydration so we never inherit a previous user's state.
     useAiSettingsStore.setState({
       selectedModel: initialSelected(),
-      fetchedModels: { claude: [], gemini: [], openai: [] },
+      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [] },
     })
     // Snapshot the post-reset baseline; any divergence after this is a user click during hydration.
     const baseline = useAiSettingsStore.getState().selectedModel
@@ -52,6 +52,9 @@ export function useAiSettingsSync() {
               claude: ai.fetchedModels.claude ?? current.claude,
               gemini: ai.fetchedModels.gemini ?? current.gemini,
               openai: ai.fetchedModels.openai ?? current.openai,
+              deepseek: ai.fetchedModels.deepseek ?? current.deepseek,
+              qwen: ai.fetchedModels.qwen ?? current.qwen,
+              kimi: ai.fetchedModels.kimi ?? current.kimi,
             },
           })
         }

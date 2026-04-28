@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi,
-  ChevronDown, RefreshCw, Info,
+  ChevronDown, RefreshCw, Info, ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -13,10 +13,12 @@ import { useAiSettingsStore } from '@/stores/aiSettings.store'
 
 interface AiProviderCardProps {
   provider: AiProvider
-  apiKeyId: 'gemini' | 'anthropic' | 'openai'
+  apiKeyId: 'gemini' | 'anthropic' | 'openai' | 'deepseek' | 'qwen' | 'kimi'
   label: string
   description: string
   logo?: React.ReactNode
+  /** URL de la console pour générer / récupérer la clé API. */
+  apiKeyUrl?: string
   /** Si true, affiche la note "image gen utilise toujours Nano Banana" (carte Gemini uniquement). */
   noteForGemini?: boolean
 }
@@ -54,21 +56,57 @@ async function fetchModelsFromProvider(
       .filter((m) => m.id.startsWith('gemini-') && !/(image|tts|embedding|aqa)/i.test(m.id))
       .map((m) => ({ id: m.id, label: m.label, pricing: { input: 0, output: 0 } }))
   }
-  // openai
-  const res = await fetch('https://api.openai.com/v1/models', {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  })
-  if (!res.ok) throw new Error(`OpenAI ${res.status}`)
-  const data = await res.json() as { data?: Array<{ id: string }> }
-  return (data.data ?? [])
-    .filter((m) =>
-      (m.id.startsWith('gpt-') || /^o\d/.test(m.id)) &&
-      !/(audio|realtime|search|tts|whisper|image|moderation)/i.test(m.id)
+  if (provider === 'openai') {
+    const res = await fetch('https://api.openai.com/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (!res.ok) throw new Error(`OpenAI ${res.status}`)
+    const data = await res.json() as { data?: Array<{ id: string }> }
+    return (data.data ?? [])
+      .filter((m) =>
+        (m.id.startsWith('gpt-') || /^o\d/.test(m.id)) &&
+        !/(audio|realtime|search|tts|whisper|image|moderation)/i.test(m.id)
+      )
+      .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+  }
+  if (provider === 'deepseek') {
+    const res = await fetch('https://api.deepseek.com/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (!res.ok) throw new Error(`DeepSeek ${res.status}`)
+    const data = await res.json() as { data?: Array<{ id: string }> }
+    return (data.data ?? [])
+      .filter((m) => m.id.startsWith('deepseek-'))
+      .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+  }
+  if (provider === 'qwen') {
+    const res = await fetch(
+      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models',
+      { headers: { Authorization: `Bearer ${apiKey}` } },
     )
-    .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+    if (!res.ok) throw new Error(`Qwen ${res.status}`)
+    const data = await res.json() as { data?: Array<{ id: string }> }
+    return (data.data ?? [])
+      .filter((m) => /^qwen/i.test(m.id) && !/(audio|tts|asr|embedding|image|vl-)/i.test(m.id))
+      .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+  }
+  // kimi (Kimi Code, OpenAI-compatible) — pas de /models documenté.
+  // On tente l'endpoint, et on retombe sur le modèle fixe si 404.
+  try {
+    const res = await fetch('https://api.kimi.com/coding/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (res.ok) {
+      const data = await res.json() as { data?: Array<{ id: string }> }
+      return (data.data ?? [])
+        .filter((m) => /^kimi/i.test(m.id) || /^moonshot/i.test(m.id))
+        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+    }
+  } catch { /* fall through */ }
+  return [{ id: 'kimi-for-coding', label: 'Kimi for Coding', pricing: { input: 0, output: 0 } }]
 }
 
-export function AiProviderCard({ provider, apiKeyId, label, description, logo, noteForGemini }: AiProviderCardProps) {
+export function AiProviderCard({ provider, apiKeyId, label, description, logo, apiKeyUrl, noteForGemini }: AiProviderCardProps) {
   // ── API key state (mirrors ApiKeyRow)
   const [editing, setEditing] = useState(false)
   const [visible, setVisible] = useState(false)
@@ -147,35 +185,64 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, n
     }
   }
 
+  const [expanded, setExpanded] = useState(false)
+  const stop = (e: React.MouseEvent) => e.stopPropagation()
+
   return (
-    <div className="bg-white/[0.03] rounded-xl p-3 flex flex-col gap-2">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="bg-white/[0.03] rounded-xl flex flex-col">
+      {/* Header — toggle accordion */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={() => setExpanded((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v) }
+        }}
+        className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] rounded-xl transition-colors"
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {logo}
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-medium text-white/70">{label}</p>
-              {testStatus === 'testing' && <Loader2 className="w-3 h-3 text-white/30 animate-spin" />}
-              {testStatus === 'ok' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
-              {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
-              {testStatus === 'empty' && <XCircle className="w-3 h-3 text-white/20" />}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-white tracking-tight">{label}</p>
+              {testStatus === 'testing' && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
+              {testStatus === 'ok' && <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />}
+              {testStatus === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400" />}
+              {testStatus === 'empty' && <XCircle className="w-3.5 h-3.5 text-white/20" />}
+              {apiKeyUrl && (
+                <a
+                  href={apiKeyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Obtenir une clé API"
+                  onClick={stop}
+                  className="flex items-center gap-1 text-[10px] text-indigo-400/70 hover:text-indigo-300 transition-colors"
+                >
+                  <span>Obtenir une clé</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
             <p className="text-[10px] text-white/30">{description}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button onClick={handleTestKey} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
+          <button onClick={(e) => { stop(e); handleTestKey() }} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
             <Wifi className="w-3 h-3" />
           </button>
           {overridden && (
-            <button onClick={handleResetKey} title="Réinitialiser (utiliser .env)" className="text-white/20 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5">
+            <button onClick={(e) => { stop(e); handleResetKey() }} title="Réinitialiser (utiliser .env)" className="text-white/20 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5">
               <RotateCcw className="w-3 h-3" />
             </button>
           )}
+          <ChevronDown className={`w-4 h-4 text-white/30 transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </div>
       </div>
 
+      {/* Body — collapsed by default */}
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 flex flex-col gap-2 border-t border-white/5">
       {testStatus && testStatus !== 'testing' && testMessage && (
         <p className={`text-[10px] ${testStatus === 'ok' ? 'text-green-400/70' : testStatus === 'error' ? 'text-red-400/70' : 'text-white/20'}`}>
           {testMessage}
@@ -258,6 +325,8 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, n
         <div className="flex items-start gap-1.5 mt-1 text-[10px] text-white/30">
           <Info className="w-3 h-3 shrink-0 mt-0.5" />
           <span>La génération d'image utilise toujours Nano Banana (<code className="font-mono">gemini-3.1-flash-image-preview</code>).</span>
+        </div>
+      )}
         </div>
       )}
     </div>

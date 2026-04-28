@@ -3,7 +3,7 @@ import { AI_MODELS, getModel, getDefaultModel, type AiProvider } from './aiModel
 
 describe('aiModels catalog', () => {
   it('exports a default model for each provider', () => {
-    const providers: AiProvider[] = ['claude', 'gemini', 'openai']
+    const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi']
     for (const p of providers) {
       const list = AI_MODELS[p]
       expect(list.length).toBeGreaterThan(0)
@@ -24,6 +24,9 @@ describe('aiModels catalog', () => {
     expect(getDefaultModel('claude').id).toBe('claude-opus-4-7')
     expect(getDefaultModel('gemini').id).toBe('gemini-3.1-pro-preview')
     expect(getDefaultModel('openai').id).toBe('gpt-4o')
+    expect(getDefaultModel('deepseek').id).toBe('deepseek-chat')
+    expect(getDefaultModel('qwen').id).toBe('qwen-max')
+    expect(getDefaultModel('kimi').id).toBe('kimi-for-coding')
   })
 
   it('all models have a non-negative pricing', () => {

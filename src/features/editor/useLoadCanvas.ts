@@ -8,10 +8,6 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { usePaletteStore } from '@/stores/palette.store'
 import { useMergeStore, type FormulaConfig } from '@/stores/merge.store'
-import { useDesignBriefStore } from '@/stores/designBrief.store'
-import type { DesignBriefState } from '@/features/ai-design/types'
-import { DEFAULT_DESIGN_BRIEF } from '@/features/ai-design/types'
-import { findFormatIdByPixelDimensions } from '@/features/print/PRINT_FORMATS'
 import { syncToStore } from './useAddObject'
 import { ensurePageBgRect } from './useCanvas'
 import { setLoadingInProgress } from './useAutoSave'
@@ -285,8 +281,6 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
       const pid = projectId!
       // Block auto-save during load to prevent overwriting good data
       setLoadingInProgress(true)
-      // Prevent a previous project's brief from leaking into this load window.
-      useDesignBriefStore.getState().resetBrief()
       try {
         const snap = await getDoc(doc(db, 'projects', pid))
         if (!snap.exists()) return
@@ -294,23 +288,8 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
         if (data.title) setProjectTitle(data.title)
 
-        // Restore canvas/page dimensions if saved (MUST come before brief hydration)
-        let correctFormatId = 'custom'
+        // Restore canvas/page dimensions if saved
         if (data.canvasWidth && data.canvasHeight) {
-          // Direct mapping for known dimensions
-          if (data.canvasWidth === 794 && data.canvasHeight === 1123) correctFormatId = 'a4'
-          else if (data.canvasWidth === 1123 && data.canvasHeight === 794) correctFormatId = 'a4'
-          else if (data.canvasWidth === 1123 && data.canvasHeight === 1587) correctFormatId = 'a3'
-          else if (data.canvasWidth === 1587 && data.canvasHeight === 1123) correctFormatId = 'a3'
-          else if (data.canvasWidth === 559 && data.canvasHeight === 794) correctFormatId = 'a5'
-          else if (data.canvasWidth === 794 && data.canvasHeight === 559) correctFormatId = 'a5'
-          else if (data.canvasWidth === 1920 && data.canvasHeight === 1080) correctFormatId = 'fullhd'
-          else if (data.canvasWidth === 3840 && data.canvasHeight === 2160) correctFormatId = '4k'
-          else if (data.canvasWidth === 1280 && data.canvasHeight === 720) correctFormatId = 'pres-16-9'
-          else if (data.canvasWidth === 1080 && data.canvasHeight === 1080) correctFormatId = 'ig-post'
-          else if (data.canvasWidth === 1080 && data.canvasHeight === 1920) correctFormatId = 'ig-story'
-          else if (data.canvasWidth === 820 && data.canvasHeight === 312) correctFormatId = 'fb-cover'
-
           const uiStore = useUIStore.getState()
           uiStore.setCanvasSize(
             data.canvasWidth,
@@ -327,23 +306,6 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
             } catch { /* ignore */ }
           }
           if (data.canvasBgImage !== undefined) uiStore.setCanvasBgImage(data.canvasBgImage)
-        }
-
-        // Restore Claude Design brief (form state of the AI design panel).
-        // WITH synchronized formatId based on canvas dimensions
-        try {
-          const raw = data.claudeDesignBrief
-          const parsed = typeof raw === 'string' && raw.length > 0
-            ? JSON.parse(raw) as DesignBriefState
-            : null
-          // FORCE formatId to match canvas dimensions (overwrite any saved value)
-          const briefToUse = parsed
-            ? { ...parsed, formatId: correctFormatId }
-            : { ...DEFAULT_DESIGN_BRIEF, formatId: correctFormatId }
-          useDesignBriefStore.getState().hydrateBrief(briefToUse)
-        } catch (err) {
-          console.warn('[Load] claudeDesignBrief parse error:', err)
-          useDesignBriefStore.getState().hydrateBrief({ ...DEFAULT_DESIGN_BRIEF, formatId: correctFormatId })
         }
 
         // Restore print settings (DPI, bleed, marks, safe area) — écrit dans

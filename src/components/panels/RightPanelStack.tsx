@@ -6,7 +6,7 @@ import {
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
-import { Layers, ImagePlus, Palette, FolderOpen, Database, Sparkles, FileText, Printer } from 'lucide-react'
+import { Layers, ImagePlus, Palette, FolderOpen, Database, FileText, Printer } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { PropertiesPanel } from '@/components/panels/PropertiesPanel'
 import { CollapsiblePanel } from '@/components/panels/CollapsiblePanel'
@@ -17,15 +17,8 @@ import { AssetsPanel } from '@/components/panels/AssetsPanel'
 import { PagePanel } from '@/components/panels/PagePanel'
 import { PrintPanel } from '@/components/panels/PrintPanel'
 import { DataMergePanel } from '@/features/merge/DataMergePanel'
-import { ClaudeDesignModal } from '@/features/ai-design/ClaudeDesignModal'
 
 const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode; onHeaderClick?: () => void }> = {
-  'claude-design': {
-    title: 'Création IA',
-    icon: Sparkles,
-    content: null,
-    onHeaderClick: () => useUIStore.getState().openClaudeDesignModal(),
-  },
   page:   { title: 'Page',       icon: FileText,   content: <PagePanel /> },
   print:  { title: 'Impression', icon: Printer,    content: <PrintPanel /> },
   data:   { title: 'Données',    icon: Database,   content: <DataMergePanel /> },
@@ -89,8 +82,6 @@ export function RightPanelStack() {
         </div>
       </div>
 
-      {/* Claude Design Modal at root level */}
-      <ClaudeDesignModal />
     </>
   )
 }

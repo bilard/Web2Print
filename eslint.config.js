@@ -6,6 +6,7 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import unusedImports from 'eslint-plugin-unused-imports'
 import reactHooks from 'eslint-plugin-react-hooks'
+import globals from 'globals'
 
 export default tseslint.config(
   {
@@ -18,6 +19,8 @@ export default tseslint.config(
       'src/components/ui/**',
       'scripts/**',
       'public/**',
+      'extension/dist/**',
+      'extension/src/overlay-main.ts',
       '*.config.{js,cjs,ts}',
       'api-server.js',
     ],
@@ -25,6 +28,14 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.serviceworker,
+        chrome: 'readonly',
+      },
+    },
     plugins: {
       'unused-imports': unusedImports,
       'react-hooks': reactHooks,

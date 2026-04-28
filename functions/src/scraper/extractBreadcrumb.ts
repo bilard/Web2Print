@@ -1,10 +1,11 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import type { Browser } from 'puppeteer-core'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { addExtra } = require('puppeteer-extra')
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const puppeteerCore = require('puppeteer-core')
 
 // Wrap puppeteer-core avec puppeteer-extra pour bénéficier du plugin stealth

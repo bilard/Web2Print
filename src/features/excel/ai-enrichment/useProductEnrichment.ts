@@ -2292,7 +2292,7 @@ function buildManufacturerProduct(
   }
 
   // Images : markdown (inclut Jina injected + inline + summary) > REDUX
-  let images: string[] = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
+  const images: string[] = markdownContent ? parseImagesFromMarkdown(markdownContent) : []
   // Merge avec REDUX rawData images (sans doublons)
   if (rawData.images.length > 0) {
     const seen = new Set(images)
@@ -2431,8 +2431,8 @@ function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string
   // FINANCIAL_NAME_RE et FINANCIAL_VALUE_RE déclarés plus haut (réutilisés aussi par le parser Jina)
 
   function add(name: string, value: string, group?: string) {
-    let n = name.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
-    let v = value.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
+    const n = name.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
+    const v = value.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
     const key = `${n.toLowerCase()}::${v.toLowerCase()}`
     if (!n || !v || seen.has(key)) return
     // Rejeter les métadonnées Jina / balises HTML / URLs
