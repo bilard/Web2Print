@@ -498,6 +498,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           canvas.bringObjectToFront(m)
         }
 
+        canvas.requestRenderAll()
         syncToStore(canvas)
 
         ensurePageBgRect(canvas)
