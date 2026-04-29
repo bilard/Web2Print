@@ -1,5 +1,6 @@
 import { Scissors, Shield, Target, Download, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { doc, setDoc } from 'firebase/firestore'
@@ -27,8 +28,10 @@ export function PrintPanel() {
         cropMarkOffsetMm,
         safeAreaMm,
       }, { merge: true })
+      toast.success('Paramètres d\'impression enregistrés ✓')
     } catch (err) {
       console.error('[PrintPanel] Save failed:', err)
+      toast.error('Erreur lors de l\'enregistrement')
     } finally {
       setSaving(false)
     }
