@@ -308,14 +308,15 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           if (data.canvasBgImage !== undefined) uiStore.setCanvasBgImage(data.canvasBgImage)
         }
 
-        // Restore print settings (DPI, bleed, marks, safe area) — écrit dans
-        // le store, l'effet `CanvasContainer` dessinera les marques.
+        // Restore print settings, but only if they look like user-set values (not old defaults).
+        // Pre-print-marks projects have undefined or 0 values; new projects have user-changed values.
         const uiStoreRef = useUIStore.getState()
-        if (typeof data.dpi === 'number') uiStoreRef.setDpi(data.dpi)
-        if (typeof data.bleedMm === 'number') uiStoreRef.setBleedMm(data.bleedMm)
-        // Always show print marks by default (use store defaults, don't restore old false values)
-        // if (typeof data.showPrintMarks === 'boolean') uiStoreRef.setShowPrintMarks(data.showPrintMarks)
-        // if (typeof data.showSafeArea === 'boolean') uiStoreRef.setShowSafeArea(data.showSafeArea)
+        if (typeof data.dpi === 'number' && data.dpi >= 72 && data.dpi <= 600) {
+          uiStoreRef.setDpi(data.dpi)
+        }
+        if (typeof data.bleedMm === 'number' && data.bleedMm >= 0 && data.bleedMm <= 10) {
+          uiStoreRef.setBleedMm(data.bleedMm)
+        }
 
         // Restore project palette
         try {
@@ -430,8 +431,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
           fixAndReattach(canvas)
 
-          // Add print marks to canvas during load with default values
-          // (always use defaults regardless of what's in Firestore)
+          // Add print marks to canvas during load
           const { buildPrintMarks, removeAllPrintMarks } = await import('@/features/print/printMarks')
           const { mmToPx } = await import('@/features/print/dimensions')
 
@@ -439,20 +439,16 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           for (const o of old) canvas.remove(o)
 
           const uiStore = useUIStore.getState()
-          const canvasWidth = uiStore.canvasWidth
-          const canvasHeight = uiStore.canvasHeight
-
-          // Always use defaults for print marks
           const marks = buildPrintMarks({
-            canvasWidthPx: canvasWidth,
-            canvasHeightPx: canvasHeight,
+            canvasWidthPx: uiStore.canvasWidth,
+            canvasHeightPx: uiStore.canvasHeight,
             pageLeftPx: 0,
             pageTopPx: 0,
-            bleedPx: mmToPx(2, 300),           // Default: 2mm @ 300 DPI
-            cropMarkLengthPx: mmToPx(3.5, 300), // Default: 3.5mm @ 300 DPI
-            cropMarkOffsetPx: mmToPx(1, 300),  // Default: 1mm @ 300 DPI
-            safeAreaPx: mmToPx(2, 300),        // Default: 2mm @ 300 DPI
-            dpi: 300,                           // Default: 300 DPI
+            bleedPx: mmToPx(uiStore.bleedMm, uiStore.dpi),
+            cropMarkLengthPx: mmToPx(uiStore.cropMarkLengthMm, uiStore.dpi),
+            cropMarkOffsetPx: mmToPx(uiStore.cropMarkOffsetMm, uiStore.dpi),
+            safeAreaPx: mmToPx(uiStore.safeAreaMm, uiStore.dpi),
+            dpi: uiStore.dpi,
             showPrintMarks: true,
             showSafeArea: true,
             showRegistrationMarks: true,
