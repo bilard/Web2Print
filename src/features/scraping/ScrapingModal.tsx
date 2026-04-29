@@ -11,7 +11,8 @@ import { ScrapingPreview } from './ScrapingPreview'
 import { ProductEnrichedView } from './ProductEnrichedView'
 import { useExcelStore } from '@/stores/excel.store'
 import { useProductEnrichment } from '@/features/excel/ai-enrichment/useProductEnrichment'
-import { useEnrichmentStore, enrichmentKey } from '@/features/excel/ai-enrichment/enrichmentStore'
+import { useEnrichmentStore } from '@/features/excel/ai-enrichment/enrichmentStore'
+import { enrichmentKey } from '@/features/excel/ai-enrichment/types'
 
 /** Clé synthétique : la modal de scraping n'a pas de feuille — on isole dans
  *  un namespace dédié pour ne pas polluer les enrichissements de feuilles
