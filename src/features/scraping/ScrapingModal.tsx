@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync } from 'lucide-react'
+import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2 } from 'lucide-react'
 import { useJina, scrapeResultToSheet, crawlPagesToSheet } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
@@ -8,7 +8,15 @@ import { ScrapeTab } from './ScrapeTab'
 import { MapExtractTab } from './MapExtractTab'
 import { CrawlTab } from './CrawlTab'
 import { ScrapingPreview } from './ScrapingPreview'
+import { ProductEnrichedView } from './ProductEnrichedView'
 import { useExcelStore } from '@/stores/excel.store'
+import { useProductEnrichment } from '@/features/excel/ai-enrichment/useProductEnrichment'
+import { useEnrichmentStore, enrichmentKey } from '@/features/excel/ai-enrichment/enrichmentStore'
+
+/** Clé synthétique : la modal de scraping n'a pas de feuille — on isole dans
+ *  un namespace dédié pour ne pas polluer les enrichissements de feuilles
+ *  Excel réelles. */
+const SCRAPE_MODAL_SHEET = '__scrape_modal__'
 
 type Tab = 'scrape' | 'map' | 'crawl'
 
@@ -35,12 +43,50 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
   const { setSheets, setCurrentFileName, sheets } = useExcelStore()
   const setCurrentPath = useExcelStore((s) => s.setCurrentPath)
 
+  // Pipeline d'enrichissement réutilisée pour le mode "Produit unique" :
+  // produit la structure riche (advantages groupés, variants, specs communes
+  // par groupe) directement depuis l'URL, sans passer par une feuille Excel.
+  const { enrich, running: enriching, reset: resetEnrich } = useProductEnrichment()
+  const clearEnrichEntry = useEnrichmentStore((s) => s.clear)
+  const enrichRowId = (() => {
+    try { return new URL(url).pathname.replace(/[^a-z0-9]/gi, '_').slice(0, 80) || 'pending' }
+    catch { return 'pending' }
+  })()
+  const enrichKey = enrichmentKey(SCRAPE_MODAL_SHEET, enrichRowId)
+  const enrichEntry = useEnrichmentStore((s) => s.entries[enrichKey])
+  const enrichLogs = useEnrichmentStore((s) => s.logs[enrichKey] ?? [])
+
   if (!open) return null
 
   const urlValid = (() => { try { new URL(url); return true } catch { return false } })()
   const hostname = (() => { try { return new URL(url).hostname.replace('www.', '') } catch { return 'scraped' } })()
 
   const handleScrape = async (mode: ScrapingMode, fields: ScrapingField[], prompt: string, opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean; manualBreadcrumb?: string[] }) => {
+    // Mode "Produit unique" : route vers la pipeline d'enrichissement riche
+    // (advantages groupés, variants table, specs communes) au lieu de l'extraction
+    // Gemini → ligne plate. Les inputs schema/template/prompt sont ignorés ici :
+    // on utilise le pipeline AUTO IA généraliste de useProductEnrichment.
+    if (opts.target === 'single') {
+      setResult(null)
+      setLastFields([])
+      // Reset de l'entrée précédente pour éviter d'afficher un résultat périmé
+      clearEnrichEntry(SCRAPE_MODAL_SHEET, enrichRowId)
+      resetEnrich()
+      // Titre dérivé du dernier segment d'URL — la pipeline le raffinera ensuite
+      let title = ''
+      try {
+        const path = new URL(url).pathname.split('/').filter(Boolean).pop() ?? ''
+        title = path.replace(/[-_]+/g, ' ').replace(/\.\w{2,4}$/, '').trim()
+      } catch { /* URL déjà validée */ }
+      await enrich({
+        sheetName: SCRAPE_MODAL_SHEET,
+        rowId: enrichRowId,
+        title,
+        knownUrl: url,
+        mode: 'auto',
+      })
+      return
+    }
     setResult(null)
     setLastFields(fields)
     const res = await scrape(url, mode, fields, prompt, opts)
@@ -202,6 +248,7 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
     setResult(null)
     setCrawlPages([])
     setUrl('')
+    clearEnrichEntry(SCRAPE_MODAL_SHEET, enrichRowId)
     onClose()
   }
 
@@ -265,13 +312,35 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
           )}
 
           {tab === 'scrape' && (
-            <ScrapeTab url={urlValid ? url : ''} loading={loading} onScrape={handleScrape} result={result} onUrlSuggestion={(suggested) => setUrl(suggested)} />
+            <ScrapeTab url={urlValid ? url : ''} loading={loading || enriching} onScrape={handleScrape} result={result} onUrlSuggestion={(suggested) => setUrl(suggested)} />
           )}
           {tab === 'map' && (
             <MapExtractTab url={urlValid ? url : ''} loading={loading} onMap={handleMap} onExtract={handleExtract} result={result} />
           )}
           {tab === 'crawl' && (
             <CrawlTab url={urlValid ? url : ''} loading={loading} progress={progress} pages={crawlPages} onCrawl={handleCrawl} onAbort={abort} />
+          )}
+
+          {/* Mode "Produit unique" : progression + rendu riche depuis enrichmentStore */}
+          {tab === 'scrape' && enrichEntry && enrichEntry.progress.status !== 'idle' && enrichEntry.progress.status !== 'done' && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
+              <Loader2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-[12px] text-indigo-300/90 font-medium">{enrichEntry.progress.message}</p>
+                {enrichLogs.length > 0 && (
+                  <p className="text-[10px] text-white/40 leading-relaxed truncate">{enrichLogs[enrichLogs.length - 1]}</p>
+                )}
+              </div>
+            </div>
+          )}
+          {tab === 'scrape' && enrichEntry?.error && !enriching && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-300">{enrichEntry.error}</p>
+            </div>
+          )}
+          {tab === 'scrape' && enrichEntry?.data && (
+            <ProductEnrichedView product={enrichEntry.data} />
           )}
 
           {result && <ScrapingPreview result={result} />}
