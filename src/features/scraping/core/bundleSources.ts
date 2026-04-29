@@ -1,4 +1,4 @@
-import { discoverRelatedUrls, type RelatedUrls } from '@/features/excel/ai-enrichment/relatedUrls'
+import { discoverRelatedUrls, type RelatedUrls } from './relatedUrls'
 
 export interface ScrapedBundle {
   primaryUrl: string
