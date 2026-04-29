@@ -308,14 +308,23 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           if (data.canvasBgImage !== undefined) uiStore.setCanvasBgImage(data.canvasBgImage)
         }
 
-        // Restore print settings, but only if they look like user-set values (not old defaults).
-        // Pre-print-marks projects have undefined or 0 values; new projects have user-changed values.
+        // Restore ALL print settings from Firestore, with range validation
+        // Pre-print-marks projects have undefined or 0 values; new projects have user-set values.
         const uiStoreRef = useUIStore.getState()
         if (typeof data.dpi === 'number' && data.dpi >= 72 && data.dpi <= 600) {
           uiStoreRef.setDpi(data.dpi)
         }
         if (typeof data.bleedMm === 'number' && data.bleedMm >= 0 && data.bleedMm <= 10) {
           uiStoreRef.setBleedMm(data.bleedMm)
+        }
+        if (typeof data.cropMarkLengthMm === 'number' && data.cropMarkLengthMm >= 2 && data.cropMarkLengthMm <= 10) {
+          uiStoreRef.setCropMarkLengthMm(data.cropMarkLengthMm)
+        }
+        if (typeof data.cropMarkOffsetMm === 'number' && data.cropMarkOffsetMm >= 0 && data.cropMarkOffsetMm <= 10) {
+          uiStoreRef.setCropMarkOffsetMm(data.cropMarkOffsetMm)
+        }
+        if (typeof data.safeAreaMm === 'number' && data.safeAreaMm >= 0 && data.safeAreaMm <= 30) {
+          uiStoreRef.setSafeAreaMm(data.safeAreaMm)
         }
 
         // Restore project palette

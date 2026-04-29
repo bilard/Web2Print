@@ -1,8 +1,12 @@
 import { Scissors, Shield, Target, Download, RotateCcw } from 'lucide-react'
+import { useState } from 'react'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 
 export function PrintPanel() {
+  const [saving, setSaving] = useState(false)
   const {
     dpi, bleedMm, safeAreaMm, cropMarkLengthMm, cropMarkOffsetMm,
     showPrintMarks, showSafeArea, showRegistrationMarks,
@@ -14,8 +18,20 @@ export function PrintPanel() {
 
   const handleSaveSettings = async () => {
     if (!projectId) return
-    // Les paramètres sont sauvegardés automatiquement via useAutoSave
-    alert('Paramètres d\'impression enregistrés!')
+    setSaving(true)
+    try {
+      await setDoc(doc(db, 'projects', projectId), {
+        dpi,
+        bleedMm,
+        cropMarkLengthMm,
+        cropMarkOffsetMm,
+        safeAreaMm,
+      }, { merge: true })
+    } catch (err) {
+      console.error('[PrintPanel] Save failed:', err)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleResetDefaults = () => {
