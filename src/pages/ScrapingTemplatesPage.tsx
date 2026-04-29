@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Copy, ChevronRight, Database } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Trash2, Copy, ChevronRight, Database, ArrowLeft } from 'lucide-react'
 import { TemplateEditor } from '@/features/scraping-templates/TemplateEditor'
 import { emptyTemplate, listTemplates, deleteTemplate } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { toast } from 'sonner'
 
 export default function ScrapingTemplatesPage() {
+  const navigate = useNavigate()
   const [templates, setTemplates] = useState<ScrapingTemplate[]>([])
   const [selected, setSelected] = useState<ScrapingTemplate | null>(null)
   const [loading, setLoading] = useState(true)
@@ -56,6 +58,13 @@ export default function ScrapingTemplatesPage() {
     <div className="min-h-screen bg-[#0f0f0f] text-white/90">
       <div className="border-b border-white/[0.06] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.06] rounded-md transition-colors"
+            aria-label="Retour au tableau de bord"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <Database className="w-4 h-4 text-indigo-300" />
           <h1 className="text-sm font-semibold">Templates de scraping</h1>
           <span className="text-[10px] text-white/40">{templates.length} template(s)</span>
