@@ -430,7 +430,8 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
           fixAndReattach(canvas)
 
-          // Add print marks to canvas during load so they render correctly
+          // Add print marks to canvas during load with default values
+          // (always use defaults regardless of what's in Firestore)
           const { buildPrintMarks, removeAllPrintMarks } = await import('@/features/print/printMarks')
           const { mmToPx } = await import('@/features/print/dimensions')
 
@@ -438,24 +439,20 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           for (const o of old) canvas.remove(o)
 
           const uiStore = useUIStore.getState()
-          const dpi = uiStore.dpi
-          const bleedMm = uiStore.bleedMm
-          const safeAreaMm = uiStore.safeAreaMm
-          const cropMarkLengthMm = uiStore.cropMarkLengthMm
-          const cropMarkOffsetMm = uiStore.cropMarkOffsetMm
           const canvasWidth = uiStore.canvasWidth
           const canvasHeight = uiStore.canvasHeight
 
+          // Always use defaults for print marks
           const marks = buildPrintMarks({
             canvasWidthPx: canvasWidth,
             canvasHeightPx: canvasHeight,
             pageLeftPx: 0,
             pageTopPx: 0,
-            bleedPx: mmToPx(bleedMm, dpi),
-            cropMarkLengthPx: mmToPx(cropMarkLengthMm, dpi),
-            cropMarkOffsetPx: mmToPx(cropMarkOffsetMm, dpi),
-            safeAreaPx: mmToPx(safeAreaMm, dpi),
-            dpi,
+            bleedPx: mmToPx(2, 300),           // Default: 2mm @ 300 DPI
+            cropMarkLengthPx: mmToPx(3.5, 300), // Default: 3.5mm @ 300 DPI
+            cropMarkOffsetPx: mmToPx(1, 300),  // Default: 1mm @ 300 DPI
+            safeAreaPx: mmToPx(2, 300),        // Default: 2mm @ 300 DPI
+            dpi: 300,                           // Default: 300 DPI
             showPrintMarks: true,
             showSafeArea: true,
             showRegistrationMarks: true,
