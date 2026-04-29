@@ -3242,9 +3242,9 @@ export function useProductEnrichment() {
   const enrich = useCallback(
     async (input: EnrichmentInput): Promise<EnrichedProduct | null> => {
       const { sheetName, rowId, title, brand, sku, reference, description, category, knownUrl } = input
-      const hasIdentifier = !!(title?.trim() || reference?.trim() || sku?.trim() || brand?.trim())
+      const hasIdentifier = !!(title?.trim() || reference?.trim() || sku?.trim() || brand?.trim() || knownUrl?.trim())
       if (!hasIdentifier) {
-        setError(sheetName, rowId, 'Aucun identifiant (titre, référence ou marque) — impossible de lancer la recherche.')
+        setError(sheetName, rowId, 'Aucun identifiant (titre, référence, marque ou URL) — impossible de lancer l\'enrichissement.')
         return null
       }
       const sourceTokens = tokenizeTitle(`${title ?? ''} ${brand ?? ''} ${description ?? ''}`)

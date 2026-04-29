@@ -419,7 +419,7 @@ function RegenerateMenu({ onRedo, matchedTemplate }: { onRedo: (mode: 'auto' | '
 /** Y a-t-il assez de données identifiantes pour lancer une recherche ?
  *  Accepte : titre OU référence/SKU OU marque. */
 function hasSearchableData(input: EnrichmentInput): boolean {
-  return !!(input.title?.trim() || input.reference?.trim() || input.sku?.trim() || input.brand?.trim())
+  return !!(input.title?.trim() || input.reference?.trim() || input.sku?.trim() || input.brand?.trim() || input.knownUrl?.trim())
 }
 
 function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: (mode: 'auto' | 'template') => void; canSearch: boolean; input: EnrichmentInput; matchedTemplate: ScrapingTemplate | null }) {

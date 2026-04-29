@@ -87,6 +87,7 @@ const isEanKey    = (k: string) => /ean|barcode|code.?barre/i.test(k)
 const isSpecKey   = (k: string) => /spec|tech|caract/i.test(k)
 const isAdvKey    = (k: string) => /avantage|advantage|feature|benefit/i.test(k)
 const isBrandKey  = (k: string) => /marque|brand|fabricant/i.test(k)
+const isUrlKey    = (k: string) => /^url$|page.?url|product.?url|fiche.?url|source.?url|url.?produit|url.?fiche|url.?source/i.test(k)
 const isDocKey    = (k: string) => /^documents?$|pdf|video|notice|lien|link|url/i.test(k)
 /** Libellé produit — utilisé en priorité sur `isPrimary` pour l'enrichissement IA
  *  (la primary est souvent mal détectée à l'import — cf. useExcelImport.ts). */
@@ -278,6 +279,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
     reference: firstValue(c => isRefKey(c.key) || isRefKey(c.label)),
     description: firstValue(c => isDescKey(c.key) || isDescKey(c.label)),
     category: categoryPath,
+    knownUrl: firstValue(c => isUrlKey(c.key) || isUrlKey(c.label)),
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
