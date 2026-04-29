@@ -469,36 +469,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           restoreMergeData<FormulaConfig>(data.mergeFormulaConfigs, (s, k, v) => s.setFormulaConfig(k, v))
         }
 
-        // Add print marks to canvas — ALWAYS, even for empty/new projects
-        const { buildPrintMarks, removeAllPrintMarks } = await import('@/features/print/printMarks')
-        const { mmToPx } = await import('@/features/print/dimensions')
-
-        const old = removeAllPrintMarks(canvas.getObjects(), 'tagged')
-        for (const o of old) canvas.remove(o)
-
-        const uiStore = useUIStore.getState()
-        const marks = buildPrintMarks({
-          canvasWidthPx: uiStore.canvasWidth,
-          canvasHeightPx: uiStore.canvasHeight,
-          pageLeftPx: 0,
-          pageTopPx: 0,
-          bleedPx: mmToPx(uiStore.bleedMm, uiStore.dpi),
-          cropMarkLengthPx: mmToPx(uiStore.cropMarkLengthMm, uiStore.dpi),
-          cropMarkOffsetPx: mmToPx(uiStore.cropMarkOffsetMm, uiStore.dpi),
-          safeAreaPx: mmToPx(uiStore.safeAreaMm, uiStore.dpi),
-          dpi: uiStore.dpi,
-          showPrintMarks: true,
-          showSafeArea: true,
-          showRegistrationMarks: true,
-        })
-
-        for (const m of marks) {
-          canvas.add(m)
-          m.setCoords()
-          canvas.bringObjectToFront(m)
-        }
-
-        canvas.requestRenderAll()
+        // Print marks are now handled by usePrintMarksSync hook (live updates when params change)
         syncToStore(canvas)
 
         ensurePageBgRect(canvas)

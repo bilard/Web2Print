@@ -12,6 +12,7 @@ import { useLoadCanvas } from './useLoadCanvas'
 import { useImageMask } from './useImageMask'
 import { useSnapGuides, type SnapGuide } from './useSnapGuides'
 import { useObjectOperations, setGlobalObjOps } from './useObjectOperations'
+import { usePrintMarksSync } from './usePrintMarksSync'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 import { usePageNavigation } from './usePageNavigation'
 import { syncToStore } from './useAddObject'
@@ -185,6 +186,7 @@ export function CanvasContainer() {
   useSnapGuides(fabricRef, setSnapGuides)
   useImageMask(fabricRef)
   useTextEditMode(fabricRef)
+  usePrintMarksSync(fabricRef)
 
   const { undo, redo, snapshot } = useHistory(fabricRef)
   useAutoSave(fabricRef)
