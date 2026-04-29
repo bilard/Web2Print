@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Canvas, Point, IText, FabricImage, type FabricObject } from 'fabric'
+import { Canvas, Point, IText, FabricImage, Rect, type FabricObject } from 'fabric'
 import { useCanvas } from './useCanvas'
 import { setIsInteracting } from './useAddObject'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
@@ -20,8 +20,6 @@ import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
-import { buildPrintMarks, removeAllPrintMarks } from '@/features/print/printMarks'
-import { mmToPx } from '@/features/print/dimensions'
 
 export let globalFabricCanvas: Canvas | null = null
 export let globalUndo: (() => void) | null = null
@@ -112,7 +110,7 @@ export function CanvasContainer() {
       canvas.off('mouse:down', onTransformStart)
       canvas.off('mouse:up', onTransformEnd)
     }
-  }, [fabricRef.current])  
+  }, [])  
 
   // Re-fit when document dimensions change (template change)
   useEffect(() => {
@@ -128,66 +126,6 @@ export function CanvasContainer() {
     return () => { globalFitCanvas = null }
   }, [fitToContainer])
 
-  // --- Print marks overlay (synced with UI store) ---
-  const dpi = useUIStore((s) => s.dpi)
-  const bleedMm = useUIStore((s) => s.bleedMm)
-  const safeAreaMm = useUIStore((s) => s.safeAreaMm)
-  const cropMarkLengthMm = useUIStore((s) => s.cropMarkLengthMm)
-  const cropMarkOffsetMm = useUIStore((s) => s.cropMarkOffsetMm)
-  const showPrintMarks = useUIStore((s) => s.showPrintMarks)
-  const showSafeArea = useUIStore((s) => s.showSafeArea)
-  const showRegistrationMarks = useUIStore((s) => s.showRegistrationMarks)
-
-  useEffect(() => {
-    const canvas = fabricRef.current
-    if (!canvas) return
-
-    const old = removeAllPrintMarks(canvas.getObjects(), 'aggressive')
-    for (const o of old) canvas.remove(o)
-
-    // Ancre les marks sur le pageBg réel présent sur le canvas (et pas sur
-    // les valeurs du store), pour éviter tout désalignement si le pageBg a
-    // dérivé (ex: scaleX ≠ 1 hérité d'une sauvegarde, ou changement de
-    // format pas encore propagé à l'objet Fabric).
-    // Ancre sur les propriétés brutes Fabric du pageBg (left/top/width×scale)
-    // PAS `getBoundingRect()` qui applique le viewportTransform et donnerait
-    // des coords double-transformées une fois le rect ajouté au canvas.
-    const pageBg = canvas.getObjects().find((o) => (o as any).data?.isPageBg) as
-      | (FabricObject & { scaleX?: number; scaleY?: number })
-      | undefined
-    let pageLeft = 0, pageTop = 0, pageW = canvasWidth, pageH = canvasHeight
-    if (pageBg) {
-      pageLeft = pageBg.left ?? 0
-      pageTop = pageBg.top ?? 0
-      pageW = (pageBg.width ?? canvasWidth) * (pageBg.scaleX ?? 1)
-      pageH = (pageBg.height ?? canvasHeight) * (pageBg.scaleY ?? 1)
-    }
-
-    // Standard InDesign : les traits de coupe sont dessinés À L'EXTÉRIEUR du
-    // bleed. `cropMarkOffsetMm` est la distance entre le bord du bleed et
-    // l'extrémité interne des traits (équivalent du « Décalage » d'InDesign).
-    const marks = buildPrintMarks({
-      canvasWidthPx: pageW,
-      canvasHeightPx: pageH,
-      pageLeftPx: pageLeft,
-      pageTopPx: pageTop,
-      bleedPx: mmToPx(bleedMm, dpi),
-      cropMarkLengthPx: mmToPx(cropMarkLengthMm, dpi),
-      cropMarkOffsetPx: mmToPx(cropMarkOffsetMm, dpi),
-      safeAreaPx: mmToPx(safeAreaMm, dpi),
-      dpi,
-      showPrintMarks,
-      showSafeArea,
-      showRegistrationMarks,
-    })
-    for (const m of marks) canvas.add(m)
-    // Ne JAMAIS toucher originX/originY ici : ça déplace visuellement les Line
-    // de width/2 (left stocké = centroïde, pas bord gauche).
-    for (const m of marks) m.setCoords()
-    for (const m of marks) canvas.bringObjectToFront(m)
-
-    canvas.requestRenderAll()
-  }, [fabricRef, canvasWidth, canvasHeight, dpi, bleedMm, safeAreaMm, cropMarkLengthMm, cropMarkOffsetMm, showPrintMarks, showSafeArea, showRegistrationMarks])
 
   // Sync zoom from footer buttons
   useEffect(() => {

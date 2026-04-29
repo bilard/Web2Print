@@ -1,5 +1,6 @@
-import { Scissors, Shield, Target } from 'lucide-react'
+import { Scissors, Shield, Target, Download, RotateCcw } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
+import { useEditorStore } from '@/stores/editor.store'
 
 export function PrintPanel() {
   const {
@@ -9,8 +10,46 @@ export function PrintPanel() {
     setShowPrintMarks, setShowSafeArea, setShowRegistrationMarks,
   } = useUIStore()
 
+  const { projectId } = useEditorStore()
+
+  const handleSaveSettings = async () => {
+    if (!projectId) return
+    // Les paramètres sont sauvegardés automatiquement via useAutoSave
+    alert('Paramètres d\'impression enregistrés!')
+  }
+
+  const handleResetDefaults = () => {
+    setDpi(300)
+    setBleedMm(2)
+    setSafeAreaMm(2)
+    setCropMarkLengthMm(3.5)
+    setCropMarkOffsetMm(1)
+    setShowPrintMarks(true)
+    setShowSafeArea(true)
+    setShowRegistrationMarks(true)
+  }
+
   return (
     <div className="p-3 flex flex-col gap-4">
+      {/* ── Boutons d'actions ── */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleSaveSettings}
+          className="flex-1 flex items-center justify-center gap-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/50 rounded-md px-2 py-1.5 text-xs text-indigo-300 transition-colors"
+          title="Sauvegarder les paramètres (enregistré automatiquement)"
+        >
+          <Download className="w-3 h-3" />
+          <span>Enregistrer</span>
+        </button>
+        <button
+          onClick={handleResetDefaults}
+          className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white/70 transition-colors"
+          title="Restaurer les paramètres par défaut"
+        >
+          <RotateCcw className="w-3 h-3" />
+          <span>Défauts</span>
+        </button>
+      </div>
       {/* ── Résolution ── */}
       <section className="flex flex-col gap-1">
         <label className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">

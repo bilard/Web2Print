@@ -313,8 +313,9 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
         const uiStoreRef = useUIStore.getState()
         if (typeof data.dpi === 'number') uiStoreRef.setDpi(data.dpi)
         if (typeof data.bleedMm === 'number') uiStoreRef.setBleedMm(data.bleedMm)
-        if (typeof data.showPrintMarks === 'boolean') uiStoreRef.setShowPrintMarks(data.showPrintMarks)
-        if (typeof data.showSafeArea === 'boolean') uiStoreRef.setShowSafeArea(data.showSafeArea)
+        // Always show print marks by default (use store defaults, don't restore old false values)
+        // if (typeof data.showPrintMarks === 'boolean') uiStoreRef.setShowPrintMarks(data.showPrintMarks)
+        // if (typeof data.showSafeArea === 'boolean') uiStoreRef.setShowSafeArea(data.showSafeArea)
 
         // Restore project palette
         try {
@@ -429,14 +430,42 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
 
           fixAndReattach(canvas)
 
-          // Purge tout print mark / safe-area / bleed mark hérité d'une sauvegarde
-          // antérieure (versions du code sans `excludeFromExport: true`). Les
-          // nouvelles marques sont créées par l'effet `CanvasContainer` une fois
-          // le canvas monté — c'est la source unique de vérité, évite les
-          // doublons avec des valeurs hard-codées divergentes.
-          const { removeAllPrintMarks } = await import('@/features/print/printMarks')
-          const orphanMarks = removeAllPrintMarks(canvas.getObjects(), 'tagged')
-          for (const m of orphanMarks) canvas.remove(m)
+          // Add print marks to canvas during load so they render correctly
+          const { buildPrintMarks, removeAllPrintMarks } = await import('@/features/print/printMarks')
+          const { mmToPx } = await import('@/features/print/dimensions')
+
+          const old = removeAllPrintMarks(canvas.getObjects(), 'tagged')
+          for (const o of old) canvas.remove(o)
+
+          const uiStore = useUIStore.getState()
+          const dpi = uiStore.dpi
+          const bleedMm = uiStore.bleedMm
+          const safeAreaMm = uiStore.safeAreaMm
+          const cropMarkLengthMm = uiStore.cropMarkLengthMm
+          const cropMarkOffsetMm = uiStore.cropMarkOffsetMm
+          const canvasWidth = uiStore.canvasWidth
+          const canvasHeight = uiStore.canvasHeight
+
+          const marks = buildPrintMarks({
+            canvasWidthPx: canvasWidth,
+            canvasHeightPx: canvasHeight,
+            pageLeftPx: 0,
+            pageTopPx: 0,
+            bleedPx: mmToPx(bleedMm, dpi),
+            cropMarkLengthPx: mmToPx(cropMarkLengthMm, dpi),
+            cropMarkOffsetPx: mmToPx(cropMarkOffsetMm, dpi),
+            safeAreaPx: mmToPx(safeAreaMm, dpi),
+            dpi,
+            showPrintMarks: true,
+            showSafeArea: true,
+            showRegistrationMarks: true,
+          })
+
+          for (const m of marks) {
+            canvas.add(m)
+            m.setCoords()
+            canvas.bringObjectToFront(m)
+          }
 
           // Re-apply per-character charSpacing (tracking IDML) from separate Firestore field
           try {

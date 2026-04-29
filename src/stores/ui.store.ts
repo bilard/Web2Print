@@ -96,7 +96,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   // --- Print defaults ---
   dpi: 300,
-  bleedMm: 0,
+  bleedMm: 2,
   safeAreaMm: 2,
   cropMarkLengthMm: 3.5,
   cropMarkOffsetMm: 1,

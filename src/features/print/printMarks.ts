@@ -44,7 +44,7 @@ function makeBleedRect(x: number, y: number, w: number, h: number, bleed: number
     originY: 'top',
     width: w + bleed * 2,
     height: h + bleed * 2,
-    fill: 'transparent',
+    fill: 'rgba(0,0,0,0)',
     stroke: BLEED_COLOR,
     strokeWidth: 1,
     strokeUniform: true,
@@ -66,13 +66,6 @@ function makeCornerMarks(
   x: number, y: number, w: number, h: number,
   bleed: number, offset: number, length: number,
 ): FabricObject[] {
-  const lineOpts = {
-    stroke: CROP_COLOR,
-    strokeWidth: 1,
-    strokeUniform: true,
-    strokeLineCap: 'butt' as const,
-  }
-
   // Plage outward partagée par les 4 coins : de `inner` à `outer` depuis le trim.
   const inner = Math.round(bleed + offset)
   const outer = Math.round(bleed + offset + length)
@@ -85,25 +78,48 @@ function makeCornerMarks(
 
   const marks: FabricObject[] = []
 
-  // Pour chaque coin : 1 trait horizontal (aligné sur le trim edge horizontal)
-  // + 1 trait vertical (aligné sur le trim edge vertical). Tous les 4 coins
-  // utilisent exactement la même formule, seuls les signes changent.
+  // Utiliser des petits Rect au lieu de Line pour meilleure visibilité
+  const makeHorizontalMark = (left: number, top: number, width: number) => {
+    return tag(new Rect({
+      left,
+      top: top - 1,
+      width,
+      height: 2,
+      fill: CROP_COLOR,
+      stroke: 'none',
+      originX: 'left',
+      originY: 'top',
+    }), 'crop-mark')
+  }
+
+  const makeVerticalMark = (left: number, top: number, height: number) => {
+    return tag(new Rect({
+      left: left - 1,
+      top,
+      width: 2,
+      height,
+      fill: CROP_COLOR,
+      stroke: 'none',
+      originX: 'left',
+      originY: 'top',
+    }), 'crop-mark')
+  }
 
   // TOP-LEFT : traits vers la gauche et vers le haut
-  marks.push(tag(new Line([L - outer, T, L - inner, T], lineOpts), 'crop-mark'))
-  marks.push(tag(new Line([L, T - outer, L, T - inner], lineOpts), 'crop-mark'))
+  marks.push(makeHorizontalMark(L - outer, T, outer - inner))
+  marks.push(makeVerticalMark(L, T - outer, outer - inner))
 
   // TOP-RIGHT : traits vers la droite et vers le haut
-  marks.push(tag(new Line([R + inner, T, R + outer, T], lineOpts), 'crop-mark'))
-  marks.push(tag(new Line([R, T - outer, R, T - inner], lineOpts), 'crop-mark'))
+  marks.push(makeHorizontalMark(R + inner, T, outer - inner))
+  marks.push(makeVerticalMark(R, T - outer, outer - inner))
 
   // BOTTOM-LEFT : traits vers la gauche et vers le bas
-  marks.push(tag(new Line([L - outer, B, L - inner, B], lineOpts), 'crop-mark'))
-  marks.push(tag(new Line([L, B + inner, L, B + outer], lineOpts), 'crop-mark'))
+  marks.push(makeHorizontalMark(L - outer, B, outer - inner))
+  marks.push(makeVerticalMark(L, B + inner, outer - inner))
 
   // BOTTOM-RIGHT : traits vers la droite et vers le bas
-  marks.push(tag(new Line([R + inner, B, R + outer, B], lineOpts), 'crop-mark'))
-  marks.push(tag(new Line([R, B + inner, R, B + outer], lineOpts), 'crop-mark'))
+  marks.push(makeHorizontalMark(R + inner, B, outer - inner))
+  marks.push(makeVerticalMark(R, B + inner, outer - inner))
 
   return marks
 }
@@ -134,13 +150,31 @@ function makeRegistrationMarks(
       originX: 'left',
       originY: 'top',
       radius,
-      fill: 'transparent',
+      fill: 'rgba(0,0,0,0)',
       stroke: CROP_COLOR,
       strokeWidth: 1,
       strokeUniform: true,
     }), 'registration-mark'),
-    tag(new Line([cx - radius, cy, cx + radius, cy], lineOpts), 'registration-mark'),
-    tag(new Line([cx, cy - radius, cx, cy + radius], lineOpts), 'registration-mark'),
+    tag(new Rect({
+      left: cx - radius,
+      top: cy - 1,
+      width: radius * 2,
+      height: 2,
+      fill: CROP_COLOR,
+      stroke: 'none',
+      originX: 'left',
+      originY: 'top',
+    }), 'registration-mark'),
+    tag(new Rect({
+      left: cx - 1,
+      top: cy - radius,
+      width: 2,
+      height: radius * 2,
+      fill: CROP_COLOR,
+      stroke: 'none',
+      originX: 'left',
+      originY: 'top',
+    }), 'registration-mark'),
   ]
 
   const centerX = x + w / 2
@@ -162,7 +196,7 @@ function makeSafeArea(x: number, y: number, w: number, h: number, margin: number
     originY: 'top',
     width: w - margin * 2,
     height: h - margin * 2,
-    fill: 'transparent',
+    fill: 'rgba(0,0,0,0)',
     stroke: SAFE_COLOR,
     strokeWidth: 1.5,
     strokeUniform: true,
