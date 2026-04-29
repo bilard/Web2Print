@@ -173,7 +173,6 @@ function createTextbox(shape: PptxShape, s: Scale): FabricObject[] {
 
   // Alignement vertical
   const measured = tb.height ?? 0
-  const availH = h - insT - insB
   if (anchor === 'middle') {
     tb.set('top', y + (h - measured) / 2)
   } else if (anchor === 'bottom') {

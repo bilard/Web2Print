@@ -254,8 +254,6 @@ function isExpressionFormula(formula: string): boolean {
   stripped = stripped.trim()
   if (!stripped) return true
   // Allow: operators, digits, dots, parens, commas, whitespace, and known function names
-  const funcNames = FORMULA_FUNCTIONS.map((f) => f.name).join('|')
-  const exprPattern = new RegExp(`^[\\s+\\-*\\/(),><=!.\\d]|(?:${funcNames})`, 'i')
   // Check each non-whitespace segment
   const segments = stripped.split(/\s+/).filter(Boolean)
   return segments.every((seg) => {

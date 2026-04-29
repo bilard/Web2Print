@@ -273,7 +273,6 @@ function filterDocumentsByProductRef(
     const parts = doc.split('|')
     const label = (parts[0] ?? '').trim().toLowerCase()
     const url = (parts[1] ?? '').trim().toLowerCase()
-    const haystack = `${label} ${url}`
 
     if (GENERIC_DOC_LABEL_RE.test(label)) { rejected.push(doc); continue }
 
@@ -1866,7 +1865,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
 }
 
 /** Fallback GET pour le scraping fabricant (sans injection JS) — utilise le mode JSON */
-async function jinaScrapeMaufacturerPageFallback(pageUrl: string, jinaKey: string): Promise<DeepScrapeResult | null> {
+async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: string): Promise<DeepScrapeResult | null> {
   // Réutilise jinaScrapeMarkdown qui est déjà en mode JSON avec images/links
   console.log('[jina-manufacturer-fallback] falling back to JSON mode scrape')
   const fallbackMd = await jinaScrapeMarkdown(pageUrl)

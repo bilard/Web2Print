@@ -12,7 +12,7 @@ interface Props {
 
 const numericTypes: FieldTypeId[] = ['number', 'currency', 'percent', 'rating']
 
-export function StatsBadges({ stats, fieldType, onSortAsc, onSortDesc, onClearSort, onSortByColor }: Props) {
+export function StatsBadges({ stats, fieldType, onSortAsc, onSortDesc, onSortByColor }: Props) {
   if (!numericTypes.includes(fieldType)) return null
   if (stats.min === null && stats.max === null) return null
 
@@ -61,32 +61,3 @@ export function StatsBadges({ stats, fieldType, onSortAsc, onSortDesc, onClearSo
   )
 }
 
-/** Inline cell badge for a value relative to min/avg/max */
-function ValueBadge({ value, stats, fieldType }: { value: number; stats: ColumnStats; fieldType: FieldTypeId }) {
-  if (!numericTypes.includes(fieldType)) return null
-  if (stats.min === null || stats.max === null || typeof stats.min !== 'number' || typeof stats.max !== 'number') return null
-
-  const range = stats.max - stats.min
-  if (range === 0) return null
-
-  const ratio = (value - stats.min) / range
-  let color: string
-  let label: string
-
-  if (ratio <= 0.25) {
-    color = 'bg-blue-500/15 text-blue-400 border-blue-500/20'
-    label = 'Min'
-  } else if (ratio >= 0.75) {
-    color = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-    label = 'Max'
-  } else {
-    color = 'bg-amber-500/15 text-amber-400 border-amber-500/20'
-    label = 'Moy'
-  }
-
-  return (
-    <span className={`inline-flex text-[9px] font-medium px-1 py-0.5 rounded border ${color} ml-1`}>
-      {label}
-    </span>
-  )
-}

@@ -206,7 +206,7 @@ interface ColorPickerProps {
   label?: string
 }
 
-export function ColorPicker({ value, onChange, allowNoFill, label }: ColorPickerProps) {
+export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   const [open, setOpen] = useState(false)
   const [showCustom, setShowCustom] = useState(false)
   const [recentColors, setRecentColors] = useState(getRecentColors)

@@ -72,14 +72,6 @@ const parseSpecTable = (v: string): { name: string; value: string }[] | null => 
   return parsed as { name: string; value: string }[]
 }
 
-// "Item 1 | Item 2" → string[] (no key:value pattern)
-const parseBulletList = (v: string): string[] | null => {
-  const parts = v.split(' | ').map(s => s.trim()).filter(Boolean)
-  if (parts.length < 2) return null
-  if (parts.some(p => p.includes(':'))) return null
-  return parts
-}
-
 // Detect URLs (PDF, video, generic)
 const isAnyUrl = (v: string) => /^https?:\/\//i.test(v)
 const isPdfUrl  = (v: string) => isAnyUrl(v) && PDF_EXT.test(v)

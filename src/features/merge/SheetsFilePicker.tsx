@@ -11,7 +11,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function SheetsFilePicker({ onClose }: Props) {
+export function SheetsFilePicker({ onClose: _onClose }: Props) {
   const { connected, connecting, importing, error, connect, disconnect, listSheetsFiles, importFile } =
     useGoogleSheetsImport()
 

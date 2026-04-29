@@ -281,7 +281,6 @@ function pathPointsToSvg(points: PathPoint[]): string {
 
 /** Compose element's ItemTransform with all parent Group transforms up to Spread */
 function computeWorldTransform(el: Element): Mat {
-  const selfId = el.getAttribute('Self') ?? '?'
   const ownTfStr = attr(el, 'ItemTransform', '1 0 0 1 0 0')
   let tf = parseTf(ownTfStr)
   const groupChain: string[] = []

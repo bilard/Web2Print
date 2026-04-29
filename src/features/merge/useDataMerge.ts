@@ -174,7 +174,7 @@ export function useDataMerge() {
     }
   }, [getAssetUrl])
 
-  const applyRow = useCallback(async (row: MergeRow, cols?: MergeColumn[]) => {
+  const applyRow = useCallback(async (row: MergeRow, _cols?: MergeColumn[]) => {
     const canvas = globalFabricCanvas
     if (!canvas) return
 

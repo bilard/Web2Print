@@ -81,7 +81,7 @@ export function useBatchExport() {
 
   const exportMultiPagePdf = useCallback(async (
     selectedRows: MergeRow[],
-    config: BatchExportConfig
+    _config: BatchExportConfig
   ) => {
     const pdfDoc = await PDFDocument.create()
 

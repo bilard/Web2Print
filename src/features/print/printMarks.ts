@@ -33,9 +33,6 @@ function tag(obj: FabricObject, markType: MarkType): FabricObject {
 }
 
 const BLEED_COLOR = '#e53935'
-// Gris moyen : reste lisible à la fois sur le fond sombre de l'éditeur
-// (autour de la page) et sur la page blanche (où les traits entrent).
-// Les repères sont `excludeFromExport: true` → couleur purement visuelle.
 const CROP_COLOR = '#888888'
 const SAFE_COLOR = '#c026d3'
 

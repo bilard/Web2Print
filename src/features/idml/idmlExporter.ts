@@ -265,22 +265,6 @@ function extractItemTransformFromXml(
   return parts as [number, number, number, number, number, number]
 }
 
-function extractGeometricBoundsFromXml(
-  xml: string,
-  selfId: string,
-): [number, number, number, number] | null {
-  const found = findElementBlock(xml, selfId)
-  if (!found) return null
-
-  const match = found.block.match(/\bGeometricBounds="([^"]*)"/)
-  if (!match) return null
-
-  const parts = match[1].trim().split(/\s+/).map(Number)
-  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return null
-
-  return parts as [number, number, number, number]
-}
-
 function patchElementAttribute(
   xml: string,
   selfId: string,
@@ -1358,7 +1342,6 @@ export async function exportIdmlModified(
   let graphicXml = graphicPath ? await zip.files[graphicPath].async('text') : null
   let graphicModified = false
 
-  let storyPatchCount = 0
   for (const [fabricId, fabObj] of textboxMap) {
     const storyId = textFrameToStory.get(fabricId)
     if (!storyId) continue
@@ -1415,11 +1398,9 @@ export async function exportIdmlModified(
     const patchedXml = patchStory(storyXml, currentText, { lineStyles })
     if (patchedXml !== storyXml) {
       zip.file(storyPath, patchedXml)
-      storyPatchCount++
     }
   }
 
-  let imageReplaceCount = 0
   for (const [, fabObj] of imageMap) {
     const fab = fabObj as FabricObject & { data?: FabricData }
     const originalName = fab.data?.name
@@ -1438,7 +1419,6 @@ export async function exportIdmlModified(
 
     const targetPath = existingPath ?? `Links/${originalName}`
     zip.file(targetPath, imgBytes)
-    imageReplaceCount++
 
     // Corriger LinkResourceURI : remonter d'un niveau si le fichier est dans un sous-dossier
     // Ex: file:/path/Folder/SubFolder/Links/img.png → file:/path/Folder/Links/img.png
@@ -1657,7 +1637,6 @@ export async function exportIdmlModified(
   }
 
   // ── 8. Formes avec remplissage image (fillImage) ──────────────────────────
-  let fillImageCount = 0
   for (const obj of fabricObjects) {
     const fab = obj as FabricObject & {
       data?: FabricData & { fillImage?: string; fillImageName?: string; fillType?: string }
@@ -1921,7 +1900,6 @@ export async function exportIdmlModified(
     }
 
     se.modified = true
-    fillImageCount++
   }
 
   for (const spreadEntry of spreadEntries) {

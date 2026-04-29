@@ -5,7 +5,7 @@ import { syncToStore } from './useAddObject'
 import { findById, findParentGroup, wouldCreateCycle } from './layerTreeOps'
 
 export function useLayers() {
-  const { setSelectedObjectId, setCanvasObjects, selectedObjectIds, setSelectedObjectIds } = useEditorStore()
+  const { setSelectedObjectId, selectedObjectIds, setSelectedObjectIds } = useEditorStore()
 
   const selectLayer = useCallback((id: string) => {
     const canvas = globalFabricCanvas

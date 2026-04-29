@@ -92,8 +92,6 @@ function mapColumns(oldCols: ExcelColumn[], newCols: ExcelColumn[]): Map<string,
 
 export function diffSheets(oldSheet: ExcelSheet, newSheet: ExcelSheet): SheetDiff {
   const colMap = mapColumns(oldSheet.columns, newSheet.columns)
-  const oldColKeys = new Set(oldSheet.columns.map((c) => c.key))
-  const newColKeys = new Set(newSheet.columns.map((c) => c.key))
 
   // Column diffs
   const columns: ColumnDiff[] = []

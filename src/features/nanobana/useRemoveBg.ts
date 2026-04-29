@@ -49,7 +49,7 @@ export function useRemoveBg() {
 
       const blob = await response.blob()
       return URL.createObjectURL(blob)
-    } catch (e) {
+    } catch {
       setError('Erreur réseau lors de la suppression du fond')
       return null
     } finally {

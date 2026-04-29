@@ -102,7 +102,7 @@ const FILTER_SLIDERS: { key: keyof ColorFilters; label: string; min: number; max
 
 export function DamImageToolbar(props: Props) {
   const {
-    zoom, onZoomChange, rotation, onRotate, flipH, onFlipH, flipV, onFlipV,
+    zoom, onZoomChange, onRotate, flipH, onFlipH, flipV, onFlipV,
     filters, onFiltersChange, activeTool, onToolChange,
     onExport, mask, onMaskChange, cropRatio, onCropRatioChange, onReset,
     imageWidth, imageHeight,

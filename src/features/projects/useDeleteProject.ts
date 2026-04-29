@@ -84,16 +84,14 @@ export async function cleanupOrphanLinksInTaxonomies(userId: string, projectId: 
 }
 
 async function deleteProjectWithAssets(projectId: string): Promise<void> {
-  let totalDeleted = 0
-
   // Strategy 1: Delete known subfolders directly (works even if parent listAll fails)
   for (const sub of PROJECT_SUBFOLDERS) {
     const path = `projects/${projectId}/${sub}`
-    totalDeleted += await deleteFilesInFolder(path)
+    await deleteFilesInFolder(path)
   }
 
   // Strategy 2: Also try listing the project root (catches any other files)
-  totalDeleted += await deleteFilesInFolder(`projects/${projectId}`)
+  await deleteFilesInFolder(`projects/${projectId}`)
 
   // Delete Firestore document
   await deleteDoc(doc(db, 'projects', projectId))

@@ -60,8 +60,6 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
   const [customBgColor, setCustomBgColor] = useState('#ffffff')
   const [activeCategory, setActiveCategory] = useState('all')
 
-  const isCustom = activeCategory === 'custom' || selectedPreset === null
-
   const currentWidth = selectedPreset !== null ? FORMAT_PRESETS[selectedPreset].width : customWidth
   const currentHeight = selectedPreset !== null ? FORMAT_PRESETS[selectedPreset].height : customHeight
 

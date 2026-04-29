@@ -309,7 +309,7 @@ const BLEND_MODES = [
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function PropertiesPanel() {
-  const { selectedObjectId, canvasObjects, updateObject } = useEditorStore()
+  const { selectedObjectId, canvasObjects } = useEditorStore()
   const fabricRef = { current: globalFabricCanvas as Canvas | null }
   const { applyStyle } = useTextEditor(fabricRef)
   const ops = useObjectOperations()

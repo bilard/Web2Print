@@ -16,7 +16,7 @@ import type { DamImage } from '../types'
 export function useDamFavorites() {
   const user = useAuthStore((s) => s.user)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
 
   useEffect(() => {
     if (!user?.uid) return

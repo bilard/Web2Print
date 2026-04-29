@@ -86,7 +86,7 @@ function patchStories(
  * Supprime les ParagraphStyleRange dont le contenu résolu est vide
  * et dont les variables ont hideLineIfEmpty activé.
  */
-function removeEmptyParagraphs(xml: string, options: PatchOptions): string {
+function removeEmptyParagraphs(xml: string, _options: PatchOptions): string {
   // Parse and check each ParagraphStyleRange
   // A PSR with only empty/whitespace Content after resolution should be removed
   // This is a simplified approach — works for single-paragraph lines
@@ -355,9 +355,6 @@ export async function buildMultiPageIdml(
   for (const [path, xml] of Object.entries(contents.masterSpreads)) {
     outputZip.file(path, xml)
   }
-
-  // Track images for deduplication
-  const imageCache = new Map<string, string>() // url → linkPath in ZIP
 
   // Build designmap entries
   const spreadEntries: string[] = []

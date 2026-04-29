@@ -113,10 +113,6 @@ export function useCroppingImage(): FabricObject | null {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }
 
-function isCropping(): boolean {
-  return _state !== null
-}
-
 // --- Helpers ----------------------------------------------------------------
 
 function naturalSize(img: FabricImage | HTMLImageElement | HTMLCanvasElement | null): {

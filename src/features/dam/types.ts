@@ -98,17 +98,6 @@ export interface DamImageVariant {
 
 export type DamTab = 'stock' | 'my-images' | 'favorites' | 'collections' | 'recent' | 'projects' | 'generate' | 'gdrive'
 
-const DAM_CATEGORIES = [
-  { id: 'business', label: 'Business', icon: '🏢' },
-  { id: 'nature', label: 'Nature', icon: '🌿' },
-  { id: 'technology', label: 'Technologie', icon: '💻' },
-  { id: 'food', label: 'Food', icon: '🍕' },
-  { id: 'sport', label: 'Sport', icon: '🏃' },
-  { id: 'travel', label: 'Voyage', icon: '✈️' },
-  { id: 'people', label: 'Personnes', icon: '👤' },
-  { id: 'art', label: 'Art', icon: '🎨' },
-] as const
-
 export const DAM_COLORS = [
   { value: 'red', hex: '#ef4444' },
   { value: 'orange', hex: '#f97316' },

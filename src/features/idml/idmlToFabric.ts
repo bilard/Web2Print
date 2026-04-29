@@ -14,26 +14,6 @@ import { resolveAvailableFont } from '@/features/assets/useFonts'
 
 /**
  * Extract per-character charSpacing from Fabric styles into a serializable map.
- * Format: { "lineIdx:charIdx": charSpacing }
- * This is needed because Fabric.js stylesToArray merges consecutive chars
- * with different charSpacing (not compared in hasStyleChanged), losing the values.
- */
-function extractCharSpacingMap(
-  styles: Record<number, Record<number, Record<string, unknown>>>,
-): Record<string, number> | null {
-  const map: Record<string, number> = {}
-  let found = false
-  for (const [lineIdx, line] of Object.entries(styles)) {
-    for (const [charIdx, style] of Object.entries(line)) {
-      if (style.charSpacing !== undefined) {
-        map[`${lineIdx}:${charIdx}`] = style.charSpacing as number
-        found = true
-      }
-    }
-  }
-  return found ? map : null
-}
-
 /**
  * Restore per-character charSpacing from a serialized map back into Fabric styles.
  */
@@ -484,7 +464,6 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
       const insB = (obj.insetBottom ?? 0) * sY
       const insL = (obj.insetLeft ?? 0) * sX
       const insR = (obj.insetRight ?? 0) * sX
-      const hasInsets = insT > 0 || insB > 0 || insL > 0 || insR > 0
 
       // Reduce text width by horizontal insets
       const insetTextWidth = Math.max(textWidth - insL - insR, 10)

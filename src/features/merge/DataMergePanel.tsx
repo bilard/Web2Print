@@ -149,7 +149,7 @@ const BINDING_ICON: Record<string, typeof Type> = {
 
 function ActiveBindings({ columns }: { columns: { key: string; label: string; fieldType?: string }[] }) {
   const canvas = globalFabricCanvas
-  const { isConnected, currentRowIndex } = useMergeStore()
+  const { isConnected } = useMergeStore()
   const selectedObjectId = useEditorStore((s) => s.selectedObjectId)
   const [bindings, setBindings] = useState<{ id: string; name: string; type: string; variable: string; matched: boolean }[]>([])
 

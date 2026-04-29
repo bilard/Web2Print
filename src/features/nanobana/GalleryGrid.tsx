@@ -170,7 +170,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set())
   const [swapping, setSwapping] = useState<string | null>(null)
-  const { removeBg, loading: removingBg, error: removeBgError } = useRemoveBg()
+  const { removeBg, error: removeBgError } = useRemoveBg()
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [lightboxSrc, setLightboxSrc] = useState<{ src: string; label: string } | null>(null)
 
@@ -270,8 +270,6 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
           </p>
           <div className="flex flex-col gap-3">
             {canvasImages.map((ci) => {
-              const hasOriginal = ci.originalSrc && ci.originalSrc !== ci.currentSrc
-              const hasVariants = ci.variants.length > 0
               const allVersions: { src: string; label: string; isOriginal: boolean; isCurrent: boolean }[] = []
 
               // Image originale

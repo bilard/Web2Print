@@ -180,7 +180,6 @@ export function CanvasContainer() {
       showSafeArea,
       showRegistrationMarks,
     })
-
     for (const m of marks) canvas.add(m)
     // Ne JAMAIS toucher originX/originY ici : ça déplace visuellement les Line
     // de width/2 (left stocké = centroïde, pas bord gauche).

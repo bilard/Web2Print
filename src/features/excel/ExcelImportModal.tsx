@@ -28,7 +28,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { detecting } = useExcelStore()
-  const { importFile, createEmpty } = useExcelImport()
+  const { createEmpty } = useExcelImport()
   const createTaxonomy = useCreateTaxonomy()
 
   // Step 2 state: parsed sheets awaiting configuration
