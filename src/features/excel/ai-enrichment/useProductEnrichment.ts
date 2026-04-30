@@ -4441,7 +4441,20 @@ Réponds UNIQUEMENT via l'outil emit_response.`
     [setProgress, setData, setError, setLlmRequest, getScrapeCache, setScrapeCache],
   )
 
+  /** Clear l'entry (data/error/progress) MAIS conserve le scrape cache.
+   *  Utilisé par "Re-générer" pour ré-exécuter le LLM sur le markdown déjà
+   *  scrapé — sans relancer une recherche DuckDuckGo qui pourrait dériver. */
   const reset = useCallback(
+    (sheetName: string, rowId: string) => {
+      clear(sheetName, rowId)
+    },
+    [clear],
+  )
+
+  /** Hard reset : clear l'entry ET le scrape cache. À utiliser quand l'URL
+   *  source change ou que le cache est suspecté compromis (mauvaise marque,
+   *  produit changé, etc.). */
+  const hardReset = useCallback(
     (sheetName: string, rowId: string) => {
       clear(sheetName, rowId)
       clearScrapeCache(sheetName, rowId)
@@ -4449,5 +4462,5 @@ Réponds UNIQUEMENT via l'outil emit_response.`
     [clear, clearScrapeCache],
   )
 
-  return { enrich, reset, running }
+  return { enrich, reset, hardReset, running }
 }

@@ -79,7 +79,7 @@ export function EnrichmentPanel({ input }: Props) {
   const scrapeCache = useEnrichmentStore((s) => s.scrapeCache[storeKey])
   const hiddenGroups = useEnrichmentStore((s) => s.hiddenGroups[storeKey])
   const setData = useEnrichmentStore((s) => s.setData)
-  const { enrich, reset, running } = useProductEnrichment()
+  const { enrich, reset, hardReset, running } = useProductEnrichment()
   const { save, isSaved, saving, error: saveError } = useSaveEnrichedProduct()
 
   // Rehydration depuis la feuille Excel : si la ligne a déjà des cellules ai_*
@@ -319,7 +319,8 @@ export function EnrichmentPanel({ input }: Props) {
         {isIdle && <IdleState onLaunch={(mode) => launch(mode)} canSearch={hasSearchableData(input)} input={input} matchedTemplate={matchedTemplate} />}
         {isLoading && <LoadingState status={status} message={entry?.progress.message ?? ''} logs={logs} />}
         {isError && <ErrorState error={error!} onRetry={launch} onRetryWithUrl={(url) => {
-          reset(input.sheetName, input.rowId)
+          // URL change → cache stale, hard reset
+          hardReset(input.sheetName, input.rowId)
           void enrich({ ...input, knownUrl: url })
         }} />}
         {isDone && data && (
