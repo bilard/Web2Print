@@ -9,6 +9,8 @@ import {
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight,
 } from 'lucide-react'
+import { MigrationModal } from '@/components/pim/MigrationModal'
+import { usePimStore } from '@/stores/pim.store'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
@@ -48,6 +50,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [loadingFiles, setLoadingFiles] = useState(false)
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
+  const migrationModalOpen = usePimStore((s) => s.migrationModalOpen)
+  const setMigrationModalOpen = usePimStore((s) => s.setMigrationModalOpen)
   // Quand l'utilisateur clique sur un nœud de la taxonomie, fermer la fiche
   // produit pour revenir à la vue liste (DataTable).
   useEffect(() => {
@@ -535,6 +539,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 onScrapeAt={handleScrapeAtPath}
                 onCreateAt={handleCreateAtPath}
                 onRefresh={refreshFileList}
+                onMigrate={() => setMigrationModalOpen(true)}
               />
             </div>
           </div>
@@ -717,6 +722,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           setSaveStatus('idle')
         }}
       />
+
+      {/* Migration PIM modal */}
+      <MigrationModal open={migrationModalOpen} onClose={() => setMigrationModalOpen(false)} />
     </div>
   )
 }
@@ -767,7 +775,7 @@ function pathKey(path: string[]): string {
 }
 
 /** Saved files list panel */
-function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh }: {
+function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh, onMigrate }: {
   files: SavedFileEntry[]
   loading: boolean
   currentDocId: string | null
@@ -779,6 +787,7 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   onScrapeAt: (path: string[]) => void
   onCreateAt: (path: string[]) => void
   onRefresh: () => void
+  onMigrate: () => void
 }) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openAddMenu, setOpenAddMenu] = useState<string | null>(null)
@@ -876,6 +885,13 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
           Rafraichir
         </button>
       </div>
+
+      <button
+        onClick={onMigrate}
+        className="w-full text-left px-2 py-1 text-[10px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] rounded"
+      >
+        Migrer mes BDD → PIM
+      </button>
 
       {openMenu || openAddMenu ? (
         <div className="fixed inset-0 z-40" onClick={handleOverlayClick} />
