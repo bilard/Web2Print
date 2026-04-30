@@ -310,12 +310,32 @@ function filterDocumentsByProductRef(
   return kept
 }
 
+/** Termes de navigation/footer site qui n'ont rien à faire dans une description
+ *  produit. Si la description contient ≥2 de ces termes, c'est qu'on a aspiré
+ *  le menu/footer du site (ex: "Nos services Le blog Aide & Contact"). */
+const NAV_TERMS_RE = /\b(nos\s+services?|le\s+blog|aide\s*&\s*contact|mentions\s+l[eé]gales|politique\s+de\s+confidentialit[eé]|centre\s+d['’]aide|mon\s+compte|se\s+connecter|newsletter|carri[eè]re|contactez[\s-]nous|à\s+propos|secteurs?\s+industriels?|suivez[\s-]nous|mon\s+panier|liste\s+de\s+souhaits|s['’]inscrire)\b/gi
+
+/** Détecte si une description ressemble à de la navigation ou du footer
+ *  (≥2 termes nav, OU ratio nav-words / total-words > 30%). */
+function isNavLikeDescription(text: string): boolean {
+  if (!text || text.length < 20) return false
+  const matches = text.match(NAV_TERMS_RE)
+  if (!matches) return false
+  if (matches.length >= 2) return true
+  const words = text.split(/\s+/).filter(Boolean).length
+  return matches.length >= 1 && words < 30
+}
+
 /** Nettoie un EnrichedProduct en retirant les contenus parasites */
 function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []): EnrichedProduct {
-  // Description : vider si c'est du cookie/GDPR (court ou long)
+  // Description : vider si c'est du cookie/GDPR (court ou long) ou du nav/footer
   let description = enriched.description
   if (description && (isGarbageContent(description) || isMainlyGarbage(description))) {
     console.log('[sanitize] garbage description detected, clearing')
+    description = ''
+  }
+  if (description && isNavLikeDescription(description)) {
+    console.log('[sanitize] nav/footer description detected, clearing')
     description = ''
   }
   // Description : retirer les lignes qui sont des listes de téléchargements
@@ -363,6 +383,10 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
   /** Nom entièrement entre crochets `[...]` sans contenu informatif (titre de
    *  section dupliqué dans les paires de table). */
   const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
+  /** Names résiduels de checkboxes facettes après le strip markdown :
+   *  "- [x]", "[x]", "* [ ]", "[]". Si le LLM avale quand-même une de ces
+   *  paires, le `name` ressemble à un marqueur de checkbox sans contenu. */
+  const CHECKBOX_MARKER_RE = /^\s*[-*•]?\s*\[[xX✓✔ ]?\]\s*$/
   const keptSpecs: EnrichedProduct['specifications'] = []
   const rejectedSpecs: EnrichedProduct['specifications'] = []
   for (const s of enriched.specifications) {
@@ -375,6 +399,10 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
       rejectedSpecs.push(s); continue
     }
     if (BRACKETED_HEADER_RE.test(s.name)) {
+      rejectedSpecs.push(s); continue
+    }
+    // Checkboxes facettes ("- [x]", "[x]") — name vide de sens, value = chip UI
+    if (CHECKBOX_MARKER_RE.test(s.name) || !s.name.trim()) {
       rejectedSpecs.push(s); continue
     }
     const bothProfile = UI_PROFILE_TERMS_RE.test(s.name) && UI_PROFILE_TERMS_RE.test(s.value)
@@ -403,11 +431,26 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
     console.log('[sanitize] filtered', rejectedSpecs.length + (keptSpecs.length - finalKept.length), 'junk specs; kept', finalKept.length)
   }
 
+  // Avantages : nettoyer les noms de groupes fragments ("ET avantages",
+  // "OU caractéristiques") qui sont des coupures de titre du genre
+  // "Points forts ET avantages" — le LLM coupe à "ET" et le reste devient un
+  // group label inutile. On les drop pour repasser ungrouped.
+  const FRAGMENT_GROUP_RE = /^\s*(et|ou|and|or|&|\+)\s+\S/i
+  const cleanedAdvantages = enriched.advantages
+    .filter(a => !isGarbageContent(a.text) && !SAFETY_TEXT_RE.test(a.text))
+    .map(a => {
+      if (a.group && FRAGMENT_GROUP_RE.test(a.group)) {
+        const { group: _g, ...rest } = a
+        return rest
+      }
+      return a
+    })
+
   return {
     ...enriched,
     description,
     documents,
-    advantages: enriched.advantages.filter(a => !isGarbageContent(a.text) && !SAFETY_TEXT_RE.test(a.text)),
+    advantages: cleanedAdvantages,
     specifications: finalKept,
   }
 }
@@ -894,10 +937,17 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
 
   console.log('[jina-reader] JSON mode → content:', md.length, 'chars, images:', Object.keys(imagesMap ?? {}).length, ', links:', Object.keys(linksMap ?? {}).length)
 
-  // Nettoyer les sections cookie/GDPR
+  // Nettoyer les sections cookie/GDPR + filtres facettes (checkboxes UI) + navs
   md = md
     .replace(/#{1,4}\s*(Your Privacy|Cookie|GDPR|Manage Preferences)[\s\S]*?(?=\n#{1,4}\s|\n\n---|\n\n\*\*|$)/gi, '')
     .replace(/^[-*•]\s*.*?(cookie|privacy|captcha|recaptcha|consent|targeting|functional|necessary).*$/gim, '')
+    // Filtres facettes / checkboxes UI : "- [x] Marque Makita" — pollue les
+    // specs (le LLM les avale comme paires KEY/VALUE).
+    .replace(/^[-*•]?\s*\[[xX✓✔ ]?\]\s+.*$/gm, '')
+    // Liens de navigation au format "Nos services • Le blog • Aide & Contact"
+    // ou puces "- Nos services" en tête de doc — virer si la ligne ne contient
+    // QUE des termes nav courts.
+    .replace(/^(?:[-*•]\s*)?(?:Nos services?|Le blog|Aide\s*&\s*Contact|Mentions l[eé]gales|Politique de confidentialit[eé]|Centre d['’]aide|Mon compte|Se connecter|Newsletter|Carri[eè]re|Contactez[\s-]nous|À propos|Secteurs industriels|Suivez[\s-]nous|Mon panier|Liste de souhaits)\s*$/gim, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 

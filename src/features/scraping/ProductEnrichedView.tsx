@@ -1,5 +1,6 @@
 import { Check, FileDown, Zap } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
+import { displayDocumentName } from '@/features/excel/ai-enrichment/documentUtils'
 
 interface Props {
   product: EnrichedProduct
@@ -133,9 +134,9 @@ export function ProductEnrichedView({ product }: Props) {
           <div className="flex flex-col gap-1">
             {product.documents.map((doc, i) => (
               <a key={i} href={doc.url} target="_blank" rel="noreferrer"
-                title={doc.filename}
+                title={doc.filename || doc.url}
                 className="px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 text-[11px] text-white/60 hover:text-white/90 truncate transition-colors">
-                {doc.name}
+                {displayDocumentName(doc)}
               </a>
             ))}
           </div>

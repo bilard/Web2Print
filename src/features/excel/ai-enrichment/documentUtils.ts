@@ -1,6 +1,22 @@
 import type { EnrichedDocument } from './types'
 
 /**
+ * Libellé d'affichage garanti non-vide pour un document. Chaîne de fallback :
+ * name → filename → basename(url) → url → 'Document'. Évite les cartes UI
+ * blanches quand le LLM ou le scrapeur ont raté l'extraction du nom.
+ */
+export function displayDocumentName(doc: EnrichedDocument): string {
+  const name = doc.name?.trim()
+  if (name) return name
+  const filename = doc.filename?.trim()
+  if (filename) return filename
+  const fromUrl = basenameFromUrl(doc.url)
+  if (fromUrl) return fromUrl
+  if (doc.url) return doc.url
+  return 'Document'
+}
+
+/**
  * Extrait le basename d'une URL et le décode pour affichage humain.
  * Ex: "https://x.com/files/notice-X12345-fr.pdf?v=2" → "notice-X12345-fr.pdf"
  * Renvoie une chaîne vide si l'URL n'a pas de basename exploitable.

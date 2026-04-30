@@ -11,6 +11,7 @@ import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTe
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { useSaveEnrichedProduct } from './useSaveEnrichedProduct'
 import { deserializeEnrichedFromRow } from './deserializeEnriched'
+import { displayDocumentName } from './documentUtils'
 import type { EnrichedProduct } from './types'
 import type { LlmRequestInfo } from '@/features/ai/llmRouter'
 import { ANCHOR_EVENT, sectionAnchor, groupAnchor, type AnchorJumpDetail } from './anchors'
@@ -901,11 +902,11 @@ function DoneState({
                 href={doc.url}
                 target="_blank"
                 rel="noreferrer"
-                title={doc.filename}
+                title={doc.filename || doc.url}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 hover:bg-indigo-500/5 transition-colors text-[11px] text-white/60 hover:text-white/90 truncate"
               >
                 <FileDown className="w-3 h-3 shrink-0 text-red-400/60" />
-                <span className="truncate">{doc.name}</span>
+                <span className="truncate">{displayDocumentName(doc)}</span>
                 <ExternalLink className="w-3 h-3 shrink-0 ml-auto text-white/20" />
               </a>
             ))}
