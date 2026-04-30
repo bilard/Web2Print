@@ -15,6 +15,7 @@ import { usePimStore } from '@/stores/pim.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { useProjectsList, useProducts } from '@/features/pim'
+import { pimProductsToSheet } from '@/features/pim/productToSheet'
 import { ExcelImportModal } from '@/features/excel/ExcelImportModal'
 import { DataTable, isRowEnriched } from '@/features/excel/DataTable'
 import { TaxonomyManager } from '@/features/excel/TaxonomyManager'
@@ -47,6 +48,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const currentProjectId = usePimStore((s) => s.currentProjectId)
   // Charge les produits du projet sélectionné
   useProducts(currentProjectId)
+  // Récupère les données du projet, produits et sources sélectionnées
+  const currentProject = usePimStore((s) =>
+    s.currentProjectId ? s.projects.find((p) => p.id === s.currentProjectId) : null,
+  )
+  const pimProducts = usePimStore((s) => s.products)
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
 
   // Auto-sélectionne le premier projet quand les projets sont chargés
   useEffect(() => {
@@ -54,6 +61,25 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       setCurrentProjectId(projects[0].id)
     }
   }, [projects, currentProjectId, setCurrentProjectId])
+
+  // Filtre les produits PIM par sources sélectionnées et convertit en sheet Excel
+  const visiblePimProducts = useMemo(() => {
+    if (selectedSourceIds.length === 0) return pimProducts
+    return pimProducts.filter((p) =>
+      p.sourceLinks.some((l) => selectedSourceIds.includes(l.sourceId)),
+    )
+  }, [pimProducts, selectedSourceIds])
+
+  const pimSheet = useMemo(() => {
+    if (!currentProject) return null
+    return pimProductsToSheet(visiblePimProducts, currentProject.sources)
+  }, [currentProject, visiblePimProducts])
+
+  // Injecte la sheet PIM dans le store Excel (lisible par DataTable sans modification)
+  useEffect(() => {
+    if (!currentProjectId || !pimSheet) return
+    setSheets([pimSheet])
+  }, [currentProjectId, pimSheet, setSheets])
 
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
