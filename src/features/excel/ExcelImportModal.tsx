@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import {
   X, Upload, FileSpreadsheet, Loader2, MonitorUp, Plus,
   Check, ChevronDown, ChevronRight, Layers,
@@ -10,6 +10,13 @@ import { FieldTypeIcon } from './FieldTypeIcon'
 import { FIELD_TYPES, type ExcelSheet, type ExcelColumn, type FieldTypeId, type TaxonomyLevelMap } from './types'
 import { buildTaxonomyFromLevels, buildTaxNodesFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
 import { useCreateTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
+import { matchRows, applyPreview } from '@/features/pim'
+import type { MergePreview, Source as PimSource } from '@/features/pim/types'
+import { useUpsertProducts } from '@/features/pim/useProducts'
+import { useUpsertSource } from '@/features/pim/useSources'
+import { usePimStore } from '@/stores/pim.store'
+import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
+import { toast } from 'sonner'
 
 interface Props {
   open: boolean
@@ -30,6 +37,39 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   const { detecting } = useExcelStore()
   const { createEmpty } = useExcelImport()
   const createTaxonomy = useCreateTaxonomy()
+
+  // ── PIM branch ───────────────────────────────────────────────────────────
+  const pimProjectId = usePimStore((s) => s.currentProjectId)
+  const products = usePimStore((s) => s.products)
+  const upsertProducts = useUpsertProducts(pimProjectId ?? '')
+  const upsertSource = useUpsertSource(pimProjectId ?? '')
+
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [pendingRows, setPendingRows] = useState<Record<string, unknown>[]>([])
+  const [pendingSource, setPendingSource] = useState<PimSource | null>(null)
+
+  const preview: MergePreview | null = useMemo(() => {
+    if (!previewOpen || pendingRows.length === 0) return null
+    return matchRows(pendingRows as never, products)
+  }, [previewOpen, pendingRows, products])
+
+  const startPreview = (rows: Record<string, unknown>[], source: PimSource) => {
+    setPendingRows(rows)
+    setPendingSource(source)
+    setPreviewOpen(true)
+  }
+
+  const confirmIngest = async () => {
+    if (!pimProjectId || !pendingSource || !preview) return
+    const ingestResult = applyPreview(preview, products, pendingSource.id, { now: Date.now() })
+    await upsertSource.mutateAsync(pendingSource)
+    await upsertProducts.mutateAsync(ingestResult.products)
+    toast.success(`${ingestResult.stats.created} ajoutés · ${ingestResult.stats.merged} mergés`)
+    setPreviewOpen(false)
+    resetConfig()
+    onClose()
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Step 2 state: parsed sheets awaiting configuration
   const [parsedSheets, setParsedSheets] = useState<ExcelSheet[] | null>(null)
@@ -101,6 +141,22 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
       return { ...sheet, columns, taxonomy, taxonomyLevels: taxoLevels }
     })
 
+    // ── PIM branch: route through matchRows when a PIM project is active ──
+    if (pimProjectId && finalSheets[0]) {
+      const pimSource: PimSource = {
+        id: `src_import_${parsedFileName}_${Date.now()}`,
+        name: parsedFileName,
+        kind: 'import',
+        schema: finalSheets[0].columns,
+        productCount: finalSheets[0].rows.length,
+        enrichedCount: 0,
+        lastSyncedAt: Date.now(),
+      }
+      startPreview(finalSheets[0].rows as Record<string, unknown>[], pimSource)
+      return
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     // Import depuis le bouton "+" (targetPath défini) → nouvelle BDD :
     // reset docId pour forcer la création d'un nouveau doc Firebase.
     if (targetPath !== undefined) {
@@ -171,7 +227,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
       .sort((a, b) => (taxoLevels[a.key] ?? 0) - (taxoLevels[b.key] ?? 0))
     const maxLevel = getMaxLevel(taxoLevels)
 
-    return (
+    return (<>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '85vh' }}>
           {/* Header */}
@@ -319,6 +375,18 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
           </div>
         </div>
       </div>
+
+      {pendingSource && (
+        <MatchPreviewModal
+          open={previewOpen}
+          preview={preview}
+          loading={false}
+          sourceName={pendingSource.name}
+          onConfirm={confirmIngest}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
+    </>
     )
   }
 
