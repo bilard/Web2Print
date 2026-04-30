@@ -4294,7 +4294,7 @@ ${dataSections.join('\n\n')}
 
 ## RÈGLES ABSOLUES
 1. LANGUE DE SORTIE : TOUJOURS FRANÇAIS. Si le contenu source est en anglais/allemand/autre, TRADUIS fidèlement (description, noms de specs, libellés groupes, avantages, libellés variants). Les valeurs numériques + unités + références/SKU restent inchangées.
-2. Description : EXTRAIS verbatim le PARAGRAPHE DESCRIPTIF PRINCIPAL du markdown — typiquement le paragraphe en prose qui suit le titre du produit (ex: "Cette tondeuse à gazon alimentée par batterie est conçue pour…"). C'est généralement 3–6 phrases continues. NE RÉSUME PAS, NE RÉDIGE PAS, NE RÉFORMULE PAS — copie le texte tel quel. Ignorer les lignes de métadonnées (`Code commande:`, `Référence fabricant:`), les liens nav, les tooltips UI. Si plusieurs paragraphes en prose existent, prendre le plus long décrivant le produit.
+2. Description : EXTRAIS verbatim le PARAGRAPHE DESCRIPTIF PRINCIPAL du markdown — typiquement le paragraphe en prose qui suit le titre du produit (ex: "Cette tondeuse à gazon alimentée par batterie est conçue pour…"). C'est généralement 3–6 phrases continues. NE RÉSUME PAS, NE RÉDIGE PAS, NE RÉFORMULE PAS — copie le texte tel quel. Ignorer les lignes de métadonnées ("Code commande:", "Référence fabricant:"), les liens nav, les tooltips UI. Si plusieurs paragraphes en prose existent, prendre le plus long décrivant le produit.
 3. Avantages : reprends TOUS les bullet points / features, traduits en FR. SANS LIMITE de nombre.
 4. Spécifications : extrais CHAQUE paire nom/valeur de CHAQUE section technique. SANS LIMITE. Libellés et groupes en FR ; valeurs (chiffres+unités) inchangées.
 5. Variantes : extrais TOUTES les déclinaisons avec référence (inchangée), libellé (FR), et properties (clés FR).
