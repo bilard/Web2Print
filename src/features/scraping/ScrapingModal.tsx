@@ -35,6 +35,8 @@ interface Props {
   onClose: () => void
   /** Chemin cible dans l'arbre de bases de données (racine = []). */
   targetPath?: string[]
+  /** Source existante à re-scraper : son ID est réutilisé (pas de doublon). */
+  resyncSource?: Source
 }
 
 const TABS: { id: Tab; label: string; Icon: typeof Globe; color: string }[] = [
@@ -43,9 +45,9 @@ const TABS: { id: Tab; label: string; Icon: typeof Globe; color: string }[] = [
   { id: 'crawl', label: 'Crawl', Icon: FolderSync, color: 'text-amber-400' },
 ]
 
-export function ScrapingModal({ open, onClose, targetPath }: Props) {
+export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props) {
   const [tab, setTab] = useState<Tab>('scrape')
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState(resyncSource?.url ?? '')
   const [result, setResult] = useState<ScrapeResult | null>(null)
   const [lastFields, setLastFields] = useState<ScrapingField[]>([])
   const [crawlPages, setCrawlPages] = useState<CrawlPage[]>([])
@@ -241,16 +243,18 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
   const handleImportResult = () => {
     if (!result) return
     if (pimProjectId) {
-      const source: Source = {
-        id: `src_${hostname}_${Date.now()}`,
-        name: hostname,
-        kind: 'scrape',
-        url,
-        schema: scrapeResultToColumns(result, lastFields),
-        productCount: result.rows.length,
-        enrichedCount: 0,
-        lastSyncedAt: Date.now(),
-      }
+      const source: Source = resyncSource
+        ? { ...resyncSource, productCount: result.rows.length, lastSyncedAt: Date.now() }
+        : {
+            id: `src_${hostname}_${Date.now()}`,
+            name: hostname,
+            kind: 'scrape',
+            url,
+            schema: scrapeResultToColumns(result, lastFields),
+            productCount: result.rows.length,
+            enrichedCount: 0,
+            lastSyncedAt: Date.now(),
+          }
       startPreview(result.rows as Record<string, unknown>[], source)
       return
     }
@@ -288,16 +292,18 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
       ]
       const serialized = serializeEnriched(enrichEntry.data, null)
       const row: Record<string, unknown> = { _id: 'enriched_0', name: productTitle, ...serialized }
-      const source: Source = {
-        id: `src_${hostname}_${Date.now()}`,
-        name: hostname,
-        kind: 'scrape',
-        url,
-        schema: enrichedColumns,
-        productCount: 1,
-        enrichedCount: 1,
-        lastSyncedAt: Date.now(),
-      }
+      const source: Source = resyncSource
+        ? { ...resyncSource, productCount: 1, enrichedCount: 1, lastSyncedAt: Date.now() }
+        : {
+            id: `src_${hostname}_${Date.now()}`,
+            name: hostname,
+            kind: 'scrape',
+            url,
+            schema: enrichedColumns,
+            productCount: 1,
+            enrichedCount: 1,
+            lastSyncedAt: Date.now(),
+          }
       startPreview([row], source)
       return
     }
@@ -331,16 +337,18 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
         { key: 'content', label: 'Contenu', fieldType: 'text_long' as const, detectedType: 'text_long' as const, isPrimary: false, width: 400 },
       ]
       const crawlRows = crawlPages.map((p, i) => ({ _id: `crawl_${i}`, url: p.url, title: p.title, content: p.content }))
-      const source: Source = {
-        id: `src_${hostname}_${Date.now()}`,
-        name: hostname,
-        kind: 'scrape',
-        url,
-        schema: crawlColumns,
-        productCount: crawlPages.length,
-        enrichedCount: 0,
-        lastSyncedAt: Date.now(),
-      }
+      const source: Source = resyncSource
+        ? { ...resyncSource, productCount: crawlPages.length, lastSyncedAt: Date.now() }
+        : {
+            id: `src_${hostname}_${Date.now()}`,
+            name: hostname,
+            kind: 'scrape',
+            url,
+            schema: crawlColumns,
+            productCount: crawlPages.length,
+            enrichedCount: 0,
+            lastSyncedAt: Date.now(),
+          }
       startPreview(crawlRows, source)
       return
     }

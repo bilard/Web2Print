@@ -7,6 +7,7 @@ import { SourceItem } from './SourceItem'
 import { SourceGroup } from './SourceGroup'
 import { AddSourceMenu } from './AddSourceMenu'
 import { SourceContextMenu } from './SourceContextMenu'
+import { ScrapingModal } from '@/features/scraping/ScrapingModal'
 import type { Source } from '@/features/pim/types'
 
 interface Props {
@@ -29,6 +30,7 @@ export function SourcesColumn({ onPickImport, onPickScrape, onPickManual }: Prop
 
   const [filter, setFilter] = useState('')
   const [menu, setMenu] = useState<{ source: Source; x: number; y: number } | null>(null)
+  const [resyncSource, setResyncSource] = useState<Source | null>(null)
 
   const grouped = useMemo(() => {
     if (!project) return new Map<string, Source[]>()
@@ -111,13 +113,21 @@ export function SourcesColumn({ onPickImport, onPickScrape, onPickManual }: Prop
         )}
       </div>
 
+      {resyncSource && (
+        <ScrapingModal
+          open={true}
+          onClose={() => setResyncSource(null)}
+          resyncSource={resyncSource}
+        />
+      )}
+
       {menu && (
         <SourceContextMenu
           x={menu.x}
           y={menu.y}
           onClose={() => setMenu(null)}
           onRename={() => alert('TODO: prompt rename — branché Phase 7')}
-          onResync={() => alert('TODO: re-scrape — branché Phase 7')}
+          onResync={() => setResyncSource(menu.source)}
           onMove={() => alert('TODO: move group — branché Phase 7')}
           onDelete={async () => {
             if (!confirm(`Supprimer la source « ${menu.source.name} » ? Les produits sans autre source seront perdus.`)) return
