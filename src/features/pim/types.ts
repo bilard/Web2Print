@@ -1,9 +1,10 @@
-import type { ExcelColumn, TaxonomyCategory, TaxonomyLevelMap } from '@/features/excel/types'
+import type { CellValue, ExcelColumn, TaxonomyCategory, TaxonomyLevelMap } from '@/features/excel/types'
 
 /** Document Firestore racine. Remplace l'ancien doc `excel_data`. */
 export interface Project {
   id: string
   name: string
+  /** Folder breadcrumb in the project hierarchy (distinct du taxonomyPath des produits). */
   path: string[]
   taxonomyLevels?: TaxonomyLevelMap
   taxonomy: TaxonomyCategory[]
@@ -29,6 +30,7 @@ export interface Source {
 
 /** Produit master, sub-collection projects/{id}/products/{productId}. */
 export interface Product {
+  /** Firestore doc ID, mirrors ExcelRow._id convention. */
   _id: string
   masterSku: string | null
   masterEan: string | null
@@ -42,7 +44,7 @@ export interface Product {
 }
 
 export interface ProductField {
-  value: string | number | boolean | null
+  value: CellValue
   winningSourceId: string
   overridden?: boolean
 }
@@ -51,7 +53,7 @@ export interface SourceLink {
   sourceId: string
   externalSku?: string
   externalUrl?: string
-  snapshot: Record<string, string | number | boolean | null>
+  snapshot: Record<string, CellValue>
 }
 
 export interface MergePreview {
@@ -63,11 +65,11 @@ export interface MergePreview {
 export interface PreviewRow {
   rowIndex: number
   detectedSku: string | null
-  snapshot: Record<string, string | number | boolean | null>
+  snapshot: Record<string, CellValue>
 }
 
 export interface PreviewMerge extends PreviewRow {
   targetProductId: string
   targetMasterSku: string | null
-  fieldChanges: Array<{ key: string; from: unknown; to: unknown; willApply: boolean; reason?: string }>
+  fieldChanges: Array<{ key: string; from: CellValue; to: CellValue; willApply: boolean; reason?: string }>
 }
