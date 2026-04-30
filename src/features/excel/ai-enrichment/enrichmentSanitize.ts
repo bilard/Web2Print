@@ -84,3 +84,48 @@ export function sanitizeEnrichedProduct(product: EnrichedProduct): EnrichedProdu
 
   return { ...product, description, specifications, advantages }
 }
+
+/**
+ * Extrait le paragraphe en prose le plus long d'un markdown — utilisé en
+ * fallback quand le LLM rend une description vide ou trop courte.
+ *
+ * Logique : on parcourt les paragraphes (séparés par lignes vides), on rejette
+ * ceux qui contiennent des liens markdown, des bullets, des tables, des
+ * métadonnées ou de la nav. On retourne le plus long ≥ 80 chars qui ressemble
+ * à de la prose descriptive (commence par majuscule, contient au moins 2
+ * phrases ou ≥ 100 chars).
+ */
+export function extractLongestProseParagraph(md: string): string {
+  if (!md) return ''
+  const paragraphs = md.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+
+  const isProse = (p: string): boolean => {
+    if (p.length < 80) return false
+    if (p.startsWith('#') || p.startsWith('|') || p.startsWith('-') || p.startsWith('*')) return false
+    if (/^[•▪►▶]/.test(p)) return false
+    if (p.startsWith('!')) return false
+    if (/^https?:\/\//.test(p)) return false
+    // Pas de markdown link au début (souvent des titles cliquables)
+    if (/^\[/.test(p)) return false
+    // Métadonnées concentrées (Code commande, Référence:, etc.)
+    if (/^(code\s+commande|r[eé]f[eé]rence|sku|ean|gtin|brand|marque)\s*[:=]/i.test(p)) return false
+    // Cookie / GDPR / privacy banner — souvent des paragraphes longs en
+    // français qui ressemblent à de la prose mais sont du juridique.
+    if (/\b(cookies?|privacy|recaptcha|consent|fonctionnalit[eé]s?\s+(?:du\s+)?site|exp[eé]rience\s+client|paramétrer|accepter|refuser|technologies\s+essentielles)\b/i.test(p)) return false
+    // Doit ressembler à de la prose : commence par majuscule, contient un verbe
+    // (heuristique : la 1re ligne contient un mot ≥ 5 chars).
+    const firstLine = p.split('\n')[0]
+    if (!/^[A-ZÀ-Ÿ]/.test(firstLine)) return false
+    if (firstLine.length < 30 && !p.includes('\n')) return false
+    if (isNavLikeDescription(p)) return false
+    return true
+  }
+
+  const candidates = paragraphs.filter(isProse)
+  if (candidates.length === 0) return ''
+  // Plus long en premier
+  candidates.sort((a, b) => b.length - a.length)
+  // Limite raisonnable (évite les blocs FAQ entiers)
+  const longest = candidates[0]
+  return longest.length > 2000 ? longest.slice(0, 2000) + '…' : longest
+}
