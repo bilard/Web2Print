@@ -11,8 +11,10 @@ import {
 } from 'lucide-react'
 import { MigrationModal } from '@/components/pim/MigrationModal'
 import { usePimStore } from '@/stores/pim.store'
+import { useProjectsList, useProject } from '@/features/pim/usePimProject'
+import { useProducts, useUpsertProducts } from '@/features/pim/useProducts'
 import { useUpsertSource } from '@/features/pim/useSources'
-import { useUpsertProducts } from '@/features/pim/useProducts'
+import { SourcesColumn } from '@/components/pim/SourcesColumn'
 import type { Source, Product } from '@/features/pim/types'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
@@ -55,15 +57,18 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [scrapingOpen, setScrapingOpen] = useState(false)
   const migrationModalOpen = usePimStore((s) => s.migrationModalOpen)
   const setMigrationModalOpen = usePimStore((s) => s.setMigrationModalOpen)
-  // Phase 5.2bis — handler création manuelle (sera passé comme onPickManual en Phase 6)
-  const _pimProjectId = usePimStore((s) => s.currentProjectId) ?? ''
-  const _upsertSource = useUpsertSource(_pimProjectId)
-  const _upsertProducts = useUpsertProducts(_pimProjectId)
+  // Phase 6.1 — PIM project wiring
+  const pimProjectId = usePimStore((s) => s.currentProjectId)
+  const setCurrentProjectId = usePimStore((s) => s.setCurrentProjectId)
+  const { data: pimProjects = [] } = useProjectsList()
+  useProject(pimProjectId)
+  useProducts(pimProjectId)
+  const _upsertSource = useUpsertSource(pimProjectId ?? '')
+  const _upsertProducts = useUpsertProducts(pimProjectId ?? '')
   const _setOpenProductId = usePimStore((s) => s.setOpenProductId)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleCreateManual = async () => {
-    if (!_pimProjectId) return
-    const project = usePimStore.getState().projects.find((p) => p.id === _pimProjectId)
+  const handleCreateManual = async () => {
+    if (!pimProjectId) return
+    const project = usePimStore.getState().projects.find((p) => p.id === pimProjectId)
     let manualSource = project?.sources.find((s) => s.kind === 'manual' && s.name === 'Manuel')
     if (!manualSource) {
       manualSource = {
@@ -93,6 +98,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     await _upsertProducts.mutateAsync([newProduct])
     _setOpenProductId(newProduct._id)
   }
+  const handleOpenPimProject = (id: string) => {
+    setCurrentProjectId(id)
+  }
+
   // Quand l'utilisateur clique sur un nœud de la taxonomie, fermer la fiche
   // produit pour revenir à la vue liste (DataTable).
   useEffect(() => {
@@ -582,6 +591,25 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 onRefresh={refreshFileList}
                 onMigrate={() => setMigrationModalOpen(true)}
               />
+              {pimProjects.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-white/[0.06]">
+                  <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1 px-1">Projets PIM</p>
+                  {pimProjects.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleOpenPimProject(p.id)}
+                      className={`w-full text-left text-[12px] px-2 py-1 rounded transition-colors ${
+                        pimProjectId === p.id
+                          ? 'bg-indigo-500/15 text-indigo-200'
+                          : 'text-white/60 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      {p.name}
+                      <span className="ml-1 text-[10px] text-white/30">{p.sources.length} src</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -595,6 +623,15 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               Bases
             </span>
           </button>
+        )}
+
+        {/* PIM SourcesColumn — visible only when a PIM project is selected */}
+        {pimProjectId && (
+          <SourcesColumn
+            onPickImport={() => setImportModalOpen(true)}
+            onPickScrape={() => setScrapingOpen(true)}
+            onPickManual={handleCreateManual}
+          />
         )}
 
         {/* Main area : top import menu + content (data or empty) */}
