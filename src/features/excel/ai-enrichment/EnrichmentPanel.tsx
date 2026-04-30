@@ -148,12 +148,15 @@ export function EnrichmentPanel({ input }: Props) {
   const llmMeta = isDone && data
     ? isManufacturerScrape
       ? { label: 'Scraping pur', title: `Données extraites directement du site fabricant (${data.scrapingProvider}) — aucune IA utilisée` }
-      : {
-          label: data.llmModel ?? data.llmProvider ?? 'Claude Opus 4.7',
-          title: data.llmProvider
-            ? `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`
-            : 'Raisonnement LLM via Claude Opus 4.7 (par défaut — provider exact non enregistré pour cette entrée)',
-        }
+      : data.llmProvider
+        ? {
+            label: data.llmModel ?? data.llmProvider,
+            title: `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`,
+          }
+        : {
+            label: 'LLM inconnu',
+            title: 'Provider exact non enregistré pour cette entrée — re-générer pour obtenir l\'info précise.',
+          }
     : null
 
   return (

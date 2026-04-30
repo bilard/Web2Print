@@ -4112,6 +4112,13 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               onProviderUsed: ({ provider, model }) => {
                 mfrLlmProvider = provider
                 mfrLlmModel = model
+                log(`✓ LLM utilisé : ${provider} (${model})`)
+              },
+              onProviderFailed: ({ provider, error }) => {
+                log(`⚠ ${provider} a échoué : ${error.message.slice(0, 200)}`)
+              },
+              onCascadeWarning: (warning) => {
+                log(`⚠ Cascade : ${warning}`)
               },
               onRequestSent: (request) => {
                 setLlmRequest(sheetName, rowId, request)
@@ -4363,6 +4370,13 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             onProviderUsed: ({ provider, model }) => {
               llmProviderUsed = provider
               llmModelUsed = model
+              log(`✓ LLM utilisé : ${provider} (${model})`)
+            },
+            onProviderFailed: ({ provider, error }) => {
+              log(`⚠ ${provider} a échoué : ${error.message.slice(0, 200)}`)
+            },
+            onCascadeWarning: (warning) => {
+              log(`⚠ Cascade : ${warning}`)
             },
             onRequestSent: (request) => {
               setLlmRequest(sheetName, rowId, request)

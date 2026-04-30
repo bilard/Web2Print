@@ -16,7 +16,7 @@ import { getSelectedModel, useAiSettingsStore } from '@/stores/aiSettings.store'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 import type { AiProvider } from '@/lib/aiModels'
 
-export type LLMProviderId = 'claude' | 'gemini' | 'openai'
+export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek'
 
 /**
  * Snapshot du payload réellement envoyé au provider LLM.
@@ -99,6 +99,14 @@ interface GenerateJsonOptions<T> {
   /** Callback invoqué avec le provider réellement utilisé (primaire OU fallback)
    *  et le modèle exact. Utile pour afficher la provenance dans l'UI. */
   onProviderUsed?: (info: { provider: LLMProviderId; model: string }) => void
+  /** Callback invoqué chaque fois qu'un provider de la cascade échoue (avec
+   *  l'erreur exacte). Permet à l'UI de tracer pourquoi le fallback a basculé
+   *  — typiquement Gemini rate limit / quota → Claude payant. */
+  onProviderFailed?: (info: { provider: LLMProviderId; error: Error }) => void
+  /** Callback invoqué avec un message d'avertissement sur la cascade configurée
+   *  (ex: provider non-implémenté ignoré). Permet à l'UI de notifier que la
+   *  config user n'est pas appliquée intégralement. */
+  onCascadeWarning?: (warning: string) => void
   /** Callback invoqué juste avant l'envoi du payload au provider, avec un snapshot
    *  des paramètres effectifs (modèle, temperature, prompt, tool schema…).
    *  Permet à l'UI d'afficher le prompt et les paramètres exacts en mode debug. */
@@ -118,24 +126,41 @@ function defaultModelFor(provider: LLMProviderId): string {
 }
 
 /** Mappe la cascade du store (ReasoningProvider[]) aux LLMProviderId supportés.
- *  Filtre les providers non implémentés (deepseek, qwen). */
-function getProviderCascade(): LLMProviderId[] {
+ *  Filtre les providers non implémentés et signale les ignorés via callback.
+ *  N'ajoute PAS de provider par défaut : la cascade exacte de l'utilisateur
+ *  fait foi. Si elle est vide ou ne contient que des providers non-supportés,
+ *  retourne [] et l'appelant doit gérer (throw transparent). */
+function getProviderCascade(onWarning?: (msg: string) => void): LLMProviderId[] {
   const cascade = useAiSettingsStore.getState().reasoningCascade
   const supported: LLMProviderId[] = []
+  const ignored: string[] = []
   for (const p of cascade) {
-    if (p === 'gemini' || p === 'claude') {
-      supported.push(p as LLMProviderId)
+    if (p === 'gemini' || p === 'claude' || p === 'deepseek') {
+      supported.push(p)
+    } else {
+      // qwen, kimi, autres : non câblés dans callProvider
+      ignored.push(p)
     }
-    // deepseek, qwen: non implémentés dans callProvider, ignorés pour maintenant
   }
-  return supported.length > 0 ? supported : ['gemini', 'claude']
+  if (ignored.length > 0 && onWarning) {
+    onWarning(`Providers ignorés (non implémentés) : ${ignored.join(', ')}. Active uniquement gemini, claude, deepseek dans ta cascade.`)
+  }
+  return supported
 }
 
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
   // Si forceProvider, respecter la préférence et retomber sur la cascade en fallback
+  const cascadeFromStore = getProviderCascade(opts.onCascadeWarning)
   const cascade = opts.forceProvider
-    ? [opts.forceProvider, ...getProviderCascade().filter((p) => p !== opts.forceProvider)]
-    : getProviderCascade()
+    ? [opts.forceProvider, ...cascadeFromStore.filter((p) => p !== opts.forceProvider)]
+    : cascadeFromStore
+
+  if (cascade.length === 0) {
+    throw new Error(
+      `[llmRouter] ${opts.task} : aucun provider LLM disponible dans ta cascade. ` +
+      `Configure au moins un provider supporté (gemini, claude, deepseek) dans Réglages.`,
+    )
+  }
 
   const route = TASK_ROUTING[opts.task]
   const modelOverride = route.model
@@ -149,6 +174,8 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
       return result
     } catch (err) {
       lastError = err
+      const errAsErr = err instanceof Error ? err : new Error(String(err))
+      opts.onProviderFailed?.({ provider, error: errAsErr })
       const nextProvider = cascade[i + 1]
       if (nextProvider) {
         console.warn(
@@ -185,7 +212,103 @@ async function callProvider<T>(
   if (provider === 'openai') {
     return await callOpenAI(opts, model)
   }
+  if (provider === 'deepseek') {
+    return await callDeepSeek(opts, model)
+  }
   throw new Error(`Provider inconnu : ${provider}`)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider : DeepSeek (API OpenAI-compatible, JSON mode)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function callDeepSeek<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
+  const apiKey = getApiKey('deepseek')
+  if (!apiKey) throw new Error('Clé DeepSeek absente. Configurez-la dans Réglages.')
+
+  // DeepSeek supporte response_format: { type: 'json_object' } mais PAS
+  // json_schema strict. On injecte le schéma dans le prompt pour guider
+  // la génération, puis on valide via Zod en sortie.
+  const schemaInstruction =
+    `\n\n## SCHÉMA DE SORTIE OBLIGATOIRE\n` +
+    `Réponds UNIQUEMENT par un JSON valide strictement conforme au schéma ci-dessous. ` +
+    `Aucun texte avant ou après le JSON. Aucune balise markdown. Juste le JSON pur.\n\n` +
+    JSON.stringify(opts.schemaForLLM, null, 2)
+
+  const temperature = TASK_TEMPERATURE[opts.task]
+  const max_tokens = 8192
+  const fullPrompt = opts.prompt + schemaInstruction
+
+  opts.onRequestSent?.({
+    provider: 'deepseek',
+    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    model,
+    temperature,
+    max_tokens,
+    messages: [{ role: 'user', content: fullPrompt }],
+    task: opts.task,
+    version: opts.version,
+  })
+
+  const ctrl = new AbortController()
+  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
+
+  let res: Response
+  try {
+    res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature,
+        max_tokens,
+        messages: [{ role: 'user', content: fullPrompt }],
+        response_format: { type: 'json_object' },
+      }),
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`DeepSeek API ${res.status} : ${body.slice(0, 300)}`)
+  }
+
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+    usage?: { prompt_tokens?: number; completion_tokens?: number }
+  }
+  if (data.usage) {
+    recordAiUsage({
+      provider: 'deepseek',
+      model,
+      inputTokens: data.usage.prompt_tokens ?? 0,
+      outputTokens: data.usage.completion_tokens ?? 0,
+    })
+  }
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('DeepSeek : réponse vide')
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch (err) {
+    throw new Error(
+      `DeepSeek : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
+      `Sortie : ${text.slice(0, 200)}`,
+    )
+  }
+
+  const validation = opts.schema.safeParse(parsed)
+  if (validation.success) return validation.data
+  throw new Error(
+    `Réponse DeepSeek non conforme au schéma : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
