@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2 } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink } from 'lucide-react'
 import { useJina, scrapeResultToSheet, crawlPagesToSheet, enrichedProductToSheet } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
@@ -71,12 +71,34 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   // ── PIM branch ───────────────────────────────────────────────────────────
   const pimProjectId = usePimStore((s) => s.currentProjectId)
   const products = usePimStore((s) => s.products)
+  const projects = usePimStore((s) => s.projects)
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const upsertProducts = useUpsertProducts(pimProjectId ?? '')
   const upsertSource = useUpsertSource(pimProjectId ?? '')
+
+  /** Source(s) PIM sélectionnée(s) dans la sidebar — affichée en header pour
+   *  rappeler à l'utilisateur dans quelle BDD le scrape sera ingéré.
+   *  Recherche dans TOUS les projets, indépendamment du currentProjectId du modal,
+   *  pour montrer le contexte sidebar même quand ouvert via "Scraper le web".
+   *  Cherche aussi par hostname (ex: nicoll.fr) si l'ID n'est pas un UUID. */
+  const selectedSources = useMemo(() => {
+    if (selectedSourceIds.length === 0) return []
+    // Cherche les sources sélectionnées dans tous les projets
+    for (const project of projects) {
+      // Cherche par ID ou par hostname/name
+      const found = project.sources.filter((s) =>
+        selectedSourceIds.includes(s.id) || selectedSourceIds.includes(s.name)
+      )
+      if (found.length > 0) return found
+    }
+    return []
+  }, [projects, selectedSourceIds])
+
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const [pendingRows, setPendingRows] = useState<Record<string, unknown>[]>([])
   const [pendingSource, setPendingSource] = useState<Source | null>(null)
+  const [frozenPreview, setFrozenPreview] = useState<MergePreview | null>(null)
 
   const preview: MergePreview | null = useMemo(() => {
     if (!previewOpen || pendingRows.length === 0) return null
@@ -84,19 +106,36 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   }, [previewOpen, pendingRows, products])
 
   const startPreview = (rows: Record<string, unknown>[], source: Source) => {
+    console.log('[ScrapingModal] startPreview called', { rowCount: rows.length, sourceId: source.id })
+    const calculatedPreview = matchRows(rows as never, products)
+    console.log('[ScrapingModal] startPreview calculated preview', { newMasters: calculatedPreview?.newMasters.length, merged: calculatedPreview?.mergedOnExisting.length, needsDedup: calculatedPreview?.needsDedup.length })
     setPendingRows(rows)
     setPendingSource(source)
+    setFrozenPreview(calculatedPreview)
     setPreviewOpen(true)
   }
 
   const confirmIngest = async () => {
-    if (!pimProjectId || !pendingSource || !preview) return
-    const result = applyPreview(preview, products, pendingSource.id, { now: Date.now() })
-    await upsertSource.mutateAsync(pendingSource)
-    await upsertProducts.mutateAsync(result.products)
-    toast.success(`${result.stats.created} ajoutés · ${result.stats.merged} mergés`)
-    setPreviewOpen(false)
-    onClose()
+    console.log('[ScrapingModal] confirmIngest called', { pimProjectId, pendingSource: pendingSource?.id, frozenPreview: !!frozenPreview })
+    if (!pimProjectId || !pendingSource || !frozenPreview) {
+      console.log('[ScrapingModal] confirmIngest early return', { pimProjectId, pendingSource: pendingSource?.id, frozenPreview: !!frozenPreview })
+      return
+    }
+    try {
+      const result = applyPreview(frozenPreview, products, pendingSource.id, { now: Date.now() })
+      console.log('[ScrapingModal] applyPreview result', { created: result.stats.created, merged: result.stats.merged })
+      await upsertSource.mutateAsync(pendingSource)
+      console.log('[ScrapingModal] upsertSource completed', pendingSource.id)
+      await upsertProducts.mutateAsync(result.products)
+      console.log('[ScrapingModal] upsertProducts completed, products count:', result.products.length)
+      toast.success(`${result.stats.created} ajoutés · ${result.stats.merged} mergés`)
+      setPreviewOpen(false)
+      setFrozenPreview(null)
+      onClose()
+    } catch (err) {
+      console.error('[ScrapingModal] confirmIngest error', err)
+      toast.error(`Erreur d'import: ${err instanceof Error ? err.message : 'erreur inconnue'}`)
+    }
   }
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -284,8 +323,13 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   }
 
   const handleImportEnriched = () => {
-    if (!enrichEntry?.data) return
+    console.log('[ScrapingModal] handleImportEnriched called', { hasEnrichEntry: !!enrichEntry?.data, pimProjectId })
+    if (!enrichEntry?.data) {
+      console.log('[ScrapingModal] handleImportEnriched: no enrichEntry data, returning')
+      return
+    }
     if (pimProjectId) {
+      console.log('[ScrapingModal] handleImportEnriched: PIM mode, preparing source')
       const enrichedColumns = [
         { key: 'name', label: 'Nom', fieldType: 'text' as const, detectedType: 'text' as const, isPrimary: true, width: 240 },
         ...ENRICHMENT_COLUMNS.map(buildEnrichmentColumn),
@@ -304,6 +348,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             enrichedCount: 1,
             lastSyncedAt: Date.now(),
           }
+      console.log('[ScrapingModal] handleImportEnriched: calling startPreview', { sourceId: source.id, sourceName: source.name })
       startPreview([row], source)
       return
     }
@@ -380,6 +425,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     setResult(null)
     setCrawlPages([])
     setUrl('')
+    setPreviewOpen(false)
+    setFrozenPreview(null)
     clearEnrichEntry(SCRAPE_MODAL_SHEET, enrichRowId)
     onClose()
   }
@@ -395,14 +442,43 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] shrink-0">
-          <div className="flex items-center gap-2.5">
-            <Globe className="w-4 h-4 text-indigo-400" />
-            <h2 className="text-sm font-semibold text-white/80">Web Scraping</h2>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Globe className="w-4 h-4 text-indigo-400 shrink-0" />
+            <h2 className="text-sm font-semibold text-white/80 shrink-0">Web Scraping</h2>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
               Jina AI
             </span>
+            {(() => {
+              // Mode PIM : affiche source sélectionnée depuis SheetsColumn
+              if (selectedSourceIds.length > 0) {
+                const sourceId = selectedSourceIds[0]
+                const primary = selectedSources[0]
+                const className = "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/60 hover:text-indigo-300 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-colors truncate max-w-[280px]"
+                return (
+                  <span className={className} title={`Source : ${sourceId}`}>
+                    <span className="truncate">{sourceId}</span>
+                  </span>
+                )
+              }
+              // Mode Scraping classique : affiche URL avec lien
+              if (urlValid) {
+                return (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/60 hover:text-indigo-300 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-colors truncate max-w-[280px]"
+                    title={`Ouvrir la source : ${url}`}
+                  >
+                    <span className="truncate">{hostname}</span>
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
+                )
+              }
+              return null
+            })()}
           </div>
-          <button onClick={handleClose} className="p-1 text-white/30 hover:text-white/60 transition-colors">
+          <button onClick={handleClose} className="p-1 text-white/30 hover:text-white/60 transition-colors shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -506,11 +582,11 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     {pendingSource && (
       <MatchPreviewModal
         open={previewOpen}
-        preview={preview}
+        preview={frozenPreview}
         loading={false}
         sourceName={pendingSource.name}
         onConfirm={confirmIngest}
-        onClose={() => setPreviewOpen(false)}
+        onClose={() => { setPreviewOpen(false); setFrozenPreview(null) }}
       />
     )}
     </>
