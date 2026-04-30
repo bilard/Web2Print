@@ -7,6 +7,7 @@ import type { EnrichedProduct, EnrichedDocument } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle } from './scrapeBundle'
 import { buildDocument, coerceDocuments, basenameFromUrl } from './documentUtils'
+import { sanitizeJinaMarkdown } from './markdownSanitize'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -311,19 +312,29 @@ function filterDocumentsByProductRef(
 }
 
 /** Termes de navigation/footer site qui n'ont rien à faire dans une description
- *  produit. Si la description contient ≥2 de ces termes, c'est qu'on a aspiré
- *  le menu/footer du site (ex: "Nos services Le blog Aide & Contact"). */
-const NAV_TERMS_RE = /\b(nos\s+services?|le\s+blog|aide\s*&\s*contact|mentions\s+l[eé]gales|politique\s+de\s+confidentialit[eé]|centre\s+d['’]aide|mon\s+compte|se\s+connecter|newsletter|carri[eè]re|contactez[\s-]nous|à\s+propos|secteurs?\s+industriels?|suivez[\s-]nous|mon\s+panier|liste\s+de\s+souhaits|s['’]inscrire)\b/gi
+ *  produit. Pas de `\b` car les liens markdown adjacents `[A](url)[B](url)`
+ *  rendus en texte donnent "AB" sans whitespace ni word boundary entre. */
+const NAV_TERMS_RE = /(nos\s+services?|le\s+blog(?:\s*RS)?|aide\s*&\s*contact|mentions?\s+l[eé]gales?|politique\s+de\s+(?:confidentialit[eé]|cookies?|protection)|centre\s+d['’]aide|mon\s+compte|se\s+connecter|s['’]identifier|s['’]enregistrer|newsletter|carri[eè]re|contactez[\s-]nous|[àa]\s+propos|secteurs?\s+industriels?|suivez[\s-]nous|mon\s+panier|liste\s+de\s+souhaits|suivi\s+de\s+colis|voir\s+le\s+panier)/gi
+
+/** Métadonnées de fiche produit qui ne sont PAS une description marketing.
+ *  Pattern : "Code commande RS:… Référence fabricant:… Marque:…" */
+const METADATA_LINE_RE = /^[^.]*?\b(code\s+commande|r[eé]f[eé]rence\s+fabricant|num[eé]ro\s+(de\s+)?(?:s[eé]rie|article)|sku|ean|gtin|code[\s-]?barres?)\s*:/i
 
 /** Détecte si une description ressemble à de la navigation ou du footer
- *  (≥2 termes nav, OU ratio nav-words / total-words > 30%). */
+ *  (≥2 termes nav, OU ratio nav-words / total-words > 30% OU ne contient que
+ *  des métadonnées sans phrase descriptive). */
 function isNavLikeDescription(text: string): boolean {
   if (!text || text.length < 20) return false
   const matches = text.match(NAV_TERMS_RE)
-  if (!matches) return false
-  if (matches.length >= 2) return true
-  const words = text.split(/\s+/).filter(Boolean).length
-  return matches.length >= 1 && words < 30
+  if (matches && matches.length >= 2) return true
+  if (matches && matches.length >= 1) {
+    const words = text.split(/\s+/).filter(Boolean).length
+    if (words < 30) return true
+  }
+  // Description = uniquement métadonnées techniques sans phrase
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean)
+  if (lines.length > 0 && lines.every(l => METADATA_LINE_RE.test(l))) return true
+  return false
 }
 
 /** Nettoie un EnrichedProduct en retirant les contenus parasites */
@@ -403,6 +414,33 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
     }
     // Checkboxes facettes ("- [x]", "[x]") — name vide de sens, value = chip UI
     if (CHECKBOX_MARKER_RE.test(s.name) || !s.name.trim()) {
+      rejectedSpecs.push(s); continue
+    }
+    // Specs prose : name est une phrase complète ou trop longue → ce sont
+    // des bullets de "Caractéristiques et avantages" / "Applications" / FAQ
+    // que le LLM a paire en faux specs.
+    const nameTrimmed = s.name.trim()
+    const valueTrimmed = s.value.trim()
+    if (nameTrimmed.length > 80) { rejectedSpecs.push(s); continue }
+    if (/[.!?]$/.test(nameTrimmed) && nameTrimmed.length > 25) {
+      rejectedSpecs.push(s); continue
+    }
+    // Bullet leak : valeur préfixée par puce typographique
+    if (/^[•▪►▶]\s/.test(valueTrimmed) || /^[•▪►▶]\s/.test(nameTrimmed)) {
+      rejectedSpecs.push(s); continue
+    }
+    // Pricing leak : valeur ne contient qu'un prix avec devise
+    if (/^\s*\d+[\s.,]*\d*\s*[€$£]\s*$/.test(valueTrimmed)) {
+      rejectedSpecs.push(s); continue
+    }
+    // UI button leak : "Cliquez sur …" / "Vérifier les …"
+    if (/(cliquez\s+sur|v[eé]rifier\s+les|ajouter\s+au\s+panier)/i.test(valueTrimmed) && valueTrimmed.length > 30) {
+      rejectedSpecs.push(s); continue
+    }
+    // Group avec markdown bold leakage (`**...**`) + section avantages : c'est
+    // pas un spec group, c'est un H2 du markdown que le LLM a recyclé.
+    const groupClean = s.group?.replace(/^\*+|\*+$/g, '').trim()
+    if (groupClean && /^(caract[eé]ristiques?\s+et\s+avantages?|applications?|points?\s+forts?|features?|advantages?|d[eé]tail\s+produit|description|faq|questions?(\s+fr[eé]quentes?)?)$/i.test(groupClean)) {
       rejectedSpecs.push(s); continue
     }
     const bothProfile = UI_PROFILE_TERMS_RE.test(s.name) && UI_PROFILE_TERMS_RE.test(s.value)
@@ -937,19 +975,9 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
 
   console.log('[jina-reader] JSON mode → content:', md.length, 'chars, images:', Object.keys(imagesMap ?? {}).length, ', links:', Object.keys(linksMap ?? {}).length)
 
-  // Nettoyer les sections cookie/GDPR + filtres facettes (checkboxes UI) + navs
-  md = md
-    .replace(/#{1,4}\s*(Your Privacy|Cookie|GDPR|Manage Preferences)[\s\S]*?(?=\n#{1,4}\s|\n\n---|\n\n\*\*|$)/gi, '')
-    .replace(/^[-*•]\s*.*?(cookie|privacy|captcha|recaptcha|consent|targeting|functional|necessary).*$/gim, '')
-    // Filtres facettes / checkboxes UI : "- [x] Marque Makita" — pollue les
-    // specs (le LLM les avale comme paires KEY/VALUE).
-    .replace(/^[-*•]?\s*\[[xX✓✔ ]?\]\s+.*$/gm, '')
-    // Liens de navigation au format "Nos services • Le blog • Aide & Contact"
-    // ou puces "- Nos services" en tête de doc — virer si la ligne ne contient
-    // QUE des termes nav courts.
-    .replace(/^(?:[-*•]\s*)?(?:Nos services?|Le blog|Aide\s*&\s*Contact|Mentions l[eé]gales|Politique de confidentialit[eé]|Centre d['’]aide|Mon compte|Se connecter|Newsletter|Carri[eè]re|Contactez[\s-]nous|À propos|Secteurs industriels|Suivez[\s-]nous|Mon panier|Liste de souhaits)\s*$/gim, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+  // Nettoyage agressif du markdown avant LLM (cookies, nav, facettes, pricing,
+  // catalog listings…). Cf. markdownSanitize.ts pour le détail des patterns.
+  md = sanitizeJinaMarkdown(md)
 
   // Injecter les images trouvées par Jina dans le markdown
   if (imagesMap && typeof imagesMap === 'object') {
