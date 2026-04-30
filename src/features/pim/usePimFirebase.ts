@@ -59,7 +59,7 @@ export async function saveProjectHeader(project: Project): Promise<void> {
   const ref = doc(db, COLLECTION, project.id)
   await setDoc(
     ref,
-    {
+    stripUndefined({
       userId: user.uid,
       name: project.name,
       path: project.path,
@@ -68,7 +68,7 @@ export async function saveProjectHeader(project: Project): Promise<void> {
       sources: project.sources,
       updatedAt: serverTimestamp(),
       createdAt: project.createdAt ? new Date(project.createdAt) : serverTimestamp(),
-    },
+    }),
     { merge: true },
   )
 }
@@ -93,6 +93,23 @@ export async function loadProducts(projectId: string): Promise<Product[]> {
   return snap.docs.map((d) => d.data() as Product)
 }
 
+/** Récursivement retire les clés à valeur `undefined` (Firestore les rejette).
+ *  Préserve `null`, arrays, objets imbriqués. Ne traverse pas les Date / Timestamp. */
+function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => stripUndefined(v)) as unknown as T
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === undefined) continue
+      out[k] = stripUndefined(v)
+    }
+    return out as T
+  }
+  return value
+}
+
 /** Écrit un lot de products via writeBatch (max 500 par batch Firestore). */
 export async function saveProducts(projectId: string, products: Product[]): Promise<void> {
   requireUser()
@@ -102,7 +119,7 @@ export async function saveProducts(projectId: string, products: Product[]): Prom
     const batch = writeBatch(db)
     chunk.forEach((p) => {
       const ref = doc(db, COLLECTION, projectId, PRODUCTS_SUB, p._id)
-      batch.set(ref, p, { merge: true })
+      batch.set(ref, stripUndefined(p), { merge: true })
     })
     await batch.commit()
   }
@@ -119,5 +136,9 @@ export async function deleteProductsByIds(projectId: string, ids: string[]): Pro
 /** Met à jour uniquement les sources d'un projet (sans toucher aux products). */
 export async function saveSources(projectId: string, sources: Source[]): Promise<void> {
   requireUser()
-  await setDoc(doc(db, COLLECTION, projectId), { sources, updatedAt: serverTimestamp() }, { merge: true })
+  await setDoc(
+    doc(db, COLLECTION, projectId),
+    stripUndefined({ sources, updatedAt: serverTimestamp() }),
+    { merge: true },
+  )
 }

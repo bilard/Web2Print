@@ -103,18 +103,13 @@ function createMaster(
     if (PER_SOURCE_FIELDS.has(k)) continue
     fields[k] = { value: v, winningSourceId: sourceId }
   }
-  const link: SourceLink = {
-    sourceId,
-    externalSku: extractString(row.snapshot.sku) ?? extractString(row.snapshot.ref),
-    externalUrl: extractString(row.snapshot.url) ?? extractString(row.snapshot.external_url),
-    snapshot: row.snapshot,
-  }
+  const link: SourceLink = makeSourceLink(sourceId, row.snapshot)
   return {
     _id: needsDedup
       ? `dedup_${sourceId}_${row.rowIndex}_${now}`
       : `prod_${row.detectedSku ?? `idx${row.rowIndex}`}_${now}`,
     masterSku: row.detectedSku,
-    masterEan: extractString(row.snapshot.ean) ?? extractString(row.snapshot.gtin),
+    masterEan: extractString(row.snapshot.ean) ?? extractString(row.snapshot.gtin) ?? null,
     primarySourceId: sourceId,
     fields,
     sourceLinks: [link],
@@ -142,12 +137,7 @@ function mergeIntoMaster(
     }
     newFields[k] = { ...existing, value: v, winningSourceId: sourceId }
   }
-  const link: SourceLink = {
-    sourceId,
-    externalSku: extractString(snapshot.sku) ?? extractString(snapshot.ref),
-    externalUrl: extractString(snapshot.url) ?? extractString(snapshot.external_url),
-    snapshot,
-  }
+  const link: SourceLink = makeSourceLink(sourceId, snapshot)
   // Remplace le link existant pour cette sourceId, ou ajoute
   const existingLinkIdx = target.sourceLinks.findIndex((sl) => sl.sourceId === sourceId)
   const newLinks =
@@ -160,4 +150,14 @@ function mergeIntoMaster(
 
 function extractString(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined
+}
+
+/** Construit un SourceLink en omettant les clés undefined (Firestore les rejette). */
+function makeSourceLink(sourceId: string, snapshot: Record<string, CellValue>): SourceLink {
+  const externalSku = extractString(snapshot.sku) ?? extractString(snapshot.ref)
+  const externalUrl = extractString(snapshot.url) ?? extractString(snapshot.external_url)
+  const link: SourceLink = { sourceId, snapshot }
+  if (externalSku !== undefined) link.externalSku = externalSku
+  if (externalUrl !== undefined) link.externalUrl = externalUrl
+  return link
 }
