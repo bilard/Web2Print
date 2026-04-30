@@ -143,21 +143,33 @@ export function EnrichmentPanel({ input }: Props) {
   const isDone = !isLoading && !isError && !!data
   const isIdle = !isLoading && !isError && !isDone
 
-  // Métadonnées du modèle LLM ou mode scraping (affichées en haut à droite quand isDone)
-  const isManufacturerScrape = isDone && data && !data.llmProvider && data.scrapingProvider?.includes('Fabricant')
-  const llmMeta = isDone && data
-    ? isManufacturerScrape
-      ? { label: 'Scraping pur', title: `Données extraites directement du site fabricant (${data.scrapingProvider}) — aucune IA utilisée` }
-      : data.llmProvider
-        ? {
-            label: data.llmModel ?? data.llmProvider,
-            title: `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`,
-          }
-        : {
-            label: 'LLM inconnu',
-            title: 'Provider exact non enregistré pour cette entrée — re-générer pour obtenir l\'info précise.',
-          }
-    : null
+  // Métadonnées du modèle LLM ou mode scraping (affichées en haut à droite quand isDone).
+  // Trois cas non-LLM connus quand llmProvider est undefined : extraction fabricant
+  // pure, template engine déterministe, parsing markdown direct ("Jina (direct)").
+  const llmMeta = (() => {
+    if (!isDone || !data) return null
+    if (data.llmProvider) {
+      return {
+        label: data.llmModel ?? data.llmProvider,
+        title: `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`,
+      }
+    }
+    // Pas de LLM : on affiche le scraper utilisé pour être transparent
+    const provider = data.scrapingProvider ?? ''
+    if (provider.includes('Fabricant')) {
+      return { label: 'Sans IA · Fabricant', title: `Extraction directe du site fabricant (${provider}) — aucun LLM appelé.` }
+    }
+    if (provider.startsWith('Template')) {
+      return { label: 'Sans IA · Template', title: `Extraction déterministe via template (${provider}) — aucun LLM appelé.` }
+    }
+    if (provider.includes('direct')) {
+      return { label: 'Sans IA · Markdown', title: `Parsing markdown direct (${provider}) — aucun LLM appelé.` }
+    }
+    return {
+      label: 'LLM inconnu',
+      title: 'Provider non enregistré pour cette entrée. Probablement une donnée legacy persistée avant le tracking — re-générer pour obtenir l\'info précise.',
+    }
+  })()
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#111113]">
