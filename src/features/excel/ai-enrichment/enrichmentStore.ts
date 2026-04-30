@@ -3,6 +3,24 @@ import type { LlmRequestInfo } from '@/features/ai/llmRouter'
 import type { EnrichmentEntry, EnrichmentProgress, EnrichedProduct } from './types'
 import { enrichmentKey } from './types'
 
+/** En-têtes de table dupliqués entre sections : "Valeur", "*Valeur*",
+ *  "Caractéristique"… — recopiés par certains scrapers et que le LLM
+ *  conserve parfois. Filtre appliqué à l'entrée du store pour purger
+ *  immédiatement, peu importe la source des specs (pipeline frais,
+ *  désérialisation Excel, edit utilisateur). */
+const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
+const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
+
+function sanitizeIncomingProduct(data: EnrichedProduct): EnrichedProduct {
+  const cleanSpecs = data.specifications.filter((s) => {
+    if (PLACEHOLDER_HEADER_RE.test(s.value) || PLACEHOLDER_HEADER_RE.test(s.name)) return false
+    if (BRACKETED_HEADER_RE.test(s.name)) return false
+    return true
+  })
+  if (cleanSpecs.length === data.specifications.length) return data
+  return { ...data, specifications: cleanSpecs }
+}
+
 /** Cache des données scrapées — persiste entre les re-generates */
 export interface ScrapeCache {
   productUrl: string
@@ -105,7 +123,7 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => {
           ...state.entries,
           [key]: {
             progress: { status: 'done', message: 'Enrichissement terminé' },
-            data,
+            data: sanitizeIncomingProduct(data),
             error: null,
             // Préserve le snapshot llmRequest capturé pendant l'étape reasoning.
             llmRequest: prev.llmRequest,

@@ -46,6 +46,12 @@ export function deserializeEnrichedFromRow(
       })
     : []
 
+  // En-têtes de table dupliqués ("Valeur", "*Valeur*", "Caractéristique"…) —
+  // parasites que le scraping recopiait avant qu'on ajoute le filtre dans
+  // sanitizeEnriched. On les nettoie aussi au reload des anciennes data.
+  const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
+  const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
+
   const specifications: EnrichedSpec[] = specsRaw
     ? specsRaw
         .split(' | ')
@@ -67,6 +73,11 @@ export function deserializeEnrichedFromRow(
             value: rest.slice(idx + 1).trim(),
             group,
           }
+        })
+        .filter((s) => {
+          if (PLACEHOLDER_HEADER_RE.test(s.value) || PLACEHOLDER_HEADER_RE.test(s.name)) return false
+          if (BRACKETED_HEADER_RE.test(s.name)) return false
+          return true
         })
     : []
 

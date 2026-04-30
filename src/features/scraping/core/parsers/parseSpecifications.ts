@@ -286,6 +286,12 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
   const LINK_BRACKETS_RE = /\[.*?\]\(.*?\)/
   const FILE_VALUE_RE = /^(pdf|doc|docx|xls|xlsx|zip|rar|dwg|dxf|bim|ifc|step|stp|iges)$/i
   const FILE_SIZE_RE = /^\d+([.,]\d+)?\s*(b|kb|mb|gb|tb|ko|mo|go|to|octets?|bytes?)\s*$/i
+  /** Lignes d'en-tête de table dupliquées entre sections : "Valeur",
+   *  "*Valeur*", "Caractéristique"… — souvent recopiées par le scraping
+   *  quand la même table d'en-tête est répétée pour chaque sous-section. */
+  const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
+  /** Nom entièrement entre crochets `[...]` sans contenu informatif. */
+  const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
 
   function add(name: string, value: string, group?: string) {
     const n = name.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
@@ -303,6 +309,8 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     if (n.length > 80 || v.length > 250) return
     if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return
     if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return
+    if (PLACEHOLDER_HEADER_RE.test(v) || PLACEHOLDER_HEADER_RE.test(n)) return
+    if (BRACKETED_HEADER_RE.test(n)) return
     if (isGarbageContent(n) || isGarbageContent(v)) return
     seen.add(key)
     specs.push({ name: n, value: v, group: group || undefined })

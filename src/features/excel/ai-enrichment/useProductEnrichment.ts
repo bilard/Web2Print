@@ -346,11 +346,29 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
   // warnings (textes multi-lignes du type "Do not operate power tools…").
   const SAFETY_TEXT_RE = /\b(power\s+tool|ne\s+pas\s+utiliser|earthed|grounded|unmodified\s+plug|electric\s+shock|lose\s+control|flammable|incendie|explosive\s+atmosphere|keep\s+work\s+area|stay\s+alert|personal\s+protective|dust\s+mask|hearing\s+protection|punho\s+adicional|ferramenta\s+el[eé]trica|sendo\s+cancer[íi]genos|preservadores\s+de\s+madeira)/i
   const COOKIE_LABEL_RE = /^(expiration|dur[eé]e|finalit[eé]|nom|prestataire|fournisseur)$/i
+  /** Lignes d'en-tête de table dupliquées entre sections : "Valeur",
+   *  "*Valeur*", "Caractéristique", "_Description_"… — souvent recopiées
+   *  par le scraping quand la même table d'en-tête est répétée pour chaque
+   *  sous-section. Une spec dont le name OU la value matche ce pattern est
+   *  un parasite, peu importe la décoration markdown autour. */
+  const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
+  /** Nom entièrement entre crochets `[...]` sans contenu informatif (titre de
+   *  section dupliqué dans les paires de table). */
+  const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
   const keptSpecs: EnrichedProduct['specifications'] = []
   const rejectedSpecs: EnrichedProduct['specifications'] = []
   for (const s of enriched.specifications) {
     if (isGarbageContent(s.name) || isGarbageContent(s.value)) { rejectedSpecs.push(s); continue }
     if (s.group && JUNK_GROUP_RE.test(s.group.trim())) { rejectedSpecs.push(s); continue }
+    // Lignes d'en-tête de table parasites : "Valeur", "*Valeur*",
+    // "Caractéristique"… — une spec dont la value ou le name est un placeholder
+    // n'apporte aucune info produit.
+    if (PLACEHOLDER_HEADER_RE.test(s.value) || PLACEHOLDER_HEADER_RE.test(s.name)) {
+      rejectedSpecs.push(s); continue
+    }
+    if (BRACKETED_HEADER_RE.test(s.name)) {
+      rejectedSpecs.push(s); continue
+    }
     const bothProfile = UI_PROFILE_TERMS_RE.test(s.name) && UI_PROFILE_TERMS_RE.test(s.value)
     const nameIsProfile = UI_PROFILE_TERMS_RE.test(s.name) && s.value.length < 60
     if (bothProfile || nameIsProfile) { rejectedSpecs.push(s); continue }
@@ -2427,6 +2445,10 @@ function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string
   /** Valeurs qui sont des types de fichiers (pdf, doc, zip...) ou des tailles de fichiers (74.3 MB, 563 KB...) */
   const FILE_VALUE_RE = /^(pdf|doc|docx|xls|xlsx|zip|rar|dwg|dxf|bim|ifc|step|stp|iges)$/i
   const FILE_SIZE_RE = /^\d+([.,]\d+)?\s*(b|kb|mb|gb|tb|ko|mo|go|to|octets?|bytes?)\s*$/i
+  /** Lignes d'en-tête de table dupliquées entre sections : "Valeur", "*Valeur*",
+   *  "Caractéristique", "_Description_"... — souvent recopiées par le scraping
+   *  quand la même table d'en-tête est répétée pour chaque sous-section. */
+  const PLACEHOLDER_VALUE_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
   // FINANCIAL_NAME_RE et FINANCIAL_VALUE_RE déclarés plus haut (réutilisés aussi par le parser Jina)
 
   function add(name: string, value: string, group?: string) {
@@ -2453,6 +2475,11 @@ function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string
     if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return
     // Rejeter si la valeur contient un domaine web complet
     if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return
+    // Rejeter les en-têtes de table dupliqués entre sections ("Valeur",
+    // "*Valeur*", "Caractéristique"…) — pas d'info produit utile.
+    if (PLACEHOLDER_VALUE_RE.test(v) || PLACEHOLDER_VALUE_RE.test(n)) return
+    // Rejeter les noms entièrement entre `[...]` (titre de section dupliqué).
+    if (/^\s*\[[^[\]()]+\]\s*$/.test(n)) return
     // Rejeter les contenus qui sont du garbage (cookies, GDPR, etc.)
     if (isGarbageContent(n) || isGarbageContent(v)) return
     seen.add(key)

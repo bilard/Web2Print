@@ -63,6 +63,23 @@ describe('parseSpecsFromMarkdown', () => {
   it('renvoie tableau vide si pas de specs', () => {
     expect(parseSpecsFromMarkdown('# Produit\n\nDescription')).toEqual([])
   })
+
+  it('rejette les lignes d\'en-tête de table dupliquées (Valeur, *Valeur*, Caractéristique)', () => {
+    const md = `## Caractéristiques techniques
+
+| Caractéristique | Valeur |
+|---|---|
+| [Fiche technique Accessoires] | *Valeur* |
+| Tension | 18 V |
+| Property | _Valeur_ |
+`
+    const specs = parseSpecsFromMarkdown(md)
+    expect(specs).toHaveLength(1)
+    expect(specs[0]).toMatchObject({ name: 'Tension', value: '18 V' })
+    // Les en-têtes parasites doivent être absents
+    expect(specs.find(s => /^\*?valeur\*?$/i.test(s.value))).toBeUndefined()
+    expect(specs.find(s => /^\[.+\]$/.test(s.name))).toBeUndefined()
+  })
 })
 
 describe('extractSpecsFromHtml', () => {
