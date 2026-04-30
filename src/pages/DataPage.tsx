@@ -10,6 +10,7 @@ import {
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight,
 } from 'lucide-react'
 import { MigrationModal } from '@/components/pim/MigrationModal'
+import { Breadcrumb } from '@/components/pim/Breadcrumb'
 import { usePimStore } from '@/stores/pim.store'
 import { useProjectsList, useProject } from '@/features/pim/usePimProject'
 import { useProducts, useUpsertProducts } from '@/features/pim/useProducts'
@@ -666,6 +667,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               Creer vide
             </button>
           </div>
+
+          {/* PIM Breadcrumb — visible only when a PIM project is selected */}
+          {pimProjectId && <Breadcrumb />}
 
           {hasSelectedDb && hasData ? (
             <div className="flex-1 flex overflow-hidden">
