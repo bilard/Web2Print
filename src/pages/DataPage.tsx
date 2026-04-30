@@ -11,6 +11,9 @@ import {
 } from 'lucide-react'
 import { MigrationModal } from '@/components/pim/MigrationModal'
 import { usePimStore } from '@/stores/pim.store'
+import { useUpsertSource } from '@/features/pim/useSources'
+import { useUpsertProducts } from '@/features/pim/useProducts'
+import type { Source, Product } from '@/features/pim/types'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
@@ -52,6 +55,44 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [scrapingOpen, setScrapingOpen] = useState(false)
   const migrationModalOpen = usePimStore((s) => s.migrationModalOpen)
   const setMigrationModalOpen = usePimStore((s) => s.setMigrationModalOpen)
+  // Phase 5.2bis — handler création manuelle (sera passé comme onPickManual en Phase 6)
+  const _pimProjectId = usePimStore((s) => s.currentProjectId) ?? ''
+  const _upsertSource = useUpsertSource(_pimProjectId)
+  const _upsertProducts = useUpsertProducts(_pimProjectId)
+  const _setOpenProductId = usePimStore((s) => s.setOpenProductId)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleCreateManual = async () => {
+    if (!_pimProjectId) return
+    const project = usePimStore.getState().projects.find((p) => p.id === _pimProjectId)
+    let manualSource = project?.sources.find((s) => s.kind === 'manual' && s.name === 'Manuel')
+    if (!manualSource) {
+      manualSource = {
+        id: `src_manual_${Date.now()}`,
+        name: 'Manuel',
+        kind: 'manual',
+        schema: [],
+        productCount: 0,
+        enrichedCount: 0,
+        lastSyncedAt: Date.now(),
+      } satisfies Source
+      await _upsertSource.mutateAsync(manualSource)
+    }
+    const now = Date.now()
+    const newProduct: Product = {
+      _id: `prod_manual_${now}`,
+      masterSku: null,
+      masterEan: null,
+      primarySourceId: manualSource.id,
+      fields: { name: { value: 'Nouveau produit', winningSourceId: manualSource.id } },
+      sourceLinks: [{ sourceId: manualSource.id, snapshot: { name: 'Nouveau produit' } }],
+      taxonomyPath: [],
+      needsDedup: false,
+      createdAt: now,
+      updatedAt: now,
+    }
+    await _upsertProducts.mutateAsync([newProduct])
+    _setOpenProductId(newProduct._id)
+  }
   // Quand l'utilisateur clique sur un nœud de la taxonomie, fermer la fiche
   // produit pour revenir à la vue liste (DataTable).
   useEffect(() => {
