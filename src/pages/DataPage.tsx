@@ -11,8 +11,10 @@ import {
 } from 'lucide-react'
 import { SheetsColumn } from '@/components/pim/SheetsColumn'
 import { useExcelStore } from '@/stores/excel.store'
+import { usePimStore } from '@/stores/pim.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
+import { useProjectsList, useProducts } from '@/features/pim'
 import { ExcelImportModal } from '@/features/excel/ExcelImportModal'
 import { DataTable, isRowEnriched } from '@/features/excel/DataTable'
 import { TaxonomyManager } from '@/features/excel/TaxonomyManager'
@@ -39,6 +41,20 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile } = useExcelFirebase()
   const { data: taxonomies } = useTaxonomies()
   const renameTaxonomy = useRenameTaxonomy()
+  // Charge les projets PIM au démarrage pour que le store soit peuplé
+  const { data: projects } = useProjectsList()
+  const setCurrentProjectId = usePimStore((s) => s.setCurrentProjectId)
+  const currentProjectId = usePimStore((s) => s.currentProjectId)
+  // Charge les produits du projet sélectionné
+  useProducts(currentProjectId)
+
+  // Auto-sélectionne le premier projet quand les projets sont chargés
+  useEffect(() => {
+    if (!currentProjectId && projects && projects.length > 0) {
+      setCurrentProjectId(projects[0].id)
+    }
+  }, [projects, currentProjectId, setCurrentProjectId])
+
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
   const [showBdd, setShowBdd] = useState(true)
