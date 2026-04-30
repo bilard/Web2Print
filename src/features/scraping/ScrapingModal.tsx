@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2 } from 'lucide-react'
-import { useJina, scrapeResultToSheet, crawlPagesToSheet } from './useJina'
+import { useJina, scrapeResultToSheet, crawlPagesToSheet, enrichedProductToSheet } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
 import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
@@ -61,6 +61,16 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
 
   const urlValid = (() => { try { new URL(url); return true } catch { return false } })()
   const hostname = (() => { try { return new URL(url).hostname.replace('www.', '') } catch { return 'scraped' } })()
+  /** Titre dérivé du slug URL : `caniveau-avec-grille-acier-heel-c250-l100-int-kenadrain` →
+   *  `caniveau avec grille acier heel c250 l100 int kenadrain`. Ce même titre
+   *  est passé à enrich() (input.title) et réutilisé comme nom de produit
+   *  pour la colonne primary `name` de la sheet importée. */
+  const productTitle = (() => {
+    try {
+      const path = new URL(url).pathname.split('/').filter(Boolean).pop() ?? ''
+      return path.replace(/[-_]+/g, ' ').replace(/\.\w{2,4}$/, '').trim() || hostname
+    } catch { return hostname }
+  })()
 
   const handleScrape = async (mode: ScrapingMode, fields: ScrapingField[], prompt: string, opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean; manualBreadcrumb?: string[] }) => {
     // Mode "Produit unique" : route vers la pipeline d'enrichissement riche
@@ -73,16 +83,11 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
       // Reset de l'entrée précédente pour éviter d'afficher un résultat périmé
       clearEnrichEntry(SCRAPE_MODAL_SHEET, enrichRowId)
       resetEnrich()
-      // Titre dérivé du dernier segment d'URL — la pipeline le raffinera ensuite
-      let title = ''
-      try {
-        const path = new URL(url).pathname.split('/').filter(Boolean).pop() ?? ''
-        title = path.replace(/[-_]+/g, ' ').replace(/\.\w{2,4}$/, '').trim()
-      } catch { /* URL déjà validée */ }
+      // Titre dérivé du slug URL — la pipeline le raffinera ensuite
       await enrich({
         sheetName: SCRAPE_MODAL_SHEET,
         rowId: enrichRowId,
-        title,
+        title: productTitle,
         knownUrl: url,
         mode: 'auto',
       })
@@ -219,6 +224,29 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
     handleClose()
   }
 
+  const handleImportEnriched = () => {
+    if (!enrichEntry?.data) return
+    const sheet = enrichedProductToSheet(enrichEntry.data, hostname, productTitle)
+    const store = useExcelStore.getState()
+    if (targetPath !== undefined) {
+      store.setCurrentDocId(null)
+      store.setSheetRowId(null)
+      setCurrentFileName(hostname)
+      setCurrentPath(targetPath)
+      setSheets([sheet])
+      store.setActiveSheet(0)
+    } else {
+      const { sheets: merged, activeIndex } = mergeSheet(sheets, sheet)
+      setSheets(merged)
+      store.setActiveSheet(activeIndex)
+      store.setSheetRowId(null)
+      if (sheets.length === 0) {
+        setCurrentFileName(hostname)
+      }
+    }
+    handleClose()
+  }
+
   const handleImportCrawl = () => {
     if (crawlPages.length === 0) return
     const sheet = crawlPagesToSheet(crawlPages, hostname)
@@ -255,6 +283,7 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
 
   const canImport = result && result.rows.length > 0
   const canImportCrawl = tab === 'crawl' && crawlPages.length > 0 && !loading
+  const canImportEnriched = tab === 'scrape' && !!enrichEntry?.data && !enriching
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -348,16 +377,22 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
         </div>
 
         {/* Footer */}
-        {(canImport || canImportCrawl) && (
+        {(canImport || canImportCrawl || canImportEnriched) && (
           <div className="px-5 py-3.5 border-t border-white/[0.06] shrink-0">
             <button
-              onClick={() => canImportCrawl ? handleImportCrawl() : handleImportResult()}
+              onClick={() => {
+                if (canImportEnriched) return handleImportEnriched()
+                if (canImportCrawl) return handleImportCrawl()
+                return handleImportResult()
+              }}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
-              {canImportCrawl
-                ? `Importer ${crawlPages.length} pages crawlées`
-                : `Importer ${result?.rows.length} ligne${(result?.rows.length ?? 0) > 1 ? 's' : ''}`}
+              {canImportEnriched
+                ? 'Importer le produit enrichi'
+                : canImportCrawl
+                  ? `Importer ${crawlPages.length} pages crawlées`
+                  : `Importer ${result?.rows.length} ligne${(result?.rows.length ?? 0) > 1 ? 's' : ''}`}
             </button>
           </div>
         )}

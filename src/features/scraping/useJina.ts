@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
+import { ENRICHMENT_COLUMNS, buildEnrichmentColumn, serializeEnriched } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import { getApiKey } from '@/lib/apiKeys'
 import { functions } from '@/lib/firebase/config'
@@ -431,6 +433,41 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
     sheet.taxonomy = buildTaxonomyFromLevels(sheet, taxonomyLevels)
   }
   return sheet
+}
+
+/** Aplatit un EnrichedProduct (mode "Produit unique") en ExcelSheet à 1 ligne,
+ *  en utilisant la convention `ai_*` reconnue par EnrichmentPanel et
+ *  deserializeEnrichedFromRow — la ligne ainsi créée se réhydrate
+ *  automatiquement en affichage structuré (variants en accordéon, images en
+ *  grille, documents PDF cliquables, advantages groupés colorés).
+ *
+ *  La feuille a une colonne primary `name` (titre du produit) + toutes les
+ *  colonnes `ENRICHMENT_COLUMNS`. */
+export function enrichedProductToSheet(
+  product: EnrichedProduct,
+  name: string,
+  productTitle: string,
+): ExcelSheet {
+  const columns: ExcelColumn[] = [
+    {
+      key: 'name',
+      label: 'Nom',
+      fieldType: 'text',
+      detectedType: 'text',
+      isPrimary: true,
+      width: 240,
+    },
+    ...ENRICHMENT_COLUMNS.map(buildEnrichmentColumn),
+  ]
+
+  const serialized = serializeEnriched(product, null)
+  const row: ExcelRow = {
+    _id: 'enriched_0',
+    name: productTitle,
+    ...serialized,
+  }
+
+  return { name, columns, rows: [row], taxonomy: [] }
 }
 
 export function crawlPagesToSheet(pages: CrawlPage[], name: string): ExcelSheet {

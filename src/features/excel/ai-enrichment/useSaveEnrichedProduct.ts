@@ -58,14 +58,14 @@ async function writeSheetsToFirestore(fileName: string, sheets: ExcelSheet[]): P
  *   `saveToFirebase(currentFileName, sheets)` directement.
  */
 
-interface EnrichmentColumnDef {
+export interface EnrichmentColumnDef {
   key: string
   label: string
   fieldType: FieldTypeId
   width: number
 }
 
-const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
+export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_description',     label: 'IA — Description',   fieldType: 'text_long', width: 320 },
   { key: 'ai_breadcrumb',      label: 'IA — Fil d\'Ariane', fieldType: 'text_long', width: 260 },
   { key: 'ai_advantages',      label: 'IA — Points forts',  fieldType: 'text_long', width: 280 },
@@ -79,7 +79,7 @@ const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_llm_request',    label: 'IA — Requête LLM',   fieldType: 'text_long', width: 120 },
 ]
 
-const buildColumn = (def: EnrichmentColumnDef): ExcelColumn => ({
+export const buildEnrichmentColumn = (def: EnrichmentColumnDef): ExcelColumn => ({
   key: def.key,
   label: def.label,
   fieldType: def.fieldType,
@@ -87,9 +87,10 @@ const buildColumn = (def: EnrichmentColumnDef): ExcelColumn => ({
   isPrimary: false,
   width: def.width,
 })
+const buildColumn = buildEnrichmentColumn
 
 /** Sérialise les différents types d'output en string unique compatible avec les colonnes existantes. */
-function serializeEnriched(
+export function serializeEnriched(
   data: EnrichedProduct,
   llmRequestJson: string | null,
 ): Record<string, string | null> {
