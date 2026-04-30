@@ -1,5 +1,8 @@
 /** Related-URL discovery utilities (pure, testable). */
 
+import { buildDocument } from './documentUtils'
+import type { EnrichedDocument } from './types'
+
 const TAB_QUERY_KEYS = ['tab', 'section', 'view', 'pane', 'content']
 
 function detectTabKeyFromUrl(baseUrl: URL): string | null {
@@ -28,7 +31,8 @@ function extractTabId(el: Element): string | null {
 
 export interface RelatedUrls {
   tabs: string[]
-  pdfs: string[]
+  /** Documents PDF découverts dans la page (avec libellé du <a> et basename) */
+  pdfs: EnrichedDocument[]
   subpages: string[]
 }
 
@@ -59,8 +63,14 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
   const basePath = baseUrl.pathname
 
   const tabs = new Set<string>()
-  const pdfs = new Set<string>()
+  const pdfsByUrl = new Map<string, EnrichedDocument>()
   const subpages = new Set<string>()
+
+  const linkLabel = (el: Element): string => (el.textContent ?? '').replace(/\s+/g, ' ').trim()
+  const addPdf = (url: string, label: string) => {
+    if (pdfsByUrl.has(url)) return
+    pdfsByUrl.set(url, buildDocument(url, label))
+  }
 
   const anchors = doc.querySelectorAll('a[href]')
   for (const a of Array.from(anchors)) {
@@ -74,7 +84,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
       // PDFs externes sur CDN documentaire
       if (/\.pdf($|\?)/i.test(resolved.pathname + resolved.search)) {
         const n = normalizeUrl(resolved.toString())
-        if (n) pdfs.add(n)
+        if (n) addPdf(n, linkLabel(a))
       }
       continue
     }
@@ -86,7 +96,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
 
     // PDFs
     if (/\.pdf($|\?)/i.test(resolved.pathname + resolved.search)) {
-      pdfs.add(normalized)
+      addPdf(normalized, linkLabel(a))
       continue
     }
 
@@ -128,7 +138,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
 
   return {
     tabs: Array.from(tabs),
-    pdfs: Array.from(pdfs),
+    pdfs: Array.from(pdfsByUrl.values()),
     subpages: Array.from(subpages),
   }
 }

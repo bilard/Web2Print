@@ -5,6 +5,8 @@ import type {
   SelectorStrategy,
   TemplateApplyResult,
 } from './types'
+import type { EnrichedDocument } from '@/features/excel/ai-enrichment/types'
+import { buildDocument } from '@/features/excel/ai-enrichment/documentUtils'
 
 /**
  * Engine d'application d'un template sur un document HTML rendu.
@@ -603,7 +605,7 @@ export function applyDocumentsFromHtml(
   html: string,
   field: FieldSelector,
   baseUrl?: string,
-): string[] {
+): EnrichedDocument[] {
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
   for (const strategy of field.strategies) {
@@ -611,7 +613,7 @@ export function applyDocumentsFromHtml(
     let containers: Element[]
     try { containers = Array.from(doc.querySelectorAll(strategy.expression)) } catch { continue }
     if (containers.length === 0) continue
-    const results: string[] = []
+    const results: EnrichedDocument[] = []
     const seen = new Set<string>()
     for (const container of containers) {
       const anchors = Array.from(container.querySelectorAll('a[href]')) as HTMLAnchorElement[]
@@ -621,10 +623,11 @@ export function applyDocumentsFromHtml(
         if (baseUrl) {
           try { href = new URL(href, baseUrl).toString() } catch { /* keep as-is */ }
         }
+        if (!/^https?:\/\//.test(href)) continue
         if (seen.has(href)) continue
         seen.add(href)
         const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
-        results.push(title && title.length > 2 ? `${title}##${href}` : href)
+        results.push(buildDocument(href, title.length > 2 ? title : undefined))
       }
     }
     if (results.length > 0) return results

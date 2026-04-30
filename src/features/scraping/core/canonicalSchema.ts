@@ -47,6 +47,7 @@ export const EnrichedProductSchema = z.object({
     documents: z.array(z.object({
       name: z.string(),
       url: z.string().url(),
+      filename: z.string(),
     })).default([]),
   }),
 

@@ -25,6 +25,20 @@ export interface ProductVariant {
   properties: Record<string, string>
 }
 
+/**
+ * Document attaché au produit (notice, fiche technique, manuel, déclaration…).
+ * Toujours triplet name/url/filename — règle universelle scraping : conserver
+ * le nom de fichier original pour traçabilité (ex: notice-X12345-fr.pdf).
+ */
+export interface EnrichedDocument {
+  /** Libellé d'affichage tel que vu sur la page (texte du <a>) */
+  name: string
+  /** URL absolue du document */
+  url: string
+  /** Nom de fichier original (basename de l'URL, décodé) */
+  filename: string
+}
+
 export interface EnrichedProduct {
   /** Description marketing reformulée par l'IA */
   description: string
@@ -40,8 +54,8 @@ export interface EnrichedProduct {
   variants: ProductVariant[]
   /** URLs d'images produit trouvées lors du scraping */
   images: string[]
-  /** URLs des documents PDF / notices / fiches techniques */
-  documents: string[]
+  /** Documents PDF / notices / fiches techniques (toujours triplet name/url/filename) */
+  documents: EnrichedDocument[]
   /** URL source principale d'où provient le scraping */
   sourceUrl: string | null
   /** URLs alternatives trouvées durant la recherche (pour info) */

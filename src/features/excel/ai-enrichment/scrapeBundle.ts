@@ -1,11 +1,12 @@
 import { discoverRelatedUrls, type RelatedUrls } from './relatedUrls'
+import type { EnrichedDocument } from './types'
 
 export interface ScrapedBundle {
   primaryUrl: string
   primaryMarkdown: string
   sourcesScrapped: string[]   // toutes les URLs effectivement scrapées (incluant primary)
   mergedMarkdown: string       // markdown final envoyé au LLM
-  pdfsFound: string[]
+  pdfsFound: EnrichedDocument[]
   errors: Array<{ url: string; error: string }>
 }
 
@@ -50,7 +51,7 @@ function dedupParagraphs(sections: Array<{ label: string; markdown: string }>): 
 
 function prioritizeUrls(r: RelatedUrls): string[] {
   // tabs > pdfs > subpages, plafonné
-  return [...r.tabs, ...r.pdfs, ...r.subpages].slice(0, MAX_ADDITIONAL_URLS)
+  return [...r.tabs, ...r.pdfs.map((p) => p.url), ...r.subpages].slice(0, MAX_ADDITIONAL_URLS)
 }
 
 export async function scrapeProductBundle(

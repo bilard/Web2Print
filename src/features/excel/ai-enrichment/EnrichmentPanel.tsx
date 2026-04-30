@@ -80,7 +80,6 @@ export function EnrichmentPanel({ input }: Props) {
   const setData = useEnrichmentStore((s) => s.setData)
   const { enrich, reset, running } = useProductEnrichment()
   const { save, isSaved, saving, error: saveError } = useSaveEnrichedProduct()
-  const [sourceMenuOpen, setSourceMenuOpen] = useState(false)
 
   // Rehydration depuis la feuille Excel : si la ligne a déjà des cellules ai_*
   // persistées (depuis Firestore), on reconstruit l'objet EnrichedProduct et
@@ -265,37 +264,16 @@ export function EnrichmentPanel({ input }: Props) {
                   <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest">Sources</span>
                 </div>
                 {primaryHost ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setSourceMenuOpen(!sourceMenuOpen)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold normal-case tracking-normal bg-gradient-to-r from-amber-500/30 to-amber-600/20 text-amber-100 border-2 border-amber-500/60 hover:from-amber-500/50 hover:to-amber-600/40 hover:text-white hover:border-amber-400 transition-all truncate max-w-[200px] shadow-lg shadow-amber-500/20"
-                      title={`Source principale : ${primaryUrl} (cliquez pour changer)`}
-                    >
-                      {primaryHost}
-                      <ChevronDown className="w-3 h-3 shrink-0" />
-                    </button>
-                    {sourceMenuOpen && uniqueExtra.length > 0 && (
-                      <div className="absolute top-full left-0 mt-1 bg-white/10 border border-white/20 rounded-md shadow-lg z-10 backdrop-blur-sm min-w-[200px]">
-                        <p className="px-3 py-2 text-[9px] text-white/50 font-semibold uppercase">Sources alternatives</p>
-                        {uniqueExtra.map((host, i) => {
-                          const url = (data.additionalSources ?? []).find((u) => hostFromUrl(u) === host)
-                          return (
-                            <button
-                              key={`${host}-${i}`}
-                              onClick={() => {
-                                setSourceMenuOpen(false)
-                                reset(input.sheetName, input.rowId)
-                                void enrich({ ...input, knownUrl: url })
-                              }}
-                              className="w-full text-left px-3 py-2 text-[10px] text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors border-t border-white/[0.06] first:border-t-0"
-                            >
-                              {host}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  <a
+                    href={primaryUrl ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold normal-case tracking-normal bg-gradient-to-r from-amber-500/30 to-amber-600/20 text-amber-100 border-2 border-amber-500/60 hover:from-amber-500/50 hover:to-amber-600/40 hover:text-white hover:border-amber-400 transition-all truncate max-w-[200px] shadow-lg shadow-amber-500/20"
+                    title={`Ouvrir la source : ${primaryUrl}`}
+                  >
+                    {primaryHost}
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
                 ) : (
                   <span
                     className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold text-white/40 bg-white/[0.04] border-2 border-white/15"
@@ -917,25 +895,20 @@ function DoneState({
             Documents ({data.documents.length})
           </p>
           <div className="flex flex-col gap-1">
-            {data.documents.map((raw, i) => {
-              // Support format "titre##url" pour afficher le bon nom
-              const hasTitle = raw.includes('##')
-              const displayName = hasTitle ? raw.split('##')[0] : (raw.split('/').pop()?.split('?')[0] ?? raw)
-              const href = hasTitle ? raw.split('##').slice(1).join('##') : raw
-              return (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 hover:bg-indigo-500/5 transition-colors text-[11px] text-white/60 hover:text-white/90 truncate"
-                >
-                  <FileDown className="w-3 h-3 shrink-0 text-red-400/60" />
-                  <span className="truncate">{decodeURIComponent(displayName)}</span>
-                  <ExternalLink className="w-3 h-3 shrink-0 ml-auto text-white/20" />
-                </a>
-              )
-            })}
+            {data.documents.map((doc, i) => (
+              <a
+                key={i}
+                href={doc.url}
+                target="_blank"
+                rel="noreferrer"
+                title={doc.filename}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 hover:bg-indigo-500/5 transition-colors text-[11px] text-white/60 hover:text-white/90 truncate"
+              >
+                <FileDown className="w-3 h-3 shrink-0 text-red-400/60" />
+                <span className="truncate">{doc.name}</span>
+                <ExternalLink className="w-3 h-3 shrink-0 ml-auto text-white/20" />
+              </a>
+            ))}
           </div>
         </div>
         ) : null

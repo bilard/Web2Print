@@ -131,17 +131,13 @@ export function ProductEnrichedView({ product }: Props) {
             Documents ({product.documents.length})
           </p>
           <div className="flex flex-col gap-1">
-            {product.documents.map((raw, i) => {
-              const hasTitle = raw.includes('##')
-              const name = hasTitle ? raw.split('##')[0] : (raw.split('/').pop()?.split('?')[0] ?? raw)
-              const href = hasTitle ? raw.split('##').slice(1).join('##') : raw
-              return (
-                <a key={i} href={href} target="_blank" rel="noreferrer"
-                  className="px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 text-[11px] text-white/60 hover:text-white/90 truncate transition-colors">
-                  {name}
-                </a>
-              )
-            })}
+            {product.documents.map((doc, i) => (
+              <a key={i} href={doc.url} target="_blank" rel="noreferrer"
+                title={doc.filename}
+                className="px-2.5 py-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] hover:border-indigo-400/40 text-[11px] text-white/60 hover:text-white/90 truncate transition-colors">
+                {doc.name}
+              </a>
+            ))}
           </div>
         </section>
       )}

@@ -70,15 +70,21 @@ const htmlWithPdfs = `
 describe('discoverRelatedUrls - pdfs', () => {
   const base = new URL('https://www.grundfos.com/fr/products/alpha/alpha1-go/alpha1-go-25-40-130-93074186')
 
-  it('collects internal pdf links', () => {
+  it('collects internal pdf links with name + filename', () => {
     const { pdfs } = discoverRelatedUrls(htmlWithPdfs, base)
-    expect(pdfs).toContain('https://www.grundfos.com/docs/datasheet-alpha1.pdf')
-    expect(pdfs.some(u => u.includes('manual-fr.pdf'))).toBe(true)
+    const dataSheet = pdfs.find((d) => d.url === 'https://www.grundfos.com/docs/datasheet-alpha1.pdf')
+    expect(dataSheet).toBeDefined()
+    expect(dataSheet?.name).toBe('Datasheet')
+    expect(dataSheet?.filename).toBe('datasheet-alpha1.pdf')
+    expect(pdfs.some(d => d.url.includes('manual-fr.pdf'))).toBe(true)
   })
 
-  it('collects external pdf links from CDNs', () => {
+  it('collects external pdf links from CDNs with filename', () => {
     const { pdfs } = discoverRelatedUrls(htmlWithPdfs, base)
-    expect(pdfs).toContain('https://cdn.grundfos.com/api/binary/d123.pdf')
+    const cert = pdfs.find((d) => d.url === 'https://cdn.grundfos.com/api/binary/d123.pdf')
+    expect(cert).toBeDefined()
+    expect(cert?.filename).toBe('d123.pdf')
+    expect(cert?.name).toBe('Certificat')
   })
 })
 

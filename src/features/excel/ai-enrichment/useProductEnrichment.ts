@@ -3,9 +3,10 @@ import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson } from '@/features/ai/llmRouter'
 import { useEnrichmentStore } from './enrichmentStore'
-import type { EnrichedProduct } from './types'
+import type { EnrichedProduct, EnrichedDocument } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle } from './scrapeBundle'
+import { buildDocument, coerceDocuments, basenameFromUrl } from './documentUtils'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -200,27 +201,35 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   }
 
   // ── 4. Documents : ajouter les PDFs trouvés dans le markdown (jamais en perdre) ──
-  let { documents } = enriched
+  let documents: EnrichedDocument[] = [...enriched.documents]
+  const seenUrls = new Set(documents.map((d) => d.url))
   const mdPdfUrls = [...markdownContent.matchAll(/https?:\/\/[^\s\)"\]]+\.pdf[^\s\)"\]]*/gi)].map(m => m[0])
-  if (mdPdfUrls.length > 0) {
-    const existingSet = new Set(documents)
-    const newDocs = mdPdfUrls.filter(u => !existingSet.has(u))
-    if (newDocs.length > 0) {
-      documents = [...documents, ...newDocs]
-      console.log('[post-process] ✓ added', newDocs.length, 'PDF docs from markdown')
-    }
+  let bareAdded = 0
+  for (const url of mdPdfUrls) {
+    if (seenUrls.has(url)) continue
+    seenUrls.add(url)
+    documents.push(buildDocument(url))
+    bareAdded += 1
+  }
+  if (bareAdded > 0) {
+    console.log('[post-process] ✓ added', bareAdded, 'PDF docs from markdown')
   }
 
-  // ── 5. Documents titré "titre##url" depuis markdown links ──
+  // ── 5. Documents titrés `[Titre](url)` depuis markdown links — préserve le label ──
   const mdLinks = [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+\.pdf[^\s\)]*)\)/gi)]
   for (const m of mdLinks) {
     const title = m[1].trim()
     const url = m[2].trim()
-    // Nettoyer les noms génériques via cleanDocumentName
-    const titledDoc = `${title}##${url}`
-    if (!documents.includes(url) && !documents.includes(titledDoc)) {
-      documents.push(titledDoc)
+    if (seenUrls.has(url)) {
+      // PDF déjà ajouté en bare URL : enrichir son name si générique
+      const existing = documents.find((d) => d.url === url)
+      if (existing && existing.name === existing.filename && title.length >= 3) {
+        existing.name = title
+      }
+      continue
     }
+    seenUrls.add(url)
+    documents.push(buildDocument(url, title))
   }
 
   // Nettoyer tous les noms de documents (titres génériques → noms extraits de l'URL)
@@ -256,9 +265,9 @@ const GENERIC_DOC_LABEL_RE = /\b(cgv|cgu|mentions\s+l[eé]gales|politique|privac
  *  - Rejeter les labels clairement génériques (CGV, tarif, newsletter…).
  */
 function filterDocumentsByProductRef(
-  documents: string[],
+  documents: EnrichedDocument[],
   productIds: string[],
-): string[] {
+): EnrichedDocument[] {
   const targetTokens = Array.from(new Set(
     productIds
       .flatMap((id) => id.toLowerCase().split(/[\s\-_/.,]+/))
@@ -267,12 +276,11 @@ function filterDocumentsByProductRef(
   // Pattern d'un code-produit dans un label/URL : alphanum 4-12 chars avec
   // chiffre (ex: "dr100ch", "fpd3502x", "duh752z"). Ignore les timestamps purs.
   const PRODUCT_CODE_RE = /\b([a-z]{1,5}\d[a-z0-9]{2,10}|\d[a-z]{1,5}\d{1,6}[a-z]{0,4})\b/gi
-  const rejected: string[] = []
-  const kept: string[] = []
+  const rejected: EnrichedDocument[] = []
+  const kept: EnrichedDocument[] = []
   for (const doc of documents) {
-    const parts = doc.split('|')
-    const label = (parts[0] ?? '').trim().toLowerCase()
-    const url = (parts[1] ?? '').trim().toLowerCase()
+    const label = doc.name.toLowerCase()
+    const url = doc.url.toLowerCase()
 
     if (GENERIC_DOC_LABEL_RE.test(label)) { rejected.push(doc); continue }
 
@@ -413,23 +421,14 @@ const GENERIC_DOC_NAMES_RE = /^(t[eé]l[eé]charger|download|voir|open|cliquez?\
  * - Décoder les noms de fichiers URL-encodés
  * - Retirer les extensions et hashs illisibles
  */
-function cleanDocumentName(doc: string): string {
-  if (!doc.includes('##')) {
-    // URL brute sans titre → extraire un nom depuis l'URL
-    const name = extractNameFromUrl(doc)
-    return name ? `${name}##${doc}` : doc
-  }
-
-  const sepIdx = doc.indexOf('##')
-  const title = doc.slice(0, sepIdx).trim()
-  const url = doc.slice(sepIdx + 2)
-
+function cleanDocumentName(doc: EnrichedDocument): EnrichedDocument {
   // Si le titre est générique, extraire un meilleur nom depuis l'URL
-  if (GENERIC_DOC_NAMES_RE.test(title) || title.length < 3) {
-    const betterName = extractNameFromUrl(url)
-    return betterName ? `${betterName}##${url}` : doc
+  if (GENERIC_DOC_NAMES_RE.test(doc.name) || doc.name.length < 3) {
+    const betterName = extractNameFromUrl(doc.url)
+    if (betterName) return { ...doc, name: betterName }
+    // Fallback : afficher le filename (déjà décodé) plutôt qu'un titre vide
+    return doc.filename ? { ...doc, name: doc.filename } : doc
   }
-
   return doc
 }
 
@@ -2243,15 +2242,12 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
  * Construit un EnrichedProduct complet depuis le markdown Jina + les données brutes fabricant.
  * AUCUN appel LLM — tout vient du scraping.
  */
-/** Déduplique les documents par URL normalisée (gère les entrées titre##url et urls brutes). */
-function deduplicateDocuments(docs: string[]): string[] {
+/** Déduplique les documents par URL normalisée. */
+function deduplicateDocuments(docs: EnrichedDocument[]): EnrichedDocument[] {
   const seen = new Set<string>()
-  const result: string[] = []
+  const result: EnrichedDocument[] = []
   for (const doc of docs) {
-    // Extraire l'URL depuis le format "titre##url" ou URL brute
-    const url = doc.includes('##') ? doc.split('##').pop()! : doc
-    // Normaliser en gardant les query params (ils différencient les fact-tags, formats, etc.)
-    const normalized = url.replace(/\/+$/, '').toLowerCase()
+    const normalized = doc.url.replace(/\/+$/, '').toLowerCase()
     if (!seen.has(normalized)) {
       seen.add(normalized)
       result.push(doc)
@@ -2320,7 +2316,13 @@ function buildManufacturerProduct(
   console.log('[manufacturer-build] images:', images.length)
 
   // Documents : Jina injected > REDUX downloads > PDFs du markdown
-  const documents: string[] = []
+  const documents: EnrichedDocument[] = []
+  const docsByUrl = new Set<string>()
+  const pushDocBuild = (url: string, name?: string) => {
+    if (!url || docsByUrl.has(url)) return
+    docsByUrl.add(url)
+    documents.push(buildDocument(url, name))
+  }
   // D'abord : extraire depuis le bloc JINA_EXTRACTED_DOWNLOADS injecté par le script
   if (markdownContent) {
     const dlStart = markdownContent.indexOf('JINA_EXTRACTED_DOWNLOADS_START')
@@ -2334,9 +2336,9 @@ function buildManufacturerProduct(
         if (pipeIdx > 0) {
           const name = trimmed.slice(0, pipeIdx).trim()
           const url = trimmed.slice(pipeIdx + 3).trim()
-          if (url) documents.push(`${name}##${url}`)
+          pushDocBuild(url, name)
         } else if (/^https?:\/\//.test(trimmed)) {
-          documents.push(trimmed)
+          pushDocBuild(trimmed)
         }
       }
       console.log('[manufacturer-build] ✓ Jina injected downloads:', documents.length)
@@ -2344,26 +2346,15 @@ function buildManufacturerProduct(
   }
   // Fallback : REDUX downloads
   if (documents.length === 0) {
-    for (const dl of rawData.downloads) {
-      const titledDoc = `${dl.name}##${dl.url}`
-      documents.push(titledDoc)
-    }
+    for (const dl of rawData.downloads) pushDocBuild(dl.url, dl.name)
   }
   // Ajouter les PDFs du markdown qui ne sont pas déjà dans les downloads
   if (markdownContent) {
     const mdPdfUrls = [...markdownContent.matchAll(/https?:\/\/[^\s)"'\]]+\.pdf[^\s)"'\]]*/gi)].map(m => m[0])
-    const existingUrls = new Set(rawData.downloads.map(d => d.url))
-    for (const url of mdPdfUrls) {
-      if (!existingUrls.has(url)) documents.push(url)
-    }
+    for (const url of mdPdfUrls) pushDocBuild(url)
     // Liens titrés [titre](url.pdf) du markdown
     const mdLinks = [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s)]+\.pdf[^\s)]*)\)/gi)]
-    for (const m of mdLinks) {
-      const url = m[2].trim()
-      if (!existingUrls.has(url) && !documents.includes(url)) {
-        documents.push(`${m[1].trim()}##${url}`)
-      }
-    }
+    for (const m of mdLinks) pushDocBuild(m[2].trim(), m[1].trim())
   }
 
   console.log('[manufacturer-build] result:', {
@@ -2971,7 +2962,7 @@ function imageStem(url: string): string {
 }
 
 /** Test si une URL d'image pointe vers un chemin "produit" (CMS avec segment produits). */
-const PRODUCT_PATH_RE = /\/(products?|product[-_]images?|product[-_]photos?|catalog\/products?)\//i
+const PRODUCT_PATH_RE = /\/(products?|produits?|product[-_]images?|product[-_]photos?|catalog\/products?|catalogue\/produits?)\//i
 
 /** Canonicalise une URL Drupal imagecache → URL originale (haute résolution).
  *  Ex: /sites/default/files/styles/<style>/public/products/34955.jpg.webp?itok=xyz
@@ -3011,11 +3002,16 @@ function isJunkImageUrl(url: string): boolean {
     // Miniatures de PDF/docs
     if (/\.pdf\.(jpe?g|png|webp|avif)$/i.test(filename)) return true
     if (/^(fiche|notice|datasheet|tech[-_]?sheet|manual|doc|document|brochure|catalog|flyer)[-_.]/i.test(filename)) return true
-    // Drupal imagecache styles avec doc/thumb/icon
+    // Noms de fichier promotionnels (campagnes, tarifs, plaquettes commerciales).
+    if (/^(tarif|tarifs|catalogue|plaquette|affiche|promo|promotion|campagne|actu|actualite|news|blog|article|hero|slide|slider|slideshow|bandeau|encart|flyer|landing|home|homepage|carousel[-_]?home)[-_.]/i.test(filename)) return true
+    // Drupal imagecache styles avec doc/thumb/icon/banner/news/...
     const styleMatch = path.match(/\/styles\/([^/]+)\//i)
-    if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure|thumb|mini|icon|logo|picto|badge|flag)([-_]|$)/i.test(styleMatch[1])) return true
-    // Path segment dédié aux documents/logos/icônes
-    if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|icons?|icones?|pictos?|badges?|banners?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?)$/i.test(s))) return true
+    if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure|thumb|mini|icon|logo|picto|badge|flag|banner|bandeau|hero|slide|slider|slideshow|promo|promotion|news|blog|actualite|article|campagne|landing|hp|home|homepage|carousel[-_]?home|segment|secteur|domaine|metier|chantier|reference|projet|inspiration|temoignage|partenaire|brand|marque|lifestyle|tarif|catalogue|plaquette|affiche|encart|application)([-_]|$)/i.test(styleMatch[1])) return true
+    // Path segment dédié aux documents/logos/icônes/banners/news/segments
+    if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|icons?|icones?|pictos?|badges?|banners?|bandeaux?|sliders?|slideshows?|heroes?|promos?|promotions?|news|blog|actualit[ée]s?|articles?|campagnes?|marketing|communication|segments?|secteurs?|domaines?|m[ée]tiers?|chantiers?|r[ée]f[ée]rences?|projets?|inspirations?|t[ée]moignages?|partenaires?|brands?|marques?|lifestyle|landing|home|homepage|hp|tarifs?|catalogues?|flyers?|affiches?|plaquettes?|encarts?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?)$/i.test(s))) return true
+    // Drupal year-folder : /sites/.../files/[styles/<x>/public/]20XX/... = contenu promo/actu daté
+    // (un produit légitime serait sous /products/ ou /produits/, pas dans un dossier d'année).
+    if (/\/sites\/[^/]+\/files\/(?:styles\/[^/]+\/public\/)?(?:19|20)\d{2}\b/i.test(path) && !/\/produits?\//i.test(path)) return true
     // Réseaux sociaux — tester TOUTE l'URL pas juste les 2 derniers segments
     // (certains CDN placent le logo LinkedIn à /assets/social/logo/linkedin.png).
     if (/\b(facebook|fb[-_]|twitter|instagram|youtube|linkedin|tiktok|pinterest|whatsapp|telegram|snapchat|reddit|vimeo|xing|discord)\b/i.test(url)) return true
@@ -3643,7 +3639,7 @@ export function useProductEnrichment() {
                   }
                   // Documents : extraire les <a href> depuis le container plutôt que le textContent.
                   const docsField = matching.fields.find((fld) => fld.field === 'documents')
-                  let documents = toArr(f.documents)
+                  let documents: EnrichedDocument[] = coerceDocuments(f.documents)
                   if (docsField) {
                     const htmlDocs = applyDocumentsFromHtml(html, docsField, productUrl)
                     if (htmlDocs.length > 0) {
@@ -3673,8 +3669,12 @@ export function useProductEnrichment() {
                       if (key === 'documents') {
                         sinks.push({
                           name: key, prompt: fld.prompt,
-                          read: () => documents,
-                          write: (v) => { documents = Array.isArray(v) ? v : v.split('\n').map((s) => s.trim()).filter(Boolean) },
+                          // Représentation textuelle pour le LLM : "name##url" par ligne
+                          read: () => documents.map((d) => `${d.name}##${d.url}`),
+                          write: (v) => {
+                            const arr = Array.isArray(v) ? v : v.split('\n').map((s) => s.trim()).filter(Boolean)
+                            documents = coerceDocuments(arr)
+                          },
                         })
                       } else if (key === 'images') {
                         sinks.push({
@@ -4097,7 +4097,19 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               .map(m => m[0])
             // Liens PDF titrés [nom](url.pdf)
             const mdDocTitled = [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s)]+\.pdf[^\s)]*)\)/gi)]
-              .map(m => `${m[1].trim()}##${m[2].trim()}`)
+              .map(m => ({ name: m[1].trim(), url: m[2].trim() }))
+            const directDocuments: EnrichedDocument[] = []
+            const directDocsSeen = new Set<string>()
+            for (const t of mdDocTitled) {
+              if (directDocsSeen.has(t.url)) continue
+              directDocsSeen.add(t.url)
+              directDocuments.push(buildDocument(t.url, t.name))
+            }
+            for (const u of mdDocs) {
+              if (directDocsSeen.has(u)) continue
+              directDocsSeen.add(u)
+              directDocuments.push(buildDocument(u))
+            }
             const mdVariants = parseVariantsFromMarkdown(markdownContent)
             const directImages = parseImagesFromMarkdown(markdownContent)
             directBuild = {
@@ -4105,7 +4117,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               advantages: mdAdvantages,
               specifications: mdSpecs,
               variants: mdVariants,
-              documents: [...new Set([...mdDocTitled, ...mdDocs])],
+              documents: directDocuments,
               images: [...new Set(directImages)],
             }
             console.log('[enrichment] ★ markdown direct build succeeded')
@@ -4277,18 +4289,25 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           console.log('[enrichment-images] PATH=B(LLM) mdImages=', mdImages.length, 'llmImages=', llmImages.length, 'merged=', mergedImages.length, 'sample:', mergedImages.slice(0, 3))
 
           // Documents : LLM + extraction directe du markdown (URLs .pdf simples + liens titrés)
-          const mdDocUrls = markdownContent
+          const mdDocUrls: string[] = markdownContent
             ? [...markdownContent.matchAll(/https?:\/\/[^\s\)"\]]+\.pdf[^\s\)"\]]*/gi)].map(m => m[0])
             : []
-          const mdDocTitled = markdownContent
+          const mdDocTitled: Array<{ name: string; url: string }> = markdownContent
             ? [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s)]+\.pdf[^\s)]*)\)/gi)]
-                .map(m => `${m[1].trim()}##${m[2].trim()}`)
+                .map(m => ({ name: m[1].trim(), url: m[2].trim() }))
             : []
-          const mergedDocs = Array.from(new Set([
-            ...(ai.documents ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)),
-            ...mdDocTitled,
-            ...mdDocUrls,
-          ]))
+          // LLM peut renvoyer string[] ou {name,url}[] — on coerce tout via documentUtils
+          const llmDocs = coerceDocuments(ai.documents ?? [])
+          const mergedDocs: EnrichedDocument[] = []
+          const mergedSeen = new Set<string>()
+          const pushDoc = (d: EnrichedDocument) => {
+            if (mergedSeen.has(d.url)) return
+            mergedSeen.add(d.url)
+            mergedDocs.push(d)
+          }
+          for (const d of llmDocs) pushDoc(d)
+          for (const t of mdDocTitled) pushDoc(buildDocument(t.url, t.name))
+          for (const u of mdDocUrls) pushDoc(buildDocument(u))
 
           const llmVariants: Array<{ reference: string; label: string; properties: Record<string, string> }> =
             Array.isArray(ai.variants) ? ai.variants.filter(

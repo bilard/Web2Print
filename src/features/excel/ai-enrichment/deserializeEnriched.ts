@@ -1,6 +1,7 @@
 import type { CellValue } from '@/features/excel/types'
 import type { LlmRequestInfo } from '@/features/ai/llmRouter'
 import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage } from './types'
+import { parseDocumentsCell } from './documentUtils'
 
 export interface DeserializedEnrichment {
   product: EnrichedProduct
@@ -85,12 +86,8 @@ export function deserializeEnrichedFromRow(
     ? imagesRaw.split(' | ').map((s) => s.trim()).filter((u) => /^https?:\/\//.test(u))
     : []
 
-  const documents = documentsRaw
-    ? documentsRaw.split(' | ').map((s) => s.trim()).filter((u) =>
-      // Support format "titre##url" et URLs directes
-      /^https?:\/\//.test(u) || (u.includes('##') && /^https?:\/\//.test(u.split('##').slice(1).join('##')))
-    )
-    : []
+  // Tolère 3 formats : JSON.stringify (canonique), 'titre##url | …' (legacy), URLs brutes (legacy v0)
+  const documents = parseDocumentsCell(documentsRaw)
 
   const llmProvider = llmModel
     ? llmModel.startsWith('claude')

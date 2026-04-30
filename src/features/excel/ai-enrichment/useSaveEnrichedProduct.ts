@@ -72,7 +72,7 @@ export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_specifications',  label: 'IA — Spécifications', fieldType: 'text_long', width: 320 },
   { key: 'ai_variants',        label: 'IA — Variantes',     fieldType: 'text_long', width: 320 },
   { key: 'ai_images',          label: 'IA — Images',        fieldType: 'image',     width: 160 },
-  { key: 'ai_documents',       label: 'IA — Documents',     fieldType: 'url',       width: 280 },
+  { key: 'ai_documents',       label: 'IA — Documents',     fieldType: 'text_long', width: 280 },
   { key: 'ai_source',          label: 'IA — Source',        fieldType: 'url',       width: 240 },
   { key: 'ai_scraper',         label: 'IA — Scraper',       fieldType: 'text',      width: 120 },
   { key: 'ai_llm_model',       label: 'IA — Modèle LLM',    fieldType: 'text',      width: 160 },
@@ -106,7 +106,9 @@ export function serializeEnriched(
         : null,
     ai_variants: data.variants.length > 0 ? JSON.stringify(data.variants) : null,
     ai_images: data.images.length > 0 ? data.images.join(' | ') : null,
-    ai_documents: data.documents.length > 0 ? data.documents.join(' | ') : null,
+    // documents : JSON-encoded array (mirror du pattern variants) pour préserver
+    // le triplet name/url/filename. Désérialisation tolère le legacy ' | '.
+    ai_documents: data.documents.length > 0 ? JSON.stringify(data.documents) : null,
     ai_source: data.sourceUrl || null,
     ai_scraper: data.scrapingProvider ?? null,
     ai_llm_model: data.llmModel ?? data.llmProvider ?? null,
