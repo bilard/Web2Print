@@ -194,13 +194,13 @@ export function EnrichmentPanel({ input }: Props) {
                   </span>
                   <span
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tracking-normal border ${
-                      isManufacturerScrape
+                      llmMeta.label.startsWith('Sans IA')
                         ? 'bg-emerald-500/10 text-emerald-300/90 border-emerald-500/20'
                         : 'bg-indigo-500/10 text-indigo-300/90 border-indigo-500/20'
                     }`}
                     title={llmMeta.title}
                   >
-                    {isManufacturerScrape ? <Globe className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5" />}
+                    {llmMeta.label.startsWith('Sans IA') ? <Globe className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5" />}
                     {llmMeta.label}
                   </span>
                 </div>
