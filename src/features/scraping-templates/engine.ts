@@ -62,6 +62,17 @@ function resolveStrategy(
       while ((m = re.exec(text)) !== null) matches.push(m[1] ?? m[0])
       return matches
     }
+    if (strategy.kind === 'text-with-hierarchy') {
+      // expression = sélecteur CSS du conteneur. Sortie = Markdown structuré
+      // (H1/H2/H3, listes, tables) — règle universelle scraping #3.
+      const nodes = doc.querySelectorAll(strategy.expression)
+      const out: string[] = []
+      for (const n of Array.from(nodes)) {
+        const md = extractMarkdownHierarchy(n)
+        if (md) out.push(md)
+      }
+      return out
+    }
   } catch {
     /* selector invalide → retourne [] */
   }
@@ -80,6 +91,104 @@ const BLOCK_TAGS = new Set([
   'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HGROUP', 'HR', 'LI', 'MAIN',
   'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'TR', 'UL',
 ])
+
+/**
+ * Walker DOM → Markdown qui préserve la hiérarchie sémantique :
+ * H1/H2/H3 → #/##/### titres, paragraphes séparés par lignes vides,
+ * listes UL/OL → "- item", tables → "| key | value |", `<br>` → saut de ligne.
+ *
+ * Utilisé par la stratégie `text-with-hierarchy` pour alimenter le LLM avec
+ * une vue structurée d'un onglet/section au lieu d'un textContent plat.
+ * Règle universelle scraping #3 : 100% du contenu de l'onglet, structure
+ * Titre/texte/etc. respectée.
+ */
+export function extractMarkdownHierarchy(el: Element): string {
+  const lines: string[] = []
+
+  const cellText = (e: Element): string => (e.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+  const walk = (node: Node, listDepth: number, ordered: boolean): void => {
+    if (node.nodeType === 3 /* TEXT */) {
+      const t = (node.nodeValue ?? '').replace(/\s+/g, ' ').trim()
+      if (t) lines.push(t)
+      return
+    }
+    if (node.nodeType !== 1 /* ELEMENT */) return
+    const e = node as Element
+    const tag = e.tagName
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEMPLATE') return
+
+    if (/^H[1-6]$/.test(tag)) {
+      const level = Math.min(parseInt(tag.slice(1), 10), 6)
+      const text = cellText(e)
+      if (text) {
+        lines.push('')
+        lines.push('#'.repeat(level) + ' ' + text)
+        lines.push('')
+      }
+      return
+    }
+    if (tag === 'BR') { lines.push(''); return }
+    if (tag === 'HR') { lines.push(''); lines.push('---'); lines.push(''); return }
+    if (tag === 'UL' || tag === 'OL') {
+      const isOrdered = tag === 'OL'
+      let itemIndex = 0
+      for (const child of Array.from(e.childNodes)) {
+        if (child.nodeType !== 1) continue
+        const liEl = child as Element
+        if (liEl.tagName !== 'LI') continue
+        itemIndex += 1
+        const text = cellText(liEl)
+        if (!text) continue
+        const indent = '  '.repeat(Math.max(listDepth, 0))
+        const prefix = isOrdered ? `${itemIndex}.` : '-'
+        lines.push(indent + prefix + ' ' + text)
+      }
+      lines.push('')
+      return
+    }
+    if (tag === 'LI') {
+      // Cas marginal : LI orphelin (hors UL/OL) — rendu en bullet plat
+      const text = cellText(e)
+      if (text) lines.push('- ' + text)
+      return
+    }
+    if (tag === 'TABLE') {
+      const rows = Array.from(e.querySelectorAll('tr'))
+      let header = false
+      for (const tr of rows) {
+        const cells = Array.from(tr.querySelectorAll('th, td')).map(cellText).filter(Boolean)
+        if (cells.length === 0) continue
+        lines.push('| ' + cells.join(' | ') + ' |')
+        if (!header && tr.querySelector('th')) {
+          lines.push('| ' + cells.map(() => '---').join(' | ') + ' |')
+          header = true
+        }
+      }
+      lines.push('')
+      return
+    }
+    if (tag === 'P' || tag === 'BLOCKQUOTE' || tag === 'PRE') {
+      const text = cellText(e)
+      if (text) {
+        const prefix = tag === 'BLOCKQUOTE' ? '> ' : tag === 'PRE' ? '    ' : ''
+        lines.push(prefix + text)
+        lines.push('')
+      }
+      return
+    }
+    // Conteneur générique : descendre dans les enfants
+    for (const child of Array.from(e.childNodes)) walk(child, listDepth, ordered)
+  }
+
+  walk(el, 0, false)
+
+  return lines
+    .join('\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
 
 function extractRichText(el: Element): string {
   const parts: string[] = []

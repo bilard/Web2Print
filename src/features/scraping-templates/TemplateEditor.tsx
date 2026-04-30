@@ -350,6 +350,7 @@ function FieldRow({ field, onChange, onRemove }: { field: FieldSelector; onChang
           <option value="xpath">XPath</option>
           <option value="attr">Attribut</option>
           <option value="text">Texte (regex)</option>
+          <option value="text-with-hierarchy">Texte hiérarchique (Markdown)</option>
         </select>
         <input
           className="flex-1 px-2 py-1 bg-black/40 border border-white/10 rounded text-white/90 text-xs font-mono"

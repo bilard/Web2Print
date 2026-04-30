@@ -10,8 +10,17 @@ import { z } from 'zod'
  */
 
 const selectorStrategySchema = z.object({
-  /** Type de sélecteur : CSS (le plus courant), XPath, ou lookup par attribut. */
-  kind: z.enum(['css', 'xpath', 'attr', 'text']),
+  /** Type de sélecteur :
+   *  - `css` : sélecteur CSS classique (extrait textContent ou attribut)
+   *  - `xpath` : expression XPath
+   *  - `attr` : "selector@@attr" pour lire un attribut spécifique
+   *  - `text` : regex appliquée au textContent du document
+   *  - `text-with-hierarchy` : sélecteur CSS dont le contenu est rendu en
+   *    Markdown (H1/H2/H3 → #/##/###, listes → "- ", tables → key | value).
+   *    Préserve la structure sémantique pour les onglets/sections et alimente
+   *    le LLM avec une vue hiérarchique fidèle (règle universelle scraping #3).
+   */
+  kind: z.enum(['css', 'xpath', 'attr', 'text', 'text-with-hierarchy']),
   /** Expression du sélecteur. */
   expression: z.string(),
   /** Optionnel : attribut à lire (src, href, data-*). Par défaut : textContent. */
