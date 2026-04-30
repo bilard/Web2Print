@@ -14,8 +14,6 @@ import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
-import { useProjectsList, useProducts } from '@/features/pim'
-import { pimProductsToSheet } from '@/features/pim/productToSheet'
 import { ExcelImportModal } from '@/features/excel/ExcelImportModal'
 import { DataTable, isRowEnriched } from '@/features/excel/DataTable'
 import { TaxonomyManager } from '@/features/excel/TaxonomyManager'
@@ -42,44 +40,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile } = useExcelFirebase()
   const { data: taxonomies } = useTaxonomies()
   const renameTaxonomy = useRenameTaxonomy()
-  // Charge les projets PIM au démarrage pour que le store soit peuplé
-  const { data: projects } = useProjectsList()
-  const setCurrentProjectId = usePimStore((s) => s.setCurrentProjectId)
-  const currentProjectId = usePimStore((s) => s.currentProjectId)
-  // Charge les produits du projet sélectionné
-  useProducts(currentProjectId)
-  // Récupère les données du projet, produits et sources sélectionnées
-  const currentProject = usePimStore((s) =>
-    s.currentProjectId ? s.projects.find((p) => p.id === s.currentProjectId) : null,
-  )
-  const pimProducts = usePimStore((s) => s.products)
-  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
-
-  // Auto-sélectionne le premier projet quand les projets sont chargés
-  useEffect(() => {
-    if (!currentProjectId && projects && projects.length > 0) {
-      setCurrentProjectId(projects[0].id)
-    }
-  }, [projects, currentProjectId, setCurrentProjectId])
-
-  // Filtre les produits PIM par sources sélectionnées et convertit en sheet Excel
-  const visiblePimProducts = useMemo(() => {
-    if (selectedSourceIds.length === 0) return pimProducts
-    return pimProducts.filter((p) =>
-      p.sourceLinks.some((l) => selectedSourceIds.includes(l.sourceId)),
-    )
-  }, [pimProducts, selectedSourceIds])
-
-  const pimSheet = useMemo(() => {
-    if (!currentProject) return null
-    return pimProductsToSheet(visiblePimProducts, currentProject.sources)
-  }, [currentProject, visiblePimProducts])
-
-  // Injecte la sheet PIM dans le store Excel (lisible par DataTable sans modification)
-  useEffect(() => {
-    if (!currentProjectId || !pimSheet) return
-    setSheets([pimSheet])
-  }, [currentProjectId, pimSheet, setSheets])
 
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
@@ -91,6 +51,14 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [loadingFiles, setLoadingFiles] = useState(false)
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
+
+  // DataPage = flux legacy BDD uniquement. Reset toute sélection PIM laissée
+  // dans le store par une session précédente — sinon ScrapingModal route le
+  // scrape vers la branche PIM (qui upsert dans pim_projects au lieu de la
+  // BDD active) et la BDD reste vide.
+  useEffect(() => {
+    usePimStore.getState().setCurrentProjectId(null)
+  }, [])
 
   // Quand l'utilisateur clique sur un nœud de la taxonomie, fermer la fiche
   // produit pour revenir à la vue liste (DataTable).
@@ -153,8 +121,13 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
   // Auto-save on data change (debounced sauf pour les nouvelles BDD :
   // quand currentDocId est null, on sauve immédiatement et on rafraîchit la liste).
+  // NB : on autorise sheets=[] tant qu'un docId existe — supprimer la dernière
+  // sheet/produit DOIT propager l'état vide à Firestore (sinon les anciennes
+  // données restent fantômes côté serveur).
   useEffect(() => {
-    if (!currentFileName || sheets.length === 0) return
+    if (!currentFileName) return
+    // Pas de doc à mettre à jour ET pas de contenu : rien à sauver
+    if (currentDocId === null && sheets.length === 0) return
     const delay = currentDocId === null ? 0 : 3000
     const timer = setTimeout(async () => {
       setSaving(true)
