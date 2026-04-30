@@ -1,0 +1,98 @@
+import { useState, useMemo } from 'react'
+import { Search, X, Globe, FileText } from 'lucide-react'
+import { useExcelStore } from '@/stores/excel.store'
+
+/** Colonne latérale qui liste les sheets (= sources scrapées/importées) du fichier
+ *  courant. Click → setActiveSheet (filtre la table). Recherche pour scaler à des
+ *  centaines de sources. Remplace les onglets horizontaux. */
+export function SheetsColumn() {
+  const sheets = useExcelStore((s) => s.sheets)
+  const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
+  const setActiveSheet = useExcelStore((s) => s.setActiveSheet)
+  const deleteSheet = useExcelStore((s) => s.deleteSheet)
+  const [filter, setFilter] = useState('')
+
+  const filtered = useMemo(() => {
+    const all = sheets.map((s, i) => ({ sheet: s, index: i }))
+    if (!filter) return all
+    const q = filter.toLowerCase()
+    return all.filter(({ sheet }) => sheet.name.toLowerCase().includes(q))
+  }, [sheets, filter])
+
+  return (
+    <aside className="w-[200px] shrink-0 border-r border-white/[0.06] bg-[#0f0f0f] flex flex-col">
+      <div className="p-2 border-b border-white/[0.06]">
+        <p className="text-[10px] uppercase tracking-wider text-white/30 px-1 mb-1.5">
+          Sources <span className="text-white/20">· {sheets.length}</span>
+        </p>
+        <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.06] rounded-md px-2 py-1">
+          <Search className="w-3 h-3 text-white/30" />
+          <input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filtrer…"
+            className="bg-transparent text-[11px] text-white/70 placeholder:text-white/25 outline-none flex-1 min-w-0"
+          />
+          {filter && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={() => setFilter('')}
+              onKeyDown={(e) => { if (e.key === 'Enter') setFilter('') }}
+              className="text-white/30 hover:text-white/60 cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto py-1">
+        {filtered.map(({ sheet, index }) => {
+          const isHost = /\.[a-z]{2,}/i.test(sheet.name)
+          const Icon = isHost ? Globe : FileText
+          const active = index === activeSheetIndex
+          return (
+            <div
+              key={index}
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveSheet(index)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveSheet(index) }}
+              className={`group flex items-center gap-2 px-2 py-1.5 text-[12px] cursor-pointer transition-colors border-l-2 ${
+                active
+                  ? 'bg-indigo-500/15 text-indigo-200 border-indigo-500'
+                  : 'text-white/60 hover:bg-white/[0.04] hover:text-white/85 border-transparent'
+              }`}
+              title={sheet.name}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0 opacity-60" />
+              <span className="flex-1 truncate">{sheet.name}</span>
+              <span className="text-[10px] tabular-nums text-white/30">{sheet.rows.length}</span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (confirm(`Supprimer « ${sheet.name} » ?`)) deleteSheet(index)
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation()
+                  if (e.key === 'Enter') {
+                    if (confirm(`Supprimer « ${sheet.name} » ?`)) deleteSheet(index)
+                  }
+                }}
+                className="opacity-0 group-hover:opacity-100 hover:bg-white/10 rounded p-0.5 text-white/40 hover:text-red-300 cursor-pointer transition-opacity"
+                title={`Supprimer « ${sheet.name} »`}
+              >
+                <X className="w-3 h-3" />
+              </span>
+            </div>
+          )
+        })}
+        {filtered.length === 0 && (
+          <p className="text-[11px] text-white/30 px-3 py-2">Aucune source.</p>
+        )}
+      </div>
+    </aside>
+  )
+}

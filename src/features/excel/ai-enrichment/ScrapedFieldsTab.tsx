@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { GripVertical, Loader2, Save, Check, ChevronDown, Eye, EyeOff, X } from 'lucide-react'
+import { GripVertical, Loader2, Save, Check, ChevronDown, Eye, EyeOff, X, Hash } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -17,6 +17,7 @@ import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTe
 import { listTemplates, saveTemplateWithVendorSync } from '@/features/scraping-templates/templatesStore'
 import { getVendorFieldRows, type FieldRow } from '@/features/scraping-templates/getVendorFieldRows'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
+import { dispatchAnchorJump } from './anchors'
 
 interface Props {
   sheetName: string
@@ -135,8 +136,49 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
   }
 
   const hasTemplate = !!matchedTemplate
+
+  // Extraire les sources disponibles
+  const sourceHost = (() => {
+    if (!url) return null
+    try { return new URL(url).hostname.replace('www.', '') }
+    catch { return null }
+  })()
+  const additionalSources = enrichmentData?.additionalSources ?? []
+
   return (
-    <div className="flex flex-col py-3 px-4 gap-3">
+    <div className="flex flex-col py-3 px-4 gap-4">
+      {/* Section de sélection des sources */}
+      {sourceHost && additionalSources.length > 0 && (
+        <div className="border border-amber-500/40 bg-amber-950/30 rounded-lg p-3">
+          <p className="text-[10px] font-bold text-amber-300 uppercase tracking-widest mb-2.5">
+            Choisir la source
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="px-3 py-1.5 rounded-md text-[10px] font-semibold bg-gradient-to-r from-amber-500/40 to-amber-600/20 text-amber-100 border border-amber-500/50 hover:from-amber-500/60 hover:to-amber-600/40 hover:text-white transition-all"
+              title={`Source actuelle : ${sourceHost}`}
+            >
+              {sourceHost}
+            </button>
+            {additionalSources.map((url, i) => {
+              const host = (() => {
+                try { return new URL(url).hostname.replace('www.', '') }
+                catch { return url }
+              })()
+              return (
+                <button
+                  key={i}
+                  className="px-3 py-1.5 rounded-md text-[10px] font-semibold bg-white/[0.06] text-white/70 border border-white/[0.12] hover:bg-white/[0.1] hover:text-white/90 hover:border-white/[0.2] transition-all"
+                  title={`Basculer vers : ${url}`}
+                >
+                  {host}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">
@@ -204,6 +246,16 @@ export function ScrapedFieldsTab({ sheetName, rowId, url, brand, title }: Props)
                       setData(sheetName, rowId, next)
                       toast.success(`Groupe "${groupName || 'sans nom'}" supprimé`)
                     }}
+                    onJumpToGroup={(groupName) => {
+                      if (!section) return
+                      // Auto-révéler un groupe caché : DoneState ne le rend pas
+                      // tant qu'il est dans hiddenGroups, donc le scroll
+                      // viserait un id inexistant.
+                      if (hiddenList.includes(groupName)) {
+                        toggleHiddenGroup(sheetName, rowId, section, groupName)
+                      }
+                      dispatchAnchorJump({ section, group: groupName })
+                    }}
                   />
                 )
               })}
@@ -256,6 +308,7 @@ function SortableRow({
   hiddenGroups,
   onToggleHide,
   onDeleteGroup,
+  onJumpToGroup,
 }: {
   id: string
   row: FieldRow
@@ -266,6 +319,7 @@ function SortableRow({
   hiddenGroups: string[]
   onToggleHide: (groupName: string) => void
   onDeleteGroup: (groupName: string) => void
+  onJumpToGroup: (groupName: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const [expanded, setExpanded] = useState(false)
@@ -289,8 +343,14 @@ function SortableRow({
           <GripVertical className="w-3 h-3" />
         </button>
         <span className="w-5 text-right text-[9px] text-white/30 tabular-nums shrink-0">{position}.</span>
-        <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="text-indigo-200/90 font-medium truncate">{row.label}</span>
+        <button
+          type="button"
+          onClick={() => dispatchAnchorJump({ section: row.key })}
+          className="flex-1 min-w-0 flex items-center gap-2 text-left group/anchor cursor-pointer"
+          title={`Voir « ${row.label} » dans le panneau de droite`}
+        >
+          <Hash className="w-2.5 h-2.5 text-white/15 group-hover/anchor:text-indigo-300/80 transition-colors shrink-0" />
+          <span className="text-indigo-200/90 font-medium truncate group-hover/anchor:text-indigo-200">{row.label}</span>
           {row.count !== null && (
             <span
               className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] tabular-nums border ${
@@ -315,7 +375,7 @@ function SortableRow({
               {row.used}/{row.total}
             </span>
           )}
-        </div>
+        </button>
         {hasSubGroups && (
           <button
             onClick={() => setExpanded((v) => !v)}
@@ -341,9 +401,17 @@ function SortableRow({
                     : 'bg-white/[0.02] hover:bg-white/[0.04] text-white/60'
                 }`}
               >
-                <span className={`flex-1 min-w-0 truncate uppercase tracking-wider text-[9.5px] font-semibold ${g.name ? '' : 'italic'}`}>
-                  {displayName}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => onJumpToGroup(g.name)}
+                  className={`flex-1 min-w-0 flex items-center gap-1.5 truncate uppercase tracking-wider text-[9.5px] font-semibold text-left ${g.name ? '' : 'italic'} ${hidden ? 'hover:text-white/50' : 'hover:text-indigo-200'} transition-colors`}
+                  title={hidden
+                    ? `Afficher « ${displayName} » et y accéder dans le panneau de droite`
+                    : `Voir « ${displayName} » dans le panneau de droite`}
+                >
+                  <Hash className="w-2.5 h-2.5 opacity-40 shrink-0" />
+                  <span className="truncate">{displayName}</span>
+                </button>
                 <span className="shrink-0 text-[9px] text-white/30 tabular-nums">{g.count}</span>
                 <button
                   onClick={() => onToggleHide(g.name)}

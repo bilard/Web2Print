@@ -13,6 +13,7 @@ import { useSaveEnrichedProduct } from './useSaveEnrichedProduct'
 import { deserializeEnrichedFromRow } from './deserializeEnriched'
 import type { EnrichedProduct } from './types'
 import type { LlmRequestInfo } from '@/features/ai/llmRouter'
+import { ANCHOR_EVENT, sectionAnchor, groupAnchor, type AnchorJumpDetail } from './anchors'
 
 interface Props {
   input: EnrichmentInput
@@ -79,6 +80,7 @@ export function EnrichmentPanel({ input }: Props) {
   const setData = useEnrichmentStore((s) => s.setData)
   const { enrich, reset, running } = useProductEnrichment()
   const { save, isSaved, saving, error: saveError } = useSaveEnrichedProduct()
+  const [sourceMenuOpen, setSourceMenuOpen] = useState(false)
 
   // Rehydration depuis la feuille Excel : si la ligne a déjà des cellules ai_*
   // persistées (depuis Firestore), on reconstruit l'objet EnrichedProduct et
@@ -257,29 +259,46 @@ export function EnrichmentPanel({ input }: Props) {
           return (
             <div className="flex items-center gap-3 px-4 pb-2 pt-0.5 min-w-0 flex-wrap">
               {/* ── Groupe SOURCE ──────────────────────────────────── */}
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[9px] font-semibold text-white/35 uppercase tracking-wider shrink-0">
-                  Source
-                </span>
-                <span
-                  className="inline-flex items-center justify-center w-4 h-4 rounded bg-orange-500/10 border border-orange-500/20 text-orange-300/90 shrink-0"
-                  title={`Outil de scraping : ${scrapingTool}`}
-                >
-                  <Globe className="w-2.5 h-2.5" />
-                </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1">
+                  <Globe className="w-4 h-4 text-amber-400" />
+                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-widest">Sources</span>
+                </div>
                 {primaryHost ? (
-                  <a
-                    href={primaryUrl ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium normal-case tracking-normal bg-amber-500/10 text-amber-200/90 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-100 transition-colors truncate max-w-[160px]"
-                    title={`Source principale : ${primaryUrl}`}
-                  >
-                    {primaryHost}
-                  </a>
+                  <div className="relative">
+                    <button
+                      onClick={() => setSourceMenuOpen(!sourceMenuOpen)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold normal-case tracking-normal bg-gradient-to-r from-amber-500/30 to-amber-600/20 text-amber-100 border-2 border-amber-500/60 hover:from-amber-500/50 hover:to-amber-600/40 hover:text-white hover:border-amber-400 transition-all truncate max-w-[200px] shadow-lg shadow-amber-500/20"
+                      title={`Source principale : ${primaryUrl} (cliquez pour changer)`}
+                    >
+                      {primaryHost}
+                      <ChevronDown className="w-3 h-3 shrink-0" />
+                    </button>
+                    {sourceMenuOpen && uniqueExtra.length > 0 && (
+                      <div className="absolute top-full left-0 mt-1 bg-white/10 border border-white/20 rounded-md shadow-lg z-10 backdrop-blur-sm min-w-[200px]">
+                        <p className="px-3 py-2 text-[9px] text-white/50 font-semibold uppercase">Sources alternatives</p>
+                        {uniqueExtra.map((host, i) => {
+                          const url = (data.additionalSources ?? []).find((u) => hostFromUrl(u) === host)
+                          return (
+                            <button
+                              key={`${host}-${i}`}
+                              onClick={() => {
+                                setSourceMenuOpen(false)
+                                reset(input.sheetName, input.rowId)
+                                void enrich({ ...input, knownUrl: url })
+                              }}
+                              className="w-full text-left px-3 py-2 text-[10px] text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors border-t border-white/[0.06] first:border-t-0"
+                            >
+                              {host}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <span
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-white/35 bg-white/[0.03] border border-white/10"
+                    className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold text-white/40 bg-white/[0.04] border-2 border-white/15"
                     title="Aucune URL source n'est enregistrée pour cette ligne. Relance l'enrichissement pour la capturer."
                   >
                     source inconnue
@@ -293,7 +312,7 @@ export function EnrichmentPanel({ input }: Props) {
                       href={url ?? undefined}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium normal-case tracking-normal bg-white/[0.03] text-white/55 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white/80 transition-colors truncate max-w-[160px]"
+                      className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-semibold normal-case tracking-normal bg-white/[0.08] text-white/70 border-2 border-white/[0.15] hover:bg-white/[0.15] hover:text-white/90 hover:border-white/[0.25] transition-all truncate max-w-[180px]"
                       title={`Source additionnelle : ${url}`}
                     >
                       {host}
@@ -349,6 +368,14 @@ export function EnrichmentPanel({ input }: Props) {
       )}
     </div>
   )
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function decodeHTMLEntities(html: string): string {
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = html
+  return textarea.value
 }
 
 // ── Idle ──────────────────────────────────────────────────────────────────
@@ -691,6 +718,32 @@ function DoneState({
   hiddenGroups?: { specifications: string[]; advantages: string[] }
   templateFieldOrder?: string[]
 }) {
+  // Ancres : la liste « Champs scrapés » à gauche dispatche un événement
+  // global pour scroller vers une section ou un sous-groupe spécifique.
+  // Les composants `SpecGroupAccordions` ouvrent l'accordéon ciblé en
+  // synchrone via leur propre listener ; on attend deux frames pour laisser
+  // le re-render propager avant de scroller.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<AnchorJumpDetail>).detail
+      if (!detail) return
+      const id = detail.group !== undefined && detail.group !== null
+        ? groupAnchor(detail.section, detail.group)
+        : sectionAnchor(detail.section)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(id)
+          if (!el) return
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          el.classList.add('anchor-pulse')
+          window.setTimeout(() => el.classList.remove('anchor-pulse'), 1200)
+        })
+      })
+    }
+    window.addEventListener(ANCHOR_EVENT, handler as EventListener)
+    return () => window.removeEventListener(ANCHOR_EVENT, handler as EventListener)
+  }, [])
+
   if (!data) return null
 
   const hiddenSpecs = hiddenGroups?.specifications ?? []
@@ -750,7 +803,7 @@ function DoneState({
           `vendorFieldOrder` de le déplacer à n'importe quelle position. */}
       {sectionOrder.map((sectionKey) => {
         if (sectionKey === 'images') return (
-          <div key="images" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <div key="images" id={sectionAnchor('images')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <ImageIcon className="w-3 h-3" />
               {data.images.length > 0
@@ -771,12 +824,12 @@ function DoneState({
           </div>
         )
         if (sectionKey === 'description') return (
-          <div key="description" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <div key="description" id={sectionAnchor('description')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
               Description enrichie
             </p>
             <EditableText
-              value={data.description}
+              value={decodeHTMLEntities(data.description)}
               onChange={(v) => onUpdate({ description: v })}
               multiline
               placeholder="Ajouter une description…"
@@ -785,7 +838,7 @@ function DoneState({
           </div>
         )
         if (sectionKey === 'advantages') return (
-          <div key="advantages" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <div key="advantages" id={sectionAnchor('advantages')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
                 <Zap className="w-3 h-3 text-amber-400/60" />
@@ -808,7 +861,7 @@ function DoneState({
           </div>
         )
         if (sectionKey === 'specifications') return (
-          <div key="specifications" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <div key="specifications" id={sectionAnchor('specifications')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">
                 Spécifications clés
@@ -830,7 +883,7 @@ function DoneState({
           </div>
         )
         if (sectionKey === 'variants') return data.variants && data.variants.length > 0 ? (
-          <div key="variants" className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+          <div key="variants" id={sectionAnchor('variants')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
               Variantes ({data.variants.length})
             </p>
@@ -843,7 +896,7 @@ function DoneState({
           const value = data.customFields?.[fieldName]
           if (!value) return null
           return (
-            <div key={sectionKey} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+            <div key={sectionKey} id={sectionAnchor(fieldName)} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
               <p className="text-[10px] text-indigo-300/70 font-semibold uppercase tracking-wider mb-1">{fieldName}</p>
               {Array.isArray(value) ? (
                 <ul className="space-y-0.5">
@@ -858,7 +911,7 @@ function DoneState({
           )
         }
         if (sectionKey === 'documents') return data.documents.length > 0 ? (
-        <div className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+        <div key="documents" id={sectionAnchor('documents')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <FileDown className="w-3 h-3" />
             Documents ({data.documents.length})
@@ -928,20 +981,49 @@ function DoneState({
             </details>
           )}
           {scrapeCache?.sourcesScrapped && scrapeCache.sourcesScrapped.length > 1 && (
-            <details className="mt-2">
-              <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-200">
-                {scrapeCache.sourcesScrapped.length} sources scrapées
-              </summary>
-              <ul className="mt-1 space-y-1">
-                {scrapeCache.sourcesScrapped.map((url, i) => (
-                  <li key={i} className="text-xs text-neutral-500 truncate">
-                    <a href={url} target="_blank" rel="noreferrer" className="hover:text-indigo-400">
-                      {url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </details>
+            <div className="mt-4 rounded-lg border-2 border-amber-500/50 bg-gradient-to-br from-amber-950/40 to-amber-900/20 overflow-hidden">
+              <div className="px-4 py-3 bg-amber-950/60 border-b border-amber-500/30">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <p className="text-[11px] font-bold text-amber-300 uppercase tracking-widest">Sources scrapées</p>
+                      <p className="text-[9px] text-amber-200/60">{scrapeCache.sourcesScrapped.length} URLs détectées</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="max-h-[180px] overflow-y-auto">
+                <div className="p-3 space-y-2">
+                  {scrapeCache.sourcesScrapped.map((url, i) => {
+                    const hostname = (() => {
+                      try { return new URL(url).hostname.replace('www.', '') }
+                      catch { return url }
+                    })()
+                    return (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-start gap-2 px-3 py-2 rounded-md bg-white/[0.04] hover:bg-amber-500/20 border border-white/[0.08] hover:border-amber-500/40 transition-all group"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-amber-400/70 group-hover:text-amber-300 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-medium text-amber-200 group-hover:text-amber-100 truncate">
+                            {hostname}
+                          </p>
+                          <p className="text-[9px] text-white/40 truncate">
+                            {url}
+                          </p>
+                        </div>
+                        <ExternalLink className="w-3 h-3 text-white/20 group-hover:text-amber-400 shrink-0 mt-0.5" />
+                      </a>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1143,11 +1225,15 @@ function AdvantageGroupList({
       {groups.map((grp, gi) => {
         const color = grp.name ? ADVANTAGE_GROUP_COLORS[gi % ADVANTAGE_GROUP_COLORS.length] : null
         return (
-          <div key={gi} className={`rounded-lg ${color ? `border ${color.border}` : ''} overflow-hidden`}>
+          <div
+            key={gi}
+            id={groupAnchor('advantages', grp.name ?? '')}
+            className={`rounded-lg ${color ? `border ${color.border}` : ''} overflow-hidden scroll-mt-2`}
+          >
             {grp.name && (
               <div className={`px-3 py-1.5 ${color!.bg}`}>
                 <p className={`text-[10px] font-bold uppercase tracking-wider ${color!.text}`}>
-                  {grp.name}
+                  {decodeHTMLEntities(grp.name)}
                 </p>
               </div>
             )}
@@ -1156,7 +1242,7 @@ function AdvantageGroupList({
                 <li key={globalIdx} className="group flex items-start gap-2 text-[12px] text-white/70 leading-relaxed">
                   <Check className="mt-[2px] w-3.5 h-3.5 text-emerald-400/70 shrink-0" />
                   <EditableText
-                    value={adv.text}
+                    value={decodeHTMLEntities(adv.text)}
                     onChange={(v) => {
                       const next = [...data.advantages]
                       next[globalIdx] = { ...next[globalIdx], text: v }
@@ -1242,20 +1328,45 @@ function SpecGroupAccordions({
     })
   }
 
+  // Anchor jump : si un sous-groupe ciblé est replié, on l'ouvre avant que
+  // DoneState ne tente le scroll (les deux listeners reçoivent l'événement
+  // dans le même tick — on synchronise via setOpenGroups).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<AnchorJumpDetail>).detail
+      if (!detail || detail.section !== 'specifications') return
+      if (detail.group === undefined || detail.group === null) return
+      const idx = groups.findIndex((g) => (g.name ?? '') === detail.group)
+      if (idx < 0) return
+      setOpenGroups((prev) => {
+        if (prev.has(idx)) return prev
+        const next = new Set(prev)
+        next.add(idx)
+        return next
+      })
+    }
+    window.addEventListener(ANCHOR_EVENT, handler as EventListener)
+    return () => window.removeEventListener(ANCHOR_EVENT, handler as EventListener)
+  }, [groups])
+
   return (
     <div className="space-y-1.5">
       {groups.map((grp, gi) => {
         const isOpen = openGroups.has(gi)
         const color = grp.name ? GROUP_COLORS[gi % GROUP_COLORS.length] : null
         return (
-          <div key={gi} className={`rounded-lg border overflow-hidden ${color ? color.border : 'border-white/[0.08]'}`}>
+          <div
+            key={gi}
+            id={groupAnchor('specifications', grp.name ?? '')}
+            className={`rounded-lg border overflow-hidden scroll-mt-2 ${color ? color.border : 'border-white/[0.08]'}`}
+          >
             {grp.name ? (
               <button
                 onClick={() => toggleGroup(gi)}
                 className={`w-full flex items-center justify-between px-3 py-2 ${color!.bg} transition-colors hover:brightness-125`}
               >
                 <span className={`text-[10px] font-bold uppercase tracking-wider ${color!.text}`}>
-                  {grp.name}
+                  {decodeHTMLEntities(grp.name)}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[9px] text-white/25">{grp.specs.length}</span>
@@ -1274,7 +1385,7 @@ function SpecGroupAccordions({
                   >
                     <div className="w-[45%] px-3 py-1.5 border-r border-white/[0.05] shrink-0 flex items-center">
                       <EditableText
-                        value={s.name}
+                        value={decodeHTMLEntities(s.name)}
                         onChange={(v) => {
                           const next = [...data.specifications]
                           next[i] = { ...next[i], name: v }
@@ -1286,7 +1397,7 @@ function SpecGroupAccordions({
                     </div>
                     <div className="flex-1 px-3 py-1.5 flex items-center gap-1">
                       <EditableText
-                        value={s.value}
+                        value={decodeHTMLEntities(s.value)}
                         onChange={(v) => {
                           const next = [...data.specifications]
                           next[i] = { ...next[i], value: v }
@@ -1413,10 +1524,10 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
                     </td>
                   )}
                   <td className="px-2.5 py-1.5 whitespace-nowrap font-semibold text-indigo-400/80">
-                    {stripHeaderPrefix('Référence', v.reference) || stripHeaderPrefix('Réf', v.reference) || v.reference}
+                    {stripHeaderPrefix('Référence', decodeHTMLEntities(v.reference)) || stripHeaderPrefix('Réf', decodeHTMLEntities(v.reference)) || decodeHTMLEntities(v.reference)}
                   </td>
-                  <td className="px-2.5 py-1.5 text-white/60 max-w-[200px] truncate" title={v.label}>
-                    {stripHeaderPrefix('Libellé', v.label) || v.label}
+                  <td className="px-2.5 py-1.5 text-white/60 max-w-[200px] truncate" title={decodeHTMLEntities(v.label)}>
+                    {stripHeaderPrefix('Libellé', decodeHTMLEntities(v.label)) || decodeHTMLEntities(v.label)}
                   </td>
                   {displayTableKeys.map(k => {
                     const cleaned = stripHeaderPrefix(k, v.properties[k])
@@ -1432,11 +1543,13 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
                     <td colSpan={colSpan} className="px-4 py-2">
                       <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[9px]">
                         {details.map((s, si) => {
-                          const cleanedVal = stripHeaderPrefix(s.name, s.value)
+                          const decodedName = decodeHTMLEntities(s.name)
+                          const decodedValue = decodeHTMLEntities(s.value)
+                          const cleanedVal = stripHeaderPrefix(decodedName, decodedValue)
                           return (
                             <div key={si} className="flex justify-between gap-2 py-0.5 border-b border-white/[0.04]">
-                              <span className="text-white/40">{s.name}</span>
-                              <span className="text-white/70 text-right font-medium">{cleanedVal || s.value}</span>
+                              <span className="text-white/40">{decodedName}</span>
+                              <span className="text-white/70 text-right font-medium">{cleanedVal || decodedValue}</span>
                             </div>
                           )
                         })}

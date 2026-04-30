@@ -12,7 +12,7 @@
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson as geminiGenerateJson } from '@/features/briefs/ai/geminiClient'
-import { getSelectedModel } from '@/stores/aiSettings.store'
+import { getSelectedModel, useAiSettingsStore } from '@/stores/aiSettings.store'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 import type { AiProvider } from '@/lib/aiModels'
 
@@ -68,7 +68,7 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
-  'product.enrichment':     { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'product.enrichment':     { primary: 'gemini', fallback: 'claude', model: 'gemini-3-flash' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
   'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
 }
@@ -109,7 +109,7 @@ interface GenerateJsonOptions<T> {
 }
 
 /**
- * Point d'entrée unique. Essaie le provider primaire, fallback en cas d'échec.
+ * Point d'entrée unique. Essaie les providers dans l'ordre de la cascade (depuis le store).
  * Throws seulement si TOUS les providers configurés échouent.
  */
 function defaultModelFor(provider: LLMProviderId): string {
@@ -117,25 +117,50 @@ function defaultModelFor(provider: LLMProviderId): string {
   return getSelectedModel(provider as AiProvider)
 }
 
-export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
-  const route = TASK_ROUTING[opts.task]
-  const primary = opts.forceProvider ?? route.primary
-  const fallback = opts.forceProvider ? undefined : route.fallback
-
-  try {
-    const result = await callProvider(primary, opts, route.model)
-    opts.onProviderUsed?.({ provider: primary, model: route.model ?? defaultModelFor(primary) })
-    return result
-  } catch (err) {
-    if (!fallback) throw err
-    console.warn(
-      `[llmRouter] ${opts.task}: provider primaire "${primary}" a échoué, fallback sur "${fallback}". Cause:`,
-      err,
-    )
-    const result = await callProvider(fallback, opts)
-    opts.onProviderUsed?.({ provider: fallback, model: defaultModelFor(fallback) })
-    return result
+/** Mappe la cascade du store (ReasoningProvider[]) aux LLMProviderId supportés.
+ *  Filtre les providers non implémentés (deepseek, qwen). */
+function getProviderCascade(): LLMProviderId[] {
+  const cascade = useAiSettingsStore.getState().reasoningCascade
+  const supported: LLMProviderId[] = []
+  for (const p of cascade) {
+    if (p === 'gemini' || p === 'claude') {
+      supported.push(p as LLMProviderId)
+    }
+    // deepseek, qwen: non implémentés dans callProvider, ignorés pour maintenant
   }
+  return supported.length > 0 ? supported : ['gemini', 'claude']
+}
+
+export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
+  // Si forceProvider, respecter la préférence et retomber sur la cascade en fallback
+  const cascade = opts.forceProvider
+    ? [opts.forceProvider, ...getProviderCascade().filter((p) => p !== opts.forceProvider)]
+    : getProviderCascade()
+
+  const route = TASK_ROUTING[opts.task]
+  const modelOverride = route.model
+
+  let lastError: unknown = null
+  for (let i = 0; i < cascade.length; i++) {
+    const provider = cascade[i]
+    try {
+      const result = await callProvider(provider, opts, modelOverride)
+      opts.onProviderUsed?.({ provider, model: modelOverride ?? defaultModelFor(provider) })
+      return result
+    } catch (err) {
+      lastError = err
+      const nextProvider = cascade[i + 1]
+      if (nextProvider) {
+        console.warn(
+          `[llmRouter] ${opts.task}: "${provider}" a échoué, fallback sur "${nextProvider}". Cause:`,
+          err,
+        )
+      }
+    }
+  }
+
+  // Tous les providers ont échoué
+  throw lastError ?? new Error(`[llmRouter] ${opts.task}: aucun provider disponible`)
 }
 
 async function callProvider<T>(

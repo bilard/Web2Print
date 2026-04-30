@@ -9,15 +9,7 @@ import {
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight,
 } from 'lucide-react'
-import { MigrationModal } from '@/components/pim/MigrationModal'
-import { Breadcrumb } from '@/components/pim/Breadcrumb'
-import { usePimStore } from '@/stores/pim.store'
-import { useProjectsList, useProject } from '@/features/pim/usePimProject'
-import { useProducts, useUpsertProducts } from '@/features/pim/useProducts'
-import { useUpsertSource } from '@/features/pim/useSources'
-import { SourcesColumn } from '@/components/pim/SourcesColumn'
-import type { Source, Product } from '@/features/pim/types'
-import { pimProductsToSheet } from '@/features/pim/productToSheet'
+import { SheetsColumn } from '@/components/pim/SheetsColumn'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
@@ -57,80 +49,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [loadingFiles, setLoadingFiles] = useState(false)
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
-  const migrationModalOpen = usePimStore((s) => s.migrationModalOpen)
-  const setMigrationModalOpen = usePimStore((s) => s.setMigrationModalOpen)
-  // Phase 6.1 — PIM project wiring
-  const pimProjectId = usePimStore((s) => s.currentProjectId)
-  const setCurrentProjectId = usePimStore((s) => s.setCurrentProjectId)
-  const { data: pimProjects = [] } = useProjectsList()
-  useProject(pimProjectId)
-  useProducts(pimProjectId)
-  const _upsertSource = useUpsertSource(pimProjectId ?? '')
-  const _upsertProducts = useUpsertProducts(pimProjectId ?? '')
-
-  // Phase 6.3 — Inject PIM products as synthetic ExcelSheet
-  const pimProducts = usePimStore((s) => s.products)
-  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
-  const currentPimProject = usePimStore((s) =>
-    s.currentProjectId ? s.projects.find((p) => p.id === s.currentProjectId) : null,
-  )
-
-  const visiblePimProducts = useMemo(() => {
-    if (selectedSourceIds.length === 0) return pimProducts
-    return pimProducts.filter((p) =>
-      p.sourceLinks.some((l) => selectedSourceIds.includes(l.sourceId)),
-    )
-  }, [pimProducts, selectedSourceIds])
-
-  const pimSheet = useMemo(() => {
-    if (!currentPimProject) return null
-    return pimProductsToSheet(visiblePimProducts, currentPimProject.sources)
-  }, [currentPimProject, visiblePimProducts])
-
-  // Injecte la sheet PIM dans le store Excel (lu par DataTable sans modification)
-  useEffect(() => {
-    if (!pimProjectId || !pimSheet) return
-    setSheets([pimSheet])
-  }, [pimProjectId, pimSheet]) // eslint-disable-line react-hooks/exhaustive-deps
-  const _setOpenProductId = usePimStore((s) => s.setOpenProductId)
-  const handleCreateManual = async () => {
-    if (!pimProjectId) return
-    const project = usePimStore.getState().projects.find((p) => p.id === pimProjectId)
-    let manualSource = project?.sources.find((s) => s.kind === 'manual' && s.name === 'Manuel')
-    if (!manualSource) {
-      manualSource = {
-        id: `src_manual_${Date.now()}`,
-        name: 'Manuel',
-        kind: 'manual',
-        schema: [],
-        productCount: 0,
-        enrichedCount: 0,
-        lastSyncedAt: Date.now(),
-      } satisfies Source
-      await _upsertSource.mutateAsync(manualSource)
-    }
-    const now = Date.now()
-    const newProduct: Product = {
-      _id: `prod_manual_${now}`,
-      masterSku: null,
-      masterEan: null,
-      primarySourceId: manualSource.id,
-      fields: { name: { value: 'Nouveau produit', winningSourceId: manualSource.id } },
-      sourceLinks: [{ sourceId: manualSource.id, snapshot: { name: 'Nouveau produit' } }],
-      taxonomyPath: [],
-      needsDedup: false,
-      createdAt: now,
-      updatedAt: now,
-    }
-    await _upsertProducts.mutateAsync([newProduct])
-    _setOpenProductId(newProduct._id)
-  }
-  const handleOpenPimProject = (id: string) => {
-    // Désélectionner la BDD legacy pour éviter les conflits d'auto-save
-    setCurrentDocId(null)
-    setCurrentFileName(null)
-    setCurrentProjectId(id)
-  }
 
   // Quand l'utilisateur clique sur un nœud de la taxonomie, fermer la fiche
   // produit pour revenir à la vue liste (DataTable).
@@ -238,8 +156,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     if (!file) return
     const loaded = await loadFromFirebase(docId)
     if (loaded) {
-      // Quitter le mode PIM avant d'activer la BDD legacy
-      setCurrentProjectId(null)
       setCurrentDocId(docId)
       setCurrentFileName(file.fileName)
       setCurrentPath(file.path ?? [])
@@ -420,49 +336,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               ) : null}
             </span>
           )}
-          {/* Sheet tabs (multi-feuilles) ou nom unique */}
-          {sheets.length > 1 ? (
-            <div className="flex items-center gap-0.5 border-l border-white/[0.06] pl-2">
-              {sheets.map((s, i) => {
-                const active = i === activeSheetIndex
-                return (
-                  <div
-                    key={i}
-                    className={`group/tab flex items-center gap-0.5 pl-2.5 pr-1 rounded-md transition-colors ${
-                      active
-                        ? 'bg-white/[0.08] text-white/70'
-                        : 'text-white/30 hover:text-white/50 hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <button
-                      onClick={() => setActiveSheet(i)}
-                      className="text-[11px] py-1 max-w-[140px] truncate"
-                      title={s.name}
-                    >
-                      {s.name}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteSheet(i)
-                        toast.success(`Onglet « ${s.name} » supprimé`)
-                      }}
-                      className={`${active ? 'opacity-60' : 'opacity-0'} group-hover/tab:opacity-100 hover:bg-white/10 rounded p-0.5 transition-opacity text-white/60 hover:text-white cursor-pointer`}
-                      title={`Supprimer « ${s.name} »`}
-                      aria-label={`Supprimer ${s.name}`}
-                    >
-                      <X className="w-3 h-3 pointer-events-none" />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <h1 className="text-[13px] font-medium text-white/70">
-              {currentFileName ?? sheet?.name ?? 'Données'}
-            </h1>
-          )}
+          {/* Nom de la sheet active (les onglets ont migré dans la SheetsColumn latérale) */}
+          <h1 className="text-[13px] font-medium text-white/70">
+            {sheet?.name ?? currentFileName ?? 'Données'}
+          </h1>
         </div>
 
         {/* Separator */}
@@ -621,27 +498,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 onScrapeAt={handleScrapeAtPath}
                 onCreateAt={handleCreateAtPath}
                 onRefresh={refreshFileList}
-                onMigrate={() => setMigrationModalOpen(true)}
               />
-              {pimProjects.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-white/[0.06]">
-                  <p className="text-[10px] uppercase tracking-widest text-white/30 mb-1 px-1">Projets PIM</p>
-                  {pimProjects.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => handleOpenPimProject(p.id)}
-                      className={`w-full text-left text-[12px] px-2 py-1 rounded transition-colors ${
-                        pimProjectId === p.id
-                          ? 'bg-indigo-500/15 text-indigo-200'
-                          : 'text-white/60 hover:bg-white/[0.04]'
-                      }`}
-                    >
-                      {p.name}
-                      <span className="ml-1 text-[10px] text-white/30">{p.sources.length} src</span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         ) : (
@@ -657,14 +514,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           </button>
         )}
 
-        {/* PIM SourcesColumn — visible only when a PIM project is selected */}
-        {pimProjectId && (
-          <SourcesColumn
-            onPickImport={() => setImportModalOpen(true)}
-            onPickScrape={() => setScrapingOpen(true)}
-            onPickManual={handleCreateManual}
-          />
-        )}
+        {/* SheetsColumn : nav latérale des sources scrapées/importées (remplace les onglets
+             horizontaux). Affichée dès qu'il y a > 1 sheet. */}
+        {sheets.length > 1 && <SheetsColumn />}
 
         {/* Main area : top import menu + content (data or empty) */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -699,10 +551,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             </button>
           </div>
 
-          {/* PIM Breadcrumb — visible only when a PIM project is selected */}
-          {pimProjectId && <Breadcrumb />}
+          {/* Breadcrumb PIM désactivé — pas pertinent pour le flux legacy */}
 
-          {(hasSelectedDb || !!pimProjectId) && hasData ? (
+          {hasSelectedDb && hasData ? (
             <div className="flex-1 flex overflow-hidden">
               {/* Taxonomy navigation sidebar */}
               {showNav ? (
@@ -836,8 +687,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         }}
       />
 
-      {/* Migration PIM modal */}
-      <MigrationModal open={migrationModalOpen} onClose={() => setMigrationModalOpen(false)} />
     </div>
   )
 }
@@ -888,7 +737,7 @@ function pathKey(path: string[]): string {
 }
 
 /** Saved files list panel */
-function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh, onMigrate }: {
+function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh }: {
   files: SavedFileEntry[]
   loading: boolean
   currentDocId: string | null
@@ -900,7 +749,6 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   onScrapeAt: (path: string[]) => void
   onCreateAt: (path: string[]) => void
   onRefresh: () => void
-  onMigrate: () => void
 }) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openAddMenu, setOpenAddMenu] = useState<string | null>(null)
@@ -999,12 +847,7 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
         </button>
       </div>
 
-      <button
-        onClick={onMigrate}
-        className="w-full text-left px-2 py-1 text-[10px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] rounded"
-      >
-        Migrer mes BDD → PIM
-      </button>
+      {/* Bouton "Migrer mes BDD → PIM" retiré — flux legacy conservé. */}
 
       {openMenu || openAddMenu ? (
         <div className="fixed inset-0 z-40" onClick={handleOverlayClick} />

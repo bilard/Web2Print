@@ -37,3 +37,13 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
+
+@keyframes anchor-pulse-frame {
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  20%  { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.anchor-pulse {
+  animation: anchor-pulse-frame 1.2s ease-out;
+}
