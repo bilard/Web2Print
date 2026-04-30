@@ -2,6 +2,7 @@ import type { CellValue } from '@/features/excel/types'
 import type { LlmRequestInfo } from '@/features/ai/llmRouter'
 import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage } from './types'
 import { parseDocumentsCell } from './documentUtils'
+import { sanitizeEnrichedProduct } from './enrichmentSanitize'
 
 export interface DeserializedEnrichment {
   product: EnrichedProduct
@@ -123,22 +124,24 @@ export function deserializeEnrichedFromRow(
     ? breadcrumbRaw.split(/\s*[›>/»·]\s*/).map(s => s.trim()).filter(Boolean)
     : undefined
 
-  return {
-    product: {
-      description,
-      breadcrumb: breadcrumb && breadcrumb.length > 0 ? breadcrumb : undefined,
-      advantages,
-      specifications,
-      variants,
-      images,
-      documents,
-      sourceUrl,
-      additionalSources: [],
-      generatedAt: 0, // inconnu après rehydration
-      scrapingProvider: scraper,
-      llmProvider,
-      llmModel,
-    },
-    llmRequest,
-  }
+  // Sanitize au chargement : les données persistées avant l'introduction des
+  // filtres (nav, checkbox, pricing, prose-specs) doivent être nettoyées au
+  // re-affichage sans nécessiter de re-enrichissement complet.
+  const product = sanitizeEnrichedProduct({
+    description,
+    breadcrumb: breadcrumb && breadcrumb.length > 0 ? breadcrumb : undefined,
+    advantages,
+    specifications,
+    variants,
+    images,
+    documents,
+    sourceUrl,
+    additionalSources: [],
+    generatedAt: 0,
+    scrapingProvider: scraper,
+    llmProvider,
+    llmModel,
+  })
+
+  return { product, llmRequest }
 }

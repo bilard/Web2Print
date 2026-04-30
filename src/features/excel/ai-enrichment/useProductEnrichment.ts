@@ -421,7 +421,9 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
     // que le LLM a paire en faux specs.
     const nameTrimmed = s.name.trim()
     const valueTrimmed = s.value.trim()
-    if (nameTrimmed.length > 80) { rejectedSpecs.push(s); continue }
+    // Quantity tier (pricing) : "1 +", "10 +", "100 +"
+    if (/^\d+\s*\+\s*$/.test(nameTrimmed)) { rejectedSpecs.push(s); continue }
+    if (nameTrimmed.length > 60) { rejectedSpecs.push(s); continue }
     if (/[.!?]$/.test(nameTrimmed) && nameTrimmed.length > 25) {
       rejectedSpecs.push(s); continue
     }
@@ -429,8 +431,8 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
     if (/^[•▪►▶]\s/.test(valueTrimmed) || /^[•▪►▶]\s/.test(nameTrimmed)) {
       rejectedSpecs.push(s); continue
     }
-    // Pricing leak : valeur ne contient qu'un prix avec devise
-    if (/^\s*\d+[\s.,]*\d*\s*[€$£]\s*$/.test(valueTrimmed)) {
+    // Pricing leak : valeur ne contient que chiffres/séparateurs + devise
+    if (/^\s*[\d\s.,]+\s*[€$£]\s*$/.test(valueTrimmed)) {
       rejectedSpecs.push(s); continue
     }
     // UI button leak : "Cliquez sur …" / "Vérifier les …"
@@ -3865,7 +3867,12 @@ export function useProductEnrichment() {
         }
 
         // ── Étape 2 : Scraper la page via Jina Reader ──────────────────────
-        let markdownContent: string | null = usedCache ? (cached!.markdownContent ?? null) : null
+        // Le scrape cache peut contenir du markdown sale (sauvegardé avant
+        // l'introduction des filtres pré-LLM). On ré-applique sanitizeJinaMarkdown
+        // (idempotent) à chaque réutilisation pour ne pas re-polluer.
+        let markdownContent: string | null = usedCache && cached!.markdownContent
+          ? sanitizeJinaMarkdown(cached!.markdownContent)
+          : null
 
         /** Score la qualité du markdown : specs × 3 + avantages × 2 + bonus description */
         const scoreMd = (md: string | null): number => {
