@@ -17,6 +17,7 @@ import { useProducts, useUpsertProducts } from '@/features/pim/useProducts'
 import { useUpsertSource } from '@/features/pim/useSources'
 import { SourcesColumn } from '@/components/pim/SourcesColumn'
 import type { Source, Product } from '@/features/pim/types'
+import { pimProductsToSheet } from '@/features/pim/productToSheet'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
@@ -66,6 +67,31 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   useProducts(pimProjectId)
   const _upsertSource = useUpsertSource(pimProjectId ?? '')
   const _upsertProducts = useUpsertProducts(pimProjectId ?? '')
+
+  // Phase 6.3 — Inject PIM products as synthetic ExcelSheet
+  const pimProducts = usePimStore((s) => s.products)
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
+  const currentPimProject = usePimStore((s) =>
+    s.currentProjectId ? s.projects.find((p) => p.id === s.currentProjectId) : null,
+  )
+
+  const visiblePimProducts = useMemo(() => {
+    if (selectedSourceIds.length === 0) return pimProducts
+    return pimProducts.filter((p) =>
+      p.sourceLinks.some((l) => selectedSourceIds.includes(l.sourceId)),
+    )
+  }, [pimProducts, selectedSourceIds])
+
+  const pimSheet = useMemo(() => {
+    if (!currentPimProject) return null
+    return pimProductsToSheet(visiblePimProducts, currentPimProject.sources)
+  }, [currentPimProject, visiblePimProducts])
+
+  // Injecte la sheet PIM dans le store Excel (lu par DataTable sans modification)
+  useEffect(() => {
+    if (!pimProjectId || !pimSheet) return
+    setSheets([pimSheet])
+  }, [pimProjectId, pimSheet]) // eslint-disable-line react-hooks/exhaustive-deps
   const _setOpenProductId = usePimStore((s) => s.setOpenProductId)
   const handleCreateManual = async () => {
     if (!pimProjectId) return
@@ -100,6 +126,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     _setOpenProductId(newProduct._id)
   }
   const handleOpenPimProject = (id: string) => {
+    // Désélectionner la BDD legacy pour éviter les conflits d'auto-save
+    setCurrentDocId(null)
+    setCurrentFileName(null)
     setCurrentProjectId(id)
   }
 
@@ -209,6 +238,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     if (!file) return
     const loaded = await loadFromFirebase(docId)
     if (loaded) {
+      // Quitter le mode PIM avant d'activer la BDD legacy
+      setCurrentProjectId(null)
       setCurrentDocId(docId)
       setCurrentFileName(file.fileName)
       setCurrentPath(file.path ?? [])
@@ -671,7 +702,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           {/* PIM Breadcrumb — visible only when a PIM project is selected */}
           {pimProjectId && <Breadcrumb />}
 
-          {hasSelectedDb && hasData ? (
+          {(hasSelectedDb || !!pimProjectId) && hasData ? (
             <div className="flex-1 flex overflow-hidden">
               {/* Taxonomy navigation sidebar */}
               {showNav ? (
