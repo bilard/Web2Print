@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2 } from 'lucide-react'
 import { useJina, scrapeResultToSheet, crawlPagesToSheet, enrichedProductToSheet } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
@@ -13,6 +13,15 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useProductEnrichment } from '@/features/excel/ai-enrichment/useProductEnrichment'
 import { useEnrichmentStore } from '@/features/excel/ai-enrichment/enrichmentStore'
 import { enrichmentKey } from '@/features/excel/ai-enrichment/types'
+import { ENRICHMENT_COLUMNS, buildEnrichmentColumn, serializeEnriched } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
+import { matchRows, applyPreview } from '@/features/pim'
+import type { MergePreview, Source } from '@/features/pim/types'
+import { useUpsertProducts } from '@/features/pim/useProducts'
+import { useUpsertSource } from '@/features/pim/useSources'
+import { usePimStore } from '@/stores/pim.store'
+import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
+import { scrapeResultToColumns } from './core/scrapeToRows'
+import { toast } from 'sonner'
 
 /** Clé synthétique : la modal de scraping n'a pas de feuille — on isole dans
  *  un namespace dédié pour ne pas polluer les enrichissements de feuilles
@@ -56,6 +65,38 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
   const enrichKey = enrichmentKey(SCRAPE_MODAL_SHEET, enrichRowId)
   const enrichEntry = useEnrichmentStore((s) => s.entries[enrichKey])
   const enrichLogs = useEnrichmentStore((s) => s.logs[enrichKey] ?? [])
+
+  // ── PIM branch ───────────────────────────────────────────────────────────
+  const pimProjectId = usePimStore((s) => s.currentProjectId)
+  const products = usePimStore((s) => s.products)
+  const upsertProducts = useUpsertProducts(pimProjectId ?? '')
+  const upsertSource = useUpsertSource(pimProjectId ?? '')
+
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [pendingRows, setPendingRows] = useState<Record<string, unknown>[]>([])
+  const [pendingSource, setPendingSource] = useState<Source | null>(null)
+
+  const preview: MergePreview | null = useMemo(() => {
+    if (!previewOpen || pendingRows.length === 0) return null
+    return matchRows(pendingRows as never, products)
+  }, [previewOpen, pendingRows, products])
+
+  const startPreview = (rows: Record<string, unknown>[], source: Source) => {
+    setPendingRows(rows)
+    setPendingSource(source)
+    setPreviewOpen(true)
+  }
+
+  const confirmIngest = async () => {
+    if (!pimProjectId || !pendingSource || !preview) return
+    const result = applyPreview(preview, products, pendingSource.id, { now: Date.now() })
+    await upsertSource.mutateAsync(pendingSource)
+    await upsertProducts.mutateAsync(result.products)
+    toast.success(`${result.stats.created} ajoutés · ${result.stats.merged} mergés`)
+    setPreviewOpen(false)
+    onClose()
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   if (!open) return null
 
@@ -199,6 +240,20 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
 
   const handleImportResult = () => {
     if (!result) return
+    if (pimProjectId) {
+      const source: Source = {
+        id: `src_${hostname}_${Date.now()}`,
+        name: hostname,
+        kind: 'scrape',
+        url,
+        schema: scrapeResultToColumns(result, lastFields),
+        productCount: result.rows.length,
+        enrichedCount: 0,
+        lastSyncedAt: Date.now(),
+      }
+      startPreview(result.rows as Record<string, unknown>[], source)
+      return
+    }
     const sheet = scrapeResultToSheet(result, lastFields, hostname)
     const store = useExcelStore.getState()
     // Scrape depuis le bouton "+" (targetPath défini) → nouvelle BDD :
@@ -226,6 +281,26 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
 
   const handleImportEnriched = () => {
     if (!enrichEntry?.data) return
+    if (pimProjectId) {
+      const enrichedColumns = [
+        { key: 'name', label: 'Nom', fieldType: 'text' as const, detectedType: 'text' as const, isPrimary: true, width: 240 },
+        ...ENRICHMENT_COLUMNS.map(buildEnrichmentColumn),
+      ]
+      const serialized = serializeEnriched(enrichEntry.data, null)
+      const row: Record<string, unknown> = { _id: 'enriched_0', name: productTitle, ...serialized }
+      const source: Source = {
+        id: `src_${hostname}_${Date.now()}`,
+        name: hostname,
+        kind: 'scrape',
+        url,
+        schema: enrichedColumns,
+        productCount: 1,
+        enrichedCount: 1,
+        lastSyncedAt: Date.now(),
+      }
+      startPreview([row], source)
+      return
+    }
     const sheet = enrichedProductToSheet(enrichEntry.data, hostname, productTitle)
     const store = useExcelStore.getState()
     if (targetPath !== undefined) {
@@ -249,6 +324,26 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
 
   const handleImportCrawl = () => {
     if (crawlPages.length === 0) return
+    if (pimProjectId) {
+      const crawlColumns = [
+        { key: 'url', label: 'URL', fieldType: 'url' as const, detectedType: 'url' as const, isPrimary: true, width: 280 },
+        { key: 'title', label: 'Titre', fieldType: 'text' as const, detectedType: 'text' as const, isPrimary: false, width: 200 },
+        { key: 'content', label: 'Contenu', fieldType: 'text_long' as const, detectedType: 'text_long' as const, isPrimary: false, width: 400 },
+      ]
+      const crawlRows = crawlPages.map((p, i) => ({ _id: `crawl_${i}`, url: p.url, title: p.title, content: p.content }))
+      const source: Source = {
+        id: `src_${hostname}_${Date.now()}`,
+        name: hostname,
+        kind: 'scrape',
+        url,
+        schema: crawlColumns,
+        productCount: crawlPages.length,
+        enrichedCount: 0,
+        lastSyncedAt: Date.now(),
+      }
+      startPreview(crawlRows, source)
+      return
+    }
     const sheet = crawlPagesToSheet(crawlPages, hostname)
     const store = useExcelStore.getState()
     // Scrape depuis le bouton "+" (targetPath défini) → nouvelle BDD :
@@ -286,6 +381,7 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
   const canImportEnriched = tab === 'scrape' && !!enrichEntry?.data && !enriching
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-[#161616] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
 
@@ -398,5 +494,17 @@ export function ScrapingModal({ open, onClose, targetPath }: Props) {
         )}
       </div>
     </div>
+
+    {pendingSource && (
+      <MatchPreviewModal
+        open={previewOpen}
+        preview={preview}
+        loading={false}
+        sourceName={pendingSource.name}
+        onConfirm={confirmIngest}
+        onClose={() => setPreviewOpen(false)}
+      />
+    )}
+    </>
   )
 }
