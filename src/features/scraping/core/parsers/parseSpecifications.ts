@@ -332,6 +332,11 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // Rejet bullets "• Texte" en nom ou valeur (n'est PAS une spec, c'est
     // une cellule de table qui a capturé un bullet de feature)
     if (/^[•·]\s/.test(n) || /^[•·]\s/.test(v)) return
+    // Rejet bullets markdown `- ` ou `* ` en valeur (ex: `Avantages produits=- Item`)
+    if (/^[-*]\s/.test(v)) return
+    // Rejet noms qui sont des headings de section (capturés par erreur via Format 1)
+    const SECTION_HEADING_RE = /^(caract[eé]ristiques?|sp[eé]cifications?|d[eé]tails?|description|avantages?|points?\s+forts?|fiche|info\s|[eé]quipement|application)/i
+    if (SECTION_HEADING_RE.test(n) && n.length < 35) return
     if (isGarbageContent(n) || isGarbageContent(v)) return
     seen.add(key)
     seenNames.add(nameKey)
