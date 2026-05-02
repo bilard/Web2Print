@@ -243,6 +243,12 @@ export function extractSpecsFromHtml(html: string): string | null {
 export function parseSpecsFromMarkdown(md: string): Specification[] {
   const specs: Specification[] = []
   const seen = new Set<string>()
+  // Dedup STRICT par nom (première occurrence gagne) — pour les pages e-commerce
+  // qui affichent des comparaisons multi-modèles (RS Components, Conrad, etc.)
+  // où "Poids", "Batterie", "Niveau sonore" reviennent plusieurs fois pour des
+  // produits différents. On garde uniquement la spec du produit principal,
+  // toujours rendue en premier.
+  const seenNames = new Set<string>()
 
   const FINANCIAL_NAME_RE = /^(date|payment|paiement|prix|price|montant|amount|total|ech[eé]ance|mensualit[eé]|versement|livraison|delivery|shipping|frais|fee|cost|co[uû]t|quantit[eé]|qty|stock|disponibilit[eé]|panier|cart|ajouter|add to|acheter|buy)\b|incl\.\s*vat|excl\.\s*vat|ttc|hors\s*taxe|tva/i
   const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
@@ -269,8 +275,10 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
           if (PRICE_GROUP_RE.test(currentGroup ?? '')) continue
           if (PRICE_GROUP_RE.test(name)) continue
           const key = `${name.toLowerCase()}::${value.toLowerCase()}`
-          if (!seen.has(key)) {
+          const nameKey = name.toLowerCase().trim()
+          if (!seen.has(key) && !seenNames.has(nameKey)) {
             seen.add(key)
+            seenNames.add(nameKey)
             specs.push({ name, value, group: currentGroup })
           }
         }
@@ -297,13 +305,23 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     const n = name.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
     const v = value.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
     const key = `${n.toLowerCase()}::${v.toLowerCase()}`
+    const nameKey = n.toLowerCase().trim()
     if (!n || !v || seen.has(key)) return
+    // Dedup par nom : garde la première occurrence pour les pages avec
+    // comparaisons multi-modèles (RS Components etc.).
+    if (seenNames.has(nameKey)) return
     if (JUNK_NAME_RE.test(n)) return
     if (JUNK_VALUE_RE.test(v)) return
     if (FILE_VALUE_RE.test(v)) return
     if (FILE_SIZE_RE.test(n) || FILE_SIZE_RE.test(v)) return
     if (FINANCIAL_NAME_RE.test(n)) return
     if (FINANCIAL_VALUE_RE.test(v)) return
+    // FINANCIAL_NAME_RE inclut "ajouter|panier|cart|acheter|buy" — appliquer aussi
+    // sur la VALEUR pour rejeter les bouts de table prix `Unité=Ajouter`.
+    if (FINANCIAL_NAME_RE.test(v)) return
+    // Cookie banner buttons : "Tout accepter=Enregistrer", "Accepter tout=Refuser"
+    if (/^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save|continuer\s+sans\s+accepter)$/i.test(n)
+        || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return
     if (/^[#]/.test(n)) return
     if (/^[.\-–—,;:!?]$/.test(v)) return
     if (n.length > 80 || v.length > 250) return
@@ -311,8 +329,12 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return
     if (PLACEHOLDER_HEADER_RE.test(v) || PLACEHOLDER_HEADER_RE.test(n)) return
     if (BRACKETED_HEADER_RE.test(n)) return
+    // Rejet bullets "• Texte" en nom ou valeur (n'est PAS une spec, c'est
+    // une cellule de table qui a capturé un bullet de feature)
+    if (/^[•·]\s/.test(n) || /^[•·]\s/.test(v)) return
     if (isGarbageContent(n) || isGarbageContent(v)) return
     seen.add(key)
+    seenNames.add(nameKey)
     specs.push({ name: n, value: v, group: group || undefined })
   }
 
@@ -333,6 +355,15 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     if (trimmed.startsWith('#') && trimmed.length > 120) continue
 
     if (/^#{1,4}\s*(t[eé]l[eé]chargements?|downloads?|documents?\s*(?:associ[eé]s|techniques?|utiles?)?|fichiers?|resources?|pi[eè]ces?\s*jointes?)/i.test(trimmed)) {
+      inSpecSection = false
+      currentGroup = ''
+      continue
+    }
+
+    // Section avis Bazaarvoice (`## Avis`, `### Note générale`, `### Filtrer les avis`,
+    // `### Avis régionaux`, `### Description sommaire de la notation`) → sortir et bloquer
+    // l'entrée en spec mode via `isSpecGroup` qui matche faussement "générale".
+    if (/^#{1,5}\s*(avis(?:\s+r[eé]gionaux|\s+clients?|\s+v[eé]rifi[eé]s?)?|reviews?|customer\s+reviews?|user\s+reviews?|note\s+g[eé]n[eé]rale|description\s+sommaire|filtrer\s+les\s+avis|trier\s+les\s+avis|avis\s+aliment[eé]s\s+par|foire\s+aux\s+questions|faq)\s*$/i.test(trimmed)) {
       inSpecSection = false
       currentGroup = ''
       continue
@@ -390,12 +421,19 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     }
 
     // Format 3 : Clé : Valeur (sans markdown bold)
+    // Anti-prose : le name doit ressembler à un vrai nom de spec (max 5 mots,
+    // commence par majuscule, pas par article). Sans ce check, des phrases
+    // prose contenant `:` étaient capturées comme specs (Jardiland-style).
     if (inSpecSection) {
       const kvMatch = trimmed.match(/^([^:]{2,50})\s*:\s+(.{1,200})$/)
       if (kvMatch) {
         const n = kvMatch[1].replace(/\*\*/g, '').trim()
         const v = kvMatch[2].replace(/\*\*/g, '').trim()
-        if (n && v && !/^https?:/.test(n)) {
+        const looksLikeSpecName =
+          n.split(/\s+/).length <= 5
+          && /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(n)
+          && !/^(le|la|les|un|une|des|du|de|cette|ce|ces|votre|notre|optimis[eé]z?|am[eé]lior[eé]z?|d[eé]couvr[eé]z?|s[eé]lectionnez|profit[eé]z?)\b/i.test(n)
+        if (n && v && !/^https?:/.test(n) && looksLikeSpecName) {
           add(n, v, currentGroup)
           continue
         }
@@ -419,6 +457,36 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
           add(trimmed, nextLine, currentGroup)
           i = nextIdx
           continue
+        }
+      }
+    }
+
+    // Format 4b : Bullet PLAIN "* Nom" suivi d'une valeur courte sur la ligne suivante.
+    // Style Dyson : ## Caractéristiques → * Temps de charge → (ligne vide) → 3 hrs
+    // Exclut les bullets BOLD `* **Titre**` qui sont des titres de feature
+    // (ex: `* **Connecté à l'application MyDyson™**` dans Description complète).
+    if (inSpecSection) {
+      // [^*] : 1er char ne doit PAS être `*` → exclut les bullets bold
+      const bulletName = trimmed.match(/^[*-]\s{1,4}([^*].{1,58})$/)
+      if (bulletName) {
+        const name = bulletName[1].trim()
+        let nextIdx = i + 1
+        while (nextIdx < lines.length && nextIdx <= i + 3 && !lines[nextIdx].trim()) nextIdx++
+        const nextLine = (lines[nextIdx] ?? '').trim()
+        if (nextLine && nextLine.length > 0 && nextLine.length < 200
+            && !nextLine.startsWith('#') && !nextLine.startsWith('*') && !nextLine.startsWith('-')
+            && !nextLine.startsWith('[') && !nextLine.startsWith('|') && !nextLine.startsWith('http')
+            && !nextLine.startsWith('!')) {
+          // La valeur doit ressembler à une spec : courte, avec digit, ou avec unité.
+          // Sans ça, on capture des paragraphes de prose comme valeurs de spec.
+          const looksLikeValue = /\d/.test(nextLine)
+            || nextLine.length < 30
+            || /\b(mm|cm|m|kg|g|nm|rpm|tr\/min|v|ah|w|kw|hz|db|dba|°|%|bar|l\/min|psi|mpa|ion|litre|watt|volt|amp|micron)/i.test(nextLine)
+          if (looksLikeValue) {
+            add(name, nextLine, currentGroup)
+            i = nextIdx
+            continue
+          }
         }
       }
     }
