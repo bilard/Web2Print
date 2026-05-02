@@ -253,6 +253,9 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
   const FINANCIAL_NAME_RE = /^(date|payment|paiement|prix|price|montant|amount|total|ech[eé]ance|mensualit[eé]|versement|livraison|delivery|shipping|frais|fee|cost|co[uû]t|quantit[eé]|qty|stock|disponibilit[eé]|panier|cart|ajouter|add to|acheter|buy)\b|incl\.\s*vat|excl\.\s*vat|ttc|hors\s*taxe|tva/i
   const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
   const PRICE_GROUP_RE = /prix|price|tarif|co[uû]t|cost|tva|vat|ttc|ht\b|hors\s*taxe/i
+  /** UI de livraison/promo/checkout que les sites GSA mettent en cellule de
+   *  tableau (Jardiland, Leroy Merlin) et qu'on capture par erreur en spec. */
+  const DELIVERY_UI_RE = /^(en\s+stock|stock\s+disponible|disponible|indisponible|livraison|gratuit\s+(à\s+partir|d[eè]s)|estim(ée|ation)(\s+\S+)*|exp[eé]di[eé]e?|d[eé]livr[eé]e?|retir[eé]\s+en|click\s+&\s+collect|\+\s*\d+\s+offres?|voir\s+l['']offre|voir\s+d[eé]tails?|comparer)$/i
 
   // ── Parser rapide pour le format injecté par notre script Jina ──
   const jinaStart = md.indexOf('JINA_EXTRACTED_SPECS_START')
@@ -319,6 +322,10 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // FINANCIAL_NAME_RE inclut "ajouter|panier|cart|acheter|buy" — appliquer aussi
     // sur la VALEUR pour rejeter les bouts de table prix `Unité=Ajouter`.
     if (FINANCIAL_NAME_RE.test(v)) return
+    // Delivery / promo UI cells (Jardiland-style)
+    if (DELIVERY_UI_RE.test(n) || DELIVERY_UI_RE.test(v)) return
+    // Nom = juste un symbole/séparateur (ex: "+", "-", "/", "?")
+    if (/^[+\-*/?!.,;:]$/.test(n)) return
     // Cookie banner buttons : "Tout accepter=Enregistrer", "Accepter tout=Refuser"
     if (/^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save|continuer\s+sans\s+accepter)$/i.test(n)
         || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return

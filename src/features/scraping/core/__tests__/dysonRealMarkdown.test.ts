@@ -470,4 +470,26 @@ serre de jardin en polycarbonate : double paroi Mythos de 2,3 m².
     expect(names).not.toContain('Description')
     expect(names).toContain('Marque')
   })
+
+  it('specs : rejette les UI de livraison/promo (Jardiland: En stock, +1 offre)', () => {
+    const md = `# Produit
+
+## Caractéristiques
+
+| En stock | GRATUIT à partir du mardi 12 mai |
+| + | 1 offre |
+| Voir l'offre | Voir détails |
+| Estimation livraison | 3-5 jours |
+| Marque | Makita |
+| Poids | 3.3kg |
+`
+    const specs = parseSpecsFromMarkdown(md)
+    const names = specs.map(s => s.name)
+    expect(names).not.toContain('En stock')
+    expect(names).not.toContain('+')
+    expect(names).not.toContain("Voir l'offre")
+    expect(names).not.toContain('Estimation livraison')
+    expect(names).toContain('Marque')
+    expect(names).toContain('Poids')
+  })
 })
