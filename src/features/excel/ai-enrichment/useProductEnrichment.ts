@@ -4167,6 +4167,17 @@ Réponds UNIQUEMENT via l'outil emit_response.`
                 mergedDirectImages.push(u)
               }
             }
+            // Prix structurés (TTC/HT/barré/promo/éco-participation)
+            // Sources : markdown patterns + JSON-LD offers (priorité JSON-LD).
+            const jsonLdPricing = structured && (structured as { offers?: { price?: number; priceCurrency?: string; priceValidUntil?: string } }).offers
+              ? {
+                  ttc: typeof (structured as { offers: { price?: number } }).offers.price === 'number' ? (structured as { offers: { price: number } }).offers.price : undefined,
+                  currency: (structured as { offers: { priceCurrency?: string } }).offers.priceCurrency || 'EUR',
+                  validUntil: (structured as { offers: { priceValidUntil?: string } }).offers.priceValidUntil,
+                }
+              : undefined
+            const mdPricing = parsePricingFromMarkdown(markdownContent, jsonLdPricing)
+
             directBuild = {
               description: mdDescription,
               advantages: mdAdvantages,
@@ -4174,8 +4185,20 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               variants: mdVariants,
               documents: directDocuments,
               images: [...new Set(mergedDirectImages)],
+              pricing: mdPricing ?? undefined,
             }
             console.log('[enrichment] ★ markdown direct build succeeded')
+            if (mdPricing) {
+              const priceParts = [
+                mdPricing.ttc != null && `TTC ${mdPricing.ttc}€`,
+                mdPricing.ht != null && `HT ${mdPricing.ht}€`,
+                mdPricing.original != null && `barré ${mdPricing.original}€`,
+                mdPricing.discount?.amount != null && `-${mdPricing.discount.amount}€`,
+                mdPricing.discount?.percent != null && `-${mdPricing.discount.percent}%`,
+                mdPricing.ecoParticipation != null && `éco ${mdPricing.ecoParticipation}€`,
+              ].filter(Boolean).join(' · ')
+              log(`💰 Prix : ${priceParts}`)
+            }
           }
         }
 
