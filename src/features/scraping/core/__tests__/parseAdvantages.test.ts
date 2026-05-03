@@ -37,6 +37,49 @@ describe('parseAdvantagesFromMarkdown', () => {
   it('renvoie tableau vide si pas d\'avantages', () => {
     expect(parseAdvantagesFromMarkdown('# Produit\n\nDescription seulement')).toEqual([])
   })
+
+  it('Milwaukee : "## caractéristiques" seul + bullets longs → traité comme features', () => {
+    // Ambiguïté FR : "Caractéristiques" peut être specs (Dyson) OU features (Milwaukee).
+    // Heuristique : si ≥ 3 bullets longs (≥ 30 chars) sans pattern "name: value",
+    // c'est une section de features.
+    const md = `# Perceuse Milwaukee M18 FPD3
+
+## caractéristiques
+
+*   Rendement supérieur avec un couple puissant de 158 Nm
+*   Design compact avec 175 mm de long pour accéder facilement aux espaces étroits
+*   AUTOSTOP™, un mécanisme de sécurité breveté permettant un arrêt immédiat
+*   Nouveau mandrin métal 13 mm offrant une meilleure prise des mors
+*   LED pour une meilleure visibilité dans des situations de faible éclairage
+`
+    const advs = parseAdvantagesFromMarkdown(md)
+    expect(advs.length).toBeGreaterThanOrEqual(5)
+    expect(advs.some(a => a.text.includes('158 Nm'))).toBe(true)
+    expect(advs.some(a => a.text.includes('AUTOSTOP'))).toBe(true)
+    expect(advs.some(a => a.text.includes('mandrin'))).toBe(true)
+  })
+
+  it('Dyson : "## Caractéristiques" + paires nom/valeur → reste section specs (pas de features)', () => {
+    // Cas inverse : section "Caractéristiques" avec paires courtes "name: value"
+    // → c'est des specs, pas des features → ne doit PAS extraire d'advantages.
+    const md = `# Aspirateur
+
+## Avantages produits
+
+- Filtration HEPA renforcée
+
+## Caractéristiques
+
+- Puissance: 1500 W
+- Capacité: 2 L
+- Poids: 5 kg
+`
+    const advs = parseAdvantagesFromMarkdown(md)
+    // Seule la section Avantages doit produire des items
+    expect(advs.some(a => a.text.includes('HEPA'))).toBe(true)
+    expect(advs.some(a => a.text.includes('Puissance'))).toBe(false)
+    expect(advs.some(a => a.text.includes('Capacité'))).toBe(false)
+  })
 })
 
 describe('mergeGroupsIntoAdvantages', () => {

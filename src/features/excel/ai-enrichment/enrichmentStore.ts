@@ -75,6 +75,7 @@ interface EnrichmentState {
   setData: (sheetName: string, rowId: string, data: EnrichedProduct) => void
   setError: (sheetName: string, rowId: string, error: string) => void
   setLlmRequest: (sheetName: string, rowId: string, request: LlmRequestInfo) => void
+  setLlmUsed: (sheetName: string, rowId: string, info: { provider: string; model: string }) => void
   addLog: (sheetName: string, rowId: string, message: string) => void
   clearLogs: (sheetName: string, rowId: string) => void
   toggleHiddenGroup: (sheetName: string, rowId: string, section: HiddenGroupSection, groupName: string) => void
@@ -156,6 +157,18 @@ export const useEnrichmentStore = create<EnrichmentState>((set, get) => {
         entries: {
           ...state.entries,
           [key]: { ...prev, llmRequest: request },
+        },
+      }
+    }),
+
+  setLlmUsed: (sheetName, rowId, info) =>
+    set((state) => {
+      const key = enrichmentKey(sheetName, rowId)
+      const prev = state.entries[key] ?? emptyEntry
+      return {
+        entries: {
+          ...state.entries,
+          [key]: { ...prev, llmUsed: info },
         },
       }
     }),

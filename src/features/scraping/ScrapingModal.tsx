@@ -536,7 +536,14 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
               <Loader2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
               <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-[12px] text-indigo-300/90 font-medium">{enrichEntry.progress.message}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-[12px] text-indigo-300/90 font-medium">{enrichEntry.progress.message}</p>
+                  {enrichEntry.llmUsed && (
+                    <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                      {enrichEntry.llmUsed.provider} · {enrichEntry.llmUsed.model}
+                    </span>
+                  )}
+                </div>
                 {enrichLogs.length > 0 && (
                   <p className="text-[10px] text-white/40 leading-relaxed truncate">{enrichLogs[enrichLogs.length - 1]}</p>
                 )}

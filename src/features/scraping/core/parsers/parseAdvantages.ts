@@ -125,6 +125,31 @@ export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
       const headingText = headingMatch[1].replace(/\*\*/g, '').trim()
       // Quitter si on entre dans une section technique / commerciale / autre
       if (exitKeywords.test(headingText)) {
+        // Cas ambigu : "## Caractéristiques" seul peut être soit specs (Dyson)
+        // soit features (Milwaukee bullets marketing). Scan la section ENTIÈRE
+        // (jusqu'au prochain H1/H2) et compte bullets longs vs paires "name: value".
+        // Si ≥ 3 bullets ≥ 30 chars sans pattern "name: value" → features.
+        if (/^caract[eé]ristiques?\s*$/i.test(headingText)) {
+          let longBullets = 0
+          let specPairs = 0
+          for (let j = i + 1; j < lines.length; j++) {
+            const lj = lines[j].trim()
+            if (!lj) continue
+            if (/^#{1,2}\s/.test(lj)) break
+            const bm = lj.match(/^[-*•·✓✔]\s+(.+)/)
+            if (!bm) continue
+            const txt = bm[1].replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            if (/^\S[^:]{0,40}:\s*\S/.test(txt) && txt.length < 60) specPairs++
+            else if (txt.length >= 30) longBullets++
+          }
+          if (longBullets >= 3 && longBullets > specPairs) {
+            flushPending()
+            inFeatureZone = true
+            currentGroup = headingText
+            currentBoldGroup = undefined
+            continue
+          }
+        }
         flushPending()
         inFeatureZone = false
         currentGroup = undefined

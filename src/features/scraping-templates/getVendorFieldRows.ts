@@ -164,6 +164,13 @@ export function getVendorFieldRows(
       switch (k) {
         case 'breadcrumb': return (enriched.breadcrumb?.length ?? 0) > 0
         case 'images': return enriched.images.length > 0
+        case 'pricing': return !!enriched.pricing && (
+          enriched.pricing.ttc != null
+          || enriched.pricing.ht != null
+          || enriched.pricing.original != null
+          || enriched.pricing.discount != null
+          || enriched.pricing.ecoParticipation != null
+        )
         case 'description': return (enriched.description ?? '').trim().length > 0
         case 'advantages': return enriched.advantages.length > 0
         case 'specifications': return enriched.specifications.length > 0

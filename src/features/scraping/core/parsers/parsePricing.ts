@@ -55,6 +55,11 @@ const PRICE_PATTERNS = {
   original: /(?:prix\s+d['']origine|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "Économisez 200,00€"
   discountAmount: /[Éé]conomis[eéè]z?\s+([\d\s  .,]+)\s*€/i,
+  // Markdown strikethrough "~~367,49 €~~" → prix barré (avant promo)
+  originalStrike: /~~\s*([\d  .,]+)\s*€\s*~~/i,
+  // "-137,50 €" / "−137,50€" — réduction en montant signée (≥ 3 caractères
+  // chiffres pour éviter "-1€" ambigu ; le pattern % est traité séparément).
+  discountAmountSigned: /(?<![.,\d])[-−]\s*(\d[\d  .,]{2,})\s*€/g,
   // "-17%" ou "(-17%)" — itérée avec exclusion bannières marketing
   discountPercent: /[-−]\s*(\d{1,2})\s*%/g,
   // "1 449,00 € HT"
@@ -156,20 +161,66 @@ export function parsePricingFromMarkdown(
       if (n != null) { result.ttc = n; found = true }
     }
 
-    // Prix barré / origine
+    // Prix barré / origine — par mot-clé "était / prix d'origine / barré"
     const originalM = cleanMd.match(PRICE_PATTERNS.original)
     if (originalM) {
       const n = parsePriceNumber(originalM[1])
       if (n != null) { result.original = n; found = true }
     }
 
-    // Réduction (montant)
+    // Prix barré — strikethrough markdown `~~367,49 €~~` (Jardiland & co)
+    // Retire la section du cleanMd pour ne pas confondre ce prix barré avec
+    // le prix TTC réel dans le fallback EUR plus bas.
+    if (result.original == null) {
+      const strikeM = cleanMd.match(PRICE_PATTERNS.originalStrike)
+      if (strikeM) {
+        const n = parsePriceNumber(strikeM[1])
+        if (n != null) { result.original = n; found = true }
+        cleanMd = cleanMd.replace(strikeM[0], ' ')
+      }
+    }
+
+    // Heuristique deux prix adjacents : `229,99 €367,49 €` (Jardiland sans
+    // strikethrough HTML — Jina ne préserve pas le `<del>`/CSS line-through).
+    // Si p2 > p1 → p1 = TTC actuel, p2 = prix barré.
+    if (result.ttc == null && result.original == null) {
+      const adjM = cleanMd.match(/(\d[\d   .,]*)\s*€\s*(\d[\d   .,]*)\s*€/)
+      if (adjM) {
+        const p1 = parsePriceNumber(adjM[1])
+        const p2 = parsePriceNumber(adjM[2])
+        if (p1 != null && p2 != null && p1 > 0 && p2 > p1) {
+          result.ttc = p1
+          result.original = p2
+          found = true
+          cleanMd = cleanMd.replace(adjM[0], ' ')
+        }
+      }
+    }
+
+    // Réduction (montant) — par mot-clé "Économisez X €"
     const discAmtM = cleanMd.match(PRICE_PATTERNS.discountAmount)
     if (discAmtM) {
       const n = parsePriceNumber(discAmtM[1])
       if (n != null) {
         result.discount = { ...result.discount, amount: n }
         found = true
+      }
+    }
+
+    // Réduction (montant) — signé négatif `-137,50 €` (Jardiland & co)
+    // Skip les bannières marketing et les contextes shipping (déjà filtrés via cleanMd).
+    // Retire le match du cleanMd pour ne pas confondre ce montant avec un prix TTC.
+    if (result.discount?.amount == null) {
+      for (const m of cleanMd.matchAll(PRICE_PATTERNS.discountAmountSigned)) {
+        const idx = m.index ?? 0
+        if (isInMarketingBanner(cleanMd, idx)) continue
+        const n = parsePriceNumber(m[1])
+        if (n != null && n > 0) {
+          result.discount = { ...result.discount, amount: n }
+          found = true
+          cleanMd = cleanMd.replace(m[0], ' ')
+          break
+        }
       }
     }
 

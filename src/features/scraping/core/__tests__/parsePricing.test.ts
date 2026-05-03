@@ -163,4 +163,39 @@ Prix : 100,00 €`
     const p = parsePricingFromMarkdown(md)
     expect(p?.discount?.percent).toBe(20)
   })
+
+  it('Jardiland Jina réel : prix adjacents collés `229,99 €367,49 €- 137,50 €`', () => {
+    // Format réel Jina sur Jardiland en promo (pas de strikethrough préservé)
+    const md = `Tondeuse Ryobi pack
+
+229,99 €367,49 €- 137,50 €
+dont 3,12 € de participation DEEE
+`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(229.99)
+    expect(p?.original).toBe(367.49)
+    expect(p?.discount?.amount).toBe(137.5)
+    expect(p?.ecoParticipation).toBe(3.12)
+  })
+
+  it('Jardiland-style promo : strikethrough barré + montant signé + éco-DEEE', () => {
+    // Pattern réel Jardiland en promo : `~~XXX,XX €~~ -YYY,YY €` puis prix actuel
+    const md = `Tondeuse XYZ Promo
+
+**FRENCH DAYS : JUSQU'À -70% DE REMISE !**
+
+~~367,49 €~~ -137,50 €
+
+229,99 €
+
+dont 3,12 € de participation DEEE
+`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.original).toBe(367.49)
+    expect(p?.discount?.amount).toBe(137.5)
+    expect(p?.ttc).toBe(229.99)
+    expect(p?.ecoParticipation).toBe(3.12)
+    // La bannière "JUSQU'À -70%" reste exclue
+    expect(p?.discount?.percent).toBeUndefined()
+  })
 })

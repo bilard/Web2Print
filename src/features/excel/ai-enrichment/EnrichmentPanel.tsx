@@ -13,6 +13,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { VendorFieldOrderModal } from '@/features/scraping-templates/VendorFieldOrderModal'
 import { useExcelStore } from '@/stores/excel.store'
+import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
+import type { AiProvider } from '@/lib/aiModels'
 import { useEnrichmentStore } from './enrichmentStore'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
 import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
@@ -367,6 +369,17 @@ export function EnrichmentPanel({ input }: Props) {
   const isDone = !isLoading && !isError && !!data
   const isIdle = !isLoading && !isError && !isDone
 
+  // Cascade configurée — affichée dans le tooltip "Sans IA" pour indiquer
+  // quel(s) LLM serai(en)t appelé(s) si le directBuild échouait.
+  const reasoningCascade = useAiSettingsStore((s) => s.reasoningCascade)
+  const cascadeDescription = reasoningCascade
+    .map((p) => {
+      const PROVIDER_LABELS: Record<string, string> = { claude: 'Claude', gemini: 'Gemini', deepseek: 'DeepSeek', qwen: 'Qwen' }
+      return `${PROVIDER_LABELS[p] ?? p} · ${getSelectedModel(p as AiProvider)}`
+    })
+    .join(' → ')
+  const fallbackHint = cascadeDescription ? `\n\nFallback configuré : ${cascadeDescription}.` : ''
+
   // Métadonnées du modèle LLM ou mode scraping (affichées en haut à droite quand isDone).
   // Trois cas non-LLM connus quand llmProvider est undefined : extraction fabricant
   // pure, template engine déterministe, parsing markdown direct ("Jina (direct)").
@@ -388,13 +401,13 @@ export function EnrichmentPanel({ input }: Props) {
     // Pas de LLM : on affiche le scraper utilisé pour être transparent
     const provider = data.scrapingProvider ?? ''
     if (provider.includes('Fabricant')) {
-      return { label: 'Sans IA · Fabricant', title: `Extraction directe du site fabricant (${provider}) — aucun LLM appelé.` }
+      return { label: 'Sans IA · Fabricant', title: `Extraction directe du site fabricant (${provider}) — aucun LLM appelé.${fallbackHint}` }
     }
     if (provider.startsWith('Template')) {
-      return { label: 'Sans IA · Template', title: `Extraction déterministe via template (${provider}) — aucun LLM appelé.` }
+      return { label: 'Sans IA · Template', title: `Extraction déterministe via template (${provider}) — aucun LLM appelé.${fallbackHint}` }
     }
     if (provider.includes('direct')) {
-      return { label: 'Sans IA · Markdown', title: `Parsing markdown direct (${provider}) — aucun LLM appelé.` }
+      return { label: 'Sans IA · Markdown', title: `Parsing markdown direct (${provider}) — aucun LLM appelé.${fallbackHint}` }
     }
     return {
       label: 'LLM inconnu',

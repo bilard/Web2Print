@@ -8,7 +8,7 @@ import { useGDriveSettings } from '@/features/gdrive/useGDriveSettings'
 import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey, type ApiTestResult } from '@/lib/apiKeys'
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
-import { useAiSettingsStore, type ReasoningProvider } from '@/stores/aiSettings.store'
+import { useAiSettingsStore, getSelectedModel, type ReasoningProvider } from '@/stores/aiSettings.store'
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   claude: 'Claude',
@@ -434,6 +434,7 @@ function ReasoningCascadeSelector() {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-white">{info.label}</p>
                 <p className="text-[10px] text-white/40">{info.sub}</p>
+                <p className="text-[9.5px] font-mono text-violet-300/70 mt-0.5 truncate">{getSelectedModel(p as AiProvider)}</p>
               </div>
               <div className="flex items-center gap-0.5 shrink-0">
                 <button

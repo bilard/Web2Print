@@ -115,6 +115,10 @@ export interface EnrichmentEntry {
   /** Snapshot du dernier payload envoyé au LLM — éphémère, non persisté.
    *  Affiché dans le panneau pour debug (prompt + paramètres). */
   llmRequest?: LlmRequestInfo
+  /** Provider/modèle effectivement utilisé pour le dernier appel de raisonnement
+   *  (mis à jour par le callback `onProviderUsed` du llmRouter). Affiché dans
+   *  l'UI de progression pour transparence (ex: "claude · claude-opus-4-7"). */
+  llmUsed?: { provider: string; model: string }
 }
 
 /** Clé de cache unique par feuille + ligne. */

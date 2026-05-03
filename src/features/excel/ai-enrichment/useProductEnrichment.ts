@@ -3033,6 +3033,31 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
       const headingText = headingMatch[1].replace(/\*\*/g, '').trim()
       // Quitter si on entre dans une section technique / commerciale / autre
       if (exitKeywords.test(headingText)) {
+        // Cas ambigu : "## Caractéristiques" seul peut être soit specs (Dyson)
+        // soit features (Milwaukee bullets marketing). Scan la section ENTIÈRE
+        // (jusqu'au prochain H1/H2) et compte bullets longs vs paires "name: value".
+        // Si ≥ 3 bullets ≥ 30 chars sans pattern "name: value" → features.
+        if (/^caract[eé]ristiques?\s*$/i.test(headingText)) {
+          let longBullets = 0
+          let specPairs = 0
+          for (let j = i + 1; j < lines.length; j++) {
+            const lj = lines[j].trim()
+            if (!lj) continue
+            if (/^#{1,2}\s/.test(lj)) break
+            const bm = lj.match(/^[-*•·✓✔]\s+(.+)/)
+            if (!bm) continue
+            const txt = bm[1].replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            if (/^\S[^:]{0,40}:\s*\S/.test(txt) && txt.length < 60) specPairs++
+            else if (txt.length >= 30) longBullets++
+          }
+          if (longBullets >= 3 && longBullets > specPairs) {
+            flushPending()
+            inFeatureZone = true
+            currentGroup = headingText
+            currentBoldGroup = undefined
+            continue
+          }
+        }
         flushPending()
         inFeatureZone = false
         currentGroup = undefined
@@ -3163,7 +3188,7 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
 // ── Hook principal ──────────────────────────────────────────────────────────
 
 export function useProductEnrichment() {
-  const { setProgress, setData, setError, setLlmRequest, clear, getScrapeCache, setScrapeCache, clearScrapeCache, addLog, clearLogs } = useEnrichmentStore()
+  const { setProgress, setData, setError, setLlmRequest, setLlmUsed, clear, getScrapeCache, setScrapeCache, clearScrapeCache, addLog, clearLogs } = useEnrichmentStore()
   const [running, setRunning] = useState(false)
 
   const enrich = useCallback(
@@ -4003,6 +4028,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               onProviderUsed: ({ provider, model }) => {
                 mfrLlmProvider = provider
                 mfrLlmModel = model
+                setLlmUsed(sheetName, rowId, { provider, model })
                 log(`✓ LLM utilisé : ${provider} (${model})`)
               },
               onProviderFailed: ({ provider, error }) => {
@@ -4156,26 +4182,31 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             }
             const mdVariants = parseVariantsFromMarkdown(markdownContent)
             const directImages = parseImagesFromMarkdown(markdownContent)
-            // Stratégie images :
-            //   - Si JSON-LD déclare ≥ 2 images → UTILISER UNIQUEMENT celles-là
-            //     (le site déclare lui-même ses images produit, le markdown est pollué
-            //     par bannières promo/marketing comme French Days, Jardi'Versaire, etc.)
-            //   - Sinon → merge JSON-LD (priorité) + markdown (filtré par isJunkImageUrl)
+            // Stratégie images : TOUJOURS merger JSON-LD + markdown.
+            // `parseImagesFromMarkdown` filtre déjà via `isJunkImageUrl` les
+            // bannières promo (French Days, Jardi'Versaire, etc.), logos, pictos.
+            // Le dédup par `imageStem()` ci-dessous fusionne les URLs identiques
+            // (variantes de taille / OG vs gallery). Privilégier JSON-LD comme
+            // EXCLUSIF (ancien comportement) faisait perdre les vraies images
+            // produit quand le JSON-LD n'a qu'une URL `og:image` répétée.
             const structuredImages = structured?.images ?? []
-            const sourceImages = structuredImages.length >= 2
-              ? structuredImages
-              : [...structuredImages, ...directImages]
+            const sourceImages = [...structuredImages, ...directImages]
+            // Dédup par `imageStem()` (retire UNIQUEMENT les extensions d'image,
+            // ex: `21334841.4006825646498.25192.40242354.jpg` → garde tous les
+            // points internes du filename). L'ancienne logique `split('.')[0]`
+            // collapsait à `21334841` (préfixe SKU) → fusionnait toutes les vues
+            // produit Jardiland en une seule image.
             const seenImageStems = new Set<string>()
             const mergedDirectImages: string[] = []
             for (const u of sourceImages) {
-              const stem = u.split('/').pop()?.split('?')[0]?.split('.')[0] ?? u
+              const stem = imageStem(u)
               if (!seenImageStems.has(stem)) {
                 seenImageStems.add(stem)
                 mergedDirectImages.push(u)
               }
             }
-            if (structuredImages.length >= 2) {
-              log(`✓ ${structuredImages.length} images produit depuis JSON-LD (markdown ignoré pour images)`)
+            if (structuredImages.length > 0 || directImages.length > 0) {
+              log(`✓ ${mergedDirectImages.length} images produit (JSON-LD ${structuredImages.length} + markdown ${directImages.length}, dédupliquées par stem)`)
             }
             // Prix structurés (TTC/HT/barré/promo/éco-participation)
             // Sources : markdown patterns + JSON-LD offers (priorité JSON-LD).
@@ -4197,6 +4228,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               images: [...new Set(mergedDirectImages)],
               pricing: mdPricing ?? undefined,
             }
+            console.log('[enrichment-images-direct] structured=', structuredImages.length, 'direct=', directImages.length, 'merged=', mergedDirectImages.length, 'final=', directBuild.images?.length, 'sample:', directBuild.images?.slice(0, 3))
             console.log('[enrichment] ★ markdown direct build succeeded')
             if (mdPricing) {
               const priceParts = [
@@ -4356,6 +4388,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             onProviderUsed: ({ provider, model }) => {
               llmProviderUsed = provider
               llmModelUsed = model
+              setLlmUsed(sheetName, rowId, { provider, model })
               log(`✓ LLM utilisé : ${provider} (${model})`)
             },
             onProviderFailed: ({ provider, error }) => {
@@ -4449,7 +4482,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         setRunning(false)
       }
     },
-    [setProgress, setData, setError, setLlmRequest, getScrapeCache, setScrapeCache],
+    [setProgress, setData, setError, setLlmRequest, setLlmUsed, getScrapeCache, setScrapeCache],
   )
 
   /** Clear l'entry (data/error/progress) MAIS conserve le scrape cache.
