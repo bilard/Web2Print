@@ -13,6 +13,7 @@ import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal } from '@/features/scraping/core/parsers/parseDescription'
 import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal } from '@/features/scraping/core/parsers/parseSpecifications'
+import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
