@@ -55,14 +55,14 @@ const PRICE_PATTERNS = {
   original: /(?:prix\s+d['']origine|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "Économisez 200,00€"
   discountAmount: /[Éé]conomis[eéè]z?\s+([\d\s  .,]+)\s*€/i,
-  // "-17%" ou "(-17%)"
-  discountPercent: /[-−]\s*(\d{1,2})\s*%/,
+  // "-17%" ou "(-17%)" — itérée avec exclusion bannières marketing
+  discountPercent: /[-−]\s*(\d{1,2})\s*%/g,
   // "1 449,00 € HT"
   htPrice: /([\d\s  .,]+)\s*€\s*HT\b/i,
   // "1 738,80 € TTC"
   ttcPrice: /([\d\s  .,]+)\s*€\s*TTC\b/i,
-  // "Dont 3,40€ d'éco-participation"
-  ecoPart: /(?:dont|y\s+compris)\s+([\d\s  .,]+)\s*€\s*d['']?[ée]co[\s-]?participation/i,
+  // "Dont 3,40€ d'éco-participation" / "dont 2,50 € de participation DEEE"
+  ecoPart: /(?:dont|y\s+compris)\s+([\d\s  .,]+)\s*€\s*(?:d['']?[ée]co[\s-]?participation|de\s+participation\s+DEEE)/i,
   // GBP "£49.99"
   gbp: /£\s*([\d\s  .,]+)/,
   // USD "$59.99"
@@ -84,6 +84,17 @@ const MARKETPLACE_CONTEXT_RE = /(?:[àa]\s+partir\s+de|offres?\s+partenaires?|ma
 function isInMarketplaceContext(md: string, idx: number): boolean {
   const before = md.slice(Math.max(0, idx - 250), idx)
   return MARKETPLACE_CONTEXT_RE.test(before)
+}
+
+/** Mots-clés indiquant une bannière marketing globale (pas une vraie réduction sur le produit).
+ *  Ex Jardiland : `**FRENCH DAYS : JUSQU'À -70% DE REMISE !**` — campagne site, pas promo produit. */
+const MARKETING_BANNER_RE = /(?:jusqu['']?\s*[àa]|[àa]\s+partir\s+de)\s*$/i
+
+/** Vérifie si un `-XX%` à la position `idx` est dans une bannière marketing
+ *  (les ~30 chars précédents contiennent "jusqu'à" / "à partir de"). */
+function isInMarketingBanner(md: string, idx: number): boolean {
+  const before = md.slice(Math.max(0, idx - 30), idx)
+  return MARKETING_BANNER_RE.test(before)
 }
 
 /**
@@ -163,12 +174,16 @@ export function parsePricingFromMarkdown(
     }
 
     // Réduction (pourcentage)
-    const discPctM = cleanMd.match(PRICE_PATTERNS.discountPercent)
-    if (discPctM) {
-      const n = parsePriceNumber(discPctM[1])
+    // Itère et skippe les bannières marketing globales (`JUSQU'À -70%`, `à partir de -50%`)
+    // qui ne reflètent pas une vraie promo produit.
+    for (const m of cleanMd.matchAll(PRICE_PATTERNS.discountPercent)) {
+      const idx = m.index ?? 0
+      if (isInMarketingBanner(cleanMd, idx)) continue
+      const n = parsePriceNumber(m[1])
       if (n != null) {
         result.discount = { ...result.discount, percent: n }
         found = true
+        break
       }
     }
 
@@ -179,10 +194,12 @@ export function parsePricingFromMarkdown(
       if (n != null) { result.ecoParticipation = n; found = true }
     }
 
-    // Fallback : prix EUR seul si rien d'autre trouvé.
+    // Fallback : prix EUR seul si aucun TTC encore trouvé.
+    // (Une réduction % seule ne dispense pas de chercher le prix réel —
+    // sinon une bannière marketing "-70%" suffit à shunter l'extraction du prix.)
     // Itère tous les matchs et skip ceux dans contexte marketplace
     // (Jardiland-style : "à partir de", "Offres partenaires", "+ N offres").
-    if (!found) {
+    if (result.ttc == null) {
       const eurMatches = [...cleanMd.matchAll(/([\d\s  .,]+)\s*€/g)]
       for (const m of eurMatches) {
         const idx = m.index ?? 0

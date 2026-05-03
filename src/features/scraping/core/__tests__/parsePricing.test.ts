@@ -106,14 +106,24 @@ Prix : 1 738,80 € TTC
   })
 
   it('Jardiland-style : capture le 1er prix EUR brut, ignore les offres marketplace', () => {
-    // Pattern réel Jardiland Ryobi : prix principal puis "à partir de XXX,XX €" pour marketplace
+    // Pattern réel Jardiland Ryobi : bannière site + prix principal + éco-part DEEE + offres marketplace
     const md = `Tondeuse RYOBI
+
+**FRENCH DAYS : JUSQU'À -70% DE REMISE !**
+
+23 avis
+
+ALEXANDRA M.
 
 5/5 5/5
 
 Je suis contente de mon achat
 
+Voir tous les avis
+
 219,00 €
+
+dont 2,50 € de participation DEEE
 
 Quantité
 
@@ -125,13 +135,7 @@ GRATUIT à partir du mercredi 06 mai
 
 **Offres partenaires**
 
-+
-
-**6 offres**
-
-à partir de
-
-**185,99 €**
++ **6 offres** à partir de **185,99 €**
 
 Paiement 100% sécurisé
 `
@@ -139,5 +143,24 @@ Paiement 100% sécurisé
     expect(p?.ttc).toBe(219)
     // Le 185,99 € est marketplace → DOIT être ignoré
     expect(p?.ttc).not.toBe(185.99)
+    // L'éco-participation "de participation DEEE" doit être captée
+    expect(p?.ecoParticipation).toBe(2.5)
+    // La bannière "JUSQU'À -70%" est marketing globale → ne doit PAS créer un faux discount
+    expect(p?.discount?.percent).toBeUndefined()
+  })
+
+  it('ignore les bannières marketing -XX% globales (jusqu\'à / à partir de)', () => {
+    const md = `**FRENCH DAYS : JUSQU'À -70% DE REMISE !**
+
+Prix : 100,00 €`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(100)
+    expect(p?.discount?.percent).toBeUndefined()
+  })
+
+  it('garde un -XX% légitime hors bannière (ex: "-20%" en ligne avec prix)', () => {
+    const md = `Prix : 80,00 € — Avant : 100,00 € — -20%`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.discount?.percent).toBe(20)
   })
 })
