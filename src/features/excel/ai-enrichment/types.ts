@@ -39,13 +39,34 @@ export interface EnrichedDocument {
   filename: string
 }
 
+/** Prix structurés (TTC, HT, prix barré, promo, éco-participation). */
+export interface Pricing {
+  /** Prix actuel TTC (ou prix unique si pas de distinction TVA) */
+  ttc?: number
+  /** Prix HT (B2B principalement) */
+  ht?: number
+  /** Prix d'origine / barré (avant promotion) */
+  original?: number
+  /** Économie réalisée (montant et/ou pourcentage) */
+  discount?: { amount?: number; percent?: number }
+  /** Devise ISO (EUR, USD, GBP…) — défaut : EUR */
+  currency: string
+  /** Éco-participation (FR uniquement) */
+  ecoParticipation?: number
+  /** Date fin de promotion (ISO) — depuis JSON-LD `priceValidUntil` */
+  validUntil?: string
+}
+
 export interface EnrichedProduct {
   /** Description marketing reformulée par l'IA */
   description: string
   /** Fil d'Ariane / catégorisation (ex: ["Outillage", "Perceuses", "Visseuses à chocs"]) */
   breadcrumb?: string[]
-  /** Prix indicatif extrait — type ouvert car parfois string (ex: "À partir de 99€") */
+  /** Prix indicatif extrait — type ouvert car parfois string (ex: "À partir de 99€").
+   *  @deprecated utilise `pricing` pour les prix structurés (TTC/HT/barré/promo). */
   price?: string | number | null
+  /** Prix structurés extraits (markdown patterns + JSON-LD `offers`). */
+  pricing?: Pricing
   /** Liste d'avantages / points forts (bullet points), avec groupe optionnel */
   advantages: EnrichedAdvantage[]
   /** Spécifications techniques consolidées */
