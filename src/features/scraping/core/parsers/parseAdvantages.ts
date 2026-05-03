@@ -39,13 +39,18 @@ export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
   const advantages: Array<{ text: string; group?: string }> = []
   const seenTexts = new Set<string>()
 
-  // Sections qui contiennent des avantages (bullet points)
-  // "Caractéristiques" seul = section de specs (Dyson : nom de spec + valeur sur 2 lignes).
-  // "Description complète" (Dyson) = section qui contient les bullets de features détaillés.
-  const featureKeywords = /(?:avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+|atouts?|plus\s+produit|caract[eé]ristiques?\s+du\s+produit|description\s+(?:compl[eèé]te|d[eé]taill[eé]e))/i
-  // Sections qui NE contiennent PAS des avantages → quitter la featureZone.
-  // "Caractéristiques" seul (sans "du produit") → section specs → exit.
-  const exitKeywords = /(?:sp[eé]cification|caract[eé]ristiques?(?!\s+du\s+produit)|donn[eé]es\s*technique|descriptif\s*technique|t[eé]l[eé]chargement|downloads?|documents?|avis|reviews?|note\s+g[eé]n[eé]rale|description\s+sommaire|filtrer\s+les\s+avis|trier\s+les\s+avis|foire\s+aux\s+questions|faq|r[eé]f[eé]rences?|variantes?|accessoires?\s*associ|offres?\s+partenaires?|marketplace|vendeur\s+tiers?|paiement|s[eé]curis[eé]|satisfait\s+ou\s+rembours[eé]|livraison|prix|tarif|contact|mentions?\s*l[eé]gal|conditions?\s*g[eé]n[eé]ral|informations?\s*compl[eé]ment|[eé]quipement|application|cookies?|gdpr|consentement|param[eè]tres?\s+(?:de\s+)?confidentialit)/i
+  // Sections qui contiennent des avantages (bullet points).
+  // `applications?` ajouté : sur RS Components / Conrad / Distrelec, le H3
+  // `### **Applications**` liste les cas d'usage (= avantages marketing).
+  // "Caractéristiques" seul = section specs (Dyson) ; "Caractéristiques du produit"
+  // = features. "Description complète" (Dyson) = bullets de features détaillés.
+  const featureKeywords = /(?:avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+|atouts?|plus\s+produit|caract[eé]ristiques?\s+du\s+produit|description\s+(?:compl[eèé]te|d[eé]taill[eé]e)|applications?)/i
+  // Sections qui NE contiennent PAS d'avantages → quitter la featureZone.
+  // "Caractéristiques" seul (sans "du produit") → specs → exit (sauf override
+  // par l'heuristique caractéristiques plus bas).
+  // "[équipement|domaine] et application" : exit (différent d'`Applications`
+  // tout court qui est dans featureKeywords).
+  const exitKeywords = /(?:sp[eé]cification|caract[eé]ristiques?(?!\s+du\s+produit)|donn[eé]es\s*technique|descriptif\s*technique|t[eé]l[eé]chargement|downloads?|documents?|avis|reviews?|note\s+g[eé]n[eé]rale|description\s+sommaire|filtrer\s+les\s+avis|trier\s+les\s+avis|foire\s+aux\s+questions|faq|r[eé]f[eé]rences?|variantes?|accessoires?\s*associ|offres?\s+partenaires?|marketplace|vendeur\s+tiers?|paiement|s[eé]curis[eé]|satisfait\s+ou\s+rembours[eé]|livraison|prix|tarif|contact|mentions?\s*l[eé]gal|conditions?\s*g[eé]n[eé]ral|informations?\s*compl[eé]ment|[eé]quipement\s+et\s+application|domaine\s+d[‘'']application|cookies?|gdpr|consentement|param[eè]tres?\s+(?:de\s+)?confidentialit)/i
   // Contenu commercial/politique à filtrer
   const COMMERCIAL_RE = /achet[eé]|achat|retourn|rembours|livr[eé]|exp[eé]di|panier|commander|boutique|magasin|labellis[eé]|certifi[eé].*utilisateur|v[eé]rifi[eé].*identit|historique.*d.achat|provien.*d.utilisateur|contrefaçon|authenticit|service\s*client|cat[eé]gories?\s*d.?[eé]valuation|distinguons?\s*trois|noter\s*ce\s*produit/i
 
