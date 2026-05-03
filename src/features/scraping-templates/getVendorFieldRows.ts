@@ -37,10 +37,12 @@ export interface FieldRow {
 }
 
 /** Sections toujours rendues par EnrichmentPanel, même sans template field. */
-const SYNTHETIC_KEYS = ['images', 'description', 'advantages', 'specifications', 'variants', 'documents'] as const
+const SYNTHETIC_KEYS = ['breadcrumb', 'images', 'pricing', 'description', 'advantages', 'specifications', 'variants', 'documents'] as const
 
 const LABELS: Record<string, string> = {
+  breadcrumb: 'Fil d\'Ariane',
   images: 'Images',
+  pricing: 'Prix',
   description: 'Description',
   advantages: 'Points forts',
   specifications: 'Spécifications',
@@ -62,12 +64,24 @@ function truncate(s: string, n: number): string {
 function countFor(key: string, p: EnrichedProduct | null | undefined): number | null {
   if (!p) return null
   switch (key) {
+    case 'breadcrumb': return p.breadcrumb?.length ?? 0
     case 'images': return p.images.length
     case 'advantages': return p.advantages.length
     case 'specifications': return p.specifications.length
     case 'variants': return p.variants.length
     case 'documents': return p.documents.length
     case 'description': return null
+    case 'pricing': {
+      if (!p.pricing) return null
+      // Compter le nombre de champs prix renseignés (ttc, ht, original, discount, eco)
+      let n = 0
+      if (p.pricing.ttc != null) n++
+      if (p.pricing.ht != null) n++
+      if (p.pricing.original != null) n++
+      if (p.pricing.discount?.amount != null || p.pricing.discount?.percent != null) n++
+      if (p.pricing.ecoParticipation != null) n++
+      return n
+    }
     default: {
       const v = p.customFields?.[key]
       if (Array.isArray(v)) return v.length
@@ -79,6 +93,10 @@ function countFor(key: string, p: EnrichedProduct | null | undefined): number | 
 function previewFor(key: string, p: EnrichedProduct | null | undefined): string {
   if (!p) return '—'
   switch (key) {
+    case 'breadcrumb':
+      return p.breadcrumb && p.breadcrumb.length > 0
+        ? truncate(p.breadcrumb.join(' › '), 90)
+        : '—'
     case 'images':
       return p.images.length > 0 ? `${p.images.length} image${p.images.length > 1 ? 's' : ''}` : '—'
     case 'description':
@@ -95,6 +113,18 @@ function previewFor(key: string, p: EnrichedProduct | null | undefined): string 
       return `${p.variants.length} · ${truncate(p.variants[0]?.reference ?? p.variants[0]?.label ?? '', 40)}`
     case 'documents':
       return p.documents.length > 0 ? `${p.documents.length} document${p.documents.length > 1 ? 's' : ''}` : '—'
+    case 'pricing': {
+      if (!p.pricing) return '—'
+      const cur = p.pricing.currency || 'EUR'
+      const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: cur, minimumFractionDigits: 2 }).format(n)
+      const parts: string[] = []
+      if (p.pricing.ttc != null) parts.push(`TTC ${fmt(p.pricing.ttc)}`)
+      if (p.pricing.ht != null) parts.push(`HT ${fmt(p.pricing.ht)}`)
+      if (p.pricing.original != null) parts.push(`barré ${fmt(p.pricing.original)}`)
+      if (p.pricing.discount?.percent != null) parts.push(`-${p.pricing.discount.percent}%`)
+      if (parts.length === 0) return '—'
+      return truncate(parts.join(' · '), 90)
+    }
     default: {
       const v = p.customFields?.[key]
       if (Array.isArray(v)) {
@@ -132,6 +162,7 @@ export function getVendorFieldRows(
   if (enriched) {
     const has = (k: string): boolean => {
       switch (k) {
+        case 'breadcrumb': return (enriched.breadcrumb?.length ?? 0) > 0
         case 'images': return enriched.images.length > 0
         case 'description': return (enriched.description ?? '').trim().length > 0
         case 'advantages': return enriched.advantages.length > 0
