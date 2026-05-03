@@ -492,4 +492,20 @@ serre de jardin en polycarbonate : double paroi Mythos de 2,3 m².
     expect(names).toContain('Marque')
     expect(names).toContain('Poids')
   })
+
+  it('specs : rejette les noms longs sans valeur structurée (prose composite)', () => {
+    const md = `# Produit
+
+## Caractéristiques
+
+| Pratiquement incassable la serre maintient une température | idéale pour vos plantes et protège du soleil |
+| Marque | Makita |
+| Poids | 3.3kg |
+`
+    const specs = parseSpecsFromMarkdown(md)
+    const names = specs.map(s => s.name)
+    expect(names.every(n => n.split(/\s+/).length <= 5)).toBe(true)
+    expect(names).toContain('Marque')
+    expect(names).toContain('Poids')
+  })
 })
