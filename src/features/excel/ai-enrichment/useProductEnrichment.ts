@@ -19,6 +19,8 @@ import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
+import { extractProductReference, buildManufacturerSearchUrl } from '@/features/scraping/core/manufacturerFallback'
+import { detectBrandFromUrl } from '@/features/scraping/useJina'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -3813,6 +3815,36 @@ export function useProductEnrichment() {
                 }
               } catch (err) {
                 console.warn('[enrichment] Firecrawl fallback failed:', err)
+              }
+            }
+          }
+
+          // Fallback fabricant si toujours rien et URL = revendeur (dernière chance)
+          const MANUFACTURER_THRESHOLD = 5
+          const scoreAfterFc = scoreMd(markdownContent)
+          if (scoreAfterFc < MANUFACTURER_THRESHOLD && productUrl) {
+            const detected = detectBrandFromUrl(productUrl)
+            const ref = extractProductReference(title ?? '')
+            if (detected && ref) {
+              const mfgSearchUrl = buildManufacturerSearchUrl(detected.brand, ref)
+              if (mfgSearchUrl) {
+                log(`Score toujours faible (${scoreAfterFc}) → essai site fabricant ${detected.brand} : ${mfgSearchUrl}`)
+                try {
+                  const mfgMd = await jinaScrapeMarkdown(mfgSearchUrl)
+                  if (mfgMd) {
+                    const mfgSanitized = sanitizeJinaMarkdown(mfgMd)
+                    const mfgScore = scoreMd(mfgSanitized)
+                    console.log('[enrichment] manufacturer score:', mfgScore, '(', mfgSanitized.length, 'chars)')
+                    if (mfgScore > scoreAfterFc) {
+                      log(`✓ Site fabricant meilleur (${mfgScore} > ${scoreAfterFc})`)
+                      markdownContent = `## [Source: ${mfgSearchUrl}]\n\n${mfgSanitized}`
+                    } else {
+                      log(`Site fabricant pas meilleur — markdown inchangé`)
+                    }
+                  }
+                } catch (err) {
+                  console.warn('[enrichment] manufacturer fallback failed:', err)
+                }
               }
             }
           }
