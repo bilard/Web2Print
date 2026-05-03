@@ -112,6 +112,35 @@ describe('discoverRelatedUrls - subpages', () => {
   })
 })
 
+const dysonHtml = `
+<html><body>
+  <main>
+    <a href="/aspirateurs/robots/spot-scrub-ai/noir?bvstate=pg%3A2%2Fct%3Ar">Avis page 2</a>
+    <a href="/aspirateurs/robots/spot-scrub-ai/avis?productCode=586183-01">Voir les avis</a>
+    <a href="/aspirateurs/robots/spot-scrub-ai/noir?tab=specifications">Spécifications</a>
+  </main>
+</body></html>
+`
+
+describe('discoverRelatedUrls - exclusion des pages avis', () => {
+  const base = new URL('https://www.dyson.fr/aspirateurs/robots/spot-scrub-ai/noir')
+
+  it('exclut les tabs Bazaarvoice (?bvstate=...)', () => {
+    const { tabs } = discoverRelatedUrls(dysonHtml, base)
+    expect(tabs.every(u => !u.includes('bvstate'))).toBe(true)
+  })
+
+  it('exclut les sous-pages /avis?productCode=...', () => {
+    const { subpages } = discoverRelatedUrls(dysonHtml, base)
+    expect(subpages.every(u => !u.includes('/avis'))).toBe(true)
+  })
+
+  it('conserve les vrais onglets produit (?tab=specifications)', () => {
+    const { tabs } = discoverRelatedUrls(dysonHtml, base)
+    expect(tabs.some(u => u.includes('tab=specifications'))).toBe(true)
+  })
+})
+
 const grundfosButtonHtml = `
 <html><body>
   <main>

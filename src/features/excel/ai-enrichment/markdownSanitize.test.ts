@@ -15,6 +15,23 @@ Real content here.`
     expect(out).toContain('Real content here.')
   })
 
+  it('strips top navigation written as plain text concatenated (POST scrape via innerText)', () => {
+    // Cas réel : `injectPageScript` dans Jina POST utilise innerText pour
+    // extraire les nav top RS, ce qui colle les libellés sans espaces ni
+    // structure markdown : "Nos servicesLe blog RSSecteurs industrielsAide & Contact"
+    const md = `# Produit
+
+Nos servicesLe blog RSSecteurs industrielsAide & Contact
+
+Real description that should survive.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).not.toContain('Nos services')
+    expect(out).not.toContain('Le blog')
+    expect(out).not.toContain('Secteurs industriels')
+    expect(out).not.toContain('Aide & Contact')
+    expect(out).toContain('Real description that should survive.')
+  })
+
   it('strips checkbox column from spec tables', () => {
     const md = `| - [x] Sélectionner tout | Attribut | Valeur |
 | --- | --- | --- |
@@ -181,5 +198,105 @@ Cette tondeuse à gazon alimentée par batterie est conçue pour une tonte effic
     expect(out).toContain('| Marque | Makita |')
     expect(out).toContain('| Tension | 18 V |')
     expect(out).toContain('Démarrage progressif')
+  })
+
+  it('supprime la section ## Avis (Bazaarvoice inline Dyson)', () => {
+    const md = `# Produit
+
+## Description complète
+
+Robot intelligent.
+
+## Avis
+
+### Description sommaire de la notation
+
+Sélectionnez une ligne ci-dessous pour filtrer les avis.
+
+### Note générale
+
+3.4
+
+606 avis
+
+### Filtrer les avis
+
+Afficher plus de filtres
+
+### Avis régionaux
+
+1 to 8 sur 606 avis.
+
+## Caractéristiques
+
+*   Temps de charge
+
+3 hrs
+`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('Robot intelligent')
+    expect(out).toContain('## Caractéristiques')
+    expect(out).toContain('Temps de charge')
+    expect(out).not.toContain('Sélectionnez une ligne')
+    expect(out).not.toContain('Filtrer les avis')
+    expect(out).not.toContain('Avis régionaux')
+    expect(out).not.toContain('606 avis')
+    expect(out).not.toContain('Note générale')
+  })
+
+  it("transforme `[Heading]Text` en `**Heading**\\n\\nText` (Dyson data-label inline)", () => {
+    const md = `# Produit
+
+## Description complète
+
+[Détection des taches avec IA avancée.¹]Robot intelligent : Identification des taches par IA et caméra HD
+
+[Nettoie sans relâche]Aspiration Dyson Puissante : 4 fois plus d'aspiration sur les tapis³
+`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('**Détection des taches avec IA avancée.¹**')
+    expect(out).toContain('Robot intelligent : Identification')
+    expect(out).not.toContain('[Détection des taches')
+    expect(out).toContain('**Nettoie sans relâche**')
+    expect(out).toContain('Aspiration Dyson Puissante')
+  })
+
+  it('ne touche PAS les liens markdown valides `[text](url)`', () => {
+    const md = `# Produit
+
+Voir le [guide d'utilisation](https://example.com/guide) pour plus d'infos.
+
+![Image alt](https://example.com/img.jpg)
+`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('[guide d\'utilisation](https://example.com/guide)')
+    expect(out).toContain('![Image alt](https://example.com/img.jpg)')
+  })
+
+  it('supprime également ## Avis alimentés par Bazaarvoice', () => {
+    const md = `# Produit
+
+## Description complète
+
+Vraiment bien.
+
+## Avis alimentés par Bazaarvoice
+
+### Note globale
+
+3.4 stars out of 5 from 602 Avis
+
+> Aspirateur robot laveur intelligent.
+
+## Foire aux questions
+
+Comment ça marche ?
+`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).toContain('Vraiment bien')
+    expect(out).toContain('Foire aux questions')
+    expect(out).not.toContain('Bazaarvoice')
+    expect(out).not.toContain('602 Avis')
+    expect(out).not.toContain('Note globale')
   })
 })

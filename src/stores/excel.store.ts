@@ -57,11 +57,17 @@ interface ExcelState {
 
   // Sheet actions
   deleteSheet: (sheetIdx: number) => void
+  renameSheet: (sheetIdx: number, newName: string) => void
 
   // Row actions
   addRow: (sheetIdx: number, row: ExcelRow) => void
   updateCell: (sheetIdx: number, rowId: string, colKey: string, value: string | number | boolean | null) => void
   deleteRow: (sheetIdx: number, rowId: string) => void
+
+  /** Reset une feuille devenue vide après suppression d'un produit scrapé :
+   *  retire les colonnes IA — *, le breadcrumb d'Ariane, et reset le name si
+   *  c'était un hostname (ex: "fr.rs-online.com" → "Feuille 1"). Idempotent. */
+  pruneEmptySheet: (sheetIdx: number) => void
 
   // Taxonomy actions
   addTaxonomyCategory: (sheetIdx: number, cat: TaxonomyCategory) => void
@@ -276,6 +282,14 @@ export const useExcelStore = create<ExcelState>((set) => ({
       return { sheets, activeSheetIndex, sheetRowId: null }
     }),
 
+  renameSheet: (sheetIdx, newName) =>
+    set((s) => {
+      if (sheetIdx < 0 || sheetIdx >= s.sheets.length) return s
+      const sheets = [...s.sheets]
+      sheets[sheetIdx] = { ...sheets[sheetIdx], name: newName }
+      return { sheets }
+    }),
+
   addRow: (sheetIdx, row) =>
     set((s) => {
       const sheets = [...s.sheets]
@@ -301,7 +315,36 @@ export const useExcelStore = create<ExcelState>((set) => ({
       const sheets = [...s.sheets]
       const sheet = { ...sheets[sheetIdx] }
       sheet.rows = sheet.rows.filter((r) => r._id !== rowId)
+
+      // Auto-cleanup quand la feuille devient vide ET avait des colonnes IA — *
+      // (issues d'un import scrape précédent). On retire les colonnes fantômes
+      // et on reset le name si c'était un hostname, pour que l'utilisateur
+      // ne voie pas un chip "fr.rs-online.com" sur une feuille vide.
+      if (sheet.rows.length === 0 && sheet.columns.some((c) => c.key.startsWith('ai_'))) {
+        sheet.columns = sheet.columns.filter((c) => !c.key.startsWith('ai_') && c.key !== 'breadcrumb')
+        if (/\.[a-z]{2,}/i.test(sheet.name)) sheet.name = `Feuille ${sheetIdx + 1}`
+        sheet.taxonomy = []
+        sheet.taxonomyLevels = undefined
+      }
+
       sheets[sheetIdx] = sheet
+      return { sheets }
+    }),
+
+  pruneEmptySheet: (sheetIdx) =>
+    set((s) => {
+      const sheets = [...s.sheets]
+      const sheet = sheets[sheetIdx]
+      if (!sheet || sheet.rows.length > 0) return s
+      const hasAiCols = sheet.columns.some((c) => c.key.startsWith('ai_'))
+      const hasHostName = /\.[a-z]{2,}/i.test(sheet.name)
+      if (!hasAiCols && !hasHostName) return s
+      const next = { ...sheet }
+      next.columns = sheet.columns.filter((c) => !c.key.startsWith('ai_') && c.key !== 'breadcrumb')
+      if (hasHostName) next.name = `Feuille ${sheetIdx + 1}`
+      next.taxonomy = []
+      next.taxonomyLevels = undefined
+      sheets[sheetIdx] = next
       return { sheets }
     }),
 

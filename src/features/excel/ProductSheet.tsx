@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   X, ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
-  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers,
+  Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers, Globe,
 } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
@@ -16,6 +16,10 @@ import { getLevelColor, getTaxoColumns } from './taxonomyBuilder'
 import type { ExcelColumn, CellValue, FieldTypeId } from './types'
 import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
+import { useEnrichmentStore } from './ai-enrichment/enrichmentStore'
+import { enrichmentKey } from './ai-enrichment/types'
+
+const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
 interface Props {
   rowId: string
@@ -107,6 +111,9 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [taxoPickerOpen, setTaxoPickerOpen] = useState(false)
   const { data: taxonomies } = useTaxonomies()
+  const storeBreadcrumb = useEnrichmentStore(
+    (s) => s.entries[enrichmentKey(sheet?.name ?? '', rowId)]?.data?.breadcrumb,
+  )
 
   // Split resizable entre panneau source (gauche) et enrichissement IA (droite)
   const splitContainerRef = useRef<HTMLDivElement>(null)
@@ -153,6 +160,16 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   if (!sheet) return null
   const row = sheet.rows.find(r => r._id === rowId)
   if (!row) return null
+
+  // Breadcrumb scrapé : on lit le store en priorité (live après scrape) puis on
+  // retombe sur la cellule `ai_breadcrumb` persistée (fiches déjà sauvegardées,
+  // avant que EnrichmentPanel ait re-hydraté le store).
+  const scrapedBreadcrumb: string[] = (() => {
+    if (storeBreadcrumb && storeBreadcrumb.length > 0) return storeBreadcrumb
+    const raw = row.ai_breadcrumb
+    if (typeof raw !== 'string' || !raw.trim()) return []
+    return raw.split(BREADCRUMB_SPLIT_RE).map(s => s.trim()).filter(Boolean)
+  })()
 
   const currentIdx = allRowIds.indexOf(rowId)
   const hasPrev = currentIdx > 0
@@ -359,6 +376,25 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
                 </span>
               )
             })}
+          </div>
+        )}
+        {/* Fil d'Ariane scrapé depuis le site source (catégorisation native du fournisseur) */}
+        {scrapedBreadcrumb && scrapedBreadcrumb.length > 0 && (
+          <div
+            className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/60 max-w-full"
+            title={`Fil d'Ariane scrapé : ${scrapedBreadcrumb.join(' › ')}`}
+          >
+            <Globe className="w-3 h-3 shrink-0 text-white/40" />
+            <span className="text-white/30 uppercase tracking-wider text-[9px]">Source</span>
+            <span className="text-white/20">·</span>
+            <span className="truncate">
+              {scrapedBreadcrumb.map((seg, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="text-white/25 mx-1">›</span>}
+                  {seg}
+                </span>
+              ))}
+            </span>
           </div>
         )}
         {/* Bouton taxonomie globale : affiche le classement courant (ou « Non classé ») */}

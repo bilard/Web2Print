@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { scrapeProductBundle } from './scrapeBundle'
+import { scrapeProductBundle, extractPrimarySourceSection } from './scrapeBundle'
 
 describe('scrapeProductBundle', () => {
   it('returns primary-only when no related URLs found', async () => {
@@ -47,5 +47,38 @@ describe('scrapeProductBundle', () => {
     const bundle = await scrapeProductBundle('https://example.com/p', { deepScrape, fastScrape })
     expect(bundle.errors[0].error).toBe('Deep scrape returned null')
     expect(bundle.mergedMarkdown).toBe('')
+  })
+})
+
+describe('extractPrimarySourceSection', () => {
+  it('retourne le markdown tel quel si aucun marqueur [Source:]', () => {
+    const md = '# Produit\n\nDescription du produit.'
+    expect(extractPrimarySourceSection(md)).toBe(md)
+  })
+
+  it('retourne uniquement la 1re section quand plusieurs sources fusionnées', () => {
+    const md = [
+      '## [Source: https://example.com/product]',
+      '# Aspirateur Dyson',
+      'Description produit principale.',
+      '',
+      '## [Source: https://example.com/product/avis?productCode=123]',
+      'Sélectionnez une ligne ci-dessous pour filtrer les avis.',
+      'Révèle les taches grâce à un faisceau lumineux.',
+      '',
+      '## [Source: https://example.com/doc.pdf]',
+      'Fiche technique PDF.',
+    ].join('\n')
+
+    const primary = extractPrimarySourceSection(md)
+    expect(primary).toContain('Description produit principale')
+    expect(primary).not.toContain('filtrer les avis')
+    expect(primary).not.toContain('Fiche technique PDF')
+  })
+
+  it('retourne tout si un seul marqueur [Source:]', () => {
+    const md = '## [Source: https://example.com/product]\n# Produit\nDescription.'
+    const result = extractPrimarySourceSection(md)
+    expect(result).toContain('Description')
   })
 })

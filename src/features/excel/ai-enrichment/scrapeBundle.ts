@@ -54,6 +54,18 @@ function prioritizeUrls(r: RelatedUrls): string[] {
   return [...r.tabs, ...r.pdfs.map((p) => p.url), ...r.subpages].slice(0, MAX_ADDITIONAL_URLS)
 }
 
+/**
+ * Extrait uniquement la première section [Source: ...] du markdown fusionné.
+ * La description produit doit venir de la page principale, pas des pages avis
+ * ou des PDFs RGPD qui sont mergés dans le bundle.
+ */
+export function extractPrimarySourceSection(md: string): string {
+  const firstMarker = md.indexOf('## [Source:')
+  if (firstMarker < 0) return md
+  const secondMarker = md.indexOf('\n## [Source:', firstMarker + 1)
+  return secondMarker > 0 ? md.slice(0, secondMarker).trim() : md
+}
+
 export async function scrapeProductBundle(
   productUrl: string,
   deps: BundleDeps,

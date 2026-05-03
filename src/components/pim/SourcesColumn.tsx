@@ -1,5 +1,5 @@
 // src/components/pim/SourcesColumn.tsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Search, X } from 'lucide-react'
 import { usePimStore } from '@/stores/pim.store'
 import { useRemoveSource } from '@/features/pim/useSources'
@@ -24,7 +24,6 @@ export function SourcesColumn({ onPickImport, onPickScrape, onPickManual }: Prop
     return id ? s.projects.find((p) => p.id === id) : null
   })
   const selectedIds = usePimStore((s) => s.selectedSourceIds)
-  const setSelected = usePimStore((s) => s.setSelectedSourceIds)
   const toggleSelected = usePimStore((s) => s.toggleSelectedSource)
   const removeSource = useRemoveSource(project?.id ?? '')
 
@@ -55,19 +54,13 @@ export function SourcesColumn({ onPickImport, onPickScrape, onPickManual }: Prop
     )
   }
 
-  const handleSelect = (source: Source) => (e: React.MouseEvent) => {
-    if (e.metaKey || e.ctrlKey) {
-      toggleSelected(source.id)
-    } else if (selectedIds.length === 1 && selectedIds[0] === source.id) {
-      setSelected([])  // re-click = vue globale
-    } else {
-      setSelected([source.id])
-    }
-  }
+  const handleSelect = useCallback((sourceId: string) => {
+    toggleSelected(sourceId)
+  }, [toggleSelected])
 
-  const handleContext = (source: Source) => (e: React.MouseEvent) => {
+  const handleContext = useCallback((source: Source) => (e: React.MouseEvent) => {
     setMenu({ source, x: e.clientX, y: e.clientY })
-  }
+  }, [])
 
   const totalCount = project.sources.length
 
@@ -101,7 +94,7 @@ export function SourcesColumn({ onPickImport, onPickScrape, onPickManual }: Prop
                   key={src.id}
                   source={src}
                   selected={selectedIds.includes(src.id)}
-                  onSelect={handleSelect(src)}
+                  onSelect={() => handleSelect(src.id)}
                   onContextMenu={handleContext(src)}
                 />
               ))}

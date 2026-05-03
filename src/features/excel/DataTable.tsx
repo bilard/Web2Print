@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useMemo, Fragment, type RefObject, type 
 import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, Expand, ChevronRight, ChevronDown, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
+import { usePimStore } from '@/stores/pim.store'
 import { FieldTypeSelector } from './FieldTypeSelector'
 import { StatsBadges } from './StatsBadges'
 import { ColumnMenu } from './ColumnMenu'
@@ -43,7 +44,23 @@ export function DataTable() {
     updateColumnWidth, moveColumn, moveColumnTo, hideColumn, updateColumnFormula, addColumn,
     updateColumnLabel, updateColumnDecimals, reorderColumns,
   } = useExcelStore()
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const sheet = sheets[activeSheetIndex]
+  /** Rows à afficher :
+   *  - mono-source (une seule sheet) : on affiche tout, pas de sélection.
+   *  - multi-source : on n'affiche QUE les rows des sources sélectionnées.
+   *    Aucune source sélectionnée → liste vide (l'utilisateur doit cliquer
+   *    explicitement une source dans SheetsColumn).
+   *  Le schéma de colonnes vient toujours de la sheet active : les rows
+   *  venues d'une autre source affichent simplement `null` pour les colonnes
+   *  manquantes. */
+  const baseRows = (() => {
+    if (sheets.length <= 1) return sheet?.rows ?? []
+    if (selectedSourceIds.length === 0) return []
+    return sheets
+      .filter((s) => selectedSourceIds.includes(s.name))
+      .flatMap((s) => s.rows)
+  })()
   const [editingCell, setEditingCell] = useState<{ rowId: string; colKey: string } | null>(null)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -137,7 +154,7 @@ export function DataTable() {
 
   // Filter rows by taxonomy navigation + search
   const navFilterEntries = Object.entries(taxonomyNavFilter)
-  let filteredRows = sheet.rows
+  let filteredRows = baseRows
   if (navFilterEntries.length > 0) {
     filteredRows = filteredRows.filter((row) =>
       navFilterEntries.every(([colKey, value]) => String(row[colKey]) === value)

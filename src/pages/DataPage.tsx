@@ -34,7 +34,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     sheets, activeSheetIndex, importModalOpen, searchQuery, currentFileName, currentDocId, currentPath,
     sheetRowId, taxonomyNavFilter, groupByTaxonomy, aiFilter,
     setImportModalOpen, setActiveSheet, setSearchQuery, setSheets, setCurrentFileName, setCurrentDocId, setCurrentPath,
-    setSheetRowId, setGroupByTaxonomy, setAiFilter, deleteSheet,
+    setSheetRowId, setGroupByTaxonomy, setAiFilter, deleteSheet, pruneEmptySheet,
   } = useExcelStore()
   const { exportToXlsx, createEmpty } = useExcelImport()
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile } = useExcelFirebase()
@@ -66,16 +66,44 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     setSheetRowId(null)
   }, [taxonomyNavFilter, setSheetRowId])
 
+  // Auto-cleanup au chargement : si une feuille a 0 ligne mais conserve des
+  // colonnes IA — * ou un name de hostname (résidu d'un scrape dont le produit
+  // a été supprimé), on les retire pour éviter les "champs fantômes" dans le
+  // panneau Champs et le chip URL en haut. pruneEmptySheet est idempotent.
+  useEffect(() => {
+    sheets.forEach((s, i) => {
+      if (s.rows.length === 0 && (s.columns.some((c) => c.key.startsWith('ai_')) || /\.[a-z]{2,}/i.test(s.name))) {
+        pruneEmptySheet(i)
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDocId])
+
   const sheet = sheets[activeSheetIndex]
   const hasData = sheets.length > 0 && (sheet?.rows.length > 0 || sheet?.columns.length > 0)
   // Une BDD est sélectionnée si Firebase a un docId courant.
   // Pendant la création (Nouvelle BDD), docId est null le temps du save → état non sélectionné.
   const hasSelectedDb = currentDocId !== null
 
-  // Compute filtered row IDs for ProductSheet navigation
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
+
+  // Compute filtered row IDs for ProductSheet navigation.
+  // - Mono-source : rows de l'unique sheet.
+  // - Multi-source : union des sources sélectionnées ; aucune sélectionnée
+  //   → liste vide (cohérent avec DataTable).
   const filteredRowIds = useMemo(() => {
     if (!sheet) return []
-    let rows = sheet.rows
+    let baseRows: typeof sheet.rows
+    if (sheets.length <= 1) {
+      baseRows = sheet.rows
+    } else if (selectedSourceIds.length === 0) {
+      baseRows = []
+    } else {
+      baseRows = sheets
+        .filter((s) => selectedSourceIds.includes(s.name))
+        .flatMap((s) => s.rows)
+    }
+    let rows = baseRows
     const navEntries = Object.entries(taxonomyNavFilter)
     if (navEntries.length > 0) {
       rows = rows.filter((r) => navEntries.every(([k, v]) => String(r[k]) === v))
@@ -95,7 +123,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       rows = rows.filter((r) => !isRowEnriched(r))
     }
     return rows.map((r) => r._id)
-  }, [sheet, taxonomyNavFilter, searchQuery, aiFilter])
+  }, [sheet, sheets, selectedSourceIds, taxonomyNavFilter, searchQuery, aiFilter])
 
   // Compteurs pour le toggle IA : total / enrichis / non-enrichis (sur l'ensemble de la feuille)
   const aiCounts = useMemo(() => {

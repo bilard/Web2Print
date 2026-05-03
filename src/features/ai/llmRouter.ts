@@ -125,6 +125,26 @@ function defaultModelFor(provider: LLMProviderId): string {
   return getSelectedModel(provider as AiProvider)
 }
 
+/** Le `modelOverride` du TASK_ROUTING est lié au PRIMARY provider de la route.
+ *  Quand on bascule sur un fallback (cascade), le modèle ne s'applique que si
+ *  son préfixe correspond au provider courant. Sinon → defaultModel du provider.
+ *
+ *  Sans ce check, on passait `gemini-3-flash` à DeepSeek/Claude → 400. */
+function modelForProvider(provider: LLMProviderId, modelOverride?: string): string {
+  if (modelOverride) {
+    const prefixMap: Record<LLMProviderId, RegExp> = {
+      claude: /^claude-/i,
+      gemini: /^gemini-/i,
+      deepseek: /^deepseek-/i,
+      openai: /^(gpt-|o\d|chatgpt)/i,
+    }
+    if (prefixMap[provider]?.test(modelOverride)) {
+      return modelOverride
+    }
+  }
+  return defaultModelFor(provider)
+}
+
 /** Mappe la cascade du store (ReasoningProvider[]) aux LLMProviderId supportés.
  *  Filtre les providers non implémentés et signale les ignorés via callback.
  *  N'ajoute PAS de provider par défaut : la cascade exacte de l'utilisateur
@@ -170,7 +190,7 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
     const provider = cascade[i]
     try {
       const result = await callProvider(provider, opts, modelOverride)
-      opts.onProviderUsed?.({ provider, model: modelOverride ?? defaultModelFor(provider) })
+      opts.onProviderUsed?.({ provider, model: modelForProvider(provider, modelOverride) })
       return result
     } catch (err) {
       lastError = err
@@ -195,7 +215,7 @@ async function callProvider<T>(
   opts: GenerateJsonOptions<T>,
   modelOverride?: string,
 ): Promise<T> {
-  const model = modelOverride ?? defaultModelFor(provider)
+  const model = modelForProvider(provider, modelOverride)
   if (provider === 'claude') {
     return await callClaude(opts, model)
   }

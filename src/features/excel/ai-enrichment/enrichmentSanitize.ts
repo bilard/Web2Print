@@ -1,4 +1,5 @@
 import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage } from './types'
+import { isJunkImageUrl } from './imageFilter'
 
 /**
  * Sanitization minimaliste appliquée à TOUTE EnrichedProduct au chargement
@@ -82,7 +83,11 @@ export function sanitizeEnrichedProduct(product: EnrichedProduct): EnrichedProdu
   const specifications = (product.specifications ?? []).filter(s => !isJunkSpec(s))
   const advantages = (product.advantages ?? []).map(cleanAdvantage)
 
-  return { ...product, description, specifications, advantages }
+  // Filtre les images junk au reload Firestore — couvre les données enregistrées
+  // avant l'extension du filtre `isJunkImageUrl` (mégamenu Drupal Nicoll, etc.).
+  const images = (product.images ?? []).filter(u => typeof u === 'string' && u.startsWith('http') && !isJunkImageUrl(u))
+
+  return { ...product, description, specifications, advantages, images }
 }
 
 /**

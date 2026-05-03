@@ -36,6 +36,13 @@ export interface RelatedUrls {
   subpages: string[]
 }
 
+/** Patterns qui indiquent une page d'avis clients — jamais utile pour l'enrichissement produit. */
+const REVIEW_URL_RE = /\/(?:avis|reviews?|opinions?|ratings?|notes?|feedbacks?|evaluations?|customer-reviews?|kundenbewertung|bewertungen|recensioni|resenas?)(?:\/|$|\?)|[?&](?:bvstate|productcode|pgnum|pgsize|rtype|ctype)=/i
+
+function isReviewUrl(url: URL): boolean {
+  return REVIEW_URL_RE.test(url.pathname + url.search)
+}
+
 const NAV_ANCESTOR_SELECTORS = [
   'header', 'footer',
   'nav[role="navigation"]',
@@ -100,6 +107,8 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
       continue
     }
 
+    if (isReviewUrl(resolved)) continue
+
     // Tabs : même pathname, query ou hash différent
     if (resolved.pathname === basePath && (resolved.search || resolved.hash)) {
       tabs.add(normalized)
@@ -131,6 +140,7 @@ export function discoverRelatedUrls(html: string, baseUrl: URL): RelatedUrls {
       const candidate = new URL(baseUrl.toString())
       candidate.searchParams.set(tabKey, tabId)
       candidate.hash = ''
+      if (isReviewUrl(candidate)) continue
       const normalized = normalizeUrl(candidate.toString())
       if (normalized && normalized !== baseKey) tabs.add(normalized)
     }

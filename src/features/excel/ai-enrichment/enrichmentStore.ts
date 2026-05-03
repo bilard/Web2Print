@@ -11,10 +11,26 @@ import { enrichmentKey } from './types'
 const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
 const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
 
-function sanitizeIncomingProduct(data: EnrichedProduct): EnrichedProduct {
+/** Compte les `[` et `]` dans une chaîne — utile pour détecter les noms ou
+ *  valeurs avec crochets déséquilibrés (ex: `[Fiche technique Trappes de visite`
+ *  ou `Nicoll]CHUTUNIC® EVO` issus d'un mégamenu Drupal mal converti en
+ *  markdown puis halluciné en KEY/VALUE par le LLM). Un libellé produit
+ *  légitime a TOUJOURS ses crochets appariés (ex: `Tension [V]`). */
+function hasUnbalancedBrackets(s: string): boolean {
+  const opens = (s.match(/\[/g) || []).length
+  const closes = (s.match(/\]/g) || []).length
+  return opens !== closes
+}
+
+export function sanitizeIncomingProduct(data: EnrichedProduct): EnrichedProduct {
   const cleanSpecs = data.specifications.filter((s) => {
+    // Valeur ou nom vide → spec inutilisable (la valeur affichée ne serait que
+    // le placeholder "Valeur" — exactement le bug Nicoll observé).
+    if (!s.name?.trim() || !s.value?.trim()) return false
     if (PLACEHOLDER_HEADER_RE.test(s.value) || PLACEHOLDER_HEADER_RE.test(s.name)) return false
     if (BRACKETED_HEADER_RE.test(s.name)) return false
+    // Crochets déséquilibrés sur le nom OU la valeur → bruit de mégamenu.
+    if (hasUnbalancedBrackets(s.name) || hasUnbalancedBrackets(s.value)) return false
     return true
   })
   if (cleanSpecs.length === data.specifications.length) return data

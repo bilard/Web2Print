@@ -643,7 +643,7 @@ function extractItemsFromContainer(container: Element): string[] {
  *  3. Retourner le candidat le PLUS COURT avec ≥ 2 items — les sites ont
  *     souvent un breadcrumb visible (3-4 items) + un breadcrumb SEO/catégorie
  *     plus long (5+ items) ; l'utilisateur attend le visible. */
-function extractBreadcrumbFromHtml(html: string): string[] {
+export function extractBreadcrumbFromHtml(html: string): string[] {
   if (!html || typeof DOMParser === 'undefined') return []
   let doc: Document
   try {

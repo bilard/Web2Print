@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Sparkles, Loader2, ChevronDown, ChevronUp, Timer, RefreshCw, ExternalLink } from 'lucide-react'
 import type { ScrapingField, ScrapingMode, ScrapeResult, ExtractionTarget } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
-import { FIELD_TEMPLATES, detectBrandFromUrl, BRAND_OFFICIAL_SITES } from './useJina'
+import { FIELD_TEMPLATES, detectBrandFromUrl } from './useJina'
 
 interface Props {
   url: string
@@ -28,7 +28,7 @@ function parseManualBreadcrumb(raw: string): string[] {
 
 export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: Props) {
   const [mode, setMode] = useState<ScrapingMode>('schema')
-  const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.product.fields)
+  const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.product_full.fields)
   const [prompt, setPrompt] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [target, setTarget] = useState<ExtractionTarget>('single')
@@ -69,17 +69,6 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
       if (needsWait) setWaitFor(30000)
       else if (isSpa) setWaitFor(10000)
       else setWaitFor(0)
-    } catch { /* URL invalide */ }
-  }, [url])
-
-  // Auto-switch vers template "Produit complet" quand on détecte un site fabricant
-  useEffect(() => {
-    try {
-      const host = new URL(url).hostname
-      const isBrandSite = Object.values(BRAND_OFFICIAL_SITES).some(b => host.includes(new URL(b.baseUrl).hostname))
-      if (isBrandSite && fields === FIELD_TEMPLATES.product.fields) {
-        setFields(FIELD_TEMPLATES.product_full.fields)
-      }
     } catch { /* URL invalide */ }
   }, [url])
 
