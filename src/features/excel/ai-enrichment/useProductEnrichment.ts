@@ -4155,17 +4155,26 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             }
             const mdVariants = parseVariantsFromMarkdown(markdownContent)
             const directImages = parseImagesFromMarkdown(markdownContent)
-            // Merge images JSON-LD (priorité, dédupliqué par stem)
+            // Stratégie images :
+            //   - Si JSON-LD déclare ≥ 2 images → UTILISER UNIQUEMENT celles-là
+            //     (le site déclare lui-même ses images produit, le markdown est pollué
+            //     par bannières promo/marketing comme French Days, Jardi'Versaire, etc.)
+            //   - Sinon → merge JSON-LD (priorité) + markdown (filtré par isJunkImageUrl)
             const structuredImages = structured?.images ?? []
-            const allImages = [...structuredImages, ...directImages]
+            const sourceImages = structuredImages.length >= 2
+              ? structuredImages
+              : [...structuredImages, ...directImages]
             const seenImageStems = new Set<string>()
             const mergedDirectImages: string[] = []
-            for (const u of allImages) {
+            for (const u of sourceImages) {
               const stem = u.split('/').pop()?.split('?')[0]?.split('.')[0] ?? u
               if (!seenImageStems.has(stem)) {
                 seenImageStems.add(stem)
                 mergedDirectImages.push(u)
               }
+            }
+            if (structuredImages.length >= 2) {
+              log(`✓ ${structuredImages.length} images produit depuis JSON-LD (markdown ignoré pour images)`)
             }
             // Prix structurés (TTC/HT/barré/promo/éco-participation)
             // Sources : markdown patterns + JSON-LD offers (priorité JSON-LD).
