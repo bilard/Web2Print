@@ -16,6 +16,8 @@ import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal } from '@/feat
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
+import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
+import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -3715,6 +3717,11 @@ export function useProductEnrichment() {
           })
           const multiEnabled = useEnrichmentStore.getState().multiUrlEnabled
           try {
+            // Lancer en parallèle JSON-LD (rapide) et Jina markdown (long)
+            const structuredPromise = extractStructuredDataFromUrl(productUrl).catch((err) => {
+              console.warn('[enrichment] JSON-LD fetch failed:', err)
+              return null
+            })
             if (multiEnabled) {
               log(`Multi-URL bundle (X-Engine: browser + onglets auto) → ${productUrl}`)
               const bundle = await scrapeProductBundle(productUrl, {
@@ -3737,6 +3744,22 @@ export function useProductEnrichment() {
               const r = await jinaScrapeMaufacturerPage(productUrl)
               markdownContent = r?.markdown ?? null
             }
+            const structuredData = await structuredPromise
+            if (structuredData) {
+              const fields = [
+                structuredData.name && 'name',
+                structuredData.description && 'description',
+                structuredData.brand && 'brand',
+                structuredData.sku && 'sku',
+                structuredData.images.length > 0 && `${structuredData.images.length} images`,
+                structuredData.specs.length > 0 && `${structuredData.specs.length} specs`,
+              ].filter(Boolean).join(', ')
+              if (fields.length > 0) {
+                log(`✓ JSON-LD Schema.org extrait : ${fields}`)
+                console.log('[enrichment] structured-data:', structuredData)
+              }
+            }
+            ;(globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured = structuredData
           } catch (err) {
             console.warn('[enrichment] scrape failed', err)
             log(`✗ Scrape échec : ${String(err).slice(0, 200)}`)
@@ -3997,6 +4020,23 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           // la description produit.
           const primaryMd = extractPrimarySourceSection(markdownContent)
           let mdDescription = parseDescriptionFromMarkdown(primaryMd)
+          const structured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+
+          // Merge JSON-LD prioritaire si disponible
+          if (structured) {
+            // Description : JSON-LD si présente et > 50 chars
+            if (structured.description && structured.description.length > 50) {
+              mdDescription = structured.description
+            }
+            // Specs : ajouter celles de JSON-LD non dupliquées par nom (priorité = en tête)
+            if (structured.specs.length > 0) {
+              const existingNames = new Set(mdSpecs.map(s => s.name.toLowerCase()))
+              const jsonLdSpecs = structured.specs
+                .filter(sp => !existingNames.has(sp.name.toLowerCase()))
+                .map(sp => ({ name: sp.name, value: sp.value, group: 'JSON-LD' }))
+              mdSpecs.unshift(...jsonLdSpecs)
+            }
+          }
           console.log('[enrichment] parseDescriptionFromMarkdown returned:', mdDescription.length, 'chars. First 200:', JSON.stringify(mdDescription.slice(0, 200)))
 
           if (!mdDescription || mdDescription.length < 30) {
@@ -4056,13 +4096,25 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             }
             const mdVariants = parseVariantsFromMarkdown(markdownContent)
             const directImages = parseImagesFromMarkdown(markdownContent)
+            // Merge images JSON-LD (priorité, dédupliqué par stem)
+            const structuredImages = structured?.images ?? []
+            const allImages = [...structuredImages, ...directImages]
+            const seenImageStems = new Set<string>()
+            const mergedDirectImages: string[] = []
+            for (const u of allImages) {
+              const stem = u.split('/').pop()?.split('?')[0]?.split('.')[0] ?? u
+              if (!seenImageStems.has(stem)) {
+                seenImageStems.add(stem)
+                mergedDirectImages.push(u)
+              }
+            }
             directBuild = {
               description: mdDescription,
               advantages: mdAdvantages,
               specifications: mdSpecs,
               variants: mdVariants,
               documents: directDocuments,
-              images: [...new Set(directImages)],
+              images: [...new Set(mergedDirectImages)],
             }
             console.log('[enrichment] ★ markdown direct build succeeded')
           }
