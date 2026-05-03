@@ -1005,7 +1005,7 @@ function DoneState({
     variants: 'variants', variantes: 'variants', Variantes: 'variants', references: 'variants',
     specifications: 'specifications', specs: 'specifications',
   }
-  const DEFAULT_ORDER = ['images', 'description', 'advantages', 'pricing', 'specifications', 'variants', 'custom', 'documents']
+  const DEFAULT_ORDER = ['images', 'pricing', 'description', 'advantages', 'specifications', 'variants', 'custom', 'documents']
 
   const sectionOrder: string[] = []
   if (templateFieldOrder && templateFieldOrder.length > 0) {
