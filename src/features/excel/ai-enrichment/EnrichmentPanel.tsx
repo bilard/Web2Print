@@ -1104,10 +1104,16 @@ function DoneState({
         )
         if (sectionKey === 'pricing') {
           const p = data.pricing
-          if (!p) return null
-          const hasAnyPrice = p.ttc != null || p.ht != null || p.original != null
-          if (!hasAnyPrice) return null
-          const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: p.currency || 'EUR', minimumFractionDigits: 2 }).format(n)
+          const hasAnyPrice = p && (p.ttc != null || p.ht != null || p.original != null)
+          const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: p?.currency || 'EUR', minimumFractionDigits: 2 }).format(n)
+          if (!p || !hasAnyPrice) {
+            return (
+              <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
+                <p className="text-[11px] text-white/30 italic">Aucun prix détecté</p>
+              </div>
+            )
+          }
           return (
             <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
               <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
