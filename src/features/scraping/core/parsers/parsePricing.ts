@@ -74,6 +74,18 @@ const PRICE_PATTERNS = {
 /** Mots-clés qui indiquent un prix de livraison/expédition (à ignorer). */
 const SHIPPING_CONTEXT_RE = /(?:livraison|exp[eé]dition|frais\s+de\s+port|shipping)\s*:?\s*([\d\s  .,]+)\s*€/gi
 
+/** Mots-clés indiquant un prix marketplace/partenaire (PAS le prix vendeur principal).
+ *  Ex Jardiland : `**Offres partenaires** + **6 offres** à partir de **185,99 €**`
+ *  Le 185,99€ est une offre tiers, pas le prix Jardiland (qui est 219,00 €). */
+const MARKETPLACE_CONTEXT_RE = /(?:[àa]\s+partir\s+de|offres?\s+partenaires?|marketplace|vendeur\s+tiers?|partenaire|\+\s*\d+\s+offres?)/i
+
+/** Vérifie si un prix EUR à la position `idx` dans `md` est dans un contexte marketplace
+ *  (les 250 chars précédents contiennent un mot-clé marketplace). */
+function isInMarketplaceContext(md: string, idx: number): boolean {
+  const before = md.slice(Math.max(0, idx - 250), idx)
+  return MARKETPLACE_CONTEXT_RE.test(before)
+}
+
 /**
  * Parse les prix structurés depuis du markdown.
  *
@@ -167,12 +179,20 @@ export function parsePricingFromMarkdown(
       if (n != null) { result.ecoParticipation = n; found = true }
     }
 
-    // Fallback : prix EUR seul si rien d'autre trouvé
+    // Fallback : prix EUR seul si rien d'autre trouvé.
+    // Itère tous les matchs et skip ceux dans contexte marketplace
+    // (Jardiland-style : "à partir de", "Offres partenaires", "+ N offres").
     if (!found) {
-      const eurM = cleanMd.match(PRICE_PATTERNS.eur)
-      if (eurM) {
-        const n = parsePriceNumber(eurM[1])
-        if (n != null) { result.ttc = n; found = true }
+      const eurMatches = [...cleanMd.matchAll(/([\d\s  .,]+)\s*€/g)]
+      for (const m of eurMatches) {
+        const idx = m.index ?? 0
+        if (isInMarketplaceContext(cleanMd, idx)) continue
+        const n = parsePriceNumber(m[1])
+        if (n != null && n > 0) {
+          result.ttc = n
+          found = true
+          break
+        }
       }
     }
   }

@@ -104,4 +104,40 @@ Prix : 1 738,80 € TTC
     const p = parsePricingFromMarkdown(md)
     expect(p).toBeNull()
   })
+
+  it('Jardiland-style : capture le 1er prix EUR brut, ignore les offres marketplace', () => {
+    // Pattern réel Jardiland Ryobi : prix principal puis "à partir de XXX,XX €" pour marketplace
+    const md = `Tondeuse RYOBI
+
+5/5 5/5
+
+Je suis contente de mon achat
+
+219,00 €
+
+Quantité
+
+Livraison à domicile
+
+**En stock**
+
+GRATUIT à partir du mercredi 06 mai
+
+**Offres partenaires**
+
++
+
+**6 offres**
+
+à partir de
+
+**185,99 €**
+
+Paiement 100% sécurisé
+`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(219)
+    // Le 185,99 € est marketplace → DOIT être ignoré
+    expect(p?.ttc).not.toBe(185.99)
+  })
 })
