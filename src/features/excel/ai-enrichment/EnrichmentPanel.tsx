@@ -1,8 +1,16 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, ImageIcon, Globe, Save, Plus, X,
-  Code2, ChevronDown, Copy, FileDown, ListOrdered,
+  Code2, ChevronDown, Copy, FileDown, ListOrdered, LayoutGrid, List as ListIcon, ArrowDownAZ, ArrowUpAZ, GripVertical,
 } from 'lucide-react'
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext, rectSortingStrategy, verticalListSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { VendorFieldOrderModal } from '@/features/scraping-templates/VendorFieldOrderModal'
 import { useExcelStore } from '@/stores/excel.store'
 import { useEnrichmentStore } from './enrichmentStore'
@@ -20,52 +28,268 @@ interface Props {
   input: EnrichmentInput
 }
 
-/** Grille d'images avec expand/collapse — affiche 6 par défaut, toutes au clic.
- *  Chaque tuile expose un bouton supprimer (X) au hover. */
-function ImageGrid({ images, onRemove }: { images: string[]; onRemove?: (url: string) => void }) {
+/** Extrait le nom de fichier d'une URL d'image (dernier segment du path,
+ *  query/fragment retirés, decodeURIComponent appliqué). Fallback sur l'URL
+ *  brute si le parsing échoue. */
+function getImageName(url: string): string {
+  try {
+    const u = new URL(url)
+    const segments = u.pathname.split('/').filter(Boolean)
+    const last = segments[segments.length - 1]
+    if (!last) return url
+    return decodeURIComponent(last)
+  } catch {
+    return url
+  }
+}
+
+type ImageSort = 'original' | 'name-asc' | 'name-desc'
+type ImageView = 'grid' | 'list'
+
+/** Tuile/ligne sortable. Fournit un drag handle (grip) ; le reste du contenu
+ *  reste interactif (clic image = ouvrir, clic X = supprimer). */
+function SortableImageItem({
+  id, view, url, onRemove,
+}: { id: string; view: ImageView; url: string; onRemove?: (url: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.7 : 1,
+  }
+
+  if (view === 'grid') {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`group relative aspect-square rounded-md overflow-hidden bg-white/5 border transition-colors ${
+          isDragging ? 'border-indigo-400/60 shadow-lg shadow-indigo-500/10' : 'border-white/[0.06] hover:border-indigo-400/40'
+        }`}
+      >
+        <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full" title={getImageName(url)}>
+          <img
+            src={url}
+            alt=""
+            className="w-full h-full object-contain p-1 pointer-events-none"
+            onError={(e) => {
+              ;(e.target as HTMLImageElement).style.display = 'none'
+            }}
+          />
+        </a>
+        <button
+          {...attributes}
+          {...listeners}
+          className="absolute top-1 left-1 w-5 h-5 flex items-center justify-center rounded bg-black/70 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/90 hover:text-white cursor-grab active:cursor-grabbing touch-none transition-all"
+          title="Glisser pour réordonner"
+        >
+          <GripVertical className="w-3 h-3" />
+        </button>
+        {onRemove && (
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onRemove(url)
+            }}
+            className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-white transition-all"
+            title="Supprimer cette image"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-center gap-2 px-1.5 py-1 rounded-md border transition-colors ${
+        isDragging
+          ? 'bg-indigo-500/10 border-indigo-400/40 shadow-lg shadow-indigo-500/10'
+          : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.04] hover:border-indigo-400/30'
+      }`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab active:cursor-grabbing text-white/15 hover:text-white/40 touch-none"
+        title="Glisser pour réordonner"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="shrink-0 w-9 h-9 rounded bg-white/5 border border-white/[0.06] overflow-hidden flex items-center justify-center"
+        title="Ouvrir"
+      >
+        <img
+          src={url}
+          alt=""
+          className="w-full h-full object-contain p-0.5"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).style.display = 'none'
+          }}
+        />
+      </a>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="flex-1 min-w-0 text-[11px] text-white/70 hover:text-indigo-300 truncate"
+        title={url}
+      >
+        {getImageName(url)}
+      </a>
+      {onRemove && (
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onRemove(url)
+          }}
+          className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-white/30 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-300 transition-all"
+          title="Supprimer cette image"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Grille/liste d'images avec expand/collapse — affiche 6 par défaut, toutes au clic.
+ *  Toggle vue grille/liste, tri par nom (A→Z / Z→A / ordre original) ET drag-and-drop
+ *  manuel. Le drop persiste l'ordre via `onReorder` et bascule le tri sur "Ordre
+ *  d'origine" (cohérent : l'utilisateur vient de fixer un ordre manuel). */
+function ImageGrid({
+  images, onRemove, onReorder,
+}: { images: string[]; onRemove?: (url: string) => void; onReorder?: (next: string[]) => void }) {
   const [expanded, setExpanded] = useState(false)
-  const visible = expanded ? images : images.slice(0, 6)
+  const [view, setView] = useState<ImageView>('grid')
+  const [sort, setSort] = useState<ImageSort>('original')
+
+  const sorted = (() => {
+    if (sort === 'original') return images
+    const indexed = images.map((url, i) => ({ url, name: getImageName(url), i }))
+    indexed.sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name, 'fr', { numeric: true, sensitivity: 'base' })
+      return sort === 'name-asc' ? cmp : -cmp
+    })
+    return indexed.map((x) => x.url)
+  })()
+
+  const visible = expanded ? sorted : sorted.slice(0, 6)
+
+  // ID stable par position dans `sorted` (les URLs peuvent théoriquement se
+  // répéter ; on combine url + index pour rester unique côté dnd-kit).
+  const itemId = (url: string, i: number) => `${i}::${url}`
+  const visibleIds = visible.map((url, i) => itemId(url, i))
+
+  const cycleSort = () => {
+    setSort((s) => (s === 'original' ? 'name-asc' : s === 'name-asc' ? 'name-desc' : 'original'))
+  }
+  const sortLabel = sort === 'name-asc' ? 'Nom A→Z' : sort === 'name-desc' ? 'Nom Z→A' : 'Ordre d\'origine'
+  const SortIcon = sort === 'name-desc' ? ArrowUpAZ : ArrowDownAZ
+
+  // Activation distance > 0 pour ne pas confondre clic et drag (un clic
+  // simple sur un lien ne doit pas démarrer un drag).
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e
+    if (!over || active.id === over.id || !onReorder) return
+    const oldIdx = visibleIds.indexOf(String(active.id))
+    const newIdx = visibleIds.indexOf(String(over.id))
+    if (oldIdx < 0 || newIdx < 0) return
+    // Réordonner la sous-liste visible, puis remettre cette sous-liste en
+    // tête de l'array complet (les éventuelles images cachées par le collapse
+    // passent après — préserve leur ordre relatif).
+    const reorderedVisible = arrayMove(visible, oldIdx, newIdx)
+    const hidden = sorted.filter((u) => !visible.includes(u))
+    const next = [...reorderedVisible, ...hidden]
+    onReorder(next)
+    // Après un drag manuel, le tri par nom n'a plus de sens : on revient à
+    // l'ordre stocké pour que ce que voit l'utilisateur reflète le storage.
+    if (sort !== 'original') setSort('original')
+  }
+
+  const draggable = !!onReorder
+
+  const content = view === 'grid' ? (
+    <div className="grid grid-cols-3 gap-1.5">
+      {visible.map((url, i) => (
+        <SortableImageItem key={itemId(url, i)} id={itemId(url, i)} view="grid" url={url} onRemove={onRemove} />
+      ))}
+    </div>
+  ) : (
+    <div className="flex flex-col gap-1">
+      {visible.map((url, i) => (
+        <SortableImageItem key={itemId(url, i)} id={itemId(url, i)} view="list" url={url} onRemove={onRemove} />
+      ))}
+    </div>
+  )
+
   return (
     <>
-      <div className="grid grid-cols-3 gap-1.5">
-        {visible.map((url, i) => (
-          <div
-            key={i}
-            className="group relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/[0.06] hover:border-indigo-400/40 transition-colors"
+      <div className="flex items-center justify-end gap-1 mb-1.5">
+        <button
+          onClick={cycleSort}
+          title={`Trier — ${sortLabel}`}
+          className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+            sort === 'original'
+              ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              : 'text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20'
+          }`}
+        >
+          <SortIcon className="w-3 h-3" />
+          {sortLabel}
+        </button>
+        <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded p-0.5">
+          <button
+            onClick={() => setView('grid')}
+            title="Vue grille"
+            className={`p-0.5 rounded transition-colors ${
+              view === 'grid' ? 'bg-white/[0.08] text-white/80' : 'text-white/30 hover:text-white/60'
+            }`}
           >
-            <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full">
-              <img
-                src={url}
-                alt=""
-                className="w-full h-full object-contain p-1"
-                onError={(e) => {
-                  ;(e.target as HTMLImageElement).style.display = 'none'
-                }}
-              />
-            </a>
-            {onRemove && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onRemove(url)
-                }}
-                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-white transition-all"
-                title="Supprimer cette image"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        ))}
+            <LayoutGrid className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => setView('list')}
+            title="Vue liste (avec noms)"
+            className={`p-0.5 rounded transition-colors ${
+              view === 'list' ? 'bg-white/[0.08] text-white/80' : 'text-white/30 hover:text-white/60'
+            }`}
+          >
+            <ListIcon className="w-3 h-3" />
+          </button>
+        </div>
       </div>
-      {images.length > 6 && (
+
+      {draggable ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={visibleIds}
+            strategy={view === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
+          >
+            {content}
+          </SortableContext>
+        </DndContext>
+      ) : content}
+
+      {sorted.length > 6 && (
         <button
           onClick={() => setExpanded(!expanded)}
           className="mt-1.5 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
         >
           <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          {expanded ? 'Réduire' : `Voir les ${images.length} images`}
+          {expanded ? 'Réduire' : `Voir les ${sorted.length} images`}
         </button>
       )}
     </>
@@ -149,9 +373,16 @@ export function EnrichmentPanel({ input }: Props) {
   const llmMeta = (() => {
     if (!isDone || !data) return null
     if (data.llmProvider) {
+      const PROVIDER_LABELS: Record<string, string> = {
+        claude: 'Claude',
+        gemini: 'Gemini',
+        deepseek: 'DeepSeek',
+        openai: 'OpenAI',
+      }
+      const providerLabel = PROVIDER_LABELS[data.llmProvider] ?? data.llmProvider
       return {
-        label: data.llmModel ?? data.llmProvider,
-        title: `Raisonnement LLM via ${data.llmProvider}${data.llmModel ? ` (${data.llmModel})` : ''}`,
+        label: data.llmModel ? `${providerLabel} · ${data.llmModel}` : providerLabel,
+        title: `Raisonnement LLM via ${providerLabel}${data.llmModel ? ` (${data.llmModel})` : ''}`,
       }
     }
     // Pas de LLM : on affiche le scraper utilisé pour être transparent
@@ -774,7 +1005,7 @@ function DoneState({
     variants: 'variants', variantes: 'variants', Variantes: 'variants', references: 'variants',
     specifications: 'specifications', specs: 'specifications',
   }
-  const DEFAULT_ORDER = ['images', 'description', 'advantages', 'specifications', 'variants', 'custom', 'documents']
+  const DEFAULT_ORDER = ['images', 'description', 'advantages', 'pricing', 'specifications', 'variants', 'custom', 'documents']
 
   const sectionOrder: string[] = []
   if (templateFieldOrder && templateFieldOrder.length > 0) {
@@ -824,6 +1055,7 @@ function DoneState({
               <ImageGrid
                 images={data.images}
                 onRemove={(url) => onUpdate({ images: data.images.filter((u) => u !== url) })}
+                onReorder={(next) => onUpdate({ images: next })}
               />
             ) : (
               <p className="text-[11px] text-white/35 leading-relaxed">
@@ -870,6 +1102,51 @@ function DoneState({
             )}
           </div>
         )
+        if (sectionKey === 'pricing') {
+          const p = data.pricing
+          if (!p) return null
+          const hasAnyPrice = p.ttc != null || p.ht != null || p.original != null
+          if (!hasAnyPrice) return null
+          const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: p.currency || 'EUR', minimumFractionDigits: 2 }).format(n)
+          return (
+            <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
+                {p.ttc != null && (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] text-white/40 uppercase tracking-wider">TTC</span>
+                    <span className="text-[16px] font-semibold text-emerald-300">{fmt(p.ttc)}</span>
+                  </div>
+                )}
+                {p.ht != null && (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] text-white/40 uppercase tracking-wider">HT</span>
+                    <span className="text-[14px] text-white/70">{fmt(p.ht)}</span>
+                  </div>
+                )}
+                {p.original != null && p.original > (p.ttc ?? 0) && (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] text-white/40 uppercase tracking-wider">Avant</span>
+                    <span className="text-[12px] text-white/40 line-through">{fmt(p.original)}</span>
+                  </div>
+                )}
+                {p.discount && (p.discount.amount != null || p.discount.percent != null) && (
+                  <div className="px-1.5 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px] font-medium">
+                    {p.discount.percent != null ? `-${p.discount.percent}%` : ''}
+                    {p.discount.amount != null && p.discount.percent != null ? ' · ' : ''}
+                    {p.discount.amount != null ? `-${fmt(p.discount.amount)}` : ''}
+                  </div>
+                )}
+              </div>
+              {(p.ecoParticipation != null || p.validUntil) && (
+                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/40">
+                  {p.ecoParticipation != null && <span>Éco-participation : {fmt(p.ecoParticipation)}</span>}
+                  {p.validUntil && <span>Valable jusqu'au {p.validUntil}</span>}
+                </div>
+              )}
+            </div>
+          )
+        }
         if (sectionKey === 'specifications') return (
           <div key="specifications" id={sectionAnchor('specifications')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">

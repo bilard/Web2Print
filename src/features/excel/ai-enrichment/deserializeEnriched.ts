@@ -1,6 +1,6 @@
 import type { CellValue } from '@/features/excel/types'
 import type { LlmRequestInfo } from '@/features/ai/llmRouter'
-import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage } from './types'
+import type { EnrichedProduct, EnrichedSpec, EnrichedAdvantage, Pricing } from './types'
 import { parseDocumentsCell } from './documentUtils'
 import { sanitizeEnrichedProduct } from './enrichmentSanitize'
 
@@ -40,7 +40,9 @@ export function deserializeEnrichedFromRow(
 
   const advantages: EnrichedAdvantage[] = advantagesRaw
     ? advantagesRaw.split(' | ').map((s) => s.trim()).filter(Boolean).map((raw) => {
-        const groupMatch = raw.match(/^\[([^\]]+)\](.*)$/)
+        // [\s\S]* au lieu de .* pour matcher les sauts de ligne (avantages
+        // hiérarchiques Dyson : titre suivi de paragraphes prose multi-lignes).
+        const groupMatch = raw.match(/^\[([^\]]+)\]([\s\S]*)$/)
         if (groupMatch) {
           return { text: groupMatch[2].trim(), group: groupMatch[1].trim() }
         }
@@ -63,7 +65,7 @@ export function deserializeEnrichedFromRow(
           // Format optionnel : [Groupe]Nom: Valeur
           let group: string | undefined
           let rest = pair
-          const groupMatch = rest.match(/^\[([^\]]+)\](.*)$/)
+          const groupMatch = rest.match(/^\[([^\]]+)\]([\s\S]*)$/)
           if (groupMatch) {
             group = groupMatch[1].trim()
             rest = groupMatch[2].trim()
@@ -120,6 +122,13 @@ export function deserializeEnrichedFromRow(
     try { variants = JSON.parse(variantsRaw) } catch { /* ignore */ }
   }
 
+  // Prix structurés (JSON sérialisé)
+  let pricing: Pricing | undefined
+  const pricingRaw = typeof row.ai_pricing === 'string' && row.ai_pricing ? row.ai_pricing : null
+  if (pricingRaw) {
+    try { pricing = JSON.parse(pricingRaw) as Pricing } catch { /* ignore */ }
+  }
+
   const breadcrumb = breadcrumbRaw
     ? breadcrumbRaw.split(/\s*[›>/»·]\s*/).map(s => s.trim()).filter(Boolean)
     : undefined
@@ -135,6 +144,7 @@ export function deserializeEnrichedFromRow(
     variants,
     images,
     documents,
+    pricing,
     sourceUrl,
     additionalSources: [],
     generatedAt: 0,

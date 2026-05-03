@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelColumn, ExcelSheet, FieldTypeId } from '@/features/excel/types'
@@ -11,14 +11,17 @@ import { enrichmentKey } from './types'
 const FIRESTORE_COLLECTION = 'excel_data'
 const FIRESTORE_MAX_BYTES = 1_048_576 // 1 MB hard limit Firestore
 
-function toDocId(fileName: string): string {
-  return fileName
-    .replace(/\.[^.]+$/, '')
-    .replace(/[^a-zA-Z0-9_-]/g, '_')
-    .toLowerCase()
-}
-
-async function writeSheetsToFirestore(fileName: string, sheets: ExcelSheet[]): Promise<void> {
+/** Persiste les sheets dans le doc Firestore courant (existingDocId) ou dans
+ *  un nouveau doc Firestore avec ID auto-généré sinon. Retourne l'ID utilisé.
+ *  ⚠ Doit utiliser EXACTEMENT le même mécanisme que `useExcelFirebase.saveToFirebase` :
+ *  on vise le `currentDocId` du store quand il existe, jamais un docId calculé à
+ *  partir du fileName — sinon on dédouble la BDD côté Firestore. */
+async function writeSheetsToFirestore(
+  fileName: string,
+  sheets: ExcelSheet[],
+  existingDocId: string | null,
+  path: string[],
+): Promise<string> {
   const user = auth.currentUser
   if (!user) {
     throw new Error('Non authentifié — impossible de sauvegarder dans Firestore.')
@@ -31,12 +34,13 @@ async function writeSheetsToFirestore(fileName: string, sheets: ExcelSheet[]): P
       `Supprime des colonnes/lignes inutiles ou réduis la taille des images.`,
     )
   }
-  const docId = toDocId(fileName)
-  const ref = doc(db, FIRESTORE_COLLECTION, `${user.uid}_${docId}`)
+  const ref = existingDocId
+    ? doc(db, FIRESTORE_COLLECTION, existingDocId)
+    : doc(collection(db, FIRESTORE_COLLECTION))
   await setDoc(ref, {
     userId: user.uid,
     fileName,
-    docId,
+    path,
     sheets: serialized,
     sheetCount: sheets.length,
     totalRows: sheets.reduce((a, s) => a + s.rows.length, 0),
@@ -44,6 +48,7 @@ async function writeSheetsToFirestore(fileName: string, sheets: ExcelSheet[]): P
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   }, { merge: true })
+  return ref.id
 }
 
 /**
@@ -73,6 +78,7 @@ export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_variants',        label: 'IA — Variantes',     fieldType: 'text_long', width: 320 },
   { key: 'ai_images',          label: 'IA — Images',        fieldType: 'image',     width: 160 },
   { key: 'ai_documents',       label: 'IA — Documents',     fieldType: 'text_long', width: 280 },
+  { key: 'ai_pricing',         label: 'IA — Prix',          fieldType: 'text_long', width: 200 },
   { key: 'ai_source',          label: 'IA — Source',        fieldType: 'url',       width: 240 },
   { key: 'ai_scraper',         label: 'IA — Scraper',       fieldType: 'text',      width: 120 },
   { key: 'ai_llm_model',       label: 'IA — Modèle LLM',    fieldType: 'text',      width: 160 },
@@ -109,6 +115,7 @@ export function serializeEnriched(
     // documents : JSON-encoded array (mirror du pattern variants) pour préserver
     // le triplet name/url/filename. Désérialisation tolère le legacy ' | '.
     ai_documents: data.documents.length > 0 ? JSON.stringify(data.documents) : null,
+    ai_pricing: data.pricing ? JSON.stringify(data.pricing) : null,
     ai_source: data.sourceUrl || null,
     ai_scraper: data.scrapingProvider ?? null,
     ai_llm_model: data.llmModel ?? data.llmProvider ?? null,
@@ -120,6 +127,7 @@ export function useSaveEnrichedProduct() {
   const addColumn = useExcelStore((s) => s.addColumn)
   const updateCell = useExcelStore((s) => s.updateCell)
   const setCurrentFileName = useExcelStore((s) => s.setCurrentFileName)
+  const setCurrentDocId = useExcelStore((s) => s.setCurrentDocId)
   const [savedRowIds, setSavedRowIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -127,7 +135,7 @@ export function useSaveEnrichedProduct() {
   const save = useCallback(
     async (rowId: string, data: EnrichedProduct): Promise<boolean> => {
       // Snapshot frais du store à chaque appel
-      const { sheets, activeSheetIndex, currentFileName } = useExcelStore.getState()
+      const { sheets, activeSheetIndex, currentFileName, currentDocId, currentPath } = useExcelStore.getState()
       const sheet = sheets[activeSheetIndex]
       if (!sheet) {
         const msg = 'Aucune feuille active'
@@ -181,8 +189,19 @@ export function useSaveEnrichedProduct() {
           setCurrentFileName(effectiveFileName)
         }
 
-        // 4. Écriture Firestore explicite (ne dépend plus de l'auto-save debounced)
-        await writeSheetsToFirestore(effectiveFileName, freshSheets)
+        // 4. Écriture Firestore — vise le doc EXISTANT (currentDocId) sinon
+        //    crée un nouveau doc avec ID auto-généré et le mémorise dans le store.
+        //    ⚠ Sans ça, on créerait un doc parallèle calculé sur le fileName et
+        //    la BDD apparaîtrait en doublon dans la sidebar.
+        const savedDocId = await writeSheetsToFirestore(
+          effectiveFileName,
+          freshSheets,
+          currentDocId ?? null,
+          currentPath ?? [],
+        )
+        if (savedDocId && savedDocId !== currentDocId) {
+          setCurrentDocId(savedDocId)
+        }
 
         setSavedRowIds((prev) => {
           const next = new Set(prev)
@@ -203,7 +222,7 @@ export function useSaveEnrichedProduct() {
         setSaving(false)
       }
     },
-    [addColumn, updateCell, setCurrentFileName],
+    [addColumn, updateCell, setCurrentFileName, setCurrentDocId],
   )
 
   const isSaved = useCallback((rowId: string) => savedRowIds.has(rowId), [savedRowIds])
