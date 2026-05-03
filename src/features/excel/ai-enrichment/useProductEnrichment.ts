@@ -18,6 +18,7 @@ import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingT
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
+import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
 
 /**
  * Hook d'enrichissement IA en live d'un produit individuel.
@@ -3787,6 +3788,32 @@ export function useProductEnrichment() {
                   break
                 }
               } catch { /* ignorer */ }
+            }
+          }
+
+          // Fallback Firecrawl si score toujours faible (anti-bot Akamai bypass)
+          const FIRECRAWL_THRESHOLD = 15
+          const currentScore = scoreMd(markdownContent)
+          if (currentScore < FIRECRAWL_THRESHOLD && productUrl) {
+            const fcKey = getApiKey('firecrawl')
+            if (fcKey) {
+              log(`Score insuffisant (${currentScore}) → tentative Firecrawl`)
+              try {
+                const fcResult = await firecrawlScrape(productUrl, fcKey)
+                if (fcResult?.markdown) {
+                  const fcSanitized = sanitizeJinaMarkdown(fcResult.markdown)
+                  const fcScore = scoreMd(fcSanitized)
+                  console.log('[enrichment] firecrawl score:', fcScore, '(', fcSanitized.length, 'chars)')
+                  if (fcScore > currentScore) {
+                    log(`✓ Firecrawl meilleur (${fcScore} > ${currentScore}) — bascule sur Firecrawl`)
+                    markdownContent = `## [Source: ${productUrl}]\n\n${fcSanitized}`
+                  } else {
+                    log(`Firecrawl pas meilleur (${fcScore} ≤ ${currentScore}) — markdown inchangé`)
+                  }
+                }
+              } catch (err) {
+                console.warn('[enrichment] Firecrawl fallback failed:', err)
+              }
             }
           }
         }
