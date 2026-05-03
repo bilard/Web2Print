@@ -80,6 +80,12 @@ export const API_KEYS: ApiKeyConfig[] = [
     envVar: 'VITE_JINA_API_KEY',
     description: 'Clé API Jina — scraping et recherche produit',
   },
+  {
+    id: 'firecrawl',
+    label: 'Firecrawl',
+    envVar: 'VITE_FIRECRAWL_API_KEY',
+    description: 'Clé API Firecrawl — scraping anti-bot fallback',
+  },
 ]
 
 /** Get an API key value: localStorage override, then env fallback */
@@ -236,6 +242,20 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         return { status: 'ok', message: `Connecté — ${credits} crédits` }
       }
       if (res.status === 403) return { status: 'error', message: 'Clé invalide' }
+      return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'firecrawl') {
+      // Test Firecrawl: team usage endpoint (lightweight, vérifie auth)
+      const res = await fetch('https://api.firecrawl.dev/v2/team/credit-usage', {
+        headers: { 'Authorization': 'Bearer ' + key },
+      })
+      if (res.ok) {
+        const data = await res.json() as { data?: { remaining_credits?: number } }
+        const credits = data?.data?.remaining_credits ?? '?'
+        return { status: 'ok', message: `Connecté — ${credits} crédits` }
+      }
+      if (res.status === 401 || res.status === 403) return { status: 'error', message: 'Clé invalide' }
       return { status: 'error', message: `Erreur ${res.status}` }
     }
 

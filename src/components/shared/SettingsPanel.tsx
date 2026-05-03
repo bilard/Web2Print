@@ -129,6 +129,12 @@ const RemoveBgLogo = () => (
   </svg>
 )
 
+const FirecrawlLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-orange-400" fill="currentColor" aria-hidden="true">
+    <path d="M13.5 2c-.3 0-.5.2-.6.4-1 2.7-2.5 4.4-4.3 6-1.6 1.4-3.6 3.2-3.6 6.6 0 3.5 2.6 7 7 7s7-3.5 7-7.7c0-2-.7-3.7-1.4-5-.9-1.6-1.8-3-1.6-5.1 0-.5-.4-.9-.9-.9-1.4 0-1.6 1-1.6 1.8-.7-1.5-1-2.5-1-3.1z M11 12c1 1 2 1.5 2 3 0 1-.8 2-2 2s-2-1-2-2c0-1.5 1-2 2-3z"/>
+  </svg>
+)
+
 const GDriveLogo = () => (
   <svg viewBox="0 0 87.3 78" className="w-4 h-4 shrink-0">
     <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H1.1c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
@@ -578,6 +584,7 @@ function ConnectorsTab() {
     <div className="flex flex-col gap-2">
       <ApiKeyRow id="removebg" label="Remove.bg" description="Suppression de fond d'images" logo={<RemoveBgLogo />} />
       <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
+      <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <GDriveConnectorRow />
     </div>
   )
