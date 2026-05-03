@@ -4231,6 +4231,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             variants: directBuild.variants ?? [],
             images: mergedImages,
             documents: directBuild.documents ?? [],
+            pricing: directBuild.pricing,
             sourceUrl: productUrl,
             additionalSources,
             generatedAt: Date.now(),
