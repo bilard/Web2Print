@@ -508,4 +508,22 @@ serre de jardin en polycarbonate : double paroi Mythos de 2,3 m².
     expect(names).toContain('Marque')
     expect(names).toContain('Poids')
   })
+
+  it('avantages : préserve "Avantages produits" complet quand le strip donnerait juste "produits"', () => {
+    const md = `# Produit
+
+## Caractéristiques
+
+**Avantages produits**
+
+- Résistant et durable face aux chocs quotidiens
+- Anti-UV pour protéger durablement vos plantes
+- Démontable pour un nettoyage facile et complet
+`
+    const advs = parseAdvantagesFromMarkdown(md)
+    // Au moins un avantage avec le groupe "Avantages produits" (ou similaire qui contient le heading complet)
+    const hasCompleteGroup = advs.some(a => /avantages\s+produits/i.test(a.group ?? ''))
+    expect(hasCompleteGroup).toBe(true)
+    expect(advs.length).toBeGreaterThanOrEqual(3)
+  })
 })

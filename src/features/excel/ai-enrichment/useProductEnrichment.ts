@@ -5,10 +5,14 @@ import { generateJson } from '@/features/ai/llmRouter'
 import { useEnrichmentStore } from './enrichmentStore'
 import type { EnrichedProduct, EnrichedDocument } from './types'
 import { enrichmentKey } from './types'
-import { scrapeProductBundle } from './scrapeBundle'
+import { scrapeProductBundle, extractPrimarySourceSection } from './scrapeBundle'
 import { buildDocument, coerceDocuments, basenameFromUrl } from './documentUtils'
 import { sanitizeJinaMarkdown } from './markdownSanitize'
 import { extractLongestProseParagraph } from './enrichmentSanitize'
+import { isJunkImageUrl } from './imageFilter'
+export { isJunkImageUrl }
+import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal } from '@/features/scraping/core/parsers/parseDescription'
+import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal } from '@/features/scraping/core/parsers/parseSpecifications'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
 import { findMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
@@ -85,6 +89,70 @@ function mergeGroupsIntoAdvantages(
   }
 
   return result
+}
+
+/**
+ * Extrait le fil d'Ariane depuis l'en-tête markdown de Jina.
+ * Stratégie : prendre la portion AVANT le premier H1 (où le breadcrumb apparaît
+ * typiquement), repérer une ligne contenant ≥ 1 séparateur (`>`, `›`, `»`, `→`)
+ * et ≥ 2 textes de liens markdown, filtrer les termes de navigation génériques,
+ * dédupliquer en préservant l'ordre.
+ */
+function parseBreadcrumbFromMarkdown(md: string): string[] {
+  if (!md) return []
+
+  const h1Idx = md.search(/^#\s+/m)
+  const headPart = h1Idx > 0 ? md.slice(0, h1Idx) : md.slice(0, 4000)
+  const lines = headPart.split('\n').map((l) => l.trim()).filter(Boolean)
+
+  // Termes de navigation site, pas du breadcrumb produit
+  const NAV_RE = /^(menu|recherche|fermer|connexion|connectez|se\s+connecter|inscription|inscrire|panier|wishlist|liste\s+de\s+souhaits?|mon\s+compte|aide|contact|nous\s+contacter|langue|country|english|fran[çc]ais|skip|aller\s+au|retour\s+(en\s+)?haut|tous?\s+les?\s+(produits|cat[eé]gories)|voir\s+(tout|plus))/i
+
+  // Texte d'un lien markdown — on capture aussi du texte final hors lien éventuel
+  const mdLinkRe = /\[([^\]\n]+?)\]\(([^)]+)\)/g
+
+  for (const line of lines) {
+    if (line.length > 800) continue
+    const sepCount = (line.match(/[›>»→]/g) ?? []).length
+    if (sepCount < 1) continue
+
+    const linkTexts: string[] = []
+    for (const m of line.matchAll(mdLinkRe)) {
+      const t = m[1].replace(/^!\[.*?\]\(.*?\)\s*/, '').trim()
+      if (!t || t.length > 80) continue
+      if (/^[›>»→/|·]+$/.test(t)) continue
+      if (/^!?\[.*\]/.test(t)) continue
+      if (NAV_RE.test(t)) continue
+      linkTexts.push(t)
+    }
+
+    if (linkTexts.length < 2 || linkTexts.length > 8) continue
+
+    // Tenter de récupérer le dernier segment (souvent texte brut, pas un lien)
+    // après le dernier séparateur de la ligne
+    const lastSep = Math.max(line.lastIndexOf('›'), line.lastIndexOf('>'), line.lastIndexOf('»'), line.lastIndexOf('→'))
+    if (lastSep > 0) {
+      const tail = line.slice(lastSep + 1).replace(mdLinkRe, '').trim()
+      if (tail && tail.length <= 80 && !/^[›>»→/|·]+$/.test(tail) && !NAV_RE.test(tail)) {
+        linkTexts.push(tail)
+      }
+    }
+
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const t of linkTexts) {
+      const key = t.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(t)
+    }
+    if (out.length >= 2) {
+      console.log('[post-process] ✓ breadcrumb from markdown:', out)
+      return out
+    }
+  }
+
+  return []
 }
 
 /**
@@ -247,7 +315,14 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   // Nettoyer tous les noms de documents (titres génériques → noms extraits de l'URL)
   const cleanedDocuments = documents.map(doc => cleanDocumentName(doc))
 
-  return { ...enriched, description, advantages, specifications, variants, documents: cleanedDocuments }
+  // ── 6. Breadcrumb : extraire depuis l'en-tête markdown si pas déjà fourni ──
+  let breadcrumb = enriched.breadcrumb
+  if (!breadcrumb || breadcrumb.length === 0) {
+    const mdBreadcrumb = parseBreadcrumbFromMarkdown(markdownContent)
+    if (mdBreadcrumb.length > 0) breadcrumb = mdBreadcrumb
+  }
+
+  return { ...enriched, description, advantages, specifications, variants, documents: cleanedDocuments, breadcrumb }
 }
 
 /** Détecte si un texte est principalement du contenu cookie/GDPR (ratio de lignes garbage) */
@@ -293,8 +368,16 @@ function filterDocumentsByProductRef(
   for (const doc of documents) {
     const label = doc.name.toLowerCase()
     const url = doc.url.toLowerCase()
+    const filename = (doc.filename || '').toLowerCase()
 
-    if (GENERIC_DOC_LABEL_RE.test(label)) { rejected.push(doc); continue }
+    // GENERIC_DOC_LABEL_RE est un filtre "anti-doc-marketing" (cgv, tarif,
+    // catalogue, mentions légales…). On le teste sur le filename URL plutôt
+    // que sur le label : depuis qu'on injecte le titre Jina (ex: "Tarif 2026")
+    // dans `doc.name`, beaucoup de fiches techniques légitimes hébergées sous
+    // un nom URL spécifique se faisaient rejeter à tort sur le titre marketing
+    // de la page. Le filename URL est l'identifiant stable.
+    const genericProbe = filename || label
+    if (GENERIC_DOC_LABEL_RE.test(genericProbe)) { rejected.push(doc); continue }
 
     // Chercher les codes produit dans le label + URL (pas les queries longues).
     // Se limiter au label + fragment final de l'URL (basename) pour éviter
@@ -1385,6 +1468,7 @@ interface ManufacturerData {
   images: string[]
   specs: Array<{ name: string; value: string; group?: string }>
   description: string
+  breadcrumb: string[]
 }
 
 
@@ -1920,12 +2004,12 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
       return jinaScrapeMaufacturerPageFallback(pageUrl, jinaKey)
     }
 
-    // Nettoyage cookie/GDPR
-    md = md
-      .replace(/#{1,4}\s*(Your Privacy|Cookie|GDPR|Manage Preferences|Bienvenue chez)[\s\S]*?(?=\n#{1,4}\s|\n\n---|\n\n\*\*|$)/gi, '')
-      .replace(/^[-*•]\s*.*?(cookie|privacy|captcha|recaptcha|consent|targeting|functional|necessary).*$/gim, '')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim()
+    // Nettoyage complet : cookies, nav top RS-like, facettes, pricing tables…
+    // Sans ça, le markdown POST conserve les liens nav concaténés
+    // ("Nos servicesLe blog RSAide & Contact") et la ligne métadonnées
+    // ("Code commande RS:… Référence fabricant:…") qui empoisonnent
+    // parseDescriptionFromMarkdown en aval.
+    md = sanitizeJinaMarkdown(md)
 
     console.log('[jina-manufacturer] POST got', md.length, 'chars (with JS accordion expand)')
 
@@ -1989,7 +2073,7 @@ async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: stri
  */
 async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerData> {
   console.log('[manufacturer] fetching raw HTML →', pageUrl)
-  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '' }
+  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [] }
 
   const corsProxies = [
     `https://api.allorigins.win/raw?url=${encodeURIComponent(pageUrl)}`,
@@ -2014,6 +2098,18 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   if (!html || html.length < 1000) {
     console.log('[manufacturer] no HTML from CORS proxies')
     return data
+  }
+
+  // ── 0. Breadcrumb depuis HTML (nav>ol/ul, BreadcrumbList microdata, etc.) ──
+  try {
+    const { extractBreadcrumbFromHtml } = await import('@/features/scraping/useJina')
+    const items = extractBreadcrumbFromHtml(html)
+    if (items.length > 0) {
+      data.breadcrumb = items
+      console.log('[manufacturer] ✓ breadcrumb from HTML:', items)
+    }
+  } catch (err) {
+    console.warn('[manufacturer] breadcrumb extraction failed:', err)
   }
 
   // ── 1. Parse window.__REDUX_STORE (TTI Group / sites Relay) ──
@@ -2379,7 +2475,8 @@ function buildManufacturerProduct(
     description = ''
   }
   if (!description || description.length < 30) {
-    const mdDesc = markdownContent ? parseDescriptionFromMarkdown(markdownContent) : ''
+    const primaryMd = markdownContent ? extractPrimarySourceSection(markdownContent) : null
+    const mdDesc = primaryMd ? parseDescriptionFromMarkdown(primaryMd) : ''
     // Vérifier que la description markdown n'est pas du contenu parasite
     if (mdDesc && !isGarbageContent(mdDesc) && !isMainlyGarbage(mdDesc)) description = mdDesc
   }
@@ -2457,6 +2554,10 @@ function buildManufacturerProduct(
     descLen: description.length,
   })
 
+  // Breadcrumb : HTML brut (extraction DOM fiable) > markdown (fallback parser)
+  const mdBreadcrumb = markdownContent ? parseBreadcrumbFromMarkdown(markdownContent) : []
+  const breadcrumb = rawData.breadcrumb.length > 0 ? rawData.breadcrumb : mdBreadcrumb
+
   return {
     description,
     advantages,
@@ -2464,6 +2565,7 @@ function buildManufacturerProduct(
     variants,
     images: [...new Set(images)],
     documents: deduplicateDocuments(documents),
+    breadcrumb: breadcrumb.length > 0 ? breadcrumb : undefined,
     sourceUrl: productUrl,
     additionalSources,
     generatedAt: Date.now(),
@@ -2475,375 +2577,26 @@ function buildManufacturerProduct(
 
 // ── Parsers markdown : extraction structurée depuis le texte brut ───────────
 
+/** Délégué vers la version canonique du parser de specs (parseSpecifications.ts).
+ * On délègue plutôt que de dupliquer pour qu'il n'y ait QU'UN parser à
+ * maintenir — précédemment cette fonction locale shadow-ait l'export et tous
+ * les fixes du parser canonique (Format 4b strict, looksLikeValue, etc.)
+ * étaient ignorés. */
 function parseSpecsFromMarkdown(md: string): Array<{ name: string; value: string; group?: string }> {
-  const specs: Array<{ name: string; value: string; group?: string }> = []
-  const seen = new Set<string>()
-
-  // ── Filtres financiers / prix (déclarés ici pour les réutiliser dans Jina ET dans add()) ──
-  const FINANCIAL_NAME_RE = /^(date|payment|paiement|prix|price|montant|amount|total|ech[eé]ance|mensualit[eé]|versement|livraison|delivery|shipping|frais|fee|cost|co[uû]t|quantit[eé]|qty|stock|disponibilit[eé]|panier|cart|ajouter|add to|acheter|buy)\b|incl\.\s*vat|excl\.\s*vat|ttc|hors\s*taxe|tva/i
-  const FINANCIAL_VALUE_RE = /^\d{1,4}[,.]\d{2}\s*[€$£]|^[€$£]\s*\d|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$|incl\.\s*vat|excl\.\s*vat|ttc\b|hors\s*taxe|tva\b/i
-  /** Noms de groupe / clés qui trahissent une section prix / tarif */
-  const PRICE_GROUP_RE = /prix|price|tarif|co[uû]t|cost|tva|vat|ttc|ht\b|hors\s*taxe/i
-
-  // ── Parser rapide pour le format injecté par notre script Jina ──
-  // Format : JINA_EXTRACTED_SPECS_START\nGROUP: Titre\nNom = Valeur\n...\nJINA_EXTRACTED_SPECS_END
-  const jinaStart = md.indexOf('JINA_EXTRACTED_SPECS_START')
-  const jinaEnd = md.indexOf('JINA_EXTRACTED_SPECS_END')
-  if (jinaStart >= 0 && jinaEnd > jinaStart) {
-    const block = md.slice(jinaStart, jinaEnd)
-    let currentGroup: string | undefined
-    const decodeHtml = (s: string) => s.replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c))).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
-    for (const line of block.split('\n')) {
-      const trimmed = line.trim()
-      if (trimmed.startsWith('GROUP:')) {
-        currentGroup = decodeHtml(trimmed.slice(6).trim()) || undefined
-      } else if (trimmed.includes(' = ')) {
-        const eqIdx = trimmed.indexOf(' = ')
-        const name = decodeHtml(trimmed.slice(0, eqIdx).trim())
-        const value = decodeHtml(trimmed.slice(eqIdx + 3).trim())
-        if (name && value) {
-          // Appliquer les mêmes filtres financiers que add()
-          if (FINANCIAL_NAME_RE.test(name)) continue
-          if (FINANCIAL_VALUE_RE.test(value)) continue
-          if (PRICE_GROUP_RE.test(currentGroup ?? '')) continue
-          if (PRICE_GROUP_RE.test(name)) continue
-          const key = `${name.toLowerCase()}::${value.toLowerCase()}`
-          if (!seen.has(key)) {
-            seen.add(key)
-            specs.push({ name, value, group: currentGroup })
-          }
-        }
-      }
-    }
-    if (specs.length > 0) {
-      console.log('[parseSpecs] ✓ Jina injected specs:', specs.length)
-    }
-  }
-
-  /** Rejette les contenus parasites : métadonnées Jina, URLs, titres de page, liens markdown, etc. */
-  const JUNK_NAME_RE = /^(title|url|source|markdown|favicon|description|og:|meta |statuscode|viewport|http)/i
-  const JUNK_VALUE_RE = /^https?:\/\/|\.pdf\b|\[.*\]\(http/i
-  const LINK_BRACKETS_RE = /\[.*?\]\(.*?\)/
-  /** Valeurs qui sont des types de fichiers (pdf, doc, zip...) ou des tailles de fichiers (74.3 MB, 563 KB...) */
-  const FILE_VALUE_RE = /^(pdf|doc|docx|xls|xlsx|zip|rar|dwg|dxf|bim|ifc|step|stp|iges)$/i
-  const FILE_SIZE_RE = /^\d+([.,]\d+)?\s*(b|kb|mb|gb|tb|ko|mo|go|to|octets?|bytes?)\s*$/i
-  /** Lignes d'en-tête de table dupliquées entre sections : "Valeur", "*Valeur*",
-   *  "Caractéristique", "_Description_"... — souvent recopiées par le scraping
-   *  quand la même table d'en-tête est répétée pour chaque sous-section. */
-  const PLACEHOLDER_VALUE_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
-  // FINANCIAL_NAME_RE et FINANCIAL_VALUE_RE déclarés plus haut (réutilisés aussi par le parser Jina)
-
-  function add(name: string, value: string, group?: string) {
-    const n = name.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
-    const v = value.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
-    const key = `${n.toLowerCase()}::${v.toLowerCase()}`
-    if (!n || !v || seen.has(key)) return
-    // Rejeter les métadonnées Jina / balises HTML / URLs
-    if (JUNK_NAME_RE.test(n)) return
-    if (JUNK_VALUE_RE.test(v)) return
-    // Rejeter les types de fichiers et tailles de fichiers (listes de téléchargements PDF)
-    if (FILE_VALUE_RE.test(v)) return
-    if (FILE_SIZE_RE.test(n) || FILE_SIZE_RE.test(v)) return
-    // Rejeter les données financières / commerciales (tables de paiement, prix, dates)
-    if (FINANCIAL_NAME_RE.test(n)) return
-    if (FINANCIAL_VALUE_RE.test(v)) return
-    // Rejeter les noms qui sont des titres markdown (#) ou des bullets (+)
-    if (/^[#]/.test(n)) return
-    // Rejeter les valeurs non-informatives (un seul caractère ponctuation)
-    if (/^[.\-–—,;:!?]$/.test(v)) return
-    // Rejeter les noms ou valeurs trop longs (titres de page entiers)
-    if (n.length > 80 || v.length > 250) return
-    // Rejeter si le nom contient "fiche" + "produit"/"technique" (liens doc)
-    if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return
-    // Rejeter si la valeur contient un domaine web complet
-    if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return
-    // Rejeter les en-têtes de table dupliqués entre sections ("Valeur",
-    // "*Valeur*", "Caractéristique"…) — pas d'info produit utile.
-    if (PLACEHOLDER_VALUE_RE.test(v) || PLACEHOLDER_VALUE_RE.test(n)) return
-    // Rejeter les noms entièrement entre `[...]` (titre de section dupliqué).
-    if (/^\s*\[[^[\]()]+\]\s*$/.test(n)) return
-    // Rejeter les contenus qui sont du garbage (cookies, GDPR, etc.)
-    if (isGarbageContent(n) || isGarbageContent(v)) return
-    seen.add(key)
-    specs.push({ name: n, value: v, group: group || undefined })
-  }
-
-  const lines = md.split('\n')
-
-  // Lignes Jina metadata à ignorer complètement
-  const jinaMetaRe = /^(Title|URL|Markdown Content|Source|Published Time|StatusCode|Favicon|ViewportWidth)\s*:/i
-
-  const specSectionRe = /^#{1,4}\s*(sp[eé]cifications?|caract[eé]ristiques?\s*(?:techniques?|du\s*produit)?|descriptif\s*technique|donn[eé]es\s*techniques?|informations?\s*(?:techniques?)?|fiche\s*technique|d[eé]tails?\s*techniques?|poids|puissance|d[eé]cibels?|vibrations?|dimensions?|batterie|general|g[eé]n[eé]ral|per[çc]age|vissage|couple|moteur|[eé]nergie|vitesse|mandrin|capacit[eé]s?|tension|autonomie|charge(?:ment)?|bruit|acoustique|emballage|inclus|contenu\s*(?:de\s*la\s*)?livr|accessoires?)/i
-  let inSpecSection = false
-  let currentGroup = ''
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const trimmed = line.trim()
-
-    // Ignorer les lignes de métadonnées Jina
-    if (jinaMetaRe.test(trimmed)) continue
-    // Ignorer les lignes qui sont des liens markdown vers des docs/PDFs
-    if (/^\[.*\]\(https?:\/\//.test(trimmed) && /\.(pdf|doc)/i.test(trimmed)) continue
-    // Ignorer les lignes qui sont des titres de page Bosch/Makita/etc. excessivement longs
-    if (trimmed.startsWith('#') && trimmed.length > 120) continue
-
-    // Quitter la section specs si on entre dans une section de téléchargements/documents
-    if (/^#{1,4}\s*(t[eé]l[eé]chargements?|downloads?|documents?\s*(?:associ[eé]s|techniques?|utiles?)?|fichiers?|resources?|pi[eè]ces?\s*jointes?)/i.test(trimmed)) {
-      inSpecSection = false
-      currentGroup = ''
-      continue
-    }
-
-    if (specSectionRe.test(trimmed)) {
-      inSpecSection = true
-      const heading = trimmed.replace(/^#{1,4}\s+/, '').trim()
-      currentGroup = heading
-      continue
-    }
-    const subHeading = trimmed.match(/^#{2,5}\s+(.+)/)
-    if (subHeading) {
-      const heading = subHeading[1].trim()
-      const headingLc = heading.toLowerCase()
-      const isSpecGroup = /(information|poids|puissance|d[eé]cibels?|vibration|dimension|batterie|per[çc]age|vissage|couple|vitesse|mandrin|capacit|g[eé]n[eé]ral|technique|sp[eé]cification|donn[eé]es|important|emballage|inclus|livr[eé]|tension|autonomie|charge|bruit|acoustique|moteur|[eé]nergie|accessoire|r[eé]sistance|performance|mat[eé]riau|d[eé]bit|pression|hydraulique|certification|norme|classe|s[eé]rie|gamme|mod[eè]le|r[eé]f[eé]rence|connect|bluetooth|wireless|wifi)/i.test(headingLc)
-      // Heading court tout en majuscules = très probable section de specs fabricant (Milwaukee, DeWalt, etc.)
-      const isUpperCaseShort = heading.length <= 40 && heading === heading.toUpperCase() && /[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]{3,}/.test(heading)
-      if (isSpecGroup || isUpperCaseShort) {
-        inSpecSection = true
-        currentGroup = heading
-      } else if (inSpecSection) {
-        if (/^#{1,2}\s/.test(trimmed)) {
-          inSpecSection = false
-          currentGroup = ''
-        } else {
-          currentGroup = heading
-        }
-      }
-      continue
-    }
-
-    // Format 1 : Tableau markdown — | Nom | Valeur |
-    const tableMatch = trimmed.match(/^\|?\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|?\s*$/)
-    if (tableMatch) {
-      const n = tableMatch[1].replace(/\*\*/g, '').trim()
-      const v = tableMatch[2].replace(/\*\*/g, '').trim()
-      if (n && v && !/^[-:]+$/.test(n) && !/^[-:]+$/.test(v)) {
-        const nLc = n.toLowerCase()
-        if (nLc !== 'nom' && nLc !== 'name' && nLc !== 'caractéristique' && nLc !== 'specification') {
-          add(n, v, currentGroup)
-        }
-      }
-      continue
-    }
-
-    // Format 2 : **Clé** Valeur  ou  **Clé** : Valeur
-    const boldKeyMatch = trimmed.match(/^\*\*(.+?)\*\*\s*:?\s*(.+)/)
-    if (boldKeyMatch) {
-      const n = boldKeyMatch[1].trim()
-      const v = boldKeyMatch[2].trim()
-      if (v && v.length < 200 && !v.startsWith('http') && n.length < 60) {
-        add(n, v, currentGroup)
-        continue
-      }
-    }
-
-    // Format 3 : Clé : Valeur (sans markdown bold)
-    if (inSpecSection) {
-      const kvMatch = trimmed.match(/^([^:]{2,50})\s*:\s+(.{1,200})$/)
-      if (kvMatch) {
-        const n = kvMatch[1].replace(/\*\*/g, '').trim()
-        const v = kvMatch[2].replace(/\*\*/g, '').trim()
-        if (n && v && !/^https?:/.test(n)) {
-          add(n, v, currentGroup)
-          continue
-        }
-      }
-    }
-
-    // Format 4 : Lignes consécutives "Nom" puis "Valeur" (avec tolérance aux lignes vides entre les deux)
-    if (inSpecSection && trimmed.length > 2 && trimmed.length < 80
-        && !trimmed.startsWith('-') && !trimmed.startsWith('*') && !trimmed.startsWith('[')
-        && !trimmed.startsWith('#') && !trimmed.startsWith('|') && !trimmed.startsWith('http')
-        && !trimmed.startsWith('!') && !/^[=:\-]+$/.test(trimmed)) {
-      // Chercher la prochaine ligne non-vide (skip max 2 lignes vides — format Bosch/Nicoll)
-      let nextIdx = i + 1
-      while (nextIdx < lines.length && nextIdx <= i + 3 && !lines[nextIdx].trim()) nextIdx++
-      const nextLine = (lines[nextIdx] ?? '').trim()
-      if (nextLine && nextLine.length > 0 && nextLine.length < 100
-          && !nextLine.startsWith('#') && !nextLine.startsWith('-') && !nextLine.startsWith('*')
-          && !nextLine.startsWith('[') && !nextLine.startsWith('|') && !nextLine.startsWith('http')
-          && !nextLine.startsWith('!')) {
-        const looksLikeValue = /\d/.test(nextLine) || nextLine.length < 30 || /\b(mm|cm|m|kg|g|nm|rpm|tr\/min|v|ah|w|kw|hz|db|dba|°|%|bar|l\/min|psi|mpa|ion|litre|watt|volt|amp)/i.test(nextLine)
-        if (looksLikeValue) {
-          add(trimmed, nextLine, currentGroup)
-          i = nextIdx
-          continue
-        }
-      }
-    }
-  }
-
-  // Fallback global
-  if (specs.length === 0) {
-    const globalBoldKv = [...md.matchAll(/\*\*([^*]{2,50})\*\*\s*:?\s*([^\n*]{2,150})/g)]
-    for (const m of globalBoldKv) {
-      const n = m[1].trim()
-      const v = m[2].trim()
-      if (n && v && !v.startsWith('http') && !/^(voir|en savoir|d[eé]couvr)/i.test(v)) {
-        add(n, v)
-      }
-    }
-  }
-
-  return specs
+  return parseSpecsFromMarkdownExternal(md)
 }
 
+/** Délégué vers la version canonique du parser, qui inclut :
+ *   - Phase 0  : NEXT_DATA_SPECS (sites Next.js)
+ *   - Phase 0bis : H3 en gras (titre produit) + paragraphe long
+ *   - Phase 1  : prose entre H1 et H2+ (avec rejet métadonnées RS/Conrad)
+ *   - Phase 2/3 : sections descriptives / longest prose
+ *
+ * On délègue plutôt que de dupliquer pour qu'il n'y ait QU'UN parser à
+ * maintenir — précédemment cette fonction locale shadow-ait l'export et tous
+ * les fixes du parser canonique étaient ignorés. */
 function parseDescriptionFromMarkdown(md: string): string {
-  const lines = md.split('\n')
-
-  // ── Helpers ──
-  const isProseText = (s: string) =>
-    s.length >= 40 && !s.startsWith('|') && !s.startsWith('#')
-    && !/^\[.*\]\(.*\)$/.test(s) && !/^!\[/.test(s) && !s.startsWith('http')
-    && !/^[-*•✓✔]\s/.test(s) && !isGarbageContent(s)
-    && !/^\d+([.,]\d+)?\s*(b|kb|mb|gb|ko|mo|go|octets?|bytes?)\s*$/i.test(s)
-    // Rejet des lignes-documents (format "Label | URL" ou "Label ## URL") :
-    // label court suivi d'un séparateur puis d'une URL → c'est une ligne
-    // téléchargement, pas de la prose descriptive.
-    && !/\s[|#]{1,2}\s*https?:\/\//.test(s)
-    && !/https?:\/\/\S+/.test(s)
-
-  const clean = (s: string) => s.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim()
-
-  // Sections qui contiennent typiquement de la description/prose
-  const descSectionRe = /caract[eé]ristiques?\s*(du\s*produit|principales?|g[eé]n[eé]rales?)?|description|pr[eé]sentation|aper[çc]u|about|overview|introduction|r[eé]sum[eé]|en\s*bref|le\s*produit|d[eé]tail|points?\s*forts?\s*(du\s*produit)?|[eé]quipement\s*(et\s*application)?|informations?\s*compl[eé]ment/i
-  // Sections techniques / non-descriptives → on sort de la description
-  const nonDescSectionRe = /sp[eé]cification|descriptif\s*technique|donn[eé]es?\s*technique|fiche\s*technique|t[eé]l[eé]chargement|downloads?|documents?|r[eé]f[eé]rences?|variantes?|accessoires?\s*(?:associ|inclus|compatib)|avis|reviews?|galerie|vid[eé]os?|questions?|faq|contact|prix|tarif|dimensions?\s*et|table\s*des?\s*mati[eè]res/i
-
-  // ── Phase 1 : texte entre le H1 et le premier H2 ──
-  const phase1Parts: string[] = []
-  let afterTitle = false
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (/^#\s/.test(trimmed)) { afterTitle = true; continue }
-    if (!afterTitle) continue
-    if (/^#{2,}\s/.test(trimmed)) break
-    if (!trimmed) continue
-    const c = clean(trimmed)
-    if (isProseText(c)) phase1Parts.push(c)
-    if (phase1Parts.length >= 4) break
-  }
-
-  // ── Phase 2 : texte dans les sections descriptives (## Caractéristiques du produit, etc.) ──
-  const phase2Parts: string[] = []
-  let inDescSection = false
-  for (const line of lines) {
-    const trimmed = line.trim()
-
-    // Heading markdown
-    if (/^#{2,4}\s/.test(trimmed)) {
-      const heading = trimmed.replace(/^#{2,4}\s+/, '')
-      if (nonDescSectionRe.test(heading)) {
-        inDescSection = false
-        continue
-      }
-      if (descSectionRe.test(heading)) {
-        inDescSection = true
-        continue
-      }
-      // Heading inconnu : quitter la section desc en cours
-      if (inDescSection) {
-        inDescSection = false
-        continue
-      }
-      continue
-    }
-
-    // Titre en bold sur une ligne seule (format Bosch : **Points forts du produit**)
-    const boldLine = trimmed.match(/^\*\*(.+?)\*\*\s*$/)
-    if (boldLine) {
-      const heading = boldLine[1]
-      if (nonDescSectionRe.test(heading)) {
-        inDescSection = false
-        continue
-      }
-      if (descSectionRe.test(heading)) {
-        inDescSection = true
-        continue
-      }
-    }
-
-    if (!inDescSection) continue
-    if (!trimmed) continue
-    const c = clean(trimmed)
-    if (isProseText(c)) {
-      const norm = c.toLowerCase().slice(0, 50)
-      if (!phase2Parts.some(p => p.toLowerCase().slice(0, 50) === norm)) {
-        phase2Parts.push(c)
-      }
-    }
-    if (phase2Parts.length >= 8) break
-  }
-
-  // ── Phase 3 : fallback — trouver le plus long bloc de prose consécutif dans tout le markdown ──
-  const phase3Parts: string[] = []
-  if (phase1Parts.length === 0 && phase2Parts.length === 0) {
-    let currentBlock: string[] = []
-    let bestBlock: string[] = []
-    let bestLen = 0
-    for (const line of lines) {
-      const trimmed = line.trim()
-      const c = clean(trimmed)
-      if (trimmed && isProseText(c) && c.length >= 50) {
-        currentBlock.push(c)
-      } else {
-        const blockLen = currentBlock.reduce((s, p) => s + p.length, 0)
-        if (blockLen > bestLen) {
-          bestBlock = [...currentBlock]
-          bestLen = blockLen
-        }
-        currentBlock = []
-      }
-    }
-    // Vérifier le dernier bloc
-    const blockLen = currentBlock.reduce((s, p) => s + p.length, 0)
-    if (blockLen > bestLen) bestBlock = currentBlock
-    if (bestBlock.length > 0) phase3Parts.push(...bestBlock.slice(0, 6))
-  }
-
-  // ── Sélection du meilleur résultat ──
-  // Préférer Phase 2 (section descriptive identifiée) si elle a du contenu riche
-  // Sinon Phase 1 (après le titre), sinon Phase 3 (fallback prose)
-  const phase2Text = phase2Parts.join('\n\n').trim()
-  const phase1Text = phase1Parts.join('\n\n').trim()
-  const phase3Text = phase3Parts.join('\n\n').trim()
-
-  // Si Phase 2 a trouvé du contenu riche, le préférer
-  if (phase2Text.length > phase1Text.length && phase2Text.length >= 50) {
-    return phase2Text
-  }
-  // Si Phase 1 a du contenu décent, le combiner avec Phase 2
-  if (phase1Text.length >= 50) {
-    if (phase2Text.length >= 50) {
-      // Les deux ont du contenu — combiner en évitant les doublons
-      const combined = phase1Text
-      const p2Norm = phase2Text.toLowerCase().slice(0, 50)
-      if (!combined.toLowerCase().includes(p2Norm.slice(0, 30))) {
-        return (combined + '\n\n' + phase2Text).trim()
-      }
-      return combined
-    }
-    return phase1Text
-  }
-  // Fallback : Phase 2 ou Phase 3
-  if (phase2Text.length >= 40) return phase2Text
-  if (phase3Text.length >= 40) return phase3Text
-
-  // Dernier recours : H1 comme description minimale
-  const h1Match = md.match(/^#\s+(.+)/m)
-  if (h1Match) return clean(h1Match[1])
-
-  return ''
+  return parseDescriptionFromMarkdownExternal(md)
 }
 
 /** Retire le préfixe du nom de colonne dans la valeur d'une cellule markdown.
@@ -3078,47 +2831,20 @@ function canonicalizeImageUrl(url: string): string {
   }
 }
 
-/** Teste si une URL est une image junk (logo, picto, badge, miniature de PDF,
- *  etc.). Partagé entre parseImagesFromMarkdown et le filtrage des images LLM. */
-function isJunkImageUrl(url: string): boolean {
-  try {
-    const path = new URL(url).pathname
-    const filename = path.split('/').pop()?.toLowerCase() ?? ''
-    const segments = path.split('/').filter(Boolean)
-    // Extensions non-photo : SVG et ICO quasi toujours des pictos/icônes.
-    if (/\.(svg|ico)(\?|$)/i.test(url)) return true
-    // Noms de fichier de pictos/logos/ornements (start ou milieu de nom).
-    if (/^(logo|favicon|sprite|spacer|blank|pixel|transparent|1x1|beacon|icon|ico|picto|pictogram|badge|banner|bannière|flag|trust|seal|award|certif|cert|stamp|star|rating|review|note|etoile|medal|ribbon|bullet|check|tick|arrow|fleche|chevron|caret|cross|croix)\b/i.test(filename)) return true
-    if (/[-_](logo|icon|avatar|favicon|sprite|spacer|pixel|tracking|beacon|picto|pictogram|badge|banner|flag|trust|seal|award|certif|stamp|star|rating|medal|ribbon|thumb|thumbnail|miniature|preview|placeholder|overlay|watermark|social|share|heart|favorite|wish|cart|bag|compare|print|printer)[-_.\d]/i.test(filename)) return true
-    // Miniatures de PDF/docs
-    if (/\.pdf\.(jpe?g|png|webp|avif)$/i.test(filename)) return true
-    if (/^(fiche|notice|datasheet|tech[-_]?sheet|manual|doc|document|brochure|catalog|flyer)[-_.]/i.test(filename)) return true
-    // Noms de fichier promotionnels (campagnes, tarifs, plaquettes commerciales).
-    if (/^(tarif|tarifs|catalogue|plaquette|affiche|promo|promotion|campagne|actu|actualite|news|blog|article|hero|slide|slider|slideshow|bandeau|encart|flyer|landing|home|homepage|carousel[-_]?home)[-_.]/i.test(filename)) return true
-    // Drupal imagecache styles avec doc/thumb/icon/banner/news/...
-    const styleMatch = path.match(/\/styles\/([^/]+)\//i)
-    if (styleMatch && /(^|[-_])(doc|docs|document|documents|pdf|notice|fiche|datasheet|brochure|thumb|mini|icon|logo|picto|badge|flag|banner|bandeau|hero|slide|slider|slideshow|promo|promotion|news|blog|actualite|article|campagne|landing|hp|home|homepage|carousel[-_]?home|segment|secteur|domaine|metier|chantier|reference|projet|inspiration|temoignage|partenaire|brand|marque|lifestyle|tarif|catalogue|plaquette|affiche|encart|application)([-_]|$)/i.test(styleMatch[1])) return true
-    // Path segment dédié aux documents/logos/icônes/banners/news/segments
-    if (segments.some(s => /^(docs?|documents?|pdfs?|notices?|fiches?|brochures?|datasheets?|logos?|icons?|icones?|pictos?|badges?|banners?|bandeaux?|sliders?|slideshows?|heroes?|promos?|promotions?|news|blog|actualit[ée]s?|articles?|campagnes?|marketing|communication|segments?|secteurs?|domaines?|m[ée]tiers?|chantiers?|r[ée]f[ée]rences?|projets?|inspirations?|t[ée]moignages?|partenaires?|brands?|marques?|lifestyle|landing|home|homepage|hp|tarifs?|catalogues?|flyers?|affiches?|plaquettes?|encarts?|flags?|seals?|awards?|certificates?|ornements?|sprites?|assets[-_]?icons?)$/i.test(s))) return true
-    // Drupal year-folder : /sites/.../files/[styles/<x>/public/]20XX/... = contenu promo/actu daté
-    // (un produit légitime serait sous /products/ ou /produits/, pas dans un dossier d'année).
-    if (/\/sites\/[^/]+\/files\/(?:styles\/[^/]+\/public\/)?(?:19|20)\d{2}\b/i.test(path) && !/\/produits?\//i.test(path)) return true
-    // Réseaux sociaux — tester TOUTE l'URL pas juste les 2 derniers segments
-    // (certains CDN placent le logo LinkedIn à /assets/social/logo/linkedin.png).
-    if (/\b(facebook|fb[-_]|twitter|instagram|youtube|linkedin|tiktok|pinterest|whatsapp|telegram|snapchat|reddit|vimeo|xing|discord)\b/i.test(url)) return true
-    // Chemins assets globaux (sans dossier produit/media identifiable).
-    if (/\/(assets|static|public|dist|build|common|shared)\/(images?|img|icons?|logos?|svg|media)\//i.test(path)) return true
-    // URL très petite (< 2 segments = probable asset global)
-    if (segments.length <= 1) return true
-    return false
-  } catch {
-    return false
-  }
-}
-
 function parseImagesFromMarkdown(md: string): string[] {
-  // Limiter l'extraction au contenu avant les sections documents/associés/etc.
-  md = truncateBeforeNonProductSections(md)
+  // On parcourt le markdown FULL — la troncature avalait :
+  //   - les blocs `JINA_EXTRACTED_IMAGES_*` (Jina les injecte en queue ; et
+  //     le scrape fabricant fusionne POST + GET → DEUX blocs distincts dont
+  //     un seul était lu via `indexOf`),
+  //   - les inline `![](url)` du carousel produit principal (les sites
+  //     Drupal placent souvent leur galerie après une section qui matche
+  //     le cutoff ex: "Documents" / "Téléchargements"),
+  //   - l'Images Summary, Image N: url, og:image, Links Summary placés en
+  //     fin de markdown.
+  // Le filtrage des images de related-products se fait via `isJunkImageUrl`
+  // (mégamenu, doc-carousel, picto, logo) puis le sélecteur PRODUCT_PATH_RE
+  // + dedup par stem en fin de fonction — pas besoin de tronquer le source.
+  const fullMd = md
 
   const seen = new Set<string>()
   const images: string[] = []
@@ -3133,25 +2859,25 @@ function parseImagesFromMarkdown(md: string): string[] {
     images.push(u)
   }
 
-  // 1. Jina injected images block (JINA_EXTRACTED_IMAGES_START/END)
-  const jinaImgStart = md.indexOf('JINA_EXTRACTED_IMAGES_START')
-  const jinaImgEnd = md.indexOf('JINA_EXTRACTED_IMAGES_END')
-  if (jinaImgStart >= 0 && jinaImgEnd > jinaImgStart) {
-    const block = md.slice(jinaImgStart + 'JINA_EXTRACTED_IMAGES_START'.length, jinaImgEnd)
-    for (const line of block.split('\n')) {
+  // 1. TOUS les blocs Jina injected images (JINA_EXTRACTED_IMAGES_START/END).
+  //    La fusion POST + JSON dans `jinaScrapeMaufacturerPage` produit deux
+  //    blocs successifs (30 + 69 images) — il faut les parcourir tous, pas
+  //    seulement le premier.
+  for (const m of fullMd.matchAll(/JINA_EXTRACTED_IMAGES_START\s*([\s\S]*?)\s*JINA_EXTRACTED_IMAGES_END/g)) {
+    for (const line of m[1].split('\n')) {
       const url = line.trim()
       if (url && /^https?:\/\//.test(url)) addImg(url)
     }
   }
 
-  // 2. Inline markdown images: ![alt](url)
-  for (const m of md.matchAll(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g)) {
+  // 2. Inline markdown images: ![alt](url) — fullMd
+  for (const m of fullMd.matchAll(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g)) {
     addImg(m[2])
   }
 
-  // 3. Jina "Images Summary" / "Images:" section at end of markdown
+  // 3. Jina "Images Summary" / "Images:" section at end of markdown — fullMd
   //    Formats: "Image N (alt): url" or "[Image N (alt)](url)" or just plain URLs
-  const imgSectionMatch = md.match(/(?:^|\n)#{0,4}\s*(?:Images?\s*(?:Summary)?|Photos?)\s*:?\s*\n([\s\S]+?)(?:\n#{1,4}\s|\n\n---|\n\n\*\*|$)/im)
+  const imgSectionMatch = fullMd.match(/(?:^|\n)#{0,4}\s*(?:Images?\s*(?:Summary)?|Photos?)\s*:?\s*\n([\s\S]+?)(?:\n#{1,4}\s|\n\n---|\n\n\*\*|$)/im)
   if (imgSectionMatch) {
     const section = imgSectionMatch[1]
     // [alt](url) format
@@ -3172,24 +2898,24 @@ function parseImagesFromMarkdown(md: string): string[] {
     }
   }
 
-  // 4. Plain URLs with image extensions anywhere in the markdown
-  for (const m of md.matchAll(/(https?:\/\/[^\s)"\]]+\.(?:jpe?g|png|webp|avif)[^\s)"\]]*)/gi)) {
+  // 4. Plain URLs with image extensions — fullMd
+  for (const m of fullMd.matchAll(/(https?:\/\/[^\s)"\]]+\.(?:jpe?g|png|webp|avif)[^\s)"\]]*)/gi)) {
     addImg(m[1])
   }
 
-  // 5. Jina "Image N (alt): url" format (sometimes outside a section)
-  for (const m of md.matchAll(/Image\s+\d+[^:]*:\s*(https?:\/\/[^\s)"\]]+)/gim)) {
+  // 5. Jina "Image N (alt): url" format (Jina range ces ancres en fin de md) — fullMd
+  for (const m of fullMd.matchAll(/Image\s+\d+[^:]*:\s*(https?:\/\/[^\s)"\]]+)/gim)) {
     addImg(m[1])
   }
 
-  // 6. og:image or meta image URLs in Jina metadata
-  for (const m of md.matchAll(/(?:og:image|twitter:image|image_src|meta\s*image)\s*[:=]\s*(https?:\/\/[^\s)"\]]+)/gim)) {
+  // 6. og:image or meta image URLs in Jina metadata — fullMd
+  for (const m of fullMd.matchAll(/(?:og:image|twitter:image|image_src|meta\s*image)\s*[:=]\s*(https?:\/\/[^\s)"\]]+)/gim)) {
     addImg(m[1])
   }
 
-  // 7. Links Summary — images disguised as regular links in Jina's Links section
+  // 7. Links Summary — Jina place ce bloc en queue de markdown — fullMd
   //    Format: [alt text](url.jpg) in a Links section
-  const linksSectionMatch = md.match(/(?:^|\n)#{0,4}\s*Links?\s*(?:Summary)?\s*:?\s*\n([\s\S]+?)(?:\n#{1,4}\s|$)/im)
+  const linksSectionMatch = fullMd.match(/(?:^|\n)#{0,4}\s*Links?\s*(?:Summary)?\s*:?\s*\n([\s\S]+?)(?:\n#{1,4}\s|$)/im)
   if (linksSectionMatch) {
     for (const m of linksSectionMatch[1].matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+\.(?:jpe?g|png|webp|avif)[^)\s]*)\)/gi)) {
       addImg(m[1])
@@ -3209,7 +2935,7 @@ function parseImagesFromMarkdown(md: string): string[] {
       deduped.push(url)
     }
   }
-  console.log('[parseImagesFromMarkdown] mdLen=', md.length, 'raw=', images.length, 'productMatch=', productImages.length, 'final=', deduped.length, 'sample:', deduped.slice(0, 3))
+  console.log('[parseImagesFromMarkdown] fullMdLen=', fullMd.length, 'raw=', images.length, 'productMatch=', productImages.length, 'final=', deduped.length, 'sample:', deduped.slice(0, 3))
   return deduped
 }
 
@@ -3217,20 +2943,35 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
   const advantages: Array<{ text: string; group?: string }> = []
   const seenTexts = new Set<string>()
 
-  // Sections qui contiennent des avantages (bullet points)
-  const featureKeywords = /(?:avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+|atouts?|plus\s+produit|caract[eé]ristiques?)/i
-  // Sections qui NE contiennent PAS des avantages → quitter la featureZone
-  const exitKeywords = /(?:sp[eé]cification|caract[eé]ristiques?\s*techniques?|donn[eé]es\s*technique|descriptif\s*technique|t[eé]l[eé]chargement|downloads?|documents?|avis|reviews?|r[eé]f[eé]rences?|variantes?|accessoires?\s*associ|prix|tarif|contact|mentions?\s*l[eé]gal|conditions?\s*g[eé]n[eé]ral|informations?\s*compl[eé]ment|[eé]quipement|application)/i
+  // Sections qui contiennent des avantages (bullet points).
+  // `applications?` ajouté car sur RS Components / Conrad / Distrelec, le H3
+  // `### **Applications**` liste les cas d'usage du produit (= avantages
+  // marketing). Précédemment ce mot était dans exitKeywords et faisait sortir
+  // le parser de la featureZone, perdant 3+ bullets de description.
+  // "Caractéristiques" seul = section de specs (Dyson : nom de spec + valeur sur 2 lignes).
+  // "Description complète" (Dyson) = section qui contient les bullets de features détaillés.
+  const featureKeywords = /(?:avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|les\s*\+|atouts?|plus\s+produit|caract[eé]ristiques?\s+du\s+produit|description\s+(?:compl[eèé]te|d[eé]taill[eé]e)|applications?)/i
+  // "Caractéristiques" seul (sans "du produit") → section specs → exit.
+  const exitKeywords = /(?:sp[eé]cification|caract[eé]ristiques?(?!\s+du\s+produit)|donn[eé]es\s*technique|descriptif\s*technique|t[eé]l[eé]chargement|downloads?|documents?|avis|reviews?|note\s+g[eé]n[eé]rale|description\s+sommaire|filtrer\s+les\s+avis|trier\s+les\s+avis|foire\s+aux\s+questions|faq|r[eé]f[eé]rences?|variantes?|accessoires?\s*associ|prix|tarif|contact|mentions?\s*l[eé]gal|conditions?\s*g[eé]n[eé]ral|informations?\s*compl[eé]ment|[eé]quipement\s+et\s+application|domaine\s+d[‘’]application)/i
   // Contenu commercial/politique à filtrer
   const COMMERCIAL_RE = /achet[eé]|achat|retourn|rembours|livr[eé]|exp[eé]di|panier|commander|boutique|magasin|labellis[eé]|certifi[eé].*utilisateur|v[eé]rifi[eé].*identit|historique.*d.achat|provien.*d.utilisateur|contrefaçon|authenticit|service\s*client|cat[eé]gories?\s*d.?[eé]valuation|distinguons?\s*trois|noter\s*ce\s*produit/i
 
   const extractGroupName = (raw: string): string | undefined => {
-    const cleaned = raw
+    const stripped = raw
       .replace(/\*\*/g, '')
       .replace(/^les\s*\+\s*/i, '')
       .replace(/^(avantages?|features?|points?\s*forts?|b[eé]n[eé]fices?|atouts?|plus\s+produit|caract[eé]ristiques?)\s*/i, '')
       .trim()
-    return cleaned.length > 1 && cleaned.length < 80 ? cleaned : undefined
+    // Si le strip ne laisse rien (heading = juste le prefixe générique),
+    // on n'a pas de groupe utile.
+    if (stripped.length === 0) return undefined
+    // Si le strip vide trop le heading (ex: "Avantages produits" -> "produits"
+    // qui est ambigu), on garde le heading complet pour préserver la sémantique.
+    if (stripped.length < 3 || stripped.split(/\s+/).length === 1) {
+      const fullCleaned = raw.replace(/\*\*/g, '').trim()
+      return fullCleaned.length > 1 && fullCleaned.length < 80 ? fullCleaned : undefined
+    }
+    return stripped.length > 1 && stripped.length < 80 ? stripped : undefined
   }
 
   const addBullet = (text: string, group: string | undefined) => {
@@ -3240,6 +2981,9 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
       .replace(/\\\\/g, '')
       .trim()
     if (clean.length < 15 || clean.startsWith('http') || /^\d+$/.test(clean) || seenTexts.has(clean)) return
+    // Artefacts d'image-liens `[![img](url)label](anchor)` → après nettoyage: `!Image N:...`
+    if (clean.startsWith('!')) return
+    if (/\]\(https?:/.test(clean)) return
     // Rejeter le contenu commercial / politique
     if (COMMERCIAL_RE.test(clean)) return
     // Rejeter les noms de specs isolés (sans verbe, sans valeur)
@@ -3255,7 +2999,24 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
 
   const lines = md.split('\n')
   let currentGroup: string | undefined
+  // Bold heading SANS bullet à l'intérieur de la zone features → devient le groupe
+  // pour les bullets bold suivants (ex Dyson: ## Description complète puis
+  // **Détection des taches…** au-dessus de `*  **Robot intelligent : …**`).
+  let currentBoldGroup: string | undefined
   let inFeatureZone = false
+  // pendingAdvantage : avantage en cours de construction. Démarré par un
+  // bullet bold, enrichi par les paragraphes prose suivants. Poussé au flush.
+  let pendingAdvantage: { text: string; group?: string } | null = null
+
+  const flushPending = () => {
+    if (!pendingAdvantage) return
+    const adv = pendingAdvantage
+    pendingAdvantage = null
+    if (adv.text.length < 15) return
+    if (seenTexts.has(adv.text)) return
+    seenTexts.add(adv.text)
+    advantages.push(adv)
+  }
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim()
@@ -3266,36 +3027,52 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
       const headingText = headingMatch[1].replace(/\*\*/g, '').trim()
       // Quitter si on entre dans une section technique / commerciale / autre
       if (exitKeywords.test(headingText)) {
+        flushPending()
         inFeatureZone = false
         currentGroup = undefined
+        currentBoldGroup = undefined
         continue
       }
       if (featureKeywords.test(headingText)) {
+        flushPending()
         inFeatureZone = true
         currentGroup = extractGroupName(headingText)
+        currentBoldGroup = undefined
         continue
       }
       if (inFeatureZone) {
         const level = trimmed.match(/^(#{1,5})/)?.[1].length ?? 99
         if (level <= 2) {
+          flushPending()
           inFeatureZone = false
           currentGroup = undefined
+          currentBoldGroup = undefined
         }
       }
       continue
     }
 
-    // Texte bold seul = potentiel titre de section
+    // Texte bold seul = potentiel titre de section ou sous-groupe
     const boldMatch = trimmed.match(/^\*\*(.+?)\*\*\s*$/)
     if (boldMatch) {
       if (exitKeywords.test(boldMatch[1])) {
+        flushPending()
         inFeatureZone = false
         currentGroup = undefined
+        currentBoldGroup = undefined
         continue
       }
       if (featureKeywords.test(boldMatch[1])) {
+        flushPending()
         inFeatureZone = true
         currentGroup = extractGroupName(boldMatch[1])
+        currentBoldGroup = undefined
+        continue
+      }
+      // Bold heading dans la zone features → sous-groupe
+      if (inFeatureZone) {
+        flushPending()
+        currentBoldGroup = boldMatch[1].replace(/\*\*/g, '').trim()
         continue
       }
     }
@@ -3306,30 +3083,48 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
       const nextLine = (lines[i + 1] ?? '').trim()
       const isTitleBeforeBullets = /^[-*•·✓✔]\s+/.test(nextLine)
       if (isTitleBeforeBullets || inFeatureZone) {
+        flushPending()
         inFeatureZone = true
         currentGroup = extractGroupName(trimmed)
+        currentBoldGroup = undefined
         continue
       }
     }
 
     if (!inFeatureZone) continue
 
-    // Bullet points explicites
+    // Bullet bold `* **Titre**` → démarre un nouvel avantage hiérarchique.
+    // Les paragraphes prose qui suivent seront ajoutés à son texte.
+    const bulletBoldMatch = trimmed.match(/^[-*•·✓✔]\s+\*\*(.+?)\*\*\s*$/)
+    if (bulletBoldMatch) {
+      flushPending()
+      const title = bulletBoldMatch[1].replace(/\*\*/g, '').trim()
+      if (title.length >= 5) {
+        pendingAdvantage = {
+          text: title,
+          group: currentBoldGroup ?? currentGroup,
+        }
+      }
+      continue
+    }
+
+    // Bullet points explicites (non-bold)
     const bulletMatch = trimmed.match(/^[-*•·✓✔]\s+(.+)/)
     if (bulletMatch) {
-      addBullet(bulletMatch[1], currentGroup)
+      flushPending()
+      addBullet(bulletMatch[1], currentBoldGroup ?? currentGroup)
       continue
     }
 
     // Numérotés : "1. Texte"
     const numberedMatch = trimmed.match(/^\d+\.\s+(.+)/)
     if (numberedMatch && numberedMatch[1].length > 20) {
-      addBullet(numberedMatch[1], currentGroup)
+      flushPending()
+      addBullet(numberedMatch[1], currentBoldGroup ?? currentGroup)
       continue
     }
 
-    // Paragraphes de prose dans la zone features (pas un heading, pas un tableau, pas un lien)
-    // Certaines pages mettent les avantages en texte libre plutôt qu'en bullets
+    // Paragraphes de prose dans la zone features
     if (
       trimmed.length >= 40
       && !trimmed.startsWith('|')
@@ -3339,11 +3134,23 @@ function parseAdvantagesFromMarkdown(md: string): Array<{ text: string; group?: 
       && !COMMERCIAL_RE.test(trimmed)
       && !isGarbageContent(trimmed)
     ) {
-      addBullet(trimmed, currentGroup)
+      const cleanedProse = trimmed
+        .replace(/\*\*/g, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/\\\\/g, '')
+        .trim()
+      // Si un avantage hiérarchique est en cours → la prose est sa description.
+      // Sinon : paragraphe libre = avantage à part entière.
+      if (pendingAdvantage) {
+        pendingAdvantage.text += '\n\n' + cleanedProse
+      } else {
+        addBullet(trimmed, currentBoldGroup ?? currentGroup)
+      }
       continue
     }
   }
 
+  flushPending()
   return advantages
 }
 
@@ -3834,6 +3641,7 @@ export function useProductEnrichment() {
                     images: toArr(f.images),
                     documents,
                     price: null,
+                    breadcrumb: toArr(f.breadcrumb).length > 0 ? toArr(f.breadcrumb) : undefined,
                     sourceUrl: productUrl,
                     additionalSources: [],
                     generatedAt: Date.now(),
@@ -4184,11 +3992,19 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         if (markdownContent && markdownContent.length > 200) {
           const mdSpecs = parseSpecsFromMarkdown(markdownContent)
           const mdAdvantages = parseAdvantagesFromMarkdown(markdownContent)
-          let mdDescription = parseDescriptionFromMarkdown(markdownContent)
+          // Description : parser uniquement la section primaire pour éviter
+          // que le texte UI des pages avis (/avis?productCode=...) contamine
+          // la description produit.
+          const primaryMd = extractPrimarySourceSection(markdownContent)
+          let mdDescription = parseDescriptionFromMarkdown(primaryMd)
+          console.log('[enrichment] parseDescriptionFromMarkdown returned:', mdDescription.length, 'chars. First 200:', JSON.stringify(mdDescription.slice(0, 200)))
 
           if (!mdDescription || mdDescription.length < 30) {
             const h1Match = markdownContent.match(/^#\s+(.+)/m)
-            if (h1Match) mdDescription = h1Match[1].replace(/\*\*/g, '').trim()
+            if (h1Match) {
+              mdDescription = h1Match[1].replace(/\*\*/g, '').trim()
+              console.log('[enrichment] mdDescription < 30 → fallback H1:', JSON.stringify(mdDescription))
+            }
           }
 
           console.log('[enrichment] markdown build attempt:', { specs: mdSpecs.length, advantages: mdAdvantages.length, descLen: mdDescription.length })
@@ -4203,6 +4019,31 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               .map(m => ({ name: m[1].trim(), url: m[2].trim() }))
             const directDocuments: EnrichedDocument[] = []
             const directDocsSeen = new Set<string>()
+            // 0. Tous les blocs JINA_EXTRACTED_DOWNLOADS injectés par le scraper
+            //    (POST + GET → potentiellement 2 blocs). Format : `title##url`
+            //    OU `title | url` selon la source (Drupal vs Relay).
+            for (const m of markdownContent.matchAll(/JINA_EXTRACTED_DOWNLOADS_START\s*([\s\S]*?)\s*JINA_EXTRACTED_DOWNLOADS_END/g)) {
+              for (const line of m[1].split('\n')) {
+                const trimmed = line.trim()
+                if (!trimmed) continue
+                let name: string | undefined
+                let url: string
+                const sepHash = trimmed.indexOf('##')
+                const sepPipe = trimmed.indexOf(' | ')
+                if (sepHash > 0) {
+                  name = trimmed.slice(0, sepHash).trim()
+                  url = trimmed.slice(sepHash + 2).trim()
+                } else if (sepPipe > 0) {
+                  name = trimmed.slice(0, sepPipe).trim()
+                  url = trimmed.slice(sepPipe + 3).trim()
+                } else if (/^https?:\/\//.test(trimmed)) {
+                  url = trimmed
+                } else continue
+                if (!url || directDocsSeen.has(url)) continue
+                directDocsSeen.add(url)
+                directDocuments.push(buildDocument(url, name))
+              }
+            }
             for (const t of mdDocTitled) {
               if (directDocsSeen.has(t.url)) continue
               directDocsSeen.add(t.url)
