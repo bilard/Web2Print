@@ -6,7 +6,7 @@ import { useEnrichmentStore } from './enrichmentStore'
 import type { EnrichedProduct, EnrichedDocument } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle, extractPrimarySourceSection } from './scrapeBundle'
-import { buildDocument, coerceDocuments, basenameFromUrl } from './documentUtils'
+import { buildDocument, coerceDocuments } from './documentUtils'
 import { sanitizeJinaMarkdown, looksLikeBotChallenge } from './markdownSanitize'
 import { extractLongestProseParagraph } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
@@ -325,7 +325,7 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   }
 
   // ── 4. Documents : ajouter les PDFs trouvés dans le markdown (jamais en perdre) ──
-  let documents: EnrichedDocument[] = [...enriched.documents]
+  const documents: EnrichedDocument[] = [...enriched.documents]
   const seenUrls = new Set(documents.map((d) => d.url))
   const mdPdfUrls = [...markdownContent.matchAll(/https?:\/\/[^\s\)"\]]+\.pdf[^\s\)"\]]*/gi)].map(m => m[0])
   let bareAdded = 0
@@ -2849,15 +2849,6 @@ function parseCharacteristicsBlob(blob: string): Record<string, string> {
  *  Gère : ![alt](url), Images Summary Jina, URLs brutes avec extension,
  *  et URLs CDN sans extension claire (dans le contexte d'une section images).
  */
-/** Coupe le markdown avant les sections qui ne contiennent PAS d'images produit
- *  (documents/téléchargements, produits associés/similaires, conseils, avis, FAQ, footer).
- *  Retourne le markdown restant — ou le markdown complet si aucune coupure trouvée. */
-function truncateBeforeNonProductSections(md: string): string {
-  const cutoffRe = /\n#{1,4}\s+(Documents?|T[eé]l[eé]chargements?|Downloads?|Conseils?|Produits?\s+associ[eé]s?|Produits?\s+similaires?|Produits?\s+r[eé]cemment|Produits?\s+compl[eé]mentaires?|Accessoires?\b|Related\s+products?|Complementary\s+products?|Avis|Reviews?|FAQ|Questions?\s+fr[eé]quentes?|Nos\s+Domaines)/i
-  const m = cutoffRe.exec(md)
-  return m ? md.slice(0, m.index) : md
-}
-
 /** Extrait le "stem" d'une URL d'image pour dédup : dernier segment path,
  *  extensions retirées (gère les doubles .jpg.webp de Drupal imagecache). */
 function imageStem(url: string): string {

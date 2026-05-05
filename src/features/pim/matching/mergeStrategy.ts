@@ -63,7 +63,7 @@ export function applyPreview(
 
   // 2. Merge sur masters existants ou batch
   preview.mergedOnExisting.forEach((merge) => {
-    let target = productsById.get(merge.targetProductId)
+    const target = productsById.get(merge.targetProductId)
     if (!target) return
     const updated = mergeIntoMaster(target, merge.snapshot, sourceId, opts.now)
     productsById.set(target._id, updated)
