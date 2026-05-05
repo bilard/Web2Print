@@ -1,4 +1,4 @@
-import { Rect, Line, Circle, type FabricObject } from 'fabric'
+import { Rect, Circle, type FabricObject } from 'fabric'
 
 export interface PrintMarksOptions {
   canvasWidthPx: number

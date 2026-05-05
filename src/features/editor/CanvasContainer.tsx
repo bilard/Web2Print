@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Canvas, Point, IText, FabricImage, Rect, type FabricObject } from 'fabric'
+import { Canvas, Point, IText, FabricImage } from 'fabric'
 import { useCanvas } from './useCanvas'
 import { setIsInteracting } from './useAddObject'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'

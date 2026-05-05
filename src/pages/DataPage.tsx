@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Upload, Download, Search, ArrowLeft,
   Table2, Tag, Plus, Save, Cloud, CloudOff,
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
-  MoreVertical, ExternalLink, Sparkles, Layers, X,
+  MoreVertical, ExternalLink, Sparkles, Layers,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight,
 } from 'lucide-react'
@@ -24,7 +24,6 @@ import { UpdatePreviewModal } from '@/features/excel/UpdatePreviewModal'
 import { ScrapingModal } from '@/features/scraping/ScrapingModal'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
-import { toast } from 'sonner'
 
 type RightTab = 'fields' | 'taxonomy'
 
@@ -76,7 +75,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         pruneEmptySheet(i)
       }
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDocId])
 
   const sheet = sheets[activeSheetIndex]
