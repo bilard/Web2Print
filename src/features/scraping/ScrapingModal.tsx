@@ -199,7 +199,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       setLastFields([])
       // Reset de l'entrée précédente pour éviter d'afficher un résultat périmé
       clearEnrichEntry(SCRAPE_MODAL_SHEET, enrichRowId)
-      resetEnrich()
+      resetEnrich(SCRAPE_MODAL_SHEET, enrichRowId)
       // Titre dérivé du slug URL — la pipeline le raffinera ensuite
       await enrich({
         sheetName: SCRAPE_MODAL_SHEET,

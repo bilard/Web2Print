@@ -326,9 +326,9 @@ function ImagesSection({
       specifications: data.specifications,
       variants: data.variants,
       title: input.title,
-      sourceUrl: data.sourceUrl ?? input.url,
+      sourceUrl: data.sourceUrl ?? input.knownUrl,
     }),
-    [data.specifications, data.variants, data.sourceUrl, input.title, input.url],
+    [data.specifications, data.variants, data.sourceUrl, input.title, input.knownUrl],
   )
   const images = data.images
   const photos = useMemo(() => images.filter((u) => classifyImage(u, refs) === 'photo'), [images, refs])

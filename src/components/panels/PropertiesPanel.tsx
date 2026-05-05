@@ -19,7 +19,7 @@ import { applyImageFill as applyImageFillUtil } from '@/features/editor/applyIma
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { GradientPicker, gradientToFabric, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
 import type { Canvas } from 'fabric'
-import type { GradientConfig } from '@/stores/editor.store'
+import type { GradientConfig, CanvasObjectProps } from '@/stores/editor.store'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useImageGallery } from '@/features/nanobana/useImageGallery'
 import { useUIStore } from '@/stores/ui.store'
@@ -353,7 +353,7 @@ export function PropertiesPanel() {
     else setActiveTab('shape')
   }, [selectedObjectId, storeObj?.type])
 
-  const applyToFabric = (patch: Parameters<typeof updateObject>[1]) => {
+  const applyToFabric = (patch: Partial<CanvasObjectProps>) => {
     if (!obj) return
     const canvas = globalFabricCanvas
     const fObj = canvas?.getObjects().find((o) => (o as any).data?.id === obj.id)

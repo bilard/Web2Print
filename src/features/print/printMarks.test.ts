@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildPrintMarks } from './printMarks'
-import { Rect, Line } from 'fabric'
+import { Rect } from 'fabric'
 
 describe('buildPrintMarks', () => {
   const baseOpts = {
@@ -43,7 +43,7 @@ describe('buildPrintMarks', () => {
     const cropLines = objs.filter((o) => (o as any).data?.markType === 'crop-mark')
     expect(cropLines).toHaveLength(8)
     for (const l of cropLines) {
-      expect(l).toBeInstanceOf(Line)
+      expect(l).toBeInstanceOf(Rect)
     }
   })
 

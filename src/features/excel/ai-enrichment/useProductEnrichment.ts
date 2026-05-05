@@ -4059,7 +4059,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           console.log('[enrichment] parseDescriptionFromMarkdown returned:', mdDescription.length, 'chars. First 200:', JSON.stringify(mdDescription.slice(0, 200)))
 
           if (!mdDescription || mdDescription.length < 30) {
-            const h1Match = markdownContent.match(/^#\s+(.+)/m)
+            const h1Match = markdownContent?.match(/^#\s+(.+)/m)
             if (h1Match) {
               mdDescription = h1Match[1].replace(/\*\*/g, '').trim()
               console.log('[enrichment] mdDescription < 30 → fallback H1:', JSON.stringify(mdDescription))
@@ -4148,11 +4148,11 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             }
             // Prix structurés (TTC/HT/barré/promo/éco-participation)
             // Sources : markdown patterns + JSON-LD offers (priorité JSON-LD).
-            const jsonLdPricing = structured && (structured as { offers?: { price?: number; priceCurrency?: string; priceValidUntil?: string } }).offers
+            const jsonLdPricing = structured?.offers
               ? {
-                  ttc: typeof (structured as { offers: { price?: number } }).offers.price === 'number' ? (structured as { offers: { price: number } }).offers.price : undefined,
-                  currency: (structured as { offers: { priceCurrency?: string } }).offers.priceCurrency || 'EUR',
-                  validUntil: (structured as { offers: { priceValidUntil?: string } }).offers.priceValidUntil,
+                  ttc: typeof structured.offers.price === 'number' ? structured.offers.price : undefined,
+                  currency: structured.offers.priceCurrency || 'EUR',
+                  validUntil: structured.offers.priceValidUntil,
                 }
               : undefined
             const mdPricing = parsePricingFromMarkdown(mdSafe, jsonLdPricing)

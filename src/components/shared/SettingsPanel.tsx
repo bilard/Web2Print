@@ -936,7 +936,7 @@ function SiteCookiesSection() {
             DevTools → Application → Cookies → sélectionner tout → copier · Tableau auto-parsé (colonnes analytiques ignorées)
           </p>
           <div className="flex gap-1 justify-end">
-            <button onClick={() => { setAdding(false); setNewCookie(''); setNewHostname(''); setParsedPreview('') }} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">Annuler</button>
+            <button onClick={() => { setAdding(false); setNewCookie(''); setNewHostname('') }} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">Annuler</button>
             <button onClick={handleAdd} disabled={!newHostname.trim() || (!newCookie.trim() && !parsedPreview)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5 disabled:opacity-30">Ajouter</button>
           </div>
         </div>

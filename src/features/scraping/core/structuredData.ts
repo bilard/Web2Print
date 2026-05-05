@@ -14,6 +14,13 @@ export interface StructuredProductData {
   category?: string
   images: string[]
   specs: Array<{ name: string; value: string }>
+  /** Offres extraites du JSON-LD (Schema.org `offers`). Présent si le site
+   *  expose un prix structuré. */
+  offers?: {
+    price?: number
+    priceCurrency?: string
+    priceValidUntil?: string
+  }
 }
 
 const stripHtml = (s: string): string => s.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim()
@@ -75,6 +82,21 @@ const extractBrand = (brand: unknown): string | undefined => {
     return (brand as Record<string, string>).name
   }
   return undefined
+}
+
+const extractOffers = (raw: unknown): StructuredProductData['offers'] => {
+  if (!raw) return undefined
+  const obj = Array.isArray(raw) ? raw[0] : raw
+  if (!obj || typeof obj !== 'object') return undefined
+  const o = obj as Record<string, unknown>
+  const priceRaw = o.price
+  const price = typeof priceRaw === 'number'
+    ? priceRaw
+    : (typeof priceRaw === 'string' && priceRaw.trim() !== '' && !isNaN(Number(priceRaw)) ? Number(priceRaw) : undefined)
+  const priceCurrency = typeof o.priceCurrency === 'string' ? o.priceCurrency : undefined
+  const priceValidUntil = typeof o.priceValidUntil === 'string' ? o.priceValidUntil : undefined
+  if (price === undefined && !priceCurrency && !priceValidUntil) return undefined
+  return { price, priceCurrency, priceValidUntil }
 }
 
 const extractSpecs = (props: unknown): Array<{ name: string; value: string }> => {
@@ -158,8 +180,9 @@ export function parseStructuredDataFromHtml(html: string): StructuredProductData
 
   const images = extractImages(product.image)
   const specs = extractSpecs(product.additionalProperty)
+  const offers = extractOffers(product.offers)
 
-  return { name, description, brand, manufacturer, sku, gtin: gtin || undefined, mpn, category, images, specs }
+  return { name, description, brand, manufacturer, sku, gtin: gtin || undefined, mpn, category, images, specs, offers }
 }
 
 /**

@@ -495,13 +495,20 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // Anti-prose : le name doit ressembler à un vrai nom de spec (max 5 mots,
     // pas un article). La contrainte majuscule initiale est retirée : dans les
     // sections specs FR, "diamètre max dans l'acier" (minuscule) est une vraie spec.
-    if (inSpecSection) {
+    // Skip les bullets typographiques → laisser Format 5 les traiter (sinon ce
+    // format les capture avec le bullet en préfixe puis add() rejette).
+    if (inSpecSection && !/^[•·▪●◦▶]/.test(trimmed)) {
       const kvMatch = trimmed.match(/^([^:]{2,50})\s*:\s+(.{1,200})$/)
       if (kvMatch) {
         const n = kvMatch[1].replace(/\*\*/g, '').trim()
         const v = kvMatch[2].replace(/\*\*/g, '').trim()
+        const wordCount = n.split(/\s+/).length
+        const startsWithUpper = /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(n)
+        // Noms minuscule-initial autorisés mais plus stricts (max 4 mots) :
+        // "diamètre max dans l'acier" est une vraie spec, mais
+        // "serre de jardin en polycarbonate" est de la prose.
         const looksLikeSpecName =
-          n.split(/\s+/).length <= 5
+          (startsWithUpper ? wordCount <= 5 : wordCount <= 4)
           && !/^(le|la|les|un|une|des|du|de|cette|ce|ces|votre|notre|optimis[eé]z?|am[eé]lior[eé]z?|d[eé]couvr[eé]z?|s[eé]lectionnez|profit[eé]z?)\b/i.test(n)
         if (n && v && !/^https?:/.test(n) && looksLikeSpecName) {
           add(n, v, currentGroup)
