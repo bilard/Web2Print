@@ -7,6 +7,7 @@ import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import { getApiKey } from '@/lib/apiKeys'
 import { functions } from '@/lib/firebase/config'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
+import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
 
 /** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
  *  e-commerce (contourne les protections anti-bot qui servent aux crawlers
@@ -45,19 +46,59 @@ export const BRAND_OFFICIAL_SITES: Record<string, { label: string; baseUrl: stri
   einhell:    { label: 'Einhell',          baseUrl: 'https://www.einhell.fr/' },
   flex:       { label: 'Flex',             baseUrl: 'https://www.flex-tools.com/fr-fr/' },
   worx:       { label: 'Worx',            baseUrl: 'https://www.worx.com/fr/' },
+  aeg:        { label: 'AEG',              baseUrl: 'https://www.aeg-powertools.eu/fr/' },
+  hilti:      { label: 'Hilti',            baseUrl: 'https://www.hilti.fr/' },
+  grundfos:   { label: 'Grundfos',         baseUrl: 'https://product-selection.grundfos.com/fr/' },
+  geberit:    { label: 'Geberit',          baseUrl: 'https://www.geberit.fr/' },
+  villeroy:   { label: 'Villeroy & Boch',  baseUrl: 'https://www.villeroy-boch.fr/' },
+  roca:       { label: 'Roca',             baseUrl: 'https://www.roca.fr/' },
+  ideal:      { label: 'Ideal Standard',   baseUrl: 'https://www.idealstandard.fr/' },
 }
 
-const RESELLER_HOSTS = /leroymerlin|castorama|boulanger|fnac|darty|amazon|cdiscount|manomano|conforama|ikea|bricomarche|bricodepot|bricorama|mr-bricolage|toolstation|prolians|wurth|berner|distriartisan|outillage-online|guedo|mabeo|maxoutil|debonix/i
+export const RESELLER_HOSTS = /leroymerlin|castorama|boulanger|fnac|darty|amazon|cdiscount|manomano|conforama|ikea|bricomarche|bricodepot|bricorama|mr-bricolage|toolstation|prolians|wurth|berner|distriartisan|outillage-online|guedo|mabeo|maxoutil|debonix|rubix|screwfix|tooled-up|orexad|raja|rs-online|rs-components|conrad|farnell|distrelec|reichelt/i
 
-/** Détecte la marque dans une URL de revendeur et retourne le site officiel FR */
+/** Préfixes SKU industriels reconnus → marque. Permet de détecter la marque
+ *  même quand son nom n'est pas dans l'URL — courant chez les revendeurs B2B
+ *  qui n'utilisent que la référence (Rubix : `dga506rtj`, `dcg405n`, etc.).
+ *  Liste à étendre au besoin, mais reste universelle (préfixes constructeurs
+ *  documentés, pas du keyword retail-français). */
+const SKU_BRAND_PREFIXES: Array<{ pattern: RegExp; brand: string }> = [
+  { pattern: /\b(?:dga|dhr|dhp|ddf|dls|dpb|duh|dub|dlw|djr|dtm|dtw|dtd|dlm|dmr|dur|dn|drt|drv|dcl|dcs|djs)\d{2,4}/i, brand: 'makita' },
+  { pattern: /\b(?:dcg|dcd|dch|dcs|dcb|dcn|dcf|dcr|dcm|dcl|dcw|dcp|dcst|dcmt|dcmw)\d{2,4}/i, brand: 'dewalt' },
+  { pattern: /\b(?:gbh|gsr|gbs|gbm|gws|gas|gst|gop|gho|gli|gex|gss|gco|glm|gtb|gke|gkf|gks|gkt)\d{2,4}/i, brand: 'bosch' },
+  { pattern: /\bm(?:12|18|28)\b\s?[-_]?[a-z]{2,5}/i, brand: 'milwaukee' },
+  { pattern: /\b(?:bsb|btw|bdd|bek|bex|bks|bsh|bsp|bts|bvc|bsj|bld|bmm)\d{2,4}/i, brand: 'aeg' },
+  { pattern: /\b(?:ts|of|ro|ets|psc|pdc|kapex|domino)\b\s?\d{2,4}/i, brand: 'festool' },
+  { pattern: /\bksc?[a-z]{0,3}\d{2,4}/i, brand: 'metabo' },
+  { pattern: /\b(?:rb|olt|rl)\d{2,4}/i, brand: 'ryobi' },
+]
+
+/** Détecte la marque dans une URL de revendeur et retourne le site officiel FR.
+ *  Cherche dans 3 sources :
+ *   1. Mot-clé marque dans le path/host (`milwaukee`, `bosch`…)
+ *   2. Préfixe SKU industriel connu (`DGA506RTJ` → Makita, `DCG405N` → DeWalt)
+ *   3. Aucune trouvée → null
+ *  Fonctionne aussi sur les URLs de gros revendeurs B2B qui n'écrivent que
+ *  la référence sans nom de marque (ex: Rubix, Mabéo, Würth). */
 export function detectBrandFromUrl(url: string): { brand: string; officialSite: typeof BRAND_OFFICIAL_SITES[string] } | null {
   try {
     const host = new URL(url).hostname
     if (!RESELLER_HOSTS.test(host)) return null
-    const path = new URL(url).pathname.toLowerCase() + ' ' + new URL(url).hostname.toLowerCase()
+    const path = new URL(url).pathname.toLowerCase() + ' ' + host.toLowerCase()
+
+    // 1. Match par nom de marque (existant)
     for (const [key, site] of Object.entries(BRAND_OFFICIAL_SITES)) {
       if (path.includes(key)) return { brand: key, officialSite: site }
     }
+
+    // 2. Match par préfixe SKU (nouveau)
+    for (const { pattern, brand } of SKU_BRAND_PREFIXES) {
+      if (pattern.test(path)) {
+        const site = BRAND_OFFICIAL_SITES[brand]
+        if (site) return { brand, officialSite: site }
+      }
+    }
+
     return null
   } catch { return null }
 }
@@ -470,6 +511,35 @@ export function enrichedProductToSheet(
   return { name, columns, rows: [row], taxonomy: [] }
 }
 
+/** Variante multi-produits de `enrichedProductToSheet` — agrège plusieurs
+ *  EnrichedProduct dans une même feuille (un produit = une ligne).
+ *  Utilisé par Map+Extract et Crawl quand on enrichit plusieurs URLs d'un coup. */
+export function enrichedProductsToSheet(
+  products: EnrichedProduct[],
+  name: string,
+  titles: string[],
+): ExcelSheet {
+  const columns: ExcelColumn[] = [
+    {
+      key: 'name',
+      label: 'Nom',
+      fieldType: 'text',
+      detectedType: 'text',
+      isPrimary: true,
+      width: 240,
+    },
+    ...ENRICHMENT_COLUMNS.map(buildEnrichmentColumn),
+  ]
+
+  const rows: ExcelRow[] = products.map((product, i) => ({
+    _id: `enriched_${i}`,
+    name: titles[i] ?? `Produit ${i + 1}`,
+    ...serializeEnriched(product, null),
+  }))
+
+  return { name, columns, rows, taxonomy: [] }
+}
+
 export function crawlPagesToSheet(pages: CrawlPage[], name: string): ExcelSheet {
   return {
     name,
@@ -809,7 +879,7 @@ async function llmExtract(
         }],
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: schema,
+          responseSchema: sanitizeSchemaForGemini(schema),
           temperature: 0.1,
         },
       }),

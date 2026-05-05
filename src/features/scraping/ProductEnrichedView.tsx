@@ -1,4 +1,4 @@
-import { Check, FileDown, Zap } from 'lucide-react'
+import { Check, FileDown, Zap, ShieldAlert } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { displayDocumentName } from '@/features/excel/ai-enrichment/documentUtils'
 
@@ -38,6 +38,23 @@ export function ProductEnrichedView({ product }: Props) {
 
   return (
     <div className="space-y-4">
+      {product.blockedByAntiBot && (
+        <section className="flex items-start gap-3 px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/[0.06]">
+          <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <div className="flex-1 text-[12px] text-red-300/90 space-y-1">
+            <p className="font-semibold">Site bloqué par anti-bot (DataDome / Akamai / Cloudflare)</p>
+            <p className="text-red-300/70">
+              Le proxy et l'IA n'ont pas pu accéder à la fiche produit — toutes les sources renvoient une page CAPTCHA.
+              Pour scraper ce produit, deux options :
+            </p>
+            <ul className="text-[11px] text-red-300/60 list-disc list-inside space-y-0.5">
+              <li>Recharger les crédits <strong className="text-red-300">Firecrawl</strong> (Paramètres → Connecteurs) — son anti-bot stealth passe la majorité des sites protégés</li>
+              <li>Utiliser le <strong className="text-red-300">site fabricant</strong> de la marque détectée (banner ambre dans Scrape) — pas d'anti-bot, données complètes</li>
+            </ul>
+          </div>
+        </section>
+      )}
+
       {product.description && (
         <section className="px-4 py-3 rounded-lg border border-white/[0.06] bg-white/[0.02]">
           <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Description</p>

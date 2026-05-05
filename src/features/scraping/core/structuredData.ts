@@ -161,3 +161,141 @@ export function parseStructuredDataFromHtml(html: string): StructuredProductData
 
   return { name, description, brand, manufacturer, sku, gtin: gtin || undefined, mpn, category, images, specs }
 }
+
+/**
+ * Parse les microdata Schema.org embarquées dans le HTML
+ * (`<div itemscope itemtype="https://schema.org/Product">`).
+ *
+ * Beaucoup de sites e-commerce utilisent microdata au lieu (ou en plus) du
+ * JSON-LD : Magento legacy, Prestashop, certains Shopify, sites custom.
+ * Ce parser couvre ce cas — appelé en fallback de `parseStructuredDataFromHtml`.
+ */
+export function parseMicrodataFromHtml(html: string): StructuredProductData | null {
+  if (typeof DOMParser === 'undefined') return null
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(html, 'text/html')
+  } catch {
+    return null
+  }
+
+  // Trouve le scope Product (peut être imbriqué dans une page avec plusieurs)
+  const productScopes = doc.querySelectorAll('[itemscope][itemtype*="schema.org/Product" i]')
+  if (productScopes.length === 0) return null
+
+  // Choisit le scope avec le plus de itemprop renseignés
+  let bestScope: Element | null = null
+  let bestCount = 0
+  for (const scope of Array.from(productScopes)) {
+    const count = scope.querySelectorAll('[itemprop]').length
+    if (count > bestCount) {
+      bestCount = count
+      bestScope = scope
+    }
+  }
+  if (!bestScope || bestCount === 0) return null
+
+  /** Extrait la valeur d'un itemprop (gère content="", value attr, ou textContent) */
+  const getItemprop = (root: Element, name: string): string | null => {
+    // Prend le premier itemprop direct (pas dans un sub-scope imbriqué)
+    const all = root.querySelectorAll(`[itemprop~="${name}" i]`)
+    for (const el of Array.from(all)) {
+      // Ignore si dans un sub-scope (ex: brand → on veut l'extérieur)
+      let parent = el.parentElement
+      let inSubScope = false
+      while (parent && parent !== root) {
+        if (parent.hasAttribute('itemscope')) { inSubScope = true; break }
+        parent = parent.parentElement
+      }
+      if (inSubScope) continue
+
+      const tag = el.tagName.toLowerCase()
+      let val: string | null = null
+      if (tag === 'meta') val = el.getAttribute('content')
+      else if (tag === 'img') val = el.getAttribute('src') || el.getAttribute('content')
+      else if (tag === 'a' || tag === 'link') val = el.getAttribute('href')
+      else if (tag === 'time') val = el.getAttribute('datetime') || el.textContent
+      else if (tag === 'data' || tag === 'meter') val = el.getAttribute('value') || el.textContent
+      else val = el.getAttribute('content') || el.textContent
+      val = val?.trim() ?? null
+      if (val) return val
+    }
+    return null
+  }
+
+  /** Extrait les images : tous les itemprop="image" + meta images */
+  const getImages = (root: Element): string[] => {
+    const out: string[] = []
+    for (const el of Array.from(root.querySelectorAll('[itemprop~="image" i]'))) {
+      const tag = el.tagName.toLowerCase()
+      const u = tag === 'img' ? el.getAttribute('src')
+        : tag === 'meta' ? el.getAttribute('content')
+        : el.getAttribute('href') || el.getAttribute('content')
+      if (u && /^https?:\/\//.test(u) && !out.includes(u)) out.push(u)
+    }
+    return out
+  }
+
+  /** additionalProperty : <div itemprop="additionalProperty" itemscope itemtype="...PropertyValue">
+   *    <meta itemprop="name" content="..."/>
+   *    <meta itemprop="value" content="..."/>
+   *  </div>
+   */
+  const getSpecs = (root: Element): Array<{ name: string; value: string }> => {
+    const out: Array<{ name: string; value: string }> = []
+    const propScopes = root.querySelectorAll('[itemprop~="additionalProperty" i][itemscope]')
+    for (const scope of Array.from(propScopes)) {
+      const name = getItemprop(scope, 'name')
+      const value = getItemprop(scope, 'value')
+      if (name && value) out.push({ name: name.trim(), value: value.trim() })
+    }
+    return out
+  }
+
+  const name = getItemprop(bestScope, 'name') ?? undefined
+  const descRaw = getItemprop(bestScope, 'description') ?? undefined
+  const description = descRaw ? stripHtml(descRaw) : undefined
+
+  // Brand : peut être un sub-scope avec name, ou une string directe
+  let brand: string | undefined
+  const brandScope = bestScope.querySelector('[itemprop~="brand" i][itemscope]')
+  if (brandScope) {
+    const bn = brandScope.querySelector('[itemprop~="name" i]')
+    brand = bn?.getAttribute('content') ?? bn?.textContent ?? undefined
+  } else {
+    brand = getItemprop(bestScope, 'brand') ?? undefined
+  }
+  brand = brand?.trim() || undefined
+
+  const sku = getItemprop(bestScope, 'sku') ?? undefined
+  const mpn = getItemprop(bestScope, 'mpn') ?? undefined
+  const gtin = getItemprop(bestScope, 'gtin13')
+    ?? getItemprop(bestScope, 'gtin')
+    ?? getItemprop(bestScope, 'gtin12')
+    ?? getItemprop(bestScope, 'gtin8')
+    ?? undefined
+  const category = getItemprop(bestScope, 'category') ?? undefined
+
+  const images = getImages(bestScope)
+  const specs = getSpecs(bestScope)
+
+  // Pas de produit si aucune donnée utile
+  if (!name && !description && images.length === 0 && specs.length === 0) return null
+
+  return {
+    name: name?.trim(),
+    description: description?.trim(),
+    brand,
+    sku: sku?.trim(),
+    gtin: gtin?.trim(),
+    mpn: mpn?.trim(),
+    category: category?.trim(),
+    images,
+    specs,
+  }
+}
+
+/** Try JSON-LD then microdata. Returns first non-null result. */
+export function parseStructuredDataAny(html: string): StructuredProductData | null {
+  return parseStructuredDataFromHtml(html) ?? parseMicrodataFromHtml(html)
+}

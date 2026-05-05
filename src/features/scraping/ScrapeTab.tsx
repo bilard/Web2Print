@@ -1,8 +1,14 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Sparkles, Loader2, ChevronDown, ChevronUp, Timer, RefreshCw, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Sparkles, Loader2, ChevronDown, ChevronUp, Timer, RefreshCw, Link2, ListPlus, FileSpreadsheet, Cloud, X as XIcon } from 'lucide-react'
 import type { ScrapingField, ScrapingMode, ScrapeResult, ExtractionTarget } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
-import { FIELD_TEMPLATES, detectBrandFromUrl } from './useJina'
+import { FIELD_TEMPLATES } from './useJina'
+import { BrandSuggestion } from './BrandSuggestion'
+import { extractUrlsFromFile, extractUrlsFromGoogleSheet, extractUrlsFromText } from './urlSourceParsers'
+import { useGDriveStore } from '@/stores/gdrive.store'
+import { toast } from 'sonner'
+
+type UrlSource = 'single' | 'list' | 'file' | 'sheet'
 
 interface Props {
   url: string
@@ -14,6 +20,11 @@ interface Props {
   result: ScrapeResult | null
   /** Appelé quand l'utilisateur clique sur la suggestion de site officiel */
   onUrlSuggestion?: (url: string) => void
+  /** Lance le pipeline d'enrichissement complet (Produit complet) sur N URLs.
+   *  Requis pour les modes Liste/Fichier/Sheet. */
+  onEnrichMany?: (urls: string[]) => Promise<void> | void
+  /** True quand un batch est en cours — désactive les boutons multi-URL. */
+  batchRunning?: boolean
 }
 
 /** Parse une chaîne breadcrumb saisie à la main en tableau de niveaux.
@@ -26,7 +37,7 @@ function parseManualBreadcrumb(raw: string): string[] {
     .filter((s) => s.length > 0 && s.length < 80)
 }
 
-export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: Props) {
+export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onEnrichMany, batchRunning }: Props) {
   const [mode, setMode] = useState<ScrapingMode>('schema')
   const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.product_full.fields)
   const [prompt, setPrompt] = useState('')
@@ -41,6 +52,64 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
   })
   const [manualBreadcrumb, setManualBreadcrumb] = useState('')
 
+  // ── Multi-URL : source + URLs détectées ─────────────────────────────────────
+  const [urlSource, setUrlSource] = useState<UrlSource>('single')
+  const [listText, setListText] = useState('')
+  const [importedUrls, setImportedUrls] = useState<string[]>([])
+  const [sheetIdOrUrl, setSheetIdOrUrl] = useState('')
+  const [importing, setImporting] = useState(false)
+  const gdriveAccessToken = useGDriveStore((s) => s.accessToken)
+  const gdriveConnected = useGDriveStore((s) => s.connected)
+
+  const listUrls = urlSource === 'list' ? extractUrlsFromText(listText) : []
+  const multiUrls = urlSource === 'list' ? listUrls : urlSource === 'file' || urlSource === 'sheet' ? importedUrls : []
+  const isMulti = urlSource !== 'single'
+
+  const handleFileUpload = async (file: File | null) => {
+    if (!file) return
+    setImporting(true)
+    try {
+      const urls = await extractUrlsFromFile(file)
+      setImportedUrls(urls)
+      if (urls.length === 0) toast.warning(`Aucune URL trouvée dans ${file.name}`)
+      else toast.success(`${urls.length} URL(s) détectée(s) dans ${file.name}`)
+    } catch (e) {
+      toast.error(`Échec import : ${e instanceof Error ? e.message : 'inconnu'}`)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleSheetImport = async () => {
+    if (!gdriveAccessToken) {
+      toast.error('Connecte Google Drive dans Paramètres → Connectors')
+      return
+    }
+    // Accepte l'URL complète d'un Sheet OU juste l'ID
+    const idMatch = sheetIdOrUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/) ?? sheetIdOrUrl.match(/^([a-zA-Z0-9-_]{20,})$/)
+    const fileId = idMatch?.[1]
+    if (!fileId) {
+      toast.error('ID ou URL de Sheet invalide')
+      return
+    }
+    setImporting(true)
+    try {
+      const urls = await extractUrlsFromGoogleSheet(fileId, gdriveAccessToken)
+      setImportedUrls(urls)
+      if (urls.length === 0) toast.warning('Aucune URL trouvée dans le Sheet')
+      else toast.success(`${urls.length} URL(s) importée(s) depuis le Sheet`)
+    } catch (e) {
+      toast.error(`Échec import Sheet : ${e instanceof Error ? e.message : 'inconnu'}`)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleLaunchBatch = async () => {
+    if (!onEnrichMany || multiUrls.length === 0) return
+    await onEnrichMany(multiUrls)
+  }
+
   /** Met à jour waitFor + persiste en localStorage. Valeur 0 = réinitialise
    *  la préférence (auto-détection réactivée). */
   const updateWaitFor = (v: number) => {
@@ -51,9 +120,6 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
 
   const hasBreadcrumbField = fields.some((f) => f.key === 'breadcrumb')
   const parsedManualBreadcrumb = parseManualBreadcrumb(manualBreadcrumb)
-
-  // Détection de marque → suggestion site officiel
-  const brandSuggestion = useMemo(() => detectBrandFromUrl(url), [url])
 
   // Auto-détection des sites SPA/JS-heavy → active waitFor par défaut.
   // Skip si l'utilisateur a déjà une préférence persistée (localStorage) pour
@@ -74,21 +140,130 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
 
   return (
     <div className="space-y-4">
-      {/* Suggestion site officiel */}
-      {brandSuggestion && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/8 border border-amber-500/20">
-          <ExternalLink className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <p className="text-[11px] text-amber-300/80 flex-1">
-            <strong>{brandSuggestion.officialSite.label}</strong> détecté — privilégier le site officiel pour des données complètes
-          </p>
-          <button
-            onClick={() => onUrlSuggestion?.(brandSuggestion.officialSite.baseUrl)}
-            className="text-[10px] px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/20 transition-colors whitespace-nowrap"
-          >
-            {new URL(brandSuggestion.officialSite.baseUrl).hostname}
-          </button>
+      {/* Sélecteur de source d'URLs : 1 URL / Liste / Fichier / Google Sheet */}
+      <div>
+        <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1">Source des URLs</label>
+        <div className="flex rounded-md overflow-hidden border border-white/10">
+          {([
+            ['single', '1 URL', Link2],
+            ['list', 'Liste', ListPlus],
+            ['file', 'Fichier', FileSpreadsheet],
+            ['sheet', 'Google Sheet', Cloud],
+          ] as [UrlSource, string, typeof Link2][]).map(([s, label, Icon]) => (
+            <button
+              key={s}
+              onClick={() => { setUrlSource(s); setImportedUrls([]) }}
+              className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] px-2 py-1.5 transition-colors ${
+                urlSource === s ? 'bg-indigo-500/20 text-indigo-300' : 'text-white/30 hover:text-white/50'
+              }`}
+            >
+              <Icon className="w-3 h-3" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mode "Liste" : textarea N URLs */}
+      {urlSource === 'list' && (
+        <div>
+          <label className="text-[10px] text-white/30 uppercase tracking-wider flex items-center justify-between mb-1.5">
+            <span>Liste d'URLs (une par ligne)</span>
+            {listUrls.length > 0 && (
+              <span className="text-[10px] text-emerald-400/80 normal-case tracking-normal">
+                {listUrls.length} URL{listUrls.length > 1 ? 's' : ''} détectée{listUrls.length > 1 ? 's' : ''}
+              </span>
+            )}
+          </label>
+          <textarea
+            value={listText}
+            onChange={(e) => setListText(e.target.value)}
+            placeholder={'https://example.com/produit-1\nhttps://example.com/produit-2\nhttps://example.com/produit-3'}
+            rows={6}
+            className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none resize-y transition-colors font-mono"
+          />
+          <p className="text-[10px] text-white/25 mt-1">Colle un texte libre — toutes les URLs http(s) sont détectées automatiquement.</p>
         </div>
       )}
+
+      {/* Mode "Fichier" : upload CSV/Excel */}
+      {urlSource === 'file' && (
+        <div className="space-y-2">
+          <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">Fichier CSV ou Excel</label>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods"
+              onChange={(e) => handleFileUpload(e.target.files?.[0] ?? null)}
+              disabled={importing}
+              className="flex-1 text-[11px] text-white/60 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-[11px] file:bg-indigo-500/20 file:text-indigo-300 hover:file:bg-indigo-500/30 file:cursor-pointer"
+            />
+            {importing && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin self-center" />}
+          </div>
+          <p className="text-[10px] text-white/25">Auto-détection de la colonne URL (header "url"/"lien"/"link" ou contenu http).</p>
+          {importedUrls.length > 0 && (
+            <div className="flex items-center justify-between p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
+              <span className="text-[11px] text-emerald-300">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''} importée{importedUrls.length > 1 ? 's' : ''}</span>
+              <button onClick={() => setImportedUrls([])} className="text-emerald-400/60 hover:text-emerald-300">
+                <XIcon className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mode "Google Sheet" : ID ou URL */}
+      {urlSource === 'sheet' && (
+        <div className="space-y-2">
+          <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1.5">URL ou ID du Google Sheet</label>
+          {!gdriveConnected && (
+            <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300/80">
+              Connecte Google Drive dans Paramètres → Connectors avant d'importer un Sheet.
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={sheetIdOrUrl}
+              onChange={(e) => setSheetIdOrUrl(e.target.value)}
+              placeholder="https://docs.google.com/spreadsheets/d/ABC.../edit  ou  ABC..."
+              disabled={!gdriveConnected || importing}
+              className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none transition-colors font-mono disabled:opacity-40"
+            />
+            <button
+              onClick={handleSheetImport}
+              disabled={!gdriveConnected || importing || !sheetIdOrUrl.trim()}
+              className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-medium disabled:opacity-40 transition-colors"
+            >
+              {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Importer'}
+            </button>
+          </div>
+          {importedUrls.length > 0 && (
+            <div className="flex items-center justify-between p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
+              <span className="text-[11px] text-emerald-300">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''} importée{importedUrls.length > 1 ? 's' : ''}</span>
+              <button onClick={() => setImportedUrls([])} className="text-emerald-400/60 hover:text-emerald-300">
+                <XIcon className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Aperçu des URLs en mode multi (10 premières) */}
+      {isMulti && multiUrls.length > 0 && (
+        <div className="max-h-32 overflow-y-auto space-y-0.5 p-2 bg-black/20 border border-white/[0.06] rounded-lg">
+          {multiUrls.slice(0, 10).map((u, i) => (
+            <p key={i} className="text-[10px] text-white/40 font-mono truncate" title={u}>
+              <span className="text-white/15 mr-1.5">{String(i + 1).padStart(2, '0')}</span>{u}
+            </p>
+          ))}
+          {multiUrls.length > 10 && (
+            <p className="text-[10px] text-white/25 italic">… et {multiUrls.length - 10} autre{multiUrls.length - 10 > 1 ? 's' : ''}</p>
+          )}
+        </div>
+      )}
+
+      <BrandSuggestion url={url} onAccept={(u) => onUrlSuggestion?.(u)} />
 
       {/* Cible + Mode */}
       <div className="space-y-2">
@@ -224,20 +399,35 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion }: P
         )}
       </div>
 
-      {/* Action */}
-      <button
-        onClick={() => onScrape(mode, fields, prompt, {
-          target,
-          waitFor: waitFor > 0 ? waitFor : undefined,
-          noCache,
-          manualBreadcrumb: parsedManualBreadcrumb.length > 0 ? parsedManualBreadcrumb : undefined,
-        })}
-        disabled={!url || loading}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-        {loading ? 'Extraction...' : 'Extraire'}
-      </button>
+      {/* Action — adapté selon mode single/multi */}
+      {isMulti ? (
+        <button
+          onClick={handleLaunchBatch}
+          disabled={multiUrls.length === 0 || batchRunning || loading}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {batchRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {batchRunning
+            ? `Enrichissement en cours…`
+            : multiUrls.length === 0
+              ? 'Aucune URL à enrichir'
+              : `Lancer ${multiUrls.length} enrichissement${multiUrls.length > 1 ? 's' : ''}`}
+        </button>
+      ) : (
+        <button
+          onClick={() => onScrape(mode, fields, prompt, {
+            target,
+            waitFor: waitFor > 0 ? waitFor : undefined,
+            noCache,
+            manualBreadcrumb: parsedManualBreadcrumb.length > 0 ? parsedManualBreadcrumb : undefined,
+          })}
+          disabled={!url || loading}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {loading ? 'Extraction...' : 'Extraire'}
+        </button>
+      )}
     </div>
   )
 }

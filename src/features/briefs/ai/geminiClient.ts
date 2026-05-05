@@ -32,7 +32,7 @@ interface GeminiResponse {
  *  `additionalProperties`, `$schema`, `definitions`). On strip récursivement
  *  ces clés avant l'appel. Pour `additionalProperties: { type: 'string' }` sur
  *  un object sans `properties` défini, on laisse Gemini inférer librement. */
-function sanitizeSchemaForGemini(node: unknown): unknown {
+export function sanitizeSchemaForGemini(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(sanitizeSchemaForGemini)
   if (node === null || typeof node !== 'object') return node
   const STRIP = new Set(['additionalProperties', '$schema', 'definitions', '$defs', '$ref', 'patternProperties', 'oneOf', 'anyOf', 'allOf', 'not'])

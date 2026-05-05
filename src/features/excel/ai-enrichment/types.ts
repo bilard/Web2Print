@@ -93,6 +93,11 @@ export interface EnrichedProduct {
    *  Clé = nom du champ défini dans le template (ex: "Titres court"),
    *  valeur = string pour champ unique, string[] pour champ liste. */
   customFields?: Record<string, string | string[]>
+  /** Vrai si le scraping a renvoyé une page CAPTCHA / challenge bot
+   *  (DataDome, Akamai, Cloudflare…) à toutes les sources tentées.
+   *  La donnée affichée est probablement vide ou très partielle.
+   *  Permet à l'UI d'afficher un bandeau d'alerte avec actions concrètes. */
+  blockedByAntiBot?: boolean
 }
 
 export type EnrichmentStatus =

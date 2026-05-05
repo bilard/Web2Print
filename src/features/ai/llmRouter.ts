@@ -68,7 +68,7 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
-  'product.enrichment':     { primary: 'gemini', fallback: 'claude', model: 'gemini-3-flash' },
+  'product.enrichment':     { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
   'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
 }

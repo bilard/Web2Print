@@ -1,10 +1,11 @@
 import { setGlobalOptions } from 'firebase-functions/v2'
 import { scrapeCatalogForBrief } from './scraper/scrapeCatalogForBrief'
 import { extractBreadcrumb } from './scraper/extractBreadcrumb'
+import { scrapeWithBrightData } from './scraper/brightDataUnlocker'
 
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
 
-export { scrapeCatalogForBrief, extractBreadcrumb }
+export { scrapeCatalogForBrief, extractBreadcrumb, scrapeWithBrightData }
 
 // --- DAM ---
 export { searchImages as damSearchImages } from './dam/searchImages'

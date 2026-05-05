@@ -199,3 +199,127 @@ dont 3,12 € de participation DEEE
     expect(p?.discount?.percent).toBeUndefined()
   })
 })
+
+describe('parsePricingFromMarkdown — HT/TTC turndown artefacts', () => {
+  it('matche `414,20 €^HT^` (turndown-rendered <sup>HT</sup>)', () => {
+    const md = 'Prix : 414,20 €^HT^ / unité'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+  })
+
+  it('matche `497,04 € *TTC*` (italique markdown autour de TTC)', () => {
+    const md = 'Total 497,04 € *TTC*'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(497.04)
+  })
+
+  it('matche les deux prix HT et TTC dans un même bloc style Rubix', () => {
+    const md = `
+414,20 €^HT^
+/ unité
+497,04 €^TTC^
+En stock
+`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+    expect(p?.ttc).toBe(497.04)
+  })
+
+  it('matche `414,20 € (HT)` (parens)', () => {
+    const md = '414,20 € (HT)'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+  })
+
+  it('matche avec saut de ligne entre € et HT/TTC', () => {
+    const md = '414,20 €\nHT\n'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+  })
+})
+
+describe('parsePricingFromMarkdown — inférence HT depuis 2 prix sans label', () => {
+  it('infère HT quand TTC matché et un prix plus petit (TVA ~20%) à proximité', () => {
+    // Cas : turndown perd les <sup>HT</sup>/<sup>TTC</sup>, il reste juste 2 prix
+    const md = `Prix unitaire
+414,20 €
+/ unité
+497,04 € TTC
+En stock`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(497.04)
+    expect(p?.ht).toBe(414.2)
+  })
+
+  it("n'infère PAS HT si l'autre prix est trop éloigné en valeur (>25% de différence)", () => {
+    const md = `100,00 €
+TVA non applicable
+500,00 € TTC`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(500)
+    // 500/100 = 5x → trop loin du facteur TVA, pas d'inférence
+    expect(p?.ht).toBeUndefined()
+  })
+
+  it("n'infère PAS HT si l'autre prix est plus grand (cas prix barré)", () => {
+    const md = `Prix promo : 100,00 €
+Avant : 150,00 €`
+    const p = parsePricingFromMarkdown(md)
+    // 150 > 100 donc pas HT — c'est probablement un prix barré
+    expect(p?.ht).toBeUndefined()
+  })
+
+  it('matche `**414,20** €^HT^` (bold autour du prix + sup tag)', () => {
+    const md = '**414,20** €^HT^ / unité'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+  })
+
+  it('matche `__414,20__ € __HT__` (italic markers)', () => {
+    const md = '__414,20__ € __HT__'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+  })
+
+  it('matche `<strong>414,20</strong> €<sup>HT</sup>` (HTML strong/sup résiduel)', () => {
+    const md = '<strong>414,20</strong> €<sup>HT</sup>'
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+  })
+
+  it('cas Rubix complet : HT bold prominent + TTC plus petit', () => {
+    // Reproduction de la sortie turndown probable du bloc prix Rubix
+    const md = `Prix unitaire
+
+**414,20** € ^HT^
+
+/ unité
+
+497,04 € ^TTC^
+
+En stock`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ht).toBe(414.2)
+    expect(p?.ttc).toBe(497.04)
+  })
+
+  it('infère HT via fallback global quand HT est éloigné du TTC dans le doc', () => {
+    // Cas Rubix : HT au top de la page, TTC en bas, séparés par 2000 chars de
+    // description, specs, etc. La fenêtre locale 250 chars ne les voit pas.
+    const md = `## Produit perforateur
+
+414,20 €
+
+${'X '.repeat(500)}
+
+Description très longue du produit...
+
+${'Y '.repeat(500)}
+
+Prix total : 497,04 € TTC
+`
+    const p = parsePricingFromMarkdown(md)
+    expect(p?.ttc).toBe(497.04)
+    expect(p?.ht).toBe(414.2)
+  })
+})

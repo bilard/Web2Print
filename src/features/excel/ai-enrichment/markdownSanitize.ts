@@ -1,4 +1,71 @@
 /**
+ * Détection universelle de pages CAPTCHA / bot challenge (DataDome, Akamai
+ * Bot Manager, Cloudflare, Imperva, hCaptcha, reCAPTCHA…).
+ *
+ * Quand un site détecte un scraper, il sert une page de vérification dont le
+ * texte ressemble à de la prose et déjoue les heuristiques `extractLongestProseParagraph`.
+ * Cette fonction reconnaît les phrases caractéristiques de ces pages pour
+ * forcer un fallback (Firecrawl ou abandon propre) avant que le LLM ingère
+ * le contenu pollué.
+ *
+ * Approche : compte les signaux distinctifs (≥ 2 hits = challenge confirmé).
+ * Évite le faux positif sur un produit qui parlerait d'authentification ou
+ * de captcha en passant.
+ */
+export function looksLikeBotChallenge(md: string): boolean {
+  if (!md || md.length < 30) return false
+  const sample = md.slice(0, 4000).toLowerCase()
+
+  // Signaux FORTS : 1 seul match suffit (textes très spécifiques aux pages
+  // anti-bot, jamais présents dans une vraie fiche produit).
+  const strongSignals = [
+    /\bvarious possible explanations for this\b/,         // DataDome boilerplate
+    /\bclicking play.{0,30}you will hear/,                // DataDome audio CAPTCHA
+    /\bbrowsing and clicking at a speed much faster\b/,   // DataDome
+    /\bis preventing javascript from working on your computer\b/, // DataDome
+    /\brobot on the same network\b/,                      // DataDome
+    /\bcaptcha-delivery\.com\b/,                          // DataDome host
+    /\bdatadome\b/,
+    /\bcf-browser-verification\b/,                        // Cloudflare
+    /\bcdn-cgi\/challenge-platform\b/,                    // Cloudflare
+    /\bjs_challenge\b/,                                   // Cloudflare
+    /\bsorry,?\s+you have been blocked\b/,                // Generic
+    /\byou have been blocked\b/,                          // Generic
+    /\bplease enable js and disable any ad blocker\b/,    // DataDome cmsg
+    /\bwe want to make sure\b.{0,80}\bnot a robot\b/,
+    /\bnous voulons (?:nous )?assurer.{0,80}(?:robot|humain)/,
+    /\bcette v[eé]rification est requise\b/,
+  ]
+  for (const re of strongSignals) {
+    if (re.test(sample)) return true
+  }
+
+  // Signaux FAIBLES : 2+ matches nécessaires (mots qui peuvent apparaître
+  // dans une vraie fiche produit en passant).
+  const weakSignals = [
+    /\bnot a robot\b/,
+    /\baren'?t a robot\b/,
+    /\bare you (?:a )?human\b/,
+    /\baudio verification\b/,
+    /\bvisual verification\b/,
+    /\b(?:re)?captcha\b/,
+    /\bhuman verification\b/,
+    /\bsecurity check\b.{0,80}(?:browser|verify)/,
+    /\bcomplete the (?:verification|challenge)\b/,
+    /\bunusual (?:traffic|activity)\b/,
+    /\bvotre navigateur.{0,30}(?:doit|requiert)\b/,
+    /\bsuspicious activity\b/,
+    /\baccess (?:denied|forbidden)\b/,
+  ]
+  let hits = 0
+  for (const re of weakSignals) {
+    if (re.test(sample)) hits++
+    if (hits >= 2) return true
+  }
+  return false
+}
+
+/**
  * Nettoie le markdown brut renvoyé par Jina Reader avant de l'envoyer au LLM
  * d'enrichissement. Cible les patterns parasites communs aux sites e-commerce
  * B2B (RS Components, Conrad, Distrelec, Reichelt, Würth…) :
@@ -83,6 +150,27 @@ export function sanitizeJinaMarkdown(raw: string): string {
 
   // 13. Préambule Jina (`\s*` éviterait `\n` et avalerait la ligne suivante !)
   md = md.replace(/^(Title|URL Source|Markdown Content):[ \t]*[^\n]*\n?/gim, '')
+
+  // 13a. Scripts/tags d'analytics & tracking inline (Tealium, GTM, Facebook Pixel,
+  //      Cookielaw, OneTrust, DoubleClick, etc.). Ces URLs ressemblent à de
+  //      la prose pour le LLM ; on les retire avant l'envoi pour éviter qu'elles
+  //      soient extraites comme description.
+  md = md.replace(
+    /^.*?(?:\/\/|https?:\/\/)?(?:tags\.tiqcdn\.com|utag\.(?:js|sync|loader)|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|fbevents\.js|fbcdn\.net|stats\.g\.doubleclick\.net|cdn\.cookielaw\.org|consent\.cookiebot\.com|cdn\.onetrust\.com|tag\.adloox\.com|hotjar\.com|hs-scripts\.com|matomo\.cloud|piwik\.pro|cdn\.matomo\.cloud|pixel\.gocheckable\.com)[^\s]*.*$/gim,
+    '',
+  )
+  // Protocol-relative ou absolu pointant vers un .js/.css/.json — pas de la prose
+  md = md.replace(/^\s*(?:\/\/|https?:\/\/)[^\s]+\.(?:js|css|json|map)\s*$/gim, '')
+
+  // 13b. Blocs JSON-LD (schema.org) bruts — utiles pour parsing structuré ailleurs,
+  //      mais pollution pure quand renvoyés au LLM en prose.
+  md = md.replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '')
+  // JSON Schema.org rendu par Jina sans wrapper script
+  md = md.replace(/^\s*\{\s*"@context"\s*:\s*"https?:\/\/schema\.org"[\s\S]*?\}\s*$/gim, '')
+
+  // 13c. Lignes de code/configuration techniques (window.dataLayer, ga(), etc.)
+  md = md.replace(/^\s*(?:window\.|var\s+|let\s+|const\s+|function\s+)\w+\s*[=(][\s\S]*?[;)]\s*$/gim, '')
+  md = md.replace(/^\s*(?:gtag|ga|fbq|_satellite|_paq)\s*\([^\n]*\)\s*;?\s*$/gim, '')
 
   // 14. Sections d'avis clients (Bazaarvoice / Yotpo / Trustpilot) :
   //     supprime tout entre `## Avis` (ou variantes) et la prochaine H2 non-avis.

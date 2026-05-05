@@ -109,19 +109,30 @@ export function extractLongestProseParagraph(md: string): string {
     if (p.startsWith('#') || p.startsWith('|') || p.startsWith('-') || p.startsWith('*')) return false
     if (/^[•▪►▶]/.test(p)) return false
     if (p.startsWith('!')) return false
-    if (/^https?:\/\//.test(p)) return false
+    // URLs (tout protocole : http(s), protocol-relative `//`, file://, data:)
+    if (/^(?:https?:\/\/|\/\/|file:|data:|javascript:|mailto:)/.test(p)) return false
     // Pas de markdown link au début (souvent des titles cliquables)
     if (/^\[/.test(p)) return false
+    // Code/config technique (window.dataLayer, gtag, JSON, etc.)
+    if (/^\s*(?:window\.|var\s+|let\s+|const\s+|function\s+|gtag|ga\s*\(|fbq\s*\(|\{\s*["@])/.test(p)) return false
     // Métadonnées concentrées (Code commande, Référence:, etc.)
     if (/^(code\s+commande|r[eé]f[eé]rence|sku|ean|gtin|brand|marque)\s*[:=]/i.test(p)) return false
     // Cookie / GDPR / privacy banner — souvent des paragraphes longs en
     // français qui ressemblent à de la prose mais sont du juridique.
     if (/\b(cookies?|privacy|recaptcha|consent|fonctionnalit[eé]s?\s+(?:du\s+)?site|exp[eé]rience\s+client|paramétrer|accepter|refuser|technologies\s+essentielles)\b/i.test(p)) return false
+    // Heuristique anti-URL-soup : si plus de 30% du paragraphe est composé de
+    // tokens URL/chemin (slashes, points, slugs hyphenés), ce n'est pas de la prose.
+    const urlTokens = (p.match(/[a-z0-9-]+(?:[./][a-z0-9-]+){2,}/gi) ?? []).join('').length
+    if (urlTokens / p.length > 0.3) return false
     // Doit ressembler à de la prose : commence par majuscule, contient un verbe
     // (heuristique : la 1re ligne contient un mot ≥ 5 chars).
     const firstLine = p.split('\n')[0]
     if (!/^[A-ZÀ-Ÿ]/.test(firstLine)) return false
     if (firstLine.length < 30 && !p.includes('\n')) return false
+    // Ratio de mots français/alphabétiques sur le total. La prose contient
+    // beaucoup de mots ; les blocs de code/URLs en contiennent peu.
+    const words = p.match(/\b[a-zà-ÿ]{3,}\b/gi) ?? []
+    if (words.length < 8) return false
     if (isNavLikeDescription(p)) return false
     return true
   }

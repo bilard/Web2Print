@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeJinaMarkdown } from './markdownSanitize'
+import { sanitizeJinaMarkdown, looksLikeBotChallenge } from './markdownSanitize'
 
 describe('sanitizeJinaMarkdown', () => {
   it('strips top navigation links squished together (RS-style)', () => {
@@ -298,5 +298,101 @@ Comment ça marche ?
     expect(out).not.toContain('Bazaarvoice')
     expect(out).not.toContain('602 Avis')
     expect(out).not.toContain('Note globale')
+  })
+
+  it('strips Tealium / GTM / Facebook Pixel tracking URLs (universal)', () => {
+    const md = `# Produit
+
+//tags.tiqcdn.com/utag/kingfisher/screwfix-fr/prod/utag.js
+https://www.googletagmanager.com/gtm.js?id=GTM-XXXX
+//connect.facebook.net/en_US/fbevents.js
+
+Description réelle du produit ici.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).not.toContain('tags.tiqcdn.com')
+    expect(out).not.toContain('googletagmanager')
+    expect(out).not.toContain('connect.facebook.net')
+    expect(out).toContain('Description réelle du produit ici.')
+  })
+
+  it('strips JSON-LD blocks (schema.org)', () => {
+    const md = `# Produit
+
+{ "@context": "https://schema.org", "@type": "Product", "name": "Test" }
+
+Description réelle.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).not.toContain('@context')
+    expect(out).not.toContain('schema.org')
+    expect(out).toContain('Description réelle.')
+  })
+
+  it('detects DataDome bot challenge page (Rubix-style)', () => {
+    const challenge = `We want to make sure it is actually you we are dealing with and not a robot.
+
+The visual verification might not be accessible to you. We recommend you to use the audio verification instead. Important: after clicking play, you will hear 6 digits.
+
+Why is this verification required? Something about the behaviour of the browser has caught our attention.
+
+There are various possible explanations for this:`
+    expect(looksLikeBotChallenge(challenge)).toBe(true)
+  })
+
+  it('detects French CAPTCHA challenge page', () => {
+    const challenge = `Nous voulons nous assurer qu'il s'agit bien de vous et non d'un robot.
+
+Cette vérification est requise car votre navigateur a un comportement inhabituel.
+
+Veuillez compléter le captcha pour continuer.`
+    expect(looksLikeBotChallenge(challenge)).toBe(true)
+  })
+
+  it('detects DataDome bullet variant (no "robot/captcha" wording)', () => {
+    // Variant observé sur Rubix : seul "various possible explanations" + bullets
+    const challenge = `There are various possible explanations for this:
+* you are browsing and clicking at a speed much faster than expected of a human being
+* something is preventing Javascript from working on your computer
+* there is a robot on the same network (IP 34.34.225.178) as you`
+    expect(looksLikeBotChallenge(challenge)).toBe(true)
+  })
+
+  it('detects "you have been blocked" generic message', () => {
+    const md = `# rubix.com
+
+# You have been blocked
+
+Some text here about the block.`
+    expect(looksLikeBotChallenge(md)).toBe(true)
+  })
+
+  it('does NOT trigger on a real product page mentioning captcha in passing', () => {
+    const realProduct = `# Perceuse-Visseuse 18V
+
+Outil professionnel sans fil avec batterie lithium-ion 5 Ah. Idéal pour les
+travaux de bricolage et de construction. Inclut un mandrin métallique et
+deux vitesses mécaniques.
+
+Le site utilise un captcha pour la création de compte.`
+    expect(looksLikeBotChallenge(realProduct)).toBe(false)
+  })
+
+  it('returns false for empty or short markdown', () => {
+    expect(looksLikeBotChallenge('')).toBe(false)
+    expect(looksLikeBotChallenge('hello')).toBe(false)
+  })
+
+  it('strips inline analytics function calls (gtag, fbq, ga)', () => {
+    const md = `# Produit
+
+gtag('config', 'GA_TRACKING_ID');
+fbq('track', 'PageView');
+window.dataLayer = window.dataLayer || [];
+
+Vraie description.`
+    const out = sanitizeJinaMarkdown(md)
+    expect(out).not.toContain('gtag(')
+    expect(out).not.toContain('fbq(')
+    expect(out).not.toContain('window.dataLayer')
+    expect(out).toContain('Vraie description.')
   })
 })

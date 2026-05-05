@@ -1,23 +1,24 @@
 import { useState } from 'react'
 import { Map as MapIcon, Sparkles, Loader2, CheckSquare, Square, Globe, Search } from 'lucide-react'
-import type { ScrapingField, MapLink, ScrapeResult } from './useJina'
-import { SchemaEditor } from './SchemaEditor'
-import { FIELD_TEMPLATES } from './useJina'
+import type { MapLink } from './useJina'
+import { BrandSuggestion } from './BrandSuggestion'
 
 interface Props {
   url: string
   loading: boolean
   onMap: (search?: string) => Promise<MapLink[] | null>
-  onExtract: (urls: string[], fields: ScrapingField[], prompt: string) => void
-  result: ScrapeResult | null
+  /** Lance le pipeline d'enrichissement complet (Produit complet) sur N URLs. */
+  onEnrichMany: (urls: string[]) => Promise<void> | void
+  /** True quand le batch est en cours — désactive le bouton. */
+  batchRunning: boolean
+  /** Appelé quand l'utilisateur accepte la suggestion site fabricant. */
+  onUrlSuggestion?: (suggested: string) => void
 }
 
-export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props) {
+export function MapExtractTab({ url, loading, onMap, onEnrichMany, batchRunning, onUrlSuggestion }: Props) {
   const [links, setLinks] = useState<MapLink[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [mapSearch, setMapSearch] = useState('')
-  const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.listing.fields)
-  const [prompt, setPrompt] = useState('')
   const [step, setStep] = useState<'map' | 'extract'>('map')
 
   const handleMap = async () => {
@@ -39,8 +40,9 @@ export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props)
   if (step === 'map' || links.length === 0) {
     return (
       <div className="space-y-4">
+        <BrandSuggestion url={url} onAccept={(u) => onUrlSuggestion?.(u)} />
         <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg text-xs text-blue-300/70">
-          <strong className="text-blue-300">Map →</strong> Découvrez toutes les URLs d'un site, sélectionnez les pages à extraire, puis lancez l'extraction structurée.
+          <strong className="text-blue-300">Map →</strong> Découvre toutes les URLs d'un site, sélectionne les pages produits à scraper, puis lance l'enrichissement complet (Produit complet) sur chacune.
         </div>
         <div className="flex gap-2">
           <div className="flex-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded-lg px-3 py-2">
@@ -67,6 +69,10 @@ export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props)
 
   return (
     <div className="space-y-4">
+      <div className="p-2.5 bg-indigo-500/5 border border-indigo-500/20 rounded-lg text-[11px] text-indigo-300/70">
+        Sélectionne les URLs produits — chacune sera scrapée avec le pipeline <strong className="text-indigo-300">Produit complet</strong> (Jina + IA, multi-sources).
+      </div>
+
       {/* URL list */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
@@ -102,25 +108,15 @@ export function MapExtractTab({ url, loading, onMap, onExtract, result }: Props)
         </div>
       </div>
 
-      {/* Schema */}
-      <SchemaEditor fields={fields} onChange={setFields} />
-
-      {/* Prompt + options */}
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Prompt IA pour guider l'extraction..."
-        rows={2}
-        className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none resize-none font-mono"
-      />
-
       <button
-        onClick={() => onExtract(Array.from(selected), fields, prompt)}
-        disabled={selected.size === 0 || loading}
+        onClick={() => onEnrichMany(Array.from(selected))}
+        disabled={selected.size === 0 || loading || batchRunning}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-        {loading ? 'Extraction async...' : `Extraire ${selected.size} page${selected.size > 1 ? 's' : ''}`}
+        {batchRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+        {batchRunning
+          ? 'Enrichissement en cours...'
+          : `Enrichir ${selected.size} produit${selected.size > 1 ? 's' : ''} (Produit complet)`}
       </button>
     </div>
   )

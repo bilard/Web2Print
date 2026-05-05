@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from 'react'
 import {
   Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, ImageIcon, Globe, Save, Plus, X,
   Code2, ChevronDown, Copy, FileDown, ListOrdered, LayoutGrid, List as ListIcon, ArrowDownAZ, ArrowUpAZ, GripVertical,
+  ShieldAlert,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -16,6 +17,10 @@ import { useExcelStore } from '@/stores/excel.store'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import type { AiProvider } from '@/lib/aiModels'
 import { useEnrichmentStore } from './enrichmentStore'
+import { TypedLogConsole } from './TypedLogConsole'
+import { looksLikeBotChallenge } from './markdownSanitize'
+import { RESELLER_HOSTS, detectBrandFromUrl } from '@/features/scraping/useJina'
+import { classifyImage, getProductRefs } from './imageFilter'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
 import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
@@ -295,6 +300,107 @@ function ImageGrid({
         </button>
       )}
     </>
+  )
+}
+
+/** Section "Images trouvées" avec deux onglets : Photos vs Pictos & logos.
+ *  La répartition utilise `classifyImage(url, refs)` :
+ *    - Si on a une référence produit (specs/title/url/variants) → URL contient
+ *      la ref = photo, sinon = picto.
+ *    - Pas de ref → fallback sur heuristique URL (`isPictoOrLogo`).
+ *  Édition (remove/reorder) se fait dans l'onglet actif uniquement, mais le
+ *  setState mute toujours `data.images` complet — on reconstruit en gardant
+ *  l'ordre d'origine pour les éléments de l'autre onglet. */
+function ImagesSection({
+  data,
+  input,
+  onUpdate,
+}: {
+  data: EnrichedProduct
+  input: EnrichmentInput
+  onUpdate: (patch: Partial<EnrichedProduct>) => void
+}) {
+  const [tab, setTab] = useState<'photos' | 'pictos'>('photos')
+  const refs = useMemo(
+    () => getProductRefs({
+      specifications: data.specifications,
+      variants: data.variants,
+      title: input.title,
+      sourceUrl: data.sourceUrl ?? input.url,
+    }),
+    [data.specifications, data.variants, data.sourceUrl, input.title, input.url],
+  )
+  const images = data.images
+  const photos = useMemo(() => images.filter((u) => classifyImage(u, refs) === 'photo'), [images, refs])
+  const pictos = useMemo(() => images.filter((u) => classifyImage(u, refs) === 'picto'), [images, refs])
+  const active = tab === 'photos' ? photos : pictos
+  const total = images.length
+
+  // Mute : retire l'URL du tableau complet `images`.
+  const handleRemove = (url: string) => {
+    onUpdate({ images: images.filter((u) => u !== url) })
+  }
+
+  // Mute : reorder se fait sur la liste de l'onglet actif. On reconstruit
+  // `images` en concaténant l'ordre demandé pour cet onglet + les éléments
+  // de l'autre onglet dans leur position d'origine. La concaténation simple
+  // (active réordonné + reste) suffit puisqu'aucune logique aval n'attend
+  // une séquence stricte entre photos et pictos.
+  const handleReorder = (nextActive: string[]) => {
+    const otherSet = new Set(tab === 'photos' ? pictos : photos)
+    const others = images.filter((u) => otherSet.has(u))
+    onUpdate({ images: [...nextActive, ...others] })
+  }
+
+  return (
+    <div id={sectionAnchor('images')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
+          <ImageIcon className="w-3 h-3" />
+          {total > 0 ? `Images trouvées (${total})` : 'Aucune image trouvée'}
+        </p>
+        {total > 0 && (
+          <div className="flex items-center gap-0.5 bg-white/[0.03] border border-white/[0.06] rounded p-0.5">
+            <button
+              onClick={() => setTab('photos')}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium tabular-nums transition-colors ${
+                tab === 'photos'
+                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30'
+                  : 'text-white/50 hover:text-white/80 border border-transparent'
+              }`}
+            >
+              Photos {photos.length > 0 && <span className="opacity-70">({photos.length})</span>}
+            </button>
+            <button
+              onClick={() => setTab('pictos')}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium tabular-nums transition-colors ${
+                tab === 'pictos'
+                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30'
+                  : 'text-white/50 hover:text-white/80 border border-transparent'
+              }`}
+            >
+              Pictos & logos {pictos.length > 0 && <span className="opacity-70">({pictos.length})</span>}
+            </button>
+          </div>
+        )}
+      </div>
+      {total === 0 ? (
+        <p className="text-[11px] text-white/35 leading-relaxed">
+          Le scraping n'a pas détecté d'images produit exploitables. Essayez{' '}
+          <span className="text-white/60">Re-générer</span> pour relancer la recherche.
+        </p>
+      ) : active.length === 0 ? (
+        <p className="text-[11px] text-white/35 italic py-3">
+          {tab === 'photos' ? 'Aucune photo produit dans cette source.' : 'Aucun picto ou logo détecté.'}
+        </p>
+      ) : (
+        <ImageGrid
+          images={active}
+          onRemove={handleRemove}
+          onReorder={handleReorder}
+        />
+      )}
+    </div>
   )
 }
 
@@ -592,6 +698,7 @@ export function EnrichmentPanel({ input }: Props) {
         {isDone && data && (
           <DoneState
             data={data}
+            input={input}
             llmRequest={llmRequest}
             onUpdate={updateData}
             scrapeCache={scrapeCache}
@@ -775,7 +882,6 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
     { id: 'reasoning', label: 'Synthèse IA', icon: Sparkles },
   ]
   const currentIdx = steps.findIndex((s) => s.id === status)
-  const logsEndRef = useRef<HTMLDivElement>(null)
 
   // Progression globale : 0 → 100 en easing-out sur la durée typique totale.
   const [activePct, setActivePct] = useState(0)
@@ -791,10 +897,6 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
     }, 250)
     return () => clearInterval(id)
   }, [currentIdx, status])
-
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [logs.length])
 
   // Progression globale : done steps = 100, active = activePct, pending = 0
   const globalPct = currentIdx < 0 ? 0 : Math.round(((currentIdx * 100) + activePct) / steps.length)
@@ -865,35 +967,10 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
         <p className="text-[11px] text-white/50 text-center leading-relaxed">{message}</p>
       )}
 
-      {/* Logs temps réel */}
+      {/* Console catégorisée — filtrage par type (scrape/llm/parse/network/warning) */}
       {logs.length > 0 && (
-        <div className="mt-4 flex-1 min-h-[320px] max-h-[60vh] overflow-y-auto rounded-lg bg-black/40 border border-white/[0.06] p-2.5">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Code2 className="w-3 h-3 text-white/20" />
-            <span className="text-[9px] font-semibold text-white/25 uppercase tracking-wider">Logs</span>
-          </div>
-          <div className="space-y-0.5 font-mono">
-            {logs.map((entry, i) => {
-              const isSuccess = entry.startsWith('✓') || entry.startsWith('★')
-              const isWarning = entry.startsWith('✗') || entry.includes('échoué') || entry.includes('invalidé') || entry.includes('insuffisant')
-              return (
-                <div
-                  key={i}
-                  className={`text-[10px] leading-relaxed px-1.5 py-0.5 rounded ${
-                    isSuccess
-                      ? 'text-emerald-400/70'
-                      : isWarning
-                        ? 'text-amber-400/70'
-                        : 'text-white/35'
-                  }`}
-                >
-                  <span className="text-white/15 select-none mr-1.5">{String(i + 1).padStart(2, '0')}</span>
-                  {entry}
-                </div>
-              )
-            })}
-            <div ref={logsEndRef} />
-          </div>
+        <div className="mt-4 flex-1 min-h-[320px]">
+          <TypedLogConsole logs={logs} maxHeight="60vh" />
         </div>
       )}
     </div>
@@ -959,6 +1036,7 @@ function ErrorState({ error, onRetry, onRetryWithUrl }: {
 
 function DoneState({
   data,
+  input,
   llmRequest,
   onUpdate,
   scrapeCache,
@@ -966,6 +1044,7 @@ function DoneState({
   templateFieldOrder,
 }: {
   data: NonNullable<ReturnType<typeof useEnrichmentStore.getState>['entries'][string]>['data']
+  input: EnrichmentInput
   llmRequest: LlmRequestInfo | null
   onUpdate: (patch: Partial<EnrichedProduct>) => void
   scrapeCache?: { sourcesScrapped?: string[] }
@@ -1057,32 +1136,71 @@ function DoneState({
           `vendorFieldOrder` de le déplacer à n'importe quelle position. */}
       {sectionOrder.map((sectionKey) => {
         if (sectionKey === 'images') return (
-          <div key="images" id={sectionAnchor('images')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-            <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <ImageIcon className="w-3 h-3" />
-              {data.images.length > 0
-                ? `Images trouvées (${data.images.length})`
-                : 'Aucune image trouvée'}
-            </p>
-            {data.images.length > 0 ? (
-              <ImageGrid
-                images={data.images}
-                onRemove={(url) => onUpdate({ images: data.images.filter((u) => u !== url) })}
-                onReorder={(next) => onUpdate({ images: next })}
-              />
-            ) : (
-              <p className="text-[11px] text-white/35 leading-relaxed">
-                Le scraping n'a pas détecté d'images produit exploitables. Essayez{' '}
-                <span className="text-white/60">Re-générer</span> pour relancer la recherche.
-              </p>
-            )}
-          </div>
+          <ImagesSection
+            key="images"
+            data={data}
+            input={input}
+            onUpdate={onUpdate}
+          />
         )
-        if (sectionKey === 'description') return (
+        if (sectionKey === 'description') {
+          // Détection multi-source : flag explicite, description = challenge,
+          // OU produit complètement vide sur une URL revendeur anti-bot.
+          // Cette dernière règle attrape le cas où blockedByAntiBot est perdu
+          // par la sérialisation Excel mais le contexte le confirme.
+          const isFullyEmpty = !data.description?.trim()
+            && data.advantages.length === 0
+            && data.specifications.length === 0
+            && data.images.length === 0
+          const sourceHost = (() => {
+            try { return data.sourceUrl ? new URL(data.sourceUrl).hostname : '' }
+            catch { return '' }
+          })()
+          const isFromAntiBotRetailer = !!sourceHost && RESELLER_HOSTS.test(sourceHost)
+          const showAntiBotWarning =
+            data.blockedByAntiBot
+            || looksLikeBotChallenge(data.description)
+            || (isFullyEmpty && isFromAntiBotRetailer)
+          // Détecte la marque depuis l'URL pour proposer un lien fabricant cliquable.
+          const brandSuggestion = data.sourceUrl ? detectBrandFromUrl(data.sourceUrl) : null
+          return (
           <div key="description" id={sectionAnchor('description')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
               Description enrichie
             </p>
+            {showAntiBotWarning && (
+              <div className="flex items-start gap-2.5 px-3 py-2.5 mb-2 rounded-lg border border-red-500/30 bg-red-500/[0.06]">
+                <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1 text-[11.5px] text-red-300/90 space-y-2">
+                  <p className="font-semibold">Site bloqué par anti-bot (DataDome / Akamai / Cloudflare)</p>
+                  <p className="text-red-300/70 leading-relaxed">
+                    {sourceHost && <strong className="text-red-300">{sourceHost}</strong>}{sourceHost && ' '}
+                    utilise une protection anti-bot que ni Jina ni Firecrawl basic n'arrivent à passer (toutes les sources renvoient une page CAPTCHA).
+                    Aucune donnée fiable n'est extraite — pas d'hallucination IA.
+                  </p>
+                  {brandSuggestion ? (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[11px] text-red-300/80">
+                        <strong className="text-red-200">{brandSuggestion.officialSite.label}</strong> détecté →
+                      </span>
+                      <a
+                        href={brandSuggestion.officialSite.baseUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 transition-colors"
+                      >
+                        Aller sur le site fabricant
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-[10.5px] text-red-300/60 italic">
+                      Solution : retrouve la fiche sur le site officiel de la marque (pas d'anti-bot, données complètes).
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             <EditableText
               value={decodeHTMLEntities(data.description)}
               onChange={(v) => onUpdate({ description: v })}
@@ -1091,7 +1209,8 @@ function DoneState({
               className="text-[12.5px] text-white/75 leading-relaxed"
             />
           </div>
-        )
+          )
+        }
         if (sectionKey === 'advantages') return (
           <div key="advantages" id={sectionAnchor('advantages')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">
@@ -1809,9 +1928,8 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
             const isExpanded = expandedIdx === i
             const colSpan = 2 + displayTableKeys.length + (hasDetails ? 1 : 0)
             return (
-              <>
+              <Fragment key={`variant-${i}`}>
                 <tr
-                  key={`row-${i}`}
                   className={`${
                     i % 2 === 0 ? 'bg-white/[0.015]' : 'bg-transparent'
                   } border-t border-white/[0.04] hover:bg-white/[0.04] transition-colors ${details.length > 0 ? 'cursor-pointer' : ''}`}
@@ -1858,7 +1976,7 @@ function VariantTable({ variants }: { variants: EnrichedProduct['variants'] }) {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             )
           })}
         </tbody>

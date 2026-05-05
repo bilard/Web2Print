@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseStructuredDataFromHtml } from '../structuredData'
+import { parseStructuredDataFromHtml, parseMicrodataFromHtml, parseStructuredDataAny } from '../structuredData'
 
 describe('parseStructuredDataFromHtml', () => {
   it('extrait Product simple avec @type unique', () => {
@@ -113,5 +113,68 @@ describe('parseStructuredDataFromHtml', () => {
     const data = parseStructuredDataFromHtml(html)
     expect(data?.gtin).toBe('1234567890123')
     expect(data?.mpn).toBe('DHR202Z')
+  })
+})
+
+describe('parseMicrodataFromHtml', () => {
+  it('extrait microdata Product complète', () => {
+    const html = `<html><body>
+      <div itemscope itemtype="https://schema.org/Product">
+        <h1 itemprop="name">Perceuse Bosch GBH</h1>
+        <p itemprop="description">Perceuse à percussion sans fil 18V Brushless avec 2 batteries.</p>
+        <div itemprop="brand" itemscope itemtype="https://schema.org/Brand">
+          <meta itemprop="name" content="Bosch"/>
+        </div>
+        <meta itemprop="sku" content="GBH18V-26"/>
+        <img itemprop="image" src="https://example.com/img1.jpg"/>
+        <img itemprop="image" src="https://example.com/img2.jpg"/>
+        <div itemprop="additionalProperty" itemscope itemtype="https://schema.org/PropertyValue">
+          <meta itemprop="name" content="Tension"/>
+          <meta itemprop="value" content="18V"/>
+        </div>
+        <div itemprop="additionalProperty" itemscope itemtype="https://schema.org/PropertyValue">
+          <meta itemprop="name" content="Poids"/>
+          <meta itemprop="value" content="2.4kg"/>
+        </div>
+      </div>
+    </body></html>`
+    const data = parseMicrodataFromHtml(html)
+    expect(data?.name).toBe('Perceuse Bosch GBH')
+    expect(data?.description).toContain('Perceuse à percussion')
+    expect(data?.brand).toBe('Bosch')
+    expect(data?.sku).toBe('GBH18V-26')
+    expect(data?.images).toHaveLength(2)
+    expect(data?.specs).toHaveLength(2)
+    expect(data?.specs[0]).toEqual({ name: 'Tension', value: '18V' })
+  })
+
+  it('retourne null si pas de scope Product', () => {
+    const html = `<html><body><div>Just a regular page</div></body></html>`
+    expect(parseMicrodataFromHtml(html)).toBeNull()
+  })
+
+  it('parseStructuredDataAny essaie JSON-LD puis microdata', () => {
+    const microdataOnly = `<html><body>
+      <div itemscope itemtype="https://schema.org/Product">
+        <h1 itemprop="name">Outil</h1>
+        <p itemprop="description">Description suffisamment longue pour être considérée comme valide ici.</p>
+      </div>
+    </body></html>`
+    const data = parseStructuredDataAny(microdataOnly)
+    expect(data?.name).toBe('Outil')
+  })
+
+  it('parseStructuredDataAny préfère JSON-LD si les deux sont présents', () => {
+    const both = `<html><head>
+      <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"Product","name":"From JSON-LD"}
+      </script>
+    </head><body>
+      <div itemscope itemtype="https://schema.org/Product">
+        <h1 itemprop="name">From microdata</h1>
+      </div>
+    </body></html>`
+    const data = parseStructuredDataAny(both)
+    expect(data?.name).toBe('From JSON-LD')
   })
 })

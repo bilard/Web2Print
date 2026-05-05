@@ -1,6 +1,7 @@
 import { useAuthInit } from './useAuth'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAiSettingsSync } from '@/features/settings/useAiSettingsSync'
+import { useApiKeysSync } from '@/features/settings/useApiKeysSync'
 
 interface AuthProviderProps {
   children: React.ReactNode
@@ -9,6 +10,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   useAuthInit()
   useAiSettingsSync()
+  useApiKeysSync()
   const loading = useAuthStore((s) => s.loading)
 
   if (loading) {
