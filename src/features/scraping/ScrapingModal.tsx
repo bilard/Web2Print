@@ -1,7 +1,9 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink } from 'lucide-react'
-import { useJina, scrapeResultToSheet, crawlPagesToSheet, enrichedProductToSheet } from './useJina'
+import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
+import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
+import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
 import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import { ScrapeTab } from './ScrapeTab'
@@ -51,7 +53,28 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   const [result, setResult] = useState<ScrapeResult | null>(null)
   const [lastFields, setLastFields] = useState<ScrapingField[]>([])
   const [crawlPages, setCrawlPages] = useState<CrawlPage[]>([])
-  const { scrape, map, extract, crawl, abort, loading, error, progress } = useJina()
+
+  /** Batch d'enrichissement multi-URLs (Map+Extract et Crawl) :
+   *  applique la pipeline `enrich()` (Produit complet) à chaque URL. */
+  interface BatchItem {
+    url: string
+    title: string
+    rowId: string
+    product?: EnrichedProduct
+    error?: string
+    status: 'pending' | 'running' | 'done' | 'failed'
+  }
+  const [batch, setBatch] = useState<BatchItem[]>([])
+  const [batchRunning, setBatchRunning] = useState(false)
+  const [batchCurrentIdx, setBatchCurrentIdx] = useState<number | null>(null)
+  /** Annulation demandée — affichée immédiatement dans l'UI même si
+   *  l'item courant continue (enrich() n'accepte pas d'AbortSignal). */
+  const [batchAborting, setBatchAborting] = useState(false)
+  /** Index de l'item du batch dont la fiche détaillée (`ProductEnrichedView`)
+   *  est actuellement affichée. null = liste seule. */
+  const [batchPreviewIdx, setBatchPreviewIdx] = useState<number | null>(null)
+  const batchAbortRef = useRef(false)
+  const { scrape, map, abort, loading, error } = useJina()
   const { setSheets, setCurrentFileName, sheets } = useExcelStore()
   const setCurrentPath = useExcelStore((s) => s.setCurrentPath)
 
@@ -67,6 +90,18 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   const enrichKey = enrichmentKey(SCRAPE_MODAL_SHEET, enrichRowId)
   const enrichEntry = useEnrichmentStore((s) => s.entries[enrichKey])
   const enrichLogs = useEnrichmentStore((s) => s.logs[enrichKey] ?? [])
+
+  // Subscribe live au progress de l'item courant du batch (texte qui change
+  // pendant une itération unique d'`enrich()`).
+  const allEntries = useEnrichmentStore((s) => s.entries)
+
+  // Logs temps réel de l'item courant du batch (pile cascade Jina/Firecrawl/BrightData).
+  const batchCurrentRowId = batchRunning && batchCurrentIdx !== null
+    ? (batch[batchCurrentIdx]?.rowId ?? null)
+    : null
+  const batchCurrentLogs = useEnrichmentStore((s) =>
+    batchCurrentRowId ? (s.logs[enrichmentKey(SCRAPE_MODAL_SHEET, batchCurrentRowId)] ?? []) : [],
+  )
 
   // ── PIM branch ───────────────────────────────────────────────────────────
   const pimProjectId = usePimStore((s) => s.currentProjectId)
@@ -185,17 +220,162 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     return map(url, search)
   }
 
-  const handleExtract = async (urls: string[], fields: ScrapingField[], prompt: string) => {
-    setResult(null)
-    setLastFields(fields)
-    const res = await extract(urls, fields, prompt)
-    if (res) setResult(res)
-  }
-
+  /** Découvre les produits sur la page fournie en UN SEUL appel Jina + IA :
+   *  `scrape()` lit la page (jinaRead) ET demande au LLM d'extraire le nom +
+   *  l'URL de chaque carte produit visible. Plus rapide que l'ancien flow à
+   *  deux passes (map + scrape). Anti-hallucination par filtres URL côté
+   *  client (host, regex include/exclude) — l'utilisateur peut compléter
+   *  via la sélection manuelle. */
   const handleCrawl = async (opts: { limit: number; includePaths: string; excludePaths: string }) => {
     setCrawlPages([])
-    const pages = await crawl(url, opts, (page) => setCrawlPages((prev) => [...prev, page]))
-    if (pages) setCrawlPages(pages)
+
+    let baseHost = ''
+    try { baseHost = new URL(url).hostname } catch { /* URL invalide */ }
+    const includeRe = opts.includePaths.trim() ? safeRegex(opts.includePaths.trim()) : null
+    const excludeRe = opts.excludePaths.trim() ? safeRegex(opts.excludePaths.trim()) : null
+    const startPath = (() => { try { return new URL(url).pathname } catch { return '' } })()
+
+    // Schéma minimal (name + url uniquement) → moins de tokens LLM → plus rapide.
+    const minimalListingFields = [
+      { key: 'name', label: 'Nom', description: 'Nom du produit tel qu\'écrit sur la carte', type: 'string' as const },
+      { key: 'url', label: 'URL', description: 'URL absolue du lien vers la fiche produit', type: 'string' as const },
+    ]
+    const aiRes = await scrape(
+      url,
+      'schema',
+      minimalListingFields,
+      "Pour CHAQUE produit affiché dans la grille principale de cette page, extrais son nom EXACT (tel qu'écrit sur la carte) et son URL ABSOLUE. Ignore le menu, le header, le footer, les suggestions latérales. Ne pas inventer de produits, n'extraire que ce qui est visible sur la page.",
+      { target: 'multiple' },
+    )
+    if (!aiRes || aiRes.rows.length === 0) return
+
+    const seen = new Set<string>()
+    const products: CrawlPage[] = []
+    for (const row of aiRes.rows) {
+      const r = row as Record<string, unknown>
+      const rawUrl = String(r.url ?? '')
+      const name = String(r.name ?? '').trim()
+      if (!rawUrl) continue
+      try {
+        const u = new URL(rawUrl, url)
+        const absolute = u.toString()
+        if (seen.has(absolute)) continue
+        if (baseHost && !u.hostname.includes(baseHost)) continue
+        if (u.pathname === startPath && u.hash) continue
+        if (includeRe && !includeRe.test(u.pathname)) continue
+        if (excludeRe && excludeRe.test(u.pathname)) continue
+        seen.add(absolute)
+        products.push({
+          url: absolute,
+          title: name || u.pathname,
+          content: '',
+        })
+        if (products.length >= opts.limit) break
+      } catch { /* URL invalide */ }
+    }
+    setCrawlPages(products)
+  }
+
+  /** Compile une regex en silence — retourne null si la chaîne est invalide. */
+  const safeRegex = (s: string): RegExp | null => {
+    try { return new RegExp(s) } catch { return null }
+  }
+
+  /** Dérive un titre lisible depuis l'URL (slug → "produit xyz"). */
+  const deriveTitleFromUrl = (u: string): string => {
+    try {
+      const path = new URL(u).pathname.split('/').filter(Boolean).pop() ?? ''
+      return path.replace(/[-_]+/g, ' ').replace(/\.\w{2,4}$/, '').trim() || new URL(u).hostname
+    } catch { return u }
+  }
+
+  /** Dérive un rowId stable et unique pour chaque URL du batch (préfixe par
+   *  index pour éviter les collisions sur slugs tronqués similaires). */
+  const deriveBatchRowId = (u: string, i: number): string => {
+    let slug = ''
+    try { slug = new URL(u).pathname.replace(/[^a-z0-9]/gi, '_').slice(0, 60) }
+    catch { slug = 'pending' }
+    return `batch_${i}_${slug || 'item'}`
+  }
+
+  /** Lance la pipeline `enrich()` (Produit complet) sur N URLs séquentiellement.
+   *  Mise à jour de `batch` après chaque produit pour un feedback live. */
+  const handleEnrichMany = async (urls: string[]) => {
+    if (urls.length === 0) return
+    batchAbortRef.current = false
+    setBatchAborting(false)
+    setResult(null)
+    setBatchRunning(true)
+    setBatchCurrentIdx(null)
+
+    // Initialise les items dans l'ordre — UI visible pendant le run
+    const initial: BatchItem[] = urls.map((u, i) => ({
+      url: u,
+      title: deriveTitleFromUrl(u),
+      rowId: deriveBatchRowId(u, i),
+      status: 'pending',
+    }))
+    setBatch(initial)
+
+    try {
+      for (let i = 0; i < initial.length; i++) {
+        if (batchAbortRef.current) break
+        setBatchCurrentIdx(i)
+        const item = initial[i]
+        setBatch((prev) => prev.map((b, idx) => (idx === i ? { ...b, status: 'running' } : b)))
+
+        try {
+          const product = await enrich({
+            sheetName: SCRAPE_MODAL_SHEET,
+            rowId: item.rowId,
+            title: item.title,
+            knownUrl: item.url,
+            mode: 'auto',
+          })
+          // Si une annulation a été demandée pendant cet enrich(), rejette le
+          // résultat : l'utilisateur attend que ça s'arrête, on ne garde pas
+          // ce produit qui n'aurait jamais existé sans le délai d'annulation.
+          if (batchAbortRef.current) {
+            setBatch((prev) => prev.map((b, idx) =>
+              idx === i ? { ...b, status: 'failed', error: 'Annulé' } : b
+            ))
+          } else if (product) {
+            setBatch((prev) => prev.map((b, idx) =>
+              idx === i ? { ...b, status: 'done', product } : b
+            ))
+            // Auto-sélectionne le premier produit terminé pour aperçu live
+            setBatchPreviewIdx((prev) => (prev === null ? i : prev))
+          } else {
+            setBatch((prev) => prev.map((b, idx) =>
+              idx === i ? { ...b, status: 'failed', error: 'Aucun produit extrait' } : b
+            ))
+          }
+        } catch (e) {
+          setBatch((prev) => prev.map((b, idx) =>
+            idx === i ? { ...b, status: 'failed', error: batchAbortRef.current ? 'Annulé' : (e instanceof Error ? e.message : 'Erreur') } : b
+          ))
+        }
+
+        // Léger rate-limit Jina (cohérent avec extract())
+        if (i < initial.length - 1 && !batchAbortRef.current) await new Promise((r) => setTimeout(r, 500))
+      }
+    } finally {
+      setBatchCurrentIdx(null)
+      setBatchRunning(false)
+      setBatchAborting(false)
+    }
+  }
+
+  const abortBatch = () => {
+    batchAbortRef.current = true
+    setBatchAborting(true)
+    abort() // interrompt les requêtes Jina/scrape qui acceptent un signal
+    // Feedback instantané : marque tous les items 'pending' comme annulés.
+    // L'item 'running' continue (enrich() n'accepte pas d'AbortSignal) — son
+    // résultat sera ignoré à la fin de l'itération via le check batchAbortRef.
+    setBatch((prev) => prev.map((b) =>
+      b.status === 'pending' ? { ...b, status: 'failed', error: 'Annulé' } : b
+    ))
   }
 
   /** Normalise une valeur de clé pour la comparaison (trim, lowercase, strip). */
@@ -373,34 +553,39 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     handleClose()
   }
 
-  const handleImportCrawl = () => {
-    if (crawlPages.length === 0) return
+  const handleImportBatch = () => {
+    const successful = batch.filter((b) => b.product)
+    if (successful.length === 0) return
+    const products = successful.map((b) => b.product!) as EnrichedProduct[]
+    const titles = successful.map((b) => b.product?.name || b.title)
+
     if (pimProjectId) {
-      const crawlColumns = [
-        { key: 'url', label: 'URL', fieldType: 'url' as const, detectedType: 'url' as const, isPrimary: true, width: 280 },
-        { key: 'title', label: 'Titre', fieldType: 'text' as const, detectedType: 'text' as const, isPrimary: false, width: 200 },
-        { key: 'content', label: 'Contenu', fieldType: 'text_long' as const, detectedType: 'text_long' as const, isPrimary: false, width: 400 },
+      const enrichedColumns = [
+        { key: 'name', label: 'Nom', fieldType: 'text' as const, detectedType: 'text' as const, isPrimary: true, width: 240 },
+        ...ENRICHMENT_COLUMNS.map(buildEnrichmentColumn),
       ]
-      const crawlRows = crawlPages.map((p, i) => ({ _id: `crawl_${i}`, url: p.url, title: p.title, content: p.content }))
+      const rows = products.map((product, i) => {
+        const serialized = serializeEnriched(product, null)
+        return { _id: `enriched_${i}`, name: titles[i], ...serialized } as Record<string, unknown>
+      })
       const source: Source = resyncSource
-        ? { ...resyncSource, productCount: crawlPages.length, lastSyncedAt: Date.now() }
+        ? { ...resyncSource, productCount: products.length, enrichedCount: products.length, lastSyncedAt: Date.now() }
         : {
             id: `src_${hostname}_${Date.now()}`,
             name: hostname,
             kind: 'scrape',
             url,
-            schema: crawlColumns,
-            productCount: crawlPages.length,
-            enrichedCount: 0,
+            schema: enrichedColumns,
+            productCount: products.length,
+            enrichedCount: products.length,
             lastSyncedAt: Date.now(),
           }
-      startPreview(crawlRows, source)
+      startPreview(rows, source)
       return
     }
-    const sheet = crawlPagesToSheet(crawlPages, hostname)
+
+    const sheet = enrichedProductsToSheet(products, hostname, titles)
     const store = useExcelStore.getState()
-    // Scrape depuis le bouton "+" (targetPath défini) → nouvelle BDD :
-    // reset docId et remplace les feuilles au lieu d'ajouter un onglet.
     if (targetPath !== undefined) {
       store.setCurrentDocId(null)
       store.setSheetRowId(null)
@@ -422,8 +607,17 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
   const handleClose = () => {
     abort()
+    batchAbortRef.current = true
     setResult(null)
     setCrawlPages([])
+    // Nettoie les entrées du store enrichmentStore créées par le batch
+    for (const item of batch) {
+      clearEnrichEntry(SCRAPE_MODAL_SHEET, item.rowId)
+    }
+    setBatch([])
+    setBatchRunning(false)
+    setBatchAborting(false)
+    setBatchPreviewIdx(null)
     setUrl('')
     setPreviewOpen(false)
     setFrozenPreview(null)
@@ -432,8 +626,9 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   }
 
   const canImport = result && result.rows.length > 0
-  const canImportCrawl = tab === 'crawl' && crawlPages.length > 0 && !loading
   const canImportEnriched = tab === 'scrape' && !!enrichEntry?.data && !enriching
+  const successfulBatchCount = batch.filter((b) => b.product).length
+  const canImportBatch = (tab === 'map' || tab === 'crawl') && successfulBatchCount > 0 && !batchRunning
 
   return (
     <>
@@ -501,7 +696,17 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
           {TABS.map(({ id, label, Icon, color }) => (
             <button
               key={id}
-              onClick={() => { setTab(id); setResult(null) }}
+              onClick={() => {
+                setTab(id)
+                setResult(null)
+                // Réinitialise le batch lors du changement d'onglet (évite la
+                // confusion : batch Map+Extract qui reste visible en passant à Crawl).
+                if (!batchRunning) {
+                  for (const item of batch) clearEnrichEntry(SCRAPE_MODAL_SHEET, item.rowId)
+                  setBatch([])
+                  setBatchPreviewIdx(null)
+                }
+              }}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
                 tab === id ? `${color} border-b-2 border-current` : 'text-white/30 hover:text-white/60'
               }`}
@@ -522,33 +727,201 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
           )}
 
           {tab === 'scrape' && (
-            <ScrapeTab url={urlValid ? url : ''} loading={loading || enriching} onScrape={handleScrape} result={result} onUrlSuggestion={(suggested) => setUrl(suggested)} />
+            <ScrapeTab
+              url={urlValid ? url : ''}
+              loading={loading || enriching}
+              onScrape={handleScrape}
+              result={result}
+              onUrlSuggestion={(suggested) => setUrl(suggested)}
+              onEnrichMany={handleEnrichMany}
+              batchRunning={batchRunning}
+            />
           )}
           {tab === 'map' && (
-            <MapExtractTab url={urlValid ? url : ''} loading={loading} onMap={handleMap} onExtract={handleExtract} result={result} />
+            <MapExtractTab
+              url={urlValid ? url : ''}
+              loading={loading}
+              onMap={handleMap}
+              onEnrichMany={handleEnrichMany}
+              batchRunning={batchRunning}
+              onUrlSuggestion={(suggested) => setUrl(suggested)}
+            />
           )}
           {tab === 'crawl' && (
-            <CrawlTab url={urlValid ? url : ''} loading={loading} progress={progress} pages={crawlPages} onCrawl={handleCrawl} onAbort={abort} />
+            <CrawlTab
+              url={urlValid ? url : ''}
+              loading={loading}
+              pages={crawlPages}
+              onCrawl={handleCrawl}
+              onAbort={abort}
+              onEnrichMany={handleEnrichMany}
+              batchRunning={batchRunning}
+              onUrlSuggestion={(suggested) => setUrl(suggested)}
+            />
+          )}
+
+          {/* Progression du batch d'enrichissement multi-URLs */}
+          {(tab === 'map' || tab === 'crawl') && batch.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-white/50">
+                    Enrichissement {batch.filter((b) => b.status === 'done' || b.status === 'failed').length} / {batch.length}
+                  </span>
+                  {successfulBatchCount > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/80 border border-emerald-500/20">
+                      {successfulBatchCount} OK
+                    </span>
+                  )}
+                  {batch.filter((b) => b.status === 'failed').length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-300/80 border border-red-500/20">
+                      {batch.filter((b) => b.status === 'failed').length} échec(s)
+                    </span>
+                  )}
+                </div>
+                {batchRunning && !batchAborting && (
+                  <button
+                    onClick={abortBatch}
+                    className="text-[11px] text-red-400/70 hover:text-red-400 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                )}
+                {batchAborting && (
+                  <span className="flex items-center gap-1.5 text-[10px] text-amber-400/80">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Annulation… (attente fin de l'item courant)
+                  </span>
+                )}
+              </div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                  style={{ width: `${(batch.filter((b) => b.status === 'done' || b.status === 'failed').length / batch.length) * 100}%` }}
+                />
+              </div>
+              {/* Item courant : reflète le progress du store enrichment */}
+              {batchRunning && batchCurrentIdx !== null && (() => {
+                const item = batch[batchCurrentIdx]
+                if (!item) return null
+                const entry = allEntries[enrichmentKey(SCRAPE_MODAL_SHEET, item.rowId)]
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
+                      <Loader2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-indigo-300/90 font-medium truncate">{item.title}</p>
+                        <p className="text-[10px] text-white/40 truncate">{entry?.progress?.message ?? 'En attente…'}</p>
+                      </div>
+                    </div>
+                    <TypedLogConsole logs={batchCurrentLogs} maxHeight="16rem" />
+                  </div>
+                )
+              })()}
+              {/* Liste cliquable des items — clic = aperçu détaillé */}
+              <div className="max-h-48 overflow-y-auto space-y-0.5 border border-white/[0.06] rounded-lg p-1">
+                {batch.map((item, i) => {
+                  const isPreviewed = batchPreviewIdx === i
+                  const clickable = item.status === 'done' && !!item.product
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => clickable && setBatchPreviewIdx(i)}
+                      disabled={!clickable}
+                      className={`w-full flex items-center gap-2 px-2 py-1 rounded text-[11px] text-left transition-colors ${
+                        isPreviewed
+                          ? 'bg-indigo-500/15 ring-1 ring-indigo-500/30'
+                          : item.status === 'running'
+                            ? 'bg-indigo-500/10'
+                            : clickable
+                              ? 'hover:bg-white/[0.04] cursor-pointer'
+                              : 'cursor-default'
+                      }`}
+                    >
+                      {item.status === 'pending' && <span className="w-2 h-2 rounded-full bg-white/15 shrink-0" />}
+                      {item.status === 'running' && <Loader2 className="w-3 h-3 text-indigo-400 shrink-0 animate-spin" />}
+                      {item.status === 'done' && <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />}
+                      {item.status === 'failed' && <AlertCircle className="w-3 h-3 text-red-400/70 shrink-0" />}
+                      <span className={`truncate flex-1 ${item.status === 'failed' ? 'text-red-300/60' : 'text-white/60'}`} title={item.url}>
+                        {item.product?.name || item.title}
+                      </span>
+                      {item.status === 'failed' && item.error && (
+                        <span className="text-[9px] text-red-400/50 truncate max-w-[120px]" title={item.error}>{item.error}</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Aperçu détaillé du produit sélectionné — même rendu que Scrape/Produit unique */}
+              {batchPreviewIdx !== null && batch[batchPreviewIdx]?.product && (
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.01] p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-white/30">
+                      <Sparkles className="w-3 h-3 text-violet-400/70" />
+                      Aperçu
+                      <span className="font-mono text-white/40 normal-case">
+                        {batchPreviewIdx + 1} / {successfulBatchCount}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Précédent produit réussi
+                          for (let k = batchPreviewIdx - 1; k >= 0; k--) {
+                            if (batch[k].product) { setBatchPreviewIdx(k); return }
+                          }
+                        }}
+                        className="text-[11px] px-2 py-0.5 rounded text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+                      >
+                        ← Précédent
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          for (let k = batchPreviewIdx + 1; k < batch.length; k++) {
+                            if (batch[k].product) { setBatchPreviewIdx(k); return }
+                          }
+                        }}
+                        className="text-[11px] px-2 py-0.5 rounded text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
+                      >
+                        Suivant →
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[13px] font-semibold text-white/90 mb-3 truncate" title={batch[batchPreviewIdx].product?.name}>
+                    {batch[batchPreviewIdx].product?.name || batch[batchPreviewIdx].title}
+                  </p>
+                  <ProductEnrichedView product={batch[batchPreviewIdx].product!} />
+                </div>
+              )}
+            </div>
           )}
 
           {/* Mode "Produit unique" : progression + rendu riche depuis enrichmentStore */}
           {tab === 'scrape' && enrichEntry && enrichEntry.progress.status !== 'idle' && enrichEntry.progress.status !== 'done' && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
-              <Loader2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-[12px] text-indigo-300/90 font-medium">{enrichEntry.progress.message}</p>
-                  {enrichEntry.llmUsed && (
-                    <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
-                      {enrichEntry.llmUsed.provider} · {enrichEntry.llmUsed.model}
-                    </span>
-                  )}
+            <div className="space-y-2">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
+                <Loader2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-[12px] text-indigo-300/90 font-medium">{enrichEntry.progress.message}</p>
+                    {enrichEntry.llmUsed && (
+                      <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                        {enrichEntry.llmUsed.provider} · {enrichEntry.llmUsed.model}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {enrichLogs.length > 0 && (
-                  <p className="text-[10px] text-white/40 leading-relaxed truncate">{enrichLogs[enrichLogs.length - 1]}</p>
-                )}
               </div>
+              <TypedLogConsole logs={enrichLogs} maxHeight="20rem" />
             </div>
+          )}
+          {/* Console persistante après scrape réussi (utile pour debugging) */}
+          {tab === 'scrape' && enrichEntry?.progress.status === 'done' && enrichLogs.length > 0 && (
+            <TypedLogConsole logs={enrichLogs} maxHeight="20rem" />
           )}
           {tab === 'scrape' && enrichEntry?.error && !enriching && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
@@ -564,21 +937,21 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         </div>
 
         {/* Footer */}
-        {(canImport || canImportCrawl || canImportEnriched) && (
+        {(canImport || canImportEnriched || canImportBatch) && (
           <div className="px-5 py-3.5 border-t border-white/[0.06] shrink-0">
             <button
               onClick={() => {
+                if (canImportBatch) return handleImportBatch()
                 if (canImportEnriched) return handleImportEnriched()
-                if (canImportCrawl) return handleImportCrawl()
                 return handleImportResult()
               }}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
-              {canImportEnriched
-                ? 'Importer le produit enrichi'
-                : canImportCrawl
-                  ? `Importer ${crawlPages.length} pages crawlées`
+              {canImportBatch
+                ? `Importer ${successfulBatchCount} produit${successfulBatchCount > 1 ? 's' : ''} enrichi${successfulBatchCount > 1 ? 's' : ''}`
+                : canImportEnriched
+                  ? 'Importer le produit enrichi'
                   : `Importer ${result?.rows.length} ligne${(result?.rows.length ?? 0) > 1 ? 's' : ''}`}
             </button>
           </div>

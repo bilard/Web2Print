@@ -7,7 +7,7 @@ import type { EnrichedProduct, EnrichedDocument } from './types'
 import { enrichmentKey } from './types'
 import { scrapeProductBundle, extractPrimarySourceSection } from './scrapeBundle'
 import { buildDocument, coerceDocuments, basenameFromUrl } from './documentUtils'
-import { sanitizeJinaMarkdown } from './markdownSanitize'
+import { sanitizeJinaMarkdown, looksLikeBotChallenge } from './markdownSanitize'
 import { extractLongestProseParagraph } from './enrichmentSanitize'
 import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
@@ -21,6 +21,9 @@ import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
+import { isHostKnownBlocked, markHostBlocked } from '@/features/scraping/core/brightDataFallback'
+import { brightDataScrapeWithDocs, getLastBrightDataError, getLastBrightDataSuccess } from '@/features/scraping/core/brightDataFallback'
+import { getSiteCookieForUrl } from '@/lib/siteCookies'
 import { extractProductReference, buildManufacturerSearchUrl } from '@/features/scraping/core/manufacturerFallback'
 import { detectBrandFromUrl } from '@/features/scraping/useJina'
 
@@ -173,13 +176,36 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
     return enriched
   }
 
-  // Fallback description : si le LLM a rendu une description vide ou trop courte
-  // (ex: < 50 chars), extrait le paragraphe de prose le plus long du markdown.
-  if (!enriched.description || enriched.description.trim().length < 50) {
+  // Fallback description : si le LLM a rendu une description vide, trop courte,
+  // OU qui ressemble à une URL/script technique (Tealium, GTM, JSON-LD…),
+  // OU qui ressemble à une page CAPTCHA (DataDome/Akamai/Cloudflare),
+  // extrait le paragraphe de prose le plus long du markdown.
+  const desc = enriched.description?.trim() ?? ''
+  const looksLikeUrl = /^(?:https?:\/\/|\/\/|file:|data:|javascript:|mailto:)/i.test(desc)
+  const looksLikeCode = /^\s*(?:\{\s*["@]|window\.|var\s+|const\s+|function\s+|gtag|ga\s*\(|fbq\s*\()/i.test(desc)
+  const isTrackingUrl = /\b(?:tags\.tiqcdn\.com|googletagmanager\.com|connect\.facebook\.net|cdn\.cookielaw\.org|cdn\.onetrust\.com|matomo|piwik|hotjar|hs-scripts|utag\.js)\b/i.test(desc)
+  // CAPTCHA / challenge bot : texte qui RESSEMBLE à de la prose mais est
+  // en fait une page de vérification (DataDome, Akamai, Cloudflare).
+  const isCaptcha = looksLikeBotChallenge(desc)
+  // Faible ratio de mots alphabétiques (>3 chars) → probablement non-prose
+  const wordRatio = (desc.match(/\b[a-zà-ÿ]{3,}\b/gi)?.length ?? 0) / Math.max(1, desc.split(/\s+/).length)
+  const isLowProse = desc.length > 0 && wordRatio < 0.4
+  const needsFallback = !desc || desc.length < 50 || looksLikeUrl || looksLikeCode || isTrackingUrl || isLowProse || isCaptcha
+
+  if (needsFallback) {
+    if (desc && (looksLikeUrl || looksLikeCode || isTrackingUrl || isLowProse || isCaptcha)) {
+      const reason = isCaptcha ? 'CAPTCHA/challenge' : looksLikeUrl ? 'URL' : looksLikeCode ? 'code' : isTrackingUrl ? 'tracking' : 'low-prose'
+      console.log(`[post-process] ⚠ description LLM = ${reason} — fallback prose`)
+    }
     const fallback = extractLongestProseParagraph(markdownContent)
-    if (fallback && fallback.length >= 50) {
-      console.log('[post-process] ✓ description LLM vide/courte → fallback prose paragraph (', fallback.length, 'chars)')
+    // Refuse aussi le fallback s'il est lui-même une page CAPTCHA
+    const fallbackOk = fallback && fallback.length >= 50 && !looksLikeBotChallenge(fallback)
+    if (fallbackOk) {
+      console.log('[post-process] ✓ description fallback prose paragraph (', fallback.length, 'chars)')
       enriched = { ...enriched, description: fallback }
+    } else if (looksLikeUrl || looksLikeCode || isTrackingUrl || isLowProse || isCaptcha) {
+      // Pas de fallback prose disponible — préfère vide à la pollution.
+      enriched = { ...enriched, description: '' }
     }
   }
 
@@ -195,9 +221,20 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
   let { advantages, specifications, variants, description } = enriched
 
   // ── 0. Description : enrichir si le LLM a retourné un texte faible/vide ──
+  // Garde anti-CAPTCHA : si le markdown ENTIER ou la description parsée est
+  // une page challenge bot (DataDome, Akamai…), on REFUSE de remplacer la
+  // description LLM, et on vide la description si elle-même est un challenge.
+  const mdIsChallenge = looksLikeBotChallenge(markdownContent)
   const mdDescription = parseDescriptionFromMarkdown(markdownContent)
-  if (mdDescription && mdDescription.length > 40) {
-    if (!description || description.length < 40) {
+  const mdDescIsChallenge = looksLikeBotChallenge(mdDescription)
+  if (mdIsChallenge || mdDescIsChallenge) {
+    console.log('[post-process] ⚠ markdown / description = CAPTCHA — pas de remplacement')
+    if (looksLikeBotChallenge(description)) {
+      console.log('[post-process] ⚠ description LLM = CAPTCHA → vidée')
+      description = ''
+    }
+  } else if (mdDescription && mdDescription.length > 40) {
+    if (!description || description.length < 40 || looksLikeBotChallenge(description)) {
       description = mdDescription
       console.log('[post-process] ✓ description from markdown:', description.slice(0, 80) + '…')
     } else if (mdDescription.length > description.length * 1.5) {
@@ -315,6 +352,25 @@ function enrichWithMarkdownGroups(enriched: EnrichedProduct, markdownContent: st
       }
       continue
     }
+    seenUrls.add(url)
+    documents.push(buildDocument(url, title))
+  }
+
+  // ── 5b. Documents par LIBELLÉ (URL sans extension .pdf) ──
+  // Sites B2B comme Rubix mettent les PDFs derrière `/document/123` ou
+  // `/download/abc` sans extension. Capturer les liens dont le TEXTE matche
+  // un libellé documentaire courant. Reste générique (pas de scraper par
+  // fournisseur) — match purement sur le label visible.
+  const DOC_LABEL_RE = /^(fiche\s*technique|notice(?:\s+d['']utilisation)?|datasheet|tech[\s-]?sheet|manuel(?:\s+d['']utilisation)?|user\s+manual|brochure|catalogue|guide(?:\s+d['']utilisation)?|d[eé]claration(?:\s+(?:de\s+)?conformit[eé]|\s+ce)?|certificat|sp[eé]cifications?\s+(?:techniques?|du\s+produit)|fds|sds|safety\s+data\s+sheet|notice\s+technique|ce\s+declaration|installation\s+guide|manual)\b/i
+  const mdLabelLinks = [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/gi)]
+  for (const m of mdLabelLinks) {
+    const title = m[1].trim()
+    const url = m[2].trim()
+    // Skip si déjà capturé OU si URL avec extension .pdf (cas déjà traité)
+    if (seenUrls.has(url)) continue
+    if (/\.(pdf|docx?|xlsx?)(\?|$)/i.test(url)) continue
+    if (title.length < 3 || title.length > 100) continue
+    if (!DOC_LABEL_RE.test(title)) continue
     seenUrls.add(url)
     documents.push(buildDocument(url, title))
   }
@@ -2964,12 +3020,22 @@ export function useProductEnrichment() {
 
       setRunning(true)
       clearLogs(sheetName, rowId)
+      // Reset du flag anti-bot global au début de chaque run.
+      ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
       const log = (msg: string) => addLog(sheetName, rowId, msg)
       try {
         console.log('[enrichment] START', { sheetName, rowId, title, brand, reference: reference ?? sku, knownUrl })
         log(`Démarrage — ${title} ${brand ?? ''}`)
         // ── Étape 0 : Vérifier le cache scraping (Re-générer réutilise les mêmes données) ──
-        const cached = getScrapeCache(sheetName, rowId)
+        let cached = getScrapeCache(sheetName, rowId)
+        // Invalide le cache si le markdown est en fait une page CAPTCHA / challenge
+        // bot → force un nouveau scrape pour tenter Firecrawl HTML mode.
+        if (cached?.markdownContent && looksLikeBotChallenge(cached.markdownContent)) {
+          console.log('[enrichment] ⚠ cached markdown is CAPTCHA/challenge — invalidating cache')
+          log(`Cache invalidé — ancienne donnée était une page CAPTCHA`)
+          clearScrapeCache(sheetName, rowId)
+          cached = undefined
+        }
         let usedCache = false
 
         // ── Étape 1 : Trouver la page produit ─────────────────────────────
@@ -3580,20 +3646,44 @@ export function useProductEnrichment() {
             }
           }
 
-          // Fallback Firecrawl si score toujours faible (anti-bot Akamai bypass)
+          // Détection universelle de page captcha / challenge bot (DataDome,
+          // Akamai, Cloudflare…) : si le markdown est en fait une page de
+          // vérification, on force Firecrawl indépendamment du score, car
+          // une page challenge a souvent un score modéré (prose technique).
+          const isBotChallenge = looksLikeBotChallenge(markdownContent ?? '')
+          if (isBotChallenge) {
+            log(`⚠ Page CAPTCHA / challenge bot détectée — fallback forcé`)
+            console.log('[enrichment] ⚠ bot challenge detected in markdown, forcing fallback')
+            // Marque le contexte global pour propager le flag jusqu'au build final.
+            ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = true
+          }
+
+          // Fallback Firecrawl : déclenché si score faible OU page challenge.
+          // Le cache hostKnownBlocked NE saute plus Firecrawl — son mode stealth
+          // peut passer DataDome que Jina ne passe pas. On l'économisait pour
+          // Firecrawl toujours tenté même si le host est en cache DataDome.
           const FIRECRAWL_THRESHOLD = 15
           const currentScore = scoreMd(markdownContent)
-          if (currentScore < FIRECRAWL_THRESHOLD && productUrl) {
+          const hostKnownBlocked = productUrl ? isHostKnownBlocked(productUrl) : false
+          let firecrawlChallenge = false
+          if ((currentScore < FIRECRAWL_THRESHOLD || isBotChallenge) && productUrl) {
             const fcKey = getApiKey('firecrawl')
             if (fcKey) {
-              log(`Score insuffisant (${currentScore}) → tentative Firecrawl`)
+              log(isBotChallenge
+                ? `Challenge bot → tentative Firecrawl stealth (anti-bot bypass)`
+                : `Score insuffisant (${currentScore}) → tentative Firecrawl`)
               try {
                 const fcResult = await firecrawlScrape(productUrl, fcKey)
                 if (fcResult?.markdown) {
                   const fcSanitized = sanitizeJinaMarkdown(fcResult.markdown)
                   const fcScore = scoreMd(fcSanitized)
-                  console.log('[enrichment] firecrawl score:', fcScore, '(', fcSanitized.length, 'chars)')
-                  if (fcScore > currentScore) {
+                  const fcIsChallenge = looksLikeBotChallenge(fcSanitized)
+                  console.log('[enrichment] firecrawl score:', fcScore, '(', fcSanitized.length, 'chars)', fcIsChallenge ? '⚠ challenge' : '')
+                  if (fcIsChallenge) {
+                    log(`⚠ Firecrawl aussi bloqué par challenge bot — escalade Bright Data`)
+                    firecrawlChallenge = true
+                    markHostBlocked(productUrl)
+                  } else if (fcScore > currentScore || isBotChallenge) {
                     log(`✓ Firecrawl meilleur (${fcScore} > ${currentScore}) — bascule sur Firecrawl`)
                     markdownContent = `## [Source: ${productUrl}]\n\n${fcSanitized}`
                   } else {
@@ -3604,6 +3694,86 @@ export function useProductEnrichment() {
                 console.warn('[enrichment] Firecrawl fallback failed:', err)
               }
             }
+          }
+
+          // Cascade anti-bot premium : Bright Data — palier 4.
+          // GUARD : si Jina a déjà retourné du contenu exploitable (pas de CAPTCHA,
+          // score suffisant), on N'appelle PAS Bright Data même si le host est connu
+          // DataDome. Bright Data écraserait un bon markdown Jina avec le markdown
+          // Turndown structurellement pauvre. Le cache DataDome (hostKnownBlocked)
+          // est conservé pour court-circuiter Firecrawl, pas pour forcer BD.
+          const jinaSucceeded = !isBotChallenge && scoreMd(markdownContent) >= FIRECRAWL_THRESHOLD
+          const hasSiteCookies = productUrl ? !!getSiteCookieForUrl(productUrl) : false
+          const needAntiBotPremium = !jinaSucceeded && productUrl && (
+            firecrawlChallenge || hostKnownBlocked || hasSiteCookies || (
+              (isBotChallenge || looksLikeBotChallenge(markdownContent ?? '')) && scoreMd(markdownContent) < FIRECRAWL_THRESHOLD
+            )
+          )
+
+          // ── Palier 4 : Bright Data Web Unlocker (via Cloud Function) ──
+          let brightDataSucceeded = false
+          if (needAntiBotPremium && productUrl) {
+            log(hostKnownBlocked
+              ? `Host connu DataDome — direct Bright Data Web Unlocker`
+              : `Firecrawl bloqué → tentative Bright Data Web Unlocker`)
+            try {
+              const bdResult = await brightDataScrapeWithDocs(productUrl)
+              if (bdResult?.markdown) {
+                const bdSanitized = sanitizeJinaMarkdown(bdResult.markdown)
+                const bdScore = scoreMd(bdSanitized)
+                const bdIsChallenge = looksLikeBotChallenge(bdSanitized)
+                console.log('[enrichment] brightdata score:', bdScore, '(', bdSanitized.length, 'chars)', bdIsChallenge ? '⚠ challenge' : '')
+                if (bdIsChallenge) {
+                  log(`⚠ Bright Data : page challenge détectée — abandon`)
+                } else {
+                  const meta = getLastBrightDataSuccess()
+                  const metaParts = meta
+                    ? ` · ${meta.country} · ${(meta.lengthBytes / 1024).toFixed(0)}KB · ${(meta.durationMs / 1000).toFixed(1)}s`
+                    : ''
+                  log(`✓ Bright Data OK (score ${bdScore})${metaParts} — bascule sur Bright Data`)
+                  const pdfBlock = bdResult.pdfLinks.length > 0
+                    ? `\n\n## Documents\n\n${bdResult.pdfLinks.map((d) => `- [${d.name}](${d.url})`).join('\n')}\n`
+                    : ''
+                  if (bdResult.pdfLinks.length > 0) {
+                    log(`✓ Bright Data : ${bdResult.pdfLinks.length} document(s) PDF détecté(s)`)
+                  }
+                  markdownContent = `## [Source: ${productUrl}]\n\n${bdSanitized}${pdfBlock}`
+                  brightDataSucceeded = true
+                  ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
+                }
+              } else {
+                const bdErr = getLastBrightDataError()
+                if (bdErr?.code === 'unauthenticated') {
+                  log(`⚠ Bright Data : auth Firebase requise (utilisateur non connecté ?)`)
+                } else if (bdErr?.code === 'balance_exhausted') {
+                  log(`⚠ Bright Data : balance épuisée — recharger sur le dashboard Bright Data`)
+                } else if (bdErr?.code === 'not_configured') {
+                  log(`⚠ Bright Data : Cloud Function pas configurée (BRIGHTDATA_API_TOKEN manquant)`)
+                } else if (bdErr?.code === 'timeout') {
+                  log(`⚠ Bright Data : timeout ${Math.round(160)}s — DataDome résiste sur ce site`)
+                } else if (bdErr) {
+                  log(`⚠ Bright Data erreur : ${bdErr.message.slice(0, 100)}`)
+                } else {
+                  log(`⚠ Bright Data n'a rien retourné`)
+                }
+              }
+            } catch (err) {
+              console.warn('[enrichment] Bright Data fallback failed:', err)
+            }
+          }
+
+          // ── GUARD FINAL ANTI-HALLUCINATION ─────────────────────────────────
+          // Si après Firecrawl (réussi ou échoué) le markdown est TOUJOURS un
+          // CAPTCHA, on le vide de force pour que :
+          //   - parseSpecsFromMarkdown / parseAdvantagesFromMarkdown / parseImagesFromMarkdown
+          //     ne ramassent pas les pictos/textes du challenge
+          //   - le LLM ne soit pas appelé sur du contenu challenge (= hallucination)
+          //   - le pipeline produise un EnrichedProduct vide avec blockedByAntiBot=true
+          if (markdownContent && looksLikeBotChallenge(markdownContent)) {
+            console.log('[enrichment] ⚠ markdown is still CAPTCHA after all fallbacks — clearing to prevent hallucination')
+            log(`⚠ Toutes les sources renvoient un CAPTCHA — abandon (pas d'hallucination IA)`)
+            markdownContent = ''
+            ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = true
           }
 
           // Fallback fabricant si toujours rien et URL = revendeur (dernière chance)
@@ -3859,15 +4029,26 @@ Réponds UNIQUEMENT via l'outil emit_response.`
         // ══ PATH A : Construction directe depuis markdown (pas de LLM) ═
         else {
         let directBuild: Partial<EnrichedProduct> | null = null
-        if (markdownContent && markdownContent.length > 200) {
-          const mdSpecs = parseSpecsFromMarkdown(markdownContent)
-          const mdAdvantages = parseAdvantagesFromMarkdown(markdownContent)
+        const structuredEarly = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+        // Donnée structurée riche = JSON-LD ou microdata avec assez d'infos pour
+        // construire un produit utile sans LLM. Utile quand markdown est vide
+        // (DataDome bloque Jina/Firecrawl markdown mais le HTML contient JSON-LD).
+        const hasRichStructured = !!(structuredEarly && (
+          (structuredEarly.description && structuredEarly.description.length > 50) ||
+          structuredEarly.specs.length >= 3 ||
+          structuredEarly.images.length >= 3
+        ))
+        const hasMarkdown = !!(markdownContent && markdownContent.length > 200)
+
+        if (hasMarkdown || hasRichStructured) {
+          const mdSpecs = hasMarkdown ? parseSpecsFromMarkdown(markdownContent!) : []
+          const mdAdvantages = hasMarkdown ? parseAdvantagesFromMarkdown(markdownContent!) : []
           // Description : parser uniquement la section primaire pour éviter
           // que le texte UI des pages avis (/avis?productCode=...) contamine
           // la description produit.
-          const primaryMd = extractPrimarySourceSection(markdownContent)
-          let mdDescription = parseDescriptionFromMarkdown(primaryMd)
-          const structured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+          const primaryMd = hasMarkdown ? extractPrimarySourceSection(markdownContent!) : ''
+          let mdDescription = hasMarkdown ? parseDescriptionFromMarkdown(primaryMd) : ''
+          const structured = structuredEarly
 
           // Merge JSON-LD prioritaire si disponible
           if (structured) {
@@ -3894,22 +4075,27 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             }
           }
 
-          console.log('[enrichment] markdown build attempt:', { specs: mdSpecs.length, advantages: mdAdvantages.length, descLen: mdDescription.length })
+          console.log('[enrichment] direct build attempt:', { specs: mdSpecs.length, advantages: mdAdvantages.length, descLen: mdDescription.length, hasMarkdown, hasRichStructured })
 
-          const hasEnoughData = mdSpecs.length >= 5
+          // Seuil abaissé quand structured-data riche : 3 specs suffisent
+          // (vs 5 pour markdown-only) car la donnée est de meilleure qualité.
+          const minSpecs = hasRichStructured ? 3 : 5
+          const hasEnoughData = mdSpecs.length >= minSpecs
             && (mdAdvantages.length >= 2 || mdDescription.length > 50)
           if (hasEnoughData) {
-            const mdDocs = [...markdownContent.matchAll(/https?:\/\/[^\s\)"\]]+\.pdf[^\s\)"\]]*/gi)]
+            // Si markdown vide (chemin structured-only), tout ce qui suit reste no-op
+            const mdSafe = markdownContent ?? ''
+            const mdDocs = [...mdSafe.matchAll(/https?:\/\/[^\s\)"\]]+\.pdf[^\s\)"\]]*/gi)]
               .map(m => m[0])
             // Liens PDF titrés [nom](url.pdf)
-            const mdDocTitled = [...markdownContent.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s)]+\.pdf[^\s)]*)\)/gi)]
+            const mdDocTitled = [...mdSafe.matchAll(/\[([^\]]+)\]\((https?:\/\/[^\s)]+\.pdf[^\s)]*)\)/gi)]
               .map(m => ({ name: m[1].trim(), url: m[2].trim() }))
             const directDocuments: EnrichedDocument[] = []
             const directDocsSeen = new Set<string>()
             // 0. Tous les blocs JINA_EXTRACTED_DOWNLOADS injectés par le scraper
             //    (POST + GET → potentiellement 2 blocs). Format : `title##url`
             //    OU `title | url` selon la source (Drupal vs Relay).
-            for (const m of markdownContent.matchAll(/JINA_EXTRACTED_DOWNLOADS_START\s*([\s\S]*?)\s*JINA_EXTRACTED_DOWNLOADS_END/g)) {
+            for (const m of mdSafe.matchAll(/JINA_EXTRACTED_DOWNLOADS_START\s*([\s\S]*?)\s*JINA_EXTRACTED_DOWNLOADS_END/g)) {
               for (const line of m[1].split('\n')) {
                 const trimmed = line.trim()
                 if (!trimmed) continue
@@ -3941,8 +4127,8 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               directDocsSeen.add(u)
               directDocuments.push(buildDocument(u))
             }
-            const mdVariants = parseVariantsFromMarkdown(markdownContent)
-            const directImages = parseImagesFromMarkdown(markdownContent)
+            const mdVariants = parseVariantsFromMarkdown(mdSafe)
+            const directImages = parseImagesFromMarkdown(mdSafe)
             // Stratégie images : TOUJOURS merger JSON-LD + markdown.
             // `parseImagesFromMarkdown` filtre déjà via `isJunkImageUrl` les
             // bannières promo (French Days, Jardi'Versaire, etc.), logos, pictos.
@@ -3978,7 +4164,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
                   validUntil: (structured as { offers: { priceValidUntil?: string } }).offers.priceValidUntil,
                 }
               : undefined
-            const mdPricing = parsePricingFromMarkdown(markdownContent, jsonLdPricing)
+            const mdPricing = parsePricingFromMarkdown(mdSafe, jsonLdPricing)
 
             directBuild = {
               description: mdDescription,
@@ -4033,6 +4219,42 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             llmModel: undefined,
           }
         } else {
+          // ══ GUARD ANTI-HALLUCINATION ════════════════════════════════
+          // Si le scraping a été bloqué par anti-bot ET pas de structured-data
+          // utilisable → SKIP le LLM. Le prompt PATH B demande au LLM de
+          // "générer la fiche depuis ses connaissances" = hallucination par
+          // design. L'utilisateur veut explicitement éviter ça.
+          const antiBotBlocked = (globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked === true
+          const hasAnyStructuredData = !!(structuredEarly && (
+            (structuredEarly.description && structuredEarly.description.length > 30) ||
+            structuredEarly.specs.length > 0 ||
+            structuredEarly.images.length > 0
+          ))
+          if (antiBotBlocked && !hasAnyStructuredData) {
+            log(`⚠ Site bloqué par anti-bot ET aucune donnée structurée — skip LLM (pas d'hallucination)`)
+            console.log('[enrichment] anti-bot blocked + no structured data → returning empty product, skipping LLM')
+            enriched = {
+              description: '',
+              advantages: [],
+              specifications: [],
+              variants: [],
+              images: [],
+              documents: [],
+              sourceUrl: productUrl,
+              additionalSources,
+              generatedAt: Date.now(),
+              scrapingProvider: 'Jina (bloqué)',
+              llmProvider: undefined,
+              llmModel: undefined,
+              blockedByAntiBot: true,
+            }
+            // Skip le reste du PATH B (LLM call, post-process)
+            setData(sheetName, rowId, enriched)
+            ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
+            setRunning(false)
+            return enriched
+          }
+
           // ══ PATH B : LLM classique ═══════════════════════════════════
           log(`Synthèse IA (LLM) — données scrapées insuffisantes pour build direct`)
           setProgress(sheetName, rowId, {
@@ -4233,6 +4455,11 @@ Réponds UNIQUEMENT via l'outil emit_response.`
           .filter((x): x is string => typeof x === 'string' && x.trim().length >= 3)
 
         enriched = sanitizeEnriched(enriched, productIdsForSanitize)
+        // Flag anti-bot : si le scraping a rencontré un challenge bot non
+        // résolu, on le propage au produit pour que l'UI affiche un bandeau.
+        const antiBot = (globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked ?? false
+        if (antiBot) enriched = { ...enriched, blockedByAntiBot: true }
+        ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
         setData(sheetName, rowId, enriched)
         return enriched
       } catch (err) {

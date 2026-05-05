@@ -209,9 +209,20 @@ export function parseAdvantagesFromMarkdown(md: string): Advantage[] {
     // Texte non-markdown qui matche les keywords
     if (!trimmed.startsWith('-') && !trimmed.startsWith('*') && !trimmed.startsWith('•')
         && featureKeywords.test(trimmed) && !exitKeywords.test(trimmed) && trimmed.length < 80) {
-      const nextLine = (lines[i + 1] ?? '').trim()
-      const isTitleBeforeBullets = /^[-*•·✓✔]\s+/.test(nextLine)
-      if (isTitleBeforeBullets || inFeatureZone) {
+      // Chercher la prochaine ligne NON-VIDE (une ligne vide entre le heading
+      // et les items est fréquente sur Leroy Merlin, Castorama, etc.)
+      let nextNonEmpty = ''
+      for (let j = i + 1; j < lines.length && j <= i + 4; j++) {
+        const l = lines[j].trim()
+        if (l) { nextNonEmpty = l; break }
+      }
+      const isTitleBeforeBullets = /^[-*•·✓✔]\s+/.test(nextNonEmpty)
+      // Aussi activer si les items suivants sont de la prose simple (pas de bullets)
+      // ex: Leroy Merlin affiche les avantages comme paragraphes sans tirets
+      const isTitleBeforeProse = nextNonEmpty.length >= 30
+        && !nextNonEmpty.startsWith('#') && !nextNonEmpty.startsWith('|')
+        && !exitKeywords.test(nextNonEmpty)
+      if (isTitleBeforeBullets || isTitleBeforeProse || inFeatureZone) {
         flushPending()
         inFeatureZone = true
         currentGroup = extractGroupName(trimmed)

@@ -299,65 +299,109 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
   const FILE_SIZE_RE = /^\d+([.,]\d+)?\s*(b|kb|mb|gb|tb|ko|mo|go|to|octets?|bytes?)\s*$/i
   /** Lignes d'en-tête de table dupliquées entre sections : "Valeur",
    *  "*Valeur*", "Caractéristique"… — souvent recopiées par le scraping
-   *  quand la même table d'en-tête est répétée pour chaque sous-section. */
-  const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé])[\s*_]*$/i
+   *  quand la même table d'en-tête est répétée pour chaque sous-section.
+   *  Inclut "attribut(s)" / "attribute(s)" — col header générique de Rubix & co. */
+  const PLACEHOLDER_HEADER_RE = /^[\s*_]*(valeur|value|caract[eé]ristique|description|sp[eé]cification|name|nom|d[eé]signation|propri[eé]t[eé]|attributs?|attributes?|fields?|champs?|key|cl[eé])[\s*_]*$/i
   /** Nom entièrement entre crochets `[...]` sans contenu informatif. */
   const BRACKETED_HEADER_RE = /^\s*\[[^[\]()]+\]\s*$/
 
-  function add(name: string, value: string, group?: string) {
-    const n = name.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
-    const v = value.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
+  // Heuristique anti-inversion : sur certains sites B2B (Rubix, Würth) la table
+  // de specs est rendue avec valeur À GAUCHE et label À DROITE. Le parser HTML
+  // capture donc `name=value, value=name` (inversé). On détecte et on swap si :
+  //   - n ressemble à une VALEUR (digits + unité physique, OU "X €", OU OUI/NON)
+  //   - ET v ressemble à un NOM (alphabétique, ≥1 lettre majuscule au début,
+  //     pas d'unité physique seule)
+  // Reste générique — applicable à tout site dont la mise en page est inversée.
+  const VALUE_LIKE_RE = /^(?:\d[\d\s.,]*(?:\s*(?:[A-Za-zÀ-ÿ²³µ]{1,5}|\/[A-Za-z]+))?|\d+\s*[€$£%]|oui|non|yes|no)$/i
+  const NAME_LIKE_RE = /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-Za-zÀ-ÿ\s'’\-()/]+$/
+  const isInverted = (n: string, v: string): boolean => {
+    if (!n || !v) return false
+    if (n.length > 30) return false  // un vrai value reste court
+    if (v.length < 3 || v.length > 60) return false  // un vrai name a une certaine longueur
+    return VALUE_LIKE_RE.test(n) && NAME_LIKE_RE.test(v) && !VALUE_LIKE_RE.test(v)
+  }
+
+  /** Retourne true si la spec a été ajoutée, false si rejetée par un filtre.
+   *  Permet aux callers (Format 4 notamment) de NE PAS consommer la ligne
+   *  suivante quand la pair est rejetée — évite les cascades de shift. */
+  function add(rawName: string, rawValue: string, group?: string): boolean {
+    let n = rawName.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
+    let v = rawValue.trim().replace(LINK_BRACKETS_RE, '').replace(/\*\*/g, '').trim()
+    if (isInverted(n, v)) {
+      [n, v] = [v, n]
+    }
     const key = `${n.toLowerCase()}::${v.toLowerCase()}`
     const nameKey = n.toLowerCase().trim()
-    if (!n || !v || seen.has(key)) return
+    if (!n || !v || seen.has(key)) return false
     // Dedup par nom : garde la première occurrence pour les pages avec
     // comparaisons multi-modèles (RS Components etc.).
-    if (seenNames.has(nameKey)) return
-    if (JUNK_NAME_RE.test(n)) return
-    if (JUNK_VALUE_RE.test(v)) return
-    if (FILE_VALUE_RE.test(v)) return
-    if (FILE_SIZE_RE.test(n) || FILE_SIZE_RE.test(v)) return
-    if (FINANCIAL_NAME_RE.test(n)) return
-    if (FINANCIAL_VALUE_RE.test(v)) return
+    if (seenNames.has(nameKey)) return false
+    if (JUNK_NAME_RE.test(n)) return false
+    if (JUNK_VALUE_RE.test(v)) return false
+    if (FILE_VALUE_RE.test(v)) return false
+    if (FILE_SIZE_RE.test(n) || FILE_SIZE_RE.test(v)) return false
+    if (FINANCIAL_NAME_RE.test(n)) return false
+    if (FINANCIAL_VALUE_RE.test(v)) return false
     // FINANCIAL_NAME_RE inclut "ajouter|panier|cart|acheter|buy" — appliquer aussi
     // sur la VALEUR pour rejeter les bouts de table prix `Unité=Ajouter`.
-    if (FINANCIAL_NAME_RE.test(v)) return
+    if (FINANCIAL_NAME_RE.test(v)) return false
     // Delivery / promo UI cells (Jardiland-style)
-    if (DELIVERY_UI_RE.test(n) || DELIVERY_UI_RE.test(v)) return
+    if (DELIVERY_UI_RE.test(n) || DELIVERY_UI_RE.test(v)) return false
     // Nom = juste un symbole/séparateur (ex: "+", "-", "/", "?")
-    if (/^[+\-*/?!.,;:]$/.test(n)) return
+    if (/^[+\-*/?!.,;:]$/.test(n)) return false
     // Cookie banner buttons : "Tout accepter=Enregistrer", "Accepter tout=Refuser"
     if (/^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save|continuer\s+sans\s+accepter)$/i.test(n)
-        || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return
-    if (/^[#]/.test(n)) return
-    if (/^[.\-–—,;:!?]$/.test(v)) return
-    if (n.length > 80 || v.length > 250) return
-    if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return
-    if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return
-    if (PLACEHOLDER_HEADER_RE.test(v) || PLACEHOLDER_HEADER_RE.test(n)) return
-    if (BRACKETED_HEADER_RE.test(n)) return
+        || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return false
+    if (/^[#]/.test(n)) return false
+    if (/^[.\-–—,;:!?]$/.test(v)) return false
+    if (n.length > 80 || v.length > 250) return false
+    if (/fiche\s*(de\s*donn[eé]es|technique|produit)/i.test(n)) return false
+    if (/www\.[a-z]/i.test(v) || /\.com\//.test(v)) return false
+    if (PLACEHOLDER_HEADER_RE.test(v) || PLACEHOLDER_HEADER_RE.test(n)) return false
+    if (BRACKETED_HEADER_RE.test(n)) return false
+    // Rejet : nom purement numérique (ex: "414,20") — c'est probablement un prix
+    // capturé par erreur dans une table 2-col. Les vrais codes de spec (EN60745,
+    // 2014/30/UE) contiennent des lettres et passent ce test.
+    if (/^\d[\d\s.,\-+/]*$/.test(n)) return false
+    // Rejet : value qui est uniquement une unité/suffixe monétaire (ex: "€ HT",
+    // "€ TTC", "/ unité", "/ pièce") — c'est le label d'une cellule prix mal
+    // capturée comme value. Les vraies valeurs avec unité ont au moins un digit.
+    if (/^[\s/]?[€$£%]\s*(?:HT|TTC|HTVA|TVA)?\s*$/i.test(v)) return false
+    if (/^\/\s*(?:unit[eé]|pi[eè]ce|kilo|kg|m|m²|m³)\s*$/i.test(v)) return false
     // Rejet bullets "• Texte" en nom ou valeur (n'est PAS une spec, c'est
     // une cellule de table qui a capturé un bullet de feature)
-    if (/^[•·]\s/.test(n) || /^[•·]\s/.test(v)) return
+    if (/^[•·]\s/.test(n) || /^[•·]\s/.test(v)) return false
     // Rejet bullets markdown `- ` ou `* ` en valeur (ex: `Avantages produits=- Item`)
-    if (/^[-*]\s/.test(v)) return
+    if (/^[-*]\s/.test(v)) return false
     // Rejet noms qui sont des headings de section (capturés par erreur via Format 1)
     const SECTION_HEADING_RE = /^(caract[eé]ristiques?|sp[eé]cifications?|d[eé]tails?|description|avantages?|points?\s+forts?|fiche|info\s|[eé]quipement|application)/i
-    if (SECTION_HEADING_RE.test(n) && n.length < 35) return
+    if (SECTION_HEADING_RE.test(n) && n.length < 35) return false
     // Anti-prose composite : nom > 5 mots ET valeur sans chiffre/unité
     // = très probablement une phrase prose découpée par erreur
-    if (n.split(/\s+/).length > 5 && !/[:\d]|\b(mm|cm|kg|g|w|v|hz|ml|l|nm|rpm|db|°|%|bar|psi|mpa)\b/i.test(v)) return
-    if (isGarbageContent(n) || isGarbageContent(v)) return
+    if (n.split(/\s+/).length > 5 && !/[:\d]|\b(mm|cm|kg|g|w|v|hz|ml|l|nm|rpm|db|°|%|bar|psi|mpa)\b/i.test(v)) return false
+    if (isGarbageContent(n) || isGarbageContent(v)) return false
     seen.add(key)
     seenNames.add(nameKey)
     specs.push({ name: n, value: v, group: group || undefined })
+    return true
   }
 
   const lines = md.split('\n')
 
   const jinaMetaRe = /^(Title|URL|Markdown Content|Source|Published Time|StatusCode|Favicon|ViewportWidth)\s*:/i
 
-  const specSectionRe = /^#{1,4}\s*(sp[eé]cifications?|caract[eé]ristiques?\s*(?:techniques?|du\s*produit)?|descriptif\s*technique|donn[eé]es\s*techniques?|informations?\s*(?:techniques?)?|fiche\s*technique|d[eé]tails?\s*techniques?|poids|puissance|d[eé]cibels?|vibrations?|dimensions?|batterie|general|g[eé]n[eé]ral|per[çc]age|vissage|couple|moteur|[eé]nergie|vitesse|mandrin|capacit[eé]s?|tension|autonomie|charge(?:ment)?|bruit|acoustique|emballage|inclus|contenu\s*(?:de\s*la\s*)?livr|accessoires?)/i
+  // Lexique commun aux 3 formes de heading (markdown #, bold **, plain text avec `:`).
+  const SPEC_HEADING_KEYWORDS = '(?:sp[eé]cifications?|caract[eé]ristiques?\\s*(?:techniques?|du\\s*produit)?|descriptif\\s*technique|donn[eé]es\\s*techniques?|informations?\\s*(?:techniques?)?|fiche\\s*technique|d[eé]tails?\\s*techniques?|normes?|directives?(?:\\s+europ[eé]ennes?)?|conformit[eé]|r[eé]glementation|certifications?|poids|puissance|d[eé]cibels?|vibrations?|dimensions?|batterie|general|g[eé]n[eé]ral|per[çc]age|vissage|couple|moteur|[eé]nergie|vitesse|mandrin|capacit[eé]s?|tension|autonomie|charge(?:ment)?|bruit|acoustique|emballage|inclus|contenu\\s*(?:de\\s*la\\s*)?livr|accessoires?)'
+  // Forme 1 : heading markdown `## Spécifications`
+  const specSectionRe = new RegExp(`^#{1,4}\\s*${SPEC_HEADING_KEYWORDS}`, 'i')
+  // Forme 2 : heading bold `**Spécifications**`, `**Spécifications :**` ou
+  // `**Spécifications**:` (Turndown d'un <strong> ou <b>). Trailer permissif :
+  // accepte espaces/markers/colons dans n'importe quel ordre après le keyword.
+  const specSectionBoldRe = new RegExp(`^[*_]{1,2}\\s*${SPEC_HEADING_KEYWORDS}[\\s*_:.]*$`, 'i')
+  // Forme 3 : plain text `Spécifications :` sur sa propre ligne (sans markup).
+  // Style Rubix/Leroy Merlin : `Caractéristiques :` mais aussi
+  // `Capacité de perçage/burinage :` (contenu entre keyword et colon).
+  const specSectionPlainRe = new RegExp(`^${SPEC_HEADING_KEYWORDS}[^:\\n]{0,60}:\\s*$`, 'i')
   let inSpecSection = false
   let currentGroup = ''
 
@@ -388,6 +432,18 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
       inSpecSection = true
       const heading = trimmed.replace(/^#{1,4}\s+/, '').trim()
       currentGroup = heading
+      continue
+    }
+    // Heading bold (sans #) — `**Spécifications**` / `__Normes__`
+    if (specSectionBoldRe.test(trimmed)) {
+      inSpecSection = true
+      currentGroup = trimmed.replace(/^[*_]{1,2}\s*|\s*[*_]{1,2}\s*[:.]?\s*$/g, '').trim()
+      continue
+    }
+    // Heading plain text avec `:` — `Spécifications :`
+    if (specSectionPlainRe.test(trimmed)) {
+      inSpecSection = true
+      currentGroup = trimmed.replace(/\s*:\s*$/, '').trim()
       continue
     }
     const subHeading = trimmed.match(/^#{2,5}\s+(.+)/)
@@ -437,8 +493,8 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
 
     // Format 3 : Clé : Valeur (sans markdown bold)
     // Anti-prose : le name doit ressembler à un vrai nom de spec (max 5 mots,
-    // commence par majuscule, pas par article). Sans ce check, des phrases
-    // prose contenant `:` étaient capturées comme specs (Jardiland-style).
+    // pas un article). La contrainte majuscule initiale est retirée : dans les
+    // sections specs FR, "diamètre max dans l'acier" (minuscule) est une vraie spec.
     if (inSpecSection) {
       const kvMatch = trimmed.match(/^([^:]{2,50})\s*:\s+(.{1,200})$/)
       if (kvMatch) {
@@ -446,7 +502,6 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
         const v = kvMatch[2].replace(/\*\*/g, '').trim()
         const looksLikeSpecName =
           n.split(/\s+/).length <= 5
-          && /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(n)
           && !/^(le|la|les|un|une|des|du|de|cette|ce|ces|votre|notre|optimis[eé]z?|am[eé]lior[eé]z?|d[eé]couvr[eé]z?|s[eé]lectionnez|profit[eé]z?)\b/i.test(n)
         if (n && v && !/^https?:/.test(n) && looksLikeSpecName) {
           add(n, v, currentGroup)
@@ -459,18 +514,53 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     if (inSpecSection && trimmed.length > 2 && trimmed.length < 80
         && !trimmed.startsWith('-') && !trimmed.startsWith('*') && !trimmed.startsWith('[')
         && !trimmed.startsWith('#') && !trimmed.startsWith('|') && !trimmed.startsWith('http')
-        && !trimmed.startsWith('!') && !/^[=:\-]+$/.test(trimmed)) {
+        && !trimmed.startsWith('!') && !/^[=:\-]+$/.test(trimmed)
+        && !/^[•·▪●◦▶]/.test(trimmed)  // bullets typographiques → laisser Format 5 les traiter
+        && !/:\s*$/.test(trimmed)) {   // prose intro finissant par `:` (ex: "conforme aux directives :")
       let nextIdx = i + 1
       while (nextIdx < lines.length && nextIdx <= i + 3 && !lines[nextIdx].trim()) nextIdx++
       const nextLine = (lines[nextIdx] ?? '').trim()
       if (nextLine && nextLine.length > 0 && nextLine.length < 100
           && !nextLine.startsWith('#') && !nextLine.startsWith('-') && !nextLine.startsWith('*')
           && !nextLine.startsWith('[') && !nextLine.startsWith('|') && !nextLine.startsWith('http')
-          && !nextLine.startsWith('!')) {
+          && !nextLine.startsWith('!')
+          && !/^[•·▪●◦▶]/.test(nextLine)) {  // ne pas absorber un bullet kv comme valeur
         const looksLikeValue = /\d/.test(nextLine) || nextLine.length < 30 || /\b(mm|cm|m|kg|g|nm|rpm|tr\/min|v|ah|w|kw|hz|db|dba|°|%|bar|l\/min|psi|mpa|ion|litre|watt|volt|amp)/i.test(nextLine)
         if (looksLikeValue) {
-          add(trimmed, nextLine, currentGroup)
-          i = nextIdx
+          // Tentative d'ajout. Si add() rejette (ex: nom = "Attributs" placeholder),
+          // on NE consomme PAS la ligne suivante — elle redevient candidate au tour
+          // d'après. Évite les cascades de shift quand un faux header générique
+          // s'intercale dans une suite de specs alternées (Rubix-style).
+          const accepted = add(trimmed, nextLine, currentGroup)
+          if (accepted) {
+            i = nextIdx
+          }
+          continue
+        }
+      }
+    }
+
+    // Format 5 : Bullet inline `• Nom : Valeur` (single-line, séparateur ` : `).
+    // Pattern courant chez les revendeurs B2B (Rubix, Würth, Mabéo) qui rendent
+    // les fiches Spécifications en liste à puces typographiques `•` plutôt qu'en
+    // table. Restreint à `inSpecSection` pour éviter de capturer des bullets de
+    // description marketing. Accepte aussi les variantes `·`, `▪`, `●`, `◦`.
+    if (inSpecSection) {
+      const bulletInlineMatch = trimmed.match(/^[•·▪●◦▶]\s+([^:]{2,60})\s*:\s+(.{1,200})$/)
+      if (bulletInlineMatch) {
+        const n = bulletInlineMatch[1].trim()
+        const v = bulletInlineMatch[2].trim()
+        // Garde-fou : nom doit ressembler à une vraie spec OU un code normatif.
+        //   - Forme prose : ≤6 mots, commence par majuscule, pas par article
+        //   - Forme code : alphanumérique avec / . - autorisés (ex: 2014/30/UE,
+        //     EN60745-2-6, EN50581) — utilisé pour les sections "Normes"
+        const isProseSpec =
+          n.split(/\s+/).length <= 6
+          && /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(n)
+          && !/^(le|la|les|un|une|des|du|de|cette|ce|ces|votre|notre|optimis[eé]z?|am[eé]lior[eé]z?|d[eé]couvr[eé]z?|s[eé]lectionnez|profit[eé]z?)\b/i.test(n)
+        const isCodeSpec = /^[A-Z\d][A-Z\d./\-+]{2,40}$/.test(n)
+        if ((isProseSpec || isCodeSpec) && !/^https?:/.test(v)) {
+          add(n, v, currentGroup)
           continue
         }
       }

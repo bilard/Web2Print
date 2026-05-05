@@ -51,10 +51,16 @@ export function parsePriceNumber(raw: string): number | null {
 const PRICE_PATTERNS = {
   // "prix actuel : 999,00€" / "prix actuel\n\n999,00€"
   current: /prix\s+(?:actuel|de\s+vente)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
+  // ES: "precio de venta : 999,00€" / "precio especial"
+  current_es: /precio\s+(?:de\s+venta|final|especial|cliente|oferta)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "prix d'origine : 1 199,00€" / "était 1 199,00€"
   original: /(?:prix\s+d['']origine|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
+  // ES: "precio habitual : 1 199,00€" / "precio sin descuento" / "antes"
+  original_es: /(?:precio\s+(?:habitual|original|sin\s+descuento|de\s+lista|cat[aá]logo|normal|pvp)|antes)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "Économisez 200,00€"
   discountAmount: /[Éé]conomis[eéè]z?\s+([\d\s  .,]+)\s*€/i,
+  // ES: "Ahorras 100,00€" / "Descuento 50,00€"
+  discountAmount_es: /(?:ahorra[sz]?|descuento)\s+([\d\s  .,]+)\s*€/i,
   // Markdown strikethrough "~~367,49 €~~" → prix barré (avant promo)
   originalStrike: /~~\s*([\d  .,]+)\s*€\s*~~/i,
   // "-137,50 €" / "−137,50€" — réduction en montant signée (≥ 3 caractères
@@ -63,11 +69,11 @@ const PRICE_PATTERNS = {
   // "-17%" ou "(-17%)" — itérée avec exclusion bannières marketing
   discountPercent: /[-−]\s*(\d{1,2})\s*%/g,
   // "1 449,00 € HT"
-  htPrice: /([\d\s  .,]+)\s*€\s*HT\b/i,
+  htPrice: /(\d[\d\s  .,]*)\s*€[^\w€]{0,12}HT\b/i,
   // "1 738,80 € TTC"
-  ttcPrice: /([\d\s  .,]+)\s*€\s*TTC\b/i,
+  ttcPrice: /(\d[\d\s  .,]*)\s*€[^\w€]{0,12}TTC\b/i,
   // "Dont 3,40€ d'éco-participation" / "dont 2,50 € de participation DEEE"
-  ecoPart: /(?:dont|y\s+compris)\s+([\d\s  .,]+)\s*€\s*(?:d['']?[ée]co[\s-]?participation|de\s+participation\s+DEEE)/i,
+  ecoPart: /(?:dont|y\s+compris)\s+([\d\s  .,]+)\s*€\s*(?:d['']?[ée]co[\s-]?participation|[ée]co[\s-]?part\b|de\s+participation\s+DEEE)/i,
   // GBP "£49.99"
   gbp: /£\s*([\d\s  .,]+)/,
   // USD "$59.99"
@@ -116,9 +122,17 @@ export function parsePricingFromMarkdown(
   const result: Pricing = { currency: 'EUR' }
   let found = false
 
-  // 1. Retirer les contextes "livraison" pour ne pas confondre leurs prix
+  // 0. Pré-nettoyage : retirer les markers markdown bold/italic et balises HTML
+  //    inline (sup/sub/strong/b/em/i) qui s'intercalent entre les digits, le `€`
+  //    et les labels HT/TTC. Sans ce nettoyage, des sorties Turndown comme
+  //    `**414,20** €^HT^` empêchent la regex `(\d…)\s*€…HT` de matcher.
   let cleanMd = md
-  for (const m of md.matchAll(SHIPPING_CONTEXT_RE)) {
+    .replace(/\*\*/g, '')
+    .replace(/__/g, '')
+    .replace(/<\/?(?:sup|sub|strong|b|em|i|span)\b[^>]*>/gi, '')
+
+  // 1. Retirer les contextes "livraison" pour ne pas confondre leurs prix
+  for (const m of cleanMd.matchAll(SHIPPING_CONTEXT_RE)) {
     cleanMd = cleanMd.replace(m[0], '')
   }
 
@@ -161,11 +175,29 @@ export function parsePricingFromMarkdown(
       if (n != null) { result.ttc = n; found = true }
     }
 
+    // ES: "precio de venta"
+    if (result.ttc == null) {
+      const currentEsM = cleanMd.match(PRICE_PATTERNS.current_es)
+      if (currentEsM) {
+        const n = parsePriceNumber(currentEsM[1])
+        if (n != null) { result.ttc = n; found = true }
+      }
+    }
+
     // Prix barré / origine — par mot-clé "était / prix d'origine / barré"
     const originalM = cleanMd.match(PRICE_PATTERNS.original)
     if (originalM) {
       const n = parsePriceNumber(originalM[1])
       if (n != null) { result.original = n; found = true }
+    }
+
+    // ES: "precio habitual / precio original / antes"
+    if (result.original == null) {
+      const originalEsM = cleanMd.match(PRICE_PATTERNS.original_es)
+      if (originalEsM) {
+        const n = parsePriceNumber(originalEsM[1])
+        if (n != null) { result.original = n; found = true }
+      }
     }
 
     // Prix barré — strikethrough markdown `~~367,49 €~~` (Jardiland & co)
@@ -182,18 +214,61 @@ export function parsePricingFromMarkdown(
 
     // Heuristique deux prix adjacents : `229,99 €367,49 €` (Jardiland sans
     // strikethrough HTML — Jina ne préserve pas le `<del>`/CSS line-through).
-    // Si p2 > p1 → p1 = TTC actuel, p2 = prix barré.
+    // Gère les deux ordres : prix_actuel puis barré (p2>p1) ET barré puis
+    // prix_actuel (p1>p2, style Leroy Merlin : 585,90 € → 285,14 €).
     if (result.ttc == null && result.original == null) {
       const adjM = cleanMd.match(/(\d[\d   .,]*)\s*€\s*(\d[\d   .,]*)\s*€/)
       if (adjM) {
         const p1 = parsePriceNumber(adjM[1])
         const p2 = parsePriceNumber(adjM[2])
-        if (p1 != null && p2 != null && p1 > 0 && p2 > p1) {
-          result.ttc = p1
-          result.original = p2
+        if (p1 != null && p2 != null && p1 > 0 && p2 > 0 && Math.abs(p1 - p2) > 0.01) {
+          result.ttc = Math.min(p1, p2)
+          result.original = Math.max(p1, p2)
           found = true
           cleanMd = cleanMd.replace(adjM[0], ' ')
         }
+      }
+    }
+
+    // Inférence HT depuis 2 prix juxtaposés. Stratégie 2 paliers :
+    //   1. Fenêtre locale (250 chars autour du match TTC) — préfère les prix
+    //      adjacents physiquement (cas typique : "414,20 € HT\n497,04 € TTC").
+    //   2. Fallback global : si rien dans la fenêtre, cherche dans tout le doc
+    //      un € avec ratio TVA plausible (TTC/HT entre 1.05 et 1.25) — couvre
+    //      les pages où HT et TTC sont rendus dans des sections séparées.
+    // Couvre le cas où turndown perd les superscripts `<sup>HT</sup>` /
+    // labels HT/TTC parfois absents après conversion HTML→markdown.
+    if (result.ttc != null && result.ht == null) {
+      const ttcM = cleanMd.match(PRICE_PATTERNS.ttcPrice)
+      const fallbackTtcIdx = ttcM?.index
+      const anchorIdx = fallbackTtcIdx ?? cleanMd.search(/\d[\d\s.,]*\s*€/)
+      const inTvaRange = (n: number) => n < result.ttc! && result.ttc! / n >= 1.05 && result.ttc! / n <= 1.25
+
+      // Palier 1 : fenêtre locale 250 chars
+      let htCandidate: number | undefined
+      if (anchorIdx >= 0) {
+        const window = cleanMd.slice(Math.max(0, anchorIdx - 250), anchorIdx + 250)
+        const local = [...window.matchAll(/(\d[\d\s.,]+)\s*€/g)]
+          .map((m) => parsePriceNumber(m[1]))
+          .filter((n): n is number => n != null && n > 0 && Math.abs(n - result.ttc!) > 0.01)
+          .filter(inTvaRange)
+          .sort((a, b) => b - a)
+        htCandidate = local[0]
+      }
+
+      // Palier 2 : fallback global sur tout le markdown
+      if (htCandidate == null) {
+        const global = [...cleanMd.matchAll(/(\d[\d\s.,]+)\s*€/g)]
+          .map((m) => parsePriceNumber(m[1]))
+          .filter((n): n is number => n != null && n > 0 && Math.abs(n - result.ttc!) > 0.01)
+          .filter(inTvaRange)
+          .sort((a, b) => b - a)
+        htCandidate = global[0]
+      }
+
+      if (htCandidate != null) {
+        result.ht = htCandidate
+        found = true
       }
     }
 
@@ -204,6 +279,15 @@ export function parsePricingFromMarkdown(
       if (n != null) {
         result.discount = { ...result.discount, amount: n }
         found = true
+      }
+    }
+
+    // ES: "Ahorras X €"
+    if (result.discount?.amount == null) {
+      const discAmtEsM = cleanMd.match(PRICE_PATTERNS.discountAmount_es)
+      if (discAmtEsM) {
+        const n = parsePriceNumber(discAmtEsM[1])
+        if (n != null) { result.discount = { ...result.discount, amount: n }; found = true }
       }
     }
 
@@ -274,6 +358,20 @@ export function parsePricingFromMarkdown(
     if (jsonLdPrice.validUntil) { result.validUntil = jsonLdPrice.validUntil; found = true }
     if (jsonLdPrice.discount) result.discount = jsonLdPrice.discount
     if (jsonLdPrice.ecoParticipation != null) result.ecoParticipation = jsonLdPrice.ecoParticipation
+  }
+
+  // Diagnostic — visible dans la console DevTools, utile pour comprendre
+  // pourquoi un prix manque sur un site spécifique.
+  if (found) {
+    console.log('[parsePricing] result:', {
+      ttc: result.ttc, ht: result.ht, original: result.original,
+      currency: result.currency,
+      discount: result.discount, eco: result.ecoParticipation,
+    })
+  } else {
+    // Log un échantillon de la fenêtre prix pour debug
+    const eurMatches = [...cleanMd.matchAll(/(\d[\d\s.,]*)\s*€/g)].slice(0, 5).map(m => m[0])
+    console.log('[parsePricing] no price detected. €-matches sample:', eurMatches)
   }
 
   return found ? result : null

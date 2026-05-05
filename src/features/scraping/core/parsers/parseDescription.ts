@@ -266,6 +266,23 @@ export function parseDescriptionFromMarkdown(md: string): string {
       }
     }
 
+    // Titre plain text avec ":" final (style Leroy Merlin : "Présentation :", "Avantages :")
+    // Pas de markup markdown, juste du texte suivi d'un deux-points.
+    if (!trimmed.startsWith('-') && !trimmed.startsWith('#') && !trimmed.startsWith('|')
+        && /^[A-ZÀ-Ÿa-zà-ÿ].{1,60}:\s*$/.test(trimmed)) {
+      const plainHeading = trimmed.replace(/\s*:\s*$/, '').trim()
+      // "Avantages", "Points forts" → sortir de la section description
+      if (/avantages?|points?\s*forts?|features?|b[eé]n[eé]fices?/i.test(plainHeading)
+          || nonDescSectionRe.test(plainHeading)) {
+        inDescSection = false
+        continue
+      }
+      if (descSectionRe.test(plainHeading)) {
+        inDescSection = true
+        continue
+      }
+    }
+
     if (!inDescSection) continue
     if (!trimmed) continue
     const c = clean(trimmed)

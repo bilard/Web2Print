@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, Info, ChevronUp, ChevronDown, X, Plus } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, Info, ChevronUp, ChevronDown, X, Plus, RefreshCw, ExternalLink, KeyRound, CreditCard, Cookie, Trash2 } from 'lucide-react'
+import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, type SiteCookieEntry } from '@/lib/siteCookies'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { useGDriveSettings } from '@/features/gdrive/useGDriveSettings'
-import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, testApiKey, type ApiTestResult } from '@/lib/apiKeys'
+import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnvDefault, getApiKeyLinks, testApiKey, type ApiTestResult, type ApiTestAction } from '@/lib/apiKeys'
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
 import { useAiSettingsStore, getSelectedModel, type ReasoningProvider } from '@/stores/aiSettings.store'
@@ -19,10 +20,28 @@ const PROVIDER_LABELS: Record<AiProvider, string> = {
   kimi: 'Kimi',
 }
 
-function formatUsd(n: number): string {
-  if (n === 0) return '$0.00'
-  if (n < 0.01) return '< $0.01'
-  return `$${n.toFixed(2)}`
+const USD_TO_EUR = 0.92
+
+function formatEur(usd: number): string {
+  const eur = usd * USD_TO_EUR
+  if (eur <= 0) {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(0)
+  }
+  let decimals: number
+  if (eur >= 1) decimals = 2
+  else if (eur >= 0.01) decimals = 3
+  else if (eur >= 0.0001) decimals = 4
+  else decimals = 6
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(eur)
+}
+
+function formatTokens(n: number): string {
+  return n.toLocaleString('fr-FR')
 }
 
 type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'stats' | 'about'
@@ -135,6 +154,18 @@ const FirecrawlLogo = () => (
   </svg>
 )
 
+const ScrapflyLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 12h4l3-9 4 18 3-9h4" />
+  </svg>
+)
+
+const BrightDataLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-orange-400" fill="currentColor" aria-hidden="true">
+    <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.5L17 7l-5 3-5-3 5-2.5zM6 8.5l5 3v6l-5-3v-6zm12 0v6l-5 3v-6l5-3z"/>
+  </svg>
+)
+
 const GDriveLogo = () => (
   <svg viewBox="0 0 87.3 78" className="w-4 h-4 shrink-0">
     <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H1.1c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
@@ -179,14 +210,28 @@ function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer la clé
   const [value, setValue] = useState(() => getApiKey(id))
   const [testStatus, setTestStatus] = useState<ApiTestResult | 'testing' | null>(null)
   const [testMessage, setTestMessage] = useState('')
-  const overridden = isApiKeyOverridden(id)
+  const [testAction, setTestAction] = useState<ApiTestAction | null>(null)
+  const [overridden, setOverridden] = useState(() => isApiKeyOverridden(id))
+  const links = getApiKeyLinks(id)
 
+  // Re-test au mount + lors d'une hydratation Firestore (clés synchronisées)
   useEffect(() => {
-    const key = getApiKey(id)
-    if (key) {
-      setTestStatus('testing')
-      testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message) })
+    const refresh = () => {
+      const newValue = getApiKey(id)
+      setValue(newValue)
+      setOverridden(isApiKeyOverridden(id))
+      if (newValue) {
+        setTestStatus('testing')
+        testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message); setTestAction(r.action ?? null) })
+      } else {
+        setTestStatus('empty')
+        setTestMessage('')
+        setTestAction(null)
+      }
     }
+    refresh()
+    window.addEventListener('apikeys:hydrated', refresh)
+    return () => window.removeEventListener('apikeys:hydrated', refresh)
   }, [id])
 
   const handleSave = () => {
@@ -194,20 +239,23 @@ function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer la clé
     setEditing(false)
     setTestStatus('testing')
     setTestMessage('')
-    testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message) })
+    setTestAction(null)
+    testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message); setTestAction(r.action ?? null) })
   }
 
   const handleReset = () => {
     resetApiKey(id)
     setValue(getApiKey(id))
     setTestStatus('testing')
-    testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message) })
+    setTestAction(null)
+    testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message); setTestAction(r.action ?? null) })
   }
 
   const handleTest = () => {
     setTestStatus('testing')
     setTestMessage('')
-    testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message) })
+    setTestAction(null)
+    testApiKey(id).then((r) => { setTestStatus(r.status); setTestMessage(r.message); setTestAction(r.action ?? null) })
   }
 
   return (
@@ -227,6 +275,28 @@ function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer la clé
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {links?.manage && (
+            <a
+              href={links.manage}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Gérer la clé API (console provider)"
+              className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5"
+            >
+              <KeyRound className="w-3 h-3" />
+            </a>
+          )}
+          {links?.billing && (
+            <a
+              href={links.billing}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Acheter des crédits / facturation"
+              className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5"
+            >
+              <CreditCard className="w-3 h-3" />
+            </a>
+          )}
           <button onClick={handleTest} title="Tester la connexion" className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5">
             <Wifi className="w-3 h-3" />
           </button>
@@ -239,9 +309,26 @@ function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer la clé
       </div>
 
       {testStatus && testStatus !== 'testing' && testMessage && (
-        <p className={`text-[10px] ${testStatus === 'ok' ? 'text-green-400/70' : testStatus === 'error' ? 'text-red-400/70' : 'text-white/20'}`}>
-          {testMessage}
-        </p>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className={`text-[10px] ${testStatus === 'ok' ? 'text-green-400/70' : testStatus === 'error' ? 'text-red-400/70' : 'text-white/20'}`}>
+            {testMessage}
+          </p>
+          {testAction && (
+            <a
+              href={testAction.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded border transition-colors ${
+                testStatus === 'error'
+                  ? 'text-red-300 border-red-500/40 hover:bg-red-500/10 hover:border-red-500/60'
+                  : 'text-amber-300 border-amber-500/40 hover:bg-amber-500/10 hover:border-amber-500/60'
+              }`}
+            >
+              {testAction.label}
+              <ExternalLink className="w-2.5 h-2.5" />
+            </a>
+          )}
+        </div>
       )}
 
       {editing ? (
@@ -270,6 +357,106 @@ function ApiKeyRow({ id, label, description, logo, placeholder = 'Entrer la clé
           {overridden && <span className="ml-2 text-[9px] text-indigo-400">(personnalisée)</span>}
         </button>
       )}
+    </div>
+  )
+}
+
+function BrightDataConnectorRow() {
+  // État du test de connectivité. Bright Data est server-side via Cloud Function,
+  // donc pas d'input de clé ; on test la chaîne complète Browser → CF → BD via
+  // une URL bénigne (httpbin.org/html, ~500 bytes, ~1s, coûte ~$0.003).
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle')
+  const [testMessage, setTestMessage] = useState('')
+
+  const handleTest = async () => {
+    setTestStatus('testing')
+    setTestMessage('')
+    try {
+      const { brightDataScrapeHtml, getLastBrightDataError, getLastBrightDataSuccess } = await import('@/features/scraping/core/brightDataFallback')
+      const html = await brightDataScrapeHtml('https://httpbin.org/html')
+      const err = getLastBrightDataError()
+      if (err) {
+        setTestStatus('error')
+        if (err.code === 'unauthenticated') setTestMessage('Auth Firebase requise — connecte-toi à l\'app')
+        else if (err.code === 'balance_exhausted') setTestMessage('Balance Bright Data épuisée — recharger sur le dashboard')
+        else if (err.code === 'not_configured') setTestMessage('Cloud Function non déployée ou secret BRIGHTDATA_API_TOKEN absent')
+        else if (err.code === 'rate_limited') setTestMessage('Rate limit Bright Data atteint — réessayer dans 1 min')
+        else if (err.code === 'timeout') setTestMessage('Timeout 90s — Bright Data a mis trop de temps')
+        else setTestMessage(err.message.slice(0, 120))
+      } else if (html) {
+        const success = getLastBrightDataSuccess()
+        setTestStatus('ok')
+        if (success) {
+          setTestMessage(`OK · ${success.country} · ${(success.lengthBytes / 1024).toFixed(0)} KB · ${(success.durationMs / 1000).toFixed(1)}s`)
+        } else {
+          setTestMessage('Connecté')
+        }
+      } else {
+        setTestStatus('error')
+        setTestMessage('Pas de contenu retourné')
+      }
+    } catch (e) {
+      setTestStatus('error')
+      setTestMessage(e instanceof Error ? e.message.slice(0, 120) : 'Erreur inconnue')
+    }
+  }
+
+  return (
+    <div className="bg-white/[0.03] rounded-xl p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BrightDataLogo />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs font-medium text-white/70">Bright Data Web Unlocker</p>
+              {testStatus === 'testing' && <Loader2 className="w-3 h-3 text-white/30 animate-spin" />}
+              {testStatus === 'ok' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
+              {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
+              {testStatus === 'idle' && <span className="text-[8px] text-violet-300/60 px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-500/30 uppercase tracking-wider">Server-side</span>}
+            </div>
+            <p className="text-[10px] text-white/30">Bypass CAPTCHA premium (DataDome/Akamai/PerimeterX) — clé en Firebase Secrets</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <a
+            href="https://brightdata.com/cp/zones"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Gérer les zones (Bright Data dashboard)"
+            className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5"
+          >
+            <KeyRound className="w-3 h-3" />
+          </a>
+          <a
+            href="https://brightdata.com/cp/billing"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Recharger la balance / facturation"
+            className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5"
+          >
+            <CreditCard className="w-3 h-3" />
+          </a>
+          <button
+            onClick={handleTest}
+            disabled={testStatus === 'testing'}
+            title="Tester la Cloud Function (coûte ~$0.003)"
+            className="text-white/20 hover:text-indigo-400 transition-colors p-1 rounded hover:bg-white/5 disabled:opacity-30"
+          >
+            <Wifi className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+
+      {testMessage && (
+        <p className={`text-[10px] ${testStatus === 'ok' ? 'text-green-400/70' : testStatus === 'error' ? 'text-red-400/70' : 'text-white/40'}`}>
+          {testMessage}
+        </p>
+      )}
+
+      <div className="text-[10px] text-white/30 bg-white/5 rounded-lg px-2.5 py-1.5 leading-relaxed">
+        <span className="text-white/50 font-medium">Configuration :</span> 2 secrets Firebase requis · <code className="text-violet-300/80">BRIGHTDATA_API_TOKEN</code> · <code className="text-violet-300/80">BRIGHTDATA_ZONE</code>.
+        Déploiement : <code className="text-white/60">firebase deploy --only functions:scrapeWithBrightData</code>
+      </div>
     </div>
   )
 }
@@ -580,19 +767,204 @@ function FirebaseTab() {
   )
 }
 
+/**
+ * Parse le format tableau DevTools → cookie string `NAME=VALUE; ...`
+ * Garde UNIQUEMENT les cookies du domaine cible (filtre YouTube, Facebook, etc.)
+ */
+function parseDevToolsCookieTable(raw: string, targetHostname: string): string {
+  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean)
+  const tabLines = lines.filter((l) => l.split('\t').length >= 3)
+  if (tabLines.length === 0) return raw.trim()
+
+  // "www.partseurope.eu" → "partseurope.eu"
+  const baseDomain = targetHostname.replace(/^www\./, '').toLowerCase()
+  const TRACKING_RE = /^(_ga|_gid|_fbp|_fbc|fb\.|bp|gtm|_gat|__utm)/i
+  const VALID_NAME_RE = /^[^\s()<>@,;:\\"\/\[\]?={}]+$/
+  // Valeurs d'attributs HTTP qui ne sont jamais des noms de cookies
+  const HTTP_ATTR_RE = /^(Lax|Strict|None|Secure|HttpOnly|Medium|High|Low|Session)$/i
+
+  const pairs: string[] = []
+  for (const line of tabLines) {
+    const cols = line.split('\t')
+    const name   = cols[0]?.trim()
+    const value  = cols[1]?.trim() ?? ''
+    const domain = (cols[2]?.trim() ?? '').replace(/^\./, '').toLowerCase()
+    if (!name || !VALID_NAME_RE.test(name)) continue
+    if (TRACKING_RE.test(name) || HTTP_ATTR_RE.test(name)) continue
+    // Garder seulement les cookies du domaine cible
+    if (baseDomain && domain && !domain.endsWith(baseDomain)) continue
+    pairs.push(`${name}=${value}`)
+  }
+  return pairs.join('; ')
+}
+
+/** Section de gestion des cookies de session par domaine.
+ *  Utilisé pour scraper les sites B2B qui cachent les prix derrière un login.
+ *  Les cookies sont injectés dans les requêtes Bright Data côté Cloud Function. */
+function SiteCookiesSection() {
+  const [entries, setEntries] = useState<SiteCookieEntry[]>(() => listSiteCookies())
+  const [adding, setAdding] = useState(false)
+  const [newHostname, setNewHostname] = useState('')
+  const [newCookie, setNewCookie] = useState('')
+  const [revealedHost, setRevealedHost] = useState<string | null>(null)
+  const [editingHost, setEditingHost] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [savedFlash, setSavedFlash] = useState<string | null>(null)
+
+  const refresh = () => setEntries(listSiteCookies())
+
+  // Preview toujours en sync avec hostname ET cookie — recalculé à chaque frappe des deux
+  const parsedPreview = useMemo(() => {
+    if (!newCookie.trim()) return ''
+    const hn = newHostname.trim().replace(/^https?:\/\//, '').split('/')[0]
+    const parsed = parseDevToolsCookieTable(newCookie, hn)
+    return parsed !== newCookie.trim() ? parsed : ''
+  }, [newCookie, newHostname])
+
+  const handleAdd = () => {
+    const hostname = newHostname.trim().replace(/^https?:\/\//, '').split('/')[0]
+    const cookieValue = parsedPreview || parseDevToolsCookieTable(newCookie, hostname) || newCookie.trim()
+    if (!hostname || !cookieValue) return
+    setSiteCookie(hostname, cookieValue)
+    setEntries(listSiteCookies())
+    setNewHostname(''); setNewCookie(''); setAdding(false)
+    setSavedFlash(hostname)
+    setTimeout(() => setSavedFlash(null), 2500)
+  }
+
+  const handleDelete = (hostname: string) => {
+    removeSiteCookie(hostname)
+    refresh()
+  }
+
+  const handleSaveEdit = (hostname: string) => {
+    const cookieValue = parseDevToolsCookieTable(editValue, hostname)
+    if (cookieValue.trim()) setSiteCookie(hostname, cookieValue.trim())
+    setEditingHost(null); setEditValue('')
+    refresh()
+  }
+
+  const maskCookie = (c: string) => c.slice(0, 12) + '••••' + c.slice(-4)
+
+  return (
+    <div className="bg-white/[0.03] rounded-xl p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Cookie className="w-3.5 h-3.5 text-amber-400/70 shrink-0" />
+          <div>
+            <p className="text-xs font-medium text-white/70">Cookies de session</p>
+            <p className="text-[10px] text-white/30">Sites B2B login-gated — injectés automatiquement dans Bright Data</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setAdding((v) => !v)}
+          title="Ajouter un cookie de session"
+          className="text-white/20 hover:text-amber-400 transition-colors p-1 rounded hover:bg-white/5"
+        >
+          <Plus className="w-3 h-3" />
+        </button>
+      </div>
+
+      {entries.length > 0 && (
+        <div className="flex flex-col gap-1">
+          {entries.map((e) => (
+            <div key={e.hostname} className={`flex flex-col gap-1 rounded-lg px-2.5 py-1.5 transition-colors ${savedFlash === e.hostname ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-white/5'}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {savedFlash === e.hostname && <CheckCircle2 className="w-3 h-3 text-amber-400 shrink-0" />}
+                  <span className="text-[11px] text-white/60 font-mono truncate">{e.hostname}</span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => setRevealedHost(revealedHost === e.hostname ? null : e.hostname)} title="Afficher/masquer" className="text-white/20 hover:text-white/60 p-0.5">
+                    {revealedHost === e.hostname ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  </button>
+                  <button onClick={() => { setEditingHost(e.hostname); setEditValue(getSiteCookie(e.hostname)) }} title="Modifier" className="text-white/20 hover:text-amber-400 p-0.5">
+                    <RotateCcw className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => handleDelete(e.hostname)} title="Supprimer" className="text-white/20 hover:text-red-400 p-0.5">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              {editingHost === e.hostname ? (
+                <div className="flex flex-col gap-1">
+                  <textarea
+                    value={editValue}
+                    onChange={(ev) => setEditValue(ev.target.value)}
+                    rows={3}
+                    className="w-full bg-black/40 text-[10px] text-white/70 font-mono rounded px-2 py-1 border border-white/10 focus:outline-none focus:border-amber-500/50 resize-none"
+                  />
+                  <p className="text-[9px] text-white/20">Coller le tableau DevTools ou un cookie string — parsing automatique</p>
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => setEditingHost(null)} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">Annuler</button>
+                    <button onClick={() => handleSaveEdit(e.hostname)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5">Sauvegarder</button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[10px] text-white/30 font-mono break-all">
+                  {revealedHost === e.hostname ? e.cookie : maskCookie(e.cookie)}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {adding && (
+        <div className="flex flex-col gap-1.5 bg-white/5 rounded-lg px-2.5 py-2">
+          <input
+            type="text"
+            placeholder="www.partseurope.eu"
+            value={newHostname}
+            onChange={(e) => setNewHostname(e.target.value)}
+            className="w-full bg-black/40 text-[11px] text-white/70 font-mono rounded px-2 py-1 border border-white/10 focus:outline-none focus:border-amber-500/50"
+          />
+          <textarea
+            placeholder={'Coller le tableau DevTools (copier-tout) ou écrire directement :\nPHPSESSID=abc123; user_locale=fr'}
+            value={newCookie}
+            onChange={(e) => setNewCookie(e.target.value)}
+            rows={3}
+            className="w-full bg-black/40 text-[10px] text-white/50 font-mono rounded px-2 py-1 border border-white/10 focus:outline-none focus:border-amber-500/50 resize-none"
+          />
+          {parsedPreview && (
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded px-2 py-1">
+              <p className="text-[9px] text-amber-400/70 mb-0.5">Tableau détecté → converti en cookie string :</p>
+              <p className="text-[10px] text-white/50 font-mono break-all">{parsedPreview}</p>
+            </div>
+          )}
+          <p className="text-[9px] text-white/20 leading-relaxed">
+            DevTools → Application → Cookies → sélectionner tout → copier · Tableau auto-parsé (colonnes analytiques ignorées)
+          </p>
+          <div className="flex gap-1 justify-end">
+            <button onClick={() => { setAdding(false); setNewCookie(''); setNewHostname(''); setParsedPreview('') }} className="text-[10px] text-white/30 hover:text-white/60 px-2 py-0.5">Annuler</button>
+            <button onClick={handleAdd} disabled={!newHostname.trim() || (!newCookie.trim() && !parsedPreview)} className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5 disabled:opacity-30">Ajouter</button>
+          </div>
+        </div>
+      )}
+
+      {entries.length === 0 && !adding && (
+        <p className="text-[10px] text-white/20 text-center py-1">Aucun cookie — cliquer + pour ajouter</p>
+      )}
+    </div>
+  )
+}
+
 function ConnectorsTab() {
   return (
     <div className="flex flex-col gap-2">
       <ApiKeyRow id="removebg" label="Remove.bg" description="Suppression de fond d'images" logo={<RemoveBgLogo />} />
       <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
+      <BrightDataConnectorRow />
+      <SiteCookiesSection />
+      <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <GDriveConnectorRow />
     </div>
   )
 }
 
 function StatsTab() {
-  const { data: stats, isLoading } = useUsageStats()
+  const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
 
   if (isLoading) {
     return (
@@ -608,9 +980,30 @@ function StatsTab() {
   }
 
   const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi']
+  const totalTokensIn = providers.reduce((s, p) => s + stats.aiCost.byProvider[p].tokensIn, 0)
+  const totalTokensOut = providers.reduce((s, p) => s + stats.aiCost.byProvider[p].tokensOut, 0)
+  const updatedLabel = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : null
 
   return (
     <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[10px] text-white/25">
+          {updatedLabel ? `Mis à jour à ${updatedLabel}` : '—'}
+        </span>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          title="Rafraîchir les données"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-white/60 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 hover:border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
+          Rafraîchir
+        </button>
+      </div>
+
       <div className="bg-white/[0.03] rounded-xl p-4">
         <StatRow label="Projets" value={String(stats.projectCount)} />
         <StatRow label="Exports ce mois" value={stats.exportCount === 0 ? '—' : String(stats.exportCount)} />
@@ -628,17 +1021,29 @@ function StatsTab() {
           <div className="flex items-center gap-1.5 text-[10px] font-semibold text-white/30 uppercase tracking-wider">
             <Sparkles className="w-3 h-3" /> Coût IA estimé ce mois
           </div>
-          <span className="text-[9px] text-white/20 uppercase">estimation</span>
+          <span className="text-[9px] text-white/20 uppercase">estimation · 1 USD ≈ {USD_TO_EUR.toFixed(2)} €</span>
         </div>
-        <p className="text-2xl font-mono text-white/90">{formatUsd(stats.aiCost.total)}</p>
-        <div className="flex flex-col gap-1 mt-2">
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-mono text-white/90">{formatEur(stats.aiCost.total)}</p>
+          {stats.aiCost.total > 0 && stats.aiCost.total * USD_TO_EUR < 0.01 && (
+            <span className="text-[10px] font-mono text-white/30">
+              ({(stats.aiCost.total * USD_TO_EUR * 100).toFixed(4)} c)
+            </span>
+          )}
+        </div>
+        <div className="flex items-center justify-between text-[10px] font-mono text-white/30 pt-1 pb-1 border-b border-white/5">
+          <span>Total tokens</span>
+          <span>{formatTokens(totalTokensIn)} in · {formatTokens(totalTokensOut)} out</span>
+        </div>
+        <div className="flex flex-col gap-1 mt-1">
           {providers.map((p) => {
             const u = stats.aiCost.byProvider[p]
+            const hasUsage = u.tokensIn > 0 || u.tokensOut > 0
             return (
-              <div key={p} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
+              <div key={p} className={`flex items-center justify-between py-1 border-b border-white/5 last:border-0 ${hasUsage ? '' : 'opacity-40'}`}>
                 <span className="text-xs text-white/50">{PROVIDER_LABELS[p]}</span>
                 <span className="text-[10px] font-mono text-white/40">
-                  {u.tokensIn.toLocaleString()} in · {u.tokensOut.toLocaleString()} out · {formatUsd(u.costUsd)}
+                  {formatTokens(u.tokensIn)} in · {formatTokens(u.tokensOut)} out · <span className={hasUsage ? 'text-white/70' : ''}>{formatEur(u.costUsd)}</span>
                 </span>
               </div>
             )
