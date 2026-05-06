@@ -10,6 +10,11 @@ interface AiProviderUsage {
   costUsd: number
 }
 
+interface BrightDataUsage {
+  requests: number
+  costUsd: number
+}
+
 interface UsageStats {
   projectCount: number
   exportCount: number
@@ -19,9 +24,11 @@ interface UsageStats {
     total: number
     byProvider: Record<AiProvider, AiProviderUsage>
   }
+  brightData: BrightDataUsage
 }
 
 const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0 })
+const emptyBrightData = (): BrightDataUsage => ({ requests: 0, costUsd: 0 })
 
 async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   const month = new Date().toISOString().slice(0, 7)
@@ -47,6 +54,17 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   }
 }
 
+async function fetchBrightData(userId: string): Promise<BrightDataUsage> {
+  const month = new Date().toISOString().slice(0, 7)
+  const snap = await getDoc(doc(db, 'brightDataUsage', `${userId}_${month}`))
+  if (!snap.exists()) return emptyBrightData()
+  const data = snap.data() as Partial<BrightDataUsage>
+  return {
+    requests: data.requests ?? 0,
+    costUsd: data.costUsd ?? 0,
+  }
+}
+
 async function fetchStats(userId: string): Promise<UsageStats> {
   const q = query(collection(db, 'projects'), where('ownerId', '==', userId))
   const safeAiCost = (): Promise<UsageStats['aiCost']> =>
@@ -57,7 +75,12 @@ async function fetchStats(userId: string): Promise<UsageStats> {
         byProvider: { claude: emptyProvider(), gemini: emptyProvider(), openai: emptyProvider(), deepseek: emptyProvider(), qwen: emptyProvider(), kimi: emptyProvider() },
       }
     })
-  const [snap, aiCost] = await Promise.all([getDocs(q), safeAiCost()])
+  const safeBrightData = (): Promise<BrightDataUsage> =>
+    fetchBrightData(userId).catch((e) => {
+      console.warn('[useUsageStats] fetchBrightData failed:', e)
+      return emptyBrightData()
+    })
+  const [snap, aiCost, brightData] = await Promise.all([getDocs(q), safeAiCost(), safeBrightData()])
 
   let totalBytes = 0
   snap.docs.forEach((d) => {
@@ -72,6 +95,7 @@ async function fetchStats(userId: string): Promise<UsageStats> {
     storageUsedMb: Math.round(totalBytes / (1024 * 1024) * 100) / 100,
     storageQuotaMb: 500,
     aiCost,
+    brightData,
   }
 }
 

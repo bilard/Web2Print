@@ -18,6 +18,7 @@ import { httpsCallable, type FunctionsError } from 'firebase/functions'
 import TurndownService from 'turndown'
 import { functions } from '@/lib/firebase/config'
 import { getSiteCookieForUrl } from '@/lib/siteCookies'
+import { recordBrightDataUsage } from '@/features/stats/brightDataUsageTracking'
 
 // ─── Host cache (24h TTL) ────────────────────────────────────────────────────
 // Mémorise les hosts qui renvoient systématiquement un challenge anti-bot.
@@ -167,6 +168,7 @@ async function callScrape(url: string): Promise<string | null> {
         durationMs: data.durationMs,
         lengthBytes: data.length,
       }
+      void recordBrightDataUsage()
       return data.html
     }
     return null

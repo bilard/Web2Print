@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, Info, ChevronUp, ChevronDown, X, Plus, RefreshCw, ExternalLink, KeyRound, CreditCard, Cookie, Trash2 } from 'lucide-react'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
+import { useQueryClient } from '@tanstack/react-query'
 import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, type SiteCookieEntry } from '@/lib/siteCookies'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUsageStats } from '@/features/stats/useUsageStats'
@@ -44,7 +47,7 @@ function formatTokens(n: number): string {
   return n.toLocaleString('fr-FR')
 }
 
-type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'stats' | 'about'
+type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'about'
 
 interface TabConfig {
   id: SettingsTab
@@ -58,6 +61,7 @@ const TABS: TabConfig[] = [
   { id: 'ai',         label: 'IA',            icon: Sparkles,  accent: 'text-violet-400' },
   { id: 'firebase',   label: 'Firebase',      icon: Flame,     accent: 'text-amber-400' },
   { id: 'connectors', label: 'Connecteurs',   icon: Plug,      accent: 'text-emerald-400' },
+  { id: 'cookies',    label: 'Cookies',       icon: Cookie,    accent: 'text-amber-300' },
   { id: 'stats',      label: 'Statistiques',  icon: BarChart2, accent: 'text-sky-400' },
   { id: 'about',      label: 'À propos',      icon: Info,      accent: 'text-white/60' },
 ]
@@ -368,6 +372,44 @@ function BrightDataConnectorRow() {
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle')
   const [testMessage, setTestMessage] = useState('')
 
+  // Token Bright Data persisté dans Firestore (config/brightdata.apiToken).
+  // Lu côté server par les Cloud Functions via getBrightDataToken() avec
+  // fallback sur le Secret Manager si Firestore est vide.
+  const [tokenEditing, setTokenEditing] = useState(false)
+  const [tokenValue, setTokenValue] = useState('')
+  const [tokenLoaded, setTokenLoaded] = useState(false)
+  const [tokenSaving, setTokenSaving] = useState(false)
+  const [tokenVisible, setTokenVisible] = useState(false)
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    let cancelled = false
+    getDoc(doc(db, 'config/brightdata'))
+      .then((snap) => {
+        if (cancelled) return
+        const v = snap.exists() ? (snap.data()?.apiToken as string | undefined) : undefined
+        setTokenValue(typeof v === 'string' ? v : '')
+        setTokenLoaded(true)
+      })
+      .catch(() => { if (!cancelled) setTokenLoaded(true) })
+    return () => { cancelled = true }
+  }, [])
+
+  const handleSaveToken = async () => {
+    setTokenSaving(true)
+    try {
+      const trimmed = tokenValue.trim()
+      await setDoc(doc(db, 'config/brightdata'), { apiToken: trimmed }, { merge: true })
+      setTokenEditing(false)
+      // Force le rafraîchissement du panneau live BD
+      queryClient.invalidateQueries({ queryKey: ['brightDataAccount'] })
+    } finally {
+      setTokenSaving(false)
+    }
+  }
+
+  const tokenMasked = tokenValue ? '•'.repeat(8) + tokenValue.slice(-4) : ''
+
   const handleTest = async () => {
     setTestStatus('testing')
     setTestMessage('')
@@ -414,7 +456,7 @@ function BrightDataConnectorRow() {
               {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
               {testStatus === 'idle' && <span className="text-[8px] text-violet-300/60 px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-500/30 uppercase tracking-wider">Server-side</span>}
             </div>
-            <p className="text-[10px] text-white/30">Bypass CAPTCHA premium (DataDome/Akamai/PerimeterX) — clé en Firebase Secrets</p>
+            <p className="text-[10px] text-white/30">Bypass CAPTCHA premium (DataDome/Akamai/PerimeterX) — token éditable ci-dessous</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -453,9 +495,53 @@ function BrightDataConnectorRow() {
         </p>
       )}
 
+      {/* Champ API key Bright Data — saisi via UI, stocké dans Firestore,
+          lu par les Cloud Functions sans nécessiter de redéploiement */}
+      {!tokenLoaded ? (
+        <div className="bg-white/5 rounded-lg px-2.5 py-1.5 text-[10px] text-white/30 flex items-center gap-1.5">
+          <Loader2 className="w-3 h-3 animate-spin" /> Chargement du token…
+        </div>
+      ) : tokenEditing ? (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex gap-1.5">
+            <input
+              type={tokenVisible ? 'text' : 'password'}
+              value={tokenValue}
+              onChange={(e) => setTokenValue(e.target.value)}
+              placeholder="Coller le token Bright Data API…"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-violet-500/50"
+              autoFocus
+            />
+            <button onClick={() => setTokenVisible((v) => !v)} className="text-white/30 hover:text-white/60 px-1">
+              {tokenVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={handleSaveToken}
+              disabled={tokenSaving}
+              className="text-xs bg-violet-500 hover:bg-violet-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+            >
+              {tokenSaving && <Loader2 className="w-3 h-3 animate-spin" />}
+              Sauvegarder
+            </button>
+          </div>
+          <p className="text-[10px] text-white/30">
+            Stocké dans Firestore <code className="text-violet-300/70">config/brightdata.apiToken</code>.
+            Lu par les Cloud Functions sans redéploiement.
+          </p>
+        </div>
+      ) : (
+        <button
+          onClick={() => setTokenEditing(true)}
+          className="text-left text-xs font-mono text-white/40 bg-white/5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 transition-colors truncate flex items-center justify-between"
+        >
+          <span>{tokenValue ? tokenMasked : '— aucun token configuré (clique pour saisir)'}</span>
+          {tokenValue && <span className="text-[9px] text-violet-300/60 ml-2">Firestore</span>}
+        </button>
+      )}
+
       <div className="text-[10px] text-white/30 bg-white/5 rounded-lg px-2.5 py-1.5 leading-relaxed">
-        <span className="text-white/50 font-medium">Configuration :</span> 2 secrets Firebase requis · <code className="text-violet-300/80">BRIGHTDATA_API_TOKEN</code> · <code className="text-violet-300/80">BRIGHTDATA_ZONE</code>.
-        Déploiement : <code className="text-white/60">firebase deploy --only functions:scrapeWithBrightData</code>
+        <span className="text-white/50 font-medium">Note :</span> le token saisi ici prend le pas sur le Secret Manager.
+        Pour le scope BD requis : <span className="text-white/60">Account read</span> (solde) + <span className="text-white/60">Zone read/write</span> (scraping).
       </div>
     </div>
   )
@@ -956,9 +1042,24 @@ function ConnectorsTab() {
       <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <BrightDataConnectorRow />
-      <SiteCookiesSection />
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <GDriveConnectorRow />
+    </div>
+  )
+}
+
+function CookiesTab() {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-start gap-2 px-1 pb-1 text-[11px] text-white/40 leading-relaxed">
+        <Cookie className="w-3.5 h-3.5 text-amber-400/70 shrink-0 mt-0.5" />
+        <span>
+          Cookies de session B2B injectés automatiquement dans Bright Data au moment du scrape — permet
+          de récupérer prix et stocks cachés derrière un login. Connecte-toi manuellement dans Chrome,
+          copie les cookies depuis DevTools et colle-les ici. Validité typique : 24-72 h selon le site.
+        </span>
+      </div>
+      <SiteCookiesSection />
     </div>
   )
 }
@@ -1064,7 +1165,7 @@ function AboutTab() {
 }
 
 export function SettingsPanel() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
+  const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
 
   return (
     <div className="flex flex-col gap-5">
@@ -1100,6 +1201,7 @@ export function SettingsPanel() {
         {activeTab === 'ai' && <AiTab />}
         {activeTab === 'firebase' && <FirebaseTab />}
         {activeTab === 'connectors' && <ConnectorsTab />}
+        {activeTab === 'cookies' && <CookiesTab />}
         {activeTab === 'stats' && <StatsTab />}
         {activeTab === 'about' && <AboutTab />}
       </div>

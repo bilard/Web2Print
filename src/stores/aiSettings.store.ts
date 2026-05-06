@@ -15,9 +15,17 @@ interface AiSettingsState {
   /** Cascade ordonnée des providers à essayer, du primaire au dernier
    *  fallback. Le premier qui répond gagne. Min 1, max REASONING_PROVIDERS.length. */
   reasoningCascade: ReasoningProvider[]
+  /** Budget mensuel en USD par provider — alimente les badges "limite atteinte"
+   *  dans le panneau live. `null` = pas de budget défini (badge masqué). */
+  monthlyBudgetUsd: Record<AiProvider, number | null>
+  /** Budget mensuel en USD pour Bright Data Web Unlocker (scraping anti-bot).
+   *  Géré séparément des LLM car ce n'est pas un AiProvider. */
+  brightDataBudgetUsd: number | null
   setSelectedModel: (provider: AiProvider, id: string) => void
   setFetchedModels: (provider: AiProvider, models: AiModelInfo[]) => void
   setReasoningCascade: (cascade: ReasoningProvider[]) => void
+  setMonthlyBudgetUsd: (provider: AiProvider, value: number | null) => void
+  setBrightDataBudgetUsd: (value: number | null) => void
 }
 
 export const initialSelected = (): Record<AiProvider, string> => ({
@@ -38,6 +46,15 @@ function sanitizeCascade(cascade: unknown): ReasoningProvider[] {
   return Array.from(seen)
 }
 
+const initialBudgets = (): Record<AiProvider, number | null> => ({
+  claude: null,
+  gemini: null,
+  openai: null,
+  deepseek: null,
+  qwen: null,
+  kimi: null,
+})
+
 export const useAiSettingsStore = create<AiSettingsState>()(
   persist(
     (set) => ({
@@ -46,17 +63,33 @@ export const useAiSettingsStore = create<AiSettingsState>()(
       // Default cascade : Gemini (free tier) puis Claude Opus en fallback. Les
       // providers chinois sont disponibles mais non activés par défaut.
       reasoningCascade: ['gemini', 'claude'],
+      monthlyBudgetUsd: initialBudgets(),
+      brightDataBudgetUsd: null,
       setSelectedModel: (provider, id) =>
         set((s) => ({ selectedModel: { ...s.selectedModel, [provider]: id } })),
       setFetchedModels: (provider, models) =>
         set((s) => ({ fetchedModels: { ...s.fetchedModels, [provider]: models } })),
       setReasoningCascade: (cascade) => set({ reasoningCascade: sanitizeCascade(cascade) }),
+      setMonthlyBudgetUsd: (provider, value) =>
+        set((s) => ({
+          monthlyBudgetUsd: {
+            ...s.monthlyBudgetUsd,
+            [provider]: value !== null && Number.isFinite(value) && value > 0 ? value : null,
+          },
+        })),
+      setBrightDataBudgetUsd: (value) =>
+        set({
+          brightDataBudgetUsd:
+            value !== null && Number.isFinite(value) && value > 0 ? value : null,
+        }),
     }),
     {
       name: 'designstudio_ai_settings',
       partialize: (s) => ({
         selectedModel: s.selectedModel,
         reasoningCascade: s.reasoningCascade,
+        monthlyBudgetUsd: s.monthlyBudgetUsd,
+        brightDataBudgetUsd: s.brightDataBudgetUsd,
       }),
       // Migration depuis l'ancien champ primaryReasoningProvider (single value)
       // vers reasoningCascade (array). Garde Claude en fallback automatique.
@@ -68,9 +101,12 @@ export const useAiSettingsStore = create<AiSettingsState>()(
           obj.reasoningCascade = primary === 'claude' ? ['claude', 'gemini'] : ['gemini', 'claude']
           delete obj.primaryReasoningProvider
         }
+        if (!obj.monthlyBudgetUsd || typeof obj.monthlyBudgetUsd !== 'object') {
+          obj.monthlyBudgetUsd = initialBudgets()
+        }
         return obj
       },
-      version: 2,
+      version: 3,
     },
   ),
 )

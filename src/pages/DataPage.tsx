@@ -31,9 +31,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate()
   const {
     sheets, activeSheetIndex, importModalOpen, searchQuery, currentFileName, currentDocId, currentPath,
-    sheetRowId, taxonomyNavFilter, groupByTaxonomy, aiFilter,
+    sheetRowId, taxonomyNavFilter, groupByTaxonomy,
     setImportModalOpen, setActiveSheet, setSearchQuery, setSheets, setCurrentFileName, setCurrentDocId, setCurrentPath,
-    setSheetRowId, setGroupByTaxonomy, setAiFilter, deleteSheet, pruneEmptySheet,
+    setSheetRowId, setGroupByTaxonomy, deleteSheet, pruneEmptySheet,
   } = useExcelStore()
   const { exportToXlsx, createEmpty } = useExcelImport()
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile } = useExcelFirebase()
@@ -115,21 +115,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         })
       )
     }
-    if (aiFilter === 'enriched') {
-      rows = rows.filter(isRowEnriched)
-    } else if (aiFilter === 'raw') {
-      rows = rows.filter((r) => !isRowEnriched(r))
-    }
     return rows.map((r) => r._id)
-  }, [sheet, sheets, selectedSourceIds, taxonomyNavFilter, searchQuery, aiFilter])
+  }, [sheet, sheets, selectedSourceIds, taxonomyNavFilter, searchQuery])
 
-  // Compteurs pour le toggle IA : total / enrichis / non-enrichis (sur l'ensemble de la feuille)
-  const aiCounts = useMemo(() => {
-    if (!sheet) return { total: 0, enriched: 0, raw: 0 }
-    let enriched = 0
-    for (const r of sheet.rows) if (isRowEnriched(r)) enriched++
-    return { total: sheet.rows.length, enriched, raw: sheet.rows.length - enriched }
-  }, [sheet])
 
   // Load saved files list
   const refreshFileList = useCallback(async () => {
@@ -425,51 +413,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
 
-        {/* Filtre IA : segment 3 options (Tous / IA / Non-IA) */}
-        {hasData && (
-          <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded-md p-0.5 gap-0.5">
-            <button
-              onClick={() => setAiFilter('all')}
-              title="Afficher tous les produits"
-              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                aiFilter === 'all'
-                  ? 'bg-white/[0.08] text-white/85'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              Tous
-              <span className="text-[10px] text-white/40 tabular-nums">{aiCounts.total}</span>
-            </button>
-            <button
-              onClick={() => setAiFilter('enriched')}
-              title="Afficher uniquement les produits enrichis par l'IA"
-              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                aiFilter === 'enriched'
-                  ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25'
-                  : 'text-white/40 hover:text-indigo-300/70 hover:bg-indigo-500/5'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              IA
-              <span className={`text-[10px] tabular-nums ${aiFilter === 'enriched' ? 'text-indigo-300/70' : 'text-white/40'}`}>
-                {aiCounts.enriched}
-              </span>
-            </button>
-            <button
-              onClick={() => setAiFilter('raw')}
-              title="Afficher uniquement les produits non enrichis"
-              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                aiFilter === 'raw'
-                  ? 'bg-white/[0.08] text-white/85 border border-white/15'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-              }`}
-            >
-              Non-IA
-              <span className="text-[10px] text-white/40 tabular-nums">{aiCounts.raw}</span>
-            </button>
-          </div>
-        )}
 
         {/* Standalone toggle buttons */}
         {!embedded && hasData && (

@@ -216,8 +216,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     if (res) setResult(res)
   }
 
-  const handleMap = async (search?: string): Promise<MapLink[] | null> => {
-    return map(url, search)
+  const handleMap = async (search?: string, rootUrl?: string): Promise<MapLink[] | null> => {
+    return map(rootUrl ?? url, search)
   }
 
   /** Découvre les produits sur la page fournie en UN SEUL appel Jina + IA :
@@ -226,14 +226,16 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
    *  deux passes (map + scrape). Anti-hallucination par filtres URL côté
    *  client (host, regex include/exclude) — l'utilisateur peut compléter
    *  via la sélection manuelle. */
-  const handleCrawl = async (opts: { limit: number; includePaths: string; excludePaths: string }) => {
-    setCrawlPages([])
+  const handleCrawl = async (opts: { limit: number; includePaths: string; excludePaths: string }, rootUrl?: string) => {
+    const targetUrl = rootUrl ?? url
+    // Si on est dans un loop multi-URL, on accumule plutôt qu'on reset
+    if (!rootUrl) setCrawlPages([])
 
     let baseHost = ''
-    try { baseHost = new URL(url).hostname } catch { /* URL invalide */ }
+    try { baseHost = new URL(targetUrl).hostname } catch { /* URL invalide */ }
     const includeRe = opts.includePaths.trim() ? safeRegex(opts.includePaths.trim()) : null
     const excludeRe = opts.excludePaths.trim() ? safeRegex(opts.excludePaths.trim()) : null
-    const startPath = (() => { try { return new URL(url).pathname } catch { return '' } })()
+    const startPath = (() => { try { return new URL(targetUrl).pathname } catch { return '' } })()
 
     // Schéma minimal (name + url uniquement) → moins de tokens LLM → plus rapide.
     const minimalListingFields = [
@@ -241,7 +243,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       { key: 'url', label: 'URL', description: 'URL absolue du lien vers la fiche produit', type: 'string' as const },
     ]
     const aiRes = await scrape(
-      url,
+      targetUrl,
       'schema',
       minimalListingFields,
       "Pour CHAQUE produit affiché dans la grille principale de cette page, extrais son nom EXACT (tel qu'écrit sur la carte) et son URL ABSOLUE. Ignore le menu, le header, le footer, les suggestions latérales. Ne pas inventer de produits, n'extraire que ce qui est visible sur la page.",
@@ -257,7 +259,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       const name = String(r.name ?? '').trim()
       if (!rawUrl) continue
       try {
-        const u = new URL(rawUrl, url)
+        const u = new URL(rawUrl, targetUrl)
         const absolute = u.toString()
         if (seen.has(absolute)) continue
         if (baseHost && !u.hostname.includes(baseHost)) continue
@@ -273,7 +275,16 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         if (products.length >= opts.limit) break
       } catch { /* URL invalide */ }
     }
-    setCrawlPages(products)
+    // Multi-URL : accumule, dédoublonne par URL absolue.
+    setCrawlPages((prev) => {
+      if (!rootUrl) return products
+      const merged = [...prev]
+      const seen = new Set(prev.map((p) => p.url))
+      for (const p of products) {
+        if (!seen.has(p.url)) { merged.push(p); seen.add(p.url) }
+      }
+      return merged
+    })
   }
 
   /** Compile une regex en silence — retourne null si la chaîne est invalide. */

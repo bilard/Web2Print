@@ -205,5 +205,24 @@ service cloud.firestore {
       allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
                                             && request.resource.data.ownerId == request.auth.uid;
     }
+
+    // ── Bright Data Usage tracking — compteur de requêtes mensuel ──────────
+    // Document `brightDataUsage/{uid}_{YYYY-MM}` incrémenté par recordBrightDataUsage()
+    // après chaque appel scrapeWithBrightData réussi. Même schéma de protection
+    // que aiUsage : lecture/écriture par le owner uniquement.
+    match /brightDataUsage/{docId} {
+      allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
+                                            && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── App config ──────────────────────────────────────────────────────────
+    // Documents de configuration partagée (token Bright Data API, etc.).
+    // Lecture/écriture autorisée pour tout user authentifié — appli mono-user.
+    // Les Cloud Functions (Admin SDK) bypass ces rules pour lire le token.
+    match /config/{docId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

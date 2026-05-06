@@ -14,8 +14,6 @@ interface PimState {
   taxonomyNavFilter: string[]
   /** Recherche dans la table principale. */
   searchQuery: string
-  /** Filtre IA tri-état (existant). */
-  aiFilter: 'all' | 'enriched' | 'raw'
   /** Produit ouvert dans la fiche (sheet). */
   openProductId: string | null
   /** Modale de migration legacy ouverte. */
@@ -41,7 +39,6 @@ interface PimState {
   toggleSelectedSource: (id: string) => void
   setTaxonomyNavFilter: (path: string[]) => void
   setSearchQuery: (q: string) => void
-  setAiFilter: (v: 'all' | 'enriched' | 'raw') => void
   setOpenProductId: (id: string | null) => void
   setMigrationModalOpen: (open: boolean) => void
 }
@@ -53,7 +50,6 @@ export const usePimStore = create<PimState>((set) => ({
   selectedSourceIds: [],
   taxonomyNavFilter: [],
   searchQuery: '',
-  aiFilter: 'all',
   openProductId: null,
   migrationModalOpen: false,
 
@@ -108,7 +104,6 @@ export const usePimStore = create<PimState>((set) => ({
     })),
   setTaxonomyNavFilter: (taxonomyNavFilter) => set({ taxonomyNavFilter, openProductId: null }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
-  setAiFilter: (aiFilter) => set({ aiFilter }),
   setOpenProductId: (openProductId) => set({ openProductId }),
   setMigrationModalOpen: (migrationModalOpen) => set({ migrationModalOpen }),
 }))

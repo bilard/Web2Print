@@ -23,9 +23,6 @@ interface ExcelState {
   sheetRowId: string | null
   /** Whether to group rows by taxonomy levels in the table */
   groupByTaxonomy: boolean
-  /** Filter rows by AI enrichment status: 'all' (default), 'enriched' (IA only), 'raw' (non-IA only) */
-  aiFilter: 'all' | 'enriched' | 'raw'
-
   // Actions
   setSheets: (sheets: ExcelSheet[]) => void
   setActiveSheet: (index: number) => void
@@ -40,7 +37,6 @@ interface ExcelState {
   setCurrentDocId: (id: string | null) => void
   setCurrentPath: (path: string[]) => void
   setGroupByTaxonomy: (v: boolean) => void
-  setAiFilter: (v: 'all' | 'enriched' | 'raw') => void
 
   // Column actions
   updateColumnType: (sheetIdx: number, colKey: string, type: FieldTypeId) => void
@@ -103,7 +99,6 @@ export const useExcelStore = create<ExcelState>((set) => ({
   taxonomyNavFilter: {},
   sheetRowId: null,
   groupByTaxonomy: true,
-  aiFilter: 'all',
 
   setSheets: (sheets) =>
     set((s) => {
@@ -135,7 +130,6 @@ export const useExcelStore = create<ExcelState>((set) => ({
   setCurrentDocId: (currentDocId) => set({ currentDocId }),
   setCurrentPath: (currentPath) => set({ currentPath }),
   setGroupByTaxonomy: (groupByTaxonomy) => set({ groupByTaxonomy }),
-  setAiFilter: (aiFilter) => set({ aiFilter }),
 
   updateColumnType: (sheetIdx, colKey, type) =>
     set((s) => {

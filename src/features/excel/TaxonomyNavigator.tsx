@@ -26,7 +26,7 @@ interface TreeNode {
 }
 
 export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
-  const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, aiFilter, updateCell } = useExcelStore()
+  const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, updateCell } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null)
 
@@ -77,12 +77,8 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
       })
     }
 
-    let initialRows = sheet.rows
-    if (aiFilter === 'enriched') initialRows = initialRows.filter(isRowEnriched)
-    else if (aiFilter === 'raw') initialRows = initialRows.filter((r) => !isRowEnriched(r))
-
-    return buildLevel(0, initialRows, [])
-  }, [sheet, taxoCols, taxonomyNavFilter, aiFilter])
+    return buildLevel(0, sheet.rows, [])
+  }, [sheet, taxoCols, taxonomyNavFilter])
 
   // Drop d'un produit sur un nœud : assigne toute la chaîne de valeurs (root → nœud)
   // et vide les niveaux plus profonds pour éviter des valeurs orphelines.
@@ -127,14 +123,12 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const filteredCount = useMemo(() => {
     if (!sheet) return 0
     let rows = sheet.rows
-    if (aiFilter === 'enriched') rows = rows.filter(isRowEnriched)
-    else if (aiFilter === 'raw') rows = rows.filter((r) => !isRowEnriched(r))
     if (!hasFilters) return rows.length
     for (const [colKey, value] of Object.entries(taxonomyNavFilter)) {
       rows = rows.filter((r) => String(r[colKey]) === value)
     }
     return rows.length
-  }, [sheet, taxonomyNavFilter, hasFilters, aiFilter])
+  }, [sheet, taxonomyNavFilter, hasFilters])
 
   if (!sheet || taxoCols.length === 0) {
     return (

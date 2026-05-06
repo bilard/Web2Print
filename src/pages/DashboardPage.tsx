@@ -13,6 +13,7 @@ import { ProjectCard, type ProjectViewMode } from '@/components/shared/ProjectCa
 import { NewDocumentPanel } from '@/components/shared/NewDocumentPanel'
 import { ImportPanel } from '@/components/shared/ImportPanel'
 import { SettingsPanel } from '@/components/shared/SettingsPanel'
+import { LiveLlmUsagePanel } from '@/components/shared/LiveLlmUsagePanel'
 import type { DocumentConfig } from '@/components/shared/NewDocumentPanel'
 import type { ImportSelection } from '@/components/shared/ImportPanel'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
@@ -506,38 +507,43 @@ export default function DashboardPage() {
         </div>
       ) : (
         <main className="flex-1 p-8 overflow-auto" role="main" aria-label={menuItems.find((m) => m.id === activeSection)?.label}>
-          <div className="max-w-6xl mx-auto">
-
-            {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}
-            {activeSection === 'blank' && (
-              <>
-                <h1 className="text-xl font-bold mb-6">Créer un document</h1>
-                <NewDocumentPanel
-                  onConfirm={handleCreate}
-                  loading={createProject.isPending}
-                />
-              </>
-            )}
-
-            {/* ─── IMPORTER ─── */}
-            {activeSection === 'import' && (
-              <>
-                <h1 className="text-xl font-bold mb-6">Importer</h1>
-                <ImportPanel
-                  onImport={handleImport}
-                  loading={importLoading || createProject.isPending}
-                />
-              </>
-            )}
-
-            {/* ─── PARAMÈTRES ─── */}
-            {activeSection === 'settings' && (
-              <>
+          {activeSection === 'settings' ? (
+            // Settings utilise un layout deux colonnes pleine largeur :
+            // liste alignée à gauche + panneau live consommation LLM à droite.
+            <div className="flex gap-6 items-start">
+              <div className="w-[640px] shrink-0 max-w-full">
                 <h1 className="text-xl font-bold mb-6">Paramètres</h1>
                 <SettingsPanel />
-              </>
-            )}
-          </div>
+              </div>
+              <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] pt-12">
+                <LiveLlmUsagePanel />
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-6xl mx-auto">
+              {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}
+              {activeSection === 'blank' && (
+                <>
+                  <h1 className="text-xl font-bold mb-6">Créer un document</h1>
+                  <NewDocumentPanel
+                    onConfirm={handleCreate}
+                    loading={createProject.isPending}
+                  />
+                </>
+              )}
+
+              {/* ─── IMPORTER ─── */}
+              {activeSection === 'import' && (
+                <>
+                  <h1 className="text-xl font-bold mb-6">Importer</h1>
+                  <ImportPanel
+                    onImport={handleImport}
+                    loading={importLoading || createProject.isPending}
+                  />
+                </>
+              )}
+            </div>
+          )}
         </main>
       )}
     </div>

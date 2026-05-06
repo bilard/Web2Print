@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Map as MapIcon, Sparkles, Loader2, CheckSquare, Square, Globe, Search } from 'lucide-react'
 import type { MapLink } from './useJina'
 import { BrandSuggestion } from './BrandSuggestion'
+import { UrlSourceSelector } from './UrlSourceSelector'
 
 interface Props {
   url: string
   loading: boolean
-  onMap: (search?: string) => Promise<MapLink[] | null>
+  /** `rootUrl` permet de boucler sur N URLs racines. */
+  onMap: (search?: string, rootUrl?: string) => Promise<MapLink[] | null>
   /** Lance le pipeline d'enrichissement complet (Produit complet) sur N URLs. */
   onEnrichMany: (urls: string[]) => Promise<void> | void
   /** True quand le batch est en cours — désactive le bouton. */
@@ -20,10 +22,36 @@ export function MapExtractTab({ url, loading, onMap, onEnrichMany, batchRunning,
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [mapSearch, setMapSearch] = useState('')
   const [step, setStep] = useState<'map' | 'extract'>('map')
+  const [rootUrls, setRootUrls] = useState<string[]>([])
+  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null)
+
+  const handleSourceChange = useCallback((urls: string[]) => {
+    setRootUrls(urls)
+  }, [])
 
   const handleMap = async () => {
-    const found = await onMap(mapSearch)
-    if (found) { setLinks(found); setSelected(new Set()); setStep('extract') }
+    if (rootUrls.length === 0) return
+    setSelected(new Set())
+    if (rootUrls.length === 1) {
+      const found = await onMap(mapSearch)
+      if (found) { setLinks(found); setStep('extract') }
+      return
+    }
+    // Multi-URL : map chaque racine, agrège, dédoublonne par URL absolue
+    setBatchProgress({ done: 0, total: rootUrls.length })
+    const merged: MapLink[] = []
+    const seen = new Set<string>()
+    for (let i = 0; i < rootUrls.length; i++) {
+      const found = await onMap(mapSearch, rootUrls[i])
+      if (found) {
+        for (const link of found) {
+          if (!seen.has(link.url)) { merged.push(link); seen.add(link.url) }
+        }
+      }
+      setBatchProgress({ done: i + 1, total: rootUrls.length })
+    }
+    setBatchProgress(null)
+    if (merged.length > 0) { setLinks(merged); setStep('extract') }
   }
 
   const toggleAll = () => {
@@ -43,7 +71,13 @@ export function MapExtractTab({ url, loading, onMap, onEnrichMany, batchRunning,
         <BrandSuggestion url={url} onAccept={(u) => onUrlSuggestion?.(u)} />
         <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg text-xs text-blue-300/70">
           <strong className="text-blue-300">Map →</strong> Découvre toutes les URLs d'un site, sélectionne les pages produits à scraper, puis lance l'enrichissement complet (Produit complet) sur chacune.
+          <br />
+          <span className="text-[11px] text-blue-300/50">Mode multi-URL : choisis Liste/Fichier/Sheet pour mapper plusieurs sites en séquence (résultats agrégés et dédoublonnés).</span>
         </div>
+
+        {/* Sélecteur multi-source : 1 URL / Liste / Fichier / Google Sheet */}
+        <UrlSourceSelector singleUrl={url} onChange={handleSourceChange} />
+
         <div className="flex gap-2">
           <div className="flex-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded-lg px-3 py-2">
             <Search className="w-3.5 h-3.5 text-white/20 shrink-0" />
@@ -56,11 +90,15 @@ export function MapExtractTab({ url, loading, onMap, onEnrichMany, batchRunning,
           </div>
           <button
             onClick={handleMap}
-            disabled={!url || loading}
+            disabled={rootUrls.length === 0 || loading}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/20 text-blue-300 text-sm font-medium transition-colors disabled:opacity-40"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapIcon className="w-4 h-4" />}
-            Mapper le site
+            {batchProgress
+              ? `Mapping ${batchProgress.done + 1}/${batchProgress.total}…`
+              : rootUrls.length > 1
+                ? `Mapper ${rootUrls.length} sites`
+                : 'Mapper le site'}
           </button>
         </div>
       </div>

@@ -24,6 +24,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
+import { getBrightDataToken } from './brightDataToken'
 
 const BRIGHTDATA_API_TOKEN = defineSecret('BRIGHTDATA_API_TOKEN')
 const BRIGHTDATA_ZONE = defineSecret('BRIGHTDATA_ZONE')
@@ -154,10 +155,10 @@ export const scrapeWithBrightData = onCall<ScrapeRequest, Promise<ScrapeResponse
       throw new HttpsError('invalid-argument', 'URL invalide ou manquante')
     }
 
-    const token = BRIGHTDATA_API_TOKEN.value()
+    const token = await getBrightDataToken(BRIGHTDATA_API_TOKEN.value())
     const zone = BRIGHTDATA_ZONE.value() || 'web_unlocker1'
     if (!token) {
-      throw new HttpsError('failed-precondition', 'BRIGHTDATA_API_TOKEN non configuré')
+      throw new HttpsError('failed-precondition', 'BRIGHTDATA_API_TOKEN non configuré (ni dans Firestore config/brightdata.apiToken, ni dans Secret Manager)')
     }
 
     const country = req.data?.country || detectCountry(url)

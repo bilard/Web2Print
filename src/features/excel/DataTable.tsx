@@ -39,7 +39,7 @@ export function isRowEnriched(row: ExcelRow): boolean {
 
 export function DataTable() {
   const {
-    sheets, activeSheetIndex, searchQuery, taxonomyNavFilter, groupByTaxonomy, aiFilter,
+    sheets, activeSheetIndex, searchQuery, taxonomyNavFilter, groupByTaxonomy,
     updateColumnType, setColumnPrimary, updateCell, deleteRow, addRow,
     updateColumnWidth, moveColumn, moveColumnTo, hideColumn, updateColumnFormula, addColumn,
     updateColumnLabel, updateColumnDecimals, reorderColumns,
@@ -168,12 +168,6 @@ export function DataTable() {
       }),
     )
   }
-  if (aiFilter === 'enriched') {
-    filteredRows = filteredRows.filter(isRowEnriched)
-  } else if (aiFilter === 'raw') {
-    filteredRows = filteredRows.filter((r) => !isRowEnriched(r))
-  }
-
   // Sort rows
   const sortedRows = (() => {
     if (!sortColKey || !sortDir) return filteredRows
