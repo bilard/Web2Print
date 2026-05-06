@@ -39,6 +39,7 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
   const [importing, setImporting] = useState(false)
   const gdriveAccessToken = useGDriveStore((s) => s.accessToken)
   const gdriveConnected = useGDriveStore((s) => s.connected)
+  const gdriveDisconnect = useGDriveStore((s) => s.disconnect)
 
   const listUrls = useMemo(
     () => (source === 'list' ? extractUrlsFromText(listText) : []),
@@ -83,12 +84,24 @@ export function UrlSourceSelector({ singleUrl, onChange, showPreview = true }: P
     }
     setImporting(true)
     try {
-      const urls = await extractUrlsFromGoogleSheet(fileId, gdriveAccessToken)
-      setImportedUrls(urls)
-      if (urls.length === 0) toast.warning('Aucune URL trouvée dans le Sheet')
-      else toast.success(`${urls.length} URL(s) importée(s) depuis le Sheet`)
+      const result = await extractUrlsFromGoogleSheet(fileId, gdriveAccessToken)
+      setImportedUrls(result.urls)
+      if (result.urls.length === 0) {
+        toast.warning(
+          `Aucune URL trouvée dans le Sheet (${result.rowCount} lignes, colonne : "${result.detectedColumn ?? 'non détectée'}", méthode : ${result.method})`
+        )
+      } else {
+        const colInfo = result.detectedColumn ? `colonne "${result.detectedColumn}"` : 'fallback texte'
+        toast.success(`${result.urls.length} URL(s) importée(s) sur ${result.rowCount} lignes (${colInfo})`)
+      }
     } catch (e) {
-      toast.error(`Échec import Sheet : ${e instanceof Error ? e.message : 'inconnu'}`)
+      const msg = e instanceof Error ? e.message : 'inconnu'
+      if (msg === 'TOKEN_EXPIRED') {
+        gdriveDisconnect()
+        toast.error('Session Google Drive expirée — reconnecte-toi dans Paramètres → Connectors')
+      } else {
+        toast.error(`Échec import Sheet : ${msg}`)
+      }
     } finally {
       setImporting(false)
     }

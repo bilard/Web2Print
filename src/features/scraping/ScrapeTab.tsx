@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Sparkles, Loader2, Timer, RefreshCw, Package, Cpu, PackageCheck,
   LayoutList, FileText, Users, ChevronDown, ChevronUp, ChevronLeft, X as XIcon,
@@ -8,6 +8,7 @@ import { SchemaEditor } from './SchemaEditor'
 import { FIELD_TEMPLATES } from './useJina'
 import { BrandSuggestion } from './BrandSuggestion'
 import { extractUrlsFromFile, extractUrlsFromGoogleSheet, extractUrlsFromText } from './urlSourceParsers'
+import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { toast } from 'sonner'
 
@@ -27,6 +28,7 @@ interface Props {
   onUrlSuggestion?: (url: string) => void
   onEnrichMany?: (urls: string[]) => Promise<void> | void
   batchRunning?: boolean
+  logs?: string[]
 }
 
 const TEMPLATES = [
@@ -40,14 +42,13 @@ const TEMPLATES = [
 
 type MultiMode = 'list' | 'file' | 'sheet'
 
-export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onEnrichMany, batchRunning }: Props) {
+export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onEnrichMany, batchRunning, logs }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [templateKey, setTemplateKey] = useState<string>('product_full')
   const [showMulti, setShowMulti] = useState(false)
   const [multiMode, setMultiMode] = useState<MultiMode>('list')
   const [listText, setListText] = useState('')
   const [importedUrls, setImportedUrls] = useState<string[]>([])
-  const [sheetIdOrUrl, setSheetIdOrUrl] = useState('')
   const [importing, setImporting] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.product_full.fields)
@@ -62,6 +63,62 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
 
   const gdriveAccessToken = useGDriveStore(s => s.accessToken)
   const gdriveConnected = useGDriveStore(s => s.connected)
+  const gdriveDisconnect = useGDriveStore(s => s.disconnect)
+
+  // Auto-bascule en mode Google Sheet quand l'URL principale est un Sheet.
+  useEffect(() => {
+    if (!/docs\.google\.com\/spreadsheets/i.test(url)) return
+    setShowMulti(true)
+    setMultiMode('sheet')
+  }, [url])
+
+  // Auto-import dès que (URL Sheet + token GDrive) sont disponibles.
+  // Guard via ref pour ne déclencher qu'une fois par URL et éviter les boucles.
+  const autoImportedUrlRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!/docs\.google\.com\/spreadsheets/i.test(url)) {
+      autoImportedUrlRef.current = null
+      return
+    }
+    if (!gdriveAccessToken) return
+    if (autoImportedUrlRef.current === url) return
+
+    const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+    const fileId = idMatch?.[1]
+    if (!fileId) return
+
+    autoImportedUrlRef.current = url
+    let cancelled = false
+    setImporting(true)
+    ;(async () => {
+      try {
+        const result = await extractUrlsFromGoogleSheet(fileId, gdriveAccessToken)
+        if (cancelled) return
+        setImportedUrls(result.urls)
+        if (result.urls.length === 0) {
+          toast.warning(
+            `Aucune URL trouvée (${result.rowCount} lignes, colonne : "${result.detectedColumn ?? 'non détectée'}", méthode : ${result.method})`
+          )
+        } else {
+          const colInfo = result.detectedColumn ? `colonne "${result.detectedColumn}"` : 'fallback texte'
+          toast.success(`${result.urls.length} URL(s) importée(s) sur ${result.rowCount} lignes (${colInfo})`)
+        }
+      } catch (e) {
+        if (cancelled) return
+        const msg = e instanceof Error ? e.message : 'inconnu'
+        if (msg === 'TOKEN_EXPIRED') {
+          gdriveDisconnect()
+          toast.error('Session Google Drive expirée — reconnecte-toi dans Paramètres → Connectors')
+        } else {
+          toast.error(`Échec import Sheet : ${msg}`)
+        }
+        autoImportedUrlRef.current = null
+      } finally {
+        if (!cancelled) setImporting(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [url, gdriveAccessToken, gdriveDisconnect])
 
   const listUrls = multiMode === 'list' ? extractUrlsFromText(listText) : []
   const multiUrls = multiMode === 'list' ? listUrls : importedUrls
@@ -107,23 +164,6 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
     }
   }
 
-  const handleSheetImport = async () => {
-    if (!gdriveAccessToken) { toast.error('Connecte Google Drive dans Paramètres → Connectors'); return }
-    const idMatch = sheetIdOrUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/) ?? sheetIdOrUrl.match(/^([a-zA-Z0-9-_]{20,})$/)
-    const fileId = idMatch?.[1]
-    if (!fileId) { toast.error('ID ou URL de Sheet invalide'); return }
-    setImporting(true)
-    try {
-      const urls = await extractUrlsFromGoogleSheet(fileId, gdriveAccessToken)
-      setImportedUrls(urls)
-      if (urls.length === 0) toast.warning('Aucune URL trouvée dans le Sheet')
-      else toast.success(`${urls.length} URL(s) importée(s)`)
-    } catch (e) {
-      toast.error(`Échec import Sheet : ${e instanceof Error ? e.message : 'inconnu'}`)
-    } finally {
-      setImporting(false)
-    }
-  }
 
   const handleLaunch = async () => {
     if (isMulti) {
@@ -272,23 +312,17 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
                       Connecte Google Drive dans Paramètres → Connectors.
                     </p>
                   )}
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={sheetIdOrUrl}
-                      onChange={e => setSheetIdOrUrl(e.target.value)}
-                      placeholder="URL ou ID du Google Sheet"
-                      disabled={!gdriveConnected || importing}
-                      className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 placeholder:text-white/20 focus:border-indigo-500/50 focus:outline-none transition-colors font-mono disabled:opacity-40"
-                    />
-                    <button
-                      onClick={handleSheetImport}
-                      disabled={!gdriveConnected || importing || !sheetIdOrUrl.trim()}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-medium disabled:opacity-40 transition-colors"
-                    >
-                      {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Importer'}
-                    </button>
-                  </div>
+                  {gdriveConnected && importing && (
+                    <div className="flex items-center gap-2 p-2 rounded bg-indigo-500/5 border border-indigo-500/20">
+                      <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
+                      <span className="text-[11px] text-indigo-300/80">Import en cours…</span>
+                    </div>
+                  )}
+                  {gdriveConnected && !importing && importedUrls.length === 0 && (
+                    <p className="p-2 rounded bg-white/[0.02] border border-white/[0.06] text-[10px] text-white/40">
+                      Colle une URL Google Sheets dans la barre du haut — l'import est automatique.
+                    </p>
+                  )}
                   {importedUrls.length > 0 && (
                     <div className="flex items-center justify-between p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
                       <span className="text-[11px] text-emerald-300">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''} importée{importedUrls.length > 1 ? 's' : ''}</span>
@@ -403,6 +437,11 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
                 ? `Lancer ${multiUrls.length} enrichissement${multiUrls.length > 1 ? 's' : ''}`
                 : 'Extraire'}
           </button>
+
+          {/* Console de logs temps réel */}
+          {logs && logs.length > 0 && (
+            <TypedLogConsole logs={logs} maxHeight="20rem" />
+          )}
         </div>
       )}
     </div>

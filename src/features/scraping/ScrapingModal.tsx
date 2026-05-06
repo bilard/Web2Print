@@ -639,7 +639,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   const canImport = result && result.rows.length > 0
   const canImportEnriched = tab === 'scrape' && !!enrichEntry?.data && !enriching
   const successfulBatchCount = batch.filter((b) => b.product).length
-  const canImportBatch = (tab === 'map' || tab === 'crawl') && successfulBatchCount > 0 && !batchRunning
+  const canImportBatch = successfulBatchCount > 0 && !batchRunning
 
   return (
     <>
@@ -746,6 +746,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               onUrlSuggestion={(suggested) => setUrl(suggested)}
               onEnrichMany={handleEnrichMany}
               batchRunning={batchRunning}
+              logs={batchRunning ? batchCurrentLogs : enrichLogs}
             />
           )}
           {tab === 'map' && (
@@ -771,8 +772,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             />
           )}
 
-          {/* Progression du batch d'enrichissement multi-URLs */}
-          {(tab === 'map' || tab === 'crawl') && batch.length > 0 && (
+          {/* Progression du batch d'enrichissement multi-URLs (tous tabs incluant scrape) */}
+          {batch.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -911,29 +912,6 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             </div>
           )}
 
-          {/* Mode "Produit unique" : progression + rendu riche depuis enrichmentStore */}
-          {tab === 'scrape' && enrichEntry && enrichEntry.progress.status !== 'idle' && enrichEntry.progress.status !== 'done' && (
-            <div className="space-y-2">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
-                <Loader2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-[12px] text-indigo-300/90 font-medium">{enrichEntry.progress.message}</p>
-                    {enrichEntry.llmUsed && (
-                      <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
-                        {enrichEntry.llmUsed.provider} · {enrichEntry.llmUsed.model}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <TypedLogConsole logs={enrichLogs} maxHeight="20rem" />
-            </div>
-          )}
-          {/* Console persistante après scrape réussi (utile pour debugging) */}
-          {tab === 'scrape' && enrichEntry?.progress.status === 'done' && enrichLogs.length > 0 && (
-            <TypedLogConsole logs={enrichLogs} maxHeight="20rem" />
-          )}
           {tab === 'scrape' && enrichEntry?.error && !enriching && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />

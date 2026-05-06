@@ -379,6 +379,45 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // Anti-prose composite : nom > 5 mots ET valeur sans chiffre/unité
     // = très probablement une phrase prose découpée par erreur
     if (n.split(/\s+/).length > 5 && !/[:\d]|\b(mm|cm|kg|g|w|v|hz|ml|l|nm|rpm|db|°|%|bar|psi|mpa)\b/i.test(v)) return false
+
+    // ── Anti-PDF-manuel : prose extraite des notices/manuels d'instruction ──
+    // Quand Jina scrape un PDF (ex: notice sécurité Makita), le texte est
+    // injecté brut dans le markdown et les heuristiques table le capturent.
+    // Signatures : blockquote `>`, ruptures de page hyphenisées, multi-phrases,
+    // lexique sécurité, prose anglaise/française composite.
+
+    // Préfixe blockquote markdown — typique des tables PDF mal extraites
+    if (/^>\s/.test(n) || /^>\s/.test(v)) return false
+    // Trait d'union de fin = rupture de page PDF ("actua-", "influ-")
+    if (/-\s*$/.test(n) || /-\s*$/.test(v)) return false
+    // Multi-phrases : point/!/? suivi d'un espace + capitale → prose narrative
+    if (/[.!?]\s+[A-Z]/.test(n) || /[.!?]\s+[A-Z]/.test(v)) return false
+    // Phrase complète : nom ET valeur se terminent par un point déclaratif
+    if (/[a-z]{3,}\.$/.test(n) && /[a-z]{3,}\.$/.test(v)) return false
+    // Lexique sécurité/avertissement — quasi jamais dans les vraies specs
+    const SAFETY_RE = /\b(NOTICE|WARNING|CAUTION|DANGER|IMPORTANT|never\s+use|must\s+(?:not|be)|do\s+not\s+(?:use|operate|disassemble|short)|tape\s+(?:or|off)|hold\s+the\s+tool|annex\s+[a-z]|instruction\s+manual)\b/i
+    if (SAFETY_RE.test(n) || SAFETY_RE.test(v)) return false
+    // Prose anglaise composite : ≥5 mots ET ≥2 stopwords courants
+    // Exception : si la valeur a une signature unité claire (digit + unité physique
+    // OU valeur courte purement numérique), on garde — couvre les vraies specs
+    // multi-mots type "Width of the cutting blade" → "300 mm".
+    const ENGLISH_STOPWORDS = /\b(the|of|in|to|for|with|when|while|under|on|off|by|that|which|this|these|those|will|may|can|could|would|should|has|have|is|are|was|were|been|be|all|any|each|both|either|neither|some|few|many|several|most)\b/gi
+    const looksLikeProse = (s: string): boolean => {
+      const words = s.split(/\s+/).length
+      if (words < 5) return false
+      const stops = (s.match(ENGLISH_STOPWORDS) ?? []).length
+      return stops >= 2
+    }
+    const hasUnitSignal = (s: string): boolean => {
+      if (s.length > 80) return false
+      if (!/\d/.test(s)) return false
+      if (/\b(mm|cm|m|kg|g|nm|rpm|tr\/min|v|ah|w|kw|hz|db|dba|°|%|bar|l\/min|psi|mpa|ion|litre|watt|volt|amp)\b/i.test(s)) return true
+      // Valeur courte purement numérique : "300", "0-1500", "300x500"
+      if (s.length < 30 && /^[\d.,\s\-x×/]+$/.test(s)) return true
+      return false
+    }
+    if ((looksLikeProse(n) || looksLikeProse(v)) && !hasUnitSignal(v)) return false
+
     if (isGarbageContent(n) || isGarbageContent(v)) return false
     seen.add(key)
     seenNames.add(nameKey)

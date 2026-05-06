@@ -126,26 +126,46 @@ export async function extractUrlsFromFile(file: File): Promise<string[]> {
   return out
 }
 
+export interface GoogleSheetImportResult {
+  urls: string[]
+  /** Nom du header de la colonne détectée, null si heuristique ou fallback texte. */
+  detectedColumn: string | null
+  /** Nombre de lignes de données (hors header). */
+  rowCount: number
+  /** Méthode utilisée : 'header' | 'heuristic' | 'text-fallback' */
+  method: 'header' | 'heuristic' | 'text-fallback'
+}
+
 /** Télécharge un Google Sheet en CSV via Drive API et extrait les URLs.
  *  Réutilise le accessToken du store gdrive — l'utilisateur doit être connecté. */
 export async function extractUrlsFromGoogleSheet(
   fileId: string,
   accessToken: string,
-): Promise<string[]> {
+): Promise<GoogleSheetImportResult> {
   const exportUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/csv`
   const res = await fetch(exportUrl, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`TOKEN_EXPIRED`)
+    }
     throw new Error(`Google Sheets export failed: HTTP ${res.status}`)
   }
   const csv = await res.text()
   const rows = parseCsv(csv)
+  const dataRows = rows.length > 0 ? rows.slice(1) : []
   const urlCol = findUrlColumn(rows)
+
   if (urlCol < 0) {
     const all = rows.map((r) => r.join(' ')).join('\n')
-    return extractUrlsFromText(all)
+    return { urls: extractUrlsFromText(all), detectedColumn: null, rowCount: dataRows.length, method: 'text-fallback' }
   }
+
+  const headerRow = rows[0] ?? []
+  const colHeader = headerRow[urlCol] ?? null
+  const isNamedHeader = colHeader !== null && /^(url|lien|link|web|adresse|hyperlien)\b/i.test(colHeader.trim())
+
   const seen = new Set<string>()
   const out: string[] = []
   for (const row of rows) {
@@ -155,5 +175,10 @@ export async function extractUrlsFromGoogleSheet(
     seen.add(cell)
     out.push(cell)
   }
-  return out
+  return {
+    urls: out,
+    detectedColumn: colHeader,
+    rowCount: dataRows.length,
+    method: isNamedHeader ? 'header' : 'heuristic',
+  }
 }
