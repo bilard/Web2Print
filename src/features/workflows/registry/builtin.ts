@@ -6,6 +6,7 @@ import { nodeRegistry } from './index'
 import './importNodes'
 import './enrichmentNodes'
 import './persistenceNodes'
+import './exportNodes'
 
 let initialized = false
 
