@@ -4,8 +4,10 @@ import { useMemo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useRunContext } from '../../runtime/runContext'
 import { nodeRegistry } from '../../registry'
+import { useConnectionDrag } from '../../runtime/connectionDragStore'
+import { isCompatible } from '../../runtime/ports'
 import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download } from 'lucide-react'
-import type { NodeSpec } from '../../types'
+import type { NodeSpec, Port } from '../../types'
 
 interface ExportPayload {
   url: string
@@ -112,6 +114,39 @@ const STATUS_DOT: Record<string, ReactNode> = {
 const HANDLE_BASE =
   '!w-2.5 !h-2.5 !border-2 !border-[#0f0f0f] hover:!w-3 hover:!h-3 transition-all'
 
+type DragHighlight = 'compatible' | 'incompatible' | 'inactive' | 'idle'
+
+function highlightFor(
+  port: Port,
+  portKind: 'input' | 'output',
+  drag: { fromType: string | null; fromKind: 'source' | 'target' | null },
+): DragHighlight {
+  if (!drag.fromType || !drag.fromKind) return 'idle'
+  // Drag started from an output → only inputs are candidates.
+  // Drag started from an input → only outputs are candidates.
+  const wantsInput = drag.fromKind === 'source'
+  const isCandidate = wantsInput ? portKind === 'input' : portKind === 'output'
+  if (!isCandidate) return 'inactive'
+  const compat = wantsInput
+    ? isCompatible(drag.fromType, port.type)
+    : isCompatible(port.type, drag.fromType)
+  return compat ? 'compatible' : 'incompatible'
+}
+
+function handleClass(highlight: DragHighlight): string {
+  switch (highlight) {
+    case 'compatible':
+      return `${HANDLE_BASE} !bg-emerald-400 !ring-2 !ring-emerald-400/60 animate-pulse`
+    case 'incompatible':
+      return `${HANDLE_BASE} !bg-red-500/60 opacity-40`
+    case 'inactive':
+      return `${HANDLE_BASE} !bg-neutral-600 opacity-40`
+    case 'idle':
+    default:
+      return `${HANDLE_BASE} !bg-indigo-400`
+  }
+}
+
 export function BaseNode({ id, data, selected }: NodeProps) {
   const nodeType = (data as { type?: string }).type
   const spec = nodeType ? nodeRegistry.get(nodeType) : undefined
@@ -121,6 +156,9 @@ export function BaseNode({ id, data, selected }: NodeProps) {
     () => (status === 'success' ? findExportResult(runOutputs) : null),
     [status, runOutputs],
   )
+  const dragFromType = useConnectionDrag((s) => s.fromType)
+  const dragFromKind = useConnectionDrag((s) => s.fromKind)
+  const drag = { fromType: dragFromType, fromKind: dragFromKind }
 
   if (!spec) {
     return (
@@ -195,7 +233,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
                 id={inp.name}
                 position={Position.Left}
                 style={{ top }}
-                className={`${HANDLE_BASE} !bg-indigo-400`}
+                className={handleClass(highlightFor(inp, 'input', drag))}
               />
             ) : null}
             {out ? (
@@ -204,7 +242,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
                 id={out.name}
                 position={Position.Right}
                 style={{ top }}
-                className={`${HANDLE_BASE} !bg-indigo-400`}
+                className={handleClass(highlightFor(out, 'output', drag))}
               />
             ) : null}
           </div>

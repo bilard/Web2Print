@@ -1,5 +1,6 @@
 // src/features/workflows/editor/WorkflowEditor.tsx
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import {
   ReactFlow,
   Background,
@@ -15,13 +16,15 @@ import {
   type EdgeChange,
   type Node,
   type NodeChange,
+  type OnConnectStartParams,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { BaseNode } from './nodes/BaseNode'
 import { FlowEdge, FlowEdgeDefs } from './edges/FlowEdge'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { nodeRegistry } from '../registry'
-import { isCompatible } from '../runtime/ports'
+import { isCompatible, portTypeRegistry } from '../runtime/ports'
+import { useConnectionDrag } from '../runtime/connectionDragStore'
 import type { WorkflowEdge, WorkflowNode } from '../types'
 
 const nodeTypes = { base: BaseNode }
@@ -158,17 +161,105 @@ export function WorkflowEditor() {
     [setStoreEdges],
   )
 
-  const onConnect = useCallback(
-    (conn: Connection) => {
-      if (!wf || !conn.source || !conn.target) return
+  const resolveConnectionPorts = useCallback(
+    (conn: Pick<Connection, 'source' | 'target' | 'sourceHandle' | 'targetHandle'>) => {
+      if (!wf || !conn.source || !conn.target) return null
       const sourceNode = wf.nodes.find((n) => n.id === conn.source)
       const targetNode = wf.nodes.find((n) => n.id === conn.target)
-      if (!sourceNode || !targetNode) return
+      if (!sourceNode || !targetNode) return null
       const sourceSpec = nodeRegistry.get(sourceNode.type)
       const targetSpec = nodeRegistry.get(targetNode.type)
       const srcPort = sourceSpec?.outputs.find((o) => o.name === conn.sourceHandle)
       const tgtPort = targetSpec?.inputs.find((i) => i.name === conn.targetHandle)
-      if (!srcPort || !tgtPort || !isCompatible(srcPort.type, tgtPort.type)) return
+      if (!srcPort || !tgtPort) return null
+      return { srcPort, tgtPort, sourceSpec, targetSpec }
+    },
+    [wf],
+  )
+
+  const isValidConnection = useCallback(
+    (conn: Connection | Edge) => {
+      if (conn.source === conn.target) return false
+      const ports = resolveConnectionPorts(conn)
+      if (!ports) return false
+      return isCompatible(ports.srcPort.type, ports.tgtPort.type)
+    },
+    [resolveConnectionPorts],
+  )
+
+  // Track whether the current drag gesture produced a valid connection.
+  const connectionMadeRef = useRef(false)
+  const dragSourcePortTypeRef = useRef<string | null>(null)
+  const setDragStart = useConnectionDrag((s) => s.start)
+  const clearDrag = useConnectionDrag((s) => s.end)
+
+  const onConnectStart = useCallback(
+    (_evt: unknown, params: OnConnectStartParams) => {
+      connectionMadeRef.current = false
+      if (!params.nodeId || !params.handleId || !params.handleType) return
+      const node = wf?.nodes.find((n) => n.id === params.nodeId)
+      if (!node) return
+      const spec = nodeRegistry.get(node.type)
+      const port =
+        params.handleType === 'source'
+          ? spec?.outputs.find((o) => o.name === params.handleId)
+          : spec?.inputs.find((i) => i.name === params.handleId)
+      if (!port) return
+      dragSourcePortTypeRef.current = port.type
+      setDragStart(port.type, params.handleType)
+    },
+    [wf, setDragStart],
+  )
+
+  const onConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      const fromType = dragSourcePortTypeRef.current
+      const sourceLabel =
+        (fromType && portTypeRegistry.get(fromType)?.label) ?? fromType ?? '?'
+      clearDrag()
+      dragSourcePortTypeRef.current = null
+      if (connectionMadeRef.current) return
+      // Did the user drop on a Handle? If so, the connection was rejected by
+      // isValidConnection — surface a toast explaining why.
+      const target = (event as MouseEvent).target as HTMLElement | null
+      const handle = target?.closest('.react-flow__handle') as HTMLElement | null
+      if (!handle) return
+      // Find which port was the drop target by reading data attributes set by RF.
+      const targetNodeId = handle
+        .closest('.react-flow__node')
+        ?.getAttribute('data-id')
+      const targetHandleId = handle.getAttribute('data-handleid')
+      const targetHandleType = handle.getAttribute('data-handlepos') // top|bottom|left|right
+      const wasTargetSide = handle.classList.contains('target')
+      if (!targetNodeId || !targetHandleId) return
+      const node = wf?.nodes.find((n) => n.id === targetNodeId)
+      const spec = node ? nodeRegistry.get(node.type) : undefined
+      const targetPort = wasTargetSide
+        ? spec?.inputs.find((i) => i.name === targetHandleId)
+        : spec?.outputs.find((o) => o.name === targetHandleId)
+      const targetLabel =
+        (targetPort && portTypeRegistry.get(targetPort.type)?.label) ??
+        targetPort?.type ??
+        '?'
+      void targetHandleType
+      toast.error(
+        `Types incompatibles : ${sourceLabel} → ${targetLabel}`,
+        {
+          description:
+            'Insérez un node de transformation entre les deux (ex. Import CSV/Excel pour passer d\'un fichier à une Sheet).',
+        },
+      )
+    },
+    [clearDrag, wf],
+  )
+
+  const onConnect = useCallback(
+    (conn: Connection) => {
+      if (!conn.source || !conn.target) return
+      const ports = resolveConnectionPorts(conn)
+      if (!ports) return
+      if (!isCompatible(ports.srcPort.type, ports.tgtPort.type)) return
+      connectionMadeRef.current = true
       upsertEdge({
         id: `e_${conn.source}_${conn.sourceHandle}_${conn.target}_${conn.targetHandle}`,
         source: conn.source,
@@ -177,7 +268,7 @@ export function WorkflowEditor() {
         targetHandle: conn.targetHandle ?? 'in',
       })
     },
-    [wf, upsertEdge],
+    [resolveConnectionPorts, upsertEdge],
   )
 
   const upsertStoreNode = useWorkflowStore((s) => s.upsertNode)
@@ -220,6 +311,9 @@ export function WorkflowEditor() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
+        isValidConnection={isValidConnection}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineStyle={connectionLineStyle}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
