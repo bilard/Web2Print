@@ -1,10 +1,43 @@
 // src/features/workflows/editor/nodes/BaseNode.tsx
 import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useRunContext } from '../../runtime/runContext'
 import { nodeRegistry } from '../../registry'
-import { CheckCircle2, Loader2, AlertCircle, MinusCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download } from 'lucide-react'
 import type { NodeSpec } from '../../types'
+
+interface ExportPayload {
+  url: string
+  mime?: string
+  filename: string
+}
+
+function findExportResult(outputs: Record<string, unknown> | undefined): ExportPayload | null {
+  if (!outputs) return null
+  for (const v of Object.values(outputs)) {
+    if (
+      v &&
+      typeof v === 'object' &&
+      'url' in v &&
+      'filename' in v &&
+      typeof (v as ExportPayload).url === 'string' &&
+      typeof (v as ExportPayload).filename === 'string'
+    ) {
+      return v as ExportPayload
+    }
+  }
+  return null
+}
+
+function triggerDownload(payload: ExportPayload): void {
+  const a = document.createElement('a')
+  a.href = payload.url
+  a.download = payload.filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
 
 interface CategoryStyle {
   ring: string
@@ -83,6 +116,11 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const nodeType = (data as { type?: string }).type
   const spec = nodeType ? nodeRegistry.get(nodeType) : undefined
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
+  const outputs = useRunContext((s) => s.nodeStates[id]?.outputs)
+  const exportResult = useMemo(
+    () => (status === 'success' ? findExportResult(outputs) : null),
+    [status, outputs],
+  )
 
   if (!spec) {
     return (
@@ -122,6 +160,22 @@ export function BaseNode({ id, data, selected }: NodeProps) {
           <span className="mt-2 text-[11px] font-medium text-white text-center leading-tight">
             {spec.label}
           </span>
+
+          {/* Download button — appears when an export-result is available */}
+          {exportResult ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                triggerDownload(exportResult)
+              }}
+              className="mt-2 flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[10px] text-emerald-200 transition-colors"
+              title={`Télécharger ${exportResult.filename}`}
+            >
+              <Download className="w-3 h-3" />
+              Télécharger
+            </button>
+          ) : null}
         </div>
 
         {/* Status dot */}
