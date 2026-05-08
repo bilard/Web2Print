@@ -7,7 +7,7 @@ export type PortType = string
 export interface Port {
   name: string
   type: PortType
-  required: boolean
+  required?: boolean
 }
 
 export type ConfigFieldKind =
