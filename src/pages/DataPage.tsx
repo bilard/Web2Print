@@ -32,6 +32,7 @@ import { UpdatePreviewModal } from '@/features/excel/UpdatePreviewModal'
 import { ScrapingModal } from '@/features/scraping/ScrapingModal'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
+import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
 
 type RightTab = 'fields' | 'taxonomy'
 
@@ -112,7 +113,16 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     let rows = baseRows
     const navEntries = Object.entries(taxonomyNavFilter)
     if (navEntries.length > 0) {
-      rows = rows.filter((r) => navEntries.every(([k, v]) => String(r[k]) === v))
+      const colEntries = navEntries.filter(([k]) => k !== GLOBAL_TAXO_FILTER_KEY)
+      const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+      const globalPredicate = globalFilter
+        ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
+        : null
+      rows = rows.filter((r) => {
+        if (!colEntries.every(([k, v]) => String(r[k]) === v)) return false
+        if (globalPredicate && !globalPredicate(r)) return false
+        return true
+      })
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -124,7 +134,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       )
     }
     return rows.map((r) => r._id)
-  }, [sheet, sheets, selectedSourceIds, taxonomyNavFilter, searchQuery])
+  }, [sheet, sheets, selectedSourceIds, taxonomyNavFilter, searchQuery, taxonomies])
 
 
   // Load saved files list

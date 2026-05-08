@@ -1,9 +1,20 @@
 import { useMemo, useCallback, useState } from 'react'
-import { ChevronRight, FolderTree, X, Package, ChevronDown, PanelLeftClose } from 'lucide-react'
+import { ChevronRight, FolderTree, X, Package, ChevronDown, PanelLeftClose, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
+import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
+import {
+  PRODUCT_TAXONOMY_ID_KEY,
+  PRODUCT_TAXONOMY_NODE_ID_KEY,
+  GLOBAL_TAXO_FILTER_KEY,
+  encodeGlobalTaxoFilter,
+  decodeGlobalTaxoFilter,
+  buildGlobalTaxoFilterPredicate,
+  getProductTaxonomyLink,
+} from '@/features/taxonomy/productTaxonomy'
+import { findPath } from '@/features/taxonomy/taxonomyUtils'
+import type { Taxonomy, TaxonomyNode } from '@/features/taxonomy/types'
 import { getTaxoColumns } from './taxonomyBuilder'
-import { isRowEnriched } from './DataTable'
 import type { ExcelRow } from './types'
 
 interface NodePath {
@@ -28,6 +39,7 @@ interface TreeNode {
 export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, updateCell } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
+  const { data: taxonomies } = useTaxonomies()
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null)
 
   const taxoCols = useMemo(() => {
@@ -117,6 +129,49 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
 
   const handleClearAll = () => setTaxonomyNavFilter({})
 
+  // ── Section taxonomie globale ──────────────────────────────────────────────
+  // On scope aux taxonomies qui ont au moins une row liée dans la sheet active,
+  // pour ne pas noyer la nav avec toutes les taxos du compte.
+  const linkedTaxonomies = useMemo(() => {
+    if (!sheet || !taxonomies || taxonomies.length === 0) return []
+    const linkCounts = new Map<string, Map<string, number>>() // taxoId → nodeId → count
+    for (const row of sheet.rows) {
+      const link = getProductTaxonomyLink(row)
+      if (!link) continue
+      let m = linkCounts.get(link.taxonomyId)
+      if (!m) { m = new Map(); linkCounts.set(link.taxonomyId, m) }
+      m.set(link.nodeId, (m.get(link.nodeId) ?? 0) + 1)
+    }
+    if (linkCounts.size === 0) return []
+    return taxonomies
+      .filter((t) => linkCounts.has(t.id))
+      .map((t) => ({ taxonomy: t, leafCounts: linkCounts.get(t.id)! }))
+  }, [sheet, taxonomies])
+
+  const globalFilterDecoded = useMemo(() => {
+    const v = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+    return v ? decodeGlobalTaxoFilter(v) : null
+  }, [taxonomyNavFilter])
+
+  const handleSelectGlobalNode = useCallback((taxonomyId: string, nodeId: string) => {
+    const newFilter = { ...taxonomyNavFilter }
+    const currentVal = newFilter[GLOBAL_TAXO_FILTER_KEY]
+    const targetVal = encodeGlobalTaxoFilter(taxonomyId, nodeId)
+    if (currentVal === targetVal) {
+      delete newFilter[GLOBAL_TAXO_FILTER_KEY]
+    } else {
+      newFilter[GLOBAL_TAXO_FILTER_KEY] = targetVal
+    }
+    setTaxonomyNavFilter(newFilter)
+  }, [taxonomyNavFilter, setTaxonomyNavFilter])
+
+  const handleDropOnGlobalNode = useCallback((rowId: string, taxonomyId: string, nodeId: string, label: string) => {
+    if (!sheet) return
+    updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_ID_KEY, taxonomyId)
+    updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_NODE_ID_KEY, nodeId)
+    toast.success(`Produit classé sous « ${label} »`)
+  }, [sheet, activeSheetIndex, updateCell])
+
   const hasFilters = Object.keys(taxonomyNavFilter).length > 0
 
   // Count total filtered rows
@@ -124,13 +179,22 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     if (!sheet) return 0
     let rows = sheet.rows
     if (!hasFilters) return rows.length
+    const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+    const globalPredicate = globalFilter
+      ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
+      : null
     for (const [colKey, value] of Object.entries(taxonomyNavFilter)) {
+      if (colKey === GLOBAL_TAXO_FILTER_KEY) continue
       rows = rows.filter((r) => String(r[colKey]) === value)
     }
+    if (globalPredicate) rows = rows.filter(globalPredicate)
     return rows.length
-  }, [sheet, taxonomyNavFilter, hasFilters])
+  }, [sheet, taxonomyNavFilter, hasFilters, taxonomies])
 
-  if (!sheet || taxoCols.length === 0) {
+  const noColumnTree = !sheet || taxoCols.length === 0
+  const noGlobalTree = linkedTaxonomies.length === 0
+
+  if (noColumnTree && noGlobalTree) {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-3 text-center px-4">
         <FolderTree className="w-8 h-8 text-white/15" />
@@ -189,6 +253,20 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
               </span>
             )
           })}
+          {globalFilterDecoded && (() => {
+            const tax = taxonomies?.find((t) => t.id === globalFilterDecoded.taxonomyId)
+            const node = tax?.nodes[globalFilterDecoded.nodeId]
+            if (!tax || !node) return null
+            return (
+              <span className="flex items-center gap-1">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 inline-flex items-center gap-1">
+                  <Layers className="w-2.5 h-2.5" />
+                  {node.label}
+                </span>
+                <ChevronRight className="w-2.5 h-2.5 text-white/20" />
+              </span>
+            )
+          })()}
           <span className="text-[10px] text-white/30 flex items-center gap-1">
             <Package className="w-2.5 h-2.5" />
             {filteredCount}
@@ -196,15 +274,49 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
         </div>
       )}
 
-      {/* Tree */}
+      {/* Sections */}
       <div className="flex-1 overflow-y-auto py-1">
-        <TreeLevel
-          nodes={rootNodes}
-          onSelect={handleSelect}
-          dropTargetKey={dropTargetKey}
-          setDropTargetKey={setDropTargetKey}
-          onDropRow={handleDropOnNode}
-        />
+        {/* Section colonnes de la sheet (legacy / par-niveau) */}
+        {!noColumnTree && (
+          <>
+            {!noGlobalTree && (
+              <div className="px-3 pt-1.5 pb-1 text-[9px] font-medium uppercase tracking-wider text-white/25">
+                Colonnes
+              </div>
+            )}
+            <TreeLevel
+              nodes={rootNodes}
+              onSelect={handleSelect}
+              dropTargetKey={dropTargetKey}
+              setDropTargetKey={setDropTargetKey}
+              onDropRow={handleDropOnNode}
+            />
+          </>
+        )}
+
+        {/* Section taxonomie globale */}
+        {!noGlobalTree && (
+          <>
+            <div className={`px-3 ${noColumnTree ? 'pt-1.5' : 'pt-3'} pb-1 text-[9px] font-medium uppercase tracking-wider text-white/25 flex items-center gap-1`}>
+              <Layers className="w-2.5 h-2.5" />
+              Taxonomie globale
+            </div>
+            {linkedTaxonomies.map(({ taxonomy, leafCounts }) => (
+              <GlobalTaxoSubtree
+                key={taxonomy.id}
+                taxonomy={taxonomy}
+                leafCounts={leafCounts}
+                selectedNodeId={
+                  globalFilterDecoded?.taxonomyId === taxonomy.id ? globalFilterDecoded.nodeId : null
+                }
+                onSelect={(nodeId) => handleSelectGlobalNode(taxonomy.id, nodeId)}
+                onDropRow={(rowId, nodeId, label) => handleDropOnGlobalNode(rowId, taxonomy.id, nodeId, label)}
+                dropTargetKey={dropTargetKey}
+                setDropTargetKey={setDropTargetKey}
+              />
+            ))}
+          </>
+        )}
       </div>
     </div>
   )
@@ -315,6 +427,202 @@ function TreeLevel({ nodes, onSelect, dropTargetKey, setDropTargetKey, onDropRow
             />
           )}
         </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Section taxonomie globale : arbre filtré aux ancêtres des nœuds liés
+// ────────────────────────────────────────────────────────────────────────────
+
+interface GlobalTaxoSubtreeProps {
+  taxonomy: Taxonomy
+  /** nodeId direct → nb de produits liés (sans descendance) */
+  leafCounts: Map<string, number>
+  selectedNodeId: string | null
+  onSelect: (nodeId: string) => void
+  onDropRow: (rowId: string, nodeId: string, label: string) => void
+  dropTargetKey: string | null
+  setDropTargetKey: (k: string | null) => void
+}
+
+interface GlobalTaxoTreeNode {
+  node: TaxonomyNode
+  count: number  // descendant + self
+  children: GlobalTaxoTreeNode[]
+  isExpanded: boolean
+  isSelected: boolean
+}
+
+function GlobalTaxoSubtree({
+  taxonomy, leafCounts, selectedNodeId, onSelect, onDropRow, dropTargetKey, setDropTargetKey,
+}: GlobalTaxoSubtreeProps) {
+  // Calcule les counts cumulatifs (un nœud agrège lui-même + descendants directement liés)
+  // et restreint l'arbre aux nœuds qui ont au moins 1 produit (ou sont sur un chemin
+  // vers un nœud lié). Évite d'afficher toute la taxo, on ne montre que ce qui est utilisé.
+  const tree = useMemo(() => {
+    const allNodes = taxonomy.nodes
+    // 1) Set des nœuds "intéressants" : nœud lié + tous ses ancêtres
+    const keepIds = new Set<string>()
+    for (const linkedId of leafCounts.keys()) {
+      for (const ancestorId of findPath(allNodes, linkedId)) {
+        keepIds.add(ancestorId)
+      }
+    }
+    // 2) Counts cumulatifs (nœud + descendants liés)
+    const cumulCounts = new Map<string, number>()
+    const computeCumul = (id: string): number => {
+      if (cumulCounts.has(id)) return cumulCounts.get(id)!
+      let c = leafCounts.get(id) ?? 0
+      for (const child of Object.values(allNodes)) {
+        if (child.parentId === id && keepIds.has(child.id)) {
+          c += computeCumul(child.id)
+        }
+      }
+      cumulCounts.set(id, c)
+      return c
+    }
+    for (const id of keepIds) computeCumul(id)
+
+    // 3) Auto-expand le chemin du nœud sélectionné
+    const expandedIds = new Set<string>()
+    if (selectedNodeId) {
+      for (const id of findPath(allNodes, selectedNodeId)) expandedIds.add(id)
+    }
+
+    // 4) Construit l'arbre filtré récursivement
+    const buildBranch = (parentId: string | null): GlobalTaxoTreeNode[] => {
+      return Object.values(allNodes)
+        .filter((n) => n.parentId === parentId && keepIds.has(n.id))
+        .sort((a, b) => a.order - b.order)
+        .map((node) => ({
+          node,
+          count: cumulCounts.get(node.id) ?? 0,
+          isSelected: selectedNodeId === node.id,
+          isExpanded: expandedIds.has(node.id),
+          children: expandedIds.has(node.id) ? buildBranch(node.id) : [],
+        }))
+    }
+
+    return buildBranch(null)
+  }, [taxonomy, leafCounts, selectedNodeId])
+
+  if (tree.length === 0) return null
+
+  return (
+    <div>
+      <div className="px-3 py-1 text-[10px] text-white/40 truncate" title={taxonomy.name}>
+        {taxonomy.name}
+      </div>
+      <GlobalTaxoLevel
+        taxonomyId={taxonomy.id}
+        nodes={tree}
+        depth={0}
+        onSelect={onSelect}
+        onDropRow={onDropRow}
+        dropTargetKey={dropTargetKey}
+        setDropTargetKey={setDropTargetKey}
+      />
+    </div>
+  )
+}
+
+interface GlobalTaxoLevelProps {
+  taxonomyId: string
+  nodes: GlobalTaxoTreeNode[]
+  depth: number
+  onSelect: (nodeId: string) => void
+  onDropRow: (rowId: string, nodeId: string, label: string) => void
+  dropTargetKey: string | null
+  setDropTargetKey: (k: string | null) => void
+}
+
+function GlobalTaxoLevel({
+  taxonomyId, nodes, depth, onSelect, onDropRow, dropTargetKey, setDropTargetKey,
+}: GlobalTaxoLevelProps) {
+  if (nodes.length === 0) return null
+  return (
+    <div>
+      {nodes.map((tn) => {
+        const dragKey = `${GLOBAL_TAXO_FILTER_KEY}::${taxonomyId}::${tn.node.id}`
+        const isDropTarget = dropTargetKey === dragKey
+        return (
+          <div key={tn.node.id}>
+            <button
+              onClick={() => onSelect(tn.node.id)}
+              onDragOver={(e) => {
+                if (!e.dataTransfer.types.includes('application/x-product-row')) return
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                if (dropTargetKey !== dragKey) setDropTargetKey(dragKey)
+              }}
+              onDragLeave={(e) => {
+                if (e.currentTarget.contains(e.relatedTarget as Node)) return
+                if (dropTargetKey === dragKey) setDropTargetKey(null)
+              }}
+              onDrop={(e) => {
+                const rowId = e.dataTransfer.getData('application/x-product-row')
+                if (!rowId) return
+                e.preventDefault()
+                setDropTargetKey(null)
+                onDropRow(rowId, tn.node.id, tn.node.label)
+              }}
+              className={`w-full text-left flex items-center gap-2 py-[5px] transition-colors group ${
+                isDropTarget
+                  ? 'ring-2 ring-inset ring-indigo-500 bg-indigo-500/10'
+                  : tn.isSelected
+                    ? 'bg-indigo-500/10'
+                    : 'hover:bg-white/[0.03]'
+              }`}
+              style={{
+                paddingLeft: `${depth * 16 + 12}px`,
+                paddingRight: 12,
+              }}
+            >
+              <span className="w-3.5 shrink-0 flex items-center justify-center">
+                {tn.isExpanded ? (
+                  <ChevronDown className="w-3 h-3 text-indigo-400" />
+                ) : (
+                  <ChevronRight className="w-3 h-3 text-white/15 group-hover:text-white/30" />
+                )}
+              </span>
+
+              {tn.isSelected && <div className="w-[3px] h-5 rounded-full shrink-0 -ml-1 bg-indigo-400" />}
+
+              <span
+                className={`flex-1 truncate leading-tight ${tn.isSelected ? 'font-semibold text-indigo-300' : ''}`}
+                style={{
+                  fontSize: depth === 0 ? '13px' : depth === 1 ? '12px' : '11px',
+                  color: tn.isSelected
+                    ? undefined
+                    : depth === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
+                }}
+              >
+                {tn.node.label}
+              </span>
+
+              <span
+                className={`tabular-nums ${tn.isSelected ? 'text-indigo-300/70' : 'text-white/20'}`}
+                style={{ fontSize: depth === 0 ? '10px' : '9px' }}
+              >
+                {tn.count}
+              </span>
+            </button>
+
+            {tn.isExpanded && tn.children.length > 0 && (
+              <GlobalTaxoLevel
+                taxonomyId={taxonomyId}
+                nodes={tn.children}
+                depth={depth + 1}
+                onSelect={onSelect}
+                onDropRow={onDropRow}
+                dropTargetKey={dropTargetKey}
+                setDropTargetKey={setDropTargetKey}
+              />
+            )}
+          </div>
         )
       })}
     </div>

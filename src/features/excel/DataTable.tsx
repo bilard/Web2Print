@@ -10,6 +10,8 @@ import { AddColumnMenu } from './AddColumnMenu'
 import { FormulaEditor } from './FormulaEditor'
 import { evaluateFormula } from './formulaEngine'
 import { getTaxoColumns } from './taxonomyBuilder'
+import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
+import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
@@ -45,6 +47,7 @@ export function DataTable() {
     updateColumnLabel, updateColumnDecimals, reorderColumns,
   } = useExcelStore()
   const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
+  const { data: taxonomies } = useTaxonomies()
   const sheet = sheets[activeSheetIndex]
   /** Rows à afficher :
    *  - mono-source (une seule sheet) : on affiche tout, pas de sélection.
@@ -156,9 +159,16 @@ export function DataTable() {
   const navFilterEntries = Object.entries(taxonomyNavFilter)
   let filteredRows = baseRows
   if (navFilterEntries.length > 0) {
-    filteredRows = filteredRows.filter((row) =>
-      navFilterEntries.every(([colKey, value]) => String(row[colKey]) === value)
-    )
+    const colEntries = navFilterEntries.filter(([k]) => k !== GLOBAL_TAXO_FILTER_KEY)
+    const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+    const globalPredicate = globalFilter
+      ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
+      : null
+    filteredRows = filteredRows.filter((row) => {
+      if (!colEntries.every(([colKey, value]) => String(row[colKey]) === value)) return false
+      if (globalPredicate && !globalPredicate(row)) return false
+      return true
+    })
   }
   if (searchQuery) {
     filteredRows = filteredRows.filter((row) =>
