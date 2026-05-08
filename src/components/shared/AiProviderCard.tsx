@@ -29,118 +29,142 @@ function formatPricing(pricing: { input: number; output: number }): string {
   return `$${fmt(pricing.input)} in / $${fmt(pricing.output)} out · 1M tok`
 }
 
-async function fetchModelsFromProvider(
-  provider: AiProvider,
-  apiKey: string,
-): Promise<AiModelInfo[]> {
-  if (provider === 'claude') {
-    const res = await fetch('https://api.anthropic.com/v1/models', {
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-    })
-    if (!res.ok) throw new Error(`Anthropic ${res.status}`)
-    const data = await res.json() as { data?: Array<{ id: string; display_name?: string }> }
-    return (data.data ?? [])
-      .filter((m) => m.id.startsWith('claude-'))
-      .map((m) => ({ id: m.id, label: m.display_name ?? m.id, pricing: { input: 0, output: 0 } }))
-  }
-  if (provider === 'gemini') {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
-    if (!res.ok) throw new Error(`Gemini ${res.status}`)
-    const data = await res.json() as { models?: Array<{ name: string; displayName?: string }> }
-    return (data.models ?? [])
-      .map((m) => ({ id: m.name.replace(/^models\//, ''), label: m.displayName ?? m.name }))
-      .filter((m) => m.id.startsWith('gemini-') && !/(image|tts|embedding|aqa)/i.test(m.id))
-      .map((m) => ({ id: m.id, label: m.label, pricing: { input: 0, output: 0 } }))
-  }
-  if (provider === 'openai') {
-    const res = await fetch('https://api.openai.com/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    })
-    if (!res.ok) throw new Error(`OpenAI ${res.status}`)
-    const data = await res.json() as { data?: Array<{ id: string }> }
-    return (data.data ?? [])
-      .filter((m) =>
-        (m.id.startsWith('gpt-') || /^o\d/.test(m.id)) &&
-        !/(audio|realtime|search|tts|whisper|image|moderation)/i.test(m.id)
-      )
-      .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
-  }
-  if (provider === 'deepseek') {
-    const res = await fetch('https://api.deepseek.com/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    })
-    if (!res.ok) throw new Error(`DeepSeek ${res.status}`)
-    const data = await res.json() as { data?: Array<{ id: string }> }
-    return (data.data ?? [])
-      .filter((m) => m.id.startsWith('deepseek-'))
-      .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
-  }
-  if (provider === 'qwen') {
-    const res = await fetch(
-      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models',
-      { headers: { Authorization: `Bearer ${apiKey}` } },
-    )
-    if (!res.ok) throw new Error(`Qwen ${res.status}`)
-    const data = await res.json() as { data?: Array<{ id: string }> }
-    return (data.data ?? [])
-      .filter((m) => /^qwen/i.test(m.id) && !/(audio|tts|asr|embedding|image|vl-)/i.test(m.id))
-      .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
-  }
-  if (provider === 'openrouter') {
+/** Adapter par provider pour récupérer la liste des modèles texte/JSON.
+ *
+ *  - `url(apiKey)` : URL de listing ; Gemini passe la clé en query, les autres en header.
+ *  - `headers(apiKey)` : optionnel — Anthropic a `x-api-key`, les autres `Bearer`.
+ *  - `extract(data)` : map réponse → AiModelInfo[] avec filtres provider-spécifiques.
+ *  - `fallbackOnError` : seed list si l'endpoint est 404 (ex. Kimi). Sans ça → throw.
+ */
+interface ProviderModelsAdapter {
+  url: (apiKey: string) => string
+  headers?: (apiKey: string) => Record<string, string>
+  extract: (data: unknown) => AiModelInfo[]
+  fallbackOnError?: AiModelInfo[]
+}
+
+function bearer(apiKey: string): Record<string, string> {
+  return { Authorization: `Bearer ${apiKey}` }
+}
+
+function pickArr<T>(data: unknown, key: 'data' | 'models'): T[] {
+  if (typeof data !== 'object' || data === null) return []
+  const arr = (data as Record<string, unknown>)[key]
+  return Array.isArray(arr) ? (arr as T[]) : []
+}
+
+const PROVIDER_MODEL_ADAPTERS: Record<AiProvider, ProviderModelsAdapter> = {
+  claude: {
+    url: () => 'https://api.anthropic.com/v1/models',
+    headers: (apiKey) => ({
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    }),
+    extract: (data) =>
+      pickArr<{ id: string; display_name?: string }>(data, 'data')
+        .filter((m) => m.id.startsWith('claude-'))
+        .map((m) => ({ id: m.id, label: m.display_name ?? m.id, pricing: { input: 0, output: 0 } })),
+  },
+  gemini: {
+    url: (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+    extract: (data) =>
+      pickArr<{ name: string; displayName?: string }>(data, 'models')
+        .map((m) => ({ id: m.name.replace(/^models\//, ''), label: m.displayName ?? m.name }))
+        .filter((m) => m.id.startsWith('gemini-') && !/(image|tts|embedding|aqa)/i.test(m.id))
+        .map((m) => ({ id: m.id, label: m.label, pricing: { input: 0, output: 0 } })),
+  },
+  openai: {
+    url: () => 'https://api.openai.com/v1/models',
+    headers: bearer,
+    extract: (data) =>
+      pickArr<{ id: string }>(data, 'data')
+        .filter((m) =>
+          (m.id.startsWith('gpt-') || /^o\d/.test(m.id)) &&
+          !/(audio|realtime|search|tts|whisper|image|moderation)/i.test(m.id)
+        )
+        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
+  },
+  deepseek: {
+    url: () => 'https://api.deepseek.com/v1/models',
+    headers: bearer,
+    extract: (data) =>
+      pickArr<{ id: string }>(data, 'data')
+        .filter((m) => m.id.startsWith('deepseek-'))
+        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
+  },
+  qwen: {
+    url: () => 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models',
+    headers: bearer,
+    extract: (data) =>
+      pickArr<{ id: string }>(data, 'data')
+        .filter((m) => /^qwen/i.test(m.id) && !/(audio|tts|asr|embedding|image|vl-)/i.test(m.id))
+        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
+  },
+  openrouter: {
     // OpenRouter expose ~300 modèles avec pricing en USD par TOKEN (string).
     // On convertit en USD par 1M tokens (* 1e6) pour cohérence avec AI_MODELS.
-    // L'endpoint /api/v1/models est public mais on ajoute la clé pour cohérence.
-    const res = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    })
-    if (!res.ok) throw new Error(`OpenRouter ${res.status}`)
-    const data = await res.json() as {
-      data?: Array<{
+    url: () => 'https://openrouter.ai/api/v1/models',
+    headers: bearer,
+    extract: (data) => {
+      type RawModel = {
         id: string
         name?: string
         pricing?: { prompt?: string; completion?: string }
         architecture?: { modality?: string }
-      }>
-    }
-    return (data.data ?? [])
-      // Exclut les modèles non-textuels (image gen, audio, embeddings).
-      .filter((m) => {
-        const mod = m.architecture?.modality ?? ''
-        if (/image|audio|embedding/i.test(mod)) return false
-        if (/(embedding|tts|whisper|asr|image-generation|moderation)/i.test(m.id)) return false
-        return true
-      })
-      .map((m) => {
-        const inUsd = parseFloat(m.pricing?.prompt ?? '0') * 1e6
-        const outUsd = parseFloat(m.pricing?.completion ?? '0') * 1e6
-        return {
-          id: m.id,
-          label: m.name ?? m.id,
-          pricing: {
-            input: Number.isFinite(inUsd) ? inUsd : 0,
-            output: Number.isFinite(outUsd) ? outUsd : 0,
-          },
-        }
-      })
-  }
-  // kimi (Kimi Code, OpenAI-compatible) — pas de /models documenté.
-  // On tente l'endpoint, et on retombe sur le modèle fixe si 404.
-  try {
-    const res = await fetch('https://api.kimi.com/coding/v1/models', {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    })
-    if (res.ok) {
-      const data = await res.json() as { data?: Array<{ id: string }> }
-      return (data.data ?? [])
+      }
+      return pickArr<RawModel>(data, 'data')
+        .filter((m) => {
+          const mod = m.architecture?.modality ?? ''
+          if (/image|audio|embedding/i.test(mod)) return false
+          if (/(embedding|tts|whisper|asr|image-generation|moderation)/i.test(m.id)) return false
+          return true
+        })
+        .map((m) => {
+          const inUsd = parseFloat(m.pricing?.prompt ?? '0') * 1e6
+          const outUsd = parseFloat(m.pricing?.completion ?? '0') * 1e6
+          return {
+            id: m.id,
+            label: m.name ?? m.id,
+            pricing: {
+              input: Number.isFinite(inUsd) ? inUsd : 0,
+              output: Number.isFinite(outUsd) ? outUsd : 0,
+            },
+          }
+        })
+    },
+  },
+  kimi: {
+    // Kimi Code (OpenAI-compatible) n'a pas d'endpoint /models documenté ; on tente,
+    // et on retombe sur le modèle fixe en cas de 404 ou erreur réseau.
+    url: () => 'https://api.kimi.com/coding/v1/models',
+    headers: bearer,
+    extract: (data) =>
+      pickArr<{ id: string }>(data, 'data')
         .filter((m) => /^kimi/i.test(m.id) || /^moonshot/i.test(m.id))
-        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+        .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } })),
+    fallbackOnError: [{ id: 'kimi-for-coding', label: 'Kimi for Coding', pricing: { input: 0, output: 0 } }],
+  },
+}
+
+async function fetchModelsFromProvider(
+  provider: AiProvider,
+  apiKey: string,
+): Promise<AiModelInfo[]> {
+  const adapter = PROVIDER_MODEL_ADAPTERS[provider]
+  try {
+    const res = await fetch(adapter.url(apiKey), {
+      headers: adapter.headers?.(apiKey),
+    })
+    if (!res.ok) {
+      if (adapter.fallbackOnError) return adapter.fallbackOnError
+      throw new Error(`${provider} ${res.status}`)
     }
-  } catch { /* fall through */ }
-  return [{ id: 'kimi-for-coding', label: 'Kimi for Coding', pricing: { input: 0, output: 0 } }]
+    return adapter.extract(await res.json())
+  } catch (err) {
+    if (adapter.fallbackOnError) return adapter.fallbackOnError
+    throw err
+  }
 }
 
 export function AiProviderCard({ provider, apiKeyId, label, description, logo, apiKeyUrl, noteForGemini }: AiProviderCardProps) {
