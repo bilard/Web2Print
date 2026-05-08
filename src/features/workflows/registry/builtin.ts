@@ -2,12 +2,14 @@
 import { portTypeRegistry, registerBuiltinPorts } from '../runtime/ports'
 import { nodeRegistry } from './index'
 
+// Side-effect imports register node specs into nodeRegistry
+import './importNodes'
+
 let initialized = false
 
 export function initWorkflowsRegistry(): void {
   if (initialized) return
   initialized = true
   if (portTypeRegistry.list().length === 0) registerBuiltinPorts()
-  // Node specs are registered here once each *.node.ts module is added (Phase 3).
-  // Importing them is enough — they call nodeRegistry.register at module load.
+  // Node specs are registered via the side-effect imports above.
 }
