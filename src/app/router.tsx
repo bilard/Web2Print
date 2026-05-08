@@ -8,6 +8,8 @@ const EditorPage = lazy(() => import('@/pages/EditorPage'))
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
 const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
+const WorkflowsPage = lazy(() => import('@/pages/WorkflowsPage'))
+const WorkflowEditorPage = lazy(() => import('@/pages/WorkflowEditorPage'))
 
 function PageLoader() {
   return (
@@ -76,6 +78,26 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <ScrapingTemplatesPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/workflows',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <WorkflowsPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/workflows/:id',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <WorkflowEditorPage />
         </Suspense>
       </ProtectedRoute>
     ),
