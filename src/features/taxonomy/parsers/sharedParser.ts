@@ -1,16 +1,21 @@
 // src/features/taxonomy/parsers/sharedParser.ts
 import type { TaxonomyNode } from '../types'
 
+// Match label columns: level_1, Nom_Niveau1, Niveau_1, Nom_Level1.
+// Exclude ID columns (ID_Niveau1, ID_Level1) — those carry codes, not labels.
+const LEVEL_KEY_RE = /^(?:nom[_\s]?)?(?:level|niveau)[_\s]?\d+$/i
+
 /**
  * Convertit des lignes avec colonnes level_1, level_2, …level_N
- * en TaxonomyNodes. Les valeurs identiques à même niveau sont dédupliquées.
+ * (ou Nom_NiveauN / Niveau_N, casse libre) en TaxonomyNodes.
+ * Les valeurs identiques à même niveau sont dédupliquées.
  */
 export function nodesFromRows(rows: Record<string, string>[]): TaxonomyNode[] {
   if (rows.length === 0) return []
 
   const sampleRow = rows[0]
   const levelKeys = Object.keys(sampleRow)
-    .filter((k) => /^level_\d+$/i.test(k))
+    .filter((k) => LEVEL_KEY_RE.test(k))
     .sort((a, b) => {
       const na = parseInt(a.replace(/\D/g, ''), 10)
       const nb = parseInt(b.replace(/\D/g, ''), 10)

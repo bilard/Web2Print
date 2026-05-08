@@ -86,10 +86,35 @@ export function looksLikeBotChallenge(md: string): boolean {
 export function sanitizeJinaMarkdown(raw: string): string {
   let md = raw
 
-  // 1. Sections cookie / GDPR / consent banner
-  md = md
-    .replace(/#{1,4}\s*(Your Privacy|Cookie|GDPR|Manage Preferences|Nous respectons votre vie priv[eé]e|Param[eè]tres?\s+de\s+confidentialit[eé]|Vos\s+pr[eé]f[eé]rences?\s+(?:de\s+)?cookies?)[\s\S]*?(?=\n#{1,4}\s|\n\n---|\n\n\*\*|$)/gi, '')
-    .replace(/^[-*•]\s*.*?(cookie|privacy|captcha|recaptcha|consent|targeting|functional|necessary).*$/gim, '')
+  // 0. Réparation des URLs markdown splittées par retour à la ligne.
+  //    Jina (ou des post-process intermédiaires) wrappe parfois les URLs
+  //    longues, produisant `[Texte](https\n//www.url.html)`. On ré-assemble
+  //    avant tout filtrage pour que les règles "navigation" puissent matcher
+  //    les `[...](...)` complets en une seule ligne.
+  md = md.replace(/\]\(\s*(https?)\s*\n+\s*(\/\/[^\s)]+)\s*\)/gi, ']($1:$2)')
+  md = md.replace(/\]\(\s*(https?:)\s*\n+\s*(\/\/[^\s)]+)\s*\)/gi, ']($1$2)')
+
+  // 1. Sections cookie / GDPR / consent banner — approche itérative robuste.
+  //    Détecte TOUT heading H1-H4 dont le titre contient un mot-clé cookie/RGPD,
+  //    supprime heading + contenu jusqu'au prochain heading (n'importe lequel).
+  //    Boucle jusqu'à stabilisation pour absorber les sections enchaînées
+  //    (`## Maîtrisez...` → `## Politique cookies` → `## Qu'est-ce qu'un cookie`
+  //    → `## Utilisation des cookies` etc.). Apostrophe-agnostique.
+  const COOKIE_HEADING_KW = /[Cc]ookies?|[Pp]rivacy|GDPR|RGPD|[Cc]onsent|[Tt]racking|[Cc]onfidentialit[eé]|[Dd]onn[eé]es?\s+personnelles?|[Vv]ie\s+priv[eé]e|[Pp]r[eé]f[eé]rences?\s+(?:de\s+)?cookies?|[Mm]a[iî]trisez|[Pp]olitique\s+(?:en\s+mati[eè]re\s+de\s+)?cookies?|[Qq]u['’]est[\s-]?ce\s+qu['’]un\s+cookie|[Uu]tilisation\s+des\s+cookies?|[Ss]trictement\s+n[eé]cessaire|^[Ff]onctionnel\b|^[Ss]tatistique\b|^[Mm]arketing\b|^[Pp]ublicitaire\b/
+  for (let pass = 0; pass < 10; pass++) {
+    const before = md
+    md = md.replace(
+      new RegExp(`(^|\\n)#{1,4}\\s+[^\\n]*?(?:${COOKIE_HEADING_KW.source})[^\\n]*\\n[\\s\\S]*?(?=\\n#{1,4}\\s|\\n\\n---|$)`, 'g'),
+      '$1',
+    )
+    if (md === before) break
+  }
+  // 1b. Liens isolés de bandeau cookies sur leur propre ligne
+  md = md.replace(/^[-*•]\s*.*?(cookie|privacy|captcha|recaptcha|consent|targeting|functional|necessary).*$/gim, '')
+  // 1c. Lignes orphelines de cookie banner après suppression du heading parent :
+  //     "*    Finalité:  ..." / "*    Expiration:  ..." / "*    Nom:  ..." /
+  //     "*    Fournisseur:  ..." / "*    Prestataire:  ..." / "*    Politique:  ..."
+  md = md.replace(/^[*-]\s+(Finalit[eé]|Expiration|Nom|Fournisseur|Prestataire(?:\s+de\s+traitement\s+des\s+donn[eé]es)?|Politique\s+de\s+confidentialit[eé](?:\s+du\s+prestataire)?)\s*:\s*.*$/gim, '')
   // Strip lignes Q/R cookie banner standalones (sans heading parent) :
   // "Est-ce indispensable ?" / "Pourquoi ces cookies ?" + paragraphe explicatif
   md = md.replace(/^[*_]*(?:est[\s-]ce\s+(?:indispensable|n[eé]cessaire)|pourquoi\s+(?:ces|les)\s+cookies?|qu['']?est[\s-]?ce\s+qu['']?un\s+cookie|que\s+sont\s+les\s+cookies?)[\s?*_]*$/gim, '')
@@ -141,8 +166,12 @@ export function sanitizeJinaMarkdown(raw: string): string {
   // 10. "Menu" lone header
   md = md.replace(/^Menu\s*$/gm, '')
 
-  // 11. Catalogue listings : ≥4 bullets de liens consécutifs (sans texte propre)
+  // 11. Catalogue / menu listings : ≥4 lignes de liens consécutifs.
+  //     - Avec bullet : `* [Texte](url)` (catalogue B2B)
+  //     - Sans bullet : `[Texte](url)` séparés par lignes vides (menu nav top/footer)
+  //     Dans les 2 cas, c'est de la navigation à virer avant parsing produit.
   md = md.replace(/(?:^[*-]\s*\[[^\]]+\]\([^)]+\)\s*$\n?){4,}/gm, '')
+  md = md.replace(/(?:^\[[^\]]+\]\(https?:\/\/[^)]+\)\s*$\n+){4,}/gm, '')
 
   // 12. Bullets vides résiduels
   md = md.replace(/^[*-]\s*$/gm, '')

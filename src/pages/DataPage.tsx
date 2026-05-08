@@ -7,8 +7,16 @@ import {
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
   MoreVertical, ExternalLink, Sparkles, Layers,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
-  Database, Folder, FolderOpen, Pencil, Check, ChevronRight,
+  Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
 } from 'lucide-react'
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext, verticalListSortingStrategy, useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { SheetsColumn } from '@/components/pim/SheetsColumn'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
@@ -36,7 +44,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     setSheetRowId, setGroupByTaxonomy, deleteSheet, pruneEmptySheet,
   } = useExcelStore()
   const { exportToXlsx, createEmpty } = useExcelImport()
-  const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile } = useExcelFirebase()
+  const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile, reorderFiles } = useExcelFirebase()
   const { data: taxonomies } = useTaxonomies()
   const renameTaxonomy = useRenameTaxonomy()
 
@@ -207,6 +215,22 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     await moveFile(docId, nextPath)
     await refreshFileList()
     if (currentDocId === docId) setCurrentPath(nextPath)
+  }
+
+  /** Réordonne les BDDs d'un même niveau (mêmes `path`). Optimiste : met à
+   *  jour l'état local immédiatement avant le round-trip Firestore. */
+  const handleReorderSiblings = async (orderedDocIds: string[]) => {
+    const updates = orderedDocIds.map((docId, sortIndex) => ({ docId, sortIndex }))
+    const indexMap = new Map(updates.map((u) => [u.docId, u.sortIndex]))
+    setSavedFiles((prev) => prev.map((f) => (
+      indexMap.has(f.docId) ? { ...f, sortIndex: indexMap.get(f.docId) } : f
+    )))
+    try {
+      await reorderFiles(updates)
+    } catch (err) {
+      console.error('[DataPage] reorderFiles error:', err)
+      await refreshFileList()
+    }
   }
 
   /** Chemin cible en attente d'import/scrape. Appliqué au store seulement
@@ -482,6 +506,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 onScrapeAt={handleScrapeAtPath}
                 onCreateAt={handleCreateAtPath}
                 onRefresh={refreshFileList}
+                onReorder={handleReorderSiblings}
               />
             </div>
           </div>
@@ -685,6 +710,20 @@ interface SavedFileEntry {
   totalRows: number
   updatedAt: Date | null
   path: string[]
+  /** Ordre manuel persisté en Firestore (asc). Absent = pas encore drag-trié. */
+  sortIndex?: number
+}
+
+/** Tri des BDDs d'un même niveau : `sortIndex` ASC d'abord, fallback
+ *  `updatedAt` DESC. Items sans `sortIndex` flottent au-dessus (= plus récent
+ *  en haut, comportement d'origine). */
+function sortSiblings(files: SavedFileEntry[]): SavedFileEntry[] {
+  return [...files].sort((a, b) => {
+    const ai = typeof a.sortIndex === 'number' ? a.sortIndex : -Infinity
+    const bi = typeof b.sortIndex === 'number' ? b.sortIndex : -Infinity
+    if (ai !== bi) return ai - bi
+    return (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0)
+  })
 }
 
 interface FolderNode {
@@ -721,7 +760,7 @@ function pathKey(path: string[]): string {
 }
 
 /** Saved files list panel */
-function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh }: {
+function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRename, onMove, onImportAt, onScrapeAt, onCreateAt, onRefresh, onReorder }: {
   files: SavedFileEntry[]
   loading: boolean
   currentDocId: string | null
@@ -733,6 +772,7 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   onScrapeAt: (path: string[]) => void
   onCreateAt: (path: string[]) => void
   onRefresh: () => void
+  onReorder: (orderedDocIds: string[]) => void | Promise<void>
 }) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openAddMenu, setOpenAddMenu] = useState<string | null>(null)
@@ -743,6 +783,26 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
 
   const tree = useMemo(() => buildDatabaseTree(files), [files])
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const a = files.find((f) => f.docId === active.id)
+    const b = files.find((f) => f.docId === over.id)
+    if (!a || !b) return
+    // No-op silencieux si drop entre deux niveaux différents (différents `path`)
+    if (pathKey(a.path) !== pathKey(b.path)) return
+    // Reconstruit l'ordre visible courant pour ce niveau, puis échange a/b
+    const siblings = sortSiblings(files.filter((f) => pathKey(f.path) === pathKey(a.path)))
+    const oldIdx = siblings.findIndex((f) => f.docId === a.docId)
+    const newIdx = siblings.findIndex((f) => f.docId === b.docId)
+    if (oldIdx === -1 || newIdx === -1) return
+    const next = [...siblings]
+    next.splice(newIdx, 0, ...next.splice(oldIdx, 1))
+    void onReorder(next.map((f) => f.docId))
+  }
 
   const handleOverlayClick = () => { setOpenMenu(null); setOpenAddMenu(null) }
 
@@ -844,33 +904,35 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
       ) : files.length === 0 ? (
         <p className="text-xs text-white/25 text-center py-4">Aucune base de données</p>
       ) : (
-        <TreeLevel
-          node={tree}
-          depth={0}
-          collapsed={collapsed}
-          onToggleFolder={toggleFolder}
-          currentDocId={currentDocId}
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          openAddMenu={openAddMenu}
-          setOpenAddMenu={setOpenAddMenu}
-          renamingDocId={renamingDocId}
-          renameValue={renameValue}
-          setRenameValue={setRenameValue}
-          commitRename={commitRename}
-          cancelRename={cancelRename}
-          startRename={startRename}
-          movingDocId={movingDocId}
-          moveValue={moveValue}
-          setMoveValue={setMoveValue}
-          commitMove={commitMove}
-          cancelMove={cancelMove}
-          startMove={startMove}
-          onLoad={onLoad}
-          onDelete={onDelete}
-          onImportAt={onImportAt}
-          onScrapeAt={onScrapeAt}
-        />
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <TreeLevel
+            node={tree}
+            depth={0}
+            collapsed={collapsed}
+            onToggleFolder={toggleFolder}
+            currentDocId={currentDocId}
+            openMenu={openMenu}
+            setOpenMenu={setOpenMenu}
+            openAddMenu={openAddMenu}
+            setOpenAddMenu={setOpenAddMenu}
+            renamingDocId={renamingDocId}
+            renameValue={renameValue}
+            setRenameValue={setRenameValue}
+            commitRename={commitRename}
+            cancelRename={cancelRename}
+            startRename={startRename}
+            movingDocId={movingDocId}
+            moveValue={moveValue}
+            setMoveValue={setMoveValue}
+            commitMove={commitMove}
+            cancelMove={cancelMove}
+            startMove={startMove}
+            onLoad={onLoad}
+            onDelete={onDelete}
+            onImportAt={onImportAt}
+            onScrapeAt={onScrapeAt}
+          />
+        </DndContext>
       )}
     </div>
   )
@@ -947,21 +1009,21 @@ interface TreeLevelProps {
 
 function TreeLevel(props: TreeLevelProps) {
   const { node, depth } = props
+  // Dossiers : tri alpha figé (pas de drag-drop côté dossiers).
   const folders = [...node.folders.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-  const files = [...node.files].sort((a, b) => {
-    const ta = a.updatedAt?.getTime() ?? 0
-    const tb = b.updatedAt?.getTime() ?? 0
-    return tb - ta
-  })
+  const files = sortSiblings(node.files)
+  const fileIds = files.map((f) => f.docId)
 
   return (
     <div className={depth === 0 ? 'space-y-1' : 'space-y-0.5 mt-0.5'}>
       {folders.map((f) => (
         <FolderRow key={`folder-${pathKey(f.path)}`} folder={f} {...props} />
       ))}
-      {files.map((f) => (
-        <FileRow key={f.docId} file={f} {...props} />
-      ))}
+      <SortableContext items={fileIds} strategy={verticalListSortingStrategy}>
+        {files.map((f) => (
+          <FileRow key={f.docId} file={f} {...props} />
+        ))}
+      </SortableContext>
     </div>
   )
 }
@@ -1051,16 +1113,35 @@ function FileRow({
   const isRenaming = renamingDocId === f.docId
   const isMoving = movingDocId === f.docId
   const FolderIcon = isActive ? FolderOpen : Folder
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: f.docId })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    paddingLeft: `${depth * 12 + 4}px`,
+    zIndex: isDragging ? 50 : undefined,
+  }
 
   return (
     <div
-      className={`relative flex items-center gap-2 pr-1.5 py-1.5 rounded-md border transition-colors ${
-        isActive
-          ? 'bg-indigo-500/10 border-indigo-500/30'
-          : 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.12]'
+      ref={setNodeRef}
+      style={style}
+      className={`group relative flex items-center gap-1.5 pr-1.5 py-1.5 rounded-md border transition-colors ${
+        isDragging
+          ? 'bg-indigo-500/10 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
+          : isActive
+            ? 'bg-indigo-500/10 border-indigo-500/30'
+            : 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.12]'
       }`}
-      style={{ paddingLeft: `${depth * 12 + 8}px` }}
     >
+      <button
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab active:cursor-grabbing text-white/15 hover:text-white/40 opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+        title="Glisser pour réordonner"
+      >
+        <GripVertical className="w-3 h-3" />
+      </button>
       <FolderIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-300' : 'text-amber-300/70'}`} />
       <div className="flex-1 min-w-0">
         {isRenaming ? (

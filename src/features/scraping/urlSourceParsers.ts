@@ -60,12 +60,12 @@ function parseCsv(raw: string): string[][] {
 }
 
 /** Identifie l'index de la colonne contenant des URLs.
- *  Stratégie : (1) header nommé "url"/"lien"/"link", sinon (2) colonne avec le
- *  plus grand ratio d'URLs http(s). */
+ *  Stratégie : (1) header nommé "url"/"lien"/"link" (singulier OU pluriel),
+ *  sinon (2) colonne avec le plus grand ratio d'URLs http(s). */
 function findUrlColumn(rows: string[][]): number {
   if (rows.length === 0) return -1
   const header = rows[0].map((c) => c.toLowerCase().trim())
-  const namedIdx = header.findIndex((h) => /^(url|lien|link|web|adresse|hyperlien)\b/i.test(h))
+  const namedIdx = header.findIndex((h) => /^(urls?|liens?|links?|web|adresses?|hyperliens?)\b/i.test(h))
   if (namedIdx >= 0) return namedIdx
 
   // Fallback : colonne avec le plus haut ratio d'URLs sur les lignes data
@@ -142,9 +142,15 @@ export async function extractUrlsFromGoogleSheet(
   fileId: string,
   accessToken: string,
 ): Promise<GoogleSheetImportResult> {
-  const exportUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/csv`
+  // Cache-busting : un Sheet peut être édité, on veut TOUJOURS la version live.
+  const exportUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/csv&_=${Date.now()}`
   const res = await fetch(exportUrl, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
+    cache: 'no-store',
   })
   if (!res.ok) {
     if (res.status === 401 || res.status === 403) {
@@ -159,12 +165,14 @@ export async function extractUrlsFromGoogleSheet(
 
   if (urlCol < 0) {
     const all = rows.map((r) => r.join(' ')).join('\n')
-    return { urls: extractUrlsFromText(all), detectedColumn: null, rowCount: dataRows.length, method: 'text-fallback' }
+    const urls = extractUrlsFromText(all)
+    console.log('[gsheet-import] text-fallback →', urls.length, 'URLs:', urls)
+    return { urls, detectedColumn: null, rowCount: dataRows.length, method: 'text-fallback' }
   }
 
   const headerRow = rows[0] ?? []
   const colHeader = headerRow[urlCol] ?? null
-  const isNamedHeader = colHeader !== null && /^(url|lien|link|web|adresse|hyperlien)\b/i.test(colHeader.trim())
+  const isNamedHeader = colHeader !== null && /^(urls?|liens?|links?|web|adresses?|hyperliens?)\b/i.test(colHeader.trim())
 
   const seen = new Set<string>()
   const out: string[] = []
@@ -175,6 +183,7 @@ export async function extractUrlsFromGoogleSheet(
     seen.add(cell)
     out.push(cell)
   }
+  console.log(`[gsheet-import] ${isNamedHeader ? 'header' : 'heuristic'} → colonne "${colHeader}", ${out.length} URLs:`, out)
   return {
     urls: out,
     detectedColumn: colHeader,

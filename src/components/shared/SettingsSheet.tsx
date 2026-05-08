@@ -24,7 +24,10 @@ export function SettingsSheet() {
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">
-          <h2 className="font-semibold text-white text-sm">Paramètres</h2>
+          <div className="flex items-baseline gap-2">
+            <h2 className="font-semibold text-white text-sm">Paramètres</h2>
+            <span className="text-[10px] font-mono text-white/30">v0.1.0</span>
+          </div>
           <button onClick={() => setSettingsOpen(false)} className="text-white/30 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>

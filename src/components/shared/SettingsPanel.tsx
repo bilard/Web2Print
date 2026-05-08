@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, Info, ChevronUp, ChevronDown, X, Plus, RefreshCw, ExternalLink, KeyRound, CreditCard, Cookie, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, ChevronUp, ChevronDown, X, Plus, RefreshCw, ExternalLink, KeyRound, CreditCard, Cookie, Trash2 } from 'lucide-react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useQueryClient } from '@tanstack/react-query'
@@ -21,6 +21,7 @@ const PROVIDER_LABELS: Record<AiProvider, string> = {
   deepseek: 'DeepSeek',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  openrouter: 'OpenRouter',
 }
 
 const USD_TO_EUR = 0.92
@@ -47,7 +48,7 @@ function formatTokens(n: number): string {
   return n.toLocaleString('fr-FR')
 }
 
-type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'about'
+type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats'
 
 interface TabConfig {
   id: SettingsTab
@@ -63,7 +64,6 @@ const TABS: TabConfig[] = [
   { id: 'connectors', label: 'Connecteurs',   icon: Plug,      accent: 'text-emerald-400' },
   { id: 'cookies',    label: 'Cookies',       icon: Cookie,    accent: 'text-amber-300' },
   { id: 'stats',      label: 'Statistiques',  icon: BarChart2, accent: 'text-sky-400' },
-  { id: 'about',      label: 'À propos',      icon: Info,      accent: 'text-white/60' },
 ]
 
 const FirebaseLogo = () => (
@@ -126,6 +126,19 @@ const KimiLogo = () => (
       fill="#FFFFFF"
       d="M7.5 7.75h2v3.4l3.4-3.4h2.55l-3.55 3.55 3.7 4.95H13l-2.7-3.7-.8.8v2.9h-2v-8.5zm9 0h2v8.5h-2z"
     />
+  </svg>
+)
+
+const OpenRouterLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="#6366f1" />
+    <path
+      fill="#FFFFFF"
+      d="M5 12h6.5l-2.4-2.4 1.4-1.4L15 12l-4.5 4.5-1.4-1.4L11.5 12.7H5v-.7zm9 0h5"
+      strokeWidth="1.5"
+      stroke="#FFFFFF"
+    />
+    <circle cx="19.5" cy="12" r="1.5" fill="#FFFFFF" />
   </svg>
 )
 
@@ -644,13 +657,15 @@ function ProfileTab() {
 }
 
 const CASCADE_PROVIDER_INFO: Record<ReasoningProvider, { label: string; sub: string; logo: React.ReactNode }> = {
-  gemini:   { label: 'Gemini',      sub: 'free tier · économique',       logo: <GeminiLogo /> },
-  claude:   { label: 'Claude Opus', sub: 'pay-as-you-go · qualité max',  logo: <ClaudeLogo /> },
-  deepseek: { label: 'DeepSeek',    sub: 'low cost · JSON natif',        logo: <DeepSeekLogo /> },
-  qwen:     { label: 'Qwen',        sub: 'multilingue · alternatif',     logo: <QwenLogo /> },
+  gemini:     { label: 'Gemini',      sub: 'free tier · économique',          logo: <GeminiLogo /> },
+  claude:     { label: 'Claude Opus', sub: 'pay-as-you-go · qualité max',     logo: <ClaudeLogo /> },
+  openai:     { label: 'OpenAI',      sub: 'GPT · json_schema strict',        logo: <OpenAILogo /> },
+  deepseek:   { label: 'DeepSeek',    sub: 'low cost · JSON natif',           logo: <DeepSeekLogo /> },
+  qwen:       { label: 'Qwen',        sub: 'multilingue · alternatif',        logo: <QwenLogo /> },
+  openrouter: { label: 'OpenRouter',  sub: 'agrégateur · routing multi-LLM',  logo: <OpenRouterLogo /> },
 }
 
-const ALL_REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'deepseek', 'qwen']
+const ALL_REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'openrouter']
 
 function ReasoningCascadeSelector() {
   const cascade = useAiSettingsStore((s) => s.reasoningCascade)
@@ -834,6 +849,14 @@ function AiTab() {
         logo={<KimiLogo />}
         apiKeyUrl="https://www.kimi.com/code/console"
       />
+      <AiProviderCard
+        provider="openrouter"
+        apiKeyId="openrouter"
+        label="OpenRouter"
+        description="Accès unifié à tous les LLM (Claude, GPT, Gemini, Llama, Mistral, Qwen, DeepSeek…)"
+        logo={<OpenRouterLogo />}
+        apiKeyUrl="https://openrouter.ai/settings/keys"
+      />
     </div>
   )
 }
@@ -845,6 +868,9 @@ function FirebaseTab() {
       <div className="flex items-start gap-2 px-1 pb-1 text-[11px] text-white/40">
         <FirebaseLogo />
         <span>Configuration du backend (authentification, base de données, stockage)</span>
+      </div>
+      <div className="bg-white/[0.03] rounded-xl px-4 py-1">
+        <StatRow label="Projet" value="web2print-6fe5a" />
       </div>
       {firebaseKeys.map((k) => (
         <ApiKeyRow key={k.id} id={k.id} label={k.label} description={k.description} />
@@ -1080,7 +1106,7 @@ function StatsTab() {
     return <p className="text-xs text-white/30">Impossible de charger les statistiques</p>
   }
 
-  const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi']
+  const providers: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
   const totalTokensIn = providers.reduce((s, p) => s + stats.aiCost.byProvider[p].tokensIn, 0)
   const totalTokensOut = providers.reduce((s, p) => s + stats.aiCost.byProvider[p].tokensOut, 0)
   const updatedLabel = dataUpdatedAt
@@ -1155,15 +1181,6 @@ function StatsTab() {
   )
 }
 
-function AboutTab() {
-  return (
-    <div className="bg-white/[0.03] rounded-xl p-4">
-      <StatRow label="Version" value="v0.1.0" />
-      <StatRow label="Projet Firebase" value="web2print-6fe5a" />
-    </div>
-  )
-}
-
 export function SettingsPanel() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
 
@@ -1203,7 +1220,6 @@ export function SettingsPanel() {
         {activeTab === 'connectors' && <ConnectorsTab />}
         {activeTab === 'cookies' && <CookiesTab />}
         {activeTab === 'stats' && <StatsTab />}
-        {activeTab === 'about' && <AboutTab />}
       </div>
     </div>
   )

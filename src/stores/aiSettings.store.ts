@@ -5,9 +5,9 @@ import { AI_MODELS, getModel, getDefaultModel, type AiProvider, type AiModelInfo
 /** Providers supportés pour les tâches de raisonnement texte/JSON
  *  (extraction scraping, Art Director, amélioration de prompt). Tous les
  *  providers de cette liste sont câblés dans les fonctions concernées. */
-export type ReasoningProvider = 'gemini' | 'claude' | 'deepseek' | 'qwen'
+export type ReasoningProvider = 'gemini' | 'claude' | 'openai' | 'deepseek' | 'qwen' | 'openrouter'
 
-const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'deepseek', 'qwen']
+const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'openrouter']
 
 interface AiSettingsState {
   selectedModel: Record<AiProvider, string>
@@ -35,6 +35,7 @@ export const initialSelected = (): Record<AiProvider, string> => ({
   deepseek: getDefaultModel('deepseek').id,
   qwen: getDefaultModel('qwen').id,
   kimi: getDefaultModel('kimi').id,
+  openrouter: getDefaultModel('openrouter').id,
 })
 
 function sanitizeCascade(cascade: unknown): ReasoningProvider[] {
@@ -53,13 +54,14 @@ const initialBudgets = (): Record<AiProvider, number | null> => ({
   deepseek: null,
   qwen: null,
   kimi: null,
+  openrouter: null,
 })
 
 export const useAiSettingsStore = create<AiSettingsState>()(
   persist(
     (set) => ({
       selectedModel: initialSelected(),
-      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [] },
+      fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
       // Default cascade : Gemini (free tier) puis Claude Opus en fallback. Les
       // providers chinois sont disponibles mais non activés par défaut.
       reasoningCascade: ['gemini', 'claude'],
@@ -93,6 +95,9 @@ export const useAiSettingsStore = create<AiSettingsState>()(
       }),
       // Migration depuis l'ancien champ primaryReasoningProvider (single value)
       // vers reasoningCascade (array). Garde Claude en fallback automatique.
+      // v4 : complète les Records par-provider avec les clés manquantes (ex: openrouter
+      // ajouté ultérieurement) — sans ça, Object.entries() renvoie undefined sur la
+      // nouvelle clé et casse les composants qui appellent .toFixed() etc.
       migrate: (persisted: unknown) => {
         if (!persisted || typeof persisted !== 'object') return persisted
         const obj = persisted as Record<string, unknown>
@@ -103,10 +108,17 @@ export const useAiSettingsStore = create<AiSettingsState>()(
         }
         if (!obj.monthlyBudgetUsd || typeof obj.monthlyBudgetUsd !== 'object') {
           obj.monthlyBudgetUsd = initialBudgets()
+        } else {
+          obj.monthlyBudgetUsd = { ...initialBudgets(), ...(obj.monthlyBudgetUsd as Record<string, unknown>) }
+        }
+        if (!obj.selectedModel || typeof obj.selectedModel !== 'object') {
+          obj.selectedModel = initialSelected()
+        } else {
+          obj.selectedModel = { ...initialSelected(), ...(obj.selectedModel as Record<string, unknown>) }
         }
         return obj
       },
-      version: 3,
+      version: 4,
     },
   ),
 )

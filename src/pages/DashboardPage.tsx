@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useProjects } from '@/features/projects/useProjects'
@@ -25,8 +25,9 @@ const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
 const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
 const ScrapingHubPage = lazy(() => import('@/features/scraping-hub/ScrapingHubPage').then((m) => ({ default: m.ScrapingHubPage })))
+const ChatPage = lazy(() => import('@/features/chat/ChatPage').then((m) => ({ default: m.ChatPage })))
 
-type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub'
+type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub'
 
 const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }>; label: string; accent: string; activeBg: string; activeText: string }[] = [
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
@@ -37,6 +38,7 @@ const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }
   { id: 'taxonomies', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300' },
   { id: 'scraping-templates', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
   { id: 'scraping-hub', icon: BookOpen, label: 'Scraping Hub', accent: 'text-sky-400', activeBg: 'bg-sky-500/[0.1]', activeText: 'text-sky-300' },
+  { id: 'chat', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300' },
 ]
 
 export default function DashboardPage() {
@@ -123,6 +125,9 @@ export default function DashboardPage() {
       canvasWidth: config.canvasWidth,
       canvasHeight: config.canvasHeight,
       canvasBg: config.canvasBg,
+      canvasBgType: config.canvasBgType,
+      canvasBgGradient: config.canvasBgGradient,
+      canvasBgImage: config.canvasBgImage,
     })
     navigate(`/editor/${project.id}`, { state: { title: config.title } })
   }
@@ -387,6 +392,16 @@ export default function DashboardPage() {
             <ScrapingHubPage />
           </Suspense>
         </div>
+      ) : activeSection === 'chat' ? (
+        <div className="flex-1 overflow-hidden">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+              <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+            </div>
+          }>
+            <ChatPage />
+          </Suspense>
+        </div>
       ) : activeSection === 'images' ? (
         <div className="flex-1 overflow-hidden">
           <DamPage />
@@ -512,7 +527,10 @@ export default function DashboardPage() {
             // liste alignée à gauche + panneau live consommation LLM à droite.
             <div className="flex gap-6 items-start">
               <div className="w-[640px] shrink-0 max-w-full">
-                <h1 className="text-xl font-bold mb-6">Paramètres</h1>
+                <div className="flex items-baseline gap-3 mb-6">
+                  <h1 className="text-xl font-bold">Paramètres</h1>
+                  <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
+                </div>
                 <SettingsPanel />
               </div>
               <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] pt-12">

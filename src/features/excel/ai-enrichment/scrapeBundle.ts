@@ -17,6 +17,10 @@ export interface BundleDeps {
   fastScrape: (url: string) => Promise<string | null>
   /** Callback de log optionnel */
   log?: (msg: string) => void
+  /** Inclure le contenu des PDFs dans le markdown fusionné (défaut : false).
+   *  Activé via opt-in UI quand l'utilisateur sait que le PDF cible contient
+   *  une fiche technique exploitable (vs notice multilingue qui pollue). */
+  includePdfs?: boolean
 }
 
 const MAX_ADDITIONAL_URLS = 8
@@ -49,9 +53,16 @@ function dedupParagraphs(sections: Array<{ label: string; markdown: string }>): 
   return output.join('\n\n').trim()
 }
 
-function prioritizeUrls(r: RelatedUrls): string[] {
-  // tabs > pdfs > subpages, plafonné
-  return [...r.tabs, ...r.pdfs.map((p) => p.url), ...r.subpages].slice(0, MAX_ADDITIONAL_URLS)
+function prioritizeUrls(r: RelatedUrls, includePdfs: boolean): string[] {
+  // PDFs EXCLUS par défaut du bundle de contenu : leur texte est typiquement
+  // de la prose multilingue (notices/manuels d'instructions) qui pollue le
+  // parser de specs avec du contenu sécurité/légal traduit en 8+ langues.
+  // Les URLs des PDFs restent dans `r.pdfs` → renvoyées séparément dans
+  // `pdfsFound` pour alimenter la liste documents/téléchargements.
+  // L'option `includePdfs=true` est opt-in via UI (cas où le PDF contient une
+  // vraie fiche technique structurée — utilisateur informé du risque).
+  const pdfUrls = includePdfs ? r.pdfs.map((p) => p.url) : []
+  return [...r.tabs, ...pdfUrls, ...r.subpages].slice(0, MAX_ADDITIONAL_URLS)
 }
 
 /**
@@ -70,7 +81,7 @@ export async function scrapeProductBundle(
   productUrl: string,
   deps: BundleDeps,
 ): Promise<ScrapedBundle> {
-  const { deepScrape, fastScrape, log } = deps
+  const { deepScrape, fastScrape, log, includePdfs = false } = deps
   const errors: Array<{ url: string; error: string }> = []
   log?.(`[bundle] passe 1 — deep scrape primary: ${productUrl}`)
 
@@ -91,8 +102,9 @@ export async function scrapeProductBundle(
     ? discoverRelatedUrls(primary.html, baseUrl)
     : { tabs: [], pdfs: [], subpages: [] }
 
-  const prioritized = prioritizeUrls(related)
-  log?.(`[bundle] passe 2 — URLs liées détectées : ${related.tabs.length} onglets, ${related.pdfs.length} PDFs, ${related.subpages.length} sous-pages (plafonné à ${prioritized.length})`)
+  const prioritized = prioritizeUrls(related, includePdfs)
+  const pdfNote = includePdfs ? '' : ' (PDFs ignorés — opt-in désactivé)'
+  log?.(`[bundle] passe 2 — URLs liées détectées : ${related.tabs.length} onglets, ${related.pdfs.length} PDFs, ${related.subpages.length} sous-pages (plafonné à ${prioritized.length})${pdfNote}`)
 
   const sections: Array<{ label: string; markdown: string }> = [
     { label: productUrl, markdown: primary.markdown },

@@ -14,18 +14,31 @@ const PROVIDER_LABELS: Record<AiProvider, string> = {
   deepseek: 'DeepSeek',
   qwen: 'Qwen',
   kimi: 'Kimi',
+  openrouter: 'OpenRouter',
 }
 
 const PROVIDER_DOT: Record<AiProvider, string> = {
-  claude:   'bg-orange-400',
-  gemini:   'bg-sky-400',
-  openai:   'bg-emerald-400',
-  deepseek: 'bg-indigo-400',
-  qwen:     'bg-violet-400',
-  kimi:     'bg-amber-400',
+  claude:     'bg-orange-400',
+  gemini:     'bg-sky-400',
+  openai:     'bg-emerald-400',
+  deepseek:   'bg-indigo-400',
+  qwen:       'bg-violet-400',
+  kimi:       'bg-amber-400',
+  openrouter: 'bg-fuchsia-400',
 }
 
-const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi']
+/** Pages de facturation / top-up de chaque provider — ouvre la console pour recharger les crédits. */
+const PROVIDER_TOPUP_URLS: Record<AiProvider, string> = {
+  claude:     'https://console.anthropic.com/settings/billing',
+  gemini:     'https://aistudio.google.com/app/plan_information',
+  openai:     'https://platform.openai.com/settings/organization/billing/overview',
+  deepseek:   'https://platform.deepseek.com/top_up',
+  qwen:       'https://bailian.console.aliyun.com/?productCode=p_efm#/expense-center',
+  kimi:       'https://platform.moonshot.cn/console/account',
+  openrouter: 'https://openrouter.ai/settings/credits',
+}
+
+const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
 
 function formatEur(usd: number, decimals = 4): string {
   const eur = usd * USD_TO_EUR
@@ -133,11 +146,11 @@ function BudgetEditor({
     return (
       <button
         onClick={() => setEditing(true)}
-        title={`Définir un budget mensuel pour ${label}`}
+        title={`Définir un seuil d'alerte mensuel pour ${label} — local, ne recharge pas le compte`}
         className="group inline-flex items-center gap-1 text-[10px] text-white/40 hover:text-indigo-300 transition-colors"
       >
         <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />
-        {value !== null ? `Budget : ${value.toFixed(2)} $/mois` : 'Définir budget'}
+        {typeof value === 'number' ? `Alerte : ${value.toFixed(2)} $/mois` : 'Définir alerte'}
       </button>
     )
   }
@@ -350,7 +363,16 @@ export function LiveLlmUsagePanel() {
               <div className="col-span-4 flex items-center gap-2 min-w-0">
                 <span className={`w-1.5 h-1.5 rounded-full ${PROVIDER_DOT[row.provider]} shrink-0`} />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-white/80 truncate">{PROVIDER_LABELS[row.provider]}</p>
+                  <a
+                    href={PROVIDER_TOPUP_URLS[row.provider]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Ouvrir la console ${PROVIDER_LABELS[row.provider]} — recharger les crédits chez le provider`}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-indigo-300 transition-colors truncate"
+                  >
+                    <span className="truncate">{PROVIDER_LABELS[row.provider]}</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-indigo-300 shrink-0" />
+                  </a>
                   <p className="text-[9.5px] text-white/30 font-mono truncate">{row.modelLabel}</p>
                 </div>
               </div>
@@ -421,7 +443,16 @@ export function LiveLlmUsagePanel() {
               <div className="flex items-center gap-2 min-w-0">
                 <Globe className="w-3.5 h-3.5 text-orange-400 shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-white/80 truncate">Bright Data</p>
+                  <a
+                    href="https://brightdata.com/cp/setting/billing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Ouvrir la facturation Bright Data — recharger le solde"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-orange-300 transition-colors truncate"
+                  >
+                    <span className="truncate">Bright Data</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-orange-300 shrink-0" />
+                  </a>
                   <p className="text-[9.5px] text-white/30 font-mono truncate">Web Unlocker</p>
                 </div>
               </div>
@@ -442,7 +473,18 @@ export function LiveLlmUsagePanel() {
             <div className="grid grid-cols-4 gap-1.5">
               {/* Solde */}
               <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
-                <p className="text-[9px] text-white/30 uppercase tracking-wider">Solde</p>
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-[9px] text-white/30 uppercase tracking-wider">Solde</p>
+                  <a
+                    href="https://brightdata.com/cp/setting/billing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Recharger le solde Bright Data"
+                    className="text-[9px] text-white/30 hover:text-orange-300 inline-flex items-center gap-0.5 transition-colors"
+                  >
+                    recharger <ExternalLink className="w-2 h-2" />
+                  </a>
+                </div>
                 {brightDataRow.balanceUsd !== null ? (
                   <>
                     <p className="text-sm font-mono text-white/90 leading-tight">
@@ -457,17 +499,7 @@ export function LiveLlmUsagePanel() {
                     )}
                   </>
                 ) : (
-                  <>
-                    <p className="text-sm font-mono text-white/20 leading-tight">—</p>
-                    <a
-                      href="https://brightdata.com/cp/dashboard"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[9px] text-white/30 hover:text-orange-300 inline-flex items-center gap-0.5"
-                    >
-                      voir dashboard <ExternalLink className="w-2 h-2" />
-                    </a>
-                  </>
+                  <p className="text-sm font-mono text-white/20 leading-tight">—</p>
                 )}
               </div>
 
@@ -573,7 +605,9 @@ export function LiveLlmUsagePanel() {
         Données agrégées depuis Firestore — collections{' '}
         <code className="text-white/40">aiUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code> et{' '}
         <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
-        Auto-refresh toutes les 15 s.
+        Auto-refresh toutes les 15 s. Les <strong className="text-white/60">alertes</strong> sont des seuils mensuels{' '}
+        <em>locaux</em> : elles déclenchent un warning à ≥ 80 % et un état "limite atteinte" à ≥ 100 %, mais ne rechargent pas le compte chez le provider.
+        Pour recharger réellement les crédits, cliquer sur le nom du provider <ExternalLink className="inline w-2 h-2 -translate-y-px" />.
       </p>
     </aside>
   )

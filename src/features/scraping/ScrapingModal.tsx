@@ -746,7 +746,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               onUrlSuggestion={(suggested) => setUrl(suggested)}
               onEnrichMany={handleEnrichMany}
               batchRunning={batchRunning}
-              logs={batchRunning ? batchCurrentLogs : enrichLogs}
+              logs={batchRunning ? [] : enrichLogs}
             />
           )}
           {tab === 'map' && (
@@ -818,19 +818,21 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
                 if (!item) return null
                 const entry = allEntries[enrichmentKey(SCRAPE_MODAL_SHEET, item.rowId)]
                 return (
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
-                      <Loader2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-indigo-300/90 font-medium truncate">{item.title}</p>
-                        <p className="text-[10px] text-white/40 truncate">{entry?.progress?.message ?? 'En attente…'}</p>
-                      </div>
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
+                    <Loader2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5 animate-spin" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] text-indigo-300/90 font-medium truncate">{item.title}</p>
+                      <p className="text-[10px] text-white/40 truncate">{entry?.progress?.message ?? 'En attente…'}</p>
                     </div>
-                    <TypedLogConsole logs={batchCurrentLogs} maxHeight="16rem" />
                   </div>
                 )
               })()}
-              {/* Liste cliquable des items — clic = aperçu détaillé */}
+              {/* Console de logs — affichée une seule fois pour tout le batch */}
+              {batchCurrentLogs.length > 0 && (
+                <TypedLogConsole logs={batchCurrentLogs} maxHeight="16rem" />
+              )}
+              {/* Liste cliquable des items — masquée quand 1 seul (item card suffit) */}
+              {batch.length > 1 && (
               <div className="max-h-48 overflow-y-auto space-y-0.5 border border-white/[0.06] rounded-lg p-1">
                 {batch.map((item, i) => {
                   const isPreviewed = batchPreviewIdx === i
@@ -865,6 +867,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
                   )
                 })}
               </div>
+              )}
 
               {/* Aperçu détaillé du produit sélectionné — même rendu que Scrape/Produit unique */}
               {batchPreviewIdx !== null && batch[batchPreviewIdx]?.product && (

@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, serverTimestamp, query, where, updateDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, serverTimestamp, query, where, updateDoc, writeBatch } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelSheet } from './types'
@@ -62,7 +62,7 @@ export function useExcelFirebase() {
   }
 
   /** Liste toutes les bases de l'utilisateur courant. */
-  const listSavedFiles = async (): Promise<{ fileName: string; docId: string; totalRows: number; updatedAt: Date | null; path: string[] }[]> => {
+  const listSavedFiles = async (): Promise<{ fileName: string; docId: string; totalRows: number; updatedAt: Date | null; path: string[]; sortIndex?: number }[]> => {
     const user = auth.currentUser
     if (!user) return []
 
@@ -78,6 +78,7 @@ export function useExcelFirebase() {
           totalRows: data.totalRows ?? 0,
           updatedAt: data.updatedAt?.toDate?.() ?? null,
           path: Array.isArray(data.path) ? data.path : [],
+          sortIndex: typeof data.sortIndex === 'number' ? data.sortIndex : undefined,
         }
       })
       .sort((a, b) => {
@@ -115,5 +116,17 @@ export function useExcelFirebase() {
     await updateDoc(ref, { path: cleaned, updatedAt: serverTimestamp() })
   }
 
-  return { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile }
+  /** Persiste l'ordre manuel d'un groupe de bases (siblings d'un même path).
+   *  N updates → 1 commit atomique, pour éviter un état mi-réordonné. */
+  const reorderFiles = async (updates: { docId: string; sortIndex: number }[]) => {
+    const user = auth.currentUser
+    if (!user || updates.length === 0) return
+    const batch = writeBatch(db)
+    for (const { docId, sortIndex } of updates) {
+      batch.update(doc(db, COLLECTION, docId), { sortIndex })
+    }
+    await batch.commit()
+  }
+
+  return { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile, reorderFiles }
 }

@@ -18,6 +18,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { useMoveNode } from '@/features/taxonomy/useTaxonomyMutations'
 import { buildTree, nodeMatchesSearch, nodeHasLinkedProjects } from '@/features/taxonomy/taxonomyUtils'
+import { useTaxonomyProductCounts } from '@/features/taxonomy/useTaxonomyProductCounts'
 import { TaxonomyNode } from './TaxonomyNode'
 import type { Taxonomy, TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
 
@@ -30,6 +31,7 @@ export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
   const { searchQuery, expandAll, showLinkedOnly } = useTaxonomyStore()
   const moveNode = useMoveNode()
   const initialized = useRef(false)
+  const productCounts = useTaxonomyProductCounts(taxonomy)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -114,6 +116,7 @@ export function TaxonomyTree({ taxonomy, onLinkProjects }: TaxonomyTreeProps) {
         onLinkProjects={onLinkProjects}
         searchQuery={searchQuery}
         showLinkedOnly={showLinkedOnly}
+        productCounts={productCounts}
       />
     ))
   }

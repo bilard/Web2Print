@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   Sparkles, Loader2, Timer, RefreshCw, Package, Cpu, PackageCheck,
-  LayoutList, FileText, Users, ChevronDown, ChevronUp, ChevronLeft, X as XIcon,
+  LayoutList, FileText, Users, ChevronDown, ChevronUp, ChevronLeft, X as XIcon, FileText as FilePdfIcon,
 } from 'lucide-react'
 import type { ScrapingField, ScrapingMode, ScrapeResult, ExtractionTarget } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
@@ -54,6 +54,18 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
   const [fields, setFields] = useState<ScrapingField[]>(FIELD_TEMPLATES.product_full.fields)
   const [prompt, setPrompt] = useState('')
   const [noCache, setNoCache] = useState(false)
+  const [includePdfs, setIncludePdfs] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('ds-scrape-include-pdfs') === '1'
+  })
+
+  const updateIncludePdfs = (v: boolean) => {
+    setIncludePdfs(v)
+    if (typeof window !== 'undefined') {
+      if (v) window.localStorage.setItem('ds-scrape-include-pdfs', '1')
+      else window.localStorage.removeItem('ds-scrape-include-pdfs')
+    }
+  }
   const [manualBreadcrumb, setManualBreadcrumb] = useState('')
   const [waitFor, setWaitFor] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
@@ -130,6 +142,15 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
 
   const tpl = TEMPLATES.find(t => t.key === templateKey) ?? TEMPLATES[2]
   const TplIcon = tpl.Icon
+
+  // Hostnames uniques des URLs importées (ex: "nicoll.fr, makita.fr")
+  const importedHosts = (() => {
+    const hosts = new Set<string>()
+    for (const u of multiUrls) {
+      try { hosts.add(new URL(u).hostname.replace(/^www\./, '')) } catch { /* ignore */ }
+    }
+    return [...hosts]
+  })()
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage.getItem('ds-scrape-wait-for')) return
@@ -297,9 +318,16 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
                     {importing && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin self-center" />}
                   </div>
                   {importedUrls.length > 0 && (
-                    <div className="flex items-center justify-between p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
-                      <span className="text-[11px] text-emerald-300">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''} importée{importedUrls.length > 1 ? 's' : ''}</span>
-                      <button onClick={() => setImportedUrls([])} className="text-emerald-400/60 hover:text-emerald-300"><XIcon className="w-3 h-3" /></button>
+                    <div className="flex items-center justify-between gap-2 p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="text-[11px] text-emerald-300 shrink-0">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''}</span>
+                        {importedHosts.length > 0 && (
+                          <span className="text-[10px] text-emerald-400/60 truncate font-mono" title={importedHosts.join(', ')}>
+                            {importedHosts.slice(0, 3).join(', ')}{importedHosts.length > 3 ? ` +${importedHosts.length - 3}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <button onClick={() => setImportedUrls([])} className="text-emerald-400/60 hover:text-emerald-300 shrink-0"><XIcon className="w-3 h-3" /></button>
                     </div>
                   )}
                 </div>
@@ -324,9 +352,16 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
                     </p>
                   )}
                   {importedUrls.length > 0 && (
-                    <div className="flex items-center justify-between p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
-                      <span className="text-[11px] text-emerald-300">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''} importée{importedUrls.length > 1 ? 's' : ''}</span>
-                      <button onClick={() => setImportedUrls([])} className="text-emerald-400/60 hover:text-emerald-300"><XIcon className="w-3 h-3" /></button>
+                    <div className="flex items-center justify-between gap-2 p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="text-[11px] text-emerald-300 shrink-0">{importedUrls.length} URL{importedUrls.length > 1 ? 's' : ''}</span>
+                        {importedHosts.length > 0 && (
+                          <span className="text-[10px] text-emerald-400/60 truncate font-mono" title={importedHosts.join(', ')}>
+                            {importedHosts.slice(0, 3).join(', ')}{importedHosts.length > 3 ? ` +${importedHosts.length - 3}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <button onClick={() => setImportedUrls([])} className="text-emerald-400/60 hover:text-emerald-300 shrink-0"><XIcon className="w-3 h-3" /></button>
                     </div>
                   )}
                 </div>
@@ -372,6 +407,11 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
                   <Timer className="w-2.5 h-2.5" />{waitFor / 1000}s
                 </span>
               )}
+              {includePdfs && !showAdvanced && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <FilePdfIcon className="w-2.5 h-2.5" />PDFs
+                </span>
+              )}
             </button>
             {showAdvanced && (
               <div className="mt-2 space-y-3 p-3 bg-black/20 rounded-lg border border-white/[0.06]">
@@ -404,6 +444,12 @@ export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onE
                       className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
                     <RefreshCw className="w-3 h-3 text-white/30" />
                     <span className="text-[11px] text-white/50">Pas de cache</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer" title="Inclure le contenu textuel des PDFs liés (notices/fiches techniques) dans l'extraction. Désactivé par défaut car les notices multilingues polluent les specs.">
+                    <input type="checkbox" checked={includePdfs} onChange={e => updateIncludePdfs(e.target.checked)}
+                      className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30" />
+                    <FilePdfIcon className={`w-3 h-3 ${includePdfs ? 'text-amber-400/70' : 'text-white/30'}`} />
+                    <span className={`text-[11px] ${includePdfs ? 'text-amber-300' : 'text-white/50'}`}>Scraper les PDFs</span>
                   </label>
                   <div className="flex items-center gap-2">
                     <Timer className={`w-3 h-3 ${waitFor > 0 ? 'text-amber-400/70' : 'text-white/30'}`} />

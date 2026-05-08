@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from 'rea
 import {
   Sparkles, Loader2, RefreshCw, ExternalLink, Zap, Check, AlertCircle, ImageIcon, Globe, Save, Plus, X,
   Code2, ChevronDown, Copy, FileDown, ListOrdered, LayoutGrid, List as ListIcon, ArrowDownAZ, ArrowUpAZ, GripVertical,
-  ShieldAlert,
+  ShieldAlert, Tag, Camera,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -53,11 +53,24 @@ function getImageName(url: string): string {
 type ImageSort = 'original' | 'name-asc' | 'name-desc'
 type ImageView = 'grid' | 'list'
 
+type GridVariant = 'hero' | 'thumb' | 'default'
+
 /** Tuile/ligne sortable. Fournit un drag handle (grip) ; le reste du contenu
- *  reste interactif (clic image = ouvrir, clic X = supprimer). */
+ *  reste interactif (clic image = ouvrir, clic X = supprimer).
+ *  En vue grille, `variant='hero'` rend une image principale large (aspect 4/3,
+ *  padding plus large), `variant='thumb'` rend une vignette compacte (aspect
+ *  carré, padding réduit). */
 function SortableImageItem({
-  id, view, url, onRemove,
-}: { id: string; view: ImageView; url: string; onRemove?: (url: string) => void }) {
+  id, view, url, onRemove, onSwapTab, swapTargetTab, variant = 'default',
+}: {
+  id: string
+  view: ImageView
+  url: string
+  onRemove?: (url: string) => void
+  onSwapTab?: (url: string) => void
+  swapTargetTab?: 'photos' | 'pictos'
+  variant?: GridVariant
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -67,11 +80,15 @@ function SortableImageItem({
   }
 
   if (view === 'grid') {
+    const aspect = variant === 'hero' ? 'aspect-[4/3]' : 'aspect-square'
+    const imgPadding = variant === 'hero' ? 'p-3' : variant === 'thumb' ? 'p-0.5' : 'p-1'
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className={`group relative aspect-square rounded-md overflow-hidden bg-white/5 border transition-colors ${
+        className={`group relative ${aspect} rounded-md overflow-hidden bg-white/5 border transition-colors ${
+          variant === 'hero' ? 'ring-1 ring-indigo-400/30' : ''
+        } ${
           isDragging ? 'border-indigo-400/60 shadow-lg shadow-indigo-500/10' : 'border-white/[0.06] hover:border-indigo-400/40'
         }`}
       >
@@ -79,12 +96,17 @@ function SortableImageItem({
           <img
             src={url}
             alt=""
-            className="w-full h-full object-contain p-1 pointer-events-none"
+            className={`w-full h-full object-contain ${imgPadding} pointer-events-none`}
             onError={(e) => {
               ;(e.target as HTMLImageElement).style.display = 'none'
             }}
           />
         </a>
+        {variant === 'hero' && (
+          <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-indigo-500/80 text-white text-[9px] font-semibold uppercase tracking-wide pointer-events-none">
+            Principale
+          </div>
+        )}
         <button
           {...attributes}
           {...listeners}
@@ -93,19 +115,34 @@ function SortableImageItem({
         >
           <GripVertical className="w-3 h-3" />
         </button>
-        {onRemove && (
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onRemove(url)
-            }}
-            className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-white transition-all"
-            title="Supprimer cette image"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        )}
+        <div className="absolute top-1 right-1 flex items-center gap-1">
+          {onSwapTab && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onSwapTab(url)
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-indigo-500/80 hover:text-white transition-all"
+              title={swapTargetTab === 'pictos' ? 'Déplacer vers Pictos & logos' : 'Déplacer vers Photos'}
+            >
+              {swapTargetTab === 'pictos' ? <Tag className="w-3 h-3" /> : <Camera className="w-3 h-3" />}
+            </button>
+          )}
+          {onRemove && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onRemove(url)
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-white transition-all"
+              title="Supprimer cette image"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -153,6 +190,19 @@ function SortableImageItem({
       >
         {getImageName(url)}
       </a>
+      {onSwapTab && (
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onSwapTab(url)
+          }}
+          className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-white/30 opacity-0 group-hover:opacity-100 hover:bg-indigo-500/20 hover:text-indigo-300 transition-all"
+          title={swapTargetTab === 'pictos' ? 'Déplacer vers Pictos & logos' : 'Déplacer vers Photos'}
+        >
+          {swapTargetTab === 'pictos' ? <Tag className="w-3 h-3" /> : <Camera className="w-3 h-3" />}
+        </button>
+      )}
       {onRemove && (
         <button
           onClick={(e) => {
@@ -175,8 +225,14 @@ function SortableImageItem({
  *  manuel. Le drop persiste l'ordre via `onReorder` et bascule le tri sur "Ordre
  *  d'origine" (cohérent : l'utilisateur vient de fixer un ordre manuel). */
 function ImageGrid({
-  images, onRemove, onReorder,
-}: { images: string[]; onRemove?: (url: string) => void; onReorder?: (next: string[]) => void }) {
+  images, onRemove, onReorder, onSwapTab, swapTargetTab,
+}: {
+  images: string[]
+  onRemove?: (url: string) => void
+  onReorder?: (next: string[]) => void
+  onSwapTab?: (url: string) => void
+  swapTargetTab?: 'photos' | 'pictos'
+}) {
   const [expanded, setExpanded] = useState(false)
   const [view, setView] = useState<ImageView>('grid')
   const [sort, setSort] = useState<ImageSort>('original')
@@ -229,15 +285,48 @@ function ImageGrid({
   const draggable = !!onReorder
 
   const content = view === 'grid' ? (
-    <div className="grid grid-cols-3 gap-1.5">
-      {visible.map((url, i) => (
-        <SortableImageItem key={itemId(url, i)} id={itemId(url, i)} view="grid" url={url} onRemove={onRemove} />
-      ))}
-    </div>
+    visible.length === 0 ? null : (
+      <div className="flex flex-col gap-1.5">
+        <SortableImageItem
+          key={itemId(visible[0], 0)}
+          id={itemId(visible[0], 0)}
+          view="grid"
+          url={visible[0]}
+          onRemove={onRemove}
+          onSwapTab={onSwapTab}
+          swapTargetTab={swapTargetTab}
+          variant="hero"
+        />
+        {visible.length > 1 && (
+          <div className="grid grid-cols-5 gap-1.5">
+            {visible.slice(1).map((url, i) => (
+              <SortableImageItem
+                key={itemId(url, i + 1)}
+                id={itemId(url, i + 1)}
+                view="grid"
+                url={url}
+                onRemove={onRemove}
+                onSwapTab={onSwapTab}
+                swapTargetTab={swapTargetTab}
+                variant="thumb"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    )
   ) : (
     <div className="flex flex-col gap-1">
       {visible.map((url, i) => (
-        <SortableImageItem key={itemId(url, i)} id={itemId(url, i)} view="list" url={url} onRemove={onRemove} />
+        <SortableImageItem
+          key={itemId(url, i)}
+          id={itemId(url, i)}
+          view="list"
+          url={url}
+          onRemove={onRemove}
+          onSwapTab={onSwapTab}
+          swapTargetTab={swapTargetTab}
+        />
       ))}
     </div>
   )
@@ -331,14 +420,23 @@ function ImagesSection({
     [data.specifications, data.variants, data.sourceUrl, input.title, input.knownUrl],
   )
   const images = data.images
-  const photos = useMemo(() => images.filter((u) => classifyImage(u, refs) === 'photo'), [images, refs])
-  const pictos = useMemo(() => images.filter((u) => classifyImage(u, refs) === 'picto'), [images, refs])
+  const overrides = data.imageClassOverrides
+  // Classification effective : override manuel > heuristique URL.
+  const classOf = (u: string): 'photo' | 'picto' =>
+    overrides?.[u] ?? classifyImage(u, refs)
+  const photos = useMemo(() => images.filter((u) => classOf(u) === 'photo'), [images, refs, overrides])
+  const pictos = useMemo(() => images.filter((u) => classOf(u) === 'picto'), [images, refs, overrides])
   const active = tab === 'photos' ? photos : pictos
   const total = images.length
 
-  // Mute : retire l'URL du tableau complet `images`.
+  // Mute : retire l'URL du tableau complet `images` ET nettoie son override.
   const handleRemove = (url: string) => {
-    onUpdate({ images: images.filter((u) => u !== url) })
+    const nextOverrides = { ...overrides }
+    delete nextOverrides[url]
+    onUpdate({
+      images: images.filter((u) => u !== url),
+      imageClassOverrides: Object.keys(nextOverrides).length > 0 ? nextOverrides : undefined,
+    })
   }
 
   // Mute : reorder se fait sur la liste de l'onglet actif. On reconstruit
@@ -350,6 +448,21 @@ function ImagesSection({
     const otherSet = new Set(tab === 'photos' ? pictos : photos)
     const others = images.filter((u) => otherSet.has(u))
     onUpdate({ images: [...nextActive, ...others] })
+  }
+
+  // Bascule la classification d'une URL vers l'autre onglet. Stocke uniquement
+  // si le résultat diffère de l'heuristique automatique — sinon retire l'override
+  // (évite d'accumuler des entrées qui répètent simplement le défaut).
+  const handleSwapTab = (url: string) => {
+    const current = classOf(url)
+    const next: 'photo' | 'picto' = current === 'photo' ? 'picto' : 'photo'
+    const auto = classifyImage(url, refs)
+    const nextOverrides = { ...overrides }
+    if (next === auto) delete nextOverrides[url]
+    else nextOverrides[url] = next
+    onUpdate({
+      imageClassOverrides: Object.keys(nextOverrides).length > 0 ? nextOverrides : undefined,
+    })
   }
 
   return (
@@ -398,6 +511,8 @@ function ImagesSection({
           images={active}
           onRemove={handleRemove}
           onReorder={handleReorder}
+          onSwapTab={handleSwapTab}
+          swapTargetTab={tab === 'photos' ? 'pictos' : 'photos'}
         />
       )}
     </div>

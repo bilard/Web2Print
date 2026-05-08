@@ -81,6 +81,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // ── Chat Prompts ──────────────────────────────────────────────────────────
+    // Bibliothèque de prompts personnels du module Chat IA.
+    // Stockée sous users/{uid}/prompts/{promptId} — privée à chaque user.
+
+    match /users/{uid}/prompts/{promptId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // ── Excel Data ────────────────────────────────────────────────────────────
 
     match /excel_data/{docId} {

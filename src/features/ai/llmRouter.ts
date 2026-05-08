@@ -16,7 +16,7 @@ import { getSelectedModel, useAiSettingsStore } from '@/stores/aiSettings.store'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 import type { AiProvider } from '@/lib/aiModels'
 
-export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek'
+export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'openrouter'
 
 /**
  * Snapshot du payload réellement envoyé au provider LLM.
@@ -48,6 +48,7 @@ type LLMTask =
   | 'brief.imagePrompts'
   | 'brief.catalogKeywords'
   | 'product.enrichment'
+  | 'product.taxonomyClassification'
   | 'design.templateFill'
 
 interface RouteConfig {
@@ -69,6 +70,8 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
   'product.enrichment':     { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Classification taxonomique : raisonnement structuré sur libellés, Claude Opus 4.7
+  'product.taxonomyClassification': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
   'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
 }
@@ -81,6 +84,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'brief.imagePrompts':     0.4,
   'brief.catalogKeywords':  0.4,
   'product.enrichment':     0,
+  'product.taxonomyClassification': 0,
   'design.templateFill':    0.5,
 }
 
@@ -130,13 +134,16 @@ function defaultModelFor(provider: LLMProviderId): string {
  *  son préfixe correspond au provider courant. Sinon → defaultModel du provider.
  *
  *  Sans ce check, on passait `gemini-3-flash` à DeepSeek/Claude → 400. */
-function modelForProvider(provider: LLMProviderId, modelOverride?: string): string {
+export function modelForProvider(provider: LLMProviderId, modelOverride?: string): string {
   if (modelOverride) {
     const prefixMap: Record<LLMProviderId, RegExp> = {
       claude: /^claude-/i,
       gemini: /^gemini-/i,
       deepseek: /^deepseek-/i,
       openai: /^(gpt-|o\d|chatgpt)/i,
+      // OpenRouter accepte des IDs préfixés par vendor (anthropic/, openai/, google/...).
+      // On laisse passer tout override qui contient un slash — sinon defaultModel.
+      openrouter: /\//,
     }
     if (prefixMap[provider]?.test(modelOverride)) {
       return modelOverride
@@ -150,12 +157,12 @@ function modelForProvider(provider: LLMProviderId, modelOverride?: string): stri
  *  N'ajoute PAS de provider par défaut : la cascade exacte de l'utilisateur
  *  fait foi. Si elle est vide ou ne contient que des providers non-supportés,
  *  retourne [] et l'appelant doit gérer (throw transparent). */
-function getProviderCascade(onWarning?: (msg: string) => void): LLMProviderId[] {
+export function getProviderCascade(onWarning?: (msg: string) => void): LLMProviderId[] {
   const cascade = useAiSettingsStore.getState().reasoningCascade
   const supported: LLMProviderId[] = []
   const ignored: string[] = []
   for (const p of cascade) {
-    if (p === 'gemini' || p === 'claude' || p === 'deepseek') {
+    if (p === 'gemini' || p === 'claude' || p === 'openai' || p === 'deepseek' || p === 'openrouter') {
       supported.push(p)
     } else {
       // qwen, kimi, autres : non câblés dans callProvider
@@ -163,7 +170,7 @@ function getProviderCascade(onWarning?: (msg: string) => void): LLMProviderId[] 
     }
   }
   if (ignored.length > 0 && onWarning) {
-    onWarning(`Providers ignorés (non implémentés) : ${ignored.join(', ')}. Active uniquement gemini, claude, deepseek dans ta cascade.`)
+    onWarning(`Providers ignorés (non implémentés) : ${ignored.join(', ')}. Active uniquement gemini, claude, openai, deepseek, openrouter dans ta cascade.`)
   }
   return supported
 }
@@ -235,7 +242,106 @@ async function callProvider<T>(
   if (provider === 'deepseek') {
     return await callDeepSeek(opts, model)
   }
+  if (provider === 'openrouter') {
+    return await callOpenRouter(opts, model)
+  }
   throw new Error(`Provider inconnu : ${provider}`)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider : OpenRouter (API OpenAI-compatible, json_object via prompt-injection)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function callOpenRouter<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
+  const apiKey = getApiKey('openrouter')
+  if (!apiKey) throw new Error('Clé OpenRouter absente. Configurez-la dans Réglages.')
+
+  // OpenRouter agrège des centaines de modèles dont le support de
+  // response_format varie. Pour rester universel : on injecte le schéma dans le
+  // prompt (comme DeepSeek) et on demande json_object — chaque backend dégrade
+  // proprement vers du JSON pur.
+  const schemaInstruction =
+    `\n\n## SCHÉMA DE SORTIE OBLIGATOIRE\n` +
+    `Réponds UNIQUEMENT par un JSON valide strictement conforme au schéma ci-dessous. ` +
+    `Aucun texte avant ou après le JSON. Aucune balise markdown. Juste le JSON pur.\n\n` +
+    JSON.stringify(opts.schemaForLLM, null, 2)
+
+  const temperature = TASK_TEMPERATURE[opts.task]
+  const max_tokens = 8192
+  const fullPrompt = opts.prompt + schemaInstruction
+
+  opts.onRequestSent?.({
+    provider: 'openrouter',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    model,
+    temperature,
+    max_tokens,
+    messages: [{ role: 'user', content: fullPrompt }],
+    task: opts.task,
+    version: opts.version,
+  })
+
+  const ctrl = new AbortController()
+  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
+
+  let res: Response
+  try {
+    res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'DesignStudio Web2Print',
+      },
+      body: JSON.stringify({
+        model,
+        temperature,
+        max_tokens,
+        messages: [{ role: 'user', content: fullPrompt }],
+        response_format: { type: 'json_object' },
+      }),
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`OpenRouter API ${res.status} : ${body.slice(0, 300)}`)
+  }
+
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+    usage?: { prompt_tokens?: number; completion_tokens?: number }
+  }
+  if (data.usage) {
+    recordAiUsage({
+      provider: 'openrouter',
+      model,
+      inputTokens: data.usage.prompt_tokens ?? 0,
+      outputTokens: data.usage.completion_tokens ?? 0,
+    })
+  }
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('OpenRouter : réponse vide')
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch (err) {
+    throw new Error(
+      `OpenRouter : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
+      `Sortie : ${text.slice(0, 200)}`,
+    )
+  }
+
+  const validation = opts.schema.safeParse(parsed)
+  if (validation.success) return validation.data
+  throw new Error(
+    `Réponse OpenRouter non conforme au schéma : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

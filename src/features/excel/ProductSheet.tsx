@@ -802,6 +802,15 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
         open={taxoPickerOpen}
         currentTaxonomyId={(row[PRODUCT_TAXONOMY_ID_KEY] as string | null | undefined) ?? null}
         currentNodeId={(row[PRODUCT_TAXONOMY_NODE_ID_KEY] as string | null | undefined) ?? null}
+        productInfo={{
+          title: enrichmentInput.title || undefined,
+          brand: enrichmentInput.brand,
+          description: enrichmentInput.description,
+          sku: enrichmentInput.sku,
+          sourceBreadcrumb: scrapedBreadcrumb.length > 0 ? scrapedBreadcrumb : undefined,
+          sourceCategoryPath: enrichmentInput.category,
+          sourceUrl: enrichmentInput.knownUrl,
+        }}
         onClose={() => setTaxoPickerOpen(false)}
         onPick={(taxId, nodeId) => {
           updateCell(activeSheetIndex, rowId, PRODUCT_TAXONOMY_ID_KEY, taxId)

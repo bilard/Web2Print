@@ -79,6 +79,16 @@ export const API_KEYS: ApiKeyConfig[] = [
     },
   },
   {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    envVar: 'VITE_OPENROUTER_API_KEY',
+    description: 'Clé OpenRouter — accès unifié à Claude, GPT, Gemini, Llama, Mistral, Qwen, DeepSeek… via une seule API',
+    links: {
+      manage: 'https://openrouter.ai/settings/keys',
+      billing: 'https://openrouter.ai/credits',
+    },
+  },
+  {
     id: 'firebase_api',
     label: 'Firebase API Key',
     envVar: 'VITE_FIREBASE_API_KEY',
@@ -274,6 +284,33 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       )
       if (res.ok) {
         return { status: 'ok', message: 'Connecté à DashScope (Qwen)' }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { status: 'error', message: 'Clé invalide ou non autorisée' }
+      }
+      return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'openrouter') {
+      // OpenRouter : /api/v1/auth/key renvoie le solde restant + la limite.
+      // Le format est { data: { label, usage, limit, limit_remaining, ... } }.
+      const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
+        headers: { Authorization: `Bearer ${key}` },
+      })
+      if (res.ok) {
+        const json = await res.json() as { data?: { limit?: number; limit_remaining?: number; usage?: number } }
+        const remaining = json.data?.limit_remaining
+        const limit = json.data?.limit
+        const usage = json.data?.usage
+        const buyAction: ApiTestAction = { label: 'Acheter des crédits', url: 'https://openrouter.ai/credits' }
+        if (typeof remaining === 'number') {
+          const totalSuffix = typeof limit === 'number' ? ` / $${limit}` : ''
+          if (remaining <= 0) return { status: 'error', message: `Crédits épuisés${totalSuffix}`, action: buyAction }
+          if (remaining < 0.5) return { status: 'ok', message: `⚠ $${remaining.toFixed(2)}${totalSuffix} restants`, action: buyAction }
+          return { status: 'ok', message: `Connecté — $${remaining.toFixed(2)}${totalSuffix} restants` }
+        }
+        if (typeof usage === 'number') return { status: 'ok', message: `Connecté — usage $${usage.toFixed(4)}` }
+        return { status: 'ok', message: 'Connecté à OpenRouter' }
       }
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronRight, ChevronDown, GripVertical } from 'lucide-react'
+import { ChevronRight, ChevronDown, GripVertical, Package } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { useRenameNode, useDeleteNode, useAddNode } from '@/features/taxonomy/useTaxonomyMutations'
 import { nodeHasLinkedProjects } from '@/features/taxonomy/taxonomyUtils'
 import type { TaxonomyNodeWithChildren } from '@/features/taxonomy/types'
+import type { TaxonomyProductCounts } from '@/features/taxonomy/useTaxonomyProductCounts'
 import { TaxonomyNodeActions } from './TaxonomyNodeActions'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
@@ -22,9 +23,10 @@ interface TaxonomyNodeProps {
   onLinkProjects: (nodeId: string) => void
   searchQuery: string
   showLinkedOnly?: boolean
+  productCounts?: TaxonomyProductCounts
 }
 
-export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, showLinkedOnly = false }: TaxonomyNodeProps) {
+export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, showLinkedOnly = false, productCounts }: TaxonomyNodeProps) {
   const { expandedNodeIds, highlightedNodeId, toggleNode } = useTaxonomyStore()
   const isExpanded = expandedNodeIds.has(node.id)
   const isHighlighted = highlightedNodeId === node.id
@@ -162,6 +164,27 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, sh
             {highlightLabel(node.label, searchQuery)}
           </span>
         )}
+        {productCounts && (() => {
+          const direct = productCounts.direct[node.id] ?? 0
+          const total = productCounts.total[node.id] ?? 0
+          const shown = node.isLeaf ? direct : total
+          if (shown <= 0) return null
+          return (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-mono text-white/55 bg-white/[0.05] border border-white/[0.08] px-1.5 py-0.5 rounded-full flex-shrink-0"
+              title={
+                node.isLeaf
+                  ? `${direct} produit${direct !== 1 ? 's' : ''} classé${direct !== 1 ? 's' : ''} ici`
+                  : `${total} produit${total !== 1 ? 's' : ''} dans cette branche${
+                      direct > 0 ? ` (dont ${direct} directement)` : ''
+                    }`
+              }
+            >
+              <Package className="w-2.5 h-2.5 opacity-60" />
+              {shown}
+            </span>
+          )
+        })()}
         {node.linkedProjectIds.length > 0 && (
           <span className="text-[10px] text-teal-400/70 bg-teal-500/10 px-1.5 rounded-full flex-shrink-0">
             {node.linkedProjectIds.length}
@@ -183,6 +206,7 @@ export function TaxonomyNode({ node, taxonomyId, onLinkProjects, searchQuery, sh
           {visibleChildren.map((child) => (
             <TaxonomyNode key={child.id} node={child} taxonomyId={taxonomyId}
               onLinkProjects={onLinkProjects} searchQuery={searchQuery} showLinkedOnly={showLinkedOnly}
+              productCounts={productCounts}
             />
           ))}
         </div>

@@ -1,11 +1,19 @@
 import { useState } from 'react'
 import { FileText, Monitor, Smartphone, Image, LayoutGrid, Loader2 } from 'lucide-react'
+import { BackgroundPicker, backgroundCss, type BackgroundValue } from './BackgroundPicker'
+import { DEFAULT_GRADIENT } from './GradientPicker'
+import type { CanvasBgType } from '@/stores/ui.store'
+import type { GradientConfig } from '@/stores/editor.store'
 
 export interface DocumentConfig {
   title: string
   canvasWidth: number
   canvasHeight: number
+  /** Couleur unie (utilisée quand `canvasBgType === 'solid'`). */
   canvasBg: string
+  canvasBgType: CanvasBgType
+  canvasBgGradient: GradientConfig
+  canvasBgImage: string | null
 }
 
 interface NewDocumentPanelProps {
@@ -38,11 +46,6 @@ const FORMAT_PRESETS: FormatPreset[] = [
   { label: 'LinkedIn Banner', width: 1584, height: 396, icon: <Image className="w-5 h-5" />, category: 'social' },
 ]
 
-const BG_COLORS = [
-  '#ffffff', '#f5f5f5', '#e5e5e5', '#0f0f0f', '#1a1a1a', '#000000',
-  '#fef2f2', '#fef9c3', '#ecfdf5', '#eff6ff', '#f5f3ff', '#fdf2f8',
-]
-
 const CATEGORIES = [
   { key: 'all', label: 'Tous' },
   { key: 'print', label: 'Impression' },
@@ -56,8 +59,12 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null)
   const [customWidth, setCustomWidth] = useState(1200)
   const [customHeight, setCustomHeight] = useState(900)
-  const [bgColor, setBgColor] = useState('#ffffff')
-  const [customBgColor, setCustomBgColor] = useState('#ffffff')
+  const [bg, setBg] = useState<BackgroundValue>({
+    type: 'solid',
+    color: '#ffffff',
+    gradient: DEFAULT_GRADIENT,
+    image: null,
+  })
   const [activeCategory, setActiveCategory] = useState('all')
 
   const currentWidth = selectedPreset !== null ? FORMAT_PRESETS[selectedPreset].width : customWidth
@@ -84,7 +91,10 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
       title: title.trim(),
       canvasWidth: currentWidth,
       canvasHeight: currentHeight,
-      canvasBg: bgColor === 'custom' ? customBgColor : bgColor,
+      canvasBg: bg.color,
+      canvasBgType: bg.type,
+      canvasBgGradient: bg.gradient,
+      canvasBgImage: bg.image,
     })
   }
 
@@ -185,38 +195,10 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
             )}
           </div>
 
-          {/* Background color */}
+          {/* Background — solid / gradient / image */}
           <div>
-            <label className="text-xs text-white/50 mb-3 block font-medium uppercase tracking-wider">Couleur de fond</label>
-            <div className="flex gap-2 flex-wrap items-center">
-              {BG_COLORS.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setBgColor(color)}
-                  className={`w-8 h-8 rounded-lg border-2 transition-all ${
-                    bgColor === color ? 'border-indigo-500 scale-110' : 'border-white/10 hover:border-white/30'
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-              <div className="flex items-center gap-1.5 ml-2">
-                <button
-                  onClick={() => setBgColor('custom')}
-                  className={`w-8 h-8 rounded-lg border-2 transition-all flex items-center justify-center ${
-                    bgColor === 'custom' ? 'border-indigo-500 scale-110' : 'border-white/10 hover:border-white/30'
-                  }`}
-                  style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}
-                />
-                {bgColor === 'custom' && (
-                  <input
-                    type="color"
-                    value={customBgColor}
-                    onChange={(e) => setCustomBgColor(e.target.value)}
-                    className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
-                  />
-                )}
-              </div>
-            </div>
+            <label className="text-xs text-white/50 mb-3 block font-medium uppercase tracking-wider">Arrière-plan</label>
+            <BackgroundPicker value={bg} onChange={setBg} />
           </div>
         </div>
 
@@ -232,7 +214,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                 style={{
                   width: previewW,
                   height: previewH,
-                  backgroundColor: bgColor === 'custom' ? customBgColor : bgColor,
+                  background: backgroundCss(bg),
                 }}
               />
             </div>

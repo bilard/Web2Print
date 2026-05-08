@@ -4,12 +4,20 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { cleanupOrphanLinksInTaxonomies } from './useDeleteProject'
 import type { ProjectData } from '@/types/project'
+import type { CanvasBgType } from '@/stores/ui.store'
+import type { GradientConfig } from '@/stores/editor.store'
 
 interface CreateProjectParams {
   title: string
   canvasWidth: number
   canvasHeight: number
   canvasBg: string
+  /** Type d'arrière-plan persisté. Défaut "solid" si non fourni — useLoadCanvas
+   *  fait déjà le fallback côté restauration. */
+  canvasBgType?: CanvasBgType
+  /** Sérialisé via JSON.stringify pour matcher le format produit par useAutoSave. */
+  canvasBgGradient?: GradientConfig
+  canvasBgImage?: string | null
   /** Optional custom document ID (e.g. IDML filename slug). If omitted, Firestore auto-generates one. */
   customId?: string
 }
@@ -30,7 +38,7 @@ export function slugify(name: string): string {
 
 async function createProject(userId: string, params: CreateProjectParams): Promise<ProjectData> {
   const now = Date.now()
-  const data = {
+  const data: Record<string, unknown> = {
     title: params.title,
     thumbnail: null,
     createdAt: now,
@@ -40,6 +48,13 @@ async function createProject(userId: string, params: CreateProjectParams): Promi
     canvasWidth: params.canvasWidth,
     canvasHeight: params.canvasHeight,
     canvasBg: params.canvasBg,
+    canvasBgType: params.canvasBgType ?? 'solid',
+    canvasBgImage: params.canvasBgImage ?? null,
+  }
+  if (params.canvasBgGradient) {
+    // Stringify pour matcher le schéma produit par useAutoSave (sinon useLoadCanvas
+    // accepte les deux, mais on évite un mismatch silencieux entre projets jeunes/anciens).
+    data.canvasBgGradient = JSON.stringify(params.canvasBgGradient)
   }
 
   let projectId: string

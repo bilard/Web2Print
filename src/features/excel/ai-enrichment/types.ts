@@ -78,6 +78,11 @@ export interface EnrichedProduct {
   variants: ProductVariant[]
   /** URLs d'images produit trouvées lors du scraping */
   images: string[]
+  /** Surcharge manuelle de la classification photo/picto par URL.
+   *  Une entrée ici écrase le résultat de `classifyImage(url, refs)` dans l'UI :
+   *  l'utilisateur peut basculer une image entre les onglets Photos / Pictos & logos
+   *  quand l'heuristique se trompe (ex: logo technologie LXT/XPT/BL classé photo). */
+  imageClassOverrides?: Record<string, 'photo' | 'picto'>
   /** Documents PDF / notices / fiches techniques (toujours triplet name/url/filename) */
   documents: EnrichedDocument[]
   /** URL source principale d'où provient le scraping */

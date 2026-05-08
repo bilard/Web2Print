@@ -13,7 +13,7 @@ import { useAiSettingsStore } from '@/stores/aiSettings.store'
 
 interface AiProviderCardProps {
   provider: AiProvider
-  apiKeyId: 'gemini' | 'anthropic' | 'openai' | 'deepseek' | 'qwen' | 'kimi'
+  apiKeyId: 'gemini' | 'anthropic' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'openrouter'
   label: string
   description: string
   logo?: React.ReactNode
@@ -89,6 +89,43 @@ async function fetchModelsFromProvider(
     return (data.data ?? [])
       .filter((m) => /^qwen/i.test(m.id) && !/(audio|tts|asr|embedding|image|vl-)/i.test(m.id))
       .map((m) => ({ id: m.id, label: m.id, pricing: { input: 0, output: 0 } }))
+  }
+  if (provider === 'openrouter') {
+    // OpenRouter expose ~300 modèles avec pricing en USD par TOKEN (string).
+    // On convertit en USD par 1M tokens (* 1e6) pour cohérence avec AI_MODELS.
+    // L'endpoint /api/v1/models est public mais on ajoute la clé pour cohérence.
+    const res = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (!res.ok) throw new Error(`OpenRouter ${res.status}`)
+    const data = await res.json() as {
+      data?: Array<{
+        id: string
+        name?: string
+        pricing?: { prompt?: string; completion?: string }
+        architecture?: { modality?: string }
+      }>
+    }
+    return (data.data ?? [])
+      // Exclut les modèles non-textuels (image gen, audio, embeddings).
+      .filter((m) => {
+        const mod = m.architecture?.modality ?? ''
+        if (/image|audio|embedding/i.test(mod)) return false
+        if (/(embedding|tts|whisper|asr|image-generation|moderation)/i.test(m.id)) return false
+        return true
+      })
+      .map((m) => {
+        const inUsd = parseFloat(m.pricing?.prompt ?? '0') * 1e6
+        const outUsd = parseFloat(m.pricing?.completion ?? '0') * 1e6
+        return {
+          id: m.id,
+          label: m.name ?? m.id,
+          pricing: {
+            input: Number.isFinite(inUsd) ? inUsd : 0,
+            output: Number.isFinite(outUsd) ? outUsd : 0,
+          },
+        }
+      })
   }
   // kimi (Kimi Code, OpenAI-compatible) — pas de /models documenté.
   // On tente l'endpoint, et on retombe sur le modèle fixe si 404.

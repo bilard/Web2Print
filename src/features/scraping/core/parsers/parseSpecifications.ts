@@ -199,6 +199,30 @@ export function extractSpecsFromHtml(html: string): string | null {
     }
   }
 
+  // ── 4b. Pattern Makita "techspecs--row-*" : pairing par ROW container ──
+  //    Les sélecteurs globaux donnent des counts inégaux (27 labels vs 17 values
+  //    à cause des variantes `*-specification-info`). On itère par row container.
+  const techRows = doc.querySelectorAll('[class*="techspecs--row"][class*="row-content"], [class~="techspecs--row"]')
+  if (techRows.length >= 2) {
+    const techLines: string[] = []
+    const seenRows = new Set<Element>()
+    for (const row of techRows) {
+      if (seenRows.has(row)) continue
+      seenRows.add(row)
+      const label = row.querySelector('[class*="techspecs--row-specification"]:not([class*="info"]), [class*="techspec-name"], [class*="techspec-label"]')
+      const value = row.querySelector('[class*="techspecs--row-value"], [class*="techspec-value"], [class*="techspec-data"]')
+      if (!label || !value) continue
+      const n = label.textContent?.trim()
+      const hasCheckIcon = !!value.querySelector('i[class*="fa-check"], i[class*="check"], svg[class*="check"], [class*="checkmark"]')
+      const v = value.textContent?.trim() || (hasCheckIcon ? 'Oui' : '')
+      if (n && v) techLines.push(`| ${n} | ${v} |`)
+    }
+    if (techLines.length >= 3) {
+      mdParts.push('\n## Spécifications')
+      mdParts.push(...techLines)
+    }
+  }
+
   // ── 5. Dernier recours : chercher les paires .label / .value dans le body ──
   if (mdParts.filter(l => l.startsWith('|')).length < 3) {
     const labelValueSelectors = [
@@ -219,7 +243,12 @@ export function extractSpecsFromHtml(html: string): string | null {
           mdParts.push('\n## Spécifications (DOM)')
           for (let i = 0; i < labels.length; i++) {
             const n = labels[i].textContent?.trim()
-            const v = values[i].textContent?.trim()
+            // Si la valeur contient une icône check (<i class="fa fa-check">),
+            // c'est une spec booléenne "Oui" (ex: Makita "Tension LXT", "BL Motor").
+            const valueEl = values[i]
+            const hasCheckIcon = !!valueEl.querySelector('i[class*="fa-check"], i[class*="check"], svg[class*="check"], [class*="checkmark"]')
+            const textValue = valueEl.textContent?.trim()
+            const v = textValue || (hasCheckIcon ? 'Oui' : '')
             if (n && v) mdParts.push(`| ${n} | ${v} |`)
           }
           break
@@ -388,15 +417,24 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
 
     // Préfixe blockquote markdown — typique des tables PDF mal extraites
     if (/^>\s/.test(n) || /^>\s/.test(v)) return false
+    // Lien markdown splitté : `[Texte](https` côté name + `//www....)` côté value
+    // (artefact quand le `:` ou `|` d'un menu de navigation découpe l'URL).
+    // Détection : présence du début ou de la fin d'un `[...](...)` incomplet.
+    if (n.includes('](') || v.includes('](')) return false
+    if (/^\/\/[a-z0-9]/i.test(v)) return false  // value qui démarre par "//www..." (URL coupée)
+    if (/\)\s*$/.test(v) && /\.[a-z]{2,5}\)?$/i.test(v)) return false  // value qui finit par ".html)" — fin d'URL coupée
     // Trait d'union de fin = rupture de page PDF ("actua-", "influ-")
     if (/-\s*$/.test(n) || /-\s*$/.test(v)) return false
     // Multi-phrases : point/!/? suivi d'un espace + capitale → prose narrative
     if (/[.!?]\s+[A-Z]/.test(n) || /[.!?]\s+[A-Z]/.test(v)) return false
     // Phrase complète : nom ET valeur se terminent par un point déclaratif
     if (/[a-z]{3,}\.$/.test(n) && /[a-z]{3,}\.$/.test(v)) return false
-    // Lexique sécurité/avertissement — quasi jamais dans les vraies specs
-    const SAFETY_RE = /\b(NOTICE|WARNING|CAUTION|DANGER|IMPORTANT|never\s+use|must\s+(?:not|be)|do\s+not\s+(?:use|operate|disassemble|short)|tape\s+(?:or|off)|hold\s+the\s+tool|annex\s+[a-z]|instruction\s+manual)\b/i
+    // Lexique sécurité/avertissement multilingue — jamais dans les vraies specs.
+    // Couvre EN/FR/DE/IT/NL/ES/PT/DA/EL/TR (notices Makita-style multilingues).
+    const SAFETY_RE = /\b(NOTICE|WARNING|CAUTION|DANGER|IMPORTANT|never\s+use|must\s+(?:not|be)|do\s+not\s+(?:use|operate|disassemble|short)|tape\s+(?:or|off)|hold\s+the\s+tool|annex\s+[a-z]|instruction\s+manual|HINWEIS|WARNUNG|VORSICHT|ANMERKUNG|BEMERKUNG|NOTA|AVVERTIMENTO|ATTENZIONE|AVVISO|OPMERKING|WAARSCHUWING|KENNISGEVING|LET\s+OP|ADVERTENCIA|PRECAUCI[ÓO]N|OBSERVA[ÇC][ÃA]O|BEM[ÆE]RK|ADVARSEL|FORSIGTIG|BEM[ÆE]RKNING|ΠΑΡΑΤΗΡΗΣΗ|ΠΡΟΕΙΔΟΠΟΙΗΣΗ|ΠΡΟΣΟΧΗ|ΕΙΔΟΠΟΙΗΣΗ|UYARI|D[İI]KKAT|[ÖO]NEML[İI]\s+NOT)\b/i
     if (SAFETY_RE.test(n) || SAFETY_RE.test(v)) return false
+    // Caractères grecs ou turcs spécifiques → quasi-certainement du PDF multilingue
+    if (/[ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω]/.test(n) || /[ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω]/.test(v)) return false
     // Prose anglaise composite : ≥5 mots ET ≥2 stopwords courants
     // Exception : si la valeur a une signature unité claire (digit + unité physique
     // OU valeur courte purement numérique), on garde — couvre les vraies specs

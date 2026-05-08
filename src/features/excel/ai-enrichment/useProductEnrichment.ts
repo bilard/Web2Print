@@ -573,6 +573,19 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
     if (CHECKBOX_MARKER_RE.test(s.name) || !s.name.trim()) {
       rejectedSpecs.push(s); continue
     }
+    // Liens markdown splittés : `[Texte](https` côté name + `//www....html)` côté value.
+    // Vient des menus de navigation aspirés par Jina avec URLs splittées sur 2 lignes.
+    // S'applique APRÈS toutes les autres extractions (LLM, manufacturer build,
+    // markdown parser) — dernière ligne de défense indépendante du chemin.
+    if (s.name.includes('](') || s.value.includes('](')) {
+      rejectedSpecs.push(s); continue
+    }
+    if (/^\/\/[a-z0-9]/i.test(s.value.trim())) {
+      rejectedSpecs.push(s); continue
+    }
+    if (/\.(html?|php|asp|aspx|jsp)\)?\s*$/i.test(s.value.trim())) {
+      rejectedSpecs.push(s); continue
+    }
     // Specs prose : name est une phrase complète ou trop longue → ce sont
     // des bullets de "Caractéristiques et avantages" / "Applications" / FAQ
     // que le LLM a paire en faux specs.
@@ -626,6 +639,8 @@ function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []):
   }
   if (rejectedSpecs.length > 0 || finalKept.length < keptSpecs.length) {
     console.log('[sanitize] filtered', rejectedSpecs.length + (keptSpecs.length - finalKept.length), 'junk specs; kept', finalKept.length)
+    console.log('[sanitize] REJECTED specs (sample 20):', rejectedSpecs.slice(0, 20).map(s => ({ name: s.name.slice(0, 40), value: s.value.slice(0, 40), group: s.group })))
+    console.log('[sanitize] KEPT specs:', finalKept.map(s => ({ name: s.name, value: s.value.slice(0, 60), group: s.group })))
   }
 
   // Avantages : nettoyer les noms de groupes fragments ("ET avantages",
@@ -1448,6 +1463,9 @@ function extractSpecsFromHtml(html: string): string | null {
   // ── 5. Dernier recours : chercher les paires .label / .value dans le body ──
   if (mdParts.filter(l => l.startsWith('|')).length < 3) {
     const labelValueSelectors = [
+      // Makita / sites avec convention "techspecs--row-*"
+      { label: '[class*="techspecs--row-specification"], [class*="techspec-name"], [class*="techspec-label"]',
+        value: '[class*="techspecs--row-value"], [class*="techspec-value"], [class*="techspec-data"]' },
       // Paires label+value communes sur les SPA fabricants
       { label: '[class*="spec-label"], [class*="spec-name"], [class*="SpecLabel"], [class*="SpecName"]',
         value: '[class*="spec-value"], [class*="spec-data"], [class*="SpecValue"], [class*="SpecData"]' },
@@ -1466,7 +1484,12 @@ function extractSpecsFromHtml(html: string): string | null {
           mdParts.push('\n## Spécifications (DOM)')
           for (let i = 0; i < labels.length; i++) {
             const n = labels[i].textContent?.trim()
-            const v = values[i].textContent?.trim()
+            // Si la valeur contient une icône check (<i class="fa fa-check">),
+            // c'est une spec booléenne "Oui" (Makita "Tension LXT", "BL Motor").
+            const valueEl = values[i]
+            const hasCheckIcon = !!valueEl.querySelector('i[class*="fa-check"], i[class*="check"], svg[class*="check"], [class*="checkmark"]')
+            const textValue = valueEl.textContent?.trim()
+            const v = textValue || (hasCheckIcon ? 'Oui' : '')
             if (n && v) mdParts.push(`| ${n} | ${v} |`)
           }
           break
@@ -2458,6 +2481,28 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
           if (n && v) data.specs.push({ name: n, value: v })
         }
       }
+      // Makita / sites avec convention "techspecs--row-*".
+      // Pairing par ROW container (parent commun) — pas index global, car les
+      // selectors `.row-specification` et `.row-value` n'ont pas le même count
+      // (Makita : 27 labels vs 17 values à cause de variantes type `.row-specification-info`).
+      const techRows = doc.querySelectorAll('[class*="techspecs--row"][class*="row-content"], [class~="techspecs--row"]')
+      let techCount = 0
+      const seenRows = new Set<Element>()
+      for (const row of techRows) {
+        if (seenRows.has(row)) continue
+        seenRows.add(row)
+        const label = row.querySelector('[class*="techspecs--row-specification"]:not([class*="info"]), [class*="techspec-name"], [class*="techspec-label"]')
+        const value = row.querySelector('[class*="techspecs--row-value"], [class*="techspec-value"], [class*="techspec-data"]')
+        if (!label || !value) continue
+        const n = label.textContent?.trim()
+        const hasCheckIcon = !!value.querySelector('i[class*="fa-check"], i[class*="check"], svg[class*="check"], [class*="checkmark"]')
+        const v = value.textContent?.trim() || (hasCheckIcon ? 'Oui' : '')
+        if (n && v) {
+          data.specs.push({ name: n, value: v })
+          techCount++
+        }
+      }
+      if (techCount > 0) console.log('[manufacturer] ✓ specs from techspecs HTML rows:', techCount)
       if (data.specs.length > 0) console.log('[manufacturer] ✓ specs from HTML DOM:', data.specs.length)
     } catch (err) {
       console.warn('[manufacturer] HTML DOM spec extraction failed:', err)
@@ -3570,7 +3615,11 @@ export function useProductEnrichment() {
               return null
             })
             if (multiEnabled) {
-              log(`Multi-URL bundle (X-Engine: browser + onglets auto) → ${productUrl}`)
+              // Opt-in PDFs : lu depuis localStorage, défini par l'utilisateur
+              // dans les options avancées de ScrapeTab. Désactivé par défaut.
+              const includePdfs = typeof window !== 'undefined'
+                && window.localStorage.getItem('ds-scrape-include-pdfs') === '1'
+              log(`Multi-URL bundle (X-Engine: browser + onglets auto${includePdfs ? ' + PDFs' : ''}) → ${productUrl}`)
               const bundle = await scrapeProductBundle(productUrl, {
                 deepScrape: async (url) => {
                   const r = await jinaScrapeMaufacturerPage(url)
@@ -3578,6 +3627,7 @@ export function useProductEnrichment() {
                 },
                 fastScrape: (url) => jinaScrapeMarkdown(url),
                 log,
+                includePdfs,
               })
               markdownContent = bundle.mergedMarkdown || null
               if (bundle.sourcesScrapped.length > 1) {
