@@ -193,7 +193,7 @@ Permet d'ajouter telemetry, retry policy, caching, throttling, audit log sans mo
 | Import          | IDML          | `file`    | `sheet`            | mapping champs                             |
 | Import          | SVG           | `file`    | `sheet`            | scale, dpi                                 |
 | Import          | CSV/Excel     | `file`    | `sheet`            | delimiter, header row                      |
-| Enrichissement  | Scraping+AI   | `sheet`   | `sheet`            | colonne URL, champs à enrichir, modèle LLM |
+| Enrichissement  | Scraping+AI   | `sheet`   | `sheet` + `asset[]` | colonne URL, champs à enrichir, modèle LLM |
 | Persistence     | Save PIM      | `sheet`   | `pim-products`     | collection cible, clé dedupe               |
 | Persistence     | Save DAM      | `asset[]` | `asset[]`          | dossier DAM                                |
 | Export          | Excel         | `sheet`   | `export-result`    | colonnes                                   |
