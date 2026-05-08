@@ -110,9 +110,24 @@ export const useExcelStore = create<ExcelState>((set) => ({
         sheets.length === 0
           ? 0
           : Math.min(Math.max(s.activeSheetIndex, 0), sheets.length - 1)
+      // Migration : retirer le préfixe "IA — " / "IA - " / "IA—" hérité
+      // d'une ancienne version sur les labels des colonnes ai_*. Le label
+      // corrigé est persisté à la prochaine auto-save Firestore.
+      const AI_PREFIX_RE = /^IA\s*[—\-–]\s*/i
+      const normalizedSheets = sheets.map((sheet) => {
+        let mutated = false
+        const cleaned = sheet.columns.map((col) => {
+          if (col.key.startsWith('ai_') && AI_PREFIX_RE.test(col.label)) {
+            mutated = true
+            return { ...col, label: col.label.replace(AI_PREFIX_RE, '') }
+          }
+          return col
+        })
+        return mutated ? { ...sheet, columns: cleaned } : sheet
+      })
       // Toute fiche produit ouverte référait à une ligne de l'ancien jeu de
       // données — on ferme par sécurité.
-      return { sheets, activeSheetIndex, sheetRowId: null }
+      return { sheets: normalizedSheets, activeSheetIndex, sheetRowId: null }
     }),
   setActiveSheet: (activeSheetIndex) =>
     // Fermer toute fiche produit ouverte : son rowId référait à une ligne
