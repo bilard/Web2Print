@@ -80,7 +80,7 @@ export const exportExcelNode: NodeSpec<
 
     // XLSX.write with type:'array' returns a Uint8Array
     const data = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array
-    const blob = new Blob([data], {
+    const blob = new Blob([new Uint8Array(data)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
     const url = URL.createObjectURL(blob)
