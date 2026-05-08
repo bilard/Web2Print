@@ -89,6 +89,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // ── Workflows ────────────────────────────────────────────────────────────
+    // Workflows d'orchestration (à la Make/n8n) sous users/{uid}/workflows/{id}.
+    // Privés à chaque user — pas de partage au MVP (phase 2 : champ sharedWith).
+
+    match /users/{uid}/workflows/{workflowId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // ── Excel Data ────────────────────────────────────────────────────────────
     // `excel_data/{docId}` = méta légères (fileName, path, sortIndex, totals…)
     // `excel_data_payload/{docId}` = blob `sheets` JSON sérialisé, séparé pour
