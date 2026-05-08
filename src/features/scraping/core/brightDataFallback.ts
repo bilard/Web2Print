@@ -19,6 +19,7 @@ import TurndownService from 'turndown'
 import { functions } from '@/lib/firebase/config'
 import { getSiteCookieForUrl } from '@/lib/siteCookies'
 import { recordBrightDataUsage } from '@/features/stats/brightDataUsageTracking'
+import { parseStructuredDataAny, type StructuredProductData } from './structuredData'
 
 // ─── Host cache (24h TTL) ────────────────────────────────────────────────────
 // Mémorise les hosts qui renvoient systématiquement un challenge anti-bot.
@@ -271,7 +272,16 @@ function extractImagesFromHtml(html: string, baseUrl: string): string[] {
  */
 export async function brightDataScrapeWithDocs(
   url: string,
-): Promise<{ markdown: string; pdfLinks: Array<{ name: string; url: string }> } | null> {
+): Promise<{
+  markdown: string
+  pdfLinks: Array<{ name: string; url: string }>
+  /** JSON-LD / microdata Schema.org parsé directement depuis le HTML BD.
+   *  Crucial pour les sites anti-bot (Akamai, DataDome) où le fetch parallèle
+   *  `extractStructuredDataFromUrl` est bloqué : le HTML BD contient les
+   *  scripts <script type="application/ld+json"> mais Turndown les supprime,
+   *  donc on parse AVANT la conversion markdown. */
+  structuredData: StructuredProductData | null
+} | null> {
   const html = await callScrape(url)
   if (!html) return null
   let markdown = ''
@@ -288,5 +298,11 @@ export async function brightDataScrapeWithDocs(
     const imgBlock = `\nJINA_EXTRACTED_IMAGES_START\n${rawImages.join('\n')}\nJINA_EXTRACTED_IMAGES_END\n`
     markdown = imgBlock + markdown
   }
-  return { markdown, pdfLinks }
+  let structuredData: StructuredProductData | null = null
+  try {
+    structuredData = parseStructuredDataAny(html)
+  } catch (e) {
+    console.warn('[brightdata] parseStructuredData failed:', e)
+  }
+  return { markdown, pdfLinks, structuredData }
 }

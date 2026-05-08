@@ -61,6 +61,22 @@ export interface EnrichedProduct {
   /** Nom / titre du produit (rempli par le pipeline depuis JSON-LD ou H1).
    *  Optionnel : peut être absent si le scraping n'a pas pu extraire de titre fiable. */
   name?: string
+  /** Marque du produit (ex: "Bosch"). Lifté depuis JSON-LD `brand` ou specs
+   *  identité (chip "BOSCH : ..." chez Rubix → brand = "Bosch"). */
+  brand?: string
+  /** Modèle / désignation produit du fabricant (ex: "GBH 5-40 DCE").
+   *  Lifté depuis JSON-LD `sku` ou la valeur du chip de marque (ex: chip
+   *  "BOSCH : GBH 5-40 DCE" → model = "GBH 5-40 DCE"). */
+  model?: string
+  /** Référence du distributeur / revendeur (ex: chip "RUBIX : 0136-5035407").
+   *  Distinct de `manufacturerRef` qui est le code interne du fabricant. */
+  distributorRef?: string
+  /** Référence fabricant / MPN (ex: chip "FABRICANT : 0611264000").
+   *  Lifté depuis JSON-LD `mpn` ou specs identité. */
+  manufacturerRef?: string
+  /** Code-barres EAN/GTIN (ex: "3165140461214"). Lifté depuis JSON-LD `gtin*`
+   *  ou specs identité (chip "EAN : ..."). */
+  ean?: string
   /** Description marketing reformulée par l'IA */
   description: string
   /** Fil d'Ariane / catégorisation (ex: ["Outillage", "Perceuses", "Visseuses à chocs"]) */

@@ -32,9 +32,16 @@ export function deserializeEnrichedFromRow(
   const sourceUrl = typeof row.ai_source === 'string' && row.ai_source ? row.ai_source : null
   const scraper = typeof row.ai_scraper === 'string' && row.ai_scraper ? row.ai_scraper : undefined
   const llmModel = typeof row.ai_llm_model === 'string' && row.ai_llm_model ? row.ai_llm_model : undefined
+  // Champs identité (Schema.org-aligned), persistés depuis 2026-05-08
+  const name = typeof row.ai_name === 'string' && row.ai_name ? row.ai_name : undefined
+  const brand = typeof row.ai_brand === 'string' && row.ai_brand ? row.ai_brand : undefined
+  const model = typeof row.ai_model === 'string' && row.ai_model ? row.ai_model : undefined
+  const distributorRef = typeof row.ai_distributor_ref === 'string' && row.ai_distributor_ref ? row.ai_distributor_ref : undefined
+  const manufacturerRef = typeof row.ai_manufacturer_ref === 'string' && row.ai_manufacturer_ref ? row.ai_manufacturer_ref : undefined
+  const ean = typeof row.ai_ean === 'string' && row.ai_ean ? row.ai_ean : undefined
 
   // Rien à restaurer si tous les champs sont vides
-  if (!description && !advantagesRaw && !specsRaw && !imagesRaw && !sourceUrl) {
+  if (!description && !advantagesRaw && !specsRaw && !imagesRaw && !sourceUrl && !name && !brand && !ean) {
     return null
   }
 
@@ -137,6 +144,12 @@ export function deserializeEnrichedFromRow(
   // filtres (nav, checkbox, pricing, prose-specs) doivent être nettoyées au
   // re-affichage sans nécessiter de re-enrichissement complet.
   const product = sanitizeEnrichedProduct({
+    name,
+    brand,
+    model,
+    distributorRef,
+    manufacturerRef,
+    ean,
     description,
     breadcrumb: breadcrumb && breadcrumb.length > 0 ? breadcrumb : undefined,
     advantages,

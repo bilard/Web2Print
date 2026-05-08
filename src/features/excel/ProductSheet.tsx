@@ -18,6 +18,7 @@ import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
 import { useEnrichmentStore } from './ai-enrichment/enrichmentStore'
 import { enrichmentKey } from './ai-enrichment/types'
+import { IDENTITY_AI_KEYS } from './ai-enrichment/useSaveEnrichedProduct'
 
 const BREADCRUMB_SPLIT_RE = /\s*[›>/»·]\s*/
 
@@ -97,6 +98,58 @@ const isDocKey    = (k: string) => /^documents?$|pdf|video|notice|lien|link|url/
  *  (la primary est souvent mal détectée à l'import — cf. useExcelImport.ts). */
 const isTitleKey  = (k: string) => /libell|d[eé]signation|nom.?(article|produit)?|titre|title|product.?name/i.test(k)
 
+/** Clés `ai_*` dont la valeur cellule est sérialisée (pipe-séparé / JSON) et
+ *  doit être affichée comme preview compact dans CHAMPS EXCEL — l'édition est
+ *  désactivée (la donnée structurée s'édite via le panneau d'enrichissement). */
+const STRUCTURED_AI_KEYS = new Set<string>([
+  'ai_description', 'ai_advantages', 'ai_specifications', 'ai_pricing', 'ai_images',
+])
+
+/** Aperçu compact d'une cellule `ai_*` sérialisée — la version riche est
+ *  rendue dans les sections dédiées au-dessus de CHAMPS EXCEL. */
+function formatAiCellPreview(key: string, raw: string): string {
+  const trim = (s: string, n: number) => s.length > n ? s.slice(0, n - 1) + '…' : s
+  switch (key) {
+    case 'ai_description':
+      return trim(raw.replace(/\s+/g, ' ').trim(), 220)
+    case 'ai_advantages': {
+      const items = raw.split(' | ').map(s => s.replace(/^\[[^\]]+\]/, '').trim()).filter(Boolean)
+      if (items.length === 0) return '—'
+      return `${items.length} point${items.length > 1 ? 's' : ''} · ${trim(items[0], 80)}`
+    }
+    case 'ai_specifications': {
+      const items = raw.split(' | ').map(s => s.replace(/^\[[^\]]+\]/, '').trim()).filter(Boolean)
+      if (items.length === 0) return '—'
+      return `${items.length} spec${items.length > 1 ? 's' : ''} · ${trim(items[0], 80)}`
+    }
+    case 'ai_pricing': {
+      try {
+        const p = JSON.parse(raw) as {
+          ttc?: number; ht?: number; original?: number;
+          discount?: { percent?: number; amount?: number };
+          currency?: string; ecoParticipation?: number;
+        }
+        const cur = p.currency || 'EUR'
+        const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: cur, minimumFractionDigits: 2 }).format(n)
+        const parts: string[] = []
+        if (p.ttc != null) parts.push(`TTC ${fmt(p.ttc)}`)
+        if (p.ht != null) parts.push(`HT ${fmt(p.ht)}`)
+        if (p.original != null) parts.push(`barré ${fmt(p.original)}`)
+        if (p.discount?.percent != null) parts.push(`-${p.discount.percent}%`)
+        return parts.length > 0 ? parts.join(' · ') : '—'
+      } catch {
+        return trim(raw, 100)
+      }
+    }
+    case 'ai_images': {
+      const urls = raw.split(' | ').map(s => s.trim()).filter(Boolean)
+      return urls.length > 0 ? `${urls.length} image${urls.length > 1 ? 's' : ''}` : '—'
+    }
+    default:
+      return raw
+  }
+}
+
 type Tab = 'general' | 'specs' | 'documents'
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -113,6 +166,13 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const { data: taxonomies } = useTaxonomies()
   const storeBreadcrumb = useEnrichmentStore(
     (s) => s.entries[enrichmentKey(sheet?.name ?? '', rowId)]?.data?.breadcrumb,
+  )
+  // Donnée scrapée complète : on lit le store pour rendre les sections
+  // "Description / Points forts / Prix / Spécifications / Images" depuis
+  // l'enrichissement live, en plus de ce qui est déjà persisté dans les
+  // colonnes ai_*. Pattern aligné avec storeBreadcrumb.
+  const enrichedProduct = useEnrichmentStore(
+    (s) => s.entries[enrichmentKey(sheet?.name ?? '', rowId)]?.data ?? null,
   )
 
   // Split resizable entre panneau source (gauche) et enrichissement IA (droite)
@@ -231,6 +291,9 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
 
   const allImages: string[] = []
   imageCols.forEach(col => allImages.push(...parseImageList(getValue(col))))
+  // Inclure les images scrapées (store d'enrichissement) — la galerie en haut
+  // de la fiche affiche ainsi la fusion des images user + images scrapées.
+  if (enrichedProduct?.images?.length) allImages.push(...enrichedProduct.images)
   const uniqueImages = [...new Set(allImages)]
 
   const contentCols = visibleCols.filter(c =>
@@ -586,7 +649,9 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
               const docKeys = new Set(docCols.map(c => c.key))
               const imgKeys = new Set(imageCols.map(c => c.key))
               const remainingCols = visibleCols
-                .filter(c => !c.key.startsWith('ai_'))
+                // Garder les clés identité (ai_name/ai_brand/ai_model/ai_*_ref/
+                // ai_ean) ; exclure les autres ai_* qui ont leur propre panneau.
+                .filter(c => !c.key.startsWith('ai_') || IDENTITY_AI_KEYS.has(c.key))
                 .filter(c => !imgKeys.has(c.key))
                 .filter(c => !specKeys.has(c.key))
                 .filter(c => !docKeys.has(c.key))
@@ -606,9 +671,21 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
                   </div>
                   {remainingCols.map(col => {
                     const v = getValue(col)
+                    // Le label "Nom" des imports CSV/XLSX désigne souvent un slug
+                    // d'URL ou un ID interne du distributeur (ex: "p G1049005977"
+                    // chez Rubix), pas un vrai nom produit. Affiché "ID interne"
+                    // pour clarifier — le vrai nom produit vient de `ai_name`.
+                    const displayLabel = col.label.trim().toLowerCase() === 'nom' ? 'ID interne' : col.label
+                    // Pour les ai_* structurés (description/advantages/specs/pricing/images) :
+                    // preview compact + édition désactivée (la donnée s'édite via le
+                    // panneau d'enrichissement à droite, pas via une textarea brute).
+                    const isStructuredAi = STRUCTURED_AI_KEYS.has(col.key)
+                    const display = isStructuredAi
+                      ? formatAiCellPreview(col.key, String(v ?? ''))
+                      : fmt(v, col)
                     return (
                       <div key={col.key} className="group flex items-start gap-3 px-5 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
-                        <span className="text-[11px] text-white/35 w-28 shrink-0 pt-[1px] truncate">{col.label}</span>
+                        <span className="text-[11px] text-white/35 w-28 shrink-0 pt-[1px] truncate">{displayLabel}</span>
                         <div className="flex-1 min-w-0">
                           {editingField === col.key ? (
                             <textarea autoFocus value={editValue} rows={1}
@@ -629,9 +706,15 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
                               }}
                               className="w-full bg-white/[0.04] border border-indigo-500/40 rounded px-2 py-1 text-[12px] text-white outline-none resize-none leading-relaxed break-words" />
                           ) : (
-                            <p className="text-[12px] text-white/65 leading-relaxed break-words cursor-pointer hover:text-white/90 transition-colors"
-                              onClick={() => { setEditingField(col.key); setEditValue(v != null ? String(v) : '') }}>
-                              {fmt(v, col)}
+                            <p
+                              className={`text-[12px] text-white/65 leading-relaxed break-words transition-colors ${
+                                isStructuredAi ? 'cursor-default' : 'cursor-pointer hover:text-white/90'
+                              }`}
+                              onClick={() => {
+                                if (isStructuredAi) return
+                                setEditingField(col.key); setEditValue(v != null ? String(v) : '')
+                              }}>
+                              {display}
                             </p>
                           )}
                         </div>

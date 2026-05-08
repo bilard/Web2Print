@@ -81,19 +81,51 @@ export interface EnrichmentColumnDef {
 }
 
 export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
-  { key: 'ai_description',     label: 'IA — Description',   fieldType: 'text_long', width: 320 },
-  { key: 'ai_breadcrumb',      label: 'IA — Fil d\'Ariane', fieldType: 'text_long', width: 260 },
-  { key: 'ai_advantages',      label: 'IA — Points forts',  fieldType: 'text_long', width: 280 },
-  { key: 'ai_specifications',  label: 'IA — Spécifications', fieldType: 'text_long', width: 320 },
-  { key: 'ai_variants',        label: 'IA — Variantes',     fieldType: 'text_long', width: 320 },
-  { key: 'ai_images',          label: 'IA — Images',        fieldType: 'image',     width: 160 },
-  { key: 'ai_documents',       label: 'IA — Documents',     fieldType: 'text_long', width: 280 },
-  { key: 'ai_pricing',         label: 'IA — Prix',          fieldType: 'text_long', width: 200 },
-  { key: 'ai_source',          label: 'IA — Source',        fieldType: 'url',       width: 240 },
-  { key: 'ai_scraper',         label: 'IA — Scraper',       fieldType: 'text',      width: 120 },
-  { key: 'ai_llm_model',       label: 'IA — Modèle LLM',    fieldType: 'text',      width: 160 },
-  { key: 'ai_llm_request',    label: 'IA — Requête LLM',   fieldType: 'text_long', width: 120 },
+  // ── Identité produit (Schema.org-aligned) ──────────────────────────────────
+  // Ces colonnes sont liftées depuis JSON-LD/microdata ou les chips Rubix-style
+  // ("BOSCH : modèle", "RUBIX : ...", "FABRICANT : ...", "EAN : ...") par
+  // `buildIdentity` dans useProductEnrichment.ts. Affichées dans le panneau
+  // "CHAMPS EXCEL" de ProductSheet (whitelistées via IDENTITY_AI_KEYS).
+  { key: 'ai_name',             label: 'Nom du produit',     fieldType: 'text',      width: 280 },
+  { key: 'ai_brand',            label: 'Marque',             fieldType: 'text',      width: 140 },
+  { key: 'ai_model',            label: 'Modèle',             fieldType: 'text',      width: 180 },
+  { key: 'ai_distributor_ref',  label: 'Réf. distributeur',  fieldType: 'text',      width: 160 },
+  { key: 'ai_manufacturer_ref', label: 'Réf. fabricant',     fieldType: 'text',      width: 160 },
+  { key: 'ai_ean',              label: 'EAN',                fieldType: 'text',      width: 160 },
+  // ── Contenu enrichi ────────────────────────────────────────────────────────
+  { key: 'ai_description',     label: 'Description',   fieldType: 'text_long', width: 320 },
+  { key: 'ai_breadcrumb',      label: 'Fil d\'Ariane',  fieldType: 'text_long', width: 260 },
+  { key: 'ai_advantages',      label: 'Points forts',   fieldType: 'text_long', width: 280 },
+  { key: 'ai_specifications',  label: 'Spécifications', fieldType: 'text_long', width: 320 },
+  { key: 'ai_variants',        label: 'Variantes',      fieldType: 'text_long', width: 320 },
+  { key: 'ai_images',          label: 'Images',         fieldType: 'image',     width: 160 },
+  { key: 'ai_documents',       label: 'Documents',      fieldType: 'text_long', width: 280 },
+  { key: 'ai_pricing',         label: 'Prix',           fieldType: 'text_long', width: 200 },
+  { key: 'ai_source',          label: 'Source',         fieldType: 'url',       width: 240 },
+  { key: 'ai_scraper',         label: 'Scraper',        fieldType: 'text',      width: 120 },
+  { key: 'ai_llm_model',       label: 'Modèle LLM',     fieldType: 'text',      width: 160 },
+  { key: 'ai_llm_request',     label: 'Requête LLM',    fieldType: 'text_long', width: 120 },
 ]
+
+/** Clés identité + champs scrapés rendus dans le panneau "CHAMPS EXCEL"
+ *  de ProductSheet pour qu'ils s'affichent à côté des colonnes utilisateur,
+ *  malgré leur préfixe `ai_`. Identité (name/brand/model/refs/ean) +
+ *  contenu enrichi principal (description/advantages/specifications/pricing/images).
+ *  Les autres `ai_*` (breadcrumb/variants/documents/source/scraper/llm) restent
+ *  filtrés car redondants avec le panneau d'enrichissement à droite. */
+export const IDENTITY_AI_KEYS = new Set<string>([
+  'ai_name',
+  'ai_brand',
+  'ai_model',
+  'ai_distributor_ref',
+  'ai_manufacturer_ref',
+  'ai_ean',
+  'ai_description',
+  'ai_advantages',
+  'ai_specifications',
+  'ai_pricing',
+  'ai_images',
+])
 
 export const buildEnrichmentColumn = (def: EnrichmentColumnDef): ExcelColumn => ({
   key: def.key,
@@ -111,6 +143,12 @@ export function serializeEnriched(
   llmRequestJson: string | null,
 ): Record<string, string | null> {
   return {
+    ai_name: data.name || null,
+    ai_brand: data.brand || null,
+    ai_model: data.model || null,
+    ai_distributor_ref: data.distributorRef || null,
+    ai_manufacturer_ref: data.manufacturerRef || null,
+    ai_ean: data.ean || null,
     ai_description: data.description || null,
     ai_breadcrumb: (data.breadcrumb && data.breadcrumb.length > 0) ? data.breadcrumb.join(' › ') : null,
     ai_advantages: data.advantages.length > 0

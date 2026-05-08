@@ -494,6 +494,190 @@ function isNavLikeDescription(text: string): boolean {
   return false
 }
 
+// ── Lift identité depuis specs / structuredData / markdown ──────────────────
+// Les identifiants (nom, marque, modèle, refs distributeur/fabricant, EAN)
+// arrivent par 3 canaux selon le site/scraping :
+//   1. JSON-LD Schema.org (parseStructuredDataAny) → name/brand/sku/mpn/gtin
+//   2. Specs parsées depuis le markdown (KEY/VALUE)
+//      → chips Rubix-style "BOSCH : GBH 5-40 DCE", "RUBIX : 0136-5035407",
+//        "FABRICANT : 0611264000", "EAN : 3165140461214"
+//   3. Markdown H1 (fallback quand JSON-LD absent)
+// Cette fonction promeut ces signaux en champs distincts d'EnrichedProduct
+// pour qu'ils apparaissent comme colonnes Excel séparées (ai_name, ai_brand,
+// ai_model, ai_distributor_ref, ai_manufacturer_ref, ai_ean) plutôt que
+// noyés dans ai_specifications.
+
+interface IdentityFields {
+  /** name n'est jamais lifté depuis les specs (les chips ne contiennent pas
+   *  un champ "Nom du produit" propre) — il est posé par `buildIdentity` à
+   *  partir de JSON-LD ou du H1 markdown. Présent ici pour symétrie de
+   *  signature avec la sortie de `buildIdentity`. */
+  name?: string
+  brand?: string
+  model?: string
+  distributorRef?: string
+  manufacturerRef?: string
+  ean?: string
+}
+
+const EAN_VALUE_RE = /^\d{8,14}$/
+/** Dictionnaire de marques connues — utilisé pour détecter le pattern chip
+ *  "BRAND : modèle" (ex: Rubix-like). Strict : on n'admet PAS un fallback regex
+ *  sur les MAJUSCULES car ça nuke les specs avec name en CAPS comme TENSION,
+ *  POIDS, PUISSANCE, DIAMETRE — risque de perdre des specs réelles. Ajouter
+ *  ici les nouvelles marques si nécessaire. */
+const KNOWN_BRAND_KEYWORDS = [
+  // Outillage / bricolage
+  'BOSCH', 'MAKITA', 'MILWAUKEE', 'DEWALT', 'STANLEY', 'HILTI', 'METABO',
+  'FACOM', 'STIHL', 'HUSQVARNA', 'RYOBI', 'AEG', 'KARCHER', 'KÄRCHER',
+  'FESTOOL', 'FEIN', 'PANASONIC', 'BLACKDECKER', 'KNIPEX', 'WERA',
+  'STAHLWILLE', 'BETA', 'GEDORE', 'SAM', 'KS TOOLS', 'NOROTOS',
+  // Sanitaire / plomberie
+  'NICOLL', 'GEBERIT', 'GROHE', 'HANSGROHE',
+  // Électroménager / multimédia
+  'BOSCH SIEMENS', 'WHIRLPOOL', 'DYSON', 'PHILIPS', 'SAMSUNG', 'LG', 'SONY',
+]
+
+/** Pattern valeur de mesure (ex: "230 V", "6.8 kg", "1500 W") — utilisé pour
+ *  REJETER une lift "BRAND: VALUE" qui ressemble à une spec technique. */
+const MEASUREMENT_VALUE_RE = /^\d+([.,]\d+)?\s*[a-zàâéèêëîïôùûüç%°/]+\.?$/i
+
+function looksLikeBrandKey(rawName: string): boolean {
+  const trimmed = rawName.trim().replace(/^[*_\s]+|[*_\s]+$/g, '')
+  if (!trimmed) return false
+  return KNOWN_BRAND_KEYWORDS.some(b => b.toLowerCase() === trimmed.toLowerCase())
+}
+
+/**
+ * Extrait les champs identité depuis les specs et retire les entrées liftées.
+ * Le retrait évite la duplication "Marque" dans ai_specifications + ai_brand.
+ *
+ * Exporté pour tests unitaires uniquement.
+ */
+export function liftIdentityFromSpecs(specs: EnrichedProduct['specifications']): {
+  identity: IdentityFields
+  remaining: EnrichedProduct['specifications']
+} {
+  const identity: IdentityFields = {}
+  const remaining: EnrichedProduct['specifications'] = []
+
+  for (const spec of specs) {
+    const cleanName = spec.name.trim().replace(/^[*_\s]+|[*_\s:]+$/g, '')
+    const cleanValue = spec.value.trim()
+    const lowerName = cleanName.toLowerCase()
+    let lifted = false
+
+    // EAN / GTIN / code-barres
+    if (!identity.ean && /^(ean|gtin|code[\s-]?barre|barcode)$/i.test(cleanName) && EAN_VALUE_RE.test(cleanValue.replace(/\s/g, ''))) {
+      identity.ean = cleanValue.replace(/\s/g, '')
+      lifted = true
+    }
+    // Réf. distributeur (chip "RUBIX : ...")
+    else if (!identity.distributorRef && /^(rubix|distributeur|distributor|code\s+commande|code\s+revendeur|sku\s+revendeur|r[eé]f\.?\s+(?:revendeur|distributeur))$/i.test(cleanName) && cleanValue.length >= 3 && cleanValue.length < 60) {
+      identity.distributorRef = cleanValue
+      lifted = true
+    }
+    // Réf. fabricant (chip "FABRICANT : ..." ou MPN)
+    else if (!identity.manufacturerRef && /^(fabricant|manufacturer|mpn|model\s*(?:number|no\.?)?|r[eé]f(?:[eé]rence)?\s+fabricant|part\s*(?:number|n[°o]?))$/i.test(cleanName) && cleanValue.length >= 3 && cleanValue.length < 60) {
+      identity.manufacturerRef = cleanValue
+      lifted = true
+    }
+    // Marque (chip "BOSCH : GBH 5-40 DCE" → brand=Bosch, model="GBH 5-40 DCE")
+    //                                ↑ key=brand            value=model
+    // Garde-fou : la value ne doit PAS ressembler à une mesure ("230 V",
+    // "6.8 kg") — sinon c'est probablement une spec technique mal labellée
+    // qui passerait à travers le dictionnaire (très improbable mais sûr).
+    else if (
+      (!identity.brand || !identity.model)
+      && looksLikeBrandKey(cleanName)
+      && cleanValue.length >= 2
+      && cleanValue.length < 80
+      && !/[.!?\n]/.test(cleanValue)
+      && !MEASUREMENT_VALUE_RE.test(cleanValue)
+    ) {
+      // Capitalisation propre : BOSCH → Bosch
+      const brandTitle = cleanName.charAt(0).toUpperCase() + cleanName.slice(1).toLowerCase()
+      if (!identity.brand) identity.brand = brandTitle
+      if (!identity.model) identity.model = cleanValue
+      lifted = true
+    }
+    // Marque générique (label = "Marque" / "Brand")
+    else if (!identity.brand && /^(marque|brand|fabricant\s+(?:officiel|d['’]origine))$/i.test(cleanName) && cleanValue.length >= 2 && cleanValue.length < 50) {
+      identity.brand = cleanValue
+      lifted = true
+    }
+    // Modèle générique
+    else if (!identity.model && /^(mod[eè]le|model|d[eé]signation)$/i.test(lowerName) && cleanValue.length >= 2 && cleanValue.length < 80) {
+      identity.model = cleanValue
+      lifted = true
+    }
+
+    if (!lifted) remaining.push(spec)
+  }
+
+  return { identity, remaining }
+}
+
+/**
+ * Construit les champs identité d'un EnrichedProduct en consolidant :
+ *   1. JSON-LD/microdata (priorité haute — donnée structurée fiable)
+ *   2. Specs liftées (chips Rubix-style)
+ *   3. Markdown H1 (fallback pour name)
+ *   4. Données entrée utilisateur (title/brand/reference)
+ * Retourne aussi les specs nettoyées (sans les entrées liftées).
+ */
+function buildIdentity(args: {
+  structured: StructuredProductData | null
+  specs: EnrichedProduct['specifications']
+  markdown: string | null
+  inputTitle?: string
+  inputBrand?: string
+  inputReference?: string
+}): { identity: IdentityFields; specs: EnrichedProduct['specifications'] } {
+  const { structured, specs, markdown, inputTitle, inputBrand, inputReference } = args
+  const { identity: lifted, remaining } = liftIdentityFromSpecs(specs)
+
+  // JSON-LD prioritaire sur les specs liftées (donnée structurée plus fiable)
+  const id: IdentityFields = {
+    name: structured?.name?.trim() || lifted.name,
+    brand: structured?.brand?.trim() || lifted.brand,
+    model: structured?.sku?.trim() || lifted.model,
+    distributorRef: lifted.distributorRef,
+    manufacturerRef: structured?.mpn?.trim() || lifted.manufacturerRef,
+    ean: structured?.gtin?.trim() || lifted.ean,
+  }
+
+  // Fallback name : H1 markdown puis input utilisateur
+  if (!id.name) {
+    const h1Match = markdown?.match(/^#\s+(.+)/m)
+    if (h1Match) {
+      const h1 = h1Match[1].replace(/\*\*/g, '').trim()
+      if (h1.length >= 5 && h1.length < 250) id.name = h1
+    }
+  }
+  if (!id.name && inputTitle && inputTitle.length >= 5) id.name = inputTitle
+
+  // Fallback brand : input utilisateur
+  if (!id.brand && inputBrand && inputBrand.length >= 2) id.brand = inputBrand
+
+  // Fallback manufacturerRef : input reference si fournie (souvent c'est la
+  // ref fabricant que l'utilisateur passe, pas la ref distributeur).
+  if (!id.manufacturerRef && inputReference && inputReference.length >= 3 && inputReference.length < 60) {
+    id.manufacturerRef = inputReference
+  }
+
+  // Nettoyer les valeurs vides
+  const cleaned: IdentityFields = {}
+  if (id.name) cleaned.name = id.name
+  if (id.brand) cleaned.brand = id.brand
+  if (id.model) cleaned.model = id.model
+  if (id.distributorRef) cleaned.distributorRef = id.distributorRef
+  if (id.manufacturerRef) cleaned.manufacturerRef = id.manufacturerRef
+  if (id.ean) cleaned.ean = id.ean
+
+  return { identity: cleaned, specs: remaining }
+}
+
 /** Nettoie un EnrichedProduct en retirant les contenus parasites */
 function sanitizeEnriched(enriched: EnrichedProduct, productIds: string[] = []): EnrichedProduct {
   // Description : vider si c'est du cookie/GDPR (court ou long) ou du nav/footer
@@ -2666,10 +2850,21 @@ function buildManufacturerProduct(
   const mdBreadcrumb = markdownContent ? parseBreadcrumbFromMarkdown(markdownContent) : []
   const breadcrumb = rawData.breadcrumb.length > 0 ? rawData.breadcrumb : mdBreadcrumb
 
+  // Identité (name/brand/model/refs/EAN) — liftée depuis specs Rubix-style ou
+  // JSON-LD parallèle stocké dans __lastStructured. Les specs liftées sont
+  // retirées du tableau `specifications` pour ne pas dupliquer dans l'UI.
+  const structuredFromGlobal = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+  const { identity, specs: specsAfterLift } = buildIdentity({
+    structured: structuredFromGlobal,
+    specs: specifications,
+    markdown: markdownContent,
+  })
+
   return {
+    ...identity,
     description,
     advantages,
-    specifications,
+    specifications: specsAfterLift,
     variants,
     images: [...new Set(images)],
     documents: deduplicateDocuments(documents),
@@ -3527,10 +3722,34 @@ export function useProductEnrichment() {
                     log(`⚠️ Prompts champs : transformation LLM échouée (${err instanceof Error ? err.message : String(err)})`)
                   }
 
+                  // Identité depuis template : champs explicites du template
+                  // (title/brand/reference/ean) en priorité, lift sur specs en
+                  // fallback (template peut avoir extrait des chips Rubix-style
+                  // dans les specs sans les nommer explicitement).
+                  const templateSpecs = applied.specGroups.flatMap((g) => g.pairs.map((p) => ({ ...p, group: g.group })))
+                  const templateStructuredFallback: StructuredProductData = {
+                    name: toStr(f.title) || toStr(f.name) || undefined,
+                    brand: toStr(f.brand) || undefined,
+                    sku: toStr(f.sku) || toStr(f.reference) || undefined,
+                    mpn: toStr(f.mpn) || undefined,
+                    gtin: toStr(f.ean) || toStr(f.gtin) || undefined,
+                    images: [],
+                    specs: [],
+                  }
+                  const { identity: templateIdentity, specs: templateSpecsAfterLift } = buildIdentity({
+                    structured: templateStructuredFallback,
+                    specs: templateSpecs,
+                    markdown: null,
+                    inputTitle: toStr(f.title),
+                    inputBrand: toStr(f.brand),
+                    inputReference: toStr(f.reference) || toStr(f.sku),
+                  })
+
                   const rawBuilt: EnrichedProduct = {
+                    ...templateIdentity,
                     description: toStr(f.description),
                     advantages,
-                    specifications: applied.specGroups.flatMap((g) => g.pairs.map((p) => ({ ...p, group: g.group }))),
+                    specifications: templateSpecsAfterLift,
                     variants,
                     images: toArr(f.images),
                     documents,
@@ -3781,6 +4000,25 @@ export function useProductEnrichment() {
                   markdownContent = `## [Source: ${productUrl}]\n\n${bdSanitized}${pdfBlock}`
                   brightDataSucceeded = true
                   ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
+                  // BD a parsé le JSON-LD/microdata du HTML brut (avant Turndown
+                  // qui supprime les <script>). Si le fetch parallèle initial a
+                  // échoué (souvent le cas en anti-bot Akamai/DataDome), on
+                  // promeut la donnée structurée BD vers __lastStructured pour
+                  // alimenter l'identité (name, brand, sku=model, mpn, gtin).
+                  const existingStructured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured
+                  if (bdResult.structuredData && (!existingStructured || (
+                    !existingStructured.name && !existingStructured.brand && existingStructured.specs.length === 0
+                  ))) {
+                    ;(globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured = bdResult.structuredData
+                    const fields = [
+                      bdResult.structuredData.name && 'name',
+                      bdResult.structuredData.brand && 'brand',
+                      bdResult.structuredData.sku && 'sku',
+                      bdResult.structuredData.gtin && 'gtin',
+                      bdResult.structuredData.mpn && 'mpn',
+                    ].filter(Boolean).join(', ')
+                    if (fields) log(`✓ JSON-LD extrait du HTML BD : ${fields}`)
+                  }
                 }
               } else {
                 const bdErr = getLastBrightDataError()
@@ -4049,10 +4287,23 @@ Réponds UNIQUEMENT via l'outil emit_response.`
                   (v: unknown) => v && typeof v === 'object' && typeof (v as Record<string, unknown>).reference === 'string'
                 ) : [])
 
+            // Identité : `mfrBuild` la porte déjà (buildManufacturerProduct
+            // appelle buildIdentity). On la propage et on lifte les nouveaux
+            // specs LLM au cas où l'IA aurait extrait l'identité (Marque/EAN…).
+            const { identity: mfrIdentity, specs: mfrSpecsAfterLift } = buildIdentity({
+              structured: (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null,
+              specs: mergedSpecs,
+              markdown: markdownContent,
+              inputTitle: title,
+              inputBrand: brand || manufacturerBrand,
+              inputReference: reference ?? sku,
+            })
+
             enriched = {
+              ...mfrIdentity,
               description: mfrAi.description || mfrBuild.description,
               advantages: mergedAdvantages,
-              specifications: mergedSpecs,
+              specifications: mfrSpecsAfterLift,
               variants: mergedVariants,
               images: mfrBuild.images, // garder les images scrapées
               documents: mfrBuild.documents, // garder les PDFs scrapés
@@ -4244,10 +4495,25 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             (directBuild.images ?? []).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)),
           ))
 
+          // Identité (name/brand/model/refs/EAN) — JSON-LD prioritaire, lift
+          // depuis specs Rubix-style en fallback, H1 markdown pour name si
+          // toujours rien. Les specs liftées sont retirées pour éviter la
+          // duplication "Marque" dans ai_specifications + ai_brand.
+          const directStructured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+          const { identity: directIdentity, specs: directSpecsAfterLift } = buildIdentity({
+            structured: directStructured,
+            specs: directBuild.specifications ?? [],
+            markdown: markdownContent,
+            inputTitle: title,
+            inputBrand: brand,
+            inputReference: reference ?? sku,
+          })
+
           enriched = {
+            ...directIdentity,
             description: directBuild.description ?? '',
             advantages: directBuild.advantages ?? [],
-            specifications: directBuild.specifications ?? [],
+            specifications: directSpecsAfterLift,
             variants: directBuild.variants ?? [],
             images: mergedImages,
             documents: directBuild.documents ?? [],
@@ -4470,10 +4736,24 @@ Réponds UNIQUEMENT via l'outil emit_response.`
             console.log('[enrichment] LLM extracted', llmVariants.length, 'variants')
           }
 
+          // Identité (name/brand/model/refs/EAN) — même stratégie que PATH A :
+          // JSON-LD prioritaire puis lift depuis specs Rubix-style, fallback
+          // sur le H1 markdown ou les inputs utilisateur.
+          const llmStructured = (globalThis as unknown as { __lastStructured?: StructuredProductData | null }).__lastStructured ?? null
+          const { identity: llmIdentity, specs: llmSpecsAfterLift } = buildIdentity({
+            structured: llmStructured,
+            specs: ai.specifications,
+            markdown: markdownContent,
+            inputTitle: title,
+            inputBrand: brand,
+            inputReference: reference ?? sku,
+          })
+
           enriched = {
+            ...llmIdentity,
             description: ai.description,
             advantages: (ai.advantages as string[]).map(text => ({ text })),
-            specifications: ai.specifications,
+            specifications: llmSpecsAfterLift,
             variants: llmVariants,
             images: mergedImages,
             documents: mergedDocs,
