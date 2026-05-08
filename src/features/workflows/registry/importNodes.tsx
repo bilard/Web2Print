@@ -1,5 +1,5 @@
-// src/features/workflows/registry/importNodes.ts
-import { FileSpreadsheet, FileText, FileImage } from 'lucide-react'
+// src/features/workflows/registry/importNodes.tsx
+import { FileSpreadsheet, FileText, FileImage, Upload } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { parseExcelFile } from '@/features/excel/useExcelImport'
@@ -79,6 +79,51 @@ export const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown
   },
 }
 
+interface UploadConfig { lastFileName: string }
+
+export const uploadNode: NodeSpec<UploadConfig, Record<string, never>, { file: File | null }> = {
+  type: 'upload',
+  category: 'import',
+  label: 'Upload',
+  description: 'Sélectionne un fichier local. (MVP : fichier non persisté entre sessions.)',
+  icon: Upload,
+  inputs: [],
+  outputs: [{ name: 'file', type: 'file' }],
+  configSchema: [],
+  defaultConfig: { lastFileName: '' },
+  runtime: 'client',
+  ConfigComponent: ({ config, onChange }) => (
+    <div>
+      <input
+        type="file"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (!f) return
+          const key = `wf_file_${Date.now()}_${f.name}`
+          ;(window as unknown as { __workflowFiles?: Map<string, File> }).__workflowFiles ??= new Map()
+          ;(window as unknown as { __workflowFiles: Map<string, File> }).__workflowFiles.set(key, f)
+          onChange({ ...config, lastFileName: key })
+        }}
+        className="text-xs text-neutral-300 w-full"
+      />
+      <div className="text-[10px] text-neutral-500 mt-1 truncate">
+        {config.lastFileName ? config.lastFileName.replace(/^wf_file_\d+_/, '') : 'Aucun fichier'}
+      </div>
+    </div>
+  ),
+  run: async (ctx, config) => {
+    const map = (window as unknown as { __workflowFiles?: Map<string, File> }).__workflowFiles
+    const f = map?.get(config.lastFileName)
+    if (!f) {
+      ctx.log('warn', `Aucun fichier trouvé en mémoire pour la clé "${config.lastFileName}"`)
+      return { file: null }
+    }
+    ctx.log('info', `Fichier prêt : ${f.name} (${(f.size / 1024).toFixed(1)} KB)`)
+    return { file: f }
+  },
+}
+
 nodeRegistry.register(importCsvNode)
 nodeRegistry.register(importIdmlNode)
 nodeRegistry.register(importSvgNode)
+nodeRegistry.register(uploadNode)
