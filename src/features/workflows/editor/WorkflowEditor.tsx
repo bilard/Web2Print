@@ -5,9 +5,11 @@ import {
   Background,
   Controls,
   MiniMap,
+  MarkerType,
   applyEdgeChanges,
   applyNodeChanges,
   type Connection,
+  type DefaultEdgeOptions,
   type Edge,
   type EdgeChange,
   type Node,
@@ -21,6 +23,15 @@ import { isCompatible } from '../runtime/ports'
 import type { WorkflowEdge, WorkflowNode } from '../types'
 
 const nodeTypes = { base: BaseNode }
+
+const defaultEdgeOptions: DefaultEdgeOptions = {
+  type: 'smoothstep',
+  animated: true,
+  style: { stroke: '#6366f1', strokeWidth: 1.5 },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1', width: 14, height: 14 },
+}
+
+const connectionLineStyle = { stroke: '#818cf8', strokeWidth: 1.5, strokeDasharray: '4 4' }
 
 const toRfNode = (n: WorkflowNode): Node => ({
   id: n.id,
@@ -174,12 +185,29 @@ export function WorkflowEditor() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        defaultEdgeOptions={defaultEdgeOptions}
+        connectionLineStyle={connectionLineStyle}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        minZoom={0.2}
+        maxZoom={2}
         fitView
+        fitViewOptions={{ padding: 0.3, maxZoom: 1.2 }}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#222" gap={20} />
-        <Controls className="!bg-[#1a1a1a] !border-neutral-800" />
-        <MiniMap className="!bg-[#1a1a1a]" maskColor="rgba(0,0,0,0.6)" />
+        <Background color="#1f1f1f" gap={24} size={1} />
+        <Controls
+          className="!bg-[#1a1a1a] !border-neutral-800 [&>button]:!bg-[#1a1a1a] [&>button]:!border-neutral-800 [&>button]:!text-neutral-400 [&>button:hover]:!bg-[#222]"
+          showInteractive={false}
+        />
+        <MiniMap
+          className="!bg-[#0f0f0f] !border !border-neutral-800"
+          maskColor="rgba(15,15,15,0.85)"
+          nodeColor="#6366f1"
+          nodeBorderRadius={4}
+          nodeStrokeWidth={0}
+          pannable
+          zoomable
+        />
       </ReactFlow>
     </div>
   )
