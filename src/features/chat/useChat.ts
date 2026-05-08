@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { generateText, type ChatMessage as RouterChatMessage } from './ai/chatRouter'
 import type { ChatMessageData } from './ChatMessage'
 import {
@@ -11,6 +11,12 @@ const SYSTEM_PROMPT =
   'Tu es un assistant IA utile, précis et concis intégré à DesignStudio Web2Print. ' +
   "Réponds en français par défaut, en suivant la langue de l'utilisateur si elle diffère. " +
   'Utilise du markdown (titres, listes, blocs de code) pour structurer tes réponses.'
+
+/** Plafond du contexte envoyé au LLM. Au-delà, on ne garde que les MAX_HISTORY
+ *  derniers messages — au-delà de ~30 tours, le coût input devient quadratique
+ *  (chaque réponse est re-renvoyée à chaque message suivant) sans bénéfice
+ *  observable côté qualité. L'UI continue d'afficher tout l'historique. */
+const MAX_HISTORY_MESSAGES = 30
 
 function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -32,6 +38,10 @@ export function useChat(): UseChatResult {
   const [messages, setMessages] = useState<ChatMessageData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const abortRef = useRef<{ aborted: boolean } | null>(null)
+  // Snapshot lu au moment du send (évite de mettre `messages` dans les deps de
+  // useCallback, ce qui invaliderait la fonction à chaque message).
+  const messagesRef = useRef<ChatMessageData[]>(messages)
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
   const send = useCallback(
     async (input: { text: string; attachments?: ChatAttachment[] }) => {
@@ -49,14 +59,17 @@ export function useChat(): UseChatResult {
         content: '',
         status: 'streaming',
       }
-      const nextMessages = [...messages, userMsg]
+      const nextMessages = [...messagesRef.current, userMsg]
       setMessages([...nextMessages, placeholder])
       setIsLoading(true)
 
       const tracker = { aborted: false }
       abortRef.current = tracker
 
-      const routerMessages: RouterChatMessage[] = nextMessages.map((m) => {
+      // Borne le contexte envoyé au LLM aux MAX_HISTORY derniers messages —
+      // l'UI conserve l'intégralité, mais on ne fait pas exploser les tokens.
+      const trimmed = nextMessages.slice(-MAX_HISTORY_MESSAGES)
+      const routerMessages: RouterChatMessage[] = trimmed.map((m) => {
         const atts = m.attachments ?? []
         const promptText = m.role === 'user'
           ? composePromptWithTextAttachments(m.content, atts)
@@ -108,7 +121,7 @@ export function useChat(): UseChatResult {
         abortRef.current = null
       }
     },
-    [messages],
+    [],
   )
 
   const stop = useCallback(() => {
