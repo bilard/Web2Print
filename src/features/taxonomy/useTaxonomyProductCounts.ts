@@ -18,28 +18,43 @@ export interface TaxonomyProductCounts {
 
 const EMPTY: TaxonomyProductCounts = { direct: {}, total: {}, grandTotal: 0 }
 
-export function useTaxonomyProductCounts(
-  taxonomy: Taxonomy | null | undefined,
-): TaxonomyProductCounts {
+/** Hook canonique : scan unique des sheets, regroupe par taxonomyId. À utiliser
+ *  quand un composant affiche plusieurs taxonomies — évite N×M boucles. */
+export function useAllTaxonomyProductCounts(
+  taxonomies: readonly Taxonomy[],
+): Map<string, TaxonomyProductCounts> {
   const sheets = useExcelStore((s) => s.sheets)
   return useMemo(() => {
-    if (!taxonomy) return EMPTY
-    const direct: Record<string, number> = {}
-    const total: Record<string, number> = {}
-    let grandTotal = 0
+    const result = new Map<string, TaxonomyProductCounts>()
+    if (taxonomies.length === 0) return result
+    const taxById = new Map(taxonomies.map((t) => [t.id, t]))
+    for (const tax of taxonomies) {
+      result.set(tax.id, { direct: {}, total: {}, grandTotal: 0 })
+    }
     for (const sheet of sheets) {
       for (const row of sheet.rows) {
         const taxId = row[PRODUCT_TAXONOMY_ID_KEY]
         const nodeId = row[PRODUCT_TAXONOMY_NODE_ID_KEY]
-        if (taxId !== taxonomy.id) continue
-        if (typeof nodeId !== 'string' || !taxonomy.nodes[nodeId]) continue
-        direct[nodeId] = (direct[nodeId] ?? 0) + 1
-        grandTotal += 1
-        for (const ancestorId of findPath(taxonomy.nodes, nodeId)) {
-          total[ancestorId] = (total[ancestorId] ?? 0) + 1
+        if (typeof taxId !== 'string' || typeof nodeId !== 'string') continue
+        const tax = taxById.get(taxId)
+        if (!tax || !tax.nodes[nodeId]) continue
+        const counts = result.get(taxId)!
+        counts.direct[nodeId] = (counts.direct[nodeId] ?? 0) + 1
+        counts.grandTotal += 1
+        for (const ancestorId of findPath(tax.nodes, nodeId)) {
+          counts.total[ancestorId] = (counts.total[ancestorId] ?? 0) + 1
         }
       }
     }
-    return { direct, total, grandTotal }
-  }, [taxonomy, sheets])
+    return result
+  }, [taxonomies, sheets])
+}
+
+/** Wrapper rétrocompat pour les call-sites n'ayant qu'une taxonomie. */
+export function useTaxonomyProductCounts(
+  taxonomy: Taxonomy | null | undefined,
+): TaxonomyProductCounts {
+  const list = useMemo(() => (taxonomy ? [taxonomy] : []), [taxonomy])
+  const map = useAllTaxonomyProductCounts(list)
+  return taxonomy ? (map.get(taxonomy.id) ?? EMPTY) : EMPTY
 }

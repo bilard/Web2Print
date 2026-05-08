@@ -10,7 +10,10 @@ import {
   classifyProductInTaxonomy,
   type ProductClassificationInput,
 } from '@/features/taxonomy/aiClassifyProduct'
-import { useTaxonomyProductCounts } from '@/features/taxonomy/useTaxonomyProductCounts'
+import {
+  useAllTaxonomyProductCounts,
+  type TaxonomyProductCounts,
+} from '@/features/taxonomy/useTaxonomyProductCounts'
 import { ProductTaxonomyPickerTree } from './ProductTaxonomyPickerTree'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
@@ -33,10 +36,11 @@ interface AiSuggestion {
   pathString: string
 }
 
-/** Sous-composant : un arbre par taxonomie (le hook de comptage doit être appelé
- *  au top-level d'un composant, donc on isole). */
+/** Sous-composant : un arbre par taxonomie. `counts` est calculé au top-level
+ *  via useAllTaxonomyProductCounts puis passé en prop pour éviter N appels. */
 function TaxonomyTreeSection({
   taxonomy,
+  counts,
   currentTaxonomyId,
   currentNodeId,
   suggestion,
@@ -48,6 +52,7 @@ function TaxonomyTreeSection({
   withProductsOnly,
 }: {
   taxonomy: Taxonomy
+  counts: TaxonomyProductCounts
   currentTaxonomyId: string | null
   currentNodeId: string | null
   suggestion: AiSuggestion | null
@@ -58,7 +63,6 @@ function TaxonomyTreeSection({
   onToggleNode: (nodeId: string) => void
   withProductsOnly: boolean
 }) {
-  const counts = useTaxonomyProductCounts(taxonomy)
   const isCurrentTax = currentTaxonomyId === taxonomy.id
   const isSuggestedTax = suggestion?.taxonomyId === taxonomy.id
   const totalNodes = Object.keys(taxonomy.nodes).length
@@ -97,8 +101,13 @@ function TaxonomyTreeSection({
 }
 
 /** Bandeau fixe au-dessus de la zone scrollable (cas une seule taxonomie en scope). */
-function FixedTaxonomyHeader({ taxonomy }: { taxonomy: Taxonomy }) {
-  const counts = useTaxonomyProductCounts(taxonomy)
+function FixedTaxonomyHeader({
+  taxonomy,
+  counts,
+}: {
+  taxonomy: Taxonomy
+  counts: TaxonomyProductCounts
+}) {
   const totalNodes = Object.keys(taxonomy.nodes).length
   return (
     <div className="flex items-center justify-between px-5 py-2 bg-[#161618] border-y border-white/[0.06] shrink-0">
@@ -117,6 +126,8 @@ function FixedTaxonomyHeader({ taxonomy }: { taxonomy: Taxonomy }) {
     </div>
   )
 }
+
+const EMPTY_COUNTS: TaxonomyProductCounts = { direct: {}, total: {}, grandTotal: 0 }
 
 export function ProductTaxonomyPicker({
   open,
@@ -158,6 +169,8 @@ export function ProductTaxonomyPicker({
     if (taxonomyFilter === 'all') return taxonomies
     return taxonomies.filter((t) => t.id === taxonomyFilter)
   }, [taxonomies, taxonomyFilter])
+
+  const allCounts = useAllTaxonomyProductCounts(visibleTaxonomies)
 
   // Init/reset de l'expand : à l'ouverture, sur changement de scope, ou quand
   // une suggestion IA arrive — on ouvre les niveaux 0 + le chemin du courant
@@ -438,7 +451,10 @@ export function ProductTaxonomyPicker({
         )}
 
         {visibleTaxonomies.length === 1 && (
-          <FixedTaxonomyHeader taxonomy={visibleTaxonomies[0]} />
+          <FixedTaxonomyHeader
+            taxonomy={visibleTaxonomies[0]}
+            counts={allCounts.get(visibleTaxonomies[0].id) ?? EMPTY_COUNTS}
+          />
         )}
 
         {visibleTaxonomies.length > 0 && (
@@ -486,6 +502,7 @@ export function ProductTaxonomyPicker({
               <TaxonomyTreeSection
                 key={tax.id}
                 taxonomy={tax}
+                counts={allCounts.get(tax.id) ?? EMPTY_COUNTS}
                 currentTaxonomyId={currentTaxonomyId}
                 currentNodeId={currentNodeId}
                 suggestion={suggestion}
