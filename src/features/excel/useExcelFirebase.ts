@@ -56,26 +56,34 @@ export function useExcelFirebase() {
     return fullDocId
   }
 
-  /** Charge une base par son `docId` Firestore complet. Lit le payload séparé
-   *  en priorité ; fallback sur l'ancien champ `sheets` inline pour les docs
-   *  pas encore migrés (compat lecture). */
+  /** Charge une base par son `docId` Firestore complet. Lit d'abord les méta
+   *  dans `excel_data` (toujours autorisé) pour détecter le format ; si
+   *  `sheets` y est encore inline (legacy non migré), on l'utilise direct,
+   *  sinon on va chercher le blob dans `excel_data_payload`.
+   *
+   *  NB : on n'attaque PAS `excel_data_payload` en premier — la rule
+   *  `resource.data.userId == auth.uid` deny les reads sur doc inexistant
+   *  (resource null), donc tenter un getDoc spéculatif sur un docId non
+   *  encore migré jette permission-denied avant même tout fallback. */
   const loadFromFirebase = async (docId: string): Promise<ExcelSheet[] | null> => {
     const user = auth.currentUser
     if (!user) return null
 
     setDetecting(true)
     try {
-      const payloadSnap = await getDoc(doc(db, PAYLOAD_COLLECTION, docId))
-      if (payloadSnap.exists()) {
-        const sheets: ExcelSheet[] = JSON.parse(payloadSnap.data().json)
+      const metaSnap = await getDoc(doc(db, COLLECTION, docId))
+      if (!metaSnap.exists()) return null
+      const meta = metaSnap.data()
+
+      if (typeof meta.sheets === 'string') {
+        const sheets: ExcelSheet[] = JSON.parse(meta.sheets)
         setSheets(sheets)
         return sheets
       }
-      const legacySnap = await getDoc(doc(db, COLLECTION, docId))
-      if (!legacySnap.exists()) return null
-      const data = legacySnap.data()
-      if (typeof data.sheets !== 'string') return null
-      const sheets: ExcelSheet[] = JSON.parse(data.sheets)
+
+      const payloadSnap = await getDoc(doc(db, PAYLOAD_COLLECTION, docId))
+      if (!payloadSnap.exists()) return null
+      const sheets: ExcelSheet[] = JSON.parse(payloadSnap.data().json)
       setSheets(sheets)
       return sheets
     } finally {

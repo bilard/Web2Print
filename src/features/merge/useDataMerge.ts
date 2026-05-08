@@ -28,18 +28,20 @@ export function useDataMerge() {
   const applyRowRef = useRef<((row: MergeRow, cols?: MergeColumn[]) => Promise<void>) | null>(null)
 
   const connectSource = useCallback(async (source: DataSourceRef) => {
-    // Lit le payload séparé en priorité, fallback sur l'ancien champ inline
-    // pour les docs pas encore migrés (cf. useExcelFirebase.saveToFirebase).
-    const payloadSnap = await getDoc(doc(db, 'excel_data_payload', source.excelDocId))
+    // Lit d'abord les méta dans `excel_data` (toujours autorisé) ; si `sheets`
+    // est encore inline (legacy non migré), on l'utilise direct, sinon on va
+    // chercher le blob dans `excel_data_payload`. NB : on n'attaque PAS le
+    // payload en premier — la rule deny les reads sur doc inexistant.
+    const metaSnap = await getDoc(doc(db, 'excel_data', source.excelDocId))
+    if (!metaSnap.exists()) throw new Error('Dataset introuvable')
+    const meta = metaSnap.data()
     let sheets: ExcelSheet[]
-    if (payloadSnap.exists()) {
-      sheets = JSON.parse(payloadSnap.data().json)
+    if (typeof meta.sheets === 'string') {
+      sheets = JSON.parse(meta.sheets)
     } else {
-      const legacySnap = await getDoc(doc(db, 'excel_data', source.excelDocId))
-      if (!legacySnap.exists()) throw new Error('Dataset introuvable')
-      const data = legacySnap.data()
-      if (typeof data.sheets !== 'string') throw new Error('Dataset vide ou corrompu')
-      sheets = JSON.parse(data.sheets)
+      const payloadSnap = await getDoc(doc(db, 'excel_data_payload', source.excelDocId))
+      if (!payloadSnap.exists()) throw new Error('Dataset vide ou corrompu')
+      sheets = JSON.parse(payloadSnap.data().json)
     }
     const sheet = sheets[source.sheetIndex] ?? sheets[0]
 
