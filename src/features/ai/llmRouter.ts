@@ -249,125 +249,62 @@ async function callProvider<T>(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Provider : OpenRouter (API OpenAI-compatible, json_object via prompt-injection)
+// Providers OpenAI-compatible (DeepSeek, OpenRouter)
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// Ces backends acceptent `response_format: { type: 'json_object' }` mais PAS
+// `json_schema` strict. On injecte le schéma dans le prompt pour guider la
+// génération, puis on valide via Zod en sortie.
 
-async function callOpenRouter<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
-  const apiKey = getApiKey('openrouter')
-  if (!apiKey) throw new Error('Clé OpenRouter absente. Configurez-la dans Réglages.')
-
-  // OpenRouter agrège des centaines de modèles dont le support de
-  // response_format varie. Pour rester universel : on injecte le schéma dans le
-  // prompt (comme DeepSeek) et on demande json_object — chaque backend dégrade
-  // proprement vers du JSON pur.
-  const schemaInstruction =
-    `\n\n## SCHÉMA DE SORTIE OBLIGATOIRE\n` +
-    `Réponds UNIQUEMENT par un JSON valide strictement conforme au schéma ci-dessous. ` +
-    `Aucun texte avant ou après le JSON. Aucune balise markdown. Juste le JSON pur.\n\n` +
-    JSON.stringify(opts.schemaForLLM, null, 2)
-
-  const temperature = TASK_TEMPERATURE[opts.task]
-  const max_tokens = 8192
-  const fullPrompt = opts.prompt + schemaInstruction
-
-  opts.onRequestSent?.({
-    provider: 'openrouter',
-    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-    model,
-    temperature,
-    max_tokens,
-    messages: [{ role: 'user', content: fullPrompt }],
-    task: opts.task,
-    version: opts.version,
-  })
-
-  const ctrl = new AbortController()
-  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
-
-  let res: Response
-  try {
-    res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'DesignStudio Web2Print',
-      },
-      body: JSON.stringify({
-        model,
-        temperature,
-        max_tokens,
-        messages: [{ role: 'user', content: fullPrompt }],
-        response_format: { type: 'json_object' },
-      }),
-    })
-  } finally {
-    clearTimeout(timeoutId)
-  }
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`OpenRouter API ${res.status} : ${body.slice(0, 300)}`)
-  }
-
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>
-    usage?: { prompt_tokens?: number; completion_tokens?: number }
-  }
-  if (data.usage) {
-    recordAiUsage({
-      provider: 'openrouter',
-      model,
-      inputTokens: data.usage.prompt_tokens ?? 0,
-      outputTokens: data.usage.completion_tokens ?? 0,
-    })
-  }
-  const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('OpenRouter : réponse vide')
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(text)
-  } catch (err) {
-    throw new Error(
-      `OpenRouter : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
-      `Sortie : ${text.slice(0, 200)}`,
-    )
-  }
-
-  const validation = opts.schema.safeParse(parsed)
-  if (validation.success) return validation.data
-  throw new Error(
-    `Réponse OpenRouter non conforme au schéma : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
-  )
+interface OpenAICompatibleConfig {
+  providerId: 'deepseek' | 'openrouter'
+  apiKeyId: string
+  endpoint: string
+  displayName: string
+  /** Headers en plus de `Authorization` (ex. `HTTP-Referer` / `X-Title` pour OpenRouter). */
+  extraHeaders?: Record<string, string>
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Provider : DeepSeek (API OpenAI-compatible, JSON mode)
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function callDeepSeek<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
-  const apiKey = getApiKey('deepseek')
-  if (!apiKey) throw new Error('Clé DeepSeek absente. Configurez-la dans Réglages.')
-
-  // DeepSeek supporte response_format: { type: 'json_object' } mais PAS
-  // json_schema strict. On injecte le schéma dans le prompt pour guider
-  // la génération, puis on valide via Zod en sortie.
-  const schemaInstruction =
-    `\n\n## SCHÉMA DE SORTIE OBLIGATOIRE\n` +
-    `Réponds UNIQUEMENT par un JSON valide strictement conforme au schéma ci-dessous. ` +
-    `Aucun texte avant ou après le JSON. Aucune balise markdown. Juste le JSON pur.\n\n` +
-    JSON.stringify(opts.schemaForLLM, null, 2)
-
-  const temperature = TASK_TEMPERATURE[opts.task]
-  const max_tokens = 8192
-  const fullPrompt = opts.prompt + schemaInstruction
-
-  opts.onRequestSent?.({
-    provider: 'deepseek',
+const OPENAI_COMPATIBLE_PROVIDERS: Record<'deepseek' | 'openrouter', OpenAICompatibleConfig> = {
+  deepseek: {
+    providerId: 'deepseek',
+    apiKeyId: 'deepseek',
     endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    displayName: 'DeepSeek',
+  },
+  openrouter: {
+    providerId: 'openrouter',
+    apiKeyId: 'openrouter',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    displayName: 'OpenRouter',
+    // OpenRouter exige un identifiant d'app pour le routing/rate-limit.
+    extraHeaders: {
+      'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
+      'X-Title': 'DesignStudio Web2Print',
+    },
+  },
+}
+
+const SCHEMA_INSTRUCTION_HEADER =
+  `\n\n## SCHÉMA DE SORTIE OBLIGATOIRE\n` +
+  `Réponds UNIQUEMENT par un JSON valide strictement conforme au schéma ci-dessous. ` +
+  `Aucun texte avant ou après le JSON. Aucune balise markdown. Juste le JSON pur.\n\n`
+
+async function callOpenAICompatible<T>(
+  config: OpenAICompatibleConfig,
+  opts: GenerateJsonOptions<T>,
+  model: string,
+): Promise<T> {
+  const apiKey = getApiKey(config.apiKeyId)
+  if (!apiKey) throw new Error(`Clé ${config.displayName} absente. Configurez-la dans Réglages.`)
+
+  const fullPrompt = opts.prompt + SCHEMA_INSTRUCTION_HEADER + JSON.stringify(opts.schemaForLLM, null, 2)
+  const temperature = TASK_TEMPERATURE[opts.task]
+  const max_tokens = 8192
+
+  opts.onRequestSent?.({
+    provider: config.providerId,
+    endpoint: config.endpoint,
     model,
     temperature,
     max_tokens,
@@ -381,12 +318,13 @@ async function callDeepSeek<T>(opts: GenerateJsonOptions<T>, model: string): Pro
 
   let res: Response
   try {
-    res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    res = await fetch(config.endpoint, {
       method: 'POST',
       signal: ctrl.signal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
+        ...(config.extraHeaders ?? {}),
       },
       body: JSON.stringify({
         model,
@@ -402,7 +340,7 @@ async function callDeepSeek<T>(opts: GenerateJsonOptions<T>, model: string): Pro
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`DeepSeek API ${res.status} : ${body.slice(0, 300)}`)
+    throw new Error(`${config.displayName} API ${res.status} : ${body.slice(0, 300)}`)
   }
 
   const data = (await res.json()) as {
@@ -411,21 +349,21 @@ async function callDeepSeek<T>(opts: GenerateJsonOptions<T>, model: string): Pro
   }
   if (data.usage) {
     recordAiUsage({
-      provider: 'deepseek',
+      provider: config.providerId,
       model,
       inputTokens: data.usage.prompt_tokens ?? 0,
       outputTokens: data.usage.completion_tokens ?? 0,
     })
   }
   const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('DeepSeek : réponse vide')
+  if (!text) throw new Error(`${config.displayName} : réponse vide`)
 
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
   } catch (err) {
     throw new Error(
-      `DeepSeek : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
+      `${config.displayName} : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
       `Sortie : ${text.slice(0, 200)}`,
     )
   }
@@ -433,9 +371,15 @@ async function callDeepSeek<T>(opts: GenerateJsonOptions<T>, model: string): Pro
   const validation = opts.schema.safeParse(parsed)
   if (validation.success) return validation.data
   throw new Error(
-    `Réponse DeepSeek non conforme au schéma : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
+    `Réponse ${config.displayName} non conforme au schéma : ${validation.error.issues.map((i) => i.message).join(' ; ')}`,
   )
 }
+
+const callDeepSeek = <T>(opts: GenerateJsonOptions<T>, model: string) =>
+  callOpenAICompatible(OPENAI_COMPATIBLE_PROVIDERS.deepseek, opts, model)
+
+const callOpenRouter = <T>(opts: GenerateJsonOptions<T>, model: string) =>
+  callOpenAICompatible(OPENAI_COMPATIBLE_PROVIDERS.openrouter, opts, model)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider : Claude (Anthropic API direct browser, tool-use forcé pour JSON strict)
