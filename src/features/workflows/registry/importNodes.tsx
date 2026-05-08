@@ -22,8 +22,8 @@ interface CsvConfig {
 export const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown }> = {
   type: 'import-csv',
   category: 'import',
-  label: 'Import CSV/Excel',
-  description: "Charge un fichier .csv/.xlsx et produit une Sheet (premier onglet).",
+  label: 'Parser Excel/CSV',
+  description: "Transformateur : prend un fichier .csv/.xlsx en entrée et produit une Sheet (premier onglet).",
   icon: FileSpreadsheet,
   inputs: [{ name: 'file', type: 'file', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],

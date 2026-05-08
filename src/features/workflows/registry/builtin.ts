@@ -4,8 +4,12 @@ import { nodeRegistry } from './index'
 
 // Side-effect imports register node specs into nodeRegistry
 import './importNodes'
+import './scrapeNodes'
+import './gdriveNodes'
 import './enrichmentNodes'
+import './aiNodes'
 import './persistenceNodes'
+import './taxonomyNodes'
 import './exportNodes'
 
 let initialized = false
