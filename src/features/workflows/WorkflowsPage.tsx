@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2, Workflow as WorkflowIcon } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Workflow as WorkflowIcon } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow } from './persistence/workflowsApi'
 import type { Workflow } from './types'
@@ -35,10 +35,20 @@ export function WorkflowsPage() {
     <div className="min-h-screen bg-[#0f0f0f] text-white p-8">
       <div className="max-w-5xl mx-auto">
         <header className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold flex items-center gap-3">
-            <WorkflowIcon className="w-6 h-6 text-indigo-400" />
-            Workflows
-          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => nav('/dashboard')}
+              className="p-2 rounded-md hover:bg-white/[0.05] text-neutral-400 hover:text-white transition-colors"
+              aria-label="Retour au dashboard"
+              title="Retour au dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl font-semibold flex items-center gap-3">
+              <WorkflowIcon className="w-6 h-6 text-indigo-400" />
+              Workflows
+            </h1>
+          </div>
           <button
             onClick={create}
             className="px-4 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2"
