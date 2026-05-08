@@ -6,6 +6,7 @@ import {
   Controls,
   MiniMap,
   MarkerType,
+  useReactFlow,
   applyEdgeChanges,
   applyNodeChanges,
   type Connection,
@@ -17,21 +18,24 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { BaseNode } from './nodes/BaseNode'
+import { FlowEdge, FlowEdgeDefs } from './edges/FlowEdge'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { nodeRegistry } from '../registry'
 import { isCompatible } from '../runtime/ports'
 import type { WorkflowEdge, WorkflowNode } from '../types'
 
 const nodeTypes = { base: BaseNode }
+const edgeTypes = { flow: FlowEdge }
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
-  type: 'smoothstep',
-  animated: true,
-  style: { stroke: '#6366f1', strokeWidth: 1.5 },
+  type: 'flow',
+  style: { stroke: '#6366f1', strokeWidth: 2 },
   markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1', width: 14, height: 14 },
 }
 
-const connectionLineStyle = { stroke: '#818cf8', strokeWidth: 1.5, strokeDasharray: '4 4' }
+const connectionLineStyle = { stroke: '#818cf8', strokeWidth: 2, strokeDasharray: '5 4' }
+
+export const WORKFLOW_DRAG_TYPE = 'application/x-workflow-node'
 
 const toRfNode = (n: WorkflowNode): Node => ({
   id: n.id,
@@ -176,12 +180,43 @@ export function WorkflowEditor() {
     [wf, upsertEdge],
   )
 
+  const upsertStoreNode = useWorkflowStore((s) => s.upsertNode)
+  const rfInstance = useReactFlow()
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+      const type = event.dataTransfer.getData(WORKFLOW_DRAG_TYPE)
+      if (!type) return
+      const spec = nodeRegistry.get(type)
+      if (!spec) return
+      const position = rfInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+      upsertStoreNode({
+        id: `n_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        type: spec.type,
+        position,
+        config: spec.defaultConfig,
+      })
+    },
+    [rfInstance, upsertStoreNode],
+  )
+
   return (
-    <div className="flex-1 bg-[#0f0f0f]">
+    <div className="flex-1 bg-[#0f0f0f]" onDragOver={onDragOver} onDrop={onDrop}>
+      <FlowEdgeDefs />
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

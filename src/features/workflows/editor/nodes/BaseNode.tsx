@@ -4,25 +4,80 @@ import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useRunContext } from '../../runtime/runContext'
 import { nodeRegistry } from '../../registry'
 import { CheckCircle2, Loader2, AlertCircle, MinusCircle } from 'lucide-react'
+import type { NodeSpec } from '../../types'
 
-const STATUS_BORDER: Record<string, string> = {
-  pending: 'border-neutral-700',
-  running: 'border-indigo-500 ring-1 ring-indigo-500/50',
-  success: 'border-emerald-600/70',
-  error: 'border-red-500',
-  skipped: 'border-neutral-700 opacity-60',
+interface CategoryStyle {
+  ring: string
+  icon: string
+  bg: string
+  border: string
+  glow: string
 }
 
-const STATUS_BADGE: Record<string, ReactNode> = {
+const CATEGORY_STYLES: Record<NodeSpec['category'], CategoryStyle> = {
+  import: {
+    ring: 'ring-amber-500/40',
+    icon: 'text-amber-300',
+    bg: 'bg-gradient-to-br from-amber-500/15 to-amber-700/15',
+    border: 'border-amber-500/40',
+    glow: 'shadow-amber-500/10',
+  },
+  enrichment: {
+    ring: 'ring-violet-500/40',
+    icon: 'text-violet-300',
+    bg: 'bg-gradient-to-br from-violet-500/15 to-violet-700/15',
+    border: 'border-violet-500/40',
+    glow: 'shadow-violet-500/10',
+  },
+  persistence: {
+    ring: 'ring-emerald-500/40',
+    icon: 'text-emerald-300',
+    bg: 'bg-gradient-to-br from-emerald-500/15 to-emerald-700/15',
+    border: 'border-emerald-500/40',
+    glow: 'shadow-emerald-500/10',
+  },
+  export: {
+    ring: 'ring-sky-500/40',
+    icon: 'text-sky-300',
+    bg: 'bg-gradient-to-br from-sky-500/15 to-sky-700/15',
+    border: 'border-sky-500/40',
+    glow: 'shadow-sky-500/10',
+  },
+  utility: {
+    ring: 'ring-neutral-500/40',
+    icon: 'text-neutral-300',
+    bg: 'bg-gradient-to-br from-neutral-600/15 to-neutral-800/15',
+    border: 'border-neutral-600/40',
+    glow: 'shadow-neutral-500/10',
+  },
+}
+
+const STATUS_DOT: Record<string, ReactNode> = {
   pending: null,
-  running: <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />,
-  success: <CheckCircle2 className="w-3 h-3 text-emerald-500" />,
-  error: <AlertCircle className="w-3 h-3 text-red-500" />,
-  skipped: <MinusCircle className="w-3 h-3 text-neutral-500" />,
+  running: (
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-indigo-500 flex items-center justify-center">
+      <Loader2 className="w-2.5 h-2.5 text-indigo-400 animate-spin" />
+    </div>
+  ),
+  success: (
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-emerald-500 flex items-center justify-center">
+      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+    </div>
+  ),
+  error: (
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-red-500 flex items-center justify-center">
+      <AlertCircle className="w-2.5 h-2.5 text-red-400" />
+    </div>
+  ),
+  skipped: (
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-neutral-600 flex items-center justify-center">
+      <MinusCircle className="w-2.5 h-2.5 text-neutral-500" />
+    </div>
+  ),
 }
 
-const HANDLE_CLS =
-  '!w-2 !h-2 !border !border-[#1a1a1a] !bg-indigo-500 hover:!bg-indigo-400 transition-colors'
+const HANDLE_BASE =
+  '!w-2.5 !h-2.5 !border-2 !border-[#0f0f0f] hover:!w-3 hover:!h-3 transition-all'
 
 export function BaseNode({ id, data, selected }: NodeProps) {
   const nodeType = (data as { type?: string }).type
@@ -38,59 +93,94 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   }
 
   const Icon = spec.icon
+  const cat = CATEGORY_STYLES[spec.category]
   const inputs = spec.inputs ?? []
   const outputs = spec.outputs ?? []
-  const portRows = Math.max(inputs.length, outputs.length)
-  const selectionCls = selected
-    ? 'ring-2 ring-indigo-500/70 border-indigo-500'
-    : STATUS_BORDER[status]
+  const portRows = Math.max(inputs.length, outputs.length, 1)
+
+  const ringCls = selected
+    ? `ring-2 ${cat.ring.replace('/40', '/80')}`
+    : status === 'running'
+      ? 'ring-2 ring-indigo-500/60 animate-pulse'
+      : status === 'error'
+        ? 'ring-2 ring-red-500/60'
+        : 'ring-1 ring-white/5'
 
   return (
-    <div
-      className={`relative bg-[#1a1a1a] border ${selectionCls} rounded-md shadow-md text-white min-w-[140px] max-w-[180px] transition-colors`}
-    >
-      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-neutral-800/80">
-        <Icon className="w-3.5 h-3.5 text-indigo-400 shrink-0" aria-hidden="true" />
-        <span className="text-[11px] font-medium truncate flex-1">{spec.label}</span>
-        {STATUS_BADGE[status]}
+    <div className={`relative group`}>
+      {/* Card */}
+      <div
+        className={`relative w-[130px] rounded-xl ${cat.bg} backdrop-blur-sm border ${cat.border} ${ringCls} shadow-lg ${cat.glow} transition-all group-hover:scale-[1.02]`}
+      >
+        {/* Icon block */}
+        <div className="flex flex-col items-center justify-center px-3 pt-4 pb-2">
+          <div
+            className={`w-12 h-12 rounded-xl ${cat.bg} border ${cat.border} flex items-center justify-center shadow-inner`}
+          >
+            <Icon className={`w-6 h-6 ${cat.icon}`} aria-hidden="true" />
+          </div>
+          <span className="mt-2 text-[11px] font-medium text-white text-center leading-tight">
+            {spec.label}
+          </span>
+        </div>
+
+        {/* Status dot */}
+        {STATUS_DOT[status]}
       </div>
 
-      <div className="py-1">
-        {Array.from({ length: portRows }).map((_, i) => {
-          const inp = inputs[i]
-          const out = outputs[i]
+      {/* Ports — positioned absolutely on the card edges */}
+      {Array.from({ length: portRows }).map((_, i) => {
+        const inp = inputs[i]
+        const out = outputs[i]
+        const top = portRows === 1 ? '50%' : `${30 + (i / Math.max(portRows - 1, 1)) * 40}%`
+        return (
+          <div key={i}>
+            {inp ? (
+              <Handle
+                type="target"
+                id={inp.name}
+                position={Position.Left}
+                style={{ top }}
+                className={`${HANDLE_BASE} !bg-indigo-400`}
+              />
+            ) : null}
+            {out ? (
+              <Handle
+                type="source"
+                id={out.name}
+                position={Position.Right}
+                style={{ top }}
+                className={`${HANDLE_BASE} !bg-indigo-400`}
+              />
+            ) : null}
+          </div>
+        )
+      })}
+
+      {/* Port labels — visible on hover */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute inset-0">
+        {inputs.map((p, i) => {
+          const top = inputs.length === 1 ? '50%' : `${30 + (i / Math.max(inputs.length - 1, 1)) * 40}%`
           return (
-            <div
-              key={i}
-              className="relative flex items-center justify-between text-[10px] text-neutral-400 px-2 h-5"
+            <span
+              key={`in-${p.name}`}
+              className="absolute right-full mr-2 text-[10px] text-neutral-400 whitespace-nowrap -translate-y-1/2"
+              style={{ top }}
             >
-              {inp ? (
-                <>
-                  <Handle
-                    type="target"
-                    id={inp.name}
-                    position={Position.Left}
-                    className={HANDLE_CLS}
-                  />
-                  <span className="ml-1 truncate">{inp.name}</span>
-                </>
-              ) : (
-                <span />
-              )}
-              {out ? (
-                <>
-                  <span className="mr-1 truncate text-right">{out.name}</span>
-                  <Handle
-                    type="source"
-                    id={out.name}
-                    position={Position.Right}
-                    className={HANDLE_CLS}
-                  />
-                </>
-              ) : (
-                <span />
-              )}
-            </div>
+              {p.name}
+            </span>
+          )
+        })}
+        {outputs.map((p, i) => {
+          const top = outputs.length === 1 ? '50%' : `${30 + (i / Math.max(outputs.length - 1, 1)) * 40}%`
+          return (
+            <span
+              key={`out-${p.name}`}
+              className="absolute left-full ml-2 text-[10px] text-neutral-400 whitespace-nowrap -translate-y-1/2"
+              style={{ top }}
+            >
+              {p.name}
+            </span>
           )
         })}
       </div>
