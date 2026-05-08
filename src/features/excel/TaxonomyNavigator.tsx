@@ -14,7 +14,7 @@ import {
 } from '@/features/taxonomy/productTaxonomy'
 import { findPath } from '@/features/taxonomy/taxonomyUtils'
 import type { Taxonomy, TaxonomyNode } from '@/features/taxonomy/types'
-import { getTaxoColumns } from './taxonomyBuilder'
+import { getTaxoColumns, getLevelColor } from './taxonomyBuilder'
 import type { ExcelRow } from './types'
 
 interface NodePath {
@@ -266,9 +266,13 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
             const tax = taxonomies?.find((t) => t.id === globalFilterDecoded.taxonomyId)
             const node = tax?.nodes[globalFilterDecoded.nodeId]
             if (!tax || !node) return null
+            const color = getLevelColor(node.level + 1)
             return (
               <span className="flex items-center gap-1">
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 inline-flex items-center gap-1">
+                <span
+                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
+                  style={{ backgroundColor: `${color}20`, color }}
+                >
                   <Layers className="w-2.5 h-2.5" />
                   {node.label}
                 </span>
@@ -557,6 +561,10 @@ function GlobalTaxoLevel({
       {nodes.map((tn) => {
         const dragKey = `${GLOBAL_TAXO_FILTER_KEY}::${taxonomyId}::${tn.node.id}`
         const isDropTarget = dropTargetKey === dragKey
+        // Couleur par profondeur — même palette que la section "Colonnes"
+        // pour que les niveaux soient visuellement cohérents entre les deux
+        // arbres. depth est 0-indexé, getLevelColor attend du 1-indexé.
+        const color = getLevelColor(depth + 1)
         return (
           <div key={tn.node.id}>
             <button
@@ -580,40 +588,44 @@ function GlobalTaxoLevel({
               }}
               className={`w-full text-left flex items-center gap-2 py-[5px] transition-colors group ${
                 isDropTarget
-                  ? 'ring-2 ring-inset ring-indigo-500 bg-indigo-500/10'
+                  ? 'ring-2 ring-inset'
                   : tn.isSelected
-                    ? 'bg-indigo-500/10'
+                    ? 'bg-white/[0.06]'
                     : 'hover:bg-white/[0.03]'
               }`}
               style={{
                 paddingLeft: `${depth * 16 + 12}px`,
                 paddingRight: 12,
+                ...(isDropTarget ? { backgroundColor: `${color}20`, boxShadow: `inset 0 0 0 2px ${color}` } : {}),
               }}
             >
               <span className="w-3.5 shrink-0 flex items-center justify-center">
                 {tn.isExpanded ? (
-                  <ChevronDown className="w-3 h-3 text-indigo-400" />
+                  <ChevronDown className="w-3 h-3" style={{ color }} />
                 ) : (
                   <ChevronRight className="w-3 h-3 text-white/15 group-hover:text-white/30" />
                 )}
               </span>
 
-              {tn.isSelected && <div className="w-[3px] h-5 rounded-full shrink-0 -ml-1 bg-indigo-400" />}
+              {tn.isSelected && (
+                <div
+                  className="w-[3px] h-5 rounded-full shrink-0 -ml-1"
+                  style={{ backgroundColor: color }}
+                />
+              )}
 
               <span
-                className={`flex-1 truncate leading-tight ${tn.isSelected ? 'font-semibold text-indigo-300' : ''}`}
+                className={`flex-1 truncate leading-tight ${tn.isSelected ? 'font-semibold' : ''}`}
                 style={{
                   fontSize: depth === 0 ? '13px' : depth === 1 ? '12px' : '11px',
-                  color: tn.isSelected
-                    ? undefined
-                    : depth === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
+                  color: tn.isSelected ? color : depth === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
                 }}
               >
                 {tn.node.label}
               </span>
 
               <span
-                className={`tabular-nums ${tn.isSelected ? 'text-indigo-300/70' : 'text-white/20'}`}
+                className={`tabular-nums ${tn.isSelected ? 'text-white/50' : 'text-white/20'}`}
                 style={{ fontSize: depth === 0 ? '10px' : '9px' }}
               >
                 {tn.count}
