@@ -155,6 +155,23 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
       .map((t) => ({ taxonomy: t, leafCounts: linkCounts.get(t.id)! }))
   }, [allRowsInBdd, taxonomies])
 
+  /** Auto-expand : nœuds référencés par les rows de la sheet active. Quand
+   *  l'utilisateur sélectionne une source (sheet), la nav globale ouvre
+   *  automatiquement les chemins vers les classifications de ses produits.
+   *  Map taxonomyId → Set<nodeId>. */
+  const autoExpandByTaxoId = useMemo(() => {
+    const out = new Map<string, Set<string>>()
+    if (!sheet) return out
+    for (const row of sheet.rows) {
+      const link = getProductTaxonomyLink(row)
+      if (!link) continue
+      let s = out.get(link.taxonomyId)
+      if (!s) { s = new Set(); out.set(link.taxonomyId, s) }
+      s.add(link.nodeId)
+    }
+    return out
+  }, [sheet])
+
   const globalFilterDecoded = useMemo(() => {
     const v = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
     return v ? decodeGlobalTaxoFilter(v) : null
@@ -322,6 +339,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
                 selectedNodeId={
                   globalFilterDecoded?.taxonomyId === taxonomy.id ? globalFilterDecoded.nodeId : null
                 }
+                autoExpandNodeIds={autoExpandByTaxoId.get(taxonomy.id)}
                 onSelect={(nodeId) => handleSelectGlobalNode(taxonomy.id, nodeId)}
                 onDropRow={(rowId, nodeId, label) => handleDropOnGlobalNode(rowId, taxonomy.id, nodeId, label)}
                 dropTargetKey={dropTargetKey}
@@ -455,6 +473,9 @@ interface GlobalTaxoSubtreeProps {
   /** nodeId direct → nb de produits liés (sans descendance) */
   leafCounts: Map<string, number>
   selectedNodeId: string | null
+  /** nodeIds dont le chemin doit être auto-expand (rows de la sheet active
+   *  liées à cette taxo) — ouvre la nav vers les classifications du source. */
+  autoExpandNodeIds?: Set<string>
   onSelect: (nodeId: string) => void
   onDropRow: (rowId: string, nodeId: string, label: string) => void
   dropTargetKey: string | null
@@ -470,7 +491,7 @@ interface GlobalTaxoTreeNode {
 }
 
 function GlobalTaxoSubtree({
-  taxonomy, leafCounts, selectedNodeId, onSelect, onDropRow, dropTargetKey, setDropTargetKey,
+  taxonomy, leafCounts, selectedNodeId, autoExpandNodeIds, onSelect, onDropRow, dropTargetKey, setDropTargetKey,
 }: GlobalTaxoSubtreeProps) {
   // Calcule les counts cumulatifs (un nœud agrège lui-même + descendants directement liés)
   // et restreint l'arbre aux nœuds qui ont au moins 1 produit (ou sont sur un chemin
@@ -499,10 +520,16 @@ function GlobalTaxoSubtree({
     }
     for (const id of keepIds) computeCumul(id)
 
-    // 3) Auto-expand le chemin du nœud sélectionné
+    // 3) Auto-expand : chemin du nœud sélectionné + chemins des nœuds liés
+    //    aux rows de la sheet active (auto-révèle la classification du source).
     const expandedIds = new Set<string>()
     if (selectedNodeId) {
       for (const id of findPath(allNodes, selectedNodeId)) expandedIds.add(id)
+    }
+    if (autoExpandNodeIds) {
+      for (const nodeId of autoExpandNodeIds) {
+        for (const id of findPath(allNodes, nodeId)) expandedIds.add(id)
+      }
     }
 
     // 4) Construit l'arbre filtré récursivement
@@ -520,7 +547,7 @@ function GlobalTaxoSubtree({
     }
 
     return buildBranch(null)
-  }, [taxonomy, leafCounts, selectedNodeId])
+  }, [taxonomy, leafCounts, selectedNodeId, autoExpandNodeIds])
 
   if (tree.length === 0) return null
 
