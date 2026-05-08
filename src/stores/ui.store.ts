@@ -85,7 +85,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
-  setZoom: (zoom) => set({ zoom: Math.min(400, Math.max(10, zoom)) }),
+  setZoom: (zoom) => set({ zoom: Math.min(400, Math.max(1, zoom)) }),
   setGridVisible: (gridVisible) => set({ gridVisible }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
   setCanvasSize: (w, h, bg) =>

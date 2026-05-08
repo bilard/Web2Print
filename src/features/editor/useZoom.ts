@@ -3,7 +3,7 @@ import { Canvas, Point } from 'fabric'
 import type { TPointerEventInfo, TPointerEvent } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 
-const MIN_ZOOM = 0.1
+const MIN_ZOOM = 0.01
 const MAX_ZOOM = 4
 
 export function useZoom(fabricRef: React.RefObject<Canvas | null>) {
