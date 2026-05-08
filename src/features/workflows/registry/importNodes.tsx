@@ -1,8 +1,10 @@
 // src/features/workflows/registry/importNodes.tsx
+import { useState, useEffect } from 'react'
 import { FileSpreadsheet, FileText, FileImage, Upload } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { parseExcelFile } from '@/features/excel/useExcelImport'
+import { putFile, getFile } from '../runtime/fileStore'
 
 interface CsvConfig {
   headerRow: boolean
@@ -23,13 +25,15 @@ export const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      ctx.log('error', 'Aucun fichier fourni')
-      return { sheet: null }
+      throw new Error('Aucun fichier fourni — connectez un Upload ou un autre node produisant un fichier.')
     }
     ctx.log('info', `Parsing ${inputs.file.name}…`)
     const sheets = await parseExcelFile(inputs.file)
+    if (sheets.length === 0) {
+      throw new Error('Le fichier ne contient aucun onglet exploitable.')
+    }
     ctx.log('info', `${sheets.length} onglet(s) parsé(s) — utilisation du premier`)
-    return { sheet: sheets[0] ?? null }
+    return { sheet: sheets[0] }
   },
 }
 
@@ -48,10 +52,9 @@ export const importIdmlNode: NodeSpec<IdmlConfig, { file: File }, { sheet: unkno
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      ctx.log('error', 'Aucun fichier fourni')
-      return { sheet: null }
+      throw new Error('Aucun fichier fourni — connectez un Upload.')
     }
-    ctx.log('warn', 'Import IDML : stub — à wirer en phase 2 (parseIdml ne produit pas de Sheet directement)')
+    ctx.log('warn', 'Import IDML : stub — produit une Sheet vide. À wirer en phase 2.')
     return { sheet: { name: inputs.file.name, columns: [], rows: [] } }
   },
 }
@@ -71,52 +74,87 @@ export const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown
   runtime: 'client',
   run: async (ctx, _config, inputs) => {
     if (!inputs.file) {
-      ctx.log('error', 'Aucun fichier fourni')
-      return { sheet: null }
+      throw new Error('Aucun fichier fourni — connectez un Upload.')
     }
-    ctx.log('warn', 'Import SVG : stub — à wirer en phase 2 (parseSvgToFabric produit des objets canvas, pas des Sheet)')
+    ctx.log('warn', 'Import SVG : stub — produit une Sheet vide. À wirer en phase 2.')
     return { sheet: { name: inputs.file.name, columns: [], rows: [] } }
   },
 }
 
-interface UploadConfig { lastFileName: string }
+interface UploadConfig {
+  fileKey: string
+  fileName: string
+  fileSize: number
+}
 
-export const uploadNode: NodeSpec<UploadConfig, Record<string, never>, { file: File | null }> = {
+interface UploadConfigUiProps {
+  config: UploadConfig
+  onChange: (next: UploadConfig) => void
+}
+
+function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
+  const [exists, setExists] = useState<boolean | null>(null)
+  useEffect(() => {
+    if (!config.fileKey) {
+      setExists(null)
+      return
+    }
+    getFile(config.fileKey)
+      .then((f) => setExists(!!f))
+      .catch(() => setExists(false))
+  }, [config.fileKey])
+
+  return (
+    <div className="space-y-1.5">
+      <input
+        type="file"
+        onChange={async (e) => {
+          const f = e.target.files?.[0]
+          if (!f) return
+          const key = `wf_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+          await putFile(key, f)
+          onChange({ fileKey: key, fileName: f.name, fileSize: f.size })
+        }}
+        className="text-xs text-neutral-300 w-full"
+      />
+      {config.fileName ? (
+        <div className="text-[10px] text-neutral-500 truncate">
+          <span className="text-neutral-400">{config.fileName}</span>
+          <span className="ml-1">· {(config.fileSize / 1024).toFixed(1)} KB</span>
+          {exists === false ? (
+            <span className="ml-1 text-amber-400">· fichier introuvable, re-sélectionnez</span>
+          ) : exists === true ? (
+            <span className="ml-1 text-emerald-400">· OK</span>
+          ) : null}
+        </div>
+      ) : (
+        <div className="text-[10px] text-neutral-600">Aucun fichier sélectionné</div>
+      )}
+    </div>
+  )
+}
+
+export const uploadNode: NodeSpec<UploadConfig, Record<string, never>, { file: File }> = {
   type: 'upload',
   category: 'import',
   label: 'Upload',
-  description: 'Sélectionne un fichier local. (MVP : fichier non persisté entre sessions.)',
+  description: 'Sélectionne un fichier local (persisté en IndexedDB côté navigateur).',
   icon: Upload,
   inputs: [],
   outputs: [{ name: 'file', type: 'file' }],
   configSchema: [],
-  defaultConfig: { lastFileName: '' },
+  defaultConfig: { fileKey: '', fileName: '', fileSize: 0 },
   runtime: 'client',
-  ConfigComponent: ({ config, onChange }) => (
-    <div>
-      <input
-        type="file"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (!f) return
-          const key = `wf_file_${Date.now()}_${f.name}`
-          ;(window as unknown as { __workflowFiles?: Map<string, File> }).__workflowFiles ??= new Map()
-          ;(window as unknown as { __workflowFiles: Map<string, File> }).__workflowFiles.set(key, f)
-          onChange({ ...config, lastFileName: key })
-        }}
-        className="text-xs text-neutral-300 w-full"
-      />
-      <div className="text-[10px] text-neutral-500 mt-1 truncate">
-        {config.lastFileName ? config.lastFileName.replace(/^wf_file_\d+_/, '') : 'Aucun fichier'}
-      </div>
-    </div>
-  ),
+  ConfigComponent: UploadConfigUi,
   run: async (ctx, config) => {
-    const map = (window as unknown as { __workflowFiles?: Map<string, File> }).__workflowFiles
-    const f = map?.get(config.lastFileName)
+    if (!config.fileKey) {
+      throw new Error('Aucun fichier sélectionné — ouvrez la config du node Upload pour en choisir un.')
+    }
+    const f = await getFile(config.fileKey)
     if (!f) {
-      ctx.log('warn', `Aucun fichier trouvé en mémoire pour la clé "${config.lastFileName}"`)
-      return { file: null }
+      throw new Error(
+        `Fichier "${config.fileName}" introuvable en stockage local — il a été supprimé ou cet ordinateur ne le contient pas. Re-sélectionnez-le.`,
+      )
     }
     ctx.log('info', `Fichier prêt : ${f.name} (${(f.size / 1024).toFixed(1)} KB)`)
     return { file: f }

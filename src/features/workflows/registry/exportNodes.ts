@@ -51,16 +51,11 @@ export const exportExcelNode: NodeSpec<
   defaultConfig: { columns: '' },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
-    const emptyResult: ExportResult = {
-      url: '',
-      mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      filename: 'empty.xlsx',
-    }
-
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
     if (rows.length === 0) {
-      ctx.log('warn', 'Sheet sans rows — export annulé')
-      return { result: emptyResult }
+      throw new Error(
+        "La Sheet d'entrée n'a aucune ligne — vérifiez que le node amont a bien produit des données.",
+      )
     }
 
     const filterCols = config.columns
@@ -123,6 +118,11 @@ export const exportPptxNode: NodeSpec<
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
+    if (rows.length === 0) {
+      throw new Error(
+        "La Sheet d'entrée n'a aucune ligne — vérifiez que le node amont a bien produit des données.",
+      )
+    }
 
     const pres = new PptxGenJS()
     pres.layout = 'LAYOUT_16x9'
