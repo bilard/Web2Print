@@ -4,7 +4,11 @@ import { auth } from '@/lib/firebase/config'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import type { GDriveFile, DriveSection } from './types'
 
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
+const DRIVE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.readonly',
+  // Permet aux nodes d'export workflow de créer/écrire des fichiers que l'app a créés.
+  'https://www.googleapis.com/auth/drive.file',
+]
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const FILE_FIELDS = 'files(id,name,mimeType,thumbnailLink,webViewLink,modifiedTime,sharedWithMeTime,viewedByMeTime,sharingUser,owners)'
 
@@ -20,7 +24,7 @@ export function useGoogleDrive() {
 
   const connectDrive = useCallback(async () => {
     const provider = new GoogleAuthProvider()
-    provider.addScope(DRIVE_SCOPE)
+    for (const scope of DRIVE_SCOPES) provider.addScope(scope)
     provider.setCustomParameters({ login_hint: 'ibs.studio@gmail.com', prompt: 'select_account' })
     const result = await signInWithPopup(auth, provider)
     const credential = GoogleAuthProvider.credentialFromResult(result)

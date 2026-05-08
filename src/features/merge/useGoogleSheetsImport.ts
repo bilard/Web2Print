@@ -8,7 +8,10 @@ import { parseExcelFile } from '@/features/excel/useExcelImport'
 import { useDataMerge } from './useDataMerge'
 import type { DataSourceRef } from '@/stores/merge.store'
 
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
+const DRIVE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/drive.file',
+]
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const SHEETS_MIME = 'application/vnd.google-apps.spreadsheet'
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -36,7 +39,7 @@ export function useGoogleSheetsImport() {
     setError(null)
     try {
       const provider = new GoogleAuthProvider()
-      provider.addScope(DRIVE_SCOPE)
+      for (const scope of DRIVE_SCOPES) provider.addScope(scope)
       provider.setCustomParameters({ prompt: 'select_account' })
       const result = await signInWithPopup(auth, provider)
       const credential = GoogleAuthProvider.credentialFromResult(result)
