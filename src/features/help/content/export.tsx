@@ -1,5 +1,6 @@
 import { Download } from 'lucide-react'
 import type { HelpSection } from './types'
+import { ExportDialogMock } from './mockups/ExportDialogMock'
 
 export const exportSection: HelpSection = {
   id: 'export',
@@ -10,6 +11,11 @@ export const exportSection: HelpSection = {
     {
       type: 'text',
       md: `L'éditeur exporte vers cinq formats. Chaque format vise un usage précis.`,
+    },
+    { type: 'mockup', Component: ExportDialogMock },
+    {
+      type: 'text',
+      md: `_Dialogue Exporter : choix du format puis options imprimeur (marques de coupe, bleed)._`,
     },
     {
       type: 'text',
@@ -39,8 +45,8 @@ Les print marks sont rendus en taille physique constante (3.5 mm de longueur, 1 
     },
     {
       type: 'menu-link',
-      target: { path: '/dashboard' },
-      label: 'Retour au tableau de bord',
+      target: { path: '/editor/:id', highlightId: 'editor-header.export' },
+      label: 'Bouton Exporter (depuis l\'éditeur)',
       icon: Download,
     },
     {

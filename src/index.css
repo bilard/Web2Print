@@ -47,3 +47,18 @@
 .anchor-pulse {
   animation: anchor-pulse-frame 1.2s ease-out;
 }
+
+.help-highlight-ring {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 2px rgb(99 102 241), 0 0 0 4px rgba(15, 15, 15, 1);
+  border-radius: 0.375rem;
+}
+
+/* Masque le bouton de clear natif des inputs type="search" (WebKit/Chromium) */
+.help-search-input::-webkit-search-cancel-button,
+.help-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}

@@ -26,15 +26,18 @@ export function EditorFooter() {
       {/* Controls bar */}
       <div className="h-9 flex items-center px-4 gap-4">
         <div className="flex items-center gap-1">
-          <button onClick={() => setZoom(zoom - 10)}
+          <button data-help-id="editor-footer.zoom-out"
+            onClick={() => setZoom(zoom - Math.max(1, Math.round(zoom * 0.1)))}
             className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors">
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setZoom(100)}
+          <button data-help-id="editor-footer.zoom-reset"
+            onClick={() => setZoom(100)}
             className="text-xs text-white/50 hover:text-white w-14 text-center font-mono hover:bg-white/5 rounded py-0.5 transition-colors">
             {zoom}%
           </button>
-          <button onClick={() => setZoom(zoom + 10)}
+          <button data-help-id="editor-footer.zoom-in"
+            onClick={() => setZoom(zoom + Math.max(1, Math.round(zoom * 0.1)))}
             className="p-1 rounded text-white/30 hover:text-white hover:bg-white/10 transition-colors">
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
@@ -43,7 +46,8 @@ export function EditorFooter() {
         <div className="w-px h-4 bg-white/10" />
 
         {/* Page settings trigger — ouvre le panel PAGE dans le sidebar */}
-        <button onClick={openPagePanel}
+        <button data-help-id="editor-footer.page-settings"
+          onClick={openPagePanel}
           className="flex items-center gap-1.5 text-xs font-mono px-2 py-1 rounded transition-colors text-white/30 hover:text-white hover:bg-white/10"
           title="Paramètres de la page">
           <Settings2 className="w-3 h-3" />
@@ -52,13 +56,15 @@ export function EditorFooter() {
 
         <div className="flex-1" />
 
-        <button onClick={() => setGridVisible(!gridVisible)}
+        <button data-help-id="editor-footer.grid"
+          onClick={() => setGridVisible(!gridVisible)}
           className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors ${gridVisible ? 'text-indigo-400 bg-indigo-500/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}>
           <Grid3X3 className="w-3.5 h-3.5" />
           Grille
         </button>
 
-        <button onClick={() => setSnapEnabled(!snapEnabled)}
+        <button data-help-id="editor-footer.snap"
+          onClick={() => setSnapEnabled(!snapEnabled)}
           className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors ${snapEnabled ? 'text-indigo-400 bg-indigo-500/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}>
           <Magnet className="w-3.5 h-3.5" />
           Snap

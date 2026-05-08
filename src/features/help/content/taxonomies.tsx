@@ -1,5 +1,6 @@
 import { Tags } from 'lucide-react'
 import type { HelpSection } from './types'
+import { TaxonomyNavMock } from './mockups/TaxonomyNavMock'
 
 export const taxonomiesSection: HelpSection = {
   id: 'taxonomies',
@@ -12,6 +13,11 @@ export const taxonomiesSection: HelpSection = {
       md: `Les taxonomies sont des arbres de catégories que tu attaches à tes produits ou tes projets. Elles servent à filtrer, grouper et naviguer dans de gros volumes de données.
 
 Exemple : \`Outillage > Électroportatif > Perceuses > Visseuses-perceuses\`.`,
+    },
+    { type: 'mockup', Component: TaxonomyNavMock },
+    {
+      type: 'text',
+      md: `_Le navigateur de taxonomie : la branche active s'auto-déplie, le nœud sélectionné est mis en évidence, et chaque niveau a sa propre couleur._`,
     },
     {
       type: 'text',
@@ -27,9 +33,17 @@ Les taxonomies sont stockées dans Firestore et synchronisées à travers tes ap
     },
     {
       type: 'menu-link',
-      target: { path: '/taxonomies' },
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.taxonomies' },
       label: 'Ouvrir Taxonomies',
       icon: Tags,
+    },
+    {
+      type: 'text',
+      md: `### Navigation intelligente
+
+Dès qu'une BDD source est active, le navigateur de gauche **auto-déplie** la branche correspondante et **colorise tous les ancêtres** du nœud sélectionné jusqu'à la racine. Désélectionner referme la branche. Pratique pour se repérer dans des arbres profonds (4-5 niveaux et plus).
+
+Quand plusieurs sources matchent, l'arbre se déplie sur l'union des branches actives.`,
     },
     {
       type: 'text',

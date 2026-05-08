@@ -39,7 +39,7 @@ Les clés API sont configurées dans les paramètres de l'app. Aucun envoi autom
     },
     {
       type: 'menu-link',
-      target: { path: '/data' },
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.data' },
       label: 'Ouvrir le PIM',
       icon: Sparkles,
     },

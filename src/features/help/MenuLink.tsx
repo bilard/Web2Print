@@ -17,6 +17,8 @@ export function MenuLink({ target, label, icon: Icon }: MenuLinkProps) {
   const closeDrawer = useHelpStore((s) => s.closeDrawer)
 
   const isCurrentRoute = matchesRoute(location.pathname, target.path)
+  const isContextual = target.path.includes(':')
+  const needsContext = isContextual && !isCurrentRoute
 
   const handleClick = () => {
     if (target.highlightId) {
@@ -28,18 +30,28 @@ export function MenuLink({ target, label, icon: Icon }: MenuLinkProps) {
         navigate(navigatable)
         closeDrawer()
       }
+    } else if (target.highlightId) {
+      // déjà sur la bonne page : le ring va s'afficher derrière le drawer ouvert
+      closeDrawer()
     }
   }
 
   const TrailingIcon = Icon ?? ArrowUpRight
+  const title = needsContext
+    ? 'Ouvre un projet d\'abord pour voir cet élément en contexte'
+    : isCurrentRoute && target.highlightId
+    ? 'Met en évidence cet élément à l\'écran'
+    : undefined
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-1.5 my-1 mr-1 px-2 py-1 rounded-md
+      title={title}
+      className={`inline-flex items-center gap-1.5 my-1 mr-1 px-2 py-1 rounded-md
         bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300
-        border border-indigo-500/20 text-xs font-medium transition-colors"
+        border border-indigo-500/20 text-xs font-medium transition-colors
+        ${needsContext ? 'opacity-60' : ''}`}
     >
       <TrailingIcon className="w-3 h-3" />
       {label}

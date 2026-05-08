@@ -24,8 +24,8 @@ Une fois importé, tu peux modifier le contenu, ajouter des placeholders pour le
     },
     {
       type: 'menu-link',
-      target: { path: '/dashboard' },
-      label: 'Tableau de bord',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.import' },
+      label: 'Importer un fichier',
       icon: LayoutGrid,
     },
     {

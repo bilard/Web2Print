@@ -240,6 +240,7 @@ export default function DashboardPage() {
             return (
               <button
                 id={`menu-${id}`}
+                data-help-id={`dashboard.sidebar.${id}`}
                 ref={id === 'blank' ? newProjectHighlight.ref : undefined}
                 key={id}
                 role="menuitem"

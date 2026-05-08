@@ -4,20 +4,25 @@ import { ScreenshotBlock } from './blocks/ScreenshotBlock'
 import { MockupBlock } from './blocks/MockupBlock'
 import { ShortcutBlock } from './blocks/ShortcutBlock'
 import { MenuLink } from './MenuLink'
+import { useHelpStore } from './help.store'
+import { highlightNode } from './highlightText'
 
 interface HelpSectionViewProps {
   section: HelpSection
 }
 
 export function HelpSectionView({ section }: HelpSectionViewProps) {
+  const query = useHelpStore((s) => s.searchQuery)
   return (
     <article className="flex flex-col gap-1">
       <header className="mb-2">
         <div className="text-[10px] uppercase tracking-wider text-indigo-400/80 font-medium">
           {section.category}
         </div>
-        <h2 className="text-lg font-semibold text-white mt-0.5">{section.title}</h2>
-        <p className="text-sm text-white/60 mt-1">{section.intro}</p>
+        <h2 className="text-lg font-semibold text-white mt-0.5">
+          {highlightNode(section.title, query)}
+        </h2>
+        <p className="text-sm text-white/60 mt-1">{highlightNode(section.intro, query)}</p>
       </header>
       {section.blocks.map((b, i) => (
         <BlockRenderer key={i} block={b} />

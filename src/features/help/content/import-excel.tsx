@@ -1,5 +1,7 @@
 import { Database, Sparkles } from 'lucide-react'
 import type { HelpSection } from './types'
+import { PimGridMock } from './mockups/PimGridMock'
+import { EnrichmentPanelMock } from './mockups/EnrichmentPanelMock'
 
 export const importExcelSection: HelpSection = {
   id: 'import-excel',
@@ -10,6 +12,11 @@ export const importExcelSection: HelpSection = {
     {
       type: 'text',
       md: `Le PIM (Product Information Management) est ta source de vérité pour tout merge avec un template graphique. Plusieurs façons de l'alimenter.`,
+    },
+    { type: 'mockup', Component: PimGridMock },
+    {
+      type: 'text',
+      md: `_Vue d'une BDD : chaque ligne est un produit, l'icône violette signale une fiche enrichie par IA._`,
     },
     {
       type: 'text',
@@ -38,15 +45,18 @@ Tes BDD sont stockées sur Firebase et accessibles depuis n'importe quel poste c
     },
     {
       type: 'menu-link',
-      target: { path: '/data' },
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.data' },
       label: 'Ouvrir le PIM',
       icon: Database,
     },
     {
       type: 'text',
-      md: `### Enrichir une ligne par IA
-
-Clique sur une ligne → panneau **Enrichi par IA** à droite.
+      md: `### Enrichir une ligne par IA`,
+    },
+    { type: 'mockup', Component: EnrichmentPanelMock },
+    {
+      type: 'text',
+      md: `Clique sur une ligne → panneau **Enrichi par IA** à droite.
 
 **Mode AUTO** (violet) : si la ligne a un \`title\`, \`brand\` ou \`reference\`, recherche Google + LLM trouve l'URL et extrait. Risque d'hallucination — à privilégier quand tu n'as pas d'URL.
 
@@ -56,7 +66,7 @@ Clique sur une ligne → panneau **Enrichi par IA** à droite.
     },
     {
       type: 'menu-link',
-      target: { path: '/scraping-templates' },
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-templates' },
       label: 'Gérer les templates scraping',
       icon: Sparkles,
     },

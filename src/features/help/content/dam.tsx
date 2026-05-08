@@ -1,5 +1,6 @@
 import { Image } from 'lucide-react'
 import type { HelpSection } from './types'
+import { DamGridMock } from './mockups/DamGridMock'
 
 export const damSection: HelpSection = {
   id: 'dam',
@@ -11,6 +12,7 @@ export const damSection: HelpSection = {
       type: 'text',
       md: `Le DAM (Digital Asset Management) regroupe tous tes visuels accessibles depuis l'éditeur. Une seule source pour les logos, photos produits, illustrations et images générées par IA.`,
     },
+    { type: 'mockup', Component: DamGridMock },
     {
       type: 'text',
       md: `### Ce que tu peux faire
@@ -24,8 +26,8 @@ export const damSection: HelpSection = {
     },
     {
       type: 'menu-link',
-      target: { path: '/dashboard' },
-      label: 'Accéder au DAM (depuis le dashboard ou l\'éditeur)',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images' },
+      label: 'Accéder au DAM',
       icon: Image,
     },
     {

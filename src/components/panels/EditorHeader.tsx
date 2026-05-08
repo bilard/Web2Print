@@ -79,6 +79,7 @@ export function EditorHeader() {
 
       {/* Undo / Redo */}
       <button
+        data-help-id="editor-header.undo"
         onClick={() => globalUndo?.()}
         disabled={!canUndo}
         className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -87,6 +88,7 @@ export function EditorHeader() {
         <Undo2 className="w-4 h-4" />
       </button>
       <button
+        data-help-id="editor-header.redo"
         onClick={() => globalRedo?.()}
         disabled={!canRedo}
         className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"

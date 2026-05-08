@@ -5,6 +5,7 @@ import { useHelpStore } from './help.store'
 import { helpSectionsById, helpSections } from './content/index'
 import { HelpTableOfContents } from './HelpTableOfContents'
 import { HelpSectionView } from './HelpSectionView'
+import { HelpSearch } from './HelpSearch'
 
 export function HelpDrawer() {
   const open = useHelpStore((s) => s.open)
@@ -38,15 +39,16 @@ export function HelpDrawer() {
         transition-transform duration-200 ease-out
         ${open ? 'translate-x-0' : 'translate-x-full pointer-events-none'}`}
     >
-      <header className="h-12 flex items-center justify-between px-3 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2">
+      <header className="h-12 flex items-center gap-3 px-3 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <HelpCircle className="w-4 h-4 text-indigo-400" />
           <span className="text-sm font-medium text-white">Aide</span>
         </div>
+        <HelpSearch />
         <button
           type="button"
           onClick={closeDrawer}
-          className="p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+          className="shrink-0 p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
           title="Fermer (Echap)"
         >
           <X className="w-4 h-4" />

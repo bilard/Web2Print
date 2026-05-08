@@ -1,5 +1,6 @@
 import { Database, Globe } from 'lucide-react'
 import type { HelpSection } from './types'
+import { ScrapingTemplateMock } from './mockups/ScrapingTemplateMock'
 
 export const scrapingSection: HelpSection = {
   id: 'scraping',
@@ -24,6 +25,11 @@ export const scrapingSection: HelpSection = {
 
 Pour un fournisseur que tu vas scraper plus de 2 fois, **crée un template**. C'est la voie royale : 0 hallucination IA, 0 token consommé, réutilisable sur des centaines d'URLs.`,
     },
+    { type: 'mockup', Component: ScrapingTemplateMock },
+    {
+      type: 'text',
+      md: `_Éditeur de template : à gauche l'aperçu de page, à droite les champs cibles. Double-clic sur un élément suffit à générer le sélecteur CSS._`,
+    },
     {
       type: 'text',
       md: `### Créer un template de scraping
@@ -39,7 +45,7 @@ Le template vit dans Firestore et matchera automatiquement les futures URLs du d
     },
     {
       type: 'menu-link',
-      target: { path: '/scraping-templates' },
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-templates' },
       label: 'Ouvrir Templates scraping',
       icon: Database,
     },
@@ -61,7 +67,7 @@ Pour un usage récurrent, transforme ce mapping ad-hoc en template.`,
     },
     {
       type: 'menu-link',
-      target: { path: '/data' },
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.data' },
       label: 'Ouvrir le PIM',
       icon: Globe,
     },

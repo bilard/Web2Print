@@ -73,6 +73,7 @@ function ToolButton({ tool, icon: Icon, tooltip, highlightId }: ToolButtonProps)
   return (
     <button
       ref={highlight.ref}
+      data-help-id={highlightId ?? `toolbar.${tool}`}
       className={`w-[34px] h-[34px] flex items-center justify-center rounded-md transition-colors ${
         isActive
           ? 'bg-indigo-500/20 text-indigo-400'

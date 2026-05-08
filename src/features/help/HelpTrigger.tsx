@@ -3,9 +3,11 @@ import { HelpCircle } from 'lucide-react'
 import { useHelpStore } from './help.store'
 import { HelpDrawer } from './HelpDrawer'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { useDataAttrHighlight } from './hooks/useDataAttrHighlight'
 
 export function HelpTrigger() {
   const toggleDrawer = useHelpStore((s) => s.toggleDrawer)
+  useDataAttrHighlight()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

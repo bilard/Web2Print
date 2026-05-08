@@ -35,8 +35,8 @@ L'éditeur reconstitue la maquette à l'identique sur un canvas Fabric.js. Tu pe
     },
     {
       type: 'menu-link',
-      target: { path: '/dashboard' },
-      label: 'Tableau de bord',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.import' },
+      label: 'Importer un fichier',
       icon: LayoutGrid,
     },
     {
