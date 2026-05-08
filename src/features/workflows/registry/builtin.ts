@@ -4,6 +4,7 @@ import { nodeRegistry } from './index'
 
 // Side-effect imports register node specs into nodeRegistry
 import './importNodes'
+import './enrichmentNodes'
 
 let initialized = false
 
