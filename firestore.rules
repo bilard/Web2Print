@@ -90,8 +90,18 @@ service cloud.firestore {
     }
 
     // ── Excel Data ────────────────────────────────────────────────────────────
+    // `excel_data/{docId}` = méta légères (fileName, path, sortIndex, totals…)
+    // `excel_data_payload/{docId}` = blob `sheets` JSON sérialisé, séparé pour
+    // que les listings n'aient pas à charger le payload complet à chaque refresh.
+    // Le `docId` est commun entre les deux collections.
 
     match /excel_data/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /excel_data_payload/{docId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;

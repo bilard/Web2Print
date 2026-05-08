@@ -1,9 +1,10 @@
-import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, serverTimestamp, query, where, updateDoc, writeBatch } from 'firebase/firestore'
+import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, serverTimestamp, query, where, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelSheet } from './types'
 
 const COLLECTION = 'excel_data'
+const PAYLOAD_COLLECTION = 'excel_data_payload'
 
 export function useExcelFirebase() {
   const { setSheets, setDetecting } = useExcelStore()
@@ -12,7 +13,12 @@ export function useExcelFirebase() {
    *  précis (cas usuel : base déjà chargée). Sinon, crée un nouveau doc avec
    *  un ID Firestore auto-généré (unique) — deux bases au même `fileName` ne
    *  se marchent plus dessus. Retourne le docId final pour que l'appelant
-   *  puisse le mémoriser (currentDocId). */
+   *  puisse le mémoriser (currentDocId).
+   *
+   *  Stocke les méta dans `excel_data/{docId}` et le blob sheets dans
+   *  `excel_data_payload/{docId}` (commit atomique batched). Le `deleteField`
+   *  sur `sheets` migre paresseusement les anciens docs qui portaient
+   *  encore le blob inline. */
   const saveToFirebase = async (
     fileName: string,
     sheets: ExcelSheet[],
@@ -26,33 +32,49 @@ export function useExcelFirebase() {
       ? doc(db, COLLECTION, existingDocId)
       : doc(collection(db, COLLECTION))
     const fullDocId = ref.id
+    const payloadRef = doc(db, PAYLOAD_COLLECTION, fullDocId)
 
-    await setDoc(ref, {
+    const batch = writeBatch(db)
+    batch.set(ref, {
       userId: user.uid,
       fileName,
       path,
-      sheets: JSON.stringify(sheets),
+      sheets: deleteField(),
       sheetCount: sheets.length,
       totalRows: sheets.reduce((acc, s) => acc + s.rows.length, 0),
       totalColumns: sheets.reduce((acc, s) => acc + s.columns.length, 0),
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     }, { merge: true })
+    batch.set(payloadRef, {
+      userId: user.uid,
+      json: JSON.stringify(sheets),
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+    await batch.commit()
 
     return fullDocId
   }
 
-  /** Charge une base par son `docId` Firestore complet. */
+  /** Charge une base par son `docId` Firestore complet. Lit le payload séparé
+   *  en priorité ; fallback sur l'ancien champ `sheets` inline pour les docs
+   *  pas encore migrés (compat lecture). */
   const loadFromFirebase = async (docId: string): Promise<ExcelSheet[] | null> => {
     const user = auth.currentUser
     if (!user) return null
 
     setDetecting(true)
     try {
-      const ref = doc(db, COLLECTION, docId)
-      const snap = await getDoc(ref)
-      if (!snap.exists()) return null
-      const data = snap.data()
+      const payloadSnap = await getDoc(doc(db, PAYLOAD_COLLECTION, docId))
+      if (payloadSnap.exists()) {
+        const sheets: ExcelSheet[] = JSON.parse(payloadSnap.data().json)
+        setSheets(sheets)
+        return sheets
+      }
+      const legacySnap = await getDoc(doc(db, COLLECTION, docId))
+      if (!legacySnap.exists()) return null
+      const data = legacySnap.data()
+      if (typeof data.sheets !== 'string') return null
       const sheets: ExcelSheet[] = JSON.parse(data.sheets)
       setSheets(sheets)
       return sheets
@@ -89,12 +111,14 @@ export function useExcelFirebase() {
     return files
   }
 
-  /** Supprime une base par son `docId` Firestore complet. */
+  /** Supprime une base par son `docId` Firestore complet (méta + payload). */
   const deleteFromFirebase = async (docId: string) => {
     const user = auth.currentUser
     if (!user) return
-    const ref = doc(db, COLLECTION, docId)
-    await deleteDoc(ref)
+    const batch = writeBatch(db)
+    batch.delete(doc(db, COLLECTION, docId))
+    batch.delete(doc(db, PAYLOAD_COLLECTION, docId))
+    await batch.commit()
   }
 
   /** Renomme une base (met à jour uniquement le libellé `fileName`). */

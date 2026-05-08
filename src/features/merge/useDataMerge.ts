@@ -28,12 +28,19 @@ export function useDataMerge() {
   const applyRowRef = useRef<((row: MergeRow, cols?: MergeColumn[]) => Promise<void>) | null>(null)
 
   const connectSource = useCallback(async (source: DataSourceRef) => {
-    const docRef = doc(db, 'excel_data', source.excelDocId)
-    const snap = await getDoc(docRef)
-    if (!snap.exists()) throw new Error('Dataset introuvable')
-
-    const data = snap.data()
-    const sheets: ExcelSheet[] = JSON.parse(data.sheets)
+    // Lit le payload séparé en priorité, fallback sur l'ancien champ inline
+    // pour les docs pas encore migrés (cf. useExcelFirebase.saveToFirebase).
+    const payloadSnap = await getDoc(doc(db, 'excel_data_payload', source.excelDocId))
+    let sheets: ExcelSheet[]
+    if (payloadSnap.exists()) {
+      sheets = JSON.parse(payloadSnap.data().json)
+    } else {
+      const legacySnap = await getDoc(doc(db, 'excel_data', source.excelDocId))
+      if (!legacySnap.exists()) throw new Error('Dataset introuvable')
+      const data = legacySnap.data()
+      if (typeof data.sheets !== 'string') throw new Error('Dataset vide ou corrompu')
+      sheets = JSON.parse(data.sheets)
+    }
     const sheet = sheets[source.sheetIndex] ?? sheets[0]
 
     const cols: MergeColumn[] = sheet.columns.map((c) => ({

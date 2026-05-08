@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, serverTimestamp, writeBatch, deleteField } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelColumn, ExcelSheet, FieldTypeId } from '@/features/excel/types'
@@ -9,6 +9,7 @@ import { useEnrichmentStore } from './enrichmentStore'
 import { enrichmentKey } from './types'
 
 const FIRESTORE_COLLECTION = 'excel_data'
+const FIRESTORE_PAYLOAD_COLLECTION = 'excel_data_payload'
 const FIRESTORE_MAX_BYTES = 1_048_576 // 1 MB hard limit Firestore
 
 /** Persiste les sheets dans le doc Firestore courant (existingDocId) ou dans
@@ -37,17 +38,26 @@ async function writeSheetsToFirestore(
   const ref = existingDocId
     ? doc(db, FIRESTORE_COLLECTION, existingDocId)
     : doc(collection(db, FIRESTORE_COLLECTION))
-  await setDoc(ref, {
+  const payloadRef = doc(db, FIRESTORE_PAYLOAD_COLLECTION, ref.id)
+
+  const batch = writeBatch(db)
+  batch.set(ref, {
     userId: user.uid,
     fileName,
     path,
-    sheets: serialized,
+    sheets: deleteField(),
     sheetCount: sheets.length,
     totalRows: sheets.reduce((a, s) => a + s.rows.length, 0),
     totalColumns: sheets.reduce((a, s) => a + s.columns.length, 0),
     updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   }, { merge: true })
+  batch.set(payloadRef, {
+    userId: user.uid,
+    json: serialized,
+    updatedAt: serverTimestamp(),
+  }, { merge: true })
+  await batch.commit()
   return ref.id
 }
 
