@@ -116,10 +116,10 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const nodeType = (data as { type?: string }).type
   const spec = nodeType ? nodeRegistry.get(nodeType) : undefined
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
-  const outputs = useRunContext((s) => s.nodeStates[id]?.outputs)
+  const runOutputs = useRunContext((s) => s.nodeStates[id]?.outputs)
   const exportResult = useMemo(
-    () => (status === 'success' ? findExportResult(outputs) : null),
-    [status, outputs],
+    () => (status === 'success' ? findExportResult(runOutputs) : null),
+    [status, runOutputs],
   )
 
   if (!spec) {
