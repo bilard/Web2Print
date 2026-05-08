@@ -7,35 +7,14 @@ import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 
 const USD_TO_EUR = 0.92
 
-const PROVIDER_LABELS: Record<AiProvider, string> = {
-  claude: 'Claude (Anthropic)',
-  gemini: 'Gemini (Google)',
-  openai: 'OpenAI',
-  deepseek: 'DeepSeek',
-  qwen: 'Qwen',
-  kimi: 'Kimi',
-  openrouter: 'OpenRouter',
-}
-
-const PROVIDER_DOT: Record<AiProvider, string> = {
-  claude:     'bg-orange-400',
-  gemini:     'bg-sky-400',
-  openai:     'bg-emerald-400',
-  deepseek:   'bg-indigo-400',
-  qwen:       'bg-violet-400',
-  kimi:       'bg-amber-400',
-  openrouter: 'bg-fuchsia-400',
-}
-
-/** Pages de facturation / top-up de chaque provider — ouvre la console pour recharger les crédits. */
-const PROVIDER_TOPUP_URLS: Record<AiProvider, string> = {
-  claude:     'https://console.anthropic.com/settings/billing',
-  gemini:     'https://aistudio.google.com/app/plan_information',
-  openai:     'https://platform.openai.com/settings/organization/billing/overview',
-  deepseek:   'https://platform.deepseek.com/top_up',
-  qwen:       'https://bailian.console.aliyun.com/?productCode=p_efm#/expense-center',
-  kimi:       'https://platform.moonshot.cn/console/account',
-  openrouter: 'https://openrouter.ai/settings/credits',
+const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: string }> = {
+  claude:     { label: 'Claude (Anthropic)', dot: 'bg-orange-400',  topup: 'https://console.anthropic.com/settings/billing' },
+  gemini:     { label: 'Gemini (Google)',    dot: 'bg-sky-400',     topup: 'https://aistudio.google.com/app/plan_information' },
+  openai:     { label: 'OpenAI',             dot: 'bg-emerald-400', topup: 'https://platform.openai.com/settings/organization/billing/overview' },
+  deepseek:   { label: 'DeepSeek',           dot: 'bg-indigo-400',  topup: 'https://platform.deepseek.com/top_up' },
+  qwen:       { label: 'Qwen',               dot: 'bg-violet-400',  topup: 'https://bailian.console.aliyun.com/?productCode=p_efm#/expense-center' },
+  kimi:       { label: 'Kimi',               dot: 'bg-amber-400',   topup: 'https://platform.moonshot.cn/console/account' },
+  openrouter: { label: 'OpenRouter',         dot: 'bg-fuchsia-400', topup: 'https://openrouter.ai/settings/credits' },
 }
 
 const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
@@ -361,16 +340,16 @@ export function LiveLlmUsagePanel() {
               }`}
             >
               <div className="col-span-4 flex items-center gap-2 min-w-0">
-                <span className={`w-1.5 h-1.5 rounded-full ${PROVIDER_DOT[row.provider]} shrink-0`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${PROVIDER_META[row.provider].dot} shrink-0`} />
                 <div className="min-w-0">
                   <a
-                    href={PROVIDER_TOPUP_URLS[row.provider]}
+                    href={PROVIDER_META[row.provider].topup}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`Ouvrir la console ${PROVIDER_LABELS[row.provider]} — recharger les crédits chez le provider`}
+                    title={`Ouvrir la console ${PROVIDER_META[row.provider].label} — recharger les crédits chez le provider`}
                     className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-indigo-300 transition-colors truncate"
                   >
-                    <span className="truncate">{PROVIDER_LABELS[row.provider]}</span>
+                    <span className="truncate">{PROVIDER_META[row.provider].label}</span>
                     <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-indigo-300 shrink-0" />
                   </a>
                   <p className="text-[9.5px] text-white/30 font-mono truncate">{row.modelLabel}</p>
@@ -395,7 +374,7 @@ export function LiveLlmUsagePanel() {
               <div className="col-span-3 flex flex-col items-end gap-1">
                 <StatusBadge kind={row.kind} pct={row.pct} />
                 <BudgetEditor
-                  label={PROVIDER_LABELS[row.provider]}
+                  label={PROVIDER_META[row.provider].label}
                   value={row.budget}
                   onChange={(v) => setBudget(row.provider, v)}
                 />

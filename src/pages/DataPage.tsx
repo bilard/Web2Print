@@ -891,8 +891,6 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
         </button>
       </div>
 
-      {/* Bouton "Migrer mes BDD → PIM" retiré — flux legacy conservé. */}
-
       {openMenu || openAddMenu ? (
         <div className="fixed inset-0 z-40" onClick={handleOverlayClick} />
       ) : null}

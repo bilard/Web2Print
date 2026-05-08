@@ -4,7 +4,8 @@ import {
   PRODUCT_TAXONOMY_ID_KEY,
   PRODUCT_TAXONOMY_NODE_ID_KEY,
 } from './productTaxonomy'
-import type { Taxonomy, TaxonomyNode } from './types'
+import { findPath } from './taxonomyUtils'
+import type { Taxonomy } from './types'
 
 export interface TaxonomyProductCounts {
   /** Produits directement liés à ce nœud précis. */
@@ -34,12 +35,8 @@ export function useTaxonomyProductCounts(
         if (typeof nodeId !== 'string' || !taxonomy.nodes[nodeId]) continue
         direct[nodeId] = (direct[nodeId] ?? 0) + 1
         grandTotal += 1
-        let current: TaxonomyNode | undefined = taxonomy.nodes[nodeId]
-        const visited = new Set<string>()
-        while (current && !visited.has(current.id)) {
-          visited.add(current.id)
-          total[current.id] = (total[current.id] ?? 0) + 1
-          current = current.parentId ? taxonomy.nodes[current.parentId] : undefined
+        for (const ancestorId of findPath(taxonomy.nodes, nodeId)) {
+          total[ancestorId] = (total[ancestorId] ?? 0) + 1
         }
       }
     }

@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { ImagePlus, Trash2, Palette, Layers, Image as ImageIcon } from 'lucide-react'
 import { ColorPicker } from './ColorPicker'
-import { GradientPicker, DEFAULT_GRADIENT, gradientToCss } from './GradientPicker'
+import { GradientPicker, gradientToCss } from './GradientPicker'
 import type { GradientConfig } from '@/stores/editor.store'
 import type { CanvasBgType } from '@/stores/ui.store'
 
@@ -46,14 +46,7 @@ const TABS: { value: CanvasBgType; label: string; icon: React.ElementType }[] = 
 export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const setType = (type: CanvasBgType) => {
-    // Initialise le dégradé au premier passage si l'utilisateur n'en a jamais touché
-    if (type === 'gradient' && !value.gradient) {
-      onChange({ ...value, type, gradient: DEFAULT_GRADIENT })
-    } else {
-      onChange({ ...value, type })
-    }
-  }
+  const setType = (type: CanvasBgType) => onChange({ ...value, type })
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

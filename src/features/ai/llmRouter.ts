@@ -456,15 +456,16 @@ interface AnthropicResponse {
   usage?: { input_tokens?: number; output_tokens?: number }
 }
 
-// Utility: Deep clean object to remove null/undefined values that break API validation
-function deepClean(obj: any): any {
+/** Anthropic JSON Schema rejette `null`/`undefined` dans `input_schema` ;
+ *  on retire récursivement toutes les valeurs nulles avant l'appel. */
+function deepClean(obj: unknown): unknown {
   if (obj === null || obj === undefined) return undefined
   if (typeof obj !== 'object') return obj
   if (Array.isArray(obj)) {
-    return obj.map(deepClean).filter(v => v !== undefined)
+    return obj.map(deepClean).filter((v) => v !== undefined)
   }
-  const cleaned: Record<string, any> = {}
-  for (const [key, value] of Object.entries(obj)) {
+  const cleaned: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     const cleanValue = deepClean(value)
     if (cleanValue !== undefined) {
       cleaned[key] = cleanValue
@@ -487,10 +488,6 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
   const toolName = 'emit_response'
   const rawSchema = opts.schemaForClaude ?? opts.schemaForLLM
   const cleanSchema = deepClean(rawSchema)
-  console.log('[llmRouter] Schema cleaning:', {
-    before_keys: Object.keys(rawSchema),
-    after_keys: Object.keys(cleanSchema),
-  })
   const tool = {
     name: toolName,
     description: 'Émet la réponse structurée conforme au schéma demandé.',
@@ -557,41 +554,8 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     messages: [{ role: 'user', content: messageContent }],
   }
 
-  // Debug: log the payload to check for null values
-  console.log(`[llmRouter] model: ${model} (${typeof model})`)
-  console.log(`[llmRouter] max_tokens: ${max_tokens} (${typeof max_tokens})`)
-  console.log(`[llmRouter] messageContent type: ${typeof messageContent}`)
-  console.log(`[llmRouter] messageContent === null: ${messageContent === null}`)
-  console.log(`[llmRouter] messageContent === undefined: ${messageContent === undefined}`)
-  if (typeof messageContent === 'string') {
-    console.log(`[llmRouter] messageContent is string: length=${messageContent.length}`)
-  } else if (Array.isArray(messageContent)) {
-    console.log(`[llmRouter] messageContent is array: items=${messageContent.length}`)
-  } else {
-    console.log(`[llmRouter] messageContent is: ${JSON.stringify(messageContent)}`)
-  }
-
-  if (messageContent === null || messageContent === undefined) {
-    console.error('[llmRouter] CRITICAL: messageContent is null or undefined!', opts.prompt)
-  }
-
   let res: Response
   try {
-    const bodyString = JSON.stringify(requestPayload)
-    console.log(`[llmRouter] Request body size: ${bodyString.length} chars`)
-    console.log(`[llmRouter] Request body FIRST 500:`, bodyString.substring(0, 500))
-    console.log(`[llmRouter] Request body LAST 500:`, bodyString.substring(Math.max(0, bodyString.length - 500)))
-
-    // Check for null values in JSON
-    if (bodyString.includes(':null')) {
-      console.error('[llmRouter] WARNING: null values detected in request body!')
-    }
-
-    // Check for missing content field
-    if (!bodyString.includes('"content":')) {
-      console.error('[llmRouter] ERROR: content field missing from messages!')
-    }
-
     res = await fetch(ANTHROPIC_ENDPOINT, {
       method: 'POST',
       signal: ctrl.signal,
@@ -601,7 +565,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
         'anthropic-version': ANTHROPIC_VERSION,
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: bodyString,
+      body: JSON.stringify(requestPayload),
     })
   } finally {
     clearTimeout(timeoutId)

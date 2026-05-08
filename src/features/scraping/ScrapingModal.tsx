@@ -141,28 +141,18 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   }, [previewOpen, pendingRows, products])
 
   const startPreview = (rows: Record<string, unknown>[], source: Source) => {
-    console.log('[ScrapingModal] startPreview called', { rowCount: rows.length, sourceId: source.id })
-    const calculatedPreview = matchRows(rows as never, products)
-    console.log('[ScrapingModal] startPreview calculated preview', { newMasters: calculatedPreview?.newMasters.length, merged: calculatedPreview?.mergedOnExisting.length, needsDedup: calculatedPreview?.needsDedup.length })
     setPendingRows(rows)
     setPendingSource(source)
-    setFrozenPreview(calculatedPreview)
+    setFrozenPreview(matchRows(rows as never, products))
     setPreviewOpen(true)
   }
 
   const confirmIngest = async () => {
-    console.log('[ScrapingModal] confirmIngest called', { pimProjectId, pendingSource: pendingSource?.id, frozenPreview: !!frozenPreview })
-    if (!pimProjectId || !pendingSource || !frozenPreview) {
-      console.log('[ScrapingModal] confirmIngest early return', { pimProjectId, pendingSource: pendingSource?.id, frozenPreview: !!frozenPreview })
-      return
-    }
+    if (!pimProjectId || !pendingSource || !frozenPreview) return
     try {
       const result = applyPreview(frozenPreview, products, pendingSource.id, { now: Date.now() })
-      console.log('[ScrapingModal] applyPreview result', { created: result.stats.created, merged: result.stats.merged })
       await upsertSource.mutateAsync(pendingSource)
-      console.log('[ScrapingModal] upsertSource completed', pendingSource.id)
       await upsertProducts.mutateAsync(result.products)
-      console.log('[ScrapingModal] upsertProducts completed, products count:', result.products.length)
       toast.success(`${result.stats.created} ajoutés · ${result.stats.merged} mergés`)
       setPreviewOpen(false)
       setFrozenPreview(null)
@@ -514,13 +504,8 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   }
 
   const handleImportEnriched = () => {
-    console.log('[ScrapingModal] handleImportEnriched called', { hasEnrichEntry: !!enrichEntry?.data, pimProjectId })
-    if (!enrichEntry?.data) {
-      console.log('[ScrapingModal] handleImportEnriched: no enrichEntry data, returning')
-      return
-    }
+    if (!enrichEntry?.data) return
     if (pimProjectId) {
-      console.log('[ScrapingModal] handleImportEnriched: PIM mode, preparing source')
       const enrichedColumns = [
         { key: 'name', label: 'Nom', fieldType: 'text' as const, detectedType: 'text' as const, isPrimary: true, width: 240 },
         ...ENRICHMENT_COLUMNS.map(buildEnrichmentColumn),
@@ -539,7 +524,6 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             enrichedCount: 1,
             lastSyncedAt: Date.now(),
           }
-      console.log('[ScrapingModal] handleImportEnriched: calling startPreview', { sourceId: source.id, sourceName: source.name })
       startPreview([row], source)
       return
     }

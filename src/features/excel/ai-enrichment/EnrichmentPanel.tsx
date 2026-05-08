@@ -35,6 +35,16 @@ interface Props {
   input: EnrichmentInput
 }
 
+const PROVIDER_LABELS: Record<string, string> = {
+  claude: 'Claude',
+  gemini: 'Gemini',
+  openai: 'OpenAI',
+  deepseek: 'DeepSeek',
+  qwen: 'Qwen',
+  kimi: 'Kimi',
+  openrouter: 'OpenRouter',
+}
+
 /** Extrait le nom de fichier d'une URL d'image (dernier segment du path,
  *  query/fragment retirés, decodeURIComponent appliqué). Fallback sur l'URL
  *  brute si le parsing échoue. */
@@ -594,10 +604,7 @@ export function EnrichmentPanel({ input }: Props) {
   // quel(s) LLM serai(en)t appelé(s) si le directBuild échouait.
   const reasoningCascade = useAiSettingsStore((s) => s.reasoningCascade)
   const cascadeDescription = reasoningCascade
-    .map((p) => {
-      const PROVIDER_LABELS: Record<string, string> = { claude: 'Claude', gemini: 'Gemini', deepseek: 'DeepSeek', qwen: 'Qwen' }
-      return `${PROVIDER_LABELS[p] ?? p} · ${getSelectedModel(p as AiProvider)}`
-    })
+    .map((p) => `${PROVIDER_LABELS[p] ?? p} · ${getSelectedModel(p as AiProvider)}`)
     .join(' → ')
   const fallbackHint = cascadeDescription ? `\n\nFallback configuré : ${cascadeDescription}.` : ''
 
@@ -607,19 +614,12 @@ export function EnrichmentPanel({ input }: Props) {
   const llmMeta = (() => {
     if (!isDone || !data) return null
     if (data.llmProvider) {
-      const PROVIDER_LABELS: Record<string, string> = {
-        claude: 'Claude',
-        gemini: 'Gemini',
-        deepseek: 'DeepSeek',
-        openai: 'OpenAI',
-      }
       const providerLabel = PROVIDER_LABELS[data.llmProvider] ?? data.llmProvider
       return {
         label: data.llmModel ? `${providerLabel} · ${data.llmModel}` : providerLabel,
         title: `Raisonnement LLM via ${providerLabel}${data.llmModel ? ` (${data.llmModel})` : ''}`,
       }
     }
-    // Pas de LLM : on affiche le scraper utilisé pour être transparent
     const provider = data.scrapingProvider ?? ''
     if (provider.includes('Fabricant')) {
       return { label: 'Sans IA · Fabricant', title: `Extraction directe du site fabricant (${provider}) — aucun LLM appelé.${fallbackHint}` }
