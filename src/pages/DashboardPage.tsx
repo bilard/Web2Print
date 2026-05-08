@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Workflow } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useProjects } from '@/features/projects/useProjects'
@@ -27,7 +27,7 @@ const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage')
 const ScrapingHubPage = lazy(() => import('@/features/scraping-hub/ScrapingHubPage').then((m) => ({ default: m.ScrapingHubPage })))
 const ChatPage = lazy(() => import('@/features/chat/ChatPage').then((m) => ({ default: m.ChatPage })))
 
-type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub'
+type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
 
 const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }>; label: string; accent: string; activeBg: string; activeText: string }[] = [
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
@@ -38,6 +38,7 @@ const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }
   { id: 'taxonomies', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300' },
   { id: 'scraping-templates', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
   { id: 'scraping-hub', icon: BookOpen, label: 'Scraping Hub', accent: 'text-sky-400', activeBg: 'bg-sky-500/[0.1]', activeText: 'text-sky-300' },
+  { id: 'workflows', icon: Workflow, label: 'Workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
   { id: 'chat', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300' },
 ]
 
@@ -183,7 +184,11 @@ export default function DashboardPage() {
   const handleKeyDown = (e: React.KeyboardEvent, id: Section) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      setActiveSection(id)
+      if (id === 'workflows') {
+        navigate('/workflows')
+      } else {
+        setActiveSection(id)
+      }
     }
     // Arrow key navigation
     const currentIndex = menuItems.findIndex((item) => item.id === id)
@@ -248,7 +253,13 @@ export default function DashboardPage() {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!sidebarOpen ? label : undefined}
                 title={!sidebarOpen ? label : undefined}
-                onClick={() => setActiveSection(id)}
+                onClick={() => {
+                  if (id === 'workflows') {
+                    navigate('/workflows')
+                  } else {
+                    setActiveSection(id)
+                  }
+                }}
                 onKeyDown={(e) => handleKeyDown(e, id)}
                 className={`w-full flex items-center ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'} py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[#141414] ${
                   isActive
