@@ -42,6 +42,11 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const { data: taxonomies } = useTaxonomies()
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null)
 
+  /** En BDD multi-sources, l'utilisateur n'a pas forcément sélectionné de
+   *  source — la nav doit néanmoins montrer toutes les taxos liées dans la
+   *  BDD pour qu'il puisse les explorer. On agrège sur toutes les sheets. */
+  const allRowsInBdd = useMemo(() => sheets.flatMap((s) => s.rows), [sheets])
+
   const taxoCols = useMemo(() => {
     if (!sheet) return []
     return getTaxoColumns(sheet)
@@ -130,12 +135,14 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const handleClearAll = () => setTaxonomyNavFilter({})
 
   // ── Section taxonomie globale ──────────────────────────────────────────────
-  // On scope aux taxonomies qui ont au moins une row liée dans la sheet active,
-  // pour ne pas noyer la nav avec toutes les taxos du compte.
+  // Scope = toutes les sheets de la BDD (pas juste la sheet active) : en
+  // multi-sources, l'utilisateur peut explorer la taxo sans avoir présélectionné
+  // une source. On ne montre que les taxos avec au moins une row liée pour ne
+  // pas noyer la nav avec tout le catalogue de taxos du compte.
   const linkedTaxonomies = useMemo(() => {
-    if (!sheet || !taxonomies || taxonomies.length === 0) return []
+    if (!taxonomies || taxonomies.length === 0) return []
     const linkCounts = new Map<string, Map<string, number>>() // taxoId → nodeId → count
-    for (const row of sheet.rows) {
+    for (const row of allRowsInBdd) {
       const link = getProductTaxonomyLink(row)
       if (!link) continue
       let m = linkCounts.get(link.taxonomyId)
@@ -146,7 +153,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     return taxonomies
       .filter((t) => linkCounts.has(t.id))
       .map((t) => ({ taxonomy: t, leafCounts: linkCounts.get(t.id)! }))
-  }, [sheet, taxonomies])
+  }, [allRowsInBdd, taxonomies])
 
   const globalFilterDecoded = useMemo(() => {
     const v = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
@@ -174,22 +181,24 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
 
   const hasFilters = Object.keys(taxonomyNavFilter).length > 0
 
-  // Count total filtered rows
+  // Count total filtered rows. Quand le filtre globalTaxo est actif, on
+  // élargit le scope à toutes les sheets (cohérent avec DataPage).
   const filteredCount = useMemo(() => {
     if (!sheet) return 0
-    let rows = sheet.rows
-    if (!hasFilters) return rows.length
     const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+    const baseRows = globalFilter ? allRowsInBdd : sheet.rows
+    if (!hasFilters) return baseRows.length
     const globalPredicate = globalFilter
       ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
       : null
+    let rows = baseRows
     for (const [colKey, value] of Object.entries(taxonomyNavFilter)) {
       if (colKey === GLOBAL_TAXO_FILTER_KEY) continue
       rows = rows.filter((r) => String(r[colKey]) === value)
     }
     if (globalPredicate) rows = rows.filter(globalPredicate)
     return rows.length
-  }, [sheet, taxonomyNavFilter, hasFilters, taxonomies])
+  }, [sheet, allRowsInBdd, taxonomyNavFilter, hasFilters, taxonomies])
 
   const noColumnTree = !sheet || taxoCols.length === 0
   const noGlobalTree = linkedTaxonomies.length === 0

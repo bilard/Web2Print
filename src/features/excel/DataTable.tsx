@@ -57,9 +57,14 @@ export function DataTable() {
    *  Le schéma de colonnes vient toujours de la sheet active : les rows
    *  venues d'une autre source affichent simplement `null` pour les colonnes
    *  manquantes. */
+  const globalTaxoFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
   const baseRows = (() => {
     if (sheets.length <= 1) return sheet?.rows ?? []
-    if (selectedSourceIds.length === 0) return []
+    if (selectedSourceIds.length === 0) {
+      // Filtre taxo globale actif → on agrège toutes les sources pour que
+      // la nav par taxonomie soit utilisable sans devoir sélectionner une source.
+      return globalTaxoFilter ? sheets.flatMap((s) => s.rows) : []
+    }
     return sheets
       .filter((s) => selectedSourceIds.includes(s.name))
       .flatMap((s) => s.rows)

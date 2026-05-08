@@ -100,11 +100,14 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   //   → liste vide (cohérent avec DataTable).
   const filteredRowIds = useMemo(() => {
     if (!sheet) return []
+    const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
     let baseRows: typeof sheet.rows
     if (sheets.length <= 1) {
       baseRows = sheet.rows
     } else if (selectedSourceIds.length === 0) {
-      baseRows = []
+      // Filtre taxo globale actif → on agrège toutes les sources pour que
+      // la nav par taxonomie soit utilisable sans devoir sélectionner une source.
+      baseRows = globalFilter ? sheets.flatMap((s) => s.rows) : []
     } else {
       baseRows = sheets
         .filter((s) => selectedSourceIds.includes(s.name))
@@ -114,7 +117,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     const navEntries = Object.entries(taxonomyNavFilter)
     if (navEntries.length > 0) {
       const colEntries = navEntries.filter(([k]) => k !== GLOBAL_TAXO_FILTER_KEY)
-      const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
       const globalPredicate = globalFilter
         ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
         : null
