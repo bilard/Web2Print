@@ -25,6 +25,7 @@ import { useWorkflowStore } from '../persistence/workflow.store'
 import { nodeRegistry } from '../registry'
 import { isCompatible, portTypeRegistry } from '../runtime/ports'
 import { useConnectionDrag } from '../runtime/connectionDragStore'
+import { useRunContext } from '../runtime/runContext'
 import type { WorkflowEdge, WorkflowNode } from '../types'
 
 const nodeTypes = { base: BaseNode }
@@ -78,6 +79,7 @@ export function WorkflowEditor() {
   const setStoreNodes = useWorkflowStore((s) => s.setNodes)
   const setStoreEdges = useWorkflowStore((s) => s.setEdges)
   const upsertEdge = useWorkflowStore((s) => s.upsertEdge)
+  const clearRunNodes = useRunContext((s) => s.clearNodes)
 
   const [nodes, setNodes] = useState<Node[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
@@ -135,6 +137,9 @@ export function WorkflowEditor() {
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      const removedIds = changes
+        .filter((c): c is Extract<NodeChange, { type: 'remove' }> => c.type === 'remove')
+        .map((c) => c.id)
       setNodes((prev) => {
         const next = applyNodeChanges(changes, prev)
         const shouldPersist = changes.some((c) => PERSIST_NODE_CHANGE.has(c.type))
@@ -143,8 +148,11 @@ export function WorkflowEditor() {
         }
         return next
       })
+      if (removedIds.length > 0) {
+        clearRunNodes(removedIds)
+      }
     },
-    [setStoreNodes],
+    [setStoreNodes, clearRunNodes],
   )
 
   const onEdgesChange = useCallback(

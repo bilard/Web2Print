@@ -15,6 +15,7 @@ interface RunContextState {
   endNode: (id: string, status: NodeStatus, error?: string) => void
   appendLog: (id: string, level: 'info' | 'warn' | 'error', msg: string) => void
   setNodeOutputs: (id: string, outputs: Record<string, unknown>) => void
+  clearNodes: (ids: string[]) => void
 }
 
 const blankNode = (): NodeRunState => ({ status: 'pending', logs: [] })
@@ -75,5 +76,12 @@ export const useRunContext = create<RunContextState>((set, get) => ({
       return {
         nodeStates: { ...s.nodeStates, [id]: { ...prev, outputs } },
       }
+    }),
+  clearNodes: (ids) =>
+    set((s) => {
+      if (ids.length === 0) return s
+      const next = { ...s.nodeStates }
+      for (const id of ids) delete next[id]
+      return { nodeStates: next }
     }),
 }))

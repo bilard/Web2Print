@@ -43,7 +43,8 @@ export function RunPanel() {
   const states = useRunContext((s) => s.nodeStates)
   const wf = useWorkflowStore((s) => s.current)
   const [open, setOpen] = useState(true)
-  const entries = Object.entries(states)
+  const liveIds = new Set((wf?.nodes ?? []).map((n) => n.id))
+  const entries = Object.entries(states).filter(([id]) => liveIds.has(id))
 
   return (
     <div className="border-t border-neutral-800 bg-[#0f0f0f] text-sm">
