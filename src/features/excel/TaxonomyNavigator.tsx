@@ -2,6 +2,7 @@ import { useMemo, useCallback, useState } from 'react'
 import { ChevronRight, FolderTree, X, Package, ChevronDown, PanelLeftClose, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
+import { usePimStore } from '@/stores/pim.store'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import {
   PRODUCT_TAXONOMY_ID_KEY,
@@ -39,6 +40,7 @@ interface TreeNode {
 export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const { sheets, activeSheetIndex, taxonomyNavFilter, setTaxonomyNavFilter, updateCell } = useExcelStore()
   const sheet = sheets[activeSheetIndex]
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const { data: taxonomies } = useTaxonomies()
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null)
 
@@ -46,6 +48,19 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
    *  source — la nav doit néanmoins montrer toutes les taxos liées dans la
    *  BDD pour qu'il puisse les explorer. On agrège sur toutes les sheets. */
   const allRowsInBdd = useMemo(() => sheets.flatMap((s) => s.rows), [sheets])
+
+  /** Rows ciblées par la sélection courante :
+   *  - mono-source : la sheet active.
+   *  - multi-source avec sélection : les sheets cochées dans SheetsColumn.
+   *  - multi-source sans sélection : juste la sheet active (fallback minimal).
+   *  Pilote l'auto-expand de la nav globale. */
+  const selectedRows = useMemo(() => {
+    if (sheets.length <= 1) return sheet?.rows ?? []
+    if (selectedSourceIds.length > 0) {
+      return sheets.filter((s) => selectedSourceIds.includes(s.name)).flatMap((s) => s.rows)
+    }
+    return sheet?.rows ?? []
+  }, [sheets, sheet, selectedSourceIds])
 
   const taxoCols = useMemo(() => {
     if (!sheet) return []
@@ -155,14 +170,13 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
       .map((t) => ({ taxonomy: t, leafCounts: linkCounts.get(t.id)! }))
   }, [allRowsInBdd, taxonomies])
 
-  /** Auto-expand : nœuds référencés par les rows de la sheet active. Quand
-   *  l'utilisateur sélectionne une source (sheet), la nav globale ouvre
-   *  automatiquement les chemins vers les classifications de ses produits.
+  /** Auto-expand : nœuds référencés par les rows des sources sélectionnées.
+   *  Quand l'utilisateur coche/décoche des sources dans SheetsColumn, la nav
+   *  globale ouvre/ferme dynamiquement les chemins correspondants.
    *  Map taxonomyId → Set<nodeId>. */
   const autoExpandByTaxoId = useMemo(() => {
     const out = new Map<string, Set<string>>()
-    if (!sheet) return out
-    for (const row of sheet.rows) {
+    for (const row of selectedRows) {
       const link = getProductTaxonomyLink(row)
       if (!link) continue
       let s = out.get(link.taxonomyId)
@@ -170,7 +184,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
       s.add(link.nodeId)
     }
     return out
-  }, [sheet])
+  }, [selectedRows])
 
   const globalFilterDecoded = useMemo(() => {
     const v = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
