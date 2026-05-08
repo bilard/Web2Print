@@ -1138,12 +1138,16 @@ function FileRow({
       style={style}
       className={`group relative flex items-center gap-1.5 pr-1.5 py-1.5 rounded-md border transition-colors ${
         isDragging
-          ? 'bg-indigo-500/10 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
+          ? 'bg-indigo-500/15 border-indigo-500/50 shadow-lg shadow-indigo-500/10'
           : isActive
-            ? 'bg-indigo-500/10 border-indigo-500/30'
+            ? 'bg-indigo-500/[0.18] border-indigo-400/60 ring-1 ring-indigo-400/30'
             : 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.12]'
       }`}
     >
+      {/* Active accent bar — barre verticale indigo pour repérer la BDD courante */}
+      {isActive && (
+        <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-indigo-400" />
+      )}
       <button
         {...attributes}
         {...listeners}
@@ -1183,8 +1187,8 @@ function FileRow({
           />
         ) : (
           <div className="cursor-pointer" onClick={() => onLoad(f.docId)}>
-            <p className="text-[11.5px] font-medium text-white/70 truncate">{f.fileName}</p>
-            <p className="text-[9.5px] text-white/30">
+            <p className={`text-[11.5px] font-medium truncate ${isActive ? 'text-indigo-100' : 'text-white/70'}`}>{f.fileName}</p>
+            <p className={`text-[9.5px] ${isActive ? 'text-indigo-300/70' : 'text-white/30'}`}>
               {f.totalRows} produit{f.totalRows > 1 ? 's' : ''}
               {f.updatedAt && ` · ${f.updatedAt.toLocaleDateString('fr-FR')}`}
             </p>
