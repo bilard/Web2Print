@@ -41,7 +41,7 @@ export const savePimNode: NodeSpec<
       label: 'Source ID',
       required: true,
       default: 'workflow-import',
-      help: 'ID de la source pour ces produits',
+      help: 'ID de la source. Si elle n\'existe pas dans le projet, les produits seront créés mais invisibles dans la liste des sources (à corriger en phase 2).',
     },
   ],
   defaultConfig: { projectId: '', sourceId: 'workflow-import' },
@@ -51,6 +51,11 @@ export const savePimNode: NodeSpec<
       ctx.log('error', 'Project ID PIM manquant dans la config')
       return { result: { count: 0, projectId: '' } }
     }
+
+    ctx.log(
+      'warn',
+      `Source "${config.sourceId}" non auto-enregistrée — si elle n'existe pas dans le projet, les produits seront créés mais invisibles dans la liste des sources (à corriger en phase 2)`,
+    )
 
     const rows = (inputs.sheet?.rows ?? []) as Array<Record<string, unknown>>
     const now = Date.now()
