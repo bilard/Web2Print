@@ -1,10 +1,19 @@
 // src/features/workflows/registry/importNodes.tsx
-import { useState, useEffect } from 'react'
-import { FileSpreadsheet, FileText, FileImage, Upload } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import {
+  FileSpreadsheet,
+  FileText,
+  FileImage,
+  Upload,
+  File as FileIcon,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+} from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { parseExcelFile } from '@/features/excel/useExcelImport'
-import { putFile, getFile } from '../runtime/fileStore'
+import { putFile, getFile, deleteFile } from '../runtime/fileStore'
 
 interface CsvConfig {
   headerRow: boolean
@@ -92,8 +101,25 @@ interface UploadConfigUiProps {
   onChange: (next: UploadConfig) => void
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+function fileExtIcon(name: string) {
+  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  if (['csv', 'xlsx', 'xls', 'tsv'].includes(ext)) return FileSpreadsheet
+  if (['svg', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return FileImage
+  if (['idml', 'pdf', 'doc', 'docx'].includes(ext)) return FileText
+  return FileIcon
+}
+
 function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
   const [exists, setExists] = useState<boolean | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+
   useEffect(() => {
     if (!config.fileKey) {
       setExists(null)
@@ -104,32 +130,119 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
       .catch(() => setExists(false))
   }, [config.fileKey])
 
+  const onPick = async (f: File) => {
+    const key = `wf_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    await putFile(key, f)
+    if (config.fileKey) await deleteFile(config.fileKey).catch(() => {})
+    onChange({ fileKey: key, fileName: f.name, fileSize: f.size })
+  }
+
+  const onClear = async () => {
+    if (config.fileKey) await deleteFile(config.fileKey).catch(() => {})
+    onChange({ fileKey: '', fileName: '', fileSize: 0 })
+  }
+
+  const Icon = config.fileName ? fileExtIcon(config.fileName) : FileIcon
+  const hasFile = !!config.fileName
+  const ok = hasFile && exists === true
+  const missing = hasFile && exists === false
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <input
+        ref={inputRef}
         type="file"
+        className="hidden"
         onChange={async (e) => {
           const f = e.target.files?.[0]
-          if (!f) return
-          const key = `wf_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-          await putFile(key, f)
-          onChange({ fileKey: key, fileName: f.name, fileSize: f.size })
+          if (f) await onPick(f)
         }}
-        className="text-xs text-neutral-300 w-full"
       />
-      {config.fileName ? (
-        <div className="text-[10px] text-neutral-500 truncate">
-          <span className="text-neutral-400">{config.fileName}</span>
-          <span className="ml-1">· {(config.fileSize / 1024).toFixed(1)} KB</span>
-          {exists === false ? (
-            <span className="ml-1 text-amber-400">· fichier introuvable, re-sélectionnez</span>
-          ) : exists === true ? (
-            <span className="ml-1 text-emerald-400">· OK</span>
-          ) : null}
-        </div>
+
+      {!hasFile ? (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={async (e) => {
+            e.preventDefault()
+            setDragOver(false)
+            const f = e.dataTransfer.files?.[0]
+            if (f) await onPick(f)
+          }}
+          className={`w-full flex flex-col items-center justify-center gap-1.5 px-3 py-4 rounded-md border-2 border-dashed transition-colors ${
+            dragOver
+              ? 'border-indigo-500 bg-indigo-500/10 text-indigo-200'
+              : 'border-neutral-700 bg-[#0f0f0f] text-neutral-400 hover:border-neutral-600 hover:text-neutral-300'
+          }`}
+        >
+          <Upload className="w-5 h-5" />
+          <span className="text-[11px]">Cliquer ou déposer un fichier</span>
+        </button>
       ) : (
-        <div className="text-[10px] text-neutral-600">Aucun fichier sélectionné</div>
+        <div
+          className={`relative flex items-center gap-2 p-2 rounded-md border ${
+            missing
+              ? 'border-amber-500/40 bg-amber-500/5'
+              : 'border-neutral-700 bg-[#161616]'
+          }`}
+        >
+          <div
+            className={`shrink-0 w-9 h-9 rounded-md flex items-center justify-center border ${
+              missing
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+            }`}
+          >
+            <Icon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div
+              className="text-[12px] text-white truncate"
+              title={config.fileName}
+            >
+              {config.fileName}
+            </div>
+            <div className="text-[10px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
+              <span>{formatBytes(config.fileSize)}</span>
+              {ok ? (
+                <span className="flex items-center gap-0.5 text-emerald-400">
+                  <CheckCircle2 className="w-2.5 h-2.5" /> prêt
+                </span>
+              ) : missing ? (
+                <span className="flex items-center gap-0.5 text-amber-400">
+                  <AlertTriangle className="w-2.5 h-2.5" /> introuvable
+                </span>
+              ) : (
+                <span className="text-neutral-600">vérification…</span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClear}
+            className="shrink-0 p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-white/5"
+            title="Retirer le fichier"
+            aria-label="Retirer le fichier"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
+
+      {hasFile ? (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="w-full text-[11px] text-neutral-400 hover:text-white py-1 rounded hover:bg-white/5 transition-colors"
+        >
+          Remplacer le fichier
+        </button>
+      ) : null}
     </div>
   )
 }
