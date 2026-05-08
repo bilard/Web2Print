@@ -565,6 +565,10 @@ function GlobalTaxoLevel({
         // pour que les niveaux soient visuellement cohérents entre les deux
         // arbres. depth est 0-indexé, getLevelColor attend du 1-indexé.
         const color = getLevelColor(depth + 1)
+        // Un nœud "actif" = sélectionné OU sur le chemin vers la sélection
+        // (auto-expand). On colore le label de tous les actifs pour matérialiser
+        // la chaîne hiérarchique du filtre courant.
+        const isActive = tn.isSelected || tn.isExpanded
         return (
           <div key={tn.node.id}>
             <button
@@ -618,15 +622,18 @@ function GlobalTaxoLevel({
                 className={`flex-1 truncate leading-tight ${tn.isSelected ? 'font-semibold' : ''}`}
                 style={{
                   fontSize: depth === 0 ? '13px' : depth === 1 ? '12px' : '11px',
-                  color: tn.isSelected ? color : depth === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
+                  color: isActive ? color : depth === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
                 }}
               >
                 {tn.node.label}
               </span>
 
               <span
-                className={`tabular-nums ${tn.isSelected ? 'text-white/50' : 'text-white/20'}`}
-                style={{ fontSize: depth === 0 ? '10px' : '9px' }}
+                className="tabular-nums"
+                style={{
+                  fontSize: depth === 0 ? '10px' : '9px',
+                  color: isActive ? `${color}b3` : 'rgba(255,255,255,0.2)',
+                }}
               >
                 {tn.count}
               </span>
