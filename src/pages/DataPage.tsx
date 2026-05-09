@@ -94,20 +94,20 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
   const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
 
-  // Compute filtered row IDs for ProductSheet navigation.
+  // Compute filtered row IDs for ProductSheet navigation. Doit refléter
+  // EXACTEMENT le scope de DataTable, sinon les flèches prev/next dans la
+  // fiche produit naviguent vers des rows invisibles.
   // - Mono-source : rows de l'unique sheet.
-  // - Multi-source : union des sources sélectionnées ; aucune sélectionnée
-  //   → liste vide (cohérent avec DataTable).
+  // - Multi-source avec sélection : sources cochées.
+  // - Multi-source sans sélection : vide (sauf filtre taxo actif → toutes).
   const filteredRowIds = useMemo(() => {
     if (!sheet) return []
-    const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+    const hasNavFilter = Object.keys(taxonomyNavFilter).length > 0
     let baseRows: typeof sheet.rows
     if (sheets.length <= 1) {
       baseRows = sheet.rows
     } else if (selectedSourceIds.length === 0) {
-      // Filtre taxo globale actif → on agrège toutes les sources pour que
-      // la nav par taxonomie soit utilisable sans devoir sélectionner une source.
-      baseRows = globalFilter ? sheets.flatMap((s) => s.rows) : []
+      baseRows = hasNavFilter ? sheets.flatMap((s) => s.rows) : []
     } else {
       baseRows = sheets
         .filter((s) => selectedSourceIds.includes(s.name))
@@ -117,6 +117,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     const navEntries = Object.entries(taxonomyNavFilter)
     if (navEntries.length > 0) {
       const colEntries = navEntries.filter(([k]) => k !== GLOBAL_TAXO_FILTER_KEY)
+      const globalFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
       const globalPredicate = globalFilter
         ? buildGlobalTaxoFilterPredicate(globalFilter, taxonomies)
         : null

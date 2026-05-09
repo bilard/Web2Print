@@ -52,14 +52,15 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   /** Rows ciblées par la sélection courante :
    *  - mono-source : la sheet active.
    *  - multi-source avec sélection : les sheets cochées dans SheetsColumn.
-   *  - multi-source sans sélection : juste la sheet active (fallback minimal).
+   *  - multi-source sans sélection : aucune (l'arbre reste replié, l'utilisateur
+   *    développe lui-même les nœuds qu'il veut explorer).
    *  Pilote l'auto-expand de la nav globale. */
   const selectedRows = useMemo(() => {
     if (sheets.length <= 1) return sheet?.rows ?? []
     if (selectedSourceIds.length > 0) {
       return sheets.filter((s) => selectedSourceIds.includes(s.name)).flatMap((s) => s.rows)
     }
-    return sheet?.rows ?? []
+    return []
   }, [sheets, sheet, selectedSourceIds])
 
   const taxoCols = useMemo(() => {
@@ -150,14 +151,20 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
   const handleClearAll = () => setTaxonomyNavFilter({})
 
   // ── Section taxonomie globale ──────────────────────────────────────────────
-  // Scope = toutes les sheets de la BDD (pas juste la sheet active) : en
-  // multi-sources, l'utilisateur peut explorer la taxo sans avoir présélectionné
-  // une source. On ne montre que les taxos avec au moins une row liée pour ne
-  // pas noyer la nav avec tout le catalogue de taxos du compte.
+  // Scope = TOUTES les rows de la BDD (mono ou multi-source). On veut que la
+  // nav montre l'inventaire des taxonomies présentes, indépendamment de la
+  // sélection courante. La sélection ne pilote que l'auto-expand des nœuds
+  // (cf. `autoExpandByTaxoId`).
+  const taxonomyScopeRows = useMemo(() => {
+    if (sheets.length <= 1) return sheet?.rows ?? []
+    return allRowsInBdd
+  }, [sheets, sheet, allRowsInBdd])
+
   const linkedTaxonomies = useMemo(() => {
     if (!taxonomies || taxonomies.length === 0) return []
+    if (taxonomyScopeRows.length === 0) return []
     const linkCounts = new Map<string, Map<string, number>>() // taxoId → nodeId → count
-    for (const row of allRowsInBdd) {
+    for (const row of taxonomyScopeRows) {
       const link = getProductTaxonomyLink(row)
       if (!link) continue
       let m = linkCounts.get(link.taxonomyId)
@@ -168,7 +175,7 @@ export function TaxonomyNavigator({ onClose }: { onClose?: () => void } = {}) {
     return taxonomies
       .filter((t) => linkCounts.has(t.id))
       .map((t) => ({ taxonomy: t, leafCounts: linkCounts.get(t.id)! }))
-  }, [allRowsInBdd, taxonomies])
+  }, [taxonomyScopeRows, taxonomies])
 
   /** Auto-expand : nœuds référencés par les rows des sources sélectionnées.
    *  Quand l'utilisateur coche/décoche des sources dans SheetsColumn, la nav

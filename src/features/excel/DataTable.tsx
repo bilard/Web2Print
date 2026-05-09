@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, Fragment, type RefObject, type MouseEvent as ReactMouseEvent } from 'react'
-import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, Expand, ChevronRight, ChevronDown, Sparkles } from 'lucide-react'
+import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, ChevronRight, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
@@ -50,20 +50,20 @@ export function DataTable() {
   const { data: taxonomies } = useTaxonomies()
   const sheet = sheets[activeSheetIndex]
   /** Rows à afficher :
-   *  - mono-source (une seule sheet) : on affiche tout, pas de sélection.
-   *  - multi-source : on n'affiche QUE les rows des sources sélectionnées.
-   *    Aucune source sélectionnée → liste vide (l'utilisateur doit cliquer
-   *    explicitement une source dans SheetsColumn).
+   *  - mono-source (une seule sheet) : on affiche tout.
+   *  - multi-source avec sélection : rows des sources cochées dans SheetsColumn.
+   *  - multi-source sans sélection :
+   *      • avec filtre taxo actif → toutes les sources agrégées (le filtre
+   *        restreint ensuite à la branche choisie) ;
+   *      • sans filtre taxo → liste vide, l'utilisateur doit choisir un scope.
    *  Le schéma de colonnes vient toujours de la sheet active : les rows
    *  venues d'une autre source affichent simplement `null` pour les colonnes
    *  manquantes. */
-  const globalTaxoFilter = taxonomyNavFilter[GLOBAL_TAXO_FILTER_KEY]
+  const hasNavFilter = Object.keys(taxonomyNavFilter).length > 0
   const baseRows = (() => {
     if (sheets.length <= 1) return sheet?.rows ?? []
     if (selectedSourceIds.length === 0) {
-      // Filtre taxo globale actif → on agrège toutes les sources pour que
-      // la nav par taxonomie soit utilisable sans devoir sélectionner une source.
-      return globalTaxoFilter ? sheets.flatMap((s) => s.rows) : []
+      return hasNavFilter ? sheets.flatMap((s) => s.rows) : []
     }
     return sheets
       .filter((s) => selectedSourceIds.includes(s.name))
@@ -160,7 +160,9 @@ export function DataTable() {
     if (type === 'formula') setEditingFormula(colKey)
   }
 
-  // Filter rows by taxonomy navigation + search
+  // Filter rows by taxonomy navigation + search.
+  // Sources et taxonomie agissent en INTERSECTION : on ne montre que les rows
+  // qui matchent à la fois le scope source (cf. baseRows) ET le filtre taxo.
   const navFilterEntries = Object.entries(taxonomyNavFilter)
   let filteredRows = baseRows
   if (navFilterEntries.length > 0) {
@@ -786,13 +788,33 @@ function DataRow({
   activeSheetIndex, formatCell, getCellColorStyle, dragColIdx,
 }: DataRowProps) {
   const enriched = isRowEnriched(row)
+  // Différencie simple-clic (ouvre la fiche) et double-clic (édite la cellule)
+  // via un délai court : si un dblclick arrive avant l'expiration, on annule.
+  const openTimerRef = useRef<number | null>(null)
+
+  const handleRowClick = () => {
+    if (editingCell?.rowId === row._id) return
+    if (openTimerRef.current !== null) clearTimeout(openTimerRef.current)
+    openTimerRef.current = window.setTimeout(() => {
+      setSheetRowId(row._id)
+      openTimerRef.current = null
+    }, 200)
+  }
+
+  const cancelOpen = () => {
+    if (openTimerRef.current !== null) {
+      clearTimeout(openTimerRef.current)
+      openTimerRef.current = null
+    }
+  }
+
   return (
     <tr
+      onClick={handleRowClick}
       className={`group transition-colors hover:bg-white/[0.07] cursor-pointer ${rowIdx % 2 === 1 ? 'bg-white/[0.025]' : ''}`}
     >
       <td
         className={`sticky left-0 z-10 relative px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a] cursor-grab active:cursor-grabbing`}
-        onClick={() => setSheetRowId(row._id)}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
@@ -808,18 +830,8 @@ function DataRow({
             aria-hidden
           />
         )}
-        <div className="flex items-center justify-center gap-0.5">
-          {enriched ? (
-            <span
-              className="group-hover:hidden inline-flex items-center justify-center"
-              title="Ce produit a été enrichi par l'IA"
-            >
-              <Sparkles className="w-3 h-3 text-indigo-400/90" />
-            </span>
-          ) : (
-            <span className="text-[10px] text-white/15 group-hover:hidden tabular-nums">{rowIdx + 1}</span>
-          )}
-          <Expand className="w-3 h-3 text-white/20 group-hover:text-indigo-400 hidden group-hover:block transition-colors" />
+        <div className="flex items-center justify-center">
+          <span className="text-[10px] text-white/15 tabular-nums">{rowIdx + 1}</span>
         </div>
       </td>
 
@@ -834,10 +846,11 @@ function DataRow({
         return (
           <td
             key={col.key}
-            className={`px-3 py-[7px] border-b border-r border-white/[0.05] overflow-hidden align-middle ${isFormulaCol ? 'cursor-default' : 'cursor-text'} ${dragColIdx !== null && dragColIdx === vColIdx ? 'opacity-30' : ''}`}
-            onClick={(e) => {
+            className={`px-3 py-[7px] border-b border-r border-white/[0.05] overflow-hidden align-middle ${isFormulaCol ? 'cursor-default' : 'cursor-pointer'} ${dragColIdx !== null && dragColIdx === vColIdx ? 'opacity-30' : ''}`}
+            onDoubleClick={(e) => {
               if (isEditing || isFormulaCol) return
               e.stopPropagation()
+              cancelOpen()
               startEdit(row._id, col.key, value)
             }}
             style={{ backgroundColor: colorStyle?.bg }}
@@ -849,6 +862,7 @@ function DataRow({
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={commitEdit}
+                onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') commitEdit()
                   if (e.key === 'Escape') setEditingCell(null)
@@ -890,6 +904,7 @@ function DataRow({
 
       <td
         className={`sticky right-0 z-10 px-1 py-1.5 border-b border-l border-white/[0.05] text-center ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a]`}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={(e) => { e.stopPropagation(); deleteRow(activeSheetIndex, row._id) }}
