@@ -1,5 +1,6 @@
 import { getApiKey } from '@/lib/apiKeys'
 import { base64ToBlob } from './base64ToBlob'
+import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 
 const MODEL = 'gemini-3.1-flash-image-preview'
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
@@ -48,6 +49,31 @@ export async function generateImage(
 ): Promise<GenerateImageResult> {
   const apiKey = getApiKey('gemini')
   if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
+
+  const activity = useAiActivityStore.getState()
+  const activityId = nextAiActivityId('img')
+  activity.start({
+    id: activityId,
+    provider: 'gemini-image',
+    model: MODEL,
+    label: 'Nano Banana 2',
+    kind: 'image',
+  })
+  try {
+    const result = await generateImageInner(apiKey, prompt, referenceImages)
+    activity.end(activityId, 'success')
+    return result
+  } catch (err) {
+    activity.end(activityId, 'error', err instanceof Error ? err.message : String(err))
+    throw err
+  }
+}
+
+async function generateImageInner(
+  apiKey: string,
+  prompt: string,
+  referenceImages: ReferenceImage[],
+): Promise<GenerateImageResult> {
 
   const parts: GeminiImagePart[] = []
   for (const ref of referenceImages) {

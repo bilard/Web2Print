@@ -13,7 +13,8 @@ import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
 import { generateJson as geminiGenerateJson } from '@/features/briefs/ai/geminiClient'
 import { getSelectedModel, useAiSettingsStore } from '@/stores/aiSettings.store'
-import { recordAiUsage } from '@/features/stats/aiUsageTracking'
+import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTracking'
+import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import type { AiProvider } from '@/lib/aiModels'
 
 export type LLMProviderId = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'openrouter'
@@ -193,15 +194,36 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   const modelOverride = route.model
 
   let lastError: unknown = null
+  const activity = useAiActivityStore.getState()
   for (let i = 0; i < cascade.length; i++) {
     const provider = cascade[i]
+    const model = modelForProvider(provider, modelOverride)
+    const activityId = nextAiActivityId(`json-${opts.task}`)
+    activity.start({ id: activityId, provider, model, label: opts.task, kind: 'json' })
+    let tokensIn = 0
+    let tokensOut = 0
+    let costUsd = 0
+    const popListener = pushAiUsageListener((u) => {
+      tokensIn += u.tokensIn
+      tokensOut += u.tokensOut
+      costUsd += u.costUsd
+    })
     try {
       const result = await callProvider(provider, opts, modelOverride)
-      opts.onProviderUsed?.({ provider, model: modelForProvider(provider, modelOverride) })
+      popListener()
+      activity.end(activityId, 'success', { inputTokens: tokensIn, outputTokens: tokensOut, costUsd })
+      opts.onProviderUsed?.({ provider, model })
       return result
     } catch (err) {
+      popListener()
       lastError = err
       const errAsErr = err instanceof Error ? err : new Error(String(err))
+      activity.end(activityId, 'error', {
+        errorMessage: errAsErr.message,
+        inputTokens: tokensIn,
+        outputTokens: tokensOut,
+        costUsd,
+      })
       opts.onProviderFailed?.({ provider, error: errAsErr })
       const nextProvider = cascade[i + 1]
       if (nextProvider) {

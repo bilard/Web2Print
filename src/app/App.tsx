@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { AiLiveIndicator } from '@/components/shared/AiLiveIndicator'
 import { router } from './router'
 
 const queryClient = new QueryClient({
@@ -20,6 +21,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <RouterProvider router={router} />
+          <AiLiveIndicator />
           <Toaster theme="dark" position="bottom-right" richColors />
         </AuthProvider>
       </QueryClientProvider>

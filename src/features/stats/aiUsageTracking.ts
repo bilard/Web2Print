@@ -3,6 +3,23 @@ import { db } from '@/lib/firebase/config'
 import { getModel, type AiProvider } from '@/lib/aiModels'
 import { useAuthStore } from '@/stores/auth.store'
 
+/** Listener temporaire enregistré par les routeurs LLM pendant qu'une requête
+ *  est en vol — leur permet de capter tokens+coût pour l'indicateur live sans
+ *  refactoriser tous les sites d'appel. Stack pour supporter les appels
+ *  imbriqués (rare mais possible si un provider compose un autre). */
+type UsageListener = (entry: { tokensIn: number; tokensOut: number; costUsd: number }) => void
+const listeners: UsageListener[] = []
+
+/** Enregistre un listener pour la durée d'un bloc — pattern push/pop pour
+ *  supporter les appels concurrents. Renvoie une fonction de désinscription. */
+export function pushAiUsageListener(listener: UsageListener): () => void {
+  listeners.push(listener)
+  return () => {
+    const idx = listeners.lastIndexOf(listener)
+    if (idx !== -1) listeners.splice(idx, 1)
+  }
+}
+
 export function computeCost(
   tokens: { input: number; output: number },
   pricing: { input: number; output: number },
@@ -104,6 +121,16 @@ export function recordAiUsage(params: RecordParams): number {
   existing.tokensOut += params.outputTokens
   existing.costUsd += costUsd
   pending.set(params.provider, existing)
+
+  // Notifie le listener du dernier routeur actif (LIFO) — pour l'indicateur live.
+  const activeListener = listeners[listeners.length - 1]
+  if (activeListener) {
+    activeListener({
+      tokensIn: params.inputTokens,
+      tokensOut: params.outputTokens,
+      costUsd,
+    })
+  }
 
   if (!flushTimer) {
     flushTimer = setTimeout(() => { void flushPending() }, FLUSH_DELAY_MS)

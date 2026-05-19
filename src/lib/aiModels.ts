@@ -14,8 +14,8 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5',  pricing: { input: 0.80, output: 4 } },
   ],
   gemini: [
-    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview', pricing: { input: 1.25,  output: 10 },  isDefault: true },
-    { id: 'gemini-3-flash',         label: 'Gemini 3 Flash',         pricing: { input: 0.075, output: 0.30 } },
+    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview', pricing: { input: 1.25,  output: 10 },   isDefault: true },
+    { id: 'gemini-2.5-flash',       label: 'Gemini 2.5 Flash',       pricing: { input: 0.30,  output: 2.50 } },
   ],
   openai: [
     { id: 'gpt-4o',      label: 'GPT-4o',      pricing: { input: 2.50, output: 10 },  isDefault: true },

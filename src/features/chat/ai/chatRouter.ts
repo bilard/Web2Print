@@ -9,7 +9,8 @@
  */
 
 import { getApiKey } from '@/lib/apiKeys'
-import { recordAiUsage } from '@/features/stats/aiUsageTracking'
+import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTracking'
+import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import {
   type LLMProviderId,
   getProviderCascade,
@@ -63,16 +64,36 @@ export async function generateText(opts: GenerateTextOptions): Promise<GenerateT
   }
 
   let lastError: unknown = null
+  const activity = useAiActivityStore.getState()
   for (let i = 0; i < cascade.length; i++) {
     const provider = cascade[i]
     const model = modelForProvider(provider)
+    const activityId = nextAiActivityId('chat')
+    activity.start({ id: activityId, provider, model, label: 'chat', kind: 'chat' })
+    let tokensIn = 0
+    let tokensOut = 0
+    let costUsd = 0
+    const popListener = pushAiUsageListener((u) => {
+      tokensIn += u.tokensIn
+      tokensOut += u.tokensOut
+      costUsd += u.costUsd
+    })
     try {
       const text = await dispatch(provider, model, opts)
+      popListener()
+      activity.end(activityId, 'success', { inputTokens: tokensIn, outputTokens: tokensOut, costUsd })
       opts.onProviderUsed?.({ provider, model })
       return { text, provider, model }
     } catch (err) {
+      popListener()
       lastError = err
       const errAsErr = err instanceof Error ? err : new Error(String(err))
+      activity.end(activityId, 'error', {
+        errorMessage: errAsErr.message,
+        inputTokens: tokensIn,
+        outputTokens: tokensOut,
+        costUsd,
+      })
       opts.onProviderFailed?.({ provider, error: errAsErr })
       const next = cascade[i + 1]
       if (next) console.warn(`[chatRouter] "${provider}" a échoué, fallback sur "${next}":`, err)
