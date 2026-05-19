@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, ChevronDown, ChevronRight, GripVertical } from 'lucide-react'
+import { Eye, EyeOff, ChevronDown, ChevronRight, GripVertical, Inbox } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -9,6 +9,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useExcelStore } from '@/stores/excel.store'
+import { usePimStore } from '@/stores/pim.store'
 import { FieldTypeIcon } from './FieldTypeIcon'
 import type { ExcelColumn } from './types'
 
@@ -112,6 +113,7 @@ function SortableField({ col, isHidden, isExpanded, onToggleExpand, onToggleVisi
 
 export function FieldsPanel() {
   const { sheets, activeSheetIndex, toggleColumnVisibility, showAllColumns, hideAllColumns, reorderColumns, setColumnPrimary } = useExcelStore()
+  const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const sheet = sheets[activeSheetIndex]
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
 
@@ -120,6 +122,20 @@ export function FieldsPanel() {
   )
 
   if (!sheet) return null
+
+  // Multi-source SANS sélection : les champs montrés viendraient d'une sheet
+  // « par défaut » non choisie par l'utilisateur — affichage trompeur. On
+  // bascule sur un empty state demandant de sélectionner une source.
+  if (sheets.length > 1 && selectedSourceIds.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 px-4 gap-3 text-center">
+        <Inbox className="w-8 h-8 text-white/15" />
+        <p className="text-xs text-white/40 leading-relaxed">
+          Sélectionnez une source dans la colonne de gauche pour voir ses champs
+        </p>
+      </div>
+    )
+  }
 
   const hidden = new Set(sheet.hiddenColumns ?? [])
   const visibleCount = sheet.columns.length - hidden.size

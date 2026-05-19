@@ -1,10 +1,12 @@
-import { useState } from 'react'
-import { Plus, X, Tag, ChevronDown, ChevronRight, Palette, Layers, RefreshCw, FolderTree } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, X, Tag, ChevronDown, ChevronRight, Palette, Layers, RefreshCw, FolderTree, Sparkles, Loader2, StopCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { FieldTypeIcon } from './FieldTypeIcon'
 import { buildTaxonomyFromLevels, buildTaxNodesFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
 import { useCreateTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
+import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
+import { useBulkAttachToTaxonomy } from '@/features/taxonomy/useBulkAttachToTaxonomy'
 import type { TaxonomyCategory, TaxonomyTag, TaxonomyLevelMap } from './types'
 
 const TAG_COLORS = [
@@ -20,10 +22,22 @@ export function TaxonomyManager() {
     setTaxonomyFromLevels,
   } = useExcelStore()
   const createTaxonomy = useCreateTaxonomy()
+  const { data: taxonomies } = useTaxonomies()
+  const bulkAttach = useBulkAttachToTaxonomy()
   const sheet = sheets[activeSheetIndex]
   const [newCatName, setNewCatName] = useState('')
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
   const [newTagName, setNewTagName] = useState('')
+  const [selectedTaxoId, setSelectedTaxoId] = useState<string>('')
+  const [overwriteLinked, setOverwriteLinked] = useState(false)
+
+  // Sélection par défaut : 1ʳᵉ taxonomie disponible. Évite un select vide qui
+  // désactive le bouton sans raison apparente.
+  const effectiveTaxoId = useMemo(() => {
+    if (!taxonomies || taxonomies.length === 0) return ''
+    if (selectedTaxoId && taxonomies.some((t) => t.id === selectedTaxoId)) return selectedTaxoId
+    return taxonomies[0].id
+  }, [taxonomies, selectedTaxoId])
 
   if (!sheet) return null
 
@@ -60,6 +74,20 @@ export function TaxonomyManager() {
     } catch {
       toast.error('Erreur lors de la création de la taxonomie')
     }
+  }
+
+  const handleBulkAttach = async () => {
+    if (!taxonomies || bulkAttach.running) return
+    const target = taxonomies.find((t) => t.id === effectiveTaxoId)
+    if (!target) {
+      toast.error('Sélectionnez une taxonomie cible')
+      return
+    }
+    if (sheet.rows.length === 0) {
+      toast.info('Aucun produit à classer dans la feuille active')
+      return
+    }
+    await bulkAttach.run(target, { minConfidence: 0.5, overwriteLinked })
   }
 
   const handleAddCategory = () => {
@@ -160,6 +188,111 @@ export function TaxonomyManager() {
               Créer dans Taxonomies
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Separator */}
+      <div className="border-t border-white/[0.06]" />
+
+      {/* === Section: Auto-attach products to a global taxonomy === */}
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold text-white/80 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-indigo-400" />
+          Attachement IA
+        </h3>
+        <p className="text-[10px] text-white/30 -mt-1">
+          Classe automatiquement les produits de la feuille dans une taxonomie
+        </p>
+
+        {!taxonomies || taxonomies.length === 0 ? (
+          <p className="text-[11px] text-white/30 italic py-2">
+            Aucune taxonomie disponible. Créez-en une ci-dessus ou depuis la page Taxonomies.
+          </p>
+        ) : (
+          <>
+            <select
+              value={effectiveTaxoId}
+              onChange={(e) => setSelectedTaxoId(e.target.value)}
+              disabled={bulkAttach.running}
+              className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] text-white/80 outline-none focus:border-indigo-500/50 disabled:opacity-50"
+            >
+              {taxonomies.map((t) => {
+                const count = Object.keys(t.nodes).length
+                return (
+                  <option key={t.id} value={t.id} className="bg-[#1a1a1a]">
+                    {t.name} ({count} nœuds)
+                  </option>
+                )
+              })}
+            </select>
+
+            <label className="flex items-center gap-2 text-[10px] text-white/45 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={overwriteLinked}
+                onChange={(e) => setOverwriteLinked(e.target.checked)}
+                disabled={bulkAttach.running}
+                className="accent-indigo-500"
+              />
+              Réécrire les produits déjà classés
+            </label>
+
+            {!bulkAttach.running ? (
+              <button
+                onClick={handleBulkAttach}
+                disabled={!effectiveTaxoId || sheet.rows.length === 0}
+                className="flex items-center justify-center gap-1.5 text-[10px] px-2 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed border border-indigo-500/20 text-indigo-300 transition-colors"
+                title={
+                  sheet.rows.length === 0
+                    ? 'La feuille active ne contient aucun produit'
+                    : `Lancer la classification IA sur ${sheet.rows.length} produit(s)`
+                }
+              >
+                <Sparkles className="w-3 h-3" />
+                Lancer l'attachement ({sheet.rows.length})
+              </button>
+            ) : (
+              <button
+                onClick={bulkAttach.abort}
+                className="flex items-center justify-center gap-1.5 text-[10px] px-2 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 transition-colors"
+              >
+                <StopCircle className="w-3 h-3" />
+                Interrompre
+              </button>
+            )}
+
+            {(bulkAttach.running || bulkAttach.progress.done > 0) && (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-[10px] text-white/45 tabular-nums">
+                  <span className="flex items-center gap-1">
+                    {bulkAttach.running && <Loader2 className="w-3 h-3 animate-spin" />}
+                    {bulkAttach.progress.done} / {bulkAttach.progress.total}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-emerald-400/80">✓ {bulkAttach.progress.classified}</span>
+                    {bulkAttach.progress.skipped > 0 && (
+                      <span className="text-white/30">— {bulkAttach.progress.skipped}</span>
+                    )}
+                    {bulkAttach.progress.errors > 0 && (
+                      <span className="text-red-400/70">⚠ {bulkAttach.progress.errors}</span>
+                    )}
+                  </span>
+                </div>
+                <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-400/70 transition-all"
+                    style={{
+                      width: `${
+                        bulkAttach.progress.total === 0
+                          ? 0
+                          : Math.round((bulkAttach.progress.done / bulkAttach.progress.total) * 100)
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

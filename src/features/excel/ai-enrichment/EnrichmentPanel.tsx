@@ -1326,41 +1326,35 @@ function DoneState({
           </div>
           )
         }
-        if (sectionKey === 'advantages') return (
-          <div key="advantages" id={sectionAnchor('advantages')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
-                <Zap className="w-3 h-3 text-amber-400/60" />
-                Points forts
-              </p>
-              <button
-                onClick={() => onUpdate({ advantages: [...data.advantages, { text: '' }] })}
-                className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
-              >
-                <Plus className="w-3 h-3" /> Ajouter
-              </button>
+        if (sectionKey === 'advantages') {
+          if (data.advantages.length === 0) return null
+          return (
+            <div key="advantages" id={sectionAnchor('advantages')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider flex items-center gap-1.5">
+                  <Zap className="w-3 h-3 text-amber-400/60" />
+                  Points forts
+                </p>
+                <button
+                  onClick={() => onUpdate({ advantages: [...data.advantages, { text: '' }] })}
+                  className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
+                >
+                  <Plus className="w-3 h-3" /> Ajouter
+                </button>
+              </div>
+              {visibleAdvantagesCount === 0 ? (
+                <p className="text-[11px] text-white/30 italic">Tous les groupes sont cachés</p>
+              ) : (
+                <AdvantageGroupList advantages={data.advantages} hiddenGroups={hiddenAdv} onUpdate={onUpdate} data={data} />
+              )}
             </div>
-            {visibleAdvantagesCount === 0 ? (
-              <p className="text-[11px] text-white/30 italic">
-                {data.advantages.length === 0 ? 'Aucun point fort' : 'Tous les groupes sont cachés'}
-              </p>
-            ) : (
-              <AdvantageGroupList advantages={data.advantages} hiddenGroups={hiddenAdv} onUpdate={onUpdate} data={data} />
-            )}
-          </div>
-        )
+          )
+        }
         if (sectionKey === 'pricing') {
           const p = data.pricing
           const hasAnyPrice = p && (p.ttc != null || p.ht != null || p.original != null)
           const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: p?.currency || 'EUR', minimumFractionDigits: 2 }).format(n)
-          if (!p || !hasAnyPrice) {
-            return (
-              <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
-                <p className="text-[11px] text-white/30 italic">Aucun prix détecté</p>
-              </div>
-            )
-          }
+          if (!p || !hasAnyPrice) return null
           return (
             <div key="pricing" id={sectionAnchor('pricing')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
               <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">Prix</p>
@@ -1400,28 +1394,29 @@ function DoneState({
             </div>
           )
         }
-        if (sectionKey === 'specifications') return (
-          <div key="specifications" id={sectionAnchor('specifications')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">
-                Spécifications clés
-              </p>
-              <button
-                onClick={() => onUpdate({ specifications: [...data.specifications, { name: '', value: '' }] })}
-                className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
-              >
-                <Plus className="w-3 h-3" /> Ajouter
-              </button>
+        if (sectionKey === 'specifications') {
+          if (data.specifications.length === 0) return null
+          return (
+            <div key="specifications" id={sectionAnchor('specifications')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider">
+                  Spécifications clés
+                </p>
+                <button
+                  onClick={() => onUpdate({ specifications: [...data.specifications, { name: '', value: '' }] })}
+                  className="text-[10px] text-white/40 hover:text-white/80 transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
+                >
+                  <Plus className="w-3 h-3" /> Ajouter
+                </button>
+              </div>
+              {visibleSpecsCount === 0 ? (
+                <p className="text-[11px] text-white/30 italic">Tous les groupes sont cachés</p>
+              ) : (
+                <SpecGroupAccordions specifications={data.specifications} hiddenGroups={hiddenSpecs} onUpdate={onUpdate} data={data} />
+              )}
             </div>
-            {visibleSpecsCount === 0 ? (
-              <p className="text-[11px] text-white/30 italic">
-                {data.specifications.length === 0 ? 'Aucune spécification' : 'Tous les groupes sont cachés'}
-              </p>
-            ) : (
-              <SpecGroupAccordions specifications={data.specifications} hiddenGroups={hiddenSpecs} onUpdate={onUpdate} data={data} />
-            )}
-          </div>
-        )
+          )
+        }
         if (sectionKey === 'variants') return data.variants && data.variants.length > 0 ? (
           <div key="variants" id={sectionAnchor('variants')} className="px-4 pt-3 pb-3 border-b border-white/[0.04]">
             <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-2">
