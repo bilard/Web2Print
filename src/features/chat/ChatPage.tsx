@@ -5,13 +5,16 @@ import { ChatComposer } from './ChatComposer'
 import { ChatMessageList } from './ChatMessageList'
 import { PromptLibraryPanel } from './prompts/PromptLibraryPanel'
 import { usePrompts } from './prompts/usePrompts'
-import { CATEGORY_META, PROMPT_CATEGORIES, type Prompt } from './prompts/types'
+import { CATEGORY_META, PROMPT_CATEGORIES, type Prompt, type PromptCategory } from './prompts/types'
+import type { ComposerSubmitPayload } from './ChatComposer'
 
 export function ChatPage() {
   const { messages, isLoading, send, reset, stop } = useChat()
   const { prompts, recordUse } = usePrompts()
   const [prefill, setPrefill] = useState<{ text: string; nonce: number }>({ text: '', nonce: 0 })
+  const [activeCategory, setActiveCategory] = useState<PromptCategory | null>(null)
   const isEmpty = messages.length === 0
+  const isImageMode = activeCategory === 'image'
 
   const seedPrompt = (prompt: string) => {
     setPrefill((p) => ({ text: prompt, nonce: p.nonce + 1 }))
@@ -22,7 +25,15 @@ export function ChatPage() {
     void recordUse(p.id)
   }
 
-  const handlePickCategory = (categoryId: typeof PROMPT_CATEGORIES[number]) => {
+  const handlePickCategory = (categoryId: PromptCategory) => {
+    // Toggle : recliquer la chip active la désélectionne.
+    if (activeCategory === categoryId) {
+      setActiveCategory(null)
+      return
+    }
+    setActiveCategory(categoryId)
+    // Pour Image, on ne prérempli RIEN : le user décrit l'image dans le composer.
+    if (categoryId === 'image') return
     const top = prompts
       .filter((p) => p.category === categoryId)
       .sort((a, b) => {
@@ -31,6 +42,18 @@ export function ChatPage() {
       })[0]
     if (top) handlePickPrompt(top)
   }
+
+  const handleSubmit = (payload: ComposerSubmitPayload) => {
+    void send({
+      text: payload.text,
+      attachments: payload.attachments,
+      mode: isImageMode ? 'image' : 'text',
+    })
+  }
+
+  const composerPlaceholder = isImageMode
+    ? "Décris l'image à générer (Nano Banana)…"
+    : 'Comment puis-je vous aider ?'
 
   return (
     <div className="flex-1 h-full flex bg-[#0f0f0f] overflow-hidden">
@@ -58,24 +81,31 @@ export function ChatPage() {
                 Comment puis-je vous aider&nbsp;?
               </h1>
               <ChatComposer
-                onSubmit={send}
+                onSubmit={handleSubmit}
                 onStop={stop}
                 isLoading={isLoading}
                 prefill={prefill.text}
                 prefillNonce={prefill.nonce}
+                placeholder={composerPlaceholder}
               />
               <div className="mt-4 flex items-center justify-center flex-wrap gap-2">
                 {PROMPT_CATEGORIES.filter((c) => c !== 'custom').map((c) => {
                   const meta = CATEGORY_META[c]
                   const Icon = meta.icon
+                  const active = activeCategory === c
                   return (
                     <button
                       key={c}
                       type="button"
+                      aria-pressed={active}
                       onClick={() => handlePickCategory(c)}
-                      className="flex items-center gap-1.5 text-[12.5px] text-white/70 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 rounded-full px-3 py-1.5 transition-colors"
+                      className={`flex items-center gap-1.5 text-[12.5px] rounded-full px-3 py-1.5 border transition-colors ${
+                        active
+                          ? 'bg-violet-500/15 text-violet-100 border-violet-400/50 hover:bg-violet-500/20'
+                          : 'bg-white/[0.03] text-white/70 hover:text-white hover:bg-white/[0.06] border-white/10 hover:border-white/20'
+                      }`}
                     >
-                      <Icon className="w-3.5 h-3.5 opacity-70" />
+                      <Icon className={`w-3.5 h-3.5 ${active ? 'opacity-90' : 'opacity-70'}`} />
                       {meta.label}
                     </button>
                   )
@@ -89,11 +119,12 @@ export function ChatPage() {
             <div className="shrink-0 px-4 pb-4">
               <div className="max-w-3xl mx-auto">
                 <ChatComposer
-                  onSubmit={send}
+                  onSubmit={handleSubmit}
                   onStop={stop}
                   isLoading={isLoading}
                   prefill={prefill.text}
                   prefillNonce={prefill.nonce}
+                  placeholder={composerPlaceholder}
                 />
               </div>
             </div>
@@ -102,7 +133,7 @@ export function ChatPage() {
       </div>
 
       <div style={{ width: 345 }} className="shrink-0">
-        <PromptLibraryPanel onPick={handlePickPrompt} />
+        <PromptLibraryPanel onPick={handlePickPrompt} categoryFilter={activeCategory} />
       </div>
     </div>
   )

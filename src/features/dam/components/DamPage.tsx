@@ -20,7 +20,6 @@ const TAB_TITLES: Record<string, string> = {
   collections: 'Collections',
   recent: 'Récents',
   projects: 'Projets',
-  generate: 'Nano Banana',
   gdrive: 'Google Drive',
 }
 
@@ -35,16 +34,18 @@ export function DamPage() {
       {activeTab === 'stock' && <DamSidebar />}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between px-6 h-14 border-b border-white/5">
-          <h1 className="text-[15px] font-semibold text-white tracking-tight">
-            {TAB_TITLES[activeTab] ?? ''}
-          </h1>
-          {activeTab === 'stock' && totalResults > 0 && (
-            <span className="text-[11px] text-white/40">
-              {totalResults.toLocaleString()} résultats
-            </span>
-          )}
-        </div>
+        {TAB_TITLES[activeTab] && (
+          <div className="flex items-center justify-between px-6 h-14 border-b border-white/5">
+            <h1 className="text-[15px] font-semibold text-white tracking-tight">
+              {TAB_TITLES[activeTab]}
+            </h1>
+            {activeTab === 'stock' && totalResults > 0 && (
+              <span className="text-[11px] text-white/40">
+                {totalResults.toLocaleString()} résultats
+              </span>
+            )}
+          </div>
+        )}
 
         {activeTab === 'stock' && <DamImageGrid />}
         {activeTab === 'my-images' && <DamRecentImages />}

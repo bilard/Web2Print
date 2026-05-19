@@ -1,4 +1,4 @@
-export type DamSourceProvider = 'pexels' | 'unsplash' | 'project'
+export type DamSourceProvider = 'pexels' | 'unsplash' | 'project' | 'nanobana'
 
 export interface DamImage {
   id: string

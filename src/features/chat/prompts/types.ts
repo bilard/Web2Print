@@ -5,6 +5,7 @@ import {
   Code2,
   Coffee,
   Lightbulb,
+  ImagePlus,
   Sparkles,
 } from 'lucide-react'
 
@@ -14,6 +15,7 @@ export const PROMPT_CATEGORIES = [
   'code',
   'daily',
   'ideas',
+  'image',
   'custom',
 ] as const
 
@@ -31,6 +33,7 @@ export const CATEGORY_META: Record<PromptCategory, PromptCategoryMeta> = {
   code:     { id: 'code',     label: 'Code',            icon: Code2 },
   daily:    { id: 'daily',    label: 'Vie quotidienne', icon: Coffee },
   ideas:    { id: 'ideas',    label: 'Idées',           icon: Lightbulb },
+  image:    { id: 'image',    label: 'Image',           icon: ImagePlus },
   custom:   { id: 'custom',   label: 'Personnalisé',    icon: Sparkles },
 }
 

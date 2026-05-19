@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'collections', label: 'Collections', icon: FolderOpen },
   { id: 'recent', label: 'Récents', icon: Clock },
   { id: 'projects', label: 'Projets', icon: Briefcase },
-  { id: 'generate', label: 'Nano Banana', icon: Sparkles },
+  { id: 'generate', label: 'Création d\'image', icon: Sparkles },
   { id: 'gdrive', label: 'Google Drive', icon: HardDrive },
 ]
 

@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Loader2, AlertCircle, AlertTriangle, ChevronDown, ChevronRight, Copy, Check, FileText } from 'lucide-react'
+import { Loader2, AlertCircle, AlertTriangle, ChevronDown, ChevronRight, Copy, Check, FileText, Download, Save } from 'lucide-react'
+import { toast } from 'sonner'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db, storage } from '@/lib/firebase/config'
+import { useAuthStore } from '@/stores/auth.store'
 import { ResponseProviderBadge } from './ModelBadge'
 import type { ChatAttachment } from './attachments'
 
@@ -107,6 +112,11 @@ export interface ChatMessageData {
   fallbacks?: { provider: string; error: string }[]
   /** Pièces jointes (uniquement messages user). */
   attachments?: ChatAttachment[]
+  /** Image générée (mode Nano Banana) — blob URL. */
+  imageDataUri?: string
+  imageMimeType?: string
+  /** Prompt qui a déclenché la génération — utilisé comme description DAM. */
+  imagePrompt?: string
 }
 
 interface ChatMessageProps {
@@ -123,6 +133,119 @@ const MARKDOWN_CLASSES =
   'prose-ul:text-white/80 prose-ol:text-white/80 prose-li:my-0.5 ' +
   'prose-a:text-indigo-400 hover:prose-a:text-indigo-300 ' +
   'prose-hr:border-white/10 prose-blockquote:text-white/60 prose-blockquote:border-l-white/20'
+
+interface GeneratedImageActionsProps {
+  imageUrl: string
+  mimeType?: string
+  prompt?: string
+}
+
+function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageActionsProps) {
+  const userId = useAuthStore((s) => s.user?.uid)
+  const [saving, setSaving] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
+
+  const handleDownload = () => {
+    const ext = mimeType === 'image/jpeg' ? 'jpg' : 'png'
+    const a = document.createElement('a')
+    a.href = imageUrl
+    a.download = `nano-banana-${Date.now()}.${ext}`
+    a.click()
+  }
+
+  const handleSave = async () => {
+    if (!userId) {
+      toast.error('Connectez-vous pour sauvegarder dans le DAM.')
+      return
+    }
+    if (savedId || saving) return
+    setSaving(true)
+    try {
+      // Le imageUrl est un blob: URL — fetch interne, pas réseau.
+      const blob = await fetch(imageUrl).then((r) => r.blob())
+      const id = `nb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+      const ext = blob.type === 'image/jpeg' ? 'jpg' : 'png'
+      const path = `users/${userId}/dam-generated/${id}.${ext}`
+      const fileRef = storageRef(storage, path)
+      await uploadBytes(fileRef, blob, { contentType: blob.type || 'image/png' })
+      const url = await getDownloadURL(fileRef)
+
+      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+        const i = new Image()
+        i.onload = () => resolve({ w: i.naturalWidth, h: i.naturalHeight })
+        i.onerror = () => resolve({ w: 0, h: 0 })
+        i.src = imageUrl
+      })
+      const orientation: 'landscape' | 'portrait' | 'square' =
+        dims.w > dims.h ? 'landscape' : dims.h > dims.w ? 'portrait' : 'square'
+
+      await setDoc(doc(db, 'dam_assets', id), {
+        sourceProvider: 'nanobana',
+        sourceId: id,
+        sourceUrl: url,
+        thumbnailUrl: url,
+        previewUrl: url,
+        fullUrl: url,
+        width: dims.w,
+        height: dims.h,
+        photographer: 'Nano Banana',
+        photographerUrl: '',
+        description: prompt?.trim() ?? '',
+        tags: [],
+        color: '#000000',
+        orientation,
+        addedBy: userId,
+        addedAt: serverTimestamp(),
+        usageCount: 0,
+      })
+      setSavedId(id)
+      toast.success('Image sauvegardée dans Mes images')
+    } catch (err) {
+      console.error('Save to DAM failed:', err)
+      toast.error(err instanceof Error ? err.message : 'Échec de la sauvegarde')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex gap-1.5 mb-1">
+      <button
+        type="button"
+        onClick={handleDownload}
+        className="flex items-center gap-1.5 text-[11px] text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 rounded-md px-2 py-1 transition-colors"
+        title="Télécharger en .png sur ton ordinateur"
+      >
+        <Download className="w-3 h-3" />
+        Télécharger
+      </button>
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving || !!savedId}
+        className={`flex items-center gap-1.5 text-[11px] rounded-md px-2 py-1 border transition-colors ${
+          savedId
+            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 cursor-default'
+            : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 hover:border-white/20 text-white/70 hover:text-white disabled:opacity-50'
+        }`}
+        title={
+          savedId
+            ? 'Déjà sauvegardé dans Mes images'
+            : 'Sauvegarder dans le DAM (onglet Mes images)'
+        }
+      >
+        {saving ? (
+          <Loader2 className="w-3 h-3 animate-spin" />
+        ) : savedId ? (
+          <Check className="w-3 h-3" />
+        ) : (
+          <Save className="w-3 h-3" />
+        )}
+        {savedId ? 'Sauvegardé' : saving ? 'En cours…' : 'Sauvegarder dans DAM'}
+      </button>
+    </div>
+  )
+}
 
 export function ChatMessage({ message }: ChatMessageProps) {
   if (message.role === 'user') {
@@ -169,13 +292,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
   }
 
   // Assistant
+  const isImageGen = message.model === 'gemini-3.1-flash-image-preview'
   return (
     <div className="flex justify-start">
       <div className="max-w-[90%] flex flex-col">
-        {message.status === 'streaming' && !message.content && (
+        {message.status === 'streaming' && !message.content && !message.imageDataUri && (
           <div className="flex items-center gap-2 text-white/50 text-[13px] py-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Réflexion en cours…</span>
+            <span>{isImageGen ? 'Génération de l\'image…' : 'Réflexion en cours…'}</span>
           </div>
         )}
         {message.status === 'error' ? (
@@ -187,11 +311,35 @@ export function ChatMessage({ message }: ChatMessageProps) {
             </div>
           </div>
         ) : (
-          message.content && (
-            <div className={MARKDOWN_CLASSES}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-            </div>
-          )
+          <>
+            {message.imageDataUri && (
+              <div className="max-w-md mb-1.5">
+                <a
+                  href={message.imageDataUri}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block mb-1.5 rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-colors"
+                  title="Ouvrir l'image en grand"
+                >
+                  <img
+                    src={message.imageDataUri}
+                    alt="Image générée par Nano Banana"
+                    className="w-full h-auto block"
+                  />
+                </a>
+                <GeneratedImageActions
+                  imageUrl={message.imageDataUri}
+                  mimeType={message.imageMimeType}
+                  prompt={message.imagePrompt}
+                />
+              </div>
+            )}
+            {message.content && (
+              <div className={MARKDOWN_CLASSES}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              </div>
+            )}
+          </>
         )}
         {message.fallbacks && message.fallbacks.length > 0 && message.status === 'done' && (
           <div className="flex flex-col gap-1 mt-2">

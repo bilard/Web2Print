@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, Plus, Star, Sparkles, Loader2, Library } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -14,11 +14,13 @@ import { PromptEditDialog } from './PromptEditDialog'
 
 interface PromptLibraryPanelProps {
   onPick: (prompt: Prompt) => void
+  /** Force la tab interne quand le parent active une catégorie depuis l'écran d'accueil. */
+  categoryFilter?: PromptCategory | null
 }
 
 type FilterTab = 'all' | 'favorites' | PromptCategory
 
-export function PromptLibraryPanel({ onPick }: PromptLibraryPanelProps) {
+export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPanelProps) {
   const {
     prompts,
     isLoading,
@@ -32,6 +34,12 @@ export function PromptLibraryPanel({ onPick }: PromptLibraryPanelProps) {
 
   const [tab, setTab] = useState<FilterTab>('all')
   const [search, setSearch] = useState('')
+
+  // Sync : quand le parent active une chip d'accueil, on bascule la tab interne.
+  useEffect(() => {
+    if (categoryFilter) setTab(categoryFilter)
+    else setTab((current) => (current === 'all' || current === 'favorites' ? current : 'all'))
+  }, [categoryFilter])
   const [editing, setEditing] = useState<{ open: boolean; prompt: Prompt | null }>({
     open: false,
     prompt: null,
