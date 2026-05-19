@@ -525,7 +525,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
         // Create initial print marks AFTER canvas is fully ready
         // usePrintMarksSync will handle live updates when params change
         const { buildPrintMarks, removeAllPrintMarks } = await import('@/features/print/printMarks')
-        const { mmToPx } = await import('@/features/print/dimensions')
+        const { CANVAS_DPI, mmToCanvasPx } = await import('@/features/print/dimensions')
 
         const old = removeAllPrintMarks(canvas.getObjects(), 'tagged')
         for (const o of old) canvas.remove(o)
@@ -536,14 +536,14 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           canvasHeightPx: uiStore.canvasHeight,
           pageLeftPx: 0,
           pageTopPx: 0,
-          bleedPx: mmToPx(uiStore.bleedMm, uiStore.dpi),
-          cropMarkLengthPx: mmToPx(uiStore.cropMarkLengthMm, uiStore.dpi),
-          cropMarkOffsetPx: mmToPx(uiStore.cropMarkOffsetMm, uiStore.dpi),
-          safeAreaPx: mmToPx(uiStore.safeAreaMm, uiStore.dpi),
-          dpi: uiStore.dpi,
-          showPrintMarks: true,
-          showSafeArea: true,
-          showRegistrationMarks: true,
+          bleedPx: mmToCanvasPx(uiStore.bleedMm),
+          cropMarkLengthPx: mmToCanvasPx(uiStore.cropMarkLengthMm),
+          cropMarkOffsetPx: mmToCanvasPx(uiStore.cropMarkOffsetMm),
+          safeAreaPx: mmToCanvasPx(uiStore.safeAreaMm),
+          dpi: CANVAS_DPI,
+          showPrintMarks: uiStore.showPrintMarks,
+          showSafeArea: uiStore.showSafeArea,
+          showRegistrationMarks: uiStore.showRegistrationMarks,
         })
 
         for (const m of marks) {

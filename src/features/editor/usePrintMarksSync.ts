@@ -2,14 +2,22 @@ import { useEffect } from 'react'
 import { Canvas } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 import { buildPrintMarks, removeAllPrintMarks } from '@/features/print/printMarks'
-import { mmToPx } from '@/features/print/dimensions'
+import { CANVAS_DPI, mmToCanvasPx } from '@/features/print/dimensions'
 
 /**
  * Keep print marks in sync with store parameters.
- * Whenever dpi, bleed, crop, or safe area change, re-create marks.
+ * Whenever bleed, crop, or safe area change, re-create marks.
+ *
+ * NB : la conversion mm → canvas px utilise `CANVAS_DPI` (72) — taille
+ * physique des hirondelles/coupes constante quel que soit le format du
+ * document importé. Le `dpi` du store ne concerne que l'export.
  */
 export function usePrintMarksSync(fabricRef: React.MutableRefObject<Canvas | null>) {
-  const { dpi, bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm, canvasWidth, canvasHeight } = useUIStore()
+  const {
+    bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm,
+    canvasWidth, canvasHeight,
+    showPrintMarks, showSafeArea, showRegistrationMarks,
+  } = useUIStore()
 
   useEffect(() => {
     const canvas = fabricRef.current
@@ -25,14 +33,14 @@ export function usePrintMarksSync(fabricRef: React.MutableRefObject<Canvas | nul
       canvasHeightPx: canvasHeight,
       pageLeftPx: 0,
       pageTopPx: 0,
-      bleedPx: mmToPx(bleedMm, dpi),
-      cropMarkLengthPx: mmToPx(cropMarkLengthMm, dpi),
-      cropMarkOffsetPx: mmToPx(cropMarkOffsetMm, dpi),
-      safeAreaPx: mmToPx(safeAreaMm, dpi),
-      dpi: dpi,
-      showPrintMarks: true,
-      showSafeArea: true,
-      showRegistrationMarks: true,
+      bleedPx: mmToCanvasPx(bleedMm),
+      cropMarkLengthPx: mmToCanvasPx(cropMarkLengthMm),
+      cropMarkOffsetPx: mmToCanvasPx(cropMarkOffsetMm),
+      safeAreaPx: mmToCanvasPx(safeAreaMm),
+      dpi: CANVAS_DPI,
+      showPrintMarks,
+      showSafeArea,
+      showRegistrationMarks,
     })
 
     // Add marks to canvas
@@ -43,5 +51,5 @@ export function usePrintMarksSync(fabricRef: React.MutableRefObject<Canvas | nul
     }
 
     canvas.requestRenderAll()
-  }, [dpi, bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm, canvasWidth, canvasHeight])
+  }, [bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm, canvasWidth, canvasHeight])
 }

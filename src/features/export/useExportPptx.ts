@@ -4,9 +4,10 @@ import { Textbox } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
+import { CANVAS_DPI } from '@/features/print/dimensions'
 
-// Convertit px → pouces (96dpi)
-const pxToIn = (px: number) => px / 96
+// Le canvas est en pt (1 px = 1 pt = 1/72 inch).
+const pxToIn = (px: number) => px / CANVAS_DPI
 
 function cssToHex(color: string): string {
   if (!color || color === 'transparent') return 'FFFFFF'

@@ -1,12 +1,79 @@
 import type { TspanInfo, TextStyle } from './svgTextParser'
 
 /**
+ * Char-level style accepté par Fabric.Textbox.toObject().
+ *
+ * Fabric v6 sérialise les styles via stylesToArray (alias `xi`) qui ne compare
+ * QUE ce jeu de clés. Une entrée char qui ne contient AUCUNE clé reconnue (par
+ * ex. uniquement `letterSpacing` ou `textDecoration` brut) fait crasher la
+ * sérialisation avec « Cannot read properties of undefined (reading 'end') ».
+ */
+export interface FabricCharStyle {
+  fill?: string
+  stroke?: string
+  strokeWidth?: number
+  fontSize?: number
+  fontFamily?: string
+  fontWeight?: string | number
+  fontStyle?: string
+  underline?: boolean
+  overline?: boolean
+  linethrough?: boolean
+  textBackgroundColor?: string
+  textDecorationColor?: string
+  textDecorationThickness?: number
+  deltaY?: number
+}
+
+/**
  * Fabric.js styles format: {line: {char: style}}
  * line = array index (0-based)
  * char = character index within line (0-based)
- * style = TextStyle object
  */
-export type FabricStyleMap = Record<number, Record<number, Partial<TextStyle>>>
+export type FabricStyleMap = Record<number, Record<number, FabricCharStyle>>
+
+function cleanFontFamily(ff: string | undefined): string | undefined {
+  if (!ff) return undefined
+  const first = ff.split(',')[0].trim().replace(/^['"]|['"]$/g, '')
+  return first || undefined
+}
+
+/**
+ * Convertit un TextStyle SVG en style char-level reconnu par Fabric.
+ *
+ * - `textDecoration` (CSS) → booléens `underline` / `overline` / `linethrough`.
+ *   "none" produit un objet vide (le caller doit skip).
+ * - `baselineShift` numérique → `deltaY`. Les valeurs string ("super"/"sub")
+ *   sont droppées (Fabric attend un nombre, et un string non reconnu rendrait
+ *   à nouveau l'objet "invisible" pour le comparateur xi).
+ * - `letterSpacing` est droppé : Fabric n'expose pas de char-spacing par
+ *   caractère (charSpacing est un attribut au niveau Textbox).
+ */
+export function sanitizeTspanStylesForFabric(s: TextStyle): FabricCharStyle {
+  const out: FabricCharStyle = {}
+  if (s.fill) out.fill = s.fill
+  if (s.fontFamily) {
+    const family = cleanFontFamily(s.fontFamily)
+    if (family) out.fontFamily = family
+  }
+  if (typeof s.fontSize === 'number' && Number.isFinite(s.fontSize)) {
+    out.fontSize = s.fontSize
+  }
+  if (s.fontWeight !== undefined && s.fontWeight !== null && s.fontWeight !== '') {
+    out.fontWeight = s.fontWeight
+  }
+  if (s.fontStyle) out.fontStyle = s.fontStyle
+  if (typeof s.textDecoration === 'string') {
+    const d = s.textDecoration.toLowerCase()
+    if (d.includes('underline')) out.underline = true
+    if (d.includes('overline')) out.overline = true
+    if (d.includes('line-through')) out.linethrough = true
+  }
+  if (typeof s.baselineShift === 'number' && Number.isFinite(s.baselineShift)) {
+    out.deltaY = s.baselineShift
+  }
+  return out
+}
 
 /**
  * Normalize whitespace for matching: collapse spaces, trim, handle newlines
@@ -77,8 +144,13 @@ export function remapStylesToFabric(
 
     lastFoundPos = endPos
 
-    // Apply styles to this range
-    applyStylesToRange(result, wrappedText, startPos, endPos, tspan.styles)
+    // Sanitise (convertit `text-decoration` en booléens, drop les clés que
+    // Fabric ne reconnaît pas) avant d'appliquer à la range. Si vide,
+    // skip — sinon un objet `{ letterSpacing: 2 }` ferait crasher Fabric.
+    const fabricStyles = sanitizeTspanStylesForFabric(tspan.styles)
+    if (Object.keys(fabricStyles).length === 0) continue
+
+    applyStylesToRange(result, wrappedText, startPos, endPos, fabricStyles)
   }
 
   return result
@@ -165,7 +237,7 @@ function applyStylesToRange(
   wrappedText: string,
   startPos: number,
   endPos: number,
-  styles: TextStyle
+  styles: FabricCharStyle
 ): void {
   const lines = wrappedText.split('\n')
   let charPos = 0

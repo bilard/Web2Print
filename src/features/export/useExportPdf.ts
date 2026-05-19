@@ -4,6 +4,7 @@ import { Textbox } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
+import { CANVAS_DPI } from '@/features/print/dimensions'
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace('#', '')
@@ -28,7 +29,7 @@ export interface ExportPdfOptions {
 
 export function useExportPdf() {
   const projectTitle = useEditorStore((s) => s.projectTitle)
-  const { canvasWidth, canvasHeight, bleedMm, dpi } = useUIStore()
+  const { canvasWidth, canvasHeight, bleedMm } = useUIStore()
 
   const exportPdf = useCallback(
     async (opts: ExportPdfOptions = {}): Promise<void> => {
@@ -36,7 +37,9 @@ export function useExportPdf() {
       if (!canvas) return
 
       const withMarks = !!opts.withPrintMarks
-      const bleedPx = withMarks ? Math.round(bleedMm * (dpi / 25.4)) : 0
+      // La page PDF est en pt (1 px canvas = 1 pt) — bleed et marks suivent
+      // la même unité, donc conversion mm via CANVAS_DPI (72).
+      const bleedPx = withMarks ? Math.round(bleedMm * (CANVAS_DPI / 25.4)) : 0
       const captureWidth = canvasWidth + 2 * bleedPx
       const captureHeight = canvasHeight + 2 * bleedPx
 
@@ -89,9 +92,9 @@ export function useExportPdf() {
 
       // Traits de coupe en L aux 4 coins de la zone trimmed
       if (withMarks) {
-        const markLen = Math.max(8, Math.round(5 * (dpi / 25.4)))   // 5 mm
-        const markGap = Math.max(2, Math.round(2 * (dpi / 25.4)))   // 2 mm de gap depuis le bord trimmed
-        const thickness = Math.max(1, Math.round(0.25 * (dpi / 25.4)))
+        const markLen = Math.max(8, Math.round(5 * (CANVAS_DPI / 25.4)))    // 5 mm
+        const markGap = Math.max(2, Math.round(2 * (CANVAS_DPI / 25.4)))    // 2 mm de gap depuis le bord trimmed
+        const thickness = Math.max(1, Math.round(0.25 * (CANVAS_DPI / 25.4)))
         const markColor = rgb(0, 0, 0)
 
         const left = bleedPx
@@ -158,7 +161,7 @@ export function useExportPdf() {
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 5000)
     },
-    [projectTitle, canvasWidth, canvasHeight, bleedMm, dpi],
+    [projectTitle, canvasWidth, canvasHeight, bleedMm],
   )
 
   return { exportPdf }

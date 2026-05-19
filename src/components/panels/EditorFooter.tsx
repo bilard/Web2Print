@@ -1,5 +1,6 @@
 import { ZoomIn, ZoomOut, Grid3X3, Magnet, Settings2 } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
+import { canvasPxToMm } from '@/features/print/dimensions'
 import { PagesBar } from './PagesBar'
 
 export function EditorFooter() {
@@ -51,7 +52,7 @@ export function EditorFooter() {
           className="flex items-center gap-1.5 text-xs font-mono px-2 py-1 rounded transition-colors text-white/30 hover:text-white hover:bg-white/10"
           title="Paramètres de la page">
           <Settings2 className="w-3 h-3" />
-          {canvasWidth} x {canvasHeight} px
+          {Math.round(canvasPxToMm(canvasWidth))} x {Math.round(canvasPxToMm(canvasHeight))} mm
         </button>
 
         <div className="flex-1" />
