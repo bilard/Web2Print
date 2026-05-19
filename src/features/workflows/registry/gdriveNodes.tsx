@@ -35,7 +35,7 @@ const SHEETS_MIME = 'application/vnd.google-apps.spreadsheet'
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
 // ---------------------------------------------------------------------------
-// UI commune : sélection d'un fichier via le picker Drive
+// UI commune : sélection d'un item Drive (fichier OU dossier)
 // ---------------------------------------------------------------------------
 
 interface PickedFileFields {
@@ -44,38 +44,46 @@ interface PickedFileFields {
   fileMimeType: string
 }
 
-interface FilePickerUiProps<C extends PickedFileFields> {
-  config: C
-  onChange: (next: C) => void
-  mimeFilter: 'sheets' | 'all'
-  buttonLabel: string
+interface DrivePickerSelection {
+  id: string
+  name: string
+  mimeType: string
 }
 
-function FilePickerUi<C extends PickedFileFields>({
-  config,
-  onChange,
-  mimeFilter,
-  buttonLabel,
-}: FilePickerUiProps<C>) {
+interface DrivePickerUiProps {
+  value: DrivePickerSelection
+  onChange: (next: DrivePickerSelection) => void
+  /** 'file' = fichier (défaut), 'folder' = dossier uniquement. */
+  mode: 'file' | 'folder'
+  /** Filtre fichier (ignoré en mode 'folder'). */
+  mimeFilter?: 'sheets' | 'all'
+  /** Texte du gros bouton dashed quand rien n'est sélectionné. */
+  emptyLabel: string
+}
+
+/**
+ * Picker unifié utilisé par TOUS les nodes Drive (import fichier, import sheet,
+ * export sheet → choix dossier, export drive → choix dossier). Même look-and-feel
+ * partout : gros bouton dashed quand vide → carte avec icône, statut, ID quand
+ * sélectionné → bouton "Changer" en dessous.
+ */
+function DrivePickerUi({ value, onChange, mode, mimeFilter = 'all', emptyLabel }: DrivePickerUiProps) {
   const [open, setOpen] = useState(false)
   const accessToken = useGDriveStore((s) => s.accessToken)
-  const hasFile = !!config.fileId
-
-  const onClear = () => {
-    onChange({ ...config, fileId: '', fileName: '', fileMimeType: '' })
-  }
+  const hasItem = !!value.id
+  const isFolder = mode === 'folder'
 
   return (
     <>
       <div className="space-y-2">
-        {!hasFile ? (
+        {!hasItem ? (
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-md border-2 border-dashed border-neutral-700 bg-[#0f0f0f] text-neutral-400 hover:border-blue-500/40 hover:text-blue-300 transition-colors"
           >
-            <FolderSearch className="w-4 h-4" />
-            <span className="text-[12px]">{buttonLabel}</span>
+            {isFolder ? <Folder className="w-4 h-4" /> : <FolderSearch className="w-4 h-4" />}
+            <span className="text-[12px]">{emptyLabel}</span>
           </button>
         ) : (
           <div className="relative flex items-center gap-2 p-2 rounded-md border border-neutral-700 bg-[#161616]">
@@ -86,17 +94,17 @@ function FilePickerUi<C extends PickedFileFields>({
                   : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
               }`}
             >
-              {config.fileMimeType === SHEETS_MIME ? (
-                <FileSpreadsheet className="w-5 h-5" />
-              ) : config.fileMimeType === FOLDER_MIME ? (
+              {value.mimeType === FOLDER_MIME || isFolder ? (
                 <Folder className="w-5 h-5" />
+              ) : value.mimeType === SHEETS_MIME ? (
+                <FileSpreadsheet className="w-5 h-5" />
               ) : (
                 <FileBox className="w-5 h-5" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] text-white truncate" title={config.fileName}>
-                {config.fileName}
+              <div className="text-[12px] text-white truncate" title={value.name}>
+                {value.name}
               </div>
               <div className="text-[10px] flex items-center gap-1.5 mt-0.5">
                 {accessToken ? (
@@ -108,28 +116,28 @@ function FilePickerUi<C extends PickedFileFields>({
                     <AlertTriangle className="w-2.5 h-2.5" /> non connecté
                   </span>
                 )}
-                <span className="text-neutral-500 truncate">ID: {config.fileId.slice(0, 16)}…</span>
+                <span className="text-neutral-500 truncate">ID: {value.id.slice(0, 16)}…</span>
               </div>
             </div>
             <button
               type="button"
-              onClick={onClear}
+              onClick={() => onChange({ id: '', name: '', mimeType: '' })}
               className="shrink-0 p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-white/5"
-              aria-label="Retirer la sélection"
-              title="Retirer la sélection"
+              aria-label={isFolder ? 'Réinitialiser à la racine' : 'Retirer la sélection'}
+              title={isFolder ? 'Racine "My Drive"' : 'Retirer la sélection'}
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
-        {hasFile ? (
+        {hasItem ? (
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="w-full text-[11px] text-neutral-400 hover:text-white py-1 rounded hover:bg-white/5 transition-colors"
           >
-            Changer de fichier
+            {isFolder ? 'Changer de dossier' : 'Changer de fichier'}
           </button>
         ) : null}
       </div>
@@ -137,10 +145,39 @@ function FilePickerUi<C extends PickedFileFields>({
       <GDrivePickerModal
         open={open}
         onClose={() => setOpen(false)}
-        onPick={(picked) => onChange({ ...config, fileId: picked.id, fileName: picked.name, fileMimeType: picked.mimeType })}
+        onPick={(picked) => {
+          if (isFolder && picked.mimeType !== FOLDER_MIME) return
+          onChange({ id: picked.id, name: picked.name, mimeType: picked.mimeType })
+        }}
         mimeFilter={mimeFilter}
+        foldersOnly={isFolder}
+        title={isFolder ? 'Choisir un dossier' : undefined}
       />
     </>
+  )
+}
+
+// Adaptateurs pour les deux schémas de config historiques.
+
+function FilePickerForConfig<C extends PickedFileFields>({
+  config,
+  onChange,
+  mimeFilter,
+  emptyLabel,
+}: {
+  config: C
+  onChange: (next: C) => void
+  mimeFilter: 'sheets' | 'all'
+  emptyLabel: string
+}) {
+  return (
+    <DrivePickerUi
+      mode="file"
+      mimeFilter={mimeFilter}
+      emptyLabel={emptyLabel}
+      value={{ id: config.fileId, name: config.fileName, mimeType: config.fileMimeType }}
+      onChange={(v) => onChange({ ...config, fileId: v.id, fileName: v.name, fileMimeType: v.mimeType })}
+    />
   )
 }
 
@@ -161,11 +198,11 @@ function GSheetsImportConfigUi({
 }) {
   return (
     <div className="space-y-3">
-      <FilePickerUi
+      <FilePickerForConfig
         config={config}
         onChange={onChange}
         mimeFilter="sheets"
-        buttonLabel="Choisir un Google Sheets"
+        emptyLabel="Choisir un Google Sheets"
       />
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
@@ -224,73 +261,38 @@ interface GSheetsExportConfig {
   parentFolderName: string
 }
 
-function FolderPickerUi({
+interface FolderTargetFields {
+  parentFolderId: string
+  parentFolderName: string
+}
+
+/**
+ * Adaptateur autour de `DrivePickerUi` pour les configs d'export qui stockent
+ * la sélection sous `parentFolderId` / `parentFolderName`. Quand vide → racine.
+ */
+function FolderPickerForExport<C extends FolderTargetFields>({
   config,
   onChange,
 }: {
-  config: GSheetsExportConfig
-  onChange: (next: GSheetsExportConfig) => void
+  config: C
+  onChange: (next: C) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const hasFolder = !!config.parentFolderId
-
   return (
-    <>
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-wider text-neutral-500 block">
-          Dossier Drive cible
-        </label>
-        {!hasFolder ? (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-neutral-700 bg-[#0f0f0f] text-neutral-400 hover:border-blue-500/40 hover:text-blue-300 transition-colors"
-          >
-            <Folder className="w-3.5 h-3.5" />
-            <span className="text-[11px]">Racine "My Drive" — cliquer pour choisir un dossier</span>
-          </button>
-        ) : (
-          <div className="flex items-center gap-2 p-2 rounded-md border border-neutral-700 bg-[#161616]">
-            <Folder className="w-4 h-4 text-amber-300 shrink-0" />
-            <span className="text-[12px] text-white flex-1 truncate" title={config.parentFolderName}>
-              {config.parentFolderName}
-            </span>
-            <button
-              type="button"
-              onClick={() => onChange({ ...config, parentFolderId: '', parentFolderName: '' })}
-              className="p-1 rounded text-neutral-500 hover:text-red-400 hover:bg-white/5"
-              title="Racine"
-            >
-              <X className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="text-[10px] text-neutral-400 hover:text-white"
-            >
-              Changer
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Le picker filtre sur tout, mais seuls les dossiers sont "ouvrables" via
-          double-clic. On exploite le clic comme sélection sur n'importe quel
-          item — l'utilisateur peut sélectionner le dossier courant en cliquant
-          sur un de ses sous-éléments puis remontant : on garde le picker simple
-          et on ne sélectionne QUE des dossiers ici. */}
-      <GDrivePickerModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onPick={(picked) => {
-          if (picked.mimeType === FOLDER_MIME) {
-            onChange({ ...config, parentFolderId: picked.id, parentFolderName: picked.name })
-          }
+    <div className="space-y-1.5">
+      <label className="text-[10px] uppercase tracking-wider text-neutral-500 block">
+        Dossier Drive cible
+      </label>
+      <DrivePickerUi
+        mode="folder"
+        emptyLabel='Racine "My Drive" — choisir un dossier'
+        value={{
+          id: config.parentFolderId,
+          name: config.parentFolderName,
+          mimeType: config.parentFolderId ? FOLDER_MIME : '',
         }}
-        mimeFilter="all"
-        title="Choisir un dossier"
+        onChange={(v) => onChange({ ...config, parentFolderId: v.id, parentFolderName: v.name })}
       />
-    </>
+    </div>
   )
 }
 
@@ -315,7 +317,7 @@ function GSheetsExportConfigUi({
           placeholder="Workflow Export"
         />
       </div>
-      <FolderPickerUi config={config} onChange={onChange} />
+      <FolderPickerForExport config={config} onChange={onChange} />
     </div>
   )
 }
@@ -366,11 +368,11 @@ function GDriveImportConfigUi({
   onChange: (next: GDriveImportConfig) => void
 }) {
   return (
-    <FilePickerUi
+    <FilePickerForConfig
       config={config}
       onChange={onChange}
       mimeFilter="all"
-      buttonLabel="Choisir un fichier Drive"
+      emptyLabel="Choisir un fichier Drive"
     />
   )
 }
@@ -434,11 +436,7 @@ function GDriveExportConfigUi({
           placeholder="(vide = nom d'origine)"
         />
       </div>
-      <FolderPickerUi
-        // ré-utilise FolderPickerUi : sa signature lit/écrit les mêmes champs
-        config={config as unknown as GSheetsExportConfig}
-        onChange={(next) => onChange(next as unknown as GDriveExportConfig)}
-      />
+      <FolderPickerForExport config={config} onChange={onChange} />
     </div>
   )
 }

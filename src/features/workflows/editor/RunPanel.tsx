@@ -1,9 +1,9 @@
 // src/features/workflows/editor/RunPanel.tsx
-import { useState } from 'react'
-import { Download } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download } from 'lucide-react'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { nodeRegistry } from '../registry'
+import { PanelResizeHandle, usePanelResize } from './usePanelResize'
 
 interface ExportPayload {
   url: string
@@ -42,20 +42,46 @@ function downloadExport(payload: ExportPayload) {
 export function RunPanel() {
   const states = useRunContext((s) => s.nodeStates)
   const wf = useWorkflowStore((s) => s.current)
-  const [open, setOpen] = useState(true)
+  const { height, collapsed, setHeight, toggleCollapsed, minHeight, maxHeightVh } = usePanelResize({
+    storageKey: 'web2print.bottomPanel.runLogs',
+    defaultHeight: 192,
+    minHeight: 120,
+  })
   const liveIds = new Set((wf?.nodes ?? []).map((n) => n.id))
   const entries = Object.entries(states).filter(([id]) => liveIds.has(id))
 
   return (
-    <div className="border-t border-neutral-800 bg-[#0f0f0f] text-sm">
+    <div
+      className="border-t border-neutral-800 bg-[#0f0f0f] text-sm shrink-0 relative flex flex-col"
+      style={{ height: collapsed ? 30 : height }}
+    >
+      {!collapsed ? (
+        <PanelResizeHandle
+          height={height}
+          onChange={setHeight}
+          minHeight={minHeight}
+          maxHeightVh={maxHeightVh}
+        />
+      ) : null}
       <button
-        className="w-full px-4 py-1.5 text-xs uppercase text-neutral-500 text-left"
-        onClick={() => setOpen((v) => !v)}
+        type="button"
+        className="w-full px-4 py-1.5 text-xs uppercase text-neutral-500 text-left flex items-center gap-2 hover:bg-white/[0.02] transition-colors"
+        onClick={toggleCollapsed}
+        aria-expanded={!collapsed}
+        title={collapsed ? 'Déplier les logs' : 'Replier les logs'}
       >
-        {open ? '▾' : '▸'} Run logs ({entries.length} nodes)
+        {collapsed ? (
+          <ChevronUp className="w-3 h-3 text-neutral-600" />
+        ) : (
+          <ChevronDown className="w-3 h-3 text-neutral-600" />
+        )}
+        <span>Run logs</span>
+        <span className="text-neutral-600 normal-case">
+          · {entries.length} node{entries.length > 1 ? 's' : ''}
+        </span>
       </button>
-      {open ? (
-        <div className="max-h-56 overflow-y-auto px-4 pb-3 space-y-2">
+      {!collapsed ? (
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-3 space-y-2">
           {entries.map(([id, st]) => {
             const node = wf?.nodes.find((n) => n.id === id)
             const spec = node ? nodeRegistry.get(node.type) : undefined

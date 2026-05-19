@@ -64,6 +64,13 @@ const CATEGORY_STYLES: Record<NodeSpec['category'], CategoryStyle> = {
     border: 'border-violet-500/40',
     glow: 'shadow-violet-500/10',
   },
+  transformation: {
+    ring: 'ring-fuchsia-500/40',
+    icon: 'text-fuchsia-300',
+    bg: 'bg-gradient-to-br from-fuchsia-500/15 to-fuchsia-700/15',
+    border: 'border-fuchsia-500/40',
+    glow: 'shadow-fuchsia-500/10',
+  },
   persistence: {
     ring: 'ring-emerald-500/40',
     icon: 'text-emerald-300',
@@ -84,6 +91,20 @@ const CATEGORY_STYLES: Record<NodeSpec['category'], CategoryStyle> = {
     bg: 'bg-gradient-to-br from-neutral-600/15 to-neutral-800/15',
     border: 'border-neutral-600/40',
     glow: 'shadow-neutral-500/10',
+  },
+  logic: {
+    ring: 'ring-pink-500/40',
+    icon: 'text-pink-300',
+    bg: 'bg-gradient-to-br from-pink-500/15 to-pink-700/15',
+    border: 'border-pink-500/40',
+    glow: 'shadow-pink-500/10',
+  },
+  communication: {
+    ring: 'ring-cyan-500/40',
+    icon: 'text-cyan-300',
+    bg: 'bg-gradient-to-br from-cyan-500/15 to-cyan-700/15',
+    border: 'border-cyan-500/40',
+    glow: 'shadow-cyan-500/10',
   },
 }
 

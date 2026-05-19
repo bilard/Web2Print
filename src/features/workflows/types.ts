@@ -33,7 +33,15 @@ export type NodeRuntime = 'client' | 'server' | 'any'
 
 export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
   type: string
-  category: 'import' | 'enrichment' | 'persistence' | 'export' | 'utility'
+  category:
+    | 'import'
+    | 'enrichment'
+    | 'transformation'
+    | 'persistence'
+    | 'export'
+    | 'utility'
+    | 'logic'
+    | 'communication'
   label: string
   description: string
   icon: LucideIcon
@@ -46,6 +54,12 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
   ConfigComponent?: ComponentType<{
     config: C
     onChange: (next: C) => void
+    /**
+     * Colonnes/champs disponibles via les nodes upstream (typiquement les
+     * en-têtes d'un CSV importé). Permet aux UIs de proposer une auto-
+     * complétion sur les variables {{...}}.
+     */
+    availableColumns?: string[]
   }>
 }
 
@@ -92,4 +106,10 @@ export interface RunContextApi {
   signal: AbortSignal
   log: (level: 'info' | 'warn' | 'error', msg: string) => void
   setProgress?: (pct: number) => void
+  /**
+   * Config brut (sans interpolation des {{...}}) — utile pour les nodes qui
+   * ont besoin de ré-interpoler eux-mêmes (ex : Send Gmail en mode "iterate"
+   * pour envoyer un mail différent par row).
+   */
+  rawConfig?: unknown
 }

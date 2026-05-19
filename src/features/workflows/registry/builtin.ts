@@ -8,9 +8,12 @@ import './scrapeNodes'
 import './gdriveNodes'
 import './enrichmentNodes'
 import './aiNodes'
+import './transformationNodes'
 import './persistenceNodes'
 import './taxonomyNodes'
 import './exportNodes'
+import './logicNodes'
+import './communicationNodes'
 
 let initialized = false
 

@@ -63,3 +63,53 @@ export async function deleteFile(key: string): Promise<void> {
     db.close()
   }
 }
+
+// Stored shape for folder uploads: each File keeps its relative path so the
+// consumer (e.g. detectAssemblyFiles) can rebuild the directory structure.
+interface StoredFolderEntry {
+  file: File
+  path: string
+}
+
+export async function putFiles(key: string, files: File[]): Promise<void> {
+  const entries: StoredFolderEntry[] = files.map((f) => {
+    const ff = f as File & { webkitRelativePath?: string; _path?: string }
+    return { file: f, path: ff._path || ff.webkitRelativePath || f.name }
+  })
+  const db = await openDb()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite')
+      tx.objectStore(STORE_NAME).put(entries, key)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } finally {
+    db.close()
+  }
+}
+
+export async function getFiles(key: string): Promise<File[] | null> {
+  const db = await openDb()
+  try {
+    return await new Promise<File[] | null>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly')
+      const req = tx.objectStore(STORE_NAME).get(key)
+      req.onsuccess = () => {
+        const raw = req.result as StoredFolderEntry[] | undefined
+        if (!raw || !Array.isArray(raw)) {
+          resolve(null)
+          return
+        }
+        const restored = raw.map((e) => {
+          Object.defineProperty(e.file, '_path', { value: e.path, configurable: true })
+          return e.file
+        })
+        resolve(restored)
+      }
+      req.onerror = () => reject(req.error)
+    })
+  } finally {
+    db.close()
+  }
+}

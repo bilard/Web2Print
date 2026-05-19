@@ -54,8 +54,22 @@ const STEPS: PaletteStep[] = [
     },
   },
   {
-    category: 'persistence',
+    category: 'transformation',
     step: 3,
+    label: 'Transformation',
+    hint: 'Nettoyer / réécrire / filtrer / trier les données (optionnel).',
+    required: false,
+    accent: {
+      text: 'text-fuchsia-300',
+      border: 'border-fuchsia-500/20',
+      hoverBg: 'hover:bg-fuchsia-500/10',
+      badgeBg: 'bg-fuchsia-500/15',
+      badgeBorder: 'border-fuchsia-500/40',
+    },
+  },
+  {
+    category: 'persistence',
+    step: 4,
     label: 'Sauvegarde',
     hint: 'Persister dans le PIM, le DAM ou la taxonomie (optionnel).',
     required: false,
@@ -69,7 +83,7 @@ const STEPS: PaletteStep[] = [
   },
   {
     category: 'export',
-    step: 4,
+    step: 5,
     label: 'Export',
     hint: 'Générer un fichier final (Excel, PPTX…).',
     required: false,
@@ -83,7 +97,7 @@ const STEPS: PaletteStep[] = [
   },
   {
     category: 'utility',
-    step: 5,
+    step: 6,
     label: 'Utilitaires',
     hint: 'Helpers techniques.',
     required: false,
@@ -93,6 +107,34 @@ const STEPS: PaletteStep[] = [
       hoverBg: 'hover:bg-neutral-500/10',
       badgeBg: 'bg-neutral-700/40',
       badgeBorder: 'border-neutral-600/40',
+    },
+  },
+  {
+    category: 'logic',
+    step: 7,
+    label: 'Logique',
+    hint: 'Branchement conditionnel et chaînage de fonctions.',
+    required: false,
+    accent: {
+      text: 'text-pink-300',
+      border: 'border-pink-500/20',
+      hoverBg: 'hover:bg-pink-500/10',
+      badgeBg: 'bg-pink-500/15',
+      badgeBorder: 'border-pink-500/40',
+    },
+  },
+  {
+    category: 'communication',
+    step: 8,
+    label: 'Communication',
+    hint: 'Envoyer des notifications externes (email, etc.).',
+    required: false,
+    accent: {
+      text: 'text-cyan-300',
+      border: 'border-cyan-500/20',
+      hoverBg: 'hover:bg-cyan-500/10',
+      badgeBg: 'bg-cyan-500/15',
+      badgeBorder: 'border-cyan-500/40',
     },
   },
 ]
@@ -148,7 +190,7 @@ export function NodePalette() {
   return (
     <aside className="w-60 border-r border-neutral-800 bg-[#0f0f0f] overflow-y-auto p-3">
       <h3 className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 tracking-wider">
-        Palette
+        Blocs
       </h3>
       <p className="text-[10px] text-neutral-600 mb-4 leading-tight">
         Construisez votre workflow étape par étape — glissez sur le canvas ou cliquez pour spawn au centre.

@@ -6,7 +6,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  MarkerType,
   useReactFlow,
   applyEdgeChanges,
   applyNodeChanges,
@@ -33,8 +32,6 @@ const edgeTypes = { flow: FlowEdge }
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
   type: 'flow',
-  style: { stroke: '#6366f1', strokeWidth: 2 },
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1', width: 14, height: 14 },
 }
 
 const connectionLineStyle = { stroke: '#818cf8', strokeWidth: 2, strokeDasharray: '5 4' }
@@ -48,13 +45,19 @@ const toRfNode = (n: WorkflowNode): Node => ({
   data: { type: n.type, config: n.config },
 })
 
-const toRfEdge = (e: WorkflowEdge): Edge => ({
-  id: e.id,
-  source: e.source,
-  target: e.target,
-  sourceHandle: e.sourceHandle,
-  targetHandle: e.targetHandle,
-})
+const toRfEdge = (e: WorkflowEdge, nodes: WorkflowNode[]): Edge => {
+  const sourceNode = nodes.find((n) => n.id === e.source)
+  const sourceSpec = sourceNode ? nodeRegistry.get(sourceNode.type) : undefined
+  const sourcePort = sourceSpec?.outputs.find((o) => o.name === e.sourceHandle)
+  return {
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: e.sourceHandle,
+    targetHandle: e.targetHandle,
+    data: { portType: sourcePort?.type ?? 'any' },
+  }
+}
 
 const fromRfNode = (n: Node): WorkflowNode => ({
   id: n.id,
@@ -98,7 +101,7 @@ export function WorkflowEditor() {
     }
     if (loadedWfId.current !== wf.id) {
       setNodes(wf.nodes.map(toRfNode))
-      setEdges(wf.edges.map(toRfEdge))
+      setEdges(wf.edges.map((e) => toRfEdge(e, wf.nodes)))
       loadedWfId.current = wf.id
       return
     }
@@ -129,7 +132,7 @@ export function WorkflowEditor() {
       const prevById = new Map(prev.map((e) => [e.id, e]))
       const merged: Edge[] = []
       for (const e of wf.edges) {
-        merged.push(prevById.get(e.id) ?? toRfEdge(e))
+        merged.push(prevById.get(e.id) ?? toRfEdge(e, wf.nodes))
       }
       return merged
     })
