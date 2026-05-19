@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Workflow } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
@@ -26,6 +26,7 @@ const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
 const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
 const ScrapingHubPage = lazy(() => import('@/features/scraping-hub/ScrapingHubPage').then((m) => ({ default: m.ScrapingHubPage })))
 const ChatPage = lazy(() => import('@/features/chat/ChatPage').then((m) => ({ default: m.ChatPage })))
+const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage').then((m) => ({ default: m.WorkflowsPage })))
 
 type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
 
@@ -46,7 +47,9 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const signOut = useSignOut()
   const navigate = useNavigate()
-  const [activeSection, setActiveSection] = useState<Section>('library')
+  const location = useLocation()
+  const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
+  const [activeSection, setActiveSection] = useState<Section>(initialSection)
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
     return window.localStorage.getItem('dashboard:sidebarOpen') !== 'false'
@@ -184,11 +187,7 @@ export default function DashboardPage() {
   const handleKeyDown = (e: React.KeyboardEvent, id: Section) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      if (id === 'workflows') {
-        navigate('/workflows')
-      } else {
-        setActiveSection(id)
-      }
+      setActiveSection(id)
     }
     // Arrow key navigation
     const currentIndex = menuItems.findIndex((item) => item.id === id)
@@ -253,13 +252,7 @@ export default function DashboardPage() {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!sidebarOpen ? label : undefined}
                 title={!sidebarOpen ? label : undefined}
-                onClick={() => {
-                  if (id === 'workflows') {
-                    navigate('/workflows')
-                  } else {
-                    setActiveSection(id)
-                  }
-                }}
+                onClick={() => setActiveSection(id)}
                 onKeyDown={(e) => handleKeyDown(e, id)}
                 className={`w-full flex items-center ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'} py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[#141414] ${
                   isActive
@@ -412,6 +405,16 @@ export default function DashboardPage() {
             </div>
           }>
             <ChatPage />
+          </Suspense>
+        </div>
+      ) : activeSection === 'workflows' ? (
+        <div className="flex-1 overflow-hidden">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+          }>
+            <WorkflowsPage embedded />
           </Suspense>
         </div>
       ) : activeSection === 'images' ? (

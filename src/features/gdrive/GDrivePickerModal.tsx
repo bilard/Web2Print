@@ -12,6 +12,7 @@ import {
   Loader2,
   FileText,
   Folder,
+  FolderCheck,
   LogIn,
   AlertCircle,
 } from 'lucide-react'
@@ -31,6 +32,9 @@ interface Props {
   onPick: (file: PickedFile) => void
   /** Filtre optionnel sur le mimeType visible (les autres fichiers sont masqués). */
   mimeFilter?: 'sheets' | 'all'
+  /** Mode "choisir un dossier" : seuls les dossiers sont listés ; un clic navigue
+   *  dedans, et un bouton "Choisir ce dossier" permet de valider la sélection. */
+  foldersOnly?: boolean
   title?: string
 }
 
@@ -58,7 +62,7 @@ interface FolderCrumb {
   name: string
 }
 
-export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', title }: Props) {
+export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', foldersOnly = false, title }: Props) {
   const accessToken = useGDriveStore((s) => s.accessToken)
   const accountEmail = useGDriveStore((s) => s.accountEmail)
   const { connectDrive, listFilesBySection, listFilesByParent, disconnect } = useGoogleDrive()
@@ -131,13 +135,20 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', t
 
   if (!open) return null
 
-  // Filtrage : on garde toujours les dossiers (pour navigation) + les fichiers
-  // qui matchent le filtre demandé.
+  // Filtrage : en mode foldersOnly on ne montre que des dossiers ; sinon on
+  // garde toujours les dossiers (pour navigation) + les fichiers matchants.
   const visibleFiles = files.filter((f) => {
+    if (foldersOnly) return f.mimeType === FOLDER_MIME
     if (f.mimeType === FOLDER_MIME) return true
     if (mimeFilter === 'sheets') return f.mimeType === SHEETS_MIME
     return true
   })
+
+  const pickCurrentFolder = () => {
+    if (!currentFolder) return
+    onPick({ id: currentFolder.id, name: currentFolder.name, mimeType: FOLDER_MIME })
+    onClose()
+  }
 
   const sectionLabel = SECTIONS.find((s) => s.id === section)?.label ?? ''
 
@@ -202,15 +213,37 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', t
           {/* Header */}
           <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
             <div className="text-sm text-white/80">
-              {mimeFilter === 'sheets' ? 'Sélectionner un Google Sheets' : 'Sélectionner un fichier Drive'}
+              {foldersOnly
+                ? 'Choisir un dossier Drive'
+                : mimeFilter === 'sheets'
+                  ? 'Sélectionner un Google Sheets'
+                  : 'Sélectionner un fichier Drive'}
             </div>
-            <button
-              onClick={onClose}
-              className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white"
-              aria-label="Fermer"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {foldersOnly && accessToken ? (
+                <button
+                  type="button"
+                  onClick={pickCurrentFolder}
+                  disabled={!currentFolder}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-500/15 hover:bg-blue-500/25 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-blue-500/30 disabled:border-white/[0.06] text-blue-200 text-[12px] transition-colors"
+                  title={
+                    currentFolder
+                      ? `Sélectionner "${currentFolder.name}"`
+                      : 'Naviguez dans un dossier pour pouvoir le sélectionner'
+                  }
+                >
+                  <FolderCheck className="w-3.5 h-3.5" />
+                  {currentFolder ? `Choisir "${currentFolder.name}"` : 'Choisir ce dossier'}
+                </button>
+              ) : null}
+              <button
+                onClick={onClose}
+                className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </header>
 
           {!accessToken ? (
@@ -257,7 +290,15 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', t
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder={currentFolder ? `Rechercher dans ${currentFolder.name}` : 'Rechercher dans Drive'}
+                    placeholder={
+                      foldersOnly
+                        ? currentFolder
+                          ? `Rechercher un dossier dans ${currentFolder.name}`
+                          : 'Rechercher un dossier'
+                        : currentFolder
+                          ? `Rechercher dans ${currentFolder.name}`
+                          : 'Rechercher dans Drive'
+                    }
                     className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg pl-9 pr-3 py-2 text-sm text-white/90 placeholder:text-white/30 outline-none focus:border-blue-500/40"
                   />
                 </div>
@@ -302,8 +343,14 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', t
                   </div>
                 ) : visibleFiles.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-16">
-                    <FileText className="w-8 h-8 text-white/10" />
-                    <p className="text-xs text-white/30">Aucun fichier</p>
+                    {foldersOnly ? (
+                      <Folder className="w-8 h-8 text-white/10" />
+                    ) : (
+                      <FileText className="w-8 h-8 text-white/10" />
+                    )}
+                    <p className="text-xs text-white/30">
+                      {foldersOnly ? 'Aucun sous-dossier' : 'Aucun fichier'}
+                    </p>
                   </div>
                 ) : (
                   <ul className="space-y-0.5">

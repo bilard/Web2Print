@@ -240,6 +240,76 @@ export async function loadFontsFromFiles(fontFiles: File[], fontListFile?: File 
 }
 
 /**
+ * Résumé sérialisable d'un assembly IDML, destiné à l'affichage UI.
+ * Pas de References à des File / Blob / Map.
+ */
+export interface IdmlSummary {
+  idmlFileName: string
+  pdfFileName: string | null
+  fontTotal: number
+  fontLoaded: number
+  fontFamilies: string[]
+  imageCount: number
+  spreadCount: number
+  xmlFileCount: number
+}
+
+/**
+ * Construit un résumé léger d'un assembly IDML à partir d'une liste de fichiers.
+ * Ne charge PAS les fonts dans le document (pas de side effect global).
+ * Renvoie null si aucun .idml n'est détecté.
+ */
+export async function summarizeAssembly(files: File[]): Promise<IdmlSummary | null> {
+  const assembly = detectAssemblyFiles(files)
+  if (!assembly.idmlFile) return null
+
+  // Familles de fonts via metadata OpenType (best-effort, fallback nom de fichier)
+  const fontFamilies: string[] = []
+  let fontLoaded = 0
+  for (const f of assembly.fontFiles) {
+    try {
+      const buf = await f.arrayBuffer()
+      const font = opentype.parse(buf.slice(0))
+      const names = font.names as { preferredFamily?: { en?: string; fr?: string }; fontFamily?: { en?: string; fr?: string } }
+      const family = names.preferredFamily?.en || names.preferredFamily?.fr
+        || names.fontFamily?.en || names.fontFamily?.fr
+        || deriveFamily(f.name)
+      fontFamilies.push(family)
+      fontLoaded++
+    } catch {
+      fontFamilies.push(deriveFamily(f.name))
+    }
+  }
+
+  // Unzip pour compter spreads et fichiers XML
+  let spreadCount = 0
+  let xmlFileCount = 0
+  try {
+    const contents = await unzipIdml(assembly.idmlFile)
+    spreadCount = Object.keys(contents.spreads).length
+    xmlFileCount =
+      Object.keys(contents.spreads).length +
+      Object.keys(contents.stories).length +
+      Object.keys(contents.resources).length +
+      Object.keys(contents.masterSpreads).length +
+      (contents.designMap ? 1 : 0)
+  } catch {
+    // ignore — on garde 0
+  }
+
+  return {
+    idmlFileName: assembly.idmlFile.name,
+    pdfFileName: assembly.pdfFile?.name ?? null,
+    fontTotal: assembly.fontFiles.length,
+    fontLoaded,
+    fontFamilies,
+    imageCount: assembly.imageFiles.length,
+    spreadCount,
+    xmlFileCount,
+  }
+}
+
+/**
  * Creates a map of image filename → blob URL from assembly image files.
  * Matches are case-insensitive on filename only (no path).
  */

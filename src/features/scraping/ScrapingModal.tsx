@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink } from 'lucide-react'
+import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag } from 'lucide-react'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
-import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet } from './useJina'
+import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
@@ -21,6 +21,8 @@ import type { MergePreview, Source } from '@/features/pim/types'
 import { useUpsertProducts } from '@/features/pim/useProducts'
 import { useUpsertSource } from '@/features/pim/useSources'
 import { usePimStore } from '@/stores/pim.store'
+import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
+import { useBulkAttachToTaxonomy } from '@/features/taxonomy/useBulkAttachToTaxonomy'
 import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
 import { scrapeResultToColumns } from './core/scrapeToRows'
 import { toast } from 'sonner'
@@ -77,6 +79,11 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   const { scrape, map, abort, loading, error } = useJina()
   const { setSheets, setCurrentFileName, sheets } = useExcelStore()
   const setCurrentPath = useExcelStore((s) => s.setCurrentPath)
+
+  // Auto-classement IA après import : taxonomie cible (optionnelle).
+  const { data: taxonomies } = useTaxonomies()
+  const bulkAttach = useBulkAttachToTaxonomy()
+  const [importTaxoId, setImportTaxoId] = useState<string>('')
 
   // Pipeline d'enrichissement réutilisée pour le mode "Produit unique" :
   // produit la structure riche (advantages groupés, variants, specs communes
@@ -168,6 +175,13 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
   const urlValid = (() => { try { new URL(url); return true } catch { return false } })()
   const hostname = (() => { try { return new URL(url).hostname.replace('www.', '') } catch { return 'scraped' } })()
+  /** Nom affichable de la source : marque détectée (« Milwaukee », « DeWalt »…)
+   *  si reconnue depuis l'URL, sinon le hostname. Utilisé pour le chip header
+   *  ET comme nom de feuille / fichier / source à l'import. */
+  const displayName = (() => {
+    const brand = url ? detectBrandLabelFromUrl(url) : null
+    return brand ?? hostname
+  })()
   /** Titre dérivé du slug URL : `caniveau-avec-grille-acier-heel-c250-l100-int-kenadrain` →
    *  `caniveau avec grille acier heel c250 l100 int kenadrain`. Ce même titre
    *  est passé à enrich() (input.title) et réutilisé comme nom de produit
@@ -460,6 +474,16 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     return { sheets: [...existing, next], activeIndex: existing.length }
   }
 
+  /** Lance la classification IA en lot sur les rowIds nouvellement importés
+   *  vers la taxonomie sélectionnée. Fire-and-forget : la classification
+   *  continue après fermeture du modal (le store reçoit les updateCell). */
+  const triggerAutoClassify = (rowIds: string[]) => {
+    if (!importTaxoId || rowIds.length === 0 || !taxonomies) return
+    const target = taxonomies.find((t) => t.id === importTaxoId)
+    if (!target) return
+    void bulkAttach.run(target, { minConfidence: 0.5, overwriteLinked: true, rowIds })
+  }
+
   const handleImportResult = () => {
     if (!result) return
     if (pimProjectId) {
@@ -467,7 +491,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         ? { ...resyncSource, productCount: result.rows.length, lastSyncedAt: Date.now() }
         : {
             id: `src_${hostname}_${Date.now()}`,
-            name: hostname,
+            name: displayName,
             kind: 'scrape',
             url,
             schema: scrapeResultToColumns(result, lastFields),
@@ -478,14 +502,15 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       startPreview(result.rows as Record<string, unknown>[], source)
       return
     }
-    const sheet = scrapeResultToSheet(result, lastFields, hostname)
+    const sheet = scrapeResultToSheet(result, lastFields, displayName)
+    const newRowIds = sheet.rows.map((r) => r._id)
     const store = useExcelStore.getState()
     // Scrape depuis le bouton "+" (targetPath défini) → nouvelle BDD :
     // reset docId et remplace les feuilles au lieu d'ajouter un onglet.
     if (targetPath !== undefined) {
       store.setCurrentDocId(null)
       store.setSheetRowId(null)
-      setCurrentFileName(hostname)
+      setCurrentFileName(displayName)
       setCurrentPath(targetPath)
       setSheets([sheet])
       store.setActiveSheet(0)
@@ -497,9 +522,10 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       store.setActiveSheet(activeIndex)
       store.setSheetRowId(null)
       if (sheets.length === 0) {
-        setCurrentFileName(hostname)
+        setCurrentFileName(displayName)
       }
     }
+    triggerAutoClassify(newRowIds)
     handleClose()
   }
 
@@ -516,7 +542,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         ? { ...resyncSource, productCount: 1, enrichedCount: 1, lastSyncedAt: Date.now() }
         : {
             id: `src_${hostname}_${Date.now()}`,
-            name: hostname,
+            name: displayName,
             kind: 'scrape',
             url,
             schema: enrichedColumns,
@@ -527,12 +553,13 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       startPreview([row], source)
       return
     }
-    const sheet = enrichedProductToSheet(enrichEntry.data, hostname, productTitle)
+    const sheet = enrichedProductToSheet(enrichEntry.data, displayName, productTitle)
+    const newRowIds = sheet.rows.map((r) => r._id)
     const store = useExcelStore.getState()
     if (targetPath !== undefined) {
       store.setCurrentDocId(null)
       store.setSheetRowId(null)
-      setCurrentFileName(hostname)
+      setCurrentFileName(displayName)
       setCurrentPath(targetPath)
       setSheets([sheet])
       store.setActiveSheet(0)
@@ -542,9 +569,10 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       store.setActiveSheet(activeIndex)
       store.setSheetRowId(null)
       if (sheets.length === 0) {
-        setCurrentFileName(hostname)
+        setCurrentFileName(displayName)
       }
     }
+    triggerAutoClassify(newRowIds)
     handleClose()
   }
 
@@ -567,7 +595,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         ? { ...resyncSource, productCount: products.length, enrichedCount: products.length, lastSyncedAt: Date.now() }
         : {
             id: `src_${hostname}_${Date.now()}`,
-            name: hostname,
+            name: displayName,
             kind: 'scrape',
             url,
             schema: enrichedColumns,
@@ -579,12 +607,13 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       return
     }
 
-    const sheet = enrichedProductsToSheet(products, hostname, titles)
+    const sheet = enrichedProductsToSheet(products, displayName, titles)
+    const newRowIds = sheet.rows.map((r) => r._id)
     const store = useExcelStore.getState()
     if (targetPath !== undefined) {
       store.setCurrentDocId(null)
       store.setSheetRowId(null)
-      setCurrentFileName(hostname)
+      setCurrentFileName(displayName)
       setCurrentPath(targetPath)
       setSheets([sheet])
       store.setActiveSheet(0)
@@ -594,9 +623,10 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       store.setActiveSheet(activeIndex)
       store.setSheetRowId(null)
       if (sheets.length === 0) {
-        setCurrentFileName(hostname)
+        setCurrentFileName(displayName)
       }
     }
+    triggerAutoClassify(newRowIds)
     handleClose()
   }
 
@@ -660,7 +690,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
                     className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/60 hover:text-indigo-300 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-colors truncate max-w-[280px]"
                     title={`Ouvrir la source : ${url}`}
                   >
-                    <span className="truncate">{hostname}</span>
+                    <span className="truncate">{displayName}</span>
                     <ExternalLink className="w-3 h-3 shrink-0" />
                   </a>
                 )
@@ -685,6 +715,35 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             />
           </div>
         </div>
+
+        {/* Auto-classement IA — taxonomie cible (optionnelle).
+             Si renseignée, chaque produit importé est classé automatiquement
+             dans le bon nœud après la fin du scrape. */}
+        {taxonomies && taxonomies.length > 0 && (
+          <div className="px-5 py-2.5 border-b border-white/[0.06] shrink-0 flex items-center gap-2">
+            <Tag className="w-3.5 h-3.5 text-white/30 shrink-0" />
+            <span className="text-[11px] text-white/45 shrink-0">Auto-classer dans</span>
+            <select
+              value={importTaxoId}
+              onChange={(e) => setImportTaxoId(e.target.value)}
+              className="flex-1 bg-black/30 border border-white/10 rounded-md px-2 py-1 text-[11px] text-white/75 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer"
+              title="Classer automatiquement les produits importés dans cette taxonomie"
+            >
+              <option value="" className="bg-[#1a1a1a]">— Pas d'auto-classement</option>
+              {taxonomies.map((t) => {
+                const count = Object.keys(t.nodes).length
+                return (
+                  <option key={t.id} value={t.id} className="bg-[#1a1a1a]">
+                    {t.name} ({count} nœuds)
+                  </option>
+                )
+              })}
+            </select>
+            {importTaxoId && (
+              <span className="text-[10px] text-indigo-300/70 shrink-0">IA</span>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex border-b border-white/[0.06] shrink-0">

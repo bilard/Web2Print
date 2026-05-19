@@ -5,12 +5,18 @@ import { ColorPicker } from '@/components/shared/ColorPicker'
 import { GradientPicker } from '@/components/shared/GradientPicker'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
+import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
 
+// Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
+// Les formats print sont exprimés en pt pour rester cohérents avec l'import
+// IDML, l'export PNG (multiplier = dpi/72) et la conversion mm via CANVAS_DPI.
 const FORMAT_PRESETS = [
-  { label: 'A4 Portrait', w: 794, h: 1123 },
-  { label: 'A4 Paysage', w: 1123, h: 794 },
-  { label: 'A3 Portrait', w: 1123, h: 1587 },
-  { label: 'A5 Portrait', w: 559, h: 794 },
+  // Print (pt)
+  { label: 'A4 Portrait', w: 595, h: 842 },
+  { label: 'A4 Paysage', w: 842, h: 595 },
+  { label: 'A3 Portrait', w: 842, h: 1191 },
+  { label: 'A5 Portrait', w: 420, h: 595 },
+  // Numérique (px = pt)
   { label: 'Full HD', w: 1920, h: 1080 },
   { label: '4K', w: 3840, h: 2160 },
   { label: '16:9', w: 1280, h: 720 },
@@ -19,6 +25,12 @@ const FORMAT_PRESETS = [
   { label: 'Facebook Cover', w: 820, h: 312 },
 ]
 
+/** Arrondi mm pour l'affichage : 1 décimale sous 10mm, entier au-delà. */
+function roundMm(mm: number): number {
+  if (!Number.isFinite(mm)) return 0
+  return mm < 10 ? Math.round(mm * 10) / 10 : Math.round(mm)
+}
+
 export function PagePanel() {
   const {
     canvasWidth, canvasHeight, canvasBg,
@@ -26,13 +38,14 @@ export function PagePanel() {
     setCanvasSize, setCanvasBgType, setCanvasBgGradient, setCanvasBgImage,
   } = useUIStore()
 
-  const [width, setWidth] = useState<number | string>(canvasWidth)
-  const [height, setHeight] = useState<number | string>(canvasHeight)
+  // L'UI affiche et saisit en mm ; le store reste en px canvas (= pt).
+  const [widthMm, setWidthMm] = useState<number | string>(() => roundMm(canvasPxToMm(canvasWidth)))
+  const [heightMm, setHeightMm] = useState<number | string>(() => roundMm(canvasPxToMm(canvasHeight)))
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setWidth(canvasWidth)
-    setHeight(canvasHeight)
+    setWidthMm(roundMm(canvasPxToMm(canvasWidth)))
+    setHeightMm(roundMm(canvasPxToMm(canvasHeight)))
   }, [canvasWidth, canvasHeight])
 
   const triggerSave = () => {
@@ -44,13 +57,19 @@ export function PagePanel() {
     }, 50)
   }
 
-  const applySize = (w: number, h: number) => {
-    const cw = Math.max(100, w)
-    const ch = Math.max(100, h)
-    setWidth(cw)
-    setHeight(ch)
+  // Reçoit les dimensions en pt (= px canvas).
+  const applySize = (wPt: number, hPt: number) => {
+    const cw = Math.max(50, wPt)
+    const ch = Math.max(50, hPt)
+    setWidthMm(roundMm(canvasPxToMm(cw)))
+    setHeightMm(roundMm(canvasPxToMm(ch)))
     setCanvasSize(cw, ch)
     triggerSave()
+  }
+
+  // Saisie utilisateur en mm → convertit en pt pour applySize.
+  const applySizeMm = (wMm: number, hMm: number) => {
+    applySize(mmToCanvasPx(Math.max(10, wMm)), mmToCanvasPx(Math.max(10, hMm)))
   }
 
   const handleBgTypeChange = (type: CanvasBgType) => {
@@ -96,26 +115,26 @@ export function PagePanel() {
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Largeur</span>
-            <input type="number" value={width} min={100}
-              onChange={(e) => setWidth(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => applySize(Number(width) || 100, Number(height) || 100)}
-              onKeyDown={(e) => e.key === 'Enter' && applySize(Number(width) || 100, Number(height) || 100)}
+            <input type="number" value={widthMm} min={10} step={0.1}
+              onChange={(e) => setWidthMm(e.target.value === '' ? '' : Number(e.target.value))}
+              onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
+              onKeyDown={(e) => e.key === 'Enter' && applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
               className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
           </div>
           <span className="text-white/20 mt-4">x</span>
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Hauteur</span>
-            <input type="number" value={height} min={100}
-              onChange={(e) => setHeight(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => applySize(Number(width) || 100, Number(height) || 100)}
-              onKeyDown={(e) => e.key === 'Enter' && applySize(Number(width) || 100, Number(height) || 100)}
+            <input type="number" value={heightMm} min={10} step={0.1}
+              onChange={(e) => setHeightMm(e.target.value === '' ? '' : Number(e.target.value))}
+              onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
+              onKeyDown={(e) => e.key === 'Enter' && applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
               className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
           </div>
-          <span className="text-[10px] text-white/20 mt-4">px</span>
+          <span className="text-[10px] text-white/20 mt-4">mm</span>
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
           {FORMAT_PRESETS.map((p) => {
-            const active = canvasWidth === p.w && canvasHeight === p.h
+            const active = Math.round(canvasWidth) === p.w && Math.round(canvasHeight) === p.h
             return (
               <button key={p.label} onClick={() => applySize(p.w, p.h)}
                 className={`px-2 py-1 text-[10px] rounded border transition-colors ${active
@@ -185,7 +204,7 @@ export function PagePanel() {
       </section>
 
       <div className="text-[10px] text-white/20 text-center pt-2 border-t border-white/5">
-        {canvasWidth} x {canvasHeight} px &mdash; {(canvasWidth / 96 * 25.4).toFixed(0)} x {(canvasHeight / 96 * 25.4).toFixed(0)} mm
+        {roundMm(canvasPxToMm(canvasWidth))} x {roundMm(canvasPxToMm(canvasHeight))} mm &mdash; {Math.round(canvasWidth)} x {Math.round(canvasHeight)} pt
       </div>
     </div>
   )

@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { FolderOpen, Presentation, Upload, Loader2, ImageIcon, FileSpreadsheet, Shapes } from 'lucide-react'
+import { toast } from 'sonner'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
+import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
 
 export interface ImportSelection {
   type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx'
@@ -59,30 +61,48 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   }, [idmlState.step, idmlProcessing, handleIdmlConfirm])
 
   const handlePptxFile = useCallback((file: File) => {
-    if (!file.name.toLowerCase().match(/\.pptx?$/)) return
+    if (!file.name.toLowerCase().match(/\.pptx?$/)) {
+      toast.error('Type non supporté : attendu .pptx', { description: file.name })
+      return
+    }
     onImport({ type: 'pptx', files: [file] })
   }, [onImport])
 
   const handleImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Type non supporté : attendu une image (.png, .jpg, .webp, .gif, .svg)', { description: file.name })
+      return
+    }
     onImport({ type: 'image', files: [file] })
   }, [onImport])
 
   const handleSvgFile = useCallback((file: File) => {
-    if (!file.name.toLowerCase().endsWith('.svg')) return
+    if (!file.name.toLowerCase().endsWith('.svg')) {
+      toast.error('Type non supporté : attendu .svg', { description: file.name })
+      return
+    }
     onImport({ type: 'svg', files: [file] })
   }, [onImport])
 
   const handleXlsxFile = useCallback((file: File) => {
-    if (!file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) return
+    if (!file.name.toLowerCase().match(/\.(xlsx|xls|csv)$/)) {
+      toast.error('Type non supporté : attendu .xlsx, .xls ou .csv', { description: file.name })
+      return
+    }
     onImport({ type: 'xlsx', files: [file] })
   }, [onImport])
 
-  const onDrop = (type: string) => (e: React.DragEvent) => {
+  const onDrop = (type: string) => async (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(null)
     if (type === 'pptx' && e.dataTransfer.files[0]) handlePptxFile(e.dataTransfer.files[0])
-    if (type === 'idml') handleIdmlFiles(Array.from(e.dataTransfer.files))
+    if (type === 'idml') {
+      const items = e.dataTransfer.items
+      const files = dataTransferHasDirectory(items)
+        ? await traverseDataTransfer(items)
+        : Array.from(e.dataTransfer.files)
+      handleIdmlFiles(files)
+    }
     if (type === 'image' && e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0])
     if (type === 'svg' && e.dataTransfer.files[0]) handleSvgFile(e.dataTransfer.files[0])
     if (type === 'xlsx' && e.dataTransfer.files[0]) handleXlsxFile(e.dataTransfer.files[0])

@@ -57,6 +57,48 @@ export const BRAND_OFFICIAL_SITES: Record<string, { label: string; baseUrl: stri
 
 export const RESELLER_HOSTS = /leroymerlin|castorama|boulanger|fnac|darty|amazon|cdiscount|manomano|conforama|ikea|bricomarche|bricodepot|bricorama|mr-bricolage|toolstation|prolians|wurth|berner|distriartisan|outillage-online|guedo|mabeo|maxoutil|debonix|rubix|screwfix|tooled-up|orexad|raja|rs-online|rs-components|conrad|farnell|distrelec|reichelt/i
 
+/** Labels affichables pour les revendeurs reconnus dans `RESELLER_HOSTS`.
+ *  Utilisés pour nommer une source à l'import quand l'URL ne révèle pas
+ *  de marque produit (ex: `fr.rubix.com` → « Rubix »). L'ordre n'a pas
+ *  d'importance : on prend le premier hit du regex source. */
+export const RESELLER_LABELS: Record<string, string> = {
+  leroymerlin: 'Leroy Merlin',
+  castorama: 'Castorama',
+  boulanger: 'Boulanger',
+  fnac: 'Fnac',
+  darty: 'Darty',
+  amazon: 'Amazon',
+  cdiscount: 'Cdiscount',
+  manomano: 'ManoMano',
+  conforama: 'Conforama',
+  ikea: 'IKEA',
+  bricomarche: 'Bricomarché',
+  bricodepot: 'Brico Dépôt',
+  bricorama: 'Bricorama',
+  'mr-bricolage': 'Mr.Bricolage',
+  toolstation: 'Toolstation',
+  prolians: 'Prolians',
+  wurth: 'Würth',
+  berner: 'Berner',
+  distriartisan: 'Distri Artisan',
+  'outillage-online': 'Outillage Online',
+  guedo: 'Guedo',
+  mabeo: 'Mabéo',
+  maxoutil: 'Maxoutil',
+  debonix: 'Debonix',
+  rubix: 'Rubix',
+  screwfix: 'Screwfix',
+  'tooled-up': 'Tooled-Up',
+  orexad: 'Orexad',
+  raja: 'Raja',
+  'rs-online': 'RS Online',
+  'rs-components': 'RS Components',
+  conrad: 'Conrad',
+  farnell: 'Farnell',
+  distrelec: 'Distrelec',
+  reichelt: 'Reichelt',
+}
+
 /** Préfixes SKU industriels reconnus → marque. Permet de détecter la marque
  *  même quand son nom n'est pas dans l'URL — courant chez les revendeurs B2B
  *  qui n'utilisent que la référence (Rubix : `dga506rtj`, `dcg405n`, etc.).
@@ -72,6 +114,54 @@ const SKU_BRAND_PREFIXES: Array<{ pattern: RegExp; brand: string }> = [
   { pattern: /\bksc?[a-z]{0,3}\d{2,4}/i, brand: 'metabo' },
   { pattern: /\b(?:rb|olt|rl)\d{2,4}/i, brand: 'ryobi' },
 ]
+
+/** Détecte le label de marque depuis une URL — site officiel OU revendeur.
+ *  Retourne le label affichable (« Milwaukee », « DeWalt »…) ou null si rien
+ *  n'est reconnu. À utiliser pour nommer une source/sheet à l'import.
+ *  Stratégie :
+ *   1. Site officiel : hostname matche le baseUrl de `BRAND_OFFICIAL_SITES`
+ *      (ex : `fr.milwaukeetool.eu` → « Milwaukee »).
+ *   2. Revendeur : délègue à `detectBrandFromUrl` qui inspecte path + SKU.
+ *   3. Fallback : la clé de marque apparaît comme segment isolé du hostname
+ *      (entre points/tirets), pour les sous-domaines régionaux non listés. */
+export function detectBrandLabelFromUrl(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+
+    // Revendeur : tente d'abord la marque produit (path + SKU). Si rien, on
+    // affiche le nom du revendeur lui-même (« Rubix », « Leroy Merlin »…)
+    // plutôt que le hostname brut.
+    if (RESELLER_HOSTS.test(host)) {
+      const detected = detectBrandFromUrl(url)
+      if (detected) return detected.officialSite.label
+      for (const [key, label] of Object.entries(RESELLER_LABELS)) {
+        if (host.includes(key)) return label
+      }
+      return null
+    }
+
+    // Site officiel : match hostname strict (avec/sans `www.`) ou suffix.
+    for (const site of Object.values(BRAND_OFFICIAL_SITES)) {
+      try {
+        const officialHost = new URL(site.baseUrl).hostname.toLowerCase()
+        const stripped = officialHost.replace(/^www\./, '')
+        if (host === officialHost || host === stripped || host.endsWith('.' + stripped)) {
+          return site.label
+        }
+      } catch { /* baseUrl invalide — ignore */ }
+    }
+
+    // Dernier recours : clé de marque comme segment isolé du hostname
+    // (`fr.milwaukee-tools.eu` mais pas `flexitarian.com` pour `flex`).
+    for (const [key, site] of Object.entries(BRAND_OFFICIAL_SITES)) {
+      const re = new RegExp(`(^|[.\\-])${key}([.\\-]|$)`, 'i')
+      if (re.test(host)) return site.label
+    }
+
+    return null
+  } catch { return null }
+}
 
 /** Détecte la marque dans une URL de revendeur et retourne le site officiel FR.
  *  Cherche dans 3 sources :
