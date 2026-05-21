@@ -215,79 +215,67 @@ function normalizeGradientStops(svg: string): string {
   )
 }
 
+export async function generateCurrentPageSvg(): Promise<{
+  svg: string
+  width: number
+  height: number
+} | null> {
+  const canvas = globalFabricCanvas
+  if (!canvas) return null
+
+  canvas.discardActiveObject()
+  canvas.requestRenderAll()
+
+  const gridObjects = canvas.getObjects().filter((o) => o.data?.isGrid)
+  gridObjects.forEach((o) => canvas.remove(o))
+
+  const savedCanvasBgColor = canvas.backgroundColor
+  const tempExcluded: FabricObject[] = []
+  canvas.backgroundColor = ''
+
+  for (const o of canvas.getObjects()) {
+    if (o.data?.isPageBg && (o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport) {
+      ;(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport = false
+      tempExcluded.push(o)
+    }
+  }
+
+  for (const o of canvas.getObjects()) ensureClipPathIds(o)
+  const imageRestorations = embedImagesAsDataUrls(canvas)
+  const { canvasWidth, canvasHeight, canvasBg } = useUIStore.getState()
+
+  const svgMarkup = canvas.toSVG({
+    viewBox: { x: 0, y: 0, width: canvasWidth, height: canvasHeight },
+    width: `${canvasWidth}`,
+    height: `${canvasHeight}`,
+  })
+
+  restoreImageElements(imageRestorations)
+  canvas.backgroundColor = savedCanvasBgColor
+  for (const o of tempExcluded) {
+    ;(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport = true
+  }
+  gridObjects.forEach((o) => canvas.add(o))
+  canvas.requestRenderAll()
+
+  let finalSvg = normalizeGradientStops(flattenClipPathsToDefs(svgMarkup))
+
+  if (canvasBg && canvasBg !== 'transparent' && tempExcluded.length === 0) {
+    const bgRect = `<rect x="0" y="0" width="${canvasWidth}" height="${canvasHeight}" fill="${canvasBg}"/>`
+    finalSvg = finalSvg.replace(/(<svg[^>]*>)/, `$1${bgRect}`)
+  }
+
+  return { svg: finalSvg, width: canvasWidth, height: canvasHeight }
+}
+
 export function useExportSvg() {
   const projectTitle = useEditorStore((s) => s.projectTitle)
 
   const exportSvg = useCallback(async (): Promise<void> => {
-    const canvas = globalFabricCanvas
-    if (!canvas) return
+    const result = await generateCurrentPageSvg()
+    if (!result) return
 
-    canvas.discardActiveObject()
-    canvas.requestRenderAll()
-
-    // Retire la grille pendant l'export.
-    const gridObjects = canvas.getObjects().filter((o) => o.data?.isGrid)
-    gridObjects.forEach((o) => canvas.remove(o))
-
-    // Sauvegarde l'état qu'on va modifier le temps de l'export.
-    const savedCanvasBgColor = canvas.backgroundColor
-    const tempExcluded: FabricObject[] = []
-
-    // Couleur de fond Fabric = thème dark de l'éditeur (#111111) — Fabric
-    // l'injecterait comme `<rect fill="…" width="100%" height="100%">` couvrant
-    // tout l'export. On la neutralise.
-    canvas.backgroundColor = ''
-
-    // Inclut le pageBg (rect blanc / image / dégradé du document) à l'export
-    // en désactivant temporairement son `excludeFromExport`.
-    for (const o of canvas.getObjects()) {
-      if (o.data?.isPageBg && (o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport) {
-        ;(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport = false
-        tempExcluded.push(o)
-      }
-    }
-
-    // Assigne un ID à tous les clipPaths qui n'en ont pas — voir commentaire
-    // sur ensureClipPathIds plus haut.
-    for (const o of canvas.getObjects()) ensureClipPathIds(o)
-
-    // Embarque les images <img> en data: URLs pour qu'Illustrator n'ait pas
-    // à résoudre des liens externes (Unsplash/DAM/etc).
-    const imageRestorations = embedImagesAsDataUrls(canvas)
-
-    const { canvasWidth, canvasHeight, canvasBg } = useUIStore.getState()
-
-    const svgMarkup = canvas.toSVG({
-      viewBox: { x: 0, y: 0, width: canvasWidth, height: canvasHeight },
-      width: `${canvasWidth}`,
-      height: `${canvasHeight}`,
-    })
-
-    // Restauration de l'état canvas.
-    restoreImageElements(imageRestorations)
-    canvas.backgroundColor = savedCanvasBgColor
-    for (const o of tempExcluded) {
-      ;(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport = true
-    }
-    gridObjects.forEach((o) => canvas.add(o))
-    canvas.requestRenderAll()
-
-    // Post-traitement :
-    //   1. Remonte les <clipPath> inline dans <defs> et retire les
-    //      clip-path parasites à l'intérieur (compat Illustrator).
-    //   2. Trie les <stop> par offset croissant et convertit rgba()
-    //      en rgb()+stop-opacity (Illustrator ne tolère ni l'un ni l'autre).
-    let finalSvg = normalizeGradientStops(flattenClipPathsToDefs(svgMarkup))
-
-    // Filet de sécurité : injecte un rect de fond après le `<svg …>` si la
-    // couleur de fond du document est définie et que le pageBg n'a pas couvert
-    // l'arrière-plan (cas d'un fond image/dégradé qui n'aurait pas exporté).
-    if (canvasBg && canvasBg !== 'transparent' && tempExcluded.length === 0) {
-      const bgRect = `<rect x="0" y="0" width="${canvasWidth}" height="${canvasHeight}" fill="${canvasBg}"/>`
-      finalSvg = finalSvg.replace(/(<svg[^>]*>)/, `$1${bgRect}`)
-    }
-
-    const blob = new Blob([finalSvg], { type: 'image/svg+xml;charset=utf-8' })
+    const blob = new Blob([result.svg], { type: 'image/svg+xml;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
