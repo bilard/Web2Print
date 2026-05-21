@@ -41,11 +41,11 @@ export async function uploadSvgToStorage(
 }
 
 export async function captureCurrentPageSvg(): Promise<SvgCaptureResult> {
-  // `cropToContent: true` ⇒ le SVG est cadré sur la bounding box du design réel
-  // (sans padding), pas sur la surface canvas. Sinon les designs centrés dans
-  // un canvas plus grand que le contenu (cas IDML/PDF avec marges natives)
-  // produisent un MP4 majoritairement vide avec une petite vignette au centre.
-  const result = await generateCurrentPageSvg({ cropToContent: true })
+  // `cropToContent` : cadre le SVG sur la bbox du design (zéro blanc autour).
+  // `embedFonts`    : embed les fonts custom en `@font-face` base64 dans
+  //                   `<defs>` — sinon le browser headless Cloud Run fallback
+  //                   sur Arial/Times au lieu des fonts IDML originales.
+  const result = await generateCurrentPageSvg({ cropToContent: true, embedFonts: true })
   if (!result) throw new Error('Canvas non disponible')
   return uploadSvgToStorage(result.svg, result.width, result.height)
 }

@@ -3,6 +3,7 @@ import { FabricImage, type FabricObject } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
+import { buildFontFaceCss } from '@/features/assets/fontBufferRegistry'
 
 /**
  * Pré-assigne `clipPathId` à chaque clipPath du graphe d'objets.
@@ -262,6 +263,28 @@ export interface GenerateSvgOptions {
    *  marques d'impression). Utilisé par la capture vidéo pour que le MP4 final
    *  soit cadré sur le design, pas sur la surface canvas. */
   cropToContent?: boolean
+  /** Embarque les fonts custom utilisées en `@font-face` base64 dans `<defs>`.
+   *  Indispensable pour le rendu Cloud Run (browser headless sans FontFace API
+   *  runtime) — sinon les textes fallback sur Arial/Times. */
+  embedFonts?: boolean
+}
+
+/**
+ * Extrait les `font-family` uniques utilisées dans le SVG. Lit l'attribut
+ * `font-family="..."` (Fabric peut écrire une chaîne avec fallback, ex.
+ * `"DIN OT", "Helvetica"`) — on prend la première family non générique.
+ */
+function extractFontFamilies(svg: string): Set<string> {
+  const families = new Set<string>()
+  const re = /font-family="([^"]+)"/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(svg)) !== null) {
+    const first = m[1].split(',')[0]?.trim().replace(/^['"]|['"]$/g, '')
+    if (first && !/^(serif|sans-serif|monospace|cursive|fantasy)$/i.test(first)) {
+      families.add(first)
+    }
+  }
+  return families
 }
 
 export async function generateCurrentPageSvg(
@@ -322,6 +345,23 @@ export async function generateCurrentPageSvg(
   if (canvasBg && canvasBg !== 'transparent' && tempExcluded.length === 0) {
     const bgRect = `<rect x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" fill="${canvasBg}"/>`
     finalSvg = finalSvg.replace(/(<svg[^>]*>)/, `$1${bgRect}`)
+  }
+
+  if (options?.embedFonts) {
+    const families = extractFontFamilies(finalSvg)
+    if (families.size > 0) {
+      const css = buildFontFaceCss(families)
+      if (css) {
+        // Injecter en tête du <defs> existant (Fabric en ouvre toujours un),
+        // sinon juste après le <svg> d'ouverture.
+        const styleBlock = `<style type="text/css"><![CDATA[\n${css}\n]]></style>`
+        if (/<defs\b[^>]*>/.test(finalSvg)) {
+          finalSvg = finalSvg.replace(/(<defs\b[^>]*>)/, `$1${styleBlock}`)
+        } else {
+          finalSvg = finalSvg.replace(/(<svg[^>]*>)/, `$1<defs>${styleBlock}</defs>`)
+        }
+      }
+    }
   }
 
   return { svg: finalSvg, width: vbW, height: vbH }

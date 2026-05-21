@@ -2,6 +2,7 @@ import JSZip from 'jszip'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
+import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 import opentype from 'opentype.js'
 import { parseAdobeFntList, buildFontLookup, type AdobeFontEntry } from './adobeFntParser'
 
@@ -209,6 +210,7 @@ export async function loadFontsFromFiles(fontFiles: File[], fontListFile?: File 
       await fontFace.load()
       document.fonts.add(fontFace)
       registerDynamicFontVariant(family, weight, style, file.name, styleLabel)
+      registerFontBuffer(family, weight, style, buffer, file.name)
       loaded.push({ name: file.name, family, file })
 
 

@@ -12,6 +12,7 @@ import { syncToStore } from './useAddObject'
 import { ensurePageBgRect } from './useCanvas'
 import { setLoadingInProgress } from './useAutoSave'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
+import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 import { downloadIdmlFromStorage, globalIdmlSource } from '@/features/idml/idmlSource'
 
 /**
@@ -179,6 +180,7 @@ async function loadProjectFonts(projectId: string, canvas?: Canvas): Promise<voi
         await fontFace.load()
         document.fonts.add(fontFace)
         registerDynamicFontVariant(family, weight, style, name, styleName)
+        registerFontBuffer(family, weight, style, buffer, name)
 
 
         if (!familyBuffers.has(family)) familyBuffers.set(family, [])
