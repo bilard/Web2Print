@@ -41,9 +41,11 @@ export async function uploadSvgToStorage(
 }
 
 export async function captureCurrentPageSvg(): Promise<SvgCaptureResult> {
-  // Capture aux dimensions exactes du canvas → la vidéo a le MÊME format que
-  // le document source (IDML/PDF/PPTX importé), comme demandé par l'utilisateur.
-  const result = await generateCurrentPageSvg()
+  // `cropToContent: true` ⇒ le SVG est cadré sur la bounding box du design réel
+  // (sans padding), pas sur la surface canvas. Sinon les designs centrés dans
+  // un canvas plus grand que le contenu (cas IDML/PDF avec marges natives)
+  // produisent un MP4 majoritairement vide avec une petite vignette au centre.
+  const result = await generateCurrentPageSvg({ cropToContent: true })
   if (!result) throw new Error('Canvas non disponible')
   return uploadSvgToStorage(result.svg, result.width, result.height)
 }

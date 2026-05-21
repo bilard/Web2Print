@@ -215,7 +215,58 @@ function normalizeGradientStops(svg: string): string {
   )
 }
 
-export async function generateCurrentPageSvg(): Promise<{
+/**
+ * Calcule la bounding box du contenu réel du canvas (exclut fond de page, grille,
+ * marques d'impression, guides de crop). Renvoie null si vide. Utilisé en mode
+ * vidéo (`cropToContent`) pour que la frame MP4 colle au design plutôt qu'à la
+ * surface canvas (souvent dimensionnée au format source IDML/PDF avec marges
+ * blanches autour).
+ */
+function computeContentBoundingBox(
+  objects: FabricObject[],
+  canvasWidth: number,
+  canvasHeight: number,
+): { x: number; y: number; width: number; height: number } | null {
+  const relevant = objects.filter((o) => {
+    const d = (o as FabricObject & { data?: Record<string, unknown> }).data
+    const excluded = (o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport
+    if (excluded) return false
+    if (!d) return true
+    return (
+      !d.isGrid && !d.isPageBg && !d.isPrintMark &&
+      !d.isCropGrid && !d.isCropDim && !d.isCropFrame && !d.isCropGhost
+    )
+  })
+  if (relevant.length === 0) return null
+  let minL = Infinity, minT = Infinity, maxR = -Infinity, maxB = -Infinity
+  for (const o of relevant) {
+    const r = o.getBoundingRect()
+    if (!Number.isFinite(r.left) || !Number.isFinite(r.top)) continue
+    minL = Math.min(minL, r.left)
+    minT = Math.min(minT, r.top)
+    maxR = Math.max(maxR, r.left + r.width)
+    maxB = Math.max(maxB, r.top + r.height)
+  }
+  if (!Number.isFinite(minL)) return null
+  // Clamp à la zone canvas (objets pourraient déborder en cas d'objets hors-zone).
+  const x = Math.max(0, minL)
+  const y = Math.max(0, minT)
+  const w = Math.min(canvasWidth - x, maxR - x)
+  const h = Math.min(canvasHeight - y, maxB - y)
+  if (w <= 0 || h <= 0) return null
+  return { x, y, width: w, height: h }
+}
+
+export interface GenerateSvgOptions {
+  /** Cadre le viewBox SVG sur la bounding box du contenu réel (exclut fond, grille,
+   *  marques d'impression). Utilisé par la capture vidéo pour que le MP4 final
+   *  soit cadré sur le design, pas sur la surface canvas. */
+  cropToContent?: boolean
+}
+
+export async function generateCurrentPageSvg(
+  options?: GenerateSvgOptions,
+): Promise<{
   svg: string
   width: number
   height: number
@@ -244,10 +295,18 @@ export async function generateCurrentPageSvg(): Promise<{
   const imageRestorations = embedImagesAsDataUrls(canvas)
   const { canvasWidth, canvasHeight, canvasBg } = useUIStore.getState()
 
+  const bbox = options?.cropToContent
+    ? computeContentBoundingBox(canvas.getObjects(), canvasWidth, canvasHeight)
+    : null
+  const vbX = bbox?.x ?? 0
+  const vbY = bbox?.y ?? 0
+  const vbW = bbox?.width ?? canvasWidth
+  const vbH = bbox?.height ?? canvasHeight
+
   const svgMarkup = canvas.toSVG({
-    viewBox: { x: 0, y: 0, width: canvasWidth, height: canvasHeight },
-    width: `${canvasWidth}`,
-    height: `${canvasHeight}`,
+    viewBox: { x: vbX, y: vbY, width: vbW, height: vbH },
+    width: `${vbW}`,
+    height: `${vbH}`,
   })
 
   restoreImageElements(imageRestorations)
@@ -261,11 +320,11 @@ export async function generateCurrentPageSvg(): Promise<{
   let finalSvg = normalizeGradientStops(flattenClipPathsToDefs(svgMarkup))
 
   if (canvasBg && canvasBg !== 'transparent' && tempExcluded.length === 0) {
-    const bgRect = `<rect x="0" y="0" width="${canvasWidth}" height="${canvasHeight}" fill="${canvasBg}"/>`
+    const bgRect = `<rect x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" fill="${canvasBg}"/>`
     finalSvg = finalSvg.replace(/(<svg[^>]*>)/, `$1${bgRect}`)
   }
 
-  return { svg: finalSvg, width: canvasWidth, height: canvasHeight }
+  return { svg: finalSvg, width: vbW, height: vbH }
 }
 
 export function useExportSvg() {
