@@ -14,6 +14,7 @@ import { setLoadingInProgress } from './useAutoSave'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 import { downloadIdmlFromStorage, globalIdmlSource } from '@/features/idml/idmlSource'
+import { applyPrintDefaults } from '@/features/print/printDefaults'
 
 /**
  * Drop any legacy `clipPath` left on a FabricImage by older saves.
@@ -284,6 +285,12 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
       // Block auto-save during load to prevent overwriting good data
       setLoadingInProgress(true)
       try {
+        // Réinitialise les paramètres d'impression aux "Défauts" : repères tous
+        // désactivés et valeurs canoniques. Les valeurs persistées du projet
+        // (dpi, bleedMm, etc.) écrasent ensuite ce socle ; les toggles non
+        // persistés restent à false comme attendu à l'ouverture.
+        applyPrintDefaults()
+
         const snap = await getDoc(doc(db, 'projects', pid))
         if (!snap.exists()) return
         const data = snap.data()
