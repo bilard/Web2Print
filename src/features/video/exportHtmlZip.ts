@@ -121,8 +121,9 @@ Généré par Web2Print.
 `
 }
 
-/** Construit le ZIP et déclenche le téléchargement navigateur. */
-export async function downloadHtmlZip(opts: ExportOptions): Promise<void> {
+/** Construit le ZIP en mémoire (blob). Réutilisable pour download local OU
+ *  upload Firebase Storage (sauvegarde DAM). */
+export async function buildHtmlZipBlob(opts: ExportOptions): Promise<Blob> {
   const id = TEMPLATE_ID(opts.aspect, opts.isMultiScene)
   const baseDir = `/hf-templates/${id}`
   const indexUrl = `${baseDir}/index.html`
@@ -172,7 +173,13 @@ export async function downloadHtmlZip(opts: ExportOptions): Promise<void> {
   })
   zip.file('README.md', buildReadme({ isMultiScene: opts.isMultiScene, aspect: opts.aspect }))
 
-  const blob = await zip.generateAsync({ type: 'blob' })
+  return zip.generateAsync({ type: 'blob' })
+}
+
+/** Construit le ZIP et déclenche le téléchargement navigateur. */
+export async function downloadHtmlZip(opts: ExportOptions): Promise<void> {
+  const blob = await buildHtmlZipBlob(opts)
+  const id = TEMPLATE_ID(opts.aspect, opts.isMultiScene)
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

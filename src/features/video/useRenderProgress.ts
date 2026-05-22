@@ -10,25 +10,17 @@ function formatBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(2)} MB`
 }
 
-function aspectLabel(a: GenerateVideoStep['aspect']): string {
-  if (a === 'portrait') return '1080×1920 · 9:16'
-  if (a === 'landscape') return '1920×1080 · 16:9'
-  return '1080×1080 · 1:1'
-}
-
 export function useRenderProgress() {
   const [capture, setCapture] = useState<StepInfo>(PENDING)
   const [extract, setExtract] = useState<StepInfo>(PENDING)
   const [compose, setCompose] = useState<StepInfo>(PENDING)
-  const [render, setRender] = useState<StepInfo>(PENDING)
   const [logs, setLogs] = useState<string[]>([])
   const [now, setNow] = useState(Date.now())
 
   const ticking =
     capture.status === 'active' ||
     extract.status === 'active' ||
-    compose.status === 'active' ||
-    render.status === 'active'
+    compose.status === 'active'
 
   useEffect(() => {
     if (!ticking) return
@@ -40,7 +32,6 @@ export function useRenderProgress() {
     setCapture(PENDING)
     setExtract(PENDING)
     setCompose(PENDING)
-    setRender(PENDING)
     setLogs([])
   }
 
@@ -51,7 +42,6 @@ export function useRenderProgress() {
       setLogs(['→ Export SVG du canvas Fabric (toSVG + embed images)'])
     } else if (s.step === 'composing') {
       setCompose({ status: 'active', startedAt: ts })
-      // Mode standalone multi-scene : log différencié selon présence de la composition.
       if (s.composition) {
         const sceneCount = s.composition.scenes.length
         const types = s.composition.scenes.map((sc) => sc.type).join(' → ')
@@ -80,19 +70,14 @@ export function useRenderProgress() {
         ])
       }
       setLogs((l) => [...l, '⟳ Gemini interprète le brief → composition multi-scènes'])
-    } else if (s.step === 'rendering') {
+    } else if (s.step === 'done') {
+      // Close out any step still active, log a final summary line.
       setCapture((c) => (c.status === 'active' ? { ...c, status: 'done', finishedAt: ts } : c))
       setExtract((e) => (e.status === 'active' ? { ...e, status: 'done', finishedAt: ts } : e))
       setCompose((co) => (co.status === 'active' ? { ...co, status: 'done', finishedAt: ts } : co))
-      setRender({ status: 'active', startedAt: ts })
-
-      const isMultiScene = !!s.composition
-      const template = isMultiScene
-        ? `multi-scene-${s.aspect ?? 'auto'}`
-        : `design-reveal-${s.aspect ?? 'auto'}`
 
       const extraLogs: string[] = []
-      if (s.bytes) extraLogs.push(`✓ SVG uploadé vers Storage (${formatBytes(s.bytes)})`)
+      if (s.bytes) extraLogs.push(`✓ SVG capturé (${formatBytes(s.bytes)})`)
       if (s.styleConfig) {
         extraLogs.push(
           `✓ styleConfig : pace=${s.styleConfig.pace} · ${s.styleConfig.palette.bg}/${s.styleConfig.palette.accent}`,
@@ -104,27 +89,14 @@ export function useRenderProgress() {
           `✓ palette ${s.composition.palette.bg}/${s.composition.palette.accent} · ${total.toFixed(1)}s total`,
         )
       }
-
-      setLogs((l) => [
-        ...l,
-        ...extraLogs,
-        `→ POST /render → ${template}`,
-        `⟳ Annimation render — ${aspectLabel(s.aspect)} · 24fps · draft`,
-        isMultiScene
-          ? '⟳ GSAP enchaîne les scènes avec fade-in/fade-out par segment'
-          : '⟳ GSAP anime <text> / <image> / <path> par phase',
-      ])
-    } else if (s.step === 'done') {
-      setRender((r) => (r.startedAt ? { ...r, status: 'done', finishedAt: ts } : r))
-      setLogs((l) => [...l, '✓ MP4 encodé + URL signée (valable 7j)'])
+      setLogs((l) => [...l, ...extraLogs, '✓ Animation prête — preview live + ZIP HTML disponible'])
     } else if (s.step === 'error') {
-      setRender((r) => (r.status === 'active' ? { ...r, status: 'error', finishedAt: ts } : r))
       setCompose((co) => (co.status === 'active' ? { ...co, status: 'error', finishedAt: ts } : co))
       setExtract((e) => (e.status === 'active' ? { ...e, status: 'error', finishedAt: ts } : e))
       setCapture((c) => (c.status === 'active' ? { ...c, status: 'error', finishedAt: ts } : c))
-      setLogs((l) => [...l, '✗ Échec du rendu'])
+      setLogs((l) => [...l, '✗ Échec de la génération'])
     }
   }
 
-  return { capture, extract, compose, render, logs, now, reset, update }
+  return { capture, extract, compose, logs, now, reset, update }
 }

@@ -10,10 +10,8 @@ interface Props {
   capture: StepInfo
   extract?: StepInfo
   compose?: StepInfo
-  render: StepInfo
   logs: string[]
   now: number
-  estimatedRenderMs?: number
 }
 
 function elapsedMs(s: StepInfo, now: number) {
@@ -25,22 +23,10 @@ function fmtSec(ms: number) {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-function adaptiveEstimate(elapsedMs: number, base: number) {
-  if (elapsedMs <= base * 0.85) return base
-  return Math.max(base, elapsedMs + 15000)
-}
-
-export function RenderProgress({ capture, extract, compose, render, logs, now, estimatedRenderMs = 60000 }: Props) {
+export function RenderProgress({ capture, extract, compose, logs, now }: Props) {
   const captureMs = elapsedMs(capture, now)
   const extractMs = extract ? elapsedMs(extract, now) : 0
   const composeMs = compose ? elapsedMs(compose, now) : 0
-  const renderMs = elapsedMs(render, now)
-  const effectiveEstimate = adaptiveEstimate(renderMs, estimatedRenderMs)
-  const overEstimate = render.status === 'active' && renderMs > estimatedRenderMs
-  const renderProgress =
-    render.status === 'done' ? 1
-    : render.status === 'active' ? Math.min(renderMs / effectiveEstimate, 0.98)
-    : 0
   const showCapture = capture.status !== 'pending'
   const showExtract = !!extract && extract.status !== 'pending'
   const showCompose = !!compose && compose.status !== 'pending'
@@ -48,7 +34,12 @@ export function RenderProgress({ capture, extract, compose, render, logs, now, e
   return (
     <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 space-y-2.5">
       {showCapture && (
-        <StepRow label="Capture de la page" status={capture.status} elapsedMs={captureMs} progress={capture.status === 'done' ? 1 : capture.status === 'active' ? 0.6 : 0} />
+        <StepRow
+          label="Capture de la page"
+          status={capture.status}
+          elapsedMs={captureMs}
+          progress={capture.status === 'done' ? 1 : capture.status === 'active' ? 0.6 : 0}
+        />
       )}
       {showExtract && (
         <StepRow
@@ -60,13 +51,12 @@ export function RenderProgress({ capture, extract, compose, render, logs, now, e
       )}
       {showCompose && (
         <StepRow
-          label="Composition multi-scènes"
+          label="Composition multi-scènes (Gemini)"
           status={compose!.status}
           elapsedMs={composeMs}
           progress={compose!.status === 'done' ? 1 : compose!.status === 'active' ? 0.5 : 0}
         />
       )}
-      <StepRow label="Rendu vidéo Annimation" status={render.status} elapsedMs={renderMs} progress={renderProgress} estimateMs={overEstimate ? undefined : estimatedRenderMs} />
 
       {logs.length > 0 && (
         <div className="font-mono text-[10px] text-white/45 space-y-0.5 max-h-24 overflow-y-auto border-t border-white/10 pt-2">
@@ -82,10 +72,9 @@ interface RowProps {
   status: StepInfo['status']
   elapsedMs: number
   progress: number
-  estimateMs?: number
 }
 
-function StepRow({ label, status, elapsedMs, progress, estimateMs }: RowProps) {
+function StepRow({ label, status, elapsedMs, progress }: RowProps) {
   const iconClass = status === 'done' ? 'text-emerald-400'
     : status === 'error' ? 'text-red-400'
     : 'text-indigo-400 animate-spin'
@@ -101,9 +90,6 @@ function StepRow({ label, status, elapsedMs, progress, estimateMs }: RowProps) {
         {elapsedMs > 0 && (
           <span className="text-white/45 font-mono tabular-nums text-[11px]">
             {fmtSec(elapsedMs)}
-            {status === 'active' && estimateMs && (
-              <span className="text-white/30"> / ~{fmtSec(estimateMs)}</span>
-            )}
           </span>
         )}
       </div>

@@ -5,82 +5,87 @@ import { db, storage } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
+import type { Composition } from './promptToComposition'
 
-export interface SavedVideo {
-  renderId: string
+export interface SavedAnimation {
+  animationId: string
   ownerId: string
+  /** URL signée du ZIP HTML dans Firebase Storage (`dam/html-animations/...`). */
   url: string
   storagePath: string | null
-  durationMs: number | null
+  bytes: number | null
   aspect: AspectFormat
+  composition: Composition | null
+  styleConfig: StyleConfig | null
   caption: string | null
   brand: string | null
   prompt: string | null
-  styleConfig: StyleConfig | null
+  width: number | null
+  height: number | null
   createdAt: Timestamp | null
   title?: string | null
 }
 
-export function useUserVideos() {
+export function useUserAnimations() {
   const user = useAuthStore((s) => s.user)
-  const [videos, setVideos] = useState<SavedVideo[]>([])
+  const [animations, setAnimations] = useState<SavedAnimation[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user?.uid) {
-      setVideos([])
+      setAnimations([])
       setLoading(false)
       return
     }
 
     setLoading(true)
     const q = query(
-      collection(db, 'videos'),
+      collection(db, 'animations'),
       where('ownerId', '==', user.uid),
     )
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const list = snap.docs.map((d) => d.data() as SavedVideo)
+        const list = snap.docs.map((d) => d.data() as SavedAnimation)
         list.sort((a, b) => {
           const ta = a.createdAt?.toMillis() ?? 0
           const tb = b.createdAt?.toMillis() ?? 0
           return tb - ta
         })
-        setVideos(list)
+        setAnimations(list)
         setLoading(false)
       },
       (err) => {
-        console.warn('videos listener error:', err.message)
+        console.warn('animations listener error:', err.message)
         setLoading(false)
       },
     )
     return unsub
   }, [user?.uid])
 
-  const deleteVideo = async (video: SavedVideo) => {
-    await deleteDoc(doc(db, 'videos', video.renderId))
-    if (video.storagePath) {
+  const deleteAnimation = async (anim: SavedAnimation) => {
+    await deleteDoc(doc(db, 'animations', anim.animationId))
+    if (anim.storagePath) {
       try {
-        await deleteObject(storageRef(storage, video.storagePath))
+        await deleteObject(storageRef(storage, anim.storagePath))
       } catch {
-        // best-effort: object may already be gone or under different ownership
+        // best-effort: object may already be gone
       }
     }
   }
 
-  const renameVideo = async (video: SavedVideo, title: string) => {
+  const renameAnimation = async (anim: SavedAnimation, title: string) => {
     const trimmed = title.trim()
-    await updateDoc(doc(db, 'videos', video.renderId), {
+    await updateDoc(doc(db, 'animations', anim.animationId), {
       title: trimmed.length > 0 ? trimmed : null,
     })
 
-    if (video.storagePath && trimmed.length > 0) {
+    if (anim.storagePath && trimmed.length > 0) {
       const safe = trimmed.replace(/[/\\:*?"<>|\x00-\x1f]/g, '_').slice(0, 120)
       const asciiFallback = safe.normalize('NFKD').replace(/[^\x20-\x7e]/g, '_')
       try {
-        await updateMetadata(storageRef(storage, video.storagePath), {
-          contentDisposition: `attachment; filename="${asciiFallback}.mp4"; filename*=UTF-8''${encodeURIComponent(safe)}.mp4`,
+        await updateMetadata(storageRef(storage, anim.storagePath), {
+          contentDisposition: `attachment; filename="${asciiFallback}.zip"; filename*=UTF-8''${encodeURIComponent(safe)}.zip`,
         })
       } catch (e) {
         console.warn('Could not update storage metadata:', e)
@@ -88,5 +93,5 @@ export function useUserVideos() {
     }
   }
 
-  return { videos, loading, deleteVideo, renameVideo }
+  return { animations, loading, deleteAnimation, renameAnimation }
 }

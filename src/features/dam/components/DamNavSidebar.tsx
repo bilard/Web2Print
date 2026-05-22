@@ -1,10 +1,10 @@
-import { Image as ImageIcon, Home, ImagePlus, Star, FolderOpen, Clock, Briefcase, Sparkles, HardDrive, Film } from 'lucide-react'
+import { Image as ImageIcon, Home, ImagePlus, Star, FolderOpen, Clock, Briefcase, Sparkles, HardDrive, FileCode2 } from 'lucide-react'
 import { useDamStore } from '../../../stores/dam.store'
 import { useDamFavorites } from '../hooks/useDamFavorites'
 import { useDamCollections } from '../hooks/useDamCollections'
 import { useDamSaveImage } from '../hooks/useDamSaveImage'
 import { useProjects } from '../../projects/useProjects'
-import { useUserVideos } from '../../video/useUserVideos'
+import { useUserAnimations } from '../../video/useUserAnimations'
 import type { DamTab } from '../types'
 
 interface NavItem {
@@ -21,7 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'recent', label: 'Récents', icon: Clock },
   { id: 'projects', label: 'Projets', icon: Briefcase },
   { id: 'generate', label: 'Création d\'image', icon: Sparkles },
-  { id: 'videos', label: 'Vidéos', icon: Film },
+  { id: 'videos', label: 'Animations HTML', icon: FileCode2 },
   { id: 'gdrive', label: 'Google Drive', icon: HardDrive },
 ]
 
@@ -31,7 +31,7 @@ export function DamNavSidebar() {
   const { collections } = useDamCollections()
   const { savedIds } = useDamSaveImage()
   const { data: projects = [] } = useProjects()
-  const { videos } = useUserVideos()
+  const { animations } = useUserAnimations()
 
   const counts: Partial<Record<DamTab, number>> = {
     'my-images': savedIds.size,
@@ -39,7 +39,7 @@ export function DamNavSidebar() {
     collections: collections.length,
     recent: savedIds.size,
     projects: projects.length,
-    videos: videos.length,
+    videos: animations.length,
   }
 
   return (

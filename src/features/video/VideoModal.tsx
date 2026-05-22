@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Film, X, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Save, Check, Eraser } from 'lucide-react'
+import { Film, X, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Eraser } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGenerateVideo, type GenerateVideoSource } from './useGenerateVideo'
 import { useRenderProgress } from './useRenderProgress'
@@ -12,7 +12,6 @@ import { FileDropzone } from './FileDropzone'
 import { VideoPromptLibrary } from './VideoPromptLibrary'
 import { useVideoPromptLibrary, type VideoPrompt } from './useVideoPromptLibrary'
 import { useEnrichComposition } from './useEnrichComposition'
-import { saveRenderedVideo } from './saveVideo'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
 import { detectAspect } from './types'
@@ -25,15 +24,20 @@ interface VideoModalProps {
 }
 
 interface ResultState {
-  renderId: string
-  url: string
-  durationMs?: number
+  /** Identifiant local de l'animation (généré côté client). Sert au filename
+   *  ZIP et de clé de sauvegarde DAM. */
+  id: string
   aspect: AspectFormat
+  /** Mode standalone : composition multi-scènes Gemini. */
+  composition?: Composition
+  /** Mode canvas : SVG capturé. */
+  svg?: string
+  styleConfig?: StyleConfig
+  width?: number
+  height?: number
   caption?: string
   brand?: string
   prompt?: string
-  styleConfig?: StyleConfig
-  composition?: Composition
 }
 
 interface LivePreviewState {
@@ -235,23 +239,21 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
       },
       {
         onSuccess: (res) => {
-          if (!res.url) return
           setResult({
-            renderId: res.renderId,
-            url: res.url,
-            durationMs: res.durationMs,
-            aspect: lastAspect,
+            id: res.id,
+            aspect: res.aspect,
+            composition: res.composition,
+            svg: res.svg,
+            styleConfig: res.styleConfig,
+            width: res.width,
+            height: res.height,
             caption: caption.trim() || undefined,
             brand: brand.trim() || undefined,
             prompt: combinedPrompt || undefined,
-            styleConfig: res.styleConfig,
-            composition: res.composition,
           })
-          toast.success(`Vidéo générée en ${Math.round((res.durationMs ?? 0) / 1000)}s`)
+          toast.success('Animation prête — preview + ZIP HTML disponibles')
         },
         onError: (err) => {
-          // AbortError = l'utilisateur a cliqué Stop : handleStop a déjà toasté
-          // "Génération annulée", inutile d'afficher une deuxième fois en rouge.
           if (err instanceof DOMException && err.name === 'AbortError') return
           setErrorMsg(err.message)
           toast.error(err.message)
@@ -311,44 +313,10 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     toast.info('Génération annulée')
   }
 
-  /** Sauvegarde la vidéo MP4 dans le DAM. Nécessite un `result.url` issu d'un
-   *  rendu Cloud Run abouti — sinon on toast une explication claire. */
-  const handleSavePreview = async () => {
-    if (!result?.url || !result.renderId) {
-      toast.error("Le MP4 n'est pas encore prêt — attends la fin du rendu Cloud Run")
-      return
-    }
-    if (!authUser?.uid) {
-      toast.error('Connecte-toi pour sauvegarder dans le DAM')
-      return
-    }
-    setSaveState('saving')
-    try {
-      await saveRenderedVideo({
-        renderId: result.renderId,
-        url: result.url,
-        durationMs: result.durationMs,
-        aspect: result.aspect,
-        caption: result.caption,
-        brand: result.brand,
-        prompt: result.prompt,
-        styleConfig: result.styleConfig,
-        ownerId: authUser.uid,
-      })
-      setSaveState('saved')
-      toast.success('Vidéo ajoutée au DAM')
-    } catch (err) {
-      setSaveState('error')
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('saveRenderedVideo failed:', err)
-      toast.error(`Sauvegarde échouée : ${msg}`)
-    }
-  }
-
   /** Lance Nano Banana 2 sur les scènes de la composition courante pour ajouter
-   *  des images photo-réalistes en background, puis **relance le rendu MP4**
-   *  avec la composition enrichie — sinon le service Cloud Run aurait reçu la
-   *  composition initiale (sans images) au clic "Générer la vidéo". */
+   *  des images photo-réalistes en background. Une fois enrichie, on émet
+   *  directement le nouveau result (pas besoin de relancer un rendu — la
+   *  composition est self-contained et la preview consomme `imageUrl`). */
   const handleEnrich = () => {
     if (!preview?.composition) {
       toast.error('Aucune composition à enrichir')
@@ -365,57 +333,12 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
       {
         onSuccess: (enriched) => {
           setPreview((prev) => (prev ? { ...prev, composition: enriched } : prev))
+          // Mise à jour directe du result si déjà émis (sinon il sera émis avec
+          // la composition enrichie au prochain cycle). Plus de relance Cloud
+          // Run — l'animation HTML consomme `imageUrl` directement.
+          setResult((prev) => (prev ? { ...prev, composition: enriched } : prev))
           const ok = enriched.scenes.filter((s) => s.imageUrl).length
-          toast.success(`${ok}/${enriched.scenes.length} images générées — relance du rendu MP4`)
-
-          // Relance Cloud Run avec la composition enrichie pour que le MP4 final
-          // contienne les images Nano Banana (sinon le rendu en cours utilise
-          // l'ancienne composition sans imageUrl).
-          setResult(null)
-          setErrorMsg(null)
-          progress.reset()
-
-          const combinedPrompt = buildCombinedPrompt({ topic, audience, goal, tone, freeform })
-          const durationSec = resolveDurationSec(duration, customDurationSec)
-
-          mutation.mutate(
-            {
-              caption: caption.trim() || undefined,
-              brand: brand.trim() || undefined,
-              prompt: combinedPrompt || undefined,
-              topic: topic.trim() || undefined,
-              audience: audience.trim() || undefined,
-              goal: goal.trim() || undefined,
-              tone: tone.trim() || undefined,
-              aspect: resolved,
-              customWidth: aspect === 'custom' ? custom.width : undefined,
-              customHeight: aspect === 'custom' ? custom.height : undefined,
-              targetDurationSec: durationSec,
-              precomputedComposition: enriched,
-              source,
-            },
-            {
-              onSuccess: (res) => {
-                if (!res.url) return
-                setResult({
-                  renderId: res.renderId,
-                  url: res.url,
-                  durationMs: res.durationMs,
-                  aspect: resolved,
-                  caption: caption.trim() || undefined,
-                  brand: brand.trim() || undefined,
-                  prompt: combinedPrompt || undefined,
-                  styleConfig: res.styleConfig,
-                  composition: res.composition,
-                })
-                toast.success(`Vidéo enrichie générée en ${Math.round((res.durationMs ?? 0) / 1000)}s`)
-              },
-              onError: (err) => {
-                setErrorMsg(err.message)
-                toast.error(err.message)
-              },
-            },
-          )
+          toast.success(`${ok}/${enriched.scenes.length} images générées — preview mise à jour`)
         },
         onError: (err) => {
           toast.error(err.message)
@@ -481,12 +404,14 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         },
         {
           onSuccess: (res) => {
-            if (!res.url) return
             setResult({
-              renderId: res.renderId,
-              url: res.url,
-              durationMs: res.durationMs,
-              aspect: resolved ?? lastAspect,
+              id: res.id,
+              aspect: res.aspect,
+              composition: res.composition,
+              svg: res.svg,
+              styleConfig: res.styleConfig,
+              width: res.width,
+              height: res.height,
               caption: p.caption ?? undefined,
               brand: p.brand ?? undefined,
               prompt:
@@ -497,12 +422,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   tone: p.tone ?? undefined,
                   freeform: p.freeform ?? undefined,
                 }) || undefined,
-              styleConfig: res.styleConfig,
-              composition: res.composition,
             })
-            toast.success(`Vidéo rejouée en ${Math.round((res.durationMs ?? 0) / 1000)}s`)
+            toast.success('Animation rejouée — preview + ZIP HTML disponibles')
           },
           onError: (err) => {
+            if (err instanceof DOMException && err.name === 'AbortError') return
             setErrorMsg(err.message)
             toast.error(err.message)
           },
@@ -529,76 +453,36 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             capture={progress.capture}
             extract={progress.extract}
             compose={progress.compose}
-            render={progress.render}
             logs={progress.logs}
             now={progress.now}
-            estimatedRenderMs={100000}
           />
         </div>
       )}
 
       {preview?.composition && (
-        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={handleEnrich}
-            disabled={enrich.enriching}
-            className="flex-1 flex items-center justify-center gap-2 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-50 disabled:cursor-not-allowed border border-fuchsia-500/40 text-fuchsia-200 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors"
-            title="Génère 1 image photo IA par scène et les affiche en Ken Burns en background"
-          >
-            {enrich.enriching ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <ImageIcon className="w-3.5 h-3.5" />
-            )}
-            {enrich.enriching && enrich.progress
-              ? `Enrichissement Nano Banana 2 — ${enrich.progress.done}/${enrich.progress.total}`
-              : 'Enrichir avec images IA (Nano Banana 2)'}
-          </button>
-          <button
-            type="button"
-            onClick={handleSavePreview}
-            disabled={!result?.url || saveState === 'saving' || saveState === 'saved'}
-            className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors border ${
-              saveState === 'saved'
-                ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 cursor-default'
-                : saveState === 'error'
-                ? 'bg-red-500/10 border-red-500/40 text-red-200 hover:bg-red-500/20'
-                : result?.url
-                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-200'
-                : 'bg-white/3 border-white/10 text-white/30 cursor-not-allowed'
-            }`}
-            title={
-              !result?.url
-                ? 'Le bouton s\'active quand le rendu MP4 Cloud Run est terminé (60-90s après "Générer la vidéo")'
-                : 'Sauvegarder cette vidéo dans le DAM'
-            }
-          >
-            {saveState === 'saving' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : saveState === 'saved' ? (
-              <Check className="w-3.5 h-3.5" />
-            ) : (
-              <Save className="w-3.5 h-3.5" />
-            )}
-            {saveState === 'saving'
-              ? 'Sauvegarde…'
-              : saveState === 'saved'
-              ? 'Sauvegardée dans le DAM'
-              : saveState === 'error'
-              ? 'Réessayer la sauvegarde'
-              : result?.url
-              ? 'Sauvegarder dans le DAM'
-              : 'MP4 en cours de rendu…'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleEnrich}
+          disabled={enrich.enriching}
+          className="shrink-0 flex items-center justify-center gap-2 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-50 disabled:cursor-not-allowed border border-fuchsia-500/40 text-fuchsia-200 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors"
+          title="Génère 1 image photo IA par scène et les affiche en Ken Burns en background"
+        >
+          {enrich.enriching ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <ImageIcon className="w-3.5 h-3.5" />
+          )}
+          {enrich.enriching && enrich.progress
+            ? `Enrichissement Nano Banana 2 — ${enrich.progress.done}/${enrich.progress.total}`
+            : 'Enrichir avec images IA (Nano Banana 2)'}
+        </button>
       )}
 
       {preview && (preview.svg || preview.composition) && (
         <div className="flex flex-col gap-2 flex-1 min-h-0">
           <div className="flex items-center gap-2 text-[10px] text-indigo-300/80 uppercase tracking-wider font-semibold shrink-0">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            {generating ? 'Aperçu Annimation — rendu MP4 en cours…' : 'Aperçu Annimation'}
+            Aperçu animation
           </div>
           <HyperframesPlayer
             aspect={preview.aspect}
@@ -624,7 +508,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         <div className="flex items-center gap-2">
           <Film className="w-4 h-4 text-indigo-400" />
           <h2 className="font-semibold text-white text-sm">
-            {inResultMode ? 'Vidéo générée' : 'Générer une vidéo'}
+            {inResultMode ? 'Animation prête' : 'Générer une animation'}
           </h2>
         </div>
         <button
@@ -649,28 +533,17 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           <div className="w-[90%] mx-auto p-5 flex flex-col gap-4">
             {inResultMode ? (
               <VideoResult
-                renderId={result.renderId}
-                url={result.url}
-                durationMs={result.durationMs}
+                animationId={result.id}
                 aspect={result.aspect}
+                composition={result.composition}
+                svg={result.svg}
+                styleConfig={result.styleConfig}
+                width={result.width}
+                height={result.height}
                 caption={result.caption}
                 brand={result.brand}
                 prompt={result.prompt}
-                styleConfig={result.styleConfig}
                 onRegenerate={handleRegenerate}
-                preview={
-                  preview
-                    ? {
-                        svg: preview.svg,
-                        composition: preview.composition,
-                        aspect: preview.aspect,
-                        styleConfig: preview.styleConfig,
-                        brand: preview.brand,
-                        caption: preview.caption,
-                        prompt: preview.prompt,
-                      }
-                    : undefined
-                }
               />
             ) : (
               <>
@@ -682,12 +555,14 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     {isStandalone ? (
                       <>
                         Composition multi-scènes (<span className="text-white/80">hook → visual → cta</span>) générée par
-                        Gemini selon ton brief. MP4 ≈10 s, 30 fps.
+                        Gemini selon ton brief. Livraison ≈ 5 s : <span className="text-white/80">HTML/CSS/JS</span> +
+                        aperçu live, ZIP téléchargeable et sauvegardable dans le DAM.
                       </>
                     ) : (
                       <>
                         Export <span className="text-white/80">SVG éditable</span> de la page courante,
-                        puis animation GSAP par élément. MP4 ≈10 s, 30 fps.
+                        puis animation GSAP par élément. Livraison ≈ 5 s :
+                        <span className="text-white/80"> HTML/CSS/JS</span> + aperçu live.
                       </>
                     )}
                   </p>
@@ -850,7 +725,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     ) : (
                       <Sparkles className="w-3.5 h-3.5" />
                     )}
-                    Générer la vidéo
+                    Générer l'animation
                   </button>
                   {!generating && (
                     <button

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Pause, RotateCw, Loader2, AlertTriangle, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
-import type { AspectFormat, DesignRevealVariables, DesignRevealStyleConfig } from './types'
+import type { AspectFormat } from './types'
 import type { Composition } from './promptToComposition'
+import type { StyleConfig } from './promptToStyleConfig'
 
 interface Props {
   aspect: AspectFormat
@@ -12,7 +13,7 @@ interface Props {
   brand?: string
   caption?: string
   prompt?: string
-  styleConfig?: DesignRevealStyleConfig
+  styleConfig?: StyleConfig
   autoPlay?: boolean
   className?: string
   /** Dimensions exactes (canvas source) — si fournies, override la taille du bucket */
@@ -113,7 +114,7 @@ export function HyperframesPlayer({
         prompt: prompt || undefined,
       }
     }
-    const dr: DesignRevealVariables & { svg: string } = {
+    return {
       svg: svg ?? '',
       brand: brand || undefined,
       caption: caption || undefined,
@@ -121,7 +122,6 @@ export function HyperframesPlayer({
       styleConfig: styleConfig || undefined,
       svgUrl: '',
     }
-    return dr as unknown as Record<string, unknown>
   }, [isMultiScene, composition, svg, brand, caption, prompt, styleConfig])
 
   useEffect(() => {

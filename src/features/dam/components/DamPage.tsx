@@ -12,7 +12,7 @@ import { DamProjectAssets } from './DamProjectAssets'
 import { DamLightbox } from './DamLightbox'
 import { GDriveConnect } from '../../gdrive/GDriveConnect'
 import { GDrivePanel } from '../../gdrive/GDrivePanel'
-import { UserVideosList } from '../../video/UserVideosList'
+import { UserAnimationsList } from '../../video/UserAnimationsList'
 
 const TAB_TITLES: Record<string, string> = {
   stock: 'Banque d\'images',
@@ -21,7 +21,7 @@ const TAB_TITLES: Record<string, string> = {
   collections: 'Collections',
   recent: 'Récents',
   projects: 'Projets',
-  videos: 'Vidéos',
+  videos: 'Animations HTML',
   gdrive: 'Google Drive',
 }
 
@@ -56,7 +56,7 @@ export function DamPage() {
         {activeTab === 'recent' && <DamRecentImages />}
         {activeTab === 'projects' && (selectedProjectId ? <DamProjectAssets /> : <DamProjects />)}
         {activeTab === 'generate' && <DamGenerate />}
-        {activeTab === 'videos' && <UserVideosList />}
+        {activeTab === 'videos' && <UserAnimationsList />}
         {activeTab === 'gdrive' && (
           <div className="flex-1 overflow-auto p-6">
             {gdriveConnected ? (
