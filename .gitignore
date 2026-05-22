@@ -47,3 +47,4 @@ Taxonomies/
 dist/
 .claude/
 env.local
+.agents/
