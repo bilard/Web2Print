@@ -17,6 +17,10 @@ export function usePrintMarksSync(fabricRef: React.MutableRefObject<Canvas | nul
     bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm,
     canvasWidth, canvasHeight,
     showPrintMarks, showSafeArea, showRegistrationMarks,
+    bleedStroke, bleedColor,
+    cropStroke, cropColor,
+    regRadiusMm, regStroke, regColor, regOffsetMm,
+    safeStroke, safeColor, safeDash, safeGap,
   } = useUIStore()
 
   useEffect(() => {
@@ -35,12 +39,27 @@ export function usePrintMarksSync(fabricRef: React.MutableRefObject<Canvas | nul
       pageTopPx: 0,
       bleedPx: mmToCanvasPx(bleedMm),
       cropMarkLengthPx: mmToCanvasPx(cropMarkLengthMm),
-      cropMarkOffsetPx: mmToCanvasPx(cropMarkOffsetMm),
+      // Cap défensif : si une vieille valeur stockée dépasse 3 mm (anciennes
+      // versions du slider allaient à 10 mm), on la borne ici pour éviter que
+      // les marques apparaissent loin de la page.
+      cropMarkOffsetPx: mmToCanvasPx(Math.min(cropMarkOffsetMm, 3)),
       safeAreaPx: mmToCanvasPx(safeAreaMm),
       dpi: CANVAS_DPI,
       showPrintMarks,
       showSafeArea,
       showRegistrationMarks,
+      bleedStroke,
+      bleedColor,
+      cropStroke,
+      cropColor,
+      regRadiusMm,
+      regStroke,
+      regColor,
+      regOffsetMm,
+      safeStroke,
+      safeColor,
+      safeDash,
+      safeGap,
     })
 
     // Add marks to canvas
@@ -51,5 +70,17 @@ export function usePrintMarksSync(fabricRef: React.MutableRefObject<Canvas | nul
     }
 
     canvas.requestRenderAll()
-  }, [bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm, canvasWidth, canvasHeight])
+  }, [
+    bleedMm, cropMarkLengthMm, cropMarkOffsetMm, safeAreaMm,
+    canvasWidth, canvasHeight,
+    showPrintMarks, showSafeArea, showRegistrationMarks,
+    bleedStroke, bleedColor,
+    cropStroke, cropColor,
+    regRadiusMm, regStroke, regColor, regOffsetMm,
+    safeStroke, safeColor, safeDash, safeGap,
+    // HMR : Vite remplace l'identité de buildPrintMarks à chaque hot-reload
+    // du module printMarks.ts → l'effet se ré-exécute et redessine les marks
+    // sans avoir à toggler ou recharger la page.
+    buildPrintMarks,
+  ])
 }
