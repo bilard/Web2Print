@@ -9,9 +9,16 @@ import {
   DEFAULT_COMPOSITION,
   type Composition,
 } from './promptToComposition'
-import type { AspectFormat, RenderResponse } from './types'
+import type { AspectFormat, RenderResponse, VideoQuality } from './types'
 
 export type GenerateVideoSource = 'canvas' | 'standalone'
+
+/** Défauts "rendu rapide" : 24 fps (cinéma standard, ~20 % moins de frames
+ *  qu'à 30) + preset ffmpeg `draft` (ultrafast). Empiriquement ~2× plus
+ *  rapide qu'à 30 fps + standard, pour une perte de qualité minime sur
+ *  une lecture sociale (1080p, vidéos courtes 5-10 s). */
+const DEFAULT_FAST_FPS = 24
+const DEFAULT_FAST_QUALITY: VideoQuality = 'draft'
 
 /** Mode canvas : convertit les dimensions du canvas (en px Fabric, souvent
  *  petits, ex. 142×216 pour 50×76 mm @ 72 dpi) en dimensions vidéo utilisables.
@@ -200,6 +207,8 @@ export function useGenerateVideo(opts?: {
             customWidth: canvasDims.width,
             customHeight: canvasDims.height,
           },
+          fps: DEFAULT_FAST_FPS,
+          quality: DEFAULT_FAST_QUALITY,
         })
 
         opts?.onStep?.({ step: 'done', aspect, styleConfig, source })
@@ -293,6 +302,8 @@ export function useGenerateVideo(opts?: {
           customWidth: input.customWidth,
           customHeight: input.customHeight,
         },
+        fps: DEFAULT_FAST_FPS,
+        quality: DEFAULT_FAST_QUALITY,
       })
 
       opts?.onStep?.({ step: 'done', aspect, composition, source })

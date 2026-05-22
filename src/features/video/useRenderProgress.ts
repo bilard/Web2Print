@@ -109,7 +109,7 @@ export function useRenderProgress() {
         ...l,
         ...extraLogs,
         `→ POST /render → ${template}`,
-        `⟳ Annimation render — ${aspectLabel(s.aspect)} · 30fps`,
+        `⟳ Annimation render — ${aspectLabel(s.aspect)} · 24fps · draft`,
         isMultiScene
           ? '⟳ GSAP enchaîne les scènes avec fade-in/fade-out par segment'
           : '⟳ GSAP anime <text> / <image> / <path> par phase',

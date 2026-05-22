@@ -520,7 +520,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             render={progress.render}
             logs={progress.logs}
             now={progress.now}
-            estimatedRenderMs={150000}
+            estimatedRenderMs={100000}
           />
         </div>
       )}
