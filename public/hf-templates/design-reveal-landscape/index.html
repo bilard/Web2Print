@@ -25,8 +25,15 @@
         display: flex; align-items: center; justify-content: center;
         transform-origin: 50% 50%;
         will-change: transform, opacity;
+        perspective: 2200px;
       }
-      .svg-host { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+      .svg-host {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        transform-style: preserve-3d;
+        transform-origin: 50% 50%;
+        will-change: transform;
+      }
       .svg-host > svg {
         width: 100%; height: 100%;
         filter: drop-shadow(0 24px 50px rgba(0,0,0,0.5));
@@ -193,6 +200,13 @@
           // Pulse final sur les mots
           tl.to(wordEls, { y: -amp(8), opacity: 0.9, duration: dur(0.6), ease: EASE_OUT }, dur(9.3));
         }
+
+        // ── 3D FLIP rotateY sur le svg-host (élément HTML — supporte
+        //    transform 3D contrairement aux <g> SVG). 4 keyframes sur ~3s.
+        tl.to('#svg-host', { rotationY: -15, duration: dur(0.9), ease: 'sine.inOut' }, dur(2.0));
+        tl.to('#svg-host', { rotationY: 12,  duration: dur(0.9), ease: 'sine.inOut' }, dur(3.0));
+        tl.to('#svg-host', { rotationY: -6,  duration: dur(0.6), ease: 'sine.inOut' }, dur(4.0));
+        tl.to('#svg-host', { rotationY: 0,   duration: dur(0.6), ease: 'power2.out' }, dur(4.7));
 
         window.__timelines = window.__timelines || {};
         window.__timelines['design-reveal-landscape'] = tl;
