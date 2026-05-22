@@ -41,11 +41,12 @@ export async function uploadSvgToStorage(
 }
 
 export async function captureCurrentPageSvg(): Promise<SvgCaptureResult> {
-  // `cropToContent` : cadre le SVG sur la bbox du design (zéro blanc autour).
-  // `embedFonts`    : embed les fonts custom en `@font-face` base64 dans
-  //                   `<defs>` — sinon le browser headless Cloud Run fallback
-  //                   sur Arial/Times au lieu des fonts IDML originales.
-  const result = await generateCurrentPageSvg({ cropToContent: true, embedFonts: true })
+  // cropToContent=false : on garde le viewBox = canvas Fabric ENTIER, ce qui
+  // préserve la marge blanche naturelle autour du contenu du projet. C'est
+  // ce que l'utilisateur attend (l'animation montre le projet tel quel,
+  // marge incluse, comme dans l'éditeur — pas cadré au contenu).
+  // `embedFonts` : embed les fonts custom en `@font-face` base64.
+  const result = await generateCurrentPageSvg({ cropToContent: false, embedFonts: true })
   if (!result) throw new Error('Canvas non disponible')
   return uploadSvgToStorage(result.svg, result.width, result.height)
 }
