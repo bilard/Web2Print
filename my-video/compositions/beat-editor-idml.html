@@ -1,0 +1,430 @@
+<template id="beat-editor-idml-template">
+  <div id="beat-editor-idml" data-composition-id="beat-editor-idml" data-width="1920" data-height="1080">
+    <div class="bi-blackout"></div>
+
+    <header class="bi-topbar">
+      <span class="bi-back">‹</span>
+      <span class="bi-crumb">Test6 · Bannière</span>
+      <span class="bi-badge bi-badge-idml">IDML · InDesign source détecté</span>
+      <div class="bi-spacer"></div>
+      <span class="bi-undo">⟲</span>
+      <span class="bi-redo">⟳</span>
+      <span class="bi-save">✓ Sauvegarder</span>
+      <span class="bi-export-idml">↧ Ré-exporter en IDML</span>
+    </header>
+
+    <div class="bi-body">
+      <aside class="bi-left">
+        <span class="bi-section-h">▦ STRUCTURE IDML IMPORTÉE</span>
+
+        <div class="bi-block bi-block--first">
+          <span class="bi-block-title">CALQUES ADOBE · 5</span>
+          <ul class="bi-tree">
+            <li class="bi-tree-item">⊟ Fond &amp; bandeau dégradé</li>
+            <li class="bi-tree-item bi-tree-active">⊟ Typographies · 4 frames</li>
+            <li class="bi-tree-sub">— frame Gilles · Script</li>
+            <li class="bi-tree-sub">— frame Nathalie · Bold</li>
+            <li class="bi-tree-sub">— frame CTA Lorem · Display</li>
+            <li class="bi-tree-sub">— frame texte mini · Body</li>
+            <li class="bi-tree-item">⊟ Carré magenta · forme</li>
+            <li class="bi-tree-item">⊟ Repères &amp; guides</li>
+            <li class="bi-tree-item">⊟ Calque variables data</li>
+          </ul>
+        </div>
+
+        <div class="bi-block">
+          <span class="bi-block-title">STYLES PARAGRAPHES · 6</span>
+          <ul class="bi-styles">
+            <li class="bi-style"><strong>$Heading-Script</strong> <em>Snell · 40 pt · #FFFFFF</em></li>
+            <li class="bi-style bi-style--active"><strong>$CTA-Display</strong> <em>Inter Black · 30 pt · #F97316</em></li>
+            <li class="bi-style"><strong>$Subhead</strong> <em>Inter SemiBold · 14 pt · #BE185D</em></li>
+            <li class="bi-style"><strong>$Body-Mini</strong> <em>Inter Regular · 6 pt · #1F2937</em></li>
+            <li class="bi-style"><strong>$Caption</strong> <em>Inter Italic · 8 pt · #6B7280</em></li>
+          </ul>
+        </div>
+
+        <div class="bi-block">
+          <span class="bi-block-title">STYLES CHARACTER · 4</span>
+          <ul class="bi-styles">
+            <li class="bi-style"><strong>$accent-orange</strong> <em>#F97316</em></li>
+            <li class="bi-style"><strong>$accent-magenta</strong> <em>#EC4899</em></li>
+            <li class="bi-style"><strong>$muted-grey</strong> <em>#6B7280</em></li>
+            <li class="bi-style"><strong>$brand-indigo</strong> <em>#6366F1</em></li>
+          </ul>
+        </div>
+      </aside>
+
+      <section class="bi-center">
+        <div class="bi-canvas">
+          <div class="bi-doc">
+            <div class="bi-doc-stripe"></div>
+            <div class="bi-doc-gilles">Gilles</div>
+            <div class="bi-doc-mag"></div>
+            <div class="bi-doc-nathalie">
+              <span class="bi-doc-mini">Lorem ipsum dolor sit amet,<br/>consectetur adipiscing elit.</span>
+              <strong>Nathalie</strong>
+            </div>
+            <div class="bi-doc-cta">
+              <span>Lorem</span><span>ipsum</span><span>dolor</span>
+            </div>
+            <div class="bi-doc-stripe-dashed"></div>
+            <div class="bi-doc-frame-highlight"></div>
+          </div>
+          <div class="bi-canvas-meta">
+            <span class="bi-meta-chip">⌖ Frame sélectionné</span>
+            <span class="bi-meta-chip">$CTA-Display · 30 pt</span>
+            <span class="bi-meta-chip">Calque · Typographies</span>
+          </div>
+        </div>
+
+        <div class="bi-tools">
+          <span class="bi-tool bi-tool--active">▶</span>
+          <span class="bi-tool">T</span>
+          <span class="bi-tool">▢</span>
+          <span class="bi-tool">▣</span>
+          <span class="bi-tool">⌖</span>
+        </div>
+      </section>
+
+      <aside class="bi-right">
+        <span class="bi-section-h">✎ ÉDITION FRAME · $CTA-Display</span>
+
+        <div class="bi-prop-card">
+          <span class="bi-prop-h">TEXTE</span>
+          <div class="bi-prop-textarea">Lorem<br/>ipsum<br/>dolor</div>
+        </div>
+
+        <div class="bi-prop-card">
+          <span class="bi-prop-h">TYPOGRAPHIE</span>
+          <div class="bi-prop-row2">
+            <span class="bi-prop-input bi-prop-input--wide">Inter Black</span>
+            <span class="bi-prop-input">30 pt</span>
+          </div>
+          <div class="bi-prop-row2">
+            <span class="bi-prop-input">Interligne 0.95</span>
+            <span class="bi-prop-input">−0.02 em</span>
+          </div>
+          <div class="bi-prop-color">
+            <span class="bi-swatch" style="background:#F97316"></span>
+            <span class="bi-prop-input">#F97316</span>
+          </div>
+        </div>
+
+        <div class="bi-prop-card">
+          <span class="bi-prop-h">DATA BINDING</span>
+          <div class="bi-binding">
+            <span class="bi-bind-key">{{produit.headline}}</span>
+            <span class="bi-bind-source">→ PIM · Milwaukee FPD3</span>
+          </div>
+          <div class="bi-binding">
+            <span class="bi-bind-key">{{prix.format}}</span>
+            <span class="bi-bind-source">→ formule "{prix} € HT"</span>
+          </div>
+        </div>
+
+        <div class="bi-prop-card bi-prop-card--callout">
+          <span class="bi-callout-ico">↺</span>
+          <div>
+            <strong>Modifications préservées</strong>
+            <p>Le ré-export IDML conserve identifiants Adobe (XmlId, FrameId, StyleId). Réinjection InDesign sans casse.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="bi-overlay">
+      <span class="bi-eyebrow">Native IDML · round-trip Adobe</span>
+      <h2 class="bi-title">InDesign, vraiment ouvert</h2>
+    </div>
+
+    <style>
+      #beat-editor-idml {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden; color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        display: flex; flex-direction: column;
+      }
+      #beat-editor-idml .bi-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-editor-idml .bi-topbar {
+        height: 50px; padding: 0 18px; background: #161616;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+      }
+      #beat-editor-idml .bi-back { font-size: 18px; color: rgba(255,255,255,0.55); }
+      #beat-editor-idml .bi-crumb { font-size: 14px; color: #F2F2F2; font-weight: 500; }
+      #beat-editor-idml .bi-badge {
+        font-size: 12px; padding: 5px 12px; border-radius: 5px; font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+      #beat-editor-idml .bi-badge-idml {
+        background: rgba(167,139,250,0.15); color: #C4B5FD;
+        border: 1px solid rgba(167,139,250,0.4);
+      }
+      #beat-editor-idml .bi-spacer { flex: 1; }
+      #beat-editor-idml .bi-undo, .bi-redo {
+        font-size: 14px; padding: 6px 10px; color: rgba(255,255,255,0.55);
+        background: rgba(255,255,255,0.04); border-radius: 5px;
+      }
+      #beat-editor-idml .bi-save {
+        font-size: 13px; padding: 7px 14px; background: #34D399; color: #052e1f;
+        border-radius: 6px; font-weight: 700;
+      }
+      #beat-editor-idml .bi-export-idml {
+        font-size: 13px; padding: 7px 14px;
+        background: linear-gradient(135deg, #A78BFA, #6366F1); color: #fff;
+        border-radius: 6px; font-weight: 600;
+        box-shadow: 0 8px 16px -4px rgba(167,139,250,0.4);
+      }
+
+      #beat-editor-idml .bi-body {
+        flex: 1; display: grid; grid-template-columns: 320px 1fr 360px;
+      }
+      #beat-editor-idml .bi-left,
+      #beat-editor-idml .bi-right {
+        background: #131313; padding: 16px 16px;
+        display: flex; flex-direction: column; gap: 14px; overflow-y: auto;
+      }
+      #beat-editor-idml .bi-left {
+        border-right: 1px solid rgba(255,255,255,0.06);
+      }
+      #beat-editor-idml .bi-right {
+        border-left: 1px solid rgba(255,255,255,0.06);
+      }
+      #beat-editor-idml .bi-section-h {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.45);
+      }
+      #beat-editor-idml .bi-block {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px; padding: 12px 14px;
+        display: flex; flex-direction: column; gap: 8px;
+      }
+      #beat-editor-idml .bi-block-title {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+        color: rgba(255,255,255,0.4);
+      }
+      #beat-editor-idml .bi-tree, .bi-styles {
+        list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px;
+      }
+      #beat-editor-idml .bi-tree-item,
+      #beat-editor-idml .bi-tree-sub {
+        padding: 6px 10px; border-radius: 5px; font-size: 12.5px;
+        color: rgba(255,255,255,0.7);
+      }
+      #beat-editor-idml .bi-tree-sub {
+        margin-left: 18px; color: rgba(255,255,255,0.5); font-size: 12px;
+      }
+      #beat-editor-idml .bi-tree-active {
+        background: rgba(167,139,250,0.12); color: #C4B5FD; font-weight: 600;
+        border: 1px solid rgba(167,139,250,0.25);
+      }
+      #beat-editor-idml .bi-style {
+        padding: 7px 10px; border-radius: 5px;
+        background: rgba(255,255,255,0.02);
+        font-size: 12px; color: rgba(255,255,255,0.7);
+        display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+      }
+      #beat-editor-idml .bi-style strong {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-weight: 600; color: #F2F2F2;
+      }
+      #beat-editor-idml .bi-style em {
+        font-style: normal; font-size: 11px; color: rgba(255,255,255,0.45);
+      }
+      #beat-editor-idml .bi-style--active {
+        background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.3);
+      }
+      #beat-editor-idml .bi-style--active strong { color: #F97316; }
+
+      /* Center */
+      #beat-editor-idml .bi-center {
+        background: #0a0a0a; display: flex; align-items: center; justify-content: center;
+        position: relative; overflow: hidden;
+      }
+      #beat-editor-idml .bi-canvas {
+        display: flex; flex-direction: column; align-items: center; gap: 18px;
+      }
+      #beat-editor-idml .bi-doc {
+        position: relative; width: 200px; height: 700px;
+        background: #FFFFFF;
+        padding: 18px 14px;
+        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8);
+        display: flex; flex-direction: column; gap: 12px;
+        overflow: hidden;
+      }
+      #beat-editor-idml .bi-doc-stripe {
+        position: absolute; top: 0; right: 0; width: 140px; height: 420px;
+        background: linear-gradient(to bottom,
+          #1e293b 0%, #6366F1 10%, #A855F7 25%, #EC4899 50%, #F97316 75%, #EAB308 100%);
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 100%, 0 60%);
+      }
+      #beat-editor-idml .bi-doc-gilles {
+        font-family: "Snell Roundhand", "Brush Script MT", cursive;
+        font-size: 38px; font-weight: 700; color: #fff; z-index: 1;
+        margin-top: 10px; align-self: center;
+      }
+      #beat-editor-idml .bi-doc-mag {
+        width: 50px; height: 50px; background: #EC4899; z-index: 1;
+        align-self: center; margin: 10px 0;
+      }
+      #beat-editor-idml .bi-doc-nathalie {
+        z-index: 2; display: flex; flex-direction: column; gap: 4px;
+      }
+      #beat-editor-idml .bi-doc-nathalie strong {
+        color: #BE185D; font-size: 17px; font-weight: 700;
+      }
+      #beat-editor-idml .bi-doc-mini {
+        color: #1f2937; font-size: 7px; line-height: 1.3;
+      }
+      #beat-editor-idml .bi-doc-cta {
+        margin-top: auto; margin-bottom: 16px;
+        display: flex; flex-direction: column; gap: 2px;
+        position: relative; z-index: 3;
+      }
+      #beat-editor-idml .bi-doc-cta span {
+        color: #F97316; font-size: 28px; font-weight: 900;
+        line-height: 0.95; letter-spacing: -0.02em;
+      }
+      #beat-editor-idml .bi-doc-frame-highlight {
+        position: absolute; bottom: 10px; left: 8px; width: 100px; height: 110px;
+        border: 2px solid #F97316;
+        background: rgba(249,115,22,0.04);
+      }
+
+      #beat-editor-idml .bi-canvas-meta {
+        display: flex; gap: 8px;
+      }
+      #beat-editor-idml .bi-meta-chip {
+        font-size: 12px; padding: 6px 12px;
+        background: #1A1A1A; border: 1px solid rgba(249,115,22,0.3);
+        color: #F97316; border-radius: 999px;
+      }
+      #beat-editor-idml .bi-tools {
+        position: absolute; left: 24px; top: 50%; transform: translateY(-50%);
+        display: flex; flex-direction: column; gap: 6px;
+        background: #131313; padding: 10px 8px; border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+      #beat-editor-idml .bi-tool {
+        width: 32px; height: 32px; border-radius: 6px;
+        background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+        display: flex; align-items: center; justify-content: center; font-size: 13px;
+      }
+      #beat-editor-idml .bi-tool--active {
+        background: rgba(99,102,241,0.2); color: #A5B4FC;
+      }
+
+      /* Right */
+      #beat-editor-idml .bi-prop-card {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px; padding: 12px 14px;
+        display: flex; flex-direction: column; gap: 8px;
+      }
+      #beat-editor-idml .bi-prop-h {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.4);
+      }
+      #beat-editor-idml .bi-prop-textarea {
+        padding: 10px 12px;
+        background: #0F0F0F; border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 5px;
+        font-size: 14px; color: #F97316; font-weight: 800;
+        line-height: 0.95;
+      }
+      #beat-editor-idml .bi-prop-row2 {
+        display: grid; grid-template-columns: 1fr 80px; gap: 6px;
+      }
+      #beat-editor-idml .bi-prop-input {
+        padding: 6px 10px; background: #0F0F0F;
+        border: 1px solid rgba(255,255,255,0.08); border-radius: 5px;
+        font-size: 12px; color: #F2F2F2; font-variant-numeric: tabular-nums;
+      }
+      #beat-editor-idml .bi-prop-color {
+        display: flex; align-items: center; gap: 8px;
+      }
+      #beat-editor-idml .bi-swatch {
+        width: 22px; height: 22px; border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.15);
+      }
+      #beat-editor-idml .bi-binding {
+        display: flex; flex-direction: column; gap: 3px;
+        padding: 8px 10px;
+        background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25);
+        border-radius: 6px;
+      }
+      #beat-editor-idml .bi-bind-key {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 13px; color: #C7D2FE; font-weight: 600;
+      }
+      #beat-editor-idml .bi-bind-source {
+        font-size: 11px; color: rgba(255,255,255,0.5);
+      }
+      #beat-editor-idml .bi-prop-card--callout {
+        background: rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.3);
+        flex-direction: row; gap: 12px; align-items: flex-start;
+      }
+      #beat-editor-idml .bi-callout-ico {
+        font-size: 22px; color: #A78BFA; flex-shrink: 0;
+      }
+      #beat-editor-idml .bi-prop-card--callout strong {
+        display: block; font-size: 13px; color: #DDD6FE; margin-bottom: 4px;
+      }
+      #beat-editor-idml .bi-prop-card--callout p {
+        margin: 0; font-size: 11.5px; line-height: 1.4;
+        color: rgba(255,255,255,0.7);
+      }
+
+      #beat-editor-idml .bi-overlay {
+        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+        background: rgba(15,15,15,0.9); backdrop-filter: blur(20px);
+        border: 1px solid rgba(167,139,250,0.3);
+        padding: 18px 28px; border-radius: 12px;
+        display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 30;
+      }
+      #beat-editor-idml .bi-eyebrow {
+        font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+        color: #A78BFA;
+      }
+      #beat-editor-idml .bi-title {
+        margin: 0; font-size: 28px; font-weight: 700; color: #F2F2F2;
+        letter-spacing: -0.02em;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-editor-idml';
+
+        tl.to(root + " .bi-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+        tl.from(root + " .bi-topbar", { y: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bi-badge", { scale: 0.85, opacity: 0, duration: 0.4, ease: "back.out(1.5)" }, 0.3);
+        tl.from(root + " .bi-export-idml", { x: 15, opacity: 0, duration: 0.4, ease: "back.out(1.4)" }, 0.4);
+
+        tl.from(root + " .bi-left", { x: -25, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.3);
+        tl.from(root + " .bi-right", { x: 25, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.35);
+
+        tl.from(root + " .bi-block", { y: 15, opacity: 0, duration: 0.35, stagger: 0.1, ease: "power3.out" }, 0.55);
+        tl.from(root + " .bi-tree-item, " + root + " .bi-tree-sub", { x: -10, opacity: 0, duration: 0.22, stagger: 0.04, ease: "power2.out" }, 0.75);
+        tl.from(root + " .bi-style", { x: -10, opacity: 0, duration: 0.22, stagger: 0.04, ease: "power2.out" }, 1.05);
+
+        tl.from(root + " .bi-doc", { y: 30, opacity: 0, scale: 0.92, duration: 0.6, ease: "expo.out" }, 0.6);
+        tl.from(root + " .bi-doc-frame-highlight", { scale: 0.8, opacity: 0, duration: 0.4, ease: "back.out(1.4)" }, 1.4);
+        tl.from(root + " .bi-meta-chip", { y: 10, opacity: 0, duration: 0.3, stagger: 0.08, ease: "power2.out" }, 1.5);
+        tl.from(root + " .bi-tools", { x: -15, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.55);
+
+        tl.from(root + " .bi-prop-card", { y: 15, opacity: 0, duration: 0.35, stagger: 0.1, ease: "power3.out" }, 0.7);
+        tl.from(root + " .bi-binding", { scale: 0.9, opacity: 0, duration: 0.3, stagger: 0.1, ease: "back.out(1.4)" }, 1.5);
+
+        tl.from(root + " .bi-overlay", { y: 30, opacity: 0, duration: 0.55, ease: "expo.out" }, 2.0);
+
+        tl.to({}, { duration: 12 });
+        window.__timelines["beat-editor-idml"] = tl;
+      })();
+    </script>
+  </div>
+</template>

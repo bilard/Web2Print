@@ -110,55 +110,89 @@
 
         const tl = gsap.timeline({ paused: true });
 
-        const startScale = 1 - amp(0.10);
-        const endScale   = 1 + amp(0.10);
-        tl.from('#stage', { scale: startScale, opacity: 0, duration: dur(0.85), ease: EASE_IN }, 0);
-        tl.to('#stage', { scale: endScale, duration: dur(8.5), ease: 'sine.inOut' }, dur(1.0));
+        // ===== ENTRÉE DU STAGE : slide horizontal depuis la gauche =====
+        const slideAmp = amp(120);
+        tl.from('#stage', { x: -slideAmp, opacity: 0, duration: dur(0.9), ease: 'expo.out' }, 0);
+
+        // ===== OSCILLATION SÉQUENTIELLE (pas de yoyo — seek-safe) =====
+        tl.to('#stage', { x: slideAmp * 0.4, duration: dur(2.2), ease: 'sine.inOut' }, dur(1.5));
+        tl.to('#stage', { x: -slideAmp * 0.4, duration: dur(2.2), ease: 'sine.inOut' }, dur(3.7));
+        tl.to('#stage', { x: slideAmp * 0.3, duration: dur(2.0), ease: 'sine.inOut' }, dur(5.9));
+        tl.to('#stage', { x: 0, duration: dur(1.5), ease: 'sine.inOut' }, dur(7.9));
+
+        // ===== HUE-ROTATE séquentiel =====
+        tl.to('#stage', { filter: 'hue-rotate(60deg)',  duration: dur(2.0), ease: 'sine.inOut' }, dur(1.0));
+        tl.to('#stage', { filter: 'hue-rotate(-30deg)', duration: dur(2.0), ease: 'sine.inOut' }, dur(3.5));
+        tl.to('#stage', { filter: 'hue-rotate(45deg)',  duration: dur(2.0), ease: 'sine.inOut' }, dur(5.8));
+        tl.to('#stage', { filter: 'hue-rotate(0deg)',   duration: dur(1.5), ease: 'sine.inOut' }, dur(8.0));
+
+        // ===== SCALE pulse séquentiel =====
+        tl.to('#stage', { scale: 1.08, duration: dur(1.5), ease: 'sine.inOut' }, dur(1.5));
+        tl.to('#stage', { scale: 0.98, duration: dur(1.5), ease: 'sine.inOut' }, dur(3.5));
+        tl.to('#stage', { scale: 1.05, duration: dur(1.5), ease: 'sine.inOut' }, dur(5.5));
+        tl.to('#stage', { scale: 1.0,  duration: dur(1.5), ease: 'sine.inOut' }, dur(7.5));
 
         if (RASTER_ONLY) {
           tl.set(images, { opacity: 0, transformOrigin: '50% 50%' }, 0);
           tl.to(images, { opacity: 1, duration: dur(0.9), ease: EASE_IN }, dur(0.2));
+          // Ken Burns plus marqué
           tl.fromTo(images, {
-            x: -amp(60), y: amp(20), scale: 1.0,
+            x: -amp(80), y: amp(30), scale: 1.0,
           }, {
-            x: amp(60), y: -amp(20), scale: 1 + amp(0.15),
+            x: amp(80), y: -amp(30), scale: 1 + amp(0.20),
             duration: dur(8.5), ease: 'sine.inOut',
           }, dur(0.6));
         } else {
           const allSvgEls = [...shapes, ...images, ...texts];
           if (allSvgEls.length > 0) tl.set(allSvgEls, { opacity: 0 }, 0);
 
+          // Slide-in alterné gauche/droite sur les shapes (effet "blocs glissent")
           if (shapes.length > 0) {
-            tl.to(shapes, {
-              opacity: 1, duration: dur(0.5), ease: 'power2.out',
-              stagger: Math.min(0.04, 1.2 / shapes.length) * PACE_MULT,
-            }, dur(0.6));
+            shapes.forEach((shape, i) => {
+              const fromX = i % 2 === 0 ? -amp(200) : amp(200);
+              tl.fromTo(shape, { x: fromX, opacity: 0 }, {
+                x: 0, opacity: 1, duration: dur(0.7), ease: 'power3.out',
+              }, dur(0.4 + i * Math.min(0.03, 1.2 / shapes.length) * PACE_MULT));
+            });
           }
           if (images.length > 0) {
-            tl.to(images, {
-              opacity: 1, duration: dur(0.7), ease: EASE_IN,
-              stagger: Math.min(0.12, 1.5 / images.length) * PACE_MULT,
-            }, dur(1.8));
+            images.forEach((img, i) => {
+              const fromX = i % 2 === 0 ? amp(160) : -amp(160);
+              tl.fromTo(img, { x: fromX, opacity: 0 }, {
+                x: 0, opacity: 1, duration: dur(0.8), ease: 'power3.out',
+              }, dur(1.4 + i * Math.min(0.10, 1.5 / images.length) * PACE_MULT));
+            });
           }
           if (texts.length > 0) {
-            tl.to(texts, {
-              opacity: 1, duration: dur(0.6), ease: EASE_IN,
-              stagger: Math.min(0.08, 1.5 / texts.length) * PACE_MULT,
-            }, dur(3.0));
+            texts.forEach((txt, i) => {
+              const fromX = i % 2 === 0 ? -amp(140) : amp(140);
+              tl.fromTo(txt, { x: fromX, opacity: 0 }, {
+                x: 0, opacity: 1, duration: dur(0.7), ease: 'expo.out',
+              }, dur(2.6 + i * Math.min(0.08, 1.5 / texts.length) * PACE_MULT));
+            });
           }
         }
 
+        // ===== CAPTION : mots arrivent alternés gauche/droite + color cycle =====
         const wordEls = capInner.querySelectorAll('.word');
         if (wordEls.length > 0) {
-          tl.set(wordEls, { y: amp(50), opacity: 0 }, 0);
-          tl.to(wordEls, {
-            y: 0, opacity: 1,
-            duration: dur(0.7), ease: EASE_IN,
-            stagger: 0.07 * PACE_MULT,
-          }, dur(4.3));
-        }
+          tl.set(wordEls, { opacity: 0 }, 0);
+          Array.from(wordEls).forEach((w, i) => {
+            const fromX = i % 2 === 0 ? -amp(160) : amp(160);
+            tl.fromTo(w, { x: fromX, opacity: 0 }, {
+              x: 0, opacity: 1, duration: dur(0.65), ease: 'expo.out',
+            }, dur(4.0 + i * 0.12 * PACE_MULT));
+          });
 
-        if (wordEls.length > 0) tl.to(wordEls, { y: -amp(6), opacity: 0.85, duration: dur(0.6), ease: EASE_OUT }, dur(9.3));
+          // Color cycle séquentiel (pas yoyo — seek-safe)
+          tl.to(wordEls, { color: ACCENT,    duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(5.2));
+          tl.to(wordEls, { color: '#ffffff', duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(6.3));
+          tl.to(wordEls, { color: ACCENT,    duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(7.4));
+          tl.to(wordEls, { color: '#ffffff', duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(8.5));
+
+          // Pulse final sur les mots
+          tl.to(wordEls, { y: -amp(8), opacity: 0.9, duration: dur(0.6), ease: EASE_OUT }, dur(9.3));
+        }
 
         window.__timelines = window.__timelines || {};
         window.__timelines['design-reveal-landscape'] = tl;

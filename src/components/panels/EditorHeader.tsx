@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Undo2, Redo2, Download, ChevronLeft, Loader2, Save } from 'lucide-react'
+import { Undo2, Redo2, Download, ChevronLeft, Loader2, Save, Film } from 'lucide-react'
 import { useEditorStore } from '@/stores/editor.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { globalUndo, globalRedo } from '@/features/editor/CanvasContainer'
 import { globalSave } from '@/features/editor/useAutoSave'
 import { ExportModal } from '@/features/export/ExportModal'
+import { VideoModal } from '@/features/video/VideoModal'
 import { EditorTaxonomyBreadcrumb } from './EditorTaxonomyBreadcrumb'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 
@@ -15,7 +16,7 @@ export function EditorHeader() {
   const user = useAuthStore((s) => s.user)
   const [editing, setEditing] = useState(false)
   const [titleDraft, setTitleDraft] = useState(projectTitle)
-  const [showExport, setShowExport] = useState(false)
+  const [modal, setModal] = useState<null | 'export' | 'video'>(null)
   const saveHighlight = useHighlight<HTMLButtonElement>('editor-header.save')
   const exportHighlight = useHighlight<HTMLButtonElement>('editor-header.export')
 
@@ -117,10 +118,19 @@ export function EditorHeader() {
         <span className="hidden sm:block">Sauvegarder</span>
       </button>
 
+      <button
+        onClick={() => setModal('video')}
+        title="Générer une vidéo de la page"
+        className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+      >
+        <Film className="w-3.5 h-3.5" />
+        <span className="hidden sm:block">Vidéo</span>
+      </button>
+
       {/* Export */}
       <button
         ref={exportHighlight.ref}
-        onClick={() => setShowExport(true)}
+        onClick={() => setModal('export')}
         className={`flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${exportHighlight.className}`}
       >
         <Download className="w-3.5 h-3.5" />
@@ -133,7 +143,8 @@ export function EditorHeader() {
       )}
     </header>
 
-    {showExport && <ExportModal onClose={() => setShowExport(false)} />}
+    {modal === 'export' && <ExportModal onClose={() => setModal(null)} />}
+    {modal === 'video' && <VideoModal onClose={() => setModal(null)} />}
     </>
   )
 }

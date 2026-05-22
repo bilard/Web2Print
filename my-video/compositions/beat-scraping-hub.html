@@ -1,0 +1,314 @@
+<template id="beat-scraping-hub-template">
+  <div id="beat-scraping-hub" data-composition-id="beat-scraping-hub" data-width="1920" data-height="1080">
+    <div class="bsh-blackout"></div>
+
+    <div class="bsh-app">
+      <aside class="bsh-sidebar">
+        <div class="bsh-sb-logo">
+          <div class="bsh-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="bsh-sb-brand">Web2Print</span>
+        </div>
+        <nav class="bsh-sb-nav">
+          <span class="bsh-sb-item">+ Nouveau document</span>
+          <span class="bsh-sb-item">↑ Importer</span>
+          <span class="bsh-sb-item">▥ Bibliothèque</span>
+          <span class="bsh-sb-item">▣ DAM</span>
+          <span class="bsh-sb-item">▤ PIM</span>
+          <span class="bsh-sb-item">⊟ Taxonomies</span>
+          <span class="bsh-sb-item">◉ Templates scraping</span>
+          <span class="bsh-sb-item bsh-sb-item--active">▦ Scraping Hub</span>
+          <span class="bsh-sb-item">⇆ Workflows</span>
+          <span class="bsh-sb-item">◗ Chat IA</span>
+        </nav>
+      </aside>
+
+      <main class="bsh-main">
+        <header class="bsh-header">
+          <h1 class="bsh-title">Scraping Hub</h1>
+          <p class="bsh-sub">Votre base de connaissances : recettes, sélecteurs, contournements bot, partagés entre projets.</p>
+        </header>
+
+        <div class="bsh-toolbar">
+          <span class="bsh-search">⌕ Rechercher un site, une marque…</span>
+          <span class="bsh-pill bsh-pill--active">Tous · 42</span>
+          <span class="bsh-pill">Outillage · 12</span>
+          <span class="bsh-pill">Maison · 18</span>
+          <span class="bsh-pill">Jardin · 8</span>
+          <span class="bsh-pill">Plomberie · 4</span>
+        </div>
+
+        <div class="bsh-grid">
+          <article class="bsh-card">
+            <div class="bsh-card-head">
+              <span class="bsh-card-pill" style="background:#dc262633;color:#ef4444">M</span>
+              <div class="bsh-card-titles">
+                <span class="bsh-card-name">milwaukeetool.fr</span>
+                <span class="bsh-card-meta">Outillage électroportatif</span>
+              </div>
+              <span class="bsh-card-fav">★</span>
+            </div>
+            <div class="bsh-card-stats">
+              <div class="bsh-stat"><strong>132</strong><span>produits</span></div>
+              <div class="bsh-stat"><strong>14</strong><span>champs</span></div>
+              <div class="bsh-stat"><strong>v1.4</strong><span>recette</span></div>
+            </div>
+            <div class="bsh-card-tags">
+              <span class="bsh-tag">specs dropdown</span>
+              <span class="bsh-tag">JSON-LD</span>
+            </div>
+          </article>
+
+          <article class="bsh-card bsh-card--active">
+            <div class="bsh-card-head">
+              <span class="bsh-card-pill" style="background:#2563eb33;color:#3b82f6">B</span>
+              <div class="bsh-card-titles">
+                <span class="bsh-card-name">bosch-professional.com</span>
+                <span class="bsh-card-meta">Outillage électroportatif</span>
+              </div>
+              <span class="bsh-card-fav">★</span>
+            </div>
+            <div class="bsh-card-stats">
+              <div class="bsh-stat"><strong>248</strong><span>produits</span></div>
+              <div class="bsh-stat"><strong>16</strong><span>champs</span></div>
+              <div class="bsh-stat"><strong>v2.1</strong><span>recette</span></div>
+            </div>
+            <div class="bsh-card-tags">
+              <span class="bsh-tag">datalayer</span>
+              <span class="bsh-tag">PDF specs</span>
+              <span class="bsh-tag">multi-pays</span>
+            </div>
+          </article>
+
+          <article class="bsh-card">
+            <div class="bsh-card-head">
+              <span class="bsh-card-pill" style="background:#16a34a33;color:#22c55e">L</span>
+              <div class="bsh-card-titles">
+                <span class="bsh-card-name">leroymerlin.fr</span>
+                <span class="bsh-card-meta">GSB · Multi-catégories</span>
+              </div>
+              <span class="bsh-card-fav">★</span>
+            </div>
+            <div class="bsh-card-stats">
+              <div class="bsh-stat"><strong>1 240</strong><span>produits</span></div>
+              <div class="bsh-stat"><strong>22</strong><span>champs</span></div>
+              <div class="bsh-stat"><strong>v3.2</strong><span>recette</span></div>
+            </div>
+            <div class="bsh-card-tags">
+              <span class="bsh-tag">breadcrumb taxo</span>
+              <span class="bsh-tag">avis clients</span>
+            </div>
+          </article>
+
+          <article class="bsh-card">
+            <div class="bsh-card-head">
+              <span class="bsh-card-pill" style="background:#facc1533;color:#eab308">D</span>
+              <div class="bsh-card-titles">
+                <span class="bsh-card-name">dewalt.fr</span>
+                <span class="bsh-card-meta">Outillage électroportatif</span>
+              </div>
+              <span class="bsh-card-fav bsh-card-fav--off">☆</span>
+            </div>
+            <div class="bsh-card-stats">
+              <div class="bsh-stat"><strong>89</strong><span>produits</span></div>
+              <div class="bsh-stat"><strong>11</strong><span>champs</span></div>
+              <div class="bsh-stat bsh-stat--warn"><strong>v1.0</strong><span>à mettre à jour</span></div>
+            </div>
+            <div class="bsh-card-tags">
+              <span class="bsh-tag">React SPA</span>
+            </div>
+          </article>
+
+          <article class="bsh-card">
+            <div class="bsh-card-head">
+              <span class="bsh-card-pill" style="background:#ec489933;color:#ec4899">N</span>
+              <div class="bsh-card-titles">
+                <span class="bsh-card-name">nicoll.fr</span>
+                <span class="bsh-card-meta">Plomberie · PVC</span>
+              </div>
+              <span class="bsh-card-fav">★</span>
+            </div>
+            <div class="bsh-card-stats">
+              <div class="bsh-stat"><strong>184</strong><span>produits</span></div>
+              <div class="bsh-stat"><strong>18</strong><span>champs</span></div>
+              <div class="bsh-stat"><strong>v1.7</strong><span>recette</span></div>
+            </div>
+            <div class="bsh-card-tags">
+              <span class="bsh-tag">tableaux specs</span>
+              <span class="bsh-tag">PDF fiches</span>
+            </div>
+          </article>
+
+          <article class="bsh-card">
+            <div class="bsh-card-head">
+              <span class="bsh-card-pill" style="background:#0ea5e933;color:#38bdf8">J</span>
+              <div class="bsh-card-titles">
+                <span class="bsh-card-name">jardiland.com</span>
+                <span class="bsh-card-meta">Jardin · Animalerie</span>
+              </div>
+              <span class="bsh-card-fav">★</span>
+            </div>
+            <div class="bsh-card-stats">
+              <div class="bsh-stat"><strong>312</strong><span>produits</span></div>
+              <div class="bsh-stat"><strong>13</strong><span>champs</span></div>
+              <div class="bsh-stat"><strong>v1.2</strong><span>recette</span></div>
+            </div>
+            <div class="bsh-card-tags">
+              <span class="bsh-tag">prix variants</span>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+
+    <style>
+      #beat-scraping-hub {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-scraping-hub .bsh-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-scraping-hub .bsh-app {
+        position: absolute; inset: 0; display: grid; grid-template-columns: 260px 1fr;
+      }
+      #beat-scraping-hub .bsh-sidebar {
+        background: #141414; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 18px 14px; display: flex; flex-direction: column; gap: 18px;
+      }
+      #beat-scraping-hub .bsh-sb-logo { display: flex; align-items: center; gap: 12px; padding: 4px; }
+      #beat-scraping-hub .bsh-sb-logomark {
+        width: 32px; height: 32px; background: #6366F1; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      #beat-scraping-hub .bsh-sb-logomark svg { width: 18px; height: 18px; }
+      #beat-scraping-hub .bsh-sb-brand { font-size: 17px; font-weight: 600; color: rgba(255,255,255,0.95); }
+      #beat-scraping-hub .bsh-sb-nav { display: flex; flex-direction: column; gap: 3px; }
+      #beat-scraping-hub .bsh-sb-item {
+        font-size: 14px; padding: 9px 14px; border-radius: 7px; color: rgba(255,255,255,0.55);
+      }
+      #beat-scraping-hub .bsh-sb-item--active {
+        background: rgba(56,189,248,0.12); color: #38BDF8; font-weight: 500;
+      }
+
+      #beat-scraping-hub .bsh-main {
+        padding: 50px 70px; display: flex; flex-direction: column; gap: 26px; overflow: hidden;
+      }
+      #beat-scraping-hub .bsh-header { display: flex; flex-direction: column; gap: 6px; }
+      #beat-scraping-hub .bsh-title {
+        margin: 0; font-size: 48px; font-weight: 700; color: #F2F2F2; letter-spacing: -0.02em;
+      }
+      #beat-scraping-hub .bsh-sub {
+        margin: 0; font-size: 17px; color: rgba(255,255,255,0.55); max-width: 760px;
+      }
+      #beat-scraping-hub .bsh-toolbar {
+        display: flex; gap: 10px; align-items: center;
+      }
+      #beat-scraping-hub .bsh-search {
+        flex: 1; padding: 11px 18px;
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 8px; font-size: 14px; color: rgba(255,255,255,0.4);
+        max-width: 380px;
+      }
+      #beat-scraping-hub .bsh-pill {
+        padding: 9px 16px; background: #1A1A1A; border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 999px; font-size: 13px; color: rgba(255,255,255,0.65);
+      }
+      #beat-scraping-hub .bsh-pill--active {
+        background: rgba(56,189,248,0.12); color: #38BDF8; border-color: rgba(56,189,248,0.3);
+        font-weight: 600;
+      }
+      #beat-scraping-hub .bsh-grid {
+        flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+        overflow-y: auto;
+      }
+      #beat-scraping-hub .bsh-card {
+        background: #141414; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+        padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;
+      }
+      #beat-scraping-hub .bsh-card--active {
+        background: rgba(56,189,248,0.06); border-color: rgba(56,189,248,0.35);
+      }
+      #beat-scraping-hub .bsh-card-head {
+        display: flex; align-items: center; gap: 12px;
+      }
+      #beat-scraping-hub .bsh-card-pill {
+        width: 38px; height: 38px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; font-weight: 800;
+      }
+      #beat-scraping-hub .bsh-card-titles {
+        flex: 1; display: flex; flex-direction: column; gap: 2px;
+      }
+      #beat-scraping-hub .bsh-card-name {
+        font-size: 15px; font-weight: 600; color: #F2F2F2;
+      }
+      #beat-scraping-hub .bsh-card-meta {
+        font-size: 12px; color: rgba(255,255,255,0.4);
+      }
+      #beat-scraping-hub .bsh-card-fav {
+        color: #FBBF24; font-size: 16px;
+      }
+      #beat-scraping-hub .bsh-card-fav--off {
+        color: rgba(255,255,255,0.2);
+      }
+      #beat-scraping-hub .bsh-card-stats {
+        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+      }
+      #beat-scraping-hub .bsh-stat {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05); border-radius: 6px;
+        padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+      }
+      #beat-scraping-hub .bsh-stat strong {
+        font-size: 18px; font-weight: 700; color: #F2F2F2; letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+      }
+      #beat-scraping-hub .bsh-stat span {
+        font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.06em; text-transform: uppercase;
+      }
+      #beat-scraping-hub .bsh-stat--warn strong { color: #FBBF24; }
+      #beat-scraping-hub .bsh-stat--warn span { color: #FBBF24; }
+      #beat-scraping-hub .bsh-card-tags {
+        display: flex; flex-wrap: wrap; gap: 6px;
+      }
+      #beat-scraping-hub .bsh-tag {
+        font-size: 11px; padding: 4px 10px;
+        background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+        border: 1px solid rgba(255,255,255,0.05); border-radius: 4px;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-scraping-hub';
+
+        tl.to(root + " .bsh-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+        tl.from(root + " .bsh-sidebar", { x: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bsh-title", { y: 20, opacity: 0, duration: 0.5, ease: "expo.out" }, 0.25);
+        tl.from(root + " .bsh-sub",   { y: 15, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.4);
+        tl.from(root + " .bsh-toolbar > *", { y: -10, opacity: 0, duration: 0.3, stagger: 0.05, ease: "power2.out" }, 0.55);
+
+        tl.from(root + " .bsh-card", {
+          y: 30, opacity: 0, scale: 0.95,
+          duration: 0.45, stagger: 0.08, ease: "back.out(1.3)",
+          transformOrigin: "50% 50%",
+        }, 0.7);
+
+        tl.from(root + " .bsh-card-stats .bsh-stat", { y: 10, opacity: 0, duration: 0.3, stagger: 0.03, ease: "power2.out" }, 1.4);
+        tl.from(root + " .bsh-tag", { scale: 0.7, opacity: 0, duration: 0.25, stagger: 0.02, ease: "back.out(1.6)", transformOrigin: "50% 50%" }, 1.7);
+
+                tl.to({}, { duration: 6 });
+        window.__timelines["beat-scraping-hub"] = tl;
+      })();
+    </script>
+  </div>
+</template>

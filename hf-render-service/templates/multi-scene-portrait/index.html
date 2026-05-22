@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="./mockups.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px;
+        background: #0a0a0a; overflow: hidden;
+        font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, "Segoe UI", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      [data-composition-id="multi-scene-portrait"] {
+        position: relative; width: 1080px; height: 1920px;
+        background: #0a0a0a; overflow: hidden;
+      }
+      .scene-halo {
+        position: absolute; inset: 0;
+        background: radial-gradient(circle at 50% 38%, var(--halo, rgba(255,255,255,0.10)) 0%, transparent 55%);
+        pointer-events: none; opacity: 0; will-change: opacity;
+      }
+      .mockup-bg { position: absolute; inset: 0; opacity: 0.55; pointer-events: none; z-index: 0; }
+      .scene-image { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+      .scene-image img { width: 100%; height: 100%; object-fit: cover; object-position: center; will-change: transform; }
+      .scene-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.65) 100%); pointer-events: none; }
+      .scene-decor { position: absolute; inset: 0; opacity: 0.6; pointer-events: none; z-index: 0; }
+      .mockup-stroke { stroke-dasharray: 1200; stroke-dashoffset: 0; }
+      .mockup-bar { transform-box: fill-box; transform-origin: center bottom; }
+      .mockup-pop { transform-box: fill-box; transform-origin: center; }
+      .mockup-card { }
+      .mockup-blob { will-change: transform, opacity; }
+      .scene {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 160px 80px;
+        opacity: 0; will-change: opacity, transform;
+      }
+      .scene > *:not(.mockup-bg):not(.scene-halo):not(.scene-decor):not(.scene-image) {
+        position: relative; z-index: 1;
+      }
+      .scene-hook .title {
+        font-size: 160px; font-weight: 900; line-height: 0.95;
+        letter-spacing: -0.04em; text-align: center;
+        will-change: transform, opacity;
+      }
+      .scene-hook .sub {
+        margin-top: 40px;
+        font-size: 42px; font-weight: 500;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        opacity: 0.7; text-align: center;
+      }
+      .scene-visual .title {
+        font-size: 96px; font-weight: 800;
+        letter-spacing: -0.03em; text-align: center;
+        line-height: 0.98; max-width: 920px;
+      }
+      .scene-visual .sub {
+        margin-top: 24px;
+        font-size: 36px; font-weight: 400;
+        opacity: 0.65; text-align: center; max-width: 880px;
+      }
+      .scene-visual .kpi-grid {
+        margin-top: 96px;
+        display: flex; flex-direction: column; gap: 28px;
+        justify-content: center; align-items: stretch;
+        width: 100%; max-width: 720px;
+      }
+      .scene-visual .kpi {
+        padding: 32px 40px;
+        border: 2px solid currentColor;
+        border-radius: 22px;
+        font-size: 68px; font-weight: 800;
+        letter-spacing: -0.02em;
+        text-align: center;
+        will-change: transform, opacity;
+      }
+      .scene-cta .label {
+        font-size: 150px; font-weight: 900; line-height: 0.95;
+        letter-spacing: -0.04em; text-align: center;
+      }
+      .scene-cta .url {
+        margin-top: 48px;
+        font-size: 36px; font-weight: 500;
+        letter-spacing: 0.15em; text-transform: uppercase;
+        opacity: 0.7; text-align: center;
+      }
+      .accent-bar {
+        margin-top: 64px;
+        width: 180px; height: 8px;
+        border-radius: 4px;
+        transform-origin: left center;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="multi-scene-portrait"
+      data-start="0"
+      data-duration="12"
+      data-width="1080"
+      data-height="1920"
+      data-composition-variables='[
+        {"id":"composition","type":"object","label":"Composition multi-scènes (scenes[],palette,pace)","default":null},
+        {"id":"brand","type":"string","label":"Marque (optionnel)","default":""}
+      ]'
+    >
+    </div>
+
+    <script>
+      (async function () {
+        const hf = window.__hyperframes;
+        const vars = (hf && typeof hf.getVariables === 'function' ? hf.getVariables() : {}) || {};
+        const root = document.getElementById('root');
+
+        const FALLBACK = {
+          scenes: [
+            { type: 'hook',   duration: 2.0, title: 'Annimation', sub: 'Vidéo IA' },
+            { type: 'visual', duration: 4.0, title: 'Web2Print', kpis: ['IA', 'Print', 'Web'] },
+            { type: 'cta',    duration: 2.0, label: 'En savoir plus' },
+          ],
+          palette: { bg: '#0a0a0a', accent: '#ffffff' },
+          pace: 'normal',
+        };
+        const comp = vars.composition && Array.isArray(vars.composition.scenes) && vars.composition.scenes.length
+          ? vars.composition
+          : FALLBACK;
+
+        console.log('[multi-scene-portrait] composition reçue:', {
+          transition: comp.transition,
+          scenes: (comp.scenes || []).map((s) => ({
+            type: s.type,
+            entryAnim: s.entryAnim,
+            customAnimations: Array.isArray(s.customAnimations) ? s.customAnimations.length : 0,
+          })),
+        });
+
+        const BG = (comp.palette && comp.palette.bg) || '#0a0a0a';
+        const ACCENT = (comp.palette && comp.palette.accent) || '#ffffff';
+        const PACE_MULT = { slow: 1.2, normal: 1.0, fast: 0.8 }[comp.pace] ?? 1.0;
+        const dur = (d) => d * PACE_MULT;
+
+        document.body.style.background = BG;
+        const rootEl = document.querySelector('[data-composition-id="multi-scene-portrait"]');
+        if (rootEl) rootEl.style.background = BG;
+
+        function el(tag, cls, text) {
+          const e = document.createElement(tag);
+          if (cls) e.className = cls;
+          if (text != null) e.textContent = String(text);
+          return e;
+        }
+
+        const THEME = comp.theme || 'default';
+        const W = 1080, H = 1920;
+
+        function hexToRgba(hex, alpha) {
+          const m = /^#?([a-f0-9]{6})$/i.exec(hex);
+          if (!m) return 'rgba(255,255,255,' + alpha + ')';
+          const r = parseInt(m[1].slice(0, 2), 16);
+          const g = parseInt(m[1].slice(2, 4), 16);
+          const b = parseInt(m[1].slice(4, 6), 16);
+          return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+        }
+
+        function addDecor(container, withBlobs) {
+          const halo = el('div', 'scene-halo');
+          halo.style.setProperty('--halo', hexToRgba(ACCENT, 0.16));
+          container.appendChild(halo);
+          if (withBlobs && window.HFMockups) {
+            const decor = el('div', 'scene-decor');
+            decor.innerHTML =
+              '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">' +
+              window.HFMockups.decorativeBlobs(W, H, ACCENT) +
+              '</svg>';
+            container.appendChild(decor);
+          }
+        }
+
+        function addMockupBg(container, theme) {
+          if (!window.HFMockups) return;
+          const bg = el('div', 'mockup-bg');
+          bg.innerHTML = window.HFMockups.buildMockupSvg(theme, W, H, ACCENT);
+          container.appendChild(bg);
+        }
+
+        function addImageBg(container, imageUrl) {
+          const wrap = el('div', 'scene-image');
+          const img = document.createElement('img');
+          img.src = imageUrl;
+          img.alt = '';
+          // crossOrigin retiré : Firebase Storage n'a pas CORS configuré et bloquait
+          // l'affichage en preview live. Pour le MP4 final côté Cloud Run, prévoir
+          // 'gsutil cors set' sur le bucket si Puppeteer doit capturer ces images.
+          wrap.appendChild(img);
+          container.appendChild(wrap);
+        }
+
+        function buildHook(scene, container) {
+          addDecor(container, true);
+          if (scene.imageUrl) addImageBg(container, scene.imageUrl);
+          container.style.color = ACCENT;
+          if (scene.title) {
+            const t = el('div', 'title');
+            const words = String(scene.title).split(/\s+/).filter(Boolean);
+            words.forEach((w) => {
+              const span = el('span', 'word', w);
+              span.style.display = 'inline-block';
+              span.style.paddingRight = '0.22em';
+              t.appendChild(span);
+            });
+            container.appendChild(t);
+          }
+          if (scene.sub) container.appendChild(el('div', 'sub', scene.sub));
+        }
+
+        function buildVisual(scene, container) {
+          addDecor(container, false);
+          addMockupBg(container, THEME);
+          if (scene.imageUrl) addImageBg(container, scene.imageUrl);
+          container.style.color = ACCENT;
+          if (scene.title) container.appendChild(el('div', 'title', scene.title));
+          if (scene.sub) container.appendChild(el('div', 'sub', scene.sub));
+          if (Array.isArray(scene.kpis) && scene.kpis.length) {
+            const grid = el('div', 'kpi-grid');
+            scene.kpis.slice(0, 4).forEach((k) => grid.appendChild(el('div', 'kpi', k)));
+            container.appendChild(grid);
+          }
+        }
+
+        function buildCta(scene, container) {
+          addDecor(container, true);
+          if (scene.imageUrl) addImageBg(container, scene.imageUrl);
+          container.style.color = ACCENT;
+          if (scene.label) {
+            const l = el('div', 'label');
+            const words = String(scene.label).split(/\s+/).filter(Boolean);
+            words.forEach((w) => {
+              const span = el('span', 'word', w);
+              span.style.display = 'inline-block';
+              span.style.paddingRight = '0.22em';
+              l.appendChild(span);
+            });
+            container.appendChild(l);
+          }
+          if (scene.url) container.appendChild(el('div', 'url', scene.url));
+          const bar = el('div', 'accent-bar');
+          bar.style.background = ACCENT;
+          container.appendChild(bar);
+        }
+
+        function animateBackgroundLayers(container, sceneDur, tl) {
+          const imgWrap = container.querySelector('.scene-image');
+          const imgEl = imgWrap ? imgWrap.querySelector('img') : null;
+          if (imgEl) {
+            tl.from(imgWrap, { opacity: 0, duration: dur(0.6), ease: 'power2.out' }, 0);
+            tl.fromTo(imgEl, { scale: 1.0, x: -20, y: 10 }, { scale: 1.15, x: 20, y: -10, duration: sceneDur, ease: 'sine.inOut', transformOrigin: '50% 50%' }, 0);
+          }
+          const halo = container.querySelector('.scene-halo');
+          if (halo) tl.to(halo, { opacity: 1, duration: dur(0.8), ease: 'power2.out' }, 0);
+          const blobs = container.querySelectorAll('.mockup-blob');
+          if (blobs.length) {
+            tl.from(blobs, { scale: 0.85, opacity: 0, duration: dur(0.7), ease: 'power2.out', stagger: 0.06 * PACE_MULT, transformOrigin: '50% 50%' }, 0);
+            tl.to(blobs, { x: (i) => (i % 2 === 0 ? 30 : -30), y: (i) => (i % 2 === 0 ? -20 : 20), duration: sceneDur, ease: 'sine.inOut' }, 0);
+          }
+          const mockup = container.querySelector('.mockup-bg');
+          if (mockup) tl.from(mockup, { opacity: 0, duration: dur(0.6), ease: 'power2.out' }, 0);
+          const strokes = container.querySelectorAll('.mockup-stroke');
+          if (strokes.length) tl.from(strokes, { strokeDashoffset: 1200, duration: dur(1.4), ease: 'power2.inOut', stagger: 0.08 * PACE_MULT }, dur(0.2));
+          const bars = container.querySelectorAll('.mockup-bar');
+          if (bars.length) tl.from(bars, { scaleY: 0, transformOrigin: 'center bottom', duration: dur(0.6), ease: 'power3.out', stagger: 0.04 * PACE_MULT }, dur(0.3));
+          const pops = container.querySelectorAll('.mockup-pop');
+          if (pops.length) tl.from(pops, { opacity: 0, scale: 0.7, transformOrigin: 'center', duration: dur(0.45), ease: 'back.out(1.5)', stagger: 0.03 * PACE_MULT }, dur(0.6));
+          const cards = container.querySelectorAll('.mockup-card');
+          if (cards.length) tl.from(cards, { opacity: 0, duration: dur(0.4), ease: 'power2.out', stagger: 0.05 * PACE_MULT }, dur(0.2));
+        }
+
+        function toGsapProps(props) {
+          if (!props || typeof props !== 'object') return null;
+          const out = {};
+          const filters = [];
+          for (const key in props) {
+            if (!Object.prototype.hasOwnProperty.call(props, key)) continue;
+            const v = props[key];
+            if (v == null) continue;
+            if (key === 'blur')            filters.push('blur(' + Math.max(0, Math.min(60, v)) + 'px)');
+            else if (key === 'brightness') filters.push('brightness(' + Math.max(0, Math.min(3, v)) + ')');
+            else if (key === 'hueRotate')  filters.push('hue-rotate(' + v + 'deg)');
+            else if (key === 'saturate')   filters.push('saturate(' + Math.max(0, Math.min(3, v)) + ')');
+            else if (key === 'contrast')   filters.push('contrast(' + Math.max(0, Math.min(3, v)) + ')');
+            else                           out[key] = v;
+          }
+          if (filters.length) out.filter = filters.join(' ');
+          return out;
+        }
+
+        function applyCustomAnimations(scene, container, _sceneDur, tl) {
+          const list = Array.isArray(scene && scene.customAnimations) ? scene.customAnimations : [];
+          for (let i = 0; i < list.length; i++) {
+            const d = list[i];
+            if (!d || typeof d.target !== 'string' || !d.target.trim()) continue;
+            let targets;
+            try { targets = container.querySelectorAll(d.target); }
+            catch (_e) { console.warn('[customAnim] sélecteur invalide:', d.target); continue; }
+            if (!targets.length) continue;
+            const from = toGsapProps(d.from);
+            const to = toGsapProps(d.to);
+            const baseDur = typeof d.duration === 'number' ? Math.max(0.05, Math.min(15, d.duration)) : 0.6;
+            const opts = {
+              duration: dur(baseDur),
+              ease: typeof d.ease === 'string' ? d.ease : 'power2.out',
+            };
+            if (typeof d.stagger === 'number') opts.stagger = Math.max(0, Math.min(2, d.stagger)) * PACE_MULT;
+            if (typeof d.repeat === 'number')  opts.repeat  = Math.max(0, Math.min(5, d.repeat));
+            if (d.yoyo === true) opts.yoyo = true;
+            const startAt = typeof d.start === 'number' ? dur(Math.max(0, Math.min(15, d.start))) : 0;
+            try {
+              if (from && to) tl.fromTo(targets, from, Object.assign({}, to, opts), startAt);
+              else if (to)    tl.to(targets, Object.assign({}, to, opts), startAt);
+              else if (from)  tl.from(targets, Object.assign({}, from, opts), startAt);
+            } catch (err) {
+              console.warn('[customAnim] tween échoué:', err && err.message, d);
+            }
+          }
+        }
+
+        function entryFrom(scene, baseProps) {
+          const anim = scene && scene.entryAnim;
+          switch (anim) {
+            case 'slide-left':  return { x: 180, opacity: 0 };
+            case 'slide-right': return { x: -180, opacity: 0 };
+            case 'fade':        return { opacity: 0 };
+            case 'scale':       return { scale: 0.85, opacity: 0 };
+            case 'blur':        return { filter: 'blur(24px)', opacity: 0 };
+            case 'rise':
+            default:            return Object.assign({ opacity: 0 }, baseProps);
+          }
+        }
+
+        function timelineForHook(scene, container, sceneDur) {
+          const tl = gsap.timeline();
+          animateBackgroundLayers(container, sceneDur, tl);
+          const titleEl = container.querySelector('.title');
+          const subEl = container.querySelector('.sub');
+          const words = container.querySelectorAll('.title .word');
+          const entry = entryFrom(scene, { y: 100 });
+          if (words.length) {
+            tl.from(words, Object.assign({}, entry, { duration: dur(0.75), ease: 'expo.out', stagger: 0.06 * PACE_MULT }), dur(0.3));
+          } else if (titleEl) {
+            tl.from(titleEl, Object.assign({}, entry, { duration: dur(0.75), ease: 'expo.out' }), dur(0.3));
+          }
+          if (subEl) tl.from(subEl, Object.assign({}, entryFrom(scene, { y: 18 }), { duration: dur(0.5), ease: 'power2.out' }), dur(0.7));
+          tl.to(container, { scale: 1.03, duration: sceneDur, ease: 'sine.inOut' }, 0);
+          applyCustomAnimations(scene, container, sceneDur, tl);
+          return tl;
+        }
+
+        function timelineForVisual(scene, container, sceneDur) {
+          const tl = gsap.timeline();
+          animateBackgroundLayers(container, sceneDur, tl);
+          const titleEl = container.querySelector('.title');
+          const subEl = container.querySelector('.sub');
+          const kpis = container.querySelectorAll('.kpi');
+          if (titleEl) tl.from(titleEl, Object.assign({}, entryFrom(scene, { y: 50 }), { duration: dur(0.6), ease: 'expo.out' }), dur(0.3));
+          if (subEl) tl.from(subEl, Object.assign({}, entryFrom(scene, { y: 0 }), { duration: dur(0.4), ease: 'power2.out' }), dur(0.6));
+          if (kpis.length) {
+            tl.from(kpis, Object.assign({}, entryFrom(scene, { x: -60 }), { duration: dur(0.55), ease: 'back.out(1.3)', stagger: 0.1 * PACE_MULT }), dur(0.8));
+          }
+          tl.to(container, { scale: 1.02, duration: sceneDur, ease: 'sine.inOut' }, 0);
+          applyCustomAnimations(scene, container, sceneDur, tl);
+          return tl;
+        }
+
+        function timelineForCta(scene, container, sceneDur) {
+          const tl = gsap.timeline();
+          animateBackgroundLayers(container, sceneDur, tl);
+          const labelEl = container.querySelector('.label');
+          const urlEl = container.querySelector('.url');
+          const bar = container.querySelector('.accent-bar');
+          const words = container.querySelectorAll('.label .word');
+          const entry = entryFrom(scene, { y: 70 });
+          if (words.length) {
+            tl.from(words, Object.assign({}, entry, { duration: dur(0.65), ease: 'expo.out', stagger: 0.06 * PACE_MULT }), dur(0.3));
+          } else if (labelEl) {
+            tl.from(labelEl, Object.assign({}, entry, { duration: dur(0.65), ease: 'expo.out' }), dur(0.3));
+          }
+          if (urlEl) tl.from(urlEl, Object.assign({}, entryFrom(scene, { y: 14 }), { duration: dur(0.45), ease: 'power2.out' }), dur(0.55));
+          if (bar) tl.from(bar, { scaleX: 0, opacity: 0, duration: dur(0.55), ease: 'power3.out' }, dur(0.7));
+          applyCustomAnimations(scene, container, sceneDur, tl);
+          return tl;
+        }
+
+        const builders = { hook: buildHook, visual: buildVisual, cta: buildCta };
+        const tlBuilders = { hook: timelineForHook, visual: timelineForVisual, cta: timelineForCta };
+
+        const TRANSITION = comp.transition || 'fade';
+        const TRANS_IN_FROM = {
+          'fade':     { opacity: 0 },
+          'slide-lr': { x: -W, opacity: 0 },
+          'slide-rl': { x:  W, opacity: 0 },
+          'slide-tb': { y: -H, opacity: 0 },
+          'slide-bt': { y:  H, opacity: 0 },
+          'wipe-lr':  { clipPath: 'inset(0% 100% 0% 0%)', opacity: 1 },
+          'zoom':     { scale: 0.82, opacity: 0 },
+          'cut':      { opacity: 0 },
+        };
+        const TRANS_OUT_TO = {
+          'fade':     { opacity: 0 },
+          'slide-lr': { x:  W, opacity: 0 },
+          'slide-rl': { x: -W, opacity: 0 },
+          'slide-tb': { y:  H, opacity: 0 },
+          'slide-bt': { y: -H, opacity: 0 },
+          'wipe-lr':  { clipPath: 'inset(0% 0% 0% 100%)', opacity: 1 },
+          'zoom':     { scale: 1.18, opacity: 0 },
+          'cut':      { opacity: 0 },
+        };
+        const TRANS_RESET = { opacity: 1, x: 0, y: 0, scale: 1, clipPath: 'inset(0% 0% 0% 0%)' };
+        const isCut = TRANSITION === 'cut';
+        const transInDur  = isCut ? 0.001 : 0.55;
+        const transOutDur = isCut ? 0.001 : 0.55;
+        const transInEase  = TRANSITION.startsWith('slide') || TRANSITION === 'wipe-lr' ? 'power3.out' : 'power2.out';
+        const transOutEase = TRANSITION.startsWith('slide') || TRANSITION === 'wipe-lr' ? 'power3.in'  : 'power2.in';
+
+        // Préload Nano Banana avant de signaler la timeline (cf square).
+        const imageUrls = comp.scenes.filter((s) => s && s.imageUrl).map((s) => s.imageUrl);
+        if (imageUrls.length > 0) {
+          await Promise.all(imageUrls.map((url) => new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => { console.warn('[multi-scene-portrait] image load failed:', url); resolve(); };
+            img.src = url;
+          })));
+        }
+
+        const master = gsap.timeline({ paused: true });
+        let cursor = 0;
+
+        comp.scenes.forEach((scene, sceneIndex) => {
+          const type = builders[scene.type] ? scene.type : 'visual';
+          const sceneDur = dur(typeof scene.duration === 'number' ? scene.duration : 3);
+          const container = el('div', 'scene scene-' + type);
+          root.appendChild(container);
+          builders[type](scene, container);
+
+          const local = tlBuilders[type](scene, container, sceneDur);
+          const isLast = sceneIndex === comp.scenes.length - 1;
+          const inDur = dur(transInDur);
+          const outDur = dur(transOutDur);
+
+          master.set(container, Object.assign({ opacity: 0 }, TRANS_IN_FROM[TRANSITION] || TRANS_IN_FROM.fade), cursor);
+          master.to(container, Object.assign({}, TRANS_RESET, { duration: inDur, ease: transInEase }), cursor);
+          master.add(local, cursor + inDur * 0.4);
+
+          if (!isLast) {
+            master.to(container, Object.assign({}, TRANS_OUT_TO[TRANSITION] || TRANS_OUT_TO.fade, { duration: outDur, ease: transOutEase }), cursor + sceneDur - outDur);
+          } else {
+            master.to(container, { opacity: 0, duration: dur(0.45), ease: 'power2.in' }, cursor + sceneDur - dur(0.45));
+          }
+
+          cursor += sceneDur;
+        });
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines['multi-scene-portrait'] = master;
+
+        const newDuration = cursor;
+        if (newDuration > 0) root.setAttribute('data-duration', String(newDuration.toFixed(2)));
+      })();
+    </script>
+  </body>
+</html>

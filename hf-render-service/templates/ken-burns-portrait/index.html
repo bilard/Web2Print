@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px;
+        background: #000; overflow: hidden;
+        font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, "Segoe UI", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: "kern", "liga";
+      }
+      [data-composition-id="ken-burns-portrait"] {
+        position: relative;
+        width: 1080px; height: 1920px;
+        background: #0a0a0a;
+        overflow: hidden;
+      }
+
+      .bg-wrap { position: absolute; inset: 0; will-change: transform, opacity; }
+      .bg {
+        position: absolute;
+        inset: -8%;
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        transform-origin: 50% 50%;
+        will-change: transform;
+        filter: brightness(0.94) contrast(1.04) saturate(1.05);
+      }
+
+      .top-fade {
+        position: absolute; top: 0; left: 0; right: 0; height: 360px;
+        background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.32) 50%, rgba(0,0,0,0) 100%);
+        pointer-events: none;
+      }
+      .bottom-fade {
+        position: absolute; bottom: 0; left: 0; right: 0; height: 920px;
+        background: linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.75) 25%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0) 100%);
+        pointer-events: none;
+      }
+
+      .brand {
+        position: absolute; top: 72px; left: 80px;
+        display: flex; align-items: center; gap: 18px;
+        color: #fff;
+        font-size: 30px; font-weight: 600;
+        letter-spacing: 0.22em; text-transform: uppercase;
+        text-shadow: 0 4px 16px rgba(0,0,0,0.7);
+        will-change: transform, opacity;
+      }
+      .brand .dot { width: 8px; height: 8px; background: #fff; border-radius: 50%; box-shadow: 0 0 12px rgba(255,255,255,0.5); }
+      .brand[hidden] { display: none; }
+
+      .accent {
+        position: absolute; left: 80px; bottom: 320px; width: 80px; height: 5px;
+        background: #ffffff; transform-origin: left center;
+        will-change: transform;
+      }
+      .accent[hidden] { display: none; }
+
+      .caption {
+        position: absolute;
+        left: 80px; right: 80px; bottom: 160px;
+        color: #fff;
+        font-size: 110px; font-weight: 900;
+        letter-spacing: -0.035em; line-height: 0.96;
+        text-shadow: 0 12px 36px rgba(0,0,0,0.7);
+      }
+      .caption[hidden] { display: none; }
+      .caption .word { display: inline-block; padding-right: 0.22em; will-change: transform, opacity; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="ken-burns-portrait"
+      data-start="0"
+      data-duration="10"
+      data-width="1080"
+      data-height="1920"
+      data-composition-variables='[
+        {"id":"imageUrl","type":"string","label":"Image","default":""},
+        {"id":"caption","type":"string","label":"Caption","default":""},
+        {"id":"brand","type":"string","label":"Marque","default":""}
+      ]'
+    >
+      <div class="bg-wrap" id="bg-wrap">
+        <div class="bg" id="bg"></div>
+      </div>
+      <div class="top-fade"></div>
+      <div class="bottom-fade"></div>
+
+      <div class="brand" id="brand" hidden>
+        <span class="dot"></span>
+        <span id="brand-text"></span>
+      </div>
+      <div class="accent" id="accent" hidden></div>
+      <div class="caption" id="caption" hidden></div>
+    </div>
+
+    <script>
+      (function () {
+        const hf = window.__hyperframes;
+        const vars = (hf && typeof hf.getVariables === 'function' ? hf.getVariables() : {}) || {};
+
+        if (vars.imageUrl) {
+          document.getElementById('bg').style.backgroundImage =
+            "url('" + String(vars.imageUrl).replace(/'/g, "%27") + "')";
+        }
+
+        const brandEl = document.getElementById('brand');
+        if (vars.brand) {
+          document.getElementById('brand-text').textContent = String(vars.brand);
+          brandEl.hidden = false;
+        }
+
+        const capEl = document.getElementById('caption');
+        const accentEl = document.getElementById('accent');
+        const hasCaption = !!vars.caption;
+        if (hasCaption) {
+          const words = String(vars.caption).split(/\s+/).filter(Boolean);
+          capEl.innerHTML = words.map(w => '<span class="word">' + w + '</span>').join('');
+          capEl.hidden = false;
+          accentEl.hidden = false;
+        }
+
+        const tl = gsap.timeline({ paused: true });
+
+        // 1. Image entrance — slide up + fade (wrap)
+        tl.from('#bg-wrap', { y: 90, opacity: 0, duration: 1.6, ease: 'expo.out' }, 0);
+
+        // 2. Ken Burns motion — continuous slow zoom + pan (bg, separate element = no conflict)
+        tl.to('#bg', { x: -100, y: -60, scale: 1.22, duration: 10, ease: 'sine.inOut' }, 0);
+
+        // 3. Brand entrance
+        if (!brandEl.hidden) {
+          tl.set('#brand', { y: 30, opacity: 0 }, 0);
+          tl.to('#brand', { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' }, 1.5);
+        }
+
+        // 4. Accent bar draw
+        if (!accentEl.hidden) {
+          tl.set('#accent', { scaleX: 0 }, 0);
+          tl.to('#accent', { scaleX: 1, duration: 0.7, ease: 'expo.out' }, 2.2);
+        }
+
+        // 5. Caption — word-by-word stagger
+        const words = capEl.querySelectorAll('.word');
+        if (words.length > 0) {
+          tl.set(words, { y: 70, opacity: 0 }, 0);
+          tl.to(words, {
+            y: 0, opacity: 1,
+            duration: 0.75, ease: 'expo.out',
+            stagger: 0.07
+          }, 2.5);
+        }
+
+        // 6. Outro — gentle fade of UI elements (image keeps moving)
+        if (!brandEl.hidden) tl.to('#brand', { opacity: 0.65, duration: 0.8, ease: 'power2.in' }, 9.1);
+        if (!accentEl.hidden) tl.to('#accent', { scaleX: 0, duration: 0.6, ease: 'expo.in' }, 9.2);
+        if (words.length > 0) tl.to(words, { y: -8, opacity: 0.8, duration: 0.7, ease: 'power2.in' }, 9.2);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines['ken-burns-portrait'] = tl;
+      })();
+    </script>
+  </body>
+</html>

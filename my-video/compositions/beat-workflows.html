@@ -1,0 +1,375 @@
+<template id="beat-workflows-template">
+  <div id="beat-workflows" data-composition-id="beat-workflows" data-width="1920" data-height="1080">
+    <div class="bw-blackout"></div>
+
+    <div class="bw-app">
+      <aside class="bw-sidebar">
+        <div class="bw-sb-logo">
+          <div class="bw-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="bw-sb-brand">Web2Print</span>
+        </div>
+        <nav class="bw-sb-nav">
+          <span class="bw-sb-item">+ Nouveau document</span>
+          <span class="bw-sb-item">↑ Importer</span>
+          <span class="bw-sb-item">▥ Bibliothèque</span>
+          <span class="bw-sb-item">▣ DAM</span>
+          <span class="bw-sb-item">▤ PIM</span>
+          <span class="bw-sb-item">⊟ Taxonomies</span>
+          <span class="bw-sb-item">◉ Templates scraping</span>
+          <span class="bw-sb-item">▦ Scraping Hub</span>
+          <span class="bw-sb-item bw-sb-item--active">⇆ Workflows</span>
+          <span class="bw-sb-item">◗ Chat IA</span>
+        </nav>
+      </aside>
+
+      <main class="bw-main">
+        <header class="bw-topbar">
+          <span class="bw-back">‹</span>
+          <span class="bw-crumb">Workflows</span>
+          <span class="bw-crumb-sep">/</span>
+          <span class="bw-crumb bw-crumb--current">TEST2 · Catalogue Milwaukee</span>
+          <div class="bw-spacer"></div>
+          <span class="bw-saved">Enregistré · il y a 2 min</span>
+          <span class="bw-run">▶ Run</span>
+        </header>
+
+        <div class="bw-body">
+          <aside class="bw-blocks">
+            <span class="bw-blocks-head">BLOCS</span>
+            <p class="bw-blocks-hint">Glissez sur le canvas pour construire votre pipeline.</p>
+
+            <div class="bw-cat">
+              <span class="bw-cat-num bw-cat-num--amber">1</span>
+              <span class="bw-cat-title">IMPORT</span>
+            </div>
+            <ul class="bw-blocks-list">
+              <li>▤ Parser Excel/CSV</li>
+              <li>▤ Import IDML</li>
+              <li class="bw-block-used">⤒ Upload</li>
+              <li>◐ Scrape URL</li>
+              <li>▦ Google Sheets</li>
+            </ul>
+
+            <div class="bw-cat">
+              <span class="bw-cat-num bw-cat-num--violet">2</span>
+              <span class="bw-cat-title">ENRICHISSEMENT</span>
+            </div>
+            <ul class="bw-blocks-list">
+              <li class="bw-block-used">★ Enrichissement IA</li>
+              <li class="bw-block-used">◑ Génération image</li>
+            </ul>
+
+            <div class="bw-cat">
+              <span class="bw-cat-num bw-cat-num--sky">3</span>
+              <span class="bw-cat-title">TRANSFORMATION</span>
+            </div>
+            <ul class="bw-blocks-list">
+              <li>✎ Réécrire colonnes</li>
+              <li>⊡ Filtrer lignes</li>
+              <li>↧ Trier lignes</li>
+            </ul>
+
+            <div class="bw-cat">
+              <span class="bw-cat-num bw-cat-num--emerald">4</span>
+              <span class="bw-cat-title">SAUVEGARDE</span>
+            </div>
+            <ul class="bw-blocks-list">
+              <li class="bw-block-used">▤ Save PIM</li>
+              <li>▣ Export PDF</li>
+              <li>✉ Envoyer Gmail</li>
+            </ul>
+          </aside>
+
+          <section class="bw-canvas">
+            <div class="bw-canvas-grid"></div>
+
+            <svg class="bw-edges" viewBox="0 0 1100 460" preserveAspectRatio="none">
+              <defs>
+                <marker id="bw-arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 Z" fill="#FBBF24"/>
+                </marker>
+                <marker id="bw-arrow-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 Z" fill="#A78BFA"/>
+                </marker>
+                <marker id="bw-arrow-pink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 Z" fill="#F472B6"/>
+                </marker>
+                <marker id="bw-arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 Z" fill="#34D399"/>
+                </marker>
+              </defs>
+              <path class="bw-edge bw-edge--1" d="M180 170 C240 170 270 230 320 230"/>
+              <path class="bw-edge bw-edge--2" d="M510 230 C560 230 590 230 640 230"/>
+              <path class="bw-edge bw-edge--3" d="M830 230 C870 230 880 230 920 230"/>
+              <path class="bw-edge bw-edge--4" d="M180 320 C240 320 290 230 320 230"/>
+            </svg>
+
+            <div class="bw-node bw-node--upload">
+              <div class="bw-node-ico bw-node-ico--amber">⤒</div>
+              <span class="bw-node-label">Upload</span>
+              <span class="bw-node-meta">catalogue.xlsx</span>
+            </div>
+            <div class="bw-node bw-node--scrape">
+              <div class="bw-node-ico bw-node-ico--amber">◐</div>
+              <span class="bw-node-label">Scrape URL</span>
+              <span class="bw-node-meta">milwaukeetool.fr</span>
+            </div>
+            <div class="bw-node bw-node--enrich">
+              <div class="bw-node-ico bw-node-ico--violet">★</div>
+              <span class="bw-node-label">Enrichir</span>
+              <span class="bw-node-meta">Claude Opus 4.7</span>
+              <span class="bw-node-progress"><span class="bw-node-progress-bar"></span></span>
+            </div>
+            <div class="bw-node bw-node--gen">
+              <div class="bw-node-ico bw-node-ico--pink">◑</div>
+              <span class="bw-node-label">Visuel IA</span>
+              <span class="bw-node-meta">Nano Banana Pro</span>
+            </div>
+            <div class="bw-node bw-node--save">
+              <div class="bw-node-ico bw-node-ico--emerald">▤</div>
+              <span class="bw-node-label">Save PIM</span>
+              <span class="bw-node-meta">Nouvelle BDD</span>
+            </div>
+
+            <div class="bw-runlogs">
+              <div class="bw-runlogs-head">
+                <span>▶ RUN LOGS</span>
+                <span class="bw-runlogs-state">Exécution · 3/5</span>
+              </div>
+              <div class="bw-runlog bw-runlog-ok">✓ Upload · 5 lignes lues · 12ms</div>
+              <div class="bw-runlog bw-runlog-ok">✓ Scrape URL · 5 fiches récupérées · 4.2s</div>
+              <div class="bw-runlog bw-runlog-run">⌛ Enrichir IA · 3/5 produits · Claude Opus 4.7</div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <style>
+      #beat-workflows {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-workflows .bw-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-workflows .bw-app {
+        position: absolute; inset: 0; display: grid; grid-template-columns: 220px 1fr;
+      }
+      #beat-workflows .bw-sidebar {
+        background: #141414; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 18px 14px; display: flex; flex-direction: column; gap: 18px;
+      }
+      #beat-workflows .bw-sb-logo { display: flex; align-items: center; gap: 12px; padding: 4px; }
+      #beat-workflows .bw-sb-logomark {
+        width: 32px; height: 32px; background: #6366F1; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      #beat-workflows .bw-sb-logomark svg { width: 18px; height: 18px; }
+      #beat-workflows .bw-sb-brand { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.95); }
+      #beat-workflows .bw-sb-nav { display: flex; flex-direction: column; gap: 3px; }
+      #beat-workflows .bw-sb-item {
+        font-size: 13px; padding: 8px 12px; border-radius: 6px; color: rgba(255,255,255,0.55);
+      }
+      #beat-workflows .bw-sb-item--active {
+        background: rgba(129,140,248,0.15); color: #818CF8; font-weight: 500;
+      }
+
+      #beat-workflows .bw-main {
+        display: flex; flex-direction: column; overflow: hidden;
+      }
+      #beat-workflows .bw-topbar {
+        height: 50px; padding: 0 22px;
+        background: #161616; border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 10px;
+      }
+      #beat-workflows .bw-back { color: rgba(255,255,255,0.55); font-size: 18px; }
+      #beat-workflows .bw-crumb { font-size: 14px; color: rgba(255,255,255,0.55); }
+      #beat-workflows .bw-crumb--current { color: #F2F2F2; font-weight: 500; }
+      #beat-workflows .bw-crumb-sep { color: rgba(255,255,255,0.25); }
+      #beat-workflows .bw-spacer { flex: 1; }
+      #beat-workflows .bw-saved { font-size: 12px; color: rgba(255,255,255,0.4); }
+      #beat-workflows .bw-run {
+        font-size: 13px; font-weight: 600; color: #fff;
+        background: linear-gradient(135deg, #6366F1, #818CF8);
+        padding: 7px 16px; border-radius: 6px;
+      }
+
+      #beat-workflows .bw-body {
+        flex: 1; display: grid; grid-template-columns: 280px 1fr; min-height: 0;
+      }
+      #beat-workflows .bw-blocks {
+        background: #131313; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 18px 18px; overflow-y: auto;
+      }
+      #beat-workflows .bw-blocks-head {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+        color: rgba(255,255,255,0.45); text-transform: uppercase;
+      }
+      #beat-workflows .bw-blocks-hint {
+        margin: 8px 0 16px; font-size: 11.5px; color: rgba(255,255,255,0.4);
+      }
+      #beat-workflows .bw-cat {
+        display: flex; align-items: center; gap: 8px; margin: 12px 0 6px;
+      }
+      #beat-workflows .bw-cat-num {
+        width: 20px; height: 20px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700;
+      }
+      #beat-workflows .bw-cat-num--amber { background: #FBBF24; color: #1f1f1f; }
+      #beat-workflows .bw-cat-num--violet { background: #A78BFA; color: #1f1f1f; }
+      #beat-workflows .bw-cat-num--sky { background: #38BDF8; color: #0f1f30; }
+      #beat-workflows .bw-cat-num--emerald { background: #34D399; color: #052e1f; }
+      #beat-workflows .bw-cat-title {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+        color: #F2F2F2;
+      }
+      #beat-workflows .bw-blocks-list {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      #beat-workflows .bw-blocks-list li {
+        padding: 7px 10px; font-size: 12px;
+        color: rgba(255,255,255,0.7);
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 5px;
+      }
+      #beat-workflows .bw-block-used {
+        background: rgba(251,191,36,0.08);
+        border-color: rgba(251,191,36,0.3);
+        color: #FBBF24; font-weight: 500;
+      }
+
+      #beat-workflows .bw-canvas {
+        position: relative; background: #0F0F0F; overflow: hidden;
+      }
+      #beat-workflows .bw-canvas-grid {
+        position: absolute; inset: 0;
+        background-image:
+          repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 40px),
+          repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 40px);
+      }
+      #beat-workflows .bw-edges {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+      }
+      #beat-workflows .bw-edge {
+        fill: none; stroke-width: 2.5; stroke-linecap: round;
+        stroke-dasharray: 300; stroke-dashoffset: 300;
+      }
+      #beat-workflows .bw-edge--1 { stroke: #FBBF24; marker-end: url(#bw-arrow-amber); }
+      #beat-workflows .bw-edge--2 { stroke: #A78BFA; marker-end: url(#bw-arrow-violet); }
+      #beat-workflows .bw-edge--3 { stroke: #F472B6; marker-end: url(#bw-arrow-pink); }
+      #beat-workflows .bw-edge--4 { stroke: #FBBF24; marker-end: url(#bw-arrow-amber); }
+
+      #beat-workflows .bw-node {
+        position: absolute; width: 180px;
+        background: #1A1A1A; border: 2px solid rgba(255,255,255,0.08);
+        border-radius: 11px;
+        padding: 14px 16px 12px;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        box-shadow: 0 20px 40px -16px rgba(0,0,0,0.8);
+      }
+      #beat-workflows .bw-node--upload { left: 30px; top: 100px; border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.05); }
+      #beat-workflows .bw-node--scrape { left: 30px; top: 280px; border-color: rgba(251,191,36,0.5); }
+      #beat-workflows .bw-node--enrich { left: 320px; top: 180px; border-color: rgba(167,139,250,0.55); background: rgba(167,139,250,0.06); }
+      #beat-workflows .bw-node--gen { left: 620px; top: 180px; border-color: rgba(244,114,182,0.4); }
+      #beat-workflows .bw-node--save { left: 920px; top: 180px; border-color: rgba(52,211,153,0.5); }
+      #beat-workflows .bw-node-ico {
+        width: 38px; height: 38px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; font-weight: 700;
+      }
+      #beat-workflows .bw-node-ico--amber { background: rgba(251,191,36,0.18); color: #FBBF24; }
+      #beat-workflows .bw-node-ico--violet { background: rgba(167,139,250,0.18); color: #A78BFA; }
+      #beat-workflows .bw-node-ico--pink { background: rgba(244,114,182,0.18); color: #F472B6; }
+      #beat-workflows .bw-node-ico--emerald { background: rgba(52,211,153,0.18); color: #34D399; }
+      #beat-workflows .bw-node-label {
+        font-size: 13px; font-weight: 600; color: #F2F2F2;
+      }
+      #beat-workflows .bw-node-meta {
+        font-size: 11px; color: rgba(255,255,255,0.45);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      #beat-workflows .bw-node-progress {
+        width: 100%; height: 3px;
+        background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;
+      }
+      #beat-workflows .bw-node-progress-bar {
+        display: block; height: 100%; width: 0%;
+        background: linear-gradient(90deg, #A78BFA, #F472B6);
+      }
+
+      #beat-workflows .bw-runlogs {
+        position: absolute; left: 30px; right: 30px; bottom: 24px;
+        background: #131313; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
+        padding: 14px 18px;
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      #beat-workflows .bw-runlogs-head {
+        display: flex; justify-content: space-between;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+        color: rgba(255,255,255,0.45); text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      #beat-workflows .bw-runlogs-state {
+        color: #FBBF24;
+      }
+      #beat-workflows .bw-runlog {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 12px; padding: 5px 0;
+        color: rgba(255,255,255,0.75);
+      }
+      #beat-workflows .bw-runlog-ok { color: #34D399; }
+      #beat-workflows .bw-runlog-run { color: #FBBF24; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-workflows';
+
+        tl.to(root + " .bw-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+        tl.from(root + " .bw-sidebar", { x: -30, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bw-topbar", { y: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.25);
+        tl.from(root + " .bw-blocks", { x: -25, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.4);
+        tl.from(root + " .bw-cat", { x: -10, opacity: 0, duration: 0.3, stagger: 0.08, ease: "power2.out" }, 0.55);
+
+        tl.from(root + " .bw-canvas-grid", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0.4);
+
+        // Nodes apparaissent en stagger
+        tl.from(root + " .bw-node--upload", { scale: 0.85, opacity: 0, duration: 0.35, ease: "back.out(1.4)" }, 0.7);
+        tl.from(root + " .bw-node--scrape", { scale: 0.85, opacity: 0, duration: 0.35, ease: "back.out(1.4)" }, 0.85);
+
+        tl.to(root + " .bw-edge--1", { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, 1.05);
+        tl.to(root + " .bw-edge--4", { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, 1.15);
+        tl.from(root + " .bw-node--enrich", { scale: 0.85, opacity: 0, duration: 0.35, ease: "back.out(1.4)" }, 1.3);
+
+        tl.to(root + " .bw-edge--2", { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, 1.65);
+        tl.from(root + " .bw-node--gen", { scale: 0.85, opacity: 0, duration: 0.35, ease: "back.out(1.4)" }, 1.8);
+
+        tl.to(root + " .bw-edge--3", { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, 2.15);
+        tl.from(root + " .bw-node--save", { scale: 0.85, opacity: 0, duration: 0.35, ease: "back.out(1.4)" }, 2.3);
+
+        // Progress bar enrich
+        tl.to(root + " .bw-node-progress-bar", { width: "65%", duration: 1.8, ease: "power2.inOut" }, 1.5);
+
+        // Run logs
+        tl.from(root + " .bw-runlogs", { y: 30, opacity: 0, duration: 0.5, ease: "power3.out" }, 2.5);
+        tl.from(root + " .bw-runlog", { x: -10, opacity: 0, duration: 0.3, stagger: 0.18, ease: "power2.out" }, 2.7);
+
+                tl.to({}, { duration: 10 });
+        window.__timelines["beat-workflows"] = tl;
+      })();
+    </script>
+  </div>
+</template>

@@ -1,0 +1,217 @@
+<template id="beat-import-template">
+  <div id="beat-import" data-composition-id="beat-import" data-width="1920" data-height="1080">
+    <div class="bi-blackout"></div>
+
+    <div class="bi-app">
+      <aside class="bi-sidebar">
+        <div class="bi-sb-logo">
+          <div class="bi-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="bi-sb-brand">Web2Print</span>
+        </div>
+        <nav class="bi-sb-nav">
+          <span class="bi-sb-item">+ Nouveau document</span>
+          <span class="bi-sb-item bi-sb-item--active">↑ Importer</span>
+          <span class="bi-sb-item">▥ Bibliothèque</span>
+          <span class="bi-sb-item">▣ DAM</span>
+          <span class="bi-sb-item">▤ PIM</span>
+          <span class="bi-sb-item">⊟ Taxonomies</span>
+          <span class="bi-sb-item">◉ Templates scraping</span>
+          <span class="bi-sb-item">▦ Scraping Hub</span>
+          <span class="bi-sb-item">⇆ Workflows</span>
+          <span class="bi-sb-item">◗ Chat IA</span>
+        </nav>
+      </aside>
+
+      <main class="bi-main">
+        <header class="bi-header">
+          <h1 class="bi-title">Importer</h1>
+          <p class="bi-sub">Vos catalogues existants, vos InDesign, vos PowerPoint — tout est converti en projet éditable.</p>
+        </header>
+
+        <div class="bi-content">
+          <div class="bi-drop">
+            <div class="bi-drop-icon">↥</div>
+            <span class="bi-drop-title">Glissez vos fichiers ici</span>
+            <span class="bi-drop-or">ou cliquez pour parcourir</span>
+            <span class="bi-drop-progress">
+              <span class="bi-drop-progress-bar"></span>
+            </span>
+            <span class="bi-drop-progress-label">catalog_milwaukee.xlsx · 1,2 Mo · 5 produits détectés</span>
+          </div>
+
+          <div class="bi-types">
+            <span class="bi-types-head">FORMATS PRIS EN CHARGE</span>
+            <div class="bi-types-grid">
+              <div class="bi-type bi-type--xlsx">
+                <span class="bi-type-ext">.xlsx</span>
+                <span class="bi-type-desc">Excel · catalogues produits</span>
+              </div>
+              <div class="bi-type bi-type--idml">
+                <span class="bi-type-ext">.idml</span>
+                <span class="bi-type-desc">InDesign · maquettes</span>
+              </div>
+              <div class="bi-type bi-type--pptx">
+                <span class="bi-type-ext">.pptx</span>
+                <span class="bi-type-desc">PowerPoint · slides</span>
+              </div>
+              <div class="bi-type bi-type--svg">
+                <span class="bi-type-ext">.svg</span>
+                <span class="bi-type-desc">Illustrations vectorielles</span>
+              </div>
+              <div class="bi-type bi-type--pdf">
+                <span class="bi-type-ext">.pdf</span>
+                <span class="bi-type-desc">Documents imprimés</span>
+              </div>
+              <div class="bi-type bi-type--img">
+                <span class="bi-type-ext">.png · .jpg</span>
+                <span class="bi-type-desc">Images bitmap</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <style>
+      #beat-import {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-import .bi-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-import .bi-app {
+        position: absolute; inset: 0;
+        display: grid; grid-template-columns: 260px 1fr;
+      }
+      #beat-import .bi-sidebar {
+        background: #141414; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 18px 14px; display: flex; flex-direction: column; gap: 18px;
+      }
+      #beat-import .bi-sb-logo {
+        display: flex; align-items: center; gap: 12px; padding: 4px;
+      }
+      #beat-import .bi-sb-logomark {
+        width: 32px; height: 32px; background: #6366F1; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      #beat-import .bi-sb-logomark svg { width: 18px; height: 18px; }
+      #beat-import .bi-sb-brand { font-size: 17px; font-weight: 600; color: rgba(255,255,255,0.95); }
+      #beat-import .bi-sb-nav { display: flex; flex-direction: column; gap: 3px; }
+      #beat-import .bi-sb-item {
+        font-size: 14px; padding: 9px 14px; border-radius: 7px;
+        color: rgba(255,255,255,0.55);
+      }
+      #beat-import .bi-sb-item--active {
+        background: rgba(251,191,36,0.12); color: #FBBF24; font-weight: 500;
+      }
+
+      #beat-import .bi-main {
+        padding: 60px 80px; display: flex; flex-direction: column; gap: 36px;
+      }
+      #beat-import .bi-header { display: flex; flex-direction: column; gap: 8px; }
+      #beat-import .bi-title {
+        margin: 0; font-size: 56px; font-weight: 700; color: #F2F2F2;
+        letter-spacing: -0.02em;
+      }
+      #beat-import .bi-sub {
+        margin: 0; font-size: 18px; color: rgba(255,255,255,0.55);
+        max-width: 700px; line-height: 1.5;
+      }
+      #beat-import .bi-content {
+        flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+      }
+
+      #beat-import .bi-drop {
+        background: rgba(251,191,36,0.04);
+        border: 2px dashed rgba(251,191,36,0.5);
+        border-radius: 18px;
+        padding: 40px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px;
+      }
+      #beat-import .bi-drop-icon {
+        font-size: 56px; color: #FBBF24;
+      }
+      #beat-import .bi-drop-title {
+        font-size: 22px; font-weight: 700; color: #F2F2F2;
+      }
+      #beat-import .bi-drop-or {
+        font-size: 14px; color: rgba(255,255,255,0.4);
+      }
+      #beat-import .bi-drop-progress {
+        margin-top: 18px;
+        width: 80%; height: 6px;
+        background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;
+      }
+      #beat-import .bi-drop-progress-bar {
+        display: block; width: 0; height: 100%;
+        background: linear-gradient(90deg, #FBBF24, #F97316);
+        border-radius: 999px;
+      }
+      #beat-import .bi-drop-progress-label {
+        font-size: 13px; color: rgba(255,255,255,0.5);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+
+      #beat-import .bi-types {
+        display: flex; flex-direction: column; gap: 14px;
+      }
+      #beat-import .bi-types-head {
+        font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.4);
+      }
+      #beat-import .bi-types-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;
+      }
+      #beat-import .bi-type {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 10px; padding: 14px 18px;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      #beat-import .bi-type-ext {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 17px; font-weight: 700; color: #FBBF24;
+      }
+      #beat-import .bi-type-desc {
+        font-size: 13px; color: rgba(255,255,255,0.6);
+      }
+      #beat-import .bi-type--idml .bi-type-ext { color: #F472B6; }
+      #beat-import .bi-type--pptx .bi-type-ext { color: #F97316; }
+      #beat-import .bi-type--svg .bi-type-ext { color: #A78BFA; }
+      #beat-import .bi-type--pdf .bi-type-ext { color: #EF4444; }
+      #beat-import .bi-type--img .bi-type-ext { color: #34D399; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-import';
+
+        tl.to(root + " .bi-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+        tl.from(root + " .bi-sidebar", { x: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bi-title", { y: 20, opacity: 0, duration: 0.5, ease: "expo.out" }, 0.3);
+        tl.from(root + " .bi-sub",   { y: 15, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.45);
+
+        tl.from(root + " .bi-drop", { scale: 0.94, opacity: 0, duration: 0.55, ease: "back.out(1.4)", transformOrigin: "50% 50%" }, 0.6);
+        tl.from(root + " .bi-drop-icon", { y: -10, opacity: 0, duration: 0.4, ease: "power2.out" }, 0.85);
+        tl.to(root + " .bi-drop-progress-bar", { width: "100%", duration: 2.2, ease: "power2.inOut" }, 1.3);
+
+        tl.from(root + " .bi-types-head", { x: -15, opacity: 0, duration: 0.35, ease: "power2.out" }, 0.8);
+        tl.from(root + " .bi-type", { y: 20, opacity: 0, duration: 0.35, stagger: 0.08, ease: "power3.out" }, 1.0);
+
+                tl.to({}, { duration: 6 });
+        window.__timelines["beat-import"] = tl;
+      })();
+    </script>
+  </div>
+</template>

@@ -1,0 +1,583 @@
+<template id="beat-ai-template">
+  <div id="beat-ai" data-composition-id="beat-ai" data-width="1920" data-height="1080">
+    <div class="ba-blackout"></div>
+
+    <div class="ba-app">
+      <!-- Sidebar identique -->
+      <aside class="ba-sidebar">
+        <div class="ba-sb-logo">
+          <div class="ba-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="ba-sb-brand">Web2Print</span>
+        </div>
+        <nav class="ba-sb-nav">
+          <span class="ba-sb-item">Nouveau document</span>
+          <span class="ba-sb-item">Importer</span>
+          <span class="ba-sb-item">Bibliothèque</span>
+          <span class="ba-sb-item ba-sb-item--active">DAM</span>
+          <span class="ba-sb-item">PIM</span>
+          <span class="ba-sb-item">Taxonomies</span>
+          <span class="ba-sb-item">Templates scraping</span>
+          <span class="ba-sb-item">Scraping Hub</span>
+          <span class="ba-sb-item">Workflows</span>
+          <span class="ba-sb-item">Chat IA</span>
+        </nav>
+      </aside>
+
+      <!-- DAM module : 2-cols subnav + panel + canvas -->
+      <main class="ba-dam">
+        <aside class="ba-dam-nav">
+          <span class="ba-dam-head">DAM</span>
+          <ul class="ba-dam-menu">
+            <li>Banque d'images</li>
+            <li>Mes images <em>6</em></li>
+            <li>Favoris</li>
+            <li>Collections <em>1</em></li>
+            <li>Récents <em>6</em></li>
+            <li>Projets <em>1</em></li>
+            <li class="ba-dam-active">Nano Banana</li>
+            <li>Google Drive</li>
+          </ul>
+        </aside>
+
+        <aside class="ba-dam-panel">
+          <div class="ba-panel-head">
+            <span class="ba-panel-pill">★ Nano Banana</span>
+          </div>
+          <div class="ba-field">
+            <span class="ba-field-lbl">Prompt</span>
+            <div class="ba-prompt">
+              <span class="ba-prompt-text"></span>
+              <span class="ba-prompt-cursor">|</span>
+            </div>
+          </div>
+          <div class="ba-field">
+            <span class="ba-field-lbl">Format de sortie</span>
+            <div class="ba-toggle">
+              <span class="ba-toggle-opt">Images &amp; texte</span>
+              <span class="ba-toggle-opt ba-toggle-opt--active">Images seul.</span>
+            </div>
+          </div>
+          <div class="ba-field">
+            <div class="ba-slider-row">
+              <span class="ba-field-lbl">Température</span>
+              <span class="ba-temp-val">1.0</span>
+            </div>
+            <div class="ba-slider">
+              <div class="ba-slider-fill"></div>
+              <span class="ba-slider-thumb"></span>
+            </div>
+            <div class="ba-slider-labels">
+              <span>Précis</span><span>Créatif</span>
+            </div>
+          </div>
+          <div class="ba-field">
+            <span class="ba-field-lbl">Ratio</span>
+            <div class="ba-chips">
+              <span class="ba-chip ba-chip--active">Auto</span>
+              <span class="ba-chip">1:1</span>
+              <span class="ba-chip">16:9</span>
+              <span class="ba-chip">9:16</span>
+              <span class="ba-chip">4:3</span>
+              <span class="ba-chip">3:4</span>
+            </div>
+          </div>
+          <div class="ba-field">
+            <span class="ba-field-lbl">Résolution</span>
+            <div class="ba-chips">
+              <span class="ba-chip">512</span>
+              <span class="ba-chip ba-chip--active">1K</span>
+              <span class="ba-chip">2K</span>
+              <span class="ba-chip">4K</span>
+            </div>
+          </div>
+          <div class="ba-field">
+            <span class="ba-field-lbl">Nombre d'images</span>
+            <div class="ba-chips">
+              <span class="ba-chip ba-chip--active">1</span>
+              <span class="ba-chip">2</span>
+              <span class="ba-chip">4</span>
+            </div>
+          </div>
+          <div class="ba-cta">★ Générer</div>
+        </aside>
+
+        <section class="ba-canvas-area">
+          <div class="ba-canvas-head">
+            <span class="ba-canvas-title">Nano Banana</span>
+            <span class="ba-canvas-meta">Powered by Gemini — Nano Banana 2</span>
+          </div>
+          <div class="ba-canvas-grid">
+            <div class="ba-img-tile ba-img-tile--1">
+              <div class="ba-img-bg"></div>
+              <svg class="ba-drill" viewBox="0 0 740 400" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ba-body-grad" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" stop-color="#dc2626"/>
+                    <stop offset="1" stop-color="#7f1d1d"/>
+                  </linearGradient>
+                  <linearGradient id="ba-grip-grad" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" stop-color="#1f2937"/>
+                    <stop offset="1" stop-color="#0b0f17"/>
+                  </linearGradient>
+                </defs>
+                <rect x="240" y="280" width="160" height="80" rx="10" fill="url(#ba-grip-grad)"/>
+                <rect x="260" y="265" width="120" height="22" rx="6" fill="#FBBF24"/>
+                <text x="320" y="282" text-anchor="middle" fill="#1f2937" font-family="-apple-system, sans-serif" font-weight="700" font-size="14">M18</text>
+                <path d="M250 200 Q250 270 280 290 L370 290 Q400 270 400 200 Z" fill="url(#ba-grip-grad)"/>
+                <rect x="180" y="140" width="320" height="120" rx="22" fill="url(#ba-body-grad)"/>
+                <rect x="180" y="200" width="320" height="60" rx="22" fill="#7f1d1d" opacity="0.7"/>
+                <rect x="500" y="170" width="60" height="55" rx="8" fill="#cbd5e1"/>
+                <rect x="555" y="180" width="40" height="35" rx="4" fill="#94a3b8"/>
+                <rect x="595" y="194" width="100" height="8" fill="#9ca3af"/>
+                <polygon points="695,194 720,198 695,202" fill="#9ca3af"/>
+                <text x="340" y="186" text-anchor="middle" fill="#fff" font-family="-apple-system, sans-serif" font-weight="800" font-size="22" letter-spacing="2">MILWAUKEE</text>
+                <text x="340" y="220" text-anchor="middle" fill="#fff" font-family="-apple-system, sans-serif" font-weight="400" font-size="14" opacity="0.85">FUEL · M18 FPD3</text>
+              </svg>
+              <div class="ba-tile-veil"></div>
+            </div>
+            <div class="ba-img-placeholder ba-img-tile--2">
+              <span>★</span>
+              <span class="ba-img-placeholder-text">Entrez un prompt pour générer des images</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Overlay eyebrow + title -->
+    <div class="ba-overlay">
+      <span class="ba-eyebrow">IA générative</span>
+      <h2 class="ba-title">Enrichi · Visualisé</h2>
+    </div>
+
+    <style>
+      #beat-ai {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: #0F0F0F;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-ai .ba-blackout {
+        position: absolute;
+        inset: 0;
+        background: #000;
+        z-index: 50;
+      }
+
+      #beat-ai .ba-app {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 220px 1fr;
+      }
+
+      /* Sidebar */
+      #beat-ai .ba-sidebar {
+        background: #141414;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      #beat-ai .ba-sb-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px;
+      }
+      #beat-ai .ba-sb-logomark {
+        width: 28px;
+        height: 28px;
+        background: #6366F1;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #beat-ai .ba-sb-logomark svg { width: 16px; height: 16px; }
+      #beat-ai .ba-sb-brand { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.92); }
+      #beat-ai .ba-sb-nav { display: flex; flex-direction: column; gap: 2px; }
+      #beat-ai .ba-sb-item {
+        font-size: 14px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      #beat-ai .ba-sb-item--active {
+        color: #F472B6;
+        background: rgba(244, 114, 182, 0.1);
+        font-weight: 500;
+      }
+
+      /* DAM module */
+      #beat-ai .ba-dam {
+        display: grid;
+        grid-template-columns: 220px 360px 1fr;
+      }
+      #beat-ai .ba-dam-nav {
+        background: #131313;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 18px 0;
+      }
+      #beat-ai .ba-dam-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 18px 16px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #F2F2F2;
+      }
+      #beat-ai .ba-dam-head::before {
+        content: "";
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #A78BFA, #F472B6);
+        border-radius: 7px;
+      }
+      #beat-ai .ba-dam-menu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      #beat-ai .ba-dam-menu li {
+        padding: 11px 18px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.55);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #beat-ai .ba-dam-menu li em {
+        font-style: normal;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+      #beat-ai .ba-dam-menu .ba-dam-active {
+        background: rgba(244, 114, 182, 0.12);
+        color: #F472B6;
+        font-weight: 500;
+        border-left: 2px solid #F472B6;
+        padding-left: 16px;
+      }
+
+      /* Panel Nano Banana */
+      #beat-ai .ba-dam-panel {
+        background: #131313;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        overflow-y: auto;
+      }
+      #beat-ai .ba-panel-head { display: flex; align-items: center; gap: 8px; }
+      #beat-ai .ba-panel-pill {
+        font-size: 16px;
+        font-weight: 600;
+        color: #F472B6;
+      }
+      #beat-ai .ba-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #beat-ai .ba-field-lbl {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      #beat-ai .ba-prompt {
+        background: #1A1A1A;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 12px 14px;
+        min-height: 72px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.85);
+        line-height: 1.4;
+      }
+      #beat-ai .ba-prompt-cursor {
+        color: #F472B6;
+        margin-left: 2px;
+      }
+      #beat-ai .ba-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        padding: 3px;
+        background: #1A1A1A;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+      }
+      #beat-ai .ba-toggle-opt {
+        text-align: center;
+        padding: 7px 10px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.55);
+        border-radius: 5px;
+      }
+      #beat-ai .ba-toggle-opt--active {
+        background: rgba(167, 139, 250, 0.15);
+        color: #C4B5FD;
+        font-weight: 600;
+      }
+      #beat-ai .ba-slider-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      #beat-ai .ba-temp-val {
+        font-size: 13px;
+        color: #F2F2F2;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+      #beat-ai .ba-slider {
+        position: relative;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+      }
+      #beat-ai .ba-slider-fill {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 50%;
+        background: linear-gradient(90deg, #A78BFA, #F472B6);
+        border-radius: 999px;
+      }
+      #beat-ai .ba-slider-thumb {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 14px;
+        height: 14px;
+        background: #FFFFFF;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.4);
+      }
+      #beat-ai .ba-slider-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      #beat-ai .ba-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #beat-ai .ba-chip {
+        padding: 6px 12px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.55);
+        background: #1A1A1A;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 5px;
+        font-variant-numeric: tabular-nums;
+      }
+      #beat-ai .ba-chip--active {
+        color: #C4B5FD;
+        background: rgba(167, 139, 250, 0.12);
+        border-color: rgba(167, 139, 250, 0.4);
+        font-weight: 600;
+      }
+      #beat-ai .ba-cta {
+        margin-top: 12px;
+        padding: 14px 16px;
+        text-align: center;
+        background: linear-gradient(135deg, #A78BFA, #F472B6);
+        color: #fff;
+        font-weight: 600;
+        font-size: 15px;
+        border-radius: 10px;
+        box-shadow: 0 12px 24px -10px rgba(244, 114, 182, 0.45);
+      }
+
+      /* Canvas area */
+      #beat-ai .ba-canvas-area {
+        background: #0F0F0F;
+        padding: 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        overflow: hidden;
+      }
+      #beat-ai .ba-canvas-head {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #beat-ai .ba-canvas-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #F2F2F2;
+      }
+      #beat-ai .ba-canvas-meta {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.35);
+      }
+      #beat-ai .ba-canvas-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      #beat-ai .ba-img-tile {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: #0b0b0b;
+      }
+      #beat-ai .ba-img-bg {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.45), transparent 55%),
+          radial-gradient(circle at 70% 70%, rgba(244, 114, 182, 0.35), transparent 60%),
+          linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      }
+      #beat-ai .ba-drill {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: 80%;
+        height: 80%;
+      }
+      #beat-ai .ba-tile-veil {
+        position: absolute;
+        inset: 0;
+        background: #0b0b0b;
+      }
+      #beat-ai .ba-img-placeholder {
+        background: #131313;
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 14px;
+      }
+      #beat-ai .ba-img-placeholder span:first-child {
+        font-size: 56px;
+        color: rgba(244, 114, 182, 0.4);
+      }
+
+      /* Overlay eyebrow + title */
+      #beat-ai .ba-overlay {
+        position: absolute;
+        bottom: 60px;
+        right: 60px;
+        background: rgba(15, 15, 15, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 24px 32px;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 30;
+        text-align: right;
+      }
+      #beat-ai .ba-eyebrow {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #F472B6;
+      }
+      #beat-ai .ba-title {
+        margin: 0;
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #F2F2F2;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-ai';
+
+        tl.to(root + " .ba-blackout", { opacity: 0, duration: 0.45, ease: "power2.out" }, 0);
+
+        tl.from(root + " .ba-sidebar", { x: -40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.15);
+        tl.from(root + " .ba-dam-nav", { x: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.3);
+        tl.from(root + " .ba-dam-menu li", { x: -10, opacity: 0, duration: 0.25, stagger: 0.04, ease: "power2.out" }, 0.45);
+
+        // Panel Nano Banana
+        tl.from(root + " .ba-dam-panel", { y: 30, opacity: 0, duration: 0.55, ease: "power3.out" }, 0.6);
+        tl.from(root + " .ba-dam-panel .ba-field, " + root + " .ba-dam-panel .ba-panel-head, " + root + " .ba-dam-panel .ba-cta", {
+          y: 15,
+          opacity: 0,
+          duration: 0.35,
+          stagger: 0.08,
+          ease: "power2.out",
+        }, 0.85);
+
+        // Typewriter prompt
+        const prompt = document.querySelector(root + " .ba-prompt-text");
+        const targetText = "Perceuse à percussion Milwaukee M18 FPD3 sur fond studio dark, lumière dramatique, ratio carré.";
+        const tw = { p: 0 };
+        if (prompt) prompt.textContent = "";
+        tl.to(tw, {
+          p: 1,
+          duration: 2.4,
+          ease: "none",
+          onUpdate: function () {
+            if (!prompt) return;
+            const n = Math.floor(targetText.length * tw.p);
+            prompt.textContent = targetText.slice(0, n);
+          },
+        }, 1.2);
+
+        // Canvas area
+        tl.from(root + " .ba-canvas-area", { x: 40, opacity: 0, duration: 0.55, ease: "power3.out" }, 0.7);
+        tl.from(root + " .ba-canvas-head", { y: 15, opacity: 0, duration: 0.4, ease: "power2.out" }, 0.9);
+
+        // Image reveal (drill)
+        tl.fromTo(root + " .ba-tile-veil",
+          { clipPath: "inset(0 0 0 0)" },
+          { clipPath: "inset(0 0 100% 0)", duration: 1.2, ease: "power2.inOut" },
+          3.0);
+        tl.from(root + " .ba-drill", {
+          scale: 1.1,
+          opacity: 0,
+          duration: 0.9,
+          ease: "power3.out",
+        }, 3.2);
+
+        // Overlay eyebrow + title
+        tl.from(root + " .ba-overlay", { y: 30, opacity: 0, duration: 0.55, ease: "expo.out" }, 4.0);
+        tl.from(root + " .ba-eyebrow", { x: 20, opacity: 0, duration: 0.4, ease: "power2.out" }, 4.15);
+        tl.from(root + " .ba-title", { y: 15, opacity: 0, duration: 0.45, ease: "power3.out" }, 4.25);
+
+                tl.to({}, { duration: 10 });
+        window.__timelines["beat-ai"] = tl;
+      })();
+    </script>
+  </div>
+</template>

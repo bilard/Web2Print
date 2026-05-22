@@ -1,0 +1,296 @@
+<template id="beat-chat-template">
+  <div id="beat-chat" data-composition-id="beat-chat" data-width="1920" data-height="1080">
+    <div class="bc-blackout"></div>
+
+    <div class="bc-app">
+      <aside class="bc-sidebar">
+        <div class="bc-sb-logo">
+          <div class="bc-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="bc-sb-brand">Web2Print</span>
+        </div>
+        <nav class="bc-sb-nav">
+          <span class="bc-sb-item">+ Nouveau document</span>
+          <span class="bc-sb-item">↑ Importer</span>
+          <span class="bc-sb-item">▥ Bibliothèque</span>
+          <span class="bc-sb-item">▣ DAM</span>
+          <span class="bc-sb-item">▤ PIM</span>
+          <span class="bc-sb-item">⊟ Taxonomies</span>
+          <span class="bc-sb-item">◉ Templates scraping</span>
+          <span class="bc-sb-item">▦ Scraping Hub</span>
+          <span class="bc-sb-item">⇆ Workflows</span>
+          <span class="bc-sb-item bc-sb-item--active">◗ Chat IA</span>
+        </nav>
+      </aside>
+
+      <!-- Left: prompt library -->
+      <aside class="bc-prompts">
+        <div class="bc-prompts-head">
+          <span class="bc-prompts-title">▦ BIBLIOTHÈQUE DE PROMPTS</span>
+          <span class="bc-prompts-add">+ Nouveau</span>
+        </div>
+        <div class="bc-prompt-cat">RETAIL · OUTILLAGE</div>
+        <ul class="bc-prompt-list">
+          <li class="bc-prompt-item bc-prompt-item--active">★ Description produit retail</li>
+          <li class="bc-prompt-item">★ 5 bullets bénéfices</li>
+          <li class="bc-prompt-item">  Comparatif marques</li>
+          <li class="bc-prompt-item">  Points forts SEO</li>
+        </ul>
+        <div class="bc-prompt-cat">CRÉATIVITÉ</div>
+        <ul class="bc-prompt-list">
+          <li class="bc-prompt-item">★ Headline plaquette A4</li>
+          <li class="bc-prompt-item">  Brief Nano Banana</li>
+        </ul>
+        <div class="bc-prompt-cat">CONFIG</div>
+        <ul class="bc-prompt-list">
+          <li class="bc-prompt-item">  Suggérer template scraping</li>
+        </ul>
+      </aside>
+
+      <!-- Right: chat -->
+      <main class="bc-main">
+        <header class="bc-chat-head">
+          <h1 class="bc-chat-title">Chat IA</h1>
+          <div class="bc-models">
+            <span class="bc-model bc-model--active">★ Claude Opus 4.7</span>
+            <span class="bc-model">★ Gemini 3.1 Pro</span>
+            <span class="bc-model">◉ GPT-5</span>
+          </div>
+        </header>
+
+        <div class="bc-context">
+          <span class="bc-context-pill">CONTEXTE INJECTÉ</span>
+          <span class="bc-context-chip">▤ PIM · Milwaukee M18 FPD3</span>
+          <span class="bc-context-chip">▣ DAM · 3 visuels</span>
+          <span class="bc-context-chip">⊟ Taxonomie · Perçage et vissage</span>
+        </div>
+
+        <div class="bc-messages">
+          <div class="bc-msg bc-msg--user">
+            <span class="bc-msg-author">Vous</span>
+            <p class="bc-msg-body">Rédige une description produit retail de 60 mots pour la M18 FPD3, ton technique, valorise le couple et la batterie. Format markdown.</p>
+          </div>
+          <div class="bc-msg bc-msg--ai">
+            <span class="bc-msg-author">★ Claude Opus 4.7</span>
+            <p class="bc-msg-body"><strong>Perceuse à percussion Milwaukee M18 FPD3</strong> — La nouvelle référence pour les pros. Brushless 18 V, <em>couple max 135 Nm</em>, mandrin métal 13 mm. Frappe 32 000 cps/min pour percer béton, métal et bois. Compatible plateforme M18™ : 250+ outils, une seule batterie. Léger, équilibré, conçu pour l'usage intensif.</p>
+            <div class="bc-msg-actions">
+              <span class="bc-msg-action">↪ Copier</span>
+              <span class="bc-msg-action">⊕ Insérer dans PIM</span>
+              <span class="bc-msg-action">⟳ Régénérer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bc-input">
+          <span class="bc-input-attach">⊕</span>
+          <span class="bc-input-text">Posez votre question…</span>
+          <span class="bc-input-send">↑</span>
+        </div>
+      </main>
+    </div>
+
+    <style>
+      #beat-chat {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-chat .bc-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-chat .bc-app {
+        position: absolute; inset: 0; display: grid; grid-template-columns: 240px 280px 1fr;
+      }
+      #beat-chat .bc-sidebar {
+        background: #141414; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 18px 14px; display: flex; flex-direction: column; gap: 18px;
+      }
+      #beat-chat .bc-sb-logo { display: flex; align-items: center; gap: 12px; padding: 4px; }
+      #beat-chat .bc-sb-logomark {
+        width: 32px; height: 32px; background: #6366F1; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      #beat-chat .bc-sb-logomark svg { width: 18px; height: 18px; }
+      #beat-chat .bc-sb-brand { font-size: 17px; font-weight: 600; color: rgba(255,255,255,0.95); }
+      #beat-chat .bc-sb-nav { display: flex; flex-direction: column; gap: 3px; }
+      #beat-chat .bc-sb-item {
+        font-size: 14px; padding: 9px 14px; border-radius: 7px; color: rgba(255,255,255,0.55);
+      }
+      #beat-chat .bc-sb-item--active {
+        background: rgba(167,139,250,0.12); color: #A78BFA; font-weight: 500;
+      }
+
+      /* Prompts panel */
+      #beat-chat .bc-prompts {
+        background: #131313; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 18px 14px;
+        display: flex; flex-direction: column; gap: 12px;
+        overflow-y: auto;
+      }
+      #beat-chat .bc-prompts-head {
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      #beat-chat .bc-prompts-title {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+      }
+      #beat-chat .bc-prompts-add {
+        font-size: 11px; padding: 4px 8px;
+        background: rgba(167,139,250,0.12); color: #A78BFA;
+        border-radius: 4px; font-weight: 600;
+      }
+      #beat-chat .bc-prompt-cat {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.35); margin-top: 6px;
+      }
+      #beat-chat .bc-prompt-list {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      #beat-chat .bc-prompt-item {
+        padding: 7px 10px; border-radius: 6px;
+        background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
+        font-size: 13px; color: rgba(255,255,255,0.7);
+      }
+      #beat-chat .bc-prompt-item--active {
+        background: rgba(167,139,250,0.1);
+        border-color: rgba(167,139,250,0.3);
+        color: #DDD6FE; font-weight: 600;
+      }
+
+      /* Chat main */
+      #beat-chat .bc-main {
+        padding: 50px 70px;
+        display: flex; flex-direction: column; gap: 20px; overflow: hidden;
+      }
+      #beat-chat .bc-chat-head {
+        display: flex; justify-content: space-between; align-items: center; gap: 20px;
+      }
+      #beat-chat .bc-chat-title {
+        margin: 0; font-size: 44px; font-weight: 700; color: #F2F2F2; letter-spacing: -0.02em;
+      }
+      #beat-chat .bc-models { display: flex; gap: 6px; }
+      #beat-chat .bc-model {
+        font-size: 12px; padding: 6px 12px;
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 6px; color: rgba(255,255,255,0.55);
+      }
+      #beat-chat .bc-model--active {
+        background: rgba(167,139,250,0.12); color: #C4B5FD;
+        border-color: rgba(167,139,250,0.3); font-weight: 600;
+      }
+
+      #beat-chat .bc-context {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        padding: 12px 16px;
+        background: rgba(99,102,241,0.06);
+        border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 10px;
+      }
+      #beat-chat .bc-context-pill {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+        color: #818CF8;
+      }
+      #beat-chat .bc-context-chip {
+        font-size: 12px; padding: 5px 10px;
+        background: rgba(99,102,241,0.12); color: #C7D2FE;
+        border-radius: 6px;
+      }
+
+      #beat-chat .bc-messages {
+        flex: 1; display: flex; flex-direction: column; gap: 16px;
+        overflow-y: auto;
+      }
+      #beat-chat .bc-msg {
+        max-width: 85%;
+        padding: 14px 18px; border-radius: 14px;
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      #beat-chat .bc-msg--user {
+        align-self: flex-end;
+        background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.3);
+      }
+      #beat-chat .bc-msg--ai {
+        align-self: flex-start;
+        background: #1A1A1A;
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      #beat-chat .bc-msg-author {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      }
+      #beat-chat .bc-msg--user .bc-msg-author { color: #818CF8; }
+      #beat-chat .bc-msg--ai .bc-msg-author { color: #A78BFA; }
+      #beat-chat .bc-msg-body {
+        margin: 0; font-size: 14.5px; line-height: 1.55;
+        color: rgba(255,255,255,0.9);
+      }
+      #beat-chat .bc-msg-body strong { color: #F2F2F2; font-weight: 700; }
+      #beat-chat .bc-msg-body em { color: #A78BFA; font-style: italic; font-weight: 600; }
+      #beat-chat .bc-msg-actions {
+        display: flex; gap: 8px; margin-top: 4px;
+      }
+      #beat-chat .bc-msg-action {
+        font-size: 11px; padding: 4px 10px;
+        background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+        border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);
+      }
+
+      #beat-chat .bc-input {
+        display: flex; align-items: center; gap: 10px;
+        padding: 14px 18px;
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+      }
+      #beat-chat .bc-input-attach,
+      #beat-chat .bc-input-send {
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 8px; font-size: 14px;
+      }
+      #beat-chat .bc-input-attach {
+        background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5);
+      }
+      #beat-chat .bc-input-send {
+        background: rgba(167,139,250,0.2); color: #A78BFA;
+      }
+      #beat-chat .bc-input-text {
+        flex: 1; font-size: 14px; color: rgba(255,255,255,0.4);
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-chat';
+
+        tl.to(root + " .bc-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+        tl.from(root + " .bc-sidebar", { x: -30, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bc-prompts", { x: -20, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.25);
+        tl.from(root + " .bc-prompt-item", { x: -10, opacity: 0, duration: 0.22, stagger: 0.04, ease: "power2.out" }, 0.4);
+
+        tl.from(root + " .bc-chat-title", { y: 15, opacity: 0, duration: 0.45, ease: "expo.out" }, 0.4);
+        tl.from(root + " .bc-model", { y: -10, opacity: 0, duration: 0.3, stagger: 0.06, ease: "power2.out" }, 0.55);
+
+        tl.from(root + " .bc-context", { y: 15, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.7);
+        tl.from(root + " .bc-context-chip", { x: -10, opacity: 0, duration: 0.25, stagger: 0.06, ease: "power2.out" }, 0.85);
+
+        tl.from(root + " .bc-msg--user", { x: 30, opacity: 0, duration: 0.45, ease: "power3.out" }, 1.0);
+        tl.from(root + " .bc-msg--ai",   { x: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, 1.5);
+        tl.from(root + " .bc-msg-action", { y: 8, opacity: 0, duration: 0.25, stagger: 0.06, ease: "power2.out" }, 2.1);
+
+        tl.from(root + " .bc-input", { y: 20, opacity: 0, duration: 0.4, ease: "power3.out" }, 2.3);
+
+                tl.to({}, { duration: 7 });
+        window.__timelines["beat-chat"] = tl;
+      })();
+    </script>
+  </div>
+</template>

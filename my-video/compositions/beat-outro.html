@@ -1,0 +1,123 @@
+<template id="beat-outro-template">
+  <div id="beat-outro" data-composition-id="beat-outro" data-width="1920" data-height="1080">
+    <div class="bo-blackout"></div>
+    <div class="bo-stage">
+      <div class="bo-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <div class="bo-glow"></div>
+      </div>
+      <h1 class="bo-wordmark">Web2Print</h1>
+      <p class="bo-claim">Du brief produit à l'export imprimeur.</p>
+    </div>
+
+    <style>
+      #beat-outro {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: #0F0F0F;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-outro .bo-blackout {
+        position: absolute;
+        inset: 0;
+        background: #000;
+        z-index: 10;
+      }
+      #beat-outro .bo-stage {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+      }
+      #beat-outro .bo-logo {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        border-radius: 36px;
+        background: #6366F1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 30px 60px -20px rgba(99, 102, 241, 0.55);
+      }
+      #beat-outro .bo-logo svg {
+        width: 100px;
+        height: 100px;
+      }
+      #beat-outro .bo-glow {
+        position: absolute;
+        inset: -40px;
+        border-radius: 80px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 65%);
+        z-index: -1;
+        opacity: 0.6;
+      }
+      #beat-outro .bo-wordmark {
+        margin: 0;
+        font-size: 96px;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: #FFFFFF;
+        line-height: 1;
+      }
+      #beat-outro .bo-claim {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.6);
+        letter-spacing: 0.005em;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-outro';
+
+        tl.to(root + " .bo-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+        tl.from(root + " .bo-logo", {
+          scale: 0.8,
+          opacity: 0,
+          duration: 0.55,
+          ease: "back.out(1.3)",
+        }, 0.1);
+
+        tl.from(root + " .bo-wordmark", {
+          y: 30,
+          opacity: 0,
+          duration: 0.5,
+          ease: "expo.out",
+        }, 0.35);
+
+        tl.from(root + " .bo-claim", {
+          y: 20,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power3.out",
+        }, 0.55);
+
+        // Final fade-out (this is the final scene — fade out allowed)
+        tl.to(root + " .bo-stage", {
+          opacity: 0,
+          duration: 0.4,
+          ease: "power2.in",
+        }, 2.4);
+
+                tl.to({}, { duration: 4 });
+        window.__timelines["beat-outro"] = tl;
+      })();
+    </script>
+  </div>
+</template>

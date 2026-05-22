@@ -1,0 +1,462 @@
+<template id="beat-editor-merge-template">
+  <div id="beat-editor-merge" data-composition-id="beat-editor-merge" data-width="1920" data-height="1080">
+    <div class="bm-blackout"></div>
+
+    <header class="bm-topbar">
+      <span class="bm-crumb">Test6 · Bannière Milwaukee</span>
+      <span class="bm-badge">⊞ DATA MERGE · 5 lignes liées</span>
+      <div class="bm-spacer"></div>
+      <span class="bm-preview">⊙ Aperçu ligne 1/5</span>
+      <span class="bm-batch">⤓ Batch export</span>
+    </header>
+
+    <div class="bm-body">
+      <aside class="bm-left">
+        <span class="bm-h">SOURCE DE DONNÉES</span>
+        <div class="bm-source">
+          <div class="bm-source-tabs">
+            <span class="bm-tab bm-tab--active">▤ PIM</span>
+            <span class="bm-tab">▦ Google Sheets</span>
+            <span class="bm-tab">⊟ Excel</span>
+          </div>
+          <div class="bm-source-info">
+            <span class="bm-source-name">Nouvelle BDD · Milwaukee</span>
+            <span class="bm-source-meta">5 produits · 19 colonnes</span>
+          </div>
+        </div>
+
+        <span class="bm-h">PLACEHOLDERS DÉTECTÉS · 7</span>
+        <ul class="bm-placeholders">
+          <li><code>{{nom}}</code> <span>Texte titre</span></li>
+          <li><code>{{marque}}</code> <span>Texte sous-titre</span></li>
+          <li><code>{{prix}}</code> <span>Texte prix</span></li>
+          <li><code>{{ean}}</code> <span>Texte code-barres</span></li>
+          <li><code>{{image_url}}</code> <span>Image principale</span></li>
+          <li><code>{{points_forts.0}}</code> <span>Bullet 1</span></li>
+          <li><code>{{specs.couple}}</code> <span>Spec couple</span></li>
+        </ul>
+
+        <span class="bm-h">FORMULES · 3</span>
+        <div class="bm-formula">
+          <span class="bm-formula-name">$prix_format</span>
+          <code class="bm-formula-expr">FORMAT_PRICE({{prix}}, "EUR")</code>
+          <span class="bm-formula-out">→ 329,00 €</span>
+        </div>
+        <div class="bm-formula">
+          <span class="bm-formula-name">$titre_complet</span>
+          <code class="bm-formula-expr">CONCAT({{marque}}, " ", {{modele}})</code>
+          <span class="bm-formula-out">→ Milwaukee M18 FPD3</span>
+        </div>
+        <div class="bm-formula">
+          <span class="bm-formula-name">$promo_si</span>
+          <code class="bm-formula-expr">IF({{stock}} &gt; 50, "EN STOCK", "ÉPUISÉ")</code>
+          <span class="bm-formula-out">→ EN STOCK</span>
+        </div>
+      </aside>
+
+      <section class="bm-center">
+        <span class="bm-h bm-h-center">APERÇU · 5 fiches générées</span>
+        <div class="bm-grid">
+          <article class="bm-fiche bm-fiche--active">
+            <div class="bm-fiche-banner">
+              <div class="bm-fiche-stripe" style="--c1:#1e293b;--c2:#dc2626"></div>
+              <span class="bm-fiche-brand">Milwaukee</span>
+              <span class="bm-fiche-name">M18 FPD3</span>
+              <span class="bm-fiche-price">329 €</span>
+            </div>
+            <span class="bm-fiche-row">1 · Milwaukee FPD3</span>
+          </article>
+          <article class="bm-fiche">
+            <div class="bm-fiche-banner">
+              <div class="bm-fiche-stripe" style="--c1:#0f172a;--c2:#2563eb"></div>
+              <span class="bm-fiche-brand">Bosch</span>
+              <span class="bm-fiche-name">GSB 18V-110</span>
+              <span class="bm-fiche-price">219 €</span>
+            </div>
+            <span class="bm-fiche-row">2 · Bosch GSB</span>
+          </article>
+          <article class="bm-fiche">
+            <div class="bm-fiche-banner">
+              <div class="bm-fiche-stripe" style="--c1:#451a03;--c2:#facc15"></div>
+              <span class="bm-fiche-brand">DeWalt</span>
+              <span class="bm-fiche-name">DCD 800 NT</span>
+              <span class="bm-fiche-price">189 €</span>
+            </div>
+            <span class="bm-fiche-row">3 · DeWalt DCD</span>
+          </article>
+          <article class="bm-fiche">
+            <div class="bm-fiche-banner">
+              <div class="bm-fiche-stripe" style="--c1:#0c4a6e;--c2:#06b6d4"></div>
+              <span class="bm-fiche-brand">Makita</span>
+              <span class="bm-fiche-name">DHP 486 RTJ</span>
+              <span class="bm-fiche-price">259 €</span>
+            </div>
+            <span class="bm-fiche-row">4 · Makita DHP</span>
+          </article>
+          <article class="bm-fiche">
+            <div class="bm-fiche-banner">
+              <div class="bm-fiche-stripe" style="--c1:#1e3a8a;--c2:#10b981"></div>
+              <span class="bm-fiche-brand">Hilti</span>
+              <span class="bm-fiche-name">SF 6H-A22</span>
+              <span class="bm-fiche-price">379 €</span>
+            </div>
+            <span class="bm-fiche-row">5 · Hilti SF</span>
+          </article>
+        </div>
+
+        <div class="bm-batch-card">
+          <div class="bm-batch-head">
+            <span class="bm-batch-title">▶ BATCH EXPORT</span>
+            <span class="bm-batch-status">3/5 · 1.2 Mo/s</span>
+          </div>
+          <div class="bm-batch-progress">
+            <span class="bm-batch-bar"></span>
+          </div>
+          <div class="bm-batch-rows">
+            <span class="bm-batch-row bm-batch-row-ok">✓ milwaukee_fpd3.pdf · 240 Ko</span>
+            <span class="bm-batch-row bm-batch-row-ok">✓ bosch_gsb_18v.pdf · 218 Ko</span>
+            <span class="bm-batch-row bm-batch-row-ok">✓ dewalt_dcd_800.pdf · 232 Ko</span>
+            <span class="bm-batch-row bm-batch-row-run">⌛ makita_dhp_486.pdf · en cours</span>
+            <span class="bm-batch-row bm-batch-row-pending">○ hilti_sf_6h.pdf · en attente</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="bm-right">
+        <span class="bm-h">NOMS DE FICHIERS</span>
+        <div class="bm-prop-card">
+          <code class="bm-pattern">{{marque|lower}}_{{modele|slug}}.pdf</code>
+          <span class="bm-pattern-meta">Pattern dynamique par ligne</span>
+        </div>
+
+        <span class="bm-h">FILTRES</span>
+        <div class="bm-prop-card">
+          <div class="bm-filter">
+            <span class="bm-filter-key">{{stock}}</span>
+            <span class="bm-filter-op">&gt;</span>
+            <span class="bm-filter-val">0</span>
+          </div>
+          <div class="bm-filter">
+            <span class="bm-filter-key">{{taxonomie}}</span>
+            <span class="bm-filter-op">contient</span>
+            <span class="bm-filter-val">"Perceuse"</span>
+          </div>
+        </div>
+
+        <span class="bm-h">EXPORT BATCH</span>
+        <div class="bm-prop-card">
+          <div class="bm-export-row">
+            <span class="bm-export-lbl">Format</span>
+            <span class="bm-export-val">PDF imprimeur</span>
+          </div>
+          <div class="bm-export-row">
+            <span class="bm-export-lbl">Qualité</span>
+            <span class="bm-export-val">CMJN · 300 dpi</span>
+          </div>
+          <div class="bm-export-row">
+            <span class="bm-export-lbl">Marques</span>
+            <span class="bm-export-val">✓ Coupe &amp; bleed</span>
+          </div>
+          <div class="bm-export-row">
+            <span class="bm-export-lbl">Dossier</span>
+            <span class="bm-export-val">/exports/milwaukee/</span>
+          </div>
+        </div>
+
+        <div class="bm-prop-card bm-callout">
+          <span class="bm-callout-ico">⌖</span>
+          <p>Aussi disponible en <strong>IDML batch</strong> : un fichier InDesign par ligne, avec données injectées dans les frames Adobe d'origine.</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="bm-overlay">
+      <span class="bm-eyebrow">Data merge · Mailmerge moderne</span>
+      <h2 class="bm-title">Cent fiches en un clic</h2>
+    </div>
+
+    <style>
+      #beat-editor-merge {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden; color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        display: flex; flex-direction: column;
+      }
+      #beat-editor-merge .bm-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-editor-merge .bm-topbar {
+        height: 50px; padding: 0 18px; background: #161616;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+      }
+      #beat-editor-merge .bm-crumb { font-size: 14px; color: #F2F2F2; font-weight: 500; }
+      #beat-editor-merge .bm-badge {
+        font-size: 12px; padding: 5px 12px; font-weight: 700;
+        background: rgba(56,189,248,0.15); color: #38BDF8;
+        border: 1px solid rgba(56,189,248,0.4); border-radius: 5px;
+      }
+      #beat-editor-merge .bm-spacer { flex: 1; }
+      #beat-editor-merge .bm-preview {
+        font-size: 12px; padding: 6px 12px;
+        background: rgba(255,255,255,0.05); border-radius: 5px;
+        color: rgba(255,255,255,0.7);
+      }
+      #beat-editor-merge .bm-batch {
+        font-size: 13px; padding: 7px 14px;
+        background: linear-gradient(135deg, #6366F1, #38BDF8); color: #fff;
+        border-radius: 6px; font-weight: 700;
+      }
+
+      #beat-editor-merge .bm-body {
+        flex: 1; display: grid; grid-template-columns: 360px 1fr 320px;
+      }
+      #beat-editor-merge .bm-left,
+      #beat-editor-merge .bm-right {
+        background: #131313; padding: 16px;
+        display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+      }
+      #beat-editor-merge .bm-left { border-right: 1px solid rgba(255,255,255,0.06); }
+      #beat-editor-merge .bm-right { border-left: 1px solid rgba(255,255,255,0.06); }
+      #beat-editor-merge .bm-h {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.45); margin-top: 4px;
+      }
+      #beat-editor-merge .bm-h-center {
+        padding: 16px 24px 8px;
+      }
+      #beat-editor-merge .bm-source {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px; padding: 10px 12px;
+        display: flex; flex-direction: column; gap: 10px;
+      }
+      #beat-editor-merge .bm-source-tabs {
+        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px;
+        background: #0F0F0F; padding: 3px; border-radius: 6px;
+      }
+      #beat-editor-merge .bm-tab {
+        text-align: center; padding: 6px; font-size: 11px;
+        color: rgba(255,255,255,0.5); border-radius: 4px;
+      }
+      #beat-editor-merge .bm-tab--active {
+        background: rgba(52,211,153,0.18); color: #34D399; font-weight: 600;
+      }
+      #beat-editor-merge .bm-source-info {
+        display: flex; flex-direction: column; gap: 2px;
+      }
+      #beat-editor-merge .bm-source-name {
+        font-size: 13px; font-weight: 600; color: #F2F2F2;
+      }
+      #beat-editor-merge .bm-source-meta {
+        font-size: 11px; color: rgba(255,255,255,0.4);
+      }
+
+      #beat-editor-merge .bm-placeholders {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      #beat-editor-merge .bm-placeholders li {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 6px 10px; background: #1A1A1A;
+        border: 1px solid rgba(56,189,248,0.15); border-radius: 5px;
+      }
+      #beat-editor-merge .bm-placeholders code {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 12px; color: #38BDF8; font-weight: 600;
+      }
+      #beat-editor-merge .bm-placeholders span {
+        font-size: 11px; color: rgba(255,255,255,0.45);
+      }
+
+      #beat-editor-merge .bm-formula {
+        background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25);
+        border-radius: 6px; padding: 8px 12px;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      #beat-editor-merge .bm-formula-name {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 12px; font-weight: 700; color: #C7D2FE;
+      }
+      #beat-editor-merge .bm-formula-expr {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11px; color: rgba(255,255,255,0.75);
+      }
+      #beat-editor-merge .bm-formula-out {
+        font-size: 11px; color: #34D399;
+      }
+
+      /* Center */
+      #beat-editor-merge .bm-center {
+        background: #0a0a0a; display: flex; flex-direction: column; overflow: hidden;
+      }
+      #beat-editor-merge .bm-grid {
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+        padding: 0 24px;
+      }
+      #beat-editor-merge .bm-fiche {
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      #beat-editor-merge .bm-fiche-banner {
+        position: relative;
+        aspect-ratio: 1 / 1.4;
+        background: #fff;
+        padding: 8px 6px;
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      #beat-editor-merge .bm-fiche--active .bm-fiche-banner {
+        outline: 2px solid #38BDF8; outline-offset: 2px;
+      }
+      #beat-editor-merge .bm-fiche-stripe {
+        position: absolute; top: 0; right: 0; width: 60%; height: 100%;
+        background: linear-gradient(to bottom, var(--c1), var(--c2));
+        clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
+      }
+      #beat-editor-merge .bm-fiche-brand {
+        font-size: 9px; font-weight: 700; color: #1f2937; z-index: 1;
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      #beat-editor-merge .bm-fiche-name {
+        font-size: 12px; font-weight: 700; color: #1f2937; z-index: 1; line-height: 1.1;
+      }
+      #beat-editor-merge .bm-fiche-price {
+        margin-top: auto; font-size: 16px; font-weight: 900; color: #F97316; z-index: 1;
+      }
+      #beat-editor-merge .bm-fiche-row {
+        font-size: 11px; color: rgba(255,255,255,0.5);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        text-align: center;
+      }
+
+      #beat-editor-merge .bm-batch-card {
+        margin: 16px 24px;
+        background: #141414; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+        padding: 14px 18px;
+        display: flex; flex-direction: column; gap: 10px;
+      }
+      #beat-editor-merge .bm-batch-head {
+        display: flex; justify-content: space-between;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+      }
+      #beat-editor-merge .bm-batch-status { color: #FBBF24; }
+      #beat-editor-merge .bm-batch-progress {
+        height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;
+      }
+      #beat-editor-merge .bm-batch-bar {
+        display: block; width: 0%; height: 100%;
+        background: linear-gradient(90deg, #38BDF8, #6366F1);
+        border-radius: 999px;
+      }
+      #beat-editor-merge .bm-batch-rows {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      }
+      #beat-editor-merge .bm-batch-row {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11.5px; padding: 5px 10px;
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05); border-radius: 5px;
+      }
+      #beat-editor-merge .bm-batch-row-ok { color: #34D399; }
+      #beat-editor-merge .bm-batch-row-run { color: #FBBF24; }
+      #beat-editor-merge .bm-batch-row-pending { color: rgba(255,255,255,0.35); }
+
+      /* Right */
+      #beat-editor-merge .bm-prop-card {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px; padding: 10px 12px;
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      #beat-editor-merge .bm-pattern {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 12px; color: #38BDF8; font-weight: 600;
+      }
+      #beat-editor-merge .bm-pattern-meta {
+        font-size: 10px; color: rgba(255,255,255,0.4);
+      }
+      #beat-editor-merge .bm-filter {
+        display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center;
+        padding: 6px 8px;
+        background: #0F0F0F; border: 1px solid rgba(255,255,255,0.06); border-radius: 5px;
+      }
+      #beat-editor-merge .bm-filter-key,
+      #beat-editor-merge .bm-filter-val {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11.5px; color: rgba(255,255,255,0.85);
+      }
+      #beat-editor-merge .bm-filter-op {
+        font-size: 11px; color: #FBBF24; font-weight: 700;
+      }
+      #beat-editor-merge .bm-export-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+      }
+      #beat-editor-merge .bm-export-lbl {
+        font-size: 11px; color: rgba(255,255,255,0.5);
+      }
+      #beat-editor-merge .bm-export-val {
+        font-size: 12px; color: #F2F2F2; font-weight: 600;
+      }
+      #beat-editor-merge .bm-callout {
+        background: rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.3);
+        flex-direction: row; align-items: flex-start; gap: 10px;
+      }
+      #beat-editor-merge .bm-callout-ico {
+        font-size: 20px; color: #A78BFA; flex-shrink: 0;
+      }
+      #beat-editor-merge .bm-callout p {
+        margin: 0; font-size: 11.5px; line-height: 1.4; color: rgba(255,255,255,0.75);
+      }
+      #beat-editor-merge .bm-callout strong {
+        color: #DDD6FE;
+      }
+
+      #beat-editor-merge .bm-overlay {
+        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+        background: rgba(15,15,15,0.9); backdrop-filter: blur(20px);
+        border: 1px solid rgba(56,189,248,0.3);
+        padding: 18px 28px; border-radius: 12px;
+        display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 30;
+      }
+      #beat-editor-merge .bm-eyebrow {
+        font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+        color: #38BDF8;
+      }
+      #beat-editor-merge .bm-title {
+        margin: 0; font-size: 28px; font-weight: 700; color: #F2F2F2; letter-spacing: -0.02em;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-editor-merge';
+
+        tl.to(root + " .bm-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+        tl.from(root + " .bm-topbar", { y: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bm-batch", { scale: 0.85, opacity: 0, duration: 0.45, ease: "back.out(1.5)" }, 0.35);
+
+        tl.from(root + " .bm-left", { x: -25, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.3);
+        tl.from(root + " .bm-source", { y: 15, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.5);
+        tl.from(root + " .bm-placeholders li", { x: -10, opacity: 0, duration: 0.22, stagger: 0.04, ease: "power2.out" }, 0.7);
+        tl.from(root + " .bm-formula", { y: 15, opacity: 0, duration: 0.35, stagger: 0.1, ease: "power3.out" }, 1.0);
+
+        tl.from(root + " .bm-center .bm-h", { y: -10, opacity: 0, duration: 0.4, ease: "power2.out" }, 0.5);
+        tl.from(root + " .bm-fiche", { y: 25, opacity: 0, scale: 0.9, duration: 0.4, stagger: 0.1, ease: "back.out(1.4)" }, 0.7);
+
+        tl.from(root + " .bm-batch-card", { y: 25, opacity: 0, duration: 0.5, ease: "power3.out" }, 1.5);
+        tl.to(root + " .bm-batch-bar", { width: "60%", duration: 3.0, ease: "power2.inOut" }, 1.7);
+        tl.from(root + " .bm-batch-row", { x: -10, opacity: 0, duration: 0.25, stagger: 0.18, ease: "power2.out" }, 1.9);
+
+        tl.from(root + " .bm-right", { x: 25, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.4);
+        tl.from(root + " .bm-prop-card", { y: 15, opacity: 0, duration: 0.35, stagger: 0.1, ease: "power3.out" }, 0.6);
+
+        tl.from(root + " .bm-overlay", { y: 30, opacity: 0, duration: 0.55, ease: "expo.out" }, 2.2);
+
+        tl.to({}, { duration: 13 });
+        window.__timelines["beat-editor-merge"] = tl;
+      })();
+    </script>
+  </div>
+</template>

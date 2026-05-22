@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+      #root {
+        position: relative; width: 1920px; height: 1080px;
+        background: #0F0F0F; overflow: hidden;
+      }
+      #root > [data-composition-id] { position: absolute; inset: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="134" data-width="1920" data-height="1080">
+      <!-- 1. Hook + Library -->
+      <div id="b-hook" class="clip"
+        data-composition-id="beat-hook" data-composition-src="compositions/beat-hook.html"
+        data-start="0" data-duration="5" data-track-index="1"></div>
+
+      <!-- 2. Importer -->
+      <div id="b-import" class="clip"
+        data-composition-id="beat-import" data-composition-src="compositions/beat-import.html"
+        data-start="5" data-duration="6" data-track-index="1"></div>
+
+      <!-- 3. PIM -->
+      <div id="b-pim" class="clip"
+        data-composition-id="beat-pim" data-composition-src="compositions/beat-pim-scraping.html"
+        data-start="11" data-duration="11" data-track-index="1"></div>
+
+      <!-- 4. Taxonomies -->
+      <div id="b-tax" class="clip"
+        data-composition-id="beat-taxonomies" data-composition-src="compositions/beat-taxonomies.html"
+        data-start="22" data-duration="7" data-track-index="1"></div>
+
+      <!-- 5. Templates scraping -->
+      <div id="b-stpl" class="clip"
+        data-composition-id="beat-scraping-templates" data-composition-src="compositions/beat-scraping-templates.html"
+        data-start="29" data-duration="7" data-track-index="1"></div>
+
+      <!-- 6. Scraping Hub -->
+      <div id="b-shub" class="clip"
+        data-composition-id="beat-scraping-hub" data-composition-src="compositions/beat-scraping-hub.html"
+        data-start="36" data-duration="6" data-track-index="1"></div>
+
+      <!-- 7. DAM Nano Banana -->
+      <div id="b-ai" class="clip"
+        data-composition-id="beat-ai" data-composition-src="compositions/beat-ai.html"
+        data-start="42" data-duration="10" data-track-index="1"></div>
+
+      <!-- 8. Workflows -->
+      <div id="b-wf" class="clip"
+        data-composition-id="beat-workflows" data-composition-src="compositions/beat-workflows.html"
+        data-start="52" data-duration="10" data-track-index="1"></div>
+
+      <!-- 9. Chat IA -->
+      <div id="b-chat" class="clip"
+        data-composition-id="beat-chat" data-composition-src="compositions/beat-chat.html"
+        data-start="62" data-duration="7" data-track-index="1"></div>
+
+      <!-- 10. Éditeur (vue d'ensemble) -->
+      <div id="b-editor" class="clip"
+        data-composition-id="beat-editor" data-composition-src="compositions/beat-editor.html"
+        data-start="69" data-duration="10" data-track-index="1"></div>
+
+      <!-- 11. Éditeur IDML (round-trip Adobe) -->
+      <div id="b-editor-idml" class="clip"
+        data-composition-id="beat-editor-idml" data-composition-src="compositions/beat-editor-idml.html"
+        data-start="79" data-duration="12" data-track-index="1"></div>
+
+      <!-- 12. Data merge (batch export) -->
+      <div id="b-editor-merge" class="clip"
+        data-composition-id="beat-editor-merge" data-composition-src="compositions/beat-editor-merge.html"
+        data-start="91" data-duration="13" data-track-index="1"></div>
+
+      <!-- 13. Imports SVG/PPTX/PDF -->
+      <div id="b-editor-imports" class="clip"
+        data-composition-id="beat-editor-imports" data-composition-src="compositions/beat-editor-imports.html"
+        data-start="104" data-duration="8" data-track-index="1"></div>
+
+      <!-- 14. Print + Export 6 formats -->
+      <div id="b-editor-export" class="clip"
+        data-composition-id="beat-editor-export" data-composition-src="compositions/beat-editor-export.html"
+        data-start="112" data-duration="18" data-track-index="1"></div>
+
+      <!-- 15. Outro -->
+      <div id="b-outro" class="clip"
+        data-composition-id="beat-outro" data-composition-src="compositions/beat-outro.html"
+        data-start="130" data-duration="4" data-track-index="1"></div>
+
+      <audio id="narration" data-start="0" data-duration="134" data-track-index="2" src="narration.wav" data-volume="1"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

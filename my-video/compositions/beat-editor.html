@@ -1,0 +1,528 @@
+<template id="beat-editor-template">
+  <div id="beat-editor" data-composition-id="beat-editor" data-width="1920" data-height="1080">
+    <div class="be-blackout"></div>
+
+    <header class="be-topbar">
+      <span class="be-logo-mini">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </span>
+      <span class="be-crumb">Test6 · Bannière Gilles &amp; Nathalie</span>
+      <span class="be-tax-btn">+ Lier à une taxonomie</span>
+      <div class="be-spacer"></div>
+      <span class="be-undo">⟲ Annuler</span>
+      <span class="be-redo">⟳ Refaire</span>
+      <span class="be-save">✓ Sauvegarder</span>
+      <span class="be-export">↧ Exporter PDF</span>
+    </header>
+
+    <div class="be-body">
+      <aside class="be-tools">
+        <span class="be-tool be-tool--active" title="Sélection">▶</span>
+        <span class="be-tool">T</span>
+        <span class="be-tool">▢</span>
+        <span class="be-tool">◯</span>
+        <span class="be-tool">⌖</span>
+        <span class="be-tool">▦</span>
+        <span class="be-tool">⬡</span>
+        <span class="be-tool">⤧</span>
+      </aside>
+
+      <aside class="be-layers">
+        <div class="be-layers-tabs">
+          <span class="be-tab be-tab--active">⊟ Calques</span>
+          <span class="be-tab">⬢ Palette</span>
+          <span class="be-tab">▣ Assets</span>
+        </div>
+        <ul class="be-layers-list">
+          <li class="be-layer be-layer--active">
+            <span class="be-layer-ico be-layer-ico--text">T</span>
+            <span class="be-layer-name">Lorem ipsum dolor</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+          <li class="be-layer">
+            <span class="be-layer-ico be-layer-ico--text">T</span>
+            <span class="be-layer-name">Nathalie</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+          <li class="be-layer">
+            <span class="be-layer-ico be-layer-ico--text">T</span>
+            <span class="be-layer-name">Texte descriptif</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+          <li class="be-layer">
+            <span class="be-layer-ico be-layer-ico--text be-layer-ico--script">G</span>
+            <span class="be-layer-name">Gilles · script font</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+          <li class="be-layer">
+            <span class="be-layer-ico be-layer-ico--shape">▢</span>
+            <span class="be-layer-name">Carré magenta</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+          <li class="be-layer">
+            <span class="be-layer-ico be-layer-ico--img">▣</span>
+            <span class="be-layer-name">Dégradé bandeau</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+          <li class="be-layer">
+            <span class="be-layer-ico be-layer-ico--rect">▤</span>
+            <span class="be-layer-name">Fond blanc</span>
+            <span class="be-layer-eye">◉</span>
+          </li>
+        </ul>
+        <div class="be-palette-head">PALETTE PROJET</div>
+        <div class="be-palette">
+          <span class="be-pal" style="background:#1e293b"></span>
+          <span class="be-pal" style="background:#6366F1"></span>
+          <span class="be-pal" style="background:#A855F7"></span>
+          <span class="be-pal be-pal--active" style="background:#EC4899"></span>
+          <span class="be-pal" style="background:#F97316"></span>
+          <span class="be-pal" style="background:#EAB308"></span>
+          <span class="be-pal" style="background:#fff"></span>
+          <span class="be-pal" style="background:#0F0F0F"></span>
+        </div>
+      </aside>
+
+      <section class="be-canvas">
+        <div class="be-ruler-h"></div>
+        <div class="be-ruler-v"></div>
+        <div class="be-banner" data-layout-allow-overflow>
+          <div class="be-banner-gilles">Gilles</div>
+          <div class="be-banner-mag"></div>
+          <div class="be-banner-nathalie">
+            <span class="be-nathalie-mini">Lorem ipsum dolor sit amet,<br/>consectetur adipiscing elit.</span>
+            <strong>Nathalie</strong>
+          </div>
+          <div class="be-banner-cta">
+            <span>Lorem</span><span>ipsum</span><span>dolor</span>
+          </div>
+          <div class="be-banner-stripe"></div>
+          <span class="be-handle be-handle--nw"></span>
+          <span class="be-handle be-handle--ne"></span>
+          <span class="be-handle be-handle--sw"></span>
+          <span class="be-handle be-handle--se"></span>
+        </div>
+        <div class="be-bottombar">
+          <span class="be-thumb-active"></span>
+          <span class="be-thumb-add">+</span>
+          <div class="be-bb-spacer"></div>
+          <span class="be-bb-bleed">⌖ 3 mm fonds perdus</span>
+          <span class="be-bb-zoom">⊖ 5% ⊕</span>
+          <span class="be-bb-dim">⟼ 3856 × 13641 px</span>
+          <span class="be-bb-tool">▦ Grille</span>
+          <span class="be-bb-tool">⌒ Snap</span>
+        </div>
+      </section>
+
+      <aside class="be-props">
+        <span class="be-props-head">PROPRIÉTÉS · PAGE</span>
+        <div class="be-prop-card">
+          <span class="be-prop-section">DIMENSIONS</span>
+          <div class="be-prop-row">
+            <span class="be-prop-lbl">L</span>
+            <span class="be-prop-input">3856</span>
+            <span class="be-prop-lbl">H</span>
+            <span class="be-prop-input">13641 <em>px</em></span>
+          </div>
+          <div class="be-format-chips">
+            <span class="be-format-chip">A4 P</span>
+            <span class="be-format-chip">A4 L</span>
+            <span class="be-format-chip">A3</span>
+            <span class="be-format-chip">A5</span>
+            <span class="be-format-chip">Full HD</span>
+            <span class="be-format-chip">4K</span>
+            <span class="be-format-chip">16:9</span>
+            <span class="be-format-chip">IG Post</span>
+            <span class="be-format-chip">IG Story</span>
+            <span class="be-format-chip">FB Cover</span>
+          </div>
+        </div>
+        <div class="be-prop-card">
+          <span class="be-prop-section">ARRIÈRE-PLAN</span>
+          <div class="be-bg-toggle">
+            <span class="be-bg-opt be-bg-opt--active">Uni</span>
+            <span class="be-bg-opt">Dégradé</span>
+            <span class="be-bg-opt">Image</span>
+          </div>
+          <div class="be-color-row">
+            <span class="be-swatch-white"></span>
+            <span class="be-color-val">#FFFFFF</span>
+          </div>
+        </div>
+        <div class="be-prop-card be-prop-card--print">
+          <span class="be-prop-section">⊞ IMPRESSION · CMJN 300 dpi</span>
+          <div class="be-print-row">
+            <span class="be-print-lbl">Fonds perdus</span>
+            <span class="be-print-val">3 mm</span>
+          </div>
+          <div class="be-print-row">
+            <span class="be-print-lbl">Marges sécurité</span>
+            <span class="be-print-val">5 mm</span>
+          </div>
+          <div class="be-print-row">
+            <span class="be-print-lbl">Profil ICC</span>
+            <span class="be-print-val">Fogra39</span>
+          </div>
+          <div class="be-print-row">
+            <span class="be-print-lbl">Marques de coupe</span>
+            <span class="be-print-val be-print-val--on">✓ Activées</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <style>
+      #beat-editor {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background: #0F0F0F; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+        display: flex; flex-direction: column;
+      }
+      #beat-editor .be-blackout {
+        position: absolute; inset: 0; background: #000; z-index: 50;
+      }
+      #beat-editor .be-topbar {
+        height: 50px; padding: 0 18px;
+        background: #161616; border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 10px;
+        flex-shrink: 0;
+      }
+      #beat-editor .be-logo-mini {
+        width: 26px; height: 26px; background: #6366F1; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      #beat-editor .be-logo-mini svg { width: 15px; height: 15px; }
+      #beat-editor .be-crumb {
+        font-size: 14px; color: #F2F2F2; font-weight: 500;
+      }
+      #beat-editor .be-tax-btn {
+        font-size: 12px; color: rgba(255,255,255,0.5);
+        padding: 4px 10px; border-radius: 5px;
+        background: rgba(255,255,255,0.04);
+      }
+      #beat-editor .be-spacer { flex: 1; }
+      #beat-editor .be-undo,
+      #beat-editor .be-redo {
+        font-size: 12px; color: rgba(255,255,255,0.5);
+        padding: 6px 10px; border-radius: 5px;
+        background: rgba(255,255,255,0.04);
+      }
+      #beat-editor .be-save {
+        font-size: 13px; padding: 7px 14px;
+        background: #34D399; color: #052e1f;
+        border-radius: 6px; font-weight: 700;
+      }
+      #beat-editor .be-export {
+        font-size: 13px; padding: 7px 14px;
+        background: rgba(167,139,250,0.2); color: #C4B5FD;
+        border: 1px solid rgba(167,139,250,0.4);
+        border-radius: 6px; font-weight: 600;
+      }
+
+      #beat-editor .be-body {
+        flex: 1; display: grid; grid-template-columns: 56px 240px 1fr 280px;
+        min-height: 0;
+      }
+      #beat-editor .be-tools {
+        background: #131313; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 14px 0;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+      }
+      #beat-editor .be-tool {
+        width: 36px; height: 36px; border-radius: 8px;
+        background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+        display: flex; align-items: center; justify-content: center; font-size: 14px;
+      }
+      #beat-editor .be-tool--active {
+        background: rgba(99,102,241,0.2); color: #A5B4FC;
+      }
+
+      #beat-editor .be-layers {
+        background: #131313; border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 14px 14px; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 12px;
+      }
+      #beat-editor .be-layers-tabs {
+        display: flex; gap: 3px;
+        background: #1A1A1A; padding: 3px; border-radius: 6px;
+      }
+      #beat-editor .be-tab {
+        flex: 1; text-align: center; padding: 6px 4px;
+        font-size: 11px; color: rgba(255,255,255,0.5);
+        border-radius: 4px;
+      }
+      #beat-editor .be-tab--active {
+        background: rgba(99,102,241,0.2); color: #C7D2FE; font-weight: 600;
+      }
+      #beat-editor .be-layers-list {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      #beat-editor .be-layer {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 10px; border-radius: 6px;
+        background: rgba(255,255,255,0.02);
+        font-size: 12px; color: rgba(255,255,255,0.7);
+      }
+      #beat-editor .be-layer--active {
+        background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35);
+        color: #C7D2FE;
+      }
+      #beat-editor .be-layer-ico {
+        width: 22px; height: 22px; border-radius: 4px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700;
+      }
+      #beat-editor .be-layer-ico--text { background: rgba(245,158,11,0.18); color: #FCD34D; }
+      #beat-editor .be-layer-ico--script { background: rgba(167,139,250,0.18); color: #C4B5FD; font-family: "Snell Roundhand", cursive; }
+      #beat-editor .be-layer-ico--shape { background: rgba(244,114,182,0.18); color: #F472B6; }
+      #beat-editor .be-layer-ico--img { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+      #beat-editor .be-layer-ico--rect { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+      #beat-editor .be-layer-name { flex: 1; }
+      #beat-editor .be-layer-eye { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+      #beat-editor .be-palette-head {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+        color: rgba(255,255,255,0.4); text-transform: uppercase;
+        margin-top: 4px;
+      }
+      #beat-editor .be-palette {
+        display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px;
+      }
+      #beat-editor .be-pal {
+        aspect-ratio: 1; border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+      #beat-editor .be-pal--active {
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(167,139,250,0.6);
+      }
+
+      /* Canvas */
+      #beat-editor .be-canvas {
+        position: relative; background: #0a0a0a;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+      }
+      #beat-editor .be-ruler-h {
+        position: absolute; top: 0; left: 22px; right: 0; height: 16px;
+        background: #161616;
+        background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0 1px, transparent 1px 32px);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+      }
+      #beat-editor .be-ruler-v {
+        position: absolute; left: 0; top: 16px; bottom: 56px; width: 16px;
+        background: #161616;
+        background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.18) 0 1px, transparent 1px 32px);
+        border-right: 1px solid rgba(255,255,255,0.06);
+      }
+      #beat-editor .be-banner {
+        position: relative;
+        width: 150px; height: 540px;
+        background: #FFFFFF;
+        border: 2px dashed #F472B6;
+        padding: 14px 12px;
+        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8);
+        display: flex; flex-direction: column; gap: 10px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+      #beat-editor .be-banner::before {
+        content: ""; position: absolute; top: 0; right: 0; width: 100px; height: 320px;
+        background: linear-gradient(to bottom,
+          #1e293b 0%, #6366F1 10%, #A855F7 25%, #EC4899 50%, #F97316 75%, #EAB308 100%);
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 100%, 0 60%);
+        opacity: 0.95;
+      }
+      #beat-editor .be-banner-gilles {
+        font-family: "Snell Roundhand", "Brush Script MT", cursive;
+        font-size: 30px; font-weight: 700; color: #FFFFFF;
+        z-index: 1; margin-top: 8px; align-self: center;
+      }
+      #beat-editor .be-banner-mag {
+        width: 44px; height: 44px; background: #EC4899;
+        z-index: 1; align-self: center; margin: 8px 0;
+      }
+      #beat-editor .be-banner-nathalie {
+        z-index: 2; display: flex; flex-direction: column; gap: 4px;
+      }
+      #beat-editor .be-banner-nathalie strong {
+        color: #BE185D; font-size: 14px; font-weight: 700;
+      }
+      #beat-editor .be-nathalie-mini {
+        color: #1f2937; font-size: 5px; line-height: 1.3;
+      }
+      #beat-editor .be-banner-cta {
+        margin-top: auto; margin-bottom: 12px;
+        display: flex; flex-direction: column; gap: 2px;
+      }
+      #beat-editor .be-banner-cta span {
+        color: #F97316; font-size: 22px; font-weight: 900;
+        line-height: 0.95; letter-spacing: -0.02em;
+      }
+      #beat-editor .be-banner-stripe {
+        position: absolute; left: 8px; top: 18px; bottom: 18px;
+        width: 0; border-left: 1px dashed #BE185D;
+      }
+      #beat-editor .be-handle {
+        position: absolute; width: 10px; height: 10px;
+        background: #38BDF8; border: 2px solid #0F0F0F; border-radius: 2px;
+        z-index: 5;
+      }
+      #beat-editor .be-handle--nw { top: -6px; left: -6px; }
+      #beat-editor .be-handle--ne { top: -6px; right: -6px; }
+      #beat-editor .be-handle--sw { bottom: -6px; left: -6px; }
+      #beat-editor .be-handle--se { bottom: -6px; right: -6px; }
+
+      #beat-editor .be-bottombar {
+        position: absolute; left: 16px; right: 0; bottom: 0;
+        height: 48px;
+        background: #131313; border-top: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 12px; padding: 0 18px;
+      }
+      #beat-editor .be-thumb-active {
+        width: 28px; height: 38px;
+        background: linear-gradient(to bottom, #fff 30%, #6366F1 100%);
+        border: 2px solid #6366F1; border-radius: 3px;
+      }
+      #beat-editor .be-thumb-add {
+        width: 28px; height: 38px;
+        background: transparent; border: 1px dashed rgba(255,255,255,0.2);
+        border-radius: 3px;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,0.4); font-size: 14px;
+      }
+      #beat-editor .be-bb-spacer { flex: 1; }
+      #beat-editor .be-bb-bleed,
+      #beat-editor .be-bb-zoom,
+      #beat-editor .be-bb-dim,
+      #beat-editor .be-bb-tool {
+        font-size: 11px; color: rgba(255,255,255,0.55);
+        padding: 5px 10px;
+        background: rgba(255,255,255,0.04); border-radius: 5px;
+        border: 1px solid rgba(255,255,255,0.05);
+        font-variant-numeric: tabular-nums;
+      }
+      #beat-editor .be-bb-bleed { color: #F472B6; }
+      #beat-editor .be-bb-tool { background: transparent; }
+
+      /* Props panel */
+      #beat-editor .be-props {
+        background: #131313; border-left: 1px solid rgba(255,255,255,0.06);
+        padding: 14px 14px; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 12px;
+      }
+      #beat-editor .be-props-head {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+        color: rgba(255,255,255,0.45);
+      }
+      #beat-editor .be-prop-card {
+        background: #1A1A1A; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px; padding: 12px 14px;
+        display: flex; flex-direction: column; gap: 10px;
+      }
+      #beat-editor .be-prop-card--print {
+        background: rgba(167,139,250,0.06);
+        border-color: rgba(167,139,250,0.25);
+      }
+      #beat-editor .be-prop-section {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: rgba(255,255,255,0.4);
+      }
+      #beat-editor .be-prop-row {
+        display: grid; grid-template-columns: 14px 1fr 14px 1fr; gap: 6px; align-items: center;
+      }
+      #beat-editor .be-prop-lbl {
+        font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-align: center;
+      }
+      #beat-editor .be-prop-input {
+        padding: 5px 8px; background: #0F0F0F;
+        border: 1px solid rgba(255,255,255,0.08); border-radius: 4px;
+        font-size: 12px; color: #F2F2F2; font-variant-numeric: tabular-nums;
+      }
+      #beat-editor .be-prop-input em {
+        font-style: normal; font-size: 9px; color: rgba(255,255,255,0.4); margin-left: 4px;
+      }
+      #beat-editor .be-format-chips {
+        display: flex; flex-wrap: wrap; gap: 4px;
+      }
+      #beat-editor .be-format-chip {
+        font-size: 10px; padding: 4px 8px;
+        background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.55);
+        border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);
+      }
+      #beat-editor .be-bg-toggle {
+        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px;
+        background: #0F0F0F; padding: 3px; border-radius: 6px;
+      }
+      #beat-editor .be-bg-opt {
+        text-align: center; padding: 5px; font-size: 11px;
+        color: rgba(255,255,255,0.55); border-radius: 4px;
+      }
+      #beat-editor .be-bg-opt--active {
+        background: rgba(99,102,241,0.25); color: #C7D2FE; font-weight: 600;
+      }
+      #beat-editor .be-color-row {
+        display: flex; align-items: center; gap: 8px;
+        padding: 6px 10px; background: #0F0F0F;
+        border: 1px solid rgba(255,255,255,0.08); border-radius: 5px;
+      }
+      #beat-editor .be-swatch-white {
+        width: 16px; height: 16px; background: #FFF;
+        border: 1px solid rgba(255,255,255,0.2); border-radius: 3px;
+      }
+      #beat-editor .be-color-val {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11px; color: #F2F2F2;
+      }
+      #beat-editor .be-print-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+      }
+      #beat-editor .be-print-lbl {
+        font-size: 11px; color: rgba(255,255,255,0.55);
+      }
+      #beat-editor .be-print-val {
+        font-size: 12px; color: #F2F2F2; font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      #beat-editor .be-print-val--on {
+        color: #34D399;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-editor';
+
+        tl.to(root + " .be-blackout", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+        tl.from(root + " .be-topbar", { y: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.1);
+        tl.from(root + " .be-tools", { x: -25, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.2);
+        tl.from(root + " .be-tool", { y: -8, opacity: 0, duration: 0.2, stagger: 0.04, ease: "power2.out" }, 0.3);
+
+        tl.from(root + " .be-layers", { x: -20, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.3);
+        tl.from(root + " .be-layer", { x: -10, opacity: 0, duration: 0.25, stagger: 0.05, ease: "power2.out" }, 0.5);
+        tl.from(root + " .be-pal", { scale: 0, opacity: 0, duration: 0.25, stagger: 0.03, ease: "back.out(1.6)", transformOrigin: "50% 50%" }, 0.85);
+
+        tl.from(root + " .be-ruler-h", { scaleX: 0, transformOrigin: "left", duration: 0.45, ease: "power3.out" }, 0.4);
+        tl.from(root + " .be-ruler-v", { scaleY: 0, transformOrigin: "top", duration: 0.45, ease: "power3.out" }, 0.45);
+        tl.from(root + " .be-banner", { y: 40, opacity: 0, scale: 0.92, duration: 0.6, ease: "expo.out" }, 0.55);
+        tl.from(root + " .be-handle", { scale: 0, opacity: 0, duration: 0.3, stagger: 0.04, ease: "back.out(1.8)", transformOrigin: "50% 50%" }, 0.95);
+        tl.from(root + " .be-bottombar", { y: 30, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.8);
+
+        tl.from(root + " .be-props", { x: 30, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.35);
+        tl.from(root + " .be-prop-card", { y: 15, opacity: 0, duration: 0.35, stagger: 0.08, ease: "power3.out" }, 0.55);
+        tl.from(root + " .be-format-chip", { y: 6, opacity: 0, duration: 0.22, stagger: 0.02, ease: "power2.out" }, 0.95);
+        tl.from(root + " .be-print-row", { x: 15, opacity: 0, duration: 0.3, stagger: 0.05, ease: "power2.out" }, 1.2);
+
+                tl.to({}, { duration: 10 });
+        window.__timelines["beat-editor"] = tl;
+      })();
+    </script>
+  </div>
+</template>

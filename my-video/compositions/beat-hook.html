@@ -1,0 +1,515 @@
+<template id="beat-hook-template">
+  <div id="beat-hook" data-composition-id="beat-hook" data-width="1920" data-height="1080">
+    <div class="bh-blackout"></div>
+
+    <!-- App preview en background : sidebar pleine + library cards + topbar -->
+    <div class="bh-app">
+      <aside class="bh-sidebar">
+        <div class="bh-sb-logo">
+          <div class="bh-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="bh-sb-brand">Web2Print</span>
+        </div>
+        <nav class="bh-sb-nav">
+          <span class="bh-sb-item" data-mod="1" style="--accent:#A78BFA"><span class="bh-sb-ico">+</span> Nouveau document</span>
+          <span class="bh-sb-item" data-mod="2" style="--accent:#FBBF24"><span class="bh-sb-ico">↑</span> Importer</span>
+          <span class="bh-sb-item bh-sb-item--active" data-mod="3" style="--accent:#38BDF8"><span class="bh-sb-ico">▥</span> Bibliothèque <em>1</em></span>
+          <span class="bh-sb-item" data-mod="4" style="--accent:#F472B6"><span class="bh-sb-ico">▣</span> DAM</span>
+          <span class="bh-sb-item" data-mod="5" style="--accent:#34D399"><span class="bh-sb-ico">▤</span> PIM</span>
+          <span class="bh-sb-item" data-mod="6" style="--accent:#2DD4BF"><span class="bh-sb-ico">⊟</span> Taxonomies</span>
+          <span class="bh-sb-item" data-mod="7" style="--accent:#818CF8"><span class="bh-sb-ico">◉</span> Templates scraping</span>
+          <span class="bh-sb-item" data-mod="8" style="--accent:#38BDF8"><span class="bh-sb-ico">▦</span> Scraping Hub</span>
+          <span class="bh-sb-item" data-mod="9" style="--accent:#818CF8"><span class="bh-sb-ico">⇆</span> Workflows</span>
+          <span class="bh-sb-item" data-mod="10" style="--accent:#A78BFA"><span class="bh-sb-ico">◗</span> Chat IA</span>
+        </nav>
+        <div class="bh-sb-bottom">
+          <div class="bh-sb-avatar"></div>
+          <div class="bh-sb-user">
+            <span class="bh-sb-user-name">Francis Bilard</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="bh-main">
+        <header class="bh-tab-bar">
+          <h1 class="bh-page-title">Mes projets</h1>
+          <div class="bh-view-toggle">
+            <span class="bh-view-opt bh-view-opt--active">◫ Vignettes</span>
+            <span class="bh-view-opt">≣ Liste</span>
+          </div>
+        </header>
+
+        <section class="bh-cards">
+          <article class="bh-card bh-card--gilles">
+            <div class="bh-card-art">
+              <div class="bh-card-art-stripe"></div>
+              <span class="bh-card-art-gilles">Gilles</span>
+              <div class="bh-card-art-mag"></div>
+              <span class="bh-card-art-lorem">Lorem<br/>ipsum<br/>dolor</span>
+            </div>
+            <span class="bh-card-name">Test6</span>
+            <span class="bh-card-tag">+ Lier à une taxonomie</span>
+            <span class="bh-card-date">09 mai 2026</span>
+          </article>
+          <article class="bh-card bh-card--ghost">
+            <div class="bh-card-art bh-card-art--ghost">
+              <div class="bh-card-art-shape bh-card-art-shape--a"></div>
+              <div class="bh-card-art-shape bh-card-art-shape--b"></div>
+              <div class="bh-card-art-shape bh-card-art-shape--c"></div>
+            </div>
+            <span class="bh-card-name">Catalogue Milwaukee</span>
+            <span class="bh-card-date">07 mai 2026</span>
+          </article>
+          <article class="bh-card bh-card--ghost">
+            <div class="bh-card-art bh-card-art--ghost-2">
+              <div class="bh-card-art-typo">A4</div>
+            </div>
+            <span class="bh-card-name">Plaquette Bosch</span>
+            <span class="bh-card-date">05 mai 2026</span>
+          </article>
+          <article class="bh-card bh-card--ghost">
+            <div class="bh-card-art bh-card-art--ghost-3"></div>
+            <span class="bh-card-name">Flyer DeWalt 2026</span>
+            <span class="bh-card-date">02 mai 2026</span>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <!-- Hero overlay -->
+    <div class="bh-hero">
+      <div class="bh-hero-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <div class="bh-hero-glow"></div>
+      </div>
+      <h1 class="bh-hero-wordmark">Web2Print</h1>
+      <p class="bh-hero-tagline">Orchestrateur catalogue · créa · print</p>
+    </div>
+
+    <div class="bh-dim"></div>
+
+    <style>
+      #beat-hook {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: #0F0F0F;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-hook .bh-blackout {
+        position: absolute;
+        inset: 0;
+        background: #000;
+        z-index: 60;
+        pointer-events: none;
+      }
+
+      /* App layout */
+      #beat-hook .bh-app {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        background: #0F0F0F;
+      }
+      #beat-hook .bh-sidebar {
+        background: #141414;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 18px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      #beat-hook .bh-sb-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px;
+      }
+      #beat-hook .bh-sb-logomark {
+        width: 32px;
+        height: 32px;
+        background: #6366F1;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #beat-hook .bh-sb-logomark svg { width: 18px; height: 18px; }
+      #beat-hook .bh-sb-brand {
+        font-size: 17px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.95);
+      }
+      #beat-hook .bh-sb-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      #beat-hook .bh-sb-item {
+        font-size: 15px;
+        padding: 9px 14px;
+        border-radius: 7px;
+        color: rgba(255, 255, 255, 0.6);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        position: relative;
+      }
+      #beat-hook .bh-sb-ico {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        color: var(--accent, rgba(255,255,255,0.5));
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      #beat-hook .bh-sb-item em {
+        font-style: normal;
+        font-size: 11px;
+        padding: 2px 7px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-left: auto;
+      }
+      #beat-hook .bh-sb-item--active {
+        background: rgba(56, 189, 248, 0.1);
+        color: #38BDF8;
+        font-weight: 500;
+      }
+      #beat-hook .bh-sb-item--active em {
+        background: rgba(56, 189, 248, 0.18);
+        color: #BAE6FD;
+      }
+      #beat-hook .bh-sb-bottom {
+        margin-top: auto;
+        padding: 10px 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #beat-hook .bh-sb-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #60a5fa, #34d399);
+      }
+      #beat-hook .bh-sb-user-name {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      /* Main */
+      #beat-hook .bh-main {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #beat-hook .bh-tab-bar {
+        padding: 36px 56px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #beat-hook .bh-page-title {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #F2F2F2;
+      }
+      #beat-hook .bh-view-toggle {
+        display: flex;
+        gap: 4px;
+        padding: 3px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+      }
+      #beat-hook .bh-view-opt {
+        padding: 6px 12px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        border-radius: 5px;
+      }
+      #beat-hook .bh-view-opt--active {
+        background: rgba(99, 102, 241, 0.18);
+        color: #C7D2FE;
+        font-weight: 600;
+      }
+
+      /* Cards grid */
+      #beat-hook .bh-cards {
+        padding: 0 56px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 22px;
+      }
+      #beat-hook .bh-card {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #beat-hook .bh-card-art {
+        aspect-ratio: 1 / 1.2;
+        background: #131313;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+      }
+      #beat-hook .bh-card-name {
+        margin-top: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #F2F2F2;
+      }
+      #beat-hook .bh-card-tag {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.45);
+        padding: 3px 8px;
+        align-self: flex-start;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      #beat-hook .bh-card-date {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Card art — Gilles (Test6) */
+      #beat-hook .bh-card--gilles .bh-card-art {
+        background: #fff;
+        position: relative;
+      }
+      #beat-hook .bh-card-art-stripe {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 70%;
+        height: 100%;
+        background: linear-gradient(to bottom,
+          #1e293b 0%, #6366F1 12%, #A855F7 26%, #EC4899 52%, #F97316 75%, #EAB308 100%);
+        clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
+      }
+      #beat-hook .bh-card-art-gilles {
+        position: absolute;
+        top: 14%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Snell Roundhand", "Brush Script MT", cursive;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        z-index: 2;
+      }
+      #beat-hook .bh-card-art-mag {
+        position: absolute;
+        top: 32%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 38px;
+        height: 38px;
+        background: #EC4899;
+      }
+      #beat-hook .bh-card-art-lorem {
+        position: absolute;
+        bottom: 14%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 16px;
+        font-weight: 900;
+        color: #F97316;
+        letter-spacing: -0.02em;
+        line-height: 0.95;
+        text-align: center;
+      }
+
+      /* Ghost cards (placeholders) */
+      #beat-hook .bh-card--ghost .bh-card-art {
+        position: relative;
+      }
+      #beat-hook .bh-card-art--ghost {
+        background: linear-gradient(135deg, #18181b, #27272a);
+      }
+      #beat-hook .bh-card-art-shape {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+      }
+      #beat-hook .bh-card-art-shape--a {
+        top: 10%; left: 10%; width: 30%; height: 14%;
+      }
+      #beat-hook .bh-card-art-shape--b {
+        top: 35%; left: 10%; right: 10%; height: 35%;
+        background: rgba(99, 102, 241, 0.18);
+      }
+      #beat-hook .bh-card-art-shape--c {
+        bottom: 10%; left: 10%; width: 50%; height: 8%;
+      }
+      #beat-hook .bh-card-art--ghost-2 {
+        background: #fafafa;
+      }
+      #beat-hook .bh-card-art-typo {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 72px;
+        font-weight: 900;
+        color: #6366F1;
+        letter-spacing: -0.04em;
+      }
+      #beat-hook .bh-card-art--ghost-3 {
+        background: radial-gradient(circle at 30% 30%, #f59e0b, #ef4444 60%, #1a1a1a 100%);
+      }
+
+      /* Hero overlay (lower) */
+      #beat-hook .bh-dim {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.35) 50%, transparent 75%);
+        z-index: 10;
+        pointer-events: none;
+      }
+      #beat-hook .bh-hero {
+        position: absolute;
+        bottom: 80px;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      #beat-hook .bh-hero-logo {
+        position: relative;
+        width: 90px;
+        height: 90px;
+        background: #6366F1;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 30px 60px -20px rgba(99, 102, 241, 0.6);
+      }
+      #beat-hook .bh-hero-logo svg { width: 50px; height: 50px; }
+      #beat-hook .bh-hero-glow {
+        position: absolute;
+        inset: -30px;
+        border-radius: 60px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.5) 0%, transparent 65%);
+        z-index: -1;
+        opacity: 0;
+      }
+      #beat-hook .bh-hero-wordmark {
+        margin: 0;
+        font-size: 88px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #FFFFFF;
+        line-height: 1;
+      }
+      #beat-hook .bh-hero-tagline {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+        color: rgba(255, 255, 255, 0.7);
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-hook';
+
+        tl.to(root + " .bh-blackout", { opacity: 0, duration: 0.5, ease: "power2.out" }, 0);
+
+        // App layout : sidebar slides in left, cards slide in
+        tl.from(root + " .bh-sb-logo", { x: -30, opacity: 0, duration: 0.45, ease: "power3.out" }, 0.1);
+        tl.from(root + " .bh-sb-item", {
+          x: -20,
+          opacity: 0,
+          duration: 0.3,
+          stagger: 0.04,
+          ease: "power2.out",
+        }, 0.25);
+
+        tl.from(root + " .bh-page-title", { y: -15, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.3);
+        tl.from(root + " .bh-view-toggle", { x: 15, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.4);
+
+        tl.from(root + " .bh-card", {
+          y: 30,
+          opacity: 0,
+          duration: 0.45,
+          stagger: 0.08,
+          ease: "power3.out",
+        }, 0.55);
+
+        // Highlights stagger sur les modules (un par un, rapide)
+        tl.fromTo(root + " .bh-sb-item:not(.bh-sb-item--active)",
+          { color: "rgba(255, 255, 255, 0.6)" },
+          {
+            color: function (i, target) {
+              return getComputedStyle(target).getPropertyValue("--accent") || "#fff";
+            },
+            duration: 0.2,
+            stagger: 0.08,
+            ease: "power2.out",
+          },
+          1.4);
+
+        // Dim background + hero overlay
+        tl.to(root + " .bh-dim", {
+          opacity: 1,
+          duration: 0.8,
+          ease: "power2.inOut",
+        }, 2.6);
+
+        tl.from(root + " .bh-hero-logo", {
+          scale: 0.7,
+          opacity: 0,
+          filter: "blur(10px)",
+          duration: 0.7,
+          ease: "back.out(1.3)",
+        }, 2.9);
+        tl.to(root + " .bh-hero-glow", {
+          opacity: 1,
+          duration: 0.45,
+          ease: "power2.out",
+        }, 3.3);
+        tl.from(root + " .bh-hero-wordmark", {
+          y: 30,
+          opacity: 0,
+          duration: 0.5,
+          ease: "expo.out",
+        }, 3.4);
+        tl.from(root + " .bh-hero-tagline", {
+          y: 15,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power3.out",
+        }, 3.6);
+
+                tl.to({}, { duration: 5 });
+        window.__timelines["beat-hook"] = tl;
+      })();
+    </script>
+  </div>
+</template>

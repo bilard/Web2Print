@@ -1,0 +1,10 @@
+[
+  {
+    "url": "http://localhost:5173/vite.svg",
+    "type": "Icon",
+    "contexts": [
+      "link[rel=\"icon\"]"
+    ],
+    "notes": null
+  }
+]

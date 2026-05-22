@@ -1,0 +1,595 @@
+<template id="beat-pim-template">
+  <div id="beat-pim" data-composition-id="beat-pim" data-width="1920" data-height="1080">
+    <div class="bp-blackout"></div>
+
+    <!-- Vraie UI Web2Print : sidebar gauche + content -->
+    <div class="bp-app">
+      <!-- Sidebar -->
+      <aside class="bp-sidebar">
+        <div class="bp-sb-logo">
+          <div class="bp-sb-logomark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="bp-sb-brand">Web2Print</span>
+        </div>
+        <nav class="bp-sb-nav">
+          <span class="bp-sb-item">Nouveau document</span>
+          <span class="bp-sb-item">Importer</span>
+          <span class="bp-sb-item">Bibliothèque <em class="bp-sb-count">1</em></span>
+          <span class="bp-sb-item">DAM</span>
+          <span class="bp-sb-item bp-sb-item--active">PIM</span>
+          <span class="bp-sb-item">Taxonomies</span>
+          <span class="bp-sb-item">Templates scraping</span>
+          <span class="bp-sb-item">Scraping Hub</span>
+          <span class="bp-sb-item">Workflows</span>
+          <span class="bp-sb-item">Chat IA</span>
+        </nav>
+      </aside>
+
+      <!-- Content -->
+      <main class="bp-main">
+        <header class="bp-tab-bar">
+          <span class="bp-crumb">Données</span>
+          <span class="bp-crumb-sep">/</span>
+          <span class="bp-crumb">Nouvelle BDD</span>
+          <span class="bp-crumb-sep">›</span>
+          <span class="bp-crumb bp-crumb--current">Milwaukee</span>
+        </header>
+
+        <div class="bp-grid">
+          <!-- Col 1 : Bases de données -->
+          <section class="bp-col bp-col--bdd">
+            <h3 class="bp-col-title">Bases de données</h3>
+            <div class="bp-col-actions">
+              <span class="bp-action bp-action--ghost">+ Créer</span>
+              <span class="bp-action bp-action--ghost">↓ Import</span>
+            </div>
+            <ul class="bp-list">
+              <li class="bp-list-item">
+                <span class="bp-list-ico bp-ico--folder bp-ico--folder-amber">▦</span>
+                <span class="bp-list-body">
+                  <span class="bp-list-name">google</span>
+                  <span class="bp-list-meta">1 produit · 09/05/2026</span>
+                </span>
+              </li>
+              <li class="bp-list-item bp-list-item--active">
+                <span class="bp-list-ico bp-ico--folder bp-ico--folder-amber">▦</span>
+                <span class="bp-list-body">
+                  <span class="bp-list-name">Nouvelle BDD</span>
+                  <span class="bp-list-meta">5 produits · 10/05/2026</span>
+                </span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Col 2 : Sources -->
+          <section class="bp-col bp-col--src">
+            <h3 class="bp-col-title">Sources <em>5</em></h3>
+            <ul class="bp-list bp-list--compact">
+              <li class="bp-list-item bp-src">
+                <span class="bp-src-ico">◐</span>
+                <span class="bp-src-name">dyson.fr</span>
+                <span class="bp-src-tag">1</span>
+              </li>
+              <li class="bp-list-item bp-src">
+                <span class="bp-src-ico">◐</span>
+                <span class="bp-src-name">nicoll.fr</span>
+                <span class="bp-src-tag">1</span>
+              </li>
+              <li class="bp-list-item bp-src">
+                <span class="bp-src-ico">◐</span>
+                <span class="bp-src-name">leroymerlin.fr</span>
+                <span class="bp-src-tag">1</span>
+              </li>
+              <li class="bp-list-item bp-src bp-src--active">
+                <span class="bp-src-ico bp-src-ico--active">▤</span>
+                <span class="bp-src-name">Milwaukee</span>
+                <span class="bp-src-tag">1</span>
+              </li>
+              <li class="bp-list-item bp-src">
+                <span class="bp-src-ico">◐</span>
+                <span class="bp-src-name">jardiland.com</span>
+                <span class="bp-src-tag">1</span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Col 3 : Navigation taxonomie -->
+          <section class="bp-col bp-col--nav">
+            <h3 class="bp-col-title">Navigation</h3>
+            <div class="bp-tax-label">TAXONOMIE GLOBALE</div>
+            <ul class="bp-tree">
+              <li class="bp-tree-l1 bp-tree-collapsed">› Maison &amp; Jardin</li>
+              <li class="bp-tax-label bp-tax-label--sub">Taxonomie GSB</li>
+              <li class="bp-tree-l1 bp-tree-collapsed">› Terrasse &amp; Jardin</li>
+              <li class="bp-tree-l1 bp-tree-active">⌄ Outillage <em>1</em></li>
+              <li class="bp-tree-l2 bp-tree-active">⌄ Outillage électroportatif <em>1</em></li>
+              <li class="bp-tree-l3 bp-tree-active">⌄ Perçage et vissage <em>1</em></li>
+              <li class="bp-tree-l4 bp-tree-active">⌄ Perceuses et visseuses <em>1</em></li>
+            </ul>
+          </section>
+
+          <!-- Col 4 : Table + Champs -->
+          <section class="bp-col bp-col--table">
+            <div class="bp-table-head">
+              <span class="bp-th">Nom</span>
+              <span class="bp-th">Nom du produit</span>
+            </div>
+            <div class="bp-table-row">
+              <span class="bp-td-num">1</span>
+              <span class="bp-td-name">m18 fpd3</span>
+              <span class="bp-td-prod">Perceuse à percussion M18 FUEL™</span>
+            </div>
+            <h3 class="bp-fields-title">Champs <em>19/19</em></h3>
+            <div class="bp-fields">
+              <span class="bp-field">Nom <em>Clé</em></span>
+              <span class="bp-field">Marque <em>Clé</em></span>
+              <span class="bp-field">Modèle <em>Clé</em></span>
+              <span class="bp-field">EAN <em>Clé</em></span>
+              <span class="bp-field bp-field--hl">Description</span>
+              <span class="bp-field bp-field--hl">Points forts</span>
+              <span class="bp-field bp-field--hl">Spécifications</span>
+              <span class="bp-field">Images</span>
+              <span class="bp-field">Prix</span>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Eyebrow overlay -->
+    <div class="bp-overlay">
+      <span class="bp-eyebrow">Data layer</span>
+      <h2 class="bp-title">Catalogue centralisé</h2>
+    </div>
+
+    <style>
+      #beat-pim {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: #0F0F0F;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        color: #fff;
+      }
+      #beat-pim .bp-blackout {
+        position: absolute;
+        inset: 0;
+        background: #000;
+        z-index: 50;
+        pointer-events: none;
+      }
+
+      /* App layout — vraie UI Web2Print */
+      #beat-pim .bp-app {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        background: #0F0F0F;
+      }
+      #beat-pim .bp-sidebar {
+        background: #141414;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      #beat-pim .bp-sb-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px;
+      }
+      #beat-pim .bp-sb-logomark {
+        width: 28px;
+        height: 28px;
+        background: #6366F1;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #beat-pim .bp-sb-logomark svg { width: 16px; height: 16px; }
+      #beat-pim .bp-sb-brand {
+        font-size: 15px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.92);
+      }
+      #beat-pim .bp-sb-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      #beat-pim .bp-sb-item {
+        font-size: 14px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.5);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #beat-pim .bp-sb-item--active {
+        color: #34D399;
+        background: rgba(52, 211, 153, 0.1);
+        font-weight: 500;
+      }
+      #beat-pim .bp-sb-count {
+        font-size: 11px;
+        font-style: normal;
+        padding: 2px 6px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 4px;
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Main content */
+      #beat-pim .bp-main {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #beat-pim .bp-tab-bar {
+        height: 50px;
+        padding: 0 22px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #161616;
+      }
+      #beat-pim .bp-crumb {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.55);
+      }
+      #beat-pim .bp-crumb--current {
+        color: #F2F2F2;
+        font-weight: 500;
+      }
+      #beat-pim .bp-crumb-sep {
+        color: rgba(255, 255, 255, 0.25);
+      }
+
+      /* Grid 4 colonnes */
+      #beat-pim .bp-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 240px 220px 260px 1fr;
+        min-height: 0;
+      }
+      #beat-pim .bp-col {
+        padding: 18px 16px;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        overflow: hidden;
+      }
+      #beat-pim .bp-col:last-child { border-right: 0; }
+      #beat-pim .bp-col-title {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.45);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #beat-pim .bp-col-title em {
+        font-style: normal;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 500;
+      }
+
+      #beat-pim .bp-col-actions {
+        display: flex;
+        gap: 6px;
+      }
+      #beat-pim .bp-action {
+        font-size: 12px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      #beat-pim .bp-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #beat-pim .bp-list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      #beat-pim .bp-list-item--active {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.25);
+      }
+      #beat-pim .bp-list-ico {
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      #beat-pim .bp-ico--folder-amber {
+        background: rgba(251, 191, 36, 0.15);
+        color: #FBBF24;
+      }
+      #beat-pim .bp-list-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        flex: 1;
+      }
+      #beat-pim .bp-list-name {
+        font-size: 14px;
+        color: #F2F2F2;
+        font-weight: 500;
+      }
+      #beat-pim .bp-list-meta {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Sources */
+      #beat-pim .bp-list--compact .bp-list-item { padding: 8px 10px; }
+      #beat-pim .bp-src-ico {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+      #beat-pim .bp-src-ico--active { color: #38BDF8; }
+      #beat-pim .bp-src-name {
+        flex: 1;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.85);
+      }
+      #beat-pim .bp-src--active {
+        background: rgba(56, 189, 248, 0.08);
+        border-color: rgba(56, 189, 248, 0.25);
+      }
+      #beat-pim .bp-src--active .bp-src-name { color: #FFFFFF; font-weight: 600; }
+      #beat-pim .bp-src-tag {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.35);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      /* Tree taxonomy */
+      #beat-pim .bp-tax-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.35);
+        padding: 6px 0 2px;
+      }
+      #beat-pim .bp-tax-label--sub { padding-top: 12px; }
+      #beat-pim .bp-tree {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #beat-pim .bp-tree li {
+        font-size: 13px;
+        padding: 4px 0;
+        color: rgba(255, 255, 255, 0.55);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #beat-pim .bp-tree li em {
+        font-style: normal;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+      #beat-pim .bp-tree-l1 { padding-left: 0; }
+      #beat-pim .bp-tree-l2 { padding-left: 14px; }
+      #beat-pim .bp-tree-l3 { padding-left: 28px; }
+      #beat-pim .bp-tree-l4 {
+        padding-left: 42px;
+        color: #2DD4BF;
+        font-weight: 600;
+      }
+      #beat-pim .bp-tree-active { color: rgba(255, 255, 255, 0.85); }
+
+      /* Table */
+      #beat-pim .bp-col--table { padding: 18px 22px; flex-direction: column; }
+      #beat-pim .bp-table-head {
+        display: grid;
+        grid-template-columns: 40px 220px 1fr;
+        padding: 10px 14px;
+        background: #181818;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px 8px 0 0;
+      }
+      #beat-pim .bp-th {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      #beat-pim .bp-table-head .bp-th:first-of-type {
+        grid-column: 2;
+      }
+      #beat-pim .bp-table-row {
+        display: grid;
+        grid-template-columns: 40px 220px 1fr;
+        padding: 16px 14px;
+        background: #141414;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-top: 0;
+        border-radius: 0 0 8px 8px;
+        align-items: center;
+        gap: 0;
+      }
+      #beat-pim .bp-td-num {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.35);
+        font-variant-numeric: tabular-nums;
+      }
+      #beat-pim .bp-td-name {
+        font-size: 16px;
+        color: #F2F2F2;
+        font-weight: 600;
+      }
+      #beat-pim .bp-td-prod {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.75);
+      }
+
+      #beat-pim .bp-fields-title {
+        margin: 18px 0 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #F2F2F2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #beat-pim .bp-fields-title em {
+        font-style: normal;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 500;
+      }
+      #beat-pim .bp-fields {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+      #beat-pim .bp-field {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #181818;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      #beat-pim .bp-field em {
+        font-style: normal;
+        font-size: 9px;
+        padding: 2px 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 3px;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.05em;
+      }
+      #beat-pim .bp-field--hl {
+        background: rgba(167, 139, 250, 0.08);
+        border-color: rgba(167, 139, 250, 0.25);
+        color: #DDD6FE;
+      }
+
+      /* Overlay eyebrow + title (sur fond UI) */
+      #beat-pim .bp-overlay {
+        position: absolute;
+        bottom: 60px;
+        left: 60px;
+        background: rgba(15, 15, 15, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 24px 32px;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 30;
+      }
+      #beat-pim .bp-eyebrow {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #6366F1;
+      }
+      #beat-pim .bp-title {
+        margin: 0;
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #F2F2F2;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+        const root = '#beat-pim';
+
+        tl.to(root + " .bp-blackout", { opacity: 0, duration: 0.45, ease: "power2.out" }, 0);
+
+        // Sidebar fade-in
+        tl.from(root + " .bp-sidebar", { x: -40, opacity: 0, duration: 0.55, ease: "power3.out" }, 0.15);
+        tl.from(root + " .bp-sb-item", { x: -10, opacity: 0, duration: 0.25, stagger: 0.04, ease: "power2.out" }, 0.35);
+
+        // Main fade
+        tl.from(root + " .bp-tab-bar", { y: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 0.4);
+
+        // Columns stagger
+        tl.from(root + " .bp-col", {
+          y: 30,
+          opacity: 0,
+          duration: 0.5,
+          stagger: 0.12,
+          ease: "power3.out",
+        }, 0.6);
+
+        // Highlights : source Milwaukee active
+        tl.fromTo(root + " .bp-src--active",
+          { backgroundColor: "rgba(56, 189, 248, 0.08)" },
+          { backgroundColor: "rgba(56, 189, 248, 0.18)", duration: 0.5, repeat: 3, yoyo: true, ease: "sine.inOut" },
+          1.6);
+
+        // Champs IA highlights
+        tl.from(root + " .bp-field--hl", {
+          scale: 0.85,
+          opacity: 0,
+          duration: 0.4,
+          stagger: 0.12,
+          ease: "back.out(1.5)",
+          transformOrigin: "50% 50%",
+        }, 2.2);
+
+        // Overlay eyebrow + title
+        tl.from(root + " .bp-overlay", { y: 30, opacity: 0, duration: 0.55, ease: "expo.out" }, 3.0);
+        tl.from(root + " .bp-eyebrow", { x: -20, opacity: 0, duration: 0.4, ease: "power2.out" }, 3.15);
+        tl.from(root + " .bp-title", { y: 15, opacity: 0, duration: 0.45, ease: "power3.out" }, 3.25);
+
+                tl.to({}, { duration: 11 });
+        window.__timelines["beat-pim"] = tl;
+      })();
+    </script>
+  </div>
+</template>
