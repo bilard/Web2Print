@@ -16,7 +16,10 @@ async function getIdToken(): Promise<string> {
   return user.getIdToken()
 }
 
-export async function requestRender(req: RenderRequest): Promise<RenderResponse> {
+export async function requestRender(
+  req: RenderRequest,
+  signal?: AbortSignal,
+): Promise<RenderResponse> {
   const url = `${assertServiceUrl()}/render`
   const idToken = await getIdToken()
 
@@ -27,6 +30,7 @@ export async function requestRender(req: RenderRequest): Promise<RenderResponse>
       authorization: `Bearer ${idToken}`,
     },
     body: JSON.stringify(req),
+    signal,
   })
 
   const body = (await res.json().catch(() => ({}))) as Partial<RenderResponse> & {

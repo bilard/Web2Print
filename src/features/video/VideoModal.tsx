@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Film, X, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Save, Check, Eraser } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGenerateVideo, type GenerateVideoSource } from './useGenerateVideo'
@@ -134,6 +134,9 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   const enrich = useEnrichComposition()
   const authUser = useAuthStore((s) => s.user)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  /** AbortController de la mutation en cours. handleStop l'aborte pour couper
+   *  réellement la requête HTTP /render (sinon Cloud Run continue de tourner). */
+  const abortRef = useRef<AbortController | null>(null)
 
   const mutation = useGenerateVideo({
     onStep: (s) => {
@@ -211,6 +214,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     const durationSec = resolveDurationSec(duration, customDurationSec)
     persistPromptInLibrary(resolved, durationSec)
 
+    abortRef.current = new AbortController()
+
     mutation.mutate(
       {
         caption: caption.trim() || undefined,
@@ -226,6 +231,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         customHeight: aspect === 'custom' ? custom.height : undefined,
         targetDurationSec: durationSec,
         source,
+        signal: abortRef.current.signal,
       },
       {
         onSuccess: (res) => {
@@ -244,6 +250,9 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           toast.success(`Vidéo générée en ${Math.round((res.durationMs ?? 0) / 1000)}s`)
         },
         onError: (err) => {
+          // AbortError = l'utilisateur a cliqué Stop : handleStop a déjà toasté
+          // "Génération annulée", inutile d'afficher une deuxième fois en rouge.
+          if (err instanceof DOMException && err.name === 'AbortError') return
           setErrorMsg(err.message)
           toast.error(err.message)
         },
@@ -287,11 +296,14 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     toast.info('Formulaire effacé')
   }
 
-  /** Annule la génération en cours. React Query `reset()` jette la mutation
-   *  pending et n'appelle ni onSuccess ni onError — l'utilisateur peut relancer
-   *  immédiatement. Note : la requête Cloud Run réelle n'est PAS abortée côté
-   *  serveur ; elle ira au bout, mais son résultat sera ignoré. */
+  /** Annule la génération en cours.
+   *  1) Abort le fetch() vers /render (Cloud Run reçoit une connexion fermée
+   *     et peut interrompre son rendu Puppeteer). Sans ça, Cloud Run continuait
+   *     et nous bloquait à 250 s+ même après "Stop".
+   *  2) reset() jette la mutation côté React Query — pas d'onSuccess/onError. */
   const handleStop = () => {
+    abortRef.current?.abort(new DOMException('Annulé par l\'utilisateur', 'AbortError'))
+    abortRef.current = null
     mutation.reset()
     progress.reset()
     setPreview(null)

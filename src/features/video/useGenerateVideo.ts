@@ -70,7 +70,15 @@ export interface GenerateVideoInput {
    *  Nano Banana sans repasser par l'interprétation du prompt. */
   precomputedComposition?: Composition
   source?: GenerateVideoSource
+  /** Signal d'annulation propagé jusqu'à fetch(/render). Permet à `handleStop`
+   *  d'abort la requête Cloud Run réelle, pas juste l'état React Query. */
+  signal?: AbortSignal
 }
+
+/** Hard cap côté client : 4 min. Cloud Run a un timeout serveur de 300 s ;
+ *  on coupe 60 s avant pour afficher une erreur claire plutôt que de laisser
+ *  le navigateur attendre un 504 silencieux. */
+const RENDER_TIMEOUT_MS = 240000
 
 export interface GenerateVideoStep {
   step: 'capturing' | 'extracting' | 'interpreting' | 'composing' | 'rendering' | 'done' | 'error'
@@ -120,6 +128,25 @@ export function useGenerateVideo(opts?: {
     mutationFn: async (input) => {
       const source: GenerateVideoSource = input.source ?? 'canvas'
 
+      // Combine le signal utilisateur (Stop) avec un timeout interne. Si l'un
+      // ou l'autre déclenche, fetch() throw immédiatement et la mutation passe
+      // en onError. Sans timeout, un Cloud Run figé bloquerait indéfiniment.
+      const ctrl = new AbortController()
+      const onUserAbort = () => ctrl.abort(input.signal?.reason)
+      input.signal?.addEventListener('abort', onUserAbort)
+      const timeoutId = setTimeout(
+        () => ctrl.abort(new DOMException(
+          `Rendu Cloud Run trop long (> ${RENDER_TIMEOUT_MS / 1000}s) — relance ou contacte support`,
+          'TimeoutError',
+        )),
+        RENDER_TIMEOUT_MS,
+      )
+      const cleanup = () => {
+        clearTimeout(timeoutId)
+        input.signal?.removeEventListener('abort', onUserAbort)
+      }
+
+      try {
       // Extraction (peut tourner avant la capture/composition en standalone)
       let fileContext = ''
       let skippedFiles: FileExtractionSkip[] = []
@@ -209,7 +236,7 @@ export function useGenerateVideo(opts?: {
           },
           fps: DEFAULT_FAST_FPS,
           quality: DEFAULT_FAST_QUALITY,
-        })
+        }, ctrl.signal)
 
         opts?.onStep?.({ step: 'done', aspect, styleConfig, source })
         return {
@@ -304,7 +331,7 @@ export function useGenerateVideo(opts?: {
         },
         fps: DEFAULT_FAST_FPS,
         quality: DEFAULT_FAST_QUALITY,
-      })
+      }, ctrl.signal)
 
       opts?.onStep?.({ step: 'done', aspect, composition, source })
       return {
@@ -312,6 +339,9 @@ export function useGenerateVideo(opts?: {
         composition,
         fileContext: fileContext || undefined,
         skippedFiles: skippedFiles.length ? skippedFiles : undefined,
+      }
+      } finally {
+        cleanup()
       }
     },
     onError: () => opts?.onStep?.({ step: 'error' }),
