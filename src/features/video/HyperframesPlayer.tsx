@@ -93,6 +93,11 @@ export function HyperframesPlayer({
   //   • Barre d'espace + drag → pan, comme un viewer standard
   const [userZoom, setUserZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
+  /** Mode "Fit" : le container occupe toute la place disponible (flex-1) au
+   *  lieu d'être contraint par son aspect-ratio nominal. Le scale interne
+   *  produit ensuite le letterboxing (style YouTube/Vimeo). Désactivé au clic
+   *  "100 %" qui restaure le ratio nominal pour avoir un référentiel pixel-perfect. */
+  const [fillContainer, setFillContainer] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [spaceHeld, setSpaceHeld] = useState(false)
   const dragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
@@ -277,11 +282,16 @@ export function HyperframesPlayer({
   const handleZoomIn = () => setUserZoom((z) => clampZoom(z * 1.25))
   const handleZoomOut = () => setUserZoom((z) => clampZoom(z / 1.25))
   const handleFit = () => {
+    setFillContainer(true)
     setUserZoom(1)
     setPan({ x: 0, y: 0 })
   }
   // Pixel-perfect = effectiveScale === 1 ⇒ userZoom = 1 / scale.
+  // On sort du mode fill pour retrouver le ratio nominal — sinon "100 %" n'a
+  // pas de référentiel stable quand le container peut prendre n'importe quelle
+  // forme.
   const handleHundred = () => {
+    setFillContainer(false)
     if (scale > 0) {
       setUserZoom(clampZoom(1 / scale))
       setPan({ x: 0, y: 0 })
@@ -389,11 +399,17 @@ export function HyperframesPlayer({
     : 'default'
 
   return (
-    <div className={`flex flex-col gap-2 ${className ?? ''}`}>
+    <div className={`flex flex-col gap-2 min-h-0 ${fillContainer ? 'flex-1 h-full' : ''} ${className ?? ''}`}>
       <div
         ref={containerRef}
-        className="relative w-full bg-black rounded-xl border border-white/10 overflow-hidden flex items-center justify-center select-none"
-        style={{ aspectRatio: `${native.width} / ${native.height}`, cursor, touchAction: 'none' }}
+        className={`relative bg-black rounded-xl border border-white/10 overflow-hidden flex items-center justify-center select-none ${
+          fillContainer ? 'flex-1 min-h-0 w-full' : 'w-full'
+        }`}
+        style={
+          fillContainer
+            ? { cursor, touchAction: 'none' as const }
+            : { aspectRatio: `${native.width} / ${native.height}`, cursor, touchAction: 'none' as const }
+        }
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -449,8 +465,12 @@ export function HyperframesPlayer({
             <button
               type="button"
               onClick={handleFit}
-              className="flex items-center gap-1 px-2 h-6 rounded text-white/80 hover:text-white hover:bg-white/10"
-              title="Adapter à la fenêtre"
+              className={`flex items-center gap-1 px-2 h-6 rounded ${
+                fillContainer
+                  ? 'bg-indigo-500/30 text-white border border-indigo-400/50'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+              title="Adapter à la fenêtre (occupe tout l'espace disponible)"
             >
               <Maximize2 className="w-3 h-3" />
               <span>Fit</span>
@@ -458,7 +478,11 @@ export function HyperframesPlayer({
             <button
               type="button"
               onClick={handleHundred}
-              className="px-2 h-6 rounded text-white/80 hover:text-white hover:bg-white/10"
+              className={`px-2 h-6 rounded ${
+                !fillContainer && Math.abs(effectivePct - 100) < 1
+                  ? 'bg-indigo-500/30 text-white border border-indigo-400/50'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
               title="Taille réelle (pixel-perfect)"
             >
               100 %
