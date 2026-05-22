@@ -19,7 +19,7 @@ interface UIState {
   canvasBgType: CanvasBgType
   canvasBgGradient: GradientConfig
   canvasBgImage: string | null
-  // --- Print ---
+  // --- Print : repères et fonds perdus (vocabulaire InDesign) ---
   dpi: number
   bleedMm: number
   safeAreaMm: number
@@ -28,6 +28,22 @@ interface UIState {
   showPrintMarks: boolean
   showSafeArea: boolean
   showRegistrationMarks: boolean
+  // Traits de coupe
+  cropStroke: number
+  cropColor: string
+  // Repères de fond perdu (rectangle bleed)
+  bleedStroke: number
+  bleedColor: string
+  // Repères de montage (hirondelles)
+  regRadiusMm: number
+  regStroke: number
+  regColor: string
+  regOffsetMm: number   // décalage additionnel depuis la position auto (mm)
+  // Zone de sécurité
+  safeStroke: number
+  safeColor: string
+  safeDash: number   // longueur d'un tiret (px)
+  safeGap: number    // espacement entre tirets (px)
   setDpi: (dpi: number) => void
   setBleedMm: (mm: number) => void
   setSafeAreaMm: (mm: number) => void
@@ -36,6 +52,18 @@ interface UIState {
   setShowPrintMarks: (v: boolean) => void
   setShowSafeArea: (v: boolean) => void
   setShowRegistrationMarks: (v: boolean) => void
+  setCropStroke: (v: number) => void
+  setCropColor: (v: string) => void
+  setBleedStroke: (v: number) => void
+  setBleedColor: (v: string) => void
+  setRegRadiusMm: (v: number) => void
+  setRegStroke: (v: number) => void
+  setRegColor: (v: string) => void
+  setRegOffsetMm: (v: number) => void
+  setSafeStroke: (v: number) => void
+  setSafeColor: (v: string) => void
+  setSafeDash: (v: number) => void
+  setSafeGap: (v: number) => void
   setRightPanelOpen: (open: boolean) => void
   setSettingsOpen: (open: boolean) => void
   setZoom: (zoom: number) => void
@@ -85,7 +113,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
-  setZoom: (zoom) => set({ zoom: Math.min(400, Math.max(1, zoom)) }),
+  setZoom: (zoom) => set({ zoom: Math.min(2000, Math.max(1, zoom)) }),
   setGridVisible: (gridVisible) => set({ gridVisible }),
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
   setCanvasSize: (w, h, bg) =>
@@ -94,7 +122,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setCanvasBgGradient: (canvasBgGradient) => set({ canvasBgGradient }),
   setCanvasBgImage: (canvasBgImage) => set({ canvasBgImage }),
 
-  // --- Print defaults ---
+  // --- Print defaults (vocabulaire InDesign : repères et fonds perdus) ---
   dpi: 300,
   bleedMm: 2,
   safeAreaMm: 2,
@@ -103,14 +131,39 @@ export const useUIStore = create<UIState>((set, get) => ({
   showPrintMarks: true,
   showSafeArea: true,
   showRegistrationMarks: true,
+  // Épaisseurs/couleurs par défaut alignées sur le rendu actuel.
+  cropStroke: 1,
+  cropColor: '#ffffff',
+  bleedStroke: 1,
+  bleedColor: '#ffffff',
+  regRadiusMm: 2.5,
+  regStroke: 1,
+  regColor: '#ffffff',
+  regOffsetMm: 0,
+  safeStroke: 0.6,
+  safeColor: '#ef4444',
+  safeDash: 4,
+  safeGap: 3,
   setDpi: (dpi) => set({ dpi: Math.max(72, Math.min(600, dpi)) }),
   setBleedMm: (bleedMm) => set({ bleedMm: Math.max(0, Math.min(10, bleedMm)) }),
   setSafeAreaMm: (safeAreaMm) => set({ safeAreaMm: Math.max(0, Math.min(30, safeAreaMm)) }),
   setCropMarkLengthMm: (cropMarkLengthMm) => set({ cropMarkLengthMm: Math.max(2, Math.min(10, cropMarkLengthMm)) }),
-  setCropMarkOffsetMm: (cropMarkOffsetMm) => set({ cropMarkOffsetMm: Math.max(0, Math.min(10, cropMarkOffsetMm)) }),
+  setCropMarkOffsetMm: (cropMarkOffsetMm) => set({ cropMarkOffsetMm: Math.max(0, Math.min(3, cropMarkOffsetMm)) }),
   setShowPrintMarks: (showPrintMarks) => set({ showPrintMarks }),
   setShowSafeArea: (showSafeArea) => set({ showSafeArea }),
   setShowRegistrationMarks: (showRegistrationMarks) => set({ showRegistrationMarks }),
+  setCropStroke: (cropStroke) => set({ cropStroke: Math.max(0.25, Math.min(5, cropStroke)) }),
+  setCropColor: (cropColor) => set({ cropColor }),
+  setBleedStroke: (bleedStroke) => set({ bleedStroke: Math.max(0.25, Math.min(5, bleedStroke)) }),
+  setBleedColor: (bleedColor) => set({ bleedColor }),
+  setRegRadiusMm: (regRadiusMm) => set({ regRadiusMm: Math.max(1, Math.min(8, regRadiusMm)) }),
+  setRegStroke: (regStroke) => set({ regStroke: Math.max(0.25, Math.min(5, regStroke)) }),
+  setRegColor: (regColor) => set({ regColor }),
+  setRegOffsetMm: (regOffsetMm) => set({ regOffsetMm: Math.max(-10, Math.min(30, regOffsetMm)) }),
+  setSafeStroke: (safeStroke) => set({ safeStroke: Math.max(0.25, Math.min(5, safeStroke)) }),
+  setSafeColor: (safeColor) => set({ safeColor }),
+  setSafeDash: (safeDash) => set({ safeDash: Math.max(0.5, Math.min(30, safeDash)) }),
+  setSafeGap: (safeGap) => set({ safeGap: Math.max(0.5, Math.min(30, safeGap)) }),
 
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),

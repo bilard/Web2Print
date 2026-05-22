@@ -8,6 +8,7 @@ import { EditorFooter } from '@/components/panels/EditorFooter'
 import { TextToolbar } from '@/components/panels/TextToolbar'
 import { SettingsSheet } from '@/components/shared/SettingsSheet'
 import { DamPickerModal } from '@/features/dam/components/DamPickerModal'
+import { useDamCanvasInsert } from '@/features/dam/hooks/useDamCanvasInsert'
 import { CanvasContainer } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useProjectStore } from '@/stores/project.store'
@@ -18,19 +19,55 @@ import { usePptxParse } from '@/features/pptx/usePptxParse'
 import { useSvgParse } from '@/features/svg/useSvgParse'
 import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { applyPrintDefaults } from '@/features/print/printDefaults'
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const setProjectId = useEditorStore((s) => s.setProjectId)
   const setProjectTitle = useEditorStore((s) => s.setProjectTitle)
-  const { pendingImport, setPendingImport } = useProjectStore()
+  const {
+    pendingImport,
+    setPendingImport,
+    pendingDamInsert,
+    setPendingDamInsert,
+  } = useProjectStore()
   const { processFiles: processIdmlFiles } = useIdmlUpload()
   const { parseAndRender: parseIdml } = useIdmlParse()
   const { parseAndRender: parsePptx, state: pptxState } = usePptxParse()
   const { parseAndRender: parseSvg, state: svgState } = useSvgParse()
   const [idmlImporting, setIdmlImporting] = useState(false)
+  const { insertOnCanvas } = useDamCanvasInsert()
   usePreloadFonts()
+
+  // Image DAM en attente d'insertion (navigation depuis le dashboard ou DamGenerate).
+  // On retry tant que `globalFabricCanvas` n'est pas prêt (init Fabric asynchrone),
+  // jusqu'à ~2s max — au-delà on abandonne pour éviter de coincer l'app.
+  useEffect(() => {
+    if (!pendingDamInsert) return
+    let cancelled = false
+    let attempts = 0
+    const tryInsert = () => {
+      if (cancelled) return
+      if (globalFabricCanvas) {
+        const target = pendingDamInsert
+        setPendingDamInsert(null)
+        void insertOnCanvas(target)
+        return
+      }
+      attempts++
+      if (attempts < 20) {
+        setTimeout(tryInsert, 100)
+      } else {
+        console.warn('[EditorPage] Canvas non prêt après 2s, insertion DAM abandonnée.')
+        setPendingDamInsert(null)
+      }
+    }
+    tryInsert()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingDamInsert, insertOnCanvas, setPendingDamInsert])
 
   useEffect(() => {
     if (id) setProjectId(id)
@@ -48,6 +85,10 @@ export default function EditorPage() {
     const timer = setTimeout(async () => {
       const { type, files } = pendingImport
       setPendingImport(null)
+
+      // Reset des paramètres d'impression aux défauts ; les repères restent
+      // désactivés, l'utilisateur les active à la demande depuis le panneau.
+      applyPrintDefaults()
 
       if (type === 'idml' && files.length > 0) {
         setIdmlImporting(true)

@@ -9,6 +9,7 @@ import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } fr
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
 import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
+import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import type { ExcelSheet, CellValue } from '@/features/excel/types'
 
 /** Cache des URLs d'assets du projet */
@@ -49,6 +50,7 @@ export function useDataMerge() {
       key: c.key,
       label: c.label,
       fieldType: c.fieldType,
+      aliases: ENRICHMENT_ALIASES[c.key],
     }))
 
     // Pre-compute formula columns so {{formula_key}} resolves correctly in templates
@@ -202,16 +204,16 @@ export function useDataMerge() {
           }
         }
         if (obj.data?.templateText) {
-          const { formulas, hideLineIfEmpty, formulaConfigs } = useMergeStore.getState()
+          const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
           const tmpl = obj.data.templateText as string
           const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
           const isSinglePlaceholder = /^\{\{[^}]+\}\}$/.test(tmpl.trim())
-          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs)
+          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           obj.set('text', resolved)
 
           // Repositionner les styles des caractères littéraux (%, DT, etc.)
           if (tStyles && Object.keys(tStyles).length > 0) {
-            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs)
+            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
             ;(obj as any).styles = remapped
           }
 
@@ -224,7 +226,7 @@ export function useDataMerge() {
             obj.set({ width: fitW, scaleX: 1, scaleY: 1 })
             // Re-appliquer les styles après initDimensions (par précaution)
             if (tStyles && Object.keys(tStyles).length > 0) {
-              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs)
+              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
               ;(obj as any).styles = remapped
             }
           }
@@ -238,8 +240,9 @@ export function useDataMerge() {
       const bindings = obj.data?.bindings as Record<string, string> | undefined
       if (!bindings) continue
 
+      const { columns: storeColumns } = useMergeStore.getState()
       for (const [prop, columnKey] of Object.entries(bindings)) {
-        const value = resolveBinding(columnKey, row)
+        const value = resolveBinding(columnKey, row, storeColumns)
         if (value === null) continue
 
         if (prop === 'src' && obj instanceof FabricImage) {
@@ -314,29 +317,29 @@ export function useDataMerge() {
         } else {
           delete target.data.templateStyles
         }
-        const { formulas, hideLineIfEmpty, formulaConfigs } = useMergeStore.getState()
+        const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
         const row = rows[currentRowIndex]
         if (row) {
-          const resolved = resolveText(currentText, row, formulas, hideLineIfEmpty, formulaConfigs)
+          const resolved = resolveText(currentText, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           target.set('text', resolved)
           const tStyles = target.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
           if (tStyles && Object.keys(tStyles).length > 0) {
-            ;(target as any).styles = remapStyles(currentText, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs)
+            ;(target as any).styles = remapStyles(currentText, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           }
         }
       } else if (target.data?.templateText) {
         // Le texte n'a pas de {{}} mais un template existe →
         // l'utilisateur a peut-être juste changé une propriété (couleur, etc.)
         // On re-résout depuis le template existant sans le supprimer
-        const { formulas, hideLineIfEmpty, formulaConfigs } = useMergeStore.getState()
+        const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
         const row = rows[currentRowIndex]
         const tmpl = target.data.templateText as string
         const tStyles = target.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
         if (row) {
-          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs)
+          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           target.set('text', resolved)
           if (tStyles && Object.keys(tStyles).length > 0) {
-            ;(target as any).styles = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs)
+            ;(target as any).styles = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           }
         }
       }

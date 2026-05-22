@@ -16,7 +16,7 @@ import type { ScrapingTemplate } from '@/features/scraping-templates/types'
  * templates de scraping qui enrichiront ces produits.
  */
 export function VendorStatusPanel() {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const { vendors, brandColumnKey, loading } = useSourceVendors(refreshKey)
   const [linkTarget, setLinkTarget] = useState<VendorSummary | null>(null)

@@ -9,6 +9,10 @@ export interface MergeColumn {
   key: string
   label: string
   fieldType: string
+  /** Synonymes acceptés pour la résolution `{{placeholder}}` (ex: "Libelle Article"
+   *  alias de "ai_name"). Injectés à la lecture depuis ENRICHMENT_ALIASES ; non
+   *  persistés en base. Matching insensible casse + trim. */
+  aliases?: string[]
 }
 
 export interface DataSourceRef {

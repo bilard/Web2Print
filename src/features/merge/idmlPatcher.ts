@@ -6,7 +6,7 @@
  */
 
 import JSZip from 'jszip'
-import type { MergeRow, FormulaConfig } from '@/stores/merge.store'
+import type { MergeRow, MergeColumn, FormulaConfig } from '@/stores/merge.store'
 import type { IdmlZipContents } from '@/features/idml/assemblyLoader'
 import { resolveText } from './mergeEngine'
 
@@ -22,6 +22,8 @@ export interface PatchOptions {
   formulas?: Record<string, string>
   formulaConfigs?: Record<string, FormulaConfig>
   hideLineIfEmpty?: Record<string, boolean>
+  /** Colonnes du dataset (pour fallback label → key lors de la résolution) */
+  columns?: MergeColumn[]
   /** Property bindings: objectId → { fill: 'col', stroke: 'col', src: 'col' } */
   bindings?: PatchBindings
 }
@@ -65,6 +67,7 @@ function patchStories(
             options.formulas,
             options.hideLineIfEmpty,
             options.formulaConfigs,
+            options.columns,
           )
           return `${open}${resolved}${close}`
         },

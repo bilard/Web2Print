@@ -100,14 +100,14 @@ export function useSegmentBinding() {
     }
 
     // Resolve and display
-    const { isConnected, rows, currentRowIndex, formulas, hideLineIfEmpty, formulaConfigs } = useMergeStore.getState()
+    const { isConnected, rows, currentRowIndex, formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
     if (isConnected && rows.length > 0) {
       const row = rows[currentRowIndex]
-      const resolved = resolveText(newTemplate, row, formulas, hideLineIfEmpty, formulaConfigs)
+      const resolved = resolveText(newTemplate, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
       obj.set('text', resolved)
       // Appliquer les styles remappés uniquement si templateStyles n'est pas vide
       if (Object.keys(newStyles).length > 0) {
-        const remapped = remapStyles(newTemplate, newStyles, row, formulas, hideLineIfEmpty, formulaConfigs)
+        const remapped = remapStyles(newTemplate, newStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
         if (Object.keys(remapped).length > 0) {
           ;(obj as unknown as { styles: CharStyleMap }).styles = remapped
         }

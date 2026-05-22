@@ -80,6 +80,26 @@ export interface EnrichmentColumnDef {
   width: number
 }
 
+/** Synonymes acceptés en placeholder `{{...}}` ou en `[...]` formule. Couvre les
+ *  noms courants de fichiers Excel/CSV legacy et de templates IDML : la
+ *  résolution merge cherche ces alias quand la clé exacte n'existe pas dans
+ *  la ligne. Insensible casse + trim. */
+export const ENRICHMENT_ALIASES: Record<string, string[]> = {
+  ai_name: ['Libelle Article', 'Libellé Article', 'Libelle', 'Libellé', 'Nom', 'name', 'Title', 'Titre', 'Product Name', 'designation', 'Désignation'],
+  ai_brand: ['brands', 'brand', 'Marque', 'Fabricant', 'Manufacturer'],
+  ai_description: ['Description', 'desc', 'descr', 'Descriptif'],
+  ai_breadcrumb: ['breadcrumb', 'Categorie', 'Catégorie', 'category', 'Famille'],
+  ai_advantages: ['Points forts', 'advantages', 'avantages', 'features'],
+  ai_specifications: ['Spécifications', 'specs', 'Caractéristiques', 'specifications'],
+  ai_pricing: ['Prix', 'price', 'Tarif', 'pricing'],
+  ai_images: ['Image', 'images', 'image_url', 'photo', 'Photo'],
+  ai_model: ['Modèle', 'model', 'Reference', 'reference', 'Référence', 'Ref'],
+  ai_ean: ['EAN', 'ean', 'Code-barres', 'Codebarres', 'Barcode'],
+  ai_distributor_ref: ['Référence distributeur', 'SKU', 'sku', 'code'],
+  ai_manufacturer_ref: ['Référence fabricant', 'Manufacturer Ref'],
+  ai_source: ['URL', 'url', 'Source', 'lien', 'Link'],
+}
+
 export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   // ── Identité produit (Schema.org-aligned) ──────────────────────────────────
   // Ces colonnes sont liftées depuis JSON-LD/microdata ou les chips Rubix-style

@@ -5,7 +5,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type FormulaResultType, type FormulaConfig } from '@/stores/merge.store'
 import { useDataMerge } from './useDataMerge'
-import { hasPlaceholders, evaluateFormula, formatFormulaResult } from './mergeEngine'
+import { hasPlaceholders, evaluateFormula, formatFormulaResult, variableMatchesColumn } from './mergeEngine'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { DataSourcePicker } from './DataSourcePicker'
 import { SourceSwitcher } from './SourceSwitcher'
@@ -159,7 +159,8 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
     const timer = setTimeout(() => {
       if (!canvas || !isConnected) { setBindings([]); return }
       const result: typeof bindings = []
-      const colKeys = new Set(columns.map((c) => c.key))
+      const fullCols = columns.map((c) => ({ key: c.key, label: c.label, fieldType: c.fieldType ?? 'text' }))
+      const isMatched = (v: string) => variableMatchesColumn(v, fullCols)
 
       for (const obj of canvas.getObjects()) {
         if (obj.data?.isGrid || obj.data?.isPageBg) continue
@@ -171,7 +172,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
           if (hasPlaceholders(tmpl)) {
             const vars = tmpl.match(/\{\{([^}]+)\}\}/g)?.map((m: string) => m.slice(2, -2)) ?? []
             for (const v of vars) {
-              result.push({ id: objId, name, type: 'texte', variable: v, matched: colKeys.has(v) })
+              result.push({ id: objId, name, type: 'texte', variable: v, matched: isMatched(v) })
             }
           }
         }
@@ -179,7 +180,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
         const b = obj.data?.bindings as Record<string, string> | undefined
         if (b) {
           for (const [prop, col] of Object.entries(b)) {
-            result.push({ id: objId, name, type: prop, variable: col, matched: colKeys.has(col) })
+            result.push({ id: objId, name, type: prop, variable: col, matched: isMatched(col) })
           }
         }
       }
@@ -259,9 +260,10 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
   }
 
   // Aperçu sur les 3 premières lignes (avec formatage selon config)
+  const fullColsForEval = columns.map((c) => ({ key: c.key, label: c.label, fieldType: (c as { fieldType?: string }).fieldType ?? 'text' }))
   const preview = editingVar ? rows.slice(0, 3).map((row) => {
     const rawFormula = normalizeForStorage(formulaDraft, columns)
-    const raw = evaluateFormula(rawFormula, row)
+    const raw = evaluateFormula(rawFormula, row, fullColsForEval)
     return formatFormulaResult(raw, configDraft.resultType !== 'auto' ? configDraft : undefined)
   }) : []
 

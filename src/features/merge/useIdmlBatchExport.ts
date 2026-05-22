@@ -23,7 +23,7 @@ export function useIdmlBatchExport() {
   const projectId = useEditorStore((s) => s.projectId)
   const projectTitle = useEditorStore((s) => s.projectTitle)
   const idmlSourceFileName = useEditorStore((s) => s.idmlSourceFileName)
-  const { rows, formulas, formulaConfigs, hideLineIfEmpty } = useMergeStore()
+  const { rows, columns, formulas, formulaConfigs, hideLineIfEmpty } = useMergeStore()
 
   const [progress, setProgress] = useState(0)
   const [total, setTotal] = useState(0)
@@ -73,6 +73,7 @@ export function useIdmlBatchExport() {
         formulas,
         formulaConfigs,
         hideLineIfEmpty,
+        columns,
         bindings: Object.keys(bindings).length > 0 ? bindings : undefined,
       }
 
@@ -95,7 +96,7 @@ export function useIdmlBatchExport() {
 
       // Generate filename
       const baseName = fileNamePattern
-        ? resolveFileName(fileNamePattern, selectedRows[0])
+        ? resolveFileName(fileNamePattern, selectedRows[0], columns)
         : (projectTitle || idmlSourceFileName?.replace(/\.idml$/i, '') || 'export')
 
       // Download

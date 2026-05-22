@@ -125,7 +125,7 @@ export function useBatchExport() {
       await applyRow(row)
       await new Promise((r) => setTimeout(r, 50))
 
-      const fileName = resolveFileName(config.fileNamePattern || `export_${i + 1}`, row)
+      const fileName = resolveFileName(config.fileNamePattern || `export_${i + 1}`, row, useMergeStore.getState().columns)
 
       if (config.format === 'png') {
         const dataUrl = captureCanvas()
