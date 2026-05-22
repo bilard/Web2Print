@@ -164,9 +164,17 @@ export function DamVariantsPanel({
                 }`}
               >
                 {/* Thumbnail */}
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onLoadVariant(v)}
-                  className="w-full aspect-video bg-[#111] relative overflow-hidden"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onLoadVariant(v)
+                    }
+                  }}
+                  className="w-full aspect-video bg-[#111] relative overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                   title="Charger cette variante"
                 >
                   <img
@@ -196,7 +204,7 @@ export function DamVariantsPanel({
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
-                </button>
+                </div>
 
                 {/* Info */}
                 <div className="px-2.5 py-2">

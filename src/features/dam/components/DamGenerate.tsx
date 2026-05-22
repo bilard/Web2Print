@@ -1,17 +1,30 @@
 import { useCallback, useRef, useState } from 'react'
-import { Sparkles, Loader2, Download, Plus, RotateCcw, Save, Check, Paperclip, X, File as FileIcon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Sparkles, Loader2, Download, Plus, RotateCcw, Save, Check, Paperclip, X, File as FileIcon, Wand2, MessageCircleQuestion, ZoomIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, storage } from '../../../lib/firebase/config'
 import { useAuthStore } from '../../../stores/auth.store'
 import { useEditorStore } from '../../../stores/editor.store'
-import { generateImage, type ReferenceImage } from '../../briefs/ai/geminiImageClient'
-import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
+import { useProjectStore } from '../../../stores/project.store'
+import { useUIStore } from '../../../stores/ui.store'
+import {
+  generateImage,
+  type ReferenceImage,
+  type OutputFormat,
+  type ImageSize,
+  type ImageAspectRatio,
+} from '../../briefs/ai/geminiImageClient'
+import {
+  improveImagePrompt,
+  type ImprovementAnswer,
+} from '../../briefs/ai/improveImagePrompt'
+import { ImprovePromptDialog } from './ImprovePromptDialog'
+import { ImageZoomOverlay } from './ImageZoomOverlay'
 
-type OutputFormat = 'images-text' | 'images-only'
-type AspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
-type Resolution = '512' | '1K' | '2K' | '4K'
+type AspectRatio = ImageAspectRatio
+type Resolution = ImageSize
 
 const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
   { value: 'auto', label: 'Auto' },
@@ -23,7 +36,6 @@ const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
 ]
 
 const RESOLUTIONS: { value: Resolution; label: string }[] = [
-  { value: '512', label: '512' },
   { value: '1K', label: '1K' },
   { value: '2K', label: '2K' },
   { value: '4K', label: '4K' },
@@ -38,7 +50,7 @@ interface GenerateConfig {
 }
 
 const DEFAULT_CONFIG: GenerateConfig = {
-  outputFormat: 'images-only',
+  outputFormat: 'images-text',
   temperature: 1,
   aspectRatio: 'auto',
   resolution: '1K',
@@ -48,6 +60,12 @@ const DEFAULT_CONFIG: GenerateConfig = {
 interface GeneratedImage {
   url: string
   blob: Blob
+  /** Prompt brut tapé par l'utilisateur (avant amélioration IA). */
+  originalPrompt?: string
+  /** Prompt final envoyé à Nano Banana (après amélioration). */
+  improvedPrompt: string
+  /** Questions Q&A posées + réponses choisies (mode "Avec questions" uniquement). */
+  clarifications?: ImprovementAnswer[]
   /** id du doc dam_assets si l'image a été sauvegardée. */
   savedId?: string
   /** En cours de sauvegarde — désactive le bouton. */
@@ -67,6 +85,10 @@ interface RefFile {
 
 async function readFileAsBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer()
+  return arrayBufferToBase64(buf)
+}
+
+function arrayBufferToBase64(buf: ArrayBuffer): string {
   let binary = ''
   const bytes = new Uint8Array(buf)
   const chunk = 0x8000
@@ -74,6 +96,58 @@ async function readFileAsBase64(file: File): Promise<string> {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
   }
   return btoa(binary)
+}
+
+const isSvgFile = (file: File): boolean =>
+  file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)
+
+/** Rastérise un SVG en PNG côté navigateur (Gemini Image n'accepte pas image/svg+xml). */
+async function rasterizeSvgToPng(file: File): Promise<{ blob: Blob; base64: string }> {
+  const text = await file.text()
+  const svgBlob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(svgBlob)
+  try {
+    const img = new Image()
+    img.decoding = 'async'
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('SVG image load failed'))
+      img.src = url
+    })
+    let w = img.naturalWidth
+    let h = img.naturalHeight
+    if (!w || !h) {
+      const viewBox = text.match(/viewBox\s*=\s*["']([-\d.\s]+)["']/i)?.[1]
+      if (viewBox) {
+        const parts = viewBox.trim().split(/[\s,]+/).map(Number)
+        if (parts.length === 4 && parts.every(Number.isFinite)) {
+          w = parts[2]
+          h = parts[3]
+        }
+      }
+    }
+    if (!w || !h) {
+      w = 1024
+      h = 1024
+    }
+    const MAX_SIDE = 2048
+    const scale = Math.min(1, MAX_SIDE / Math.max(w, h))
+    const targetW = Math.max(1, Math.round(w * scale))
+    const targetH = Math.max(1, Math.round(h * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = targetW
+    canvas.height = targetH
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2d context unavailable')
+    ctx.drawImage(img, 0, 0, targetW, targetH)
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas.toBlob failed'))), 'image/png')
+    })
+    const base64 = arrayBufferToBase64(await blob.arrayBuffer())
+    return { blob, base64 }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
 
 function formatSize(bytes: number): string {
@@ -84,18 +158,28 @@ function formatSize(bytes: number): string {
 
 export function DamGenerate() {
   const [prompt, setPrompt] = useState('')
+  /** Prompt brut avant la première amélioration IA. Effacé à chaque nouvelle génération ou
+   *  remis à zéro quand l'utilisateur édite manuellement le textarea après amélioration. */
+  const [originalPrompt, setOriginalPrompt] = useState<string | null>(null)
+  /** Q&R remontées par ImprovePromptDialog. Reset en même temps que originalPrompt. */
+  const [clarifications, setClarifications] = useState<ImprovementAnswer[] | null>(null)
   const [config, setConfig] = useState<GenerateConfig>(DEFAULT_CONFIG)
   const [generating, setGenerating] = useState(false)
+  const [improving, setImproving] = useState(false)
   const [images, setImages] = useState<GeneratedImage[]>([])
   const [error, setError] = useState<string | null>(null)
   const [refs, setRefs] = useState<RefFile[]>([])
   const [dragging, setDragging] = useState(false)
+  const [improveDialogOpen, setImproveDialogOpen] = useState(false)
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null)
   const refInputRef = useRef<HTMLInputElement>(null)
-  const { insertOnCanvas } = useDamCanvasInsert()
   const userId = useAuthStore((s) => s.user?.uid)
   // L'insertion canvas n'a de sens que si un projet d'édition est ouvert.
   const projectId = useEditorStore((s) => s.projectId)
   const canInsertCanvas = !!projectId
+  const setPendingDamInsert = useProjectStore((s) => s.setPendingDamInsert)
+  const setDamPickerOpen = useUIStore((s) => s.setDamPickerOpen)
+  const navigate = useNavigate()
 
   const handleAddRefs = useCallback(async (files: FileList | File[]) => {
     const arr = Array.from(files)
@@ -103,10 +187,23 @@ export function DamGenerate() {
     const added: RefFile[] = []
     for (const file of arr) {
       try {
+        const id = `ref_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+        if (isSvgFile(file)) {
+          const { blob, base64 } = await rasterizeSvgToPng(file)
+          added.push({
+            id,
+            name: file.name.replace(/\.svg$/i, '.png'),
+            size: blob.size,
+            mimeType: 'image/png',
+            data: base64,
+            previewUrl: URL.createObjectURL(blob),
+          })
+          continue
+        }
         const data = await readFileAsBase64(file)
         const mimeType = file.type || 'application/octet-stream'
         added.push({
-          id: `ref_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          id,
           name: file.name,
           size: file.size,
           mimeType,
@@ -120,6 +217,69 @@ export function DamGenerate() {
     }
     if (added.length > 0) setRefs((prev) => [...prev, ...added])
   }, [])
+
+  /** Capte les images collées (clipboard) et les ajoute aux fichiers de référence.
+   *  Le texte du presse-papier suit son comportement par défaut (insertion dans le textarea). */
+  const handlePromptPaste = useCallback(
+    async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const items = e.clipboardData?.items
+      if (!items || items.length === 0) return
+      const imageFiles: File[] = []
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const file = item.getAsFile()
+          if (file) {
+            const ext = file.type.split('/')[1] || 'png'
+            const named =
+              file.name && file.name !== 'image.png'
+                ? file
+                : new File([file], `pasted-${Date.now()}.${ext}`, { type: file.type })
+            imageFiles.push(named)
+          }
+        }
+      }
+      if (imageFiles.length > 0) {
+        e.preventDefault()
+        await handleAddRefs(imageFiles)
+        toast.success(
+          imageFiles.length === 1
+            ? 'Image collée ajoutée aux références'
+            : `${imageFiles.length} images collées ajoutées aux références`,
+        )
+      }
+    },
+    [handleAddRefs],
+  )
+
+  const handleImprovePrompt = useCallback(async () => {
+    const current = prompt.trim()
+    if (!current || improving || generating) return
+    setImproving(true)
+    try {
+      const imageRefs = refs
+        .filter((r) => r.mimeType.startsWith('image/'))
+        .map((r) => ({ data: r.data, mimeType: r.mimeType, name: r.name }))
+      const improved = await improveImagePrompt(current, imageRefs)
+      // Capture le prompt brut avant d'écraser le textarea — uniquement à la
+      // première amélioration d'une session (les améliorations successives
+      // gardent l'original).
+      if (!originalPrompt) setOriginalPrompt(current)
+      // Amélioration one-shot → pas de Q&R, on les efface.
+      setClarifications(null)
+      setPrompt(improved)
+      toast.success(
+        imageRefs.length > 0
+          ? `Prompt amélioré (${imageRefs.length} image${imageRefs.length > 1 ? 's' : ''} analysée${imageRefs.length > 1 ? 's' : ''})`
+          : 'Prompt amélioré',
+      )
+    } catch (err) {
+      console.error('Improve prompt failed:', err)
+      toast.error(err instanceof Error ? err.message : "Échec de l'amélioration du prompt")
+    } finally {
+      setImproving(false)
+    }
+  }, [prompt, refs, improving, generating, originalPrompt])
 
   const handleRemoveRef = useCallback((id: string) => {
     setRefs((prev) => {
@@ -135,23 +295,28 @@ export function DamGenerate() {
     setError(null)
 
     try {
-      const aspectHint =
-        config.aspectRatio !== 'auto'
-          ? ` Generate the image in ${config.aspectRatio} aspect ratio.`
-          : ''
-      const fullPrompt = `${prompt.trim()}${aspectHint}`
-
       const referenceImages: ReferenceImage[] = refs.map((r) => ({
         mimeType: r.mimeType,
         data: r.data,
         label: r.name,
       }))
 
+      const finalPrompt = prompt.trim()
       const results: GeneratedImage[] = []
       for (let i = 0; i < config.numberOfImages; i++) {
-        const { blob } = await generateImage(fullPrompt, referenceImages)
+        const { blob } = await generateImage(finalPrompt, referenceImages, {
+          outputFormat: config.outputFormat,
+          imageSize: config.resolution,
+          aspectRatio: config.aspectRatio,
+        })
         const url = URL.createObjectURL(blob)
-        results.push({ url, blob })
+        results.push({
+          url,
+          blob,
+          improvedPrompt: finalPrompt,
+          originalPrompt: originalPrompt ?? undefined,
+          clarifications: clarifications ?? undefined,
+        })
       }
       setImages(results)
     } catch (err) {
@@ -160,7 +325,7 @@ export function DamGenerate() {
     } finally {
       setGenerating(false)
     }
-  }, [prompt, config, refs, generating])
+  }, [prompt, config, refs, generating, originalPrompt, clarifications])
 
   const handleDownload = useCallback((img: GeneratedImage, index: number) => {
     const a = document.createElement('a')
@@ -213,7 +378,12 @@ export function DamGenerate() {
           height: dims.h,
           photographer: 'Nano Banana',
           photographerUrl: '',
-          description: prompt.trim(),
+          description: img.improvedPrompt || prompt.trim(),
+          improvedPrompt: img.improvedPrompt || prompt.trim(),
+          ...(img.originalPrompt ? { originalPrompt: img.originalPrompt } : {}),
+          ...(img.clarifications && img.clarifications.length > 0
+            ? { promptClarifications: img.clarifications }
+            : {}),
           tags: [],
           color: '#000000',
           orientation,
@@ -241,9 +411,13 @@ export function DamGenerate() {
 
   const handleInsertCanvas = useCallback(
     (img: GeneratedImage) => {
+      if (!projectId) {
+        toast.error("Aucun projet ouvert dans l'éditeur.")
+        return
+      }
       const damImage = {
         id: `gen-${Date.now()}`,
-        sourceProvider: 'pexels' as const,
+        sourceProvider: 'nanobana' as const,
         sourceId: '',
         sourceUrl: '',
         thumbnailUrl: img.url,
@@ -253,14 +427,21 @@ export function DamGenerate() {
         height: 1024,
         photographer: 'Nano Banana',
         photographerUrl: '',
-        description: prompt,
+        description: img.improvedPrompt || prompt,
         tags: [],
         color: '#000000',
         orientation: 'square' as const,
       }
-      insertOnCanvas(damImage)
+      // Stocke l'image en pending, ferme la modale DAM si elle est ouverte
+      // par-dessus l'éditeur, puis navigue vers /editor/<projectId>. EditorPage
+      // l'insère dès que le canvas Fabric est prêt. Si on est déjà sur la bonne
+      // route, navigate ne re-monte rien — seule la mutation du store déclenche
+      // le useEffect d'insertion.
+      setPendingDamInsert(damImage)
+      setDamPickerOpen(false)
+      navigate(`/editor/${projectId}`)
     },
-    [insertOnCanvas, prompt]
+    [projectId, prompt, setPendingDamInsert, setDamPickerOpen, navigate]
   )
 
   return (
@@ -274,13 +455,49 @@ export function DamGenerate() {
 
         {/* Prompt */}
         <div>
-          <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Prompt</div>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="text-[9px] text-white/40 uppercase tracking-wider">Prompt</div>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => setImproveDialogOpen(true)}
+                disabled={!prompt.trim() || improving || generating}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                title="Améliorer avec questions ciblées — Gemini analyse ton brief + tes images et te demande des précisions sur les points ambigus avant de générer le prompt"
+              >
+                <MessageCircleQuestion className="w-2.5 h-2.5" />
+                Avec questions
+              </button>
+              <button
+                type="button"
+                onClick={handleImprovePrompt}
+                disabled={!prompt.trim() || improving || generating}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                title="Réécriture one-shot du prompt pour Nano Banana 2 (sujet, style, composition, éclairage, qualité)"
+              >
+                {improving ? (
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                ) : (
+                  <Wand2 className="w-2.5 h-2.5" />
+                )}
+                {improving ? 'En cours…' : 'Améliorer'}
+              </button>
+            </div>
+          </div>
           <textarea
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Décrivez l'image à générer..."
+            onChange={(e) => {
+              setPrompt(e.target.value)
+              // L'utilisateur modifie le textarea après amélioration → on perd
+              // la notion d'« avant/après » : on efface l'originalPrompt et les
+              // Q&R pour éviter de sauvegarder un couple incohérent.
+              if (originalPrompt !== null) setOriginalPrompt(null)
+              if (clarifications !== null) setClarifications(null)
+            }}
+            onPaste={handlePromptPaste}
+            placeholder="Décrivez l'image à générer... (collez une image ou du texte)"
             rows={4}
-            className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50 resize-none"
+            className="w-full min-h-[96px] bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50 resize-y"
           />
         </div>
 
@@ -317,13 +534,23 @@ export function DamGenerate() {
                     key={r.id}
                     className="flex items-center gap-2 px-1.5 py-1 rounded bg-white/[0.03] border border-white/5"
                   >
-                    <div className="w-7 h-7 rounded bg-white/5 overflow-hidden flex items-center justify-center shrink-0">
-                      {r.previewUrl ? (
+                    {r.previewUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setZoomSrc(r.previewUrl ?? null)}
+                        className="w-7 h-7 rounded bg-white/5 overflow-hidden flex items-center justify-center shrink-0 cursor-zoom-in relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                        title="Agrandir"
+                      >
                         <img src={r.previewUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                          <ZoomIn className="w-3 h-3 text-white" />
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-7 h-7 rounded bg-white/5 overflow-hidden flex items-center justify-center shrink-0">
                         <FileIcon className="w-3.5 h-3.5 text-white/40" />
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] text-white/80 truncate">{r.name}</div>
                       <div className="text-[9px] text-white/35">{formatSize(r.size)}</div>
@@ -544,13 +771,21 @@ export function DamGenerate() {
             <div className={`grid gap-3 ${images.length === 1 ? 'grid-cols-1 max-w-[600px] mx-auto' : 'grid-cols-2'}`}>
               {images.map((img, i) => (
                 <div key={i} className="flex flex-col gap-2">
-                  <div className="rounded-lg overflow-hidden bg-[#111]">
+                  <button
+                    type="button"
+                    onClick={() => setZoomSrc(img.url)}
+                    className="group rounded-lg overflow-hidden bg-[#111] relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    title="Cliquer pour agrandir"
+                  >
                     <img
                       src={img.url}
                       alt={`Generated ${i + 1}`}
                       className="w-full object-contain"
                     />
-                  </div>
+                    <div className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-white/0 group-hover:text-white/90 transition pointer-events-none">
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleDownload(img, i)}
@@ -593,7 +828,7 @@ export function DamGenerate() {
                       }`}
                       title={
                         canInsertCanvas
-                          ? "Insérer l'image dans le projet ouvert dans l'éditeur"
+                          ? "Ouvrir le projet dans l'éditeur et y insérer l'image"
                           : "Ouvre d'abord un projet dans l'éditeur pour pouvoir y insérer cette image"
                       }
                     >
@@ -607,6 +842,26 @@ export function DamGenerate() {
           </div>
         )}
       </div>
+
+      <ImprovePromptDialog
+        open={improveDialogOpen}
+        onClose={() => setImproveDialogOpen(false)}
+        brief={prompt}
+        refs={refs
+          .filter((r) => r.mimeType.startsWith('image/'))
+          .map((r) => ({ data: r.data, mimeType: r.mimeType, name: r.name }))}
+        onImproved={(improved, answers) => {
+          if (!originalPrompt) setOriginalPrompt(prompt)
+          setClarifications(answers)
+          setPrompt(improved)
+        }}
+      />
+
+      <ImageZoomOverlay
+        open={zoomSrc !== null}
+        src={zoomSrc ?? ''}
+        onClose={() => setZoomSrc(null)}
+      />
     </div>
   )
 }
