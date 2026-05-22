@@ -34,10 +34,15 @@ interface RecordParams {
   outputTokens: number
 }
 
-interface PendingEntry {
+interface PendingLeaf {
   tokensIn: number
   tokensOut: number
   costUsd: number
+}
+interface PendingEntry extends PendingLeaf {
+  /** Détail par modèle, agrégé en plus du total provider — permet à l'UI
+   *  d'afficher chaque modèle (texte vs image) sur sa propre ligne. */
+  byModel: Map<string, PendingLeaf>
 }
 
 /** Délai d'agrégation avant flush Firestore. Trade-off : trop court = un write
@@ -59,13 +64,30 @@ async function flushPending() {
   const month = new Date().toISOString().slice(0, 7)
   const docId = `${userId}_${month}`
 
-  const byProvider: Record<string, { tokensIn: ReturnType<typeof increment>; tokensOut: ReturnType<typeof increment>; costUsd: ReturnType<typeof increment> }> = {}
+  type FirestoreLeaf = {
+    tokensIn: ReturnType<typeof increment>
+    tokensOut: ReturnType<typeof increment>
+    costUsd: ReturnType<typeof increment>
+  }
+  type FirestoreProviderEntry = FirestoreLeaf & {
+    byModel: Record<string, FirestoreLeaf>
+  }
+  const byProvider: Record<string, FirestoreProviderEntry> = {}
   let totalCost = 0
   for (const [provider, entry] of pending) {
+    const byModel: Record<string, FirestoreLeaf> = {}
+    for (const [modelId, leaf] of entry.byModel) {
+      byModel[modelId] = {
+        tokensIn:  increment(leaf.tokensIn),
+        tokensOut: increment(leaf.tokensOut),
+        costUsd:   increment(leaf.costUsd),
+      }
+    }
     byProvider[provider] = {
       tokensIn:  increment(entry.tokensIn),
       tokensOut: increment(entry.tokensOut),
       costUsd:   increment(entry.costUsd),
+      byModel,
     }
     totalCost += entry.costUsd
   }
@@ -116,10 +138,16 @@ export function recordAiUsage(params: RecordParams): number {
     pricing,
   )
 
-  const existing = pending.get(params.provider) ?? { tokensIn: 0, tokensOut: 0, costUsd: 0 }
+  const existing: PendingEntry =
+    pending.get(params.provider) ?? { tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: new Map() }
   existing.tokensIn += params.inputTokens
   existing.tokensOut += params.outputTokens
   existing.costUsd += costUsd
+  const modelLeaf = existing.byModel.get(params.model) ?? { tokensIn: 0, tokensOut: 0, costUsd: 0 }
+  modelLeaf.tokensIn += params.inputTokens
+  modelLeaf.tokensOut += params.outputTokens
+  modelLeaf.costUsd += costUsd
+  existing.byModel.set(params.model, modelLeaf)
   pending.set(params.provider, existing)
 
   // Notifie le listener du dernier routeur actif (LIFO) — pour l'indicateur live.

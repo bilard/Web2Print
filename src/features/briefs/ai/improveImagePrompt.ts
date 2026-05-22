@@ -1,219 +1,217 @@
-import { getApiKey } from '@/lib/apiKeys'
-import { recordAiUsage } from '@/features/stats/aiUsageTracking'
-import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
+import { generateText } from '@/features/chat/ai/chatRouter'
 
-const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages'
-const ANTHROPIC_VERSION = '2023-06-01'
-const CLAUDE_MODEL = 'claude-opus-4-7'
+export interface ImproveImageRef {
+  /** Data brute base64 SANS préfixe data:. */
+  data: string
+  /** MIME type (image/png, image/jpeg, image/webp, ...). */
+  mimeType: string
+  /** Nom du fichier pour log / contexte sémantique (ex. "tente-brise_2.webp"). */
+  name?: string
+}
 
-const GEMINI_MODEL = 'gemini-3.1-pro-preview'
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+export interface ImprovementQuestion {
+  /** Identifiant stable pour l'UI. */
+  id: string
+  /** Texte de la question en français. */
+  question: string
+  /** Options proposées (3-6). La première est la suggestion par défaut de Gemini. */
+  options: string[]
+}
 
-const SYSTEM_PROMPT =
-  "You rewrite short image briefs into rich Nano Banana 2 prompts (Google Gemini 3.1 image gen).\n\n" +
+export interface ImprovementAnswer {
+  /** Texte exact de la question (pour réinjection en clair dans le prompt). */
+  question: string
+  /** Réponse choisie ou libre. */
+  answer: string
+}
+
+// ─── System prompts ──────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT_WITH_REFS =
+  "You write Nano Banana 2 (Gemini 3.1 image) prompts for compositions that combine USER-SUPPLIED REFERENCE IMAGES with a desired scene/branding.\n\n" +
+  "CRITICAL — how to use the references:\n" +
+  "Nano Banana 2 receives the same reference images attached to your output prompt. It can SEE them directly. Therefore you must NOT re-describe each product's visual structure in detail (shape of poles, exact silhouette, fabric type, panel layout) — that re-description fights the images and triggers hallucination.\n\n" +
+  "INSTEAD, in the prompt you write:\n" +
+  "1. Identify each reference image briefly: one short noun phrase + dominant color only (e.g. \"the black spider tent (ref 1)\", \"the blue inflatable shelter (ref 2)\", \"the yellow inflatable tent (ref 3)\"). One line max per reference.\n" +
+  "2. Tell Nano Banana to preserve the EXACT structure, geometry, proportions, materials and silhouette from each reference image — do not invent variations.\n" +
+  "3. State clearly what CHANGES from the references: branding (logo replacement), baseline text \"...\" rendered legibly, new scene/background.\n" +
+  "4. Describe the new SCENE (environment, lighting, composition, camera) in rich English: this is where you can be detailed.\n" +
+  "5. Preserve every literal element from the user brief: brand names, slogans (original language + double-quoted), counts, dimensions, color constraints.\n" +
+  "6. If the user has provided clarification answers below the brief, treat them as the authoritative source for ambiguous points (environment, lighting, layout, mood) and integrate them faithfully.\n\n" +
+  "OUTPUT: one paragraph, 80-140 words. No preamble, no markdown, no bullets, no surrounding quotes."
+
+const SYSTEM_PROMPT_NO_REFS =
+  "You rewrite short image briefs into rich Nano Banana 2 (Google Gemini 3.1 image) prompts.\n\n" +
   "RULES:\n" +
-  "1. Keep EVERY concrete element the user named: brand names, slogans/baselines, exact counts (3 products = 3), dimensions, colors, scene intent.\n" +
-  "2. Brands and slogans/baselines stay in their original language. Wrap slogans in double quotes and tell NB2 to render them legibly.\n" +
-  "3. Use given physical dimensions to drive in-scene scale (e.g. 3×3 m tent → realistic grass and human-scale references around it).\n" +
+  "1. Keep EVERY concrete element the user named: brand names, slogans/baselines, exact counts, dimensions, colors, scene intent.\n" +
+  "2. Brands and slogans/baselines stay in their original language. Wrap slogans in double quotes and tell Nano Banana to render them legibly.\n" +
+  "3. Use given physical dimensions to drive in-scene scale.\n" +
   "4. Enrich the rest in English: composition, framing, lighting, palette, materials, lens, photographic quality.\n" +
-  "5. Output ONE dense paragraph, 100-180 words. No preamble, no markdown, no bullets, no surrounding quotes, no commentary.\n\n" +
-  "EXAMPLE\n" +
-  "User brief: « Mets le sac à dos Quechua bleu et la tente Forclaz orange dans la nature avec le slogan \"Bien plus que du sport\". » \n" +
-  "Output: Lifestyle outdoor photograph showcasing two distinct Quechua and Forclaz products staged in a single continuous mountain meadow scene at golden hour. " +
-  "A blue Quechua backpack rests in the left foreground, original colorway preserved, fabric textures sharp; an orange Forclaz tent stands pitched in the midground, " +
-  "roughly 2 m tall, dewy grass blades at realistic 5–10 cm scale around its footprint. Decathlon branding visible on both items, with the baseline " +
-  "\"Bien plus que du sport\" rendered legibly across the lower third of the frame in clean sans-serif. Soft warm rim light, lush pine treeline behind, " +
-  "low haze, mid-altitude meadow. Wide-angle 35 mm lens, eye-level composition, shallow depth of field. Photorealistic, highly detailed, sharp focus, " +
-  "professional outdoor brand photography, 8k."
+  "5. If clarification answers are supplied, treat them as authoritative for ambiguous points and integrate them faithfully.\n" +
+  "6. Output ONE dense paragraph, 100-160 words. No preamble, no markdown, no bullets, no surrounding quotes."
 
-const userInstruction = (current: string) =>
-  "Rewrite the following brief into one Nano Banana 2 prompt following the rules. Return ONLY the rewritten prompt paragraph, nothing else.\n\nBRIEF:\n" +
-  current.trim()
+const SYSTEM_PROMPT_QUESTIONS =
+  "You analyze an image-generation brief (plus optional reference product images) and produce a SHORT list of clarifying questions to ask the user before the prompt is written.\n\n" +
+  "Goal: extract only the AMBIGUITIES that would push Nano Banana 2 in a meaningfully different direction. Skip anything the brief already pins down. Examples of useful axes:\n" +
+  "- Environment / setting (mountain, forest, urban, studio, beach, desert, indoor stage…)\n" +
+  "- Lighting & mood (golden hour, midday, overcast, dusk, studio strobe…)\n" +
+  "- Composition / arrangement of multiple products (aligned, triangle, hero+supporting, scattered…)\n" +
+  "- Camera angle & framing (eye-level, low angle, top-down, wide vs tight…)\n" +
+  "- Season / weather (summer, snow, rain, autumn foliage…)\n" +
+  "- Human presence (yes/no, type of people, action)\n" +
+  "- Branding placement (where the logo/baseline appears — on product, in scene, as overlay)\n" +
+  "- Image format / aspect ratio if relevant\n\n" +
+  "RULES:\n" +
+  "1. Ask between 2 and 5 questions. Fewer is better — only the ones that genuinely change the output.\n" +
+  "2. For each question, propose 3-5 concrete options (short, in French). The FIRST option is your best guess given the brief and images.\n" +
+  "3. Write questions in French, in clear, natural conversational tone.\n" +
+  "4. Output ONLY valid JSON, no preamble, no markdown fences, matching:\n" +
+  '{"questions":[{"id":"env","question":"…?","options":["…","…","…"]}]}'
 
-/** Nettoie guillemets accidentels en début/fin de chaîne. */
+// ─── User content builders ───────────────────────────────────────────────────
+
+const buildBriefContent = (
+  brief: string,
+  refs: ImproveImageRef[],
+  answers: ImprovementAnswer[],
+) => {
+  const refLines = refs.length
+    ? `\n\nReferences attached:\n${refs.map((r, i) => `- ref ${i + 1}${r.name ? ` (${r.name})` : ''}`).join('\n')}`
+    : ''
+  const answersBlock = answers.length
+    ? `\n\nUser clarifications (authoritative):\n${answers.map((a) => `- ${a.question}\n  → ${a.answer}`).join('\n')}`
+    : ''
+  const instruction = refs.length
+    ? `Write ONE Nano Banana 2 prompt that composes the ${refs.length} attached reference images into the scene described. Preserve their exact structure; only branding and scene change. Return ONLY the prompt paragraph.`
+    : 'Rewrite the following brief into one Nano Banana 2 prompt following the rules. Return ONLY the rewritten prompt paragraph, nothing else.'
+  return `${instruction}${refLines}${answersBlock}\n\nBRIEF:\n${brief.trim()}`
+}
+
+const buildQuestionsContent = (brief: string, refs: ImproveImageRef[]) => {
+  const refLines = refs.length
+    ? `\n\nReference images attached (${refs.length}): ${refs.map((r, i) => `#${i + 1}${r.name ? ` (${r.name})` : ''}`).join(', ')}.`
+    : ''
+  return (
+    `Analyze the brief below${refs.length ? ' and the attached reference images' : ''}, then produce the JSON list of clarifying questions.${refLines}\n\nBRIEF:\n${brief.trim()}`
+  )
+}
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
 const stripWrappingQuotes = (s: string) => s.replace(/^["'`]+|["'`]+$/g, '').trim()
 
-interface AnthropicTextResponse {
-  content?: Array<{ type: string; text?: string }>
-  usage?: { input_tokens?: number; output_tokens?: number }
-  stop_reason?: string
-}
-
-interface GeminiTextResponse {
-  candidates?: Array<{
-    content?: { parts?: Array<{ text?: string; thought?: boolean }> }
-    finishReason?: string
-  }>
-  usageMetadata?: {
-    promptTokenCount?: number
-    candidatesTokenCount?: number
-    thoughtsTokenCount?: number
-    totalTokenCount?: number
-  }
-}
-
-async function improveViaClaude(current: string): Promise<string> {
-  const apiKey = getApiKey('anthropic')
-  if (!apiKey) throw new Error('Clé Anthropic absente.')
-
-  const activity = useAiActivityStore.getState()
-  const activityId = nextAiActivityId('img-prompt')
-  activity.start({
-    id: activityId,
-    provider: 'claude',
-    model: CLAUDE_MODEL,
-    label: 'Amélioration prompt image',
-    kind: 'json',
-  })
-
+/** Extrait le premier objet JSON valide d'une chaîne, en ignorant un éventuel
+ *  préfixe (```json) ou texte parasite. Tolère les fences markdown. */
+function extractJson(raw: string): unknown {
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim()
+  // Tentative directe : si la réponse EST déjà un objet JSON valide (mode
+  // responseMimeType: application/json), on parse tel quel.
   try {
-    const res = await fetch(ANTHROPIC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': ANTHROPIC_VERSION,
-        'anthropic-dangerous-direct-browser-access': 'true',
+    return JSON.parse(cleaned)
+  } catch {
+    // Sinon on cherche le premier { et le dernier } et on parse cette tranche.
+  }
+  const start = cleaned.indexOf('{')
+  const end = cleaned.lastIndexOf('}')
+  if (start === -1 || end === -1) {
+    console.error('[improvementQuestions] Réponse brute non-JSON:', raw)
+    throw new Error('Aucun JSON détecté dans la réponse.')
+  }
+  return JSON.parse(cleaned.slice(start, end + 1))
+}
+
+function isImprovementQuestion(x: unknown): x is ImprovementQuestion {
+  if (!x || typeof x !== 'object') return false
+  const q = x as Record<string, unknown>
+  return (
+    typeof q.id === 'string' &&
+    typeof q.question === 'string' &&
+    Array.isArray(q.options) &&
+    q.options.every((o) => typeof o === 'string')
+  )
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
+/**
+ * Demande à Gemini d'inspecter le brief + les refs, et de produire 2-5 questions
+ * de clarification ciblées sur les ambiguïtés qui changeraient vraiment le rendu
+ * Nano Banana 2 (environnement, lumière, composition, etc.).
+ */
+export async function generateImprovementQuestions(
+  brief: string,
+  refs: ImproveImageRef[] = [],
+): Promise<ImprovementQuestion[]> {
+  const imageRefs = refs.filter((r) => r.mimeType.startsWith('image/'))
+  const imageDataUris = imageRefs.map((r) => `data:${r.mimeType};base64,${r.data}`)
+
+  const { text, provider, model } = await generateText({
+    system: SYSTEM_PROMPT_QUESTIONS,
+    messages: [
+      {
+        role: 'user',
+        content: buildQuestionsContent(brief, imageRefs),
+        imageDataUris: imageDataUris.length ? imageDataUris : undefined,
       },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 1200,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userInstruction(current) }],
-      }),
-    })
-
-    if (!res.ok) {
-      const body = await res.text()
-      throw new Error(`Anthropic API ${res.status} : ${body.slice(0, 300)}`)
-    }
-
-    const data = (await res.json()) as AnthropicTextResponse
-    const tokensIn = data.usage?.input_tokens ?? 0
-    const tokensOut = data.usage?.output_tokens ?? 0
-    const costUsd = recordAiUsage({
-      provider: 'claude',
-      model: CLAUDE_MODEL,
-      inputTokens: tokensIn,
-      outputTokens: tokensOut,
-    })
-
-    const text = data.content?.find((b) => b.type === 'text')?.text?.trim()
-    console.log(
-      `[improveImagePrompt][Claude] stop=${data.stop_reason} outTok=${tokensOut} len=${text?.length ?? 0}`,
-    )
-    if (!text) {
-      activity.end(activityId, 'error', { errorMessage: 'Réponse vide' })
-      throw new Error('Claude : réponse vide')
-    }
-    if (data.stop_reason === 'max_tokens') {
-      console.warn('[improveImagePrompt][Claude] sortie tronquée par max_tokens — augmente max_tokens.')
-    }
-
-    activity.end(activityId, 'success', { inputTokens: tokensIn, outputTokens: tokensOut, costUsd })
-    return stripWrappingQuotes(text)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    activity.end(activityId, 'error', { errorMessage: message })
-    throw err
-  }
-}
-
-async function improveViaGemini(current: string): Promise<string> {
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) throw new Error('Clé Gemini absente.')
-
-  const activity = useAiActivityStore.getState()
-  const activityId = nextAiActivityId('img-prompt')
-  activity.start({
-    id: activityId,
-    provider: 'gemini',
-    model: GEMINI_MODEL,
-    label: 'Amélioration prompt image (fallback)',
-    kind: 'json',
+    ],
+    temperature: 0.3,
+    maxTokens: 2048,
+    responseFormat: 'json',
+    onProviderFailed: ({ provider, error }) =>
+      console.warn(`[improvementQuestions] ${provider} a échoué, fallback. Cause:`, error.message),
   })
 
-  try {
-    const res = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: userInstruction(current) }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048,
-          thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false },
-        },
-      }),
-    })
-
-    if (!res.ok) {
-      const body = await res.text()
-      throw new Error(`Gemini API ${res.status} : ${body.slice(0, 300)}`)
-    }
-
-    const data = (await res.json()) as GeminiTextResponse
-    const tokensIn = data.usageMetadata?.promptTokenCount ?? 0
-    const tokensOut = data.usageMetadata?.candidatesTokenCount ?? 0
-    const thoughtsTokens = data.usageMetadata?.thoughtsTokenCount ?? 0
-    const finishReason = data.candidates?.[0]?.finishReason
-    const costUsd = recordAiUsage({
-      provider: 'gemini',
-      model: GEMINI_MODEL,
-      inputTokens: tokensIn,
-      outputTokens: tokensOut,
-    })
-
-    const text = data.candidates?.[0]?.content?.parts
-      ?.filter((p) => !p.thought)
-      .map((p) => p.text ?? '')
-      .join('')
-      .trim()
-    console.log(
-      `[improveImagePrompt][Gemini] finishReason=${finishReason} outTok=${tokensOut} thoughtTok=${thoughtsTokens} len=${text?.length ?? 0}`,
-    )
-    if (!text) {
-      activity.end(activityId, 'error', { errorMessage: 'Réponse vide' })
-      throw new Error('Gemini : réponse vide')
-    }
-    if (finishReason && finishReason !== 'STOP') {
-      console.warn(`[improveImagePrompt][Gemini] finishReason=${finishReason} (sortie potentiellement tronquée).`)
-    }
-
-    activity.end(activityId, 'success', { inputTokens: tokensIn, outputTokens: tokensOut, costUsd })
-    return stripWrappingQuotes(text)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    activity.end(activityId, 'error', { errorMessage: message })
-    throw err
+  const parsed = extractJson(text) as { questions?: unknown }
+  if (!parsed || !Array.isArray(parsed.questions)) {
+    throw new Error('Réponse Gemini sans tableau "questions".')
   }
+  const questions = parsed.questions.filter(isImprovementQuestion)
+  console.log(
+    `[improvementQuestions] ✓ ${provider}/${model} refs=${imageRefs.length} q=${questions.length}`,
+  )
+  return questions
 }
 
 /**
  * Réécrit un prompt utilisateur pour la génération d'image Nano Banana 2.
- * Le meta-prompt cible spécifiquement les axes que NB2 sait exploiter :
- * sujet précis, style visuel, composition/cadrage, éclairage, palette, qualité.
  *
- * Cascade : Claude Opus 4.7 (primaire) → Gemini 3.1 Pro (fallback). Le fallback
- * couvre les cas de quota plafonné côté Anthropic — fréquent en fin de mois.
- * Renvoie un prompt en ANGLAIS (NB2 nettement plus précis en EN).
+ * Délègue à `generateText()` qui respecte la cascade configurée dans
+ * Réglages → IA. Les images de référence sont attachées en multimodal — le LLM
+ * les VOIT et écrit un prompt qui dit à Nano Banana de préserver leur apparence
+ * exacte (pas de re-description textuelle qui fait halluciner).
+ *
+ * Si `answers` est fourni, les réponses de l'utilisateur aux questions de
+ * clarification sont injectées en bloc autoritaire dans le prompt — elles
+ * lèvent les ambiguïtés que Gemini ne peut pas deviner depuis le brief seul.
  */
-export async function improveImagePrompt(current: string): Promise<string> {
-  const hasClaude = !!getApiKey('anthropic')
-  const hasGemini = !!getApiKey('gemini')
+export async function improveImagePrompt(
+  current: string,
+  refs: ImproveImageRef[] = [],
+  answers: ImprovementAnswer[] = [],
+): Promise<string> {
+  const imageRefs = refs.filter((r) => r.mimeType.startsWith('image/'))
+  const imageDataUris = imageRefs.map((r) => `data:${r.mimeType};base64,${r.data}`)
 
-  if (hasClaude) {
-    try {
-      return await improveViaClaude(current)
-    } catch (err) {
-      if (!hasGemini) throw err
-      console.warn('[improveImagePrompt] Claude a échoué, fallback Gemini. Cause:', err)
-      return await improveViaGemini(current)
-    }
-  }
-
-  if (hasGemini) return await improveViaGemini(current)
-
-  throw new Error('Aucune clé disponible (ni Anthropic ni Gemini). Configurez-les dans Réglages.')
+  const { text, provider, model } = await generateText({
+    system: imageRefs.length > 0 ? SYSTEM_PROMPT_WITH_REFS : SYSTEM_PROMPT_NO_REFS,
+    messages: [
+      {
+        role: 'user',
+        content: buildBriefContent(current, imageRefs, answers),
+        imageDataUris: imageDataUris.length ? imageDataUris : undefined,
+      },
+    ],
+    temperature: 0.5,
+    maxTokens: 2048,
+    onProviderFailed: ({ provider, error }) =>
+      console.warn(`[improveImagePrompt] ${provider} a échoué, fallback. Cause:`, error.message),
+  })
+  console.log(
+    `[improveImagePrompt] ✓ ${provider}/${model} refs=${imageRefs.length} answers=${answers.length} len=${text.length}`,
+  )
+  return stripWrappingQuotes(text)
 }

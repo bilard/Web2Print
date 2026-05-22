@@ -4,10 +4,16 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AiProvider } from '@/lib/aiModels'
 
-interface AiProviderUsage {
+interface AiUsageLeaf {
   tokensIn: number
   tokensOut: number
   costUsd: number
+}
+
+interface AiProviderUsage extends AiUsageLeaf {
+  /** Détail par modèle (rempli depuis 2026-05). Vide ou absent pour les
+   *  écritures antérieures, dans ce cas l'UI utilise uniquement l'agrégat. */
+  byModel: Record<string, AiUsageLeaf>
 }
 
 interface BrightDataUsage {
@@ -27,7 +33,7 @@ interface UsageStats {
   brightData: BrightDataUsage
 }
 
-const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0 })
+const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} })
 const emptyBrightData = (): BrightDataUsage => ({ requests: 0, costUsd: 0 })
 
 async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
@@ -41,13 +47,27 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   }
   const data = snap.data() as {
     total?: { costUsd?: number }
-    byProvider?: Partial<Record<AiProvider, Partial<AiProviderUsage>>>
+    byProvider?: Partial<Record<AiProvider, Partial<AiProviderUsage> & {
+      byModel?: Record<string, Partial<AiUsageLeaf>>
+    }>>
   }
-  const merge = (p: AiProvider): AiProviderUsage => ({
-    tokensIn:  data.byProvider?.[p]?.tokensIn  ?? 0,
-    tokensOut: data.byProvider?.[p]?.tokensOut ?? 0,
-    costUsd:   data.byProvider?.[p]?.costUsd   ?? 0,
-  })
+  const merge = (p: AiProvider): AiProviderUsage => {
+    const rawByModel = data.byProvider?.[p]?.byModel ?? {}
+    const byModel: Record<string, AiUsageLeaf> = {}
+    for (const [modelId, leaf] of Object.entries(rawByModel)) {
+      byModel[modelId] = {
+        tokensIn:  leaf?.tokensIn  ?? 0,
+        tokensOut: leaf?.tokensOut ?? 0,
+        costUsd:   leaf?.costUsd   ?? 0,
+      }
+    }
+    return {
+      tokensIn:  data.byProvider?.[p]?.tokensIn  ?? 0,
+      tokensOut: data.byProvider?.[p]?.tokensOut ?? 0,
+      costUsd:   data.byProvider?.[p]?.costUsd   ?? 0,
+      byModel,
+    }
+  }
   return {
     total: data.total?.costUsd ?? 0,
     byProvider: { claude: merge('claude'), gemini: merge('gemini'), openai: merge('openai'), deepseek: merge('deepseek'), qwen: merge('qwen'), kimi: merge('kimi'), openrouter: merge('openrouter') },

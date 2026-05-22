@@ -63,6 +63,12 @@ async function callGemini(
         responseMimeType: 'application/json',
         responseSchema: sanitized,
         temperature: 0.4,
+        maxOutputTokens: 8192,
+        // Gemini 3.x : thinking dynamique consomme maxOutputTokens et peut tronquer
+        // le JSON en sortie. Les modèles antérieurs ignorent ou rejettent ce champ.
+        ...(/^gemini-3/i.test(model)
+          ? { thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false } }
+          : {}),
       },
     }),
   })

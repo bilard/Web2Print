@@ -1,6 +1,7 @@
 import { getApiKey } from '@/lib/apiKeys'
 import { base64ToBlob } from './base64ToBlob'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
+import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 
 const MODEL = 'gemini-3.1-flash-image-preview'
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
@@ -8,6 +9,12 @@ const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODE
 interface GenerateImageResult {
   blob: Blob
   mimeType: string
+  /** Tokens texte en entrée d'après `usageMetadata.promptTokenCount`. */
+  inputTokens?: number
+  /** Tokens en sortie d'après `usageMetadata.candidatesTokenCount` (image = ~1290). */
+  outputTokens?: number
+  /** Coût USD calculé via pricing du modèle. */
+  costUsd?: number
 }
 
 export interface ReferenceImage {
@@ -18,12 +25,35 @@ export interface ReferenceImage {
   label?: string
 }
 
+export type OutputFormat = 'images-text' | 'images-only'
+
+/** Tailles supportées par Nano Banana 2 (Gemini 3.1 image preview). */
+export type ImageSize = '1K' | '2K' | '4K'
+
+/** Ratios supportés par Nano Banana 2. `auto` = ratio natif décidé par le modèle. */
+export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
+
+export interface GenerateImageOptions {
+  /** 'images-text' (défaut) demande à Gemini IMAGE + TEXT ; 'images-only' uniquement IMAGE. */
+  outputFormat?: OutputFormat
+  /** Taille du visuel généré (défaut `1K`). 2K/4K = 2-3× plus lent. */
+  imageSize?: ImageSize
+  /** Ratio d'image (défaut `auto`, ratio natif décidé par le modèle). */
+  aspectRatio?: ImageAspectRatio
+}
+
 interface GeminiImagePart {
   inlineData?: { mimeType: string; data: string }
   text?: string
 }
+interface GeminiUsageMetadata {
+  promptTokenCount?: number
+  candidatesTokenCount?: number
+  totalTokenCount?: number
+}
 interface GeminiImageResponse {
   candidates?: Array<{ content?: { parts?: GeminiImagePart[] } }>
+  usageMetadata?: GeminiUsageMetadata
 }
 
 const TRANSIENT_STATUSES = new Set([429, 500, 502, 503, 504])
@@ -46,6 +76,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 export async function generateImage(
   prompt: string,
   referenceImages: ReferenceImage[] = [],
+  options: GenerateImageOptions = {},
 ): Promise<GenerateImageResult> {
   const apiKey = getApiKey('gemini')
   if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
@@ -60,11 +91,16 @@ export async function generateImage(
     kind: 'image',
   })
   try {
-    const result = await generateImageInner(apiKey, prompt, referenceImages)
-    activity.end(activityId, 'success')
+    const result = await generateImageInner(apiKey, prompt, referenceImages, options)
+    activity.end(activityId, 'success', {
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      costUsd: result.costUsd,
+    })
     return result
   } catch (err) {
-    activity.end(activityId, 'error', err instanceof Error ? err.message : String(err))
+    const message = err instanceof Error ? err.message : String(err)
+    activity.end(activityId, 'error', { errorMessage: message })
     throw err
   }
 }
@@ -73,6 +109,11 @@ async function generateImageInner(
   apiKey: string,
   prompt: string,
   referenceImages: ReferenceImage[],
+  options: GenerateImageOptions,
+  /** Si true : force `responseModalities: ['IMAGE']` quel que soit le réglage
+   *  utilisateur. Utilisé pour le retry automatique quand le modèle a répondu
+   *  conversationnellement ("How can I help you today?") au lieu de générer. */
+  forceImageOnly = false,
 ): Promise<GenerateImageResult> {
 
   const parts: GeminiImagePart[] = []
@@ -82,13 +123,22 @@ async function generateImageInner(
   }
   parts.push({ text: prompt })
 
+  const outputFormat: OutputFormat = options.outputFormat ?? 'images-text'
+  const responseModalities = forceImageOnly || outputFormat === 'images-only'
+    ? ['IMAGE']
+    : ['TEXT', 'IMAGE']
+
+  const imageSize: ImageSize = options.imageSize ?? '1K'
+  const aspectRatio: ImageAspectRatio = options.aspectRatio ?? 'auto'
+
+  const imageConfig: Record<string, string> = { imageSize }
+  if (aspectRatio !== 'auto') imageConfig.aspectRatio = aspectRatio
+
   const body = JSON.stringify({
     contents: [{ parts }],
     generationConfig: {
-      responseModalities: ['TEXT', 'IMAGE'],
-      // 1K suffit largement pour un visuel de slide deck. En 2K/4K NB
-      // prend 2-3× plus de temps pour un gain invisible à l'écran.
-      imageConfig: { imageSize: '1K' },
+      responseModalities,
+      imageConfig,
     },
   })
 
@@ -138,15 +188,35 @@ async function generateImageInner(
     const outParts = data.candidates?.[0]?.content?.parts ?? []
     const inline = outParts.find((p) => p.inlineData)?.inlineData
     if (!inline) {
-      console.error('[geminiImageClient] Réponse sans image', JSON.stringify(data).slice(0, 1500))
       const textPart = outParts.find((p) => p.text)?.text
+      // Nano Banana a répondu en texte ("How can I help you today?", "Sure, here's…")
+      // au lieu de générer. Si on était en mode TEXT+IMAGE, on retry une fois en
+      // forçant IMAGE-only — ça empêche le modèle de basculer en conversationnel.
+      if (!forceImageOnly && outputFormat !== 'images-only') {
+        console.warn(
+          `[geminiImageClient] Réponse text-only — retry forcé IMAGE-only. Texte: "${(textPart ?? '').slice(0, 120)}"`,
+        )
+        return await generateImageInner(apiKey, prompt, referenceImages, options, true)
+      }
+      console.error('[geminiImageClient] Réponse sans image', JSON.stringify(data).slice(0, 1500))
       throw new Error(
         `Gemini Image : aucune image dans la réponse${textPart ? ` — "${textPart.slice(0, 200)}"` : ''}`,
       )
     }
 
     const blob = base64ToBlob(inline.data, inline.mimeType)
-    return { blob, mimeType: inline.mimeType }
+    const usage = data.usageMetadata
+    const inputTokens = usage?.promptTokenCount ?? 0
+    const outputTokens = usage?.candidatesTokenCount ?? 0
+    // recordAiUsage agrège pour Firestore (compteur mensuel) et notifie le live
+    // listener — calcule aussi le coût USD à partir de pricing × tokens.
+    const costUsd = recordAiUsage({
+      provider: 'gemini',
+      model: MODEL,
+      inputTokens,
+      outputTokens,
+    })
+    return { blob, mimeType: inline.mimeType, inputTokens, outputTokens, costUsd }
   }
   throw lastErr
 }

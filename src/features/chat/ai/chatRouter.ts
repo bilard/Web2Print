@@ -42,6 +42,10 @@ export interface GenerateTextOptions {
   onProviderFailed?: (info: { provider: LLMProviderId; error: Error }) => void
   /** Callback : warning sur la cascade (ex. provider non implémenté ignoré). */
   onCascadeWarning?: (warning: string) => void
+  /** Force la sortie en JSON valide. Sur Gemini → `responseMimeType: application/json`.
+   *  Sur OpenAI-compat (OpenAI, DeepSeek, OpenRouter) → `response_format: { type: 'json_object' }`.
+   *  Sur Claude : ignoré (Anthropic gère JSON via system prompt). */
+  responseFormat?: 'json'
 }
 
 export interface GenerateTextResult {
@@ -230,6 +234,13 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
           generationConfig: {
             temperature: opts.temperature ?? DEFAULT_TEMP,
             maxOutputTokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+            // Gemini 3.x : thinking dynamique consomme maxOutputTokens et tronque la
+            // sortie. On force le plus bas niveau supporté. Les anciens modèles
+            // (1.5/2.0/2.5) ignorent ce champ ou erreur → on ne l'applique qu'à G3+.
+            ...(/^gemini-3/i.test(model)
+              ? { thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false } }
+              : {}),
+            ...(opts.responseFormat === 'json' ? { responseMimeType: 'application/json' } : {}),
           },
         }),
       },
@@ -241,8 +252,15 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 2000)}`)
 
   const data = (await res.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string; thought?: boolean }> }
+      finishReason?: string
+    }>
+    usageMetadata?: {
+      promptTokenCount?: number
+      candidatesTokenCount?: number
+      thoughtsTokenCount?: number
+    }
   }
   if (data.usageMetadata) {
     recordAiUsage({
@@ -252,8 +270,20 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
       outputTokens: data.usageMetadata.candidatesTokenCount ?? 0,
     })
   }
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
-  if (!text) throw new Error('Gemini : réponse vide')
+  const candidate = data.candidates?.[0]
+  const text =
+    candidate?.content?.parts
+      ?.filter((p) => !p.thought)
+      .map((p) => p.text ?? '')
+      .join('') ?? ''
+  if (!text) {
+    const finishReason = candidate?.finishReason ?? 'unknown'
+    const thoughtsTokens = data.usageMetadata?.thoughtsTokenCount ?? 0
+    throw new Error(
+      `Gemini : réponse vide (finishReason=${finishReason}, thoughtsTokens=${thoughtsTokens}, ` +
+        `outputTokens=${data.usageMetadata?.candidatesTokenCount ?? 0})`,
+    )
+  }
   return text
 }
 
@@ -305,6 +335,7 @@ async function chatOpenAICompatible(
         temperature: opts.temperature ?? DEFAULT_TEMP,
         max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
         messages,
+        ...(opts.responseFormat === 'json' ? { response_format: { type: 'json_object' } } : {}),
       }),
     })
   } finally {

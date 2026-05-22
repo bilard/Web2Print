@@ -19,6 +19,11 @@ const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: str
 
 const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
 
+/** Modèle image Gemini (Nano Banana 2). Affiché sur sa propre ligne sous le
+ *  modèle texte Gemini sélectionné — il a son propre pricing ($30 / 1M output)
+ *  et il est utile de voir sa consommation isolément. */
+const GEMINI_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview'
+
 function formatEur(usd: number, decimals = 4): string {
   const eur = usd * USD_TO_EUR
   let d = decimals
@@ -185,27 +190,95 @@ export function LiveLlmUsagePanel() {
     return () => clearInterval(t)
   }, [refetch])
 
-  const rows = useMemo(() => {
+  type Row = {
+    key: string
+    provider: AiProvider
+    /** Titre principal — généralement le label du modèle (ex: "Gemini 3.1 Pro Preview"). */
+    title: string
+    /** Sous-titre fin sous le titre (ex: provider, pricing). */
+    subtitle: string
+    tokensIn: number
+    tokensOut: number
+    costUsd: number
+    budget: number | null
+    pct: number | null
+    kind: BadgeKind
+    pricing?: { input: number; output: number }
+    /** True pour les sous-lignes d'un même provider — le budget/alerte appartient
+     *  à la ligne principale pour ne pas dupliquer le contrôle. */
+    isSubRow?: boolean
+  }
+
+  const rows = useMemo<Row[]>(() => {
     if (!stats) return []
-    return PROVIDERS.map((p) => {
+    const result: Row[] = []
+    for (const p of PROVIDERS) {
       const u = stats.aiCost.byProvider[p]
       const budget = budgets[p]
+      // Le pct/kind reste basé sur le coût provider total (pas par modèle) —
+      // l'alerte budgétaire suit le provider, pas un modèle isolé.
       const pct = budget !== null && budget > 0 ? u.costUsd / budget : null
       const kind = getBadgeKind(u.costUsd, budget)
-      const modelId = selectedModel[p] ?? getSelectedModel(p)
-      const modelInfo = AI_MODELS[p].find((m) => m.id === modelId)
-      return {
+      const selectedModelId = selectedModel[p] ?? getSelectedModel(p)
+      const selectedInfo = AI_MODELS[p].find((m) => m.id === selectedModelId)
+
+      // Cas spécial Gemini : on émet 1 ligne pour le texte (modèle sélectionné)
+      // + 1 ligne pour le modèle image. Les autres providers gardent 1 ligne.
+      if (p === 'gemini') {
+        const textLeaf = u.byModel[selectedModelId]
+        // Fallback : si pas de byModel (anciennes écritures), on attribue tout
+        // au texte et on soustrait ce qu'on a vu côté image pour ne pas double-compter.
+        const imageLeaf = u.byModel[GEMINI_IMAGE_MODEL_ID]
+        const hasByModel = Object.keys(u.byModel).length > 0
+        const textTokensIn  = textLeaf?.tokensIn  ?? (hasByModel ? 0 : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0))
+        const textTokensOut = textLeaf?.tokensOut ?? (hasByModel ? 0 : u.tokensOut - (imageLeaf?.tokensOut ?? 0))
+        const textCostUsd   = textLeaf?.costUsd   ?? (hasByModel ? 0 : u.costUsd   - (imageLeaf?.costUsd   ?? 0))
+        result.push({
+          key: `${p}-text`,
+          provider: p,
+          title: selectedInfo?.label ?? selectedModelId,
+          subtitle: 'Gemini (Google) · texte',
+          tokensIn:  textTokensIn,
+          tokensOut: textTokensOut,
+          costUsd:   textCostUsd,
+          budget,
+          pct,
+          kind,
+          pricing: selectedInfo?.pricing,
+        })
+        const imageInfo = AI_MODELS.gemini.find((m) => m.id === GEMINI_IMAGE_MODEL_ID)
+        result.push({
+          key: `${p}-image`,
+          provider: p,
+          title: imageInfo?.label ?? 'Gemini 3.1 Flash Image',
+          subtitle: 'Gemini (Google) · image (Nano Banana 2)',
+          tokensIn:  imageLeaf?.tokensIn  ?? 0,
+          tokensOut: imageLeaf?.tokensOut ?? 0,
+          costUsd:   imageLeaf?.costUsd   ?? 0,
+          budget,
+          pct,
+          kind,
+          pricing: imageInfo?.pricing,
+          isSubRow: true,
+        })
+        continue
+      }
+
+      result.push({
+        key: p,
         provider: p,
+        title: PROVIDER_META[p].label,
+        subtitle: selectedInfo?.label ?? selectedModelId,
         tokensIn: u.tokensIn,
         tokensOut: u.tokensOut,
         costUsd: u.costUsd,
         budget,
         pct,
         kind,
-        modelLabel: modelInfo?.label ?? modelId,
-        pricing: modelInfo?.pricing,
-      }
-    })
+        pricing: selectedInfo?.pricing,
+      })
+    }
+    return result
   }, [stats, budgets, selectedModel])
 
   const brightDataRow = useMemo(() => {
@@ -245,11 +318,14 @@ export function LiveLlmUsagePanel() {
   )
   const grandTokensIn = useMemo(() => rows.reduce((s, r) => s + r.tokensIn, 0), [rows])
   const grandTokensOut = useMemo(() => rows.reduce((s, r) => s + r.tokensOut, 0), [rows])
+  // Alertes : on compte une fois par provider (pas par sous-ligne) pour ne pas
+  // doubler le décompte quand un provider est éclaté en plusieurs modèles.
+  const mainRows = useMemo(() => rows.filter((r) => !r.isSubRow), [rows])
   const overCount =
-    rows.filter((r) => r.kind === 'over').length +
+    mainRows.filter((r) => r.kind === 'over').length +
     (brightDataRow.kind === 'over' ? 1 : 0)
   const warnCount =
-    rows.filter((r) => r.kind === 'warning').length +
+    mainRows.filter((r) => r.kind === 'warning').length +
     (brightDataRow.kind === 'warning' ? 1 : 0)
 
   const updatedLabel = dataUpdatedAt
@@ -331,28 +407,29 @@ export function LiveLlmUsagePanel() {
 
         {!isLoading && rows.map((row) => {
           const hasUsage = row.tokensIn > 0 || row.tokensOut > 0
+          const meta = PROVIDER_META[row.provider]
           return (
             <div
-              key={row.provider}
+              key={row.key}
               className={`grid grid-cols-12 gap-2 items-center px-2 py-2 border-b border-white/5 last:border-0 ${
-                row.kind === 'over' ? 'bg-red-500/5' :
-                row.kind === 'warning' ? 'bg-amber-500/[0.04]' : ''
+                row.kind === 'over' && !row.isSubRow ? 'bg-red-500/5' :
+                row.kind === 'warning' && !row.isSubRow ? 'bg-amber-500/[0.04]' : ''
               }`}
             >
-              <div className="col-span-4 flex items-center gap-2 min-w-0">
-                <span className={`w-1.5 h-1.5 rounded-full ${PROVIDER_META[row.provider].dot} shrink-0`} />
+              <div className={`col-span-4 flex items-center gap-2 min-w-0 ${row.isSubRow ? 'pl-4' : ''}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${meta.dot} shrink-0 ${row.isSubRow ? 'opacity-50' : ''}`} />
                 <div className="min-w-0">
                   <a
-                    href={PROVIDER_META[row.provider].topup}
+                    href={meta.topup}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`Ouvrir la console ${PROVIDER_META[row.provider].label} — recharger les crédits chez le provider`}
+                    title={`Ouvrir la console ${meta.label} — recharger les crédits chez le provider`}
                     className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-indigo-300 transition-colors truncate"
                   >
-                    <span className="truncate">{PROVIDER_META[row.provider].label}</span>
+                    <span className="truncate">{row.title}</span>
                     <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-indigo-300 shrink-0" />
                   </a>
-                  <p className="text-[9.5px] text-white/30 font-mono truncate">{row.modelLabel}</p>
+                  <p className="text-[9.5px] text-white/30 font-mono truncate">{row.subtitle}</p>
                 </div>
               </div>
               <div className="col-span-3 text-right">
@@ -372,14 +449,21 @@ export function LiveLlmUsagePanel() {
                 <p className="text-[9px] font-mono text-white/30">${row.costUsd.toFixed(4)}</p>
               </div>
               <div className="col-span-3 flex flex-col items-end gap-1">
-                <StatusBadge kind={row.kind} pct={row.pct} />
-                <BudgetEditor
-                  label={PROVIDER_META[row.provider].label}
-                  value={row.budget}
-                  onChange={(v) => setBudget(row.provider, v)}
-                />
-                {row.budget !== null && row.pct !== null && (
-                  <ProgressBar pct={row.pct} kind={row.kind} />
+                {row.isSubRow ? (
+                  // Sous-ligne : pas de budget/alerte propre (partagé avec le provider).
+                  <span className="text-[9px] text-white/30 italic">budget partagé</span>
+                ) : (
+                  <>
+                    <StatusBadge kind={row.kind} pct={row.pct} />
+                    <BudgetEditor
+                      label={meta.label}
+                      value={row.budget}
+                      onChange={(v) => setBudget(row.provider, v)}
+                    />
+                    {row.budget !== null && row.pct !== null && (
+                      <ProgressBar pct={row.pct} kind={row.kind} />
+                    )}
+                  </>
                 )}
               </div>
             </div>
