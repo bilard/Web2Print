@@ -502,11 +502,112 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   }
 
   const inResultMode = !!result && !generating
+  /** Mode "preview/génération" : rendu en cours OU composition de preview prête.
+   *  Quand actif, la colonne droite affiche la preview au lieu de la
+   *  bibliothèque, et la grille passe en 1fr|1fr. */
+  const previewMode =
+    !inResultMode &&
+    (generating || !!(preview && (preview.svg || preview.composition)))
+
+  const previewPanel = previewMode ? (
+    <div className="flex flex-col gap-3 border-t lg:border-t-0 lg:border-l border-white/5 bg-[#141414]/40 p-5 min-h-[60vh] lg:min-h-0 overflow-y-auto">
+      {generating && (
+        <div className="shrink-0">
+          <RenderProgress
+            capture={progress.capture}
+            extract={progress.extract}
+            compose={progress.compose}
+            render={progress.render}
+            logs={progress.logs}
+            now={progress.now}
+            estimatedRenderMs={150000}
+          />
+        </div>
+      )}
+
+      {preview?.composition && (
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleEnrich}
+            disabled={enrich.enriching}
+            className="flex-1 flex items-center justify-center gap-2 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-50 disabled:cursor-not-allowed border border-fuchsia-500/40 text-fuchsia-200 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors"
+            title="Génère 1 image photo IA par scène et les affiche en Ken Burns en background"
+          >
+            {enrich.enriching ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <ImageIcon className="w-3.5 h-3.5" />
+            )}
+            {enrich.enriching && enrich.progress
+              ? `Enrichissement Nano Banana 2 — ${enrich.progress.done}/${enrich.progress.total}`
+              : 'Enrichir avec images IA (Nano Banana 2)'}
+          </button>
+          <button
+            type="button"
+            onClick={handleSavePreview}
+            disabled={!result?.url || saveState === 'saving' || saveState === 'saved'}
+            className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors border ${
+              saveState === 'saved'
+                ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 cursor-default'
+                : saveState === 'error'
+                ? 'bg-red-500/10 border-red-500/40 text-red-200 hover:bg-red-500/20'
+                : result?.url
+                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-200'
+                : 'bg-white/3 border-white/10 text-white/30 cursor-not-allowed'
+            }`}
+            title={
+              !result?.url
+                ? 'Le bouton s\'active quand le rendu MP4 Cloud Run est terminé (60-90s après "Générer la vidéo")'
+                : 'Sauvegarder cette vidéo dans le DAM'
+            }
+          >
+            {saveState === 'saving' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : saveState === 'saved' ? (
+              <Check className="w-3.5 h-3.5" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
+            {saveState === 'saving'
+              ? 'Sauvegarde…'
+              : saveState === 'saved'
+              ? 'Sauvegardée dans le DAM'
+              : saveState === 'error'
+              ? 'Réessayer la sauvegarde'
+              : result?.url
+              ? 'Sauvegarder dans le DAM'
+              : 'MP4 en cours de rendu…'}
+          </button>
+        </div>
+      )}
+
+      {preview && (preview.svg || preview.composition) && (
+        <div className="flex flex-col gap-2 flex-1 min-h-0">
+          <div className="flex items-center gap-2 text-[10px] text-indigo-300/80 uppercase tracking-wider font-semibold shrink-0">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            {generating ? 'Aperçu Annimation — rendu MP4 en cours…' : 'Aperçu Annimation'}
+          </div>
+          <HyperframesPlayer
+            aspect={preview.aspect}
+            svg={preview.svg}
+            composition={preview.composition}
+            brand={preview.brand}
+            caption={preview.caption}
+            prompt={preview.prompt}
+            styleConfig={preview.styleConfig}
+            width={preview.width}
+            height={preview.height}
+            autoPlay
+            className="flex-1 min-h-0"
+          />
+        </div>
+      )}
+    </div>
+  ) : null
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-sm flex flex-col">
-      {/* Header — sticky en haut avec z-30 pour rester AU-DESSUS de la sticky-top
-          progress (z-20) qui pourrait sinon le couvrir au scroll. */}
       <div className="sticky top-0 z-30 flex items-center justify-between px-5 py-3 border-b border-white/10 bg-[#141414] shrink-0 shadow-sm">
         <div className="flex items-center gap-2">
           <Film className="w-4 h-4 text-indigo-400" />
@@ -523,8 +624,14 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         </button>
       </div>
 
-      {/* Body grid : formulaire | bibliothèque */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] min-h-0 bg-[#1a1a1a]">
+      {/* Body grid : formulaire | (preview pendant génération OU bibliothèque sinon).
+          En mode preview/génération, la 2e colonne passe à 1fr pour donner toute
+          la place à la preview et la bibliothèque est masquée. */}
+      <div
+        className={`flex-1 grid grid-cols-1 min-h-0 bg-[#1a1a1a] ${
+          previewMode ? 'lg:grid-cols-2' : 'lg:grid-cols-[1fr_360px]'
+        }`}
+      >
         {/* Colonne formulaire */}
         <div className="overflow-y-auto">
           <div className="w-[90%] mx-auto p-5 flex flex-col gap-4">
@@ -555,111 +662,9 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
               />
             ) : (
               <>
-                {/* Zone preview/progress sticky en haut :
-                    - visible pendant generating (rendu MP4 en cours) OU dès qu'on
-                      a une composition de preview (pour pouvoir Enrichir)
-                    - bornée à 55vh avec scroll interne pour laisser place au form */}
-                {(generating || preview?.composition) && (
-                  <div
-                    className="sticky top-0 z-20 -mx-5 px-5 pt-2 pb-3 bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-white/5 flex flex-col gap-3 overflow-y-auto"
-                    style={{ maxHeight: '55vh' }}
-                  >
-                    {/* Progress bar tout en haut pour qu'elle soit toujours visible
-                        (avant les boutons + preview), comme demandé par l'utilisateur. */}
-                    {generating && (
-                      <RenderProgress
-                        capture={progress.capture}
-                        extract={progress.extract}
-                        compose={progress.compose}
-                        render={progress.render}
-                        logs={progress.logs}
-                        now={progress.now}
-                        estimatedRenderMs={150000}
-                      />
-                    )}
-
-                    {/* Boutons d'action : Enrichir + Sauvegarder.
-                        Le bouton Sauvegarder est désactivé tant que result.url n'est
-                        pas livré par Cloud Run (avec tooltip explicatif). */}
-                    {preview?.composition && (
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <button
-                          type="button"
-                          onClick={handleEnrich}
-                          disabled={enrich.enriching}
-                          className="flex-1 flex items-center justify-center gap-2 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-50 disabled:cursor-not-allowed border border-fuchsia-500/40 text-fuchsia-200 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors"
-                          title="Génère 1 image photo IA par scène et les affiche en Ken Burns en background"
-                        >
-                          {enrich.enriching ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <ImageIcon className="w-3.5 h-3.5" />
-                          )}
-                          {enrich.enriching && enrich.progress
-                            ? `Enrichissement Nano Banana 2 — ${enrich.progress.done}/${enrich.progress.total}`
-                            : 'Enrichir avec images IA (Nano Banana 2)'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSavePreview}
-                          disabled={!result?.url || saveState === 'saving' || saveState === 'saved'}
-                          className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold px-3 py-2.5 rounded-lg transition-colors border ${
-                            saveState === 'saved'
-                              ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 cursor-default'
-                              : saveState === 'error'
-                              ? 'bg-red-500/10 border-red-500/40 text-red-200 hover:bg-red-500/20'
-                              : result?.url
-                              ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-200'
-                              : 'bg-white/3 border-white/10 text-white/30 cursor-not-allowed'
-                          }`}
-                          title={
-                            !result?.url
-                              ? 'Le bouton s\'active quand le rendu MP4 Cloud Run est terminé (60-90s après "Générer la vidéo")'
-                              : 'Sauvegarder cette vidéo dans le DAM'
-                          }
-                        >
-                          {saveState === 'saving' ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : saveState === 'saved' ? (
-                            <Check className="w-3.5 h-3.5" />
-                          ) : (
-                            <Save className="w-3.5 h-3.5" />
-                          )}
-                          {saveState === 'saving'
-                            ? 'Sauvegarde…'
-                            : saveState === 'saved'
-                            ? 'Sauvegardée dans le DAM'
-                            : saveState === 'error'
-                            ? 'Réessayer la sauvegarde'
-                            : result?.url
-                            ? 'Sauvegarder dans le DAM'
-                            : 'MP4 en cours de rendu…'}
-                        </button>
-                      </div>
-                    )}
-                    {preview && (preview.svg || preview.composition) && (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-[10px] text-indigo-300/80 uppercase tracking-wider font-semibold">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                          {generating ? 'Aperçu Annimation — rendu MP4 en cours…' : 'Aperçu Annimation'}
-                        </div>
-                        <HyperframesPlayer
-                          aspect={preview.aspect}
-                          svg={preview.svg}
-                          composition={preview.composition}
-                          brand={preview.brand}
-                          caption={preview.caption}
-                          prompt={preview.prompt}
-                          styleConfig={preview.styleConfig}
-                          width={preview.width}
-                          height={preview.height}
-                          autoPlay
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
+                {/* La preview/progress est rendue dans la colonne droite
+                    (`previewPanel`) pendant la génération, pour libérer toute la
+                    hauteur du formulaire et masquer la bibliothèque. */}
                 <div className="bg-white/3 border border-white/5 rounded-xl p-3">
                   <p className="text-xs text-white/50 leading-relaxed">
                     {isStandalone ? (
@@ -862,17 +867,23 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           </div>
         </div>
 
-        {/* Colonne bibliothèque (cachée sous lg) */}
-        <div className="hidden lg:block min-h-0">
-          <VideoPromptLibrary
-            prompts={promptLib.prompts}
-            loading={promptLib.loading}
-            onReplay={(p) => applyPrompt(p, true)}
-            onEdit={(p) => applyPrompt(p, false)}
-            onDelete={promptLib.deletePrompt}
-            onRename={promptLib.renamePrompt}
-          />
-        </div>
+        {/* Colonne 2 : preview pendant génération, sinon bibliothèque.
+            La bibliothèque est cachée pendant la génération pour libérer la
+            place, comme demandé. */}
+        {previewMode ? (
+          previewPanel
+        ) : (
+          <div className="hidden lg:block min-h-0">
+            <VideoPromptLibrary
+              prompts={promptLib.prompts}
+              loading={promptLib.loading}
+              onReplay={(p) => applyPrompt(p, true)}
+              onEdit={(p) => applyPrompt(p, false)}
+              onDelete={promptLib.deletePrompt}
+              onRename={promptLib.renamePrompt}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
