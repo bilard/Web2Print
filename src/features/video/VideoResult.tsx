@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Download, RotateCcw, Clock, Maximize2, Film, Save, Check, Loader2, Palette, Sparkles } from 'lucide-react'
+import { Download, RotateCcw, Clock, Maximize2, Film, Save, Check, Loader2, Palette, Sparkles, FileCode2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { saveRenderedVideo } from './saveVideo'
 import { HyperframesPlayer } from './HyperframesPlayer'
+import { downloadHtmlZip } from './exportHtmlZip'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
@@ -33,6 +34,7 @@ interface Props {
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+type ZipState = 'idle' | 'building' | 'done' | 'error'
 
 const ASPECT_LABEL: Record<AspectFormat, string> = {
   portrait: '9:16',
@@ -51,7 +53,45 @@ type ViewMode = 'mp4' | 'live'
 export function VideoResult({ renderId, url, durationMs, aspect = 'square', caption, brand, prompt, styleConfig, initialSaved = false, onRegenerate, preview }: Props) {
   const user = useAuthStore((s) => s.user)
   const [saveState, setSaveState] = useState<SaveState>(initialSaved ? 'saved' : 'idle')
+  const [zipState, setZipState] = useState<ZipState>('idle')
   const [viewMode, setViewMode] = useState<ViewMode>('mp4')
+
+  /** Construit un ZIP HTML/CSS/JS du template (avec vars injectées) et le
+   *  télécharge. On reconstruit les variables comme le `HyperframesPlayer` le
+   *  fait : multi-scene (composition) vs design-reveal (svg + brand + caption). */
+  const handleDownloadHtmlZip = async () => {
+    const isMultiScene = !!preview?.composition
+    const variables: Record<string, unknown> = isMultiScene
+      ? {
+          composition: preview?.composition,
+          brand: preview?.brand,
+          prompt: preview?.prompt,
+        }
+      : {
+          svg: preview?.svg ?? '',
+          brand: preview?.brand,
+          caption: preview?.caption ?? caption,
+          prompt: preview?.prompt ?? prompt,
+          styleConfig: preview?.styleConfig ?? styleConfig,
+          svgUrl: '',
+        }
+    setZipState('building')
+    try {
+      await downloadHtmlZip({
+        aspect: preview?.aspect ?? aspect,
+        isMultiScene,
+        variables,
+        filename: `hyperframes-${renderId}`,
+      })
+      setZipState('done')
+      toast.success('ZIP HTML téléchargé')
+    } catch (e) {
+      setZipState('error')
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('downloadHtmlZip failed:', e)
+      toast.error(`Export HTML échoué : ${msg}`)
+    }
+  }
 
   const handleSave = async () => {
     if (!user?.uid) {
@@ -194,10 +234,29 @@ export function VideoResult({ renderId, url, durationMs, aspect = 'square', capt
             href={url}
             download
             className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+            title="Télécharger la vidéo MP4"
           >
             <Download className="w-3.5 h-3.5" />
-            Télécharger
+            MP4
           </a>
+          <button
+            type="button"
+            onClick={handleDownloadHtmlZip}
+            disabled={zipState === 'building' || !preview}
+            className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed border border-white/10 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+            title={
+              preview
+                ? 'Télécharger le template HTML/CSS/JS comme ZIP (prêt à ouvrir dans un navigateur)'
+                : 'Aperçu live indisponible — ZIP HTML désactivé'
+            }
+          >
+            {zipState === 'building' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileCode2 className="w-3.5 h-3.5" />
+            )}
+            {zipState === 'building' ? 'ZIP…' : 'HTML (.zip)'}
+          </button>
           <button
             onClick={onRegenerate}
             className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
