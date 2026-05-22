@@ -19,6 +19,11 @@ interface Props {
   /** Dimensions exactes (canvas source) — si fournies, override la taille du bucket */
   width?: number
   height?: number
+  /** Limite CSS de la hauteur du container (ex. `'60vh'`). Quand fournie, le
+   *  ratio est préservé via `aspect-ratio` mais la largeur s'adapte pour rentrer
+   *  dans la hauteur disponible — utile pour les portraits (9:16) qui sinon
+   *  débordent du viewport et masquent les boutons d'action en dessous. */
+  maxHeight?: string
 }
 
 interface NativeSize {
@@ -61,6 +66,7 @@ export function HyperframesPlayer({
   className,
   width,
   height,
+  maxHeight,
 }: Props) {
   // Si la composition source a des dims exactes (canvas), on les utilise pour
   // que la preview ait le RATIO EXACT du document — sinon fallback bucket.
@@ -403,11 +409,24 @@ export function HyperframesPlayer({
       <div
         ref={containerRef}
         className={`relative bg-black rounded-xl border border-white/10 overflow-hidden flex items-center justify-center select-none ${
-          fillContainer ? 'flex-1 min-h-0 w-full' : 'w-full'
+          fillContainer ? 'flex-1 min-h-0 w-full' : maxHeight ? 'mx-auto block' : 'w-full'
         }`}
         style={
           fillContainer
             ? { cursor, touchAction: 'none' as const }
+            : maxHeight
+            ? {
+                // Avec maxHeight, on fige la HEIGHT et on laisse aspect-ratio
+                // calculer la width. Ainsi un portrait 9:16 ne déborde plus du
+                // viewport — la largeur s'ajuste pour rentrer dans la hauteur
+                // disponible (cf. capture utilisateur où le player faisait
+                // 1246×1920 et masquait les boutons sous le scroll).
+                height: maxHeight,
+                aspectRatio: `${native.width} / ${native.height}`,
+                maxWidth: '100%',
+                cursor,
+                touchAction: 'none' as const,
+              }
             : { aspectRatio: `${native.width} / ${native.height}`, cursor, touchAction: 'none' as const }
         }
         onMouseDown={handleMouseDown}

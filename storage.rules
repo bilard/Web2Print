@@ -19,7 +19,19 @@ service firebase.storage {
                    && firestore.get(/databases/(default)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
     }
 
-    // DAM images
+    // DAM — Animations HTML/CSS/JS (ZIP générés côté client par exportHtmlZip).
+    // Privées par utilisateur, taille max 50 MB pour couvrir les compositions
+    // multi-scènes enrichies avec images IA inline.
+    match /dam/html-animations/{uid}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 50 * 1024 * 1024
+        && request.resource.contentType == 'application/zip';
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // DAM images (règle générique : doit rester APRÈS la règle html-animations
+    // spécifique sinon Firebase prend la première qui matche et rejette les ZIP).
     match /dam/{assetId}/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null

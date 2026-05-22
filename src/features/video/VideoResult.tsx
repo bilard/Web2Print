@@ -148,6 +148,7 @@ export function VideoResult(props: Props) {
         width={width}
         height={height}
         autoPlay
+        maxHeight="55vh"
       />
 
       <div className="flex items-center gap-3 text-[11px] text-white/50 font-mono tabular-nums">

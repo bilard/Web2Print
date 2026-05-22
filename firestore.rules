@@ -248,13 +248,24 @@ service cloud.firestore {
                                             && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // ── Videos ──────────────────────────────────────────────────────────────
-    // Vidéos générées par le service Cloud Run hf-render-service. Métadonnées
-    // privées au propriétaire (renderId → doc avec ownerId, url, storagePath…).
-    match /videos/{renderId} {
+    // ── Animations HTML ────────────────────────────────────────────────────
+    // Métadonnées des animations HTML/CSS/JS sauvegardées dans le DAM (le ZIP
+    // lui-même est dans Storage `dam/html-animations/{uid}/`). Le doc contient
+    // composition / styleConfig / aspect pour permettre une preview live sans
+    // re-télécharger le ZIP.
+    match /animations/{animationId} {
       allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Videos (legacy, lecture seule) ─────────────────────────────────────
+    // Anciennes vidéos MP4 générées par le service Cloud Run avant le passage
+    // au flow ZIP-only. Plus de création possible côté client ; lecture/suppression
+    // restent pour permettre de nettoyer les enregistrements historiques.
+    match /videos/{renderId} {
+      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
     // ── Print Presets (familles de paramètres d'impression) ────────────────

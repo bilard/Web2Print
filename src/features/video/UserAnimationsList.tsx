@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Download, Trash2, FileCode2, Maximize2, Pencil, Check, X, Play } from 'lucide-react'
+import { Download, Trash2, FileCode2, Maximize2, Pencil, Check, X, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUserAnimations, type SavedAnimation } from './useUserAnimations'
-import { HyperframesPlayer } from './HyperframesPlayer'
 import type { AspectFormat } from './types'
 
 const ASPECT_LABEL: Record<AspectFormat, string> = {
@@ -151,15 +150,17 @@ function AnimationTitle({ animation, onRename }: AnimationTitleProps) {
   )
 }
 
-/** Card individuel : preview HyperFrames si playing, sinon affiche un poster
- *  statique (boutton Play) pour éviter de charger toutes les iframes en même
- *  temps quand la grille est dense. */
+/** Card animation DAM. Poster statique + métadonnées + actions. Pas de preview
+ *  live ici : les compositions enrichies (Nano Banana + base64/Storage URLs) ne
+ *  rendent pas fiablement dans une iframe miniature avec srcDoc, et la card est
+ *  contrainte par aspect-ratio donc les contrôles du player débordent. L'aperçu
+ *  complet se fait via "Voir" (ouvre le ZIP dans un nouvel onglet) ou en
+ *  téléchargeant le ZIP (qui s'auto-play). */
 function AnimationCard({ animation, onDelete, onRename }: {
   animation: SavedAnimation
   onDelete: (a: SavedAnimation) => void
   onRename: (a: SavedAnimation, title: string) => Promise<void>
 }) {
-  const [playing, setPlaying] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
   const handleDownload = async () => {
@@ -185,39 +186,48 @@ function AnimationCard({ animation, onDelete, onRename }: {
     }
   }
 
+  /** Ouvre l'animation dans un nouvel onglet. Télécharge le ZIP depuis Storage,
+   *  extrait l'index.html (self-contained, autoplay inclus) et le sert en blob
+   *  URL. On passe par le ZIP plutôt que par la composition Firestore parce
+   *  que le mode design-reveal (canvas) embarque le SVG capturé dans le ZIP
+   *  uniquement — Firestore ne stocke pas le SVG (trop volumineux + pas
+   *  nécessaire à la liste DAM). */
+  const handleOpenPreview = async () => {
+    try {
+      const JSZip = (await import('jszip')).default
+      const res = await fetch(animation.url)
+      if (!res.ok) throw new Error(`HTTP ${res.status} en récupérant le ZIP`)
+      const zip = await JSZip.loadAsync(await res.blob())
+      const html = await zip.file('index.html')?.async('string')
+      if (!html) throw new Error('index.html introuvable dans le ZIP')
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank', 'noopener')
+      // Pas de revokeObjectURL — le nouvel onglet en a besoin pendant tout
+      // son cycle de vie.
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      toast.error(`Ouverture échouée : ${msg}`)
+    }
+  }
+
   return (
     <div className="bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden group">
-      <div
-        className="bg-black flex items-center justify-center relative"
+      <button
+        onClick={() => void handleOpenPreview()}
+        className="bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 flex flex-col items-center justify-center gap-3 relative w-full hover:from-indigo-500/20 hover:to-fuchsia-500/20 transition-colors"
         style={{ aspectRatio: ASPECT_RATIO[animation.aspect] }}
+        title="Ouvrir l'animation dans un nouvel onglet"
       >
-        {playing ? (
-          <HyperframesPlayer
-            aspect={animation.aspect}
-            composition={animation.composition ?? undefined}
-            styleConfig={animation.styleConfig ?? undefined}
-            brand={animation.brand ?? undefined}
-            caption={animation.caption ?? undefined}
-            prompt={animation.prompt ?? undefined}
-            width={animation.width ?? undefined}
-            height={animation.height ?? undefined}
-            autoPlay
-            className="w-full h-full"
-          />
-        ) : (
-          <button
-            onClick={() => setPlaying(true)}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors"
-            title="Lire l'aperçu"
-          >
-            <FileCode2 className="w-8 h-8" />
-            <span className="text-[10px] uppercase tracking-wider">HTML/CSS/JS</span>
-            <div className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
-              <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />
-            </div>
-          </button>
-        )}
-      </div>
+        <FileCode2 className="w-10 h-10 text-white/30 group-hover:text-white/60 transition-colors" />
+        <span className="text-[10px] uppercase tracking-wider text-white/40 group-hover:text-white/70 transition-colors">
+          HTML / CSS / JS
+        </span>
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[10px] text-white/70">
+          <ExternalLink className="w-3 h-3" />
+          Ouvrir
+        </div>
+      </button>
       <div className="px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center gap-2 text-[11px] text-white/50 font-mono tabular-nums">
           <span className="flex items-center gap-1"><Maximize2 className="w-3 h-3" />{ASPECT_LABEL[animation.aspect]}</span>
