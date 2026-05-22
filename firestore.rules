@@ -89,6 +89,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // Bibliothèque de prompts du module Annimation (vidéo) — privée à chaque user.
+    match /users/{uid}/videoPrompts/{promptId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // ── Workflows ────────────────────────────────────────────────────────────
     // Workflows d'orchestration (à la Make/n8n) sous users/{uid}/workflows/{id}.
     // Privés à chaque user — pas de partage au MVP (phase 2 : champ sharedWith).
@@ -241,6 +246,24 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
       allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
                                             && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Videos ──────────────────────────────────────────────────────────────
+    // Vidéos générées par le service Cloud Run hf-render-service. Métadonnées
+    // privées au propriétaire (renderId → doc avec ownerId, url, storagePath…).
+    match /videos/{renderId} {
+      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ── Print Presets (familles de paramètres d'impression) ────────────────
+    // Presets réutilisables entre projets, scopés au user via ownerId.
+    match /printPresets/{presetId} {
+      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow list:   if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
     // ── App config ──────────────────────────────────────────────────────────
