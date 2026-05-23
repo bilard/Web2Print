@@ -102,6 +102,9 @@ export interface GenerateVideoResult {
   styleConfig?: StyleConfig
   width?: number
   height?: number
+  /** Durée totale de l'animation choisie par l'utilisateur (5/10/15/30/custom s).
+   *  Propagée à exportHtmlZip pour patcher data-duration + durationScale. */
+  durationSec?: number
   /** Brief final concaténé (avec contexte des fichiers, si fourni). */
   prompt?: string
   fileContext?: string
@@ -211,6 +214,7 @@ export function useGenerateVideo(opts?: {
           styleConfig,
           width: canvasDims.width,
           height: canvasDims.height,
+          durationSec: input.targetDurationSec,
           prompt: enrichedPrompt,
           fileContext: fileContext || undefined,
           skippedFiles: skippedFiles.length ? skippedFiles : undefined,
@@ -287,6 +291,7 @@ export function useGenerateVideo(opts?: {
         id: generateAnimationId(),
         aspect,
         composition,
+        durationSec: input.targetDurationSec,
         prompt: enrichedPrompt,
         fileContext: fileContext || undefined,
         skippedFiles: skippedFiles.length ? skippedFiles : undefined,

@@ -35,6 +35,7 @@ interface ResultState {
   styleConfig?: StyleConfig
   width?: number
   height?: number
+  durationSec?: number
   caption?: string
   brand?: string
   prompt?: string
@@ -247,6 +248,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             styleConfig: res.styleConfig,
             width: res.width,
             height: res.height,
+            durationSec: res.durationSec,
             caption: caption.trim() || undefined,
             brand: brand.trim() || undefined,
             prompt: combinedPrompt || undefined,
@@ -412,6 +414,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
               styleConfig: res.styleConfig,
               width: res.width,
               height: res.height,
+              durationSec: res.durationSec,
               caption: p.caption ?? undefined,
               brand: p.brand ?? undefined,
               prompt:
@@ -540,6 +543,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                 styleConfig={result.styleConfig}
                 width={result.width}
                 height={result.height}
+                durationSec={result.durationSec}
                 caption={result.caption}
                 brand={result.brand}
                 prompt={result.prompt}
@@ -577,7 +581,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     onChange={setAspect}
                     custom={custom}
                     onCustomChange={setCustom}
-                    disabled={generating}
                   />
 
                   <DurationPicker
@@ -585,7 +588,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     onChange={setDuration}
                     customSec={customDurationSec}
                     onCustomSecChange={setCustomDurationSec}
-                    disabled={generating}
                   />
                 </div>
 

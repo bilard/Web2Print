@@ -87,7 +87,8 @@
         const INT_SCALE = { subtle: 0.5, normal: 1.0, punchy: 1.8 }[sc.intensity] ?? 1.0;
         const EASE_IN   = { soft: 'power2.out', classic: 'expo.out',  snappy: 'back.out(1.4)' }[sc.ease] ?? 'expo.out';
         const EASE_OUT  = { soft: 'power2.inOut', classic: 'power2.in', snappy: 'back.in(1.2)' }[sc.ease] ?? 'power2.in';
-        const dur = (d) => d * PACE_MULT;
+        const DUR_SCALE = (typeof vars.durationScale === 'number' && vars.durationScale > 0) ? vars.durationScale : 1;
+        const dur = (d) => d * PACE_MULT * DUR_SCALE;
         const amp = (v) => v * INT_SCALE;
 
         document.body.style.background = BG;

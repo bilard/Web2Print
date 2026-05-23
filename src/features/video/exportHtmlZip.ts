@@ -9,6 +9,10 @@ interface ExportOptions {
   /** Dimensions exactes du canvas source (si fourni, écrase data-width/height) */
   width?: number
   height?: number
+  /** Durée totale de l'animation en secondes (si fournie, écrase data-duration
+   *  du template — défaut 10 s). Le template lit vars.durationScale = sec/10
+   *  pour scaler ses timings GSAP. */
+  durationSec?: number
   /** Nom de base du ZIP (sans extension) */
   filename?: string
 }
@@ -20,6 +24,12 @@ const fetchText = async (url: string): Promise<string> => {
   const r = await fetch(url)
   if (!r.ok) throw new Error(`HTTP ${r.status} sur ${url}`)
   return r.text()
+}
+
+/** Patch data-duration du root + injecte vars.durationScale pour que le
+ *  template scale ses timings GSAP. Le défaut du template est 10 s. */
+function patchDuration(html: string, durationSec: number): string {
+  return html.replace(/data-duration="[\d.]+"/g, `data-duration="${durationSec}"`)
 }
 
 /** Patch des dimensions data-width/data-height + viewport meta + width/height
@@ -438,13 +448,23 @@ async function buildSelfContainedHtml(opts: ExportOptions): Promise<string> {
   if (opts.width && opts.height) {
     html = patchDimensions(html, opts.width, opts.height)
   }
+  if (opts.durationSec && opts.durationSec > 0) {
+    html = patchDuration(html, opts.durationSec)
+  }
 
   // Inline tous les <script src="./xxx.js"> auxiliaires (mockups.js, etc.).
   auxFiles.forEach((file, i) => {
     html = inlineExternalScript(html, file, auxContents[i])
   })
 
-  const varsTag = buildVarsScript(opts.variables)
+  // Injecte durationScale dans les variables — le template multiplie ses
+  // timings GSAP par ce facteur (template par défaut = 10s ; pour 5s →
+  // durationScale = 0.5 ; pour 30s → durationScale = 3).
+  const variablesWithScale = {
+    ...opts.variables,
+    durationScale: opts.durationSec ? opts.durationSec / 10 : 1,
+  }
+  const varsTag = buildVarsScript(variablesWithScale)
   const autoplayTag = buildAutoplayScript(id)
 
   // Injection des vars : dans <head>, juste avant </head>. Garantit que

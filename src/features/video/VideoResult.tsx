@@ -19,6 +19,7 @@ interface Props {
   styleConfig?: StyleConfig
   width?: number
   height?: number
+  durationSec?: number
   caption?: string
   brand?: string
   prompt?: string
@@ -71,6 +72,7 @@ export function VideoResult(props: Props) {
     styleConfig,
     width,
     height,
+    durationSec,
     caption,
     brand,
     prompt,
@@ -91,6 +93,7 @@ export function VideoResult(props: Props) {
         variables,
         width,
         height,
+        durationSec,
         filename: `hyperframes-${animationId}`,
       })
       setZipState('done')
@@ -111,7 +114,7 @@ export function VideoResult(props: Props) {
     setSaveState('saving')
     try {
       const { isMultiScene, variables } = buildVariables(props)
-      const blob = await buildHtmlZipBlob({ aspect, isMultiScene, variables, width, height })
+      const blob = await buildHtmlZipBlob({ aspect, isMultiScene, variables, width, height, durationSec })
       await saveHtmlZip({
         animationId,
         blob,
