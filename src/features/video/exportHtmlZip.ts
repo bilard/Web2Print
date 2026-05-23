@@ -460,9 +460,11 @@ async function buildSelfContainedHtml(opts: ExportOptions): Promise<string> {
   // Injecte durationScale dans les variables — le template multiplie ses
   // timings GSAP par ce facteur (template par défaut = 10s ; pour 5s →
   // durationScale = 0.5 ; pour 30s → durationScale = 3).
+  const durationScale = opts.durationSec ? opts.durationSec / 10 : 1
+  console.log('[exportHtmlZip] opts.durationSec=', opts.durationSec, '→ durationScale=', durationScale)
   const variablesWithScale = {
     ...opts.variables,
-    durationScale: opts.durationSec ? opts.durationSec / 10 : 1,
+    durationScale,
   }
   const varsTag = buildVarsScript(variablesWithScale)
   const autoplayTag = buildAutoplayScript(id)

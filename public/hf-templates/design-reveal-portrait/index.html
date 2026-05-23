@@ -90,6 +90,7 @@
         // matcher la durée totale choisie par l'utilisateur (5s → 0.5, 30s → 3.0).
         const DUR_SCALE = (typeof vars.durationScale === 'number' && vars.durationScale > 0) ? vars.durationScale : 1;
         const dur = (d) => d * PACE_MULT * DUR_SCALE;
+        console.log('[design-reveal-portrait] vars.durationScale=', vars.durationScale, '→ DUR_SCALE=', DUR_SCALE, '· PACE_MULT=', PACE_MULT);
         const amp = (v) => v * INT_SCALE;
 
         document.body.style.background = BG;
