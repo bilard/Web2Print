@@ -53,6 +53,9 @@ interface LivePreviewState {
    *  pour adopter le ratio canvas plutôt que le bucket aspect. */
   width?: number
   height?: number
+  /** Durée choisie par l'utilisateur — propagée au HyperframesPlayer pour
+   *  que la preview live respecte aussi la durée (et pas juste le ZIP). */
+  durationSec?: number
 }
 
 function FieldLabel({
@@ -147,6 +150,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     onStep: (s) => {
       progress.update(s)
       if (s.aspect) setLastAspect(s.aspect)
+      const currentDurationSec = resolveDurationSec(duration, customDurationSec)
       if (s.composition && s.aspect) {
         setPreview((prev) => ({
           composition: s.composition!,
@@ -157,6 +161,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           prompt: buildCombinedPrompt({ topic, audience, goal, tone, freeform }) || undefined,
           width: s.width ?? prev?.width,
           height: s.height ?? prev?.height,
+          durationSec: currentDurationSec,
         }))
       } else if (s.svg && s.aspect) {
         setPreview((prev) => ({
@@ -168,6 +173,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           prompt: buildCombinedPrompt({ topic, audience, goal, tone, freeform }) || undefined,
           width: s.width ?? prev?.width,
           height: s.height ?? prev?.height,
+          durationSec: currentDurationSec,
         }))
       } else if (s.styleConfig) {
         setPreview((prev) => (prev ? { ...prev, styleConfig: s.styleConfig } : prev))
@@ -497,6 +503,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             styleConfig={preview.styleConfig}
             width={preview.width}
             height={preview.height}
+            durationSec={preview.durationSec}
             autoPlay
             className="flex-1 min-h-0"
           />

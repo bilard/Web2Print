@@ -150,6 +150,7 @@ export function VideoResult(props: Props) {
         styleConfig={styleConfig}
         width={width}
         height={height}
+        durationSec={durationSec}
         autoPlay
         maxHeight="55vh"
       />

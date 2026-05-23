@@ -19,6 +19,10 @@ interface Props {
   /** Dimensions exactes (canvas source) — si fournies, override la taille du bucket */
   width?: number
   height?: number
+  /** Durée totale choisie par l'utilisateur (5/10/15/30/custom s). Injecté
+   *  comme vars.durationScale = sec/10 pour que le template scale ses
+   *  timings GSAP. */
+  durationSec?: number
   /** Limite CSS de la hauteur du container (ex. `'60vh'`). Quand fournie, le
    *  ratio est préservé via `aspect-ratio` mais la largeur s'adapte pour rentrer
    *  dans la hauteur disponible — utile pour les portraits (9:16) qui sinon
@@ -66,6 +70,7 @@ export function HyperframesPlayer({
   className,
   width,
   height,
+  durationSec,
   maxHeight,
 }: Props) {
   // Si la composition source a des dims exactes (canvas), on les utilise pour
@@ -113,11 +118,15 @@ export function HyperframesPlayer({
   const clampZoom = (z: number) => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z))
 
   const variables = useMemo<Record<string, unknown>>(() => {
+    // durationScale : le template multiplie ses timings GSAP par ce facteur
+    // pour matcher la durée totale choisie par l'utilisateur (5s → 0.5, 30s → 3).
+    const durationScale = durationSec ? durationSec / 10 : 1
     if (isMultiScene) {
       return {
         composition,
         brand: brand || undefined,
         prompt: prompt || undefined,
+        durationScale,
       }
     }
     return {
@@ -127,6 +136,7 @@ export function HyperframesPlayer({
       prompt: prompt || undefined,
       styleConfig: styleConfig || undefined,
       svgUrl: '',
+      durationScale,
     }
   }, [isMultiScene, composition, svg, brand, caption, prompt, styleConfig])
 
