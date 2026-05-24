@@ -19,6 +19,10 @@ import { syncToStore } from './useAddObject'
 import { useTextEditMode } from './useTextEditMode'
 import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
+import { Animation3DOverlay } from '@/features/animation3d/Animation3DOverlay'
+import { Flip3DOverlay } from '@/features/animation3d/Flip3DOverlay'
+import { Relief3DOverlay } from '@/features/animation3d/Relief3DOverlay'
+import { useAutoPlayPersisted } from '@/features/animation3d/useAutoPlayPersisted'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 
@@ -35,8 +39,26 @@ export function CanvasContainer() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { fabricRef, fitToContainer } = useCanvas(canvasElRef)
   const [canvasReady, setCanvasReady] = useState<Canvas | null>(null)
-  const { zoom, canvasWidth, canvasHeight } = useUIStore()
+  const {
+    zoom, canvasWidth, canvasHeight,
+    particlesOverlayActive,
+    flip3DActive, flip3DConfig,
+    relief3DActive, relief3DConfig,
+    autoPlayAnimations,
+  } = useUIStore()
   const { selectedObjectId } = useEditorStore()
+  const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 })
+
+  const flip3DTarget = flip3DActive && selectedObjectId && canvasReady
+    ? canvasReady.getObjects().find((o: any) => o.data?.id === selectedObjectId) ?? null
+    : null
+
+  const relief3DTarget = relief3DActive && selectedObjectId && canvasReady
+    ? canvasReady.getObjects().find((o: any) => o.data?.id === selectedObjectId) ?? null
+    : null
+
+  // Auto-play any persisted animations when toggle is on
+  useAutoPlayPersisted(canvasReady, autoPlayAnimations)
 
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([])
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
@@ -148,6 +170,7 @@ export function CanvasContainer() {
       if (!canvas) return
       const { offsetWidth: cw, offsetHeight: ch } = container
       canvas.setDimensions({ width: cw, height: ch })
+      setOverlaySize({ width: cw, height: ch })
       // Keep current zoom but re-center the document so it stays visible
       // when the container is resized (e.g., side panels opening/closing).
       const { canvasWidth: docW, canvasHeight: docH } = useUIStore.getState()
@@ -354,6 +377,33 @@ export function CanvasContainer() {
 
       {/* Image crop toolbars (floating) */}
       <ImageCropToolbars canvas={canvasReady} />
+
+      {/* Three.js particles overlay (retail digital signage 3D) */}
+      <Animation3DOverlay
+        active={particlesOverlayActive}
+        width={overlaySize.width}
+        height={overlaySize.height}
+      />
+
+      {/* Real 3D rotateY overlay via captured PNG */}
+      <Flip3DOverlay
+        active={flip3DActive}
+        fObj={flip3DTarget}
+        canvas={canvasReady}
+        duration={flip3DConfig.duration}
+        loop={flip3DConfig.loop}
+        intensity={flip3DConfig.intensity}
+        containerEl={containerRef.current}
+      />
+
+      {/* Relief 3D — Three.js extruded mesh + manual lighting */}
+      <Relief3DOverlay
+        active={relief3DActive}
+        fObj={relief3DTarget}
+        canvas={canvasReady}
+        containerEl={containerRef.current}
+        config={relief3DConfig}
+      />
 
       {/* Context menu */}
       {contextMenu && (

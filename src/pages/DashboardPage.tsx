@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Workflow, Film } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Workflow, Film, Trash2, X } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useProjects } from '@/features/projects/useProjects'
@@ -75,6 +75,8 @@ export default function DashboardPage() {
     const stored = window.localStorage.getItem('library:viewMode')
     return stored === 'grid' ? 'grid' : 'list'
   })
+  // Sélection multiple pour suppression groupée (cases toujours visibles sur les cartes)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
 
   const handleViewModeChange = useCallback((mode: ProjectViewMode) => {
     setViewMode(mode)
@@ -119,6 +121,33 @@ export default function DashboardPage() {
     const idSet = new Set(filterProjectIds)
     return projects.filter((p) => idSet.has(p.id))
   }, [projects, filterNodeId, filterProjectIds])
+
+  // ─── Sélection multiple / suppression groupée ────────────────────────────
+  const allSelected = filteredProjects.length > 0 && filteredProjects.every((p) => selectedIds.has(p.id))
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds(() => (allSelected ? new Set() : new Set(filteredProjects.map((p) => p.id))))
+  }, [allSelected, filteredProjects])
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    const msg = `Supprimer ${ids.length} projet${ids.length > 1 ? 's' : ''} ? Cette action est irréversible.`
+    if (!window.confirm(msg)) return
+    await Promise.allSettled(ids.map((id) => deleteProject.mutateAsync(id)))
+    clearSelection()
+  }, [selectedIds, deleteProject, clearSelection])
 
   const handleSignOut = async () => {
     await signOut()
@@ -456,42 +485,84 @@ export default function DashboardPage() {
                   )}
                 </h1>
 
-                {/* Toggle vue grille / liste */}
-                <div
-                  className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.08] rounded-lg p-0.5"
-                  role="group"
-                  aria-label="Mode d'affichage"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleViewModeChange('grid')}
-                    aria-pressed={viewMode === 'grid'}
-                    title="Vue vignettes"
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-                      viewMode === 'grid'
-                        ? 'bg-indigo-500/15 text-indigo-300'
-                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-                    }`}
+                <div className="flex items-center gap-2">
+                  {/* Toggle vue grille / liste */}
+                  <div
+                    className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.08] rounded-lg p-0.5"
+                    role="group"
+                    aria-label="Mode d'affichage"
                   >
-                    <LayoutGrid className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Vignettes</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleViewModeChange('list')}
-                    aria-pressed={viewMode === 'list'}
-                    title="Vue liste"
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-                      viewMode === 'list'
-                        ? 'bg-indigo-500/15 text-indigo-300'
-                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <List className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Liste</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleViewModeChange('grid')}
+                      aria-pressed={viewMode === 'grid'}
+                      title="Vue vignettes"
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                        viewMode === 'grid'
+                          ? 'bg-indigo-500/15 text-indigo-300'
+                          : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Vignettes</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleViewModeChange('list')}
+                      aria-pressed={viewMode === 'list'}
+                      title="Vue liste"
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                        viewMode === 'list'
+                          ? 'bg-indigo-500/15 text-indigo-300'
+                          : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Liste</span>
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Barre d'actions de sélection groupée — visible dès qu'un projet est coché */}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center justify-between gap-3 mb-4 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[13px] text-white/60 tabular-nums">
+                      {selectedIds.size} sélectionné{selectedIds.size > 1 ? 's' : ''}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={toggleSelectAll}
+                      className="text-[12px] text-indigo-300 hover:text-indigo-200 transition-colors"
+                    >
+                      {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="flex items-center gap-1 text-[12px] text-white/40 hover:text-white/70 transition-colors"
+                      title="Effacer la sélection"
+                    >
+                      <X className="w-3 h-3" />
+                      Effacer
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={deleteProject.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium bg-red-500/15 text-red-300 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  >
+                    {deleteProject.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    Supprimer ({selectedIds.size})
+                  </button>
+                </div>
+              )}
 
               {isLoading && (
                 <div className="flex items-center justify-center py-24" role="status">
@@ -545,6 +616,8 @@ export default function DashboardPage() {
                       onDuplicate={(id) => duplicateProject.mutate(id)}
                       taxonomyLabel={projectTaxonomyLabel[project.id]}
                       view={viewMode}
+                      selected={selectedIds.has(project.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   ))}
                 </div>

@@ -22,7 +22,7 @@ describe('aiModels catalog', () => {
 
   it('getDefaultModel returns the isDefault entry', () => {
     expect(getDefaultModel('claude').id).toBe('claude-opus-4-7')
-    expect(getDefaultModel('gemini').id).toBe('gemini-3.5-pro')
+    expect(getDefaultModel('gemini').id).toBe('gemini-3.5-flash')
     expect(getDefaultModel('openai').id).toBe('gpt-5.1')
     expect(getDefaultModel('deepseek').id).toBe('deepseek-chat')
     expect(getDefaultModel('qwen').id).toBe('qwen3.7-max')

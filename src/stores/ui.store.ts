@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { GradientConfig } from './editor.store'
+import { DEFAULT_RELIEF, type ReliefConfig } from '@/features/animation3d/types'
 
 export type CanvasBgType = 'solid' | 'gradient' | 'image'
 export type ActiveTool = 'select' | 'text' | 'rect' | 'ellipse' | 'line' | 'image' | 'hand' | 'zoom'
@@ -84,6 +85,20 @@ interface UIState {
   damPickerTargetId: string | null
   openDamPickerForReplace: (targetId: string) => void
   openDamPickerForFill: (targetId: string) => void
+  // 3D animation overlay
+  particlesOverlayActive: boolean
+  setParticlesOverlayActive: (active: boolean) => void
+  flip3DActive: boolean
+  flip3DConfig: { duration: number; loop: boolean; intensity: number }
+  setFlip3D: (active: boolean, config?: { duration: number; loop: boolean; intensity: number }) => void
+  // Relief 3D (Three.js extruded mesh + manual lighting)
+  relief3DActive: boolean
+  relief3DConfig: ReliefConfig
+  setRelief3D: (active: boolean, config?: ReliefConfig) => void
+  updateRelief3DConfig: (patch: Partial<ReliefConfig>) => void
+  updateReliefLighting: (patch: Partial<ReliefConfig['lighting']>) => void
+  autoPlayAnimations: boolean
+  setAutoPlayAnimations: (v: boolean) => void
 }
 
 const DEFAULT_BG_GRADIENT: GradientConfig = {
@@ -168,13 +183,14 @@ export const useUIStore = create<UIState>((set, get) => ({
   activeTool: 'select',
   setActiveTool: (tool) => set({ activeTool: tool }),
   rightPanels: [
-    { id: 'page',    collapsed: false },
-    { id: 'print',   collapsed: true },
-    { id: 'data',    collapsed: true },
-    { id: 'layers',  collapsed: true },
-    { id: 'images',  collapsed: true },
-    { id: 'palette', collapsed: true },
-    { id: 'assets',  collapsed: true },
+    { id: 'page',         collapsed: false },
+    { id: 'print',        collapsed: true },
+    { id: 'data',         collapsed: true },
+    { id: 'layers',       collapsed: true },
+    { id: 'images',       collapsed: true },
+    { id: 'palette',      collapsed: true },
+    { id: 'assets',       collapsed: true },
+    { id: 'animation3d',  collapsed: true },
   ],
   setRightPanels: (panels) => set({ rightPanels: panels }),
   toggleRightPanel: (id) =>
@@ -196,4 +212,27 @@ export const useUIStore = create<UIState>((set, get) => ({
   openDamPickerForFill: (targetId) =>
     set({ damPickerOpen: true, damPickerMode: 'fill', damPickerTargetId: targetId }),
 
+  // 3D animation overlay
+  particlesOverlayActive: false,
+  setParticlesOverlayActive: (active) => set({ particlesOverlayActive: active }),
+  flip3DActive: false,
+  flip3DConfig: { duration: 3, loop: true, intensity: 1 },
+  setFlip3D: (active, config) => set((s) => ({
+    flip3DActive: active,
+    flip3DConfig: config ?? s.flip3DConfig,
+  })),
+  relief3DActive: false,
+  relief3DConfig: DEFAULT_RELIEF,
+  setRelief3D: (active, config) => set((s) => ({
+    relief3DActive: active,
+    relief3DConfig: config ?? s.relief3DConfig,
+  })),
+  updateRelief3DConfig: (patch) => set((s) => ({
+    relief3DConfig: { ...s.relief3DConfig, ...patch },
+  })),
+  updateReliefLighting: (patch) => set((s) => ({
+    relief3DConfig: { ...s.relief3DConfig, lighting: { ...s.relief3DConfig.lighting, ...patch } },
+  })),
+  autoPlayAnimations: false,
+  setAutoPlayAnimations: (v) => set({ autoPlayAnimations: v }),
 }))

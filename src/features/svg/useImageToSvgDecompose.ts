@@ -407,6 +407,55 @@ function buildMaskRect(box: VisionParagraph['bbox'], fill: string, padX: number,
   return r
 }
 
+/**
+ * Détecte les FILETS de séparation horizontaux de la créa (ex. le trait entre deux
+ * blocs de prix). Vision ne les voit pas (pas du texte) → ils disparaîtraient. On
+ * scanne l'image source : un filet = un long run CONTINU de pixels sombres, fin,
+ * bordé de clair au-dessus ET en-dessous. Le texte, lui, a des trous entre lettres
+ * → run court (filtré par minRun). Universel, aucune coordonnée en dur.
+ */
+function detectSeparatorRects(ctx: CanvasRenderingContext2D, width: number, height: number): Rect[] {
+  let data: Uint8ClampedArray
+  try { data = ctx.getImageData(0, 0, width, height).data } catch { return [] }
+  const lum = (x: number, y: number): number => {
+    const i = (y * width + x) * 4
+    return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2]
+  }
+  const DARK = 150   // pixel du filet
+  const LIGHT = 195  // fond clair (blanc/jaune) au-dessus et en-dessous
+  const GAP = 3      // distance verticale d'échantillonnage du fond
+  const minRun = Math.max(Math.round(width * 0.06), 40)
+  const rects: Rect[] = []
+  const used = new Set<number>()
+  for (let y = GAP; y < height - GAP; y++) {
+    if (used.has(y)) continue
+    let start = -1, bStart = -1, bLen = 0
+    for (let x = 0; x < width; x++) {
+      const isLine = lum(x, y) < DARK && lum(x, y - GAP) > LIGHT && lum(x, y + GAP) > LIGHT
+      if (isLine) {
+        if (start < 0) start = x
+        const len = x - start + 1
+        if (len > bLen) { bLen = len; bStart = start }
+      } else start = -1
+    }
+    if (bLen < minRun) continue
+    if (isInProductZone({ left: bStart, top: y, width: bLen, height: 2 }, width, height)) continue
+    const midX = bStart + (bLen >> 1)
+    let t = 1
+    while (y + t < height && lum(midX, y + t) < DARK) t++ // épaisseur réelle du filet
+    const i = (y * width + midX) * 4
+    const hex = '#' + [data[i], data[i + 1], data[i + 2]].map((v) => v.toString(16).padStart(2, '0')).join('')
+    const rect = new Rect({
+      originX: 'left', originY: 'top', left: bStart, top: y, width: bLen, height: Math.max(t, 2),
+      fill: hex, strokeWidth: 0, selectable: true, evented: true, objectCaching: true,
+    })
+    ;(rect as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-mask', name: '', type: 'rect' }
+    rects.push(rect)
+    for (let k = 0; k <= t + GAP; k++) used.add(y + k)
+  }
+  return rects
+}
+
 function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: number, color: string, fontWeight: number = 400, styles?: TextStyles): Textbox {
   // Width minimum basé sur la ligne la PLUS LONGUE (le texte peut contenir des
   // `\n` reconstruits) — pas le total des caractères, sinon une Textbox 2 lignes
@@ -484,32 +533,41 @@ function buildStackedPrice(
     canvas.add(tb)
     return
   }
-  const detFs = Math.max(bbox.height * 0.95, 10)
-  const centerY = bbox.top + bbox.height / 2
+  // Mise en page d'après la géométrie réelle (mesurée sur les mots Vision) : l'entier
+  // remplit la hauteur du prix, le « € » est en HAUT (sommet de l'entier) et les
+  // décimales en BAS, base alignée sur celle de l'entier. € et décimales sont étalés
+  // (≈ exposant / indice), PAS empilés serré. 3 Textbox liés par priceGroupId.
   const leftX = bbox.left
-  const BOOST = 1.6
-  const bigFs = Math.round(detFs * BOOST)
-  const intWidth = parts.integer.length * bigFs * 0.62
-  const intTb = new Textbox(parts.integer, {
-    originX: 'left', originY: 'center', left: leftX, top: centerY, width: intWidth,
-    fontSize: bigFs, fontFamily, fontWeight, fill, lineHeight: 0.9, textAlign: 'left',
-    editable: true, selectable: true, evented: true, objectCaching: true,
-  })
-  ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
-  canvas.add(intTb)
-  const stackText = parts.decimals ? `${parts.currency}\n${parts.decimals}` : parts.currency
-  const stackFs = Math.max(Math.round(bigFs * 0.45), 10)
-  const stack = new Textbox(stackText, {
-    originX: 'left', originY: 'bottom',
-    left: leftX + intWidth + Math.round(bigFs * 0.03), top: centerY + Math.round(bigFs * 0.36),
-    width: stackFs * 1.8, fontSize: stackFs, fontFamily, fontWeight, fill, lineHeight: 0.85, textAlign: 'left',
-    editable: true, selectable: true, evented: true, objectCaching: true,
-  })
-  ;(stack as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
-  canvas.add(stack)
+  const topY = bbox.top
+  const bigFs = Math.max(Math.round(bbox.height), 10)
+  const intWidth = parts.integer.length * bigFs * 0.6
+  const smallFs = Math.max(Math.round(bigFs * 0.42), 10) // € et décimales ≈ 0.42× l'entier (mesuré)
+  const rightX = leftX + intWidth + Math.round(bigFs * 0.04)
+  const baselineY = topY + Math.round(bigFs * 0.92) // ≈ ligne de base de l'entier
   const gid = `price-${Date.now().toString(36)}-${Math.round(Math.random() * 1e6).toString(36)}`
-  ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { ...(intTb as FabricObject & { data?: Record<string, unknown> }).data, priceGroupId: gid }
-  ;(stack as FabricObject & { data?: Record<string, unknown> }).data = { ...(stack as FabricObject & { data?: Record<string, unknown> }).data, priceGroupId: gid }
+  const tag = (o: Textbox) => {
+    ;(o as FabricObject & { data?: Record<string, unknown> }).data = {
+      role: 'image-decompose-text', name: '', type: 'text', priceGroupId: gid,
+    }
+  }
+  const common = { fontFamily, fontWeight, fill, lineHeight: 0.9, textAlign: 'left' as const, editable: true, selectable: true, evented: true, objectCaching: true }
+
+  // Entier (grand, aligné en haut)
+  const intTb = new Textbox(parts.integer, { originX: 'left', originY: 'top', left: leftX, top: topY, width: intWidth, fontSize: bigFs, ...common })
+  tag(intTb)
+  canvas.add(intTb)
+
+  // « € » en HAUT, à droite de l'entier
+  const curTb = new Textbox(parts.currency, { originX: 'left', originY: 'top', left: rightX, top: topY, width: smallFs * 1.6, fontSize: smallFs, ...common })
+  tag(curTb)
+  canvas.add(curTb)
+
+  // Décimales en BAS, base alignée sur l'entier
+  if (parts.decimals) {
+    const decTb = new Textbox(parts.decimals, { originX: 'left', originY: 'bottom', left: rightX, top: baselineY, width: smallFs * 1.8, fontSize: smallFs, ...common })
+    tag(decTb)
+    canvas.add(decTb)
+  }
 }
 
 /**
@@ -1218,28 +1276,117 @@ async function decomposeSemantic(
   if (built.length === 0) return null
 
   // Masques : blocs sur fond couleur uniforme (non blanc) regroupés par couleur+proximité.
+  // On mémorise les zones de couleur GRANDIES : elles délimitent les aplats promo
+  // (rouge/jaune) où vivent les labels — sert de gate déterministe pour la complétude.
   const colored = built.filter((b) => b.bgUniform && !isNearWhite(b.bgHex))
   const maskZones = groupBuiltByColor(colored.map((b) => ({ bbox: b.bbox, bgHex: b.bgHex })))
+  const coloredZones: VisionParagraph['bbox'][] = []
   for (const z of maskZones) {
     const grown = growBoxToColorExtent(ctx, z.bbox, z.bgHex, width, height)
+    coloredZones.push(grown)
     canvas.add(buildMaskRect(grown, z.bgHex, 2, 2))
   }
 
+  // Rendu. Les blocs PRIX sont composés/empilés via buildStackedPrice (sur l'union
+  // bbox des paragraphes membres). Tout le reste (titre / description / mention /
+  // unitprice) est rendu PAR PARAGRAPHE Vision : fusionner plusieurs paragraphes en
+  // un seul Textbox via l'union bbox sur-dimensionnait fontSize (hauteur d'union ÷
+  // nb de "\n" sous-compté par Gemini) ET minWidth (longueur de la chaîne jointe)
+  // → débordements horizontaux/verticaux. La géométrie Vision par-paragraphe est la
+  // vérité de layout ; Gemini ne sert qu'à typer les blocs (prix) et exclure les
+  // logos. fontSize / couleur / poids sont ré-échantillonnés par paragraphe (cf.
+  // pipeline heuristique) pour ne pas faire fuiter le style d'un membre sur l'autre.
+  const consumed = new Set<number>()
+  // Rend UN paragraphe Vision par-paragraphe (géométrie Vision = vérité de layout).
+  // fontSize / couleur / poids ré-échantillonnés par paragraphe (pas de fuite de style
+  // d'un membre à l'autre).
+  const renderParagraph = (idx: number): void => {
+    if (idx < 0 || idx >= result.paragraphs.length || consumed.has(idx)) return
+    consumed.add(idx) // dédup : un paragraphe vu 2× ne se rend qu'une fois
+    const para = result.paragraphs[idx]
+    const bg = sampleBackground(ctx, para.bbox, width, height)
+    const nLines = countLines(para.words)
+    // Mono-ligne : bbox.height ≈ hauteur de glyphe (×0.95). Multi-ligne :
+    // bbox.height / nLines = AVANCE de ligne (inclut l'interligne) → ×0.78, sinon un
+    // titre 2 lignes ressort trop gros et sa 2ᵉ ligne chevauche le paragraphe suivant.
+    let fontSize = Math.max((para.bbox.height / nLines) * (nLines > 1 ? 0.78 : 0.95), 10)
+    const color = sampleTextColor(ctx, para.bbox, bg.hex, width, height)
+    const fontWeight = detectFontWeight(ctx, para.bbox, color, width, height)
+    // Clamp largeur via mesure RÉELLE (ctx.measureText) : une fontSize dictée par un
+    // glyphe haut (le « 2 » de « LES 2 ») peut rendre le texte plus large que son
+    // emprise Vision → débord du masque couleur (blanc hors du rouge = invisible).
+    // Déclenché seulement au-delà de 15 % de débord (tolérance de chasse) pour NE PAS
+    // rétrécir le corps de texte normal.
+    const provisional = buildTextAndStyles(para.words, fontSize)
+    const lines = provisional.text.split('\n')
+    ctx.save()
+    ctx.font = `${fontWeight} ${Math.round(fontSize)}px ${fontWeight >= 900 ? '"Arial Black", Arial' : 'Arial'}`
+    const measured = Math.max(...lines.map((l) => ctx.measureText(l).width), 1)
+    ctx.restore()
+    if (measured > para.bbox.width * 1.15) {
+      fontSize = Math.max(fontSize * (para.bbox.width / measured), 10)
+    }
+    const { text, styles } = buildTextAndStyles(para.words, fontSize)
+    canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles))
+  }
+
+  // Blocs Gemini : PRIX composés/empilés (buildStackedPrice), le reste par-paragraphe.
   for (const b of built) {
-    const fontWeight = detectFontWeight(ctx, b.bbox, b.color, width, height)
-    const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
     if (b.block.type === 'price') {
+      const fontWeight = detectFontWeight(ctx, b.bbox, b.color, width, height)
+      const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
       buildStackedPrice(canvas, b.block.priceValue ?? b.block.text, b.bbox, fontFamily, fontWeight, b.color)
+      // On ne marque consommés que les COMPOSANTS de prix (chiffres SANS lettre —
+      // tolère un « € » mal OCRisé en ₤/₽/£…), rendus via la pile. Un LABEL bundlé
+      // par erreur (« Vendu seul ») contient des lettres → NON consommé → récupéré
+      // en post-passe.
+      b.block.memberIndices.forEach((i) => {
+        const t = (result.paragraphs[i]?.text ?? '').trim()
+        // Composant de prix = AUCUNE lettre (chiffres, « € » seul, décimales, symbole
+        // mal OCRisé ₤/₽…). Rendu via la pile → consommé. Un label bundlé a des lettres.
+        if (t.length > 0 && !/[a-zà-ÿ]/i.test(t)) consumed.add(i)
+      })
       continue
     }
-    const fontSize = Math.max((b.bbox.height / Math.max(b.block.text.split('\n').length, 1)) * 0.95, 10)
-    const { text, styles } = buildTextAndStyles([{ text: b.block.text, bbox: b.bbox }], fontSize)
-    canvas.add(buildTextbox(text, b.bbox, fontSize, b.color, fontWeight, styles))
+    for (const idx of b.block.memberIndices) renderParagraph(idx)
   }
+
+  // COMPLÉTUDE 100 % DÉTERMINISTE (anti-omission, AUCUN LLM). Gemini omet parfois des
+  // paragraphes (« Vendu seul », « Le pack », « Le 2ème produit ») → textes manquants,
+  // de façon aléatoire d'un run à l'autre. On rend ICI tout paragraphe Vision NON
+  // consommé dont le CENTRE tombe dans un aplat de couleur promo (rouge/jaune) : c'est
+  // là, par définition, que vivent les labels promotionnels. Les logos / badges
+  // (ORIGINE FRANCE, LE PORC FRANÇAIS…) sont HORS de ces aplats → exclus sans appel LLM.
+  // Règle géométrique pure → résultat IDENTIQUE à chaque run. (Auparavant on passait
+  // par classifyLogoTexts, un LLM non-déterministe qui supprimait parfois de vrais
+  // labels : c'était la cause des « textes manquants ».)
+  const inColoredZone = (p: VisionParagraph): boolean => {
+    const cx = p.bbox.left + p.bbox.width / 2
+    const cy = p.bbox.top + p.bbox.height / 2
+    return coloredZones.some(
+      (z) => cx >= z.left && cx <= z.left + z.width && cy >= z.top && cy <= z.top + z.height,
+    )
+  }
+  for (let i = 0; i < result.paragraphs.length; i++) {
+    if (consumed.has(i)) continue
+    const p = result.paragraphs[i]
+    if (p.confidence < 0.5) continue
+    if (!inColoredZone(p)) continue
+    // Fragment de PRIX = AUCUNE lettre (chiffres, « € » seul, « 5 ₤ 49 » avec € mal
+    // OCRisé…) : déjà rendu composé par buildStackedPrice → le re-rendre créerait un
+    // DOUBLON superposé (« 9 €€ 59 », « 5 49 » brut). Les labels (« Vendu seul »,
+    // « Le kg: 22,88€ ») ont des lettres → toujours rendus.
+    if (!/[a-zà-ÿ]/i.test(p.text)) continue
+    renderParagraph(i)
+  }
+
+  // Filets de séparation (traits horizontaux entre blocs de prix) — invisibles pour
+  // Vision (pas du texte), détectés directement sur l'image.
+  for (const sep of detectSeparatorRects(ctx, width, height)) canvas.add(sep)
 
   canvas.requestRenderAll()
   syncToStore(canvas)
-  return built.length
+  return consumed.size
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1310,8 +1457,10 @@ export function useImageToSvgDecompose() {
       if (!ctx) throw new Error('Canvas 2D context indisponible')
       ctx.drawImage(htmlImg, 0, 0, width, height)
 
-      // Décomposition : tente d'abord l'analyse sémantique (Gemini 3.5), avec
-      // fallback total sur le pipeline heuristique (Vision + échantillonnage couleur).
+      // Décomposition : voie SÉMANTIQUE (rendu propre par-paragraphe + prix composés),
+      // avec fallback total sur le pipeline heuristique si Gemini échoue.
+      // Complétude pilotée par VISION (decomposeSemantic rend aussi les paragraphes
+      // que Gemini a omis), le LLM n'enrichit que (prix + exclusion logos).
       let kept = await decomposeSemantic(canvas, ctx, dataUri, result, width, height, toastId)
       if (kept === null) {
         kept = await decomposeHeuristic(canvas, ctx, dataUri, result, width, height, toastId)

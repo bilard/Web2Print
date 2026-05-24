@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, FileImage, MoreVertical, Copy } from 'lucide-react'
+import { Trash2, FileImage, MoreVertical, Copy, Check } from 'lucide-react'
 import type { ProjectData } from '@/types/project'
 import { EditorTaxonomyPicker } from '@/components/panels/EditorTaxonomyPicker'
 
@@ -12,6 +12,10 @@ interface ProjectCardProps {
   onDuplicate?: (id: string) => void
   taxonomyLabel?: string
   view?: ProjectViewMode
+  /** Sélection pour suppression groupée. La case est toujours visible ; le clic sur
+   *  la case coche/décoche, le clic sur le reste de la carte ouvre le projet. */
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
 function formatDate(ts: number): string {
@@ -22,12 +26,41 @@ function formatDate(ts: number): string {
   }).format(new Date(ts))
 }
 
+function SelectCheckbox({
+  selected,
+  onClick,
+  className = '',
+}: {
+  selected: boolean
+  onClick: (e: React.MouseEvent) => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={selected}
+      aria-label={selected ? 'Désélectionner le projet' : 'Sélectionner le projet'}
+      onClick={onClick}
+      className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+        selected
+          ? 'bg-indigo-500 border-indigo-500'
+          : 'border-white/30 bg-black/40 hover:border-indigo-400'
+      } ${className}`}
+    >
+      {selected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+    </button>
+  )
+}
+
 export function ProjectCard({
   project,
   onDelete,
   onDuplicate,
   taxonomyLabel,
   view = 'grid',
+  selected = false,
+  onToggleSelect,
 }: ProjectCardProps) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,6 +79,11 @@ export function ProjectCard({
   const open = () =>
     navigate(`/editor/${project.id}`, { state: { title: project.title } })
 
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onToggleSelect?.(project.id)
+  }
+
   const pickerNode = (
     <EditorTaxonomyPicker
       open={pickerOpen}
@@ -54,14 +92,18 @@ export function ProjectCard({
     />
   )
 
+  const selectedRing = selected ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-white/10'
+
   // ─── Mode LISTE ───────────────────────────────────────────────────────────
   if (view === 'list') {
     return (
       <>
       <div
-        className="group relative flex items-center gap-3 bg-[#1a1a1a] border border-white/10 rounded-lg px-2 py-2 hover:border-indigo-500/50 hover:bg-[#1f1f1f] transition-all cursor-pointer"
+        className={`group relative flex items-center gap-3 bg-[#1a1a1a] border rounded-lg px-2 py-2 hover:border-indigo-500/50 hover:bg-[#1f1f1f] transition-all cursor-pointer ${selectedRing} ${selected ? 'bg-indigo-500/[0.06]' : ''}`}
         onClick={open}
       >
+        <SelectCheckbox selected={selected} onClick={handleCheckboxClick} />
+
         {/* Thumbnail */}
         <div className="w-12 h-12 bg-[#111] rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-white/[0.06]">
           {project.thumbnail ? (
@@ -137,7 +179,14 @@ export function ProjectCard({
   // ─── Mode GRID (par défaut) ───────────────────────────────────────────────
   return (
     <>
-    <div className="group relative bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all cursor-pointer">
+    <div className={`group relative bg-[#1a1a1a] border rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all cursor-pointer ${selectedRing}`}>
+      {/* Case à cocher (overlay) — toujours visible */}
+      <SelectCheckbox
+        selected={selected}
+        onClick={handleCheckboxClick}
+        className="absolute top-2 left-2 z-10 shadow-md"
+      />
+
       {/* Thumbnail */}
       <div
         className="aspect-[4/3] bg-[#111] flex items-center justify-center overflow-hidden"

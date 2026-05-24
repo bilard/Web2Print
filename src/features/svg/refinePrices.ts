@@ -39,6 +39,51 @@ Exemples : "9,59 €", "4,79 €", "1,92 €", "14,38 €", "5 €".
 
 Ne retourne RIEN d'autre — pas d'explication, pas de phrase. Juste le prix au bon format.`
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Classification sémantique : texte de LOGO/PICTO/certification vs éditorial
+// ─────────────────────────────────────────────────────────────────────────────
+
+const LogoClassSchema = z.object({ logo: z.array(z.number()) })
+const logoClassJsonSchema = {
+  type: 'object',
+  properties: { logo: { type: 'array', items: { type: 'number' } } },
+  required: ['logo'],
+} as const
+
+/**
+ * Classe chaque texte extrait comme ÉDITORIAL ou LOGO/PICTO/certification, via LLM
+ * batch sémantique (1 appel, texte seul + positions — PAS de dico par-vendeur).
+ * Les fragments d'un même logo (ex badge rond "MEILLEUR/ÉLEVÉ/JOUR") sont ambigus
+ * isolément mais le LLM voit TOUTE la liste + positions → il les regroupe et identifie
+ * le logo. Retourne l'ensemble des INDEX à exclure (logos/pictos). En cas d'échec :
+ * ensemble vide (on garde tout, comportement d'avant).
+ */
+export async function classifyLogoTexts(
+  items: { text: string; x: number; y: number }[],
+): Promise<Set<number>> {
+  if (items.length === 0) return new Set()
+  const list = items.map((it, i) => ({ i, t: it.text.slice(0, 40), x: Math.round(it.x), y: Math.round(it.y) }))
+  const prompt = `Créa promotionnelle retail (supermarché). Voici des libellés extraits par OCR avec leur position (x%, y% sur l'image). Classe CHAQUE index :
+- EDITORIAL : prix, accroche promo ("LES 2 POUR", "Vendu seul"…), nom/description produit, mentions légales, poids/quantité.
+- LOGO : texte appartenant à un LOGO / PICTO / SCEAU / CERTIFICATION / label qualité / origine dessiné (badge "origine France", label "élevé sans traitement antibiotique", écusson "le porc français", logo filière…). Souvent regroupés en haut/coin, parfois disposés en arc/cercle. NE PAS classer logo un simple nom de marque intégré au titre produit.
+Retourne UNIQUEMENT du JSON {"logo":[indices]} (indices des textes de logo/picto à exclure).
+${JSON.stringify(list)}`
+  try {
+    const res = await generateJson({
+      task: 'design.logoClassify',
+      prompt,
+      schema: LogoClassSchema,
+      schemaForLLM: logoClassJsonSchema,
+      schemaForClaude: logoClassJsonSchema,
+      version: 'logo-classify-v1',
+    })
+    return new Set(res.logo.filter((n) => Number.isInteger(n) && n >= 0 && n < items.length))
+  } catch (err) {
+    console.warn('[refinePrices] classifyLogoTexts failed:', err)
+    return new Set()
+  }
+}
+
 /**
  * Appelle Gemini Vision pour lire UN prix sur une image cropée.
  * Retourne null si Vision n'a pas pu lire (réponse vide).

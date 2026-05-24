@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Undo2, Redo2, Download, ChevronLeft, Loader2, Save, Film } from 'lucide-react'
+import { Undo2, Redo2, Download, ChevronLeft, Loader2, Save, Film, Wand2, RotateCcw } from 'lucide-react'
 import { useEditorStore } from '@/stores/editor.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { globalUndo, globalRedo } from '@/features/editor/CanvasContainer'
@@ -9,6 +9,7 @@ import { ExportModal } from '@/features/export/ExportModal'
 import { VideoModal } from '@/features/video/VideoModal'
 import { EditorTaxonomyBreadcrumb } from './EditorTaxonomyBreadcrumb'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
+import { useImageToSvgDecompose } from '@/features/svg/useImageToSvgDecompose'
 
 export function EditorHeader() {
   const navigate = useNavigate()
@@ -19,6 +20,7 @@ export function EditorHeader() {
   const [modal, setModal] = useState<null | 'export' | 'video'>(null)
   const saveHighlight = useHighlight<HTMLButtonElement>('editor-header.save')
   const exportHighlight = useHighlight<HTMLButtonElement>('editor-header.export')
+  const { canDecompose, isRunning: decomposing, run: runDecompose, hasDecomposition, undoDecompose } = useImageToSvgDecompose()
 
   const commitTitle = () => {
     setProjectTitle(titleDraft.trim() || 'Sans titre')
@@ -117,6 +119,29 @@ export function EditorHeader() {
         {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
         <span className="hidden sm:block">Sauvegarder</span>
       </button>
+
+      {canDecompose && !hasDecomposition && (
+        <button
+          onClick={() => { void runDecompose() }}
+          disabled={decomposing}
+          title="Détecter automatiquement les textes éditoriaux via Google Vision (skip zone produit centrale)."
+          className="flex items-center gap-1.5 bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 text-pink-300 hover:text-pink-200 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-wait"
+        >
+          {decomposing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+          <span className="hidden sm:block">{decomposing ? 'Décompose…' : 'Décomposer'}</span>
+        </button>
+      )}
+
+      {canDecompose && hasDecomposition && !decomposing && (
+        <button
+          onClick={() => undoDecompose()}
+          title="Supprimer tous les Textbox de décomposition et restaurer l'image."
+          className="flex items-center gap-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 hover:text-orange-200 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span className="hidden sm:block">Annuler décomposition</span>
+        </button>
+      )}
 
       <button
         onClick={() => setModal('video')}

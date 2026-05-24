@@ -65,6 +65,8 @@ export interface CanvasObjectProps {
   // Hiérarchie groupes
   children?: CanvasObjectProps[]
   parentId?: string
+  // 3D animation (Animation3DPanel)
+  animation3D?: import('@/features/animation3d/types').Animation3DConfig | null
 }
 
 interface EditorState {

@@ -189,6 +189,25 @@ export function applyCustomControls() {
   proto.borderOpacityWhenMoving = 0.6
   proto.cornerStyle = 'circle'
   proto.padding = 0
+
+  // Patch défensif `findControl` : Fabric v6 crash sur Object.entries(undefined)
+  // au mouseMove si un objet a hasControls=true mais oCoords pas encore calculé
+  // (cas typique : enfants de Group qui n'ont jamais eu setCoords appelé).
+  // On force setCoords() pour calculer les oCoords manquants puis on laisse
+  // Fabric procéder normalement — sans bloquer les interactions légitimes
+  // (sélection, double-clic édition textbox, etc.) sur des objets sains.
+  if (!proto.__findControlPatched) {
+    const originalFindControl = proto.findControl
+    proto.findControl = function patchedFindControl(this: any, pointer: unknown, forTouch?: boolean) {
+      if (!this.hasControls || !this.canvas) return undefined
+      if (!this.oCoords) {
+        try { this.setCoords() } catch { return undefined }
+        if (!this.oCoords) return undefined
+      }
+      return originalFindControl.call(this, pointer, forTouch)
+    }
+    proto.__findControlPatched = true
+  }
 }
 
 /** Apply custom controls to a single Fabric object */

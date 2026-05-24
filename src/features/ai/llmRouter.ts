@@ -91,8 +91,11 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // Court, batch — Gemini primary, Claude fallback.
   'design.logoClassify':    { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
   // Semantic Layout : structuration multimodale (image + textes Vision) → blocs typés,
-  // prix composés, logos/packaging exclus. Gemini 3.5 Pro (grounding spatial + sémantique).
-  'design.semanticLayout':  { primary: 'gemini', fallback: 'claude', model: 'gemini-3.5-pro' },
+  // prix composés. Modèle gemini-3.1-pro-preview (PAS 3.5-flash) : 3.5 n'est servi que
+  // sur l'endpoint `v1` SANS responseSchema → JSON dépendant du prompt → parsing
+  // aléatoire (cause des échecs sémantiques → fallback heuristique). 3.1-pro-preview
+  // tourne sur v1beta avec responseSchema → JSON structuré FIABLE. Multimodal OK.
+  'design.semanticLayout':  { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -202,9 +205,23 @@ export function getProviderCascade(onWarning?: (msg: string) => void): LLMProvid
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
   // Si forceProvider, respecter la préférence et retomber sur la cascade en fallback
   const cascadeFromStore = getProviderCascade(opts.onCascadeWarning)
-  const cascade = opts.forceProvider
+  let cascade = opts.forceProvider
     ? [opts.forceProvider, ...cascadeFromStore.filter((p) => p !== opts.forceProvider)]
     : cascadeFromStore
+
+  const route = TASK_ROUTING[opts.task]
+
+  // Tâche MULTIMODALE (image en entrée) : seuls `gemini` et `claude` savent traiter
+  // une image. La cascade du store contient des providers text-only (deepseek,
+  // openrouter…) qui lèveraient « ne supporte pas le multimodal » et casseraient le
+  // fallback → échec total → bascule sur le pipeline heuristique (cassé). On restreint
+  // donc la cascade à [route.primary, route.fallback] filtrés sur gemini/claude, en
+  // garantissant la présence des deux : gemini échoue (JSON) → claude prend le relais.
+  if ((opts.imageDataUris?.length ?? 0) > 0) {
+    const ordered = [route.primary, route.fallback, 'gemini', 'claude']
+      .filter((p): p is LLMProviderId => p === 'gemini' || p === 'claude')
+    cascade = Array.from(new Set(ordered))
+  }
 
   if (cascade.length === 0) {
     throw new Error(
@@ -213,7 +230,6 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
     )
   }
 
-  const route = TASK_ROUTING[opts.task]
   const modelOverride = route.model
 
   let lastError: unknown = null

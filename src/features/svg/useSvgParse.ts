@@ -1,8 +1,35 @@
 import { useState, useCallback, useRef } from 'react'
+import { FabricImage, type Canvas, type Group } from 'fabric'
 import { parseSvgToFabric } from './svgToFabric'
 import { globalFabricCanvas, globalFitCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { globalSave } from '@/features/editor/useAutoSave'
+
+async function reloadHttpImagesWithCors(canvas: Canvas): Promise<void> {
+  const collectFromGroup = (g: Group): FabricImage[] => {
+    const out: FabricImage[] = []
+    for (const child of (g as unknown as { _objects?: unknown[] })._objects ?? []) {
+      if (child instanceof FabricImage) out.push(child)
+      else if ((child as Group)?._objects) out.push(...collectFromGroup(child as Group))
+    }
+    return out
+  }
+  const images: FabricImage[] = []
+  for (const obj of canvas.getObjects()) {
+    if (obj instanceof FabricImage) images.push(obj)
+    else if ((obj as Group)?._objects) images.push(...collectFromGroup(obj as Group))
+  }
+  await Promise.all(images.map(async (img) => {
+    const src = (img as unknown as { getSrc?: () => string }).getSrc?.()
+    if (!src || !src.startsWith('http')) return
+    try {
+      const fresh = await FabricImage.fromURL(src, { crossOrigin: 'anonymous' })
+      img.setElement(fresh.getElement())
+    } catch (err) {
+      console.warn('[SVG Parse] CORS reload failed for image:', src, err)
+    }
+  }))
+}
 
 function waitForCanvas(timeoutMs: number): Promise<typeof globalFabricCanvas> {
   return new Promise((resolve) => {
@@ -63,6 +90,11 @@ export function useSvgParse() {
         canvas.add(obj)
         obj.on('modified', () => syncToStore(canvas))
       }
+
+      // Re-load les FabricImage avec src HTTP en CORS anonymous — sans ça les images
+      // taintent le canvas, ce qui fait échouer toDataURL (vignette, thumbnails).
+      // Aligné sur le pattern usePptxParse / useDamCanvasInsert.
+      await reloadHttpImagesWithCors(canvas)
 
       canvas.requestRenderAll()
       syncToStore(canvas)
