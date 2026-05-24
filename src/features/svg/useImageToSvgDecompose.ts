@@ -31,8 +31,9 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { decomposeWithGoogleVision } from './googleVisionDecompose'
-import type { VisionParagraph, VisionWord } from './googleVisionDecompose'
+import type { VisionParagraph, VisionWord, VisionDecomposeResult } from './googleVisionDecompose'
 import { detectPriceClusters, cropToDataUri, readPriceFromImage, parsePriceParts, classifyLogoTexts } from './refinePrices'
+import { semanticLayout, type LayoutBlock } from './semanticLayout'
 
 interface DecomposeState {
   canDecompose: boolean
@@ -952,6 +953,296 @@ function mergeSameStyleStacks(canvas: Canvas): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Pipeline heuristique (Vision + échantillonnage couleur) — fallback
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function decomposeHeuristic(
+  canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
+  result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
+): Promise<number> {
+  // PASSE 1 — Collecte des textes éditoriaux valides + leurs analyses
+  interface Item {
+    para: VisionParagraph
+    bgHex: string
+    bgUniform: boolean
+    color: string
+    fontSize: number
+    fontWeight: number
+  }
+  const items: Item[] = []
+  let skipped = 0
+
+  for (const para of result.paragraphs) {
+    if (isInProductZone(para.bbox, width, height)) { skipped++; continue }
+    if (para.confidence < 0.5) { skipped++; continue }
+    const bgSample = sampleBackground(ctx, para.bbox, width, height)
+    // Texte sur fond vert = packaging produit ("A GER" sur l'emballage) → skip.
+    if (isGreenBackground(bgSample.hex)) { skipped++; continue }
+    const nLines = countLines(para.words)
+    const singleLineH = para.bbox.height / nLines
+    const fontSize = Math.max(singleLineH * 0.95, 10)
+    const color = sampleTextColor(ctx, para.bbox, bgSample.hex, width, height)
+    const fontWeight = detectFontWeight(ctx, para.bbox, color, width, height)
+    items.push({ para, bgHex: bgSample.hex, bgUniform: bgSample.uniform, color, fontSize, fontWeight })
+  }
+
+  // PASSE 1.5 — Classification LLM (batch sémantique) : retire les textes de
+  // LOGOS / PICTOS / certifications (badges qualité/origine, écussons), qui ne
+  // doivent JAMAIS être extraits comme texte éditable. 1 appel, texte+positions
+  // (pas de dico par-vendeur). Échec → on garde tout (comportement d'avant).
+  let editorialItems = items
+  if (items.length > 0) {
+    toast.loading('Classification logos / éditorial…', { id: toastId })
+    const logoIdx = await classifyLogoTexts(items.map((it) => ({
+      text: it.para.text,
+      x: ((it.para.bbox.left + it.para.bbox.width / 2) / width) * 100,
+      y: ((it.para.bbox.top + it.para.bbox.height / 2) / height) * 100,
+    })))
+    if (logoIdx.size > 0) {
+      editorialItems = items.filter((_, i) => !logoIdx.has(i))
+      skipped += logoIdx.size
+    }
+  }
+
+  // PASSE 2 — Regroupement par zone : textes adjacents avec couleur fond
+  // similaire fusionnent en UN bandeau commun (= reproduit les bandeaux promo
+  // unifiés de la créa originale au lieu de l'effet "post-it" éparpillé).
+  const zones = groupItemsByZone(editorialItems)
+
+  // PASSE 3 — Ajout au canvas : pour chaque zone à fond de COULEUR (rouge/jaune
+  // Carrefour), un masque dimensionné sur l'aplat RÉEL via `growBoxToColorExtent`
+  // à partir de la bbox SERRÉE des textes (pas d'une bbox pré-élargie qui rendrait
+  // le masque trop large/haut). Les fonds blancs ne sont PAS masqués (canvas déjà
+  // blanc → masque inutile, et la croissance déborderait sur toute la zone claire).
+  // Puis tous les Textbox de la zone par-dessus.
+  const addedTextboxes: Textbox[] = []
+  for (const zone of zones) {
+    if (zone.uniform && !isNearWhite(zone.bgHex)) {
+      const maskBox = growBoxToColorExtent(ctx, zone.bbox, zone.bgHex, width, height)
+      // Débord minimal (2 px) : évite un filet blanc à la jonction rouge/jaune.
+      canvas.add(buildMaskRect(maskBox, zone.bgHex, 2, 2))
+    }
+    for (const it of zone.items) {
+      const { text, styles } = buildTextAndStyles(it.para.words, it.fontSize)
+      const tb = buildTextbox(text, it.para.bbox, it.fontSize, it.color, it.fontWeight, styles)
+      canvas.add(tb)
+      addedTextboxes.push(tb)
+    }
+  }
+  const kept = editorialItems.length
+
+  // PASSE 4 — Relecture prix composés via Vision LLM (résout "9999" → "9,59 €"
+  // et merge les fragments "4" + "€" + "+79" → "4,79 €" sur le main Textbox).
+  // Async, ne bloque pas le rendu canvas — UI loading via toast.
+  const priceClusters = detectPriceClusters(addedTextboxes)
+  if (priceClusters.length > 0) {
+    toast.loading(`Relecture de ${priceClusters.length} prix…`, { id: toastId })
+    for (const cluster of priceClusters) {
+      const cropUri = cropToDataUri(ctx, cluster.unifiedBbox, width, height)
+      if (!cropUri) continue
+      const realPrice = await readPriceFromImage(cropUri)
+      if (!realPrice) continue
+      const parts = parsePriceParts(realPrice)
+
+      // Détermine la taille détectée, les props typo, le CENTRE vertical et la
+      // gauche de l'entier — pour le main existant ou l'orphelin reconstruit.
+      let detFs: number
+      let fontFamily: string
+      let fontWeight: number | string
+      let fill: string
+      let centerY: number
+      let leftX: number
+      let existingMain: Textbox | null = null
+
+      if (cluster.main) {
+        const m = cluster.main
+        detFs = m.fontSize ?? 20
+        fontFamily = (m.fontFamily as string) ?? 'Arial Black'
+        fontWeight = (m.fontWeight as number | string | undefined) ?? 900
+        fill = (typeof m.fill === 'string' ? m.fill : '#000000')
+        centerY = (m.top ?? 0) + (m.height ?? detFs) / 2 // centre vertical AVANT boost
+        leftX = m.left ?? 0
+        existingMain = m
+        if (!parts) {
+          m.set({ text: realPrice, width: realPrice.length * detFs * 0.55 * 1.1 })
+          for (const frag of cluster.fragments) canvas.remove(frag)
+          continue
+        }
+      } else if (cluster.orphanAnchor && parts) {
+        const a = cluster.orphanAnchor
+        const ref = cluster.fragments[0] // le « € » : on hérite sa couleur/police
+        detFs = a.fontSize
+        fontFamily = (ref?.fontFamily as string) ?? 'Arial Black'
+        fontWeight = (ref?.fontWeight as number | string | undefined) ?? 900
+        fill = (typeof ref?.fill === 'string' ? ref.fill : '#000000')
+        centerY = a.top + detFs * 0.95 // plus bas : avec le BOOST 1.6, évite que l'entier/€ remonte sur l'élément du dessus
+        leftX = a.left
+      } else {
+        for (const frag of cluster.fragments) canvas.remove(frag)
+        continue
+      }
+      if (!parts) continue // (inatteignable — narrowing TS)
+
+      // AGRANDISSEMENT (×1.6) : entier du prix plus grand pour que son BAS atteigne
+      // le bas des décimales (entier + décimale sur la même ligne de base, comme
+      // l'original). Ancré au CENTRE vertical → ne déborde pas sur l'élément du dessus.
+      const BOOST = 1.6
+      const bigFs = Math.round(detFs * BOOST)
+      const intWidth = parts.integer.length * bigFs * 0.62
+      const intOpts = {
+        originX: 'left' as const,
+        originY: 'center' as const,
+        left: leftX,
+        top: centerY,
+        width: intWidth,
+        fontSize: bigFs,
+        fontFamily,
+        fontWeight,
+        fill,
+        lineHeight: 0.9,
+        textAlign: 'left' as const,
+        editable: true,
+        selectable: true,
+        evented: true,
+        objectCaching: true,
+      }
+      let intTb: Textbox
+      if (existingMain) {
+        existingMain.set({ ...intOpts, text: parts.integer })
+        intTb = existingMain
+      } else {
+        intTb = new Textbox(parts.integer, intOpts)
+        ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
+        canvas.add(intTb)
+      }
+
+      // Pile "€"/décimales ancrée par le BAS sur le bas de la capitale de l'entier
+      // (centerY + demi-cap ≈ +0.36× corps) → la décimale ("59"/"79") partage la
+      // ligne de base de l'entier, et le "€" remonte au sommet. Alignement robuste.
+      const stackText = parts.decimals ? `${parts.currency}\n${parts.decimals}` : parts.currency
+      const stackFontSize = Math.max(Math.round(bigFs * 0.45), 10)
+      const stack = new Textbox(stackText, {
+        originX: 'left',
+        originY: 'bottom',
+        left: leftX + intWidth + Math.round(bigFs * 0.03),
+        top: centerY + Math.round(bigFs * 0.46), // ↓ descend la pile : décimale alignée sur le bas de l'entier (la descente de ligne Fabric la remontait)
+        width: stackFontSize * 1.8,
+        fontSize: stackFontSize,
+        fontFamily,
+        fontWeight,
+        fill,
+        lineHeight: 0.85,
+        textAlign: 'left',
+        editable: true,
+        selectable: true,
+        evented: true,
+        objectCaching: true,
+      })
+      ;(stack as FabricObject & { data?: Record<string, unknown> }).data = {
+        role: 'image-decompose-text',
+        name: '',
+        type: 'text',
+      }
+      canvas.add(stack)
+
+      // Supprime les fragments bruts du canvas (€, "+79", etc.).
+      for (const frag of cluster.fragments) canvas.remove(frag)
+
+      // Pas de Group Fabric (casserait le clic-pour-déplacer). On lie le gros
+      // entier et la pile "€/décimales" par un priceGroupId partagé : ils restent
+      // 2 Textbox top-level → éditables nativement au double-clic, et le listener
+      // object:moving déplace l'un quand on déplace l'autre (cf. mirrorPriceMove).
+      const gid = `price-${Date.now().toString(36)}-${Math.round(Math.random() * 1e6).toString(36)}`
+      const intAny = intTb as FabricObject & { data?: Record<string, unknown> }
+      intAny.data = { ...(intAny.data ?? {}), priceGroupId: gid }
+      const stackAny = stack as FabricObject & { data?: Record<string, unknown> }
+      stackAny.data = { ...(stackAny.data ?? {}), priceGroupId: gid }
+    }
+    canvas.requestRenderAll()
+    syncToStore(canvas)
+  }
+
+  // PASSE 5 — Regroupement en blocs : exposant fusionné inline en Textbox stylé
+  // éditable (ex "SUR LE 2ÈME"), puis textes de même style empilés en Textbox
+  // multi-ligne. Après PASSE 4 pour ne pas perturber la détection des fragments
+  // de prix (€, décimales).
+  mergeSuperscriptInline(canvas)
+  mergeSameStyleStacks(canvas)
+  canvas.requestRenderAll()
+  syncToStore(canvas)
+
+  return kept
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pipeline sémantique (Gemini 3.5) — voie principale
+// ─────────────────────────────────────────────────────────────────────────────
+
+function groupBuiltByColor(
+  items: { bbox: VisionParagraph['bbox']; bgHex: string }[],
+): { bbox: VisionParagraph['bbox']; bgHex: string }[] {
+  const zones: { bbox: VisionParagraph['bbox']; bgHex: string }[] = []
+  for (const it of items) {
+    const z = zones.find((z) => colorDistL1(z.bgHex, it.bgHex) <= 60 && rectDistance(z.bbox, it.bbox) <= 100)
+    if (z) z.bbox = unionBbox([z.bbox, it.bbox])
+    else zones.push({ bbox: { ...it.bbox }, bgHex: it.bgHex })
+  }
+  return zones
+}
+
+async function decomposeSemantic(
+  canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
+  result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
+): Promise<number | null> {
+  const texts = result.paragraphs.map((p, i) => ({
+    i, text: p.text,
+    xPct: ((p.bbox.left + p.bbox.width / 2) / width) * 100,
+    yPct: ((p.bbox.top + p.bbox.height / 2) / height) * 100,
+  }))
+  toast.loading('Analyse sémantique (Gemini 3.5)…', { id: toastId })
+  const blocks = await semanticLayout(dataUri, texts)
+  if (blocks.length === 0) return null // → fallback
+
+  interface Built { block: LayoutBlock; bbox: VisionParagraph['bbox']; color: string; bgHex: string; bgUniform: boolean }
+  const built: Built[] = []
+  for (const block of blocks) {
+    const members = block.memberIndices
+      .filter((i) => i >= 0 && i < result.paragraphs.length)
+      .map((i) => result.paragraphs[i])
+    if (members.length === 0) continue
+    const bbox = unionBbox(members.map((m) => m.bbox))
+    const bg = sampleBackground(ctx, bbox, width, height)
+    const color = sampleTextColor(ctx, bbox, bg.hex, width, height)
+    built.push({ block, bbox, color, bgHex: bg.hex, bgUniform: bg.uniform })
+  }
+  if (built.length === 0) return null
+
+  // Masques : blocs sur fond couleur uniforme (non blanc) regroupés par couleur+proximité.
+  const colored = built.filter((b) => b.bgUniform && !isNearWhite(b.bgHex))
+  const maskZones = groupBuiltByColor(colored.map((b) => ({ bbox: b.bbox, bgHex: b.bgHex })))
+  for (const z of maskZones) {
+    const grown = growBoxToColorExtent(ctx, z.bbox, z.bgHex, width, height)
+    canvas.add(buildMaskRect(grown, z.bgHex, 2, 2))
+  }
+
+  for (const b of built) {
+    const fontWeight = detectFontWeight(ctx, b.bbox, b.color, width, height)
+    const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
+    if (b.block.type === 'price') {
+      buildStackedPrice(canvas, b.block.priceValue ?? b.block.text, b.bbox, fontFamily, fontWeight, b.color)
+      continue
+    }
+    const fontSize = Math.max((b.bbox.height / Math.max(b.block.text.split('\n').length, 1)) * 0.95, 10)
+    const { text, styles } = buildTextAndStyles([{ text: b.block.text, bbox: b.bbox }], fontSize)
+    canvas.add(buildTextbox(text, b.bbox, fontSize, b.color, fontWeight, styles))
+  }
+
+  canvas.requestRenderAll()
+  syncToStore(canvas)
+  return built.length
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Hook public
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1019,216 +1310,12 @@ export function useImageToSvgDecompose() {
       if (!ctx) throw new Error('Canvas 2D context indisponible')
       ctx.drawImage(htmlImg, 0, 0, width, height)
 
-      // PASSE 1 — Collecte des textes éditoriaux valides + leurs analyses
-      interface Item {
-        para: VisionParagraph
-        bgHex: string
-        bgUniform: boolean
-        color: string
-        fontSize: number
-        fontWeight: number
+      // Décomposition : tente d'abord l'analyse sémantique (Gemini 3.5), avec
+      // fallback total sur le pipeline heuristique (Vision + échantillonnage couleur).
+      let kept = await decomposeSemantic(canvas, ctx, dataUri, result, width, height, toastId)
+      if (kept === null) {
+        kept = await decomposeHeuristic(canvas, ctx, dataUri, result, width, height, toastId)
       }
-      const items: Item[] = []
-      let skipped = 0
-
-      for (const para of result.paragraphs) {
-        if (isInProductZone(para.bbox, width, height)) { skipped++; continue }
-        if (para.confidence < 0.5) { skipped++; continue }
-        const bgSample = sampleBackground(ctx, para.bbox, width, height)
-        // Texte sur fond vert = packaging produit ("A GER" sur l'emballage) → skip.
-        if (isGreenBackground(bgSample.hex)) { skipped++; continue }
-        const nLines = countLines(para.words)
-        const singleLineH = para.bbox.height / nLines
-        const fontSize = Math.max(singleLineH * 0.95, 10)
-        const color = sampleTextColor(ctx, para.bbox, bgSample.hex, width, height)
-        const fontWeight = detectFontWeight(ctx, para.bbox, color, width, height)
-        items.push({ para, bgHex: bgSample.hex, bgUniform: bgSample.uniform, color, fontSize, fontWeight })
-      }
-
-      // PASSE 1.5 — Classification LLM (batch sémantique) : retire les textes de
-      // LOGOS / PICTOS / certifications (badges qualité/origine, écussons), qui ne
-      // doivent JAMAIS être extraits comme texte éditable. 1 appel, texte+positions
-      // (pas de dico par-vendeur). Échec → on garde tout (comportement d'avant).
-      let editorialItems = items
-      if (items.length > 0) {
-        toast.loading('Classification logos / éditorial…', { id: toastId })
-        const logoIdx = await classifyLogoTexts(items.map((it) => ({
-          text: it.para.text,
-          x: ((it.para.bbox.left + it.para.bbox.width / 2) / width) * 100,
-          y: ((it.para.bbox.top + it.para.bbox.height / 2) / height) * 100,
-        })))
-        if (logoIdx.size > 0) {
-          editorialItems = items.filter((_, i) => !logoIdx.has(i))
-          skipped += logoIdx.size
-        }
-      }
-
-      // PASSE 2 — Regroupement par zone : textes adjacents avec couleur fond
-      // similaire fusionnent en UN bandeau commun (= reproduit les bandeaux promo
-      // unifiés de la créa originale au lieu de l'effet "post-it" éparpillé).
-      const zones = groupItemsByZone(editorialItems)
-
-      // PASSE 3 — Ajout au canvas : pour chaque zone à fond de COULEUR (rouge/jaune
-      // Carrefour), un masque dimensionné sur l'aplat RÉEL via `growBoxToColorExtent`
-      // à partir de la bbox SERRÉE des textes (pas d'une bbox pré-élargie qui rendrait
-      // le masque trop large/haut). Les fonds blancs ne sont PAS masqués (canvas déjà
-      // blanc → masque inutile, et la croissance déborderait sur toute la zone claire).
-      // Puis tous les Textbox de la zone par-dessus.
-      const addedTextboxes: Textbox[] = []
-      for (const zone of zones) {
-        if (zone.uniform && !isNearWhite(zone.bgHex)) {
-          const maskBox = growBoxToColorExtent(ctx, zone.bbox, zone.bgHex, width, height)
-          // Débord minimal (2 px) : évite un filet blanc à la jonction rouge/jaune.
-          canvas.add(buildMaskRect(maskBox, zone.bgHex, 2, 2))
-        }
-        for (const it of zone.items) {
-          const { text, styles } = buildTextAndStyles(it.para.words, it.fontSize)
-          const tb = buildTextbox(text, it.para.bbox, it.fontSize, it.color, it.fontWeight, styles)
-          canvas.add(tb)
-          addedTextboxes.push(tb)
-        }
-      }
-      const kept = editorialItems.length
-
-      // PASSE 4 — Relecture prix composés via Vision LLM (résout "9999" → "9,59 €"
-      // et merge les fragments "4" + "€" + "+79" → "4,79 €" sur le main Textbox).
-      // Async, ne bloque pas le rendu canvas — UI loading via toast.
-      const priceClusters = detectPriceClusters(addedTextboxes)
-      if (priceClusters.length > 0) {
-        toast.loading(`Relecture de ${priceClusters.length} prix…`, { id: toastId })
-        for (const cluster of priceClusters) {
-          const cropUri = cropToDataUri(ctx, cluster.unifiedBbox, width, height)
-          if (!cropUri) continue
-          const realPrice = await readPriceFromImage(cropUri)
-          if (!realPrice) continue
-          const parts = parsePriceParts(realPrice)
-
-          // Détermine la taille détectée, les props typo, le CENTRE vertical et la
-          // gauche de l'entier — pour le main existant ou l'orphelin reconstruit.
-          let detFs: number
-          let fontFamily: string
-          let fontWeight: number | string
-          let fill: string
-          let centerY: number
-          let leftX: number
-          let existingMain: Textbox | null = null
-
-          if (cluster.main) {
-            const m = cluster.main
-            detFs = m.fontSize ?? 20
-            fontFamily = (m.fontFamily as string) ?? 'Arial Black'
-            fontWeight = (m.fontWeight as number | string | undefined) ?? 900
-            fill = (typeof m.fill === 'string' ? m.fill : '#000000')
-            centerY = (m.top ?? 0) + (m.height ?? detFs) / 2 // centre vertical AVANT boost
-            leftX = m.left ?? 0
-            existingMain = m
-            if (!parts) {
-              m.set({ text: realPrice, width: realPrice.length * detFs * 0.55 * 1.1 })
-              for (const frag of cluster.fragments) canvas.remove(frag)
-              continue
-            }
-          } else if (cluster.orphanAnchor && parts) {
-            const a = cluster.orphanAnchor
-            const ref = cluster.fragments[0] // le « € » : on hérite sa couleur/police
-            detFs = a.fontSize
-            fontFamily = (ref?.fontFamily as string) ?? 'Arial Black'
-            fontWeight = (ref?.fontWeight as number | string | undefined) ?? 900
-            fill = (typeof ref?.fill === 'string' ? ref.fill : '#000000')
-            centerY = a.top + detFs * 0.95 // plus bas : avec le BOOST 1.6, évite que l'entier/€ remonte sur l'élément du dessus
-            leftX = a.left
-          } else {
-            for (const frag of cluster.fragments) canvas.remove(frag)
-            continue
-          }
-          if (!parts) continue // (inatteignable — narrowing TS)
-
-          // AGRANDISSEMENT (×1.6) : entier du prix plus grand pour que son BAS atteigne
-          // le bas des décimales (entier + décimale sur la même ligne de base, comme
-          // l'original). Ancré au CENTRE vertical → ne déborde pas sur l'élément du dessus.
-          const BOOST = 1.6
-          const bigFs = Math.round(detFs * BOOST)
-          const intWidth = parts.integer.length * bigFs * 0.62
-          const intOpts = {
-            originX: 'left' as const,
-            originY: 'center' as const,
-            left: leftX,
-            top: centerY,
-            width: intWidth,
-            fontSize: bigFs,
-            fontFamily,
-            fontWeight,
-            fill,
-            lineHeight: 0.9,
-            textAlign: 'left' as const,
-            editable: true,
-            selectable: true,
-            evented: true,
-            objectCaching: true,
-          }
-          let intTb: Textbox
-          if (existingMain) {
-            existingMain.set({ ...intOpts, text: parts.integer })
-            intTb = existingMain
-          } else {
-            intTb = new Textbox(parts.integer, intOpts)
-            ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
-            canvas.add(intTb)
-          }
-
-          // Pile "€"/décimales ancrée par le BAS sur le bas de la capitale de l'entier
-          // (centerY + demi-cap ≈ +0.36× corps) → la décimale ("59"/"79") partage la
-          // ligne de base de l'entier, et le "€" remonte au sommet. Alignement robuste.
-          const stackText = parts.decimals ? `${parts.currency}\n${parts.decimals}` : parts.currency
-          const stackFontSize = Math.max(Math.round(bigFs * 0.45), 10)
-          const stack = new Textbox(stackText, {
-            originX: 'left',
-            originY: 'bottom',
-            left: leftX + intWidth + Math.round(bigFs * 0.03),
-            top: centerY + Math.round(bigFs * 0.46), // ↓ descend la pile : décimale alignée sur le bas de l'entier (la descente de ligne Fabric la remontait)
-            width: stackFontSize * 1.8,
-            fontSize: stackFontSize,
-            fontFamily,
-            fontWeight,
-            fill,
-            lineHeight: 0.85,
-            textAlign: 'left',
-            editable: true,
-            selectable: true,
-            evented: true,
-            objectCaching: true,
-          })
-          ;(stack as FabricObject & { data?: Record<string, unknown> }).data = {
-            role: 'image-decompose-text',
-            name: '',
-            type: 'text',
-          }
-          canvas.add(stack)
-
-          // Supprime les fragments bruts du canvas (€, "+79", etc.).
-          for (const frag of cluster.fragments) canvas.remove(frag)
-
-          // Pas de Group Fabric (casserait le clic-pour-déplacer). On lie le gros
-          // entier et la pile "€/décimales" par un priceGroupId partagé : ils restent
-          // 2 Textbox top-level → éditables nativement au double-clic, et le listener
-          // object:moving déplace l'un quand on déplace l'autre (cf. mirrorPriceMove).
-          const gid = `price-${Date.now().toString(36)}-${Math.round(Math.random() * 1e6).toString(36)}`
-          const intAny = intTb as FabricObject & { data?: Record<string, unknown> }
-          intAny.data = { ...(intAny.data ?? {}), priceGroupId: gid }
-          const stackAny = stack as FabricObject & { data?: Record<string, unknown> }
-          stackAny.data = { ...(stackAny.data ?? {}), priceGroupId: gid }
-        }
-        canvas.requestRenderAll()
-        syncToStore(canvas)
-      }
-
-      // PASSE 5 — Regroupement en blocs : exposant fusionné inline en Textbox stylé
-      // éditable (ex "SUR LE 2ÈME"), puis textes de même style empilés en Textbox
-      // multi-ligne. Après PASSE 4 pour ne pas perturber la détection des fragments
-      // de prix (€, décimales).
-      mergeSuperscriptInline(canvas)
-      mergeSameStyleStacks(canvas)
-      canvas.requestRenderAll()
-      syncToStore(canvas)
 
       // Cache l'image bg : l'utilisateur veut un template propre (bandeaux + textes
       // éditables sur fond blanc), pas une superposition sur la photo produit.
@@ -1240,8 +1327,7 @@ export function useImageToSvgDecompose() {
       canvas.requestRenderAll()
       syncToStore(canvas)
       setState({ canDecompose: true, isRunning: false, hasDecomposition: kept > 0 })
-      const skipNote = skipped > 0 ? `, ${skipped} sur produit ignorés` : ''
-      toast.success(`${kept} textes éditables ajoutés${skipNote}`, { id: toastId })
+      toast.success(`${kept} textes éditables ajoutés`, { id: toastId })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setState((s) => ({ ...s, isRunning: false }))
