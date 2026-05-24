@@ -13,6 +13,7 @@ import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnv
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
 import { useAiSettingsStore, getSelectedModel, type ReasoningProvider } from '@/stores/aiSettings.store'
+import { toast } from 'sonner'
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   claude: 'Claude',
@@ -797,8 +798,20 @@ function ReasoningCascadeSelector() {
 }
 
 function AiTab() {
+  const resetToLatest = useAiSettingsStore((s) => s.resetToLatestModels)
   return (
     <div className="flex flex-col gap-2">
+      <button
+        onClick={() => {
+          resetToLatest()
+          toast.success('Tous les LLM mis à jour vers leur dernière version')
+        }}
+        title="Sélectionne le dernier modèle phare de chaque provider (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)"
+        className="flex items-center justify-center gap-1.5 text-xs font-medium text-violet-200 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 rounded-lg px-3 py-2 transition-colors"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+        Mettre à jour tous les LLM (dernières versions)
+      </button>
       <ReasoningCascadeSelector />
       <AiProviderCard
         provider="gemini"

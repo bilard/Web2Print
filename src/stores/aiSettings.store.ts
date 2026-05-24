@@ -22,6 +22,9 @@ interface AiSettingsState {
    *  Géré séparément des LLM car ce n'est pas un AiProvider. */
   brightDataBudgetUsd: number | null
   setSelectedModel: (provider: AiProvider, id: string) => void
+  /** Réinitialise TOUS les providers sur leur dernier modèle phare (isDefault du
+   *  catalogue) — "mettre à jour tous les LLM aux dernières versions". */
+  resetToLatestModels: () => void
   setFetchedModels: (provider: AiProvider, models: AiModelInfo[]) => void
   setReasoningCascade: (cascade: ReasoningProvider[]) => void
   setMonthlyBudgetUsd: (provider: AiProvider, value: number | null) => void
@@ -69,6 +72,7 @@ export const useAiSettingsStore = create<AiSettingsState>()(
       brightDataBudgetUsd: null,
       setSelectedModel: (provider, id) =>
         set((s) => ({ selectedModel: { ...s.selectedModel, [provider]: id } })),
+      resetToLatestModels: () => set({ selectedModel: initialSelected() }),
       setFetchedModels: (provider, models) =>
         set((s) => ({ fetchedModels: { ...s.fetchedModels, [provider]: models } })),
       setReasoningCascade: (cascade) => set({ reasoningCascade: sanitizeCascade(cascade) }),

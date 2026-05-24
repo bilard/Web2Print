@@ -22,11 +22,11 @@ describe('aiModels catalog', () => {
 
   it('getDefaultModel returns the isDefault entry', () => {
     expect(getDefaultModel('claude').id).toBe('claude-opus-4-7')
-    expect(getDefaultModel('gemini').id).toBe('gemini-3.1-pro-preview')
-    expect(getDefaultModel('openai').id).toBe('gpt-4o')
+    expect(getDefaultModel('gemini').id).toBe('gemini-3.5-pro')
+    expect(getDefaultModel('openai').id).toBe('gpt-5.1')
     expect(getDefaultModel('deepseek').id).toBe('deepseek-chat')
-    expect(getDefaultModel('qwen').id).toBe('qwen-max')
-    expect(getDefaultModel('kimi').id).toBe('kimi-for-coding')
+    expect(getDefaultModel('qwen').id).toBe('qwen3.7-max')
+    expect(getDefaultModel('kimi').id).toBe('kimi-k2.6')
     expect(getDefaultModel('openrouter').id).toBe('openrouter/auto')
   })
 

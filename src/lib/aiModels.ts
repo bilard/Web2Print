@@ -14,27 +14,39 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5',  pricing: { input: 0.80, output: 4 } },
   ],
   gemini: [
-    { id: 'gemini-3.1-pro-preview',         label: 'Gemini 3.1 Pro Preview',          pricing: { input: 1.25,  output: 10 },   isDefault: true },
+    { id: 'gemini-3.5-pro',                 label: 'Gemini 3.5 Pro',                  pricing: { input: 2,     output: 12 },   isDefault: true },
+    { id: 'gemini-3.1-pro-preview',         label: 'Gemini 3.1 Pro Preview',          pricing: { input: 1.25,  output: 10 } },
+    { id: 'gemini-3.1-flash',               label: 'Gemini 3.1 Flash',                pricing: { input: 0.30,  output: 2.50 } },
     { id: 'gemini-2.5-flash',               label: 'Gemini 2.5 Flash',                pricing: { input: 0.30,  output: 2.50 } },
     // Génération d'image (Nano Banana 2). Output facturé en "image tokens" :
     // ~1290 output tokens / image @ $30/1M → ~$0.039 / image. Input texte standard.
     { id: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image (NB2)',    pricing: { input: 0.30,  output: 30 } },
   ],
   openai: [
-    { id: 'gpt-4o',      label: 'GPT-4o',      pricing: { input: 2.50, output: 10 },  isDefault: true },
-    { id: 'gpt-4o-mini', label: 'GPT-4o mini', pricing: { input: 0.15, output: 0.60 } },
+    { id: 'gpt-5.5-pro', label: 'GPT-5.5 Pro', pricing: { input: 30,   output: 180 } },
+    { id: 'gpt-5.5',     label: 'GPT-5.5',     pricing: { input: 5,    output: 30 } },
+    { id: 'gpt-5.4',     label: 'GPT-5.4',     pricing: { input: 2.50, output: 15 } },
+    { id: 'gpt-5.1',     label: 'GPT-5.1',     pricing: { input: 1.25, output: 10 }, isDefault: true },
+    { id: 'gpt-5-mini',  label: 'GPT-5 Mini',  pricing: { input: 0.25, output: 2 } },
+    { id: 'gpt-5-nano',  label: 'GPT-5 Nano',  pricing: { input: 0.05, output: 0.40 } },
+    { id: 'o3',          label: 'o3',          pricing: { input: 2,    output: 8 } },
+    { id: 'o4-mini',     label: 'o4 Mini',     pricing: { input: 1.10, output: 4.40 } },
   ],
   deepseek: [
     { id: 'deepseek-chat',      label: 'DeepSeek Chat (V4)', pricing: { input: 0.27, output: 1.10 }, isDefault: true },
     { id: 'deepseek-reasoner',  label: 'DeepSeek Reasoner',  pricing: { input: 0.55, output: 2.19 } },
   ],
   qwen: [
-    { id: 'qwen-max',    label: 'Qwen Max',    pricing: { input: 1.60, output: 6.40 }, isDefault: true },
-    { id: 'qwen-plus',   label: 'Qwen Plus',   pricing: { input: 0.40, output: 1.20 } },
-    { id: 'qwen-turbo',  label: 'Qwen Turbo',  pricing: { input: 0.05, output: 0.20 } },
+    { id: 'qwen3.7-max',     label: 'Qwen 3.7 Max',        pricing: { input: 1.60, output: 6.40 }, isDefault: true },
+    { id: 'qwen3-max',       label: 'Qwen3 Max',           pricing: { input: 1.20, output: 6 } },
+    { id: 'qwen3-coder',     label: 'Qwen3 Coder',         pricing: { input: 0.30, output: 1.20 } },
+    { id: 'qwen3-235b-a22b', label: 'Qwen3 235B Instruct', pricing: { input: 0.07, output: 0.30 } },
+    { id: 'qwen-flash',      label: 'Qwen Flash',          pricing: { input: 0.05, output: 0.20 } },
   ],
   kimi: [
-    { id: 'kimi-for-coding', label: 'Kimi for Coding', pricing: { input: 0, output: 0 }, isDefault: true },
+    { id: 'kimi-k2.6',        label: 'Kimi K2.6',        pricing: { input: 0.75, output: 3.50 }, isDefault: true },
+    { id: 'kimi-k2-thinking', label: 'Kimi K2 Thinking', pricing: { input: 0.60, output: 2.50 } },
+    { id: 'kimi-for-coding',  label: 'Kimi for Coding',  pricing: { input: 0,    output: 0 } },
   ],
   // OpenRouter agrège ~370 modèles. Le seed ci-dessous est curé sur les flagships
   // actuels (mai 2026) regroupés par famille — l'utilisateur clique "Rafraîchir"
@@ -61,6 +73,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'openai/gpt-oss-120b:free',                 label: 'gpt-oss 120B (free)',                        pricing: { input: 0,    output: 0 } },
 
     // Google — Gemini
+    { id: 'google/gemini-3.5-pro',                    label: 'Gemini 3.5 Pro',                             pricing: { input: 2.50, output: 15 } },
     { id: 'google/gemini-3.1-pro-preview',            label: 'Gemini 3.1 Pro Preview',                     pricing: { input: 2,    output: 12 } },
     { id: 'google/gemini-3.1-flash-lite',             label: 'Gemini 3.1 Flash Lite',                      pricing: { input: 0.25, output: 1.50 } },
     { id: 'google/gemini-2.5-pro',                    label: 'Gemini 2.5 Pro',                             pricing: { input: 1.25, output: 10 } },
@@ -77,6 +90,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'deepseek/deepseek-r1',                     label: 'DeepSeek R1',                                pricing: { input: 0.70, output: 2.50 } },
 
     // Qwen / Alibaba
+    { id: 'qwen/qwen3.7-max',                         label: 'Qwen 3.7 Max',                               pricing: { input: 0.90, output: 4.50 } },
     { id: 'qwen/qwen3-max',                           label: 'Qwen3 Max',                                  pricing: { input: 0.78, output: 3.90 } },
     { id: 'qwen/qwen3-coder',                         label: 'Qwen3 Coder 480B',                           pricing: { input: 0.22, output: 1.80 } },
     { id: 'qwen/qwen3-235b-a22b-2507',                label: 'Qwen3 235B Instruct',                        pricing: { input: 0.07, output: 0.10 } },
