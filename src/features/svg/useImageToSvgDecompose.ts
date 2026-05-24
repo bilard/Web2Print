@@ -231,7 +231,33 @@ function buildTextAndStyles(words: VisionWord[], fontSizePx: number): { text: st
     const lineStyle = styles[lineIdx] ?? (styles[lineIdx] = {})
     if (lineStyle[pctIdx]) return // déjà stylé par la détection par-mot
     const styledFs = Math.max(Math.round(fontSizePx * 0.55), 8)
-    lineStyle[pctIdx] = { fontSize: styledFs, deltaY: -Math.round((fontSizePx - styledFs) * 0.6) }
+    // deltaY = −(corps − petit)×0.72 → le HAUT du "%" s'aligne sur le haut des chiffres
+    // (0.72 = ratio capitale ; à 0.6 le "%" restait trop bas / décalé).
+    lineStyle[pctIdx] = { fontSize: styledFs, deltaY: -Math.round((fontSizePx - styledFs) * 0.72) }
+  })
+
+  // Heuristique exposant ORDINAUX : un suffixe ordinal français collé à un chiffre
+  // ("2ÈME", "2ème", "1er", "2nd"…) s'écrit en exposant réduit. Vision rend "2ÈME"
+  // comme un seul word → la détection par-taille ne le voit pas. On repère `chiffre +
+  // suffixe` et on réduit/surélève les lettres du suffixe. Les unités (cl, ml, kg…)
+  // ne sont PAS dans l'ensemble ordinal → non touchées.
+  const ORDINALS = new Set(['eme', 'er', 'ere', 're', 'nd', 'nde'])
+  const deaccent = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  lineTexts.forEach((str, lineIdx) => {
+    const re = /(\d)([A-Za-zÀ-ÿ]{1,4})/g
+    const styledFs = Math.max(Math.round(fontSizePx * 0.55), 8)
+    const deltaY = -Math.round((fontSizePx - styledFs) * 0.6)
+    let m: RegExpExecArray | null
+    let touched = false
+    const lineStyle = styles[lineIdx] ?? {}
+    while ((m = re.exec(str)) !== null) {
+      if (!ORDINALS.has(deaccent(m[2]))) continue
+      const start = m.index + 1 // juste après le chiffre
+      for (let i = start; i < start + m[2].length; i++) {
+        if (!lineStyle[i]) { lineStyle[i] = { fontSize: styledFs, deltaY }; touched = true }
+      }
+    }
+    if (touched) styles[lineIdx] = lineStyle
   })
 
   return { text: lineTexts.join('\n'), styles }
@@ -384,29 +410,55 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
   // Width minimum basé sur la ligne la PLUS LONGUE (le texte peut contenir des
   // `\n` reconstruits) — pas le total des caractères, sinon une Textbox 2 lignes
   // serait dimensionnée pour les 2 lignes bout à bout.
+  // Headline promo "-50%" (chiffres + %, pas de minuscule) : la bbox Vision ≈ hauteur
+  // de capitale, mais Arial Black rend la capitale à ~0.72× du corps → trop petit avec
+  // fontSizePx (=0.95×bbox). On agrandit (÷0.72/0.95 ≈ ×1.46) pour que la capitale
+  // remplisse la bbox comme l'original, et on ancre au CENTRE vertical de la bbox +
+  // interligne serré (0.9) → le gros glyphe reste dans la zone source sans déborder
+  // sur l'élément du dessous.
+  const headline = /%/.test(text) && !/[a-zà-ÿ]/.test(text)
+  const BOOST = 1.46
+  const fontSize = headline ? fontSizePx * BOOST : fontSizePx
+  // Les styles par-caractère (ex : "%" exposant) ont été calculés sur la taille NON
+  // boostée → on les scale du même BOOST pour un headline, sinon le "%" est sous-
+  // dimensionné et sous-remonté (décalé) par rapport aux gros chiffres boostés.
+  let finalStyles = styles
+  if (headline && styles) {
+    finalStyles = {}
+    for (const [line, chars] of Object.entries(styles)) {
+      const scaledChars: Record<number, CharStyle> = {}
+      for (const [ci, st] of Object.entries(chars)) {
+        scaledChars[Number(ci)] = { fontSize: Math.round(st.fontSize * BOOST), deltaY: Math.round(st.deltaY * BOOST) }
+      }
+      finalStyles[Number(line)] = scaledChars
+    }
+  }
   const longestLineLen = text.split('\n').reduce((m, l) => Math.max(m, l.length), 0)
-  const minWidth = Math.max(box.width, longestLineLen * fontSizePx * 0.55 * 1.1)
+  // Facteur de largeur par caractère : 0.62 (les capitales grasses/Arial Black sont
+  // larges — 0.55 sous-estimait et faisait passer "SUR LE 2ÈME" à la ligne).
+  const minWidth = Math.max(box.width, longestLineLen * fontSize * 0.62 * 1.1)
   // Pour les graisses très lourdes, Arial Black donne un rendu plus fidèle aux
   // créas retail (où -50%, gros prix utilisent typiquement Arial Black / Heavy).
   const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
   const tb = new Textbox(text, {
     originX: 'left',
-    originY: 'top',
+    originY: headline ? 'center' : 'top',
     left: box.left,
-    top: box.top,
+    top: headline ? box.top + box.height / 2 : box.top,
     width: minWidth,
-    fontSize: fontSizePx,
+    fontSize,
     fontFamily,
     fontWeight,
     fill: color,
     textAlign: 'left',
+    ...(headline ? { lineHeight: 0.9 } : {}),
     editable: true,
     selectable: true,
     evented: true,
     objectCaching: true,
     scaleX: 1,
     scaleY: 1,
-    ...(styles && Object.keys(styles).length > 0 ? { styles } : {}),
+    ...(finalStyles && Object.keys(finalStyles).length > 0 ? { styles: finalStyles } : {}),
   })
   ;(tb as FabricObject & { data?: Record<string, unknown> }).data = {
     role: 'image-decompose-text',
@@ -978,38 +1030,90 @@ export function useImageToSvgDecompose() {
           if (!cropUri) continue
           const realPrice = await readPriceFromImage(cropUri)
           if (!realPrice) continue
-
-          const main = cluster.main
-          const fontSize = main.fontSize ?? 20
-          const left = main.left ?? 0
-          const top = main.top ?? 0
-          const fontFamily = main.fontFamily ?? 'Arial Black'
-          const fontWeight = (main.fontWeight as number | string | undefined) ?? 900
-          const fill = (main.fill as string | undefined) ?? '#000000'
           const parts = parsePriceParts(realPrice)
 
-          if (!parts) {
-            // Prix non parsable → fallback aplati (width ajustée au contenu lu).
-            main.set({ text: realPrice, width: realPrice.length * fontSize * 0.55 * 1.1 })
+          // Détermine la taille détectée, les props typo, le CENTRE vertical et la
+          // gauche de l'entier — pour le main existant ou l'orphelin reconstruit.
+          let detFs: number
+          let fontFamily: string
+          let fontWeight: number | string
+          let fill: string
+          let centerY: number
+          let leftX: number
+          let existingMain: Textbox | null = null
+
+          if (cluster.main) {
+            const m = cluster.main
+            detFs = m.fontSize ?? 20
+            fontFamily = (m.fontFamily as string) ?? 'Arial Black'
+            fontWeight = (m.fontWeight as number | string | undefined) ?? 900
+            fill = (typeof m.fill === 'string' ? m.fill : '#000000')
+            centerY = (m.top ?? 0) + (m.height ?? detFs) / 2 // centre vertical AVANT boost
+            leftX = m.left ?? 0
+            existingMain = m
+            if (!parts) {
+              m.set({ text: realPrice, width: realPrice.length * detFs * 0.55 * 1.1 })
+              for (const frag of cluster.fragments) canvas.remove(frag)
+              continue
+            }
+          } else if (cluster.orphanAnchor && parts) {
+            const a = cluster.orphanAnchor
+            const ref = cluster.fragments[0] // le « € » : on hérite sa couleur/police
+            detFs = a.fontSize
+            fontFamily = (ref?.fontFamily as string) ?? 'Arial Black'
+            fontWeight = (ref?.fontWeight as number | string | undefined) ?? 900
+            fill = (typeof ref?.fill === 'string' ? ref.fill : '#000000')
+            centerY = a.top + detFs * 0.95 // plus bas : avec le BOOST 1.6, évite que l'entier/€ remonte sur l'élément du dessus
+            leftX = a.left
+          } else {
             for (const frag of cluster.fragments) canvas.remove(frag)
             continue
           }
+          if (!parts) continue // (inatteignable — narrowing TS)
 
-          // Format hypermarché : gros entier à gauche, largeur ajustée au nombre
-          // de chiffres (l'ancien Textbox était dimensionné pour la lecture brute
-          // type "9999", il faut le resserrer sur le seul entier).
-          const intWidth = parts.integer.length * fontSize * 0.62
-          main.set({ text: parts.integer, width: intWidth })
+          // AGRANDISSEMENT (×1.6) : entier du prix plus grand pour que son BAS atteigne
+          // le bas des décimales (entier + décimale sur la même ligne de base, comme
+          // l'original). Ancré au CENTRE vertical → ne déborde pas sur l'élément du dessus.
+          const BOOST = 1.6
+          const bigFs = Math.round(detFs * BOOST)
+          const intWidth = parts.integer.length * bigFs * 0.62
+          const intOpts = {
+            originX: 'left' as const,
+            originY: 'center' as const,
+            left: leftX,
+            top: centerY,
+            width: intWidth,
+            fontSize: bigFs,
+            fontFamily,
+            fontWeight,
+            fill,
+            lineHeight: 0.9,
+            textAlign: 'left' as const,
+            editable: true,
+            selectable: true,
+            evented: true,
+            objectCaching: true,
+          }
+          let intTb: Textbox
+          if (existingMain) {
+            existingMain.set({ ...intOpts, text: parts.integer })
+            intTb = existingMain
+          } else {
+            intTb = new Textbox(parts.integer, intOpts)
+            ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
+            canvas.add(intTb)
+          }
 
-          // Petit bloc empilé "€" sur les décimales, calé à droite de l'entier.
-          // lineHeight serré (0.85) pour coller le € aux décimales comme la créa.
+          // Pile "€"/décimales ancrée par le BAS sur le bas de la capitale de l'entier
+          // (centerY + demi-cap ≈ +0.36× corps) → la décimale ("59"/"79") partage la
+          // ligne de base de l'entier, et le "€" remonte au sommet. Alignement robuste.
           const stackText = parts.decimals ? `${parts.currency}\n${parts.decimals}` : parts.currency
-          const stackFontSize = Math.max(Math.round(fontSize * 0.44), 10)
+          const stackFontSize = Math.max(Math.round(bigFs * 0.45), 10)
           const stack = new Textbox(stackText, {
             originX: 'left',
-            originY: 'top',
-            left: left + intWidth + Math.round(fontSize * 0.04),
-            top: top + Math.round(fontSize * 0.04),
+            originY: 'bottom',
+            left: leftX + intWidth + Math.round(bigFs * 0.03),
+            top: centerY + Math.round(bigFs * 0.46), // ↓ descend la pile : décimale alignée sur le bas de l'entier (la descente de ligne Fabric la remontait)
             width: stackFontSize * 1.8,
             fontSize: stackFontSize,
             fontFamily,
@@ -1037,8 +1141,8 @@ export function useImageToSvgDecompose() {
           // 2 Textbox top-level → éditables nativement au double-clic, et le listener
           // object:moving déplace l'un quand on déplace l'autre (cf. mirrorPriceMove).
           const gid = `price-${Date.now().toString(36)}-${Math.round(Math.random() * 1e6).toString(36)}`
-          const mainAny = main as FabricObject & { data?: Record<string, unknown> }
-          mainAny.data = { ...(mainAny.data ?? {}), priceGroupId: gid }
+          const intAny = intTb as FabricObject & { data?: Record<string, unknown> }
+          intAny.data = { ...(intAny.data ?? {}), priceGroupId: gid }
           const stackAny = stack as FabricObject & { data?: Record<string, unknown> }
           stackAny.data = { ...(stackAny.data ?? {}), priceGroupId: gid }
         }

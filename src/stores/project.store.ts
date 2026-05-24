@@ -3,7 +3,7 @@ import type { IdmlUploadState } from '@/features/idml/useIdmlUpload'
 import type { DamImage } from '@/features/dam/types'
 
 interface PendingImport {
-  type: 'idml' | 'pptx' | 'image' | 'svg'
+  type: 'idml' | 'pptx' | 'image' | 'svg' | 'image-to-svg' | 'pdf-to-svg'
   files: File[]
 }
 

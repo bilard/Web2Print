@@ -155,8 +155,13 @@ export default function DashboardPage() {
         pptx: { w: 1920, h: 1080 },
         image: { w: 1920, h: 1080 },
         svg: { w: 1920, h: 1080 },
+        'image-to-svg': { w: 1920, h: 1080 },
+        'pdf-to-svg': { w: 1920, h: 1080 },
       }
-      const { w, h } = defaults[selection.type] ?? { w: 1920, h: 1080 }
+      // image-to-svg / pdf-to-svg : utilise les dimensions natives de la source (transmises par ImportPanel)
+      const { w, h } = selection.canvas
+        ? { w: selection.canvas.width, h: selection.canvas.height }
+        : defaults[selection.type] ?? { w: 1920, h: 1080 }
 
       let title: string
       let customId: string | undefined

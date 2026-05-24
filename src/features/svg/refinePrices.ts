@@ -120,18 +120,25 @@ export function cropToDataUri(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PriceCandidate {
-  /** Le Textbox "principal" du cluster (le gros chiffre qui restera après merge) */
-  main: Textbox
+  /** Le Textbox "principal" du cluster (le gros chiffre). `null` = cluster ORPHELIN :
+   *  Vision a raté l'entier géant (ex "4"), il faudra reconstruire l'entier. */
+  main: Textbox | null
   /** Les Textbox fragments à supprimer après merge (€, +79, etc.) */
   fragments: Textbox[]
-  /** Bbox unifiée du cluster pour cropper l'image source */
+  /** Bbox unifiée du cluster pour cropper l'image source (étendue à gauche pour les orphelins) */
   unifiedBbox: { left: number; top: number; width: number; height: number }
+  /** Présent pour les clusters ORPHELINS : où/comment reconstruire l'entier manquant. */
+  orphanAnchor?: { left: number; top: number; fontSize: number }
 }
 
 const isLikelyMainPrice = (tb: Textbox): boolean => {
-  const text = tb.text ?? ''
-  // Texte court (1-5 chars), uniquement chiffres / signes spéciaux, fontSize gros, ARIAL BLACK
-  if (!/^[+\-]?\d{1,5}$/.test(text)) return false
+  const text = (tb.text ?? '').trim()
+  // Gros chiffre principal d'un prix. Vision merge parfois le « € » (et des décimales)
+  // dans le MÊME token selon la résolution / le rendu — ex. PDF rasterisé : "4€" ou
+  // "9€59" au lieu de "4" / "9999". On tolère donc un € et des décimales optionnels
+  // après l'entier, sinon le cluster prix ne se forme pas et les fragments (€, +79)
+  // restent éparpillés. "9999" / "4" (cas image) restent couverts. "-50%" exclu (%).
+  if (!/^[+\-]?\d{1,5}([.,]\d{1,2})?\s*€?\s*\d{0,2}$/.test(text)) return false
   if ((tb.fontSize ?? 0) < 60) return false
   return true
 }
@@ -197,6 +204,44 @@ export function detectPriceClusters(textboxes: Textbox[]): PriceCandidate[] {
         width: unifiedRight - unifiedLeft,
         height: unifiedBottom - unifiedTop,
       },
+    })
+  }
+
+  // Passe ORPHELINE : un groupe « € + décimales » SANS gros entier (Vision rate
+  // parfois la reconnaissance du chiffre géant stylisé — ex. "4" non renvoyé,
+  // seulement "€" et "+79"). On reconstruit en croppant une région étendue VERS LA
+  // GAUCHE (où l'entier est visuellement présent) puis en relisant le prix ciblé.
+  for (const euro of textboxes) {
+    if (consumedFragments.has(euro)) continue
+    if ((euro.text ?? '').trim() !== '€') continue
+    const euroBox = tbBox(euro)
+    const decimals: Textbox[] = []
+    for (const other of textboxes) {
+      if (other === euro || consumedFragments.has(other)) continue
+      if (!/^[+\-]?\d{1,3}$/.test((other.text ?? '').trim())) continue
+      if (rectDistance(euroBox, tbBox(other)) > euroBox.height * 1.6) continue
+      decimals.push(other)
+    }
+    if (decimals.length === 0) continue // un « € » isolé n'est pas un prix
+    let gl = euroBox.left, gt = euroBox.top
+    let gr = euroBox.left + euroBox.width, gb = euroBox.top + euroBox.height
+    for (const d of decimals) {
+      const b = tbBox(d)
+      gl = Math.min(gl, b.left); gt = Math.min(gt, b.top)
+      gr = Math.max(gr, b.left + b.width); gb = Math.max(gb, b.top + b.height)
+    }
+    const gh = gb - gt
+    const cropLeft = Math.max(0, gl - gh * 2.5) // étend à gauche pour englober l'entier
+    const top = Math.max(0, gt - gh * 0.25)
+    consumedFragments.add(euro)
+    for (const d of decimals) consumedFragments.add(d)
+    clusters.push({
+      main: null,
+      fragments: [euro, ...decimals],
+      unifiedBbox: { left: cropLeft, top, width: gr - cropLeft, height: gb - top },
+      // fontSize ≈ gh×0.85 : après le ×1.46 du boost côté hook, l'entier reconstruit
+      // fait ~1.3× le prix principal (comme la source), pas ~1.9× (sinon "79" trop gros).
+      orphanAnchor: { left: cropLeft, top, fontSize: Math.round(gh * 0.85) },
     })
   }
 

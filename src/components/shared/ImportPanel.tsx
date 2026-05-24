@@ -1,13 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { FolderOpen, Presentation, Upload, Loader2, ImageIcon, FileSpreadsheet, Shapes } from 'lucide-react'
+import { FolderOpen, Presentation, Upload, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
 import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
+import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
+import { convertPdfToEditableSvg } from '@/features/svg/pdfToSvg'
 
 export interface ImportSelection {
-  type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx'
+  type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx' | 'image-to-svg' | 'pdf-to-svg'
   files: File[]
+  /** Dimensions canvas suggérées (présent pour image-to-svg / pdf-to-svg : matche les pixels natifs de la source). */
+  canvas?: { width: number; height: number }
 }
 
 interface ImportPanelProps {
@@ -27,6 +31,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const svgInputRef = useRef<HTMLInputElement>(null)
   const xlsxInputRef = useRef<HTMLInputElement>(null)
+  const imageToSvgInputRef = useRef<HTMLInputElement>(null)
+  const pdfToSvgInputRef = useRef<HTMLInputElement>(null)
+  const [convertingImage, setConvertingImage] = useState(false)
+  const [convertingPdf, setConvertingPdf] = useState(false)
 
   const showIdmlModal = idmlProcessing || idmlState.step === 'ready' || !!idmlError
 
@@ -92,6 +100,38 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
     onImport({ type: 'xlsx', files: [file] })
   }, [onImport])
 
+  const handleImageToSvgFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+      toast.error('Type non supporté : attendu une image raster (.png, .jpg, .webp, .gif)', { description: file.name })
+      return
+    }
+    setConvertingImage(true)
+    try {
+      const { file: svgFile, width, height } = await convertImageToEditableSvg(file)
+      onImport({ type: 'image-to-svg', files: [svgFile], canvas: { width, height } })
+    } catch (err) {
+      console.error('Image → SVG conversion error', err)
+      toast.error('Échec de la conversion image → SVG', { description: err instanceof Error ? err.message : String(err) })
+      setConvertingImage(false)
+    }
+  }, [onImport])
+
+  const handlePdfToSvgFile = useCallback(async (file: File) => {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Type non supporté : attendu un PDF', { description: file.name })
+      return
+    }
+    setConvertingPdf(true)
+    try {
+      const { file: svgFile, width, height } = await convertPdfToEditableSvg(file)
+      onImport({ type: 'pdf-to-svg', files: [svgFile], canvas: { width, height } })
+    } catch (err) {
+      console.error('PDF → SVG conversion error', err)
+      toast.error('Échec de la conversion PDF → SVG', { description: err instanceof Error ? err.message : String(err) })
+      setConvertingPdf(false)
+    }
+  }, [onImport])
+
   const onDrop = (type: string) => async (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(null)
@@ -106,20 +146,24 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
     if (type === 'image' && e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0])
     if (type === 'svg' && e.dataTransfer.files[0]) handleSvgFile(e.dataTransfer.files[0])
     if (type === 'xlsx' && e.dataTransfer.files[0]) handleXlsxFile(e.dataTransfer.files[0])
+    if (type === 'image-to-svg' && e.dataTransfer.files[0]) handleImageToSvgFile(e.dataTransfer.files[0])
+    if (type === 'pdf-to-svg' && e.dataTransfer.files[0]) handlePdfToSvgFile(e.dataTransfer.files[0])
   }
 
-  if (loading) {
+  if (loading || convertingImage || convertingPdf) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-        <p className="text-sm text-white/40">Création du projet et import...</p>
+        <p className="text-sm text-white/40">
+          {convertingImage ? 'Conversion image → SVG…' : convertingPdf ? 'Rasterisation PDF → SVG…' : 'Création du projet et import...'}
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* IDML Assembly Import */}
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('idml') }}
@@ -282,6 +326,72 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             accept=".xlsx,.xls,.csv"
             className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleXlsxFile(f); e.target.value = '' }}
+          />
+        </div>
+
+        {/* Image → SVG éditable (raster verrouillé + overlays vectoriels) */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver('image-to-svg') }}
+          onDragLeave={() => setDragOver(null)}
+          onDrop={onDrop('image-to-svg')}
+          onClick={() => imageToSvgInputRef.current?.click()}
+          className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+            dragOver === 'image-to-svg'
+              ? 'border-pink-500 bg-pink-500/10'
+              : 'border-white/10 hover:border-pink-500/40 bg-[#1a1a1a] hover:bg-[#1e1e1e]'
+          }`}
+        >
+          <div className="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center">
+            <Wand2 className="w-7 h-7 text-pink-400" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-white">Image → SVG éditable</p>
+            <p className="text-xs text-white/30 mt-1">Raster verrouillé + overlays</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-white/20">
+            <Upload className="w-3 h-3" />
+            Glisser ou cliquer
+          </div>
+          <p className="text-[10px] text-white/15">.png .jpg .webp .gif → .svg</p>
+          <input
+            ref={imageToSvgInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageToSvgFile(f); e.target.value = '' }}
+          />
+        </div>
+
+        {/* PDF → SVG éditable (page 1 rasterisée + overlays vectoriels) */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver('pdf-to-svg') }}
+          onDragLeave={() => setDragOver(null)}
+          onDrop={onDrop('pdf-to-svg')}
+          onClick={() => pdfToSvgInputRef.current?.click()}
+          className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+            dragOver === 'pdf-to-svg'
+              ? 'border-pink-500 bg-pink-500/10'
+              : 'border-white/10 hover:border-pink-500/40 bg-[#1a1a1a] hover:bg-[#1e1e1e]'
+          }`}
+        >
+          <div className="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center">
+            <FileText className="w-7 h-7 text-pink-400" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-white">PDF → SVG éditable</p>
+            <p className="text-xs text-white/30 mt-1">Page 1 rasterisée + overlays</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-white/20">
+            <Upload className="w-3 h-3" />
+            Glisser ou cliquer
+          </div>
+          <p className="text-[10px] text-white/15">.pdf (page 1) → .svg</p>
+          <input
+            ref={pdfToSvgInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfToSvgFile(f); e.target.value = '' }}
           />
         </div>
       </div>

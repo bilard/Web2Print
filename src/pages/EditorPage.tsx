@@ -17,6 +17,7 @@ import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { useIdmlParse } from '@/features/idml/useIdmlParse'
 import { usePptxParse } from '@/features/pptx/usePptxParse'
 import { useSvgParse } from '@/features/svg/useSvgParse'
+import { useLockBgImage } from '@/features/svg/useLockBgImage'
 import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
@@ -39,6 +40,9 @@ export default function EditorPage() {
   const [idmlImporting, setIdmlImporting] = useState(false)
   const { insertOnCanvas } = useDamCanvasInsert()
   usePreloadFonts()
+  // Lock auto du calque bg-image-locked pour les projets image-to-svg : empêche
+  // le drag accidentel et laisse passer les clics aux overlays manuels.
+  useLockBgImage()
 
   // Image DAM en attente d'insertion (navigation depuis le dashboard ou DamGenerate).
   // On retry tant que `globalFabricCanvas` n'est pas prêt (init Fabric asynchrone),
@@ -108,7 +112,7 @@ export default function EditorPage() {
         await parsePptx(files[0])
       }
 
-      if (type === 'svg' && files.length > 0) {
+      if ((type === 'svg' || type === 'image-to-svg' || type === 'pdf-to-svg') && files.length > 0) {
         await parseSvg(files[0])
       }
 
