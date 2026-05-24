@@ -51,6 +51,10 @@ type LLMTask =
   | 'product.enrichment'
   | 'product.taxonomyClassification'
   | 'design.templateFill'
+  | 'design.imageDecompose'
+  | 'design.priceOCR'
+  | 'design.logoClassify'
+  | 'design.semanticLayout'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -75,6 +79,20 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   'product.taxonomyClassification': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
   'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  // Image Decompose : Vision multimodal sur image raster pour détecter zones texte + masques.
+  // Gemini 3 Pro Vision est utilisé en primary parce qu'il a un grounding spatial natif
+  // (bboxes normalisées [0, 1000]) là où Claude Vision invente des positions.
+  // Fallback Claude pour le cas où la clé Gemini serait absente.
+  'design.imageDecompose':  { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Price OCR : Gemini Vision multimodal sur sous-image cropée. Très court (1 prix
+  // par appel), donc Gemini Flash ne servirait pas — on garde Pro pour la fiabilité.
+  'design.priceOCR':        { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Logo Classify : classification sémantique texte-seul (logo/picto vs éditorial).
+  // Court, batch — Gemini primary, Claude fallback.
+  'design.logoClassify':    { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Semantic Layout : structuration multimodale (image + textes Vision) → blocs typés,
+  // prix composés, logos/packaging exclus. Gemini 3.5 Pro (grounding spatial + sémantique).
+  'design.semanticLayout':  { primary: 'gemini', fallback: 'claude', model: 'gemini-3.5-pro' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -87,6 +105,11 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'product.enrichment':     0,
   'product.taxonomyClassification': 0,
   'design.templateFill':    0.5,
+  // Extraction visuelle = déterministe (positions absolues, contenus exacts)
+  'design.imageDecompose':  0,
+  'design.priceOCR':        0,
+  'design.logoClassify':    0,
+  'design.semanticLayout':  0,
 }
 
 interface GenerateJsonOptions<T> {
@@ -245,6 +268,16 @@ async function callProvider<T>(
   modelOverride?: string,
 ): Promise<T> {
   const model = modelForProvider(provider, modelOverride)
+
+  // Garde multimodale : si la task envoie des images, seuls Gemini et Claude sont
+  // capables de les traiter. DeepSeek/OpenAI text-only/OpenRouter sans modèle vision
+  // halucineraient un résultat. On rejette explicitement pour que la cascade saute
+  // au provider multimodal suivant au lieu de produire du JSON inventé.
+  const isMultimodal = (opts.imageDataUris?.length ?? 0) > 0
+  if (isMultimodal && provider !== 'gemini' && provider !== 'claude') {
+    throw new Error(`Provider "${provider}" ne supporte pas le multimodal — image input requis.`)
+  }
+
   if (provider === 'claude') {
     return await callClaude(opts, model)
   }
@@ -255,6 +288,7 @@ async function callProvider<T>(
       schemaForGemini: opts.schemaForLLM,
       version: opts.version,
       model,
+      imageDataUris: opts.imageDataUris,
       onUsage: (u) => recordAiUsage({ provider: 'gemini', model, inputTokens: u.input, outputTokens: u.output }),
     })
   }
