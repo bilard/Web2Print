@@ -32,7 +32,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { decomposeWithGoogleVision } from './googleVisionDecompose'
 import type { VisionParagraph, VisionWord } from './googleVisionDecompose'
-import { detectPriceClusters, cropToDataUri, readPriceFromImage, parsePriceParts } from './refinePrices'
+import { detectPriceClusters, cropToDataUri, readPriceFromImage, parsePriceParts, classifyLogoTexts } from './refinePrices'
 
 interface DecomposeState {
   canDecompose: boolean
@@ -468,6 +468,49 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
   return tb
 }
 
+function buildStackedPrice(
+  canvas: Canvas,
+  priceValue: string,
+  bbox: VisionParagraph['bbox'],
+  fontFamily: string,
+  fontWeight: number | string,
+  fill: string,
+): void {
+  const parts = parsePriceParts(priceValue)
+  if (!parts) {
+    const fs = Math.max(bbox.height * 0.95, 10)
+    const tb = buildTextbox(priceValue, bbox, fs, fill, typeof fontWeight === 'number' ? fontWeight : 900)
+    canvas.add(tb)
+    return
+  }
+  const detFs = Math.max(bbox.height * 0.95, 10)
+  const centerY = bbox.top + bbox.height / 2
+  const leftX = bbox.left
+  const BOOST = 1.6
+  const bigFs = Math.round(detFs * BOOST)
+  const intWidth = parts.integer.length * bigFs * 0.62
+  const intTb = new Textbox(parts.integer, {
+    originX: 'left', originY: 'center', left: leftX, top: centerY, width: intWidth,
+    fontSize: bigFs, fontFamily, fontWeight, fill, lineHeight: 0.9, textAlign: 'left',
+    editable: true, selectable: true, evented: true, objectCaching: true,
+  })
+  ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
+  canvas.add(intTb)
+  const stackText = parts.decimals ? `${parts.currency}\n${parts.decimals}` : parts.currency
+  const stackFs = Math.max(Math.round(bigFs * 0.45), 10)
+  const stack = new Textbox(stackText, {
+    originX: 'left', originY: 'bottom',
+    left: leftX + intWidth + Math.round(bigFs * 0.03), top: centerY + Math.round(bigFs * 0.36),
+    width: stackFs * 1.8, fontSize: stackFs, fontFamily, fontWeight, fill, lineHeight: 0.85, textAlign: 'left',
+    editable: true, selectable: true, evented: true, objectCaching: true,
+  })
+  ;(stack as FabricObject & { data?: Record<string, unknown> }).data = { role: 'image-decompose-text', name: '', type: 'text' }
+  canvas.add(stack)
+  const gid = `price-${Date.now().toString(36)}-${Math.round(Math.random() * 1e6).toString(36)}`
+  ;(intTb as FabricObject & { data?: Record<string, unknown> }).data = { ...(intTb as FabricObject & { data?: Record<string, unknown> }).data, priceGroupId: gid }
+  ;(stack as FabricObject & { data?: Record<string, unknown> }).data = { ...(stack as FabricObject & { data?: Record<string, unknown> }).data, priceGroupId: gid }
+}
+
 /**
  * Détecte la graisse du texte en mesurant la DENSITÉ de pixels foreground
  * (proches de la couleur texte) dans la bbox. BOLD → 2-3× plus de pixels que
@@ -583,6 +626,16 @@ function rectDistance(a: VisionParagraph['bbox'], b: VisionParagraph['bbox']): n
   const dx = Math.max(0, Math.max(a.left, b.left) - Math.min(a.left + a.width, b.left + b.width))
   const dy = Math.max(0, Math.max(a.top, b.top) - Math.min(a.top + a.height, b.top + b.height))
   return Math.max(dx, dy)
+}
+
+type Bbox = VisionParagraph['bbox']
+function unionBbox(boxes: Bbox[]): Bbox {
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity
+  for (const x of boxes) {
+    l = Math.min(l, x.left); t = Math.min(t, x.top)
+    r = Math.max(r, x.left + x.width); b = Math.max(b, x.top + x.height)
+  }
+  return { left: l, top: t, width: r - l, height: b - t }
 }
 
 /**
@@ -992,10 +1045,28 @@ export function useImageToSvgDecompose() {
         items.push({ para, bgHex: bgSample.hex, bgUniform: bgSample.uniform, color, fontSize, fontWeight })
       }
 
+      // PASSE 1.5 — Classification LLM (batch sémantique) : retire les textes de
+      // LOGOS / PICTOS / certifications (badges qualité/origine, écussons), qui ne
+      // doivent JAMAIS être extraits comme texte éditable. 1 appel, texte+positions
+      // (pas de dico par-vendeur). Échec → on garde tout (comportement d'avant).
+      let editorialItems = items
+      if (items.length > 0) {
+        toast.loading('Classification logos / éditorial…', { id: toastId })
+        const logoIdx = await classifyLogoTexts(items.map((it) => ({
+          text: it.para.text,
+          x: ((it.para.bbox.left + it.para.bbox.width / 2) / width) * 100,
+          y: ((it.para.bbox.top + it.para.bbox.height / 2) / height) * 100,
+        })))
+        if (logoIdx.size > 0) {
+          editorialItems = items.filter((_, i) => !logoIdx.has(i))
+          skipped += logoIdx.size
+        }
+      }
+
       // PASSE 2 — Regroupement par zone : textes adjacents avec couleur fond
       // similaire fusionnent en UN bandeau commun (= reproduit les bandeaux promo
       // unifiés de la créa originale au lieu de l'effet "post-it" éparpillé).
-      const zones = groupItemsByZone(items)
+      const zones = groupItemsByZone(editorialItems)
 
       // PASSE 3 — Ajout au canvas : pour chaque zone à fond de COULEUR (rouge/jaune
       // Carrefour), un masque dimensionné sur l'aplat RÉEL via `growBoxToColorExtent`
@@ -1017,7 +1088,7 @@ export function useImageToSvgDecompose() {
           addedTextboxes.push(tb)
         }
       }
-      const kept = items.length
+      const kept = editorialItems.length
 
       // PASSE 4 — Relecture prix composés via Vision LLM (résout "9999" → "9,59 €"
       // et merge les fragments "4" + "€" + "+79" → "4,79 €" sur le main Textbox).
