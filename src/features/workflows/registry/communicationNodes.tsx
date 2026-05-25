@@ -544,7 +544,7 @@ export const sendGmailNode: NodeSpec<
     body: '',
     isHtml: false,
     iterate: false,
-    attachmentMode: 'none',
+    attachmentMode: 'source',
     attachmentFilename: 'extract.csv',
   },
   runtime: 'client',

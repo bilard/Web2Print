@@ -78,7 +78,10 @@ RÈGLES IMPÉRATIVES :
 - Pré-remplis "config" au mieux à partir de la demande, en utilisant EXACTEMENT les noms de champs
   de config indiqués (ex: urlColumn, fields, prompt, titleColumn, expression…). Laisse vide si tu
   n'as pas l'information.
-- Produis un pipeline acyclique, du plus en amont (sources) vers l'aval (exports/persistance).`,
+- Produis un pipeline acyclique, du plus en amont (sources) vers l'aval (exports/persistance).
+- Si tu places un node "send-gmail" : mets dans "to" l'adresse email mentionnée dans la demande de
+  l'utilisateur (motif xxx@yyy) ; mets "subject" au titre du workflow (le "title" que tu génères) ;
+  et "attachmentMode" à "source" (joindre le fichier source).`,
   )
   parts.push(`═══ CATALOGUE DES NODES ═══\n${catalog}`)
   parts.push(`═══ DEMANDE DE L'UTILISATEUR ═══\n${userPrompt}`)
