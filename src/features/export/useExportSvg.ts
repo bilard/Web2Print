@@ -287,16 +287,27 @@ function extractFontFamilies(svg: string): Set<string> {
   return families
 }
 
-export async function generateCurrentPageSvg(
-  options?: GenerateSvgOptions,
+export interface GenerateSvgFromCanvasOptions extends GenerateSvgOptions {
+  /** Largeur de référence pour la bounding box (en px canvas). */
+  canvasWidth?: number
+  /** Hauteur de référence pour la bounding box (en px canvas). */
+  canvasHeight?: number
+  /** Couleur de fond du canvas (ex. '#ffffff', 'transparent'). */
+  canvasBg?: string
+}
+
+/**
+ * Génère un SVG depuis un canvas Fabric explicitement passé en paramètre.
+ * Utilisable sans `globalFabricCanvas` (ex. canvas offscreen de workflow).
+ */
+export async function generateSvgFromCanvas(
+  canvas: import('fabric').Canvas,
+  options?: GenerateSvgFromCanvasOptions,
 ): Promise<{
   svg: string
   width: number
   height: number
 } | null> {
-  const canvas = globalFabricCanvas
-  if (!canvas) return null
-
   canvas.discardActiveObject()
   canvas.requestRenderAll()
 
@@ -316,7 +327,11 @@ export async function generateCurrentPageSvg(
 
   for (const o of canvas.getObjects()) ensureClipPathIds(o)
   const imageRestorations = embedImagesAsDataUrls(canvas)
-  const { canvasWidth, canvasHeight, canvasBg } = useUIStore.getState()
+
+  // Dimensions : priorité aux options explicites, sinon dimensions réelles du canvas
+  const canvasWidth = options?.canvasWidth ?? canvas.getWidth()
+  const canvasHeight = options?.canvasHeight ?? canvas.getHeight()
+  const canvasBg = options?.canvasBg ?? ''
 
   const bbox = options?.cropToContent
     ? computeContentBoundingBox(canvas.getObjects(), canvasWidth, canvasHeight)
@@ -352,8 +367,6 @@ export async function generateCurrentPageSvg(
     if (families.size > 0) {
       const css = buildFontFaceCss(families)
       if (css) {
-        // Injecter en tête du <defs> existant (Fabric en ouvre toujours un),
-        // sinon juste après le <svg> d'ouverture.
         const styleBlock = `<style type="text/css"><![CDATA[\n${css}\n]]></style>`
         if (/<defs\b[^>]*>/.test(finalSvg)) {
           finalSvg = finalSvg.replace(/(<defs\b[^>]*>)/, `$1${styleBlock}`)
@@ -365,6 +378,26 @@ export async function generateCurrentPageSvg(
   }
 
   return { svg: finalSvg, width: vbW, height: vbH }
+}
+
+export async function generateCurrentPageSvg(
+  options?: GenerateSvgOptions,
+): Promise<{
+  svg: string
+  width: number
+  height: number
+} | null> {
+  const canvas = globalFabricCanvas
+  if (!canvas) return null
+
+  const { canvasWidth, canvasHeight, canvasBg } = useUIStore.getState()
+
+  return generateSvgFromCanvas(canvas, {
+    ...options,
+    canvasWidth,
+    canvasHeight,
+    canvasBg,
+  })
 }
 
 export function useExportSvg() {

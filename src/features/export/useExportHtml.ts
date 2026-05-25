@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import JSZip from 'jszip'
 import { Textbox, FabricImage } from 'fabric'
-import type { FabricObject } from 'fabric'
+import type { Canvas, FabricObject } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
@@ -139,6 +139,85 @@ body {
 `
 }
 
+export interface ExportHtmlBlobOptions {
+  /** Largeur du canvas en px. */
+  canvasWidth: number
+  /** Hauteur du canvas en px. */
+  canvasHeight: number
+  /** Titre du projet (utilisé dans le <title> HTML). */
+  title?: string
+}
+
+/**
+ * Cœur paramétré : génère un Blob ZIP HTML autonome depuis le canvas Fabric fourni.
+ * Ne déclenche aucun téléchargement. Utilisable depuis les workflows.
+ */
+export async function exportHtmlBlob(canvas: Canvas, opts: ExportHtmlBlobOptions): Promise<Blob> {
+  const { canvasWidth, canvasHeight, title = 'Design' } = opts
+
+  canvas.discardActiveObject()
+  canvas.requestRenderAll()
+
+  const gridObjs = canvas.getObjects().filter((o) => o.data?.isGrid)
+  gridObjs.forEach((o) => canvas.remove(o))
+
+  // Réinitialiser le viewport pour capturer le canvas complet à résolution native
+  const origVpt = [...(canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0])]
+  const origW = canvas.getWidth()
+  const origH = canvas.getHeight()
+  canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
+  canvas.setDimensions({ width: canvasWidth, height: canvasHeight })
+  canvas.requestRenderAll()
+
+  let canvasPng: string
+  try {
+    canvasPng = canvas.toDataURL({ format: 'png', multiplier: 2, quality: 1 })
+  } catch (err) {
+    canvas.setViewportTransform(origVpt as [number, number, number, number, number, number])
+    canvas.setDimensions({ width: origW, height: origH })
+    gridObjs.forEach((o) => canvas.add(o))
+    canvas.requestRenderAll()
+    if (err instanceof DOMException && err.name === 'SecurityError') {
+      throw new Error(
+        '[exportHtmlBlob] Canvas tainté (SecurityError) — une image est chargée sans CORS. ' +
+        'Vérifiez que les images Firebase Storage ont les en-têtes CORS appropriés.',
+      )
+    }
+    throw err
+  }
+
+  // Restaurer
+  canvas.setViewportTransform(origVpt as [number, number, number, number, number, number])
+  canvas.setDimensions({ width: origW, height: origH })
+  gridObjs.forEach((o) => canvas.add(o))
+  canvas.requestRenderAll()
+
+  const zip = new JSZip()
+  const assets = zip.folder('assets')!
+
+  assets.file('page.png', canvasPng.split(',')[1], { base64: true })
+
+  const objects = canvas.getObjects().filter((o) => !o.data?.isGrid && !o.data?.isPageBg)
+  let imgIdx = 0
+  for (const obj of objects) {
+    if (obj instanceof FabricImage) {
+      const src = obj.getSrc()
+      if (src.startsWith('data:')) {
+        const ext = src.includes('data:image/png') ? 'png' : 'jpg'
+        assets.file(`img_${imgIdx++}.${ext}`, src.split(',')[1], { base64: true })
+      }
+    }
+  }
+
+  const textOverlays = objects.map(textToHtmlOverlay).filter(Boolean)
+  const fonts = collectFonts(objects)
+
+  zip.file('index.html', buildHtml(title, canvasWidth, canvasHeight, fonts, textOverlays))
+  zip.file('style.css', buildCss())
+
+  return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
+}
+
 export function useExportHtml() {
   const projectTitle = useEditorStore((s) => s.projectTitle)
   const { canvasWidth, canvasHeight } = useUIStore()
@@ -147,57 +226,13 @@ export function useExportHtml() {
     const canvas = globalFabricCanvas
     if (!canvas) return
 
-    canvas.discardActiveObject()
-    canvas.requestRenderAll()
-
-    const gridObjs = canvas.getObjects().filter((o) => o.data?.isGrid)
-    gridObjs.forEach((o) => canvas.remove(o))
-
-    // Réinitialiser le viewport pour capturer le canvas complet à résolution native
-    const origVpt = [...(canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0])]
-    const origW = canvas.getWidth()
-    const origH = canvas.getHeight()
-    canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
-    canvas.setDimensions({ width: canvasWidth, height: canvasHeight })
-    canvas.requestRenderAll()
-
-    // Export PNG haute qualité (2x pour retina)
-    const canvasPng = canvas.toDataURL({ format: 'png', multiplier: 2, quality: 1 })
-
-    // Restaurer
-    canvas.setViewportTransform(origVpt as [number, number, number, number, number, number])
-    canvas.setDimensions({ width: origW, height: origH })
-    gridObjs.forEach((o) => canvas.add(o))
-    canvas.requestRenderAll()
-
-    const zip = new JSZip()
-    const assets = zip.folder('assets')!
-
-    // page.png = visuel complet (2x résolution, CSS affiche à 1x via width/height)
-    assets.file('page.png', canvasPng.split(',')[1], { base64: true })
-
-    // Extraire les images source dans assets/
-    const objects = canvas.getObjects().filter((o) => !o.data?.isGrid && !o.data?.isPageBg)
-    let imgIdx = 0
-    for (const obj of objects) {
-      if (obj instanceof FabricImage) {
-        const src = obj.getSrc()
-        if (src.startsWith('data:')) {
-          const ext = src.includes('data:image/png') ? 'png' : 'jpg'
-          assets.file(`img_${imgIdx++}.${ext}`, src.split(',')[1], { base64: true })
-        }
-      }
-    }
-
-    // Textes HTML transparents (accessibilité, copy-paste)
-    const textOverlays = objects.map(textToHtmlOverlay).filter(Boolean)
-    const fonts = collectFonts(objects)
+    const blob = await exportHtmlBlob(canvas, {
+      canvasWidth,
+      canvasHeight,
+      title: projectTitle,
+    })
 
     const slug = projectTitle.replace(/[^a-z0-9]/gi, '_')
-    zip.file('index.html', buildHtml(projectTitle, canvasWidth, canvasHeight, fonts, textOverlays))
-    zip.file('style.css', buildCss())
-
-    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
