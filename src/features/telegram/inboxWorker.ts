@@ -19,6 +19,18 @@ export interface InboxWorkerDeps {
   markError: (updateId: number, message: string) => Promise<void>
 }
 
+export type InboxCommand = { kind: 'flow'; prompt: string } | { kind: 'simple' }
+
+/**
+ * Distingue une commande de génération de workflow d'un message simple.
+ * `/flow <demande>` → workflow (le reste est le prompt) ; tout autre message → simple.
+ */
+export function parseInboxCommand(text: string): InboxCommand {
+  const m = /^\/flow\b\s*([\s\S]*)$/i.exec(text.trim())
+  if (m) return { kind: 'flow', prompt: m[1].trim() }
+  return { kind: 'simple' }
+}
+
 export async function processInboxMessage(deps: InboxWorkerDeps, doc: InboxDoc): Promise<void> {
   const won = await deps.claim(doc.updateId)
   if (!won) return // un autre onglet a déjà pris ce message

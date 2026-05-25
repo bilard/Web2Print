@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { processInboxMessage, type InboxWorkerDeps, type InboxDoc } from './inboxWorker'
+import { processInboxMessage, parseInboxCommand, type InboxWorkerDeps, type InboxDoc } from './inboxWorker'
 
 const doc: InboxDoc = { updateId: 1, chatId: 42, text: 'bonjour', status: 'pending' }
 
@@ -35,5 +35,28 @@ describe('inboxWorker', () => {
     await processInboxMessage(deps, doc)
     expect(deps.markError).toHaveBeenCalledWith(1, 'échec génération')
     expect(deps.markDone).not.toHaveBeenCalled()
+  })
+})
+
+describe('parseInboxCommand', () => {
+  it('/flow <demande> → workflow + prompt', () => {
+    expect(parseInboxCommand('/flow scrape https://x et exporte')).toEqual({
+      kind: 'flow',
+      prompt: 'scrape https://x et exporte',
+    })
+  })
+
+  it('insensible à la casse et aux espaces', () => {
+    expect(parseInboxCommand('  /FLOW   fais X  ')).toEqual({ kind: 'flow', prompt: 'fais X' })
+  })
+
+  it('/flow seul → prompt vide', () => {
+    expect(parseInboxCommand('/flow')).toEqual({ kind: 'flow', prompt: '' })
+  })
+
+  it('message normal → simple', () => {
+    expect(parseInboxCommand('salut')).toEqual({ kind: 'simple' })
+    expect(parseInboxCommand('/start')).toEqual({ kind: 'simple' })
+    expect(parseInboxCommand('/flowers')).toEqual({ kind: 'simple' })
   })
 })

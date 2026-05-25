@@ -11,7 +11,7 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { sendTelegramMessage, sendTelegramDocument } from '@/lib/telegramApi'
-import { processInboxMessage, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
+import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect } from './executeWorkflowAndCollect'
 
@@ -45,10 +45,24 @@ export function useTelegramInboxWorker(): void {
         })
       },
       process: async (msg) => {
+        // Routage : seul « /flow <demande> » lance un workflow ; tout autre message est simple.
+        const cmd = parseInboxCommand(msg.text)
+        if (cmd.kind === 'simple') {
+          await reply(msg.chatId, '📥 Reçu.')
+          return
+        }
+        if (!cmd.prompt) {
+          await reply(
+            msg.chatId,
+            'Pour lancer un workflow, écris ta demande après /flow.\nEx : /flow scrape https://exemple.com et exporte un Excel.',
+          )
+          return
+        }
+
         // 1) Génération + sauvegarde (2b).
         let info
         try {
-          info = await generateAndSaveWorkflow(msg.text, uid)
+          info = await generateAndSaveWorkflow(cmd.prompt, uid)
         } catch (err) {
           const reason = maskToken(err instanceof Error ? err.message : String(err))
           await reply(msg.chatId, `❌ Génération échouée : ${reason}`)
