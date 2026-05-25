@@ -79,9 +79,13 @@ RÈGLES IMPÉRATIVES :
   de config indiqués (ex: urlColumn, fields, prompt, titleColumn, expression…). Laisse vide si tu
   n'as pas l'information.
 - Produis un pipeline acyclique, du plus en amont (sources) vers l'aval (exports/persistance).
-- Si tu places un node "send-gmail" : mets dans "to" l'adresse email mentionnée dans la demande de
-  l'utilisateur (motif xxx@yyy) ; mets "subject" au titre du workflow (le "title" que tu génères) ;
-  et "attachmentMode" à "source" (joindre le fichier source).`,
+- Remplis la config de CHAQUE node avec les valeurs EXPLICITES de la demande, en utilisant les noms
+  de champs EXACTS listés dans "config:" du catalogue (ils incluent les champs des UIs custom).
+- Si tu places un node "send-gmail" : "to" = l'email indiqué dans la demande (motif xxx@yyy) ;
+  "subject" = l'objet indiqué dans la demande, sinon le titre du workflow ; "body" = le message
+  indiqué dans la demande ; "attachmentMode" = "source".
+- Pour joindre/sauvegarder un fichier PRODUIT en amont : "export-design" sort un port "file" — relie-le
+  vers le port d'entrée "attachment" de "send-gmail" ET vers le port "file" de "gdrive-export".`,
   )
   parts.push(`═══ CATALOGUE DES NODES ═══\n${catalog}`)
   parts.push(`═══ DEMANDE DE L'UTILISATEUR ═══\n${userPrompt}`)

@@ -1,15 +1,33 @@
 // src/features/workflows/promptToFlow/buildRegistryContext.ts
 import { nodeRegistry } from '../registry'
-import type { Port, ConfigField, NodeSpec } from '../types'
+import type { Port, NodeSpec } from '../types'
 
 function fmtPorts(ports: Port[]): string {
   if (ports.length === 0) return '(aucun)'
   return ports.map((p) => `${p.name}:${p.type}${p.required ? '*' : ''}`).join(', ')
 }
 
-function fmtConfig(fields: ConfigField[]): string {
-  if (fields.length === 0) return '(aucune)'
-  return fields.map((f) => `${f.name}:${f.kind}(${f.label})`).join(', ')
+/**
+ * Sérialise les champs de config. Les nodes à `ConfigComponent` custom ont un
+ * `configSchema` vide mais exposent toutes leurs clés dans `defaultConfig` (ex:
+ * send-gmail → to, subject, body…). On fusionne les deux sources pour que le LLM
+ * connaisse TOUS les champs remplissables (sinon il les laisse vides).
+ */
+function fmtConfig(spec: NodeSpec): string {
+  const bySchema = new Map((spec.configSchema ?? []).map((f) => [f.name, f]))
+  const dc = (spec.defaultConfig ?? {}) as Record<string, unknown>
+  const names = Array.from(new Set([...bySchema.keys(), ...Object.keys(dc)]))
+  if (names.length === 0) return '(aucune)'
+  return names
+    .map((name) => {
+      const f = bySchema.get(name)
+      if (f) {
+        const opts = f.options?.length ? `=${f.options.map((o) => o.value).join('|')}` : ''
+        return `${name}:${f.kind}${opts}(${f.label})`
+      }
+      return `${name}:${typeof dc[name]}`
+    })
+    .join(', ')
 }
 
 function fmtNode(spec: NodeSpec): string {
@@ -18,7 +36,7 @@ function fmtNode(spec: NodeSpec): string {
     `  desc: ${spec.description}`,
     `  in: ${fmtPorts(spec.inputs)}`,
     `  out: ${fmtPorts(spec.outputs)}`,
-    `  config: ${fmtConfig(spec.configSchema)}`,
+    `  config: ${fmtConfig(spec)}`,
   ].join('\n')
 }
 

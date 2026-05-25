@@ -416,15 +416,18 @@ async function rasterizeSvg(svgText: string): Promise<{ canvas: HTMLCanvasElemen
   }
 }
 
-export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { result: ExportResult }> = {
+export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; result: ExportResult }> = {
   type: 'export-design',
   category: 'export',
   label: 'Export (design)',
   description:
-    'Exporte un design SVG (issu de Image→SVG / PDF→SVG) dans le format choisi : PNG, PDF, PPTX, HTML ou SVG.',
+    'Exporte un design SVG (issu de Image→SVG / PDF→SVG) dans le format choisi : PNG, PDF, PPTX, HTML ou SVG. Sort le fichier produit (port "file", à connecter vers Drive ou la pièce jointe Gmail) + un résultat téléchargeable.',
   icon: Download,
   inputs: [{ name: 'file', type: 'file', required: true }],
-  outputs: [{ name: 'result', type: 'export-result' }],
+  outputs: [
+    { name: 'file', type: 'file' },
+    { name: 'result', type: 'export-result' },
+  ],
   configSchema: [
     {
       name: 'format',
@@ -451,11 +454,12 @@ export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { result:
     const baseName = ((file as File).name || 'design').replace(/\.[^.]+$/, '') || 'design'
     const stamp = Date.now()
 
-    const finish = (out: Blob, ext: string): { result: ExportResult } => {
-      const url = URL.createObjectURL(out)
+    const finish = (out: Blob, ext: string): { file: File; result: ExportResult } => {
       const filename = `${baseName}-${stamp}.${ext}`
+      const outFile = out instanceof File ? out : new File([out], filename, { type: out.type })
+      const url = URL.createObjectURL(out)
       ctx.log('info', `Export ${config.format.toUpperCase()} → ${filename}`)
-      return { result: { url, mime: out.type, filename } }
+      return { file: outFile, result: { url, mime: out.type, filename } }
     }
 
     if (config.format === 'svg') {

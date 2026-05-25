@@ -25,4 +25,13 @@ describe('buildRegistryContext', () => {
     const ctx = buildRegistryContext()
     expect(ctx).toMatch(/type: upload[\s\S]*?in: \(aucun\)/)
   })
+
+  it('expose les champs de config des nodes à UI custom (via defaultConfig)', () => {
+    const ctx = buildRegistryContext()
+    // send-gmail a un ConfigComponent custom → configSchema vide, mais ses clés
+    // réelles (to, subject, body…) doivent apparaître pour que le LLM les remplisse.
+    expect(ctx).toMatch(/type: send-gmail[\s\S]*?\bto:/)
+    expect(ctx).toMatch(/type: send-gmail[\s\S]*?\bsubject:/)
+    expect(ctx).toMatch(/type: send-gmail[\s\S]*?\bbody:/)
+  })
 })
