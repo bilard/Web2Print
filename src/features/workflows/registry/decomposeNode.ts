@@ -16,6 +16,33 @@ import { decomposeOnCanvas } from '@/features/svg/useImageToSvgDecompose'
 
 interface DecomposeConfig {}
 
+/**
+ * Pré-inline les `<image href="http(s)://…">` (URL Firebase) en data URI. Sans ça,
+ * le canvas offscreen chargeant une image cross-origin est tainté → `getImageData`
+ * et `toDataURL` (requis par la décompo Vision) lèvent une SecurityError.
+ * Nécessite que le CORS du bucket autorise le fetch (cf. cors.json).
+ */
+async function inlineExternalSvgImages(svgText: string): Promise<string> {
+  const urls = Array.from(
+    svgText.matchAll(/(?:xlink:href|href)\s*=\s*"(https?:\/\/[^"]+)"/g),
+    (m) => m[1],
+  )
+  let out = svgText
+  for (const url of Array.from(new Set(urls))) {
+    const resp = await fetch(url)
+    if (!resp.ok) throw new Error(`Image inaccessible (${resp.status})`)
+    const blob = await resp.blob()
+    const dataUri = await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader()
+      fr.onload = () => resolve(fr.result as string)
+      fr.onerror = () => reject(new Error('Lecture image échouée'))
+      fr.readAsDataURL(blob)
+    })
+    out = out.split(url).join(dataUri)
+  }
+  return out
+}
+
 export const decomposeNode: NodeSpec<
   DecomposeConfig,
   { svg: File },
@@ -46,6 +73,17 @@ export const decomposeNode: NodeSpec<
     } catch (err) {
       throw new Error(
         `Impossible de lire le fichier SVG : ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+
+    // Pré-inline l'image de fond (URL Firebase → data URI) pour que le canvas
+    // offscreen ne soit pas tainté (sinon la décompo Vision échoue en secure mode).
+    try {
+      svgText = await inlineExternalSvgImages(svgText)
+    } catch (err) {
+      ctx.log(
+        'warn',
+        `Pré-inline de l'image échoué (la décompo échouera si CORS bloque) : ${err instanceof Error ? err.message : String(err)}`,
       )
     }
 
