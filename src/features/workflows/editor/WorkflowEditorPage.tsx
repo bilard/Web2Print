@@ -1,7 +1,7 @@
 // src/features/workflows/editor/WorkflowEditorPage.tsx
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Play, Square, Workflow as WorkflowIcon } from 'lucide-react'
+import { ArrowLeft, Save, Play, Square, Sparkles, Workflow as WorkflowIcon } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
@@ -14,6 +14,7 @@ import { NodePalette } from './NodePalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
 import { RunPanel } from './RunPanel'
 import { DataPreviewPanel } from './DataPreviewPanel'
+import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 
 export function WorkflowEditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -25,6 +26,7 @@ export function WorkflowEditorPage() {
   const isRunning = useRunContext((s) => s.isRunning)
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
+  const [showGenerate, setShowGenerate] = useState(false)
 
   useEffect(() => {
     initWorkflowsRegistry()
@@ -98,6 +100,13 @@ export function WorkflowEditorPage() {
             />
           </nav>
           <span className="text-xs text-neutral-500 shrink-0">{dirty ? 'Modifications…' : 'Enregistré'}</span>
+          <button
+            onClick={() => setShowGenerate(true)}
+            className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
+            title="Générer un workflow depuis un prompt (IA)"
+          >
+            <Sparkles className="w-4 h-4 text-indigo-400" /> Générer (IA)
+          </button>
           {isRunning ? (
             <button onClick={stop} className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 flex items-center gap-2 text-sm">
               <Square className="w-4 h-4" /> Stop
@@ -125,6 +134,7 @@ export function WorkflowEditorPage() {
         </div>
         <RunPanel />
       </div>
+        {showGenerate && <PromptToFlowModal onClose={() => setShowGenerate(false)} />}
     </ReactFlowProvider>
   )
 }
