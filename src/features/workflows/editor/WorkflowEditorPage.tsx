@@ -54,6 +54,8 @@ export function WorkflowEditorPage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
+      // Modal « Générer (IA) » ouvert : Escape le ferme au lieu de quitter l'éditeur.
+      if (showGenerate) { setShowGenerate(false); return }
       const target = e.target as HTMLElement | null
       const tag = target?.tagName
       const editable = target?.isContentEditable
@@ -62,7 +64,7 @@ export function WorkflowEditorPage() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [goToList])
+  }, [goToList, showGenerate])
 
   if (loading) return <div className="min-h-screen bg-[#0f0f0f] text-white p-8">Chargement…</div>
   if (!wf) return <div className="min-h-screen bg-[#0f0f0f] text-white p-8">Workflow introuvable</div>

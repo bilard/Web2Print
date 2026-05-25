@@ -39,9 +39,9 @@ if (typeof globalThis.DOMMatrix === 'undefined') {
     toFloat64Array() { return new Float64Array(16) }
     toJSON() { return {} }
     toString() { return 'matrix(1, 0, 0, 1, 0, 0)' }
-    static fromMatrix() { return new (globalThis as unknown as Record<string, unknown>).DOMMatrix() as InstanceType<typeof DOMMatrix> }
-    static fromFloat32Array() { return new (globalThis as unknown as Record<string, unknown>).DOMMatrix() as InstanceType<typeof DOMMatrix> }
-    static fromFloat64Array() { return new (globalThis as unknown as Record<string, unknown>).DOMMatrix() as InstanceType<typeof DOMMatrix> }
+    static fromMatrix() { return new DOMMatrix() }
+    static fromFloat32Array() { return new DOMMatrix() }
+    static fromFloat64Array() { return new DOMMatrix() }
   }
 }
 

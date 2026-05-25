@@ -30,7 +30,8 @@ describe('generateWorkflow', () => {
   it('injecte les issues de réparation dans le prompt', async () => {
     generateJsonMock.mockResolvedValueOnce({ title: '', summary: '', nodes: [], edges: [] })
     await generateWorkflow('p', { repairIssues: ['Node inconnu : "foo".'] })
-    const opts = generateJsonMock.mock.calls.at(-1)![0] as { prompt: string }
+    const calls = generateJsonMock.mock.calls
+    const opts = calls[calls.length - 1][0] as { prompt: string }
     expect(opts.prompt).toContain('Node inconnu : "foo".')
   })
 })
