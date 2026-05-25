@@ -37,7 +37,8 @@ describe('generateAndSaveWorkflow', () => {
     const info = await generateAndSaveWorkflow('crée un flux', 'uid1')
 
     expect(saveWorkflow).toHaveBeenCalledWith('uid1', expect.objectContaining({ id: 'wf1', name: 'Mon flux' }))
-    expect(info).toEqual({ workflowId: 'wf1', name: 'Mon flux', nodeCount: 1 })
+    expect(info).toMatchObject({ workflowId: 'wf1', name: 'Mon flux', nodeCount: 1 })
+    expect(info.workflow.id).toBe('wf1')
   })
 
   it('tente une réparation quand le 1er passage a des erreurs', async () => {

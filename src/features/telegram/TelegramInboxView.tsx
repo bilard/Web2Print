@@ -5,11 +5,15 @@ import { useState } from 'react'
 import { Inbox, Loader2, Plus, Check, X, Trash2 } from 'lucide-react'
 import { useTelegramInbox, addInboxMessage, deleteAllInboxMessages } from './useTelegramInbox'
 import { useTelegramStore } from '@/stores/telegram.store'
+import { useTelegramInboxWorker } from './useTelegramInboxWorker'
 import { InboxItem } from './InboxItem'
 
 export function TelegramInboxView() {
+  // Le worker tourne tant que cette page est ouverte (onglet dédié) — store de run isolé.
+  useTelegramInboxWorker()
   const { messages, loading } = useTelegramInbox()
   const defaultChatId = useTelegramStore((s) => s.chatId)
+  const botToken = useTelegramStore((s) => s.botToken)
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState('')
   const [confirmClear, setConfirmClear] = useState(false)
@@ -33,6 +37,20 @@ export function TelegramInboxView() {
         <Inbox className="w-4 h-4 text-blue-400" />
         <h1 className="text-[13px] font-semibold text-white/80">Boîte de réception Telegram</h1>
         <span className="text-[11px] text-neutral-500">{messages.length} message(s)</span>
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded border ${
+            botToken
+              ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+              : 'bg-neutral-500/10 text-neutral-500 border-neutral-600/30'
+          }`}
+          title={
+            botToken
+              ? 'Cet onglet écoute et traite les messages Telegram.'
+              : 'Configure le bot token dans Settings → Connecteurs → Telegram.'
+          }
+        >
+          {botToken ? '● worker actif' : '○ token manquant'}
+        </span>
         <div className="ml-auto flex items-center gap-1.5">
           {messages.length > 0 &&
             (confirmClear ? (

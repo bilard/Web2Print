@@ -4,31 +4,7 @@ import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { nodeRegistry } from '../registry'
 import { PanelResizeHandle, usePanelResize } from './usePanelResize'
-
-interface ExportPayload {
-  url: string
-  mime?: string
-  filename: string
-}
-
-function findExportResult(
-  outputs: Record<string, unknown> | undefined,
-): ExportPayload | null {
-  if (!outputs) return null
-  for (const v of Object.values(outputs)) {
-    if (
-      v &&
-      typeof v === 'object' &&
-      'url' in v &&
-      'filename' in v &&
-      typeof (v as ExportPayload).url === 'string' &&
-      typeof (v as ExportPayload).filename === 'string'
-    ) {
-      return v as ExportPayload
-    }
-  }
-  return null
-}
+import { findExportResult, type ExportPayload } from '../runtime/exportResult'
 
 function downloadExport(payload: ExportPayload) {
   const a = document.createElement('a')

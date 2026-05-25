@@ -5,8 +5,10 @@ import { generateWorkflow } from '@/features/workflows/promptToFlow/generateWork
 import { validateGraph } from '@/features/workflows/promptToFlow/validateGraph'
 import { layoutGraph } from '@/features/workflows/promptToFlow/layoutGraph'
 import { newWorkflow, saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
+import type { Workflow } from '@/features/workflows/types'
 
 export interface GeneratedWorkflowInfo {
+  workflow: Workflow
   workflowId: string
   name: string
   nodeCount: number
@@ -41,5 +43,5 @@ export async function generateAndSaveWorkflow(
   wf.edges = validated.edges
   await saveWorkflow(uid, wf)
 
-  return { workflowId: wf.id, name: wf.name, nodeCount: wf.nodes.length }
+  return { workflow: wf, workflowId: wf.id, name: wf.name, nodeCount: wf.nodes.length }
 }
