@@ -2,6 +2,7 @@ import { useAuthInit } from './useAuth'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAiSettingsSync } from '@/features/settings/useAiSettingsSync'
 import { useApiKeysSync } from '@/features/settings/useApiKeysSync'
+import { useTelegramInboxWorker } from '@/features/telegram/useTelegramInboxWorker'
 
 interface AuthProviderProps {
   children: React.ReactNode
@@ -11,6 +12,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useAuthInit()
   useAiSettingsSync()
   useApiKeysSync()
+  useTelegramInboxWorker()
   const loading = useAuthStore((s) => s.loading)
 
   if (loading) {

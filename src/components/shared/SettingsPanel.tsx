@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, ChevronUp, ChevronDown, X, Plus, RefreshCw, ExternalLink, KeyRound, CreditCard, Cookie, Trash2 } from 'lucide-react'
+import { TelegramSettings } from '@/features/telegram/TelegramSettings'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useQueryClient } from '@tanstack/react-query'
@@ -1083,6 +1084,17 @@ function ConnectorsTab() {
       <BrightDataConnectorRow />
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <GDriveConnectorRow />
+
+      {/* ── Telegram ── */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5 px-1 pt-2 text-[10px] font-semibold text-white/30 uppercase tracking-wider">
+          <Plug className="w-3 h-3 text-cyan-400/70" />
+          Telegram
+        </div>
+        <div className="bg-white/[0.03] rounded-xl p-3">
+          <TelegramSettings />
+        </div>
+      </div>
     </div>
   )
 }
