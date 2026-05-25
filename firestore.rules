@@ -284,5 +284,18 @@ service cloud.firestore {
     match /config/{docId} {
       allow read, write: if request.auth != null;
     }
+
+    // ── Telegram entrant (2a) ──────────────────────────────────
+    // File des messages reçus : lisible/modifiable par tout utilisateur connecté
+    // (l'app perso est mono-utilisateur ; le mapping chat_id→uid est hors périmètre 2a).
+    match /telegramInbox/{messageId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Config (secret webhook + allowlist) : JAMAIS accessible au client.
+    // Seul le SDK admin de la Function y accède (il contourne les règles).
+    match /telegramConfig/{docId} {
+      allow read, write: if false;
+    }
   }
 }
