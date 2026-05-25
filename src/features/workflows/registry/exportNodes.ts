@@ -376,11 +376,15 @@ async function inlineExternalImages(svgText: string): Promise<string> {
     (m) => m[1],
   )
   let out = svgText
-  for (const url of Array.from(new Set(urls))) {
+  for (const rawUrl of Array.from(new Set(urls))) {
+    // L'URL extraite du SVG est XML-échappée (&amp;) : on la décode pour le fetch,
+    // sinon le param `token` Firebase est cassé → 403. On garde `rawUrl` (échappée)
+    // pour le remplacement, car c'est cette forme qui apparaît dans le texte SVG.
+    const fetchUrl = rawUrl.replace(/&amp;/g, '&')
     try {
-      const resp = await fetch(url)
+      const resp = await fetch(fetchUrl)
       if (!resp.ok) {
-        console.warn(`[exportDesign] Image inaccessible (${resp.status}) : ${url}`)
+        console.warn(`[exportDesign] Image inaccessible (${resp.status}) : ${fetchUrl}`)
         continue
       }
       const blob = await resp.blob()
@@ -390,9 +394,9 @@ async function inlineExternalImages(svgText: string): Promise<string> {
         fr.onerror = () => reject(new Error('Lecture de l\'image échouée.'))
         fr.readAsDataURL(blob)
       })
-      out = out.split(url).join(dataUri)
+      out = out.split(rawUrl).join(dataUri)
     } catch (err) {
-      console.warn(`[exportDesign] Impossible d'inliner l'image ${url} :`, err)
+      console.warn(`[exportDesign] Impossible d'inliner l'image ${fetchUrl} :`, err)
     }
   }
   return out
