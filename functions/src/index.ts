@@ -16,3 +16,6 @@ export { damAutocomplete } from './dam/autocomplete'
 
 // --- Image proxy (contourne CORS pour les photos catalogue scraped) ---
 export { imageProxy } from './imageProxy'
+
+// --- Telegram entrant (2a) : webhook → file Firestore ---
+export { telegramWebhook } from './telegramWebhook'
