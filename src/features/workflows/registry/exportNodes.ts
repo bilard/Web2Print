@@ -4,13 +4,6 @@ import * as XLSX from 'xlsx'
 import PptxGenJS from 'pptxgenjs'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
-import { parseSvgToFabric } from '@/features/svg/svgToFabric'
-import { exportPngBlob } from '@/features/export/useExportPng'
-import { exportPdfBlob } from '@/features/export/useExportPdf'
-import { exportPptxBlob } from '@/features/export/useExportPptx'
-import { exportHtmlBlob } from '@/features/export/useExportHtml'
-import { generateSvgFromCanvas } from '@/features/export/useExportSvg'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 
@@ -402,51 +395,50 @@ async function inlineExternalImages(svgText: string): Promise<string> {
   return out
 }
 
-/**
- * Construit un canvas Fabric offscreen depuis un SVG texte.
- * Les images externes doivent être pré-inlinées pour éviter les CORS taints.
- */
-/** Collecte récursivement les FabricImage (y compris dans les groupes). */
-function collectFabricImages(objs: FabricObject[]): FabricImage[] {
-  const out: FabricImage[] = []
-  for (const o of objs) {
-    if (o instanceof FabricImage) out.push(o)
-    else if (o instanceof Group) out.push(...collectFabricImages(o.getObjects()))
-  }
-  return out
+/** Dimensions du SVG (attributs width/height, sinon viewBox). */
+function parseSvgSize(svgText: string): { width: number; height: number } {
+  const w = /\bwidth\s*=\s*"([\d.]+)"/.exec(svgText)
+  const h = /\bheight\s*=\s*"([\d.]+)"/.exec(svgText)
+  if (w && h) return { width: Math.round(+w[1]), height: Math.round(+h[1]) }
+  const vb = /viewBox\s*=\s*"[\d.]+ [\d.]+ ([\d.]+) ([\d.]+)"/.exec(svgText)
+  if (vb) return { width: Math.round(+vb[1]), height: Math.round(+vb[2]) }
+  return { width: 1024, height: 1024 }
 }
 
-async function buildOffscreenCanvas(svgText: string): Promise<{ canvas: Canvas; width: number; height: number }> {
-  const { objects, width, height } = await parseSvgToFabric(svgText)
-
-  const el = document.createElement('canvas')
-  el.width = width
-  el.height = height
-
-  const canvas = new Canvas(el, {
-    width,
-    height,
-    renderOnAddRemove: false,
-  })
-
-  canvas.add(...objects)
-
-  // Garantir que CHAQUE image est décodée avant le rendu. Sinon `toDataURL`
-  // peint un canvas vide → "le PNG n'est pas le SVG". On attend le decode() de
-  // chaque <img> sous-jacent (les images sont des data URI après inline → local).
-  await Promise.all(
-    collectFabricImages(objects).map(async (img) => {
-      const imgEl = img.getElement() as HTMLImageElement | undefined
-      if (imgEl && typeof imgEl.decode === 'function' && !imgEl.complete) {
-        await imgEl.decode().catch(() => {})
-      }
-    }),
-  )
-
-  // Rendu SYNCHRONE (≠ requestRenderAll, asynchrone) avant que l'export ne lise les pixels.
-  canvas.renderAll()
-
-  return { canvas, width, height }
+/**
+ * Rend le SVG FIDÈLEMENT : on le charge comme <img> (rendu SVG natif du navigateur,
+ * les <text> sont peints EXACTEMENT aux positions sérialisées — aucune re-mesure)
+ * et on le peint sur un canvas à la résolution voulue. Le SVG doit être
+ * auto-suffisant (images inlinées en data URI).
+ */
+async function rasterizeInlinedSvg(
+  inlinedSvg: string,
+  multiplier: number,
+): Promise<HTMLCanvasElement> {
+  const { width: w0, height: h0 } = parseSvgSize(inlinedSvg)
+  const width = Math.max(1, Math.round(w0 * multiplier))
+  const height = Math.max(1, Math.round(h0 * multiplier))
+  const blob = new Blob([inlinedSvg], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  try {
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('Rendu SVG → image échoué.'))
+      img.src = url
+    })
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D indisponible.')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, width, height)
+    ctx.drawImage(img, 0, 0, width, height)
+    return canvas
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
 
 export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; result: ExportResult }> = {
@@ -513,82 +505,54 @@ export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: F
       return finish(new Blob([svgText], { type: 'image/svg+xml' }), 'svg')
     }
 
-    // Pour tous les autres formats : pré-inliner les images externes (prophylaxie CORS)
+    // Inliner les images externes (URL Firebase → data URI) → SVG auto-suffisant.
     ctx.log('info', 'Inlinage des images externes…')
     const inlinedSvg = await inlineExternalImages(svgText)
 
-    // Construire le canvas Fabric offscreen
-    ctx.log('info', 'Construction du canvas Fabric…')
-    let fabricCanvas: Canvas
-    let width: number
-    let height: number
-    try {
-      const result = await buildOffscreenCanvas(inlinedSvg)
-      fabricCanvas = result.canvas
-      width = result.width
-      height = result.height
-    } catch (err) {
-      throw new Error(`Impossible de parser le SVG en canvas Fabric : ${String(err)}`)
+    // HTML : page autonome embarquant le SVG tel quel.
+    if (config.format === 'html') {
+      const html = `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>${baseName}</title>
+<style>html,body{margin:0;height:100%}body{display:flex;align-items:center;justify-content:center;background:#fff}svg{max-width:100%;max-height:100%}</style>
+</head><body>${inlinedSvg}</body></html>`
+      return finish(new Blob([html], { type: 'text/html;charset=utf-8' }), 'html')
     }
 
-    ctx.log('info', `Canvas ${width}×${height} — export ${config.format.toUpperCase()} ${dpi} dpi…`)
+    // PNG / PDF / PPTX : rendu NATIF du SVG (le navigateur peint les <text> aux
+    // positions exactes — aucune re-mesure Fabric qui décalerait le texte décomposé).
+    const base = parseSvgSize(inlinedSvg)
+    ctx.log('info', `Rendu natif du SVG ${base.width}×${base.height} (${dpi} dpi)…`)
+    const canvas = await rasterizeInlinedSvg(inlinedSvg, multiplier)
 
-    try {
-      if (config.format === 'html') {
-        const blob = await exportHtmlBlob(fabricCanvas, {
-          canvasWidth: width,
-          canvasHeight: height,
-          title: baseName,
-        })
-        return finish(blob, 'zip')
-      }
-
-      if (config.format === 'png') {
-        try {
-          const blob = await exportPngBlob(fabricCanvas, dpi)
-          return finish(blob, 'png')
-        } catch (err) {
-          ctx.log('error', `[exportDesign] PNG échoué : ${String(err)}`)
-          throw err
-        }
-      }
-
-      if (config.format === 'pdf') {
-        try {
-          const blob = await exportPdfBlob(fabricCanvas, {
-            canvasWidth: width,
-            canvasHeight: height,
-            multiplier,
-            title: baseName,
-          })
-          return finish(blob, 'pdf')
-        } catch (err) {
-          ctx.log('error', `[exportDesign] PDF échoué : ${String(err)}`)
-          throw err
-        }
-      }
-
-      if (config.format === 'pptx') {
-        try {
-          const blob = await exportPptxBlob(fabricCanvas, {
-            canvasWidth: width,
-            canvasHeight: height,
-            multiplier,
-            title: baseName,
-          })
-          return finish(blob, 'pptx')
-        } catch (err) {
-          ctx.log('error', `[exportDesign] PPTX échoué : ${String(err)}`)
-          throw err
-        }
-      }
-
-      // Ne devrait pas arriver (TS exhaustive check)
-      throw new Error(`Format non supporté : ${config.format}`)
-    } finally {
-      // Nettoyage du canvas offscreen
-      fabricCanvas.dispose()
+    if (config.format === 'png') {
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Génération PNG échouée.'))), 'image/png'),
+      )
+      return finish(blob, 'png')
     }
+
+    const dataUrl = canvas.toDataURL('image/png')
+
+    if (config.format === 'pdf') {
+      const orientation = base.width >= base.height ? 'landscape' : 'portrait'
+      const pdf = new jsPDF({ orientation, unit: 'px', format: [base.width, base.height] })
+      pdf.addImage(dataUrl, 'PNG', 0, 0, base.width, base.height)
+      return finish(pdf.output('blob'), 'pdf')
+    }
+
+    // PPTX : 1 slide aux dimensions du design (px → pouces @ 96 dpi).
+    const pres = new PptxGenJS()
+    const wIn = base.width / 96
+    const hIn = base.height / 96
+    pres.defineLayout({ name: 'DESIGN', width: wIn, height: hIn })
+    pres.layout = 'DESIGN'
+    const slide = pres.addSlide()
+    slide.addImage({ data: dataUrl, x: 0, y: 0, w: wIn, h: hIn })
+    const output = await pres.write({ outputType: 'blob' })
+    const out = output instanceof Blob ? output : new Blob([output as ArrayBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    })
+    return finish(out, 'pptx')
   },
 }
 
