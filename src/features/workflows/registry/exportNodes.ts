@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx'
 import PptxGenJS from 'pptxgenjs'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { Canvas } from 'fabric'
+import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
 import { exportPngBlob } from '@/features/export/useExportPng'
 import { exportPdfBlob } from '@/features/export/useExportPdf'
@@ -406,6 +406,16 @@ async function inlineExternalImages(svgText: string): Promise<string> {
  * Construit un canvas Fabric offscreen depuis un SVG texte.
  * Les images externes doivent être pré-inlinées pour éviter les CORS taints.
  */
+/** Collecte récursivement les FabricImage (y compris dans les groupes). */
+function collectFabricImages(objs: FabricObject[]): FabricImage[] {
+  const out: FabricImage[] = []
+  for (const o of objs) {
+    if (o instanceof FabricImage) out.push(o)
+    else if (o instanceof Group) out.push(...collectFabricImages(o.getObjects()))
+  }
+  return out
+}
+
 async function buildOffscreenCanvas(svgText: string): Promise<{ canvas: Canvas; width: number; height: number }> {
   const { objects, width, height } = await parseSvgToFabric(svgText)
 
@@ -421,9 +431,20 @@ async function buildOffscreenCanvas(svgText: string): Promise<{ canvas: Canvas; 
 
   canvas.add(...objects)
 
-  // Attendre que les FabricImage (chargées async) soient prêtes
-  await new Promise<void>((resolve) => setTimeout(resolve, 150))
-  canvas.requestRenderAll()
+  // Garantir que CHAQUE image est décodée avant le rendu. Sinon `toDataURL`
+  // peint un canvas vide → "le PNG n'est pas le SVG". On attend le decode() de
+  // chaque <img> sous-jacent (les images sont des data URI après inline → local).
+  await Promise.all(
+    collectFabricImages(objects).map(async (img) => {
+      const imgEl = img.getElement() as HTMLImageElement | undefined
+      if (imgEl && typeof imgEl.decode === 'function' && !imgEl.complete) {
+        await imgEl.decode().catch(() => {})
+      }
+    }),
+  )
+
+  // Rendu SYNCHRONE (≠ requestRenderAll, asynchrone) avant que l'export ne lise les pixels.
+  canvas.renderAll()
 
   return { canvas, width, height }
 }
