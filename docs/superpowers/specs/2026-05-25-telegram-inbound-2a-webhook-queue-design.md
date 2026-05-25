@@ -74,23 +74,30 @@ Telegram ──POST /telegramWebhook──▶ Function (onRequest, europe-west1)
 }
 ```
 
-**Doc `config/telegram`** (éditable depuis l'app, lu par la Function via admin) :
+**Doc `telegramConfig/main`** (lu par la Function via admin ; **inaccessible au client**) :
 ```ts
 {
   allowedChatIds: number[]     // ex. [8229250033]
-  webhookSecret: string        // partagé avec setWebhook (voir Sécurité pour l'alternative)
+  webhookSecret: string        // partagé avec setWebhook
 }
 ```
+> Hors de la collection `/config` à dessein : une règle générique existante
+> `match /config/{docId} { allow read, write: if request.auth != null }` rendrait le
+> `webhookSecret` lisible par tout utilisateur connecté (en Firestore, une règle spécifique
+> ne peut pas restreindre ce qu'une règle générique autorise). On utilise donc une collection
+> dédiée `telegramConfig` verrouillée par `allow read, write: if false` (seul le SDK admin de
+> la Function y accède, en contournant les règles). Configuration initiale : manuelle via la
+> console Firebase ; édition in-app de l'allowlist repoussée hors 2a.
 
 ## Sécurité
 
 - **Secret webhook** : la Function rejette (401) tout appel dont le header
   `X-Telegram-Bot-Api-Secret-Token` ≠ secret attendu. Empêche l'injection de faux updates par
-  quiconque trouve l'URL. **Retenu** : le secret vit dans le doc Firestore `config/telegram`
-  (`webhookSecret`), protégé par les règles Firestore (lecture refusée aux clients) et lu par
-  la Function via le SDK admin (qui contourne les règles). *Durcissement optionnel ultérieur* :
-  porter le secret via `defineSecret('TELEGRAM_WEBHOOK_SECRET')` (Secret Manager), le secret
-  étant stable ; l'allowlist resterait alors la seule donnée dans `config/telegram`.
+  quiconque trouve l'URL. **Retenu** : le secret vit dans le doc Firestore `telegramConfig/main`
+  (`webhookSecret`), collection verrouillée par `allow read, write: if false` (lecture refusée à
+  tout client) et lue par la Function via le SDK admin (qui contourne les règles). *Durcissement
+  optionnel ultérieur* : porter le secret via `defineSecret('TELEGRAM_WEBHOOK_SECRET')` (Secret
+  Manager).
 - **Allowlist au webhook** : un `chat_id` hors `allowedChatIds` est ignoré **avant** toute
   écriture Firestore (réponse 200 silencieuse) → pas de spam de file, pas de quota gaspillé.
 - **Idempotence** : doc indexé par `update_id` via `.create()` (un réémission Telegram
