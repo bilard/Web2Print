@@ -8,7 +8,7 @@
 // canvas Fabric hors-écran, sans toucher à l'éditeur ouvert.
 
 import { Wand2 } from 'lucide-react'
-import { Canvas } from 'fabric'
+import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { parseSvgToFabric } from '@/features/svg/svgToFabric'
@@ -42,6 +42,16 @@ async function inlineExternalSvgImages(svgText: string): Promise<string> {
       fr.readAsDataURL(blob)
     })
     out = out.split(rawUrl).join(dataUri)
+  }
+  return out
+}
+
+/** Collecte récursivement les FabricImage (y compris dans les groupes). */
+function collectFabricImages(objs: FabricObject[]): FabricImage[] {
+  const out: FabricImage[] = []
+  for (const o of objs) {
+    if (o instanceof FabricImage) out.push(o)
+    else if (o instanceof Group) out.push(...collectFabricImages(o.getObjects()))
   }
   return out
 }
@@ -121,12 +131,17 @@ export const decomposeNode: NodeSpec<
       fabricCanvas.add(obj)
     }
 
-    // Attend que les images (FabricImage) aient fini de charger en forçant un render
-    // et en laissant la microtask queue se vider (les FabricImage chargent via
-    // `loadSVGFromString` — elles sont déjà résolues à ce stade, mais on laisse
-    // un tick pour garantir que les .width/.height sont propagés).
-    fabricCanvas.requestRenderAll()
-    await new Promise<void>((resolve) => setTimeout(resolve, 100))
+    // Garantit que l'image de fond est DÉCODÉE avant la décompo (decomposeOnCanvas
+    // lit ses pixels via getImageData). Sinon l'échantillonnage couleur échoue.
+    await Promise.all(
+      collectFabricImages(objects).map(async (img) => {
+        const imgEl = img.getElement() as HTMLImageElement | undefined
+        if (imgEl && typeof imgEl.decode === 'function' && !imgEl.complete) {
+          await imgEl.decode().catch(() => {})
+        }
+      }),
+    )
+    fabricCanvas.renderAll()
 
     // Lance la décomposition sur le canvas offscreen.
     // syncStore: false → ne clobber pas le Zustand de l'éditeur ouvert.

@@ -98,7 +98,11 @@ RÈGLES IMPÉRATIVES :
   "subject" = l'objet indiqué dans la demande, sinon le titre du workflow ; "body" = le message
   indiqué dans la demande ; "attachmentMode" = "source".
 - Pour joindre/sauvegarder un fichier PRODUIT en amont : "export-design" sort un port "file" — relie-le
-  vers le port d'entrée "attachment" de "send-gmail" ET vers le port "file" de "gdrive-export".`,
+  vers le port d'entrée "attachment" de "send-gmail" ET vers le port "file" de "gdrive-export".
+- IMPORTANT : "pdf-to-svg" et "image-to-svg" ne produisent qu'un RASTER verrouillé (pas éditable).
+  Dès que leur "svg" est consommé en aval (export, Drive, mail), insère un node "decompose" ENTRE la
+  conversion et le consommateur, pour obtenir un SVG décomposé/éditable (textes & formes) — sinon on
+  exporte juste l'image d'origine. Chaîne type : pdf-to-svg (svg) → decompose (svg) → export-design (file).`,
   )
   parts.push(`═══ CATALOGUE DES NODES ═══\n${catalog}`)
   parts.push(`═══ DEMANDE DE L'UTILISATEUR ═══\n${userPrompt}`)
