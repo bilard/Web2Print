@@ -23,8 +23,8 @@ export function TelegramInboxView() {
 
   // Chat cible : le Chat ID configuré, sinon l'expéditeur du dernier message reçu (tu as
   // forcément parlé au bot pour qu'il y ait des messages). Évite d'imposer une config manuelle.
-  const effectiveChatId =
-    defaultChatId.trim() || (messages[0]?.chatId != null ? String(messages[0].chatId) : '')
+  const lastValidChat = messages.find((m) => typeof m.chatId === 'number' && m.chatId > 0)?.chatId
+  const effectiveChatId = defaultChatId.trim() || (lastValidChat != null ? String(lastValidChat) : '')
 
   // Envoie réellement un message vers le chat Telegram (App → Telegram).
   const onSend = async () => {

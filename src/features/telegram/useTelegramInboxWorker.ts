@@ -45,6 +45,12 @@ export function useTelegramInboxWorker(): void {
         })
       },
       process: async (msg) => {
+        // Mémorise le chat par défaut au 1er message reçu (persisté + sync) : permet d'envoyer
+        // depuis l'app sans config manuelle.
+        if (!useTelegramStore.getState().chatId.trim() && msg.chatId) {
+          useTelegramStore.getState().setChatId(String(msg.chatId))
+        }
+
         // Routage : seul « /flow <demande> » lance un workflow ; tout autre message est simple.
         const cmd = parseInboxCommand(msg.text)
         if (cmd.kind === 'simple') {
