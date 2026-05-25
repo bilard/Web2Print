@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { AiLiveIndicator } from '@/components/shared/AiLiveIndicator'
+import { TopProgressBar } from '@/components/shared/TopProgressBar'
 import { router } from './router'
 
 const queryClient = new QueryClient({
@@ -21,6 +22,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <RouterProvider router={router} />
+          <TopProgressBar />
           <AiLiveIndicator />
           <Toaster theme="dark" position="bottom-right" richColors />
         </AuthProvider>

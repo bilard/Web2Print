@@ -3,6 +3,7 @@ import type { Workflow, WorkflowNode, WorkflowEdge, RunContextApi } from '../typ
 import { nodeRegistry } from '../registry'
 import { topoSort } from './topo'
 import { useRunContext } from './runContext'
+import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
 
 export type Middleware = (
@@ -241,6 +242,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     return
   }
   const ac = ctxStore.startRun()
+  useProgressStore.getState().begin('Exécution du workflow…')
   try {
     // Détection des loops avant tout topo
     const loops = detectLoops(wf.nodes, wf.edges)
@@ -257,7 +259,9 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     const loopByEach = new Map(loops.map((l) => [l.eachId, l]))
     const loopByCollect = new Map(loops.map((l) => [l.collectId, l]))
 
+    let processed = 0
     for (const node of ordered) {
+      useProgressStore.getState().setProgress(++processed / Math.max(1, ordered.length))
       // Skip if any upstream is skipped or errored
       const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
       const upstreamFailed = upstream.some(
@@ -364,5 +368,6 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     }
   } finally {
     useRunContext.getState().endRun()
+    useProgressStore.getState().end()
   }
 }

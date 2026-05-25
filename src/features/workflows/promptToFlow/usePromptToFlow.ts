@@ -2,6 +2,7 @@
 import { useCallback, useState } from 'react'
 import type { LLMProviderId } from '@/features/ai/llmRouter'
 import { useWorkflowStore } from '../persistence/workflow.store'
+import { useProgressStore } from '@/stores/progress.store'
 import { generateWorkflow } from './generateWorkflow'
 import { validateGraph } from './validateGraph'
 import { layoutGraph } from './layoutGraph'
@@ -32,6 +33,7 @@ export function usePromptToFlow(): UsePromptToFlow {
   const generate = useCallback(async (prompt: string, forceProvider?: LLMProviderId) => {
     setPhase('generating')
     setError(null)
+    useProgressStore.getState().begin('Génération du workflow…')
     try {
       const raw = await generateWorkflow(prompt, { forceProvider })
       let validated = validateGraph(raw)
@@ -52,6 +54,8 @@ export function usePromptToFlow(): UsePromptToFlow {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setPhase('error')
+    } finally {
+      useProgressStore.getState().end()
     }
   }, [])
 

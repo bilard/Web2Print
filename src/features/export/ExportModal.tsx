@@ -7,6 +7,7 @@ import { useExportHtml } from './useExportHtml'
 import { useExportSvg } from './useExportSvg'
 import { useExportIdml } from '@/features/idml/useExportIdml'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
+import { withProgress } from '@/stores/progress.store'
 import type { PngDpi } from './useExportPng'
 
 type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml'
@@ -46,12 +47,14 @@ export function ExportModal({ onClose }: ExportModalProps) {
     setStatus('exporting')
     setError(null)
     try {
-      if (format === 'png') await exportPng(dpi)
-      else if (format === 'pdf') await exportPdf({ withPrintMarks: pdfWithMarks })
-      else if (format === 'pptx') await exportPptx()
-      else if (format === 'html') await exportHtml()
-      else if (format === 'svg') await exportSvg()
-      else if (format === 'idml') await exportIdml()
+      await withProgress(`Export ${format.toUpperCase()}…`, async () => {
+        if (format === 'png') await exportPng(dpi)
+        else if (format === 'pdf') await exportPdf({ withPrintMarks: pdfWithMarks })
+        else if (format === 'pptx') await exportPptx()
+        else if (format === 'html') await exportHtml()
+        else if (format === 'svg') await exportSvg()
+        else if (format === 'idml') await exportIdml()
+      })
       setStatus('done')
       setTimeout(onClose, 1500)
     } catch (err) {
