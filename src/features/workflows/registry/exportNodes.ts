@@ -1,5 +1,5 @@
 // src/features/workflows/registry/exportNodes.ts
-import { FileDown, Presentation, FileType2 } from 'lucide-react'
+import { FileDown, Presentation, FileType2, Download } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import PptxGenJS from 'pptxgenjs'
 import jsPDF from 'jspdf'
@@ -340,6 +340,171 @@ export const exportPdfNode: NodeSpec<
   },
 }
 
+// ---------------------------------------------------------------------------
+// Export Design — rend un SVG (issu de image-to-svg / pdf-to-svg) dans le
+// format choisi (PNG/PDF/PPTX/HTML/SVG). Miroir du modal d'export du dashboard.
+// ---------------------------------------------------------------------------
+
+type DesignFormat = 'png' | 'pdf' | 'pptx' | 'html' | 'svg'
+
+interface ExportDesignConfig {
+  format: DesignFormat
+}
+
+interface FileInput {
+  file?: File | Blob | null
+}
+
+/**
+ * Inline les `<image href="http(s)://…">` en data URI : un SVG chargé comme
+ * `<img>` tourne en "secure mode" et ne charge AUCUNE ressource externe. On rend
+ * donc le SVG auto-suffisant avant rasterisation (data URI = canvas non tainté).
+ */
+async function inlineExternalImages(svgText: string): Promise<string> {
+  const urls = Array.from(
+    svgText.matchAll(/(?:xlink:href|href)\s*=\s*"(https?:\/\/[^"]+)"/g),
+    (m) => m[1],
+  )
+  let out = svgText
+  for (const url of Array.from(new Set(urls))) {
+    const resp = await fetch(url)
+    if (!resp.ok) throw new Error(`Image du SVG inaccessible (${resp.status}) : ${url}`)
+    const blob = await resp.blob()
+    const dataUri = await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader()
+      fr.onload = () => resolve(fr.result as string)
+      fr.onerror = () => reject(new Error('Lecture de l’image échouée.'))
+      fr.readAsDataURL(blob)
+    })
+    out = out.split(url).join(dataUri)
+  }
+  return out
+}
+
+function parseSvgSize(svgText: string): { width: number; height: number } {
+  const w = /\bwidth\s*=\s*"([\d.]+)"/.exec(svgText)
+  const h = /\bheight\s*=\s*"([\d.]+)"/.exec(svgText)
+  if (w && h) return { width: Math.round(+w[1]), height: Math.round(+h[1]) }
+  const vb = /viewBox\s*=\s*"[\d.]+ [\d.]+ ([\d.]+) ([\d.]+)"/.exec(svgText)
+  if (vb) return { width: Math.round(+vb[1]), height: Math.round(+vb[2]) }
+  return { width: 1024, height: 1024 }
+}
+
+async function rasterizeSvg(svgText: string): Promise<{ canvas: HTMLCanvasElement; width: number; height: number }> {
+  const { width, height } = parseSvgSize(svgText)
+  const selfContained = await inlineExternalImages(svgText)
+  const blob = new Blob([selfContained], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  try {
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('Rendu SVG → image échoué.'))
+      img.src = url
+    })
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D indisponible.')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, width, height)
+    ctx.drawImage(img, 0, 0, width, height)
+    return { canvas, width, height }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { result: ExportResult }> = {
+  type: 'export-design',
+  category: 'export',
+  label: 'Export (design)',
+  description:
+    'Exporte un design SVG (issu de Image→SVG / PDF→SVG) dans le format choisi : PNG, PDF, PPTX, HTML ou SVG.',
+  icon: Download,
+  inputs: [{ name: 'file', type: 'file', required: true }],
+  outputs: [{ name: 'result', type: 'export-result' }],
+  configSchema: [
+    {
+      name: 'format',
+      kind: 'select',
+      label: 'Format de sortie',
+      options: [
+        { value: 'png', label: 'PNG (image haute résolution)' },
+        { value: 'pdf', label: 'PDF (document imprimable)' },
+        { value: 'pptx', label: 'PowerPoint (.pptx)' },
+        { value: 'html', label: 'HTML (page autonome)' },
+        { value: 'svg', label: 'SVG (vectoriel éditable)' },
+      ],
+      default: 'png',
+    },
+  ],
+  defaultConfig: { format: 'png' },
+  runtime: 'client',
+  run: async (ctx, config, inputs) => {
+    const file = inputs.file
+    if (!(file instanceof Blob)) {
+      throw new Error('Aucun design en entrée — connectez la sortie SVG de « Image → SVG » ou « PDF → SVG ».')
+    }
+    const svgText = await file.text()
+    const baseName = ((file as File).name || 'design').replace(/\.[^.]+$/, '') || 'design'
+    const stamp = Date.now()
+
+    const finish = (out: Blob, ext: string): { result: ExportResult } => {
+      const url = URL.createObjectURL(out)
+      const filename = `${baseName}-${stamp}.${ext}`
+      ctx.log('info', `Export ${config.format.toUpperCase()} → ${filename}`)
+      return { result: { url, mime: out.type, filename } }
+    }
+
+    if (config.format === 'svg') {
+      return finish(new Blob([svgText], { type: 'image/svg+xml' }), 'svg')
+    }
+    if (config.format === 'html') {
+      const html = `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>${baseName}</title>
+<style>html,body{margin:0;height:100%}body{display:flex;align-items:center;justify-content:center;background:#fff}svg{max-width:100%;max-height:100%}</style>
+</head><body>${svgText}</body></html>`
+      return finish(new Blob([html], { type: 'text/html;charset=utf-8' }), 'html')
+    }
+
+    ctx.log('info', 'Rasterisation du SVG…')
+    const { canvas, width, height } = await rasterizeSvg(svgText)
+
+    if (config.format === 'png') {
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Génération PNG échouée.'))), 'image/png'),
+      )
+      return finish(blob, 'png')
+    }
+
+    const dataUrl = canvas.toDataURL('image/png')
+
+    if (config.format === 'pdf') {
+      const orientation = width >= height ? 'landscape' : 'portrait'
+      const pdf = new jsPDF({ orientation, unit: 'px', format: [width, height] })
+      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height)
+      return finish(pdf.output('blob'), 'pdf')
+    }
+
+    // pptx : 1 slide aux dimensions du design (px → pouces @ 96 dpi)
+    const pres = new PptxGenJS()
+    const wIn = width / 96
+    const hIn = height / 96
+    pres.defineLayout({ name: 'DESIGN', width: wIn, height: hIn })
+    pres.layout = 'DESIGN'
+    const slide = pres.addSlide()
+    slide.addImage({ data: dataUrl, x: 0, y: 0, w: wIn, h: hIn })
+    const output = await pres.write({ outputType: 'blob' })
+    const out = output instanceof Blob ? output : new Blob([output as ArrayBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    })
+    return finish(out, 'pptx')
+  },
+}
+
 nodeRegistry.register(exportExcelNode)
 nodeRegistry.register(exportPptxNode)
 nodeRegistry.register(exportPdfNode)
+nodeRegistry.register(exportDesignNode)
