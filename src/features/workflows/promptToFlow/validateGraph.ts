@@ -29,13 +29,17 @@ export function validateGraph(
       issues.push({ level: 'error', message: `Node inconnu ignoré : "${rn.type}" (ref ${rn.ref}).` })
       return
     }
+    if (refToId.has(rn.ref)) {
+      issues.push({ level: 'error', message: `Ref dupliquée ignorée : "${rn.ref}" (index ${i}).` })
+      return
+    }
     const id = genId(i)
     refToId.set(rn.ref, id)
     nodes.push({
       id,
       type: rn.type,
       position: { x: 0, y: 0 },
-      config: { ...(spec.defaultConfig as Record<string, unknown>), ...(rn.config ?? {}) },
+      config: { ...structuredClone(spec.defaultConfig as Record<string, unknown>), ...(rn.config ?? {}) },
     })
   })
 

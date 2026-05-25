@@ -63,6 +63,20 @@ describe('validateGraph', () => {
     expect(g.issues.some((i) => i.level === 'warning' && /file/.test(i.message))).toBe(true)
   })
 
+  it('écarte une ref dupliquée avec une issue error', () => {
+    const raw: RawGraph = {
+      title: '', summary: '',
+      nodes: [
+        { ref: 'u', type: 'upload' },
+        { ref: 'u', type: 'import-csv' },
+      ],
+      edges: [],
+    }
+    const g = validateGraph(raw, genId)
+    expect(g.nodes).toHaveLength(1)
+    expect(g.issues.some((i) => i.level === 'error' && /dupliqu/i.test(i.message))).toBe(true)
+  })
+
   it('détecte un cycle', () => {
     const raw: RawGraph = {
       title: '', summary: '',
