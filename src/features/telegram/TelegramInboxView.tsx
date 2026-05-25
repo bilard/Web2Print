@@ -21,6 +21,11 @@ export function TelegramInboxView() {
   const [sending, setSending] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
 
+  // Chat cible : le Chat ID configuré, sinon l'expéditeur du dernier message reçu (tu as
+  // forcément parlé au bot pour qu'il y ait des messages). Évite d'imposer une config manuelle.
+  const effectiveChatId =
+    defaultChatId.trim() || (messages[0]?.chatId != null ? String(messages[0].chatId) : '')
+
   // Envoie réellement un message vers le chat Telegram (App → Telegram).
   const onSend = async () => {
     const t = draft.trim()
@@ -29,13 +34,13 @@ export function TelegramInboxView() {
       toast.error('Configure le bot token (Settings → Connecteurs → Telegram).')
       return
     }
-    if (!defaultChatId.trim()) {
-      toast.error('Configure le Chat ID par défaut (Settings → Connecteurs → Telegram).')
+    if (!effectiveChatId) {
+      toast.error('Aucun Chat ID : écris d’abord au bot, ou renseigne le Chat ID par défaut dans Settings.')
       return
     }
     setSending(true)
     try {
-      await sendTelegramMessage(botToken, { chatId: defaultChatId, text: t })
+      await sendTelegramMessage(botToken, { chatId: effectiveChatId, text: t })
       toast.success('Message envoyé sur Telegram.')
       setDraft('')
       setComposing(false)
@@ -120,7 +125,7 @@ export function TelegramInboxView() {
               onChange={(e) => setDraft(e.target.value)}
               rows={2}
               autoFocus
-              placeholder={`Message à envoyer sur Telegram (chat ${defaultChatId || '— configure le Chat ID'})…`}
+              placeholder={`Message à envoyer sur Telegram (chat ${effectiveChatId || '— écris d’abord au bot'})…`}
               className="w-full bg-[#0f0f0f] border border-neutral-700 rounded-md px-2 py-1 text-[13px] text-white placeholder:text-neutral-600 outline-none resize-y"
             />
             <div className="flex gap-1.5">
