@@ -1,6 +1,6 @@
 // src/features/telegram/TelegramSettings.tsx
 import { useState, useEffect } from 'react'
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { getTelegramBotInfo } from '@/lib/telegramApi'
 
@@ -19,6 +19,7 @@ export function TelegramSettings() {
   const setBotToken = useTelegramStore((s) => s.setBotToken)
   const setChatId = useTelegramStore((s) => s.setChatId)
   const [status, setStatus] = useState<ConnStatus>({ kind: 'idle' })
+  const [showToken, setShowToken] = useState(false)
 
   // Valide le bot token auprès de Telegram (getMe), avec un léger debounce sur la saisie.
   useEffect(() => {
@@ -50,14 +51,25 @@ export function TelegramSettings() {
     <div className="space-y-3">
       <div>
         <label className="text-xs text-neutral-400 mb-1 block">Bot token Telegram</label>
-        <input
-          type="password"
-          autoComplete="off"
-          value={botToken}
-          onChange={(e) => setBotToken(e.target.value)}
-          placeholder="123456789:ABCdef..."
-          className={inputCls}
-        />
+        <div className="relative">
+          <input
+            type={showToken ? 'text' : 'password'}
+            autoComplete="off"
+            value={botToken}
+            onChange={(e) => setBotToken(e.target.value)}
+            placeholder="123456789:ABCdef..."
+            className={`${inputCls} pr-9`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowToken((s) => !s)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-neutral-500 hover:text-white"
+            title={showToken ? 'Masquer le token' : 'Afficher le token'}
+            aria-label={showToken ? 'Masquer le token' : 'Afficher le token'}
+          >
+            {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
+        </div>
         {status.kind === 'checking' && (
           <span className="flex items-center gap-1 text-[10px] text-neutral-500 mt-1">
             <Loader2 className="w-3 h-3 animate-spin" /> Vérification de la connexion…
