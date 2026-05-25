@@ -55,6 +55,7 @@ type LLMTask =
   | 'design.priceOCR'
   | 'design.logoClassify'
   | 'design.semanticLayout'
+  | 'workflow.generate'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -96,6 +97,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // aléatoire (cause des échecs sémantiques → fallback heuristique). 3.1-pro-preview
   // tourne sur v1beta avec responseSchema → JSON structuré FIABLE. Multimodal OK.
   'design.semanticLayout':  { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Prompt-to-Flow : génération de graphe structuré. gemini-3.1-pro-preview en primary
+  // (JSON fiable via responseSchema sur v1beta + disponibilité), Claude Opus 4.7 en
+  // fallback (meilleur raisonnement de graphe si la clé Gemini manque).
+  'workflow.generate': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -113,6 +118,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.priceOCR':        0,
   'design.logoClassify':    0,
   'design.semanticLayout':  0,
+  'workflow.generate':      0.2,
 }
 
 interface GenerateJsonOptions<T> {
