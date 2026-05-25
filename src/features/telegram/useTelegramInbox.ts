@@ -12,6 +12,7 @@ import {
   updateDoc,
   setDoc,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
@@ -82,6 +83,17 @@ export function addInboxMessage(chatId: number, text: string): Promise<void> {
     status: 'done',
     receivedAt: serverTimestamp(),
   })
+}
+
+/** Supprime tous les messages fournis (par lots de 450 — limite Firestore 500/batch). */
+export async function deleteAllInboxMessages(updateIds: number[]): Promise<void> {
+  for (let i = 0; i < updateIds.length; i += 450) {
+    const batch = writeBatch(db)
+    for (const id of updateIds.slice(i, i + 450)) {
+      batch.delete(doc(db, 'telegramInbox', String(id)))
+    }
+    await batch.commit()
+  }
 }
 
 /** Métadonnées d'affichage d'un statut (label + classes Tailwind du badge). */

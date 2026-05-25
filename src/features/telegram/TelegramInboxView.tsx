@@ -2,8 +2,8 @@
 // Boîte de réception Telegram : liste temps réel des messages entrants + statut,
 // avec ajout manuel et actions par message (éditer / supprimer via InboxItem).
 import { useState } from 'react'
-import { Inbox, Loader2, Plus, Check, X } from 'lucide-react'
-import { useTelegramInbox, addInboxMessage } from './useTelegramInbox'
+import { Inbox, Loader2, Plus, Check, X, Trash2 } from 'lucide-react'
+import { useTelegramInbox, addInboxMessage, deleteAllInboxMessages } from './useTelegramInbox'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { InboxItem } from './InboxItem'
 
@@ -12,6 +12,7 @@ export function TelegramInboxView() {
   const defaultChatId = useTelegramStore((s) => s.chatId)
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState('')
+  const [confirmClear, setConfirmClear] = useState(false)
 
   const onAdd = async () => {
     const t = draft.trim()
@@ -21,19 +22,56 @@ export function TelegramInboxView() {
     setAdding(false)
   }
 
+  const onClearAll = async () => {
+    await deleteAllInboxMessages(messages.map((m) => m.updateId))
+    setConfirmClear(false)
+  }
+
   return (
     <div className="h-full bg-[#0f0f0f] text-white flex flex-col overflow-hidden">
       <header className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
         <Inbox className="w-4 h-4 text-blue-400" />
         <h1 className="text-[13px] font-semibold text-white/80">Boîte de réception Telegram</h1>
         <span className="text-[11px] text-neutral-500">{messages.length} message(s)</span>
-        <button
-          type="button"
-          onClick={() => setAdding((a) => !a)}
-          className="ml-auto flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-blue-500/15 text-blue-200 hover:bg-blue-500/25 border border-blue-500/30"
-        >
-          <Plus className="w-3 h-3" /> Ajouter
-        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          {messages.length > 0 &&
+            (confirmClear ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-neutral-400">
+                  Supprimer {messages.length} message(s) ?
+                </span>
+                <button
+                  type="button"
+                  onClick={onClearAll}
+                  className="text-[11px] px-2 py-1 rounded-md bg-red-500/20 text-red-200 hover:bg-red-500/30 border border-red-500/30"
+                >
+                  Confirmer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(false)}
+                  className="text-[11px] px-2 py-1 rounded-md text-neutral-400 hover:text-white hover:bg-white/[0.06]"
+                >
+                  Annuler
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmClear(true)}
+                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-red-500/10 text-red-300 hover:bg-red-500/20 border border-red-500/30"
+              >
+                <Trash2 className="w-3 h-3" /> Tout supprimer
+              </button>
+            ))}
+          <button
+            type="button"
+            onClick={() => setAdding((a) => !a)}
+            className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-blue-500/15 text-blue-200 hover:bg-blue-500/25 border border-blue-500/30"
+          >
+            <Plus className="w-3 h-3" /> Ajouter
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-4">
