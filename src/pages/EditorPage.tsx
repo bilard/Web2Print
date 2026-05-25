@@ -17,6 +17,7 @@ import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { useIdmlParse } from '@/features/idml/useIdmlParse'
 import { usePptxParse } from '@/features/pptx/usePptxParse'
 import { useSvgParse } from '@/features/svg/useSvgParse'
+import { useImageToSvgDecompose } from '@/features/svg/useImageToSvgDecompose'
 import { useLockBgImage } from '@/features/svg/useLockBgImage'
 import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
@@ -37,7 +38,15 @@ export default function EditorPage() {
   const { parseAndRender: parseIdml } = useIdmlParse()
   const { parseAndRender: parsePptx, state: pptxState } = usePptxParse()
   const { parseAndRender: parseSvg, state: svgState } = useSvgParse()
+  const {
+    canDecompose,
+    isRunning: decomposing,
+    hasDecomposition,
+    run: runDecompose,
+  } = useImageToSvgDecompose()
   const [idmlImporting, setIdmlImporting] = useState(false)
+  // Déclenche la décomposition auto après un import raster→SVG (Image→SVG / PDF→SVG).
+  const [autoDecomposePending, setAutoDecomposePending] = useState(false)
   const { insertOnCanvas } = useDamCanvasInsert()
   usePreloadFonts()
   // Lock auto du calque bg-image-locked pour les projets image-to-svg : empêche
@@ -114,6 +123,12 @@ export default function EditorPage() {
 
       if ((type === 'svg' || type === 'image-to-svg' || type === 'pdf-to-svg') && files.length > 0) {
         await parseSvg(files[0])
+        // Conversions raster→SVG : on enchaîne automatiquement la décomposition
+        // (Vision → textes/formes éditables). Un .svg vectoriel importé n'a pas de
+        // calque image-bg-locked, donc canDecompose restera false → pas de décompo.
+        if (type === 'image-to-svg' || type === 'pdf-to-svg') {
+          setAutoDecomposePending(true)
+        }
       }
 
       if (type === 'image' && files.length > 0) {
@@ -145,7 +160,16 @@ export default function EditorPage() {
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [pendingImport])  
+  }, [pendingImport])
+
+  // Auto-décomposition : attend que le calque image-bg-locked soit détecté
+  // (canDecompose) après le rendu du SVG importé, puis lance la décompo UNE fois.
+  useEffect(() => {
+    if (!autoDecomposePending) return
+    if (!canDecompose || decomposing || hasDecomposition) return
+    setAutoDecomposePending(false)
+    void runDecompose()
+  }, [autoDecomposePending, canDecompose, decomposing, hasDecomposition, runDecompose])
 
   return (
     <div className="flex flex-col h-screen bg-[#0f0f0f] overflow-hidden">
