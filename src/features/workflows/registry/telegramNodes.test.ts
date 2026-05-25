@@ -138,4 +138,15 @@ describe('send-telegram node', () => {
 
     expect(vi.mocked(sendTelegramMessage).mock.calls[0][1].parseMode).toBe('HTML')
   })
+
+  it('iterate sans données en entrée : avertit et envoie un message unique', async () => {
+    vi.mocked(sendTelegramMessage).mockResolvedValue({ messageId: 1 })
+    const ctx = mkCtx()
+
+    const res = await sendTelegramNode.run(ctx, { ...baseConfig, iterate: true }, {})
+
+    expect(sendTelegramMessage).toHaveBeenCalledTimes(1)
+    expect(res.result.count).toBe(1)
+    expect(ctx.log).toHaveBeenCalledWith('warn', expect.stringContaining('aucune ligne en entrée'))
+  })
 })

@@ -178,6 +178,13 @@ export const sendTelegramNode: NodeSpec<
     const inputRows = extractRows(inputs.data)
 
     // Mode iterate : 1 message par ligne (ré-interpolation par row, comme send-gmail).
+    if (config.iterate && !inputRows) {
+      ctx.log(
+        'warn',
+        "Mode « 1 message par ligne » activé mais aucune ligne en entrée (port data) — envoi d'un message unique.",
+      )
+    }
+
     if (config.iterate && inputRows && rawConfig) {
       if (inputRows.length === 0) {
         ctx.log('warn', 'Mode "1 message par ligne" activé mais le tableau d\'entrée est vide.')
