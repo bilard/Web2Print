@@ -9,6 +9,7 @@ import {
 } from '@/lib/telegramApi'
 import { interpolate } from '../runtime/interpolate'
 import { extractRows } from '../runtime/executor'
+import { useTelegramStore } from '@/stores/telegram.store'
 
 // Limite Telegram pour une légende de document.
 const CAPTION_MAX = 1024
@@ -49,8 +50,12 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           className={inputCls}
         />
         <div className="text-[10px] text-neutral-600 mt-1.5 leading-snug space-y-1.5">
+          <div className="px-2 py-1.5 rounded-md bg-emerald-500/5 border border-emerald-500/20 text-emerald-200/90">
+            Laisse vide pour utiliser le <strong>bot token global</strong> (Settings → Connecteurs →
+            Telegram) — recommandé : le token n'est alors pas stocké dans le workflow.
+          </div>
           <p>
-            Crée un bot via{' '}
+            Sinon, colle ici un token créé via{' '}
             <a
               href="https://t.me/BotFather"
               target="_blank"
@@ -59,12 +64,8 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
             >
               @BotFather
             </a>{' '}
-            et colle le token ici.
+            (il sera alors enregistré avec le workflow).
           </p>
-          <div className="px-2 py-1.5 rounded-md bg-amber-500/5 border border-amber-500/20 text-amber-200/90">
-            Ce token est enregistré <strong>avec le workflow</strong>. Ne partage pas /
-            n'exporte pas un workflow contenant un token que tu veux garder secret.
-          </div>
         </div>
       </div>
 
@@ -78,7 +79,8 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           className={inputCls}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          Parle d'abord à ton bot, puis récupère ton chat_id via{' '}
+          Laisse vide pour utiliser le <strong className="text-neutral-400">Chat ID par défaut</strong>{' '}
+          (Settings). Sinon récupère ton chat_id via{' '}
           <a
             href="https://t.me/userinfobot"
             target="_blank"
@@ -87,7 +89,7 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           >
             @userinfobot
           </a>
-          . Pour un canal public : <code className="text-amber-300/80">@nomducanal</code>.
+          , ou mets <code className="text-amber-300/80">@nomducanal</code> pour un canal public.
         </p>
       </div>
 
@@ -169,9 +171,10 @@ export const sendTelegramNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: SendTelegramConfigUi,
   run: async (ctx, config, inputs) => {
-    if (!config.botToken?.trim()) {
-      throw new Error('Bot token Telegram manquant. Renseigne-le dans la config du node.')
-    }
+    // Fallback sur la config Telegram globale (Settings) quand un champ du node est vide.
+    const global = useTelegramStore.getState()
+    const effToken = (c?: string) => (c?.trim() ? c.trim() : global.botToken.trim())
+    const effChat = (c?: string) => (c?.trim() ? c.trim() : global.chatId.trim())
 
     const file = inputs.attachment instanceof Blob ? inputs.attachment : null
     const rawConfig = ctx.rawConfig as SendTelegramConfig | undefined
@@ -199,25 +202,31 @@ export const sendTelegramNode: NodeSpec<
         }
         const row = inputRows[i]
         const r = interpolate(rawConfig, { ...row, row, index: i })
-        if (!r.chatId?.trim()) {
+        const botToken = effToken(r.botToken)
+        const chatId = effChat(r.chatId)
+        if (!botToken) {
+          ctx.log('warn', `Ligne ${i + 1} ignorée : bot token manquant (node + config globale vides).`)
+          continue
+        }
+        if (!chatId) {
           ctx.log('warn', `Ligne ${i + 1} ignorée : chat_id vide après interpolation.`)
           continue
         }
         try {
           const out = file
-            ? await sendTelegramDocument(r.botToken, {
-                chatId: r.chatId,
+            ? await sendTelegramDocument(botToken, {
+                chatId,
                 file,
                 caption: r.text.slice(0, CAPTION_MAX),
                 parseMode: r.parseMode,
               })
-            : await sendTelegramMessage(r.botToken, {
-                chatId: r.chatId,
+            : await sendTelegramMessage(botToken, {
+                chatId,
                 text: r.text,
                 parseMode: r.parseMode,
               })
           messageIds.push(out.messageId)
-          ctx.log('info', `[${i + 1}/${inputRows.length}] → ${r.chatId} (msg ${out.messageId})`)
+          ctx.log('info', `[${i + 1}/${inputRows.length}] → ${chatId} (msg ${out.messageId})`)
         } catch (err) {
           ctx.log(
             'warn',
@@ -229,22 +238,31 @@ export const sendTelegramNode: NodeSpec<
     }
 
     // Mode message unique.
-    if (!config.chatId?.trim()) {
-      throw new Error('Chat ID Telegram manquant.')
+    const botToken = effToken(config.botToken)
+    if (!botToken) {
+      throw new Error(
+        'Bot token Telegram manquant (ni dans le node, ni dans la config globale Telegram des Settings).',
+      )
+    }
+    const chatId = effChat(config.chatId)
+    if (!chatId) {
+      throw new Error(
+        'Chat ID Telegram manquant (ni dans le node, ni dans la config globale Telegram des Settings).',
+      )
     }
     const out = file
-      ? await sendTelegramDocument(config.botToken, {
-          chatId: config.chatId,
+      ? await sendTelegramDocument(botToken, {
+          chatId,
           file,
           caption: config.text.slice(0, CAPTION_MAX),
           parseMode: config.parseMode,
         })
-      : await sendTelegramMessage(config.botToken, {
-          chatId: config.chatId,
+      : await sendTelegramMessage(botToken, {
+          chatId,
           text: config.text,
           parseMode: config.parseMode,
         })
-    ctx.log('info', `Message Telegram envoyé → ${config.chatId} (msg ${out.messageId}).`)
+    ctx.log('info', `Message Telegram envoyé → ${chatId} (msg ${out.messageId}).`)
     return { result: { sent: true, count: 1, messageIds: [out.messageId] } }
   },
 }

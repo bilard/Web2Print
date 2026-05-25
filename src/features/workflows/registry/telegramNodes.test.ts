@@ -7,6 +7,7 @@ vi.mock('@/lib/telegramApi', () => ({
 
 import { sendTelegramMessage, sendTelegramDocument } from '@/lib/telegramApi'
 import { sendTelegramNode } from './telegramNodes'
+import { useTelegramStore } from '@/stores/telegram.store'
 import type { RunContextApi } from '../types'
 
 type Cfg = Parameters<typeof sendTelegramNode.run>[1]
@@ -31,6 +32,8 @@ function mkCtx(overrides: Partial<RunContextApi> = {}): RunContextApi {
 describe('send-telegram node', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Config globale vide par défaut : le fallback ne doit pas masquer les guards des tests.
+    useTelegramStore.setState({ botToken: '', chatId: '' })
   })
 
   it('envoie un message texte unique', async () => {
@@ -148,5 +151,19 @@ describe('send-telegram node', () => {
     expect(sendTelegramMessage).toHaveBeenCalledTimes(1)
     expect(res.result.count).toBe(1)
     expect(ctx.log).toHaveBeenCalledWith('warn', expect.stringContaining('aucune ligne en entrée'))
+  })
+
+  it('utilise la config globale quand les champs du node sont vides', async () => {
+    useTelegramStore.setState({ botToken: 'GTOKEN', chatId: '999' })
+    vi.mocked(sendTelegramMessage).mockResolvedValue({ messageId: 7 })
+
+    const res = await sendTelegramNode.run(mkCtx(), { ...baseConfig, botToken: '', chatId: '' }, {})
+
+    expect(sendTelegramMessage).toHaveBeenCalledWith('GTOKEN', {
+      chatId: '999',
+      text: 'hello',
+      parseMode: 'none',
+    })
+    expect(res.result.messageIds).toEqual([7])
   })
 })
