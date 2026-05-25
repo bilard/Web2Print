@@ -14,7 +14,7 @@ describe('generateWorkflow', () => {
   it('appelle generateJson avec la task workflow.generate et renvoie le graphe', async () => {
     const raw = {
       title: 'X', summary: 'Y',
-      nodes: [{ ref: 'u', type: 'upload', config: {} }],
+      nodes: [{ ref: 'u', type: 'upload', config: [] }],
       edges: [],
     }
     generateJsonMock.mockResolvedValueOnce(raw)

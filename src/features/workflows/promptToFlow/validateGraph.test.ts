@@ -12,14 +12,15 @@ describe('validateGraph', () => {
     const raw: RawGraph = {
       title: 'T', summary: 'S',
       nodes: [
-        { ref: 'u', type: 'upload', config: {} },
-        { ref: 'c', type: 'import-csv', config: { headerRow: false } },
+        { ref: 'u', type: 'upload', config: [] },
+        { ref: 'c', type: 'import-csv', config: [{ key: 'headerRow', value: 'false' }] },
       ],
       edges: [{ from: 'u', fromPort: 'file', to: 'c', toPort: 'file' }],
     }
     const g = validateGraph(raw, genId)
     expect(g.issues.filter((i) => i.level === 'error')).toHaveLength(0)
     expect(g.nodes.map((n) => n.id)).toEqual(['n0', 'n1'])
+    // 'false' (texte) coercé en booléen via le type du défaut (headerRow: true)
     expect(g.nodes[1].config).toEqual({ headerRow: false })
     expect(g.edges).toHaveLength(1)
     expect(g.edges[0]).toMatchObject({ source: 'n0', sourceHandle: 'file', target: 'n1', targetHandle: 'file' })

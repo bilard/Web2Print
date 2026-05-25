@@ -12,7 +12,10 @@ const rawSchema = z.object({
       ref: z.string(),
       type: z.string(),
       label: z.string().optional(),
-      config: z.record(z.string(), z.unknown()).optional(), // zod v4 : record à 2 args (clé, valeur)
+      // Config en paires {key, value} : un objet à clés arbitraires n'est pas
+      // remplissable par la sortie structurée de Gemini (responseSchema sans
+      // properties → {} systématique). Les paires ont un schéma défini → remplies.
+      config: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
     }),
   ),
   edges: z.array(
@@ -33,7 +36,16 @@ const schemaForLLM: Record<string, unknown> = {
           ref: { type: 'string', description: 'Référence locale unique (ex: n1).' },
           type: { type: 'string', description: "Type exact d'un node du catalogue." },
           label: { type: 'string' },
-          config: { type: 'object', description: 'Valeurs de config déduites du prompt.' },
+          config: {
+            type: 'array',
+            description:
+              'Config du node sous forme de paires. "key" = nom EXACT d\'un champ listé dans "config:" du catalogue ; "value" = la valeur (texte). Émets une paire par champ remplissable.',
+            items: {
+              type: 'object',
+              properties: { key: { type: 'string' }, value: { type: 'string' } },
+              required: ['key', 'value'],
+            },
+          },
         },
         required: ['ref', 'type'],
       },
@@ -75,9 +87,10 @@ RÈGLES IMPÉRATIVES :
 - Les nodes "in: (aucun)" sont des sources (Upload, Scrape URL, imports Drive) : ne leur connecte
   aucune entrée.
 - Donne à chaque node une "ref" locale unique (n1, n2, …) ; les edges référencent ces refs.
-- Pré-remplis "config" au mieux à partir de la demande, en utilisant EXACTEMENT les noms de champs
-  de config indiqués (ex: urlColumn, fields, prompt, titleColumn, expression…). Laisse vide si tu
-  n'as pas l'information.
+- "config" est une LISTE de paires {key, value} : "key" = nom EXACT d'un champ listé dans "config:"
+  du catalogue, "value" = la valeur en texte. Émets une paire pour CHAQUE champ que la demande permet
+  de remplir (omets ceux que tu ignores). Ex. pour send-gmail :
+  [{key:"to",value:"x@y.com"},{key:"subject",value:"…"},{key:"body",value:"…"},{key:"attachmentMode",value:"source"}].
 - Produis un pipeline acyclique, du plus en amont (sources) vers l'aval (exports/persistance).
 - Remplis la config de CHAQUE node avec les valeurs EXPLICITES de la demande, en utilisant les noms
   de champs EXACTS listés dans "config:" du catalogue (ils incluent les champs des UIs custom).

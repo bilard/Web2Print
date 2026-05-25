@@ -9,6 +9,25 @@ function defaultGenId(i: number): string {
   return `n_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`
 }
 
+/** Coerce une valeur texte (issue des paires LLM) selon le type du défaut du champ. */
+function coerceConfigValue(raw: string, sample: unknown): unknown {
+  if (typeof sample === 'boolean') return raw === 'true' || raw === '1'
+  if (typeof sample === 'number') {
+    const n = Number(raw)
+    return Number.isNaN(n) ? sample : n
+  }
+  return raw
+}
+
+/** Reconstruit l'objet config depuis les paires {key, value} du LLM, mergé sur les defaults. */
+function buildConfig(defaults: Record<string, unknown>, pairs?: { key: string; value: string }[]): Record<string, unknown> {
+  const out = structuredClone(defaults)
+  for (const p of pairs ?? []) {
+    out[p.key] = coerceConfigValue(p.value, defaults[p.key])
+  }
+  return out
+}
+
 /**
  * Matérialise un graphe brut (ref→id, merge config sur defaults) et le valide :
  * types connus, ports existants, compatibilité des ports, absence de cycle,
@@ -39,7 +58,7 @@ export function validateGraph(
       id,
       type: rn.type,
       position: { x: 0, y: 0 },
-      config: { ...structuredClone(spec.defaultConfig as Record<string, unknown>), ...(rn.config ?? {}) },
+      config: buildConfig(spec.defaultConfig as Record<string, unknown>, rn.config),
     })
   })
 

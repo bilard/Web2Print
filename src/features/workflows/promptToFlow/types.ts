@@ -6,7 +6,9 @@ export interface RawNode {
   ref: string
   type: string
   label?: string
-  config?: Record<string, unknown>
+  /** Config en paires {key, value} : un objet à clés arbitraires n'est pas
+   *  émis par la sortie structurée de Gemini → on passe par des paires. */
+  config?: { key: string; value: string }[]
 }
 
 /** Edge tel que renvoyé par le LLM : références aux refs locales + noms de ports. */
