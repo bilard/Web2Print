@@ -4,6 +4,8 @@ import {
   FileSpreadsheet,
   FileText,
   FileImage,
+  FileType,
+  Wand2,
   Upload,
   File as FileIcon,
   FolderOpen,
@@ -15,6 +17,8 @@ import {
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { parseExcelFile } from '@/features/excel/useExcelImport'
+import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
+import { convertPdfToEditableSvg } from '@/features/svg/pdfToSvg'
 import { putFile, getFile, deleteFile, putFiles, getFiles } from '../runtime/fileStore'
 import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
 import { detectAssemblyFiles, summarizeAssembly } from '@/features/idml/assemblyLoader'
@@ -109,6 +113,56 @@ export const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown
     }
     ctx.log('warn', 'Import SVG : stub — produit une Sheet vide. À wirer en phase 2.')
     return { sheet: { name: inputs.file.name, columns: [], rows: [] } }
+  },
+}
+
+interface ImageToSvgConfig {}
+
+export const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: File }> = {
+  type: 'image-to-svg',
+  category: 'import',
+  label: 'Image → SVG éditable',
+  description:
+    "Transformateur : prend une image raster (.png/.jpg/.webp/.gif) et produit un SVG éditable (raster verrouillé en fond + overlays vectoriels décomposables).",
+  icon: Wand2,
+  inputs: [{ name: 'file', type: 'file', required: true }],
+  outputs: [{ name: 'svg', type: 'file' }],
+  configSchema: [],
+  defaultConfig: {},
+  runtime: 'client',
+  run: async (ctx, _config, inputs) => {
+    if (!inputs.file) {
+      throw new Error('Aucun fichier fourni — connectez un Upload produisant une image raster.')
+    }
+    ctx.log('info', `Conversion image → SVG éditable : ${inputs.file.name}…`)
+    const { file, width, height } = await convertImageToEditableSvg(inputs.file)
+    ctx.log('info', `SVG généré : ${width}×${height}px (raster verrouillé + overlays).`)
+    return { svg: file }
+  },
+}
+
+interface PdfToSvgConfig {}
+
+export const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File }> = {
+  type: 'pdf-to-svg',
+  category: 'import',
+  label: 'PDF → SVG éditable',
+  description:
+    "Transformateur : rasterise la page 1 d'un .pdf et produit un SVG éditable (raster verrouillé en fond + overlays vectoriels décomposables).",
+  icon: FileType,
+  inputs: [{ name: 'file', type: 'file', required: true }],
+  outputs: [{ name: 'svg', type: 'file' }],
+  configSchema: [],
+  defaultConfig: {},
+  runtime: 'client',
+  run: async (ctx, _config, inputs) => {
+    if (!inputs.file) {
+      throw new Error('Aucun fichier fourni — connectez un Upload produisant un PDF.')
+    }
+    ctx.log('info', `Rasterisation PDF → SVG éditable : ${inputs.file.name}…`)
+    const { file, width, height } = await convertPdfToEditableSvg(inputs.file)
+    ctx.log('info', `SVG généré : ${width}×${height}px (page 1 rasterisée + overlays).`)
+    return { svg: file }
   },
 }
 
@@ -581,4 +635,6 @@ export const uploadNode: NodeSpec<
 nodeRegistry.register(importCsvNode)
 nodeRegistry.register(importIdmlNode)
 nodeRegistry.register(importSvgNode)
+nodeRegistry.register(imageToSvgNode)
+nodeRegistry.register(pdfToSvgNode)
 nodeRegistry.register(uploadNode)
