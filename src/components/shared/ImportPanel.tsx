@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { FolderOpen, Presentation, Upload, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText } from 'lucide-react'
+import { FolderOpen, Presentation, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
@@ -183,11 +183,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">Import IDML</p>
             <p className="text-xs text-white/30 mt-1">IDML + PDF + Fonts</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">Sélectionner le dossier Assembly</p>
           <input
             ref={idmlInputRef}
             type="file"
@@ -216,11 +211,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">Importer PPTX</p>
             <p className="text-xs text-white/30 mt-1">PowerPoint, slides éditables</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">.pptx</p>
           <input
             ref={pptxInputRef}
             type="file"
@@ -249,11 +239,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">Importer une image</p>
             <p className="text-xs text-white/30 mt-1">PNG, JPG, SVG, WebP</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">.png .jpg .svg .webp .gif</p>
           <input
             ref={imageInputRef}
             type="file"
@@ -282,11 +267,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">Importer SVG</p>
             <p className="text-xs text-white/30 mt-1">Vectoriel éditable</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">.svg (Illustrator)</p>
           <input
             ref={svgInputRef}
             type="file"
@@ -315,11 +295,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">Importer Excel</p>
             <p className="text-xs text-white/30 mt-1">Données & fusion variable</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">.xlsx .xls .csv</p>
           <input
             ref={xlsxInputRef}
             type="file"
@@ -348,11 +323,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">Image → SVG éditable</p>
             <p className="text-xs text-white/30 mt-1">Raster verrouillé + overlays</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">.png .jpg .webp .gif → .svg</p>
           <input
             ref={imageToSvgInputRef}
             type="file"
@@ -381,11 +351,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             <p className="text-sm font-medium text-white">PDF → SVG éditable</p>
             <p className="text-xs text-white/30 mt-1">Page 1 rasterisée + overlays</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/20">
-            <Upload className="w-3 h-3" />
-            Glisser ou cliquer
-          </div>
-          <p className="text-[10px] text-white/15">.pdf (page 1) → .svg</p>
           <input
             ref={pdfToSvgInputRef}
             type="file"
