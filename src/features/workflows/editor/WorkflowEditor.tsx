@@ -173,7 +173,7 @@ export function WorkflowEditor() {
   )
 
   const resolveConnectionPorts = useCallback(
-    (conn: Pick<Connection, 'source' | 'target' | 'sourceHandle' | 'targetHandle'>) => {
+    (conn: Connection | Edge) => {
       if (!wf || !conn.source || !conn.target) return null
       const sourceNode = wf.nodes.find((n) => n.id === conn.source)
       const targetNode = wf.nodes.find((n) => n.id === conn.target)

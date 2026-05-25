@@ -71,7 +71,7 @@ async function createProject(userId: string, params: CreateProjectParams): Promi
     projectId = ref.id
   }
 
-  return { id: projectId, title: data.title, thumbnail: null, createdAt: now, updatedAt: now, ownerId: userId, canvasData: null }
+  return { id: projectId, title: params.title, thumbnail: null, createdAt: now, updatedAt: now, ownerId: userId, canvasData: null }
 }
 
 export function useCreateProject() {
