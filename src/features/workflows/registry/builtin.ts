@@ -14,6 +14,7 @@ import './taxonomyNodes'
 import './exportNodes'
 import './logicNodes'
 import './communicationNodes'
+import './telegramNodes'
 import './decomposeNode'
 
 let initialized = false
