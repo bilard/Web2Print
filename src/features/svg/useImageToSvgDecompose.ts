@@ -28,12 +28,24 @@ import { FabricImage, Group, Rect, Textbox } from 'fabric'
 import type { Canvas, FabricObject } from 'fabric'
 import { toast } from 'sonner'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
-import { syncToStore } from '@/features/editor/useAddObject'
+import { syncToStore as _syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { decomposeWithGoogleVision } from './googleVisionDecompose'
 import type { VisionParagraph, VisionWord, VisionDecomposeResult } from './googleVisionDecompose'
 import { detectPriceClusters, cropToDataUri, readPriceFromImage, parsePriceParts, classifyLogoTexts } from './refinePrices'
 import { semanticLayout, type LayoutBlock } from './semanticLayout'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bypass de la synchronisation Zustand pour les usages hors-éditeur (workflow).
+// Les algorithmes (decomposeHeuristic / decomposeSemantic) appellent syncToStore
+// au fil de leurs passes. Quand decomposeOnCanvas est invoqué sur un canvas
+// offscreen (node workflow), on désactive ces syncs pour ne pas écraser l'état
+// éditeur. Le flag est rétabli en finally (thread single-call, pas de concurrence).
+// ─────────────────────────────────────────────────────────────────────────────
+let _skipStoreSync = false
+function syncToStore(canvas: NonNullable<typeof globalFabricCanvas>): void {
+  if (!_skipStoreSync) _syncToStore(canvas)
+}
 
 interface DecomposeState {
   canDecompose: boolean
@@ -64,6 +76,14 @@ const firstImageIn = (g: Group): FabricImage | null => {
 const findBgImage = (): FabricImage | null => {
   const canvas = globalFabricCanvas
   if (!canvas) return null
+  const root = canvas.getObjects().find(isBgLockedMarker)
+  if (!root) return null
+  if (root instanceof FabricImage) return root
+  if (root instanceof Group) return firstImageIn(root)
+  return null
+}
+
+const findBgImageIn = (canvas: Canvas): FabricImage | null => {
   const root = canvas.getObjects().find(isBgLockedMarker)
   if (!root) return null
   if (root instanceof FabricImage) return root
@@ -167,6 +187,50 @@ function countLines(words: VisionWord[]): number {
     if (sorted[i] - sorted[i - 1] > medianH * 0.6) lines++
   }
   return lines
+}
+
+/**
+ * Détecte l'alignement d'un paragraphe multi-ligne (fer à gauche / centré / fer à
+ * droite) en comparant la DISPERSION des bords de ligne relativement à la bbox :
+ *  - bords GAUCHE quasi constants  → fer à gauche
+ *  - bords DROITE quasi constants  → fer à droite
+ *  - CENTRES quasi constants       → centré
+ * On retient la dispersion la plus faible (gauche en cas d'égalité = défaut courant).
+ * Mono-ligne → `null` (indétectable) : l'appelant lui assigne l'alignement DOMINANT
+ * de la composition (sinon un bloc mono-ligne d'une compo centrée serait fer à gauche
+ * et son centre ne tomberait pas sur l'axe commun).
+ */
+function detectTextAlign(words: VisionWord[], box: { left: number; width: number }): 'left' | 'center' | 'right' | null {
+  if (words.length <= 1) return null
+  const wHeights = words.map((w) => w.bbox.height).sort((a, b) => a - b)
+  const medianH = wHeights[Math.floor(wHeights.length / 2)]
+  const yc = (w: VisionWord) => w.bbox.top + w.bbox.height / 2
+  const sorted = [...words].sort((a, b) => yc(a) - yc(b))
+  const lines: VisionWord[][] = [[sorted[0]]]
+  for (let i = 1; i < sorted.length; i++) {
+    if (yc(sorted[i]) - yc(sorted[i - 1]) > medianH * 0.6) lines.push([sorted[i]])
+    else lines[lines.length - 1].push(sorted[i])
+  }
+  if (lines.length <= 1) return null
+  const boxRight = box.left + box.width
+  const boxCenter = box.left + box.width / 2
+  const lefts: number[] = []
+  const rights: number[] = []
+  const centers: number[] = []
+  for (const ln of lines) {
+    const l = Math.min(...ln.map((w) => w.bbox.left))
+    const r = Math.max(...ln.map((w) => w.bbox.left + w.bbox.width))
+    lefts.push(l - box.left)
+    rights.push(boxRight - r)
+    centers.push((l + r) / 2 - boxCenter)
+  }
+  const spread = (arr: number[]) => Math.max(...arr) - Math.min(...arr)
+  const sL = spread(lefts)
+  const sR = spread(rights)
+  const sC = spread(centers)
+  if (sL <= sR && sL <= sC) return 'left'
+  if (sR <= sC) return 'right'
+  return 'center'
 }
 
 interface CharStyle { fontSize: number; deltaY: number }
@@ -456,7 +520,7 @@ function detectSeparatorRects(ctx: CanvasRenderingContext2D, width: number, heig
   return rects
 }
 
-function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: number, color: string, fontWeight: number = 400, styles?: TextStyles): Textbox {
+function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: number, color: string, fontWeight: number = 400, styles?: TextStyles, align: 'left' | 'center' | 'right' = 'left', lineHeightOverride?: number): Textbox {
   // Width minimum basé sur la ligne la PLUS LONGUE (le texte peut contenir des
   // `\n` reconstruits) — pas le total des caractères, sinon une Textbox 2 lignes
   // serait dimensionnée pour les 2 lignes bout à bout.
@@ -487,6 +551,12 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
   // Facteur de largeur par caractère : 0.62 (les capitales grasses/Arial Black sont
   // larges — 0.55 sous-estimait et faisait passer "SUR LE 2ÈME" à la ligne).
   const minWidth = Math.max(box.width, longestLineLen * fontSize * 0.62 * 1.1)
+  // Centré / fer à droite : la largeur de la textbox DOIT être exactement la bbox
+  // Vision (le texte y tient déjà — la fontSize a été bornée à cette largeur en amont).
+  // Toute sur-largeur décalerait le centre vers la droite (la textbox est ancrée à
+  // gauche), désalignant le bloc des autres (cas « Panachage… » : estimation 830 vs
+  // bbox 609 → centre décalé de +110 px).
+  const finalWidth = align === 'left' ? minWidth : box.width
   // Pour les graisses très lourdes, Arial Black donne un rendu plus fidèle aux
   // créas retail (où -50%, gros prix utilisent typiquement Arial Black / Heavy).
   const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
@@ -495,13 +565,13 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
     originY: headline ? 'center' : 'top',
     left: box.left,
     top: headline ? box.top + box.height / 2 : box.top,
-    width: minWidth,
+    width: finalWidth,
     fontSize,
     fontFamily,
     fontWeight,
     fill: color,
-    textAlign: 'left',
-    ...(headline ? { lineHeight: 0.9 } : {}),
+    textAlign: align,
+    ...(lineHeightOverride != null ? { lineHeight: lineHeightOverride } : headline ? { lineHeight: 0.9 } : {}),
     editable: true,
     selectable: true,
     evented: true,
@@ -1297,6 +1367,21 @@ async function decomposeSemantic(
   // logos. fontSize / couleur / poids sont ré-échantillonnés par paragraphe (cf.
   // pipeline heuristique) pour ne pas faire fuiter le style d'un membre sur l'autre.
   const consumed = new Set<number>()
+
+  // Alignement DOMINANT de la composition : on tally les alignements détectables
+  // (blocs multi-lignes) ; les blocs mono-ligne (indétectables) en hériteront → tous
+  // les blocs d'une compo centrée partagent le même axe central (sinon les mono-lignes
+  // resteraient fer à gauche et casseraient l'alignement vertical des blocs).
+  const alignTally = { left: 0, center: 0, right: 0 }
+  for (const p of result.paragraphs) {
+    const a = detectTextAlign(p.words, p.bbox)
+    if (a) alignTally[a]++
+  }
+  const dominantAlign: 'left' | 'center' | 'right' =
+    alignTally.center > alignTally.left && alignTally.center >= alignTally.right ? 'center'
+    : alignTally.right > alignTally.left && alignTally.right > alignTally.center ? 'right'
+    : 'left'
+
   // Rend UN paragraphe Vision par-paragraphe (géométrie Vision = vérité de layout).
   // fontSize / couleur / poids ré-échantillonnés par paragraphe (pas de fuite de style
   // d'un membre à l'autre).
@@ -1306,28 +1391,56 @@ async function decomposeSemantic(
     const para = result.paragraphs[idx]
     const bg = sampleBackground(ctx, para.bbox, width, height)
     const nLines = countLines(para.words)
-    // Mono-ligne : bbox.height ≈ hauteur de glyphe (×0.95). Multi-ligne :
-    // bbox.height / nLines = AVANCE de ligne (inclut l'interligne) → ×0.78, sinon un
-    // titre 2 lignes ressort trop gros et sa 2ᵉ ligne chevauche le paragraphe suivant.
-    let fontSize = Math.max((para.bbox.height / nLines) * (nLines > 1 ? 0.78 : 0.95), 10)
+    const align = detectTextAlign(para.words, para.bbox) ?? dominantAlign
+    // fontSize. Mono-ligne : bbox.height ≈ hauteur de glyphe (×0.95). Multi-ligne :
+    //  • fer-à-GAUCHE (corps de texte, ex. description jambon) → basée sur l'AVANCE de
+    //    ligne (bbox.height/nLignes ×0.78), éprouvée, interligne par défaut ;
+    //  • CENTRÉ/DROITE (bloc display, ex. « VENEZZIO… ») → basée sur la hauteur de
+    //    GLYPHE réelle (médiane des mots Vision) : capitales ×1.38 (bbox mot ≈ cap ≈
+    //    0.72×corps), mixte ×1.05 — puis bornée à la largeur du bloc + interligne serré.
+    let fontSize: number
+    if (nLines > 1 && align !== 'left') {
+      const wh = para.words.map((w) => w.bbox.height).sort((a, b) => a - b)
+      const medianWordH = wh.length ? wh[Math.floor(wh.length / 2)] : para.bbox.height / nLines
+      const allCaps = !/[a-zà-ÿ]/.test(para.text)
+      fontSize = Math.max(medianWordH * (allCaps ? 1.38 : 1.05), 10)
+    } else if (nLines > 1) {
+      fontSize = Math.max((para.bbox.height / nLines) * 0.78, 10)
+    } else {
+      fontSize = Math.max(para.bbox.height * 0.95, 10)
+    }
     const color = sampleTextColor(ctx, para.bbox, bg.hex, width, height)
     const fontWeight = detectFontWeight(ctx, para.bbox, color, width, height)
-    // Clamp largeur via mesure RÉELLE (ctx.measureText) : une fontSize dictée par un
-    // glyphe haut (le « 2 » de « LES 2 ») peut rendre le texte plus large que son
-    // emprise Vision → débord du masque couleur (blanc hors du rouge = invisible).
-    // Déclenché seulement au-delà de 15 % de débord (tolérance de chasse) pour NE PAS
-    // rétrécir le corps de texte normal.
+    // Ajustement largeur via mesure RÉELLE (ctx.measureText). La fontSize basée sur la
+    // hauteur de glyphe peut rendre le texte plus large que son emprise Vision (Arial
+    // Black est plus large qu'une police condensée d'origine, ou un glyphe haut comme
+    // le « 2 » de « LES 2 »). Texte CENTRÉ/DROITE (largeur = bbox serrée) : on ajuste
+    // au plus juste (tolérance 1.0) sinon il passe à la ligne et déborde. Texte
+    // fer-à-GAUCHE (largeur = minWidth, pas de retour) : tolérance 1.15 pour ne pas
+    // rétrécir le corps de texte sur un simple écart de chasse.
     const provisional = buildTextAndStyles(para.words, fontSize)
     const lines = provisional.text.split('\n')
     ctx.save()
     ctx.font = `${fontWeight} ${Math.round(fontSize)}px ${fontWeight >= 900 ? '"Arial Black", Arial' : 'Arial'}`
     const measured = Math.max(...lines.map((l) => ctx.measureText(l).width), 1)
     ctx.restore()
-    if (measured > para.bbox.width * 1.15) {
-      fontSize = Math.max(fontSize * (para.bbox.width / measured), 10)
+    // fer-à-GAUCHE : largeur textbox = minWidth (pas de retour à la ligne) → on ne
+    // réduit qu'au-delà de 15 % de débord, cible bbox.width. CENTRÉ/DROITE : largeur
+    // textbox = bbox.width → on laisse 4 % de marge (Fabric mesure un peu plus large
+    // que measureText et passerait à la ligne au ras), sinon le bloc se replie.
+    const gate = align === 'left' ? para.bbox.width * 1.15 : para.bbox.width * 0.96
+    const target = align === 'left' ? para.bbox.width : para.bbox.width * 0.96
+    if (measured > gate) {
+      fontSize = Math.max(fontSize * (target / measured), 10)
     }
     const { text, styles } = buildTextAndStyles(para.words, fontSize)
-    canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles))
+    // Interligne serré calé sur la bbox source UNIQUEMENT pour les blocs display
+    // centrés/droite (hauteur totale = N × fontSize × lineHeight ≈ bbox.height). Le
+    // corps fer-à-gauche garde l'interligne par défaut (rendu éprouvé, pas de régression).
+    const lineHeight = (nLines > 1 && align !== 'left')
+      ? Math.min(Math.max(para.bbox.height / (nLines * fontSize), 0.75), 1.3)
+      : undefined
+    canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles, align, lineHeight))
   }
 
   // Blocs Gemini : PRIX composés/empilés (buildStackedPrice), le reste par-paragraphe.
@@ -1348,7 +1461,22 @@ async function decomposeSemantic(
       })
       continue
     }
-    for (const idx of b.block.memberIndices) renderParagraph(idx)
+    // Dédup symbole isolé : Vision détecte parfois un « % » / « € » À LA FOIS comme
+    // glyphe d'un autre membre (« -50% ») ET comme paragraphe isolé qui le chevauche
+    // → double affichage. On saute le symbole isolé dans ce cas.
+    const memberParas = b.block.memberIndices.map((i) => result.paragraphs[i]).filter(Boolean) as VisionParagraph[]
+    const overlaps = (a: VisionParagraph['bbox'], c: VisionParagraph['bbox']) =>
+      a.left < c.left + c.width && c.left < a.left + a.width && a.top < c.top + c.height && c.top < a.top + a.height
+    for (const idx of b.block.memberIndices) {
+      const para = result.paragraphs[idx]
+      if (para) {
+        const sym = para.text.trim()
+        if (/^[%€$£°®™]{1,2}$/.test(sym) && memberParas.some((m) => m !== para && m.text.includes(sym) && overlaps(m.bbox, para.bbox))) {
+          continue // doublon de symbole → ignoré
+        }
+      }
+      renderParagraph(idx)
+    }
   }
 
   // COMPLÉTUDE 100 % DÉTERMINISTE (anti-omission, AUCUN LLM). Gemini omet parfois des
@@ -1387,6 +1515,91 @@ async function decomposeSemantic(
   canvas.requestRenderAll()
   syncToStore(canvas)
   return consumed.size
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Orchestration découplée — utilisable sur n'importe quel Canvas Fabric,
+// y compris un canvas hors-écran (workflow). Ne dépend PAS de React ni de toast.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DecomposeOnCanvasOpts {
+  /** Callback de log (info / warn / error). Si absent, les messages sont silencieux. */
+  log?: (level: 'info' | 'warn' | 'error', msg: string) => void
+  /**
+   * Synchronise les objets Fabric vers le store Zustand de l'éditeur après la
+   * décomposition. Par défaut : true (comportement historique). Passer false
+   * pour les usages hors-éditeur (canvas offscreen dans un workflow) afin de ne
+   * pas écraser l'état de l'éditeur ouvert.
+   */
+  syncStore?: boolean
+}
+
+/**
+ * Orchestre la décomposition Vision sur le `canvas` fourni (peut être un canvas
+ * offscreen). Trouve l'objet `image-bg-locked`, récupère son dataUri, appelle
+ * Google Vision, échantillonne les couleurs, puis `decomposeSemantic` (avec
+ * fallback `decomposeHeuristic`), et cache l'image bg.
+ *
+ * Renvoie `{ count }` : nombre de textes/formes éditables ajoutés.
+ */
+export async function decomposeOnCanvas(
+  canvas: Canvas,
+  opts: DecomposeOnCanvasOpts = {},
+): Promise<{ count: number }> {
+  const { log, syncStore = true } = opts
+
+  const bg = findBgImageIn(canvas)
+  if (!bg) throw new Error('Aucun calque image-bg-locked trouvé dans le canvas')
+
+  const src = getImageSrc(bg)
+  if (!src) throw new Error('Impossible de lire l\'image source (image-bg-locked)')
+
+  const width = (bg as unknown as { width?: number }).width ?? 0
+  const height = (bg as unknown as { height?: number }).height ?? 0
+  if (!width || !height) throw new Error('Dimensions image source invalides (0×0)')
+
+  log?.('info', 'Appel Google Vision API…')
+  const dataUri = src.startsWith('data:image/') ? src : await fetchUrlAsDataUri(src)
+  const result = await decomposeWithGoogleVision(dataUri)
+
+  log?.('info', `Vision : ${result.paragraphs.length} paragraphes détectés`)
+
+  // Canvas 2D offscreen pour échantillonner les couleurs (fond/texte) de l'image.
+  const htmlImg = await loadHtmlImage(dataUri)
+  const off2d = document.createElement('canvas')
+  off2d.width = width
+  off2d.height = height
+  const ctx2d = off2d.getContext('2d', { willReadFrequently: true })
+  if (!ctx2d) throw new Error('Canvas 2D context indisponible (sampling)')
+  ctx2d.drawImage(htmlImg, 0, 0, width, height)
+
+  // Désactive la synchro Zustand si nécessaire (canvas offscreen → ne pas clobber
+  // l'état éditeur). Le flag est rétabli dans le finally.
+  const prevSkip = _skipStoreSync
+  if (!syncStore) _skipStoreSync = true
+
+  let kept: number
+  try {
+    const toastId: string | number = 'wf'
+    let keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId)
+    if (keptSem === null) {
+      kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId)
+    } else {
+      kept = keptSem
+    }
+
+    // Cache l'image bg (template propre sur fond blanc, comme dans l'éditeur).
+    const bgRoot = canvas.getObjects().find(isBgLockedMarker)
+    if (bgRoot) bgRoot.set({ visible: false })
+
+    canvas.requestRenderAll()
+    if (syncStore) syncToStore(canvas)
+  } finally {
+    _skipStoreSync = prevSkip
+  }
+
+  log?.('info', `Décomposition terminée — ${kept} textes/formes éditables ajoutés`)
+  return { count: kept }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1433,48 +1646,19 @@ export function useImageToSvgDecompose() {
   const run = useCallback(async () => {
     const canvas = globalFabricCanvas
     if (!canvas) { toast.error('Canvas non disponible'); return }
-    const bg = findBgImage()
-    if (!bg) { toast.error('Aucun calque image-bg-locked trouvé'); return }
-    const src = getImageSrc(bg)
-    if (!src) { toast.error('Impossible de lire l\'image source'); return }
-    const width = (bg as unknown as { width?: number }).width ?? 0
-    const height = (bg as unknown as { height?: number }).height ?? 0
-    if (!width || !height) { toast.error('Dimensions image source invalides'); return }
 
     setState((s) => ({ ...s, isRunning: true }))
     const toastId = toast.loading('Décomposition…', { description: 'Google Vision API analyse l\'image' })
 
     try {
-      const dataUri = src.startsWith('data:image/') ? src : await fetchUrlAsDataUri(src)
-      const result = await decomposeWithGoogleVision(dataUri)
-
-      // Canvas offscreen pour échantillonner les couleurs du texte
-      const htmlImg = await loadHtmlImage(dataUri)
-      const off = document.createElement('canvas')
-      off.width = width
-      off.height = height
-      const ctx = off.getContext('2d', { willReadFrequently: true })
-      if (!ctx) throw new Error('Canvas 2D context indisponible')
-      ctx.drawImage(htmlImg, 0, 0, width, height)
-
-      // Décomposition : voie SÉMANTIQUE (rendu propre par-paragraphe + prix composés),
-      // avec fallback total sur le pipeline heuristique si Gemini échoue.
-      // Complétude pilotée par VISION (decomposeSemantic rend aussi les paragraphes
-      // que Gemini a omis), le LLM n'enrichit que (prix + exclusion logos).
-      let kept = await decomposeSemantic(canvas, ctx, dataUri, result, width, height, toastId)
-      if (kept === null) {
-        kept = await decomposeHeuristic(canvas, ctx, dataUri, result, width, height, toastId)
-      }
-
-      // Cache l'image bg : l'utilisateur veut un template propre (bandeaux + textes
-      // éditables sur fond blanc), pas une superposition sur la photo produit.
-      // L'image reste dans le canvas (servira de référence pour re-décomposer) mais
-      // n'est plus rendue. undoDecompose la restaure.
-      const bgRoot = canvas.getObjects().find(isBgLockedMarker)
-      if (bgRoot) bgRoot.set({ visible: false })
-
-      canvas.requestRenderAll()
-      syncToStore(canvas)
+      const { count: kept } = await decomposeOnCanvas(canvas, {
+        log: (level, msg) => {
+          if (level === 'error') toast.error(msg, { id: toastId })
+          else if (level === 'warn') toast.loading(msg, { id: toastId })
+          else toast.loading(msg, { id: toastId })
+        },
+        syncStore: true,
+      })
       setState({ canDecompose: true, isRunning: false, hasDecomposition: kept > 0 })
       toast.success(`${kept} textes éditables ajoutés`, { id: toastId })
     } catch (err) {
