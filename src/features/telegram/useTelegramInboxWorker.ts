@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { sendTelegramMessage, sendTelegramDocument } from '@/lib/telegramApi'
 import { processInboxMessage, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
-import { generateAndSaveWorkflow } from './generateWorkflowFromInbox'
+import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect } from './executeWorkflowAndCollect'
 
 // Identifie cet onglet pour le claim (diagnostic).
@@ -58,6 +58,15 @@ export function useTelegramInboxWorker(): void {
           generatedWorkflowId: info.workflowId,
           generatedWorkflowName: info.name,
         })
+
+        // Le workflow nécessite un fichier choisi à la main → non exécutable en auto.
+        if (requiresManualFile(info.workflow)) {
+          await reply(
+            msg.chatId,
+            `⚠️ « ${info.name} » généré, mais il contient un node nécessitant un fichier (Upload/Import) — non exécutable automatiquement. Ouvre-le dans Workflows pour le compléter, ou reformule avec une URL à scraper / des données dans ton message.`,
+          )
+          return
+        }
 
         // 2) Exécution (2c) + retour du fichier produit. Le workflow reste sauvegardé même si
         //    l'exécution échoue (pas de rollback).

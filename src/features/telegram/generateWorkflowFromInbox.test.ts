@@ -14,7 +14,7 @@ vi.mock('@/features/workflows/persistence/workflowsApi', () => ({
   saveWorkflow: vi.fn(),
 }))
 
-import { generateAndSaveWorkflow } from './generateWorkflowFromInbox'
+import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { generateWorkflow } from '@/features/workflows/promptToFlow/generateWorkflow'
 import { validateGraph } from '@/features/workflows/promptToFlow/validateGraph'
 import { saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
@@ -59,5 +59,18 @@ describe('generateAndSaveWorkflow', () => {
 
     await expect(generateAndSaveWorkflow('Ok', 'uid1')).rejects.toThrow('aucun node')
     expect(saveWorkflow).not.toHaveBeenCalled()
+  })
+})
+
+describe('requiresManualFile', () => {
+  it('détecte un node nécessitant un fichier', () => {
+    expect(requiresManualFile({ nodes: [{ type: 'upload' }] } as never)).toBe(true)
+    expect(requiresManualFile({ nodes: [{ type: 'import-csv' }] } as never)).toBe(true)
+  })
+
+  it('false pour des sources autonomes', () => {
+    expect(
+      requiresManualFile({ nodes: [{ type: 'scrape-url' }, { type: 'export-excel' }] } as never),
+    ).toBe(false)
   })
 })
