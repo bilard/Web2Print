@@ -9,7 +9,7 @@ describe('aiSettings.store', () => {
   beforeEach(() => {
     localStorage.clear()
     useAiSettingsStore.setState({
-      selectedModel: { claude: 'claude-opus-4-7', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o', deepseek: 'deepseek-chat', qwen: 'qwen-max', kimi: 'kimi-for-coding', openrouter: 'openrouter/auto' },
+      selectedModel: { claude: 'claude-opus-4-7', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-5.1', deepseek: 'deepseek-chat', qwen: 'qwen3-max', kimi: 'kimi-for-coding', openrouter: 'openrouter/auto' },
       fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
     })
   })
@@ -17,9 +17,9 @@ describe('aiSettings.store', () => {
   it('initialises selectedModel with catalog defaults', () => {
     expect(getSelectedModel('claude')).toBe('claude-opus-4-7')
     expect(getSelectedModel('gemini')).toBe('gemini-3.1-pro-preview')
-    expect(getSelectedModel('openai')).toBe('gpt-4o')
+    expect(getSelectedModel('openai')).toBe('gpt-5.1')
     expect(getSelectedModel('deepseek')).toBe('deepseek-chat')
-    expect(getSelectedModel('qwen')).toBe('qwen-max')
+    expect(getSelectedModel('qwen')).toBe('qwen3-max')
     expect(getSelectedModel('kimi')).toBe('kimi-for-coding')
   })
 

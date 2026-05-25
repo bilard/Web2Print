@@ -45,4 +45,21 @@ if (typeof globalThis.DOMMatrix === 'undefined') {
   }
 }
 
+// Polyfill localStorage — Node 22+ expose un `localStorage` natif expérimental
+// indisponible sans `--localstorage-file`, qui masque celui de jsdom → `localStorage`
+// est `undefined` dans les tests. On force un Storage en mémoire fonctionnel
+// (réinitialisé par fichier de test grâce à l'isolation des modules Vitest).
+{
+  const mem = new Map<string, string>()
+  const storage: Storage = {
+    get length() { return mem.size },
+    clear() { mem.clear() },
+    getItem(key: string) { return mem.has(key) ? mem.get(key)! : null },
+    setItem(key: string, value: string) { mem.set(key, String(value)) },
+    removeItem(key: string) { mem.delete(key) },
+    key(index: number) { return Array.from(mem.keys())[index] ?? null },
+  }
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: storage })
+}
+
 export {}
