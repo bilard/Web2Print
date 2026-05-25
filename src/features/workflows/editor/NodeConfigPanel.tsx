@@ -1,7 +1,8 @@
 // src/features/workflows/editor/NodeConfigPanel.tsx
 import { useStore } from '@xyflow/react'
-import { ArrowRight, ArrowLeft, X, Link2, Trash2 } from 'lucide-react'
+import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertCircle } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
+import { useRunContext } from '../runtime/runContext'
 import { nodeRegistry } from '../registry'
 import { ConfigFieldRenderer } from './configFields'
 import type { Workflow, WorkflowNode, WorkflowEdge } from '../types'
@@ -218,6 +219,46 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
   )
 }
 
+/**
+ * Logs d'erreur/avertissement du node sélectionné (dernière exécution). Affiché en
+ * bas du panneau de config quand le node a échoué ou produit des logs problématiques.
+ */
+function NodeLogsPanel({ nodeId }: { nodeId: string }) {
+  const state = useRunContext((s) => s.nodeStates[nodeId])
+  if (!state) return null
+  const problemLogs = (state.logs ?? []).filter((l) => l.level === 'error' || l.level === 'warn')
+  const hasError = state.status === 'error' || !!state.error || problemLogs.length > 0
+  if (!hasError) return null
+
+  return (
+    <div className="pt-3 mt-3 border-t border-neutral-800 space-y-2">
+      <h4 className="text-xs uppercase font-semibold flex items-center gap-1.5 text-red-400/90">
+        <AlertCircle className="w-3 h-3" /> Logs d'erreur
+      </h4>
+      {state.error && (
+        <p className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/30 rounded px-2 py-1.5 leading-snug break-words">
+          {state.error}
+        </p>
+      )}
+      {problemLogs.length > 0 && (
+        <div className="space-y-1 max-h-48 overflow-auto rounded-md bg-[#161616] border border-neutral-800 p-2">
+          {problemLogs.map((l, i) => (
+            <div
+              key={i}
+              className={`text-[10px] font-mono leading-snug break-words ${
+                l.level === 'error' ? 'text-red-300' : 'text-amber-300'
+              }`}
+            >
+              <span className="text-neutral-600">{new Date(l.ts).toLocaleTimeString()} </span>
+              {l.msg}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function NodeConfigPanel() {
   const selectedId = useStore((s) => {
     for (const n of s.nodeLookup.values()) {
@@ -288,6 +329,7 @@ export function NodeConfigPanel() {
             ))
           )}
           {wf && <ConnectionsPanel node={node} wf={wf} onRemoveEdge={removeEdge} />}
+          <NodeLogsPanel nodeId={node.id} />
         </div>
       )}
     </aside>
