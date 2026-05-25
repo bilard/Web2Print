@@ -6,6 +6,8 @@ import {
   FileImage,
   FileType,
   Wand2,
+  Presentation,
+  ImageIcon,
   Upload,
   File as FileIcon,
   FolderOpen,
@@ -163,6 +165,55 @@ export const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File 
     const { file, width, height } = await convertPdfToEditableSvg(inputs.file)
     ctx.log('info', `SVG généré : ${width}×${height}px (page 1 rasterisée + overlays).`)
     return { svg: file }
+  },
+}
+
+interface ImportPptxConfig {}
+
+export const importPptxNode: NodeSpec<ImportPptxConfig, { file: File }, { file: File }> = {
+  type: 'import-pptx',
+  category: 'import',
+  label: 'Import PPTX',
+  description:
+    "Charge un .pptx (PowerPoint) et le passe en aval. L'édition des slides se fait dans l'éditeur après import.",
+  icon: Presentation,
+  inputs: [{ name: 'file', type: 'file', required: true }],
+  outputs: [{ name: 'file', type: 'file' }],
+  configSchema: [],
+  defaultConfig: {},
+  runtime: 'client',
+  run: async (ctx, _config, inputs) => {
+    if (!inputs.file) throw new Error('Aucun fichier fourni — connectez un Upload (.pptx).')
+    const name = inputs.file.name.toLowerCase()
+    if (!name.endsWith('.pptx') && !name.endsWith('.ppt')) {
+      throw new Error(`Type inattendu : ${inputs.file.name} — attendu un .pptx.`)
+    }
+    ctx.log('info', `PPTX prêt : ${inputs.file.name}`)
+    return { file: inputs.file }
+  },
+}
+
+interface ImportImageConfig {}
+
+export const importImageNode: NodeSpec<ImportImageConfig, { file: File }, { file: File }> = {
+  type: 'import-image',
+  category: 'import',
+  label: 'Importer une image',
+  description:
+    'Charge une image raster (.png/.jpg/.webp/.gif) et la passe en aval — typiquement vers « Image → SVG éditable ».',
+  icon: ImageIcon,
+  inputs: [{ name: 'file', type: 'file', required: true }],
+  outputs: [{ name: 'file', type: 'file' }],
+  configSchema: [],
+  defaultConfig: {},
+  runtime: 'client',
+  run: async (ctx, _config, inputs) => {
+    if (!inputs.file) throw new Error('Aucun fichier fourni — connectez un Upload (image).')
+    if (!inputs.file.type.startsWith('image/')) {
+      ctx.log('warn', `Type MIME inattendu : ${inputs.file.type || 'inconnu'} — attendu une image.`)
+    }
+    ctx.log('info', `Image prête : ${inputs.file.name}`)
+    return { file: inputs.file }
   },
 }
 
@@ -637,4 +688,6 @@ nodeRegistry.register(importIdmlNode)
 nodeRegistry.register(importSvgNode)
 nodeRegistry.register(imageToSvgNode)
 nodeRegistry.register(pdfToSvgNode)
+nodeRegistry.register(importPptxNode)
+nodeRegistry.register(importImageNode)
 nodeRegistry.register(uploadNode)
