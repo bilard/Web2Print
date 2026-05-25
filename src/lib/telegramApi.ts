@@ -57,6 +57,31 @@ export async function sendTelegramMessage(
   return parseTelegramResponse(res)
 }
 
+export interface TelegramBotInfo {
+  username: string
+  firstName: string
+}
+
+/** Valide un bot token via getMe. Lève une Error lisible si invalide. */
+export async function getTelegramBotInfo(botToken: string): Promise<TelegramBotInfo> {
+  const res = await fetch(`${API_BASE}/bot${botToken}/getMe`)
+  let json: {
+    ok: boolean
+    result?: { username?: string; first_name?: string }
+    error_code?: number
+    description?: string
+  }
+  try {
+    json = await res.json()
+  } catch {
+    throw new Error(`Telegram API HTTP ${res.status} : réponse illisible.`)
+  }
+  if (!json.ok || !json.result) {
+    throw new Error(`Telegram API ${json.error_code ?? res.status} : ${json.description ?? 'token invalide'}`)
+  }
+  return { username: json.result.username ?? '', firstName: json.result.first_name ?? '' }
+}
+
 export async function sendTelegramDocument(
   botToken: string,
   opts: SendTelegramDocumentOptions,
