@@ -27,6 +27,8 @@ export interface InboxMessage {
   status: InboxStatus
   errorMessage?: string
   receivedAt?: { toMillis: () => number } | null
+  generatedWorkflowId?: string
+  generatedWorkflowName?: string
 }
 
 export function useTelegramInbox(): { messages: InboxMessage[]; loading: boolean } {

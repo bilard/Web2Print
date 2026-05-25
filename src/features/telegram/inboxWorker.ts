@@ -1,6 +1,7 @@
 // src/features/telegram/inboxWorker.ts
-// Logique pure du worker : claim → accusé → done/error. Les I/O (Firestore, Telegram) sont
-// injectées via `deps`, ce qui rend la logique testable sans émulateur.
+// Logique pure du worker : claim → traitement métier → done/error. Le traitement (`process`)
+// et les I/O sont injectés via `deps`, ce qui rend la logique testable sans émulateur.
+// Le `process` porte le comportement courant (2b : générer un workflow ; 2c : exécuter).
 
 export interface InboxDoc {
   updateId: number
@@ -12,20 +13,17 @@ export interface InboxDoc {
 export interface InboxWorkerDeps {
   /** Passe le doc de pending → processing dans une transaction. true si ce worker a gagné. */
   claim: (updateId: number) => Promise<boolean>
-  sendAck: (chatId: number, text: string) => Promise<void>
+  /** Traitement métier du message (génération, réponse Telegram…). Rejette en cas d'échec. */
+  process: (doc: InboxDoc) => Promise<void>
   markDone: (updateId: number) => Promise<void>
   markError: (updateId: number, message: string) => Promise<void>
-}
-
-export function buildAckText(text: string): string {
-  return `reçu : ${text}`
 }
 
 export async function processInboxMessage(deps: InboxWorkerDeps, doc: InboxDoc): Promise<void> {
   const won = await deps.claim(doc.updateId)
   if (!won) return // un autre onglet a déjà pris ce message
   try {
-    await deps.sendAck(doc.chatId, buildAckText(doc.text))
+    await deps.process(doc)
     await deps.markDone(doc.updateId)
   } catch (err) {
     await deps.markError(doc.updateId, err instanceof Error ? err.message : String(err))

@@ -80,6 +80,11 @@ export function InboxItem({ message }: { message: InboxMessage }) {
       {message.status === 'error' && message.errorMessage && !editing && (
         <div className="text-[10px] text-red-400/80 mt-1">{message.errorMessage}</div>
       )}
+      {message.generatedWorkflowName && !editing && (
+        <div className="text-[11px] text-indigo-300/90 mt-1 flex items-center gap-1">
+          <span className="text-neutral-600">→ workflow :</span> {message.generatedWorkflowName}
+        </div>
+      )}
 
       {menuOpen && (
         <>

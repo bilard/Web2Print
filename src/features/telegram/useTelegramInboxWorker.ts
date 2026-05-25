@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { sendTelegramMessage } from '@/lib/telegramApi'
 import { processInboxMessage, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
+import { generateAndSaveWorkflow } from './generateWorkflowFromInbox'
 
 // Identifie cet onglet pour le claim (diagnostic).
 const WORKER_ID = Math.random().toString(36).slice(2)
@@ -24,7 +25,8 @@ export function useTelegramInboxWorker(): void {
   const botToken = useTelegramStore((s) => s.botToken)
 
   useEffect(() => {
-    if (!user?.uid || !botToken) return
+    const uid = user?.uid
+    if (!uid || !botToken) return
     const q = query(collection(db, 'telegramInbox'), where('status', '==', 'pending'))
 
     const unsub = onSnapshot(
@@ -48,8 +50,26 @@ export function useTelegramInboxWorker(): void {
                 return true
               })
             },
-            sendAck: async (chatId, text) => {
-              await sendTelegramMessage(botToken, { chatId: String(chatId), text })
+            process: async (msg) => {
+              // 2b : génère un workflow depuis le texte, puis répond le résultat sur Telegram.
+              try {
+                const info = await generateAndSaveWorkflow(msg.text, uid)
+                await sendTelegramMessage(botToken, {
+                  chatId: String(msg.chatId),
+                  text: `✅ Workflow « ${info.name} » généré — ${info.nodeCount} node(s). Ouvre-le dans le module Workflows.`,
+                })
+                await updateDoc(doc(db, 'telegramInbox', String(msg.updateId)), {
+                  generatedWorkflowId: info.workflowId,
+                  generatedWorkflowName: info.name,
+                })
+              } catch (err) {
+                const reason = maskToken(err instanceof Error ? err.message : String(err))
+                await sendTelegramMessage(botToken, {
+                  chatId: String(msg.chatId),
+                  text: `❌ Génération échouée : ${reason}`,
+                }).catch(() => {})
+                throw err // → markError enregistre la cause
+              }
             },
             markDone: async (updateId) => {
               await updateDoc(doc(db, 'telegramInbox', String(updateId)), {
