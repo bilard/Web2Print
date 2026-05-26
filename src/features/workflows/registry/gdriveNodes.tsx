@@ -475,7 +475,120 @@ export const gdriveExportNode: NodeSpec<
   },
 }
 
+// ---------------------------------------------------------------------------
+// Save DAM — upload des assets reçus vers un dossier Google Drive
+// ---------------------------------------------------------------------------
+
+interface SaveDamConfig extends FolderTargetFields {}
+
+interface DamAsset {
+  url?: string
+  src?: string
+  name?: string
+  type?: string
+  mimeType?: string
+  [key: string]: unknown
+}
+
+// Déduit un nom de fichier depuis l'URL (dernier segment) ; fallback indexé.
+function assetFileName(asset: DamAsset, index: number): string {
+  if (asset.name) return asset.name
+  const url = asset.url ?? asset.src
+  if (url) {
+    try {
+      const last = new URL(url).pathname.split('/').filter(Boolean).pop()
+      if (last) return decodeURIComponent(last)
+    } catch {
+      /* URL invalide → fallback */
+    }
+  }
+  return `asset-${index + 1}`
+}
+
+function SaveDamConfigUi({
+  config,
+  onChange,
+}: {
+  config: SaveDamConfig
+  onChange: (next: SaveDamConfig) => void
+}) {
+  return <FolderPickerForExport config={config} onChange={onChange} />
+}
+
+export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: DamAsset[] }> = {
+  type: 'save-dam',
+  category: 'persistence',
+  label: 'Save DAM',
+  description: 'Upload les assets (images, PDF…) reçus dans un dossier Google Drive.',
+  icon: FolderUp,
+  inputs: [{ name: 'assets', type: 'asset[]', required: true }],
+  outputs: [{ name: 'assets', type: 'asset[]' }],
+  configSchema: [],
+  defaultConfig: { parentFolderId: '', parentFolderName: '' },
+  runtime: 'client',
+  ConfigComponent: SaveDamConfigUi,
+  run: async (ctx, config, inputs) => {
+    const assets = inputs.assets ?? []
+    if (assets.length === 0) {
+      ctx.log('warn', 'Aucun asset en entrée — rien à uploader.')
+      return { assets }
+    }
+    const token = requireToken()
+    const parentFolderId = config.parentFolderId?.trim() || undefined
+    ctx.log(
+      'info',
+      `Upload de ${assets.length} asset(s) vers Drive (${config.parentFolderName?.trim() || 'racine My Drive'})…`,
+    )
+
+    const out: DamAsset[] = []
+    let ok = 0
+    let failed = 0
+    for (let i = 0; i < assets.length; i++) {
+      if (ctx.signal.aborted) {
+        ctx.log('warn', `Interrompu après ${ok} upload(s).`)
+        out.push(...assets.slice(i)) // garde les restants tels quels
+        break
+      }
+      const asset = assets[i]
+      const url = asset.url ?? asset.src
+      if (!url) {
+        ctx.log('warn', `Asset ${i + 1} sans URL — ignoré.`)
+        out.push(asset)
+        failed++
+        continue
+      }
+      const name = assetFileName(asset, i)
+      try {
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const blob = await res.blob()
+        const file = new File([blob], name, {
+          type: blob.type || asset.mimeType || 'application/octet-stream',
+        })
+        const meta = await uploadFileToDrive(token, file, { name, parentFolderId })
+        out.push({ ...asset, driveId: meta.id, driveLink: meta.webViewLink })
+        ok++
+        ctx.setProgress?.(Math.round(((i + 1) / assets.length) * 100))
+      } catch (err) {
+        const m = err instanceof Error ? err.message : String(err)
+        // Erreur d'auth Drive → inutile de réessayer pour chaque asset : on échoue net.
+        if (/permission refusée|HTTP 40[13]/i.test(m)) {
+          throw new Error(
+            `Drive : ${m} — reconnecte-toi au panneau Google Drive (scope d'écriture drive.file requis).`,
+          )
+        }
+        failed++
+        ctx.log('warn', `Asset ${i + 1} « ${name} » échoué : ${m} (souvent CORS sur l'URL distante).`)
+        out.push(asset)
+      }
+    }
+    ctx.log(failed > 0 ? 'warn' : 'info', `Terminé : ${ok} uploadé(s), ${failed} échoué(s).`)
+    return { assets: out }
+  },
+}
+
 nodeRegistry.register(gsheetsImportNode)
 nodeRegistry.register(gdriveImportNode)
 nodeRegistry.register(gsheetsExportNode)
 nodeRegistry.register(gdriveExportNode)
+nodeRegistry.register(saveDamNode)

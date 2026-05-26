@@ -1,5 +1,5 @@
 // src/features/workflows/registry/persistenceNodes.ts
-import { Database, FolderUp } from 'lucide-react'
+import { Database } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { saveProducts } from '@/features/pim/usePimFirebase'
@@ -107,44 +107,7 @@ export const savePimNode: NodeSpec<
   },
 }
 
-// ---------------------------------------------------------------------------
-
-interface SaveDamConfig {
-  folder: string
-}
-
-export const saveDamNode: NodeSpec<
-  SaveDamConfig,
-  { assets: unknown[] },
-  { assets: unknown[] }
-> = {
-  type: 'save-dam',
-  category: 'persistence',
-  label: 'Save DAM',
-  description:
-    'Upload les assets dans le DAM. (Phase 2 — actuellement passthrough.)',
-  icon: FolderUp,
-  inputs: [{ name: 'assets', type: 'asset[]', required: true }],
-  outputs: [{ name: 'assets', type: 'asset[]' }],
-  configSchema: [
-    {
-      name: 'folder',
-      kind: 'text',
-      label: 'Dossier DAM',
-      default: '/imported',
-    },
-  ],
-  defaultConfig: { folder: '/imported' },
-  runtime: 'client',
-  run: async (ctx, config, inputs) => {
-    const assets = inputs.assets ?? []
-    ctx.log(
-      'warn',
-      `Save DAM stub — ${assets.length} assets passés en sortie sans upload réel (folder=${config.folder})`,
-    )
-    return { assets }
-  },
-}
+// NB : le node « Save DAM » a migré vers gdriveNodes.tsx — il fait désormais un vrai upload des
+// assets vers Google Drive (réutilise l'intégration Drive et son picker de dossier).
 
 nodeRegistry.register(savePimNode)
-nodeRegistry.register(saveDamNode)
