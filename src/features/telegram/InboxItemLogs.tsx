@@ -52,7 +52,7 @@ export function InboxItemLogs({ logs, status }: { logs: InboxLogEntry[]; status:
         Logs de traitement ({logs.length})
       </button>
       {open && (
-        <ul className="mt-1 space-y-0.5 rounded-md border border-white/[0.06] bg-black/30 px-2 py-1.5 max-h-48 overflow-y-auto">
+        <ul className="mt-1 space-y-0.5 rounded-md border border-white/[0.06] bg-black/30 px-2 py-1.5 max-h-[70vh] overflow-y-auto">
           {logs.map((l, i) => {
             const tone = logTone(l)
             return (
