@@ -116,6 +116,10 @@ interface BrightDataCallResponse {
 const callBrightData = httpsCallable<{ url: string; sessionCookies?: string }, BrightDataCallResponse>(
   functions,
   'scrapeWithBrightData',
+  // Le Web Unlocker (DataDome/Cloudflare) peut dépasser 70s — le défaut httpsCallable — alors que la
+  // Cloud Function a un budget de 200s (TIMEOUT_MS=160s). Sans ça, le client abandonnait à 70s
+  // (« deadline-exceeded ») pendant que la fonction résolvait encore le challenge.
+  { timeout: 180_000 },
 )
 
 /** Metadata du dernier appel réussi — utile pour debug / monitoring. */
