@@ -1,79 +1,86 @@
 import { describe, it, expect } from 'vitest'
-import { serializeStructured, structuredHasSignal, mergeSpecs } from './enrichRow'
-import type { StructuredProductData } from '@/features/scraping/core/structuredData'
+import { mapProductToFields, mapProductToAssets } from './enrichRow'
+import type { EnrichedProduct } from './types'
 
-const base: StructuredProductData = { images: [], specs: [] }
+const base: EnrichedProduct = {
+  description: '',
+  advantages: [],
+  specifications: [],
+  variants: [],
+  images: [],
+  documents: [],
+  sourceUrl: null,
+  additionalSources: [],
+  generatedAt: 0,
+}
 
-describe('structuredHasSignal', () => {
-  it('vide → faux', () => {
-    expect(structuredHasSignal(base)).toBe(false)
-  })
-  it('nom seul (sans specs/prix/desc) → faux', () => {
-    expect(structuredHasSignal({ ...base, name: 'Tondeuse' })).toBe(false)
-  })
-  it('nom + specs → vrai', () => {
-    expect(structuredHasSignal({ ...base, name: 'X', specs: [{ name: 'Poids', value: '15 kg' }] })).toBe(true)
-  })
-  it('nom + prix → vrai', () => {
-    expect(structuredHasSignal({ ...base, name: 'X', offers: { price: 421.72 } })).toBe(true)
-  })
-  it('nom + description courte (<60) → faux ; longue → vrai', () => {
-    expect(structuredHasSignal({ ...base, name: 'X', description: 'courte' })).toBe(false)
-    expect(structuredHasSignal({ ...base, name: 'X', description: 'd'.repeat(61) })).toBe(true)
-  })
-})
-
-describe('serializeStructured', () => {
-  it('rend identité, prix, description, specs et bloc images', () => {
-    const md = serializeStructured({
+describe('mapProductToFields', () => {
+  it('mappe les clés standard du template vers EnrichedProduct', () => {
+    const p: EnrichedProduct = {
+      ...base,
       name: 'EasyRotak 36-550',
       brand: 'Bosch',
-      sku: '88326076',
-      gtin: '4059952570',
-      category: 'Tondeuses',
+      distributorRef: '88326076',
+      model: 'Rotak 36-550',
+      ean: '4059952570',
       description: 'Tondeuse sans fil 36V.',
-      offers: { price: 421.72, priceCurrency: 'EUR' },
-      specs: [
+      breadcrumb: ['Jardin', 'Tondeuses'],
+      advantages: [{ text: 'Léger' }, { text: 'Ergo-Flex' }],
+      specifications: [
         { name: 'Largeur de coupe', value: '38 cm' },
         { name: 'Poids', value: '15 kg' },
       ],
-      images: ['https://media.adeo.com/x?width=650', 'https://media.adeo.com/y?width=650'],
-    })
-    expect(md).toContain('# EasyRotak 36-550')
-    expect(md).toContain('Marque : Bosch')
-    expect(md).toContain('Référence / SKU : 88326076')
-    expect(md).toContain('GTIN / EAN : 4059952570')
-    expect(md).toContain('Prix : 421.72 EUR')
-    expect(md).toContain('Tondeuse sans fil 36V.')
-    // Specs PAS rendues ici (consolidées séparément via mergeSpecs dans enrichRow).
-    expect(md).not.toContain('Largeur de coupe')
-    // Images sans extension → captées via le bloc explicite.
-    expect(md).toContain('JINA_EXTRACTED_IMAGES_START')
-    expect(md).toContain('https://media.adeo.com/x?width=650')
+      images: ['https://media.adeo.com/a?w=650', 'https://media.adeo.com/b?w=650'],
+      documents: [{ name: 'Notice', url: 'https://x/notice.pdf', filename: 'notice.pdf' }],
+    }
+    const f = mapProductToFields(p, [
+      'name', 'reference', 'subtitle', 'description', 'breadcrumb',
+      'advantages', 'brand', 'ean', 'images', 'specifications', 'documents',
+    ])
+    expect(f.name).toBe('EasyRotak 36-550')
+    expect(f.reference).toBe('88326076')
+    expect(f.subtitle).toBe('Rotak 36-550')
+    expect(f.description).toBe('Tondeuse sans fil 36V.')
+    expect(f.breadcrumb).toBe('Jardin > Tondeuses')
+    expect(f.advantages).toBe('Léger\nErgo-Flex')
+    expect(f.brand).toBe('Bosch')
+    expect(f.ean).toBe('4059952570')
+    expect(f.specifications).toBe('Largeur de coupe: 38 cm\nPoids: 15 kg')
+    expect(f.documents).toBe('https://x/notice.pdf')
   })
 
-  it('structuré minimal → markdown réduit, sans bloc images', () => {
-    const md = serializeStructured({ ...base, name: 'X' })
-    expect(md).toBe('# X')
+  it('champ inconnu → customFields, sinon null', () => {
+    const p: EnrichedProduct = { ...base, name: 'X', customFields: { garantie: '3 ans' } }
+    const f = mapProductToFields(p, ['garantie', 'inexistant'])
+    expect(f.garantie).toBe('3 ans')
+    expect(f.inexistant).toBeNull()
+  })
+
+  it('reference : fallback distributorRef → manufacturerRef → model', () => {
+    expect(mapProductToFields({ ...base, manufacturerRef: 'MPN1' }, ['reference']).reference).toBe('MPN1')
+    expect(mapProductToFields({ ...base, model: 'MOD1' }, ['reference']).reference).toBe('MOD1')
   })
 })
 
-describe('mergeSpecs', () => {
-  it('fusionne JSON-LD + markdown, dédup par nom (1ʳᵉ occurrence gagne)', () => {
-    const jsonLd = [{ name: 'Poids', value: '15 kg' }]
-    const md = [
-      { name: 'poids', value: '15.0 kg' }, // doublon (casse) → ignoré
-      { name: 'Largeur de coupe', value: '38 cm' },
-    ]
-    expect(mergeSpecs(jsonLd, md)).toEqual([
-      { name: 'Poids', value: '15 kg' },
-      { name: 'Largeur de coupe', value: '38 cm' },
+describe('mapProductToAssets', () => {
+  it('garde les images produit, filtre logos/pictos, ajoute les PDFs', () => {
+    const p: EnrichedProduct = {
+      ...base,
+      images: [
+        'https://media.adeo.com/p/photo1.jpg',
+        'https://cdn.site.com/logo.svg', // picto/logo → filtré
+        'https://cdn.site.com/icons/cart.png', // picto → filtré
+      ],
+      documents: [{ name: 'Fiche', url: 'https://x/fiche.pdf', filename: 'fiche.pdf' }],
+    }
+    const assets = mapProductToAssets(p)
+    expect(assets).toEqual([
+      { url: 'https://media.adeo.com/p/photo1.jpg', type: 'image' },
+      { url: 'https://x/fiche.pdf', type: 'pdf' },
     ])
   })
 
-  it('ignore les specs sans nom ou sans valeur', () => {
-    expect(mergeSpecs([], [{ name: '', value: 'x' }, { name: 'A', value: '' }, { name: 'B', value: 'ok' }])).toEqual([
-      { name: 'B', value: 'ok' },
-    ])
+  it('aucun asset → tableau vide', () => {
+    expect(mapProductToAssets(base)).toEqual([])
   })
 })

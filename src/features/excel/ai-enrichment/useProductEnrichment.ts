@@ -3235,12 +3235,19 @@ function parseImagesFromMarkdown(md: string): string[] {
 
 // ── Hook principal ──────────────────────────────────────────────────────────
 
-export function useProductEnrichment() {
-  const { setProgress, setData, setError, setLlmRequest, setLlmUsed, clear, getScrapeCache, setScrapeCache, clearScrapeCache, addLog, clearLogs } = useEnrichmentStore()
-  const [running, setRunning] = useState(false)
-
-  const enrich = useCallback(
-    async (input: EnrichmentInput): Promise<EnrichedProduct | null> => {
+/**
+ * Cœur d'enrichissement HEADLESS (hors React) — c'est LE moteur du scraper PIM. Partagé par le hook
+ * `useProductEnrichment` (UI PIM) ET le node de workflow `scrape-url` (via enrichRow). Accès au store
+ * Zustand via `getState()` ; `onRunning` pilote le spinner UI quand appelé depuis le hook (no-op en
+ * headless). Le corps est INCHANGÉ par rapport à l'ancienne `enrich` du hook.
+ */
+export async function enrichProductCore(
+  input: EnrichmentInput,
+  onRunning?: (b: boolean) => void,
+): Promise<EnrichedProduct | null> {
+  const { setProgress, setData, setError, setLlmRequest, setLlmUsed, getScrapeCache, setScrapeCache, clearScrapeCache, addLog, clearLogs } = useEnrichmentStore.getState()
+  const setRunning = onRunning ?? (() => {})
+  {
       const { sheetName, rowId, title, brand, sku, reference, description, category, knownUrl } = input
       const hasIdentifier = !!(title?.trim() || reference?.trim() || sku?.trim() || brand?.trim() || knownUrl?.trim())
       if (!hasIdentifier) {
@@ -4790,8 +4797,20 @@ Réponds UNIQUEMENT via l'outil emit_response.`
       } finally {
         setRunning(false)
       }
-    },
-    [setProgress, setData, setError, setLlmRequest, setLlmUsed, getScrapeCache, setScrapeCache],
+    }
+  }
+
+/**
+ * Hook PIM : wrappe enrichProductCore avec l'état `running` (spinner UI) + reset/hardReset.
+ * Le moteur lui-même vit dans enrichProductCore (réutilisé headless par le node workflow).
+ */
+export function useProductEnrichment() {
+  const { clear, clearScrapeCache } = useEnrichmentStore()
+  const [running, setRunning] = useState(false)
+
+  const enrich = useCallback(
+    (input: EnrichmentInput) => enrichProductCore(input, setRunning),
+    [],
   )
 
   /** Clear l'entry (data/error/progress) MAIS conserve le scrape cache.
