@@ -22,6 +22,12 @@ import { getApiKey } from '@/lib/apiKeys'
 import { generateJson, type LLMProviderId } from '@/features/ai/llmRouter'
 import { scrapeProductBundle } from './scrapeBundle'
 import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
+import { looksLikeBotChallenge } from './markdownSanitize'
+import {
+  brightDataScrapeWithDocs,
+  isHostKnownBlocked,
+  markHostBlocked,
+} from '@/features/scraping/core/brightDataFallback'
 
 export interface EnrichRowInput {
   url: string
@@ -45,19 +51,51 @@ export interface EnrichRowResult {
   assets: EnrichRowAsset[]
 }
 
-/** Construit le deepScrape : Firecrawl si clé présente, sinon Jina Reader. */
+/**
+ * Cascade complète de deep scrape (page primaire) : Firecrawl (si clé) → Jina → Bright Data Web
+ * Unlocker en dernier recours pour les sites anti-bot (DataDome/Cloudflare). Une page de challenge
+ * renvoyée par Firecrawl/Jina (détectée via `looksLikeBotChallenge`) déclenche l'escalade vers
+ * Bright Data plutôt que d'être passée telle quelle au LLM. Un host déjà identifié bloqué saute
+ * directement à Bright Data (économise les appels). Bright Data n'est PAS utilisé pour le fastScrape
+ * des onglets secondaires (coût crédits) — voir jinaFastScrape.
+ */
 function buildDeepScrape(): (url: string) => Promise<{ markdown: string; html: string | null } | null> {
   return async (url: string) => {
-    const fcKey = getApiKey('firecrawl')
-    if (fcKey) {
-      try {
-        const r = await firecrawlScrape(url, fcKey)
-        if (r?.markdown) return { markdown: r.markdown, html: null }
-      } catch (err) {
-        console.warn('[enrichRow] firecrawl failed:', err)
+    let sawChallenge = false
+
+    if (!isHostKnownBlocked(url)) {
+      const fcKey = getApiKey('firecrawl')
+      if (fcKey) {
+        try {
+          const r = await firecrawlScrape(url, fcKey)
+          if (r?.markdown) {
+            if (!looksLikeBotChallenge(r.markdown)) return { markdown: r.markdown, html: null }
+            sawChallenge = true
+          }
+        } catch (err) {
+          console.warn('[enrichRow] firecrawl failed:', err)
+        }
+      }
+      const j = await jinaFetch(url)
+      if (j?.markdown) {
+        if (!looksLikeBotChallenge(j.markdown)) return j
+        sawChallenge = true
       }
     }
-    return jinaFetch(url)
+
+    // Dernier recours : Bright Data Web Unlocker (anti-bot premium, via Cloud Function). Renvoie
+    // markdown + images injectées (bloc JINA_EXTRACTED_IMAGES). Dégradation propre si non configuré
+    // (callScrape renvoie null → on retourne null → champs vides plutôt qu'une page challenge).
+    try {
+      const bd = await brightDataScrapeWithDocs(url)
+      if (bd?.markdown) {
+        if (sawChallenge || isHostKnownBlocked(url)) markHostBlocked(url)
+        return { markdown: bd.markdown, html: null }
+      }
+    } catch (err) {
+      console.warn('[enrichRow] bright data failed:', err)
+    }
+    return null
   }
 }
 
