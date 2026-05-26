@@ -11,9 +11,11 @@ import {
   FolderSearch,
   X,
 } from 'lucide-react'
+import { httpsCallable } from 'firebase/functions'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { useGDriveStore } from '@/stores/gdrive.store'
+import { functions } from '@/lib/firebase/config'
 import {
   GoogleAuthMissingError,
   downloadDriveFile,
@@ -510,58 +512,44 @@ function assetFileName(asset: DamAsset, index: number): string {
   return `asset-${index + 1}`
 }
 
-// Proxies CORS de dernier recours (mêmes que le scraping HTML). allorigins/raw renvoie le binaire ;
-// corsproxy.io est moins fiable (renvoie parfois du HTML) → filtré par le rejet content-type ci-dessous.
-const CORS_PROXIES = [
-  (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-]
+// Proxy serveur (Cloud Function) : fetch côté serveur avec UA navigateur → contourne CORS ET le
+// blocage anti-bot par User-Agent (les CDN retail type Makita refusent les proxies publics). Cap 4 Mo.
+const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(
+  functions,
+  'imageProxy',
+)
 
-// Proxy image dédié (fiable, ajoute CORS) — uniquement pour les images. Strip le scheme.
-const weservProxy = (u: string) =>
-  `https://images.weserv.nl/?url=${encodeURIComponent(u.replace(/^https?:\/\//, ''))}`
+function base64ToBlob(b64: string, mime: string): Blob {
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new Blob([bytes], { type: mime })
+}
 
 /**
- * Récupère un asset binaire en contournant CORS :
- *  1. fetch direct (CDN CORS-friendly) ;
- *  2. images.weserv.nl si c'est une image (proxy dédié fiable) ;
- *  3. proxies CORS génériques (allorigins, corsproxy) en dernier recours.
- * Rejette les réponses HTML (pages d'erreur de proxy) pour ne pas uploader une fausse image.
+ * Récupère un asset binaire. Les CDN retail bloquent CORS + proxies publics (UA non-navigateur),
+ * donc on passe par la Cloud Function `imageProxy` (fetch serveur, UA navigateur) en PRIORITÉ —
+ * ce qui évite aussi les erreurs CORS bruyantes en console. Fallback : fetch direct (CDN
+ * CORS-friendly, ou si la function rejette : > 4 Mo, type non géré).
  */
-async function fetchAssetBlob(url: string, name: string, signal: AbortSignal): Promise<Blob> {
-  const looksImage = (mimeFromName(name) ?? '').startsWith('image/')
-  const candidates = [
-    url,
-    ...(looksImage ? [weservProxy(url)] : []),
-    ...CORS_PROXIES.map((p) => p(url)),
-  ]
-  let lastErr: unknown = new Error('fetch échoué')
-  for (const candidate of candidates) {
+async function fetchAssetBlob(url: string, signal: AbortSignal): Promise<Blob> {
+  if (signal.aborted) throw new Error('annulé')
+  try {
+    const { data } = await imageProxyFn({ url })
+    return base64ToBlob(data.data, data.mimeType)
+  } catch (proxyErr) {
     try {
-      const res = await fetch(candidate, { signal })
-      if (!res.ok) {
-        lastErr = new Error(`HTTP ${res.status}`)
-        continue
-      }
-      // Un proxy en échec renvoie souvent une page HTML 200 → ne pas la prendre pour l'asset
-      // (un asset DAM est toujours binaire : image/pdf/vidéo, jamais du HTML).
-      const ct = res.headers.get('content-type') ?? ''
-      if (/text\/html/i.test(ct)) {
-        lastErr = new Error('réponse HTML (page d’erreur proxy) au lieu de l’asset')
-        continue
-      }
+      const res = await fetch(url, { signal })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const blob = await res.blob()
-      if (blob.size === 0) {
-        lastErr = new Error('réponse vide')
-        continue
-      }
+      if (blob.size === 0) throw new Error('réponse vide')
       return blob
-    } catch (err) {
-      if (signal.aborted) throw err // abort → on remonte, pas de fallback inutile
-      lastErr = err
+    } catch (directErr) {
+      if (signal.aborted) throw directErr
+      // L'erreur de la function est généralement la plus parlante (source 4xx, trop lourde…).
+      throw proxyErr instanceof Error ? proxyErr : directErr
     }
   }
-  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr))
 }
 
 const EXT_MIME: Record<string, string> = {
@@ -651,7 +639,7 @@ export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { asse
       }
       const name = assetFileName(asset, i)
       try {
-        const blob = await fetchAssetBlob(url, name, ctx.signal)
+        const blob = await fetchAssetBlob(url, ctx.signal)
         const file = new File([blob], name, {
           type: blob.type || mimeFromName(name) || asset.mimeType || 'application/octet-stream',
         })
@@ -668,7 +656,7 @@ export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { asse
           )
         }
         failed++
-        ctx.log('warn', `Asset ${i + 1} « ${name} » échoué : ${m} (fetch direct + proxies CORS épuisés).`)
+        ctx.log('warn', `Asset ${i + 1} « ${name} » échoué : ${m} (proxy serveur + fetch direct épuisés).`)
         out.push(asset)
       }
     }
