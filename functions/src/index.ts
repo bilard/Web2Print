@@ -2,11 +2,12 @@ import { setGlobalOptions } from 'firebase-functions/v2'
 import { scrapeCatalogForBrief } from './scraper/scrapeCatalogForBrief'
 import { extractBreadcrumb } from './scraper/extractBreadcrumb'
 import { scrapeWithBrightData } from './scraper/brightDataUnlocker'
+import { scrapeWithScrapingBrowser } from './scraper/scrapingBrowser'
 import { getBrightDataAccount } from './scraper/brightDataAccount'
 
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
 
-export { scrapeCatalogForBrief, extractBreadcrumb, scrapeWithBrightData, getBrightDataAccount }
+export { scrapeCatalogForBrief, extractBreadcrumb, scrapeWithBrightData, scrapeWithScrapingBrowser, getBrightDataAccount }
 
 // --- DAM ---
 export { searchImages as damSearchImages } from './dam/searchImages'

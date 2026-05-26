@@ -18,6 +18,7 @@ import { httpsCallable, type FunctionsError } from 'firebase/functions'
 import TurndownService from 'turndown'
 import { functions } from '@/lib/firebase/config'
 import { getSiteCookieForUrl } from '@/lib/siteCookies'
+import { looksLikeBotChallenge } from '@/features/excel/ai-enrichment/markdownSanitize'
 import { recordBrightDataUsage } from '@/features/stats/brightDataUsageTracking'
 import { parseStructuredDataAny, type StructuredProductData } from './structuredData'
 
@@ -122,8 +123,16 @@ const callBrightData = httpsCallable<{ url: string; sessionCookies?: string }, B
   { timeout: 180_000 },
 )
 
+// Tier 2 : Scraping Browser (navigateur réel chez Bright Data) — escalade pour les DataDome les plus
+// durs que le Web Unlocker HTTP ne passe pas. Plus lent (challenge JS + render) → timeout client 300s.
+const callScrapingBrowser = httpsCallable<{ url: string }, { html: string; durationMs: number }>(
+  functions,
+  'scrapeWithScrapingBrowser',
+  { timeout: 300_000 },
+)
+
 /** Metadata du dernier appel réussi — utile pour debug / monitoring. */
-let lastSuccess: { country: string; attempts: number; durationMs: number; lengthBytes: number } | null = null
+let lastSuccess: { country: string; attempts: number; durationMs: number; lengthBytes: number; source?: 'web-unlocker' | 'scraping-browser' } | null = null
 export function getLastBrightDataSuccess() {
   return lastSuccess
 }
@@ -162,26 +171,47 @@ function mapError(e: unknown): BrightDataError {
  *  Si un cookie de session est stocké pour l'hostname, il est injecté automatiquement. */
 async function callScrape(url: string): Promise<string | null> {
   const sessionCookies = getSiteCookieForUrl(url) || undefined
+
+  // ── Tier 1 : Web Unlocker (rapide, peu cher) — passe la majorité des sites protégés. ──
   try {
     const result = await callBrightData({ url, ...(sessionCookies && { sessionCookies }) })
     const data = result.data
-    if (data?.html) {
+    if (data?.html && !looksLikeBotChallenge(data.html)) {
       lastError = null
       lastSuccess = {
         country: data.country,
         attempts: data.attempts,
         durationMs: data.durationMs,
         lengthBytes: data.length,
+        source: 'web-unlocker',
       }
       void recordBrightDataUsage()
       return data.html
     }
-    return null
+    console.log('[brightdata] Web Unlocker bloqué/challenge → escalade Scraping Browser')
   } catch (e) {
     lastError = mapError(e)
-    console.warn('[brightdata] call failed:', lastError)
-    return null
+    console.warn('[brightdata] web unlocker failed:', lastError, '→ escalade Scraping Browser')
   }
+
+  // ── Tier 2 : Scraping Browser (navigateur réel BD) — UNIQUEMENT si le Web Unlocker a échoué. ──
+  // Plus lent et plus cher → jamais en premier. Résout les DataDome JS les plus durs.
+  try {
+    const r = await callScrapingBrowser({ url })
+    const html = r.data?.html
+    if (html && !looksLikeBotChallenge(html)) {
+      lastError = null
+      lastSuccess = { country: 'browser', attempts: 1, durationMs: r.data.durationMs ?? 0, lengthBytes: html.length, source: 'scraping-browser' }
+      void recordBrightDataUsage()
+      console.log('[brightdata] ✓ Scraping Browser a débloqué', url)
+      return html
+    }
+    console.warn('[brightdata] Scraping Browser : page challenge ou vide')
+  } catch (e) {
+    lastError = mapError(e)
+    console.warn('[brightdata] scraping browser failed:', lastError)
+  }
+  return null
 }
 
 /**
