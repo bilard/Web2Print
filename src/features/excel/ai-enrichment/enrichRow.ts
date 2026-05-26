@@ -76,16 +76,33 @@ export function mapProductToAssets(p: EnrichedProduct): EnrichRowAsset[] {
   return [...images, ...docs]
 }
 
+/**
+ * Titre dérivé du slug de l'URL (même logique que le PIM/ScrapingModal). CRUCIAL : il permet au
+ * moteur de se rabattre sur une RECHERCHE par titre (site fabricant / autre revendeur non bloqué)
+ * quand l'URL directe est anti-bot. Sans titre, pas de fallback → on reste coincé sur l'URL bloquée.
+ */
+function deriveTitleFromUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    const slug = u.pathname.split('/').filter(Boolean).pop() ?? ''
+    const title = slug.replace(/[-_]+/g, ' ').replace(/\.\w{2,4}$/, '').trim()
+    return title || u.hostname
+  } catch {
+    return ''
+  }
+}
+
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
   if (!url) throw new Error('enrichRow: url manquante')
   if (!targetFields || targetFields.length === 0) throw new Error('enrichRow: targetFields vide')
 
-  log?.(`[enrichRow] enrichissement (moteur PIM) ${url}`)
+  const title = deriveTitleFromUrl(url)
+  log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
   const product = await enrichProductCore({
     sheetName: 'workflow',
     rowId: `wf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    title: '',
+    title,
     knownUrl: url,
     mode: 'auto',
   })
