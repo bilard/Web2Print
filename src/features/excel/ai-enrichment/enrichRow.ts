@@ -25,6 +25,7 @@ import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
 import { looksLikeBotChallenge } from './markdownSanitize'
 import {
   brightDataScrapeWithDocs,
+  getLastBrightDataError,
   isHostKnownBlocked,
   markHostBlocked,
 } from '@/features/scraping/core/brightDataFallback'
@@ -111,7 +112,13 @@ function buildDeepScrape(
     } catch (err) {
       console.warn('[enrichRow] bright data failed:', err)
     }
-    log?.('[enrichRow] connecteur : AUCUN (Jina/Firecrawl/Bright Data tous échoués)')
+    // Surface la raison Bright Data (cookies/balance/503…) dans les logs pour diagnostic.
+    const bdErr = getLastBrightDataError()
+    log?.(
+      `[enrichRow] connecteur : AUCUN — Bright Data échoué${
+        bdErr ? ` (${bdErr.code} : ${bdErr.message.slice(0, 140)})` : ''
+      }`,
+    )
     return null
   }
 }
