@@ -85,7 +85,12 @@ export function useTelegramInboxWorker(): void {
         await reply(chatId, `⚠️ « ${name} » exécution échouée : ${maskToken(exec.firstError || 'erreur inconnue')}`)
       } else {
         const suffix = exec.errorCount > 0 ? ` (${exec.errorCount} erreur(s))` : ''
-        await reply(chatId, `✅ « ${name} » exécuté — ${exec.nodeCount} node(s), aucun fichier produit${suffix}.`)
+        const warn = exec.logs.find((l) => l.level === 'warn')
+        if (warn) {
+          await reply(chatId, `⚠️ « ${name} » exécuté — ${exec.nodeCount} node(s)${suffix}, mais : ${maskToken(warn.msg)}`)
+        } else {
+          await reply(chatId, `✅ « ${name} » exécuté — ${exec.nodeCount} node(s), aucun fichier produit${suffix}.`)
+        }
       }
     }
 

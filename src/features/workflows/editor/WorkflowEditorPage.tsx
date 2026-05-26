@@ -1,5 +1,6 @@
 // src/features/workflows/editor/WorkflowEditorPage.tsx
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, Play, Square, Sparkles, Workflow as WorkflowIcon } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
@@ -69,7 +70,24 @@ export function WorkflowEditorPage() {
   if (loading) return <div className="min-h-screen bg-[#0f0f0f] text-white p-8">Chargement…</div>
   if (!wf) return <div className="min-h-screen bg-[#0f0f0f] text-white p-8">Workflow introuvable</div>
 
-  const run = () => executeWorkflow(wf)
+  // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
+  const run = async () => {
+    await executeWorkflow(wf)
+    const states = Object.values(useRunContext.getState().nodeStates)
+    const errors = states.filter((s) => s.status === 'error')
+    const ok = states.filter((s) => s.status === 'success').length
+    const firstWarn = states
+      .filter((s) => s.status === 'success')
+      .flatMap((s) => s.logs ?? [])
+      .find((l) => l.level === 'warn')
+    if (errors.length > 0) {
+      toast.error(`Workflow : ${errors.length} node(s) en erreur — ${errors[0].error ?? 'voir les logs'}`.slice(0, 180))
+    } else if (firstWarn) {
+      toast.warning(`Workflow terminé avec avertissement — ${firstWarn.msg}`.slice(0, 200))
+    } else {
+      toast.success(`Workflow terminé — ${ok} node(s) exécuté(s).`)
+    }
+  }
   const stop = () => ac?.abort()
 
   return (

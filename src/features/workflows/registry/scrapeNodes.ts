@@ -177,7 +177,20 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
 
     ctx.setProgress?.(100)
     const sheet = rowsToSheet('Scrape', keys, labels, allRows)
-    ctx.log('info', `Terminé — ${allRows.length} ligne(s), ${allAssets.length} asset(s)`)
+    // Compte les cellules réellement remplies (hors _url) → permet de signaler un scrape vide.
+    const filled = allRows.reduce(
+      (n, row) =>
+        n + Object.entries(row).filter(([k, v]) => k !== '_url' && v != null && v !== '').length,
+      0,
+    )
+    if (filled === 0 && allAssets.length === 0) {
+      ctx.log(
+        'warn',
+        `⚠️ Aucune donnée extraite (${allRows.length} URL(s)) — site anti-bot non débloqué (cookies de session ?) ou page sans contenu structuré.`,
+      )
+    } else {
+      ctx.log('info', `Terminé — ${allRows.length} ligne(s), ${filled} champ(s) rempli(s), ${allAssets.length} asset(s)`)
+    }
     return { sheet, assets: allAssets }
   },
 }
