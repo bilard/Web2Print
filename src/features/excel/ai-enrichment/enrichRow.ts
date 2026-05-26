@@ -101,9 +101,11 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
 
-  // Bright Data Web Unlocker réussit par INTERMITTENCE sur les sites DataDome (Leroy Merlin) :
-  // on réessaie tant que le résultat est bloqué/vide. Les sites accessibles réussissent au 1er coup
-  // (pas de retry). Même rowId entre essais → host marqué bloqué → on va direct sur Bright Data.
+  // Stratégie identique au PIM :
+  //  1) essai sur l'URL fournie (le revendeur a le prix exact) ;
+  //  2) si bloquée (DataDome) → essais SANS knownUrl → le moteur RECHERCHE par titre et bascule sur
+  //     le SITE FABRICANT (Bosch…) ou un autre revendeur non bloqué, comme le bouton « site officiel »
+  //     du PIM. C'est ce fallback qui manquait au workflow (knownUrl forçait l'URL bloquée).
   const rowId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const isEmpty = (p: EnrichedProduct | null): boolean =>
     !p || p.blockedByAntiBot === true ||
@@ -112,11 +114,19 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   let product: EnrichedProduct | null = null
   const MAX_ATTEMPTS = 3
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    product = await enrichProductCore({ sheetName: 'workflow', rowId, title, knownUrl: url, mode: 'auto' })
-    if (!isEmpty(product)) break
-    if (attempt < MAX_ATTEMPTS) {
-      log?.(`[enrichRow] anti-bot — essai ${attempt}/${MAX_ATTEMPTS} bloqué, nouvelle tentative Bright Data…`)
+    const direct = attempt === 1
+    if (!direct) {
+      log?.(`[enrichRow] URL bloquée — essai ${attempt}/${MAX_ATTEMPTS} via recherche site fabricant / titre…`)
     }
+    product = await enrichProductCore({
+      sheetName: 'workflow',
+      rowId,
+      title,
+      // 1er essai : URL directe (prix revendeur). Suivants : on omet knownUrl → recherche fabricant.
+      ...(direct ? { knownUrl: url } : {}),
+      mode: 'auto',
+    })
+    if (!isEmpty(product)) break
   }
 
   if (!product) {
