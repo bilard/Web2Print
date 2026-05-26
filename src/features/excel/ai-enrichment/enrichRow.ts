@@ -124,17 +124,30 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
 
-  // Appel STRICTEMENT identique à « Scraper le web » du PIM (ScrapingModal) : mêmes sheetName/rowId
-  // (clé de cache mémoire Zustand — PAS localStorage), même titre, même knownUrl, UN seul appel.
-  // → le workflow se comporte exactement comme le PIM : réutilise un scrape réussi dans la session,
-  // sinon scrape frais identique. Pas de retry (le PIM n'en fait pas — éviter d'épuiser Bright Data).
-  const product = await enrichProductCore({
-    sheetName: SCRAPE_MODAL_SHEET,
-    rowId: deriveScrapeRowId(url),
-    title,
-    knownUrl: url,
-    mode: 'auto',
-  })
+  // Appel identique au PIM (mêmes sheetName/rowId = cache mémoire Zustand, titre, knownUrl), MAIS
+  // avec retry : un scrape frais de site DataDome (Leroy Merlin) réussit ~1 fois sur 2 (intermittence
+  // anti-bot). On re-tente tant que le résultat est bloqué/vide. Même rowId → le moteur invalide le
+  // cache « challenge » et re-scrape frais à chaque essai. Les sites accessibles passent au 1er coup.
+  const rowId = deriveScrapeRowId(url)
+  const isEmpty = (p: EnrichedProduct | null): boolean =>
+    !p || p.blockedByAntiBot === true ||
+    (!(p.specifications?.length) && !(p.images?.length) && !p.description?.trim())
+
+  let product: EnrichedProduct | null = null
+  const MAX_ATTEMPTS = 3
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    product = await enrichProductCore({
+      sheetName: SCRAPE_MODAL_SHEET,
+      rowId,
+      title,
+      knownUrl: url,
+      mode: 'auto',
+    })
+    if (!isEmpty(product)) break
+    if (attempt < MAX_ATTEMPTS) {
+      log?.(`[enrichRow] bloqué (anti-bot intermittent) — nouvel essai ${attempt + 1}/${MAX_ATTEMPTS}…`)
+    }
+  }
 
   if (!product) {
     log?.('[enrichRow] moteur PIM : aucune donnée')
