@@ -395,6 +395,11 @@ function BrightDataConnectorRow() {
   const [tokenLoaded, setTokenLoaded] = useState(false)
   const [tokenSaving, setTokenSaving] = useState(false)
   const [tokenVisible, setTokenVisible] = useState(false)
+  // Endpoint WSS du Scraping Browser (tier 2 anti-bot), persisté dans config/brightdata.browserWs.
+  const [wsValue, setWsValue] = useState('')
+  const [wsEditing, setWsEditing] = useState(false)
+  const [wsSaving, setWsSaving] = useState(false)
+  const [wsVisible, setWsVisible] = useState(false)
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -402,8 +407,11 @@ function BrightDataConnectorRow() {
     getDoc(doc(db, 'config/brightdata'))
       .then((snap) => {
         if (cancelled) return
-        const v = snap.exists() ? (snap.data()?.apiToken as string | undefined) : undefined
-        setTokenValue(typeof v === 'string' ? v : '')
+        const data = snap.exists() ? snap.data() : undefined
+        const tk = data?.apiToken
+        const ws = data?.browserWs
+        setTokenValue(typeof tk === 'string' ? tk : '')
+        setWsValue(typeof ws === 'string' ? ws : '')
         setTokenLoaded(true)
       })
       .catch(() => { if (!cancelled) setTokenLoaded(true) })
@@ -424,6 +432,20 @@ function BrightDataConnectorRow() {
   }
 
   const tokenMasked = tokenValue ? '•'.repeat(8) + tokenValue.slice(-4) : ''
+
+  const handleSaveWs = async () => {
+    setWsSaving(true)
+    try {
+      await setDoc(doc(db, 'config/brightdata'), { browserWs: wsValue.trim() }, { merge: true })
+      setWsEditing(false)
+    } finally {
+      setWsSaving(false)
+    }
+  }
+  // Masque le mot de passe (…:PASSWORD@…) et tronque pour l'affichage.
+  const wsMasked = wsValue
+    ? wsValue.replace(/:([^:@/]+)@/, ':••••@').replace(/^(.{56}).+$/, '$1…')
+    : ''
 
   const handleTest = async () => {
     setTestStatus('testing')
@@ -552,6 +574,52 @@ function BrightDataConnectorRow() {
           <span>{tokenValue ? tokenMasked : '— aucun token configuré (clique pour saisir)'}</span>
           {tokenValue && <span className="text-[9px] text-violet-300/60 ml-2">Firestore</span>}
         </button>
+      )}
+
+      {/* Scraping Browser (tier 2) — lien WSS d'une zone « Scraping Browser » Bright Data, pour les
+          DataDome les plus durs (Leroy Merlin) que le Web Unlocker ne passe pas. Stocké dans
+          config/brightdata.browserWs, lu par la Cloud Function scrapeWithScrapingBrowser. */}
+      {tokenLoaded && (
+        <div className="flex flex-col gap-1.5 pt-1.5 border-t border-white/[0.06]">
+          <p className="text-[10px] text-white/40 font-medium">Scraping Browser (tier 2 — DataDome durs)</p>
+          {wsEditing ? (
+            <>
+              <div className="flex gap-1.5">
+                <input
+                  type={wsVisible ? 'text' : 'password'}
+                  value={wsValue}
+                  onChange={(e) => setWsValue(e.target.value)}
+                  placeholder="wss://brd-customer-…-zone-…:PASSWORD@brd.superproxy.io:9222"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-violet-500/50"
+                  autoFocus
+                />
+                <button onClick={() => setWsVisible((v) => !v)} className="text-white/30 hover:text-white/60 px-1">
+                  {wsVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={handleSaveWs}
+                  disabled={wsSaving}
+                  className="text-xs bg-violet-500 hover:bg-violet-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                >
+                  {wsSaving && <Loader2 className="w-3 h-3 animate-spin" />}
+                  Sauvegarder
+                </button>
+              </div>
+              <p className="text-[10px] text-white/30">
+                Lien WSS de ta zone « Scraping Browser » (≠ Web Unlocker). Stocké dans{' '}
+                <code className="text-violet-300/70">config/brightdata.browserWs</code>.
+              </p>
+            </>
+          ) : (
+            <button
+              onClick={() => setWsEditing(true)}
+              className="text-left text-xs font-mono text-white/40 bg-white/5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 transition-colors truncate flex items-center justify-between"
+            >
+              <span>{wsValue ? wsMasked : '— aucun Scraping Browser (clique pour coller le lien WSS)'}</span>
+              {wsValue && <span className="text-[9px] text-violet-300/60 ml-2">Firestore</span>}
+            </button>
+          )}
+        </div>
       )}
 
       <div className="text-[10px] text-white/30 bg-white/5 rounded-lg px-2.5 py-1.5 leading-relaxed">

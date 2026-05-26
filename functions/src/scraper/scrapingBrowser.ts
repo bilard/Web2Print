@@ -4,11 +4,12 @@
  * (chez Bright Data) via Puppeteer over WebSocket : le navigateur résout les challenges JS +
  * fingerprinting que la requête HTTP ne reproduit pas.
  *
- * ⚠️ PRÉREQUIS MANUELS (sinon cette fonction renvoie failed-precondition) :
+ * ⚠️ PRÉREQUIS (sinon cette fonction renvoie failed-precondition) :
  *   1. Dashboard Bright Data → créer une zone « Scraping Browser » (distincte du Web Unlocker).
  *   2. Récupérer l'endpoint WSS : wss://brd-customer-<ID>-zone-<ZONE>:<PASSWORD>@brd.superproxy.io:9222
- *   3. firebase functions:secrets:set BRIGHTDATA_BROWSER_WS   (coller l'endpoint complet)
- *   4. firebase deploy --only functions:scrapeWithScrapingBrowser
+ *   3. Le coller dans l'app : Settings → Connecteurs → Bright Data → champ « Scraping Browser (WSS) »
+ *      (stocké dans Firestore config/brightdata.browserWs, lu ici — pas de redéploiement nécessaire).
+ *   Fallback : secret Secret Manager BRIGHTDATA_BROWSER_WS si Firestore vide.
  *
  * Coût : significativement plus élevé que le Web Unlocker (navigateur réel + temps de session).
  * Appelé UNIQUEMENT en dernier recours (cf. callScrape côté client).
@@ -17,6 +18,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
 import type { Browser } from 'puppeteer-core'
+import { getBrightDataBrowserWs } from './brightDataToken'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { addExtra } = require('puppeteer-extra')
@@ -53,11 +55,12 @@ export const scrapeWithScrapingBrowser = onCall<ScrapingBrowserRequest, Promise<
     if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
       throw new HttpsError('invalid-argument', 'URL invalide ou manquante')
     }
-    const wsEndpoint = BRIGHTDATA_BROWSER_WS.value()
+    // WSS lu depuis Firestore (Settings → Connecteurs, sans redéploiement) puis secret en fallback.
+    const wsEndpoint = await getBrightDataBrowserWs(BRIGHTDATA_BROWSER_WS.value())
     if (!wsEndpoint) {
       throw new HttpsError(
         'failed-precondition',
-        'BRIGHTDATA_BROWSER_WS non configuré — crée une zone « Scraping Browser » sur le dashboard Bright Data, puis: firebase functions:secrets:set BRIGHTDATA_BROWSER_WS',
+        'Scraping Browser non configuré — crée une zone « Scraping Browser » sur Bright Data et colle son lien WSS dans Settings → Connecteurs → Bright Data.',
       )
     }
 

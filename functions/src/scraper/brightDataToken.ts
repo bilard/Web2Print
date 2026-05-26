@@ -33,3 +33,22 @@ export async function getBrightDataToken(secretFallback: string | undefined): Pr
   }
   return (secretFallback ?? '').trim()
 }
+
+/**
+ * Endpoint WSS du Scraping Browser Bright Data. Même priorité que le token : Firestore
+ * `config/brightdata.browserWs` (saisi via Settings → Connecteurs, sans redéploiement) puis le
+ * secret Secret Manager en fallback. Format attendu :
+ *   wss://brd-customer-<ID>-zone-<ZONE>:<PASSWORD>@brd.superproxy.io:9222
+ */
+export async function getBrightDataBrowserWs(secretFallback: string | undefined): Promise<string> {
+  try {
+    const snap = await getFirestore().doc('config/brightdata').get()
+    if (snap.exists) {
+      const ws = snap.data()?.browserWs
+      if (typeof ws === 'string' && ws.trim()) return ws.trim()
+    }
+  } catch {
+    // Firestore unavailable — fallback silencieux au secret
+  }
+  return (secretFallback ?? '').trim()
+}
