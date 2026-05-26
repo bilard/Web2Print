@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { serializeStructured, structuredHasSignal } from './enrichRow'
+import { serializeStructured, structuredHasSignal, mergeSpecs } from './enrichRow'
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 
 const base: StructuredProductData = { images: [], specs: [] }
@@ -45,7 +45,8 @@ describe('serializeStructured', () => {
     expect(md).toContain('GTIN / EAN : 4059952570')
     expect(md).toContain('Prix : 421.72 EUR')
     expect(md).toContain('Tondeuse sans fil 36V.')
-    expect(md).toContain('- Largeur de coupe : 38 cm')
+    // Specs PAS rendues ici (consolidées séparément via mergeSpecs dans enrichRow).
+    expect(md).not.toContain('Largeur de coupe')
     // Images sans extension → captées via le bloc explicite.
     expect(md).toContain('JINA_EXTRACTED_IMAGES_START')
     expect(md).toContain('https://media.adeo.com/x?width=650')
@@ -54,5 +55,25 @@ describe('serializeStructured', () => {
   it('structuré minimal → markdown réduit, sans bloc images', () => {
     const md = serializeStructured({ ...base, name: 'X' })
     expect(md).toBe('# X')
+  })
+})
+
+describe('mergeSpecs', () => {
+  it('fusionne JSON-LD + markdown, dédup par nom (1ʳᵉ occurrence gagne)', () => {
+    const jsonLd = [{ name: 'Poids', value: '15 kg' }]
+    const md = [
+      { name: 'poids', value: '15.0 kg' }, // doublon (casse) → ignoré
+      { name: 'Largeur de coupe', value: '38 cm' },
+    ]
+    expect(mergeSpecs(jsonLd, md)).toEqual([
+      { name: 'Poids', value: '15 kg' },
+      { name: 'Largeur de coupe', value: '38 cm' },
+    ])
+  })
+
+  it('ignore les specs sans nom ou sans valeur', () => {
+    expect(mergeSpecs([], [{ name: '', value: 'x' }, { name: 'A', value: '' }, { name: 'B', value: 'ok' }])).toEqual([
+      { name: 'B', value: 'ok' },
+    ])
   })
 })

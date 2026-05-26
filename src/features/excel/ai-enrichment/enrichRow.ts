@@ -31,6 +31,8 @@ import {
 } from '@/features/scraping/core/brightDataFallback'
 import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
+import { parseSpecsFromMarkdown, type Specification } from '@/features/scraping/core/parsers/parseSpecifications'
+import { isJunkImageUrl, isPictoOrLogo } from './imageFilter'
 
 export interface EnrichRowInput {
   url: string
@@ -196,6 +198,19 @@ function buildSchemas(targetFields: string[]): {
   }
 }
 
+/** Fusionne les specs JSON-LD et celles parsées du markdown, dédupliquées par nom (1ʳᵉ occurrence). */
+export function mergeSpecs(jsonLd: Specification[], fromMarkdown: Specification[]): Specification[] {
+  const seen = new Set<string>()
+  const out: Specification[] = []
+  for (const s of [...jsonLd, ...fromMarkdown]) {
+    const key = s.name?.trim().toLowerCase()
+    if (!key || !s.value?.trim() || seen.has(key)) continue
+    seen.add(key)
+    out.push(s)
+  }
+  return out
+}
+
 /** Vrai si les données structurées JSON-LD portent assez de signal pour servir de source primaire. */
 export function structuredHasSignal(p: StructuredProductData): boolean {
   return !!(
@@ -221,10 +236,8 @@ export function serializeStructured(p: StructuredProductData): string {
     lines.push(`Prix : ${p.offers.price}${p.offers.priceCurrency ? ` ${p.offers.priceCurrency}` : ''}`)
   }
   if (p.description) lines.push('', p.description)
-  if (p.specs && p.specs.length > 0) {
-    lines.push('', '## Spécifications')
-    for (const s of p.specs) lines.push(`- ${s.name} : ${s.value}`)
-  }
+  // NB : les specs ne sont PAS rendues ici — elles sont consolidées (JSON-LD + parseSpecsFromMarkdown)
+  // puis injectées en un seul bloc « Spécifications complètes » dans enrichRow.
   if (p.images && p.images.length > 0) {
     lines.push('', 'JINA_EXTRACTED_IMAGES_START', ...p.images, 'JINA_EXTRACTED_IMAGES_END')
   }
@@ -242,6 +255,8 @@ function extractImageAssets(md: string): EnrichRowAsset[] {
   const add = (raw: string) => {
     const url = raw.trim()
     if (!/^https?:\/\//i.test(url) || seen.has(url)) return
+    // Écarte les images non-produit : logos, pictos, badges, bannières, pixels de tracking, icônes…
+    if (isJunkImageUrl(url) || isPictoOrLogo(url)) return
     seen.add(url)
     out.push({ url, type: 'image' })
   }
@@ -337,6 +352,16 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
       fields: Object.fromEntries(targetFields.map((f) => [f, null])),
       assets: pdfAssets,
     }
+  }
+
+  // Tableau de specs complet : JSON-LD + specs parsées du markdown (KEY/VALUE), comme le scraper PIM.
+  // Injecté en tête du markdown pour que le LLM remplisse la colonne « Spécifications ».
+  const mergedSpecs = mergeSpecs(structured?.specs ?? [], parseSpecsFromMarkdown(md))
+  if (mergedSpecs.length > 0) {
+    log?.(`[enrichRow] ${mergedSpecs.length} spécifications consolidées`)
+    md = `## Spécifications complètes (${mergedSpecs.length})\n${mergedSpecs
+      .map((s) => `- ${s.name} : ${s.value}`)
+      .join('\n')}\n\n${md}`
   }
 
   const { zod, jsonSchema } = buildSchemas(targetFields)
