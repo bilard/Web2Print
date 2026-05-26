@@ -304,11 +304,16 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
       console.warn('[enrichRow] bright data failed:', err)
       return null
     })
-    if (bd) {
+    if (bd && (bd.structuredData || (bd.markdown && !looksLikeBotChallenge(bd.markdown)))) {
       structured = bd.structuredData
       rawMd = bd.markdown
       pdfAssets = bd.pdfLinks.map((p) => ({ url: p.url, type: 'pdf' as const }))
       log?.('[enrichRow] connecteur : Bright Data ✓')
+    } else if (bd) {
+      // BD a répondu mais avec une page anti-bot (DataDome non résolu) → contenu inexploitable.
+      log?.(
+        '[enrichRow] ⚠️ Bright Data a renvoyé une page anti-bot (DataDome non résolu) — vérifie que la zone Bright Data est bien une zone « Web Unlocker ».',
+      )
     } else {
       const bdErr = getLastBrightDataError()
       log?.(
