@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveRun, injectTextInput } from './runWorkflowFromInbox'
+import { resolveRun, injectInput } from './runWorkflowFromInbox'
 import type { Workflow, WorkflowNode } from '@/features/workflows/types'
 
 function wf(name: string, nodes: WorkflowNode[] = []): Workflow {
@@ -64,37 +64,67 @@ describe('resolveRun', () => {
       available: ['Rapport', 'Rapport quotidien', 'Export Excel'],
     })
   })
+
+  it('strip le séparateur « : » (Scrape : url / Scrape: url)', () => {
+    const f = [wf('Scrape')]
+    expect(resolveRun(f, 'Scrape : https://x.fr/p').input ?? '').toBe('https://x.fr/p')
+    expect(resolveRun(f, 'Scrape: https://x.fr/p').input ?? '').toBe('https://x.fr/p')
+    // pas de strip des tirets : input légitime préservé
+    expect(resolveRun(f, 'Scrape -5 widgets').input ?? '').toBe('-5 widgets')
+  })
 })
 
-describe('injectTextInput', () => {
+describe('injectInput', () => {
   it('input vide → workflow inchangé, 0 injection', () => {
     const w = wf('A', [node('n1', 'text-input', { text: 'orig' })])
-    const r = injectTextInput(w, '')
+    const r = injectInput(w, '')
     expect(r.injected).toBe(0)
     expect(r.workflow).toBe(w)
   })
 
-  it('injecte dans tous les nodes text-input, laisse les autres', () => {
+  it('seul Saisie texte présent → alimente text', () => {
     const w = wf('A', [
       node('n1', 'text-input', { text: 'orig' }),
       node('n2', 'send-telegram', { text: 'garde' }),
       node('n3', 'text-input', { text: 'orig2' }),
     ])
-    const r = injectTextInput(w, 'nouveau')
+    const r = injectInput(w, 'nouveau')
     expect(r.injected).toBe(2)
     expect(r.workflow.nodes[0].config).toEqual({ text: 'nouveau' })
     expect(r.workflow.nodes[1].config).toEqual({ text: 'garde' })
     expect(r.workflow.nodes[2].config).toEqual({ text: 'nouveau' })
   })
 
-  it('aucun node text-input → 0 injection', () => {
-    const w = wf('A', [node('n1', 'scrape-url', {})])
-    expect(injectTextInput(w, 'x').injected).toBe(0)
+  it('seul Scrape URL présent → alimente urls (config conservée pour le reste)', () => {
+    const w = wf('A', [node('n1', 'scrape-url', { urls: '', template: 'product_full' })])
+    const r = injectInput(w, 'https://makita.fr/p')
+    expect(r.injected).toBe(1)
+    expect(r.workflow.nodes[0].config).toEqual({ urls: 'https://makita.fr/p', template: 'product_full' })
+  })
+
+  it('les deux présents + URL → route vers scrape-url', () => {
+    const w = wf('A', [node('n1', 'text-input', { text: '' }), node('n2', 'scrape-url', { urls: '' })])
+    const r = injectInput(w, 'https://makita.fr/p')
+    expect(r.injected).toBe(1)
+    expect(r.workflow.nodes[1].config).toEqual({ urls: 'https://makita.fr/p' })
+    expect(r.workflow.nodes[0].config).toEqual({ text: '' })
+  })
+
+  it('les deux présents + texte → route vers text-input', () => {
+    const w = wf('A', [node('n1', 'text-input', { text: '' }), node('n2', 'scrape-url', { urls: '' })])
+    const r = injectInput(w, 'bonjour')
+    expect(r.injected).toBe(1)
+    expect(r.workflow.nodes[0].config).toEqual({ text: 'bonjour' })
+  })
+
+  it('aucun node d’entrée alimentable → 0 injection', () => {
+    const w = wf('A', [node('n1', 'export-excel', {})])
+    expect(injectInput(w, 'x').injected).toBe(0)
   })
 
   it('ne mute pas le workflow original (clone éphémère)', () => {
     const original = wf('A', [node('n1', 'text-input', { text: 'orig' })])
-    injectTextInput(original, 'nouveau')
+    injectInput(original, 'nouveau')
     expect(original.nodes[0].config).toEqual({ text: 'orig' })
   })
 })

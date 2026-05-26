@@ -15,7 +15,7 @@ import { addOutboxMessage, clearAllInbox, deleteInboxMessage } from './useTelegr
 import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
-import { resolveRun, injectTextInput } from './runWorkflowFromInbox'
+import { resolveRun, injectInput } from './runWorkflowFromInbox'
 import { listWorkflows } from '@/features/workflows/persistence/workflowsApi'
 
 // Identifie cet onglet pour le claim (diagnostic).
@@ -121,11 +121,11 @@ export function useTelegramInboxWorker(): void {
             )
             return
           }
-          const { workflow, injected } = injectTextInput(res.workflow, res.input)
+          const { workflow, injected } = injectInput(res.workflow, res.input)
           if (res.input && injected === 0) {
             await reply(
               msg.chatId,
-              `⚠️ « ${workflow.name} » n'a aucun node « Saisie texte » — ton texte ne sera pas injecté. Exécution quand même…`,
+              `⚠️ « ${workflow.name} » n'a aucun node d'entrée alimentable (Saisie texte / Scrape URL) — ton texte ne sera pas injecté. Exécution quand même…`,
             )
           }
           try {

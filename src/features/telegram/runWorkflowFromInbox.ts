@@ -22,29 +22,52 @@ export function resolveRun(workflows: Workflow[], rest: string): RunResolution {
   const match = workflows
     .filter((w) => {
       const n = w.name?.toLowerCase()
-      return !!n && (lower === n || lower.startsWith(n + ' '))
+      if (!n) return false
+      // Nom exact, ou suivi d'un séparateur (espace ou « : ») — pas un simple préfixe de mot
+      // (« Scrape » ne doit pas matcher « Scraper x »).
+      return lower === n || (lower.startsWith(n) && /^[\s:]/.test(trimmed.slice(n.length)))
     })
     .sort((a, b) => b.name.length - a.name.length)[0]
 
   if (!match) return { ok: false, reason: 'not-found', available }
-  return { ok: true, workflow: match, input: trimmed.slice(match.name.length).trim() }
+  // Strip d'un séparateur « : » naturel (`Scrape : url`, `Scrape: url`) — pas les tirets, pour ne
+  // pas mordre un input légitime comme « -5 widgets ».
+  const input = trimmed.slice(match.name.length).replace(/^\s*:\s*/, '').trim()
+  return { ok: true, workflow: match, input }
+}
+
+// Nodes d'ENTRÉE alimentables par /run → champ de config recevant le texte d'entrée.
+const ENTRY_FIELD: Record<string, string> = {
+  'text-input': 'text', // Saisie texte
+  'scrape-url': 'urls', // Scrape URL (lit ses URLs depuis la config, pas d'un port d'entrée)
 }
 
 /**
- * Injecte le texte d'entrée dans tous les nodes « Saisie texte » (text-input) du workflow.
- * Retourne un CLONE éphémère (à exécuter, JAMAIS à persister via saveWorkflow) + le nombre de
- * nodes ciblés. Un input vide laisse le workflow inchangé.
+ * Injecte le texte d'entrée dans le node d'entrée du workflow. Routage par STRUCTURE (prévisible
+ * depuis le graphe que l'utilisateur a construit) :
+ *  - seul un Scrape URL présent → alimente ses `urls` ;
+ *  - seul une Saisie texte présente → alimente son `text` ;
+ *  - les deux présents → départage par le contenu (URL → Scrape URL, sinon Saisie texte) ;
+ *  - aucun → rien (injected = 0, le worker avertit).
+ * Retourne un CLONE éphémère (à exécuter, JAMAIS à persister via saveWorkflow).
  */
-export function injectTextInput(
-  wf: Workflow,
-  input: string,
-): { workflow: Workflow; injected: number } {
+export function injectInput(wf: Workflow, input: string): { workflow: Workflow; injected: number } {
   if (!input) return { workflow: wf, injected: 0 }
+  const hasText = wf.nodes.some((n) => n.type === 'text-input')
+  const hasScrape = wf.nodes.some((n) => n.type === 'scrape-url')
+
+  let targetType: string | null = null
+  if (hasText && hasScrape) targetType = /https?:\/\//i.test(input) ? 'scrape-url' : 'text-input'
+  else if (hasScrape) targetType = 'scrape-url'
+  else if (hasText) targetType = 'text-input'
+  if (!targetType) return { workflow: wf, injected: 0 }
+
+  const field = ENTRY_FIELD[targetType]
   let injected = 0
   const nodes = wf.nodes.map((n) => {
-    if (n.type !== 'text-input') return n
+    if (n.type !== targetType) return n
     injected++
-    return { ...n, config: { ...(n.config as Record<string, unknown>), text: input } }
+    return { ...n, config: { ...(n.config as Record<string, unknown>), [field]: input } }
   })
   return { workflow: { ...wf, nodes }, injected }
 }
