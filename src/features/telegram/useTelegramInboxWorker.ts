@@ -23,6 +23,9 @@ import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowF
 import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
 import { resolveRun, injectInput } from './runWorkflowFromInbox'
 import { listWorkflows, saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
+// Peuple le registre de nodes (imports à effet de bord) : la page Telegram n'importe pas l'éditeur,
+// donc sans ça l'exécution headless échoue avec « Unknown node type ».
+import { initWorkflowsRegistry } from '@/features/workflows/registry/builtin'
 
 // Identifie cet onglet pour le claim (diagnostic).
 const WORKER_ID = Math.random().toString(36).slice(2)
@@ -56,6 +59,10 @@ export function useTelegramInboxWorker(): void {
   useEffect(() => {
     const uid = user?.uid
     if (!uid || !botToken) return
+
+    // Garantit que les node specs + ports sont enregistrés avant toute génération/exécution
+    // de workflow déclenchée depuis Telegram (sinon registre vide → « Unknown node type »).
+    initWorkflowsRegistry()
 
     // Envoie une réponse ET la journalise comme message sortant (visible dans la boîte).
     const reply = (chatId: number, text: string) =>
