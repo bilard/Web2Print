@@ -1,8 +1,8 @@
 // src/features/telegram/InboxItemLogs.tsx
 // Section repliable des logs de traitement d'un message Telegram (accumulés par le worker).
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
-import type { InboxLogEntry } from './useTelegramInbox'
+import type { InboxLogEntry, InboxStatus } from './useTelegramInbox'
 
 const LEVEL_DOT: Record<InboxLogEntry['level'], string> = {
   info: 'bg-neutral-500',
@@ -24,14 +24,14 @@ function fmtTime(ts: number): string {
   })
 }
 
-export function InboxItemLogs({
-  logs,
-  defaultOpen = false,
-}: {
-  logs: InboxLogEntry[]
-  defaultOpen?: boolean
-}) {
-  const [open, setOpen] = useState(defaultOpen)
+export function InboxItemLogs({ logs, status }: { logs: InboxLogEntry[]; status: InboxStatus }) {
+  const [open, setOpen] = useState(status === 'processing')
+  // Ouvre automatiquement dès que le message entre (ou est déjà) en traitement — fiable même si
+  // la carte a été montée alors que le message était encore `pending`. Ne se referme pas tout seul :
+  // une fois traité, l'utilisateur garde la main (peut replier).
+  useEffect(() => {
+    if (status === 'processing') setOpen(true)
+  }, [status])
   if (logs.length === 0) return null
 
   return (

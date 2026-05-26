@@ -130,12 +130,7 @@ export function InboxItem({ message }: { message: InboxMessage }) {
           <span className="text-neutral-600">→ workflow :</span> {message.generatedWorkflowName}
         </div>
       )}
-      {!editing && (
-        <InboxItemLogs
-          logs={message.logs ?? []}
-          defaultOpen={message.status === 'processing'}
-        />
-      )}
+      {!editing && <InboxItemLogs logs={message.logs ?? []} status={message.status} />}
 
       {menuOpen && (
         <>
