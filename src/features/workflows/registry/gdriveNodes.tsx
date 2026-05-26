@@ -17,6 +17,7 @@ import { useGDriveStore } from '@/stores/gdrive.store'
 import {
   GoogleAuthMissingError,
   downloadDriveFile,
+  ensureDriveFolder,
   exportSheetToGoogleSheets,
   importGoogleSheetById,
   uploadFileToDrive,
@@ -479,7 +480,11 @@ export const gdriveExportNode: NodeSpec<
 // Save DAM — upload des assets reçus vers un dossier Google Drive
 // ---------------------------------------------------------------------------
 
-interface SaveDamConfig extends FolderTargetFields {}
+interface SaveDamConfig {
+  // Nom du dossier Drive cible (créé par l'app si absent). PAS un dossier pické : drive.file
+  // n'autorise l'écriture que dans les dossiers créés par l'app.
+  folderName: string
+}
 
 interface DamAsset {
   url?: string
@@ -582,7 +587,25 @@ function SaveDamConfigUi({
   config: SaveDamConfig
   onChange: (next: SaveDamConfig) => void
 }) {
-  return <FolderPickerForExport config={config} onChange={onChange} />
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] uppercase tracking-wider text-neutral-500 block">
+        Dossier Drive (créé s'il n'existe pas)
+      </label>
+      <input
+        type="text"
+        value={config.folderName}
+        onChange={(e) => onChange({ ...config, folderName: e.target.value })}
+        placeholder="Web2Print DAM"
+        className="w-full bg-[#0f0f0f] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+      />
+      <p className="text-[10px] text-neutral-600 leading-snug">
+        L'app crée/réutilise un dossier de ce nom dans ton Drive. Pas de sélection d'un dossier
+        existant : le scope minimal (drive.file) n'autorise l'écriture que dans les dossiers créés
+        par l'app.
+      </p>
+    </div>
+  )
 }
 
 export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: DamAsset[] }> = {
@@ -594,7 +617,7 @@ export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { asse
   inputs: [{ name: 'assets', type: 'asset[]', required: true }],
   outputs: [{ name: 'assets', type: 'asset[]' }],
   configSchema: [],
-  defaultConfig: { parentFolderId: '', parentFolderName: '' },
+  defaultConfig: { folderName: 'Web2Print DAM' },
   runtime: 'client',
   ConfigComponent: SaveDamConfigUi,
   run: async (ctx, config, inputs) => {
@@ -604,11 +627,10 @@ export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { asse
       return { assets }
     }
     const token = requireToken()
-    const parentFolderId = config.parentFolderId?.trim() || undefined
-    ctx.log(
-      'info',
-      `Upload de ${assets.length} asset(s) vers Drive (${config.parentFolderName?.trim() || 'racine My Drive'})…`,
-    )
+    const folderName = config.folderName?.trim() || 'Web2Print DAM'
+    ctx.log('info', `Dossier Drive cible : « ${folderName} » (créé si absent)…`)
+    const parentFolderId = await ensureDriveFolder(token, folderName)
+    ctx.log('info', `Upload de ${assets.length} asset(s)…`)
 
     const out: DamAsset[] = []
     let ok = 0

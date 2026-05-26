@@ -206,6 +206,57 @@ export async function exportSheetToGoogleSheets(
   })
 }
 
+const FOLDER_MIME = 'application/vnd.google-apps.folder'
+
+/**
+ * Garantit l'existence d'un dossier Drive de ce nom et renvoie son id. Cherche d'abord un dossier
+ * existant VISIBLE par l'app (sous `drive.file`, seuls les dossiers créés/ouverts par l'app le sont),
+ * sinon le crée. C'est le pattern canonique pour écrire avec le scope minimal `drive.file` : on ne
+ * peut pas écrire dans un dossier arbitraire choisi par l'utilisateur, mais on peut créer le nôtre.
+ */
+export async function ensureDriveFolder(token: string, name: string): Promise<string> {
+  const auth = { Authorization: `Bearer ${token}` }
+  const failAuth = (status: number) => {
+    if (status === 401 || status === 403) {
+      throw new Error(
+        `permission refusée (HTTP ${status}). Reconnecte-toi via le panneau Google Drive (scope d'écriture drive.file requis).`,
+      )
+    }
+  }
+
+  // Recherche : escape \ et ' pour la query Drive.
+  const esc = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  const q = `name='${esc}' and mimeType='${FOLDER_MIME}' and trashed=false`
+  const params = new URLSearchParams({
+    q,
+    fields: 'files(id,name)',
+    orderBy: 'modifiedTime desc',
+    pageSize: '1',
+    spaces: 'drive',
+  })
+  const findRes = await fetch(`${DRIVE_API}/files?${params}`, { headers: auth })
+  if (findRes.ok) {
+    const data = (await findRes.json()) as { files?: { id: string }[] }
+    const existing = data.files?.[0]?.id
+    if (existing) return existing
+  } else {
+    failAuth(findRes.status)
+    // autre erreur de recherche : on tente quand même la création ci-dessous
+  }
+
+  const createRes = await fetch(`${DRIVE_API}/files?fields=id`, {
+    method: 'POST',
+    headers: { ...auth, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: FOLDER_MIME }),
+  })
+  if (!createRes.ok) {
+    failAuth(createRes.status)
+    const detail = await createRes.text().catch(() => '')
+    throw new Error(`Drive : création du dossier échouée (HTTP ${createRes.status}${detail ? ` — ${detail.slice(0, 160)}` : ''})`)
+  }
+  return ((await createRes.json()) as { id: string }).id
+}
+
 /** Upload arbitraire d'un File (image, PDF, etc.) vers Drive sans conversion. */
 export async function uploadFileToDrive(
   token: string,
