@@ -56,7 +56,21 @@ describe('parseInboxCommand', () => {
 
   it('message normal → simple', () => {
     expect(parseInboxCommand('salut')).toEqual({ kind: 'simple' })
-    expect(parseInboxCommand('/start')).toEqual({ kind: 'simple' })
     expect(parseInboxCommand('/flowers')).toEqual({ kind: 'simple' })
+  })
+
+  it('/clear, /purge, /vider → clear (insensible casse/espaces)', () => {
+    expect(parseInboxCommand('/clear')).toEqual({ kind: 'clear' })
+    expect(parseInboxCommand('  /PURGE ')).toEqual({ kind: 'clear' })
+    expect(parseInboxCommand('/vider tout')).toEqual({ kind: 'clear' })
+  })
+
+  it('/clearance → simple (pas de collision via \\b)', () => {
+    expect(parseInboxCommand('/clearance')).toEqual({ kind: 'simple' })
+  })
+
+  it('/start → ignore (commande de service)', () => {
+    expect(parseInboxCommand('/start')).toEqual({ kind: 'ignore' })
+    expect(parseInboxCommand('  /START ')).toEqual({ kind: 'ignore' })
   })
 })

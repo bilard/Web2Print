@@ -10,7 +10,8 @@ import {
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useTelegramStore } from '@/stores/telegram.store'
-import { sendTelegramMessage, sendTelegramDocument } from '@/lib/telegramApi'
+import { sendTelegramMessage, sendTelegramDocument, deleteTelegramMessage } from '@/lib/telegramApi'
+import { addOutboxMessage, clearAllInbox, deleteInboxMessage } from './useTelegramInbox'
 import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect } from './executeWorkflowAndCollect'
@@ -23,6 +24,12 @@ function maskToken(msg: string): string {
   return msg.replace(/bot\d+:[A-Za-z0-9_-]+/g, 'bot***')
 }
 
+// Tolère un doc déjà supprimé (ex : /clear efface aussi son propre message en cours de traitement,
+// ou l'utilisateur supprime un message via l'UI pendant son traitement).
+function ignoreNotFound(err: unknown): void {
+  if ((err as { code?: string }).code !== 'not-found') throw err
+}
+
 export function useTelegramInboxWorker(): void {
   const user = useAuthStore((s) => s.user)
   const botToken = useTelegramStore((s) => s.botToken)
@@ -31,8 +38,11 @@ export function useTelegramInboxWorker(): void {
     const uid = user?.uid
     if (!uid || !botToken) return
 
+    // Envoie une réponse ET la journalise comme message sortant (visible dans la boîte).
     const reply = (chatId: number, text: string) =>
-      sendTelegramMessage(botToken, { chatId: String(chatId), text }).catch(() => {})
+      sendTelegramMessage(botToken, { chatId: String(chatId), text })
+        .then(({ messageId }) => void addOutboxMessage(chatId, text, messageId))
+        .catch(() => {})
 
     const deps: InboxWorkerDeps = {
       claim: (updateId) => {
@@ -51,12 +61,25 @@ export function useTelegramInboxWorker(): void {
           useTelegramStore.getState().setChatId(String(msg.chatId))
         }
 
-        // Routage : seul « /flow <demande> » lance un workflow ; tout autre message est simple.
+        // Routage des commandes envoyées depuis Telegram.
         const cmd = parseInboxCommand(msg.text)
-        if (cmd.kind === 'simple') {
-          await reply(msg.chatId, '📥 Reçu.')
+        // /start (commande de service Telegram envoyée par le client iPhone) : on le supprime
+        // de Telegram (pour qu'il ne traîne pas sur le téléphone) ET de la boîte. Aucune réponse.
+        if (cmd.kind === 'ignore') {
+          if (msg.messageId != null) {
+            await deleteTelegramMessage(botToken, { chatId: msg.chatId, messageId: msg.messageId }).catch(() => {})
+          }
+          await deleteInboxMessage(msg.updateId)
           return
         }
+        // /clear : vide toute la boîte (Telegram < 48 h + Firestore), y compris ce message.
+        if (cmd.kind === 'clear') {
+          const n = await clearAllInbox(botToken)
+          await reply(msg.chatId, `🧹 Boîte vidée (${n} message(s) supprimé(s)).`)
+          return
+        }
+        // Message simple (sans commande) → aucune réponse auto, juste reçu et marqué « traité ».
+        if (cmd.kind === 'simple') return
         if (!cmd.prompt) {
           await reply(
             msg.chatId,
@@ -93,11 +116,14 @@ export function useTelegramInboxWorker(): void {
         try {
           const exec = await executeWorkflowAndCollect(info.workflow)
           if (exec.file) {
-            await sendTelegramDocument(botToken, {
+            const caption = `✅ « ${info.name} » — exécuté (${exec.nodeCount} node(s))`
+            const sent = await sendTelegramDocument(botToken, {
               chatId: String(msg.chatId),
               file: new File([exec.file.blob], exec.file.filename, { type: exec.file.blob.type }),
-              caption: `✅ « ${info.name} » — exécuté (${exec.nodeCount} node(s))`,
+              caption,
             })
+            // Journalise l'envoi du fichier comme message sortant (avec message_id → suppressible).
+            void addOutboxMessage(msg.chatId, `📎 ${exec.file.filename}\n${caption}`, sent.messageId)
           } else if (exec.nodeCount === 0 && exec.errorCount > 0) {
             await reply(
               msg.chatId,
@@ -120,14 +146,14 @@ export function useTelegramInboxWorker(): void {
         await updateDoc(doc(db, 'telegramInbox', String(updateId)), {
           status: 'done',
           processedAt: serverTimestamp(),
-        })
+        }).catch(ignoreNotFound)
       },
       markError: async (updateId, message) => {
         await updateDoc(doc(db, 'telegramInbox', String(updateId)), {
           status: 'error',
           errorMessage: maskToken(message),
           processedAt: serverTimestamp(),
-        })
+        }).catch(ignoreNotFound)
       },
     }
 

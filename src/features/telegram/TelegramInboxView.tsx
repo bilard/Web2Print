@@ -4,7 +4,13 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Inbox, Loader2, Send, X, Trash2 } from 'lucide-react'
-import { useTelegramInbox, deleteAllInboxMessages } from './useTelegramInbox'
+import {
+  useTelegramInbox,
+  useInboxAutoCleanup,
+  deleteAllInboxEverywhere,
+  addOutboxMessage,
+  INBOX_RETENTION_DAYS,
+} from './useTelegramInbox'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { useTelegramInboxWorker } from './useTelegramInboxWorker'
 import { sendTelegramMessage } from '@/lib/telegramApi'
@@ -13,6 +19,8 @@ import { InboxItem } from './InboxItem'
 export function TelegramInboxView() {
   // Le worker tourne tant que cette page est ouverte (onglet dédié) — store de run isolé.
   useTelegramInboxWorker()
+  // Purge auto des messages anciens (local only) au montage.
+  useInboxAutoCleanup()
   const { messages, loading } = useTelegramInbox()
   const defaultChatId = useTelegramStore((s) => s.chatId)
   const botToken = useTelegramStore((s) => s.botToken)
@@ -40,7 +48,9 @@ export function TelegramInboxView() {
     }
     setSending(true)
     try {
-      await sendTelegramMessage(botToken, { chatId: effectiveChatId, text: t })
+      const { messageId } = await sendTelegramMessage(botToken, { chatId: effectiveChatId, text: t })
+      // Journalise le message sortant (avec son message_id → suppressible côté Telegram ensuite).
+      void addOutboxMessage(Number(effectiveChatId), t, messageId)
       toast.success('Message envoyé sur Telegram.')
       setDraft('')
       setComposing(false)
@@ -52,7 +62,7 @@ export function TelegramInboxView() {
   }
 
   const onClearAll = async () => {
-    await deleteAllInboxMessages(messages.map((m) => m.updateId))
+    await deleteAllInboxEverywhere(messages, botToken)
     setConfirmClear(false)
   }
 
@@ -75,6 +85,12 @@ export function TelegramInboxView() {
           }
         >
           {botToken ? '● worker actif' : '○ token manquant'}
+        </span>
+        <span
+          className="text-[10px] text-neutral-600"
+          title={`Les messages de plus de ${INBOX_RETENTION_DAYS} jours sont purgés automatiquement de cette boîte (côté app uniquement, sans toucher Telegram).`}
+        >
+          · purge auto {INBOX_RETENTION_DAYS} j
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {messages.length > 0 &&

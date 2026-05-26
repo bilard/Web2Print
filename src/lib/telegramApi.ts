@@ -82,6 +82,51 @@ export async function getTelegramBotInfo(botToken: string): Promise<TelegramBotI
   return { username: json.result.username ?? '', firstName: json.result.first_name ?? '' }
 }
 
+interface TelegramDeleteResponse {
+  ok?: boolean
+  error_code?: number
+  description?: string
+}
+
+/**
+ * Supprime un message côté Telegram (deleteMessage). Lève une Error lisible en cas d'échec —
+ * notamment au-delà de la fenêtre de 48 h imposée par Telegram, ou si message_id est inconnu.
+ */
+export async function deleteTelegramMessage(
+  botToken: string,
+  opts: { chatId: string | number; messageId: number },
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/bot${botToken}/deleteMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: opts.chatId, message_id: opts.messageId }),
+  })
+  const json = (await res.json().catch(() => null)) as TelegramDeleteResponse | null
+  if (!json?.ok) {
+    throw new Error(`Telegram deleteMessage ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+  }
+}
+
+/**
+ * Supprime plusieurs messages d'un MÊME chat en un appel (deleteMessages, Bot API 7.0+).
+ * Telegram limite à 100 message_ids par appel ; l'appelant doit découper.
+ */
+export async function deleteTelegramMessages(
+  botToken: string,
+  opts: { chatId: string | number; messageIds: number[] },
+): Promise<void> {
+  if (opts.messageIds.length === 0) return
+  const res = await fetch(`${API_BASE}/bot${botToken}/deleteMessages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: opts.chatId, message_ids: opts.messageIds }),
+  })
+  const json = (await res.json().catch(() => null)) as TelegramDeleteResponse | null
+  if (!json?.ok) {
+    throw new Error(`Telegram deleteMessages ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+  }
+}
+
 export async function sendTelegramDocument(
   botToken: string,
   opts: SendTelegramDocumentOptions,

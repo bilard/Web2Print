@@ -1,13 +1,34 @@
 // src/features/telegram/InboxItem.tsx
 // Un message de la boîte de réception, avec menu d'actions (éditer / supprimer).
 import { useState } from 'react'
-import { MoreVertical, Pencil, Trash2, Check, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { MoreVertical, Pencil, Trash2, Check, X, Send } from 'lucide-react'
 import {
   statusMeta,
-  deleteInboxMessage,
+  deleteInboxMessageEverywhere,
   updateInboxText,
+  type DeleteOutcome,
   type InboxMessage,
 } from './useTelegramInbox'
+import { useTelegramStore } from '@/stores/telegram.store'
+
+// Feedback après suppression : ce qui a réellement eu lieu côté Telegram.
+function notifyDeleteOutcome(outcome: DeleteOutcome): void {
+  switch (outcome) {
+    case 'telegram+local':
+      toast.success('Supprimé ici et sur Telegram.')
+      break
+    case 'local-only-old':
+      toast('Supprimé ici. Trop ancien (> 48 h) pour être supprimé sur Telegram.')
+      break
+    case 'local-only-no-id':
+      toast('Supprimé ici seulement (message non supprimable côté Telegram).')
+      break
+    case 'local-only-error':
+      toast('Supprimé ici. Échec de la suppression côté Telegram.')
+      break
+  }
+}
 
 function formatTime(ms?: number): string {
   if (!ms) return ''
@@ -19,6 +40,15 @@ export function InboxItem({ message }: { message: InboxMessage }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.text)
   const meta = statusMeta(message.status)
+  const botToken = useTelegramStore((s) => s.botToken)
+  // Message sortant (App → Telegram) : look distinct (indenté à droite, teinte bleue, badge « envoyé »).
+  const isOut = message.direction === 'out'
+
+  // Supprime ici ET sur Telegram (best-effort, irréversible côté Telegram).
+  const onDelete = async () => {
+    setMenuOpen(false)
+    notifyDeleteOutcome(await deleteInboxMessageEverywhere(message, botToken))
+  }
 
   const onSave = async () => {
     const t = draft.trim()
@@ -27,11 +57,25 @@ export function InboxItem({ message }: { message: InboxMessage }) {
   }
 
   return (
-    <li className="relative rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2">
+    <li
+      className={`relative rounded-lg border px-3 py-2 ${
+        isOut ? 'ml-10 border-blue-500/20 bg-blue-500/[0.07]' : 'border-white/[0.06] bg-white/[0.03]'
+      }`}
+    >
       <div className="flex items-center gap-2 mb-1">
-        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${meta.cls}`}>{meta.label}</span>
+        {isOut ? (
+          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border bg-blue-500/15 text-blue-300 border-blue-500/30">
+            <Send className="w-2.5 h-2.5" /> envoyé
+          </span>
+        ) : (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${meta.cls}`}>{meta.label}</span>
+        )}
         <span className="text-[11px] text-neutral-500">
-          {message.fromUsername ? `@${message.fromUsername}` : `chat ${message.chatId}`}
+          {isOut
+            ? `→ chat ${message.chatId}`
+            : message.fromUsername
+              ? `@${message.fromUsername}`
+              : `chat ${message.chatId}`}
         </span>
         <span className="text-[10px] text-neutral-600 ml-auto">
           {formatTime(message.receivedAt?.toMillis())}
@@ -91,20 +135,19 @@ export function InboxItem({ message }: { message: InboxMessage }) {
           {/* overlay invisible : ferme le menu au clic extérieur */}
           <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
           <div className="absolute right-2 top-9 z-20 w-32 rounded-md border border-white/10 bg-[#1a1a1a] shadow-xl py-1">
+            {!isOut && (
+              <button
+                onClick={() => {
+                  setEditing(true)
+                  setMenuOpen(false)
+                }}
+                className="flex items-center gap-2 w-full px-2.5 py-1.5 text-[12px] text-neutral-200 hover:bg-white/[0.06]"
+              >
+                <Pencil className="w-3 h-3" /> Éditer
+              </button>
+            )}
             <button
-              onClick={() => {
-                setEditing(true)
-                setMenuOpen(false)
-              }}
-              className="flex items-center gap-2 w-full px-2.5 py-1.5 text-[12px] text-neutral-200 hover:bg-white/[0.06]"
-            >
-              <Pencil className="w-3 h-3" /> Éditer
-            </button>
-            <button
-              onClick={() => {
-                setMenuOpen(false)
-                void deleteInboxMessage(message.updateId)
-              }}
+              onClick={() => void onDelete()}
               className="flex items-center gap-2 w-full px-2.5 py-1.5 text-[12px] text-red-300 hover:bg-red-500/10"
             >
               <Trash2 className="w-3 h-3" /> Supprimer

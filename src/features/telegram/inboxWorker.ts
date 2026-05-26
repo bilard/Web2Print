@@ -8,6 +8,8 @@ export interface InboxDoc {
   chatId: number
   text: string
   status: string
+  /** message_id Telegram (présent depuis la capture webhook) — requis pour supprimer côté Telegram. */
+  messageId?: number
 }
 
 export interface InboxWorkerDeps {
@@ -19,15 +21,25 @@ export interface InboxWorkerDeps {
   markError: (updateId: number, message: string) => Promise<void>
 }
 
-export type InboxCommand = { kind: 'flow'; prompt: string } | { kind: 'simple' }
+export type InboxCommand =
+  | { kind: 'flow'; prompt: string }
+  | { kind: 'clear' }
+  | { kind: 'ignore' }
+  | { kind: 'simple' }
 
 /**
- * Distingue une commande de génération de workflow d'un message simple.
- * `/flow <demande>` → workflow (le reste est le prompt) ; tout autre message → simple.
+ * Reconnaît les commandes envoyées au bot depuis Telegram.
+ * `/start` → ignore (commande de service Telegram, ne doit pas rester dans la boîte).
+ * `/flow <demande>` → workflow (le reste est le prompt).
+ * `/clear` | `/purge` | `/vider` → vide la boîte (app + Telegram).
+ * Tout autre message → simple.
  */
 export function parseInboxCommand(text: string): InboxCommand {
-  const m = /^\/flow\b\s*([\s\S]*)$/i.exec(text.trim())
-  if (m) return { kind: 'flow', prompt: m[1].trim() }
+  const t = text.trim()
+  if (/^\/start\b/i.test(t)) return { kind: 'ignore' }
+  const flow = /^\/flow\b\s*([\s\S]*)$/i.exec(t)
+  if (flow) return { kind: 'flow', prompt: flow[1].trim() }
+  if (/^\/(clear|purge|vider)\b/i.test(t)) return { kind: 'clear' }
   return { kind: 'simple' }
 }
 
