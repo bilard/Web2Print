@@ -138,7 +138,9 @@ function jinaReportsBlock(md: string): boolean {
 /** Récupère le markdown via r.jina.ai. Auth Bearer si clé Jina configurée. null si Jina a été bloqué. */
 async function jinaFetch(url: string): Promise<{ markdown: string; html: string | null } | null> {
   const jinaKey = getApiKey('jina')
-  const headers: Record<string, string> = { Accept: 'text/plain' }
+  // X-With-Images-Summary: Jina ajoute une section « Images: » listant TOUTES les images de la page
+  // (même non inline dans le markdown) → meilleure récolte d'assets par extractImageAssets.
+  const headers: Record<string, string> = { Accept: 'text/plain', 'X-With-Images-Summary': 'true' }
   if (jinaKey) headers.Authorization = `Bearer ${jinaKey}`
   try {
     const res = await fetch(`https://r.jina.ai/${url}`, { headers })
