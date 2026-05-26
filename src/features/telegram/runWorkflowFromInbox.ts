@@ -49,7 +49,8 @@ const ENTRY_FIELD: Record<string, string> = {
  *  - seul une Saisie texte présente → alimente son `text` ;
  *  - les deux présents → départage par le contenu (URL → Scrape URL, sinon Saisie texte) ;
  *  - aucun → rien (injected = 0, le worker avertit).
- * Retourne un CLONE éphémère (à exécuter, JAMAIS à persister via saveWorkflow).
+ * Retourne un CLONE (même id que l'original) : le worker l'exécute, et le persiste via saveWorkflow
+ * quand injected > 0 pour que la valeur soit visible/réutilisable dans l'éditeur.
  */
 export function injectInput(wf: Workflow, input: string): { workflow: Workflow; injected: number } {
   if (!input) return { workflow: wf, injected: 0 }

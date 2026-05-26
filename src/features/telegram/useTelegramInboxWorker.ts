@@ -16,7 +16,7 @@ import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorker
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
 import { resolveRun, injectInput } from './runWorkflowFromInbox'
-import { listWorkflows } from '@/features/workflows/persistence/workflowsApi'
+import { listWorkflows, saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
 
 // Identifie cet onglet pour le claim (diagnostic).
 const WORKER_ID = Math.random().toString(36).slice(2)
@@ -126,6 +126,13 @@ export function useTelegramInboxWorker(): void {
             await reply(
               msg.chatId,
               `⚠️ « ${workflow.name} » n'a aucun node d'entrée alimentable (Saisie texte / Scrape URL) — ton texte ne sera pas injecté. Exécution quand même…`,
+            )
+          } else if (injected > 0) {
+            // Persiste l'entrée injectée dans le workflow sauvegardé → visible/réutilisable dans
+            // l'éditeur. Best-effort : un échec d'écriture ne bloque pas l'exécution (le clone en
+            // mémoire porte déjà la valeur).
+            await saveWorkflow(uid, workflow).catch((err) =>
+              console.warn('telegram /run: échec sauvegarde workflow', maskToken(String(err))),
             )
           }
           try {
