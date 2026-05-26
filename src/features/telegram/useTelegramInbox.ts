@@ -21,8 +21,10 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { deleteTelegramMessage, deleteTelegramMessages } from '@/lib/telegramApi'
 import { classifyDeletable, withinDeleteWindow, type DeleteOutcome } from './inboxDelete'
+import type { InboxLogEntry } from './inboxWorker'
 
 export type { DeleteOutcome } from './inboxDelete'
+export type { InboxLogEntry } from './inboxWorker'
 
 export type InboxStatus = 'pending' | 'processing' | 'done' | 'error'
 
@@ -45,6 +47,8 @@ export interface InboxMessage {
   receivedAt?: { toMillis: () => number } | null
   generatedWorkflowId?: string
   generatedWorkflowName?: string
+  /** Logs de traitement, accumulés par le worker pendant le run. */
+  logs?: InboxLogEntry[]
 }
 
 export function useTelegramInbox(): { messages: InboxMessage[]; loading: boolean } {

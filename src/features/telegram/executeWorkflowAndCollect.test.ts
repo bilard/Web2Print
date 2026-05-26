@@ -52,4 +52,19 @@ describe('executeWorkflowAndCollect', () => {
     expect(res.firstError).toBe('boom')
     expect(res.nodeCount).toBe(1)
   })
+
+  it('aplatit les logs de tous les nodes et les trie par ts', async () => {
+    setStates({
+      a: { status: 'success', outputs: {}, logs: [{ ts: 30, level: 'info', msg: 'a2' }, { ts: 10, level: 'info', msg: 'a1' }] },
+      b: { status: 'error', error: 'x', outputs: {}, logs: [{ ts: 20, level: 'warn', msg: 'b1' }] },
+    })
+    const res = await executeWorkflowAndCollect(wf)
+    expect(res.logs.map((l) => l.msg)).toEqual(['a1', 'b1', 'a2'])
+  })
+
+  it('états sans logs → logs = []', async () => {
+    setStates({ a: { status: 'success', outputs: {} } })
+    const res = await executeWorkflowAndCollect(wf)
+    expect(res.logs).toEqual([])
+  })
 })

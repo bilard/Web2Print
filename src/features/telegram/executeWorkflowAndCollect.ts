@@ -5,12 +5,15 @@ import { executeWorkflow } from '@/features/workflows/runtime/executor'
 import { useRunContext } from '@/features/workflows/runtime/runContext'
 import { findExportResult } from '@/features/workflows/runtime/exportResult'
 import type { Workflow } from '@/features/workflows/types'
+import type { InboxLogEntry } from './inboxWorker'
 
 export interface ExecutionResult {
   nodeCount: number
   errorCount: number
   firstError?: string
   file?: { blob: Blob; filename: string }
+  /** Logs de tous les nodes, aplatis et triés chronologiquement. */
+  logs: InboxLogEntry[]
 }
 
 export async function executeWorkflowAndCollect(wf: Workflow): Promise<ExecutionResult> {
@@ -20,6 +23,9 @@ export async function executeWorkflowAndCollect(wf: Workflow): Promise<Execution
   const nodeCount = states.filter((s) => s.status === 'success').length
   const errored = states.filter((s) => s.status === 'error')
   const firstError = errored[0]?.error
+  const logs: InboxLogEntry[] = states
+    .flatMap((s) => s.logs ?? [])
+    .sort((a, b) => a.ts - b.ts)
 
   let file: { blob: Blob; filename: string } | undefined
   for (const s of states) {
@@ -36,5 +42,5 @@ export async function executeWorkflowAndCollect(wf: Workflow): Promise<Execution
     break
   }
 
-  return { nodeCount, errorCount: errored.length, firstError, file }
+  return { nodeCount, errorCount: errored.length, firstError, file, logs }
 }

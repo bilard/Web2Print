@@ -12,7 +12,13 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { sendTelegramMessage, sendTelegramDocument, deleteTelegramMessage } from '@/lib/telegramApi'
 import { addOutboxMessage, clearAllInbox, deleteInboxMessage } from './useTelegramInbox'
-import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
+import {
+  processInboxMessage,
+  parseInboxCommand,
+  type InboxDoc,
+  type InboxWorkerDeps,
+  type InboxLogEntry,
+} from './inboxWorker'
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
 import { resolveRun, injectInput } from './runWorkflowFromInbox'
@@ -20,6 +26,17 @@ import { listWorkflows, saveWorkflow } from '@/features/workflows/persistence/wo
 
 // Identifie cet onglet pour le claim (diagnostic).
 const WORKER_ID = Math.random().toString(36).slice(2)
+
+// Plafond de logs persistés par message (protège la taille du doc Firestore, limite 1 Mo).
+const MAX_INBOX_LOGS = 150
+
+// Résumé court d'une exécution, pour la dernière ligne de log de traitement.
+function summarizeExec(exec: ExecutionResult): string {
+  const parts = [`${exec.nodeCount} node(s) OK`]
+  if (exec.errorCount > 0) parts.push(`${exec.errorCount} erreur(s)`)
+  if (exec.file) parts.push(`fichier ${exec.file.filename}`)
+  return `Terminé : ${parts.join(', ')}.`
+}
 
 // Évite qu'un token Telegram apparaisse dans un message d'erreur persisté ou renvoyé.
 function maskToken(msg: string): string {
@@ -76,6 +93,22 @@ export function useTelegramInboxWorker(): void {
         })
       },
       process: async (msg) => {
+        // Logs de traitement de CE message, accumulés en mémoire puis écrits en entier (le worker
+        // est sérialisé par doc via le claim → pas de concurrence, pas besoin d'arrayUnion).
+        const ref = doc(db, 'telegramInbox', String(msg.updateId))
+        const logs: InboxLogEntry[] = []
+        const persist = () => updateDoc(ref, { logs }).catch(ignoreNotFound)
+        const step = (level: InboxLogEntry['level'], text: string) => {
+          logs.push({ ts: Date.now(), level, msg: maskToken(text) })
+          if (logs.length > MAX_INBOX_LOGS) logs.splice(0, logs.length - MAX_INBOX_LOGS)
+          return persist()
+        }
+        const stepBatch = (entries: InboxLogEntry[]) => {
+          for (const e of entries) logs.push({ ts: e.ts, level: e.level, msg: maskToken(e.msg) })
+          if (logs.length > MAX_INBOX_LOGS) logs.splice(0, logs.length - MAX_INBOX_LOGS)
+          return persist()
+        }
+
         // Mémorise le chat par défaut au 1er message reçu (persisté + sync) : permet d'envoyer
         // depuis l'app sans config manuelle.
         if (!useTelegramStore.getState().chatId.trim() && msg.chatId) {
@@ -102,6 +135,7 @@ export function useTelegramInboxWorker(): void {
         // /run <nom> <texte> : exécute un workflow DÉJÀ sauvegardé en injectant le texte dans ses
         // nodes « Saisie texte ». /run seul (ou nom introuvable) → liste les workflows disponibles.
         if (cmd.kind === 'run') {
+          await step('info', '📥 Commande /run reçue.')
           const res = resolveRun(await listWorkflows(uid), cmd.rest)
           if (!res.ok) {
             const list = res.available.length
@@ -111,10 +145,13 @@ export function useTelegramInboxWorker(): void {
               res.reason === 'no-name'
                 ? 'Workflows disponibles — relance avec /run <nom> <texte> :'
                 : 'Workflow introuvable. Workflows disponibles :'
+            await step('warn', res.reason === 'no-name' ? 'Aucun nom fourni — liste renvoyée.' : 'Workflow introuvable — liste renvoyée.')
             await reply(msg.chatId, `${head}\n${list}`)
             return
           }
+          await step('info', `Workflow « ${res.workflow.name} » trouvé.`)
           if (requiresManualFile(res.workflow)) {
+            await step('warn', 'Non exécutable : contient un node fichier (Upload/Import).')
             await reply(
               msg.chatId,
               `⚠️ « ${res.workflow.name} » contient un node nécessitant un fichier (Upload/Import) — non exécutable automatiquement depuis Telegram.`,
@@ -123,30 +160,42 @@ export function useTelegramInboxWorker(): void {
           }
           const { workflow, injected } = injectInput(res.workflow, res.input)
           if (res.input && injected === 0) {
+            await step('warn', 'Aucun node d’entrée alimentable — texte non injecté.')
             await reply(
               msg.chatId,
               `⚠️ « ${workflow.name} » n'a aucun node d'entrée alimentable (Saisie texte / Scrape URL) — ton texte ne sera pas injecté. Exécution quand même…`,
             )
           } else if (injected > 0) {
+            await step('info', `Entrée injectée dans ${injected} node(s) d'entrée.`)
             // Persiste l'entrée injectée dans le workflow sauvegardé → visible/réutilisable dans
             // l'éditeur. Best-effort : un échec d'écriture ne bloque pas l'exécution (le clone en
             // mémoire porte déjà la valeur).
             await saveWorkflow(uid, workflow).catch((err) =>
               console.warn('telegram /run: échec sauvegarde workflow', maskToken(String(err))),
             )
+            await step('info', 'Workflow sauvegardé.')
           }
           try {
-            await sendExecResult(msg.chatId, workflow.name, await executeWorkflowAndCollect(workflow))
+            await step('info', '⏳ Exécution en cours…')
+            const exec = await executeWorkflowAndCollect(workflow)
+            await stepBatch(exec.logs)
+            await step(exec.errorCount > 0 ? 'warn' : 'info', summarizeExec(exec))
+            await sendExecResult(msg.chatId, workflow.name, exec)
           } catch (err) {
             const reason = maskToken(err instanceof Error ? err.message : String(err))
+            await step('error', `Exécution échouée : ${reason}`)
             await reply(msg.chatId, `⚠️ « ${workflow.name} » exécution échouée : ${reason}`)
             throw err
           }
           return
         }
         // Message simple (sans commande) → aucune réponse auto, juste reçu et marqué « traité ».
-        if (cmd.kind === 'simple') return
+        if (cmd.kind === 'simple') {
+          await step('info', 'Message reçu — aucune commande à exécuter.')
+          return
+        }
         if (!cmd.prompt) {
+          await step('info', '/flow sans demande — aide renvoyée.')
           await reply(
             msg.chatId,
             'Pour lancer un workflow, écris ta demande après /flow.\nEx : /flow scrape https://exemple.com et exporte un Excel.',
@@ -155,14 +204,17 @@ export function useTelegramInboxWorker(): void {
         }
 
         // 1) Génération + sauvegarde (2b).
+        await step('info', '🤖 Génération du workflow par IA…')
         let info
         try {
           info = await generateAndSaveWorkflow(cmd.prompt, uid)
         } catch (err) {
           const reason = maskToken(err instanceof Error ? err.message : String(err))
+          await step('error', `Génération échouée : ${reason}`)
           await reply(msg.chatId, `❌ Génération échouée : ${reason}`)
           throw err
         }
+        await step('info', `Workflow « ${info.name} » généré (${info.nodeCount} node(s)).`)
         await updateDoc(doc(db, 'telegramInbox', String(msg.updateId)), {
           generatedWorkflowId: info.workflowId,
           generatedWorkflowName: info.name,
@@ -170,6 +222,7 @@ export function useTelegramInboxWorker(): void {
 
         // Le workflow nécessite un fichier choisi à la main → non exécutable en auto.
         if (requiresManualFile(info.workflow)) {
+          await step('warn', 'Généré mais non exécutable : contient un node fichier (Upload/Import).')
           await reply(
             msg.chatId,
             `⚠️ « ${info.name} » généré, mais il contient un node nécessitant un fichier (Upload/Import) — non exécutable automatiquement. Ouvre-le dans Workflows pour le compléter, ou reformule avec une URL à scraper / des données dans ton message.`,
@@ -180,9 +233,14 @@ export function useTelegramInboxWorker(): void {
         // 2) Exécution (2c) + retour du fichier produit. Le workflow reste sauvegardé même si
         //    l'exécution échoue (pas de rollback).
         try {
-          await sendExecResult(msg.chatId, info.name, await executeWorkflowAndCollect(info.workflow))
+          await step('info', '⏳ Exécution en cours…')
+          const exec = await executeWorkflowAndCollect(info.workflow)
+          await stepBatch(exec.logs)
+          await step(exec.errorCount > 0 ? 'warn' : 'info', summarizeExec(exec))
+          await sendExecResult(msg.chatId, info.name, exec)
         } catch (err) {
           const reason = maskToken(err instanceof Error ? err.message : String(err))
+          await step('error', `Exécution échouée : ${reason}`)
           await reply(msg.chatId, `⚠️ « ${info.name} » généré mais exécution échouée : ${reason}`)
           throw err
         }

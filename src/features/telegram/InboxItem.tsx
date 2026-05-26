@@ -11,6 +11,7 @@ import {
   type InboxMessage,
 } from './useTelegramInbox'
 import { useTelegramStore } from '@/stores/telegram.store'
+import { InboxItemLogs } from './InboxItemLogs'
 
 // Feedback après suppression : ce qui a réellement eu lieu côté Telegram.
 function notifyDeleteOutcome(outcome: DeleteOutcome): void {
@@ -128,6 +129,12 @@ export function InboxItem({ message }: { message: InboxMessage }) {
         <div className="text-[11px] text-indigo-300/90 mt-1 flex items-center gap-1">
           <span className="text-neutral-600">→ workflow :</span> {message.generatedWorkflowName}
         </div>
+      )}
+      {!editing && (
+        <InboxItemLogs
+          logs={message.logs ?? []}
+          defaultOpen={message.status === 'processing'}
+        />
       )}
 
       {menuOpen && (
