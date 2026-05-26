@@ -28,6 +28,8 @@ import {
   isHostKnownBlocked,
   markHostBlocked,
 } from '@/features/scraping/core/brightDataFallback'
+import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
+import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 
 export interface EnrichRowInput {
   url: string
@@ -187,6 +189,41 @@ function buildSchemas(targetFields: string[]): {
   }
 }
 
+/** Vrai si les données structurées JSON-LD portent assez de signal pour servir de source primaire. */
+export function structuredHasSignal(p: StructuredProductData): boolean {
+  return !!(
+    p.name &&
+    ((p.specs && p.specs.length > 0) || p.offers?.price != null || (p.description && p.description.length > 60))
+  )
+}
+
+/**
+ * Sérialise les données structurées (JSON-LD) en markdown riche pour l'extraction LLM : identité,
+ * prix, description, spécifications KEY/VALUE, et bloc JINA_EXTRACTED_IMAGES (images sans extension).
+ */
+export function serializeStructured(p: StructuredProductData): string {
+  const lines: string[] = []
+  if (p.name) lines.push(`# ${p.name}`)
+  if (p.brand) lines.push(`Marque : ${p.brand}`)
+  if (p.manufacturer?.name) lines.push(`Fabricant : ${p.manufacturer.name}`)
+  if (p.sku) lines.push(`Référence / SKU : ${p.sku}`)
+  if (p.gtin) lines.push(`GTIN / EAN : ${p.gtin}`)
+  if (p.mpn) lines.push(`MPN : ${p.mpn}`)
+  if (p.category) lines.push(`Catégorie : ${p.category}`)
+  if (p.offers?.price != null) {
+    lines.push(`Prix : ${p.offers.price}${p.offers.priceCurrency ? ` ${p.offers.priceCurrency}` : ''}`)
+  }
+  if (p.description) lines.push('', p.description)
+  if (p.specs && p.specs.length > 0) {
+    lines.push('', '## Spécifications')
+    for (const s of p.specs) lines.push(`- ${s.name} : ${s.value}`)
+  }
+  if (p.images && p.images.length > 0) {
+    lines.push('', 'JINA_EXTRACTED_IMAGES_START', ...p.images, 'JINA_EXTRACTED_IMAGES_END')
+  }
+  return lines.join('\n')
+}
+
 /**
  * Extrait les URLs d'images du markdown : (1) le bloc explicite JINA_EXTRACTED_IMAGES (injecté par
  * Jina/Bright Data — URLs résolues sans exigence d'extension, ex. CDN Adeo/Next.js), (2) les URLs
@@ -228,20 +265,43 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   throwIfAborted(signal)
 
   log?.(`[enrichRow] scrape ${url}`)
-  const bundle = await scrapeProductBundle(url, {
-    deepScrape: buildDeepScrape(log),
-    fastScrape: jinaFastScrape,
-    log,
-  })
 
+  // Étape 1 : données structurées JSON-LD via la cascade complète (même moteur que le scraper PIM).
+  // Le JSON-LD est dans le HTML brut → récupérable même quand la page rendue est anti-bot, d'où une
+  // donnée bien plus riche (nom, prix, description, specs, images) que le seul markdown.
+  let structured: StructuredProductData | null = null
+  try {
+    structured = await extractStructuredDataFromUrl(url)
+  } catch (err) {
+    console.warn('[enrichRow] structured data failed:', err)
+  }
   throwIfAborted(signal)
 
-  const md = bundle.mergedMarkdown
+  let md: string
+  let pdfAssets: EnrichRowAsset[] = []
+
+  if (structured && structuredHasSignal(structured)) {
+    log?.(
+      `[enrichRow] connecteur : structured data JSON-LD ✓ (${structured.specs?.length ?? 0} specs, ${structured.images?.length ?? 0} images)`,
+    )
+    md = serializeStructured(structured)
+  } else {
+    // Étape 2 (fallback) : bundle markdown (Jina → Firecrawl → Bright Data) + LLM.
+    const bundle = await scrapeProductBundle(url, {
+      deepScrape: buildDeepScrape(log),
+      fastScrape: jinaFastScrape,
+      log,
+    })
+    throwIfAborted(signal)
+    md = bundle.mergedMarkdown
+    pdfAssets = bundle.pdfsFound.map((p) => ({ url: p.url, type: 'pdf' as const }))
+  }
+
   if (!md) {
-    log?.(`[enrichRow] markdown vide — retour de champs vides`)
+    log?.(`[enrichRow] aucun contenu (structured + markdown vides) — champs vides`)
     return {
       fields: Object.fromEntries(targetFields.map((f) => [f, null])),
-      assets: bundle.pdfsFound.map((p) => ({ url: p.url, type: 'pdf' as const })),
+      assets: pdfAssets,
     }
   }
 
@@ -278,7 +338,6 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   }
 
   const imageAssets = extractImageAssets(md)
-  const pdfAssets: EnrichRowAsset[] = bundle.pdfsFound.map((p) => ({ url: p.url, type: 'pdf' }))
   const assets: EnrichRowAsset[] = [...pdfAssets, ...imageAssets]
 
   log?.(`[enrichRow] OK — ${Object.values(fields).filter((v) => v != null).length}/${targetFields.length} champs renseignés, ${assets.length} assets`)
