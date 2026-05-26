@@ -10,12 +10,6 @@
 import { enrichProductCore } from './useProductEnrichment'
 import type { EnrichedProduct } from './types'
 import { isJunkImageUrl, classifyImage, getProductRefs } from './imageFilter'
-import {
-  brightDataScrapeWithDocs,
-  getLastBrightDataError,
-} from '@/features/scraping/core/brightDataFallback'
-import { looksLikeBotChallenge } from './markdownSanitize'
-import { parseSpecsFromMarkdown } from '@/features/scraping/core/parsers/parseSpecifications'
 
 export interface EnrichRowInput {
   url: string
@@ -130,85 +124,6 @@ function isEmptyProduct(p: EnrichedProduct | null): boolean {
   )
 }
 
-/** URLs d'images du markdown (bloc JINA_EXTRACTED_IMAGES + liens inline avec extension). */
-function imagesFromMarkdown(md: string): string[] {
-  const out = new Set<string>()
-  const block = md.match(/JINA_EXTRACTED_IMAGES_START\s*([\s\S]*?)\s*JINA_EXTRACTED_IMAGES_END/i)
-  if (block) for (const line of block[1].split('\n')) {
-    const u = line.trim()
-    if (/^https?:\/\//i.test(u)) out.add(u)
-  }
-  for (const m of md.matchAll(/https?:\/\/[^\s)<>"']+\.(?:jpg|jpeg|png|webp|gif)(?:\?[^\s)<>"']*)?/gi)) {
-    out.add(m[0])
-  }
-  return Array.from(out)
-}
-
-function mergeSpecsByName(
-  a: Array<{ name: string; value: string }>,
-  b: Array<{ name: string; value: string }>,
-): Array<{ name: string; value: string }> {
-  const seen = new Set<string>()
-  const out: Array<{ name: string; value: string }> = []
-  for (const s of [...a, ...b]) {
-    const k = s.name?.trim().toLowerCase()
-    if (!k || !s.value?.trim() || seen.has(k)) continue
-    seen.add(k)
-    out.push(s)
-  }
-  return out
-}
-
-/**
- * Fallback DIRECT Bright Data Web Unlocker — appelé quand le moteur PIM revient bloqué. GARANTIT
- * l'usage du Web Unlocker (financé mais sous-utilisé par le moteur). Construit un EnrichedProduct
- * depuis le JSON-LD + specs markdown + images du HTML débloqué par Bright Data (résidentiel → passe
- * DataDome). Renvoie null si Bright Data échoue ou renvoie encore une page challenge.
- */
-async function scrapeViaBrightDataDirect(
-  url: string,
-  log?: (m: string) => void,
-): Promise<EnrichedProduct | null> {
-  log?.('[enrichRow] moteur bloqué → appel DIRECT Bright Data Web Unlocker…')
-  let bd: Awaited<ReturnType<typeof brightDataScrapeWithDocs>>
-  try {
-    bd = await brightDataScrapeWithDocs(url)
-  } catch (err) {
-    log?.(`[enrichRow] Bright Data direct : exception ${err instanceof Error ? err.message : String(err)}`)
-    return null
-  }
-  if (!bd?.markdown) {
-    const e = getLastBrightDataError()
-    log?.(`[enrichRow] Bright Data direct échoué${e ? ` (${e.code} : ${e.message.slice(0, 120)})` : ' (aucune réponse)'}`)
-    return null
-  }
-  if (looksLikeBotChallenge(bd.markdown)) {
-    log?.('[enrichRow] Bright Data direct : page anti-bot renvoyée (DataDome non résolu)')
-    return null
-  }
-  const sd = bd.structuredData
-  const specs = mergeSpecsByName(sd?.specs ?? [], parseSpecsFromMarkdown(bd.markdown))
-  log?.(`[enrichRow] Bright Data direct ✓ — ${specs.length} specs`)
-  return {
-    name: sd?.name,
-    brand: sd?.brand,
-    distributorRef: sd?.sku,
-    manufacturerRef: sd?.mpn,
-    ean: sd?.gtin,
-    description: sd?.description ?? '',
-    breadcrumb: sd?.category ? [sd.category] : undefined,
-    specifications: specs,
-    images: [...(sd?.images ?? []), ...imagesFromMarkdown(bd.markdown)],
-    documents: bd.pdfLinks.map((d) => ({ name: d.name, url: d.url, filename: d.name })),
-    advantages: [],
-    variants: [],
-    sourceUrl: url,
-    additionalSources: [],
-    generatedAt: Date.now(),
-    scrapingProvider: 'bright-data-direct',
-  }
-}
-
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
   if (!url) throw new Error('enrichRow: url manquante')
@@ -217,8 +132,10 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
 
-  // 1) Moteur PIM (un essai — réussit vite sur les sites accessibles, parfois via Jina sur DataDome).
-  let product = await enrichProductCore({
+  // Appel STRICTEMENT identique à « Scraper le web » du PIM : mêmes sheetName/rowId (clé de cache
+  // EN MÉMOIRE, partagée avec le PIM), titre, knownUrl. → si tu as scrapé ce produit dans le PIM
+  // (même session), le workflow RÉUTILISE son résultat exact. Sinon, scrape frais identique au PIM.
+  const product = await enrichProductCore({
     sheetName: SCRAPE_MODAL_SHEET,
     rowId: deriveScrapeRowId(url),
     title,
@@ -226,16 +143,8 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
     mode: 'auto',
   })
 
-  // 2) Si bloqué/vide → appel DIRECT au Web Unlocker Bright Data (financé mais sous-utilisé par le
-  //    moteur). C'est le seul moyen fiable de passer DataDome (IPs résidentielles). Garantit l'usage
-  //    du Web Unlocker → la conso Bright Data doit monter, et la donnée arriver sur ces sites.
   if (isEmptyProduct(product)) {
-    const bd = await scrapeViaBrightDataDirect(url, log)
-    if (bd && !isEmptyProduct(bd)) product = bd
-  }
-
-  if (isEmptyProduct(product)) {
-    log?.('[enrichRow] aucune donnée (moteur + Bright Data direct épuisés)')
+    log?.('[enrichRow] aucune donnée (anti-bot ou page sans contenu structuré)')
     return { fields: Object.fromEntries(targetFields.map((f) => [f, null])), assets: [] }
   }
 
