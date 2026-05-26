@@ -92,19 +92,6 @@ function deriveTitleFromUrl(url: string): string {
   }
 }
 
-// Clé de cache de scrape PARTAGÉE avec le PIM (ScrapingModal). Mêmes sheetName + rowId → le workflow
-// RÉUTILISE le scrape réussi d'un produit déjà fait dans le PIM (et inversement), sans re-scraper —
-// donc sans re-déclencher l'anti-bot. Indispensable pour les sites DataDome (Leroy Merlin) où un
-// scrape frais est bloqué par intermittence : une fois qu'un scrape a réussi (PIM ou workflow), il
-// reste disponible aux deux. (Store Zustand en mémoire, partagé dans la session app.)
-const SCRAPE_CACHE_SHEET = '__scrape_modal__'
-function deriveScrapeRowId(url: string): string {
-  try {
-    return new URL(url).pathname.replace(/[^a-z0-9]/gi, '_').slice(0, 80) || 'pending'
-  } catch {
-    return 'pending'
-  }
-}
 
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
@@ -113,13 +100,24 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
 
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
-  const product = await enrichProductCore({
-    sheetName: SCRAPE_CACHE_SHEET,
-    rowId: deriveScrapeRowId(url),
-    title,
-    knownUrl: url,
-    mode: 'auto',
-  })
+
+  // Bright Data Web Unlocker réussit par INTERMITTENCE sur les sites DataDome (Leroy Merlin) :
+  // on réessaie tant que le résultat est bloqué/vide. Les sites accessibles réussissent au 1er coup
+  // (pas de retry). Même rowId entre essais → host marqué bloqué → on va direct sur Bright Data.
+  const rowId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  const isEmpty = (p: EnrichedProduct | null): boolean =>
+    !p || p.blockedByAntiBot === true ||
+    (!(p.specifications?.length) && !(p.images?.length) && !p.description?.trim())
+
+  let product: EnrichedProduct | null = null
+  const MAX_ATTEMPTS = 3
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    product = await enrichProductCore({ sheetName: 'workflow', rowId, title, knownUrl: url, mode: 'auto' })
+    if (!isEmpty(product)) break
+    if (attempt < MAX_ATTEMPTS) {
+      log?.(`[enrichRow] anti-bot — essai ${attempt}/${MAX_ATTEMPTS} bloqué, nouvelle tentative Bright Data…`)
+    }
+  }
 
   if (!product) {
     log?.('[enrichRow] moteur PIM : aucune donnée')
