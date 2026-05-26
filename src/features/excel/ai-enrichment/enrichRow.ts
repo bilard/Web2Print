@@ -273,27 +273,54 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
 
   log?.(`[enrichRow] scrape ${url}`)
 
-  // Étape 1 : données structurées JSON-LD via la cascade complète (même moteur que le scraper PIM).
-  // Le JSON-LD est dans le HTML brut → récupérable même quand la page rendue est anti-bot, d'où une
-  // donnée bien plus riche (nom, prix, description, specs, images) que le seul markdown.
+  // Récupération optimisée pour éviter le double appel Bright Data :
+  //  - host anti-bot CONNU → UN SEUL appel brightDataScrapeWithDocs (markdown + JSON-LD + PDFs) ;
+  //  - sinon → données structurées via la cascade légère (proxies/Jina, BD seulement en dernier
+  //    recours, qui marque alors le host bloqué), puis bundle markdown en repli.
+  // Le JSON-LD est dans le HTML brut → récupérable même sur page anti-bot, d'où une donnée bien plus
+  // riche (nom, prix, description, specs, images) que le seul markdown — comme le scraper PIM.
   let structured: StructuredProductData | null = null
-  try {
-    structured = await extractStructuredDataFromUrl(url)
-  } catch (err) {
-    console.warn('[enrichRow] structured data failed:', err)
+  let rawMd = ''
+  let pdfAssets: EnrichRowAsset[] = []
+
+  if (isHostKnownBlocked(url)) {
+    log?.('[enrichRow] host anti-bot connu → Bright Data (1 appel : markdown + JSON-LD)')
+    const bd = await brightDataScrapeWithDocs(url).catch((err) => {
+      console.warn('[enrichRow] bright data failed:', err)
+      return null
+    })
+    if (bd) {
+      structured = bd.structuredData
+      rawMd = bd.markdown
+      pdfAssets = bd.pdfLinks.map((p) => ({ url: p.url, type: 'pdf' as const }))
+      log?.('[enrichRow] connecteur : Bright Data ✓')
+    } else {
+      const bdErr = getLastBrightDataError()
+      log?.(
+        `[enrichRow] Bright Data échoué${bdErr ? ` (${bdErr.code} : ${bdErr.message.slice(0, 140)})` : ''}`,
+      )
+    }
+  } else {
+    structured = await extractStructuredDataFromUrl(url).catch((err) => {
+      console.warn('[enrichRow] structured data failed:', err)
+      return null
+    })
   }
   throwIfAborted(signal)
 
-  let md: string
-  let pdfAssets: EnrichRowAsset[] = []
-
+  // Données structurées riches → source primaire (sérialisées), combinées au markdown brut si présent.
+  let structuredMd = ''
   if (structured && structuredHasSignal(structured)) {
     log?.(
-      `[enrichRow] connecteur : structured data JSON-LD ✓ (${structured.specs?.length ?? 0} specs, ${structured.images?.length ?? 0} images)`,
+      `[enrichRow] structured data JSON-LD ✓ (${structured.specs?.length ?? 0} specs, ${structured.images?.length ?? 0} images)`,
     )
-    md = serializeStructured(structured)
-  } else {
-    // Étape 2 (fallback) : bundle markdown (Jina → Firecrawl → Bright Data) + LLM.
+    structuredMd = serializeStructured(structured)
+  }
+  let md = [structuredMd, rawMd].filter(Boolean).join('\n\n')
+
+  // Host accessible sans contenu exploitable → bundle markdown (Jina → Firecrawl → BD en dernier
+  // recours). Le guard !isHostKnownBlocked évite un 2e appel BD si la cascade a déjà escaladé.
+  if (!md && !isHostKnownBlocked(url)) {
     const bundle = await scrapeProductBundle(url, {
       deepScrape: buildDeepScrape(log),
       fastScrape: jinaFastScrape,
