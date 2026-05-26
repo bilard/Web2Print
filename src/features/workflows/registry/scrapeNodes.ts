@@ -152,6 +152,7 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
 
     const allRows: Array<Record<string, unknown>> = []
     const allAssets: ScrapeUrlAsset[] = []
+    let anyBlocked = false
 
     for (let i = 0; i < urls.length; i++) {
       if (ctx.signal.aborted) break
@@ -168,6 +169,7 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
         })
         allRows.push({ _url: url, ...result.fields })
         allAssets.push(...result.assets)
+        if (result.blockedByAntiBot) anyBlocked = true
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         ctx.log('error', `Échec ${url} : ${msg}`)
@@ -187,6 +189,11 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
       ctx.log(
         'warn',
         `⚠️ Aucune donnée extraite (${allRows.length} URL(s)) — site anti-bot non débloqué (cookies de session ?) ou page sans contenu structuré.`,
+      )
+    } else if (anyBlocked) {
+      ctx.log(
+        'warn',
+        `⚠️ Données PARTIELLES — ${filled} champ(s), ${allAssets.length} asset(s) : anti-bot non résolu sur au moins une URL (mêmes données que le bandeau d'alerte du PIM).`,
       )
     } else {
       ctx.log('info', `Terminé — ${allRows.length} ligne(s), ${filled} champ(s) rempli(s), ${allAssets.length} asset(s)`)

@@ -30,6 +30,10 @@ export interface EnrichRowAsset {
 export interface EnrichRowResult {
   fields: Record<string, unknown>
   assets: EnrichRowAsset[]
+  /** Le scraping a rencontré un challenge anti-bot non résolu. Les données peuvent être PARTIELLES
+   *  (JSON-LD seul) ou absentes. Permet à l'appelant de signaler « partiel » au lieu d'un succès muet,
+   *  équivalent au bandeau d'alerte du PIM (`ProductEnrichedView`). */
+  blockedByAntiBot: boolean
 }
 
 /** Mappe un EnrichedProduct (sortie moteur PIM) vers les clés de champs du template du node. */
@@ -163,7 +167,11 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
 
   if (isEmptyProduct(product)) {
     log?.('[enrichRow] aucune donnée (anti-bot ou page sans contenu structuré)')
-    return { fields: Object.fromEntries(targetFields.map((f) => [f, null])), assets: [] }
+    return {
+      fields: Object.fromEntries(targetFields.map((f) => [f, null])),
+      assets: [],
+      blockedByAntiBot: product?.blockedByAntiBot === true,
+    }
   }
 
   const assets = mapProductToAssets(product)
@@ -173,5 +181,9 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
       `${product.llmProvider ? `, LLM ${product.llmProvider}` : ''}` +
       `${product.blockedByAntiBot ? ' ⚠️ anti-bot non résolu' : ''}`,
   )
-  return { fields: mapProductToFields(product, targetFields), assets }
+  return {
+    fields: mapProductToFields(product, targetFields),
+    assets,
+    blockedByAntiBot: product.blockedByAntiBot === true,
+  }
 }
