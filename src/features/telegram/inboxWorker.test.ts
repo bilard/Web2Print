@@ -73,4 +73,21 @@ describe('parseInboxCommand', () => {
     expect(parseInboxCommand('/start')).toEqual({ kind: 'ignore' })
     expect(parseInboxCommand('  /START ')).toEqual({ kind: 'ignore' })
   })
+
+  it('/run <nom> <texte> → run + rest (casse/espaces)', () => {
+    expect(parseInboxCommand('/run Mon Workflow Telegram message')).toEqual({
+      kind: 'run',
+      rest: 'Mon Workflow Telegram message',
+    })
+    expect(parseInboxCommand('  /RUN   Export Excel  ')).toEqual({ kind: 'run', rest: 'Export Excel' })
+  })
+
+  it('/run seul → run avec rest vide (liste des workflows côté worker)', () => {
+    expect(parseInboxCommand('/run')).toEqual({ kind: 'run', rest: '' })
+  })
+
+  it('/runs, /runner → simple (pas de collision via \\b)', () => {
+    expect(parseInboxCommand('/runs')).toEqual({ kind: 'simple' })
+    expect(parseInboxCommand('/runner go')).toEqual({ kind: 'simple' })
+  })
 })

@@ -23,6 +23,7 @@ export interface InboxWorkerDeps {
 
 export type InboxCommand =
   | { kind: 'flow'; prompt: string }
+  | { kind: 'run'; rest: string }
   | { kind: 'clear' }
   | { kind: 'ignore' }
   | { kind: 'simple' }
@@ -30,7 +31,9 @@ export type InboxCommand =
 /**
  * Reconnaît les commandes envoyées au bot depuis Telegram.
  * `/start` → ignore (commande de service Telegram, ne doit pas rester dans la boîte).
- * `/flow <demande>` → workflow (le reste est le prompt).
+ * `/flow <demande>` → workflow généré par IA (le reste est le prompt).
+ * `/run <nom> <texte>` → exécute un workflow sauvegardé (le reste = nom + texte d'entrée ;
+ *   `/run` seul liste les workflows disponibles).
  * `/clear` | `/purge` | `/vider` → vide la boîte (app + Telegram).
  * Tout autre message → simple.
  */
@@ -39,6 +42,8 @@ export function parseInboxCommand(text: string): InboxCommand {
   if (/^\/start\b/i.test(t)) return { kind: 'ignore' }
   const flow = /^\/flow\b\s*([\s\S]*)$/i.exec(t)
   if (flow) return { kind: 'flow', prompt: flow[1].trim() }
+  const run = /^\/run\b\s*([\s\S]*)$/i.exec(t)
+  if (run) return { kind: 'run', rest: run[1].trim() }
   if (/^\/(clear|purge|vider)\b/i.test(t)) return { kind: 'clear' }
   return { kind: 'simple' }
 }

@@ -14,7 +14,9 @@ import { sendTelegramMessage, sendTelegramDocument, deleteTelegramMessage } from
 import { addOutboxMessage, clearAllInbox, deleteInboxMessage } from './useTelegramInbox'
 import { processInboxMessage, parseInboxCommand, type InboxDoc, type InboxWorkerDeps } from './inboxWorker'
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
-import { executeWorkflowAndCollect } from './executeWorkflowAndCollect'
+import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
+import { resolveRun, injectTextInput } from './runWorkflowFromInbox'
+import { listWorkflows } from '@/features/workflows/persistence/workflowsApi'
 
 // Identifie cet onglet pour le claim (diagnostic).
 const WORKER_ID = Math.random().toString(36).slice(2)
@@ -43,6 +45,25 @@ export function useTelegramInboxWorker(): void {
       sendTelegramMessage(botToken, { chatId: String(chatId), text })
         .then(({ messageId }) => void addOutboxMessage(chatId, text, messageId))
         .catch(() => {})
+
+    // Renvoie le résultat d'une exécution : le fichier produit (en pièce jointe), ou un message
+    // de statut. Partagé par /flow et /run. Journalise l'envoi (closure sur botToken).
+    const sendExecResult = async (chatId: number, name: string, exec: ExecutionResult) => {
+      if (exec.file) {
+        const caption = `✅ « ${name} » — exécuté (${exec.nodeCount} node(s))`
+        const sent = await sendTelegramDocument(botToken, {
+          chatId: String(chatId),
+          file: new File([exec.file.blob], exec.file.filename, { type: exec.file.blob.type }),
+          caption,
+        })
+        void addOutboxMessage(chatId, `📎 ${exec.file.filename}\n${caption}`, sent.messageId)
+      } else if (exec.nodeCount === 0 && exec.errorCount > 0) {
+        await reply(chatId, `⚠️ « ${name} » exécution échouée : ${maskToken(exec.firstError || 'erreur inconnue')}`)
+      } else {
+        const suffix = exec.errorCount > 0 ? ` (${exec.errorCount} erreur(s))` : ''
+        await reply(chatId, `✅ « ${name} » exécuté — ${exec.nodeCount} node(s), aucun fichier produit${suffix}.`)
+      }
+    }
 
     const deps: InboxWorkerDeps = {
       claim: (updateId) => {
@@ -76,6 +97,44 @@ export function useTelegramInboxWorker(): void {
         if (cmd.kind === 'clear') {
           const n = await clearAllInbox(botToken)
           await reply(msg.chatId, `🧹 Boîte vidée (${n} message(s) supprimé(s)).`)
+          return
+        }
+        // /run <nom> <texte> : exécute un workflow DÉJÀ sauvegardé en injectant le texte dans ses
+        // nodes « Saisie texte ». /run seul (ou nom introuvable) → liste les workflows disponibles.
+        if (cmd.kind === 'run') {
+          const res = resolveRun(await listWorkflows(uid), cmd.rest)
+          if (!res.ok) {
+            const list = res.available.length
+              ? res.available.map((n) => `• ${n}`).join('\n')
+              : '(aucun workflow sauvegardé)'
+            const head =
+              res.reason === 'no-name'
+                ? 'Workflows disponibles — relance avec /run <nom> <texte> :'
+                : 'Workflow introuvable. Workflows disponibles :'
+            await reply(msg.chatId, `${head}\n${list}`)
+            return
+          }
+          if (requiresManualFile(res.workflow)) {
+            await reply(
+              msg.chatId,
+              `⚠️ « ${res.workflow.name} » contient un node nécessitant un fichier (Upload/Import) — non exécutable automatiquement depuis Telegram.`,
+            )
+            return
+          }
+          const { workflow, injected } = injectTextInput(res.workflow, res.input)
+          if (res.input && injected === 0) {
+            await reply(
+              msg.chatId,
+              `⚠️ « ${workflow.name} » n'a aucun node « Saisie texte » — ton texte ne sera pas injecté. Exécution quand même…`,
+            )
+          }
+          try {
+            await sendExecResult(msg.chatId, workflow.name, await executeWorkflowAndCollect(workflow))
+          } catch (err) {
+            const reason = maskToken(err instanceof Error ? err.message : String(err))
+            await reply(msg.chatId, `⚠️ « ${workflow.name} » exécution échouée : ${reason}`)
+            throw err
+          }
           return
         }
         // Message simple (sans commande) → aucune réponse auto, juste reçu et marqué « traité ».
@@ -114,28 +173,7 @@ export function useTelegramInboxWorker(): void {
         // 2) Exécution (2c) + retour du fichier produit. Le workflow reste sauvegardé même si
         //    l'exécution échoue (pas de rollback).
         try {
-          const exec = await executeWorkflowAndCollect(info.workflow)
-          if (exec.file) {
-            const caption = `✅ « ${info.name} » — exécuté (${exec.nodeCount} node(s))`
-            const sent = await sendTelegramDocument(botToken, {
-              chatId: String(msg.chatId),
-              file: new File([exec.file.blob], exec.file.filename, { type: exec.file.blob.type }),
-              caption,
-            })
-            // Journalise l'envoi du fichier comme message sortant (avec message_id → suppressible).
-            void addOutboxMessage(msg.chatId, `📎 ${exec.file.filename}\n${caption}`, sent.messageId)
-          } else if (exec.nodeCount === 0 && exec.errorCount > 0) {
-            await reply(
-              msg.chatId,
-              `⚠️ « ${info.name} » généré mais exécution échouée : ${maskToken(exec.firstError || 'erreur inconnue')}`,
-            )
-          } else {
-            const suffix = exec.errorCount > 0 ? ` (${exec.errorCount} erreur(s))` : ''
-            await reply(
-              msg.chatId,
-              `✅ « ${info.name} » généré et exécuté — ${exec.nodeCount} node(s), aucun fichier produit${suffix}.`,
-            )
-          }
+          await sendExecResult(msg.chatId, info.name, await executeWorkflowAndCollect(info.workflow))
         } catch (err) {
           const reason = maskToken(err instanceof Error ? err.message : String(err))
           await reply(msg.chatId, `⚠️ « ${info.name} » généré mais exécution échouée : ${reason}`)
