@@ -10,9 +10,32 @@ import {
 import { interpolate } from '../runtime/interpolate'
 import { extractRows } from '../runtime/executor'
 import { useTelegramStore } from '@/stores/telegram.store'
+import { addOutboxMessage } from '@/features/telegram/useTelegramInbox'
 
 // Limite Telegram pour une légende de document.
 const CAPTION_MAX = 1024
+
+/**
+ * Fallback texte : quand le champ Message est vide, on réutilise le texte reçu sur le port `data`
+ * (ex : sortie d'un node « Saisie texte »). Seules les valeurs scalaires sont coercées en message ;
+ * un objet/tableau (cas du mode iterate) ne fait pas un message exploitable.
+ */
+function coerceDataText(data: unknown): string {
+  if (typeof data === 'string') return data
+  if (typeof data === 'number' || typeof data === 'boolean') return String(data)
+  return ''
+}
+
+/**
+ * Journalise un envoi dans la boîte de réception (message sortant, visible dans l'app). Best-effort :
+ * un échec d'écriture ne doit pas faire échouer l'envoi déjà réalisé. `sentText` est la chaîne
+ * RÉELLEMENT envoyée (déjà tronquée pour une légende) afin que la boîte reflète Telegram à l'identique.
+ */
+function logOutbox(chatId: string, sentText: string, file: File | Blob | null, messageId: number): void {
+  const filename = file ? ('name' in file && file.name ? file.name : 'document.bin') : null
+  const outText = filename ? `📎 ${filename}${sentText ? `\n${sentText}` : ''}` : sentText
+  void addOutboxMessage(chatId, outText, messageId).catch(() => {})
+}
 
 interface SendTelegramConfig {
   botToken: string
@@ -103,9 +126,10 @@ function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
           className={`${inputCls} resize-y font-mono`}
         />
         <p className="text-[10px] text-neutral-600 mt-1.5 leading-snug">
-          Si le port <code className="text-emerald-300/80">attachment</code> est connecté, le
-          fichier est envoyé en pièce jointe et ce texte sert de légende (max {CAPTION_MAX}{' '}
-          caractères).
+          Laisse vide pour envoyer tel quel le texte reçu sur le port{' '}
+          <code className="text-emerald-300/80">data</code> (ex : node « Saisie texte »). Si le
+          port <code className="text-emerald-300/80">attachment</code> est connecté, le fichier est
+          envoyé en pièce jointe et ce texte sert de légende (max {CAPTION_MAX} caractères).
         </p>
       </div>
 
@@ -226,6 +250,7 @@ export const sendTelegramNode: NodeSpec<
                 parseMode: r.parseMode,
               })
           messageIds.push(out.messageId)
+          logOutbox(chatId, file ? r.text.slice(0, CAPTION_MAX) : r.text, file, out.messageId)
           ctx.log('info', `[${i + 1}/${inputRows.length}] → ${chatId} (msg ${out.messageId})`)
         } catch (err) {
           ctx.log(
@@ -250,18 +275,26 @@ export const sendTelegramNode: NodeSpec<
         'Chat ID Telegram manquant (ni dans le node, ni dans la config globale Telegram des Settings).',
       )
     }
+    // Texte effectif : le champ Message, ou à défaut le texte reçu sur le port `data`.
+    const text = config.text.trim() ? config.text : coerceDataText(inputs.data)
+    if (!file && !text.trim()) {
+      throw new Error(
+        'Message Telegram vide : renseigne le champ Message, ou connecte un texte sur le port « data ».',
+      )
+    }
     const out = file
       ? await sendTelegramDocument(botToken, {
           chatId,
           file,
-          caption: config.text.slice(0, CAPTION_MAX),
+          caption: text.slice(0, CAPTION_MAX),
           parseMode: config.parseMode,
         })
       : await sendTelegramMessage(botToken, {
           chatId,
-          text: config.text,
+          text,
           parseMode: config.parseMode,
         })
+    logOutbox(chatId, file ? text.slice(0, CAPTION_MAX) : text, file, out.messageId)
     ctx.log('info', `Message Telegram envoyé → ${chatId} (msg ${out.messageId}).`)
     return { result: { sent: true, count: 1, messageIds: [out.messageId] } }
   },

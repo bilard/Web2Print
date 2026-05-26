@@ -32,7 +32,8 @@ export type InboxDirection = 'in' | 'out'
 export interface InboxMessage {
   // string pour les messages sortants (id synthétique `out-…`), number pour les update_id Telegram.
   updateId: number | string
-  chatId: number
+  // number pour les chats Telegram réels ; string possible pour un @canal (envoi depuis un node).
+  chatId: number | string
   fromUsername: string | null
   text: string
   status: InboxStatus
@@ -91,11 +92,18 @@ export function updateInboxText(updateId: number | string, text: string): Promis
  * dans la boîte. id synthétique `out-<ts>-<rand>` : non-collisionnel avec les update_id Telegram
  * (entiers). status 'done' + direction 'out' → ignoré par le worker (qui ne traite que 'pending').
  */
-export function addOutboxMessage(chatId: number, text: string, messageId?: number): Promise<void> {
+export function addOutboxMessage(
+  chatId: number | string,
+  text: string,
+  messageId?: number,
+): Promise<void> {
   const id = `out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  // Normalise un chat_id numérique en number (cohérence avec les docs entrants) ; garde @canal en string.
+  const normChat =
+    typeof chatId === 'string' && /^-?\d+$/.test(chatId.trim()) ? Number(chatId.trim()) : chatId
   return setDoc(doc(db, 'telegramInbox', id), {
     updateId: id,
-    chatId,
+    chatId: normChat,
     fromUsername: null,
     text,
     status: 'done',
@@ -165,7 +173,7 @@ export async function deleteAllInboxEverywhere(
   botToken: string,
 ): Promise<void> {
   if (botToken) {
-    const byChat = new globalThis.Map<number, number[]>()
+    const byChat = new globalThis.Map<number | string, number[]>()
     for (const m of messages) {
       if (m.messageId == null || !withinDeleteWindow(m)) continue
       const ids = byChat.get(m.chatId) ?? []

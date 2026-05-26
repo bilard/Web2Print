@@ -3,7 +3,7 @@
 // message vers le chat (App → Telegram) et actions par message (éditer / supprimer via InboxItem).
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Inbox, Loader2, Send, X, Trash2 } from 'lucide-react'
+import { Inbox, Loader2, Send, X, Trash2, Info } from 'lucide-react'
 import {
   useTelegramInbox,
   useInboxAutoCleanup,
@@ -162,6 +162,18 @@ export function TelegramInboxView() {
                 <X className="w-3 h-3" /> Annuler
               </button>
             </div>
+          </div>
+        )}
+
+        {!loading && messages.length > 0 && (
+          <div className="max-w-2xl mb-3 flex items-start gap-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] text-neutral-500 leading-relaxed">
+            <Info className="w-3 h-3 mt-0.5 shrink-0 text-neutral-600" />
+            <span>
+              Supprimer un message ici l’efface aussi sur Telegram (sous 48 h). En revanche, un
+              message supprimé depuis Telegram reste affiché ici : l’API bot ne notifie pas les
+              suppressions faites côté Telegram. La synchronisation n’est donc que dans le sens
+              app → Telegram.
+            </span>
           </div>
         )}
 
