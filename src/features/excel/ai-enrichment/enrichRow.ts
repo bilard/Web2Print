@@ -105,7 +105,22 @@ async function jinaFastScrape(url: string): Promise<string | null> {
   return r?.markdown ?? null
 }
 
-/** Récupère le markdown via r.jina.ai. Auth Bearer si clé Jina configurée. */
+/**
+ * Jina renvoie HTTP 200 même quand la cible l'a bloqué : l'échec est signalé DANS le corps
+ * (« Warning: Target URL returned error 4xx », « maybe requiring CAPTCHA », ou « Markdown Content: »
+ * vide). On le détecte pour ne pas passer ce déchet au LLM ni le compter comme un succès (→ escalade
+ * Bright Data dans la cascade).
+ */
+function jinaReportsBlock(md: string): boolean {
+  const head = md.slice(0, 800)
+  if (/Warning:\s*Target URL returned error \d{3}/i.test(head)) return true
+  if (/maybe requiring CAPTCHA/i.test(head)) return true
+  const body = md.match(/Markdown Content:\s*([\s\S]*)$/i)
+  if (body && body[1].trim().length < 40) return true
+  return false
+}
+
+/** Récupère le markdown via r.jina.ai. Auth Bearer si clé Jina configurée. null si Jina a été bloqué. */
 async function jinaFetch(url: string): Promise<{ markdown: string; html: string | null } | null> {
   const jinaKey = getApiKey('jina')
   const headers: Record<string, string> = { Accept: 'text/plain' }
@@ -114,7 +129,8 @@ async function jinaFetch(url: string): Promise<{ markdown: string; html: string 
     const res = await fetch(`https://r.jina.ai/${url}`, { headers })
     if (!res.ok) return null
     const md = await res.text()
-    return md ? { markdown: md, html: null } : null
+    if (!md || jinaReportsBlock(md)) return null
+    return { markdown: md, html: null }
   } catch (err) {
     console.warn('[enrichRow] jina fetch failed:', err)
     return null
@@ -154,17 +170,26 @@ function buildSchemas(targetFields: string[]): {
   }
 }
 
-/** Extrait les URLs d'images depuis le markdown (regex simple, dédupliquée). */
+/**
+ * Extrait les URLs d'images du markdown : (1) le bloc explicite JINA_EXTRACTED_IMAGES (injecté par
+ * Jina/Bright Data — URLs résolues sans exigence d'extension, ex. CDN Adeo/Next.js), (2) les URLs
+ * inline finissant par une extension image. Dédupliqué.
+ */
 function extractImageAssets(md: string): EnrichRowAsset[] {
-  const re = /https?:\/\/[^\s)<>"']+\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s)<>"']*)?/gi
   const seen = new Set<string>()
   const out: EnrichRowAsset[] = []
-  for (const m of md.matchAll(re)) {
-    const url = m[0]
-    if (seen.has(url)) continue
+  const add = (raw: string) => {
+    const url = raw.trim()
+    if (!/^https?:\/\//i.test(url) || seen.has(url)) return
     seen.add(url)
     out.push({ url, type: 'image' })
   }
+  // (1) Bloc explicite : une URL par ligne, sans contrainte d'extension.
+  const block = md.match(/JINA_EXTRACTED_IMAGES_START\s*([\s\S]*?)\s*JINA_EXTRACTED_IMAGES_END/i)
+  if (block) for (const line of block[1].split('\n')) add(line)
+  // (2) URLs inline avec extension image.
+  const re = /https?:\/\/[^\s)<>"']+\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s)<>"']*)?/gi
+  for (const m of md.matchAll(re)) add(m[0])
   return out
 }
 
