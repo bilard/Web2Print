@@ -92,6 +92,20 @@ function deriveTitleFromUrl(url: string): string {
   }
 }
 
+// Clé de cache de scrape PARTAGÉE avec le PIM (ScrapingModal). Mêmes sheetName + rowId → le workflow
+// RÉUTILISE le scrape réussi d'un produit déjà fait dans le PIM (et inversement), sans re-scraper —
+// donc sans re-déclencher l'anti-bot. Indispensable pour les sites DataDome (Leroy Merlin) où un
+// scrape frais est bloqué par intermittence : une fois qu'un scrape a réussi (PIM ou workflow), il
+// reste disponible aux deux. (Store Zustand en mémoire, partagé dans la session app.)
+const SCRAPE_CACHE_SHEET = '__scrape_modal__'
+function deriveScrapeRowId(url: string): string {
+  try {
+    return new URL(url).pathname.replace(/[^a-z0-9]/gi, '_').slice(0, 80) || 'pending'
+  } catch {
+    return 'pending'
+  }
+}
+
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
   if (!url) throw new Error('enrichRow: url manquante')
@@ -100,8 +114,8 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
   const product = await enrichProductCore({
-    sheetName: 'workflow',
-    rowId: `wf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    sheetName: SCRAPE_CACHE_SHEET,
+    rowId: deriveScrapeRowId(url),
     title,
     knownUrl: url,
     mode: 'auto',
