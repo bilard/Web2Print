@@ -115,13 +115,31 @@ function deriveScrapeRowId(url: string): string {
   }
 }
 
-/** Produit vide/bloqué = pas de specs, pas d'images, pas de description (ou flag anti-bot). */
-function isEmptyProduct(p: EnrichedProduct | null): boolean {
-  return (
-    !p ||
-    p.blockedByAntiBot === true ||
-    (!p.specifications?.length && !p.images?.length && !p.description?.trim())
+/**
+ * Produit vide = AUCUN contenu réellement scrapé.
+ *
+ * ⚠️ Le flag `blockedByAntiBot` N'efface PLUS le produit (régression de parité corrigée 2026-05-27) :
+ * le moteur peut renvoyer un produit PARTIEL mais exploitable (JSON-LD : marque/sku/description/image)
+ * TOUT EN étant marqué anti-bot. Le PIM affiche ce partiel avec un bandeau d'alerte
+ * (`ProductEnrichedView`), donc le workflow doit faire pareil — sinon Telegram renvoie « rien »
+ * alors que le PIM montre des données. On juge donc sur le CONTENU, pas sur le flag.
+ *
+ * `name` est volontairement exclu : il peut n'être que le titre dérivé du slug d'URL (cf.
+ * `deriveTitleFromUrl`), présent même sur une page 100 % bloquée → ne prouve aucun scrape réel.
+ */
+export function isEmptyProduct(p: EnrichedProduct | null): boolean {
+  if (!p) return true
+  const hasContent = !!(
+    p.specifications?.length ||
+    p.images?.length ||
+    p.description?.trim() ||
+    p.brand?.trim() ||
+    p.ean?.trim() ||
+    p.advantages?.length ||
+    p.documents?.length ||
+    p.variants?.length
   )
+  return !hasContent
 }
 
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {

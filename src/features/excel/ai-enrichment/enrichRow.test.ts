@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mapProductToFields, mapProductToAssets } from './enrichRow'
+import { mapProductToFields, mapProductToAssets, isEmptyProduct } from './enrichRow'
 import type { EnrichedProduct } from './types'
 
 const base: EnrichedProduct = {
@@ -82,5 +82,40 @@ describe('mapProductToAssets', () => {
 
   it('aucun asset → tableau vide', () => {
     expect(mapProductToAssets(base)).toEqual([])
+  })
+})
+
+describe('isEmptyProduct (parité PIM ↔ workflow)', () => {
+  it('null → vide', () => {
+    expect(isEmptyProduct(null)).toBe(true)
+  })
+
+  it('produit PARTIEL marqué anti-bot (JSON-LD : marque + description + image) → CONSERVÉ', () => {
+    // Régression historique : le workflow jetait ce produit alors que le PIM l'affiche.
+    const p: EnrichedProduct = {
+      ...base,
+      name: 'Tondeuse Rotak 18V',
+      brand: 'Bosch',
+      description: 'Tondeuse sur batterie.',
+      images: ['https://media.adeo.com/p/photo1.jpg'],
+      blockedByAntiBot: true,
+    }
+    expect(isEmptyProduct(p)).toBe(false)
+  })
+
+  it('produit RÉELLEMENT vide marqué anti-bot (aucun contenu) → vide', () => {
+    const p: EnrichedProduct = { ...base, scrapingProvider: 'Jina (bloqué)', blockedByAntiBot: true }
+    expect(isEmptyProduct(p)).toBe(true)
+  })
+
+  it('seul le name (titre dérivé du slug) sans contenu réel → vide', () => {
+    // name est exclu du calcul : présent même sur une page 100 % bloquée.
+    const p: EnrichedProduct = { ...base, name: 'tondeuse sur batterie bosch rotak 18v' }
+    expect(isEmptyProduct(p)).toBe(true)
+  })
+
+  it('specs seules suffisent à conserver le produit', () => {
+    const p: EnrichedProduct = { ...base, specifications: [{ name: 'Poids', value: '15 kg' }] }
+    expect(isEmptyProduct(p)).toBe(false)
   })
 })
