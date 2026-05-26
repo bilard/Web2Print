@@ -9,13 +9,12 @@
  *   2. Récupérer l'endpoint WSS : wss://brd-customer-<ID>-zone-<ZONE>:<PASSWORD>@brd.superproxy.io:9222
  *   3. Le coller dans l'app : Settings → Connecteurs → Bright Data → champ « Scraping Browser (WSS) »
  *      (stocké dans Firestore config/brightdata.browserWs, lu ici — pas de redéploiement nécessaire).
- *   Fallback : secret Secret Manager BRIGHTDATA_BROWSER_WS si Firestore vide.
+ *   Pas de secret Secret Manager : le WSS contient un mot de passe et se gère 100 % via l'UI/Firestore.
  *
  * Coût : significativement plus élevé que le Web Unlocker (navigateur réel + temps de session).
  * Appelé UNIQUEMENT en dernier recours (cf. callScrape côté client).
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
-import { defineSecret } from 'firebase-functions/params'
 import { logger } from 'firebase-functions/v2'
 import type { Browser } from 'puppeteer-core'
 import { getBrightDataBrowserWs } from './brightDataToken'
@@ -28,8 +27,6 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 const puppeteerCore = require('puppeteer-core')
 const puppeteer = addExtra(puppeteerCore)
 puppeteer.use(StealthPlugin())
-
-const BRIGHTDATA_BROWSER_WS = defineSecret('BRIGHTDATA_BROWSER_WS')
 
 interface ScrapingBrowserRequest {
   url: string
@@ -45,7 +42,6 @@ export const scrapeWithScrapingBrowser = onCall<ScrapingBrowserRequest, Promise<
     timeoutSeconds: 540, // navigateur réel + résolution challenge JS → long
     memory: '1GiB',
     maxInstances: 5,
-    secrets: [BRIGHTDATA_BROWSER_WS],
   },
   async (req) => {
     if (!req.auth) {
@@ -55,8 +51,8 @@ export const scrapeWithScrapingBrowser = onCall<ScrapingBrowserRequest, Promise<
     if (typeof url !== 'string' || !/^https?:\/\//.test(url)) {
       throw new HttpsError('invalid-argument', 'URL invalide ou manquante')
     }
-    // WSS lu depuis Firestore (Settings → Connecteurs, sans redéploiement) puis secret en fallback.
-    const wsEndpoint = await getBrightDataBrowserWs(BRIGHTDATA_BROWSER_WS.value())
+    // WSS lu UNIQUEMENT depuis Firestore (Settings → Connecteurs, sans redéploiement ni secret CLI).
+    const wsEndpoint = await getBrightDataBrowserWs(undefined)
     if (!wsEndpoint) {
       throw new HttpsError(
         'failed-precondition',
