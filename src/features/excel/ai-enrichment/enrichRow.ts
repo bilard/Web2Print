@@ -92,6 +92,17 @@ function deriveTitleFromUrl(url: string): string {
   }
 }
 
+// IDENTIQUES au PIM ScrapingModal (sheetName + dérivation rowId) → même clé de cache mémoire, donc
+// même comportement : le workflow et « Scraper le web » partagent leurs scrapes dans la session.
+const SCRAPE_MODAL_SHEET = '__scrape_modal__'
+function deriveScrapeRowId(url: string): string {
+  try {
+    return new URL(url).pathname.replace(/[^a-z0-9]/gi, '_').slice(0, 80) || 'pending'
+  } catch {
+    return 'pending'
+  }
+}
+
 
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
@@ -101,33 +112,17 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
 
-  // Stratégie identique au PIM :
-  //  1) essai sur l'URL fournie (le revendeur a le prix exact) ;
-  //  2) si bloquée (DataDome) → essais SANS knownUrl → le moteur RECHERCHE par titre et bascule sur
-  //     le SITE FABRICANT (Bosch…) ou un autre revendeur non bloqué, comme le bouton « site officiel »
-  //     du PIM. C'est ce fallback qui manquait au workflow (knownUrl forçait l'URL bloquée).
-  const rowId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-  const isEmpty = (p: EnrichedProduct | null): boolean =>
-    !p || p.blockedByAntiBot === true ||
-    (!(p.specifications?.length) && !(p.images?.length) && !p.description?.trim())
-
-  let product: EnrichedProduct | null = null
-  const MAX_ATTEMPTS = 3
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const direct = attempt === 1
-    if (!direct) {
-      log?.(`[enrichRow] URL bloquée — essai ${attempt}/${MAX_ATTEMPTS} via recherche site fabricant / titre…`)
-    }
-    product = await enrichProductCore({
-      sheetName: 'workflow',
-      rowId,
-      title,
-      // 1er essai : URL directe (prix revendeur). Suivants : on omet knownUrl → recherche fabricant.
-      ...(direct ? { knownUrl: url } : {}),
-      mode: 'auto',
-    })
-    if (!isEmpty(product)) break
-  }
+  // Appel STRICTEMENT identique à « Scraper le web » du PIM (ScrapingModal) : mêmes sheetName/rowId
+  // (clé de cache mémoire Zustand — PAS localStorage), même titre, même knownUrl, UN seul appel.
+  // → le workflow se comporte exactement comme le PIM : réutilise un scrape réussi dans la session,
+  // sinon scrape frais identique. Pas de retry (le PIM n'en fait pas — éviter d'épuiser Bright Data).
+  const product = await enrichProductCore({
+    sheetName: SCRAPE_MODAL_SHEET,
+    rowId: deriveScrapeRowId(url),
+    title,
+    knownUrl: url,
+    mode: 'auto',
+  })
 
   if (!product) {
     log?.('[enrichRow] moteur PIM : aucune donnée')
