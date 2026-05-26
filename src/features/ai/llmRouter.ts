@@ -208,6 +208,40 @@ export function getProviderCascade(onWarning?: (msg: string) => void): LLMProvid
   return supported
 }
 
+// ── Cooldown providers ───────────────────────────────────────────────────────
+// Quand un provider signale une indisponibilité DATÉE (ex : quota Claude épuisé → « regain access
+// on <date> »), on le met en cooldown et on le SAUTE dans la cascade jusqu'à cette date — au lieu
+// de re-tenter (et re-logguer un 400) à chaque appel. Persisté en localStorage (survit aux reloads).
+const COOLDOWN_KEY = 'web2print.llm.cooldown'
+
+function loadCooldowns(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(COOLDOWN_KEY) || '{}') as Record<string, number>
+  } catch {
+    return {}
+  }
+}
+function cooldownUntil(provider: LLMProviderId): number {
+  return loadCooldowns()[provider] ?? 0
+}
+function setCooldown(provider: LLMProviderId, untilMs: number): void {
+  try {
+    const all = loadCooldowns()
+    all[provider] = untilMs
+    localStorage.setItem(COOLDOWN_KEY, JSON.stringify(all))
+  } catch {
+    /* localStorage indisponible → best-effort, on n'empêche pas l'appel */
+  }
+}
+/** Parse le 400 de quota Anthropic (« regain access on YYYY-MM-DD at HH:MM UTC ») → timestamp UTC. */
+function parseClaudeQuotaRegain(msg: string): number | null {
+  if (!/usage limit/i.test(msg)) return null
+  const m = msg.match(/regain access on (\d{4}-\d{2}-\d{2}) at (\d{2}:\d{2})\s*UTC/i)
+  if (!m) return null
+  const t = Date.parse(`${m[1]}T${m[2]}:00Z`)
+  return Number.isFinite(t) ? t : null
+}
+
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
   // Si forceProvider, respecter la préférence et retomber sur la cascade en fallback
   const cascadeFromStore = getProviderCascade(opts.onCascadeWarning)
@@ -242,6 +276,17 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   const activity = useAiActivityStore.getState()
   for (let i = 0; i < cascade.length; i++) {
     const provider = cascade[i]
+    // Provider en cooldown (indisponibilité datée connue, ex : quota Claude) → on le saute sans
+    // même tenter l'appel.
+    const cdUntil = cooldownUntil(provider)
+    if (cdUntil > Date.now()) {
+      const nextProvider = cascade[i + 1]
+      console.warn(
+        `[llmRouter] ${opts.task}: "${provider}" ignoré (indisponible jusqu'à ${new Date(cdUntil).toISOString()})` +
+          (nextProvider ? `, fallback "${nextProvider}".` : '.'),
+      )
+      continue
+    }
     const model = modelForProvider(provider, modelOverride)
     const activityId = nextAiActivityId(`json-${opts.task}`)
     activity.start({ id: activityId, provider, model, label: opts.task, kind: 'json' })
@@ -270,6 +315,17 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
         costUsd,
       })
       opts.onProviderFailed?.({ provider, error: errAsErr })
+      // Quota Claude épuisé avec date de rétablissement → cooldown : on ne le re-sollicitera plus
+      // jusque-là (évite un 400 par appel sur tout un batch, et après reload).
+      if (provider === 'claude') {
+        const until = parseClaudeQuotaRegain(errAsErr.message)
+        if (until && until > Date.now()) {
+          setCooldown('claude', until)
+          console.warn(
+            `[llmRouter] Claude en quota épuisé jusqu'à ${new Date(until).toISOString()} — désormais ignoré jusque-là.`,
+          )
+        }
+      }
       const nextProvider = cascade[i + 1]
       if (nextProvider) {
         console.warn(
