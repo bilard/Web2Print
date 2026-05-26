@@ -9,7 +9,7 @@
  */
 import { enrichProductCore } from './useProductEnrichment'
 import type { EnrichedProduct } from './types'
-import { isJunkImageUrl, isPictoOrLogo } from './imageFilter'
+import { isJunkImageUrl, classifyImage, getProductRefs } from './imageFilter'
 
 export interface EnrichRowInput {
   url: string
@@ -65,10 +65,22 @@ export function mapProductToFields(
   return out
 }
 
-/** Assets exploitables : images produit (logos/pictos/tracking filtrés) + documents PDF. */
+/** Assets exploitables : photos produit (même classifieur que le PIM) + documents PDF. */
 export function mapProductToAssets(p: EnrichedProduct): EnrichRowAsset[] {
+  // Réfs produit pour la classification photo/picto — exactement comme l'onglet « Photos » du PIM.
+  const refs = getProductRefs({
+    specifications: p.specifications,
+    variants: p.variants,
+    title: p.name,
+    sourceUrl: p.sourceUrl,
+  })
   const images = (p.images ?? [])
-    .filter((u) => u && !isJunkImageUrl(u) && !isPictoOrLogo(u))
+    .filter((u) => {
+      if (!u || isJunkImageUrl(u)) return false
+      // Override manuel du PIM prioritaire, sinon le classifieur partagé.
+      const klass = p.imageClassOverrides?.[u] ?? classifyImage(u, refs)
+      return klass === 'photo'
+    })
     .map((u) => ({ url: u, type: 'image' as const }))
   const docs = (p.documents ?? [])
     .filter((d) => d.url)
