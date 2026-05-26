@@ -117,6 +117,14 @@ describe('injectInput', () => {
     expect(r.workflow.nodes[0].config).toEqual({ text: 'bonjour' })
   })
 
+  it('Scrape URL : extrait l’URL du texte (robuste aux préfixes parasites)', () => {
+    const w = wf('A', [node('n1', 'scrape-url', { urls: '' })])
+    const r = injectInput(w, '/run Scrape https://www.leroymerlin.fr/produits/x-88326076.html')
+    expect(r.workflow.nodes[0].config).toEqual({
+      urls: 'https://www.leroymerlin.fr/produits/x-88326076.html',
+    })
+  })
+
   it('aucun node d’entrée alimentable → 0 injection', () => {
     const w = wf('A', [node('n1', 'export-excel', {})])
     expect(injectInput(w, 'x').injected).toBe(0)

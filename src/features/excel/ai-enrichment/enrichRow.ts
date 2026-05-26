@@ -59,7 +59,9 @@ export interface EnrichRowResult {
  * directement à Bright Data (économise les appels). Bright Data n'est PAS utilisé pour le fastScrape
  * des onglets secondaires (coût crédits) — voir jinaFastScrape.
  */
-function buildDeepScrape(): (url: string) => Promise<{ markdown: string; html: string | null } | null> {
+function buildDeepScrape(
+  log?: (msg: string) => void,
+): (url: string) => Promise<{ markdown: string; html: string | null } | null> {
   return async (url: string) => {
     let sawChallenge = false
 
@@ -69,7 +71,10 @@ function buildDeepScrape(): (url: string) => Promise<{ markdown: string; html: s
         try {
           const r = await firecrawlScrape(url, fcKey)
           if (r?.markdown) {
-            if (!looksLikeBotChallenge(r.markdown)) return { markdown: r.markdown, html: null }
+            if (!looksLikeBotChallenge(r.markdown)) {
+              log?.('[enrichRow] connecteur : Firecrawl ✓')
+              return { markdown: r.markdown, html: null }
+            }
             sawChallenge = true
           }
         } catch (err) {
@@ -78,7 +83,10 @@ function buildDeepScrape(): (url: string) => Promise<{ markdown: string; html: s
       }
       const j = await jinaFetch(url)
       if (j?.markdown) {
-        if (!looksLikeBotChallenge(j.markdown)) return j
+        if (!looksLikeBotChallenge(j.markdown)) {
+          log?.('[enrichRow] connecteur : Jina ✓')
+          return j
+        }
         sawChallenge = true
       }
     }
@@ -86,15 +94,22 @@ function buildDeepScrape(): (url: string) => Promise<{ markdown: string; html: s
     // Dernier recours : Bright Data Web Unlocker (anti-bot premium, via Cloud Function). Renvoie
     // markdown + images injectées (bloc JINA_EXTRACTED_IMAGES). Dégradation propre si non configuré
     // (callScrape renvoie null → on retourne null → champs vides plutôt qu'une page challenge).
+    log?.(
+      isHostKnownBlocked(url)
+        ? '[enrichRow] host anti-bot connu → Bright Data'
+        : '[enrichRow] Jina/Firecrawl indisponibles → tentative Bright Data',
+    )
     try {
       const bd = await brightDataScrapeWithDocs(url)
       if (bd?.markdown) {
         if (sawChallenge || isHostKnownBlocked(url)) markHostBlocked(url)
+        log?.('[enrichRow] connecteur : Bright Data ✓')
         return { markdown: bd.markdown, html: null }
       }
     } catch (err) {
       console.warn('[enrichRow] bright data failed:', err)
     }
+    log?.('[enrichRow] connecteur : AUCUN (Jina/Firecrawl/Bright Data tous échoués)')
     return null
   }
 }
@@ -212,7 +227,7 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
 
   log?.(`[enrichRow] scrape ${url}`)
   const bundle = await scrapeProductBundle(url, {
-    deepScrape: buildDeepScrape(),
+    deepScrape: buildDeepScrape(log),
     fastScrape: jinaFastScrape,
     log,
   })
@@ -251,6 +266,8 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
       schemaForLLM: jsonSchema,
       version: 'enrichRow.v1',
       forceProvider: provider,
+      onProviderUsed: ({ provider: used, model: usedModel }) =>
+        log?.(`[enrichRow] LLM : ${used} (${usedModel})`),
     })
     fields = parsed
   } catch (err) {

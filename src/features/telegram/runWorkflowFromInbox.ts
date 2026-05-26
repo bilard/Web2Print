@@ -36,6 +36,12 @@ export function resolveRun(workflows: Workflow[], rest: string): RunResolution {
   return { ok: true, workflow: match, input }
 }
 
+/** Extrait les URLs http(s) d'un texte (une par ligne). Vide si aucune. */
+function extractUrls(text: string): string {
+  const matches = text.match(/https?:\/\/[^\s,;]+/gi)
+  return matches ? Array.from(new Set(matches)).join('\n') : ''
+}
+
 // Nodes d'ENTRÉE alimentables par /run → champ de config recevant le texte d'entrée.
 const ENTRY_FIELD: Record<string, string> = {
   'text-input': 'text', // Saisie texte
@@ -64,11 +70,15 @@ export function injectInput(wf: Workflow, input: string): { workflow: Workflow; 
   if (!targetType) return { workflow: wf, injected: 0 }
 
   const field = ENTRY_FIELD[targetType]
+  // Pour Scrape URL, on extrait la/les URL(s) du texte (robuste aux préfixes parasites type
+  // « /run Scrape https://… ») ; sinon on injecte le texte tel quel.
+  const value =
+    targetType === 'scrape-url' ? extractUrls(input) || input : input
   let injected = 0
   const nodes = wf.nodes.map((n) => {
     if (n.type !== targetType) return n
     injected++
-    return { ...n, config: { ...(n.config as Record<string, unknown>), [field]: input } }
+    return { ...n, config: { ...(n.config as Record<string, unknown>), [field]: value } }
   })
   return { workflow: { ...wf, nodes }, injected }
 }
