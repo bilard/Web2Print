@@ -25,6 +25,7 @@ import {
   ChevronUp,
   X,
   AlertTriangle,
+  Braces,
 } from 'lucide-react'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -805,7 +806,7 @@ function ProductsPreview({ value }: { value: unknown }) {
   )
 }
 
-function JsonPreview({ value }: { value: unknown }) {
+function JsonPreview({ value, maxLen = 4000 }: { value: unknown; maxLen?: number }) {
   let text: string
   try {
     text = JSON.stringify(value, null, 2)
@@ -813,10 +814,83 @@ function JsonPreview({ value }: { value: unknown }) {
     text = String(value)
   }
   return (
-    <pre className="text-[11px] text-neutral-300 bg-[#0f0f0f] border border-neutral-800 rounded p-2">
-      {text.slice(0, 4000)}
-      {text.length > 4000 ? '\n…' : ''}
+    <pre className="text-[11px] text-neutral-300 bg-[#0f0f0f] border border-neutral-800 rounded p-2 whitespace-pre-wrap break-words">
+      {text.slice(0, maxLen)}
+      {text.length > maxLen ? '\n…' : ''}
     </pre>
+  )
+}
+
+// Clés de config potentiellement sensibles → masquées dans le dump JSON (ex : botToken du node
+// send-telegram). On ne veut pas exposer un secret dans l'aperçu.
+const SECRET_KEY_RE = /token|secret|password|api[-_]?key|bearer|cookie|credential/i
+
+function redactSecrets(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(redactSecrets)
+  if (v && typeof v === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      out[k] =
+        SECRET_KEY_RE.test(k) && typeof val === 'string' && val ? '••• (masqué)' : redactSecrets(val)
+    }
+    return out
+  }
+  return v
+}
+
+// Plafonne les grands tableaux (ex : sheet.rows d'un scrape) pour garder le JSON lisible ET éviter
+// que la troncature finale ne fasse disparaître les nodes suivants de `allData`.
+const ARRAY_PREVIEW_MAX = 50
+function capArrays(v: unknown, max = ARRAY_PREVIEW_MAX): unknown {
+  if (Array.isArray(v)) {
+    const capped: unknown[] = v.slice(0, max).map((x) => capArrays(x, max))
+    if (v.length > max) capped.push(`… +${v.length - max} (${v.length} au total)`)
+    return capped
+  }
+  if (v && typeof v === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) out[k] = capArrays(val, max)
+    return out
+  }
+  return v
+}
+
+/**
+ * Construit la donnée consolidée de TOUS les nodes du workflow : pour chacun, son type, son statut,
+ * sa config (paramètres) et ses sorties d'exécution. Secrets masqués. Clé = label du node (suffixée
+ * par un fragment d'id si deux nodes partagent le même label).
+ */
+function buildAllNodesData(
+  wf: Workflow | null,
+  states: Record<string, NodeRunState>,
+  labelFor: (id: string) => string,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const n of wf?.nodes ?? []) {
+    const st = states[n.id]
+    let key = labelFor(n.id)
+    if (key in out) key = `${key} (${n.id.slice(0, 6)})`
+    out[key] = capArrays(
+      redactSecrets({
+        type: n.type,
+        status: st?.status ?? 'idle',
+        config: n.config,
+        outputs: st?.outputs ?? null,
+        ...(st?.error ? { error: st.error } : {}),
+      }),
+    )
+  }
+  return out
+}
+
+function AllNodesJsonPreview({ data }: { data: Record<string, unknown> }) {
+  if (Object.keys(data).length === 0) {
+    return <EmptyState label="Aucun composant dans le workflow." />
+  }
+  return (
+    <div className="flex-1 min-h-0 overflow-auto">
+      <JsonPreview value={data} maxLen={200000} />
+    </div>
   )
 }
 
@@ -889,6 +963,14 @@ export function DataPreviewPanel() {
   const staticTarget = useStaticNodePreview(wf ?? null, effectiveSelectedId, labelFor)
   const target = staticTarget ?? runTarget
 
+  // Mode « Tout » : JSON consolidé (config + sorties) de tous les composants du workflow.
+  const [allMode, setAllMode] = useState(false)
+  const allData = useMemo(
+    () => buildAllNodesData(wf ?? null, states, labelFor),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [wf, states],
+  )
+
   // 380 px = header (~28) + padding (~16) + toolbar (~24) + table header (~28)
   // + 10 lignes × ~23 + pagination (~22) + marges. Cale exactement le contenu
   // sur la pagination par défaut (`DEFAULT_PAGE_SIZE = 10`).
@@ -912,37 +994,60 @@ export function DataPreviewPanel() {
           maxHeightVh={maxHeightVh}
         />
       ) : null}
-      <button
-        type="button"
-        onClick={toggleCollapsed}
-        className="px-4 py-1.5 text-xs uppercase text-neutral-500 flex items-center gap-2 border-b border-neutral-900 w-full text-left hover:bg-white/[0.02] transition-colors"
-        aria-expanded={!collapsed}
-        title={collapsed ? 'Déplier l’aperçu' : 'Replier l’aperçu'}
-      >
-        {collapsed ? (
-          <ChevronUp className="w-3 h-3 text-neutral-600" />
-        ) : (
-          <ChevronDown className="w-3 h-3 text-neutral-600" />
-        )}
-        {target?.status === 'running' || isRunning ? (
-          <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
-        ) : (
-          <Eye className="w-3 h-3" />
-        )}
-        <span>Aperçu données</span>
-        {target ? (
-          <span className="text-neutral-600 normal-case truncate">
-            · {target.nodeLabel}
-            <span className="text-neutral-700"> → {target.portName}</span>
-            {target.status === 'running' ? (
-              <span className="ml-2 text-indigo-400">live</span>
-            ) : null}
-          </span>
+      <div className="flex items-center border-b border-neutral-900">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          className="px-4 py-1.5 text-xs uppercase text-neutral-500 flex items-center gap-2 flex-1 min-w-0 text-left hover:bg-white/[0.02] transition-colors"
+          aria-expanded={!collapsed}
+          title={collapsed ? 'Déplier l’aperçu' : 'Replier l’aperçu'}
+        >
+          {collapsed ? (
+            <ChevronUp className="w-3 h-3 text-neutral-600" />
+          ) : (
+            <ChevronDown className="w-3 h-3 text-neutral-600" />
+          )}
+          {target?.status === 'running' || isRunning ? (
+            <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
+          ) : (
+            <Eye className="w-3 h-3" />
+          )}
+          <span>Aperçu données</span>
+          {allMode ? (
+            <span className="text-neutral-600 normal-case truncate">
+              · tous les composants (JSON)
+            </span>
+          ) : target ? (
+            <span className="text-neutral-600 normal-case truncate">
+              · {target.nodeLabel}
+              <span className="text-neutral-700"> → {target.portName}</span>
+              {target.status === 'running' ? (
+                <span className="ml-2 text-indigo-400">live</span>
+              ) : null}
+            </span>
+          ) : null}
+        </button>
+        {!collapsed ? (
+          <button
+            type="button"
+            onClick={() => setAllMode((v) => !v)}
+            aria-pressed={allMode}
+            title="Afficher le JSON (config + sorties) de tous les composants"
+            className={`mr-2 px-2 py-1 text-[10px] uppercase tracking-wider flex items-center gap-1 rounded border transition-colors ${
+              allMode
+                ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-200'
+                : 'border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:bg-white/[0.03]'
+            }`}
+          >
+            <Braces className="w-3 h-3" /> Tout
+          </button>
         ) : null}
-      </button>
+      </div>
       {!collapsed ? (
         <div className="flex-1 min-h-0 px-4 py-2 flex flex-col overflow-hidden">
-          {target ? (
+          {allMode ? (
+            <AllNodesJsonPreview data={allData} />
+          ) : target ? (
             target.status === 'error' && target.errorReason ? (
               <div className="flex items-start gap-2 text-xs text-amber-300/90 py-3">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
