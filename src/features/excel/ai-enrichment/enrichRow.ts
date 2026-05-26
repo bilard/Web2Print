@@ -10,6 +10,12 @@
 import { enrichProductCore } from './useProductEnrichment'
 import type { EnrichedProduct } from './types'
 import { isJunkImageUrl, classifyImage, getProductRefs } from './imageFilter'
+import {
+  brightDataScrapeWithDocs,
+  getLastBrightDataError,
+} from '@/features/scraping/core/brightDataFallback'
+import { looksLikeBotChallenge } from './markdownSanitize'
+import { parseSpecsFromMarkdown } from '@/features/scraping/core/parsers/parseSpecifications'
 
 export interface EnrichRowInput {
   url: string
@@ -115,6 +121,93 @@ function deriveScrapeRowId(url: string): string {
   }
 }
 
+/** Produit vide/bloqué = pas de specs, pas d'images, pas de description (ou flag anti-bot). */
+function isEmptyProduct(p: EnrichedProduct | null): boolean {
+  return (
+    !p ||
+    p.blockedByAntiBot === true ||
+    (!p.specifications?.length && !p.images?.length && !p.description?.trim())
+  )
+}
+
+/** URLs d'images du markdown (bloc JINA_EXTRACTED_IMAGES + liens inline avec extension). */
+function imagesFromMarkdown(md: string): string[] {
+  const out = new Set<string>()
+  const block = md.match(/JINA_EXTRACTED_IMAGES_START\s*([\s\S]*?)\s*JINA_EXTRACTED_IMAGES_END/i)
+  if (block) for (const line of block[1].split('\n')) {
+    const u = line.trim()
+    if (/^https?:\/\//i.test(u)) out.add(u)
+  }
+  for (const m of md.matchAll(/https?:\/\/[^\s)<>"']+\.(?:jpg|jpeg|png|webp|gif)(?:\?[^\s)<>"']*)?/gi)) {
+    out.add(m[0])
+  }
+  return Array.from(out)
+}
+
+function mergeSpecsByName(
+  a: Array<{ name: string; value: string }>,
+  b: Array<{ name: string; value: string }>,
+): Array<{ name: string; value: string }> {
+  const seen = new Set<string>()
+  const out: Array<{ name: string; value: string }> = []
+  for (const s of [...a, ...b]) {
+    const k = s.name?.trim().toLowerCase()
+    if (!k || !s.value?.trim() || seen.has(k)) continue
+    seen.add(k)
+    out.push(s)
+  }
+  return out
+}
+
+/**
+ * Fallback DIRECT Bright Data Web Unlocker — appelé quand le moteur PIM revient bloqué. GARANTIT
+ * l'usage du Web Unlocker (financé mais sous-utilisé par le moteur). Construit un EnrichedProduct
+ * depuis le JSON-LD + specs markdown + images du HTML débloqué par Bright Data (résidentiel → passe
+ * DataDome). Renvoie null si Bright Data échoue ou renvoie encore une page challenge.
+ */
+async function scrapeViaBrightDataDirect(
+  url: string,
+  log?: (m: string) => void,
+): Promise<EnrichedProduct | null> {
+  log?.('[enrichRow] moteur bloqué → appel DIRECT Bright Data Web Unlocker…')
+  let bd: Awaited<ReturnType<typeof brightDataScrapeWithDocs>>
+  try {
+    bd = await brightDataScrapeWithDocs(url)
+  } catch (err) {
+    log?.(`[enrichRow] Bright Data direct : exception ${err instanceof Error ? err.message : String(err)}`)
+    return null
+  }
+  if (!bd?.markdown) {
+    const e = getLastBrightDataError()
+    log?.(`[enrichRow] Bright Data direct échoué${e ? ` (${e.code} : ${e.message.slice(0, 120)})` : ' (aucune réponse)'}`)
+    return null
+  }
+  if (looksLikeBotChallenge(bd.markdown)) {
+    log?.('[enrichRow] Bright Data direct : page anti-bot renvoyée (DataDome non résolu)')
+    return null
+  }
+  const sd = bd.structuredData
+  const specs = mergeSpecsByName(sd?.specs ?? [], parseSpecsFromMarkdown(bd.markdown))
+  log?.(`[enrichRow] Bright Data direct ✓ — ${specs.length} specs`)
+  return {
+    name: sd?.name,
+    brand: sd?.brand,
+    distributorRef: sd?.sku,
+    manufacturerRef: sd?.mpn,
+    ean: sd?.gtin,
+    description: sd?.description ?? '',
+    breadcrumb: sd?.category ? [sd.category] : undefined,
+    specifications: specs,
+    images: [...(sd?.images ?? []), ...imagesFromMarkdown(bd.markdown)],
+    documents: bd.pdfLinks.map((d) => ({ name: d.name, url: d.url, filename: d.name })),
+    advantages: [],
+    variants: [],
+    sourceUrl: url,
+    additionalSources: [],
+    generatedAt: Date.now(),
+    scrapingProvider: 'bright-data-direct',
+  }
+}
 
 export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult> {
   const { url, targetFields, log } = input
@@ -124,33 +217,25 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
   const title = deriveTitleFromUrl(url)
   log?.(`[enrichRow] enrichissement (moteur PIM) ${url}${title ? ` — titre « ${title} »` : ''}`)
 
-  // Appel identique au PIM (mêmes sheetName/rowId = cache mémoire Zustand, titre, knownUrl), MAIS
-  // avec retry : un scrape frais de site DataDome (Leroy Merlin) réussit ~1 fois sur 2 (intermittence
-  // anti-bot). On re-tente tant que le résultat est bloqué/vide. Même rowId → le moteur invalide le
-  // cache « challenge » et re-scrape frais à chaque essai. Les sites accessibles passent au 1er coup.
-  const rowId = deriveScrapeRowId(url)
-  const isEmpty = (p: EnrichedProduct | null): boolean =>
-    !p || p.blockedByAntiBot === true ||
-    (!(p.specifications?.length) && !(p.images?.length) && !p.description?.trim())
+  // 1) Moteur PIM (un essai — réussit vite sur les sites accessibles, parfois via Jina sur DataDome).
+  let product = await enrichProductCore({
+    sheetName: SCRAPE_MODAL_SHEET,
+    rowId: deriveScrapeRowId(url),
+    title,
+    knownUrl: url,
+    mode: 'auto',
+  })
 
-  let product: EnrichedProduct | null = null
-  const MAX_ATTEMPTS = 3
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    product = await enrichProductCore({
-      sheetName: SCRAPE_MODAL_SHEET,
-      rowId,
-      title,
-      knownUrl: url,
-      mode: 'auto',
-    })
-    if (!isEmpty(product)) break
-    if (attempt < MAX_ATTEMPTS) {
-      log?.(`[enrichRow] bloqué (anti-bot intermittent) — nouvel essai ${attempt + 1}/${MAX_ATTEMPTS}…`)
-    }
+  // 2) Si bloqué/vide → appel DIRECT au Web Unlocker Bright Data (financé mais sous-utilisé par le
+  //    moteur). C'est le seul moyen fiable de passer DataDome (IPs résidentielles). Garantit l'usage
+  //    du Web Unlocker → la conso Bright Data doit monter, et la donnée arriver sur ces sites.
+  if (isEmptyProduct(product)) {
+    const bd = await scrapeViaBrightDataDirect(url, log)
+    if (bd && !isEmptyProduct(bd)) product = bd
   }
 
-  if (!product) {
-    log?.('[enrichRow] moteur PIM : aucune donnée')
+  if (isEmptyProduct(product)) {
+    log?.('[enrichRow] aucune donnée (moteur + Bright Data direct épuisés)')
     return { fields: Object.fromEntries(targetFields.map((f) => [f, null])), assets: [] }
   }
 
