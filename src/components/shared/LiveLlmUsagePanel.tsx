@@ -335,9 +335,9 @@ export function LiveLlmUsagePanel() {
   return (
     <aside
       aria-label="Consommation IA en temps réel"
-      className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 flex flex-col gap-4 sticky top-4"
+      className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 flex flex-col gap-4 max-h-[calc(100dvh-10rem)]"
     >
-      <header className="flex items-start justify-between gap-3">
+      <header className="flex items-start justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <Activity className="w-4 h-4 text-emerald-400" />
           <div className="min-w-0">
@@ -358,7 +358,7 @@ export function LiveLlmUsagePanel() {
       </header>
 
       {/* Bandeau global */}
-      <div className="grid grid-cols-3 gap-2 text-[10px]">
+      <div className="grid grid-cols-3 gap-2 text-[10px] shrink-0">
         <div className="bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">
           <p className="text-white/30 uppercase tracking-wider">Total ce mois</p>
           <p className="text-base font-mono text-white mt-0.5">{formatEur(grandTotalUsd)}</p>
@@ -388,8 +388,10 @@ export function LiveLlmUsagePanel() {
         </div>
       </div>
 
-      {/* Tableau par provider */}
-      <div className="flex flex-col">
+      {/* Liste scrollable — l'en-tête et les cartes KPI ci-dessus restent fixes. */}
+      <div className="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2 flex flex-col gap-4">
+        {/* Tableau par provider */}
+        <div className="flex flex-col">
         <div className="grid grid-cols-12 gap-2 px-2 py-1.5 text-[9px] text-white/30 uppercase tracking-wider border-b border-white/5">
           <div className="col-span-4">Provider</div>
           <div className="col-span-3 text-right">Tokens (in / out)</div>
@@ -672,6 +674,7 @@ export function LiveLlmUsagePanel() {
         <em>locaux</em> : elles déclenchent un warning à ≥ 80 % et un état "limite atteinte" à ≥ 100 %, mais ne rechargent pas le compte chez le provider.
         Pour recharger réellement les crédits, cliquer sur le nom du provider <ExternalLink className="inline w-2 h-2 -translate-y-px" />.
       </p>
+      </div>
     </aside>
   )
 }
