@@ -56,6 +56,7 @@ type LLMTask =
   | 'design.logoClassify'
   | 'design.semanticLayout'
   | 'workflow.generate'
+  | 'telegram.chat'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -101,6 +102,9 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // (JSON fiable via responseSchema sur v1beta + disponibilité), Claude Opus 4.7 en
   // fallback (meilleur raisonnement de graphe si la clé Gemini manque).
   'workflow.generate': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Chat libre depuis Telegram : aucun `model` override → utilise le modèle SÉLECTIONNÉ
+  // de chaque provider de la cascade (= « LLM activé » côté utilisateur).
+  'telegram.chat': { primary: 'claude', fallback: 'gemini' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -119,6 +123,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.logoClassify':    0,
   'design.semanticLayout':  0,
   'workflow.generate':      0.2,
+  'telegram.chat':          0.4,
 }
 
 interface GenerateJsonOptions<T> {

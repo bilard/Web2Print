@@ -22,6 +22,14 @@ import {
 import { generateAndSaveWorkflow, requiresManualFile } from './generateWorkflowFromInbox'
 import { executeWorkflowAndCollect, type ExecutionResult } from './executeWorkflowAndCollect'
 import { resolveRun, injectInput } from './runWorkflowFromInbox'
+import { askLlm } from './askLlmFromInbox'
+
+/** Limite Telegram d'un message texte (4096 car.) — on tronque proprement en deçà. */
+const TELEGRAM_TEXT_LIMIT = 4096
+function truncateForTelegram(text: string): string {
+  if (text.length <= TELEGRAM_TEXT_LIMIT) return text
+  return text.slice(0, TELEGRAM_TEXT_LIMIT - 1) + '…'
+}
 import { listWorkflows, saveWorkflow } from '@/features/workflows/persistence/workflowsApi'
 // Peuple le registre de nodes (imports à effet de bord) : la page Telegram n'importe pas l'éditeur,
 // donc sans ça l'exécution headless échoue avec « Unknown node type ».
@@ -201,9 +209,24 @@ export function useTelegramInboxWorker(): void {
           }
           return
         }
-        // Message simple (sans commande) → aucune réponse auto, juste reçu et marqué « traité ».
+        // Message simple (sans commande) → transmis au LLM ACTIVÉ, réponse renvoyée sur Telegram.
         if (cmd.kind === 'simple') {
-          await step('info', 'Message reçu — aucune commande à exécuter.')
+          const question = msg.text?.trim() ?? ''
+          if (!question) {
+            await step('info', 'Message vide — rien à exécuter.')
+            return
+          }
+          await step('info', '🤖 Appel du LLM…')
+          try {
+            const { answer, model } = await askLlm(question)
+            await step('info', `Réponse du LLM (${model || 'modèle inconnu'}).`)
+            const header = model ? `🤖 ${model}\n\n` : '🤖\n\n'
+            await reply(msg.chatId, truncateForTelegram(header + answer))
+          } catch (err) {
+            const reason = maskToken(err instanceof Error ? err.message : String(err))
+            await step('warn', `LLM indisponible : ${reason}`)
+            await reply(msg.chatId, `⚠️ LLM indisponible : ${reason}`)
+          }
           return
         }
         if (!cmd.prompt) {
