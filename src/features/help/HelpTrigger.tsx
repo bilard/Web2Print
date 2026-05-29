@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { HelpCircle } from 'lucide-react'
 import { useHelpStore } from './help.store'
 import { HelpDrawer } from './HelpDrawer'
-import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { globalFabricCanvas } from '@/features/editor/globalCanvas'
 import { useDataAttrHighlight } from './hooks/useDataAttrHighlight'
 
 export function HelpTrigger() {

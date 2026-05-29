@@ -25,8 +25,12 @@ import { Relief3DOverlay } from '@/features/animation3d/Relief3DOverlay'
 import { useAutoPlayPersisted } from '@/features/animation3d/useAutoPlayPersisted'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
+import { setGlobalFabricCanvas } from './globalCanvas'
 
-export let globalFabricCanvas: Canvas | null = null
+// Ré-export pour compat : les consommateurs de l'éditeur (chunks lazy) continuent
+// d'importer `globalFabricCanvas` depuis ce module. La VRAIE déclaration vit dans
+// `globalCanvas.ts` afin que les consommateurs eager légers ne tirent pas Fabric.
+export { globalFabricCanvas } from './globalCanvas'
 export let globalUndo: (() => void) | null = null
 export let globalRedo: (() => void) | null = null
 export let globalSnapshot: (() => void) | null = null
@@ -66,7 +70,7 @@ export function CanvasContainer() {
   // Expose canvas + fit
   useEffect(() => {
     if (!fabricRef.current || !containerRef.current) return
-    globalFabricCanvas = fabricRef.current
+    setGlobalFabricCanvas(fabricRef.current)
     ;(window as any).__fabricCanvas = fabricRef.current
     setCanvasReady(fabricRef.current)
     fitToContainer(containerRef.current)
