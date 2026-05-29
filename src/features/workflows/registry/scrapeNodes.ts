@@ -126,8 +126,9 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
       name: 'model',
       kind: 'select',
       label: 'Modèle LLM',
-      default: 'claude-opus-4-7',
+      default: 'claude-opus-4-8',
       options: [
+        { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
         { value: 'claude-opus-4-7', label: 'Claude Opus 4.7' },
         { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
       ],
@@ -137,7 +138,7 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
     urls: '',
     template: 'product_full',
     customFields: '',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
   },
   runtime: 'client',
   run: async (ctx, config) => {

@@ -3,7 +3,7 @@ import { getApiKey } from '@/lib/apiKeys'
 
 const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
-const MODEL = 'claude-opus-4-7'
+const MODEL = 'claude-opus-4-8'
 
 interface AnthropicTextResponse {
   content?: Array<{ type: string; text?: string }>

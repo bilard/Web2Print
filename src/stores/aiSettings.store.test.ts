@@ -33,7 +33,7 @@ describe('aiSettings.store', () => {
       selectedModel: { claude: 'ghost-model', gemini: 'gemini-3.1-pro-preview', openai: 'gpt-4o', deepseek: 'deepseek-chat', qwen: 'qwen-max', kimi: 'kimi-for-coding', openrouter: 'openrouter/auto' },
       fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
     })
-    expect(getSelectedModel('claude')).toBe('claude-opus-4-7')
+    expect(getSelectedModel('claude')).toBe('claude-opus-4-8')
   })
 
   it('getEffectiveModelList merges catalog + fetchedModels (catalog wins on dedup)', () => {

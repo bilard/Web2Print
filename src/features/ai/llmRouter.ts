@@ -71,16 +71,16 @@ interface RouteConfig {
  * rapides ou massives sur Gemini Flash.
  */
 const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
-  'brief.dynamicQuestions': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  'brief.cartGeneration':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
-  'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'brief.dynamicQuestions': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
+  'brief.cartGeneration':   { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
+  'brief.deckStructure':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   'brief.imagePrompts':     { primary: 'gemini', fallback: 'claude' },
   'brief.catalogKeywords':  { primary: 'gemini', fallback: 'claude' },
   'product.enrichment':     { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
   // Classification taxonomique : raisonnement structuré sur libellés, Claude Opus 4.7
-  'product.taxonomyClassification': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'product.taxonomyClassification': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   // Template Fill : copy court (≈1.5 KB JSON), Claude Opus 4.7
-  'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-7' },
+  'design.templateFill':    { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
   // Image Decompose : Vision multimodal sur image raster pour détecter zones texte + masques.
   // Gemini 3 Pro Vision est utilisé en primary parce qu'il a un grounding spatial natif
   // (bboxes normalisées [0, 1000]) là où Claude Vision invente des positions.

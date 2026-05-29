@@ -9,7 +9,8 @@ export interface AiModelInfo {
 
 export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
   claude: [
-    { id: 'claude-opus-4-7',   label: 'Claude Opus 4.7',   pricing: { input: 15,   output: 75 }, isDefault: true },
+    { id: 'claude-opus-4-8',   label: 'Claude Opus 4.8',   pricing: { input: 15,   output: 75 }, isDefault: true },
+    { id: 'claude-opus-4-7',   label: 'Claude Opus 4.7',   pricing: { input: 15,   output: 75 } },
     { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', pricing: { input: 3,    output: 15 } },
     { id: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5',  pricing: { input: 0.80, output: 4 } },
   ],

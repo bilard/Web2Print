@@ -33,7 +33,8 @@ export const enrichmentNode: NodeSpec<
   configSchema: [
     { name: 'urlColumn', kind: 'text', label: 'Colonne URL', default: 'url', required: true },
     { name: 'fields', kind: 'text', label: 'Colonnes à enrichir (séparées par virgule)', default: 'title,description,price', required: true },
-    { name: 'model', kind: 'select', label: 'Modèle LLM', default: 'claude-opus-4-7', options: [
+    { name: 'model', kind: 'select', label: 'Modèle LLM', default: 'claude-opus-4-8', options: [
+      { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
       { value: 'claude-opus-4-7', label: 'Claude Opus 4.7' },
       { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
     ]},
