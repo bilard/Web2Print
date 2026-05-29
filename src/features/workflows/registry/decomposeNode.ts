@@ -8,11 +8,13 @@
 // canvas Fabric hors-écran, sans toucher à l'éditeur ouvert.
 
 import { Wand2 } from 'lucide-react'
-import { Canvas, FabricImage, Group, type FabricObject } from 'fabric'
+import type { FabricObject } from 'fabric'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { parseSvgToFabric } from '@/features/svg/svgToFabric'
-import { decomposeOnCanvas } from '@/features/svg/useImageToSvgDecompose'
+// Imports *type-only* (effacés au build) : le moteur lourd (fabric + décompo Vision)
+// est chargé dynamiquement DANS `run`, pour ne pas peser sur le chunk du registre
+// (`builtin`) tiré dès l'ouverture de la page Workflows.
+import type * as SvgToFabric from '@/features/svg/svgToFabric'
 
 interface DecomposeConfig {}
 
@@ -46,16 +48,6 @@ async function inlineExternalSvgImages(svgText: string): Promise<string> {
   return out
 }
 
-/** Collecte récursivement les FabricImage (y compris dans les groupes). */
-function collectFabricImages(objs: FabricObject[]): FabricImage[] {
-  const out: FabricImage[] = []
-  for (const o of objs) {
-    if (o instanceof FabricImage) out.push(o)
-    else if (o instanceof Group) out.push(...collectFabricImages(o.getObjects()))
-  }
-  return out
-}
-
 export const decomposeNode: NodeSpec<
   DecomposeConfig,
   { svg: File },
@@ -80,6 +72,21 @@ export const decomposeNode: NodeSpec<
 
     ctx.log('info', `Décomposition : ${inputs.svg.name}…`)
 
+    // Chargement à la demande du moteur lourd (fabric + parsing SVG + décompo Vision).
+    const { Canvas, FabricImage, Group } = await import('fabric')
+    const { parseSvgToFabric } = await import('@/features/svg/svgToFabric')
+    const { decomposeOnCanvas } = await import('@/features/svg/useImageToSvgDecompose')
+
+    /** Collecte récursivement les FabricImage (y compris dans les groupes). */
+    const collectFabricImages = (objs: FabricObject[]): InstanceType<typeof FabricImage>[] => {
+      const out: InstanceType<typeof FabricImage>[] = []
+      for (const o of objs) {
+        if (o instanceof FabricImage) out.push(o)
+        else if (o instanceof Group) out.push(...collectFabricImages(o.getObjects()))
+      }
+      return out
+    }
+
     let svgText: string
     try {
       svgText = await inputs.svg.text()
@@ -102,7 +109,7 @@ export const decomposeNode: NodeSpec<
     }
 
     // Parse le SVG en objets Fabric (dimensions + objets, sans canvas global).
-    let parsed: Awaited<ReturnType<typeof parseSvgToFabric>>
+    let parsed: Awaited<ReturnType<typeof SvgToFabric.parseSvgToFabric>>
     try {
       parsed = await parseSvgToFabric(svgText)
     } catch (err) {

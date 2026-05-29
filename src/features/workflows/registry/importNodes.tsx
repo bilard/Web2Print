@@ -18,9 +18,8 @@ import {
 } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { parseExcelFile } from '@/features/excel/useExcelImport'
-import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
-import { convertPdfToEditableSvg } from '@/features/svg/pdfToSvg'
+// Moteurs lourds (xlsx ~484 Ko, image→svg, pdf→svg) chargés dynamiquement dans les
+// `run` concernés : sinon ils cascadent dès l'ouverture de la page Workflows.
 import { putFile, getFile, deleteFile, putFiles, getFiles } from '../runtime/fileStore'
 import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
 import { detectAssemblyFiles, summarizeAssembly } from '@/features/idml/assemblyLoader'
@@ -49,6 +48,7 @@ export const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown
       throw new Error('Aucun fichier fourni — connectez un Upload ou un autre node produisant un fichier.')
     }
     ctx.log('info', `Parsing ${inputs.file.name}…`)
+    const { parseExcelFile } = await import('@/features/excel/useExcelImport')
     const sheets = await parseExcelFile(inputs.file)
     if (sheets.length === 0) {
       throw new Error('Le fichier ne contient aucun onglet exploitable.')
@@ -137,6 +137,7 @@ export const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: F
       throw new Error('Aucun fichier fourni — connectez un Upload produisant une image raster.')
     }
     ctx.log('info', `Conversion image → SVG éditable : ${inputs.file.name}…`)
+    const { convertImageToEditableSvg } = await import('@/features/svg/imageToSvg')
     const { file, width, height } = await convertImageToEditableSvg(inputs.file)
     ctx.log('info', `SVG généré : ${width}×${height}px (raster verrouillé + overlays).`)
     return { svg: file }
@@ -162,6 +163,7 @@ export const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File 
       throw new Error('Aucun fichier fourni — connectez un Upload produisant un PDF.')
     }
     ctx.log('info', `Rasterisation PDF → SVG éditable : ${inputs.file.name}…`)
+    const { convertPdfToEditableSvg } = await import('@/features/svg/pdfToSvg')
     const { file, width, height } = await convertPdfToEditableSvg(inputs.file)
     ctx.log('info', `SVG généré : ${width}×${height}px (page 1 rasterisée + overlays).`)
     return { svg: file }
@@ -238,6 +240,7 @@ const CSV_EXCEL_RE = /\.(csv|xlsx|xls|tsv)$/i
 async function summarizeCsvFile(file: File): Promise<CsvSummary | null> {
   if (!CSV_EXCEL_RE.test(file.name)) return null
   try {
+    const { parseExcelFile } = await import('@/features/excel/useExcelImport')
     const sheets = await parseExcelFile(file)
     if (sheets.length === 0) return null
     const first = sheets[0]
@@ -666,6 +669,7 @@ export const uploadNode: NodeSpec<
     // un câblage direct Upload → Loop each (sans Parser intermédiaire).
     if (CSV_EXCEL_RE.test(f.name)) {
       try {
+        const { parseExcelFile } = await import('@/features/excel/useExcelImport')
         const sheets = await parseExcelFile(f)
         if (sheets.length > 0) {
           const first = sheets[0]

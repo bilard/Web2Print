@@ -3,9 +3,9 @@
 // nodes de workflow. Lecture (drive.readonly) ET écriture (drive.file) supposées
 // granted via le flow OAuth de useGoogleDrive / useGoogleSheetsImport.
 
-import * as XLSX from 'xlsx'
 import type { ExcelSheet } from '@/features/excel/types'
-import { parseExcelFile } from '@/features/excel/useExcelImport'
+// xlsx (~484 Ko) et parseExcelFile chargés dynamiquement dans les fonctions GSheets :
+// sinon ils cascadent chez tout consommateur de gdriveCore (nodes Drive, etc.).
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3'
@@ -113,6 +113,7 @@ export async function importGoogleSheetById(sheetId: string, token: string): Pro
   }
   const blob = await res.blob()
   const file = new File([blob], `${meta.name}.xlsx`, { type: XLSX_MIME })
+  const { parseExcelFile } = await import('@/features/excel/useExcelImport')
   const sheets = await parseExcelFile(file)
   if (sheets.length === 0) {
     throw new Error(`Le Google Sheet "${meta.name}" est vide.`)
@@ -121,7 +122,8 @@ export async function importGoogleSheetById(sheetId: string, token: string): Pro
 }
 
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook). */
-function sheetToXlsxBlob(sheet: ExcelSheet, sheetName: string): Blob {
+async function sheetToXlsxBlob(sheet: ExcelSheet, sheetName: string): Promise<Blob> {
+  const XLSX = await import('xlsx')
   const rows = sheet.rows.map((row) => {
     const out: Record<string, unknown> = {}
     for (const col of sheet.columns) {
@@ -197,7 +199,7 @@ export async function exportSheetToGoogleSheets(
   sheet: ExcelSheet,
   options: { name: string; parentFolderId?: string },
 ): Promise<DriveFileMeta> {
-  const blob = sheetToXlsxBlob(sheet, sheet.name || 'Sheet1')
+  const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1')
   return uploadToDrive(token, blob, {
     name: options.name,
     parentFolderId: options.parentFolderId,

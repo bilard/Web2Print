@@ -1,9 +1,8 @@
 // src/features/workflows/registry/exportNodes.ts
 import { FileDown, Presentation, FileType2, Download } from 'lucide-react'
-import * as XLSX from 'xlsx'
-import PptxGenJS from 'pptxgenjs'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+// Libs d'export lourdes (xlsx ~484 Ko, pptxgenjs ~268 Ko, html2canvas ~196 Ko, jspdf)
+// chargées dynamiquement DANS chaque `run` : sinon elles cascadent dès l'ouverture
+// de la page Workflows (le registre `builtin` les tirait en statique).
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 
@@ -71,6 +70,7 @@ export const exportExcelNode: NodeSpec<
         )
       : rows
 
+    const XLSX = await import('xlsx')
     const ws = XLSX.utils.json_to_sheet(filteredRows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, inputs.sheet?.name ?? 'Sheet1')
@@ -126,6 +126,7 @@ export const exportPptxNode: NodeSpec<
       )
     }
 
+    const { default: PptxGenJS } = await import('pptxgenjs')
     const pres = new PptxGenJS()
     pres.layout = 'LAYOUT_16x9'
 
@@ -257,6 +258,11 @@ export const exportPdfNode: NodeSpec<
         "La Sheet d'entrée n'a aucune ligne — vérifiez que le node amont a bien produit des données.",
       )
     }
+
+    const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas'),
+    ])
 
     // Build a sandbox iframe to isolate the rendered HTML from the host page CSS.
     const iframe = document.createElement('iframe')
@@ -532,6 +538,11 @@ export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: F
     }
 
     const dataUrl = canvas.toDataURL('image/png')
+
+    const [{ default: jsPDF }, { default: PptxGenJS }] = await Promise.all([
+      import('jspdf'),
+      import('pptxgenjs'),
+    ])
 
     if (config.format === 'pdf') {
       const orientation = base.width >= base.height ? 'landscape' : 'portrait'

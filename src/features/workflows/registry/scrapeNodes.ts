@@ -2,7 +2,8 @@
 import { Globe } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { enrichRow } from '@/features/excel/ai-enrichment/enrichRow'
+// enrichRow tire le moteur PIM (useProductEnrichment ~156 Ko) : chargé dynamiquement
+// dans run. FIELD_TEMPLATES reste statique (constante légère utilisée par le spec).
 import { FIELD_TEMPLATES } from '@/features/scraping/useJina'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 
@@ -154,6 +155,7 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
     const allAssets: ScrapeUrlAsset[] = []
     let anyBlocked = false
 
+    const { enrichRow } = await import('@/features/excel/ai-enrichment/enrichRow')
     for (let i = 0; i < urls.length; i++) {
       if (ctx.signal.aborted) break
       const url = urls[i]

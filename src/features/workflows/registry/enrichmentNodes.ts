@@ -2,7 +2,8 @@
 import { Sparkles } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { enrichRow } from '@/features/excel/ai-enrichment/enrichRow'
+// enrichRow tire le moteur PIM (useProductEnrichment ~156 Ko + Jina + LLM) : chargé
+// dynamiquement dans run pour ne pas cascader à l'ouverture de la page Workflows.
 
 interface EnrichConfig {
   urlColumn: string
@@ -45,6 +46,7 @@ export const enrichmentNode: NodeSpec<
     const fields = config.fields.split(',').map((s) => s.trim()).filter(Boolean)
     const collectedAssets: unknown[] = []
     const enrichedRows: Record<string, unknown>[] = []
+    const { enrichRow } = await import('@/features/excel/ai-enrichment/enrichRow')
     for (const row of rows) {
       if (ctx.signal.aborted) break
       const url = row[config.urlColumn]
