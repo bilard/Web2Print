@@ -8,7 +8,6 @@ import type { NodeSpec } from '../types'
 interface EnrichConfig {
   urlColumn: string
   fields: string  // comma-separated list of columns to enrich
-  model: string
 }
 
 interface EnrichInputs {
@@ -23,7 +22,9 @@ export const enrichmentNode: NodeSpec<
   type: 'enrichment',
   category: 'enrichment',
   label: 'Enrichissement',
-  description: "Scrape les URLs d'une colonne et complète les champs cibles via LLM.",
+  description:
+    "Scrape les URLs d'une colonne et complète les champs cibles via LLM. " +
+    'Modèle IA routé automatiquement par tâche (toujours à jour) — pas de réglage manuel.',
   icon: Sparkles,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [
@@ -33,13 +34,8 @@ export const enrichmentNode: NodeSpec<
   configSchema: [
     { name: 'urlColumn', kind: 'text', label: 'Colonne URL', default: 'url', required: true },
     { name: 'fields', kind: 'text', label: 'Colonnes à enrichir (séparées par virgule)', default: 'title,description,price', required: true },
-    { name: 'model', kind: 'select', label: 'Modèle LLM', default: 'claude-opus-4-8', options: [
-      { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
-      { value: 'claude-opus-4-7', label: 'Claude Opus 4.7' },
-      { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
-    ]},
   ],
-  defaultConfig: { urlColumn: 'url', fields: 'title,description,price', model: 'claude-opus-4-7' },
+  defaultConfig: { urlColumn: 'url', fields: 'title,description,price' },
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const sheet = inputs.sheet
@@ -60,7 +56,6 @@ export const enrichmentNode: NodeSpec<
         const result = await enrichRow({
           url,
           targetFields: fields,
-          model: config.model,
           signal: ctx.signal,
           log: (msg) => ctx.log('info', msg),
         })

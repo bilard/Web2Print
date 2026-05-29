@@ -14,8 +14,6 @@ interface ScrapeUrlConfig {
   template: string
   /** Liste de champs custom (séparés par virgule), utilisée si template = `custom`. */
   customFields: string
-  /** Modèle LLM. */
-  model: string
 }
 
 interface ScrapeUrlAsset {
@@ -94,7 +92,9 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
   type: 'scrape-url',
   category: 'import',
   label: 'Scrape URL',
-  description: "Scrape une ou plusieurs URLs via Jina + LLM (cascade scrape produit complet).",
+  description:
+    'Scrape une ou plusieurs URLs via Jina + LLM (cascade scrape produit complet). ' +
+    'Modèle IA routé automatiquement par tâche (toujours à jour) — pas de réglage manuel.',
   icon: Globe,
   inputs: [],
   outputs: [
@@ -122,23 +122,11 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
       default: '',
       help: 'Ignoré si un template est sélectionné',
     },
-    {
-      name: 'model',
-      kind: 'select',
-      label: 'Modèle LLM',
-      default: 'claude-opus-4-8',
-      options: [
-        { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
-        { value: 'claude-opus-4-7', label: 'Claude Opus 4.7' },
-        { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
-      ],
-    },
   ],
   defaultConfig: {
     urls: '',
     template: 'product_full',
     customFields: '',
-    model: 'claude-opus-4-8',
   },
   runtime: 'client',
   run: async (ctx, config) => {
@@ -166,7 +154,6 @@ export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, Scr
         const result = await enrichRow({
           url,
           targetFields: keys,
-          model: config.model,
           signal: ctx.signal,
           log: (msg) => ctx.log('info', msg),
         })

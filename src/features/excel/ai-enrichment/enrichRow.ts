@@ -15,8 +15,6 @@ export interface EnrichRowInput {
   url: string
   /** Champs à enrichir (clés du template, ex. ['name', 'description', 'specifications']). */
   targetFields: string[]
-  /** Modèle LLM — ignoré : le moteur PIM route par tâche (cooldown inclus). Conservé pour compat. */
-  model?: string
   /** Annulation best-effort (non propagée au moteur PIM pour l'instant). */
   signal?: AbortSignal
   log?: (msg: string) => void
