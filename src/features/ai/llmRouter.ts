@@ -58,6 +58,7 @@ type LLMTask =
   | 'workflow.generate'
   | 'telegram.chat'
   | 'telegram.chatPlan'
+  | 'web.answer'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -114,6 +115,9 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // Planification du chat Telegram : décide s'il faut une recherche web + formule la
   // requête (et répond directement sinon). JSON à 3 champs → même épinglage Gemini.
   'telegram.chatPlan': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // Réponse synthétisée à partir d'un contexte web (node « Question web (IA) »).
+  // Gemini 3.1 Pro épinglé (JSON fiable via responseSchema) ; Claude en fallback.
+  'web.answer': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -135,6 +139,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'telegram.chat':          0.4,
   // Décision structurée (chercher ou non, quelle requête) → plus déterministe.
   'telegram.chatPlan':      0.2,
+  'web.answer':             0.3,
 }
 
 interface GenerateJsonOptions<T> {

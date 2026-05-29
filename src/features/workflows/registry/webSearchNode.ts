@@ -8,7 +8,8 @@
 import { Search } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+import type { ExcelSheet } from '@/features/excel/types'
+import { webResultsToSheet } from './webResultsSheet'
 
 interface WebSearchConfig {
   /** Requête de recherche. Peut être surchargée par une entrée `query` en amont. */
@@ -27,21 +28,6 @@ interface WebSearchInputs {
 interface WebSearchOutputs {
   sheet: ExcelSheet
   text: string
-}
-
-function resultsToSheet(rows: Array<{ url: string; title?: string; description?: string }>): ExcelSheet {
-  const columns: ExcelColumn[] = [
-    { key: 'title', label: 'Titre', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 280 },
-    { key: 'url', label: 'URL', fieldType: 'url', detectedType: 'url', isPrimary: false, width: 320 },
-    { key: 'description', label: 'Description', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 360 },
-  ]
-  const excelRows: ExcelRow[] = rows.map((r, i) => ({
-    _id: `web_${i}`,
-    title: (r.title ?? '') as ExcelRow[string],
-    url: r.url as ExcelRow[string],
-    description: (r.description ?? '') as ExcelRow[string],
-  }))
-  return { name: 'Recherche web', columns, rows: excelRows, taxonomy: [] }
 }
 
 export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearchOutputs> = {
@@ -85,7 +71,7 @@ export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearch
       ctx.log('info', `${ctxWeb.results.length} résultat(s), ${ctxWeb.sources.length} source(s) lue(s).`)
     }
 
-    return { sheet: resultsToSheet(ctxWeb.results), text: ctxWeb.text }
+    return { sheet: webResultsToSheet(ctxWeb.results), text: ctxWeb.text }
   },
 }
 
