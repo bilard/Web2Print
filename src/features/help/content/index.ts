@@ -5,6 +5,7 @@ import { damSection } from './dam'
 import { importIdmlSection } from './import-idml'
 import { importPptxSection } from './import-pptx'
 import { importExcelSection } from './import-excel'
+import { importMediaSection } from './import-media'
 import { taxonomiesSection } from './taxonomies'
 import { briefsSection } from './briefs'
 import { scrapingSection } from './scraping'
@@ -19,6 +20,7 @@ export const helpSections: HelpSection[] = [
   importIdmlSection,
   importPptxSection,
   importExcelSection,
+  importMediaSection,
   taxonomiesSection,
   briefsSection,
   scrapingSection,
