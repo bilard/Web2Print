@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -22,14 +22,20 @@ import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
-import { ExcelImportModal } from '@/features/excel/ExcelImportModal'
+const ExcelImportModal = lazy(() =>
+  import('@/features/excel/ExcelImportModal').then((m) => ({ default: m.ExcelImportModal })),
+)
 import { DataTable, isRowEnriched } from '@/features/excel/DataTable'
 import { TaxonomyManager } from '@/features/excel/TaxonomyManager'
 import { FieldsPanel } from '@/features/excel/FieldsPanel'
 import { TaxonomyNavigator } from '@/features/excel/TaxonomyNavigator'
 import { ProductSheet } from '@/features/excel/ProductSheet'
-import { UpdatePreviewModal } from '@/features/excel/UpdatePreviewModal'
-import { ScrapingModal } from '@/features/scraping/ScrapingModal'
+const UpdatePreviewModal = lazy(() =>
+  import('@/features/excel/UpdatePreviewModal').then((m) => ({ default: m.UpdatePreviewModal })),
+)
+const ScrapingModal = lazy(() =>
+  import('@/features/scraping/ScrapingModal').then((m) => ({ default: m.ScrapingModal })),
+)
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
@@ -685,29 +691,35 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       </div>
 
-      {/* Import modal */}
-      <ExcelImportModal
-        open={importModalOpen}
-        onClose={() => { handleImportClose(); setPendingTargetPath(null) }}
-        targetPath={pendingTargetPath ?? undefined}
-      />
+      {/* Modals chargés à la demande (lazy) : leur code ne pèse pas sur le chunk DataPage. */}
+      <Suspense fallback={null}>
+        {importModalOpen && (
+          <ExcelImportModal
+            open={importModalOpen}
+            onClose={() => { handleImportClose(); setPendingTargetPath(null) }}
+            targetPath={pendingTargetPath ?? undefined}
+          />
+        )}
 
-      {/* Scraping modal */}
-      <ScrapingModal
-        open={scrapingOpen}
-        onClose={() => { setScrapingOpen(false); setPendingTargetPath(null) }}
-        targetPath={pendingTargetPath ?? undefined}
-      />
+        {scrapingOpen && (
+          <ScrapingModal
+            open={scrapingOpen}
+            onClose={() => { setScrapingOpen(false); setPendingTargetPath(null) }}
+            targetPath={pendingTargetPath ?? undefined}
+          />
+        )}
 
-      {/* Update/diff modal */}
-      <UpdatePreviewModal
-        open={updateModalOpen}
-        onClose={() => setUpdateModalOpen(false)}
-        onApply={(newSheets) => {
-          setSheets(newSheets)
-          setSaveStatus('idle')
-        }}
-      />
+        {updateModalOpen && (
+          <UpdatePreviewModal
+            open={updateModalOpen}
+            onClose={() => setUpdateModalOpen(false)}
+            onApply={(newSheets) => {
+              setSheets(newSheets)
+              setSaveStatus('idle')
+            }}
+          />
+        )}
+      </Suspense>
 
     </div>
   )

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { EditorHeader } from '@/components/panels/EditorHeader'
@@ -6,12 +6,17 @@ import { ToolBar } from '@/components/panels/ToolBar'
 import { RightPanelStack } from '@/components/panels/RightPanelStack'
 import { EditorFooter } from '@/components/panels/EditorFooter'
 import { TextToolbar } from '@/components/panels/TextToolbar'
-import { SettingsSheet } from '@/components/shared/SettingsSheet'
-import { DamPickerModal } from '@/features/dam/components/DamPickerModal'
+const SettingsSheet = lazy(() =>
+  import('@/components/shared/SettingsSheet').then((m) => ({ default: m.SettingsSheet })),
+)
+const DamPickerModal = lazy(() =>
+  import('@/features/dam/components/DamPickerModal').then((m) => ({ default: m.DamPickerModal })),
+)
 import { useDamCanvasInsert } from '@/features/dam/hooks/useDamCanvasInsert'
 import { CanvasContainer } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useProjectStore } from '@/stores/project.store'
+import { useUIStore } from '@/stores/ui.store'
 import { usePreloadFonts } from '@/features/assets/useFonts'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { useIdmlParse } from '@/features/idml/useIdmlParse'
@@ -28,6 +33,9 @@ export default function EditorPage() {
   const location = useLocation()
   const setProjectId = useEditorStore((s) => s.setProjectId)
   const setProjectTitle = useEditorStore((s) => s.setProjectTitle)
+  // États d'ouverture pour ne monter (et charger) ces modals qu'à la demande.
+  const settingsOpen = useUIStore((s) => s.settingsOpen)
+  const damPickerOpen = useUIStore((s) => s.damPickerOpen)
   const {
     pendingImport,
     setPendingImport,
@@ -212,8 +220,10 @@ export default function EditorPage() {
       </div>
 
       <EditorFooter />
-      <SettingsSheet />
-      <DamPickerModal />
+      <Suspense fallback={null}>
+        {settingsOpen && <SettingsSheet />}
+        {damPickerOpen && <DamPickerModal />}
+      </Suspense>
     </div>
   )
 }
