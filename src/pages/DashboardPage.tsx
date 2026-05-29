@@ -650,7 +650,7 @@ export default function DashboardPage() {
             // Settings : header (titre + onglets) figé PLEINE LARGEUR au scroll,
             // puis corps deux colonnes (contenu + panneau live conso LLM) qui défile.
             <SettingsPanel
-              stickyClassName="sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]"
+              stickyClassName="sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f] before:content-[''] before:absolute before:inset-x-0 before:bottom-full before:h-16 before:bg-[#0f0f0f]"
               header={
                 <div className="flex items-baseline gap-3">
                   <h1 className="text-xl font-bold">Paramètres</h1>
