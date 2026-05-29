@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useProjects } from '@/features/projects/useProjects'
@@ -657,9 +657,19 @@ export default function DashboardPage() {
               <SettingsPanel
                 fillHeight
                 header={
-                  <div className="flex items-baseline gap-3">
+                  <div className="flex items-baseline gap-3 flex-wrap">
                     <h1 className="text-xl font-bold">Paramètres</h1>
                     <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
+                    <a
+                      href="https://app.hyperframe.ai/dashboard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Ouvrir l'app officielle — vérifier que vous êtes sur la bonne version"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors self-center"
+                    >
+                      app.hyperframe.ai
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 }
                 aside={<LiveLlmUsagePanel />}
