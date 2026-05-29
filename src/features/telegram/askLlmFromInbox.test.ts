@@ -5,13 +5,13 @@ vi.mock('@/features/ai/llmRouter', () => ({
 }))
 
 // On garde extractUrls réel (logique pure) et on ne mocke que la récupération web.
-vi.mock('./webContext', async (importActual) => {
-  const actual = await importActual<typeof import('./webContext')>()
+vi.mock('@/features/scraping/webContext', async (importActual) => {
+  const actual = await importActual<typeof import('@/features/scraping/webContext')>()
   return { ...actual, gatherWebContext: vi.fn() }
 })
 
 import { generateJson } from '@/features/ai/llmRouter'
-import { gatherWebContext } from './webContext'
+import { gatherWebContext } from '@/features/scraping/webContext'
 import { askLlm } from './askLlmFromInbox'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +25,7 @@ function planResult(over: Partial<{ needsWeb: boolean; searchQuery: string; answ
 describe('askLlm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(gatherWebContext).mockResolvedValue({ text: '', sources: [] })
+    vi.mocked(gatherWebContext).mockResolvedValue({ text: '', sources: [], results: [] })
   })
 
   it('réponse directe (needsWeb=false) : un seul appel, pas de recherche web', async () => {
@@ -65,6 +65,7 @@ describe('askLlm', () => {
     vi.mocked(gatherWebContext).mockResolvedValue({
       text: '### Résultats…\nDjokovic 6-4 3-2',
       sources: ['https://sport.example/match'],
+      results: [],
     })
 
     const res = await askLlm('Le score Fonseca Djokovic ?')
@@ -85,6 +86,7 @@ describe('askLlm', () => {
     vi.mocked(gatherWebContext).mockResolvedValue({
       text: '### Contenu…',
       sources: ['https://exemple.com/article'],
+      results: [],
     })
 
     const res = await askLlm('Résume https://exemple.com/article stp')
@@ -101,7 +103,7 @@ describe('askLlm', () => {
     vi.mocked(generateJson).mockResolvedValueOnce(
       planResult({ needsWeb: true, searchQuery: 'truc', answer: 'Je crois que…' }) as never,
     )
-    vi.mocked(gatherWebContext).mockResolvedValue({ text: '', sources: [] })
+    vi.mocked(gatherWebContext).mockResolvedValue({ text: '', sources: [], results: [] })
 
     const res = await askLlm('un truc')
 
@@ -114,7 +116,7 @@ describe('askLlm', () => {
     vi.mocked(generateJson)
       .mockResolvedValueOnce(planResult({ needsWeb: true, searchQuery: 'météo', answer: '' }) as never)
       .mockResolvedValueOnce({ answer: 'Je n’ai pas pu consulter de source à jour.' } as never)
-    vi.mocked(gatherWebContext).mockResolvedValue({ text: '', sources: [] })
+    vi.mocked(gatherWebContext).mockResolvedValue({ text: '', sources: [], results: [] })
 
     const res = await askLlm('météo demain ?')
 
@@ -134,7 +136,7 @@ describe('askLlm', () => {
         opts.onProviderUsed?.({ provider: 'gemini', model: 'gemini-3.1-pro-preview' })
         return { answer: 'ok' } as never
       })
-    vi.mocked(gatherWebContext).mockResolvedValue({ text: '### r', sources: ['https://a'] })
+    vi.mocked(gatherWebContext).mockResolvedValue({ text: '### r', sources: ['https://a'], results: [] })
 
     const res = await askLlm('question')
 
@@ -152,7 +154,7 @@ describe('askLlm', () => {
     vi.mocked(generateJson)
       .mockResolvedValueOnce(planResult({ needsWeb: true, searchQuery: 'foo', answer: '' }) as never)
       .mockResolvedValueOnce({ answer: 'ok' } as never)
-    vi.mocked(gatherWebContext).mockResolvedValue({ text: '### r', sources: ['https://a'] })
+    vi.mocked(gatherWebContext).mockResolvedValue({ text: '### r', sources: ['https://a'], results: [] })
     const steps: string[] = []
 
     await askLlm('cherche foo', { onStep: (m) => steps.push(m) })

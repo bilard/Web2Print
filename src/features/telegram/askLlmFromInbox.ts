@@ -17,7 +17,7 @@
 
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { extractUrls, gatherWebContext } from './webContext'
+import { extractUrls, gatherWebContext } from '@/features/scraping/webContext'
 
 // ── Schéma du PLAN : décision (chercher ou non) + réponse directe éventuelle ──
 const PlanSchema = z.object({

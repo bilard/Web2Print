@@ -27,7 +27,7 @@ describe('extractUrls', () => {
 describe('gatherWebContext', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('lit les URLs du message (option B)', async () => {
+  it('lit les URLs fournies', async () => {
     read.mockResolvedValue(page('contenu page', 'Titre A'))
 
     const ctx = await gatherWebContext({ urls: ['https://exemple.com/a'] })
@@ -35,9 +35,10 @@ describe('gatherWebContext', () => {
     expect(read).toHaveBeenCalledWith('https://exemple.com/a', { noCache: true })
     expect(ctx.text).toContain('contenu page')
     expect(ctx.sources).toEqual(['https://exemple.com/a'])
+    expect(ctx.results).toEqual([])
   })
 
-  it('recherche + LIT réellement les premières pages de résultats (donnée live)', async () => {
+  it('recherche + LIT réellement les premières pages + renvoie les résultats structurés', async () => {
     search.mockResolvedValue([
       { url: 'https://live.example/1', title: 'Live 1', description: 'suivez en direct' },
       { url: 'https://live.example/2', title: 'Live 2' },
@@ -47,11 +48,12 @@ describe('gatherWebContext', () => {
 
     const ctx = await gatherWebContext({ searchQuery: 'score Fonseca Djokovic' })
 
-    // snippets listés + lecture réelle des 2 premiers (MAX_READ_RESULTS)
     expect(ctx.text).toContain('Résultats de recherche web')
-    expect(read).toHaveBeenCalledTimes(2)
+    expect(read).toHaveBeenCalledTimes(2) // readPages défaut = 2
     expect(ctx.text).toContain('SCORE depuis https://live.example/1')
     expect(ctx.text).toContain('SCORE depuis https://live.example/2')
+    expect(ctx.results).toHaveLength(3)
+    expect(ctx.results[0]).toEqual({ url: 'https://live.example/1', title: 'Live 1', description: 'suivez en direct' })
     expect(ctx.sources).toEqual([
       'https://live.example/1',
       'https://live.example/2',
@@ -59,14 +61,25 @@ describe('gatherWebContext', () => {
     ])
   })
 
-  it('ne relit pas une URL déjà lue depuis le message', async () => {
+  it('respecte maxResults et readPages', async () => {
+    search.mockResolvedValue([
+      { url: 'https://a/1' }, { url: 'https://a/2' }, { url: 'https://a/3' },
+    ])
+    read.mockResolvedValue(page('x'))
+
+    await gatherWebContext({ searchQuery: 'q', maxResults: 3, readPages: 1 })
+
+    expect(search).toHaveBeenCalledWith('q', 3)
+    expect(read).toHaveBeenCalledTimes(1) // readPages = 1
+  })
+
+  it('ne relit pas une URL déjà lue depuis les URLs fournies', async () => {
     search.mockResolvedValue([{ url: 'https://exemple.com/a', title: 'A' }])
     read.mockResolvedValue(page('contenu'))
 
     await gatherWebContext({ urls: ['https://exemple.com/a'], searchQuery: 'a' })
 
-    // 1 lecture pour l'URL du message, 0 relecture via les résultats
-    expect(read).toHaveBeenCalledTimes(1)
+    expect(read).toHaveBeenCalledTimes(1) // 1 lecture (URL fournie), 0 relecture via résultats
   })
 
   it('panne Jina avalée → contexte vide, jamais d’exception', async () => {
@@ -75,6 +88,6 @@ describe('gatherWebContext', () => {
 
     const ctx = await gatherWebContext({ urls: ['https://x.com'], searchQuery: 'q' })
 
-    expect(ctx).toEqual({ text: '', sources: [] })
+    expect(ctx).toEqual({ text: '', sources: [], results: [] })
   })
 })
