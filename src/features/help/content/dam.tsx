@@ -19,19 +19,21 @@ export const damSection: HelpSection = {
       label: 'Ouvrir le DAM',
       icon: Image,
     },
-    { type: 'text', md: `### Les onglets` },
+    { type: 'text', md: `### Les onglets
+
+Clique un onglet pour l'**ouvrir directement** dans le DAM.` },
     {
       type: 'accordion',
       items: [
-        { title: 'Banque d\'images', md: 'Recherche dans **Pexels & Unsplash** (millions de photos libres de droits) avec filtres source / orientation / couleur.' },
-        { title: 'Mes images', md: 'Tes images **sauvegardées** — depuis la banque ou issues de la génération IA.' },
-        { title: 'Favoris', md: 'Les images que tu as marquées d\'un **♥** pour un accès rapide.' },
-        { title: 'Collections', md: 'Des **dossiers d\'organisation** que tu crées et remplis toi-même.' },
-        { title: 'Récents', md: 'Les **derniers ajouts**, triés par date.' },
-        { title: 'Projets', md: 'Les **images et les polices** du projet courant, prêtes à glisser sur le canvas.' },
-        { title: 'Création d\'image', md: 'Génération d\'images par IA (**Gemini / Nano Banana 2**) — voir le détail des paramètres plus bas.' },
-        { title: 'Animations HTML', md: 'Tes **compositions vidéo** (HyperFrames).' },
-        { title: 'Google Drive', md: 'Accès à tes **fichiers Google Drive** une fois ton compte connecté.' },
+        { title: 'Banque d\'images', md: 'Recherche dans **Pexels & Unsplash** (millions de photos libres de droits) avec filtres source / orientation / couleur.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'stock' } },
+        { title: 'Mes images', md: 'Tes images **sauvegardées** — depuis la banque ou issues de la génération IA.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'my-images' } },
+        { title: 'Favoris', md: 'Les images que tu as marquées d\'un **♥** pour un accès rapide.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'favorites' } },
+        { title: 'Collections', md: 'Des **dossiers d\'organisation** que tu crées et remplis toi-même.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'collections' } },
+        { title: 'Récents', md: 'Les **derniers ajouts**, triés par date.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'recent' } },
+        { title: 'Projets', md: 'Les **images et les polices** du projet courant, prêtes à glisser sur le canvas.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'projects' } },
+        { title: 'Création d\'image', md: 'Génération d\'images par IA (**Gemini / Nano Banana 2**) — voir le détail des paramètres plus bas.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'generate' } },
+        { title: 'Animations HTML', md: 'Tes **compositions vidéo** (HyperFrames).', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'videos' } },
+        { title: 'Google Drive', md: 'Accès à tes **fichiers Google Drive** une fois ton compte connecté.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'gdrive' } },
       ],
     },
     {

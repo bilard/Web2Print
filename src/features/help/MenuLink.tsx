@@ -1,8 +1,10 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, type NavigateFunction } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowUpRight } from 'lucide-react'
 import type { MenuTarget } from './content/types'
 import { useHelpStore } from './help.store'
+import { useDamStore } from '@/stores/dam.store'
+import type { DamTab } from '@/features/dam/types'
 
 interface MenuLinkProps {
   target: MenuTarget
@@ -21,20 +23,8 @@ export function MenuLink({ target, label, icon: Icon }: MenuLinkProps) {
   const needsContext = isContextual && !isCurrentRoute
 
   const handleClick = () => {
-    if (target.highlightId) {
-      setHighlightTarget(target.highlightId)
-    }
-    const navigatable = resolveNavigatablePath(target.path)
-    if (navigatable !== null) {
-      // Ouvre réellement l'écran : la section du dashboard est encodée dans le highlightId
-      // (`dashboard.sidebar.import` → section `import`) et passée en state de navigation,
-      // que le DashboardPage lit pour activer la section. On navigue MÊME si on est déjà
-      // sur la route — sinon le lien ne ferait que surligner l'onglet sans ouvrir l'écran.
-      const section = sectionFromHighlightId(target.highlightId)
-      navigate(navigatable, section ? { state: { section } } : undefined)
-      closeDrawer()
-    } else if (isCurrentRoute && target.highlightId) {
-      // Route contextuelle (/editor/:id) et déjà dessus : le ring s'affiche, on ferme le drawer.
+    const navigated = openTarget(navigate, target, setHighlightTarget)
+    if (navigated || (isCurrentRoute && target.highlightId)) {
       closeDrawer()
     }
   }
@@ -74,6 +64,27 @@ function matchesRoute(current: string, target: string): boolean {
 function resolveNavigatablePath(path: string): string | null {
   if (path.includes(':')) return null
   return path
+}
+
+/**
+ * Ouvre réellement l'écran ciblé : surligne l'élément, navigue vers la route (en
+ * encodant la section du dashboard dans le state — `dashboard.sidebar.import` →
+ * section `import`), et active le sous-onglet DAM si `damTab` est fourni. On navigue
+ * même si on est déjà sur la route, pour changer de section/onglet.
+ * Renvoie true si une navigation a eu lieu (route non contextuelle).
+ */
+export function openTarget(
+  navigate: NavigateFunction,
+  target: MenuTarget,
+  setHighlightTarget: (id: string | null) => void,
+): boolean {
+  if (target.highlightId) setHighlightTarget(target.highlightId)
+  const navigatable = resolveNavigatablePath(target.path)
+  if (navigatable === null) return false
+  const section = sectionFromHighlightId(target.highlightId)
+  navigate(navigatable, section ? { state: { section } } : undefined)
+  if (target.damTab) useDamStore.getState().setActiveTab(target.damTab as DamTab)
+  return true
 }
 
 /** La section du dashboard est encodée dans le highlightId : `dashboard.sidebar.<section>`.

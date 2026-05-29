@@ -15,6 +15,8 @@ export type HelpCategory = (typeof HELP_CATEGORIES)[number]
 export type MenuTarget = {
   path: string
   highlightId?: string
+  /** Sous-onglet DAM à activer après navigation (ex: 'collections', 'generate'). */
+  damTab?: string
 }
 
 export type AccordionItem = {
@@ -22,6 +24,9 @@ export type AccordionItem = {
   title: string
   /** Contenu markdown affiché quand le volet est ouvert. */
   md: string
+  /** Si présent, le volet devient un raccourci : cliquer le titre OUVRE l'écran
+   *  (la description reste visible). Sinon, cliquer déplie/replie la description. */
+  target?: MenuTarget
 }
 
 export type HelpBlock =
