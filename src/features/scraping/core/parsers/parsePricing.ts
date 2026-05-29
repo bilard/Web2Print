@@ -50,17 +50,17 @@ export function parsePriceNumber(raw: string): number | null {
 /** Patterns regex pour extraction prix depuis markdown. */
 const PRICE_PATTERNS = {
   // "prix actuel : 999,00€" / "prix actuel\n\n999,00€"
-  current: /prix\s+(?:actuel|de\s+vente)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
+  current: /prix\s+(?:actuel|de\s+vente)\s*:?\s*\n?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/i,
   // ES: "precio de venta : 999,00€" / "precio especial"
   current_es: /precio\s+(?:de\s+venta|final|especial|cliente|oferta)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "prix d'origine : 1 199,00€" / "était 1 199,00€"
-  original: /(?:prix\s+d['']origine|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
+  original: /(?:prix\s+d['']origine|était|barré|barr[eé])\s*:?\s*\n?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/i,
   // ES: "precio habitual : 1 199,00€" / "precio sin descuento" / "antes"
   original_es: /(?:precio\s+(?:habitual|original|sin\s+descuento|de\s+lista|cat[aá]logo|normal|pvp)|antes)\s*:?\s*\n?\s*([\d\s  .,]+)\s*€/i,
   // "Économisez 200,00€"
-  discountAmount: /[Éé]conomis[eéè]z?\s+([\d\s  .,]+)\s*€/i,
+  discountAmount: /[Éé]conomis[eéè]z?\s+([\d\s\\u00A0\\u202F.,]+)\s*€/i,
   // ES: "Ahorras 100,00€" / "Descuento 50,00€"
-  discountAmount_es: /(?:ahorra[sz]?|descuento)\s+([\d\s  .,]+)\s*€/i,
+  discountAmount_es: /(?:ahorra[sz]?|descuento)\s+([\d\s\\u00A0\\u202F.,]+)\s*€/i,
   // Markdown strikethrough "~~367,49 €~~" → prix barré (avant promo)
   originalStrike: /~~\s*([\d  .,]+)\s*€\s*~~/i,
   // "-137,50 €" / "−137,50€" — réduction en montant signée (≥ 3 caractères
@@ -69,21 +69,21 @@ const PRICE_PATTERNS = {
   // "-17%" ou "(-17%)" — itérée avec exclusion bannières marketing
   discountPercent: /[-−]\s*(\d{1,2})\s*%/g,
   // "1 449,00 € HT"
-  htPrice: /(\d[\d\s  .,]*)\s*€[^\w€]{0,12}HT\b/i,
+  htPrice: /(\d[\d\s\\u00A0\\u202F.,]*)\s*€[^\w€]{0,12}HT\b/i,
   // "1 738,80 € TTC"
-  ttcPrice: /(\d[\d\s  .,]*)\s*€[^\w€]{0,12}TTC\b/i,
+  ttcPrice: /(\d[\d\s\\u00A0\\u202F.,]*)\s*€[^\w€]{0,12}TTC\b/i,
   // "Dont 3,40€ d'éco-participation" / "dont 2,50 € de participation DEEE"
-  ecoPart: /(?:dont|y\s+compris)\s+([\d\s  .,]+)\s*€\s*(?:d['']?[ée]co[\s-]?participation|[ée]co[\s-]?part\b|de\s+participation\s+DEEE)/i,
+  ecoPart: /(?:dont|y\s+compris)\s+([\d\s\\u00A0\\u202F.,]+)\s*€\s*(?:d['']?[ée]co[\s-]?participation|[ée]co[\s-]?part\b|de\s+participation\s+DEEE)/i,
   // GBP "£49.99"
-  gbp: /£\s*([\d\s  .,]+)/,
+  gbp: /£\s*([\d\s\\u00A0\\u202F.,]+)/,
   // USD "$59.99"
-  usd: /\$\s*([\d\s  .,]+)/,
+  usd: /\$\s*([\d\s\\u00A0\\u202F.,]+)/,
   // EUR fallback "999,00€" ou "999,00 €"
-  eur: /([\d\s  .,]+)\s*€/,
+  eur: /([\d\s\\u00A0\\u202F.,]+)\s*€/,
 }
 
 /** Mots-clés qui indiquent un prix de livraison/expédition (à ignorer). */
-const SHIPPING_CONTEXT_RE = /(?:livraison|exp[eé]dition|frais\s+de\s+port|shipping)\s*:?\s*([\d\s  .,]+)\s*€/gi
+const SHIPPING_CONTEXT_RE = /(?:livraison|exp[eé]dition|frais\s+de\s+port|shipping)\s*:?\s*([\d\s\\u00A0\\u202F.,]+)\s*€/gi
 
 /** Mots-clés indiquant un prix marketplace/partenaire (PAS le prix vendeur principal).
  *  Ex Jardiland : `**Offres partenaires** + **6 offres** à partir de **185,99 €**`
@@ -335,7 +335,7 @@ export function parsePricingFromMarkdown(
     // Itère tous les matchs et skip ceux dans contexte marketplace
     // (Jardiland-style : "à partir de", "Offres partenaires", "+ N offres").
     if (result.ttc == null) {
-      const eurMatches = [...cleanMd.matchAll(/([\d\s  .,]+)\s*€/g)]
+      const eurMatches = [...cleanMd.matchAll(/([\d\s\\u00A0\\u202F.,]+)\s*€/g)]
       for (const m of eurMatches) {
         const idx = m.index ?? 0
         if (isInMarketplaceContext(cleanMd, idx)) continue

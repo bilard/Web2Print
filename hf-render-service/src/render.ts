@@ -127,7 +127,7 @@ async function ensureTemplateExists(templateSrc: string, name: string): Promise<
     }
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`unknown_template:${name}`);
+      throw new Error(`unknown_template:${name}`, { cause: err });
     }
     throw err;
   }

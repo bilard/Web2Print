@@ -540,8 +540,10 @@ async function fetchAssetBlob(url: string, signal: AbortSignal): Promise<Blob> {
   } catch (proxyErr) {
     try {
       const res = await fetch(url, { signal })
+      // eslint-disable-next-line preserve-caught-error -- échec propre du fetch de repli, capté localement (directErr)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const blob = await res.blob()
+      // eslint-disable-next-line preserve-caught-error -- échec propre du fetch de repli, capté localement (directErr)
       if (blob.size === 0) throw new Error('réponse vide')
       return blob
     } catch (directErr) {
@@ -653,6 +655,7 @@ export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { asse
         if (/permission refusée|HTTP 40[13]/i.test(m)) {
           throw new Error(
             `Drive : ${m} — reconnecte-toi au panneau Google Drive (scope d'écriture drive.file requis).`,
+            { cause: err },
           )
         }
         failed++

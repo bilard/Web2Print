@@ -134,6 +134,7 @@ export const filterNode: NodeSpec<
     } catch (err) {
       throw new Error(
         `Filtre : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`,
+        { cause: err },
       )
     }
     const kept = rows.filter((row) => {
@@ -356,6 +357,7 @@ export const textOpNode: NodeSpec<
       } catch (err) {
         throw new Error(
           `Regex invalide "${config.pattern}" — ${err instanceof Error ? err.message : err}`,
+          { cause: err },
         )
       }
     }

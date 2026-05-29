@@ -36,6 +36,7 @@ export async function exportPngBlob(canvas: Canvas, dpi: number = 150): Promise<
       throw new Error(
         '[exportPngBlob] Canvas tainté (SecurityError) — une image est chargée sans CORS. ' +
         'Vérifiez que les images Firebase Storage ont les en-têtes CORS appropriés.',
+        { cause: err },
       )
     }
     throw err

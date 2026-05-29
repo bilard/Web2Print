@@ -134,6 +134,7 @@ function base64UrlEncode(str: string): string {
 
 function encodeMimeHeader(s: string): string {
   // RFC 2047 encoded-word pour les sujets non-ASCII
+  // eslint-disable-next-line no-control-regex -- la plage ASCII complète (avec caractères de contrôle) est volontaire
   if (/^[\x00-\x7F]*$/.test(s)) return s
   return `=?UTF-8?B?${btoa(new TextEncoder().encode(s).reduce((a, b) => a + String.fromCharCode(b), ''))}?=`
 }

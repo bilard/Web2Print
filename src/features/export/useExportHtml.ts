@@ -181,6 +181,7 @@ export async function exportHtmlBlob(canvas: Canvas, opts: ExportHtmlBlobOptions
       throw new Error(
         '[exportHtmlBlob] Canvas tainté (SecurityError) — une image est chargée sans CORS. ' +
         'Vérifiez que les images Firebase Storage ont les en-têtes CORS appropriés.',
+        { cause: err },
       )
     }
     throw err

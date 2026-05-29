@@ -29,6 +29,7 @@ function defaultLabel(a: SavedAnimation): string {
 }
 
 function sanitizeFilename(name: string): string {
+  // eslint-disable-next-line no-control-regex -- on retire volontairement les caractères de contrôle d'un nom de fichier
   const cleaned = name.replace(/[/\\:*?"<>|\x00-\x1f]/g, '_').trim()
   return cleaned.length > 0 ? cleaned.slice(0, 120) : 'animation'
 }

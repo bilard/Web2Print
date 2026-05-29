@@ -16,8 +16,6 @@ interface PimState {
   searchQuery: string
   /** Produit ouvert dans la fiche (sheet). */
   openProductId: string | null
-  /** Modale de migration legacy ouverte. */
-  migrationModalOpen: boolean
 
   // Actions projets
   setProjects: (p: Project[]) => void
@@ -40,7 +38,6 @@ interface PimState {
   setTaxonomyNavFilter: (path: string[]) => void
   setSearchQuery: (q: string) => void
   setOpenProductId: (id: string | null) => void
-  setMigrationModalOpen: (open: boolean) => void
 }
 
 export const usePimStore = create<PimState>((set) => ({
@@ -51,7 +48,6 @@ export const usePimStore = create<PimState>((set) => ({
   taxonomyNavFilter: [],
   searchQuery: '',
   openProductId: null,
-  migrationModalOpen: false,
 
   setProjects: (projects) => set({ projects }),
   setCurrentProjectId: (currentProjectId) =>
@@ -105,5 +101,4 @@ export const usePimStore = create<PimState>((set) => ({
   setTaxonomyNavFilter: (taxonomyNavFilter) => set({ taxonomyNavFilter, openProductId: null }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setOpenProductId: (openProductId) => set({ openProductId }),
-  setMigrationModalOpen: (migrationModalOpen) => set({ migrationModalOpen }),
 }))

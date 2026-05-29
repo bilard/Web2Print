@@ -83,6 +83,7 @@ export async function exportPdfBlob(canvas: Canvas, opts: ExportPdfBlobOptions):
       throw new Error(
         '[exportPdfBlob] Canvas tainté (SecurityError) — une image est chargée sans CORS. ' +
         'Vérifiez que les images Firebase Storage ont les en-têtes CORS appropriés.',
+        { cause: err },
       )
     }
     throw err

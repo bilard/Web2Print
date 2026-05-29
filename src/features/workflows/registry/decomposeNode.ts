@@ -86,6 +86,7 @@ export const decomposeNode: NodeSpec<
     } catch (err) {
       throw new Error(
         `Impossible de lire le fichier SVG : ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err },
       )
     }
 
@@ -107,6 +108,7 @@ export const decomposeNode: NodeSpec<
     } catch (err) {
       throw new Error(
         `Parsing SVG échoué : ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err },
       )
     }
 

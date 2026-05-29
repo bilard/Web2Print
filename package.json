@@ -1,7 +1,7 @@
 {
   "name": "design-studio",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "node dev.mjs",
@@ -69,7 +69,6 @@
     "turndown": "^7.2.4",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.3.6",
-    "zod-to-json-schema": "^3.25.2",
     "zustand": "^4.5.7"
   }
 }

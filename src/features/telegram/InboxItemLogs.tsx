@@ -18,7 +18,7 @@ function logTone(entry: InboxLogEntry): { dot: string; text: string } {
   if (/[✓✅]/.test(m)) return { dot: 'bg-emerald-400', text: 'text-emerald-300/90' }
   if (/connecteur|Jina|Firecrawl|Bright Data|structured data|\bLLM\b/i.test(m))
     return { dot: 'bg-cyan-400', text: 'text-cyan-300/90' }
-  if (/^[\s]*[📥⏳🤖🧹]/.test(m) || /Exécution en cours|reçue|généré|sauvegardé|trouvé|inject/i.test(m))
+  if (/^[\s]*[📥⏳🤖🧹]/u.test(m) || /Exécution en cours|reçue|généré|sauvegardé|trouvé|inject/i.test(m))
     return { dot: 'bg-indigo-400', text: 'text-indigo-300/90' }
   return { dot: 'bg-neutral-500', text: 'text-neutral-300' }
 }

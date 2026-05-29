@@ -499,6 +499,7 @@ async function callOpenAICompatible<T>(
     throw new Error(
       `${config.displayName} : JSON invalide (${err instanceof Error ? err.message : String(err)}). ` +
       `Sortie : ${text.slice(0, 200)}`,
+      { cause: err },
     )
   }
 

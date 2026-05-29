@@ -40,7 +40,7 @@ export const ifElseNode: NodeSpec<
     try {
       result = Boolean(new Function('value', `return (${expr})`)(value))
     } catch (err) {
-      throw new Error(`Erreur d'évaluation "${expr}" : ${err instanceof Error ? err.message : err}`)
+      throw new Error(`Erreur d'évaluation "${expr}" : ${err instanceof Error ? err.message : err}`, { cause: err })
     }
     ctx.log('info', `Condition "${expr}" = ${result}`)
     return result ? { then: value } : { else: value }
@@ -92,6 +92,7 @@ export const pipeNode: NodeSpec<
       } catch (err) {
         throw new Error(
           `Étape ${i + 1} "${expr}" : ${err instanceof Error ? err.message : err}`,
+          { cause: err },
         )
       }
     }

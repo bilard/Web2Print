@@ -165,7 +165,7 @@ export async function enrichRow(input: EnrichRowInput): Promise<EnrichRowResult>
     mode: 'auto',
   })
 
-  if (isEmptyProduct(product)) {
+  if (!product || isEmptyProduct(product)) {
     log?.('[enrichRow] aucune donnée (anti-bot ou page sans contenu structuré)')
     return {
       fields: Object.fromEntries(targetFields.map((f) => [f, null])),

@@ -75,6 +75,7 @@ export async function exportPptxBlob(canvas: Canvas, opts: ExportPptxBlobOptions
       throw new Error(
         '[exportPptxBlob] Canvas tainté (SecurityError) — une image est chargée sans CORS. ' +
         'Vérifiez que les images Firebase Storage ont les en-têtes CORS appropriés.',
+        { cause: err },
       )
     }
     throw err

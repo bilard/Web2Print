@@ -67,10 +67,11 @@ describe('resolveRun', () => {
 
   it('strip le séparateur « : » (Scrape : url / Scrape: url)', () => {
     const f = [wf('Scrape')]
-    expect(resolveRun(f, 'Scrape : https://x.fr/p').input ?? '').toBe('https://x.fr/p')
-    expect(resolveRun(f, 'Scrape: https://x.fr/p').input ?? '').toBe('https://x.fr/p')
+    const inputOf = (r: ReturnType<typeof resolveRun>) => (r.ok ? r.input : '')
+    expect(inputOf(resolveRun(f, 'Scrape : https://x.fr/p'))).toBe('https://x.fr/p')
+    expect(inputOf(resolveRun(f, 'Scrape: https://x.fr/p'))).toBe('https://x.fr/p')
     // pas de strip des tirets : input légitime préservé
-    expect(resolveRun(f, 'Scrape -5 widgets').input ?? '').toBe('-5 widgets')
+    expect(inputOf(resolveRun(f, 'Scrape -5 widgets'))).toBe('-5 widgets')
   })
 })
 
