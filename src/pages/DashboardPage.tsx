@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, lazy, Suspense } from 'react'
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
@@ -54,6 +54,13 @@ export default function DashboardPage() {
   const location = useLocation()
   const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
   const [activeSection, setActiveSection] = useState<Section>(initialSection)
+  // Ouvre la section demandée par la navigation (ex: lien d'aide « Importer un fichier »
+  // → state { section: 'import' }). location.key change à chaque navigation, y compris
+  // vers la même route → l'écran s'ouvre même si on est déjà sur le dashboard.
+  useEffect(() => {
+    const requested = (location.state as { section?: Section } | null)?.section
+    if (requested) setActiveSection(requested)
+  }, [location.key, location.state])
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
     return window.localStorage.getItem('dashboard:sidebarOpen') !== 'false'

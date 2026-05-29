@@ -24,14 +24,17 @@ export function MenuLink({ target, label, icon: Icon }: MenuLinkProps) {
     if (target.highlightId) {
       setHighlightTarget(target.highlightId)
     }
-    if (!isCurrentRoute) {
-      const navigatable = resolveNavigatablePath(target.path)
-      if (navigatable !== null) {
-        navigate(navigatable)
-        closeDrawer()
-      }
-    } else if (target.highlightId) {
-      // déjà sur la bonne page : le ring va s'afficher derrière le drawer ouvert
+    const navigatable = resolveNavigatablePath(target.path)
+    if (navigatable !== null) {
+      // Ouvre réellement l'écran : la section du dashboard est encodée dans le highlightId
+      // (`dashboard.sidebar.import` → section `import`) et passée en state de navigation,
+      // que le DashboardPage lit pour activer la section. On navigue MÊME si on est déjà
+      // sur la route — sinon le lien ne ferait que surligner l'onglet sans ouvrir l'écran.
+      const section = sectionFromHighlightId(target.highlightId)
+      navigate(navigatable, section ? { state: { section } } : undefined)
+      closeDrawer()
+    } else if (isCurrentRoute && target.highlightId) {
+      // Route contextuelle (/editor/:id) et déjà dessus : le ring s'affiche, on ferme le drawer.
       closeDrawer()
     }
   }
@@ -71,4 +74,13 @@ function matchesRoute(current: string, target: string): boolean {
 function resolveNavigatablePath(path: string): string | null {
   if (path.includes(':')) return null
   return path
+}
+
+/** La section du dashboard est encodée dans le highlightId : `dashboard.sidebar.<section>`.
+ *  Renvoie `<section>` (ex: 'import', 'data', 'workflows') ou null si le highlightId ne
+ *  cible pas un onglet de section (ex: 'dashboard.new-project' = un bouton, pas une section). */
+export function sectionFromHighlightId(id?: string): string | null {
+  if (!id) return null
+  const m = /^dashboard\.sidebar\.(.+)$/.exec(id)
+  return m ? m[1] : null
 }
