@@ -1277,12 +1277,17 @@ function StatsTab() {
 export function SettingsPanel({
   header,
   stickyClassName,
+  aside,
 }: {
   header?: ReactNode
   /** Classes appliquées au bloc en-tête (titre + onglets) pour le figer au scroll.
    *  La page passe `sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]` (compense le p-8
-   *  du conteneur + fond opaque). Absent (ex. SettingsSheet) → en-tête statique. */
+   *  du conteneur + fond opaque). Le header couvre TOUTE la largeur (contenu + aside)
+   *  → comportement homogène. Absent (ex. SettingsSheet) → en-tête statique. */
   stickyClassName?: string
+  /** Colonne secondaire affichée À DROITE du contenu (ex. panneau live consommation
+   *  LLM). Rendue sous le header sticky, défile avec le contenu. */
+  aside?: ReactNode
 } = {}) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
 
@@ -1318,14 +1323,21 @@ export function SettingsPanel({
         </nav>
       </div>
 
-      {/* Tab content */}
-      <div className="max-w-2xl">
-        {activeTab === 'profile' && <ProfileTab />}
-        {activeTab === 'ai' && <AiTab />}
-        {activeTab === 'firebase' && <FirebaseTab />}
-        {activeTab === 'connectors' && <ConnectorsTab />}
-        {activeTab === 'cookies' && <CookiesTab />}
-        {activeTab === 'stats' && <StatsTab />}
+      {/* Corps : contenu de l'onglet + colonne secondaire (aside) éventuelle.
+          Quand un aside est fourni, le contenu prend une largeur fixe (640px) et
+          l'aside occupe le reste ; sinon le contenu reste en max-w-2xl (cas SettingsSheet). */}
+      <div className="flex gap-6 items-start">
+        <div className={aside ? 'w-[640px] max-w-full shrink-0 min-w-0' : 'max-w-2xl min-w-0'}>
+          {activeTab === 'profile' && <ProfileTab />}
+          {activeTab === 'ai' && <AiTab />}
+          {activeTab === 'firebase' && <FirebaseTab />}
+          {activeTab === 'connectors' && <ConnectorsTab />}
+          {activeTab === 'cookies' && <CookiesTab />}
+          {activeTab === 'stats' && <StatsTab />}
+        </div>
+        {aside && (
+          <div className="hidden xl:block flex-1 min-w-0 max-w-[640px]">{aside}</div>
+        )}
       </div>
     </div>
   )

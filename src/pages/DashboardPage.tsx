@@ -647,24 +647,18 @@ export default function DashboardPage() {
       ) : (
         <main className="flex-1 p-8 overflow-auto" role="main" aria-label={menuItems.find((m) => m.id === activeSection)?.label}>
           {activeSection === 'settings' ? (
-            // Settings utilise un layout deux colonnes pleine largeur :
-            // liste alignée à gauche + panneau live consommation LLM à droite.
-            <div className="flex gap-6 items-start">
-              <div className="w-[640px] shrink-0 max-w-full">
-                <SettingsPanel
-                  stickyClassName="sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]"
-                  header={
-                    <div className="flex items-baseline gap-3">
-                      <h1 className="text-xl font-bold">Paramètres</h1>
-                      <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
-                    </div>
-                  }
-                />
-              </div>
-              <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] pt-12">
-                <LiveLlmUsagePanel />
-              </div>
-            </div>
+            // Settings : header (titre + onglets) figé PLEINE LARGEUR au scroll,
+            // puis corps deux colonnes (contenu + panneau live conso LLM) qui défile.
+            <SettingsPanel
+              stickyClassName="sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]"
+              header={
+                <div className="flex items-baseline gap-3">
+                  <h1 className="text-xl font-bold">Paramètres</h1>
+                  <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
+                </div>
+              }
+              aside={<LiveLlmUsagePanel />}
+            />
           ) : (
             <div className="max-w-6xl mx-auto">
               {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}
