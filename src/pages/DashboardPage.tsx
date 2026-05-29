@@ -645,20 +645,26 @@ export default function DashboardPage() {
           </main>
         </div>
       ) : (
-        <main className="flex-1 p-8 overflow-auto" role="main" aria-label={menuItems.find((m) => m.id === activeSection)?.label}>
+        <main
+          className={`flex-1 ${activeSection === 'settings' ? 'overflow-hidden' : 'p-8 overflow-auto'}`}
+          role="main"
+          aria-label={menuItems.find((m) => m.id === activeSection)?.label}
+        >
           {activeSection === 'settings' ? (
-            // Settings : header (titre + onglets) figé PLEINE LARGEUR au scroll,
-            // puis corps deux colonnes (contenu + panneau live conso LLM) qui défile.
-            <SettingsPanel
-              stickyClassName="sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f] before:content-[''] before:absolute before:inset-x-0 before:bottom-full before:h-16 before:bg-[#0f0f0f]"
-              header={
-                <div className="flex items-baseline gap-3">
-                  <h1 className="text-xl font-bold">Paramètres</h1>
-                  <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
-                </div>
-              }
-              aside={<LiveLlmUsagePanel />}
-            />
+            // Settings : header (titre + onglets) FIXE en haut, puis 2 colonnes
+            // (contenu + panneau live conso LLM) qui défilent indépendamment.
+            <div className="h-full p-8">
+              <SettingsPanel
+                fillHeight
+                header={
+                  <div className="flex items-baseline gap-3">
+                    <h1 className="text-xl font-bold">Paramètres</h1>
+                    <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
+                  </div>
+                }
+                aside={<LiveLlmUsagePanel />}
+              />
+            </div>
           ) : (
             <div className="max-w-6xl mx-auto">
               {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}

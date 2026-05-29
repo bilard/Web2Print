@@ -1276,31 +1276,26 @@ function StatsTab() {
 
 export function SettingsPanel({
   header,
-  stickyClassName,
   aside,
+  fillHeight,
 }: {
   header?: ReactNode
-  /** Classes appliquées au bloc en-tête (titre + onglets) pour le figer au scroll.
-   *  La page passe `sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]` (compense le p-8
-   *  du conteneur + fond opaque). Le header couvre TOUTE la largeur (contenu + aside)
-   *  → comportement homogène. Absent (ex. SettingsSheet) → en-tête statique. */
-  stickyClassName?: string
-  /** Colonne secondaire affichée À DROITE du contenu (ex. panneau live consommation
-   *  LLM). Rendue sous le header sticky, défile avec le contenu. */
+  /** Colonne secondaire à droite du contenu (ex. panneau live conso LLM). */
   aside?: ReactNode
+  /** Mode page (DashboardPage) : occupe toute la hauteur dispo, en-tête (titre +
+   *  onglets) FIXE en haut, et chaque colonne (contenu + aside) défile indépendamment.
+   *  Absent (ex. SettingsSheet) : en-tête statique, contenu qui flue (le sheet scrolle). */
+  fillHeight?: boolean
 } = {}) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
 
-  return (
-    <div className="flex flex-col gap-5">
-      {/* En-tête (titre éventuel + onglets). Figé au scroll si stickyClassName fourni. */}
-      <div className={`flex flex-col gap-4 ${stickyClassName ?? ''}`}>
-        {header}
-        {/* Tab navigation */}
-        <nav
-          aria-label="Sections des paramètres"
-          className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
-        >
+  const headerBlock = (
+    <div className="flex flex-col gap-4 shrink-0">
+      {header}
+      <nav
+        aria-label="Sections des paramètres"
+        className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
+      >
         {TABS.map(({ id, label, icon: Icon, accent }) => {
           const isActive = activeTab === id
           return (
@@ -1320,27 +1315,45 @@ export function SettingsPanel({
             </button>
           )
         })}
-        </nav>
-      </div>
+      </nav>
+    </div>
+  )
 
-      {/* Corps : contenu de l'onglet + colonne secondaire (aside) éventuelle.
-          Quand un aside est fourni, le contenu prend une largeur fixe (640px) et
-          l'aside occupe le reste ; sinon le contenu reste en max-w-2xl (cas SettingsSheet). */}
-      <div className="flex gap-6 items-start">
-        <div className={aside ? 'w-[640px] max-w-full shrink-0 min-w-0' : 'max-w-2xl min-w-0'}>
-          {activeTab === 'profile' && <ProfileTab />}
-          {activeTab === 'ai' && <AiTab />}
-          {activeTab === 'firebase' && <FirebaseTab />}
-          {activeTab === 'connectors' && <ConnectorsTab />}
-          {activeTab === 'cookies' && <CookiesTab />}
-          {activeTab === 'stats' && <StatsTab />}
-        </div>
-        {aside && (
-          <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] self-start xl:sticky xl:top-[8.5rem]">
-            {aside}
+  const tabContent = (
+    <>
+      {activeTab === 'profile' && <ProfileTab />}
+      {activeTab === 'ai' && <AiTab />}
+      {activeTab === 'firebase' && <FirebaseTab />}
+      {activeTab === 'connectors' && <ConnectorsTab />}
+      {activeTab === 'cookies' && <CookiesTab />}
+      {activeTab === 'stats' && <StatsTab />}
+    </>
+  )
+
+  // ── Mode page : header fixe + 2 colonnes scrollables indépendamment ──
+  if (fillHeight) {
+    return (
+      <div className="h-full min-h-0 flex flex-col gap-5">
+        {headerBlock}
+        <div className="flex-1 min-h-0 flex gap-6">
+          <div className="w-[640px] max-w-full shrink-0 min-w-0 overflow-y-auto -mr-2 pr-2">
+            {tabContent}
           </div>
-        )}
+          {aside && (
+            <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] min-h-0">
+              {aside}
+            </div>
+          )}
+        </div>
       </div>
+    )
+  }
+
+  // ── Mode simple (SettingsSheet) : en-tête statique, contenu qui flue ──
+  return (
+    <div className="flex flex-col gap-5">
+      {headerBlock}
+      <div className="max-w-2xl min-w-0">{tabContent}</div>
     </div>
   )
 }

@@ -335,7 +335,7 @@ export function LiveLlmUsagePanel() {
   return (
     <aside
       aria-label="Consommation IA en temps réel"
-      className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 flex flex-col gap-4 max-h-[calc(100dvh-10rem)]"
+      className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 flex flex-col gap-4 h-full max-h-full min-h-0"
     >
       <header className="flex items-start justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
