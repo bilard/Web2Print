@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, XCircle, Loader2, Wifi, LogOut, Sparkles, Flame, ChevronUp, ChevronDown, X, Plus, RefreshCw, ExternalLink, KeyRound, CreditCard, Cookie, Trash2 } from 'lucide-react'
 import { TelegramSettings } from '@/features/telegram/TelegramSettings'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
@@ -1274,16 +1274,28 @@ function StatsTab() {
   )
 }
 
-export function SettingsPanel() {
+export function SettingsPanel({
+  header,
+  stickyClassName,
+}: {
+  header?: ReactNode
+  /** Classes appliquées au bloc en-tête (titre + onglets) pour le figer au scroll.
+   *  La page passe `sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]` (compense le p-8
+   *  du conteneur + fond opaque). Absent (ex. SettingsSheet) → en-tête statique. */
+  stickyClassName?: string
+} = {}) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Tab navigation */}
-      <nav
-        aria-label="Sections des paramètres"
-        className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
-      >
+      {/* En-tête (titre éventuel + onglets). Figé au scroll si stickyClassName fourni. */}
+      <div className={`flex flex-col gap-4 ${stickyClassName ?? ''}`}>
+        {header}
+        {/* Tab navigation */}
+        <nav
+          aria-label="Sections des paramètres"
+          className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
+        >
         {TABS.map(({ id, label, icon: Icon, accent }) => {
           const isActive = activeTab === id
           return (
@@ -1303,7 +1315,8 @@ export function SettingsPanel() {
             </button>
           )
         })}
-      </nav>
+        </nav>
+      </div>
 
       {/* Tab content */}
       <div className="max-w-2xl">

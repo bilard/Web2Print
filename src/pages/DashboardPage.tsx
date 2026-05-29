@@ -651,11 +651,15 @@ export default function DashboardPage() {
             // liste alignée à gauche + panneau live consommation LLM à droite.
             <div className="flex gap-6 items-start">
               <div className="w-[640px] shrink-0 max-w-full">
-                <div className="flex items-baseline gap-3 mb-6">
-                  <h1 className="text-xl font-bold">Paramètres</h1>
-                  <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
-                </div>
-                <SettingsPanel />
+                <SettingsPanel
+                  stickyClassName="sticky top-0 z-10 -mt-8 pt-8 pb-3 bg-[#0f0f0f]"
+                  header={
+                    <div className="flex items-baseline gap-3">
+                      <h1 className="text-xl font-bold">Paramètres</h1>
+                      <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
+                    </div>
+                  }
+                />
               </div>
               <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] pt-12">
                 <LiveLlmUsagePanel />
