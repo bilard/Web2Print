@@ -1,4 +1,4 @@
-import { LayoutGrid, FilePlus, Upload, Library, Image as ImageIcon, FileSpreadsheet, FolderTree, Database } from 'lucide-react'
+import { LayoutGrid, FilePlus, Upload, Library, Image as ImageIcon, FileSpreadsheet, FolderTree, Database, BookOpen, Workflow, Send, MessageSquare, Film } from 'lucide-react'
 import type { HelpSection } from './types'
 import { DashboardMock } from './mockups/DashboardMock'
 
@@ -70,6 +70,36 @@ Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-templates' },
       label: 'Templates scraping',
       icon: Database,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-hub' },
+      label: 'Scraping Hub',
+      icon: BookOpen,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.workflows' },
+      label: 'Workflows',
+      icon: Workflow,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.telegram' },
+      label: 'Telegram',
+      icon: Send,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.hyperframes' },
+      label: 'Animation',
+      icon: Film,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.chat' },
+      label: 'Chat IA',
+      icon: MessageSquare,
     },
     {
       type: 'text',

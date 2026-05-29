@@ -1,4 +1,4 @@
-import { Workflow } from 'lucide-react'
+import { Workflow, Send } from 'lucide-react'
 import type { HelpSection } from './types'
 
 export const workflowSection: HelpSection = {
@@ -92,6 +92,18 @@ La **palette est progressive** : commence par un node **Import** (source), puis 
     {
       type: 'text',
       md: `_Les nodes IA (Scrape, Enrichissement, Décomposer, Génération de workflow, Question web) routent automatiquement vers un modèle adapté et à jour — aucun réglage de modèle à faire._`,
+    },
+    {
+      type: 'text',
+      md: `### Piloter depuis Telegram
+
+Les workflows se déclenchent aussi à distance : \`/flow <demande>\` génère et exécute un workflow, \`/run <nom>\` rejoue un workflow sauvegardé — et le fichier produit revient sur Telegram.`,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.telegram' },
+      label: 'Ouvrir Telegram',
+      icon: Send,
     },
   ],
 }

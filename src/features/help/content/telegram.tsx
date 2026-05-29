@@ -1,4 +1,4 @@
-import { Send } from 'lucide-react'
+import { Send, Workflow } from 'lucide-react'
 import type { HelpSection } from './types'
 
 export const telegramSection: HelpSection = {
@@ -47,6 +47,18 @@ export const telegramSection: HelpSection = {
 - **Workflows nécessitant un fichier manuel** (node Upload/Import) ne sont pas exécutables en auto : reformule avec une URL à scraper ou des données dans le message.
 - **Suppression** : supprimer un message dans l'app le retire aussi de Telegram (< 48 h). L'inverse (effacer depuis le téléphone) n'est pas détectable par un bot — utilise \`/clear\`.
 - **Nettoyage auto** : la boîte se purge localement après 7 jours.`,
+    },
+    {
+      type: 'text',
+      md: `### Voir aussi
+
+\`/flow\` et \`/run\` s'appuient sur le module **Workflows** : la génération par IA et l'exécution sont les mêmes que dans l'éditeur de workflow.`,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.workflows' },
+      label: 'Ouvrir Workflows',
+      icon: Workflow,
     },
   ],
 }

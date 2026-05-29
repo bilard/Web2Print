@@ -12,6 +12,7 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.chat',
   'dashboard.sidebar.workflows',
   'dashboard.sidebar.telegram',
+  'dashboard.sidebar.hyperframes',
 
   // Editor header
   'editor-header.save',

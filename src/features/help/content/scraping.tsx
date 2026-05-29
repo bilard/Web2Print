@@ -1,4 +1,4 @@
-import { Database, Globe } from 'lucide-react'
+import { Database, Globe, BookOpen } from 'lucide-react'
 import type { HelpSection } from './types'
 import { ScrapingTemplateMock } from './mockups/ScrapingTemplateMock'
 
@@ -48,6 +48,12 @@ Le template vit dans Firestore et matchera automatiquement les futures URLs du d
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-templates' },
       label: 'Ouvrir Templates scraping',
       icon: Database,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-hub' },
+      label: 'Ouvrir Scraping Hub',
+      icon: BookOpen,
     },
     {
       type: 'text',
