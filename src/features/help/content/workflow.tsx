@@ -26,59 +26,70 @@ export const workflowSection: HelpSection = {
 
 La **palette est progressive** : commence par un node **Import** (source), puis enrichis / transforme / sauvegarde / exporte / communique.`,
     },
+    { type: 'text', md: `### Catalogue des nodes
+
+Déplie une catégorie pour voir ses nodes.` },
     {
-      type: 'text',
-      md: `### Catalogue des nodes
-
-**Import (sources)**
-| Node | Rôle |
-|---|---|
-| Upload | Fichier/dossier local (auto-parse CSV/Excel) |
-| Parser Excel/CSV | CSV/XLSX → tableau |
-| Import IDML / SVG / PPTX / image | Charge un fichier InDesign / SVG / PowerPoint / image |
-| Image → SVG · PDF → SVG | Convertit un raster / PDF en SVG éditable |
-| Import Google Sheets · Import Google Drive | Source depuis Google Drive |
-| Saisie texte | Texte saisi à la main (prompt, valeur à interpoler) |
-| **Scrape URL** | Scrape 1+ URLs (Jina + IA, pipeline produit complet) |
-| **Recherche web** ⭐ | Cherche sur le web + lit les pages → tableau + texte de synthèse |
-| **Question web (IA)** ⭐ | Question → recherche web + réponse synthétisée par le LLM (+ sources) |
-
-**Enrichissement**
-| Node | Rôle |
-|---|---|
-| Enrichissement | Scrape les URLs d'une colonne et complète les champs via IA |
-| Génération image (Nano Banana) | Génère des images depuis un prompt |
-
-**Transformation**
-| Node | Rôle |
-|---|---|
-| Définir / réécrire colonnes | Templates \`{{col}}\` appliqués par ligne |
-| Filtrer · Trier · Renommer · Opération texte | Manipulations de tableau |
-| Décomposer (SVG éditable) | Analyse un SVG (Vision IA) en calques éditables |
-
-**Sauvegarde**
-| Node | Rôle |
-|---|---|
-| Save PIM | Persiste les lignes comme produits (Firestore) |
-| Import Taxonomie | Construit une taxonomie hiérarchique |
-| Save DAM | Upload les assets vers Google Drive |
-
-**Export**
-| Node | Rôle |
-|---|---|
-| Export Excel / PPTX / HTML→PDF / (design) | Génère le fichier |
-| Export Google Sheets / Google Drive | Vers Google Drive |
-
-**Logique**
-| Node | Rôle |
-|---|---|
-| If / Else · Pipe · Loop (each / collect) | Branches, chaînage d'expressions, boucles |
-
-**Communication**
-| Node | Rôle |
-|---|---|
-| Envoyer via Gmail | Envoie un email (+ pièces jointes) |
-| Envoyer via Telegram | Envoie un message / document |`,
+      type: 'accordion',
+      items: [
+        {
+          title: 'Import (sources) — 14 nodes',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| Upload | Fichier/dossier local (auto-parse CSV/Excel) |\n' +
+            '| Parser Excel/CSV | CSV/XLSX → tableau |\n' +
+            '| Import IDML / SVG / PPTX / image | Charge un fichier InDesign / SVG / PowerPoint / image |\n' +
+            '| Image → SVG · PDF → SVG | Convertit un raster / PDF en SVG éditable |\n' +
+            '| Import Google Sheets · Import Google Drive | Source depuis Google Drive |\n' +
+            '| Saisie texte | Texte saisi à la main (prompt, valeur à interpoler) |\n' +
+            '| **Scrape URL** | Scrape 1+ URLs (Jina + IA, pipeline produit complet) |\n' +
+            '| **Recherche web** ⭐ | Cherche sur le web + lit les pages → tableau + texte de synthèse |\n' +
+            '| **Question web (IA)** ⭐ | Question → recherche web + réponse synthétisée par le LLM (+ sources) |',
+        },
+        {
+          title: 'Enrichissement',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| Enrichissement | Scrape les URLs d\'une colonne et complète les champs via IA |\n' +
+            '| Génération image (Nano Banana) | Génère des images depuis un prompt |',
+        },
+        {
+          title: 'Transformation',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| Définir / réécrire colonnes | Templates `{{col}}` appliqués par ligne |\n' +
+            '| Filtrer · Trier · Renommer · Opération texte | Manipulations de tableau |\n' +
+            '| Décomposer (SVG éditable) | Analyse un SVG (Vision IA) en calques éditables |',
+        },
+        {
+          title: 'Sauvegarde',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| Save PIM | Persiste les lignes comme produits (Firestore) |\n' +
+            '| Import Taxonomie | Construit une taxonomie hiérarchique |\n' +
+            '| Save DAM | Upload les assets vers Google Drive |',
+        },
+        {
+          title: 'Export',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| Export Excel / PPTX / HTML→PDF / (design) | Génère le fichier |\n' +
+            '| Export Google Sheets / Google Drive | Vers Google Drive |',
+        },
+        {
+          title: 'Logique',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| If / Else · Pipe · Loop (each / collect) | Branches, chaînage d\'expressions, boucles |',
+        },
+        {
+          title: 'Communication',
+          md:
+            '| Node | Rôle |\n|---|---|\n' +
+            '| Envoyer via Gmail | Envoie un email (+ pièces jointes) |\n' +
+            '| Envoyer via Telegram | Envoie un message / document |',
+        },
+      ],
     },
     {
       type: 'text',

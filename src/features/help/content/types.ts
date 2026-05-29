@@ -17,12 +17,20 @@ export type MenuTarget = {
   highlightId?: string
 }
 
+export type AccordionItem = {
+  /** Titre cliquable du volet. */
+  title: string
+  /** Contenu markdown affiché quand le volet est ouvert. */
+  md: string
+}
+
 export type HelpBlock =
   | { type: 'text'; md: string }
   | { type: 'screenshot'; src: string; alt: string; caption?: string }
   | { type: 'mockup'; Component: ComponentType }
   | { type: 'menu-link'; target: MenuTarget; label: string; icon?: LucideIcon }
   | { type: 'shortcut'; keys: string[]; label: string }
+  | { type: 'accordion'; items: AccordionItem[] }
 
 export type HelpSection = {
   id: string

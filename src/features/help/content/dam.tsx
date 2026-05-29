@@ -19,21 +19,20 @@ export const damSection: HelpSection = {
       label: 'Ouvrir le DAM',
       icon: Image,
     },
+    { type: 'text', md: `### Les onglets` },
     {
-      type: 'text',
-      md: `### Les onglets
-
-| Onglet | Contenu |
-|---|---|
-| **Banque d'images** | Recherche dans Pexels & Unsplash (millions de photos libres) |
-| **Mes images** | Tes images sauvegardées (depuis la banque ou générées) |
-| **Favoris** | Images marquées d'un ♥ |
-| **Collections** | Dossiers d'organisation que tu crées |
-| **Récents** | Derniers ajouts |
-| **Projets** | Images **et polices** du projet courant |
-| **Création d'image** | Génération IA (Gemini / Nano Banana 2) |
-| **Animations HTML** | Tes compositions vidéo (HyperFrames) |
-| **Google Drive** | Accès à tes fichiers Drive (après connexion) |`,
+      type: 'accordion',
+      items: [
+        { title: 'Banque d\'images', md: 'Recherche dans **Pexels & Unsplash** (millions de photos libres de droits) avec filtres source / orientation / couleur.' },
+        { title: 'Mes images', md: 'Tes images **sauvegardées** — depuis la banque ou issues de la génération IA.' },
+        { title: 'Favoris', md: 'Les images que tu as marquées d\'un **♥** pour un accès rapide.' },
+        { title: 'Collections', md: 'Des **dossiers d\'organisation** que tu crées et remplis toi-même.' },
+        { title: 'Récents', md: 'Les **derniers ajouts**, triés par date.' },
+        { title: 'Projets', md: 'Les **images et les polices** du projet courant, prêtes à glisser sur le canvas.' },
+        { title: 'Création d\'image', md: 'Génération d\'images par IA (**Gemini / Nano Banana 2**) — voir le détail des paramètres plus bas.' },
+        { title: 'Animations HTML', md: 'Tes **compositions vidéo** (HyperFrames).' },
+        { title: 'Google Drive', md: 'Accès à tes **fichiers Google Drive** une fois ton compte connecté.' },
+      ],
     },
     {
       type: 'text',
@@ -47,87 +46,78 @@ export const damSection: HelpSection = {
       type: 'text',
       md: `### Créer une image par IA
 
-Onglet **Création d'image** — moteur **Nano Banana 2** (Gemini 3.1 image, texte → image). Voici chaque paramètre du panneau, en détail.`,
+Onglet **Création d'image** — moteur **Nano Banana 2** (Gemini 3.1 image, texte → image). Déplie chaque paramètre :`,
     },
     {
-      type: 'text',
-      md: `#### Prompt
-
-Zone de description de l'image à générer. Tu peux **coller une image** directement dans le champ : elle est alors ajoutée aux *fichiers de référence*. Deux assistants au-dessus du champ :
-
-- **« Améliorer »** — réécrit ton prompt en **une passe** en un prompt optimisé pour Nano Banana 2 (sujet, style, composition, éclairage, qualité), en tenant compte des images de référence.
-- **« Avec questions »** — l'IA te pose **3 à 6 questions ciblées** (environnement, éclairage, mise en page, ambiance…) avec des choix proposés ; tes réponses sont intégrées dans un prompt affiné. Plus précis quand ton brief est encore flou.`,
-    },
-    {
-      type: 'text',
-      md: `#### Fichiers de référence
-
-Bouton **« Ajouter des fichiers »** (ou colle une image dans le prompt). **Tous formats acceptés** : images, logos, **PDF**, **SVG** (rastérisé en PNG côté navigateur, **plafonné à 2048 px**). Les références sont **transmises telles quelles** à Nano Banana 2, qui les **voit** directement : il préserve leur structure/géométrie et n'applique que les changements demandés (branding, texte, décor). Chaque référence s'affiche en vignette ; bouton **✕** pour la retirer.`,
-    },
-    {
-      type: 'text',
-      md: `#### Format de sortie
-
-| Option | Effet |
-|---|---|
-| **Images & texte** _(défaut)_ | Demande au modèle **image + texte** : il peut accompagner l'image d'un court commentaire. |
-| **Images seul.** | **Image uniquement** — force la sortie visuelle et empêche le modèle de répondre en mode conversationnel (utile s'il « parle » au lieu de générer). |`,
-    },
-    {
-      type: 'text',
-      md: `#### Température
-
-Curseur **0 → 2** (pas de 0,1 ; **défaut 1,0**). Règle la créativité :
-
-- **0 — Précis** : déterministe, fidèle au prompt et aux références, peu de variation.
-- **2 — Créatif** : plus de liberté et de surprise, interprétation plus large.
-
-Pour reproduire fidèlement une référence, baisse vers 0 ; pour explorer des idées, monte vers 2.`,
-    },
-    {
-      type: 'text',
-      md: `#### Ratio (format)
-
-\`Auto\` · \`1:1\` · \`16:9\` · \`9:16\` · \`4:3\` · \`3:4\`.
-
-- **Auto** _(défaut)_ : le modèle choisit le cadrage le plus adapté au prompt / aux références (aucune contrainte envoyée).
-- Les autres valeurs **imposent** le rapport largeur/hauteur : \`1:1\` carré (réseaux), \`16:9\` / \`4:3\` paysage, \`9:16\` / \`3:4\` portrait.`,
-    },
-    {
-      type: 'text',
-      md: `#### Résolution
-
-\`1K\` _(défaut)_ · \`2K\` · \`4K\`. Définition du visuel généré. ⚠️ **2K et 4K sont 2 à 3× plus lents** — réserve-les au rendu final ; reste en 1K pour itérer rapidement.`,
-    },
-    {
-      type: 'text',
-      md: `#### Nombre d'images
-
-\`1\` _(défaut)_ · \`2\` · \`4\`. Génère **N variations** en parallèle à partir du même prompt — pratique pour comparer plusieurs propositions d'un coup.`,
-    },
-    {
-      type: 'text',
-      md: `#### Générer & résultats
-
-Bouton **« Générer »**. Pour chaque image produite :
-
-- **Télécharger** — enregistre le PNG en local.
-- **Sauvegarder** — ajoute à **« Mes images »** (avec prompt d'origine, prompt amélioré et Q/R conservés en métadonnées).
-- **Insérer dans l'éditeur** — place l'image dans le projet ouvert.
-
-Bouton **Réinitialiser / Effacer** pour vider les résultats. Idéal pour : visuels d'ambiance, mockups, illustrations. Pour de **vraies photos produit**, privilégie la banque d'images ou le scraping.`,
+      type: 'accordion',
+      items: [
+        {
+          title: 'Prompt (+ Améliorer / Avec questions)',
+          md:
+            'Décris l\'image à générer. Tu peux **coller une image** dans le champ : elle rejoint les *fichiers de référence*. Deux assistants :\n\n' +
+            '- **« Améliorer »** — réécrit ton prompt en **une passe** (sujet, style, composition, éclairage, qualité), en tenant compte des références.\n' +
+            '- **« Avec questions »** — l\'IA pose **3 à 6 questions ciblées** (environnement, éclairage, mise en page, ambiance…) ; tes réponses affinent le prompt. Utile quand le brief est flou.',
+        },
+        {
+          title: 'Fichiers de référence',
+          md:
+            'Bouton **« Ajouter des fichiers »** (ou colle une image). **Tous formats** : images, logos, **PDF**, **SVG** (rastérisé en PNG, **plafonné à 2048 px**). Les références sont **transmises telles quelles** à Nano Banana 2 qui les **voit** : il préserve leur structure et n\'applique que les changements demandés (branding, texte, décor). Vignette + **✕** pour retirer.',
+        },
+        {
+          title: 'Format de sortie',
+          md:
+            '- **Images & texte** _(défaut)_ : image **+ texte** — le modèle peut commenter brièvement.\n' +
+            '- **Images seul.** : **image uniquement** — force la sortie visuelle et empêche le modèle de répondre en mode conversationnel (utile s\'il « parle » au lieu de générer).',
+        },
+        {
+          title: 'Température (0 → 2, défaut 1,0)',
+          md:
+            'Curseur, pas de 0,1. Règle la créativité :\n\n' +
+            '- **0 — Précis** : déterministe, fidèle au prompt/références.\n' +
+            '- **2 — Créatif** : plus de liberté et de variation.\n\n' +
+            'Reproduire une référence → baisse vers 0 ; explorer → monte vers 2.',
+        },
+        {
+          title: 'Ratio (format)',
+          md:
+            '`Auto` · `1:1` · `16:9` · `9:16` · `4:3` · `3:4`.\n\n' +
+            '- **Auto** _(défaut)_ : le modèle choisit le cadrage adapté au prompt/références (aucune contrainte envoyée).\n' +
+            '- Les autres **imposent** le rapport : `1:1` carré (réseaux), `16:9` / `4:3` paysage, `9:16` / `3:4` portrait.',
+        },
+        {
+          title: 'Résolution (1K / 2K / 4K)',
+          md: '`1K` _(défaut)_ · `2K` · `4K`. Définition du visuel. ⚠️ **2K et 4K sont 2 à 3× plus lents** — réserve-les au rendu final, reste en 1K pour itérer.',
+        },
+        {
+          title: 'Nombre d\'images (1 / 2 / 4)',
+          md: '`1` _(défaut)_ · `2` · `4`. Génère **N variations** en parallèle du même prompt — pour comparer plusieurs propositions d\'un coup.',
+        },
+        {
+          title: 'Générer & actions sur les résultats',
+          md:
+            'Bouton **« Générer »**. Pour chaque image :\n\n' +
+            '- **Télécharger** — PNG en local.\n' +
+            '- **Sauvegarder** — vers **« Mes images »** (prompt d\'origine, prompt amélioré et Q/R conservés en métadonnées).\n' +
+            '- **Insérer dans l\'éditeur** — place l\'image dans le projet ouvert.\n\n' +
+            '**Réinitialiser / Effacer** vide les résultats. Idéal pour visuels d\'ambiance, mockups, illustrations ; pour de **vraies photos produit**, privilégie la banque ou le scraping.',
+        },
+      ],
     },
     {
       type: 'text',
       md: `### Visualiser & éditer une image
 
-Un clic ouvre la **visionneuse** (lightbox) avec une barre d'outils d'édition non destructive :
-
-- **Zoom**, **Rotation** (90°), **Miroir** horizontal / vertical.
-- **Recadrage (crop)** : masque interactif à 8 poignées, grille des tiers, contraintes de ratio.
-- **Colorimétrie** : sliders **Luminosité**, **Contraste**, **Saturation**, **Teinte**.
-- **Export** : **PNG / JPEG / WebP**, avec réglage de **qualité** et d'**échelle**.
-- **Réinitialiser** pour annuler toutes les retouches.`,
+Un clic ouvre la **visionneuse** (lightbox). Outils d'édition non destructive :`,
+    },
+    {
+      type: 'accordion',
+      items: [
+        { title: 'Zoom · Rotation · Miroir', md: '**Zoom** avant/arrière + ajustement, **Rotation** par 90°, **Miroir** horizontal et vertical.' },
+        { title: 'Recadrage (crop)', md: 'Masque interactif à **8 poignées**, grille des **tiers**, **contraintes de ratio** (1:1, 4:3, 16:9…).' },
+        { title: 'Colorimétrie', md: 'Sliders **Luminosité**, **Contraste**, **Saturation**, **Teinte** (rendu via filtre CSS, non destructif).' },
+        { title: 'Export', md: 'Formats **PNG / JPEG / WebP**, avec réglage de **qualité** (JPEG/WebP) et d\'**échelle** (% de la résolution native).' },
+        { title: 'Réinitialiser', md: 'Annule **toutes** les retouches et revient à l\'image d\'origine.' },
+      ],
     },
     {
       type: 'text',

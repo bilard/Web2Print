@@ -50,6 +50,8 @@ function extractText(block: HelpBlock): string {
       return block.label
     case 'shortcut':
       return `${block.label} ${block.keys.join(' ')}`
+    case 'accordion':
+      return block.items.map((it) => `${it.title} ${it.md}`).join(' ')
     case 'mockup':
       return ''
     default: {

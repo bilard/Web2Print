@@ -3,6 +3,7 @@ import { TextBlock } from './blocks/TextBlock'
 import { ScreenshotBlock } from './blocks/ScreenshotBlock'
 import { MockupBlock } from './blocks/MockupBlock'
 import { ShortcutBlock } from './blocks/ShortcutBlock'
+import { AccordionBlock } from './blocks/AccordionBlock'
 import { MenuLink } from './MenuLink'
 import { useHelpStore } from './help.store'
 import { highlightNode } from './highlightText'
@@ -43,6 +44,8 @@ function BlockRenderer({ block }: { block: HelpBlock }) {
       return <MenuLink target={block.target} label={block.label} icon={block.icon} />
     case 'shortcut':
       return <ShortcutBlock keys={block.keys} label={block.label} />
+    case 'accordion':
+      return <AccordionBlock items={block.items} />
     default: {
       const _exhaustive: never = block
       return _exhaustive

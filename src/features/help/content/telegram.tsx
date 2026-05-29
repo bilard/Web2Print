@@ -26,17 +26,31 @@ export const telegramSection: HelpSection = {
       label: 'Ouvrir Telegram',
       icon: Send,
     },
+    { type: 'text', md: `### Commandes disponibles` },
     {
-      type: 'text',
-      md: `### Commandes disponibles
-
-| Message | Effet |
-|---|---|
-| _(texte libre)_ | **Chat IA avec accès web.** Le bot répond via le LLM ; si l'info demandée est récente (score, actu, prix) ou si tu colles une **URL**, il **cherche sur le web et lit les pages** avant de répondre. La réponse cite ses **sources** et le modèle utilisé. |
-| \`/flow <demande>\` | **Génère un workflow par IA** depuis ta demande, l'**exécute**, et te **renvoie le fichier** produit. Ex : \`/flow scrape https://exemple.com/categorie et exporte un Excel\`. |
-| \`/run <nom> [texte]\` | **Exécute un workflow déjà sauvegardé** (par son nom) ; le texte éventuel sert d'entrée. \`/run\` seul **liste** les workflows disponibles. |
-| \`/clear\` | **Vide la boîte de réception** — côté app ET côté Telegram (messages de moins de 48 h). Alias : \`/purge\`, \`/vider\`. |
-| \`/start\` | Commande de service Telegram — **ignorée** (n'encombre pas la boîte). |`,
+      type: 'accordion',
+      items: [
+        {
+          title: '(texte libre) — Chat IA avec accès web',
+          md: 'Le bot répond via le LLM. Si l\'info demandée est récente (score, actu, prix) ou si tu colles une **URL**, il **cherche sur le web et lit les pages** avant de répondre. La réponse cite ses **sources** et le modèle utilisé.',
+        },
+        {
+          title: '/flow <demande> — Générer + exécuter un workflow',
+          md: '**Génère un workflow par IA** depuis ta demande, l\'**exécute**, et te **renvoie le fichier** produit.\n\nEx : `/flow scrape https://exemple.com/categorie et exporte un Excel`.',
+        },
+        {
+          title: '/run <nom> [texte] — Exécuter un workflow sauvegardé',
+          md: '**Exécute un workflow déjà sauvegardé** (par son nom) ; le texte éventuel sert d\'entrée. **`/run` seul liste** les workflows disponibles.',
+        },
+        {
+          title: '/clear — Vider la boîte',
+          md: '**Vide la boîte de réception** — côté app ET côté Telegram (messages de moins de 48 h). Alias : `/purge`, `/vider`.',
+        },
+        {
+          title: '/start — (ignorée)',
+          md: 'Commande de service Telegram — **ignorée**, elle n\'encombre pas la boîte.',
+        },
+      ],
     },
     {
       type: 'text',
