@@ -5,7 +5,10 @@ import { damSection } from './dam'
 import { importIdmlSection } from './import-idml'
 import { importPptxSection } from './import-pptx'
 import { importExcelSection } from './import-excel'
-import { importMediaSection } from './import-media'
+import { importImageSection } from './import-image'
+import { importSvgSection } from './import-svg'
+import { importImageToSvgSection } from './import-image-to-svg'
+import { importPdfToSvgSection } from './import-pdf-to-svg'
 import { taxonomiesSection } from './taxonomies'
 import { briefsSection } from './briefs'
 import { scrapingSection } from './scraping'
@@ -20,7 +23,10 @@ export const helpSections: HelpSection[] = [
   importIdmlSection,
   importPptxSection,
   importExcelSection,
-  importMediaSection,
+  importImageSection,
+  importSvgSection,
+  importImageToSvgSection,
+  importPdfToSvgSection,
   taxonomiesSection,
   briefsSection,
   scrapingSection,
