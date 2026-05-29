@@ -1336,7 +1336,9 @@ export function SettingsPanel({
           {activeTab === 'stats' && <StatsTab />}
         </div>
         {aside && (
-          <div className="hidden xl:block flex-1 min-w-0 max-w-[640px]">{aside}</div>
+          <div className="hidden xl:block flex-1 min-w-0 max-w-[640px] self-start xl:sticky xl:top-[8.5rem] max-h-[calc(100dvh-10rem)] overflow-y-auto">
+            {aside}
+          </div>
         )}
       </div>
     </div>
