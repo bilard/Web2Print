@@ -1012,7 +1012,7 @@ export interface EnrichmentInput {
 
 // ── Types pour la recherche ─────────────────────────────────────────────────
 
-interface SearchResult {
+export interface SearchResult {
   url: string
   title?: string
   description?: string
@@ -1210,7 +1210,7 @@ function scoreResult(r: SearchResult, sourceTokens: string[], brand?: string, re
  * Recherche web. Essaie d'abord s.jina.ai (API dédiée, meilleurs résultats si clé)
  * puis DuckDuckGo Lite via r.jina.ai (gratuit, sans clé) en fallback.
  */
-async function jinaSearch(query: string, limit = 10): Promise<SearchResult[]> {
+export async function jinaSearch(query: string, limit = 10): Promise<SearchResult[]> {
   console.log('[jina-search] →', { query, limit })
   const jinaKey = getApiKey('jina')
 

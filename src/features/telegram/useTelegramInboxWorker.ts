@@ -218,10 +218,16 @@ export function useTelegramInboxWorker(): void {
           }
           await step('info', '🤖 Appel du LLM…')
           try {
-            const { answer, model } = await askLlm(question)
+            const { answer, model, sources } = await askLlm(question, {
+              onStep: (m) => { void step('info', m) },
+            })
             await step('info', `Réponse du LLM (${model || 'modèle inconnu'}).`)
             const header = model ? `🤖 ${model}\n\n` : '🤖\n\n'
-            await reply(msg.chatId, truncateForTelegram(header + answer))
+            const footer =
+              sources.length > 0
+                ? `\n\n🔗 Sources :\n${sources.slice(0, 5).map((s) => `• ${s}`).join('\n')}`
+                : ''
+            await reply(msg.chatId, truncateForTelegram(header + answer + footer))
           } catch (err) {
             const reason = maskToken(err instanceof Error ? err.message : String(err))
             await step('warn', `LLM indisponible : ${reason}`)

@@ -660,7 +660,7 @@ interface JinaReaderResponse {
   }
 }
 
-async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean } = {}): Promise<JinaReaderResponse['data']> {
+export async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean } = {}): Promise<JinaReaderResponse['data']> {
   const extra: Record<string, string> = {}
 
   // Les gros revendeurs FR (Darty, Boulanger, Fnac, Leroy Merlin…) sont derrière

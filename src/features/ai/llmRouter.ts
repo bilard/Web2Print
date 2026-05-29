@@ -57,6 +57,7 @@ type LLMTask =
   | 'design.semanticLayout'
   | 'workflow.generate'
   | 'telegram.chat'
+  | 'telegram.chatPlan'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -102,9 +103,17 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // (JSON fiable via responseSchema sur v1beta + disponibilité), Claude Opus 4.7 en
   // fallback (meilleur raisonnement de graphe si la clé Gemini manque).
   'workflow.generate': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
-  // Chat libre depuis Telegram : aucun `model` override → utilise le modèle SÉLECTIONNÉ
-  // de chaque provider de la cascade (= « LLM activé » côté utilisateur).
-  'telegram.chat': { primary: 'claude', fallback: 'gemini' },
+  // Chat libre depuis Telegram. `model` n'épingle QUE le leg Gemini sur 3.1-pro-preview
+  // (modelForProvider n'applique l'override qu'au provider au préfixe correspondant :
+  // DeepSeek/Claude gardent leur modèle sélectionné). Raison : le modèle Gemini par
+  // défaut de l'utilisateur (souvent gemini-3.5-flash, servi sur l'API v1 SANS
+  // responseSchema) échoue au JSON structuré → la cascade bascule en silence sur
+  // DeepSeek alors que Gemini est #1. 3.1-pro-preview (v1beta + responseSchema) est
+  // fiable → l'ordre de la cascade est réellement respecté.
+  'telegram.chat': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // Planification du chat Telegram : décide s'il faut une recherche web + formule la
+  // requête (et répond directement sinon). JSON à 3 champs → même épinglage Gemini.
+  'telegram.chatPlan': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -124,6 +133,8 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.semanticLayout':  0,
   'workflow.generate':      0.2,
   'telegram.chat':          0.4,
+  // Décision structurée (chercher ou non, quelle requête) → plus déterministe.
+  'telegram.chatPlan':      0.2,
 }
 
 interface GenerateJsonOptions<T> {
