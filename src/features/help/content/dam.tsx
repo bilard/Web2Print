@@ -47,15 +47,75 @@ export const damSection: HelpSection = {
       type: 'text',
       md: `### Créer une image par IA
 
-Onglet **Création d'image** — moteur Gemini / **Nano Banana 2** (texte → image) :
+Onglet **Création d'image** — moteur **Nano Banana 2** (Gemini 3.1 image, texte → image). Voici chaque paramètre du panneau, en détail.`,
+    },
+    {
+      type: 'text',
+      md: `#### Prompt
 
-1. **Prompt** : décris l'image (tu peux coller une image ou du texte).
-2. **Améliorer le prompt** : bouton **« Améliorer »** (réécriture one-shot pour Nano Banana) ou **« Avec questions »** (l'IA te pose des questions ciblées pour affiner).
-3. **Fichiers de référence** : glisse des images / PDF / SVG (les SVG sont rastérisés) pour guider le style.
-4. **Réglages** : **Format de sortie** (Images & texte / Images seul.), **Température** (Précis ↔ Créatif), **Ratio** (Auto, 1:1, 16:9, 9:16, 4:3, 3:4), **Résolution** (1K / 2K / 4K), **Nombre d'images** (1 / 2 / 4).
-5. **Générer** → pour chaque résultat : **Télécharger**, **Sauvegarder** (dans « Mes images »), ou **Insérer dans l'éditeur**.
+Zone de description de l'image à générer. Tu peux **coller une image** directement dans le champ : elle est alors ajoutée aux *fichiers de référence*. Deux assistants au-dessus du champ :
 
-Idéal pour : visuels d'ambiance, mockups, illustrations. Pour les **photos produits réelles**, privilégie la banque d'images ou le scraping.`,
+- **« Améliorer »** — réécrit ton prompt en **une passe** en un prompt optimisé pour Nano Banana 2 (sujet, style, composition, éclairage, qualité), en tenant compte des images de référence.
+- **« Avec questions »** — l'IA te pose **3 à 6 questions ciblées** (environnement, éclairage, mise en page, ambiance…) avec des choix proposés ; tes réponses sont intégrées dans un prompt affiné. Plus précis quand ton brief est encore flou.`,
+    },
+    {
+      type: 'text',
+      md: `#### Fichiers de référence
+
+Bouton **« Ajouter des fichiers »** (ou colle une image dans le prompt). **Tous formats acceptés** : images, logos, **PDF**, **SVG** (rastérisé en PNG côté navigateur, **plafonné à 2048 px**). Les références sont **transmises telles quelles** à Nano Banana 2, qui les **voit** directement : il préserve leur structure/géométrie et n'applique que les changements demandés (branding, texte, décor). Chaque référence s'affiche en vignette ; bouton **✕** pour la retirer.`,
+    },
+    {
+      type: 'text',
+      md: `#### Format de sortie
+
+| Option | Effet |
+|---|---|
+| **Images & texte** _(défaut)_ | Demande au modèle **image + texte** : il peut accompagner l'image d'un court commentaire. |
+| **Images seul.** | **Image uniquement** — force la sortie visuelle et empêche le modèle de répondre en mode conversationnel (utile s'il « parle » au lieu de générer). |`,
+    },
+    {
+      type: 'text',
+      md: `#### Température
+
+Curseur **0 → 2** (pas de 0,1 ; **défaut 1,0**). Règle la créativité :
+
+- **0 — Précis** : déterministe, fidèle au prompt et aux références, peu de variation.
+- **2 — Créatif** : plus de liberté et de surprise, interprétation plus large.
+
+Pour reproduire fidèlement une référence, baisse vers 0 ; pour explorer des idées, monte vers 2.`,
+    },
+    {
+      type: 'text',
+      md: `#### Ratio (format)
+
+\`Auto\` · \`1:1\` · \`16:9\` · \`9:16\` · \`4:3\` · \`3:4\`.
+
+- **Auto** _(défaut)_ : le modèle choisit le cadrage le plus adapté au prompt / aux références (aucune contrainte envoyée).
+- Les autres valeurs **imposent** le rapport largeur/hauteur : \`1:1\` carré (réseaux), \`16:9\` / \`4:3\` paysage, \`9:16\` / \`3:4\` portrait.`,
+    },
+    {
+      type: 'text',
+      md: `#### Résolution
+
+\`1K\` _(défaut)_ · \`2K\` · \`4K\`. Définition du visuel généré. ⚠️ **2K et 4K sont 2 à 3× plus lents** — réserve-les au rendu final ; reste en 1K pour itérer rapidement.`,
+    },
+    {
+      type: 'text',
+      md: `#### Nombre d'images
+
+\`1\` _(défaut)_ · \`2\` · \`4\`. Génère **N variations** en parallèle à partir du même prompt — pratique pour comparer plusieurs propositions d'un coup.`,
+    },
+    {
+      type: 'text',
+      md: `#### Générer & résultats
+
+Bouton **« Générer »**. Pour chaque image produite :
+
+- **Télécharger** — enregistre le PNG en local.
+- **Sauvegarder** — ajoute à **« Mes images »** (avec prompt d'origine, prompt amélioré et Q/R conservés en métadonnées).
+- **Insérer dans l'éditeur** — place l'image dans le projet ouvert.
+
+Bouton **Réinitialiser / Effacer** pour vider les résultats. Idéal pour : visuels d'ambiance, mockups, illustrations. Pour de **vraies photos produit**, privilégie la banque d'images ou le scraping.`,
     },
     {
       type: 'text',
