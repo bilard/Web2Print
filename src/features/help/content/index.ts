@@ -9,6 +9,8 @@ import { taxonomiesSection } from './taxonomies'
 import { briefsSection } from './briefs'
 import { scrapingSection } from './scraping'
 import { exportSection } from './export'
+import { telegramSection } from './telegram'
+import { workflowSection } from './workflow'
 
 export const helpSections: HelpSection[] = [
   gettingStarted,
@@ -21,6 +23,8 @@ export const helpSections: HelpSection[] = [
   briefsSection,
   scrapingSection,
   exportSection,
+  workflowSection,
+  telegramSection,
 ]
 
 export const helpSectionsById: Map<string, HelpSection> = new Map(

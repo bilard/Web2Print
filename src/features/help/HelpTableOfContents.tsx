@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Rocket, Pencil, FileUp, Database, Download, type LucideIcon } from 'lucide-react'
+import { Rocket, Pencil, FileUp, Database, Download, Workflow, type LucideIcon } from 'lucide-react'
 import { helpSections } from './content/index'
 import { HELP_CATEGORIES, type HelpCategory, type HelpSection } from './content/types'
 import { useHelpStore } from './help.store'
@@ -65,6 +65,16 @@ const CATEGORY_STYLES: Record<HelpCategory, CategoryStyle> = {
     activeBg: 'bg-sky-500/15',
     activeText: 'text-sky-200',
     bullet: 'bg-sky-400',
+  },
+  Automatisation: {
+    Icon: Workflow,
+    label: 'text-cyan-300',
+    accent: 'text-cyan-400',
+    bg: 'bg-cyan-500/[0.06]',
+    border: 'border-cyan-500/20',
+    activeBg: 'bg-cyan-500/15',
+    activeText: 'text-cyan-200',
+    bullet: 'bg-cyan-400',
   },
 }
 

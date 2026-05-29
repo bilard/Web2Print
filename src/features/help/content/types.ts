@@ -7,6 +7,7 @@ export const HELP_CATEGORIES = [
   'Import',
   'Données',
   'Export',
+  'Automatisation',
 ] as const
 
 export type HelpCategory = (typeof HELP_CATEGORIES)[number]

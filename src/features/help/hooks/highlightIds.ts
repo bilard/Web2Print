@@ -10,6 +10,8 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.scraping-templates',
   'dashboard.sidebar.scraping-hub',
   'dashboard.sidebar.chat',
+  'dashboard.sidebar.workflows',
+  'dashboard.sidebar.telegram',
 
   // Editor header
   'editor-header.save',
