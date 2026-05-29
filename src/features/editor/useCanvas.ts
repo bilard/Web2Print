@@ -120,7 +120,8 @@ function ensurePageBgImage(canvas: Canvas, docW: number, docH: number, imageUrl:
 export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
   const fabricRef = useRef<Canvas | null>(null)
   const { canvasWidth, canvasHeight, canvasBg, canvasBgType, canvasBgGradient, canvasBgImage, setZoom } = useUIStore()
-  const { setSelectedObjectId, setSelectedObjectIds } = useEditorStore()
+  const setSelectedObjectId = useEditorStore((s) => s.setSelectedObjectId)
+  const setSelectedObjectIds = useEditorStore((s) => s.setSelectedObjectIds)
 
   // Init Fabric canvas once
   useEffect(() => {

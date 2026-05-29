@@ -6,7 +6,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 
 export function useObjectOperations() {
-  const { setSelectedObjectId } = useEditorStore()
+  const setSelectedObjectId = useEditorStore((s) => s.setSelectedObjectId)
 
   const deleteSelected = useCallback(() => {
     const canvas = globalFabricCanvas

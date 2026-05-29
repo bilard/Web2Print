@@ -9,6 +9,7 @@ import {
   Image as ImageIcon, FolderOpen, Heart, FolderHeart, Clock, Sparkles, Upload,
 } from 'lucide-react'
 import { Shadow } from 'fabric'
+import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from '@/stores/editor.store'
 import { AVAILABLE_FONTS, getAllFonts, getDynamicFontVariants } from '@/features/assets/useFonts'
 import { useTextEditor, getCurrentTextStyle } from '@/features/editor/useTextEditor'
@@ -309,7 +310,9 @@ const BLEND_MODES = [
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function PropertiesPanel() {
-  const { selectedObjectId, canvasObjects } = useEditorStore()
+  const { selectedObjectId, canvasObjects } = useEditorStore(
+    useShallow((s) => ({ selectedObjectId: s.selectedObjectId, canvasObjects: s.canvasObjects })),
+  )
   const fabricRef = { current: globalFabricCanvas as Canvas | null }
   const { applyStyle } = useTextEditor(fabricRef)
   const ops = useObjectOperations()

@@ -36,7 +36,7 @@ export function PrintPanel() {
     setSafeStroke, setSafeColor, setSafeDash, setSafeGap,
   } = useUIStore()
 
-  const { projectId } = useEditorStore()
+  const projectId = useEditorStore((s) => s.projectId)
 
   const handleSaveSettings = async () => {
     if (!projectId) return

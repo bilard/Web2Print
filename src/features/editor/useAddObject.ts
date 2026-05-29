@@ -214,7 +214,7 @@ function calloutPoints(w: number, h: number): { x: number; y: number }[] {
 // ── Main hook ───────────────────────────────────────────────────────────────
 
 export function useAddObject() {
-  const { setSelectedObjectId } = useEditorStore()
+  const setSelectedObjectId = useEditorStore((s) => s.setSelectedObjectId)
 
   const addObject = useCallback((type: string) => {
     const canvas = globalFabricCanvas

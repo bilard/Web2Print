@@ -6,6 +6,7 @@ import {
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
+import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { useLayers } from '@/features/editor/useLayers'
@@ -37,7 +38,15 @@ function findObjById(objects: CanvasObjectProps[], id: string): CanvasObjectProp
 }
 
 export function LayersPanel() {
-  const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore()
+  // useShallow : re-render uniquement si ces 3 slices changent (pas sur saveStatus,
+  // projectTitle, canUndo… qui changent aussi mais ne concernent pas les calques).
+  const { canvasObjects, selectedObjectId, setCanvasObjects } = useEditorStore(
+    useShallow((s) => ({
+      canvasObjects: s.canvasObjects,
+      selectedObjectId: s.selectedObjectId,
+      setCanvasObjects: s.setCanvasObjects,
+    })),
+  )
   const columns = useMergeStore((s) => s.columns)
   const { reorderLayers, moveLayerToGroup } = useLayers()
   const textSegments = useTextSegments()

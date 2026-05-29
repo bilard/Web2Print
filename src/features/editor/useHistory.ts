@@ -6,7 +6,10 @@ import { syncToStore } from './useAddObject'
 const MAX_HISTORY = 50
 
 export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
-  const { setCanUndo, setCanRedo } = useEditorStore()
+  // Sélecteurs ciblés (setters stables) : n'abonne pas le composant hôte à TOUT
+  // le store editor (qui change à chaque édition canvas).
+  const setCanUndo = useEditorStore((s) => s.setCanUndo)
+  const setCanRedo = useEditorStore((s) => s.setCanRedo)
   const stack = useRef<string[]>([])
   const cursor = useRef<number>(-1)
   const isRestoring = useRef(false)
