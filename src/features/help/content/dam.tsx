@@ -6,54 +6,110 @@ export const damSection: HelpSection = {
   id: 'dam',
   title: 'Bibliothèque d\'assets (DAM)',
   category: 'Édition',
-  intro: 'Centraliser images, logos et visuels — uploads, recherche et génération IA.',
+  intro: 'Banque d\'images, génération IA, édition, variantes et organisation des visuels.',
   blocks: [
     {
       type: 'text',
-      md: `Le DAM (Digital Asset Management) regroupe tous tes visuels accessibles depuis l'éditeur. Une seule source pour les logos, photos produits, illustrations et images générées par IA.`,
+      md: `Le DAM (Digital Asset Management) centralise tous tes visuels — photos de banque, images générées par IA, assets de projet — accessibles directement depuis l'éditeur. Il s'ouvre via l'onglet **DAM** du menu latéral.`,
     },
     { type: 'mockup', Component: DamGridMock },
     {
-      type: 'text',
-      md: `### Ce que tu peux faire
-
-- **Uploader** des images locales (drag-drop) → stockées sur Firebase Storage
-- **Organiser** par dossiers projet et favoris
-- **Rechercher** par texte ou par image (reverse image search)
-- **Générer** des images via IA (Gemini / Nano Banana)
-- **Crop / éditer** directement dans l'overlay du DAM
-- **Glisser** une image dans l'éditeur pour la placer sur le canvas`,
-    },
-    {
       type: 'menu-link',
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images' },
-      label: 'Accéder au DAM',
+      label: 'Ouvrir le DAM',
       icon: Image,
     },
     {
       type: 'text',
-      md: `### Variants d'images
+      md: `### Les onglets
 
-Pour les produits qui se déclinent en plusieurs couleurs ou découpes, le DAM gère les **variants** : tu uploades l'image principale, le DAM regroupe automatiquement les déclinaisons par parent. Le data-merge peut alors choisir la variante adéquate selon la ligne produit.`,
+| Onglet | Contenu |
+|---|---|
+| **Banque d'images** | Recherche dans Pexels & Unsplash (millions de photos libres) |
+| **Mes images** | Tes images sauvegardées (depuis la banque ou générées) |
+| **Favoris** | Images marquées d'un ♥ |
+| **Collections** | Dossiers d'organisation que tu crées |
+| **Récents** | Derniers ajouts |
+| **Projets** | Images **et polices** du projet courant |
+| **Création d'image** | Génération IA (Gemini / Nano Banana 2) |
+| **Animations HTML** | Tes compositions vidéo (HyperFrames) |
+| **Google Drive** | Accès à tes fichiers Drive (après connexion) |`,
     },
     {
       type: 'text',
-      md: `### Génération IA
+      md: `### Rechercher des images
 
-Quand tu n'as pas d'image fournisseur (ou pas la bonne résolution), le DAM peut en générer :
-
-1. Onglet **Générer**
-2. Décris l'image en français ou en anglais
-3. Choisis le format (carré, paysage, portrait)
-4. L'image générée par Gemini est ajoutée automatiquement au DAM
-
-Utilise la génération IA pour : visuels d'ambiance, mockups produits, illustrations éditoriales. Pour les photos produits réelles, utilise l'upload ou le scraping.`,
+- **Par texte** : barre de recherche avec **autocomplétion** et historique des recherches récentes.
+- **Par image** (recherche inversée) : bouton **caméra** → choisis une image locale → le DAM trouve des visuels **similaires** dans la banque.
+- **Filtres combinables** (volet de gauche) : **Source** (Toutes / Pexels / Unsplash), **Orientation** (Paysage / Portrait / Carré), **Couleur dominante** (palette de 10 teintes).`,
     },
     {
       type: 'text',
-      md: `### Bonne pratique
+      md: `### Créer une image par IA
 
-Centralise tous tes logos et visuels marque dans le DAM **avant** de commencer un projet. Ainsi, quand tu construis un template, tu drag-and-drop directement depuis le DAM sans avoir à chercher dans tes dossiers locaux.`,
+Onglet **Création d'image** — moteur Gemini / **Nano Banana 2** (texte → image) :
+
+1. **Prompt** : décris l'image (tu peux coller une image ou du texte).
+2. **Améliorer le prompt** : bouton **« Améliorer »** (réécriture one-shot pour Nano Banana) ou **« Avec questions »** (l'IA te pose des questions ciblées pour affiner).
+3. **Fichiers de référence** : glisse des images / PDF / SVG (les SVG sont rastérisés) pour guider le style.
+4. **Réglages** : **Format de sortie** (Images & texte / Images seul.), **Température** (Précis ↔ Créatif), **Ratio** (Auto, 1:1, 16:9, 9:16, 4:3, 3:4), **Résolution** (1K / 2K / 4K), **Nombre d'images** (1 / 2 / 4).
+5. **Générer** → pour chaque résultat : **Télécharger**, **Sauvegarder** (dans « Mes images »), ou **Insérer dans l'éditeur**.
+
+Idéal pour : visuels d'ambiance, mockups, illustrations. Pour les **photos produits réelles**, privilégie la banque d'images ou le scraping.`,
+    },
+    {
+      type: 'text',
+      md: `### Visualiser & éditer une image
+
+Un clic ouvre la **visionneuse** (lightbox) avec une barre d'outils d'édition non destructive :
+
+- **Zoom**, **Rotation** (90°), **Miroir** horizontal / vertical.
+- **Recadrage (crop)** : masque interactif à 8 poignées, grille des tiers, contraintes de ratio.
+- **Colorimétrie** : sliders **Luminosité**, **Contraste**, **Saturation**, **Teinte**.
+- **Export** : **PNG / JPEG / WebP**, avec réglage de **qualité** et d'**échelle**.
+- **Réinitialiser** pour annuler toutes les retouches.`,
+    },
+    {
+      type: 'text',
+      md: `### Variantes
+
+Sauvegarde une retouche (crop + colorimétrie + miroir + rotation) comme **variante nommée** d'une image, sans toucher l'originale :
+
+- **Enregistrer variante** → donne-lui un nom.
+- **Charger / Mettre à jour / Renommer / Supprimer** depuis le panneau **Versions**.
+- L'original reste accessible (★ Original). Pratique pour décliner un même visuel (cadrage carré pour réseaux, 16:9 pour bannière…).`,
+    },
+    {
+      type: 'text',
+      md: `### Analyse IA d'une image
+
+Dans la visionneuse, onglet **Analyse IA** → bouton **« Analyser avec IA »**. L'IA renvoie : **sujet**, description, **marques** identifiées, **texte détecté (OCR)**, ambiance / style / composition / éclairage, objets, **tags de recherche** et **palette de couleurs**. Utile pour retrouver/classer un visuel.`,
+    },
+    {
+      type: 'text',
+      md: `### Organiser
+
+- **Favoris** (♥) : accès rapide.
+- **Collections** : crée des dossiers, ajoute/retire des images, vue vignettes ou liste.
+- **Projets** : retrouve les images **et les polices** d'un projet.
+- **Supprimer** une image sauvegardée la retire **en cascade** (variantes, collections, favoris).`,
+    },
+    {
+      type: 'text',
+      md: `### Utiliser une image dans l'éditeur
+
+- **Clic** : insère l'image au centre du canvas (mise à l'échelle automatique).
+- **Glisser-déposer** : depuis la grille vers le canvas.
+- **Remplacer** : en mode sélection d'objet, double-clic remplace l'objet visé (l'image épouse son cadre, l'historique des sources est conservé).`,
+    },
+    {
+      type: 'text',
+      md: `### Sources externes
+
+- **Pexels & Unsplash** : banque intégrée (recherche + filtres).
+- **Google Drive** : connecte ton compte (onglet Google Drive) pour piocher dans tes fichiers.
+
+_Note : le DAM n'a pas d'upload « bibliothèque » classique — tes images entrent via la banque, la génération IA, les assets de projet ou Drive. Les fichiers locaux servent de **référence** pour la génération ou de cible pour la **recherche par image**._`,
     },
   ],
 }
