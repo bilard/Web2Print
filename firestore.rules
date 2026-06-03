@@ -298,13 +298,14 @@ service cloud.firestore {
     }
 
     // ── App config ──────────────────────────────────────────────────────────
-    // Documents de configuration/secrets d'infrastructure (token Bright Data API, etc.).
-    // JAMAIS accessible au client : c'est un secret partagé entre tous les comptes, pas
-    // une donnée par-utilisateur. Seules les Cloud Functions (Admin SDK) y accèdent —
-    // elles bypassent ces règles. Token à gérer via Secret Manager (BRIGHTDATA_API_TOKEN)
-    // ou directement dans la console Firestore.
+    // Documents de configuration/secrets d'infrastructure (token Bright Data API, lien
+    // Scraping Browser WSS, etc.). C'est un secret PARTAGÉ entre tous les comptes, pas une
+    // donnée par-utilisateur → réservé à l'owner (admin) : lui seul lit/édite ces réglages
+    // depuis l'UI (SettingsPanel → Bright Data). Les autres comptes restent bloqués (pas de
+    // fuite du token partagé). Les Cloud Functions (Admin SDK) bypassent ces règles de toute
+    // façon ; le token reste aussi disponible via Secret Manager (BRIGHTDATA_API_TOKEN).
     match /config/{docId} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
 
     // ── Telegram entrant (2a) ──────────────────────────────────
