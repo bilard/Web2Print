@@ -13,6 +13,7 @@ import { useDamFavorites } from '../hooks/useDamFavorites'
 import { useDamSaveImage } from '../hooks/useDamSaveImage'
 import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
 import { useDamVariants } from '../hooks/useDamVariants'
+import { useCan } from '@/features/access/useAccess'
 import { renderEditedImage, buildCssFilter, buildMaskClipPath, DEFAULT_MASK } from '../utils/renderEditedImage'
 import {
   DamImageToolbar, DEFAULT_FILTERS,
@@ -62,6 +63,7 @@ export function DamLightbox() {
   const setDamPickerOpen = useUIStore((s) => s.setDamPickerOpen)
   const { isFavorite, toggleFavorite } = useDamFavorites()
   const { isSaved, toggleSave } = useDamSaveImage()
+  const canUpload = useCan('dam.upload')
   const { insertOnCanvas, replaceOnCanvas } = useDamCanvasInsert()
   const [analysis, setAnalysis] = useState<ImageAnalysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
@@ -298,15 +300,17 @@ export function DamLightbox() {
               <Heart className="w-3.5 h-3.5" fill={fav ? 'currentColor' : 'none'} />
               {fav ? 'Favori' : 'Favoris'}
             </button>
-            <button
-              onClick={() => toggleSave(image)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition ${
-                saved ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/10 text-white/60 hover:bg-white/15'
-              }`}
-            >
-              <Bookmark className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} />
-              {saved ? 'Sauvegardée' : 'Sauvegarder'}
-            </button>
+            {canUpload && (
+              <button
+                onClick={() => toggleSave(image)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition ${
+                  saved ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/10 text-white/60 hover:bg-white/15'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} />
+                {saved ? 'Sauvegardée' : 'Sauvegarder'}
+              </button>
+            )}
             <button
               onClick={handleInsert}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs bg-indigo-500 text-white hover:bg-indigo-600 transition"

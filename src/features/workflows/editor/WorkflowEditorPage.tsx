@@ -16,6 +16,7 @@ import { NodeConfigPanel } from './NodeConfigPanel'
 import { RunPanel } from './RunPanel'
 import { DataPreviewPanel } from './DataPreviewPanel'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
+import { useCan } from '@/features/access/useAccess'
 
 export function WorkflowEditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -25,6 +26,7 @@ export function WorkflowEditorPage() {
   const setCurrent = useWorkflowStore((s) => s.setCurrent)
   const dirty = useWorkflowStore((s) => s.dirty)
   const isRunning = useRunContext((s) => s.isRunning)
+  const canRun = useCan('workflows.run')
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
@@ -132,9 +134,11 @@ export function WorkflowEditorPage() {
               <Square className="w-4 h-4" /> Stop
             </button>
           ) : (
-            <button onClick={run} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
-              <Play className="w-4 h-4" /> Run
-            </button>
+            canRun && (
+              <button onClick={run} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
+                <Play className="w-4 h-4" /> Run
+              </button>
+            )
           )}
           <button
             onClick={() => uid && saveWorkflow(uid, wf)}

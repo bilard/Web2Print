@@ -9,6 +9,7 @@ import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
 import { globalFabricCanvas } from '../../editor/CanvasContainer'
 import { applyImageFill } from '../../editor/applyImageFill'
 import type { DamImage } from '../types'
+import { useCan } from '@/features/access/useAccess'
 
 interface Props {
   image: DamImage
@@ -24,6 +25,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
   const { isFavorite, toggleFavorite } = useDamFavorites()
   const { isSaved, toggleSave, deleteAsset } = useDamSaveImage()
   const { collections, addToCollection, removeFromCollection } = useDamCollections()
+  const canDelete = useCan('dam.delete')
   const fav = isFavorite(image.id)
   const saved = isSaved(image.id)
   const [showCollections, setShowCollections] = useState(false)
@@ -184,7 +186,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
           <button onClick={handleDownload} className="p-1 rounded bg-black/60 text-white/80 hover:bg-black/80" title="Télécharger">
             <Download className="w-3.5 h-3.5" />
           </button>
-          {saved && (
+          {saved && canDelete && (
             <button
               onClick={async (e) => {
                 e.stopPropagation()

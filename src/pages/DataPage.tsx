@@ -39,6 +39,7 @@ const ScrapingModal = lazy(() =>
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
+import { useCan } from '@/features/access/useAccess'
 
 type RightTab = 'fields' | 'taxonomy'
 
@@ -54,6 +55,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile, reorderFiles } = useExcelFirebase()
   const { data: taxonomies } = useTaxonomies()
   const renameTaxonomy = useRenameTaxonomy()
+  const canExport = useCan('pim.export')
 
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
@@ -429,13 +431,15 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Sauver
               </button>
-              <button
-                onClick={() => exportToXlsx(sheets, `${currentFileName ?? sheet?.name ?? 'export'}.xlsx`)}
-                className={headerBtn}
-              >
-                <Download className="w-3.5 h-3.5" />
-                Exporter
-              </button>
+              {canExport && (
+                <button
+                  onClick={() => exportToXlsx(sheets, `${currentFileName ?? sheet?.name ?? 'export'}.xlsx`)}
+                  className={headerBtn}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Exporter
+                </button>
+              )}
             </>
           )}
         </div>

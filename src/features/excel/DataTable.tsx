@@ -13,6 +13,7 @@ import { getTaxoColumns } from './taxonomyBuilder'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
+import { useCan } from '@/features/access/useAccess'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -787,6 +788,7 @@ function DataRow({
   inputRef, startEdit, commitEdit, setEditingCell, setSheetRowId, deleteRow,
   activeSheetIndex, formatCell, getCellColorStyle, dragColIdx,
 }: DataRowProps) {
+  const canDelete = useCan('pim.delete')
   const enriched = isRowEnriched(row)
   // Différencie simple-clic (ouvre la fiche) et double-clic (édite la cellule)
   // via un délai court : si un dblclick arrive avant l'expiration, on annule.
@@ -906,14 +908,16 @@ function DataRow({
         className={`sticky right-0 z-10 px-1 py-1.5 border-b border-l border-white/[0.05] text-center ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a]`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={(e) => { e.stopPropagation(); deleteRow(activeSheetIndex, row._id) }}
-          className="p-1 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-          title="Supprimer la ligne"
-          aria-label="Supprimer la ligne"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        {canDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); deleteRow(activeSheetIndex, row._id) }}
+            className="p-1 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+            title="Supprimer la ligne"
+            aria-label="Supprimer la ligne"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </td>
     </tr>
   )
