@@ -25,15 +25,15 @@ export function useTelegramSettingsSync() {
   // Hydrate depuis Firestore au login.
   useEffect(() => {
     hydratedRef.current = false
-    if (!user) { prevUidRef.current = null; return }
+    // ⚠️ NE PAS écrire prevUidRef ici. L'auth Firebase passe transitoirement à `null`
+    // (refresh de token, double-fire de onAuthStateChanged). Si on remettait prevUidRef
+    // à null, le retour `null → uid` (MÊME compte) serait vu comme un changement de
+    // compte → reset du store → push `{}` vide → EFFACEMENT de la config en Firestore.
+    // En gardant le dernier uid connu, `uid → null → uid` ne déclenche aucun reset.
+    if (!user) return
 
-    // Reset du store en mémoire UNIQUEMENT au changement de compte (le store Zustand
-    // survit en mémoire ; le localStorage persist a déjà été vidé par purgeLocalUserData).
-    // On NE reset PAS au 1er chargement (même compte) → on pourra back-filler une config
-    // présente seulement en localStorage (jamais synchronisée), au lieu de la perdre.
     const accountChanged = prevUidRef.current !== undefined && prevUidRef.current !== user.uid
     prevUidRef.current = user.uid
-    if (accountChanged) useTelegramStore.setState({ botToken: '', chatId: '' })
 
     let cancelled = false
     const ref = doc(db, 'users', user.uid)
@@ -42,10 +42,14 @@ export function useTelegramSettingsSync() {
         if (cancelled) return
         const tg = snap.data()?.telegram as TelegramRemote | undefined
         if (tg && (tg.botToken || tg.chatId)) {
-          // Restaure depuis Firestore.
+          // Firestore = source de vérité → toujours restaurer (jamais d'effacement ici).
           useTelegramStore.setState({ botToken: tg.botToken ?? '', chatId: tg.chatId ?? '' })
+        } else if (accountChanged) {
+          // VRAI changement de compte ET Firestore vide → vider le store (isolation).
+          useTelegramStore.setState({ botToken: '', chatId: '' })
         } else {
-          // Firestore vide : si le store a une valeur (localStorage-only) → on la SAUVEGARDE.
+          // Même compte, Firestore vide : config présente seulement en localStorage
+          // (jamais synchronisée) → on la SAUVEGARDE au lieu de la perdre.
           const cur = useTelegramStore.getState()
           if (cur.botToken || cur.chatId) {
             setDoc(ref, { telegram: { botToken: cur.botToken, chatId: cur.chatId } }, { merge: true })
@@ -70,6 +74,9 @@ export function useTelegramSettingsSync() {
     const unsubscribe = useTelegramStore.subscribe((state, prev) => {
       if (!hydratedRef.current) return
       if (state.botToken === prev.botToken && state.chatId === prev.chatId) return
+      // Filet de sécurité : ne JAMAIS effacer une config distante via un push vide
+      // automatique. Un vidage volontaire passe par un autre chemin (non implémenté).
+      if (!state.botToken && !state.chatId) return
 
       if (timerRef.current !== null) window.clearTimeout(timerRef.current)
       timerRef.current = window.setTimeout(() => {
