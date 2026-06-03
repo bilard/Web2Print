@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { FolderOpen, Presentation, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { useCan } from '@/features/access/useAccess'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
 import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
@@ -36,6 +37,15 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   const pdfToSvgInputRef = useRef<HTMLInputElement>(null)
   const [convertingImage, setConvertingImage] = useState(false)
   const [convertingPdf, setConvertingPdf] = useState(false)
+
+  // Permissions par type d'import (owner court-circuite → true).
+  const canIdml = useCan('import.idml')
+  const canPptx = useCan('import.pptx')
+  const canImage = useCan('import.image')
+  const canSvg = useCan('import.svg')
+  const canExcel = useCan('import.excel')
+  const canImageToSvg = useCan('import.imageToSvg')
+  const canPdfToSvg = useCan('import.pdfToSvg')
 
   const showIdmlModal = idmlProcessing || idmlState.step === 'ready' || !!idmlError
 
@@ -166,6 +176,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
     <div className="max-w-6xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* IDML Assembly Import */}
+        {canIdml && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('idml') }}
           onDragLeave={() => setDragOver(null)}
@@ -192,8 +203,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length) handleIdmlFiles(files); e.target.value = '' }}
           />
         </div>
+        )}
 
         {/* PPTX Import */}
+        {canPptx && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('pptx') }}
           onDragLeave={() => setDragOver(null)}
@@ -220,8 +233,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePptxFile(f); e.target.value = '' }}
           />
         </div>
+        )}
 
         {/* Image Import */}
+        {canImage && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('image') }}
           onDragLeave={() => setDragOver(null)}
@@ -248,8 +263,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = '' }}
           />
         </div>
+        )}
 
         {/* SVG Import — éditable */}
+        {canSvg && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('svg') }}
           onDragLeave={() => setDragOver(null)}
@@ -276,8 +293,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSvgFile(f); e.target.value = '' }}
           />
         </div>
+        )}
 
         {/* Excel / CSV Import */}
+        {canExcel && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('xlsx') }}
           onDragLeave={() => setDragOver(null)}
@@ -304,8 +323,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleXlsxFile(f); e.target.value = '' }}
           />
         </div>
+        )}
 
         {/* Image → SVG éditable (raster verrouillé + overlays vectoriels) */}
+        {canImageToSvg && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('image-to-svg') }}
           onDragLeave={() => setDragOver(null)}
@@ -332,8 +353,10 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageToSvgFile(f); e.target.value = '' }}
           />
         </div>
+        )}
 
         {/* PDF → SVG éditable (page 1 rasterisée + overlays vectoriels) */}
+        {canPdfToSvg && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver('pdf-to-svg') }}
           onDragLeave={() => setDragOver(null)}
@@ -360,6 +383,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfToSvgFile(f); e.target.value = '' }}
           />
         </div>
+        )}
       </div>
 
       <p className="text-xs text-white/15 mt-6 text-center">

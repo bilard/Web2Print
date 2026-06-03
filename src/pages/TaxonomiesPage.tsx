@@ -23,6 +23,7 @@ interface TaxonomiesPageProps {
 export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps) {
   const navigate = useNavigate()
   const canEdit = useCan('taxonomies.edit')
+  const canBriefs = useCan('taxonomies.briefs')
   const { data: taxonomies, isLoading } = useTaxonomies()
   const {
     selectedTaxonomyId,
@@ -99,7 +100,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
           ) : (
             <>
               <TaxonomyMainTabs />
-              {currentTab === 'tree' ? (
+              {currentTab === 'tree' || !canBriefs ? (
               <>
               <div className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
                 <div className="flex-1 max-w-sm">

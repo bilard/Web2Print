@@ -13,6 +13,7 @@ import { DamLightbox } from './DamLightbox'
 import { GDriveConnect } from '../../gdrive/GDriveConnect'
 import { GDrivePanel } from '../../gdrive/GDrivePanel'
 import { UserAnimationsList } from '../../video/UserAnimationsList'
+import { useCan } from '../../access/useAccess'
 
 const TAB_TITLES: Record<string, string> = {
   stock: 'Banque d\'images',
@@ -28,6 +29,10 @@ const TAB_TITLES: Record<string, string> = {
 export function DamPage() {
   const { activeTab, totalResults, selectedProjectId } = useDamStore()
   const gdriveConnected = useGDriveStore((s) => s.connected)
+  // Gardes défensives : sans la permission, l'onglet (même resté actif) ne rend rien.
+  const canGenerate = useCan('dam.generate')
+  const canAnimations = useCan('dam.animations')
+  const canGdrive = useCan('dam.gdrive')
 
   return (
     <div className="flex h-full bg-[#0f0f0f]">
@@ -55,9 +60,9 @@ export function DamPage() {
         {activeTab === 'collections' && <DamCollections />}
         {activeTab === 'recent' && <DamRecentImages />}
         {activeTab === 'projects' && (selectedProjectId ? <DamProjectAssets /> : <DamProjects />)}
-        {activeTab === 'generate' && <DamGenerate />}
-        {activeTab === 'videos' && <UserAnimationsList />}
-        {activeTab === 'gdrive' && (
+        {activeTab === 'generate' && canGenerate && <DamGenerate />}
+        {activeTab === 'videos' && canAnimations && <UserAnimationsList />}
+        {activeTab === 'gdrive' && canGdrive && (
           <div className="flex-1 overflow-auto p-6">
             {gdriveConnected ? (
               <GDrivePanel />

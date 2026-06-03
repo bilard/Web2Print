@@ -5,12 +5,15 @@ import { useDamCollections } from '../hooks/useDamCollections'
 import { useDamSaveImage } from '../hooks/useDamSaveImage'
 import { useProjects } from '../../projects/useProjects'
 import { useUserAnimations } from '../../video/useUserAnimations'
+import { useAccessStore } from '../../../stores/access.store'
 import type { DamTab } from '../types'
 
 interface NavItem {
   id: DamTab
   label: string
   icon: typeof Home
+  /** Permission requise pour afficher l'entrée (absent = toujours visible). */
+  perm?: string
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -20,13 +23,16 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'collections', label: 'Collections', icon: FolderOpen },
   { id: 'recent', label: 'Récents', icon: Clock },
   { id: 'projects', label: 'Projets', icon: Briefcase },
-  { id: 'generate', label: 'Création d\'image', icon: Sparkles },
-  { id: 'videos', label: 'Animations HTML', icon: FileCode2 },
-  { id: 'gdrive', label: 'Google Drive', icon: HardDrive },
+  { id: 'generate', label: 'Création d\'image', icon: Sparkles, perm: 'dam.generate' },
+  { id: 'videos', label: 'Animations HTML', icon: FileCode2, perm: 'dam.animations' },
+  { id: 'gdrive', label: 'Google Drive', icon: HardDrive, perm: 'dam.gdrive' },
 ]
 
 export function DamNavSidebar() {
   const { activeTab, setActiveTab } = useDamStore()
+  const perms = useAccessStore((s) => s.permissions)
+  const isOwner = useAccessStore((s) => s.isOwner)
+  const navItems = NAV_ITEMS.filter((item) => !item.perm || isOwner || perms.has(item.perm))
   const { favoriteIds } = useDamFavorites()
   const { collections } = useDamCollections()
   const { savedIds } = useDamSaveImage()
@@ -55,7 +61,7 @@ export function DamNavSidebar() {
       </div>
 
       <ul className="flex flex-col gap-0.5 px-3 py-3">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.id
           const count = counts[item.id]
