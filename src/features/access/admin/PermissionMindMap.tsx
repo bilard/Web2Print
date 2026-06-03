@@ -109,14 +109,16 @@ export function PermissionMindMap({
   const wrapRef = useRef<HTMLDivElement>(null)
   const rfRef = useRef<ReactFlowInstance | null>(null)
 
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, contentW, contentH } = useMemo(() => {
     const has = (k: string) => permissions.has(k)
     const nodes: Node[] = []
     const edges: Edge[] = []
     const rowCenter = (i: number) => i * COL_W + MOD_W / 2 // épine verticale = centre du module
     // Étendue réelle du contenu : bord gauche = module 0 (x=0) ; bord droit = feuilles du dernier module.
     const contentW = Math.max((entries.length - 1) * COL_W + MOD_W / 2 + 22 + LEAF_W, MOD_W)
+    const maxLeaves = entries.reduce((m, [, defs]) => Math.max(m, defs.filter((d) => permissionParent(d.key) !== null).length), 0)
     const yLeaf0 = Y_MOD + LEAF_GAP_TOP
+    const contentH = yLeaf0 + Math.max(maxLeaves - 1, 0) * ROW + 34
 
     nodes.push({
       id: 'root', type: 'mind', position: { x: contentW / 2 - 44, y: 0 }, draggable: false, selectable: false,
@@ -148,7 +150,7 @@ export function PermissionMindMap({
         edges.push({ id: `e-${modId}-${pid}`, source: modId, target: pid, type: 'smoothstep', style: { stroke: c, strokeWidth: 1.5, opacity: has(d.key) ? 0.7 : 0.22 } })
       })
     })
-    return { nodes, edges }
+    return { nodes, edges, contentW, contentH }
   }, [entries, permissions, roleName])
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -156,20 +158,28 @@ export function PermissionMindMap({
     if (k) onToggle(k)
   }
 
-  // Le canvas occupe TOUT l'espace écran (pleine largeur + pleine hauteur, cf. CSS).
-  // fitView cadre l'arbre dedans à l'ouverture ; le curseur de zoom ajuste ensuite.
-  const onInit = useCallback((rf: ReactFlowInstance) => {
-    rfRef.current = rf
-    rf.fitView({ padding: 0.12 })
-  }, [])
+  // Canvas plein écran (cf. CSS). L'arbre est calé à 100 % de la LARGEUR (modules
+  // bord à bord, marge minime) et centré verticalement. Le curseur de zoom ajuste.
+  const fitWidth = useCallback(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const w = el.clientWidth, h = el.clientHeight
+    const m = 8
+    const zoom = Math.min(Math.max((w - 2 * m) / contentW, 0.15), 1.6)
+    const x = (w - contentW * zoom) / 2
+    const y = Math.max((h - contentH * zoom) / 2, 16)
+    rfRef.current?.setViewport({ x, y, zoom }, { duration: 0 })
+  }, [contentW, contentH])
+
+  const onInit = useCallback((rf: ReactFlowInstance) => { rfRef.current = rf; fitWidth() }, [fitWidth])
 
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
-    const ro = new ResizeObserver(() => rfRef.current?.fitView({ padding: 0.12, duration: 0 }))
+    const ro = new ResizeObserver(() => fitWidth())
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [fitWidth])
 
   return (
     <div ref={wrapRef} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden h-[calc(100vh-215px)] min-h-[520px]">
