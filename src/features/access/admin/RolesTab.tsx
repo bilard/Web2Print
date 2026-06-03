@@ -14,7 +14,7 @@ type ViewMode = 'cards' | 'tree' | 'mindmap'
 export function RolesTab() {
   const [roles, setRoles] = useState<Role[]>([])
   const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string> } | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [viewMode, setViewMode] = useState<ViewMode>('mindmap')
   const [openSet, setOpenSet] = useState<Set<string>>(new Set())
   const byModule = permissionsByModule()
   const entries = orderedModuleEntries(byModule)
