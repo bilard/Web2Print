@@ -1,8 +1,10 @@
 // src/features/access/admin/RolesTab.tsx
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Save, X } from 'lucide-react'
+import { Plus, Trash2, Save, X, Lock, Check, Eye } from 'lucide-react'
 import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
+import { moduleMeta } from '@/features/access/moduleMeta'
+import { ModuleCard } from './ModuleCard'
 
 export function RolesTab() {
   const [roles, setRoles] = useState<Role[]>([])
@@ -55,33 +57,54 @@ export function RolesTab() {
           </button>
           <button onClick={() => setEditing(null)} className="p-2 text-white/40 hover:text-white/80"><X className="w-4 h-4" /></button>
         </div>
-        <div className="flex flex-col gap-3">
-          {Object.entries(byModule).map(([module, defs]) => (
-            <div key={module} className="bg-white/[0.03] rounded-xl p-3">
-              <p className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">{module}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {defs.map((d) => {
-                  const on = editing.permissions.has(d.key)
-                  const parent = permissionParent(d.key)
-                  // Enfant verrouillé tant que son parent (accès au module) n'est pas coché.
-                  const locked = parent ? !editing.permissions.has(parent) : false
-                  return (
-                    <button key={d.key} onClick={() => toggle(d.key)} disabled={locked}
-                      title={locked ? `Nécessite d'abord : ${permissionLabel(parent!)}` : d.key}
-                      className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${
-                        locked
-                          ? 'bg-white/[0.01] border-white/5 text-white/20 cursor-not-allowed'
-                          : on
-                            ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200'
-                            : 'bg-white/[0.02] border-white/10 text-white/40 hover:text-white/70'
+        <p className="text-[11px] text-white/35">
+          <span className="text-white/70 font-medium">{editing.permissions.size}</span> permission(s) sélectionnée(s).
+          Active d'abord l'accès au module, puis ses actions.
+        </p>
+        <div className="flex flex-col gap-2.5">
+          {Object.entries(byModule).map(([module, defs]) => {
+            const m = moduleMeta(module)
+            const viewDef = defs.find((d) => permissionParent(d.key) === null)
+            const childDefs = defs.filter((d) => permissionParent(d.key) !== null)
+            const selectedCount = defs.filter((d) => editing.permissions.has(d.key)).length
+            const viewOn = viewDef ? editing.permissions.has(viewDef.key) : true
+            return (
+              <ModuleCard key={module} module={module} selected={selectedCount} total={defs.length}>
+                <div className="flex flex-col gap-2">
+                  {viewDef && (
+                    <button onClick={() => toggle(viewDef.key)} title={viewDef.key}
+                      className={`inline-flex items-center gap-2 self-start text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+                        viewOn ? m.chipOn : 'bg-white/[0.02] border-white/10 text-white/45 hover:text-white/75'
                       }`}>
-                      {d.label}
+                      {viewOn ? <Check className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 opacity-60" />}
+                      {viewDef.label}
                     </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+                  )}
+                  {childDefs.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {childDefs.map((d) => {
+                        const on = editing.permissions.has(d.key)
+                        const locked = !viewOn
+                        return (
+                          <button key={d.key} onClick={() => toggle(d.key)} disabled={locked}
+                            title={locked ? `Nécessite : ${permissionLabel(viewDef!.key)}` : d.key}
+                            className={`inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-colors ${
+                              locked ? 'border-white/[0.06] text-white/20 cursor-not-allowed'
+                                : on ? m.chipOn
+                                : 'bg-white/[0.02] border-white/10 text-white/45 hover:text-white/75'
+                            }`}>
+                            {locked && <Lock className="w-2.5 h-2.5" />}
+                            {on && !locked && <Check className="w-3 h-3" />}
+                            {d.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </ModuleCard>
+            )
+          })}
         </div>
       </div>
     )

@@ -1,13 +1,16 @@
 // src/features/access/admin/UsersTab.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Ban, RotateCcw, CheckCircle2 } from 'lucide-react'
-import { permissionsByModule, permissionLabel } from '@/features/access/permissions'
+import { Search, Ban, RotateCcw, CheckCircle2, Plus, Minus, Clock, ShieldCheck } from 'lucide-react'
+import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/access/permissions'
+import { moduleMeta } from '@/features/access/moduleMeta'
+import { ModuleCard } from './ModuleCard'
 import { listUsers, updateUserAccess, type ManagedUser } from '@/features/access/usersApi'
 import { listRoles, type Role } from '@/features/access/rolesApi'
 import { computeEffectivePermissions } from '@/features/access/computePermissions'
 import { isOwnerEmail } from '@/features/auth/useAuth'
 
 const DAY = 86_400_000
+const MODULE_OF: Record<string, string> = Object.fromEntries(PERMISSIONS.map((p) => [p.key, p.module]))
 
 function formatLastSeen(ts: number): string {
   if (!ts) return 'jamais vu'
@@ -40,14 +43,19 @@ export function UsersTab() {
   }
   const toggleOverride = async (u: ManagedUser, key: string, kind: 'grant' | 'revoke') => {
     const field = kind === 'grant' ? 'accessGrants' : 'accessRevokes'
+    const other = kind === 'grant' ? 'accessRevokes' : 'accessGrants'
     const cur = new Set(u[field])
-    cur.has(key) ? cur.delete(key) : cur.add(key)
-    await updateUserAccess(u.uid, { [field]: [...cur] }); refresh()
+    const otherSet = new Set(u[other])
+    if (cur.has(key)) cur.delete(key)
+    else { cur.add(key); otherSet.delete(key) } // grant et revoke mutuellement exclusifs
+    await updateUserAccess(u.uid, { [field]: [...cur], [other]: [...otherSet] }); refresh()
   }
 
+  const roleOf = (u: ManagedUser) => roles.find((r) => r.id === u.accessRoleId)
+  const rolePermsOf = (u: ManagedUser) => new Set(roleOf(u)?.permissions ?? [])
   const effectivePerms = (u: ManagedUser): string[] => {
     if (u.accessBlocked) return []
-    const role = roles.find((r) => r.id === u.accessRoleId)
+    const role = roleOf(u)
     return [...computeEffectivePermissions({
       isOwner: false,
       rolePermissions: u.accessRoleId && role ? role.permissions : null,
@@ -61,7 +69,6 @@ export function UsersTab() {
     const list = q
       ? users.filter((u) => u.email.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q))
       : users
-    // Bloqués puis « en attente » en tête (action prioritaire), sinon par dernière vue.
     const rank = (u: ManagedUser) =>
       u.accessBlocked ? 0 : (!u.accessRoleId && !isOwnerEmail(u.email)) ? 1 : 2
     return [...list].sort((a, b) => rank(a) - rank(b) || b.lastSeenAt - a.lastSeenAt)
@@ -71,96 +78,127 @@ export function UsersTab() {
   const blockedCount = users.filter((u) => u.accessBlocked).length
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       {/* Recherche + récap */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 flex-1 min-w-[180px] bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5">
+        <div className="flex items-center gap-1.5 flex-1 min-w-[180px] bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500/50 transition-colors">
           <Search className="w-3.5 h-3.5 text-white/30" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher (email ou nom)…"
             className="flex-1 bg-transparent text-xs text-white placeholder:text-white/30 outline-none" />
         </div>
-        <span className="text-[11px] text-white/40">{users.length} utilisateur(s)</span>
-        {pendingCount > 0 && <span className="text-[11px] text-amber-400/80">{pendingCount} en attente</span>}
-        {blockedCount > 0 && <span className="text-[11px] text-red-400/80">{blockedCount} bloqué(s)</span>}
+        <span className="text-[11px] px-2 py-1 rounded-md bg-white/[0.04] text-white/50">{users.length} utilisateur(s)</span>
+        {pendingCount > 0 && <span className="text-[11px] px-2 py-1 rounded-md bg-amber-500/15 text-amber-300">{pendingCount} en attente</span>}
+        {blockedCount > 0 && <span className="text-[11px] px-2 py-1 rounded-md bg-red-500/15 text-red-300">{blockedCount} bloqué(s)</span>}
       </div>
 
       {filtered.map((u) => {
         const owner = isOwnerEmail(u.email)
         const eff = effectivePerms(u)
+        const rolePerms = rolePermsOf(u)
+        const isExpanded = expanded === u.uid
         return (
-          <div key={u.uid} className={`rounded-xl px-3 py-2.5 ${u.accessBlocked ? 'bg-red-500/[0.04] border border-red-500/15' : 'bg-white/[0.03]'}`}>
-            <div className="flex items-center gap-3">
-              {u.photoURL ? <img src={u.photoURL} alt="" className="w-7 h-7 rounded-full" /> : <div className="w-7 h-7 rounded-full bg-white/10" />}
+          <div key={u.uid} className={`rounded-xl border transition-colors ${u.accessBlocked ? 'bg-red-500/[0.04] border-red-500/20' : isExpanded ? 'bg-white/[0.035] border-white/10' : 'bg-white/[0.025] border-white/[0.06]'}`}>
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              {u.photoURL
+                ? <img src={u.photoURL} alt="" className="w-8 h-8 rounded-full ring-1 ring-white/10" />
+                : <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500/40 to-fuchsia-500/30 flex items-center justify-center text-xs font-semibold text-white/80">{(u.displayName || u.email || '?').charAt(0).toUpperCase()}</div>}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-sm text-white/90 truncate">{u.displayName || u.email}</p>
-                  {owner && <span className="text-[9px] px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-300">admin</span>}
-                  {u.accessBlocked && <span className="text-[9px] px-1 py-0.5 rounded bg-red-500/20 text-red-300">bloqué</span>}
-                  {!u.accessBlocked && !u.accessRoleId && !owner && <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300">en attente</span>}
+                  {owner && <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300"><ShieldCheck className="w-2.5 h-2.5" /> admin</span>}
+                  {u.accessBlocked && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">bloqué</span>}
+                  {!u.accessBlocked && !u.accessRoleId && !owner && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">en attente</span>}
+                  {!owner && u.accessRoleId && !u.accessBlocked && roleOf(u) && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-200">{roleOf(u)!.name}</span>}
                 </div>
-                <p className="text-[10px] text-white/30 truncate">{u.email} · vu {formatLastSeen(u.lastSeenAt)}</p>
+                <p className="text-[10px] text-white/30 truncate flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {u.email} · vu {formatLastSeen(u.lastSeenAt)}</p>
               </div>
               {!owner && (
                 <select value={u.accessRoleId ?? ''} onChange={(e) => setRole(u, e.target.value)} disabled={u.accessBlocked}
-                  className="bg-white/[0.04] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 disabled:opacity-40">
+                  className="bg-white/[0.05] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 disabled:opacity-40 hover:border-white/20 transition-colors">
                   <option value="">— en attente —</option>
                   {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               )}
-              <button onClick={() => setExpanded(expanded === u.uid ? null : u.uid)} className="text-[11px] text-white/40 hover:text-white/70 px-1">détails</button>
+              <button onClick={() => setExpanded(isExpanded ? null : u.uid)}
+                className={`text-[11px] px-2 py-1 rounded-md transition-colors ${isExpanded ? 'bg-white/10 text-white/80' : 'text-white/40 hover:text-white/70'}`}>
+                détails
+              </button>
             </div>
 
-            {expanded === u.uid && owner && (
-              <div className="mt-2 pt-2 border-t border-white/5 text-[10px] text-white/30">
+            {isExpanded && owner && (
+              <div className="px-3 pb-3 pt-1 border-t border-white/5 text-[11px] text-white/35">
                 Compte propriétaire — accès total, non modifiable.
               </div>
             )}
 
-            {expanded === u.uid && !owner && (
-              <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-3">
+            {isExpanded && !owner && (
+              <div className="px-3 pb-3 pt-2 border-t border-white/5 flex flex-col gap-3">
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={() => toggleBlocked(u)}
-                    className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded border ${u.accessBlocked ? 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10' : 'border-red-500/40 text-red-300 hover:bg-red-500/10'}`}>
-                    {u.accessBlocked ? <><CheckCircle2 className="w-3 h-3" /> Réactiver</> : <><Ban className="w-3 h-3" /> Bloquer</>}
+                    className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors ${u.accessBlocked ? 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10' : 'border-red-500/40 text-red-300 hover:bg-red-500/10'}`}>
+                    {u.accessBlocked ? <><CheckCircle2 className="w-3.5 h-3.5" /> Réactiver</> : <><Ban className="w-3.5 h-3.5" /> Bloquer</>}
                   </button>
                   {(u.accessGrants.length > 0 || u.accessRevokes.length > 0) && (
-                    <button onClick={() => resetOverrides(u)} className="flex items-center gap-1 text-[11px] px-2 py-1 rounded border border-white/10 text-white/50 hover:text-white/80">
-                      <RotateCcw className="w-3 h-3" /> Réinitialiser les surcharges
+                    <button onClick={() => resetOverrides(u)} className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 transition-colors">
+                      <RotateCcw className="w-3.5 h-3.5" /> Réinitialiser les surcharges
                     </button>
                   )}
                 </div>
 
                 {/* Permissions effectives */}
                 <div>
-                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider mb-1">Permissions effectives ({eff.length})</p>
+                  <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5">Peut faire ({eff.length})</p>
                   {eff.length === 0
-                    ? <p className="text-[10px] text-white/30">{u.accessBlocked ? 'Compte bloqué — aucun accès.' : 'Aucune permission (compte en attente).'}</p>
-                    : <div className="flex flex-wrap gap-1">{eff.map((k) => <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-white/60">{permissionLabel(k)}</span>)}</div>}
+                    ? <p className="text-[11px] text-white/30">{u.accessBlocked ? 'Compte bloqué — aucun accès.' : 'Aucune permission (en attente d\'un rôle).'}</p>
+                    : <div className="flex flex-wrap gap-1">
+                        {eff.map((k) => {
+                          const mm = moduleMeta(MODULE_OF[k] ?? '')
+                          return <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.05] border border-white/5 ${mm.text}`}>{permissionLabel(k)}</span>
+                        })}
+                      </div>}
                 </div>
 
                 {/* Surcharges */}
                 <div>
-                  <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider mb-1">Surcharges (+ ajouter / − retirer)</p>
-                  {Object.entries(byModule).map(([module, defs]) => (
-                    <div key={module} className="mb-1">
-                      <p className="text-[9px] text-white/20 mb-0.5">{module}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {defs.map((d) => {
-                          const granted = u.accessGrants.includes(d.key)
-                          const revoked = u.accessRevokes.includes(d.key)
-                          return (
-                            <span key={d.key} className="inline-flex items-center gap-0.5">
-                              <button onClick={() => toggleOverride(u, d.key, 'grant')} title={`+ ${d.key}`}
-                                className={`text-[10px] px-1.5 py-0.5 rounded border ${granted ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'border-white/10 text-white/40'}`}>+ {permissionLabel(d.key)}</button>
-                              <button onClick={() => toggleOverride(u, d.key, 'revoke')} title={`− ${d.key}`}
-                                className={`text-[10px] px-1.5 py-0.5 rounded border ${revoked ? 'bg-red-500/20 border-red-500/50 text-red-300' : 'border-white/10 text-white/40'}`}>−</button>
-                            </span>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                  <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                    Ajuster
+                    <span className="inline-flex items-center gap-1 text-[9px] font-normal normal-case tracking-normal text-white/30">
+                      <Plus className="w-2.5 h-2.5 text-emerald-400" />accorder
+                      <Minus className="w-2.5 h-2.5 text-red-400 ml-1" />retirer
+                    </span>
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {Object.entries(byModule).map(([module, defs]) => {
+                      const sel = defs.filter((d) => u.accessGrants.includes(d.key) || u.accessRevokes.includes(d.key)).length
+                      return (
+                        <ModuleCard key={module} module={module} selected={sel} total={defs.length}>
+                          <div className="flex flex-wrap gap-1.5">
+                            {defs.map((d) => {
+                              const granted = u.accessGrants.includes(d.key)
+                              const revoked = u.accessRevokes.includes(d.key)
+                              const inRole = rolePerms.has(d.key)
+                              return (
+                                <span key={d.key} className={`inline-flex items-stretch rounded-lg border overflow-hidden text-[10px] ${granted ? 'border-emerald-500/40' : revoked ? 'border-red-500/40' : 'border-white/10'}`}>
+                                  <span className={`flex items-center px-2 py-1 ${revoked ? 'text-white/30 line-through' : inRole ? 'text-white/75' : 'text-white/40'}`} title={inRole ? 'Inclus dans le rôle' : 'Absent du rôle'}>
+                                    {inRole && <span className="w-1 h-1 rounded-full bg-white/45 mr-1" />}{d.label}
+                                  </span>
+                                  <button onClick={() => toggleOverride(u, d.key, 'grant')} title="Accorder en plus du rôle"
+                                    className={`px-1.5 flex items-center border-l transition-colors ${granted ? 'bg-emerald-500/25 border-emerald-500/40 text-emerald-200' : 'border-white/10 text-white/25 hover:bg-emerald-500/10 hover:text-emerald-300'}`}>
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                  <button onClick={() => toggleOverride(u, d.key, 'revoke')} title="Retirer même si le rôle l'inclut"
+                                    className={`px-1.5 flex items-center border-l transition-colors ${revoked ? 'bg-red-500/25 border-red-500/40 text-red-200' : 'border-white/10 text-white/25 hover:bg-red-500/10 hover:text-red-300'}`}>
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              )
+                            })}
+                          </div>
+                        </ModuleCard>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )}

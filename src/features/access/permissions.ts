@@ -64,12 +64,13 @@ export const PERMISSIONS: PermissionDef[] = [
 
 export const ALL_PERMISSION_KEYS: string[] = PERMISSIONS.map((p) => p.key)
 
-/** Permission parente requise. Convention : toute action `<module>.<...>` dépend de
- *  l'accès au module `<module>.view`. Les clés `*.view` n'ont pas de parent (racine). */
+/** Permission parente requise. Convention : toute action dépend de l'accès au module
+ *  `<1er segment>.view`. Seule cette clé racine elle-même n'a pas de parent (ex.
+ *  `settings.firebase.view` dépend bien de `settings.view`). */
 export function permissionParent(key: string): string | null {
-  if (key.endsWith('.view')) return null
   const root = key.split('.')[0]
-  return `${root}.view`
+  const viewKey = `${root}.view`
+  return key === viewKey ? null : viewKey
 }
 
 /** Enfants directs d'une permission (celles dont elle est le parent). */
