@@ -1,8 +1,8 @@
 // src/features/access/admin/PermissionMindMap.tsx
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import {
   ReactFlow, Background, Panel, Handle, Position, useReactFlow, useStore,
-  type Node, type Edge, type NodeProps, type NodeMouseHandler,
+  type Node, type Edge, type NodeProps, type NodeMouseHandler, type ReactFlowInstance,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { Check, Lock, Maximize } from 'lucide-react'
@@ -106,7 +106,7 @@ export function PermissionMindMap({
   permissions: Set<string>
   onToggle: (key: string) => void
 }) {
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, totalWidth } = useMemo(() => {
     const has = (k: string) => permissions.has(k)
     const nodes: Node[] = []
     const edges: Edge[] = []
@@ -143,7 +143,7 @@ export function PermissionMindMap({
         edges.push({ id: `e-${modId}-${pid}`, source: modId, target: pid, type: 'smoothstep', style: { stroke: c, strokeWidth: 1.5, opacity: has(d.key) ? 0.7 : 0.22 } })
       })
     })
-    return { nodes, edges }
+    return { nodes, edges, totalWidth }
   }, [entries, permissions, roleName])
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -151,12 +151,21 @@ export function PermissionMindMap({
     if (k) onToggle(k)
   }
 
+  // Ouverture à un zoom confortable (racine centrée en haut) plutôt qu'un fit-all
+  // qui rapetisse tout sur la largeur des 11 modules. « Recadrer » montre l'ensemble.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const onInit = useCallback((rf: ReactFlowInstance) => {
+    const w = wrapRef.current?.clientWidth ?? 1200
+    const zoom = 0.95
+    rf.setViewport({ x: w / 2 - (totalWidth / 2) * zoom, y: 26, zoom }, { duration: 0 })
+  }, [totalWidth])
+
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden h-[560px]">
+    <div ref={wrapRef} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden h-[calc(100vh-220px)] min-h-[600px]">
       <ReactFlow
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
-        fitView fitViewOptions={{ padding: 0.18 }}
+        onInit={onInit}
         nodesDraggable={false} nodesConnectable={false}
         zoomOnScroll={false} panOnScroll={false} preventScrolling={false} minZoom={0.25} maxZoom={2}
         proOptions={{ hideAttribution: true }}
