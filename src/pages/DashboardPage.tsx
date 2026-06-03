@@ -24,6 +24,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { LibraryTaxonomyFilter } from '@/components/shared/LibraryTaxonomyFilter'
 import { DamPage } from '../features/dam/components/DamPage'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
+import { useAccessStore } from '@/stores/access.store'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -52,10 +53,25 @@ const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }
   { id: 'access', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300' },
 ]
 
+const SECTION_PERMISSION: Partial<Record<Section, string>> = {
+  import: 'import.view',
+  library: 'library.view',
+  images: 'dam.view',
+  data: 'pim.view',
+  taxonomies: 'taxonomies.view',
+  'scraping-templates': 'scrapingTemplates.view',
+  'scraping-hub': 'scrapingHub.view',
+  workflows: 'workflows.view',
+  hyperframes: 'hyperframes.view',
+  chat: 'chat.view',
+  telegram: 'telegram.view',
+}
+
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const signOut = useSignOut()
   const isAdmin = useIsAdmin()
+  const permissions = useAccessStore((s) => s.permissions)
   const navigate = useNavigate()
   const location = useLocation()
   const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
@@ -269,7 +285,12 @@ export default function DashboardPage() {
   }
   if (pending) return <PendingAccessScreen />
 
-  const visibleMenuItems = isAdmin ? menuItems : menuItems.filter((m) => m.id !== 'access')
+  const canSee = (id: Section) => {
+    if (id === 'access') return isAdmin
+    const perm = SECTION_PERMISSION[id]
+    return isAdmin || !perm || permissions.has(perm)
+  }
+  const visibleMenuItems = menuItems.filter((m) => canSee(m.id))
 
   return (
     <div className="h-screen bg-[#0f0f0f] text-white flex overflow-hidden">
@@ -421,7 +442,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* Content */}
-      {activeSection === 'data' ? (
+      {activeSection === 'data' && canSee('data') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -431,7 +452,7 @@ export default function DashboardPage() {
             <DataPage embedded />
           </Suspense>
         </div>
-      ) : activeSection === 'taxonomies' ? (
+      ) : activeSection === 'taxonomies' && canSee('taxonomies') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -441,7 +462,7 @@ export default function DashboardPage() {
             <TaxonomiesPage embedded />
           </Suspense>
         </div>
-      ) : activeSection === 'scraping-templates' ? (
+      ) : activeSection === 'scraping-templates' && canSee('scraping-templates') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -451,7 +472,7 @@ export default function DashboardPage() {
             <ScrapingTemplatesPage />
           </Suspense>
         </div>
-      ) : activeSection === 'scraping-hub' ? (
+      ) : activeSection === 'scraping-hub' && canSee('scraping-hub') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -461,7 +482,7 @@ export default function DashboardPage() {
             <ScrapingHubPage />
           </Suspense>
         </div>
-      ) : activeSection === 'chat' ? (
+      ) : activeSection === 'chat' && canSee('chat') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -471,7 +492,7 @@ export default function DashboardPage() {
             <ChatPage />
           </Suspense>
         </div>
-      ) : activeSection === 'workflows' ? (
+      ) : activeSection === 'workflows' && canSee('workflows') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -483,7 +504,7 @@ export default function DashboardPage() {
         </div>
       ) : activeSection === 'access' && isAdmin ? (
         <AccessAdminPage />
-      ) : activeSection === 'telegram' ? (
+      ) : activeSection === 'telegram' && canSee('telegram') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -493,7 +514,7 @@ export default function DashboardPage() {
             <TelegramInboxView />
           </Suspense>
         </div>
-      ) : activeSection === 'hyperframes' ? (
+      ) : activeSection === 'hyperframes' && canSee('hyperframes') ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
@@ -503,7 +524,7 @@ export default function DashboardPage() {
             <HyperframesPage embedded />
           </Suspense>
         </div>
-      ) : activeSection === 'images' ? (
+      ) : activeSection === 'images' && canSee('images') ? (
         <div className="flex-1 overflow-hidden">
           <DamPage />
         </div>
@@ -710,7 +731,7 @@ export default function DashboardPage() {
               )}
 
               {/* ─── IMPORTER ─── */}
-              {activeSection === 'import' && (
+              {activeSection === 'import' && canSee('import') && (
                 <>
                   <h1 className="text-xl font-bold mb-6">Importer</h1>
                   <ImportPanel
