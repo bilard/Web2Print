@@ -11,6 +11,18 @@
 
 const PREFIX = 'designstudio_sitecookie_'
 
+/** Émis quand un cookie change → `useSiteCookiesSync` pousse vers Firestore (debounce)
+ *  et `SiteCookiesSection` rafraîchit son affichage. */
+export const SITE_COOKIES_UPDATED_EVENT = 'sitecookies:updated'
+/** Émis après hydratation depuis Firestore → l'UI rafraîchit la liste. */
+export const SITE_COOKIES_HYDRATED_EVENT = 'sitecookies:hydrated'
+
+function notifyUpdated() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SITE_COOKIES_UPDATED_EVENT))
+  }
+}
+
 export interface SiteCookieEntry {
   hostname: string
   cookie: string
@@ -26,10 +38,12 @@ export function setSiteCookie(hostname: string, cookie: string) {
   } else {
     localStorage.removeItem(PREFIX + hostname)
   }
+  notifyUpdated()
 }
 
 export function removeSiteCookie(hostname: string) {
   localStorage.removeItem(PREFIX + hostname)
+  notifyUpdated()
 }
 
 export function listSiteCookies(): SiteCookieEntry[] {
