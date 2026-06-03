@@ -70,20 +70,8 @@ export default function LoginPage() {
           }}
         />
 
-        <div className="relative flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-white/15 backdrop-blur rounded-lg flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white">
-              <path
-                d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
-          </div>
-          <span className="text-lg font-semibold tracking-tight">Web2Print</span>
+        <div className="relative flex items-center">
+          <img src="/logo.png" alt="IBS Studio" className="h-80 w-auto object-contain" />
         </div>
 
         <div className="relative max-w-md">
@@ -112,27 +100,15 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/40">app.hyperframe.ai</p>
+        <p className="relative text-xs text-white/40">app.ibs-studio.com</p>
       </aside>
 
       {/* Colonne droite — connexion */}
       <main className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-sm">
           {/* Logo mobile (colonne gauche masquée) */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-10">
-            <div className="w-9 h-9 bg-indigo-500 rounded-lg flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white">
-                <path
-                  d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-              </svg>
-            </div>
-            <span className="text-lg font-semibold text-white tracking-tight">Web2Print</span>
+          <div className="lg:hidden flex items-center mb-10">
+            <img src="/logo.png" alt="IBS Studio" className="h-56 w-auto object-contain" />
           </div>
 
           <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-8 shadow-2xl">

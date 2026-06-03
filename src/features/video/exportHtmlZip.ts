@@ -426,7 +426,7 @@ Template : **${kind}** · ratio **${opts.aspect}**
 Tout est dans \`index.html\`. Cherche le bloc \`window.__hyperframes.getVariables\`
 pour changer composition / brand / caption, puis recharge la page.
 
-Généré par Web2Print.
+Généré par IBS Studio.
 `
 }
 

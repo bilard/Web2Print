@@ -310,14 +310,11 @@ export default function DashboardPage() {
             title={sidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-label={sidebarOpen ? 'Fermer le menu principal' : 'Ouvrir le menu principal'}
           >
-            <div className="w-7 h-7 bg-indigo-500 rounded-md flex items-center justify-center flex-shrink-0">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            {sidebarOpen && (
-              <span className="flex-1 text-[13px] font-semibold text-white/90 tracking-tight truncate text-left">Web2Print</span>
-            )}
+            <img
+              src="/logo.png"
+              alt="IBS Studio"
+              className={`${sidebarOpen ? 'h-40' : 'h-10'} w-auto object-contain flex-shrink-0`}
+            />
           </button>
         </div>
 
