@@ -528,7 +528,7 @@ export default function DashboardPage() {
         <div className="flex-1 overflow-hidden">
           <DamPage />
         </div>
-      ) : activeSection === 'library' ? (
+      ) : activeSection === 'library' && canSee('library') ? (
         <div className="flex-1 flex overflow-hidden">
           <LibraryTaxonomyFilter
             selectedNodeId={filterNodeId}

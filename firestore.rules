@@ -35,9 +35,18 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      // Le user lit/écrit son propre doc ; l'admin lit tous les docs et écrit les champs access*.
-      allow read:  if isAuthenticated() && (request.auth.uid == uid || isAdmin());
-      allow write: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+      // Lecture : soi-même ou l'admin.
+      allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+      // L'admin écrit tout (assignation rôle + surcharges). Le user écrit son propre doc
+      // (profil, secrets perso) SAUF les champs d'accès RBAC — sinon il pourrait s'auto-
+      // attribuer des permissions (escalade de privilèges). Create/update séparés car
+      // `resource` est null à la création du doc.
+      allow create: if isAdmin()
+                    || (isAuthenticated() && request.auth.uid == uid
+                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes']));
+      allow update: if isAdmin()
+                    || (isAuthenticated() && request.auth.uid == uid
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes']));
     }
 
     // ── Projects ──────────────────────────────────────────────────────────────

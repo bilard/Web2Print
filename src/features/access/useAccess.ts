@@ -26,14 +26,21 @@ export function useAccessInit() {
         const grants = (data.accessGrants as string[] | undefined) ?? []
         const revokes = (data.accessRevokes as string[] | undefined) ?? []
         let rolePermissions: string[] | null = null
+        // Rôle supprimé entre-temps → on le traite comme « pas de rôle » (pending) :
+        // resolvedRoleId repasse à null pour que useIsPending() renvoie true.
+        let resolvedRoleId: string | null = roleId
         if (roleId) {
           const roleSnap = await getDoc(doc(db, 'roles', roleId))
-          rolePermissions = (roleSnap.data()?.permissions as string[] | undefined) ?? []
+          if (roleSnap.exists()) {
+            rolePermissions = (roleSnap.data()?.permissions as string[] | undefined) ?? []
+          } else {
+            resolvedRoleId = null
+          }
         }
         if (cancelled) return
         setAccess({
           permissions: computeEffectivePermissions({ isOwner, rolePermissions, grants, revokes }),
-          roleId,
+          roleId: resolvedRoleId,
           isOwner,
         })
       } catch (e) {
