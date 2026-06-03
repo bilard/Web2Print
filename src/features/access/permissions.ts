@@ -64,6 +64,19 @@ export const PERMISSIONS: PermissionDef[] = [
 
 export const ALL_PERMISSION_KEYS: string[] = PERMISSIONS.map((p) => p.key)
 
+/** Permission parente requise. Convention : toute action `<module>.<...>` dépend de
+ *  l'accès au module `<module>.view`. Les clés `*.view` n'ont pas de parent (racine). */
+export function permissionParent(key: string): string | null {
+  if (key.endsWith('.view')) return null
+  const root = key.split('.')[0]
+  return `${root}.view`
+}
+
+/** Enfants directs d'une permission (celles dont elle est le parent). */
+export function permissionChildren(key: string): string[] {
+  return PERMISSIONS.filter((p) => permissionParent(p.key) === key).map((p) => p.key)
+}
+
 /** Regroupe les permissions par module pour la matrice de l'écran admin. */
 export function permissionsByModule(): Record<string, PermissionDef[]> {
   const out: Record<string, PermissionDef[]> = {}

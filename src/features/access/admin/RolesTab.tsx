@@ -1,7 +1,7 @@
 // src/features/access/admin/RolesTab.tsx
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, Save, X } from 'lucide-react'
-import { permissionsByModule } from '@/features/access/permissions'
+import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
 
 export function RolesTab() {
@@ -18,7 +18,17 @@ export function RolesTab() {
   const toggle = (key: string) => {
     if (!editing) return
     const next = new Set(editing.permissions)
-    next.has(key) ? next.delete(key) : next.add(key)
+    if (next.has(key)) {
+      // Décocher : retire aussi en cascade les enfants qui en dépendent.
+      next.delete(key)
+      for (const child of permissionChildren(key)) next.delete(child)
+    } else {
+      // Cocher : ajoute le(s) parent(s) requis (ex. cocher « Importer PPTX » coche aussi
+      // « Ouvrir l'écran Importer »).
+      next.add(key)
+      let p = permissionParent(key)
+      while (p) { next.add(p); p = permissionParent(p) }
+    }
     setEditing({ ...editing, permissions: next })
   }
 
@@ -52,9 +62,19 @@ export function RolesTab() {
               <div className="flex flex-wrap gap-1.5">
                 {defs.map((d) => {
                   const on = editing.permissions.has(d.key)
+                  const parent = permissionParent(d.key)
+                  // Enfant verrouillé tant que son parent (accès au module) n'est pas coché.
+                  const locked = parent ? !editing.permissions.has(parent) : false
                   return (
-                    <button key={d.key} onClick={() => toggle(d.key)} title={d.key}
-                      className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${on ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'bg-white/[0.02] border-white/10 text-white/40 hover:text-white/70'}`}>
+                    <button key={d.key} onClick={() => toggle(d.key)} disabled={locked}
+                      title={locked ? `Nécessite d'abord : ${permissionLabel(parent!)}` : d.key}
+                      className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${
+                        locked
+                          ? 'bg-white/[0.01] border-white/5 text-white/20 cursor-not-allowed'
+                          : on
+                            ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200'
+                            : 'bg-white/[0.02] border-white/10 text-white/40 hover:text-white/70'
+                      }`}>
                       {d.label}
                     </button>
                   )
