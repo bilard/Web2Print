@@ -1,0 +1,42 @@
+// src/features/access/usersApi.ts
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
+
+export interface ManagedUser {
+  uid: string
+  email: string
+  displayName: string
+  photoURL: string
+  lastSeenAt: number
+  accessRoleId: string | null
+  accessGrants: string[]
+  accessRevokes: string[]
+}
+
+/** Liste tous les users (admin only — la règle Firestore l'autorise). On NE lit QUE les
+ *  champs d'identité/access, jamais les secrets (apiKeys/telegram/siteCookies). */
+export async function listUsers(): Promise<ManagedUser[]> {
+  const snap = await getDocs(collection(db, 'users'))
+  return snap.docs
+    .map((d) => {
+      const x = d.data()
+      return {
+        uid: d.id,
+        email: (x.email as string) ?? '',
+        displayName: (x.displayName as string) ?? '',
+        photoURL: (x.photoURL as string) ?? '',
+        lastSeenAt: (x.lastSeenAt as number) ?? 0,
+        accessRoleId: (x.accessRoleId as string | null) ?? null,
+        accessGrants: (x.accessGrants as string[]) ?? [],
+        accessRevokes: (x.accessRevokes as string[]) ?? [],
+      }
+    })
+    .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
+}
+
+export async function updateUserAccess(
+  uid: string,
+  access: { accessRoleId?: string | null; accessGrants?: string[]; accessRevokes?: string[] },
+): Promise<void> {
+  await setDoc(doc(db, 'users', uid), access, { merge: true })
+}
