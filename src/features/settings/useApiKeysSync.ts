@@ -36,17 +36,18 @@ interface ApiKeysDoc {
  * exclues — leur valeur sert à connecter Firestore, on ne peut pas l'y stocker.
  */
 export function useApiKeysSync() {
-  const user = useAuthStore((s) => s.user)
+  // [uid] et non [user] : évite le re-run (→ getDoc annulé) à chaque refresh de token. Cf. useTelegramSettingsSync.
+  const uid = useAuthStore((s) => s.user?.uid)
   const hydratedRef = useRef(false)
   const debounceRef = useRef<number | null>(null)
 
   // Hydrate depuis Firestore au login
   useEffect(() => {
     hydratedRef.current = false
-    if (!user) return
+    if (!uid) return
 
     let cancelled = false
-    const ref = doc(db, 'users', user.uid)
+    const ref = doc(db, 'users', uid)
     getDoc(ref)
       .then((snap) => {
         if (cancelled) return
@@ -80,11 +81,11 @@ export function useApiKeysSync() {
       .finally(() => { if (!cancelled) hydratedRef.current = true })
 
     return () => { cancelled = true }
-  }, [user])
+  }, [uid])
 
   // Push vers Firestore à chaque update local (debounced)
   useEffect(() => {
-    if (!user) return
+    if (!uid) return
 
     const handler = () => {
       if (!hydratedRef.current) return
@@ -95,7 +96,7 @@ export function useApiKeysSync() {
           const v = localStorage.getItem(`${STORAGE_PREFIX}${id}`)
           if (v) overrides[id] = v
         }
-        const ref = doc(db, 'users', user.uid)
+        const ref = doc(db, 'users', uid)
         setDoc(
           ref,
           { apiKeys: { overrides, updatedAt: Date.now() } },
@@ -109,5 +110,5 @@ export function useApiKeysSync() {
       window.removeEventListener(API_KEYS_UPDATED_EVENT, handler)
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current)
     }
-  }, [user])
+  }, [uid])
 }

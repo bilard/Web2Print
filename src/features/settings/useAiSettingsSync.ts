@@ -8,14 +8,15 @@ import type { AiProvider, AiModelInfo } from '@/lib/aiModels'
 const DEBOUNCE_MS = 500
 
 export function useAiSettingsSync() {
-  const user = useAuthStore((s) => s.user)
+  // [uid] et non [user] : évite le re-run (→ getDoc annulé) à chaque refresh de token. Cf. useTelegramSettingsSync.
+  const uid = useAuthStore((s) => s.user?.uid)
   const hydratedRef = useRef(false)
   const debounceTimerRef = useRef<number | null>(null)
 
   // Hydrate from Firestore on login
   useEffect(() => {
     hydratedRef.current = false
-    if (!user) {
+    if (!uid) {
       useAiSettingsStore.setState({
         selectedModel: initialSelected(),
         fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
@@ -32,7 +33,7 @@ export function useAiSettingsSync() {
     const baseline = useAiSettingsStore.getState().selectedModel
 
     let cancelled = false
-    const ref = doc(db, 'users', user.uid)
+    const ref = doc(db, 'users', uid)
     getDoc(ref)
       .then((snap) => {
         if (cancelled) return
@@ -77,11 +78,11 @@ export function useAiSettingsSync() {
       .finally(() => { if (!cancelled) hydratedRef.current = true })
 
     return () => { cancelled = true }
-  }, [user])
+  }, [uid])
 
   // Subscribe + push to Firestore on change (debounced)
   useEffect(() => {
-    if (!user) return
+    if (!uid) return
 
     const unsubscribe = useAiSettingsStore.subscribe((state, prev) => {
       if (!hydratedRef.current) return
@@ -94,7 +95,7 @@ export function useAiSettingsSync() {
         window.clearTimeout(debounceTimerRef.current)
       }
       debounceTimerRef.current = window.setTimeout(() => {
-        const ref = doc(db, 'users', user.uid)
+        const ref = doc(db, 'users', uid)
         setDoc(
           ref,
           {
@@ -115,5 +116,5 @@ export function useAiSettingsSync() {
         debounceTimerRef.current = null
       }
     }
-  }, [user])
+  }, [uid])
 }

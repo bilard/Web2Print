@@ -17,7 +17,12 @@ interface TelegramRemote {
 }
 
 export function useTelegramSettingsSync() {
-  const user = useAuthStore((s) => s.user)
+  // ⚠️ On sélectionne `uid` (string stable) et NON l'objet `user` : l'auth Firebase
+  // ré-émet un nouvel objet User à chaque refresh de token. Avec [user], le useEffect
+  // re-runnait, son cleanup posait `cancelled = true`, et le getDoc en vol était ignoré
+  // (jamais appliqué → hydratation muette en prod). Avec [uid], pas de re-run tant que
+  // l'uid ne change pas.
+  const uid = useAuthStore((s) => s.user?.uid)
   const hydratedRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const prevUidRef = useRef<string | null | undefined>(undefined)
@@ -25,18 +30,17 @@ export function useTelegramSettingsSync() {
   // Hydrate depuis Firestore au login.
   useEffect(() => {
     hydratedRef.current = false
-    // ⚠️ NE PAS écrire prevUidRef ici. L'auth Firebase passe transitoirement à `null`
-    // (refresh de token, double-fire de onAuthStateChanged). Si on remettait prevUidRef
-    // à null, le retour `null → uid` (MÊME compte) serait vu comme un changement de
-    // compte → reset du store → push `{}` vide → EFFACEMENT de la config en Firestore.
-    // En gardant le dernier uid connu, `uid → null → uid` ne déclenche aucun reset.
-    if (!user) return
+    // NE PAS écrire prevUidRef ici. L'auth passe transitoirement à `null` (refresh de
+    // token) ; si on remettait prevUidRef à null, le retour `null → uid` (MÊME compte)
+    // serait vu comme un changement de compte → reset du store → push `{}` vide →
+    // EFFACEMENT de la config en Firestore. En gardant le dernier uid connu, c'est neutre.
+    if (!uid) return
 
-    const accountChanged = prevUidRef.current !== undefined && prevUidRef.current !== user.uid
-    prevUidRef.current = user.uid
+    const accountChanged = prevUidRef.current !== undefined && prevUidRef.current !== uid
+    prevUidRef.current = uid
 
     let cancelled = false
-    const ref = doc(db, 'users', user.uid)
+    const ref = doc(db, 'users', uid)
     getDoc(ref)
       .then((snap) => {
         if (cancelled) return
@@ -65,23 +69,22 @@ export function useTelegramSettingsSync() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [uid])
 
   // Pousse vers Firestore sur changement (debounce).
   useEffect(() => {
-    if (!user) return
+    if (!uid) return
 
     const unsubscribe = useTelegramStore.subscribe((state, prev) => {
       if (!hydratedRef.current) return
       if (state.botToken === prev.botToken && state.chatId === prev.chatId) return
-      // Filet de sécurité : ne JAMAIS effacer une config distante via un push vide
-      // automatique. Un vidage volontaire passe par un autre chemin (non implémenté).
+      // Filet de sécurité : ne JAMAIS effacer une config distante via un push vide auto.
       if (!state.botToken && !state.chatId) return
 
       if (timerRef.current !== null) window.clearTimeout(timerRef.current)
       timerRef.current = window.setTimeout(() => {
         setDoc(
-          doc(db, 'users', user.uid),
+          doc(db, 'users', uid),
           { telegram: { botToken: state.botToken, chatId: state.chatId } },
           { merge: true },
         ).catch((e) => console.warn('[useTelegramSettingsSync] sync failed:', e))
@@ -95,5 +98,5 @@ export function useTelegramSettingsSync() {
         timerRef.current = null
       }
     }
-  }, [user])
+  }, [uid])
 }

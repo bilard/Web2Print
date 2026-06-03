@@ -19,7 +19,8 @@ import {
  * sont re-hydratés au login — et restent isolés par utilisateur (doc privé `users/{uid}`).
  */
 export function useSiteCookiesSync() {
-  const user = useAuthStore((s) => s.user)
+  // [uid] et non [user] : évite le re-run (→ getDoc annulé) à chaque refresh de token. Cf. useTelegramSettingsSync.
+  const uid = useAuthStore((s) => s.user?.uid)
   const hydratedRef = useRef(false)
   const debounceRef = useRef<number | null>(null)
 
@@ -27,10 +28,10 @@ export function useSiteCookiesSync() {
   // du user courant (ajoute les distants, retire les locaux absents du doc).
   useEffect(() => {
     hydratedRef.current = false
-    if (!user) return
+    if (!uid) return
 
     let cancelled = false
-    getDoc(doc(db, 'users', user.uid))
+    getDoc(doc(db, 'users', uid))
       .then((snap) => {
         if (cancelled) return
         const remote = (snap.data()?.siteCookies as SiteCookieEntry[] | undefined) ?? []
@@ -46,7 +47,7 @@ export function useSiteCookiesSync() {
         // déjà assurée par purgeLocalUserData() qui vide le localStorage au changement de compte).
         const hasLocalOnly = listSiteCookies().some((e) => !remoteHosts.has(e.hostname))
         if (hasLocalOnly) {
-          setDoc(doc(db, 'users', user.uid), { siteCookies: listSiteCookies() }, { merge: true })
+          setDoc(doc(db, 'users', uid), { siteCookies: listSiteCookies() }, { merge: true })
             .catch((e) => console.warn('[useSiteCookiesSync] backfill failed:', e))
         }
         window.dispatchEvent(new CustomEvent(SITE_COOKIES_HYDRATED_EVENT))
@@ -55,19 +56,19 @@ export function useSiteCookiesSync() {
       .finally(() => { if (!cancelled) hydratedRef.current = true })
 
     return () => { cancelled = true }
-  }, [user])
+  }, [uid])
 
   // Pousse vers Firestore à chaque changement local (debounced). Garde anti-boucle :
   // ne pousse pas pendant l'hydratation (qui émet aussi `sitecookies:updated`).
   useEffect(() => {
-    if (!user) return
+    if (!uid) return
 
     const handler = () => {
       if (!hydratedRef.current) return
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current)
       debounceRef.current = window.setTimeout(() => {
         setDoc(
-          doc(db, 'users', user.uid),
+          doc(db, 'users', uid),
           { siteCookies: listSiteCookies() },
           { merge: true },
         ).catch((e) => console.warn('[useSiteCookiesSync] sync failed:', e))
@@ -79,5 +80,5 @@ export function useSiteCookiesSync() {
       window.removeEventListener(SITE_COOKIES_UPDATED_EVENT, handler)
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current)
     }
-  }, [user])
+  }, [uid])
 }
