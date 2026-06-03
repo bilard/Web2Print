@@ -26,7 +26,40 @@ import {
   type DriveFileMeta,
 } from '@/features/gdrive/gdriveCore'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
-import type { ExcelSheet } from '@/features/excel/types'
+import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+
+/**
+ * Normalise l'entrée du node Export Google Sheets en une `ExcelSheet`.
+ * - une Sheet déjà formée (colonnes + lignes) passe telle quelle ;
+ * - une chaîne (sortie d'un node Saisie texte / LLM, port typé `any`) devient
+ *   une Sheet à une colonne « Texte » et une ligne ;
+ * - tout autre type est une erreur de branchement explicite.
+ */
+function coerceToExcelSheet(input: unknown, name: string): ExcelSheet {
+  if (
+    input &&
+    typeof input === 'object' &&
+    Array.isArray((input as ExcelSheet).rows) &&
+    Array.isArray((input as ExcelSheet).columns)
+  ) {
+    return input as ExcelSheet
+  }
+  if (typeof input === 'string') {
+    const column: ExcelColumn = {
+      key: 'texte',
+      label: 'Texte',
+      fieldType: 'text',
+      detectedType: 'text',
+      isPrimary: true,
+      width: 240,
+    }
+    const row: ExcelRow = { _id: 'r0', texte: input }
+    return { name, columns: [column], rows: [row], taxonomy: [] }
+  }
+  throw new Error(
+    'Export Google Sheets attend une Sheet ou du texte en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).',
+  )
+}
 
 function requireToken(): string {
   const token = useGDriveStore.getState().accessToken
@@ -327,7 +360,7 @@ function GSheetsExportConfigUi({
 
 export const gsheetsExportNode: NodeSpec<
   GSheetsExportConfig,
-  { sheet: ExcelSheet | null },
+  { sheet: unknown },
   { result: DriveFileMeta }
 > = {
   type: 'gsheets-export',
@@ -343,12 +376,13 @@ export const gsheetsExportNode: NodeSpec<
   ConfigComponent: GSheetsExportConfigUi,
   run: async (ctx, config, inputs) => {
     const token = requireToken()
-    if (!inputs.sheet) {
-      throw new Error('Sheet manquante en entrée — branchez un node qui produit une Sheet.')
+    if (inputs.sheet == null) {
+      throw new Error('Sheet manquante en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).')
     }
     const name = config.name?.trim() || 'Workflow Export'
-    ctx.log('info', `Création GSheet "${name}" (${inputs.sheet.rows.length} lignes)…`)
-    const meta = await exportSheetToGoogleSheets(token, inputs.sheet, {
+    const sheet = coerceToExcelSheet(inputs.sheet, name)
+    ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
+    const meta = await exportSheetToGoogleSheets(token, sheet, {
       name,
       parentFolderId: config.parentFolderId?.trim() || undefined,
     })
