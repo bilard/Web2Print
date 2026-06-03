@@ -89,15 +89,22 @@ export function useTelegramInboxWorker(): void {
           caption,
         })
         void addOutboxMessage(chatId, `📎 ${exec.file.filename}\n${caption}`, sent.messageId)
-      } else if (exec.nodeCount === 0 && exec.errorCount > 0) {
-        await reply(chatId, `⚠️ « ${name} » exécution échouée : ${maskToken(exec.firstError || 'erreur inconnue')}`)
+      } else if (exec.errorCount > 0) {
+        // Au moins un node a échoué (échec total OU partiel) : on remonte le message
+        // d'erreur réel (exec.firstError), sinon un warn des logs, sinon un fallback.
+        const detail =
+          exec.firstError || exec.logs.find((l) => l.level === 'warn')?.msg || 'erreur inconnue'
+        const prefix =
+          exec.nodeCount > 0
+            ? `⚠️ « ${name} » exécuté partiellement — ${exec.nodeCount} node(s) OK, ${exec.errorCount} erreur(s) : `
+            : `⚠️ « ${name} » exécution échouée : `
+        await reply(chatId, prefix + maskToken(detail))
       } else {
-        const suffix = exec.errorCount > 0 ? ` (${exec.errorCount} erreur(s))` : ''
         const warn = exec.logs.find((l) => l.level === 'warn')
         if (warn) {
-          await reply(chatId, `⚠️ « ${name} » exécuté — ${exec.nodeCount} node(s)${suffix}, mais : ${maskToken(warn.msg)}`)
+          await reply(chatId, `⚠️ « ${name} » exécuté — ${exec.nodeCount} node(s), mais : ${maskToken(warn.msg)}`)
         } else {
-          await reply(chatId, `✅ « ${name} » exécuté — ${exec.nodeCount} node(s), aucun fichier produit${suffix}.`)
+          await reply(chatId, `✅ « ${name} » exécuté — ${exec.nodeCount} node(s), aucun fichier produit.`)
         }
       }
     }
