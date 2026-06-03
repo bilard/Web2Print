@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
+import { useIsPending, useAccessLoading } from '@/features/access/useAccess'
+import { PendingAccessScreen } from '@/features/access/PendingAccessScreen'
 import { useProjects } from '@/features/projects/useProjects'
 import { useCreateProject, slugify } from '@/features/projects/useCreateProject'
 import { useDeleteProject } from '@/features/projects/useDeleteProject'
@@ -251,6 +253,17 @@ export default function DashboardPage() {
       prevEl?.focus()
     }
   }
+
+  const accessLoading = useAccessLoading()
+  const pending = useIsPending()
+  if (accessLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+  if (pending) return <PendingAccessScreen />
 
   return (
     <div className="h-screen bg-[#0f0f0f] text-white flex overflow-hidden">
