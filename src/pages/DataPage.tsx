@@ -56,6 +56,9 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const { data: taxonomies } = useTaxonomies()
   const renameTaxonomy = useRenameTaxonomy()
   const canExport = useCan('pim.export')
+  const canCreate = useCan('pim.create')
+  const canImport = useCan('pim.import')
+  const canScrape = useCan('pim.scrape')
 
   const [rightTab, setRightTab] = useState<RightTab>('fields')
   const [showRight, setShowRight] = useState(true)
@@ -554,6 +557,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Import type menu — top (désactivé si aucune BDD sélectionnée) */}
           <div className="h-14 border-b border-white/[0.06] bg-[#131313] flex items-center gap-2 px-4 shrink-0">
+            {canImport && (
             <button
               onClick={() => setImportModalOpen(true)}
               disabled={!hasSelectedDb}
@@ -563,6 +567,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               <Upload className="w-4 h-4" />
               Importer un fichier
             </button>
+            )}
+            {canScrape && (
             <button
               onClick={() => setScrapingOpen(true)}
               disabled={!hasSelectedDb}
@@ -572,6 +578,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               <Globe className="w-4 h-4" />
               Scraper le web
             </button>
+            )}
+            {canCreate && (
             <button
               onClick={createEmpty}
               disabled={!hasSelectedDb}
@@ -581,6 +589,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               <Plus className="w-4 h-4" />
               Creer vide
             </button>
+            )}
           </div>
 
           {/* Breadcrumb PIM désactivé — pas pertinent pour le flux legacy */}
@@ -803,6 +812,9 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
   onRefresh: () => void
   onReorder: (orderedDocIds: string[]) => void | Promise<void>
 }) {
+  const canCreate = useCan('pim.create')
+  const canImport = useCan('pim.import')
+  const canScrape = useCan('pim.scrape')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openAddMenu, setOpenAddMenu] = useState<string | null>(null)
   const [renamingDocId, setRenamingDocId] = useState<string | null>(null)
@@ -881,7 +893,9 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-end gap-1">
         <div className="relative">
+          {(canCreate || canImport || canScrape) && (
           <div className="flex items-center bg-white/[0.04] border border-white/10 rounded-md overflow-hidden">
+            {canCreate && (
             <button
               onClick={(e) => { e.stopPropagation(); setOpenAddMenu(openAddMenu === '__root_create__' ? null : '__root_create__') }}
               className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-colors"
@@ -890,7 +904,9 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
               <Plus className="w-3 h-3" />
               Créer
             </button>
-            <div className="w-px h-3 bg-white/10" />
+            )}
+            {canCreate && (canImport || canScrape) && <div className="w-px h-3 bg-white/10" />}
+            {(canImport || canScrape) && (
             <button
               onClick={(e) => { e.stopPropagation(); setOpenAddMenu(openAddMenu === '__root_import__' ? null : '__root_import__') }}
               className="flex items-center gap-1 px-2 py-0.5 text-[10px] text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-colors"
@@ -899,7 +915,9 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
               <Upload className="w-3 h-3" />
               Import
             </button>
+            )}
           </div>
+          )}
           {openAddMenu === '__root_create__' && (
             <CreateMenu
               onCreateDb={() => { onCreateAt([]); setOpenAddMenu(null) }}
@@ -966,11 +984,14 @@ function SavedFilesPanel({ files, loading, currentDocId, onLoad, onDelete, onRen
 }
 
 function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () => void }) {
+  const canImport = useCan('pim.import')
+  const canScrape = useCan('pim.scrape')
   return (
     <div
       className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
+      {canImport && (
       <button
         onClick={onImport}
         className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white/90 transition-colors"
@@ -978,6 +999,8 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
         <Upload className="w-3.5 h-3.5 text-emerald-400" />
         Importer Excel
       </button>
+      )}
+      {canScrape && (
       <button
         onClick={onScrape}
         className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] hover:text-white/90 transition-colors"
@@ -985,6 +1008,7 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
         <Globe className="w-3.5 h-3.5 text-indigo-400" />
         Scraper
       </button>
+      )}
     </div>
   )
 }
