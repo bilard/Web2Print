@@ -1,5 +1,5 @@
 // src/features/access/admin/PermissionMindMap.tsx
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow, Background, Panel, Handle, Position, useReactFlow, useStore,
   type Node, type Edge, type NodeProps, type NodeMouseHandler, type ReactFlowInstance,
@@ -106,15 +106,18 @@ export function PermissionMindMap({
   permissions: Set<string>
   onToggle: (key: string) => void
 }) {
-  const { nodes, edges, totalWidth } = useMemo(() => {
+  const { nodes, edges, contentW, contentH } = useMemo(() => {
     const has = (k: string) => permissions.has(k)
     const nodes: Node[] = []
     const edges: Edge[] = []
     const rowCenter = (i: number) => i * COL_W + MOD_W / 2 // épine verticale = centre du module
-    const totalWidth = Math.max((entries.length - 1) * COL_W + MOD_W, MOD_W)
+    // Étendue réelle du contenu : bord gauche = module 0 (x=0) ; bord droit = feuilles du dernier module.
+    const contentW = Math.max((entries.length - 1) * COL_W + MOD_W / 2 + 22 + LEAF_W, MOD_W)
+    const maxLeaves = entries.reduce((m, [, defs]) => Math.max(m, defs.filter((d) => permissionParent(d.key) !== null).length), 0)
+    const contentH = Y_LEAF0 + Math.max(maxLeaves - 1, 0) * ROW + 30
 
     nodes.push({
-      id: 'root', type: 'mind', position: { x: totalWidth / 2 - 44, y: 0 }, draggable: false, selectable: false,
+      id: 'root', type: 'mind', position: { x: contentW / 2 - 44, y: 0 }, draggable: false, selectable: false,
       data: { kind: 'root', label: roleName.trim() || 'Rôle', hex: '#6366f1', selected: false, locked: false } satisfies MindData,
     })
 
@@ -143,7 +146,7 @@ export function PermissionMindMap({
         edges.push({ id: `e-${modId}-${pid}`, source: modId, target: pid, type: 'smoothstep', style: { stroke: c, strokeWidth: 1.5, opacity: has(d.key) ? 0.7 : 0.22 } })
       })
     })
-    return { nodes, edges, totalWidth }
+    return { nodes, edges, contentW, contentH }
   }, [entries, permissions, roleName])
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -151,17 +154,35 @@ export function PermissionMindMap({
     if (k) onToggle(k)
   }
 
-  // Ouverture à un zoom confortable (racine centrée en haut) plutôt qu'un fit-all
-  // qui rapetisse tout sur la largeur des 11 modules. « Recadrer » montre l'ensemble.
+  // Ouverture en « fit-largeur » : zoom calculé pour que les 11 modules tiennent
+  // pile dans la largeur (aucun rognage). Le conteneur épouse la hauteur du contenu
+  // (pas de grand vide) et se recale au redimensionnement. Le curseur zoome ensuite.
   const wrapRef = useRef<HTMLDivElement>(null)
-  const onInit = useCallback((rf: ReactFlowInstance) => {
-    const w = wrapRef.current?.clientWidth ?? 1200
-    const zoom = 0.95
-    rf.setViewport({ x: w / 2 - (totalWidth / 2) * zoom, y: 26, zoom }, { duration: 0 })
-  }, [totalWidth])
+  const rfRef = useRef<ReactFlowInstance | null>(null)
+  const [boxH, setBoxH] = useState(420)
+  const PAD = 24
+
+  const fitWidth = useCallback(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const w = el.clientWidth
+    const zoom = Math.min(Math.max((w - PAD * 2) / contentW, 0.2), 1.4)
+    setBoxH(Math.min(Math.max(Math.round(contentH * zoom + PAD * 2), 320), 660))
+    rfRef.current?.setViewport({ x: (w - contentW * zoom) / 2, y: PAD, zoom }, { duration: 0 })
+  }, [contentW, contentH])
+
+  const onInit = useCallback((rf: ReactFlowInstance) => { rfRef.current = rf; fitWidth() }, [fitWidth])
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => fitWidth())
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [fitWidth])
 
   return (
-    <div ref={wrapRef} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden h-[calc(100vh-220px)] min-h-[600px]">
+    <div ref={wrapRef} style={{ height: boxH }} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden">
       <ReactFlow
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
