@@ -168,12 +168,14 @@ export function RolesTab() {
         <Plus className="w-4 h-4" /> Nouveau rôle
       </button>
       {roles.map((r) => (
-        <div key={r.id} className="flex items-center justify-between bg-white/[0.03] rounded-xl px-3 py-2.5">
-          <button onClick={() => startEdit(r)} className="flex flex-col items-start text-left min-w-0">
+        <div key={r.id} onClick={() => startEdit(r)} role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(r) } }}
+          className="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] rounded-xl px-3 py-2.5 cursor-pointer transition-colors">
+          <div className="flex flex-col items-start text-left min-w-0">
             <span className="text-sm text-white/90">{r.name}</span>
             <span className="text-[10px] text-white/30">{r.permissions.length} permission(s)</span>
-          </button>
-          <button onClick={() => remove(r.id)} className="p-1.5 text-white/30 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
+          </div>
+          <button onClick={(e) => { e.stopPropagation(); remove(r.id) }} className="p-1.5 text-white/30 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
         </div>
       ))}
       {roles.length === 0 && <p className="text-[11px] text-white/20 text-center py-3">Aucun rôle — clique « Nouveau rôle ».</p>}
