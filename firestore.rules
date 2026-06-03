@@ -43,10 +43,10 @@ service cloud.firestore {
       // `resource` est null à la création du doc.
       allow create: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes']));
+                        && !request.resource.data.keys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']));
       allow update: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
-                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes']));
+                        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']));
     }
 
     // ── Projects ──────────────────────────────────────────────────────────────

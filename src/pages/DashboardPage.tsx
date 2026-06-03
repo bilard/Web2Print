@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
-import { useIsPending, useAccessLoading } from '@/features/access/useAccess'
+import { useIsPending, useIsBlocked, useAccessLoading } from '@/features/access/useAccess'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { AccessAdminPage } from '@/features/access/admin/AccessAdminPage'
 import { PendingAccessScreen } from '@/features/access/PendingAccessScreen'
@@ -276,6 +276,7 @@ export default function DashboardPage() {
 
   const accessLoading = useAccessLoading()
   const pending = useIsPending()
+  const blocked = useIsBlocked()
   if (accessLoading) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
@@ -283,6 +284,7 @@ export default function DashboardPage() {
       </div>
     )
   }
+  if (blocked) return <PendingAccessScreen blocked />
   if (pending) return <PendingAccessScreen />
 
   const canSee = (id: Section) => {

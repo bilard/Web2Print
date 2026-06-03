@@ -25,6 +25,8 @@ export function useAccessInit() {
         const roleId = (data.accessRoleId as string | undefined) ?? null
         const grants = (data.accessGrants as string[] | undefined) ?? []
         const revokes = (data.accessRevokes as string[] | undefined) ?? []
+        // Compte suspendu par un admin → aucun accès (l'owner ne peut jamais être bloqué).
+        const blocked = !isOwner && ((data.accessBlocked as boolean | undefined) ?? false)
         let rolePermissions: string[] | null = null
         // Rôle supprimé entre-temps → on le traite comme « pas de rôle » (pending) :
         // resolvedRoleId repasse à null pour que useIsPending() renvoie true.
@@ -39,14 +41,16 @@ export function useAccessInit() {
         }
         if (cancelled) return
         setAccess({
-          permissions: computeEffectivePermissions({ isOwner, rolePermissions, grants, revokes }),
+          // Bloqué → aucune permission, quel que soit le rôle.
+          permissions: blocked ? new Set() : computeEffectivePermissions({ isOwner, rolePermissions, grants, revokes }),
           roleId: resolvedRoleId,
           isOwner,
+          blocked,
         })
       } catch (e) {
         if (cancelled) return
         console.warn('[useAccessInit] load failed:', e)
-        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner })
+        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false })
       }
     })()
 
@@ -62,6 +66,11 @@ export function useCan(key: string): boolean {
 /** Connecté mais sans rôle (et non-owner). */
 export function useIsPending(): boolean {
   return useAccessStore((s) => !s.loading && !s.isOwner && !s.roleId)
+}
+
+/** Compte suspendu par un admin (et non-owner). */
+export function useIsBlocked(): boolean {
+  return useAccessStore((s) => !s.loading && !s.isOwner && s.blocked)
 }
 
 /** Possède la permission admin (= owner en V1). */

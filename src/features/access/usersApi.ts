@@ -11,6 +11,8 @@ export interface ManagedUser {
   accessRoleId: string | null
   accessGrants: string[]
   accessRevokes: string[]
+  /** Compte suspendu par un admin → aucun accès, quel que soit le rôle. */
+  accessBlocked: boolean
 }
 
 /** Liste tous les users (admin only — la règle Firestore l'autorise). On NE lit QUE les
@@ -29,6 +31,7 @@ export async function listUsers(): Promise<ManagedUser[]> {
         accessRoleId: (x.accessRoleId as string | null) ?? null,
         accessGrants: (x.accessGrants as string[]) ?? [],
         accessRevokes: (x.accessRevokes as string[]) ?? [],
+        accessBlocked: (x.accessBlocked as boolean) ?? false,
       }
     })
     .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
@@ -36,7 +39,7 @@ export async function listUsers(): Promise<ManagedUser[]> {
 
 export async function updateUserAccess(
   uid: string,
-  access: { accessRoleId?: string | null; accessGrants?: string[]; accessRevokes?: string[] },
+  access: { accessRoleId?: string | null; accessGrants?: string[]; accessRevokes?: string[]; accessBlocked?: boolean },
 ): Promise<void> {
   await setDoc(doc(db, 'users', uid), access, { merge: true })
 }
