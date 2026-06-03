@@ -246,7 +246,7 @@ export function useAddObject() {
       obj = new Textbox('Double-cliquez pour éditer', {
         left: docX - 120, top: docY - 12,
         width: 240,
-        fontSize: 24, fontFamily: 'Inter', fill: '#ffffff',
+        fontSize: 24, fontFamily: 'Inter', fill: '#000000',
         data: { id, type: 'text' },
       })
     } else if (type === 'line') {
