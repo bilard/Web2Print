@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loader2, Wifi,
-  ChevronDown, RefreshCw, Info, ExternalLink,
+  ChevronDown, RefreshCw, Info, ExternalLink, Search,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -190,8 +190,17 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
     models.find((m) => m.id === selectedId) ??
     { id: selectedId, label: selectedId, pricing: { input: 0, output: 0 } }
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
+
+  // Champ de recherche affiché quand la liste est longue (utile surtout pour OpenRouter, ~300 modèles).
+  const showSearch = models.length > 10
+  const filteredModels = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return models
+    return models.filter((m) => m.label.toLowerCase().includes(q) || m.id.toLowerCase().includes(q))
+  }, [models, query])
 
   useEffect(() => {
     const k = getApiKey(apiKeyId)
@@ -204,7 +213,7 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
   useEffect(() => {
     if (!popoverOpen) return
     const onClick = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) setPopoverOpen(false)
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) { setPopoverOpen(false); setQuery('') }
     }
     window.addEventListener('mousedown', onClick)
     return () => window.removeEventListener('mousedown', onClick)
@@ -355,7 +364,7 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
 
         <div className="relative" ref={popoverRef}>
           <button
-            onClick={() => setPopoverOpen((v) => !v)}
+            onClick={() => setPopoverOpen((v) => { if (v) setQuery(''); return !v })}
             className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-lg px-2.5 py-1.5 transition-colors"
           >
             <div className="flex flex-col items-start min-w-0">
@@ -366,17 +375,38 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
           </button>
 
           {popoverOpen && (
-            <div className="absolute z-10 mt-1 w-full bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto">
-              {models.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => { setSelectedModel(provider, m.id); setPopoverOpen(false) }}
-                  className={`w-full flex flex-col items-start px-2.5 py-1.5 hover:bg-white/5 transition-colors ${m.id === selected.id ? 'bg-white/[0.04]' : ''}`}
-                >
-                  <span className="text-xs text-white/80">{m.label}</span>
-                  <span className="text-[10px] font-mono text-white/30">{formatPricing(m.pricing)}</span>
-                </button>
-              ))}
+            <div className="absolute z-10 mt-1 w-full bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl flex flex-col max-h-72">
+              {showSearch && (
+                <div className="sticky top-0 p-1.5 border-b border-white/5 bg-[#1a1a1a]">
+                  <div className="flex items-center gap-1.5 bg-white/5 rounded-md px-2 py-1.5">
+                    <Search className="w-3 h-3 text-white/30 shrink-0" />
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Rechercher un modèle..."
+                      autoFocus
+                      className="flex-1 bg-transparent text-xs text-white/80 placeholder:text-white/25 focus:outline-none min-w-0"
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="overflow-y-auto py-1">
+                {filteredModels.length === 0 ? (
+                  <p className="px-2.5 py-2 text-[10px] text-white/30">Aucun modèle trouvé</p>
+                ) : (
+                  filteredModels.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => { setSelectedModel(provider, m.id); setPopoverOpen(false); setQuery('') }}
+                      className={`w-full flex flex-col items-start px-2.5 py-1.5 hover:bg-white/5 transition-colors ${m.id === selected.id ? 'bg-white/[0.04]' : ''}`}
+                    >
+                      <span className="text-xs text-white/80">{m.label}</span>
+                      <span className="text-[10px] font-mono text-white/30">{formatPricing(m.pricing)}</span>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>
