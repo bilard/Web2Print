@@ -34,7 +34,7 @@ function MindNode({ data }: NodeProps) {
     return (
       <button onClick={d.onToggle}
         style={{ borderColor: d.hex, background: d.selected ? `${d.hex}26` : 'rgba(255,255,255,0.025)' }}
-        className="px-3 py-1.5 rounded-lg border text-[12px] font-semibold inline-flex items-center gap-1.5 hover:brightness-125 transition">
+        className="nodrag nopan cursor-pointer px-3 py-1.5 rounded-lg border text-[12px] font-semibold inline-flex items-center gap-1.5 hover:brightness-125 transition">
         <Handle type="target" position={Position.Left} className="!w-1.5 !h-1.5 !border-0" style={{ background: d.hex }} />
         {d.selected && <Check className="w-3.5 h-3.5" style={{ color: d.hex }} />}
         <span style={{ color: d.selected ? d.hex : 'rgba(255,255,255,0.6)' }}>{d.label}</span>
@@ -43,16 +43,19 @@ function MindNode({ data }: NodeProps) {
       </button>
     )
   }
-  // perm leaf
+  // perm leaf — toujours cliquable. Si verrouillé (module parent inactif), le clic active
+  // aussi le module (la cascade de `toggle` ajoute le parent), pour tout gérer au clic.
   return (
-    <button onClick={d.locked ? undefined : d.onToggle} disabled={d.locked}
-      style={d.selected && !d.locked ? { borderColor: d.hex, background: `${d.hex}1f`, color: '#fff' } : {}}
-      className={`px-2 py-1 rounded-md border text-[11px] inline-flex items-center gap-1 transition ${
-        d.locked ? 'border-white/[0.07] text-white/20 cursor-not-allowed'
-          : d.selected ? '' : 'border-white/15 text-white/55 hover:text-white/85'
+    <button onClick={d.onToggle}
+      title={d.locked ? "Active aussi l'accès au module" : undefined}
+      style={d.selected ? { borderColor: d.hex, background: `${d.hex}1f`, color: '#fff' } : {}}
+      className={`nodrag nopan cursor-pointer px-2 py-1 rounded-md border text-[11px] inline-flex items-center gap-1 transition ${
+        d.selected ? ''
+          : d.locked ? 'border-white/[0.08] text-white/35 hover:text-white/70 hover:border-white/25'
+            : 'border-white/15 text-white/55 hover:text-white/85'
       }`}>
-      <Handle type="target" position={Position.Left} className="!w-1 !h-1 !border-0" style={{ background: d.locked ? '#3a3a3a' : d.hex }} />
-      {d.locked ? <Lock className="w-2.5 h-2.5" /> : d.selected ? <Check className="w-2.5 h-2.5" /> : null}
+      <Handle type="target" position={Position.Left} className="!w-1 !h-1 !border-0" style={{ background: d.selected || !d.locked ? d.hex : '#3a3a3a' }} />
+      {d.selected ? <Check className="w-2.5 h-2.5" /> : d.locked ? <Lock className="w-2.5 h-2.5 opacity-50" /> : null}
       {d.label}
     </button>
   )
