@@ -1,13 +1,15 @@
 // src/features/access/admin/RolesTab.tsx
-import { useEffect, useState } from 'react'
-import { Plus, Trash2, Save, X, Lock, Check, Eye, LayoutGrid, ListTree, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { useEffect, useState, lazy, Suspense } from 'react'
+import { Plus, Trash2, Save, X, Lock, Check, Eye, LayoutGrid, ListTree, Network, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
 import { PermissionTree } from './PermissionTree'
+// Lazy : embarque React Flow (lourd) uniquement quand on ouvre le mode carte mentale.
+const PermissionMindMap = lazy(() => import('./PermissionMindMap').then((m) => ({ default: m.PermissionMindMap })))
 
-type ViewMode = 'cards' | 'tree'
+type ViewMode = 'cards' | 'tree' | 'mindmap'
 
 export function RolesTab() {
   const [roles, setRoles] = useState<Role[]>([])
@@ -87,12 +89,20 @@ export function RolesTab() {
               className={`p-1.5 rounded-md transition-colors ${viewMode === 'cards' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
             <button onClick={() => setViewMode('tree')} title="Mode arbre"
               className={`p-1.5 rounded-md transition-colors ${viewMode === 'tree' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}><ListTree className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setViewMode('mindmap')} title="Carte mentale"
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'mindmap' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}><Network className="w-3.5 h-3.5" /></button>
           </div>
-          <button onClick={expandAll} title="Tout déplier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
-          <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
+          {viewMode !== 'mindmap' && (<>
+            <button onClick={expandAll} title="Tout déplier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
+            <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
+          </>)}
         </div>
 
-        {viewMode === 'tree' ? (
+        {viewMode === 'mindmap' ? (
+          <Suspense fallback={<div className="h-[380px] rounded-xl border border-white/[0.06] bg-[#0c0c0c] flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}>
+            <PermissionMindMap roleName={editing.name} entries={entries} permissions={editing.permissions} onToggle={toggle} />
+          </Suspense>
+        ) : viewMode === 'tree' ? (
           <PermissionTree
             entries={entries}
             isSelected={(k) => editing.permissions.has(k)}

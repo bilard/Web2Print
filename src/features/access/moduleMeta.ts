@@ -42,6 +42,16 @@ export function moduleMeta(module: string): ModuleMeta {
   return MODULE_META[module] ?? FALLBACK
 }
 
+/** Couleur brute (hex) par module — pour les liens SVG de la carte mentale (React Flow). */
+export const MODULE_HEX: Record<string, string> = {
+  'Bibliothèque': '#0ea5e9', 'Import': '#f59e0b', 'DAM': '#ec4899', 'PIM': '#10b981',
+  'Taxonomies': '#14b8a6', 'Scraping': '#6366f1', 'Workflows': '#8b5cf6', 'Animation': '#d946ef',
+  'Chat IA': '#06b6d4', 'Telegram': '#3b82f6', 'Paramètres': '#94a3b8',
+}
+export function moduleHex(module: string): string {
+  return MODULE_HEX[module] ?? '#64748b'
+}
+
 /** Ordre d'affichage = ordre de navigation de l'app (barre latérale). */
 export const MODULE_ORDER = [
   'Import', 'Bibliothèque', 'DAM', 'PIM', 'Taxonomies', 'Scraping',
