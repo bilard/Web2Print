@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { isOwnerEmail } from '@/features/auth/useAuth'
 
 export interface BrightDataAccountStats {
   balanceUsd: number | null
@@ -34,7 +35,9 @@ export function useBrightDataAccount() {
       const res = await callGetBrightDataAccount()
       return res.data
     },
-    enabled: !!user,
+    // Données financières du compte Bright Data partagé → réservées au propriétaire :
+    // on ne déclenche même pas la Cloud Function pour les autres comptes.
+    enabled: isOwnerEmail(user?.email),
     staleTime: 60_000,
     refetchInterval: 60_000,
     retry: 1,

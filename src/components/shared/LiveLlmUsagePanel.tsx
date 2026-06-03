@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink } from 'lucide-react'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
+import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 
@@ -178,6 +179,9 @@ function ProgressBar({ pct, kind }: { pct: number; kind: BadgeKind }) {
 export function LiveLlmUsagePanel() {
   const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
   const { data: bdAccount, isFetching: isFetchingBd, refetch: refetchBd, error: bdError } = useBrightDataAccount()
+  // Le compte Bright Data est partagé (un seul abonnement) → ses infos financières
+  // (solde/conso/facturation/statut) ne s'affichent que pour le propriétaire.
+  const isOwner = useIsOwner()
   const budgets = useAiSettingsStore((s) => s.monthlyBudgetUsd)
   const setBudget = useAiSettingsStore((s) => s.setMonthlyBudgetUsd)
   const brightDataBudget = useAiSettingsStore((s) => s.brightDataBudgetUsd)
@@ -472,7 +476,9 @@ export function LiveLlmUsagePanel() {
           )
         })}
 
-        {/* Section Scraping — Bright Data Web Unlocker */}
+        {/* Section Scraping — Bright Data : infos compte (solde/facturation/statut) =
+            données financières personnelles du compte partagé → propriétaire uniquement. */}
+        {isOwner && (<>
         <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
           <div className="col-span-9">Scraping (server-side)</div>
           <div className="col-span-3 flex justify-end items-center gap-1.5">
@@ -664,6 +670,7 @@ export function LiveLlmUsagePanel() {
             Déployer : <code className="text-amber-300/80">firebase deploy --only functions:getBrightDataAccount</code>
           </div>
         )}
+        </>)}
       </div>
 
       <p className="text-[9px] text-white/25 leading-relaxed">
