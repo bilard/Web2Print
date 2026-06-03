@@ -4,8 +4,9 @@ import { TelegramSettings } from '@/features/telegram/TelegramSettings'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useQueryClient } from '@tanstack/react-query'
-import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, type SiteCookieEntry } from '@/lib/siteCookies'
+import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, SITE_COOKIES_HYDRATED_EVENT, SITE_COOKIES_UPDATED_EVENT, type SiteCookieEntry } from '@/lib/siteCookies'
 import { useAuthStore } from '@/stores/auth.store'
+import { useIsOwner } from '@/features/auth/useAuth'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { useGoogleDrive } from '@/features/gdrive/useGoogleDrive'
 import { useGDriveStore } from '@/stores/gdrive.store'
@@ -14,6 +15,7 @@ import { API_KEYS, getApiKey, setApiKey, isApiKeyOverridden, resetApiKey, getEnv
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
 import { useAiSettingsStore, getSelectedModel, type ReasoningProvider } from '@/stores/aiSettings.store'
+import { useAccessStore } from '@/stores/access.store'
 import { toast } from 'sonner'
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
@@ -67,6 +69,11 @@ const TABS: TabConfig[] = [
   { id: 'cookies',    label: 'Cookies',       icon: Cookie,    accent: 'text-amber-300' },
   { id: 'stats',      label: 'Statistiques',  icon: BarChart2, accent: 'text-sky-400' },
 ]
+
+const TAB_PERMISSION: Partial<Record<SettingsTab, string>> = {
+  connectors: 'settings.connectors.edit',
+  cookies: 'settings.cookies.edit',
+}
 
 const FirebaseLogo = () => (
   <svg viewBox="0 0 256 351" className="w-3.5 h-3.5 shrink-0" aria-hidden="true">
@@ -426,6 +433,11 @@ function BrightDataConnectorRow() {
       setTokenEditing(false)
       // Force le rafraîchissement du panneau live BD
       queryClient.invalidateQueries({ queryKey: ['brightDataAccount'] })
+    } catch {
+      // `config/*` est verrouillé côté client (secret d'infra partagé) → la Function
+      // lit le token via Secret Manager / Admin SDK. Plus modifiable depuis l'app.
+      toast.error('Token Bright Data géré côté serveur (Secret Manager) — non modifiable depuis l\'app.')
+      setTokenEditing(false)
     } finally {
       setTokenSaving(false)
     }
@@ -437,6 +449,9 @@ function BrightDataConnectorRow() {
     setWsSaving(true)
     try {
       await setDoc(doc(db, 'config/brightdata'), { browserWs: wsValue.trim() }, { merge: true })
+      setWsEditing(false)
+    } catch {
+      toast.error('Endpoint Scraping Browser géré côté serveur — non modifiable depuis l\'app.')
       setWsEditing(false)
     } finally {
       setWsSaving(false)
@@ -1007,6 +1022,18 @@ function SiteCookiesSection() {
 
   const refresh = () => setEntries(listSiteCookies())
 
+  // Rafraîchit la liste quand les cookies sont hydratés depuis Firestore (au login) ou
+  // modifiés ailleurs — sinon l'affichage resterait figé sur l'état du montage.
+  useEffect(() => {
+    const onChange = () => setEntries(listSiteCookies())
+    window.addEventListener(SITE_COOKIES_HYDRATED_EVENT, onChange)
+    window.addEventListener(SITE_COOKIES_UPDATED_EVENT, onChange)
+    return () => {
+      window.removeEventListener(SITE_COOKIES_HYDRATED_EVENT, onChange)
+      window.removeEventListener(SITE_COOKIES_UPDATED_EVENT, onChange)
+    }
+  }, [])
+
   // Preview toujours en sync avec hostname ET cookie — recalculé à chaque frappe des deux
   const parsedPreview = useMemo(() => {
     if (!newCookie.trim()) return ''
@@ -1288,6 +1315,15 @@ export function SettingsPanel({
   fillHeight?: boolean
 } = {}) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('connectors')
+  // Les clés Firebase (config du backend partagé) ne sont montrées qu'au propriétaire.
+  const isOwner = useIsOwner()
+  const permissions = useAccessStore((s) => s.permissions)
+  const canTab = (id: SettingsTab) => {
+    if (id === 'firebase') return isOwner
+    const perm = TAB_PERMISSION[id]
+    return isOwner || !perm || permissions.has(perm)
+  }
+  const visibleTabs = TABS.filter((t) => canTab(t.id))
 
   const headerBlock = (
     <div className="flex flex-col gap-4 shrink-0">
@@ -1296,7 +1332,7 @@ export function SettingsPanel({
         aria-label="Sections des paramètres"
         className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
       >
-        {TABS.map(({ id, label, icon: Icon, accent }) => {
+        {visibleTabs.map(({ id, label, icon: Icon, accent }) => {
           const isActive = activeTab === id
           return (
             <button
@@ -1323,9 +1359,9 @@ export function SettingsPanel({
     <>
       {activeTab === 'profile' && <ProfileTab />}
       {activeTab === 'ai' && <AiTab />}
-      {activeTab === 'firebase' && <FirebaseTab />}
-      {activeTab === 'connectors' && <ConnectorsTab />}
-      {activeTab === 'cookies' && <CookiesTab />}
+      {activeTab === 'firebase' && isOwner && <FirebaseTab />}
+      {activeTab === 'connectors' && canTab('connectors') && <ConnectorsTab />}
+      {activeTab === 'cookies' && canTab('cookies') && <CookiesTab />}
       {activeTab === 'stats' && <StatsTab />}
     </>
   )
