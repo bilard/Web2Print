@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useIsPending, useAccessLoading } from '@/features/access/useAccess'
+import { useIsAdmin } from '@/features/access/useAccess'
+import { AccessAdminPage } from '@/features/access/admin/AccessAdminPage'
 import { PendingAccessScreen } from '@/features/access/PendingAccessScreen'
 import { useProjects } from '@/features/projects/useProjects'
 import { useCreateProject, slugify } from '@/features/projects/useCreateProject'
@@ -32,7 +34,7 @@ const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage').th
 const HyperframesPage = lazy(() => import('@/features/video/HyperframesPage').then((m) => ({ default: m.HyperframesPage })))
 const TelegramInboxView = lazy(() => import('@/features/telegram/TelegramInboxView').then((m) => ({ default: m.TelegramInboxView })))
 
-type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows' | 'hyperframes' | 'telegram'
+type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows' | 'hyperframes' | 'telegram' | 'access'
 
 const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }>; label: string; accent: string; activeBg: string; activeText: string }[] = [
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
@@ -47,11 +49,13 @@ const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }
   { id: 'telegram', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300' },
   { id: 'hyperframes', icon: Film, label: 'Annimation', accent: 'text-fuchsia-400', activeBg: 'bg-fuchsia-500/[0.1]', activeText: 'text-fuchsia-300' },
   { id: 'chat', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300' },
+  { id: 'access', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300' },
 ]
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const signOut = useSignOut()
+  const isAdmin = useIsAdmin()
   const navigate = useNavigate()
   const location = useLocation()
   const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
@@ -237,17 +241,17 @@ export default function DashboardPage() {
       setActiveSection(id)
     }
     // Arrow key navigation
-    const currentIndex = menuItems.findIndex((item) => item.id === id)
+    const currentIndex = visibleMenuItems.findIndex((item) => item.id === id)
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault()
-      const next = menuItems[(currentIndex + 1) % menuItems.length]
+      const next = visibleMenuItems[(currentIndex + 1) % visibleMenuItems.length]
       setActiveSection(next.id)
       const nextEl = document.getElementById(`menu-${next.id}`)
       nextEl?.focus()
     }
     if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault()
-      const prev = menuItems[(currentIndex - 1 + menuItems.length) % menuItems.length]
+      const prev = visibleMenuItems[(currentIndex - 1 + visibleMenuItems.length) % visibleMenuItems.length]
       setActiveSection(prev.id)
       const prevEl = document.getElementById(`menu-${prev.id}`)
       prevEl?.focus()
@@ -264,6 +268,8 @@ export default function DashboardPage() {
     )
   }
   if (pending) return <PendingAccessScreen />
+
+  const visibleMenuItems = isAdmin ? menuItems : menuItems.filter((m) => m.id !== 'access')
 
   return (
     <div className="h-screen bg-[#0f0f0f] text-white flex overflow-hidden">
@@ -297,7 +303,7 @@ export default function DashboardPage() {
           role="menubar"
           aria-orientation="vertical"
         >
-          {menuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
+          {visibleMenuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
             const isActive = activeSection === id
             return (
               <button
@@ -475,6 +481,8 @@ export default function DashboardPage() {
             <WorkflowsPage embedded />
           </Suspense>
         </div>
+      ) : activeSection === 'access' && isAdmin ? (
+        <AccessAdminPage />
       ) : activeSection === 'telegram' ? (
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={
