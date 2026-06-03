@@ -50,19 +50,31 @@ export function useApiKeysSync() {
     getDoc(ref)
       .then((snap) => {
         if (cancelled) return
-        const data = snap.data()?.apiKeys as ApiKeysDoc | undefined
-        if (data?.overrides) {
-          for (const id of SYNCABLE_IDS) {
-            const remote = data.overrides[id]
-            if (typeof remote === 'string' && remote.trim()) {
-              localStorage.setItem(`${STORAGE_PREFIX}${id}`, remote.trim())
-            }
-            // Si Firestore dit explicitement "vide string" → reset local override.
-            // (On ne fait pas ça pour les clés absentes — elles peuvent simplement
-            // n'avoir jamais été synchronisées depuis cet appareil.)
+        const overrides = (snap.data()?.apiKeys as ApiKeysDoc | undefined)?.overrides ?? {}
+        // Restaure depuis Firestore. Pour une clé présente UNIQUEMENT en localStorage
+        // (jamais synchronisée), on la SAUVEGARDE dans Firestore au lieu de l'effacer —
+        // sinon on perd les clés saisies avant l'existence de la synchro. L'isolation
+        // entre comptes est déjà garantie par purgeLocalUserData() qui vide le localStorage
+        // AVANT cette hydratation lors d'un changement de compte.
+        const backfill: Record<string, string> = {}
+        for (const id of SYNCABLE_IDS) {
+          const remote = overrides[id]
+          const localKey = `${STORAGE_PREFIX}${id}`
+          if (typeof remote === 'string' && remote.trim()) {
+            localStorage.setItem(localKey, remote.trim())
+          } else {
+            const local = localStorage.getItem(localKey)
+            if (local && local.trim()) backfill[id] = local.trim()
           }
-          window.dispatchEvent(new CustomEvent(API_KEYS_HYDRATED_EVENT))
         }
+        if (Object.keys(backfill).length > 0) {
+          setDoc(
+            ref,
+            { apiKeys: { overrides: { ...overrides, ...backfill }, updatedAt: Date.now() } },
+            { merge: true },
+          ).catch((e) => console.warn('[useApiKeysSync] backfill failed:', e))
+        }
+        window.dispatchEvent(new CustomEvent(API_KEYS_HYDRATED_EVENT))
       })
       .catch((e) => console.warn('[useApiKeysSync] hydrate failed:', e))
       .finally(() => { if (!cancelled) hydratedRef.current = true })
