@@ -9,6 +9,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'ibs.studio@gmail.com';
+    }
+
     function isOwner(resource) {
       return resource.data.ownerId == request.auth.uid;
     }
@@ -24,9 +28,16 @@ service cloud.firestore {
 
     // ── Users ─────────────────────────────────────────────────────────────────
 
+    // ── Roles (RBAC) ──────────────────────────────────────────────────────────
+    match /roles/{roleId} {
+      allow read:  if isAuthenticated();   // listes de permissions, non secrètes
+      allow write: if isAdmin();
+    }
+
     match /users/{uid} {
-      allow read:  if isAuthenticated() && request.auth.uid == uid;
-      allow write: if isAuthenticated() && request.auth.uid == uid;
+      // Le user lit/écrit son propre doc ; l'admin lit tous les docs et écrit les champs access*.
+      allow read:  if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
     }
 
     // ── Projects ──────────────────────────────────────────────────────────────
@@ -278,11 +289,13 @@ service cloud.firestore {
     }
 
     // ── App config ──────────────────────────────────────────────────────────
-    // Documents de configuration partagée (token Bright Data API, etc.).
-    // Lecture/écriture autorisée pour tout user authentifié — appli mono-user.
-    // Les Cloud Functions (Admin SDK) bypass ces rules pour lire le token.
+    // Documents de configuration/secrets d'infrastructure (token Bright Data API, etc.).
+    // JAMAIS accessible au client : c'est un secret partagé entre tous les comptes, pas
+    // une donnée par-utilisateur. Seules les Cloud Functions (Admin SDK) y accèdent —
+    // elles bypassent ces règles. Token à gérer via Secret Manager (BRIGHTDATA_API_TOKEN)
+    // ou directement dans la console Firestore.
     match /config/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
 
     // ── Telegram entrant (2a) ──────────────────────────────────
