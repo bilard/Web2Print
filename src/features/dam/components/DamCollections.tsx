@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Plus, Trash2, ArrowLeft, ImageIcon, LayoutGrid, List } from 'lucide-react'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../lib/firebase/config'
+import { useCan } from '@/features/access/useAccess'
 import { useDamCollections } from '../hooks/useDamCollections'
 import { DamImageCard } from './DamImageCard'
 import { DamMasonry } from './DamMasonry'
@@ -17,6 +18,7 @@ function CollectionCard({
   onOpen: () => void
   onDelete: () => void
 }) {
+  const canCollection = useCan('dam.collection')
   const [previews, setPreviews] = useState<string[]>([])
 
   useEffect(() => {
@@ -75,15 +77,17 @@ function CollectionCard({
       </div>
 
       {/* Delete */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onDelete()
-        }}
-        className="absolute top-2 right-2 p-1 rounded bg-black/50 opacity-0 group-hover:opacity-100 text-white/40 hover:text-red-400 hover:bg-red-500/20 transition"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      {canCollection && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="absolute top-2 right-2 p-1 rounded bg-black/50 opacity-0 group-hover:opacity-100 text-white/40 hover:text-red-400 hover:bg-red-500/20 transition"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   )
 }
@@ -97,6 +101,7 @@ function CollectionRow({
   onOpen: () => void
   onDelete: () => void
 }) {
+  const canCollection = useCan('dam.collection')
   const [previews, setPreviews] = useState<string[]>([])
 
   useEffect(() => {
@@ -150,20 +155,23 @@ function CollectionRow({
       </div>
 
       {/* Delete */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onDelete()
-        }}
-        className="p-1 rounded opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 hover:bg-red-500/10 transition shrink-0"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      {canCollection && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          className="p-1 rounded opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 hover:bg-red-500/10 transition shrink-0"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   )
 }
 
 export function DamCollections() {
+  const canCollection = useCan('dam.collection')
   const { collections, loading, createCollection, deleteCollection } = useDamCollections()
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
@@ -259,12 +267,14 @@ export function DamCollections() {
           >
             <List className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => setCreating(true)}
-            className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition ml-1"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+          {canCollection && (
+            <button
+              onClick={() => setCreating(true)}
+              className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition ml-1"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -51,6 +51,7 @@ interface Props {
   variantsPanelOpen: boolean
   onToggleVariantsPanel: () => void
   isDirty: boolean
+  canEdit: boolean
 }
 
 function ToolBtn({
@@ -108,7 +109,7 @@ export function DamImageToolbar(props: Props) {
     imageWidth, imageHeight,
     onSaveVariant, onUpdateVariant, isVariantLoaded,
     saving, variantsCount, variantsPanelOpen, onToggleVariantsPanel,
-    isDirty,
+    isDirty, canEdit,
   } = props
 
   const toggle = useCallback(
@@ -148,7 +149,7 @@ export function DamImageToolbar(props: Props) {
 
         {/* Variants actions — right side */}
         <div className="ml-auto flex items-center gap-1">
-          {isVariantLoaded && onUpdateVariant && (
+          {canEdit && isVariantLoaded && onUpdateVariant && (
             <button
               onClick={onUpdateVariant}
               disabled={!isDirty || saving}
@@ -159,15 +160,17 @@ export function DamImageToolbar(props: Props) {
               Mettre à jour
             </button>
           )}
-          <button
-            onClick={handleSaveClick}
-            disabled={!isDirty || saving}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition"
-            title="Enregistrer en tant que nouvelle variante"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {isVariantLoaded ? 'Nouvelle variante' : 'Enregistrer variante'}
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleSaveClick}
+              disabled={!isDirty || saving}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              title="Enregistrer en tant que nouvelle variante"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {isVariantLoaded ? 'Nouvelle variante' : 'Enregistrer variante'}
+            </button>
+          )}
           <button
             onClick={onToggleVariantsPanel}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition ${

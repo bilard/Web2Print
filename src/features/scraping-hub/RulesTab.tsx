@@ -4,10 +4,12 @@ import remarkGfm from 'remark-gfm'
 import { Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
+import { useCan } from '@/features/access/useAccess'
 import { loadRules, saveRules } from './rulesStore'
 
 export function RulesTab() {
   const user = useAuthStore((s) => s.user)
+  const canEdit = useCan('scrapingHub.edit')
   const [content, setContent] = useState('')
   const [saved, setSaved] = useState('')
   const [loading, setLoading] = useState(true)
@@ -55,14 +57,16 @@ export function RulesTab() {
         <span className="text-xs text-white/50">
           Règles rédactionnelles — stockées dans Firestore, partagées par l'équipe
         </span>
-        <button
-          onClick={onSave}
-          disabled={!dirty || saving}
-          className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-40"
-        >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          Enregistrer
-        </button>
+        {canEdit && (
+          <button
+            onClick={onSave}
+            disabled={!dirty || saving}
+            className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-40"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Enregistrer
+          </button>
+        )}
       </div>
       <div className="flex-1 grid grid-cols-2 gap-0 overflow-hidden">
         <textarea

@@ -4,10 +4,12 @@ import { Plus, Trash2, Copy, ChevronRight, Database, ArrowLeft } from 'lucide-re
 import { TemplateEditor } from '@/features/scraping-templates/TemplateEditor'
 import { emptyTemplate, listTemplates, deleteTemplate } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
+import { useCan } from '@/features/access/useAccess'
 import { toast } from 'sonner'
 
 export default function ScrapingTemplatesPage() {
   const navigate = useNavigate()
+  const canEdit = useCan('scrapingTemplates.edit')
   const [templates, setTemplates] = useState<ScrapingTemplate[]>([])
   const [selected, setSelected] = useState<ScrapingTemplate | null>(null)
   const [loading, setLoading] = useState(true)
@@ -69,12 +71,14 @@ export default function ScrapingTemplatesPage() {
           <h1 className="text-sm font-semibold">Templates de scraping</h1>
           <span className="text-[10px] text-white/40">{templates.length} template(s)</span>
         </div>
-        <button
-          onClick={createNew}
-          className="px-3 py-1.5 rounded bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 border border-indigo-400/30 text-xs inline-flex items-center gap-1.5"
-        >
-          <Plus className="w-3.5 h-3.5" /> Nouveau
-        </button>
+        {canEdit && (
+          <button
+            onClick={createNew}
+            className="px-3 py-1.5 rounded bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 border border-indigo-400/30 text-xs inline-flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" /> Nouveau
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-[280px_1fr] gap-0 h-[calc(100vh-52px)]">
@@ -102,18 +106,20 @@ export default function ScrapingTemplatesPage() {
                       {t.fields.length} champ{t.fields.length > 1 ? 's' : ''} · {t.specGroups.length} groupe{t.specGroups.length > 1 ? 's' : ''}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1 shrink-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); clone(t) }}
-                      className="text-white/40 hover:text-white/80"
-                      title="Cloner"
-                    ><Copy className="w-3 h-3" /></button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDelete(t) }}
-                      className="text-red-400/60 hover:text-red-400"
-                      title="Supprimer"
-                    ><Trash2 className="w-3 h-3" /></button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); clone(t) }}
+                        className="text-white/40 hover:text-white/80"
+                        title="Cloner"
+                      ><Copy className="w-3 h-3" /></button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(t) }}
+                        className="text-red-400/60 hover:text-red-400"
+                        title="Supprimer"
+                      ><Trash2 className="w-3 h-3" /></button>
+                    </div>
+                  )}
                   {isActive && <ChevronRight className="w-3 h-3 text-indigo-300 shrink-0" />}
                 </div>
               </div>

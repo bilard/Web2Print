@@ -64,6 +64,7 @@ export function DamLightbox() {
   const { isFavorite, toggleFavorite } = useDamFavorites()
   const { isSaved, toggleSave } = useDamSaveImage()
   const canUpload = useCan('dam.upload')
+  const canEdit = useCan('dam.edit')
   const { insertOnCanvas, replaceOnCanvas } = useDamCanvasInsert()
   const [analysis, setAnalysis] = useState<ImageAnalysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
@@ -364,6 +365,7 @@ export function DamLightbox() {
           variantsPanelOpen={variantsPanelOpen}
           onToggleVariantsPanel={() => setVariantsPanelOpen((v) => !v)}
           isDirty={isDirty}
+          canEdit={canEdit}
         />
 
         {/* Image */}

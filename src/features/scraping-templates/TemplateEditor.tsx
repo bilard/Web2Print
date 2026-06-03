@@ -6,6 +6,7 @@ import { applyTemplate, scoreApplyResult } from './engine'
 import { fetchSourceHtml } from './fetchSourceHtml'
 import { saveTemplateWithVendorSync } from './templatesStore'
 import { VisualTemplateBuilder } from './VisualTemplateBuilder'
+import { useCan } from '@/features/access/useAccess'
 import { toast } from 'sonner'
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function TemplateEditor({ template, onChange, onSaved }: Props) {
+  const canEdit = useCan('scrapingTemplates.edit')
   const [tab, setTab] = useState<'visual' | 'advanced'>('visual')
   const [testUrl, setTestUrl] = useState('')
   const [testHtml, setTestHtml] = useState('')
@@ -176,14 +178,16 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
           >
             <Download className="w-3.5 h-3.5" /> Exporter JSON
           </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Enregistrer
-          </button>
+          {canEdit && (
+            <button
+              onClick={save}
+              disabled={saving}
+              className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Enregistrer
+            </button>
+          )}
         </div>
       </div>
 

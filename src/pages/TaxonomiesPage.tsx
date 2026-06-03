@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Loader2, Filter, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { useCan } from '@/features/access/useAccess'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
 import { useAddNode } from '@/features/taxonomy/useTaxonomyMutations'
@@ -21,6 +22,7 @@ interface TaxonomiesPageProps {
 
 export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps) {
   const navigate = useNavigate()
+  const canEdit = useCan('taxonomies.edit')
   const { data: taxonomies, isLoading } = useTaxonomies()
   const {
     selectedTaxonomyId,
@@ -126,14 +128,16 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
                   <Filter className="w-3.5 h-3.5" />
                   Liés uniquement
                 </button>
-                <button
-                  onClick={handleAddRootNode}
-                  className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white/80 hover:bg-white/[0.06] px-3 py-1.5 rounded-md transition-colors"
-                  aria-label="Ajouter un nœud racine"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Nœud racine
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={handleAddRootNode}
+                    className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white/80 hover:bg-white/[0.06] px-3 py-1.5 rounded-md transition-colors"
+                    aria-label="Ajouter un nœud racine"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Nœud racine
+                  </button>
+                )}
               </div>
               <div className="flex-1 overflow-y-auto">
                 <TaxonomyTree
