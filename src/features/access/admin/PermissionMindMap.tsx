@@ -71,9 +71,11 @@ function MindNode({ data }: NodeProps) {
 const nodeTypes = { mind: MindNode }
 
 const COL_W = 300
-const Y_MOD = 120
-const Y_LEAF0 = Y_MOD + 78
-const ROW = 36
+const Y_MOD = 120        // écart racine → module
+const LEAF_GAP_TOP = 78  // écart module → 1re feuille
+const ROW_MIN = 34       // hauteur de rang mini
+const ROW_MAX = 168      // hauteur de rang maxi (évite des écarts absurdes sur très haute zone)
+const FIT_PAD = 0.05
 
 /** Contrôles : curseur de zoom + recadrer (dark). */
 function MindControls() {
@@ -106,7 +108,13 @@ export function PermissionMindMap({
   permissions: Set<string>
   onToggle: (key: string) => void
 }) {
-  const { nodes, edges, contentW, contentH } = useMemo(() => {
+  // Dimensions réelles de la zone d'affichage (mesurées) : pilotent l'espacement
+  // vertical pour que l'arbre remplisse hauteur ET largeur.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const rfRef = useRef<ReactFlowInstance | null>(null)
+  const [box, setBox] = useState({ w: 1200, h: 520 })
+
+  const { nodes, edges } = useMemo(() => {
     const has = (k: string) => permissions.has(k)
     const nodes: Node[] = []
     const edges: Edge[] = []
@@ -114,7 +122,12 @@ export function PermissionMindMap({
     // Étendue réelle du contenu : bord gauche = module 0 (x=0) ; bord droit = feuilles du dernier module.
     const contentW = Math.max((entries.length - 1) * COL_W + MOD_W / 2 + 22 + LEAF_W, MOD_W)
     const maxLeaves = entries.reduce((m, [, defs]) => Math.max(m, defs.filter((d) => permissionParent(d.key) !== null).length), 0)
-    const contentH = Y_LEAF0 + Math.max(maxLeaves - 1, 0) * ROW + 30
+    // Hauteur-monde cible = même proportion que la zone → fitView remplit les deux axes.
+    const targetH = contentW * (box.h / Math.max(box.w, 1))
+    const yLeaf0 = Y_MOD + LEAF_GAP_TOP
+    const row = maxLeaves > 0
+      ? Math.min(Math.max((targetH - yLeaf0) / maxLeaves, ROW_MIN), ROW_MAX)
+      : ROW_MIN
 
     nodes.push({
       id: 'root', type: 'mind', position: { x: contentW / 2 - 44, y: 0 }, draggable: false, selectable: false,
@@ -140,49 +153,42 @@ export function PermissionMindMap({
       children.forEach((d, j) => {
         const pid = `p-${d.key}`
         nodes.push({
-          id: pid, type: 'mind', position: { x: leafX, y: Y_LEAF0 + j * ROW }, draggable: false,
+          id: pid, type: 'mind', position: { x: leafX, y: yLeaf0 + j * row }, draggable: false,
           data: { kind: 'perm', label: d.label, hex: c, selected: has(d.key), locked: !viewOn, permKey: d.key } satisfies MindData,
         })
         edges.push({ id: `e-${modId}-${pid}`, source: modId, target: pid, type: 'smoothstep', style: { stroke: c, strokeWidth: 1.5, opacity: has(d.key) ? 0.7 : 0.22 } })
       })
     })
-    return { nodes, edges, contentW, contentH }
-  }, [entries, permissions, roleName])
+    return { nodes, edges }
+  }, [entries, permissions, roleName, box])
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
     const k = (node.data as MindData).permKey
     if (k) onToggle(k)
   }
 
-  // Ouverture en « fit-largeur » : zoom calculé pour que les 11 modules tiennent
-  // pile dans la largeur (aucun rognage). Le conteneur épouse la hauteur du contenu
-  // (pas de grand vide) et se recale au redimensionnement. Le curseur zoome ensuite.
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const rfRef = useRef<ReactFlowInstance | null>(null)
-  const [boxH, setBoxH] = useState(420)
-  const PAD = 24
+  const onInit = useCallback((rf: ReactFlowInstance) => {
+    rfRef.current = rf
+    rf.fitView({ padding: FIT_PAD })
+  }, [])
 
-  const fitWidth = useCallback(() => {
-    const el = wrapRef.current
-    if (!el) return
-    const w = el.clientWidth
-    const zoom = Math.min(Math.max((w - PAD * 2) / contentW, 0.2), 1.4)
-    setBoxH(Math.min(Math.max(Math.round(contentH * zoom + PAD * 2), 320), 660))
-    rfRef.current?.setViewport({ x: (w - contentW * zoom) / 2, y: PAD, zoom }, { duration: 0 })
-  }, [contentW, contentH])
-
-  const onInit = useCallback((rf: ReactFlowInstance) => { rfRef.current = rf; fitWidth() }, [fitWidth])
-
+  // Mesure la zone et recale (fitView remplit hauteur + largeur) au resize / changement de contenu.
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
-    const ro = new ResizeObserver(() => fitWidth())
+    const ro = new ResizeObserver(() => setBox({ w: el.clientWidth, h: el.clientHeight }))
     ro.observe(el)
+    setBox({ w: el.clientWidth, h: el.clientHeight })
     return () => ro.disconnect()
-  }, [fitWidth])
+  }, [])
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => rfRef.current?.fitView({ padding: FIT_PAD, duration: 0 }))
+    return () => cancelAnimationFrame(raf)
+  }, [nodes, box])
 
   return (
-    <div ref={wrapRef} style={{ height: boxH }} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden">
+    <div ref={wrapRef} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden h-[calc(100vh-250px)] min-h-[480px]">
       <ReactFlow
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
