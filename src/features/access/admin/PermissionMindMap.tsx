@@ -1,11 +1,11 @@
 // src/features/access/admin/PermissionMindMap.tsx
 import { useMemo } from 'react'
 import {
-  ReactFlow, Background, Controls, Handle, Position,
+  ReactFlow, Background, Panel, Handle, Position, useReactFlow,
   type Node, type Edge, type NodeProps, type NodeMouseHandler,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Check, Lock } from 'lucide-react'
+import { Check, Lock, Plus, Minus, Maximize } from 'lucide-react'
 import { permissionParent, type PermissionDef } from '@/features/access/permissions'
 import { moduleHex } from '@/features/access/moduleMeta'
 
@@ -62,6 +62,19 @@ function MindNode({ data }: NodeProps) {
 }
 
 const nodeTypes = { mind: MindNode }
+
+/** Contrôles de navigation custom (dark) : zoom + / − et recadrer. */
+function MindControls() {
+  const { zoomIn, zoomOut, fitView } = useReactFlow()
+  const btn = 'w-7 h-7 flex items-center justify-center rounded-md bg-[#1a1a1a] border border-white/10 text-white/60 hover:text-white hover:bg-[#262626] transition-colors'
+  return (
+    <Panel position="bottom-left" className="flex flex-col gap-1 !m-2">
+      <button onClick={() => zoomIn({ duration: 150 })} title="Zoom avant" className={btn}><Plus className="w-3.5 h-3.5" /></button>
+      <button onClick={() => zoomOut({ duration: 150 })} title="Zoom arrière" className={btn}><Minus className="w-3.5 h-3.5" /></button>
+      <button onClick={() => fitView({ padding: 0.15, duration: 250 })} title="Recadrer" className={btn}><Maximize className="w-3.5 h-3.5" /></button>
+    </Panel>
+  )
+}
 
 const ROW = 34
 const MOD_GAP = 26
@@ -142,7 +155,7 @@ export function PermissionMindMap({
         proOptions={{ hideAttribution: true }}
       >
         <Background color="#1c1c1c" gap={20} />
-        <Controls showInteractive={false} className="!bg-white/5 !border-white/10" />
+        <MindControls />
       </ReactFlow>
     </div>
   )
