@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
-import { useIsPending, useIsBlocked, useAccessLoading } from '@/features/access/useAccess'
+import { useIsPending, useIsBlocked, useAccessLoading, useCan } from '@/features/access/useAccess'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { AccessAdminPage } from '@/features/access/admin/AccessAdminPage'
 import { PendingAccessScreen } from '@/features/access/PendingAccessScreen'
@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const signOut = useSignOut()
   const isAdmin = useIsAdmin()
+  const canDeleteProject = useCan('library.delete')
   const permissions = useAccessStore((s) => s.permissions)
   const navigate = useNavigate()
   const location = useLocation()
@@ -611,19 +612,21 @@ export default function DashboardPage() {
                       Effacer
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleBulkDelete}
-                    disabled={deleteProject.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium bg-red-500/15 text-red-300 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                  >
-                    {deleteProject.isPending ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                    Supprimer ({selectedIds.size})
-                  </button>
+                  {canDeleteProject && (
+                    <button
+                      type="button"
+                      onClick={handleBulkDelete}
+                      disabled={deleteProject.isPending}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium bg-red-500/15 text-red-300 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    >
+                      {deleteProject.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                      Supprimer ({selectedIds.size})
+                    </button>
+                  )}
                 </div>
               )}
 

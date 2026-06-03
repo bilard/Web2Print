@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Trash2, FileImage, MoreVertical, Copy, Check } from 'lucide-react'
 import type { ProjectData } from '@/types/project'
 import { EditorTaxonomyPicker } from '@/components/panels/EditorTaxonomyPicker'
+import { useCan } from '@/features/access/useAccess'
 
 export type ProjectViewMode = 'grid' | 'list'
 
@@ -63,6 +64,8 @@ export function ProjectCard({
   onToggleSelect,
 }: ProjectCardProps) {
   const navigate = useNavigate()
+  const canDuplicate = useCan('library.duplicate')
+  const canDelete = useCan('library.delete')
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
 
@@ -143,7 +146,7 @@ export function ProjectCard({
 
         {/* Actions inline */}
         <div className="flex items-center gap-0.5 shrink-0">
-          {onDuplicate && (
+          {canDuplicate && onDuplicate && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -156,19 +159,21 @@ export function ProjectCard({
               <Copy className="w-4 h-4" />
             </button>
           )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              if (window.confirm(`Supprimer "${project.title}" ?`)) {
-                onDelete(project.id)
-              }
-            }}
-            className="p-1.5 rounded-md text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Supprimer"
-            aria-label="Supprimer"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (window.confirm(`Supprimer "${project.title}" ?`)) {
+                  onDelete(project.id)
+                }
+              }}
+              className="p-1.5 rounded-md text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Supprimer"
+              aria-label="Supprimer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
       {pickerNode}
@@ -230,7 +235,7 @@ export function ProjectCard({
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
               <div className="absolute right-0 bottom-8 z-20 bg-[#252525] border border-white/10 rounded-lg shadow-xl py-1 min-w-[140px]">
-                {onDuplicate && (
+                {canDuplicate && onDuplicate && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onDuplicate(project.id); setMenuOpen(false) }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
@@ -239,13 +244,15 @@ export function ProjectCard({
                     Dupliquer
                   </button>
                 )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(project.id); setMenuOpen(false) }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Supprimer
-                </button>
+                {canDelete && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(project.id); setMenuOpen(false) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Supprimer
+                  </button>
+                )}
               </div>
             </>
           )}

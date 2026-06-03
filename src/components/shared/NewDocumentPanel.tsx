@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, Monitor, Smartphone, Image, LayoutGrid, Loader2 } from 'lucide-react'
 import { BackgroundPicker, backgroundCss, type BackgroundValue } from './BackgroundPicker'
 import { DEFAULT_GRADIENT } from './GradientPicker'
+import { useCan } from '@/features/access/useAccess'
 import type { CanvasBgType } from '@/stores/ui.store'
 import type { GradientConfig } from '@/stores/editor.store'
 
@@ -55,6 +56,7 @@ const CATEGORIES = [
 ]
 
 export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) {
+  const canCreate = useCan('library.create')
   const [title, setTitle] = useState('Sans titre')
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null)
   const [customWidth, setCustomWidth] = useState(1200)
@@ -230,23 +232,25 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
             </div>
 
             {/* Create button */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !title.trim()}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium px-6 py-3 rounded-lg transition-colors text-sm"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Création...
-                </>
-              ) : (
-                <>
-                  <LayoutGrid className="w-4 h-4" />
-                  Créer le document
-                </>
-              )}
-            </button>
+            {canCreate && (
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !title.trim()}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium px-6 py-3 rounded-lg transition-colors text-sm"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <LayoutGrid className="w-4 h-4" />
+                    Créer le document
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

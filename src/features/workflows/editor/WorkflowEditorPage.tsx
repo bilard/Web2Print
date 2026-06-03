@@ -27,6 +27,7 @@ export function WorkflowEditorPage() {
   const dirty = useWorkflowStore((s) => s.dirty)
   const isRunning = useRunContext((s) => s.isRunning)
   const canRun = useCan('workflows.run')
+  const canEdit = useCan('workflows.edit')
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
@@ -140,13 +141,15 @@ export function WorkflowEditorPage() {
               </button>
             )
           )}
-          <button
-            onClick={() => uid && saveWorkflow(uid, wf)}
-            className="p-2 hover:bg-neutral-800 rounded"
-            aria-label="Save"
-          >
-            <Save className="w-4 h-4" />
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => uid && saveWorkflow(uid, wf)}
+              className="p-2 hover:bg-neutral-800 rounded"
+              aria-label="Save"
+            >
+              <Save className="w-4 h-4" />
+            </button>
+          )}
         </header>
         <div className="flex-1 flex overflow-hidden">
           <NodePalette />

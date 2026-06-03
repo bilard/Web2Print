@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, LayoutGrid, List, Plus, Trash2, Workflow as WorkflowIcon } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow } from './persistence/workflowsApi'
+import { useCan } from '@/features/access/useAccess'
 import type { Workflow } from './types'
 
 interface WorkflowsPageProps {
@@ -15,6 +16,8 @@ const VIEW_MODE_KEY = 'workflows.viewMode'
 export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const uid = useAuthStore((s) => s.user?.uid)
   const nav = useNavigate()
+  const canCreate = useCan('workflows.create')
+  const canDelete = useCan('workflows.delete')
   const [items, setItems] = useState<Workflow[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -94,12 +97,14 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <button
-            onClick={create}
-            className="px-4 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Nouveau workflow
-          </button>
+          {canCreate && (
+            <button
+              onClick={create}
+              className="px-4 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Nouveau workflow
+            </button>
+          )}
         </div>
       </header>
       {loading ? (
@@ -109,13 +114,15 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           <WorkflowIcon className="w-16 h-16 opacity-20" aria-hidden="true" />
           <p className="text-lg font-medium text-white/30">Aucun workflow</p>
           <p className="text-sm text-white/20">Créez-en un pour commencer</p>
-          <button
-            onClick={create}
-            className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            Nouveau workflow
-          </button>
+          {canCreate && (
+            <button
+              onClick={create}
+              className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              Nouveau workflow
+            </button>
+          )}
         </div>
       ) : (
         <ul
@@ -143,16 +150,18 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
                       {wf.nodes.length} nodes · {wf.edges.length} liens
                     </p>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      remove(wf.id)
-                    }}
-                    className="text-neutral-500 hover:text-red-400 p-1"
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        remove(wf.id)
+                      }}
+                      className="text-neutral-500 hover:text-red-400 p-1"
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-4">
@@ -164,16 +173,18 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
                     <span className="text-xs text-neutral-500 tabular-nums">
                       {wf.nodes.length} nodes · {wf.edges.length} liens
                     </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        remove(wf.id)
-                      }}
-                      className="text-neutral-500 hover:text-red-400 p-1"
-                      aria-label="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          remove(wf.id)
+                        }}
+                        className="text-neutral-500 hover:text-red-400 p-1"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
