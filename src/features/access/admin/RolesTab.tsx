@@ -1,21 +1,41 @@
 // src/features/access/admin/RolesTab.tsx
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Save, X, Lock, Check, Eye } from 'lucide-react'
+import { Plus, Trash2, Save, X, Lock, Check, Eye, LayoutGrid, ListTree, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
-import { moduleMeta } from '@/features/access/moduleMeta'
+import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
+import { PermissionTree } from './PermissionTree'
+
+type ViewMode = 'cards' | 'tree'
 
 export function RolesTab() {
   const [roles, setRoles] = useState<Role[]>([])
   const [editing, setEditing] = useState<{ id?: string; name: string; permissions: Set<string> } | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [openSet, setOpenSet] = useState<Set<string>>(new Set())
   const byModule = permissionsByModule()
+  const entries = orderedModuleEntries(byModule)
 
   const refresh = () => { void listRoles().then(setRoles) }
   useEffect(() => { refresh() }, [])
 
-  const startNew = () => setEditing({ name: '', permissions: new Set() })
-  const startEdit = (r: Role) => setEditing({ id: r.id, name: r.name, permissions: new Set(r.permissions) })
+  /** Modules à ouvrir par défaut = ceux qui ont au moins une permission sélectionnée. */
+  const defaultOpen = (perms: Set<string>) => {
+    const open = new Set<string>()
+    for (const [module, defs] of entries) if (defs.some((d) => perms.has(d.key))) open.add(module)
+    return open
+  }
+  const startNew = () => { setEditing({ name: '', permissions: new Set() }); setOpenSet(new Set()) }
+  const startEdit = (r: Role) => {
+    const perms = new Set(r.permissions)
+    setEditing({ id: r.id, name: r.name, permissions: perms }); setOpenSet(defaultOpen(perms))
+  }
+  const toggleModule = (module: string) => setOpenSet((prev) => {
+    const next = new Set(prev); next.has(module) ? next.delete(module) : next.add(module); return next
+  })
+  const expandAll = () => setOpenSet(new Set(entries.map(([module]) => module)))
+  const collapseAll = () => setOpenSet(new Set())
 
   const toggle = (key: string) => {
     if (!editing) return
@@ -57,55 +77,77 @@ export function RolesTab() {
           </button>
           <button onClick={() => setEditing(null)} className="p-2 text-white/40 hover:text-white/80"><X className="w-4 h-4" /></button>
         </div>
-        <p className="text-[11px] text-white/35">
-          <span className="text-white/70 font-medium">{editing.permissions.size}</span> permission(s) sélectionnée(s).
-          Active d'abord l'accès au module, puis ses actions.
-        </p>
-        <div className="flex flex-col gap-2.5">
-          {Object.entries(byModule).map(([module, defs]) => {
-            const m = moduleMeta(module)
-            const viewDef = defs.find((d) => permissionParent(d.key) === null)
-            const childDefs = defs.filter((d) => permissionParent(d.key) !== null)
-            const selectedCount = defs.filter((d) => editing.permissions.has(d.key)).length
-            const viewOn = viewDef ? editing.permissions.has(viewDef.key) : true
-            return (
-              <ModuleCard key={module} module={module} selected={selectedCount} total={defs.length}>
-                <div className="flex flex-col gap-2">
-                  {viewDef && (
-                    <button onClick={() => toggle(viewDef.key)} title={viewDef.key}
-                      className={`inline-flex items-center gap-2 self-start text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
-                        viewOn ? m.chipOn : 'bg-white/[0.02] border-white/10 text-white/45 hover:text-white/75'
-                      }`}>
-                      {viewOn ? <Check className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 opacity-60" />}
-                      {viewDef.label}
-                    </button>
-                  )}
-                  {childDefs.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {childDefs.map((d) => {
-                        const on = editing.permissions.has(d.key)
-                        const locked = !viewOn
-                        return (
-                          <button key={d.key} onClick={() => toggle(d.key)} disabled={locked}
-                            title={locked ? `Nécessite : ${permissionLabel(viewDef!.key)}` : d.key}
-                            className={`inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-colors ${
-                              locked ? 'border-white/[0.06] text-white/20 cursor-not-allowed'
-                                : on ? m.chipOn
-                                : 'bg-white/[0.02] border-white/10 text-white/45 hover:text-white/75'
-                            }`}>
-                            {locked && <Lock className="w-2.5 h-2.5" />}
-                            {on && !locked && <Check className="w-3 h-3" />}
-                            {d.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </ModuleCard>
-            )
-          })}
+        {/* Barre d'outils : compteur + mode d'affichage + tout déplier/replier */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-[11px] text-white/35 mr-auto">
+            <span className="text-white/70 font-medium">{editing.permissions.size}</span> permission(s) · active d'abord l'accès au module.
+          </p>
+          <div className="flex gap-0.5 bg-white/[0.03] border border-white/10 rounded-lg p-0.5">
+            <button onClick={() => setViewMode('cards')} title="Mode cartes"
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'cards' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setViewMode('tree')} title="Mode arbre"
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'tree' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'}`}><ListTree className="w-3.5 h-3.5" /></button>
+          </div>
+          <button onClick={expandAll} title="Tout déplier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
+          <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
         </div>
+
+        {viewMode === 'tree' ? (
+          <PermissionTree
+            entries={entries}
+            isSelected={(k) => editing.permissions.has(k)}
+            onToggle={toggle}
+            openSet={openSet}
+            onToggleModule={toggleModule}
+          />
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {entries.map(([module, defs]) => {
+              const m = moduleMeta(module)
+              const viewDef = defs.find((d) => permissionParent(d.key) === null)
+              const childDefs = defs.filter((d) => permissionParent(d.key) !== null)
+              const selectedCount = defs.filter((d) => editing.permissions.has(d.key)).length
+              const viewOn = viewDef ? editing.permissions.has(viewDef.key) : true
+              return (
+                <ModuleCard key={module} module={module} selected={selectedCount} total={defs.length}
+                  open={openSet.has(module)} onToggleOpen={() => toggleModule(module)}>
+                  <div className="flex flex-col gap-2">
+                    {viewDef && (
+                      <button onClick={() => toggle(viewDef.key)} title={viewDef.key}
+                        className={`inline-flex items-center gap-2 self-start text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+                          viewOn ? m.chipOn : 'bg-white/[0.02] border-white/10 text-white/45 hover:text-white/75'
+                        }`}>
+                        {viewOn ? <Check className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 opacity-60" />}
+                        {viewDef.label}
+                      </button>
+                    )}
+                    {childDefs.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {childDefs.map((d) => {
+                          const on = editing.permissions.has(d.key)
+                          const locked = !viewOn
+                          return (
+                            <button key={d.key} onClick={() => toggle(d.key)} disabled={locked}
+                              title={locked ? `Nécessite : ${permissionLabel(viewDef!.key)}` : d.key}
+                              className={`inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-colors ${
+                                locked ? 'border-white/[0.06] text-white/20 cursor-not-allowed'
+                                  : on ? m.chipOn
+                                  : 'bg-white/[0.02] border-white/10 text-white/45 hover:text-white/75'
+                              }`}>
+                              {locked && <Lock className="w-2.5 h-2.5" />}
+                              {on && !locked && <Check className="w-3 h-3" />}
+                              {d.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </ModuleCard>
+              )
+            })}
+          </div>
+        )}
       </div>
     )
   }

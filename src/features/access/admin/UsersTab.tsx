@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, Ban, RotateCcw, CheckCircle2, Plus, Minus, Clock, ShieldCheck } from 'lucide-react'
 import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/access/permissions'
-import { moduleMeta } from '@/features/access/moduleMeta'
+import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
 import { listUsers, updateUserAccess, type ManagedUser } from '@/features/access/usersApi'
 import { listRoles, type Role } from '@/features/access/rolesApi'
@@ -169,7 +169,7 @@ export function UsersTab() {
                     </span>
                   </p>
                   <div className="flex flex-col gap-2">
-                    {Object.entries(byModule).map(([module, defs]) => {
+                    {orderedModuleEntries(byModule).map(([module, defs]) => {
                       const sel = defs.filter((d) => u.accessGrants.includes(d.key) || u.accessRevokes.includes(d.key)).length
                       return (
                         <ModuleCard key={module} module={module} selected={sel} total={defs.length}>

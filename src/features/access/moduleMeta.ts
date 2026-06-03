@@ -41,3 +41,15 @@ export const MODULE_META: Record<string, ModuleMeta> = {
 export function moduleMeta(module: string): ModuleMeta {
   return MODULE_META[module] ?? FALLBACK
 }
+
+/** Ordre d'affichage = ordre de navigation de l'app (barre latérale). */
+export const MODULE_ORDER = [
+  'Import', 'Bibliothèque', 'DAM', 'PIM', 'Taxonomies', 'Scraping',
+  'Workflows', 'Telegram', 'Animation', 'Chat IA', 'Paramètres',
+]
+
+/** Entrées d'un Record groupé par module, triées selon l'ordre de navigation. */
+export function orderedModuleEntries<T>(byModule: Record<string, T>): [string, T][] {
+  const idx = (m: string) => { const i = MODULE_ORDER.indexOf(m); return i === -1 ? 999 : i }
+  return Object.entries(byModule).sort(([a], [b]) => idx(a) - idx(b))
+}

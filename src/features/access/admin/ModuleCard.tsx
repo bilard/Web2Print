@@ -12,22 +12,29 @@ export function ModuleCard({
   selected,
   total,
   children,
+  open: openProp,
+  onToggleOpen,
 }: {
   module: string
   selected: number
   total: number
   children: ReactNode
+  /** Si fourni → carte contrôlée (pour Tout déplier/replier). Sinon auto-gérée. */
+  open?: boolean
+  onToggleOpen?: () => void
 }) {
   const m = moduleMeta(module)
   const Icon = m.icon
   const active = selected > 0
-  const [open, setOpen] = useState(active)
+  const [openInternal, setOpenInternal] = useState(active)
+  const open = openProp !== undefined ? openProp : openInternal
+  const toggleOpen = onToggleOpen ?? (() => setOpenInternal((o) => !o))
   return (
     <div className={`relative overflow-hidden rounded-xl border transition-colors ${active ? 'bg-white/[0.03] border-white/10' : 'bg-white/[0.015] border-white/[0.05]'}`}>
       <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${m.bar} ${active ? 'opacity-80' : 'opacity-25'}`} />
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         aria-expanded={open}
         className="w-full flex items-center gap-2 pl-2.5 pr-3 pt-2.5 pb-2 text-left hover:bg-white/[0.02] transition-colors"
       >
