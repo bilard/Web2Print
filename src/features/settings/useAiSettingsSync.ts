@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
-import { useAiSettingsStore, initialSelected } from '@/stores/aiSettings.store'
+import { useAiSettingsStore, initialSelected, initialBudgets, DEFAULT_REASONING_CASCADE, type ReasoningProvider } from '@/stores/aiSettings.store'
 import type { AiProvider, AiModelInfo } from '@/lib/aiModels'
 
 const DEBOUNCE_MS = 500
@@ -20,17 +20,31 @@ export function useAiSettingsSync() {
       useAiSettingsStore.setState({
         selectedModel: initialSelected(),
         fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
+        reasoningCascade: DEFAULT_REASONING_CASCADE,
+        monthlyBudgetUsd: initialBudgets(),
+        brightDataBudgetUsd: null,
       })
       return
     }
 
     // Reset to defaults BEFORE hydration so we never inherit a previous user's state.
+    // (purgeLocalUserData efface localStorage au CHANGEMENT de compte, mais pas le store
+    //  en mémoire lors d'un switch sans reload → ce reset garantit l'isolation par user.)
     useAiSettingsStore.setState({
       selectedModel: initialSelected(),
       fetchedModels: { claude: [], gemini: [], openai: [], deepseek: [], qwen: [], kimi: [], openrouter: [] },
+      reasoningCascade: DEFAULT_REASONING_CASCADE,
+      monthlyBudgetUsd: initialBudgets(),
+      brightDataBudgetUsd: null,
     })
-    // Snapshot the post-reset baseline; any divergence after this is a user click during hydration.
-    const baseline = useAiSettingsStore.getState().selectedModel
+    // Snapshot the post-reset baseline; any divergence après ça = un clic user pendant l'hydratation.
+    const s0 = useAiSettingsStore.getState()
+    const baseline = {
+      selectedModel: s0.selectedModel,
+      reasoningCascade: s0.reasoningCascade,
+      monthlyBudgetUsd: s0.monthlyBudgetUsd,
+      brightDataBudgetUsd: s0.brightDataBudgetUsd,
+    }
 
     let cancelled = false
     const ref = doc(db, 'users', uid)
@@ -41,6 +55,9 @@ export function useAiSettingsSync() {
           | {
               selectedModel?: Partial<Record<AiProvider, string>>
               fetchedModels?: Partial<Record<AiProvider, AiModelInfo[]>>
+              reasoningCascade?: ReasoningProvider[]
+              monthlyBudgetUsd?: Partial<Record<AiProvider, number | null>>
+              brightDataBudgetUsd?: number | null
             }
           | undefined
         if (!ai) return
@@ -66,12 +83,27 @@ export function useAiSettingsSync() {
           const live = useAiSettingsStore.getState().selectedModel
           const next = { ...live }
           for (const key of Object.keys(ai.selectedModel) as AiProvider[]) {
-            if (live[key] === baseline[key]) {
+            if (live[key] === baseline.selectedModel[key]) {
               // User hasn't touched this provider during hydration → safe to apply remote.
               next[key] = ai.selectedModel[key]!
             }
           }
           useAiSettingsStore.setState({ selectedModel: next })
+        }
+
+        // Cascade de raisonnement (sélection des LLM) + budgets : appliqués seulement si
+        // l'utilisateur n'y a pas touché pendant la fenêtre d'hydratation (égalité de
+        // référence avec la baseline post-reset). Cascade routée par setReasoningCascade
+        // pour passer par sanitizeCascade (ignore un tableau distant vide/corrompu).
+        const store = useAiSettingsStore.getState()
+        if (ai.reasoningCascade && store.reasoningCascade === baseline.reasoningCascade) {
+          store.setReasoningCascade(ai.reasoningCascade)
+        }
+        if (ai.monthlyBudgetUsd && store.monthlyBudgetUsd === baseline.monthlyBudgetUsd) {
+          useAiSettingsStore.setState({ monthlyBudgetUsd: { ...initialBudgets(), ...ai.monthlyBudgetUsd } })
+        }
+        if (typeof ai.brightDataBudgetUsd !== 'undefined' && store.brightDataBudgetUsd === baseline.brightDataBudgetUsd) {
+          store.setBrightDataBudgetUsd(ai.brightDataBudgetUsd)
         }
       })
       .catch((e) => console.warn('[useAiSettingsSync] hydrate failed:', e))
@@ -88,7 +120,10 @@ export function useAiSettingsSync() {
       if (!hydratedRef.current) return
       if (
         state.selectedModel === prev.selectedModel &&
-        state.fetchedModels === prev.fetchedModels
+        state.fetchedModels === prev.fetchedModels &&
+        state.reasoningCascade === prev.reasoningCascade &&
+        state.monthlyBudgetUsd === prev.monthlyBudgetUsd &&
+        state.brightDataBudgetUsd === prev.brightDataBudgetUsd
       ) return
 
       if (debounceTimerRef.current !== null) {
@@ -102,6 +137,9 @@ export function useAiSettingsSync() {
             aiSettings: {
               selectedModel: state.selectedModel,
               fetchedModels: state.fetchedModels,
+              reasoningCascade: state.reasoningCascade,
+              monthlyBudgetUsd: state.monthlyBudgetUsd,
+              brightDataBudgetUsd: state.brightDataBudgetUsd,
             },
           },
           { merge: true },

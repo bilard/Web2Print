@@ -9,6 +9,9 @@ export type ReasoningProvider = 'gemini' | 'claude' | 'openai' | 'deepseek' | 'q
 
 const REASONING_PROVIDERS: ReasoningProvider[] = ['gemini', 'claude', 'openai', 'deepseek', 'qwen', 'openrouter']
 
+/** Cascade par défaut : Gemini (free tier) puis Claude Opus en fallback. */
+export const DEFAULT_REASONING_CASCADE: ReasoningProvider[] = ['gemini', 'claude']
+
 interface AiSettingsState {
   selectedModel: Record<AiProvider, string>
   fetchedModels: Record<AiProvider, AiModelInfo[]>
@@ -50,7 +53,7 @@ function sanitizeCascade(cascade: unknown): ReasoningProvider[] {
   return Array.from(seen)
 }
 
-const initialBudgets = (): Record<AiProvider, number | null> => ({
+export const initialBudgets = (): Record<AiProvider, number | null> => ({
   claude: null,
   gemini: null,
   openai: null,
