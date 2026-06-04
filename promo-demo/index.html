@@ -9,133 +9,180 @@
     --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
     --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
     --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
-    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  [data-composition-id="promo-hero"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:var(--font);color:var(--ink);overflow:hidden}
+  [data-composition-id="promo-hero"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink);overflow:hidden}
   .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
-  .cap{position:absolute;top:72px;left:96px;font-size:30px;font-weight:700;letter-spacing:.04em}
-  .cap .n{font-family:ui-monospace,monospace;color:var(--indigo);margin-right:14px}
-  .cap .v{color:var(--ink)}
-  .cap small{display:block;font-size:21px;font-weight:400;color:var(--mut);letter-spacing:0;margin-top:8px;text-transform:none}
+  .cap{position:absolute;top:64px;left:96px;right:96px}
+  .cap .t{font-size:32px;font-weight:800;letter-spacing:.02em}
+  .cap .t .n{font-family:"JetBrains Mono",monospace;color:var(--indigo);margin-right:16px}
+  .cap small{display:block;font-size:23px;font-weight:400;color:var(--mut);margin-top:9px}
 
   /* Fenêtre app */
-  .win{width:1480px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .win{width:1500px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
   .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
   .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
-  .wt{font-family:ui-monospace,monospace;font-size:19px;color:var(--mut)}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
   .wact{margin-left:auto;display:flex;gap:10px}
   .wpill{font-size:17px;font-weight:600;padding:8px 16px;border-radius:9px}
-  .wbody{padding:30px;min-height:560px}
+  .wbody{padding:30px;min-height:600px}
 
-  /* Scraper */
-  .urlbar{display:flex;align-items:center;gap:16px;background:var(--elev);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:24px}
-  .urlbar .u{font-family:ui-monospace,monospace;font-size:24px;color:var(--mut)}
-  .urlbar .go{margin-left:auto;font-size:21px;font-weight:700;color:#fff;background:var(--indigo);padding:12px 24px;border-radius:11px}
-  .sc-cols{display:grid;grid-template-columns:1.2fr 1fr;gap:24px}
-  .card{border:1px solid var(--line);border-radius:16px;background:var(--elev);overflow:hidden}
-  .card .ch{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);font-size:21px;font-weight:600}
+  /* Curseur + clic */
+  .cursor{position:absolute;width:30px;height:30px;z-index:30;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));top:0;left:0}
+  .click-ring{position:absolute;width:54px;height:54px;border-radius:50%;border:3px solid var(--indigo);z-index:29;pointer-events:none;top:0;left:0;margin:-27px 0 0 -27px;opacity:0}
+
+  /* SCRAPER : page web source → PIM/DAM */
+  .sc-url{display:flex;align-items:center;gap:16px;background:var(--elev);border:1px solid var(--line);border-radius:14px;padding:16px 22px;margin-bottom:22px}
+  .sc-url .u{font-family:"JetBrains Mono",monospace;font-size:23px;color:var(--mut)}
+  .sc-url .go{margin-left:auto;font-size:21px;font-weight:700;color:#fff;background:var(--indigo);padding:11px 24px;border-radius:11px}
+  .sc-cols{display:grid;grid-template-columns:1fr 70px 1fr;gap:18px;align-items:center}
+  /* page web (source) */
+  .webpage{border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#fff;color:#111}
+  .wp-bar{height:42px;background:#e9eef3;display:flex;align-items:center;gap:10px;padding:0 16px}
+  .wp-bar .d{width:11px;height:11px;border-radius:50%;background:#c3ccd6}
+  .wp-bar .addr{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:15px;color:#5b6470;background:#fff;border-radius:7px;padding:6px 12px;flex:1}
+  .wp-in{padding:22px}
+  .wp-img{height:170px;border-radius:10px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9 60%,#dbeafe);margin-bottom:18px}
+  .wp-title{font-size:27px;font-weight:800;color:#0f172a;margin-bottom:10px}
+  .wp-price{font-size:34px;font-weight:800;color:#dc2626;margin-bottom:16px}
+  .wp-specs{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  .wp-specs span{font-size:18px;color:#475569}
+  .wp-cart{display:inline-block;font-size:18px;font-weight:700;color:#fff;background:#2563eb;padding:11px 22px;border-radius:9px}
+  .sc-mid{display:flex;flex-direction:column;align-items:center;gap:26px;color:var(--indigo)}
+  .sc-mid svg{width:38px;height:38px}
+  .sc-mid .lab{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--mut);writing-mode:horizontal-tb}
+  .sc-dest{display:flex;flex-direction:column;gap:16px}
+  .card{border:1px solid var(--line);border-radius:14px;background:var(--elev);overflow:hidden}
+  .card .ch{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:20px;font-weight:600}
   .card .ch .tg{width:12px;height:12px;border-radius:4px}
-  .kv-row{display:flex;justify-content:space-between;padding:15px 22px;border-bottom:1px solid var(--line);font-size:23px}
+  .kv-row{display:flex;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--line);font-size:21px}
   .kv-row:last-child{border-bottom:0}
-  .kv-row .k{font-family:ui-monospace,monospace;font-size:18px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+  .kv-row .k{font-family:"JetBrains Mono",monospace;font-size:16px;color:var(--mut);text-transform:uppercase}
   .kv-row .val{font-variant-numeric:tabular-nums}
-  .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:22px}
-  .thumb{aspect-ratio:1;border-radius:11px}
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;padding:18px}
+  .thumb{aspect-ratio:1;border-radius:9px}
 
-  /* Import */
-  .fcards{display:flex;gap:20px;margin-bottom:34px}
-  .fcard{flex:1;border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:26px 22px;display:flex;flex-direction:column;gap:14px}
-  .fcard.hot{border-color:var(--amber)}
-  .fcard .fi{width:54px;height:54px;border-radius:13px;display:grid;place-items:center}
-  .fcard .fi svg{width:28px;height:28px}
-  .fcard b{font-family:ui-monospace,monospace;font-size:24px}
-  .fcard span{font-size:18px;color:var(--mut)}
-  .imp-res{display:flex;align-items:center;gap:30px;border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:26px}
-  .imp-res .arrow{color:var(--amber)}
-  .imp-res .arrow svg{width:40px;height:40px}
-  .layers{display:flex;flex-direction:column;gap:12px;flex:1}
-  .layers .lr{display:flex;align-items:center;gap:14px;font-size:22px;color:var(--ink)}
-  .layers .lr .sw{width:16px;height:16px;border-radius:5px}
-  .layers .lr small{margin-left:auto;font-size:17px;color:var(--mut);font-family:ui-monospace,monospace}
-  .impnote{font-size:21px;color:var(--mut);margin-left:6px}
+  /* IMPORTER */
+  .fcards{display:flex;gap:20px;margin-bottom:30px}
+  .fcard{flex:1;border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:24px 20px;display:flex;flex-direction:column;gap:12px;position:relative}
+  .fcard.sel{border-color:var(--amber);box-shadow:0 0 0 2px rgba(251,191,36,.4)}
+  .fcard .fi{width:50px;height:50px;border-radius:12px;display:grid;place-items:center}
+  .fcard .fi svg{width:26px;height:26px}
+  .fcard b{font-family:"JetBrains Mono",monospace;font-size:23px}
+  .fcard span{font-size:17px;color:var(--mut)}
+  .imp-res{display:flex;align-items:center;gap:30px;border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:24px}
+  .imp-res .arrow{color:var(--amber)}.imp-res .arrow svg{width:38px;height:38px}
+  .layers{display:flex;flex-direction:column;gap:11px;flex:1}
+  .layers .lr{display:flex;align-items:center;gap:14px;font-size:21px}
+  .layers .lr .sw{width:15px;height:15px;border-radius:5px}
+  .layers .lr .ed{margin-left:auto;font-size:15px;font-family:"JetBrains Mono",monospace;color:var(--emerald);border:1px solid rgba(52,211,153,.4);border-radius:6px;padding:3px 9px}
 
-  /* Editor */
-  .editor{display:grid;grid-template-columns:70px 1fr 360px;gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:540px}
+  /* Éditeur (MODIFIER) */
+  .editor{display:grid;grid-template-columns:70px 1fr 360px;border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:560px}
   .etools{background:#101010;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 0}
   .etools i{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;color:var(--mut)}
-  .etools i.on{background:rgba(99,102,241,.18);color:#c7c4ff}
-  .etools i svg{width:24px;height:24px}
+  .etools i.on{background:rgba(99,102,241,.18);color:#c7c4ff}.etools i svg{width:24px;height:24px}
   .ecanvas{position:relative;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(99,102,241,.07),transparent 60%),#0c0c0c;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:30px 30px}
-  .poster{width:300px;aspect-ratio:50/72;background:#fff;border-radius:16px;position:relative;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+  .poster{width:320px;aspect-ratio:50/72;background:#fff;border-radius:16px;position:relative;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
   .poster .pimg{position:absolute;inset:9% 11% 50%;border-radius:9px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9 60%,#e0f2fe)}
-  .poster .pbadge{position:absolute;top:8%;right:9%;width:64px;height:64px;border-radius:50%;background:#ef4444;color:#fff;font-weight:800;font-size:22px;display:grid;place-items:center}
-  .poster .pprice{position:absolute;top:50%;left:11%;background:#facc15;color:#dc2626;font-weight:800;font-size:36px;padding:7px 12px;border-radius:9px}
-  .poster .pprice small{font-size:18px;vertical-align:super}
-  .poster .ptitle{position:absolute;bottom:13%;left:11%;font-size:25px;font-weight:800;color:#3730a3;line-height:1.05}
-  .poster .ph{position:absolute;width:16px;height:16px;border:2px solid var(--indigo);border-radius:3px;background:#fff}
+  .poster .pbadge{position:absolute;top:8%;right:9%;width:66px;height:66px;border-radius:50%;background:#ef4444;color:#fff;font-weight:800;font-size:22px;display:grid;place-items:center}
+  .poster .pprice{position:absolute;top:50%;left:11%;width:130px;height:54px}
+  .poster .pv{position:absolute;inset:0;background:#facc15;color:#dc2626;font-weight:800;font-size:34px;padding:7px 11px;border-radius:9px;display:inline-block;width:max-content}
+  .poster .pv small{font-size:17px;vertical-align:super}
+  .poster .pv2{opacity:0}
+  .poster .ptitle{position:absolute;bottom:13%;left:11%;font-size:26px;font-weight:800;color:#3730a3;line-height:1.05}
+  .poster .ph{position:absolute;width:16px;height:16px;border:2px solid var(--indigo);border-radius:3px;background:#fff;opacity:0}
   .poster .ph1{top:-8px;left:-8px}.poster .ph2{top:-8px;right:-8px}.poster .ph3{bottom:-8px;left:-8px}.poster .ph4{bottom:-8px;right:-8px}
+  .editlabel{position:absolute;z-index:25;font-size:18px;font-weight:700;color:#fff;background:var(--indigo);padding:8px 14px;border-radius:10px;opacity:0;box-shadow:0 8px 20px -6px rgba(99,102,241,.7);white-space:nowrap}
   .epanel{background:#101010;border-left:1px solid var(--line);padding:22px}
-  .ep-h{font-family:ui-monospace,monospace;font-size:16px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase;margin:22px 0 13px}
+  .ep-h{font-family:"JetBrains Mono",monospace;font-size:16px;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin:22px 0 13px}
   .ep-h:first-child{margin-top:0}
-  .ep-row{display:flex;gap:12px;margin-bottom:12px}
-  .ep-in{flex:1;background:var(--elev);border:1px solid var(--line);border-radius:9px;padding:12px 14px;font-size:19px}
-  .ep-lay{display:flex;align-items:center;gap:12px;font-size:19px;color:var(--mut);padding:9px 11px;border-radius:8px;margin-bottom:5px}
+  .ep-lay{display:flex;align-items:center;gap:12px;font-size:19px;color:var(--mut);padding:10px 11px;border-radius:8px;margin-bottom:5px}
   .ep-lay.on{background:rgba(99,102,241,.16);color:#d8d6ff}
   .ep-lay .sw{width:14px;height:14px;border-radius:4px}
-  .ep-seg{display:flex;gap:8px}
-  .ep-seg span{flex:1;text-align:center;font-size:17px;padding:11px 0;border-radius:9px;border:1px solid var(--line);color:var(--mut)}
-  .ep-seg span.on{background:rgba(99,102,241,.16);border-color:var(--indigo);color:#c7c4ff}
+  .ep-sw{display:flex;gap:10px;margin-top:6px}
+  .ep-sw i{width:34px;height:34px;border-radius:9px;border:2px solid transparent}
+  .ep-sw i.pick{border-color:#fff}
 
-  /* Connecter base */
-  .db{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+  /* CONNECTER */
+  .db{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center}
   .dtable{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--elev);font-size:21px}
-  .dtable .tr{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;padding:15px 22px;border-bottom:1px solid var(--line)}
+  .dtable .tr{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line)}
   .dtable .tr:last-child{border-bottom:0}
-  .dtable .tr.th{background:#101010;color:var(--mut);font-family:ui-monospace,monospace;font-size:16px;text-transform:uppercase;letter-spacing:.05em}
+  .dtable .tr.th{background:#101010;color:var(--mut);font-family:"JetBrains Mono",monospace;font-size:15px;text-transform:uppercase}
   .dtable .tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .dtable .tr.hl{background:rgba(99,102,241,.12)}
   .bindwrap{display:flex;flex-direction:column;align-items:center;gap:22px}
   .bindchips{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-  .bindchips i{font-family:ui-monospace,monospace;font-size:19px;color:var(--sky);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.12);border-radius:9px;padding:8px 14px;font-style:normal}
+  .bindchips i{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--sky);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.12);border-radius:9px;padding:8px 14px;font-style:normal}
   .variants{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;width:100%}
-  .variants i{aspect-ratio:50/68;border-radius:6px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(99,102,241,.4)}
-  .vcount{font-size:24px;color:var(--mut)}
-  .vcount b{font-size:40px;color:var(--ink);font-weight:800}
+  .variants i{aspect-ratio:50/66;border-radius:6px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(99,102,241,.4);position:relative}
+  .vcount{font-size:24px;color:var(--mut)}.vcount b{font-size:42px;color:var(--ink);font-weight:800}
 
-  /* Exporter */
-  .exp{display:flex;flex-direction:column;align-items:center;gap:44px;padding:30px 0}
-  .exp-src{width:200px;aspect-ratio:50/68;background:#fff;border-radius:14px;position:relative;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+  /* EXPORTER */
+  .exp{display:flex;flex-direction:column;align-items:center;gap:40px;padding:20px 0}
+  .exp-src{width:190px;aspect-ratio:50/68;background:#fff;border-radius:14px;position:relative;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
   .exp-src .pimg{position:absolute;inset:11% 13% 48%;border-radius:7px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9)}
-  .exp-src .pprice{position:absolute;bottom:14%;left:13%;background:#facc15;color:#dc2626;font-weight:800;font-size:22px;padding:5px 9px;border-radius:6px}
-  .channels{display:flex;gap:28px}
-  .chan{display:flex;flex-direction:column;align-items:center;gap:14px;width:170px}
-  .chan .ic{width:96px;height:96px;border-radius:22px;display:grid;place-items:center;border:1px solid var(--line2);background:var(--elev)}
-  .chan .ic svg{width:42px;height:42px}
-  .chan b{font-size:22px;font-weight:600}
-  .chan span{font-size:17px;color:var(--mut)}
+  .exp-src .pprice{position:absolute;bottom:14%;left:13%;background:#facc15;color:#dc2626;font-weight:800;font-size:21px;padding:5px 9px;border-radius:6px}
+  .channels{display:flex;gap:26px}
+  .chan{display:flex;flex-direction:column;align-items:center;gap:13px;width:175px;position:relative}
+  .chan .ic{width:94px;height:94px;border-radius:22px;display:grid;place-items:center;border:1px solid var(--line2);background:var(--elev)}
+  .chan .ic svg{width:40px;height:40px}
+  .chan b{font-size:21px;font-weight:600}.chan span{font-size:16px;color:var(--mut)}
+  .chan .done{position:absolute;top:-10px;right:30px;width:34px;height:34px;border-radius:50%;background:var(--emerald);color:#06281b;display:grid;place-items:center;opacity:0}
+  .chan .done svg{width:20px;height:20px}
+
+  /* WORKFLOWS (Zapier) */
+  .wf{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:40px 6px;min-height:520px}
+  .wf-node{width:198px;border:1px solid var(--line2);border-radius:14px;background:var(--elev);padding:18px;display:flex;flex-direction:column;gap:10px}
+  .wf-node .nh{display:flex;align-items:center;gap:11px}
+  .wf-node .ni{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#fff;flex-shrink:0}
+  .wf-node .ni svg{width:20px;height:20px}
+  .wf-node b{font-size:18px}
+  .wf-node span{font-size:14px;color:var(--mut)}
+  .wf-node.run{border-color:var(--indigo);box-shadow:0 0 30px -6px rgba(99,102,241,.8)}
+  .wf-arr{width:50px;display:grid;place-items:center;color:var(--mut)}
+  .wf-arr svg{width:28px;height:28px}
+  .wf-run{display:inline-flex;align-items:center;gap:10px;margin:26px auto 0;font-size:19px;font-weight:700;color:#fff;background:var(--indigo);padding:12px 24px;border-radius:11px}
+  .wf-run svg{width:18px;height:18px}
+
+  /* TELEGRAM */
+  .tg{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding:14px 0;min-height:540px}
+  .tg-msg{max-width:80%;padding:16px 22px;border-radius:20px;font-size:21px;line-height:1.4}
+  .tg-msg.me{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:7px}
+  .tg-msg.me code{font-family:"JetBrains Mono",monospace;font-size:.92em;background:rgba(255,255,255,.18);padding:2px 7px;border-radius:5px}
+  .tg-msg.bot{align-self:flex-start;background:var(--elev);border:1px solid var(--line);border-bottom-left-radius:7px}
+  .tg-file{align-self:flex-start;display:flex;align-items:center;gap:16px;background:var(--elev);border:1px solid var(--line2);border-radius:16px;padding:16px 20px;min-width:420px}
+  .tg-file .fi{width:52px;height:52px;border-radius:12px;background:rgba(99,102,241,.18);color:var(--indigo);display:grid;place-items:center;flex-shrink:0}
+  .tg-file .fi svg{width:26px;height:26px}
+  .tg-file b{font-size:20px;display:block}.tg-file .meta{font-size:15px;color:var(--mut)}
+  .tg-file .dl{margin-left:auto;color:var(--indigo)}.tg-file .dl svg{width:26px;height:26px}
+  .tg-bar{display:flex;gap:12px;align-items:center;margin-top:10px;background:var(--elev);border:1px solid var(--line);border-radius:13px;padding:13px 18px}
+  .tg-bar .ph{flex:1;font-size:18px;color:var(--mut)}
+  .tg-bar .send{width:44px;height:44px;border-radius:11px;background:var(--indigo);display:grid;place-items:center;color:#fff}
+  .tg-bar .send svg{width:22px;height:22px}
 
   /* Intro / Outro */
   .center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:30px}
   .logo{display:flex;align-items:center;gap:22px}
   .logo .sq{width:84px;height:84px;border-radius:21px;background:var(--indigo);display:grid;place-items:center;box-shadow:0 0 40px -6px rgba(99,102,241,.7)}
   .logo .sq svg{width:46px;height:46px}
-  .logo .wm{font-family:ui-monospace,monospace;font-size:42px;font-weight:700;letter-spacing:.12em}
-  .big{font-size:108px;font-weight:800;letter-spacing:-.02em;line-height:1.02;max-width:18ch}
+  .logo .wm{font-family:"JetBrains Mono",monospace;font-size:42px;font-weight:700;letter-spacing:.1em}
+  .big{font-size:104px;font-weight:800;letter-spacing:-.02em;line-height:1.02}
   .big .hl{color:var(--indigo)}
   .pills{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-  .pill{font-size:24px;font-weight:600;padding:13px 24px;border:1px solid var(--line2);border-radius:100px;color:var(--ink);background:var(--surface)}
+  .pill{font-size:24px;font-weight:600;padding:13px 24px;border:1px solid var(--line2);border-radius:100px;background:var(--surface)}
   .pill .d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:11px;vertical-align:middle}
-  .sub{font-size:30px;color:var(--mut)}
   .cta{font-size:28px;font-weight:700;color:#fff;background:var(--indigo);padding:18px 36px;border-radius:14px;box-shadow:0 0 44px -8px rgba(99,102,241,.7)}
-  .url-out{font-family:ui-monospace,monospace;font-size:26px;color:var(--mut);letter-spacing:.06em}
+  .url-out{font-family:"JetBrains Mono",monospace;font-size:26px;color:var(--mut);letter-spacing:.06em}
 </style>
 </head>
 <body>
-<div data-composition-id="promo-hero" data-start="0" data-duration="22" data-width="1920" data-height="1080">
+<div data-composition-id="promo-hero" data-start="0" data-duration="48" data-width="1920" data-height="1080">
 
   <!-- S1 — INTRO -->
-  <div id="s1" class="scene clip" data-start="0" data-duration="2.5" data-track-index="0" style="z-index:1">
+  <div id="s1" class="scene clip" data-start="0" data-duration="3.2" data-track-index="0" style="z-index:1">
     <div class="glow"></div>
     <div class="center">
       <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
@@ -146,35 +193,54 @@
         <span class="pill"><span class="d" style="background:var(--indigo)"></span>Modifier</span>
         <span class="pill"><span class="d" style="background:var(--emerald)"></span>Connecter</span>
         <span class="pill"><span class="d" style="background:var(--violet)"></span>Exporter</span>
+        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Automatiser</span>
+        <span class="pill"><span class="d" style="background:var(--sky)"></span>Telegram</span>
       </div>
     </div>
   </div>
 
   <!-- S2 — SCRAPER -->
-  <div id="s2" class="scene clip" data-start="2.0" data-duration="4.0" data-track-index="1" style="z-index:2">
+  <div id="s2" class="scene clip" data-start="2.8" data-duration="7.4" data-track-index="1" style="z-index:2">
     <div class="glow"></div>
-    <div class="cap"><span class="n">01</span><span class="v">SCRAPER</span><small>Une URL → specs, textes et visuels extraits, routés vers le PIM et le DAM.</small></div>
+    <div class="cap"><div class="t"><span class="n">01</span>SCRAPER</div><small>Collez l'URL d'un produit : IBS-Studio lit la page, range les textes dans le PIM et les images dans le DAM.</small></div>
     <div class="win">
       <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Scraping Hub — enrichissement</span></div>
       <div class="wbody">
-        <div class="urlbar"><span class="u">https://fournisseur.com/produit/perceuse-18v</span><span class="go">Scraper</span></div>
+        <div class="sc-url"><span class="u">https://fournisseur.com/produit/perceuse-18v</span><span class="go">Scraper</span></div>
         <div class="sc-cols">
-          <div class="card">
-            <div class="ch"><span class="tg" style="background:var(--emerald)"></span>PIM — caractéristiques</div>
-            <div class="kv-row"><span class="k">Référence</span><span class="val">REF-67890</span></div>
-            <div class="kv-row"><span class="k">Nom</span><span class="val">Perceuse 18V Brushless</span></div>
-            <div class="kv-row"><span class="k">Prix</span><span class="val">129,00 €</span></div>
-            <div class="kv-row"><span class="k">Marque</span><span class="val">TechMaster</span></div>
+          <!-- Source : page web -->
+          <div class="webpage">
+            <div class="wp-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="addr">fournisseur.com</span></div>
+            <div class="wp-in">
+              <div class="wp-img"></div>
+              <div class="wp-title">Perceuse 18V Brushless</div>
+              <div class="wp-price">129,00 €</div>
+              <div class="wp-specs"><span>Couple : 60 Nm</span><span>Batterie : 2× 2,0 Ah</span><span>Mandrin : 13 mm</span></div>
+              <span class="wp-cart">Ajouter au panier</span>
+            </div>
           </div>
-          <div class="card">
-            <div class="ch"><span class="tg" style="background:var(--pink)"></span>DAM — visuels</div>
-            <div class="thumbs">
-              <span class="thumb" style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></span>
-              <span class="thumb" style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></span>
-              <span class="thumb" style="background:linear-gradient(135deg,#dc2626,#facc15)"></span>
-              <span class="thumb" style="background:linear-gradient(135deg,#059669,#a3e635)"></span>
-              <span class="thumb" style="background:linear-gradient(135deg,#0ea5e9,#e0f2fe)"></span>
-              <span class="thumb" style="background:linear-gradient(135deg,#6366f1,#f472b6)"></span>
+          <!-- Flux -->
+          <div class="sc-mid">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <span class="lab">extrait<br/>&amp; range</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </div>
+          <!-- Destinations -->
+          <div class="sc-dest">
+            <div class="card">
+              <div class="ch"><span class="tg" style="background:var(--emerald)"></span>PIM — texte</div>
+              <div class="kv-row"><span class="k">Nom</span><span class="val">Perceuse 18V Brushless</span></div>
+              <div class="kv-row"><span class="k">Prix</span><span class="val">129,00 €</span></div>
+              <div class="kv-row"><span class="k">Couple</span><span class="val">60 Nm</span></div>
+            </div>
+            <div class="card">
+              <div class="ch"><span class="tg" style="background:var(--pink)"></span>DAM — images</div>
+              <div class="thumbs">
+                <span class="thumb" style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></span>
+                <span class="thumb" style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></span>
+                <span class="thumb" style="background:linear-gradient(135deg,#dc2626,#facc15)"></span>
+                <span class="thumb" style="background:linear-gradient(135deg,#059669,#a3e635)"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -183,14 +249,14 @@
   </div>
 
   <!-- S3 — IMPORTER -->
-  <div id="s3" class="scene clip" data-start="5.5" data-duration="4.0" data-track-index="0" style="z-index:3">
+  <div id="s3" class="scene clip" data-start="9.8" data-duration="6.0" data-track-index="0" style="z-index:3">
     <div class="glow"></div>
-    <div class="cap"><span class="n">02</span><span class="v">IMPORTER</span><small>InDesign (IDML) et Illustrator (SVG) ouverts dans le navigateur — blocs et textes éditables.</small></div>
+    <div class="cap"><div class="t"><span class="n">02</span>IMPORTER</div><small>Ouvrez un InDesign (IDML) ou un Illustrator (SVG) : chaque bloc redevient un calque éditable.</small></div>
     <div class="win">
       <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Importer un fichier</span></div>
       <div class="wbody">
         <div class="fcards">
-          <div class="fcard hot"><span class="fi" style="background:rgba(251,191,36,.18);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg></span><b>IDML</b><span>InDesign</span></div>
+          <div class="fcard" id="fc-idml"><span class="fi" style="background:rgba(251,191,36,.18);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg></span><b>IDML</b><span>InDesign</span></div>
           <div class="fcard"><span class="fi" style="background:rgba(56,189,248,.18);color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l8 8M3 11V3h8"/><rect x="11" y="11" width="10" height="10" rx="2"/></svg></span><b>SVG</b><span>Illustrator</span></div>
           <div class="fcard"><span class="fi" style="background:rgba(244,114,182,.18);color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h4"/></svg></span><b>PDF</b><span>→ SVG</span></div>
           <div class="fcard"><span class="fi" style="background:rgba(52,211,153,.18);color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span><b>Excel</b><span>données</span></div>
@@ -198,21 +264,22 @@
         <div class="imp-res">
           <span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="layers">
-            <div class="lr"><span class="sw" style="background:#facc15"></span>Titre · « Soldes »<small>texte</small></div>
-            <div class="lr"><span class="sw" style="background:#3730a3"></span>Sous-titre éditable<small>texte</small></div>
-            <div class="lr"><span class="sw" style="background:#0ea5e9"></span>Image produit<small>image</small></div>
-            <div class="lr"><span class="sw" style="background:#ef4444"></span>Bandeau prix<small>forme</small></div>
+            <div class="lr"><span class="sw" style="background:#facc15"></span>Titre « Soldes »<span class="ed">éditable</span></div>
+            <div class="lr"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">éditable</span></div>
+            <div class="lr"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">éditable</span></div>
+            <div class="lr"><span class="sw" style="background:#ef4444"></span>Bandeau prix<span class="ed">éditable</span></div>
           </div>
-          <span class="impnote">calques éditables</span>
         </div>
       </div>
+      <svg class="cursor" id="cur3" viewBox="0 0 24 24" fill="#fff"><path d="M5 3l15 9-6 1.5L17 19l-2.5 1.2L11 14l-4 4z" stroke="#0b0b12" stroke-width="1"/></svg>
+      <span class="click-ring" id="ring3"></span>
     </div>
   </div>
 
   <!-- S4 — MODIFIER -->
-  <div id="s4" class="scene clip" data-start="9.0" data-duration="4.0" data-track-index="1" style="z-index:4">
+  <div id="s4" class="scene clip" data-start="15.8" data-duration="7.4" data-track-index="1" style="z-index:4">
     <div class="glow"></div>
-    <div class="cap"><span class="n">03</span><span class="v">MODIFIER</span><small>Composez le template dans l'éditeur : texte, formes, images, marque, calques.</small></div>
+    <div class="cap"><div class="t"><span class="n">03</span>MODIFIER</div><small>Édition réelle dans le navigateur — ici on change le prix, puis la couleur du badge.</small></div>
     <div class="win">
       <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Éditeur — Affiche_Promo</span><span class="wact"><span class="wpill" style="background:rgba(52,211,153,.16);color:var(--emerald)">Sauvegardé</span></span></div>
       <div class="wbody" style="padding:0">
@@ -222,36 +289,39 @@
             <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i>
             <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i>
             <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i>
-            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5L5 21"/></svg></i>
           </div>
           <div class="ecanvas">
-            <div class="poster">
-              <span class="pimg"></span><span class="pbadge">-30%</span>
-              <span class="pprice">19<small>€90</small></span>
+            <div class="poster" id="poster4">
+              <span class="pimg"></span>
+              <span class="pbadge" id="pbadge4">-30%</span>
+              <span class="pprice"><span class="pv pv1">19<small>€90</small></span><span class="pv pv2">24<small>€90</small></span></span>
               <span class="ptitle">GRANDE<br/>VENTE FLASH</span>
               <span class="ph ph1"></span><span class="ph ph2"></span><span class="ph ph3"></span><span class="ph ph4"></span>
             </div>
+            <span class="editlabel" id="lbl-price" style="top:46%;left:62%">✏ Prix mis à jour</span>
+            <span class="editlabel" id="lbl-color" style="top:18%;left:60%">🎨 Couleur changée</span>
           </div>
           <div class="epanel">
-            <div class="ep-h">Propriétés</div>
-            <div class="ep-row"><span class="ep-in">X 240</span><span class="ep-in">Y 180</span></div>
-            <div class="ep-row"><span class="ep-in">L 595</span><span class="ep-in">H 842</span></div>
             <div class="ep-h">Calques</div>
-            <div class="ep-lay on"><span class="sw" style="background:#facc15"></span>Prix · 19€90</div>
-            <div class="ep-lay"><span class="sw" style="background:#ef4444"></span>Badge · -30%</div>
-            <div class="ep-lay"><span class="sw" style="background:#3730a3"></span>Titre principal</div>
+            <div class="ep-lay on" id="lay-price"><span class="sw" style="background:#facc15"></span>Prix</div>
+            <div class="ep-lay" id="lay-badge"><span class="sw" style="background:#ef4444"></span>Badge</div>
+            <div class="ep-lay"><span class="sw" style="background:#3730a3"></span>Titre</div>
+            <div class="ep-h">Couleur du badge</div>
+            <div class="ep-sw"><i style="background:#ef4444" class="pick"></i><i style="background:#6366f1" id="sw-indigo"></i><i style="background:#34d399"></i><i style="background:#fbbf24"></i></div>
             <div class="ep-h">Impression</div>
-            <div class="ep-seg"><span>72</span><span class="on">300 DPI</span><span>600</span></div>
+            <div class="ep-lay on"><span class="sw" style="background:var(--indigo)"></span>300 DPI · fond perdu 3 mm</div>
           </div>
         </div>
       </div>
+      <svg class="cursor" id="cur4" viewBox="0 0 24 24" fill="#fff"><path d="M5 3l15 9-6 1.5L17 19l-2.5 1.2L11 14l-4 4z" stroke="#0b0b12" stroke-width="1"/></svg>
+      <span class="click-ring" id="ring4"></span>
     </div>
   </div>
 
-  <!-- S5 — CONNECTER UNE BASE -->
-  <div id="s5" class="scene clip" data-start="12.5" data-duration="4.0" data-track-index="0" style="z-index:5">
+  <!-- S5 — CONNECTER -->
+  <div id="s5" class="scene clip" data-start="22.8" data-duration="6.2" data-track-index="0" style="z-index:5">
     <div class="glow"></div>
-    <div class="cap"><span class="n">04</span><span class="v">CONNECTER UNE BASE</span><small>Reliez vos données au gabarit : un visuel par ligne — des centaines de variantes.</small></div>
+    <div class="cap"><div class="t"><span class="n">04</span>CONNECTER UNE BASE</div><small>Reliez une colonne au gabarit : une déclinaison par ligne — des centaines de variantes d'un coup.</small></div>
     <div class="win">
       <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Publipostage — liaison des données</span></div>
       <div class="wbody">
@@ -277,32 +347,72 @@
   </div>
 
   <!-- S6 — EXPORTER -->
-  <div id="s6" class="scene clip" data-start="16.0" data-duration="4.0" data-track-index="1" style="z-index:6">
+  <div id="s6" class="scene clip" data-start="28.6" data-duration="5.8" data-track-index="1" style="z-index:6">
     <div class="glow"></div>
-    <div class="cap"><span class="n">05</span><span class="v">EXPORTER SUR N SUPPORTS</span><small>Une source, tous vos canaux — impression aux normes, réseaux, PPTX, web, vidéo.</small></div>
+    <div class="cap"><div class="t"><span class="n">05</span>EXPORTER SUR N SUPPORTS</div><small>Une source, tous vos canaux — chaque export généré aux bonnes dimensions et normes.</small></div>
     <div class="win">
       <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Exporter — 1 source → N canaux</span></div>
       <div class="wbody">
         <div class="exp">
           <div class="exp-src"><span class="pimg"></span><span class="pprice">19€90</span></div>
           <div class="channels">
-            <div class="chan"><span class="ic" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><b>Impression</b><span>PDF/X · 300 DPI</span></div>
-            <div class="chan"><span class="ic" style="color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"/></svg></span><b>Réseaux</b><span>image · story</span></div>
-            <div class="chan"><span class="ic" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><b>PowerPoint</b><span>PPTX</span></div>
-            <div class="chan"><span class="ic" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><b>Web</b><span>responsive</span></div>
-            <div class="chan"><span class="ic" style="color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><b>Vidéo</b><span>WebM</span></div>
+            <div class="chan"><span class="ic" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><b>Impression</b><span>PDF/X · 300 DPI</span><span class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span></div>
+            <div class="chan"><span class="ic" style="color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"/></svg></span><b>Réseaux</b><span>image · story</span><span class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span></div>
+            <div class="chan"><span class="ic" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><b>PowerPoint</b><span>PPTX</span><span class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span></div>
+            <div class="chan"><span class="ic" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><b>Web</b><span>responsive</span><span class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span></div>
+            <div class="chan"><span class="ic" style="color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><b>Vidéo</b><span>WebM</span><span class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- S7 — OUTRO -->
-  <div id="s7" class="scene clip" data-start="19.5" data-duration="2.5" data-track-index="0" style="z-index:7">
+  <!-- S7 — WORKFLOWS (Zapier) -->
+  <div id="s7" class="scene clip" data-start="34.0" data-duration="6.0" data-track-index="0" style="z-index:7">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">06</span>AUTOMATISER</div><small>Enchaînez les modules en no-code, façon Zapier — le workflow exécute tout, tout seul.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Workflows — éditeur de flux</span></div>
+      <div class="wbody">
+        <div class="wf">
+          <div class="wf-node" id="wn1"><div class="nh"><span class="ni" style="background:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><b>Scraper URL</b></div><span>source produit</span></div>
+          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="wf-node" id="wn2"><div class="nh"><span class="ni" style="background:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 .5-4 3.5 1.5 5L12 19l-4.5 3 1.5-5-4-3.5 5-.5z"/></svg></span><b>Enrichir</b></div><span>PIM + DAM</span></div>
+          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="wf-node" id="wn3"><div class="nh"><span class="ni" style="background:var(--indigo)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><b>Composer</b></div><span>gabarit + data</span></div>
+          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="wf-node" id="wn4"><div class="nh"><span class="ni" style="background:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><b>Exporter</b></div><span>PDF · image</span></div>
+          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="wf-node" id="wn5"><div class="nh"><span class="ni" style="background:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><b>Telegram</b></div><span>envoi auto</span></div>
+        </div>
+        <div style="text-align:center"><span class="wf-run" id="wfrun"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Lancer le workflow</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S8 — TELEGRAM -->
+  <div id="s8" class="scene clip" data-start="39.6" data-duration="6.0" data-track-index="1" style="z-index:8">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">07</span>TELEGRAM</div><small>Pilotez toute l'app depuis un bot : une commande, le fichier final revient dans le chat.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Telegram — bot IBS-Studio</span></div>
+      <div class="wbody">
+        <div class="tg">
+          <div class="tg-msg me" id="tg1"><code>/flow</code> Génère une PLV A4 pour la perceuse 18V, prix 129 €</div>
+          <div class="tg-msg bot" id="tg2">Workflow généré ✓ — scraping, composition et export en cours…</div>
+          <div class="tg-file" id="tg3"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><span><b>perceuse-18v-PLV.pdf</b><span class="meta">A4 · 300 DPI · 2,4 Mo</span></span><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>
+          <div class="tg-bar"><span class="ph">Message…</span><span class="send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S9 — OUTRO -->
+  <div id="s9" class="scene clip" data-start="45.2" data-duration="2.6" data-track-index="0" style="z-index:9">
     <div class="glow"></div>
     <div class="center s7-wrap">
       <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
-      <div class="big" style="font-size:88px">Scraper. Éditer.<br/><span class="hl">Publier.</span></div>
+      <div class="big" style="font-size:84px">Scraper. Éditer.<br/><span class="hl">Publier.</span></div>
       <span class="cta">Ouvrir l'application</span>
       <span class="url-out">ibs-studio.com</span>
     </div>
@@ -312,70 +422,132 @@
   <script>
     window.__timelines = window.__timelines || {};
     const tl = gsap.timeline({ paused: true });
-    const slide = (id,t)=>tl.from(id,{xPercent:100,duration:.55,ease:"power3.out"},t);
+    const slide = (id,t)=>tl.from(id,{xPercent:100,duration:.6,ease:"power3.out"},t);
+    // clic : positionne le curseur + l'anneau, joue un pulse
+    function click(curSel,ringSel,x,y,t){
+      tl.to(curSel,{x:x,y:y,duration:.5,ease:"power2.inOut"},t);
+      tl.fromTo(ringSel,{x:x,y:y,scale:.2,opacity:.9},{scale:1.3,opacity:0,duration:.5,ease:"power2.out"},t+.5);
+    }
 
-    /* S1 — intro */
+    /* S1 — intro (hold) */
     tl.from("#s1 .logo",{y:34,opacity:0,duration:.6,ease:"power3.out"},.15);
     tl.from("#s1 .s1-title",{y:46,opacity:0,duration:.7,ease:"expo.out"},.32);
-    tl.from("#s1 .pill",{y:26,opacity:0,duration:.5,ease:"power2.out",stagger:.08},.62);
+    tl.from("#s1 .pill",{y:26,opacity:0,duration:.5,ease:"power2.out",stagger:.09},.62);
 
-    /* S2 — scraper */
-    slide("#s2",2.0);
-    tl.from("#s2 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},2.5);
-    tl.from("#s2 .urlbar",{y:22,opacity:0,duration:.5,ease:"power2.out"},2.7);
-    tl.from("#s2 .go",{scale:.85,opacity:0,duration:.4,ease:"expo.out"},2.9);
-    tl.to("#s2 .go",{scale:1.05,duration:.5,yoyo:true,repeat:1,ease:"sine.inOut"},3.3);
-    tl.from("#s2 .card",{y:34,opacity:0,duration:.55,ease:"power4.out",stagger:.14},3.05);
-    tl.from("#s2 .kv-row",{x:-18,opacity:0,duration:.4,ease:"sine.out",stagger:.08},3.4);
-    tl.from("#s2 .thumb",{scale:.5,opacity:0,duration:.4,ease:"power3.out",stagger:.06},3.55);
+    /* S2 — scraper : page → lecture → PIM/DAM */
+    slide("#s2",2.8);
+    tl.from("#s2 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},3.3);
+    tl.from("#s2 .sc-url",{y:22,opacity:0,duration:.5,ease:"power2.out"},3.5);
+    tl.fromTo("#s2 .go",{scale:1},{scale:1.06,duration:.45,yoyo:true,repeat:1,ease:"sine.inOut"},3.9);
+    tl.from("#s2 .webpage",{x:-40,opacity:0,duration:.6,ease:"power3.out"},3.7);
+    // lecture séquentielle des éléments de la page (highlight) puis arrivée dans PIM/DAM
+    tl.set("#s2 .sc-dest .kv-row",{opacity:0},0);
+    tl.set("#s2 .sc-dest .thumb",{opacity:0,scale:.5},0);
+    tl.from("#s2 .sc-mid",{opacity:0,duration:.5,ease:"sine.out"},4.4);
+    // titre
+    tl.to("#s2 .wp-title",{boxShadow:"0 0 0 3px var(--indigo)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},4.7);
+    tl.to("#s2 .sc-dest .kv-row:nth-child(2)",{opacity:1,duration:.4,ease:"power2.out"},5.0);
+    // prix
+    tl.to("#s2 .wp-price",{boxShadow:"0 0 0 3px var(--indigo)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},5.4);
+    tl.to("#s2 .sc-dest .kv-row:nth-child(3)",{opacity:1,duration:.4,ease:"power2.out"},5.7);
+    // spec
+    tl.to("#s2 .wp-specs",{boxShadow:"0 0 0 3px var(--indigo)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},6.1);
+    tl.to("#s2 .sc-dest .kv-row:nth-child(4)",{opacity:1,duration:.4,ease:"power2.out"},6.4);
+    // image → DAM
+    tl.to("#s2 .wp-img",{boxShadow:"0 0 0 3px var(--pink)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},6.8);
+    tl.to("#s2 .sc-dest .thumb",{opacity:1,scale:1,duration:.4,ease:"power3.out",stagger:.12},7.1);
 
-    /* S3 — importer */
-    slide("#s3",5.5);
-    tl.from("#s3 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},6.0);
-    tl.from("#s3 .fcard",{y:36,opacity:0,duration:.5,ease:"expo.out",stagger:.1},6.2);
-    tl.to("#s3 .fcard.hot",{boxShadow:"0 0 38px -6px rgba(251,191,36,.8)",duration:.5,ease:"power2.out"},6.85);
-    tl.from("#s3 .imp-res",{y:30,opacity:0,duration:.55,ease:"power3.out"},6.9);
-    tl.from("#s3 .lr",{x:-20,opacity:0,duration:.4,ease:"sine.out",stagger:.1},7.15);
+    /* S3 — importer : curseur choisit IDML → décomposition */
+    slide("#s3",9.8);
+    tl.from("#s3 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},10.3);
+    tl.from("#s3 .fcard",{y:34,opacity:0,duration:.5,ease:"expo.out",stagger:.1},10.45);
+    tl.set("#cur3",{x:1180,y:430,opacity:0},0);
+    tl.to("#cur3",{opacity:1,duration:.3},11.2);
+    click("#cur3","#ring3",250,250,11.4); // clic sur IDML
+    tl.to("#fc-idml",{boxShadow:"0 0 0 3px var(--amber)",duration:.4,ease:"power2.out"},11.9);
+    tl.from("#s3 .imp-res",{y:30,opacity:0,duration:.55,ease:"power3.out"},12.3);
+    tl.from("#s3 .lr",{x:-22,opacity:0,duration:.45,ease:"sine.out",stagger:.18},12.6);
+    tl.from("#s3 .lr .ed",{scale:.3,opacity:0,duration:.35,ease:"power3.out",stagger:.18},12.9);
 
-    /* S4 — modifier */
-    slide("#s4",9.0);
-    tl.from("#s4 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},9.5);
-    tl.from("#s4 .etools i",{x:-16,opacity:0,duration:.4,ease:"power2.out",stagger:.06},9.6);
-    tl.from("#s4 .pimg",{opacity:0,scale:.9,duration:.5,ease:"power3.out"},9.7);
-    tl.from("#s4 .pprice",{y:20,opacity:0,duration:.45,ease:"expo.out"},9.95);
-    tl.from("#s4 .ptitle",{y:18,opacity:0,duration:.45,ease:"power2.out"},10.15);
-    tl.from("#s4 .pbadge",{scale:.4,opacity:0,duration:.45,ease:"power4.out"},10.35);
-    tl.from("#s4 .ph",{scale:0,opacity:0,duration:.35,ease:"power3.out",stagger:.05},10.5);
-    tl.from("#s4 .epanel > *",{x:24,opacity:0,duration:.4,ease:"sine.out",stagger:.05},9.85);
-    tl.to("#s4 .ep-lay.on",{backgroundColor:"rgba(99,102,241,.3)",duration:.5,yoyo:true,repeat:1,ease:"sine.inOut"},11.0);
+    /* S4 — modifier : édition RÉELLE (prix puis couleur) */
+    slide("#s4",15.8);
+    tl.from("#s4 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},16.3);
+    tl.from("#s4 .etools i",{x:-16,opacity:0,duration:.4,ease:"power2.out",stagger:.06},16.4);
+    tl.from("#s4 .poster",{scale:.92,opacity:0,duration:.5,ease:"power3.out"},16.5);
+    tl.from("#s4 .epanel > *",{x:24,opacity:0,duration:.4,ease:"sine.out",stagger:.05},16.6);
+    tl.to("#s4 .ph",{opacity:1,duration:.3,stagger:.04},17.1);
+    // ÉDIT 1 — prix : curseur → calque Prix → la valeur change sur l'affiche
+    tl.set("#cur4",{x:900,y:480,opacity:0},0);
+    tl.to("#cur4",{opacity:1,duration:.3},17.4);
+    click("#cur4","#ring4",355,205,17.6); // clic calque "Prix" (panneau)
+    tl.to("#lay-price",{backgroundColor:"rgba(99,102,241,.32)",duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},18.1);
+    tl.to("#s4 .pv1",{opacity:0,duration:.35,ease:"power2.in"},18.3);
+    tl.to("#s4 .pv2",{opacity:1,duration:.35,ease:"power2.out"},18.35);
+    tl.fromTo("#lbl-price",{opacity:0,y:10},{opacity:1,y:0,duration:.4,ease:"power2.out"},18.4);
+    tl.to("#lbl-price",{opacity:0,duration:.4,ease:"power2.in"},19.4);
+    // ÉDIT 2 — couleur badge : curseur → nuancier indigo → le badge change de couleur
+    click("#cur4","#ring4",330,360,19.4); // clic nuancier indigo (panneau)
+    tl.to("#sw-indigo",{boxShadow:"0 0 0 3px #fff",duration:.3,ease:"power2.out"},19.9);
+    tl.to("#pbadge4",{backgroundColor:"#6366F1",duration:.5,ease:"power2.inOut"},20.0);
+    tl.fromTo("#lbl-color",{opacity:0,y:10},{opacity:1,y:0,duration:.4,ease:"power2.out"},20.1);
+    tl.to("#lbl-color",{opacity:0,duration:.4,ease:"power2.in"},21.6);
 
-    /* S5 — connecter une base */
-    slide("#s5",12.5);
-    tl.from("#s5 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},13.0);
-    tl.from("#s5 .dtable .tr",{x:-22,opacity:0,duration:.4,ease:"power2.out",stagger:.08},13.15);
-    tl.from("#s5 .bindchips i",{y:18,opacity:0,duration:.4,ease:"expo.out",stagger:.1},13.5);
-    tl.from("#s5 .variants i",{scale:.3,opacity:0,duration:.35,ease:"power3.out",stagger:.035},13.7);
-    tl.from("#s5 .vcount",{opacity:0,y:16,duration:.5,ease:"power2.out"},14.4);
-    tl.from("#vc",{textContent:0,duration:1.1,ease:"power1.out",snap:{textContent:1}},14.4);
+    /* S5 — connecter : liaison → multiplication */
+    slide("#s5",22.8);
+    tl.from("#s5 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},23.3);
+    tl.from("#s5 .dtable .tr",{x:-22,opacity:0,duration:.4,ease:"power2.out",stagger:.1},23.45);
+    tl.from("#s5 .bindchips i",{y:18,opacity:0,duration:.4,ease:"expo.out",stagger:.14},24.0);
+    // surligne une ligne après l'autre (la base nourrit le gabarit)
+    tl.to("#s5 .dtable .tr:nth-child(2)",{backgroundColor:"rgba(99,102,241,.18)",duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},24.5);
+    tl.to("#s5 .dtable .tr:nth-child(3)",{backgroundColor:"rgba(99,102,241,.18)",duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},24.8);
+    tl.set("#s5 .variants i",{opacity:0,scale:.3},0);
+    tl.to("#s5 .variants i",{opacity:1,scale:1,duration:.4,ease:"power3.out",stagger:.045},25.0);
+    tl.from("#s5 .vcount",{opacity:0,y:16,duration:.5,ease:"power2.out"},25.9);
+    tl.from("#vc",{textContent:0,duration:1.3,ease:"power1.out",snap:{textContent:1}},25.9);
 
-    /* S6 — exporter */
-    slide("#s6",16.0);
-    tl.from("#s6 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},16.5);
-    tl.from("#s6 .exp-src",{y:30,opacity:0,duration:.55,ease:"power3.out"},16.65);
-    tl.from("#s6 .chan",{y:34,opacity:0,duration:.5,ease:"expo.out",stagger:.1},16.95);
-    tl.to("#s6 .chan:nth-child(1) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.5);
-    tl.to("#s6 .chan:nth-child(2) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.65);
-    tl.to("#s6 .chan:nth-child(3) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.8);
-    tl.to("#s6 .chan:nth-child(4) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.95);
-    tl.to("#s6 .chan:nth-child(5) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},18.1);
+    /* S6 — exporter : chaque canal généré (✓) */
+    slide("#s6",28.6);
+    tl.from("#s6 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},29.1);
+    tl.from("#s6 .exp-src",{y:30,opacity:0,duration:.55,ease:"power3.out"},29.25);
+    tl.from("#s6 .chan",{y:34,opacity:0,duration:.5,ease:"expo.out",stagger:.12},29.6);
+    tl.set("#s6 .chan .done",{scale:.3},0);
+    tl.to("#s6 .chan:nth-child(1) .ic",{borderColor:"currentColor",boxShadow:"0 0 26px -4px currentColor",duration:.35,ease:"power2.out"},30.4);
+    tl.to("#s6 .chan:nth-child(1) .done",{opacity:1,scale:1,duration:.35,ease:"power3.out"},30.5);
+    tl.to("#s6 .chan:nth-child(2) .ic",{borderColor:"currentColor",boxShadow:"0 0 26px -4px currentColor",duration:.35,ease:"power2.out"},30.75);
+    tl.to("#s6 .chan:nth-child(2) .done",{opacity:1,scale:1,duration:.35,ease:"power3.out"},30.85);
+    tl.to("#s6 .chan:nth-child(3) .ic",{borderColor:"currentColor",boxShadow:"0 0 26px -4px currentColor",duration:.35,ease:"power2.out"},31.1);
+    tl.to("#s6 .chan:nth-child(3) .done",{opacity:1,scale:1,duration:.35,ease:"power3.out"},31.2);
+    tl.to("#s6 .chan:nth-child(4) .ic",{borderColor:"currentColor",boxShadow:"0 0 26px -4px currentColor",duration:.35,ease:"power2.out"},31.45);
+    tl.to("#s6 .chan:nth-child(4) .done",{opacity:1,scale:1,duration:.35,ease:"power3.out"},31.55);
+    tl.to("#s6 .chan:nth-child(5) .ic",{borderColor:"currentColor",boxShadow:"0 0 26px -4px currentColor",duration:.35,ease:"power2.out"},31.8);
+    tl.to("#s6 .chan:nth-child(5) .done",{opacity:1,scale:1,duration:.35,ease:"power3.out"},31.9);
 
-    /* S7 — outro */
-    slide("#s7",19.5);
-    tl.from("#s7 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},20.0);
-    tl.from("#s7 .big",{y:36,opacity:0,duration:.6,ease:"expo.out"},20.2);
-    tl.from("#s7 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},20.5);
-    tl.from("#s7 .url-out",{opacity:0,duration:.4,ease:"sine.out"},20.7);
-    tl.to("#s7 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},21.5);
+    /* S7 — workflows (Zapier) : le flux s'exécute node par node */
+    slide("#s7",34.0);
+    tl.from("#s7 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},34.5);
+    tl.from("#s7 .wf-node",{y:30,opacity:0,duration:.45,ease:"expo.out",stagger:.12},34.6);
+    tl.from("#s7 .wf-arr",{scale:.4,opacity:0,duration:.35,ease:"power3.out",stagger:.12},34.95);
+    tl.from("#s7 .wf-run",{scale:.9,opacity:0,duration:.4,ease:"power3.out"},35.7);
+    tl.fromTo("#wfrun",{scale:1},{scale:1.06,duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},36.1);
+    var RUN={borderColor:"var(--indigo)",boxShadow:"0 0 30px -6px rgba(99,102,241,.85)",duration:.32,yoyo:true,repeat:1,ease:"sine.inOut"};
+    tl.to("#wn1",RUN,36.4); tl.to("#wn2",RUN,36.8); tl.to("#wn3",RUN,37.2); tl.to("#wn4",RUN,37.6); tl.to("#wn5",RUN,38.0);
+
+    /* S8 — telegram : commande → exécution → fichier renvoyé */
+    slide("#s8",39.6);
+    tl.from("#s8 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},40.1);
+    tl.from("#tg1",{y:20,opacity:0,scale:.96,duration:.45,ease:"power3.out"},40.4);
+    tl.from("#tg2",{y:20,opacity:0,scale:.96,duration:.45,ease:"power2.out"},41.2);
+    tl.from("#s8 .tg-bar",{y:16,opacity:0,duration:.4,ease:"sine.out"},41.6);
+    tl.from("#tg3",{y:26,opacity:0,scale:.95,duration:.5,ease:"expo.out"},42.4);
+    tl.fromTo("#tg3 .dl",{scale:1},{scale:1.25,duration:.32,yoyo:true,repeat:1,ease:"sine.inOut"},43.1);
+
+    /* S9 — outro */
+    slide("#s9",45.2);
+    tl.from("#s9 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},45.5);
+    tl.from("#s9 .big",{y:36,opacity:0,duration:.55,ease:"expo.out"},45.7);
+    tl.from("#s9 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},46.0);
+    tl.from("#s9 .url-out",{opacity:0,duration:.4,ease:"sine.out"},46.2);
+    tl.to("#s9 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},47.4);
 
     window.__timelines["promo-hero"] = tl;
   </script>
