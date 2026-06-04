@@ -4,6 +4,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { startObjectAnimation } from '@/features/animation3d/useAnimation3D'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 import { useCanvasRecorder } from '@/features/animation3d/useCanvasRecorder'
 import type { Animation3DConfig, Animation3DPreset } from '@/features/animation3d/types'
 import { PRESETS, DEFAULT_ANIMATION_CONFIG } from '@/features/animation3d/types'
@@ -187,7 +188,10 @@ export function Animation3DPanel() {
       {/* Duration */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-white/60">
-          <span>Durée par cycle</span>
+          <span className="flex items-center gap-1">
+            Durée par cycle
+            <OptionHelp text="Temps d'une boucle complète de l'animation, en secondes. Plus court = mouvement plus rapide." />
+          </span>
           <span className="tabular-nums text-white/80">{config.duration.toFixed(1)}s</span>
         </div>
         <input
@@ -204,7 +208,10 @@ export function Animation3DPanel() {
       {/* Intensity */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-white/60">
-          <span>Intensité</span>
+          <span className="flex items-center gap-1">
+            Intensité
+            <OptionHelp text="Amplitude de l'effet (× le mouvement de base). Plus élevé = animation plus marquée." />
+          </span>
           <span className="tabular-nums text-white/80">{config.intensity.toFixed(1)}×</span>
         </div>
         <input
@@ -257,6 +264,7 @@ export function Animation3DPanel() {
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-300">
             <Box className="w-3.5 h-3.5" />
             <span>Géométrie 3D</span>
+            <OptionHelp text="Donne du volume au texte/objet : profondeur d'extrusion, biseau des arêtes et rotation sur les axes X/Y. Rotation auto pour une animation continue." />
           </div>
 
           <Slider
@@ -301,6 +309,7 @@ export function Animation3DPanel() {
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300">
               <Sun className="w-3.5 h-3.5" />
               <span>Éclairage manuel</span>
+              <OptionHelp text="Contrôle l'éclairage de la scène 3D : lumière directionnelle (intensité, couleur, position) qui crée les ombres, et lumière ambiante (éclairage global uniforme)." />
             </div>
 
             {/* Directional light */}

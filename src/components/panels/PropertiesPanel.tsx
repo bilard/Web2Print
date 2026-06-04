@@ -18,6 +18,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { applyImageFill as applyImageFillUtil } from '@/features/editor/applyImageFill'
 import { ColorPicker } from '@/components/shared/ColorPicker'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 import { GradientPicker, gradientToFabric, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
 import type { Canvas } from 'fabric'
 import type { GradientConfig, CanvasObjectProps } from '@/stores/editor.store'
@@ -232,15 +233,18 @@ function Toggle({ active, onClick, children, title }: { active: boolean; onClick
   )
 }
 
-function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function Section({ title, children, defaultOpen = false, help, tourId }: { title: string; children: React.ReactNode; defaultOpen?: boolean; help?: string; tourId?: string }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <section className="flex flex-col gap-2.5">
-      <button onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/60 transition-colors">
-        <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-        {title}
-      </button>
+    <section className="flex flex-col gap-2.5" data-tour={tourId ? `opt-${tourId}` : undefined}>
+      <div className="flex items-center gap-1">
+        <button onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/60 transition-colors">
+          <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+          {title}
+        </button>
+        {help && <OptionHelp text={help} />}
+      </div>
       {open && children}
     </section>
   )
@@ -513,7 +517,8 @@ export function PropertiesPanel() {
             {(obj.type !== 'text' || activeTab === 'shape') && (
               <>
                 {/* ── Remplissage ── */}
-                <Section title="Remplissage">
+                <Section title="Remplissage" tourId="prop-fill" help="Couleur intérieure de l'objet. Choisissez : aplat (couleur unie), dégradé, image, ou aucun remplissage (transparent).">
+
                   <div className="flex gap-1 mb-1">
                     {(['solid', 'gradient', 'image', 'none'] as const).map(ft => (
                       <button key={ft} onClick={() => {
@@ -590,7 +595,8 @@ export function PropertiesPanel() {
                 </Section>
 
                 {/* ── Contour ── */}
-                <Section title="Contour">
+                <Section title="Contour" tourId="prop-stroke" help="Bordure de l'objet : couleur, épaisseur, style de trait (continu, tirets, points), et forme des extrémités/angles.">
+
                   <ColorPicker label="Couleur" value={obj.stroke}
                     onChange={(v) => applyToFabric({ stroke: v })} allowNoFill />
                   <Row>
@@ -618,7 +624,8 @@ export function PropertiesPanel() {
                 </Section>
 
                 {/* ── Opacité & Mode de fusion ── */}
-                <Section title="Opacité & Fusion">
+                <Section title="Opacité & Fusion" tourId="prop-opacity" help="Transparence de l'objet (0 = invisible) et mode de fusion (multiplier, écran, superposition…) qui définit comment ses couleurs se mélangent avec celles du dessous.">
+
                   <SliderInput label="Opacité" value={obj.opacity} onChange={(v) => applyToFabric({ opacity: v })}
                     min={0} max={1} step={0.01} unit="%" />
                   <SelectInput label="Mode de fusion" value={obj.blendMode ?? 'source-over'}
@@ -627,7 +634,8 @@ export function PropertiesPanel() {
                 </Section>
 
                 {/* ── Ombre ── */}
-                <Section title="Ombre">
+                <Section title="Ombre" tourId="prop-shadow" help="Ombre portée de l'objet : activez-la puis réglez couleur, flou et décalage horizontal/vertical.">
+
                   <label className="flex items-center gap-2 cursor-pointer">
                     <div
                       onClick={() => applyToFabric({ shadow: obj.shadow ? null : { color: 'rgba(0,0,0,0.4)', blur: 10, offsetX: 5, offsetY: 5 } })}
@@ -650,7 +658,8 @@ export function PropertiesPanel() {
                 </Section>
 
                 {/* ── Taille & Position ── */}
-                <Section title="Taille & Position">
+                <Section title="Taille & Position" tourId="prop-transform" help="Coordonnées X/Y, largeur/hauteur, rotation et arrondi. Verrouillez le ratio pour redimensionner proportionnellement ; miroir H/V et verrou de position disponibles.">
+
                   <Row>
                     <NumInput label="X" value={obj.x} onChange={(v) => applyToFabric({ x: v })} unit="pt" />
                     <NumInput label="Y" value={obj.y} onChange={(v) => applyToFabric({ y: v })} unit="pt" />
@@ -738,7 +747,8 @@ export function PropertiesPanel() {
                   const isPatternFilled = (fObj as any).fill?.type === 'pattern'
                   if (!isImage && !isPatternFilled) return null
                   return (
-                    <Section title="Cadrage">
+                    <Section title="Cadrage" tourId="prop-crop" help="Recadrez l'image dans son cadre (masque) sans la déformer : ajustez la zone visible et le zoom de l'image à l'intérieur.">
+
                       <ImageMaskSection image={fObj} />
                     </Section>
                   )
@@ -750,7 +760,8 @@ export function PropertiesPanel() {
             {obj.type === 'text' && activeTab === 'text' && (
               <>
                 {/* ── Police ── */}
-                <Section title="Police">
+                <Section title="Police" tourId="prop-font" help="Mise en forme du texte : famille de police, taille, style (gras/italique), souligné/barré et couleur.">
+
                   <div className="flex flex-col gap-1">
                     <Label>Famille</Label>
                     <select value={obj.fontFamily ?? 'Inter'} onChange={(e) => applyStyle({ fontFamily: e.target.value })}
@@ -830,7 +841,8 @@ export function PropertiesPanel() {
                 </Section>
 
                 {/* ── Paragraphe ── */}
-                <Section title="Paragraphe">
+                <Section title="Paragraphe" tourId="prop-paragraph" help="Alignement du texte (gauche, centré, droite, justifié), espacement des lettres et interligne.">
+
                   <div className="flex flex-col gap-1">
                     <Label>Alignement</Label>
                     <div className="flex gap-1">
@@ -850,7 +862,8 @@ export function PropertiesPanel() {
                 </Section>
 
                 {/* ── Transformation texte ── */}
-                <Section title="Transformation">
+                <Section title="Transformation" tourId="prop-texttransform" help="Casse du texte : majuscules, minuscules, ou capitales en début de mot — sans réécrire le contenu.">
+
                   <div className="flex gap-1">
                     {([
                       { value: 'none', label: 'Aa' },
@@ -869,7 +882,8 @@ export function PropertiesPanel() {
             )}
 
             {/* ── Arranger (always visible) ── */}
-            <Section title="Arranger">
+            <Section title="Arranger" tourId="prop-arrange" help="Ordre de superposition (premier/arrière-plan), alignement et répartition par rapport à la page, et duplication/suppression de l'objet.">
+
               {/* Z-order */}
               <div className="flex gap-1">
                 {[

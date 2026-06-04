@@ -4,6 +4,7 @@ import { usePaletteStore, savePaletteToFirestore } from '@/stores/palette.store'
 import type { PaletteColor, PaletteGradient } from '@/stores/palette.store'
 import type { GradientConfig } from '@/stores/editor.store'
 import { gradientToCss } from '@/components/shared/GradientPicker'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 
 function ColorSwatch({ item, onApply }: { item: PaletteColor; onApply?: (color: string) => void }) {
   const { removeColor, updateColor } = usePaletteStore()
@@ -193,8 +194,11 @@ export function PalettePanel() {
   return (
     <div className="p-3 flex flex-col gap-4">
       {/* Couleurs du projet */}
-      <section>
-        <h4 className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Couleurs du projet</h4>
+      <section data-tour="opt-palette-colors">
+        <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
+          Couleurs du projet
+          <OptionHelp text="Vos couleurs de marque enregistrées, réutilisables en un clic sur les objets. Ajoutez-en via le champ ci-dessous ; elles sont sauvegardées avec le projet." />
+        </h4>
         <div className="flex flex-col gap-1">
           {colors.length === 0 && (
             <p className="text-[10px] text-white/20 italic py-2">Aucune couleur enregistrée</p>
@@ -209,8 +213,11 @@ export function PalettePanel() {
       </section>
 
       {/* Dégradés du projet */}
-      <section>
-        <h4 className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Dégradés du projet</h4>
+      <section data-tour="opt-palette-gradients">
+        <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
+          Dégradés du projet
+          <OptionHelp text="Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds. Créez-en de nouveaux via le bouton ci-dessous." />
+        </h4>
         <div className="flex flex-col gap-1">
           {gradients.length === 0 && (
             <p className="text-[10px] text-white/20 italic py-2">Aucun dégradé enregistré</p>

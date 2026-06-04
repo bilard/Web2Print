@@ -1,5 +1,23 @@
 import type { TourStep } from './types'
 import { useUIStore } from '@/stores/ui.store'
+import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+
+/** Sélectionne le premier objet éditable du canvas pour peupler le panneau Propriétés. */
+function selectFirstObject() {
+  const canvas = globalFabricCanvas
+  if (!canvas) return
+  const obj = canvas.getObjects().find((o) => (o as { selectable?: boolean }).selectable !== false)
+  if (obj) {
+    canvas.setActiveObject(obj)
+    canvas.requestRenderAll()
+  }
+}
+
+/** Ouvre le stack droit ET sélectionne un objet (Propriétés vide sans sélection). */
+const prepareProps = () => {
+  useUIStore.getState().setRightPanelOpen(true)
+  selectFirstObject()
+}
 
 /**
  * Ouvre le stack de panneaux droits et déplie un panneau précis (les autres
@@ -10,11 +28,6 @@ const openPanel = (target: string) => () => {
   const ui = useUIStore.getState()
   ui.setRightPanelOpen(true)
   ui.setRightPanels(ui.rightPanels.map((p) => ({ ...p, collapsed: p.id !== target })))
-}
-
-/** Ouvre simplement le stack de panneaux droits (sans toucher aux replis). */
-const openRightStack = () => {
-  useUIStore.getState().setRightPanelOpen(true)
 }
 
 /**
@@ -118,12 +131,73 @@ export const editorTourSteps: TourStep[] = [
   },
   {
     element: '[data-tour="properties"]',
-    prepare: openRightStack,
+    prepare: prepareProps,
     requireSelector: '[data-tour="properties"]',
     popover: {
       title: 'Propriétés',
       description:
-        'Toujours en haut à droite : position, taille, couleurs, opacité, contour… de l’objet sélectionné. S’adapte au type d’objet.',
+        'Toujours en haut à droite : tous les réglages de l’objet sélectionné (un objet est sélectionné pour la démo). S’adapte au type d’objet. Détaillons chaque section — survolez les « ? » pour l’aide en continu.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-prop-fill"]',
+    prepare: prepareProps,
+    requireSelector: '[data-tour="opt-prop-fill"]',
+    popover: {
+      title: 'Remplissage',
+      description: 'Couleur intérieure : aplat, dégradé, image ou transparent. Cliquez la section pour la déplier.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-prop-stroke"]',
+    requireSelector: '[data-tour="opt-prop-stroke"]',
+    popover: {
+      title: 'Contour',
+      description: 'Bordure de l’objet : couleur, épaisseur, style de trait (continu, tirets, points) et angles.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-prop-opacity"]',
+    requireSelector: '[data-tour="opt-prop-opacity"]',
+    popover: {
+      title: 'Opacité & Fusion',
+      description: 'Transparence et mode de fusion (multiplier, écran…) qui définit le mélange avec le dessous.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-prop-shadow"]',
+    requireSelector: '[data-tour="opt-prop-shadow"]',
+    popover: {
+      title: 'Ombre',
+      description: 'Ombre portée : couleur, flou et décalage horizontal/vertical.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-prop-transform"]',
+    requireSelector: '[data-tour="opt-prop-transform"]',
+    popover: {
+      title: 'Taille & Position',
+      description: 'X/Y, largeur/hauteur, rotation, arrondi, verrou de ratio, miroir H/V et verrou de position.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-prop-arrange"]',
+    requireSelector: '[data-tour="opt-prop-arrange"]',
+    popover: {
+      title: 'Arranger',
+      description: 'Ordre de superposition, alignement et répartition sur la page, duplication et suppression.',
       side: 'left',
       align: 'start',
     },
