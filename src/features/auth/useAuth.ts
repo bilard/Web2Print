@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { auth } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { writeUserProfile } from '@/features/access/writeUserProfile'
 
 const googleProvider = new GoogleAuthProvider()
 
@@ -27,7 +28,7 @@ export function useAuthInit() {
   useEffect(() => {
     // undefined = pas encore initialisé (1er événement = chargement de page)
     let prevUid: string | null | undefined = undefined
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       const uid = user?.uid ?? null
       // Changement de compte (ou déconnexion) sur ce navigateur → purger les données
       // en cache du compte précédent (localStorage est partagé par navigateur). On ne
@@ -37,6 +38,18 @@ export function useAuthInit() {
         purgeLocalUserData()
       }
       prevUid = uid
+      // Écrire le profil AVANT d'exposer le user (donc avant que les hooks d'hydratation,
+      // déclenchés par [uid], ne lisent users/{uid}). Sinon le setDoc(merge) de
+      // writeUserProfile reste une écriture LOCALE EN ATTENTE qui, sur un doc pas encore
+      // chargé, masque tous les autres champs (aiSettings, apiKeys, accessRoleId…) dans le
+      // snapshot des getDoc concurrents → « hydratation muette » (clés API, cascade IA,
+      // rôles). On borne l'attente à 4 s pour ne jamais figer la connexion hors-ligne.
+      if (user) {
+        await Promise.race([
+          writeUserProfile(user),
+          new Promise<void>((r) => setTimeout(r, 4000)),
+        ])
+      }
       setUser(user)
       setLoading(false)
     })
