@@ -7,6 +7,7 @@ import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { usePrintPresets, type PrintPresetParams } from '@/features/print/usePrintPresets'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 
 /**
  * Panneau "Repères et fonds perdus" — vocabulaire InDesign.
@@ -130,8 +131,9 @@ export function PrintPanel() {
     <div className="p-3 flex flex-col gap-4">
       {/* ── Famille de paramètres (presets réutilisables entre projets) ── */}
       <section className="flex flex-col gap-1.5">
-        <label className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Famille de paramètres
+          <OptionHelp text="Enregistrez vos réglages d'impression comme preset réutilisable d'un projet à l'autre. Les icônes à droite : créer, mettre à jour, supprimer une famille." />
         </label>
         <div className="flex gap-1">
           <select
@@ -194,8 +196,9 @@ export function PrintPanel() {
 
       {/* ── Résolution ── */}
       <section className="flex flex-col gap-1">
-        <label className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Résolution (DPI)
+          <OptionHelp text="Densité de l'export en points par pouce. 300 DPI = standard offset/impression. 72 DPI = web. Plus le DPI est élevé, plus le fichier est lourd et net." />
         </label>
         <select
           value={dpi}
@@ -212,8 +215,9 @@ export function PrintPanel() {
       {/* ── Fond perdu ── */}
       <section className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <label className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+          <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
             Fond perdu (bleed)
+            <OptionHelp text="Marge de débord autour de la page, imprimée puis rognée. Évite les liserés blancs si la coupe est légèrement décalée. 3 mm = standard offset, 5 mm = numérique." />
           </label>
           <span className="text-[11px] text-white/80 font-mono tabular-nums">{bleedMm} mm</span>
         </div>
@@ -236,8 +240,9 @@ export function PrintPanel() {
 
       {/* ═══ REPÈRES D'IMPRESSION ═══ */}
       <section className="flex flex-col gap-3 pt-3 border-t border-white/5">
-        <h3 className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+        <h3 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Repères d'impression
+          <OptionHelp text="Marques ajoutées hors page pour guider l'imprimeur : traits de coupe (où rogner), repères de fond perdu, et hirondelles (calage des couleurs)." />
         </h3>
 
         {/* Traits de coupe */}
@@ -246,6 +251,7 @@ export function PrintPanel() {
           label="Traits de coupe"
           enabled={showPrintMarks}
           onToggle={setShowPrintMarks}
+          help="Petits traits aux quatre coins indiquant la ligne de coupe finale du document."
         >
           <SliderControl
             label="Longueur du trait"
@@ -292,6 +298,7 @@ export function PrintPanel() {
           enabled={showRegistrationMarks}
           onToggle={setShowRegistrationMarks}
           subLabel="(hirondelles)"
+          help="Cibles en croix servant à aligner précisément les plaques de couleur (CMJN) à l'impression."
         >
           <SliderControl
             label="Taille (rayon)"
@@ -317,8 +324,9 @@ export function PrintPanel() {
 
       {/* ═══ ZONE DE SÉCURITÉ ═══ */}
       <section className="flex flex-col gap-3 pt-3 border-t border-white/5">
-        <h3 className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+        <h3 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Zone de sécurité
+          <OptionHelp text="Marge intérieure de sécurité : gardez-y le texte et les éléments importants pour qu'ils ne soient pas coupés au rognage." />
         </h3>
 
         <MarkGroup
@@ -365,9 +373,10 @@ interface MarkGroupProps {
   enabled: boolean
   onToggle: (v: boolean) => void
   children: React.ReactNode
+  help?: string
 }
 
-function MarkGroup({ icon, label, subLabel, enabled, onToggle, children }: MarkGroupProps) {
+function MarkGroup({ icon, label, subLabel, enabled, onToggle, children, help }: MarkGroupProps) {
   return (
     <div className="flex flex-col gap-2">
       <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer">
@@ -380,6 +389,7 @@ function MarkGroup({ icon, label, subLabel, enabled, onToggle, children }: MarkG
         <span className="text-white/50">{icon}</span>
         <span>{label}</span>
         {subLabel && <span className="text-[10px] text-white/30">{subLabel}</span>}
+        {help && <OptionHelp text={help} />}
       </label>
       {enabled && (
         <div className="flex flex-col gap-2 pl-5">
@@ -398,13 +408,17 @@ interface SliderControlProps {
   step: number
   unit: string
   onChange: (v: number) => void
+  help?: string
 }
 
-function SliderControl({ label, value, min, max, step, unit, onChange }: SliderControlProps) {
+function SliderControl({ label, value, min, max, step, unit, onChange, help }: SliderControlProps) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-white/40">{label}</span>
+        <span className="flex items-center gap-1 text-[10px] text-white/40">
+          {label}
+          {help && <OptionHelp text={help} />}
+        </span>
         <span className="text-[10px] text-white/60 font-mono tabular-nums">
           {value} {unit}
         </span>
@@ -424,12 +438,16 @@ interface ColorControlProps {
   label: string
   value: string
   onChange: (v: string) => void
+  help?: string
 }
 
-function ColorControl({ label, value, onChange }: ColorControlProps) {
+function ColorControl({ label, value, onChange, help }: ColorControlProps) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-[10px] text-white/40">{label}</span>
+      <span className="flex items-center gap-1 text-[10px] text-white/40">
+        {label}
+        {help && <OptionHelp text={help} />}
+      </span>
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] text-white/60 font-mono tabular-nums uppercase">
           {value}
