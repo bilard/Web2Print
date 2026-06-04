@@ -1,5 +1,5 @@
 // src/features/access/usersApi.ts
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 
 export interface ManagedUser {
@@ -42,4 +42,12 @@ export async function updateUserAccess(
   access: { accessRoleId?: string | null; accessGrants?: string[]; accessRevokes?: string[]; accessBlocked?: boolean },
 ): Promise<void> {
   await setDoc(doc(db, 'users', uid), access, { merge: true })
+}
+
+/** Supprime le profil utilisateur (doc `users/{uid}`) — admin uniquement.
+ *  ⚠️ Ne supprime PAS le compte Firebase Auth ni les sous-collections : si la
+ *  personne se reconnecte, `writeUserProfile` recrée le doc et elle réapparaît
+ *  « en attente » (rôle + blocage perdus). Pour barrer durablement → Bloquer. */
+export async function deleteUser(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid))
 }

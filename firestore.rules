@@ -47,6 +47,8 @@ service cloud.firestore {
       allow update: if isAdmin()
                     || (isAuthenticated() && request.auth.uid == uid
                         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessRoleId', 'accessGrants', 'accessRevokes', 'accessBlocked']));
+      // Suppression du profil : admin uniquement (écran « Utilisateurs & rôles »).
+      allow delete: if isAdmin();
     }
 
     // ── Projects ──────────────────────────────────────────────────────────────

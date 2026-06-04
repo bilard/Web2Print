@@ -7,6 +7,7 @@ import { useIsPending, useIsBlocked, useAccessLoading, useCan } from '@/features
 import { useIsAdmin } from '@/features/access/useAccess'
 import { AccessAdminPage } from '@/features/access/admin/AccessAdminPage'
 import { PendingAccessScreen } from '@/features/access/PendingAccessScreen'
+import { OnboardingKeysWizard } from '@/features/onboarding/OnboardingKeysWizard'
 import { useProjects } from '@/features/projects/useProjects'
 import { useCreateProject, slugify } from '@/features/projects/useCreateProject'
 import { useDeleteProject } from '@/features/projects/useDeleteProject'
@@ -304,6 +305,8 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen bg-[#0f0f0f] text-white flex overflow-hidden">
+      {/* Onboarding : réclame une clé LLM si aucune n'est configurée */}
+      <OnboardingKeysWizard />
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-56' : 'w-14'} bg-[#141414] border-r border-white/[0.06] flex flex-col shrink-0 transition-[width] duration-200`}

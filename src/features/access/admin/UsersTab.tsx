@@ -1,10 +1,10 @@
 // src/features/access/admin/UsersTab.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Ban, RotateCcw, CheckCircle2, Plus, Minus, Clock, ShieldCheck } from 'lucide-react'
+import { Search, Ban, RotateCcw, CheckCircle2, Plus, Minus, Clock, ShieldCheck, Trash2, AlertTriangle } from 'lucide-react'
 import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/access/permissions'
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
-import { listUsers, updateUserAccess, type ManagedUser } from '@/features/access/usersApi'
+import { listUsers, updateUserAccess, deleteUser, type ManagedUser } from '@/features/access/usersApi'
 import { listRoles, type Role } from '@/features/access/rolesApi'
 import { computeEffectivePermissions } from '@/features/access/computePermissions'
 import { isOwnerEmail } from '@/features/auth/useAuth'
@@ -27,10 +27,18 @@ export function UsersTab() {
   const [roles, setRoles] = useState<Role[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const byModule = permissionsByModule()
 
   const refresh = () => { void listUsers().then(setUsers) }
   useEffect(() => { refresh(); void listRoles().then(setRoles) }, [])
+
+  const removeUser = async (u: ManagedUser) => {
+    await deleteUser(u.uid)
+    setConfirmDelete(null)
+    setExpanded(null)
+    refresh()
+  }
 
   const setRole = async (u: ManagedUser, roleId: string) => {
     await updateUserAccess(u.uid, { accessRoleId: roleId || null }); refresh()
@@ -144,7 +152,34 @@ export function UsersTab() {
                       <RotateCcw className="w-3.5 h-3.5" /> Réinitialiser les surcharges
                     </button>
                   )}
+                  <button onClick={() => setConfirmDelete(confirmDelete === u.uid ? null : u.uid)}
+                    className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors ml-auto">
+                    <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                  </button>
                 </div>
+
+                {/* Confirmation de suppression (2 temps) */}
+                {confirmDelete === u.uid && (
+                  <div className="flex flex-col gap-2 rounded-lg border border-red-500/30 bg-red-500/[0.06] p-2.5">
+                    <p className="text-[11px] text-red-200/90 flex items-start gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span>
+                        Supprime le profil et ses accès. La personne <strong>réapparaîtra « en attente »</strong> si
+                        elle se reconnecte (rôle et blocage perdus). Pour la barrer durablement, utilisez <strong>Bloquer</strong>.
+                      </span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => removeUser(u)}
+                        className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" /> Confirmer la suppression
+                      </button>
+                      <button onClick={() => setConfirmDelete(null)}
+                        className="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 transition-colors">
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Permissions effectives */}
                 <div>

@@ -18,6 +18,16 @@ const SYNCABLE_IDS = API_KEYS
 export const API_KEYS_HYDRATED_EVENT = 'apikeys:hydrated'
 export const API_KEYS_UPDATED_EVENT = 'apikeys:updated'
 
+/** Signal synchrone : true dès que l'hydratation Firestore des clés est terminée
+ *  (succès ou échec). Évite au wizard d'onboarding de décider « clés manquantes »
+ *  avant que les overrides Firestore ne soient écrits dans localStorage — sinon il
+ *  flasherait pour tout user de retour (dont l'owner) à chaque login. Les consumers
+ *  qui montent APRÈS l'événement le ratent : ils lisent ce booléen à la place. */
+let _apiKeysHydrated = false
+export function areApiKeysHydrated(): boolean {
+  return _apiKeysHydrated
+}
+
 interface ApiKeysDoc {
   /** Map id → valeur (string). Vide = pas d'override. */
   overrides?: Record<string, string>
@@ -44,6 +54,7 @@ export function useApiKeysSync() {
   // Hydrate depuis Firestore au login
   useEffect(() => {
     hydratedRef.current = false
+    _apiKeysHydrated = false
     if (!uid) return
 
     let cancelled = false
@@ -75,10 +86,15 @@ export function useApiKeysSync() {
             { merge: true },
           ).catch((e) => console.warn('[useApiKeysSync] backfill failed:', e))
         }
-        window.dispatchEvent(new CustomEvent(API_KEYS_HYDRATED_EVENT))
       })
       .catch((e) => console.warn('[useApiKeysSync] hydrate failed:', e))
-      .finally(() => { if (!cancelled) hydratedRef.current = true })
+      .finally(() => {
+        if (cancelled) return
+        hydratedRef.current = true
+        _apiKeysHydrated = true
+        // Re-notifie : les consumers montés après l'événement initial le rattrapent.
+        window.dispatchEvent(new CustomEvent(API_KEYS_HYDRATED_EVENT))
+      })
 
     return () => { cancelled = true }
   }, [uid])
