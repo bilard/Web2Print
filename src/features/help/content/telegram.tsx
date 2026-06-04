@@ -5,11 +5,11 @@ export const telegramSection: HelpSection = {
   id: 'telegram',
   title: 'Telegram',
   category: 'Automatisation',
-  intro: 'Piloter Web2Print depuis Telegram : chat IA avec accès web, génération et exécution de workflows.',
+  intro: 'Piloter IBS-Studio depuis Telegram : chat IA avec accès web, génération et exécution de workflows.',
   blocks: [
     {
       type: 'text',
-      md: `Connecte un bot Telegram à Web2Print pour **discuter avec l'IA**, **générer des workflows** en langage naturel et **recevoir les fichiers produits** — directement dans la messagerie.`,
+      md: `Connecte un bot Telegram à IBS-Studio pour **discuter avec l'IA**, **générer des workflows** en langage naturel et **recevoir les fichiers produits** — directement dans la messagerie.`,
     },
     {
       type: 'text',

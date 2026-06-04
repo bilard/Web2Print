@@ -435,7 +435,7 @@ const OPENAI_COMPATIBLE_PROVIDERS: Record<'deepseek' | 'openrouter', OpenAICompa
     // OpenRouter exige un identifiant d'app pour le routing/rate-limit.
     extraHeaders: {
       'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
-      'X-Title': 'DesignStudio Web2Print',
+      'X-Title': 'IBS-Studio',
     },
   },
 }

@@ -9,7 +9,7 @@ export const workflowSection: HelpSection = {
   blocks: [
     {
       type: 'text',
-      md: `Le module **Workflows** chaîne les fonctions de Web2Print (import, scraping, IA, transformation, export, envoi) dans un **graphe visuel**. Chaque **node** est une brique ; tu les relies par leurs ports (entrées/sorties typés).`,
+      md: `Le module **Workflows** chaîne les fonctions de IBS-Studio (import, scraping, IA, transformation, export, envoi) dans un **graphe visuel**. Chaque **node** est une brique ; tu les relies par leurs ports (entrées/sorties typés).`,
     },
     {
       type: 'menu-link',

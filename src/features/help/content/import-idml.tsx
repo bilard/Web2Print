@@ -5,11 +5,11 @@ export const importIdmlSection: HelpSection = {
   id: 'import-idml',
   title: 'Import IDML',
   category: 'Import',
-  intro: 'Récupérer une maquette InDesign et la transformer en template Web2Print.',
+  intro: 'Récupérer une maquette InDesign et la transformer en template IBS-Studio.',
   blocks: [
     {
       type: 'text',
-      md: `IDML (InDesign Markup Language) est le format d'échange officiel d'InDesign CC+. Web2Print parse ce format pour reconstruire la maquette dans son éditeur Fabric.js.`,
+      md: `IDML (InDesign Markup Language) est le format d'échange officiel d'InDesign CC+. IBS-Studio parse ce format pour reconstruire la maquette dans son éditeur Fabric.js.`,
     },
     {
       type: 'text',
@@ -24,7 +24,7 @@ Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, image
     },
     {
       type: 'text',
-      md: `### Importer dans Web2Print
+      md: `### Importer dans IBS-Studio
 
 1. Tableau de bord → **Importer**
 2. Sélectionne le \`.idml\`
@@ -48,17 +48,17 @@ L'éditeur reconstitue la maquette à l'identique sur un canvas Fabric.js. Tu pe
 - **Gradients radiaux/coniques** : simplifiés en linéaires
 - **Effets avancés** (modes de fusion exotiques) : peuvent être approximés
 
-Pour les cas complexes, garde InDesign comme outil de finition : exporte un IDML depuis Web2Print après merge, puis ouvre dans InDesign pour ajustement.`,
+Pour les cas complexes, garde InDesign comme outil de finition : exporte un IDML depuis IBS-Studio après merge, puis ouvre dans InDesign pour ajustement.`,
     },
     {
       type: 'text',
-      md: `### Aller-retour InDesign ↔ Web2Print
+      md: `### Aller-retour InDesign ↔ IBS-Studio
 
 Le cycle classique :
 
 1. **Graphiste** crée la maquette dans InDesign
 2. Exporte un IDML
-3. **Imprimeur** importe dans Web2Print, ajoute placeholders, branche le data-merge
+3. **Imprimeur** importe dans IBS-Studio, ajoute placeholders, branche le data-merge
 4. **Batch export IDML** (un par produit) ou PDF direct
 5. Si finition graphique nécessaire : reimport InDesign sur les fichiers IDML générés
 

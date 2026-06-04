@@ -62,7 +62,7 @@ Une fois classées, tes lignes peuvent être filtrées par catégorie depuis le 
       type: 'text',
       md: `### Auto-construction depuis le scraping
 
-Quand tu scrapes un site avec un breadcrumb (fil d'Ariane), Web2Print peut auto-construire une taxonomie à partir des chemins de catégorie rencontrés. Utile pour démarrer un PIM en miroir d'un site fournisseur.
+Quand tu scrapes un site avec un breadcrumb (fil d'Ariane), IBS-Studio peut auto-construire une taxonomie à partir des chemins de catégorie rencontrés. Utile pour démarrer un PIM en miroir d'un site fournisseur.
 
 Cette auto-construction est faite via \`buildTaxonomyFromLevels()\` quand l'extraction template renvoie un champ \`Fil d'ariane\`.`,
     },

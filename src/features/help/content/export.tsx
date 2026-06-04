@@ -67,12 +67,12 @@ Concrètement : 200 lignes × PDF = 200 PDFs en quelques minutes. Les performanc
 
 Quand tu veux que ta graphiste finisse à la main dans InDesign :
 
-1. Configure ta maquette + data-merge dans Web2Print
-2. Export **IDML** → Web2Print reconstruit un fichier IDML standard avec les valeurs déjà mergées
+1. Configure ta maquette + data-merge dans IBS-Studio
+2. Export **IDML** → IBS-Studio reconstruit un fichier IDML standard avec les valeurs déjà mergées
 3. Ouvre dans InDesign → ajustements graphiques fins
 4. Exporte le PDF final depuis InDesign
 
-Ce flow combine **automatisation** (Web2Print fait le merge en série) et **contrôle créatif** (InDesign fait la finition).`,
+Ce flow combine **automatisation** (IBS-Studio fait le merge en série) et **contrôle créatif** (InDesign fait la finition).`,
     },
     {
       type: 'text',

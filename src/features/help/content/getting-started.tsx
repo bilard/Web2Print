@@ -10,7 +10,7 @@ export const gettingStarted: HelpSection = {
   blocks: [
     {
       type: 'text',
-      md: `Web2Print est un éditeur visuel en ligne pour créer, importer et exporter des documents imprimables (print ou présentation).
+      md: `IBS-Studio est un éditeur visuel en ligne pour créer, importer et exporter des documents imprimables (print ou présentation).
 
 **Étapes pour démarrer :**
 

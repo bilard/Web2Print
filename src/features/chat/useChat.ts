@@ -9,7 +9,7 @@ import {
 import { generateImage, type ReferenceImage } from '@/features/briefs/ai/geminiImageClient'
 
 const SYSTEM_PROMPT =
-  'Tu es un assistant IA utile, précis et concis intégré à DesignStudio Web2Print. ' +
+  'Tu es un assistant IA utile, précis et concis intégré à IBS-Studio. ' +
   "Réponds en français par défaut, en suivant la langue de l'utilisateur si elle diffère. " +
   'Utilise du markdown (titres, listes, blocs de code) pour structurer tes réponses.'
 

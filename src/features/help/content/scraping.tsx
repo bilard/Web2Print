@@ -10,7 +10,7 @@ export const scrapingSection: HelpSection = {
   blocks: [
     {
       type: 'text',
-      md: `Web2Print extrait des données produits à partir d'URLs fournisseurs et les pousse directement dans une BDD. Trois modes selon le contexte.`,
+      md: `IBS-Studio extrait des données produits à partir d'URLs fournisseurs et les pousse directement dans une BDD. Trois modes selon le contexte.`,
     },
     {
       type: 'text',

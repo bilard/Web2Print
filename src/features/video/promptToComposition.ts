@@ -196,7 +196,7 @@ export type Composition = z.infer<typeof CompositionSchema>
 export const DEFAULT_COMPOSITION: Composition = {
   scenes: [
     { type: 'hook', duration: 2.0, title: 'Animation', sub: 'Vidéo générée par IA' },
-    { type: 'visual', duration: 4.0, title: 'Web2Print', kpis: ['IA', 'Print', 'Web'] },
+    { type: 'visual', duration: 4.0, title: 'IBS-Studio', kpis: ['IA', 'Print', 'Web'] },
     { type: 'cta', duration: 2.0, label: 'En savoir plus' },
   ],
   palette: { bg: '#0a0a0a', accent: '#ffffff' },

@@ -390,7 +390,7 @@ async function chatOpenRouter(opts: GenerateTextOptions, model: string): Promise
     providerKey: 'openrouter' as const,
     extraHeaders: {
       'HTTP-Referer': window.location.origin,
-      'X-Title': 'DesignStudio Web2Print',
+      'X-Title': 'IBS-Studio',
     },
   }
   try {

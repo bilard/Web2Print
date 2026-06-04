@@ -9,7 +9,7 @@ export const importPptxSection: HelpSection = {
   blocks: [
     {
       type: 'text',
-      md: `Web2Print accepte les fichiers PowerPoint au format \`.pptx\` et les transforme en projets éditables. Utile pour récupérer une présentation existante et la transformer en template.`,
+      md: `IBS-Studio accepte les fichiers PowerPoint au format \`.pptx\` et les transforme en projets éditables. Utile pour récupérer une présentation existante et la transformer en template.`,
     },
     {
       type: 'text',
@@ -18,7 +18,7 @@ export const importPptxSection: HelpSection = {
 1. Tableau de bord → **Importer**
 2. Sélectionne le \`.pptx\`
 3. Le parser extrait les slides, textes, images, formes
-4. Chaque slide devient une page éditable dans Web2Print
+4. Chaque slide devient une page éditable dans IBS-Studio
 
 Une fois importé, tu peux modifier le contenu, ajouter des placeholders pour le data-merge, et exporter dans n'importe quel format.`,
     },
@@ -40,7 +40,7 @@ Une fois importé, tu peux modifier le contenu, ajouter des placeholders pour le
       type: 'text',
       md: `### Limites
 
-- **Animations PowerPoint** : non supportées (Web2Print exporte du print/statique)
+- **Animations PowerPoint** : non supportées (IBS-Studio exporte du print/statique)
 - **SmartArt complexes** : peuvent être approximés en formes simples
 - **Round-trip PPTX → Fabric → PPTX** : fonctionnel sur des slides simples, à valider sur cas complexes (plusieurs masters, mises en page custom)
 

@@ -118,7 +118,7 @@ export function Animation3DPanel() {
     const totalMs = Math.max(2000, config.duration * 1000 + 500)
     recorder.start(lower, 30, 8_000_000)
     setTimeout(async () => {
-      await recorder.stopAndDownload(`web2print-${config.preset}-${Date.now()}.webm`)
+      await recorder.stopAndDownload(`ibs-studio-${config.preset}-${Date.now()}.webm`)
       handleStop()
     }, totalMs)
   }

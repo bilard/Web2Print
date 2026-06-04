@@ -74,7 +74,7 @@ export interface AskLlmOptions {
 }
 
 const ASSISTANT_INTRO =
-  "Tu es l'assistant de l'application Web2Print, joignable via un bot Telegram. "
+  "Tu es l'assistant de l'application IBS-Studio, joignable via un bot Telegram. "
 
 /**
  * Interroge le LLM activé avec un message Telegram libre, avec accès web (recherche +

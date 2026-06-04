@@ -20,7 +20,7 @@ Exemples de briefs :
       type: 'text',
       md: `### Modèles IA utilisés
 
-Web2Print utilise par défaut :
+IBS-Studio utilise par défaut :
 
 - **Claude Opus 4.7** (Anthropic) — synthèse rédactionnelle, traduction, restructuration
 - **Gemini 3.1 Pro** (Google) — fallback + génération d'images

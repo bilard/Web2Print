@@ -93,7 +93,7 @@ export function useCanvasRecorder() {
   /**
    * Convenience: stop and trigger a browser download.
    */
-  const stopAndDownload = async (filename = 'web2print-animation.webm') => {
+  const stopAndDownload = async (filename = 'ibs-studio-animation.webm') => {
     const blob = await stop()
     if (!blob) return
     const url = URL.createObjectURL(blob)
