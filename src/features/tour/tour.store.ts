@@ -21,6 +21,23 @@ export const useTourStore = create<TourState>((set) => ({
   stopTour: () => set({ activeTour: null }),
 }))
 
+// --- Bridge de navigation Dashboard ----------------------------------------
+// `setActiveSection` est un state local de DashboardPage. La page l'enregistre
+// au montage pour que les étapes de tour puissent ouvrir une section (sans
+// delays fixes ni CustomEvent). Réinitialisé au démontage.
+
+type SectionNavigator = (section: string) => void
+let sectionNavigator: SectionNavigator | null = null
+
+export function registerTourSectionNavigator(fn: SectionNavigator | null): void {
+  sectionNavigator = fn
+}
+
+/** Demande au Dashboard d'ouvrir une section (no-op si non monté). */
+export function navigateTourSection(section: string): void {
+  sectionNavigator?.(section)
+}
+
 // --- Persistance « déjà vu » (auto-démarrage une seule fois) ---------------
 // localStorage suffit : flag non sensible, pas besoin de Firestore. try/catch
 // pour les contextes où localStorage est indisponible (navigation privée).

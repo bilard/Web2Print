@@ -113,6 +113,7 @@ function ImageMenuButton() {
     <div className="relative" ref={menuRef}>
       <button
         ref={highlight.ref}
+        data-tour="tool-image"
         onClick={() => setOpen((prev) => !prev)}
         title="Image (I)"
         className={`w-8 h-8 flex items-center justify-center rounded transition ${

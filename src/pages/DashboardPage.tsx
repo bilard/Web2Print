@@ -26,6 +26,7 @@ import { DamPage } from '../features/dam/components/DamPage'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
+import { registerTourSectionNavigator } from '@/features/tour/tour.store'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -85,6 +86,11 @@ export default function DashboardPage() {
     const requested = (location.state as { section?: Section } | null)?.section
     if (requested) setActiveSection(requested)
   }, [location.key, location.state])
+  // Permet aux étapes du tour guidé d'ouvrir une section (navigation injectée).
+  useEffect(() => {
+    registerTourSectionNavigator((section) => setActiveSection(section as Section))
+    return () => registerTourSectionNavigator(null)
+  }, [])
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
     return window.localStorage.getItem('dashboard:sidebarOpen') !== 'false'
@@ -445,7 +451,7 @@ export default function DashboardPage() {
 
       {/* Content */}
       {activeSection === 'data' && canSee('data') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-data" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
@@ -455,7 +461,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'taxonomies' && canSee('taxonomies') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-taxonomies" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
@@ -465,7 +471,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'scraping-templates' && canSee('scraping-templates') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-scraping-templates" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
@@ -475,7 +481,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'scraping-hub' && canSee('scraping-hub') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-scraping-hub" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
@@ -485,7 +491,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'chat' && canSee('chat') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-chat" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
@@ -495,7 +501,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'workflows' && canSee('workflows') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-workflows" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
@@ -505,9 +511,11 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'access' && isAdmin ? (
-        <AccessAdminPage />
+        <div data-tour="section-access" className="flex-1 overflow-hidden">
+          <AccessAdminPage />
+        </div>
       ) : activeSection === 'telegram' && canSee('telegram') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-telegram" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -517,7 +525,7 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'hyperframes' && canSee('hyperframes') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-hyperframes" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
               <Loader2 className="w-8 h-8 text-fuchsia-500 animate-spin" />
@@ -527,11 +535,11 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'images' && canSee('images') ? (
-        <div className="flex-1 overflow-hidden">
+        <div data-tour="section-images" className="flex-1 overflow-hidden">
           <DamPage />
         </div>
       ) : activeSection === 'library' && canSee('library') ? (
-        <div className="flex-1 flex overflow-hidden">
+        <div data-tour="section-library" className="flex-1 flex overflow-hidden">
           <LibraryTaxonomyFilter
             selectedNodeId={filterNodeId}
             onSelectNode={handleFilterSelect}
@@ -699,7 +707,7 @@ export default function DashboardPage() {
           {activeSection === 'settings' ? (
             // Settings : header (titre + onglets) FIXE en haut, puis 2 colonnes
             // (contenu + panneau live conso LLM) qui défilent indépendamment.
-            <div className="h-full p-8">
+            <div data-tour="section-settings" className="h-full p-8">
               <SettingsPanel
                 fillHeight
                 header={
@@ -725,24 +733,24 @@ export default function DashboardPage() {
             <div className="max-w-6xl mx-auto">
               {/* ─── NOUVEAU DOCUMENT VIERGE ─── */}
               {activeSection === 'blank' && (
-                <>
+                <div data-tour="section-blank">
                   <h1 className="text-xl font-bold mb-6">Créer un document</h1>
                   <NewDocumentPanel
                     onConfirm={handleCreate}
                     loading={createProject.isPending}
                   />
-                </>
+                </div>
               )}
 
               {/* ─── IMPORTER ─── */}
               {activeSection === 'import' && canSee('import') && (
-                <>
+                <div data-tour="section-import">
                   <h1 className="text-xl font-bold mb-6">Importer</h1>
                   <ImportPanel
                     onImport={handleImport}
                     loading={importLoading || createProject.isPending}
                   />
-                </>
+                </div>
               )}
             </div>
           )}

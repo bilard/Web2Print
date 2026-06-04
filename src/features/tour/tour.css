@@ -4,26 +4,31 @@
 .driver-popover.w2p-tour {
   background-color: #1a1a1a;
   color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  /* Liseré d'accent en haut + halo indigo pour relier la bulle au surlignage */
+  border-top: 3px solid #6366f1;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.15);
+  max-width: 320px;
 }
 
 .driver-popover.w2p-tour .driver-popover-title {
-  color: #ffffff;
+  color: #a5b4fc; /* indigo-300 : titre coloré, bien détaché du corps */
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .driver-popover.w2p-tour .driver-popover-description {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78); /* contraste renforcé pour la lecture */
+  font-size: 0.82rem;
+  line-height: 1.55;
 }
 
 .driver-popover.w2p-tour .driver-popover-progress-text {
-  color: rgba(255, 255, 255, 0.4);
+  color: #818cf8; /* indigo-400 */
   font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .driver-popover.w2p-tour .driver-popover-close-btn {

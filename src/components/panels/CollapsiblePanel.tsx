@@ -29,7 +29,7 @@ export function CollapsiblePanel({ id, title, icon: Icon, collapsed, onToggle, o
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="border-b border-white/5">
+    <div ref={setNodeRef} style={style} data-tour={`panel-${id}`} className="border-b border-white/5">
       {/* Header — clickable to toggle, drag handle via listeners */}
       <button
         onClick={handleHeaderClick}
