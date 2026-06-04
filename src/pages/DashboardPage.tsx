@@ -25,6 +25,7 @@ import { LibraryTaxonomyFilter } from '@/components/shared/LibraryTaxonomyFilter
 import { DamPage } from '../features/dam/components/DamPage'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { useAccessStore } from '@/stores/access.store'
+import { TourLauncher } from '@/features/tour/TourLauncher'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -320,6 +321,7 @@ export default function DashboardPage() {
 
         {/* Menu principal */}
         <nav
+          data-tour="sidebar"
           className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5`}
           role="menubar"
           aria-orientation="vertical"
@@ -373,7 +375,7 @@ export default function DashboardPage() {
         {(activeSection !== 'data' || !sidebarOpen) && <div className="flex-1" />}
 
         {/* User + Settings */}
-        <div className={`${sidebarOpen ? 'px-2' : 'px-1.5'} py-3 border-t border-white/[0.06]`}>
+        <div data-tour="user-menu" className={`${sidebarOpen ? 'px-2' : 'px-1.5'} py-3 border-t border-white/[0.06]`}>
           {sidebarOpen ? (
             <div className="flex items-center gap-2.5 px-2">
               {user?.photoURL ? (
@@ -746,6 +748,8 @@ export default function DashboardPage() {
           )}
         </main>
       )}
+
+      <TourLauncher tourId="dashboard" />
     </div>
   )
 }

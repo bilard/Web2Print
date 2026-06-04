@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 /** Identifiant d'un tour guidé. Étendre l'union au fil des modules couverts. */
-export type TourId = 'editor'
+export type TourId = 'editor' | 'dashboard'
 
 interface TourState {
   /** Tour en cours, ou null si aucun. */

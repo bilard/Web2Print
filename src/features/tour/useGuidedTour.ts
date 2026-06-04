@@ -4,9 +4,11 @@ import 'driver.js/dist/driver.css'
 import './tour.css'
 import { useTourStore, type TourId } from './tour.store'
 import { editorTourSteps } from './editorTourSteps'
+import { dashboardTourSteps } from './dashboardTourSteps'
 
 const TOUR_STEPS: Record<TourId, DriveStep[]> = {
   editor: editorTourSteps,
+  dashboard: dashboardTourSteps,
 }
 
 /**
