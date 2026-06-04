@@ -3,7 +3,7 @@ import type { HelpSection } from './types'
 
 export const importPptxSection: HelpSection = {
   id: 'import-pptx',
-  title: 'Import PowerPoint (PPTX)',
+  title: 'Importer PPTX',
   category: 'Import',
   intro: 'Importer un .pptx pour le réutiliser comme template ou point de départ.',
   blocks: [

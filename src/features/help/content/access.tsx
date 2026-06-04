@@ -60,7 +60,7 @@ Les permissions sont **hiérarchiques** : la visibilité d'un module (*« voir �
       type: 'text',
       md: `### Modules couverts par les permissions
 
-Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Réglages — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).`,
+Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).`,
     },
     {
       type: 'text',

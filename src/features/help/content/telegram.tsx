@@ -3,7 +3,7 @@ import type { HelpSection } from './types'
 
 export const telegramSection: HelpSection = {
   id: 'telegram',
-  title: 'Bot Telegram',
+  title: 'Telegram',
   category: 'Automatisation',
   intro: 'Piloter Web2Print depuis Telegram : chat IA avec accès web, génération et exécution de workflows.',
   blocks: [
@@ -15,10 +15,10 @@ export const telegramSection: HelpSection = {
       type: 'text',
       md: `### Mise en route
 
-1. **Réglages → Connecteurs** : colle le *bot token* (obtenu via BotFather) et ton *chat ID*.
+1. **Paramètres → Connecteurs** : colle le *bot token* (obtenu via BotFather) et ton *chat ID*.
 2. Ouvre l'onglet **Telegram** dans le menu latéral : c'est lui qui fait tourner le « worker » qui traite les messages.
 3. ⚠️ **Le bot ne répond que si l'onglet Telegram reste ouvert** — le traitement s'exécute dans ton navigateur, en série.
-4. Une **clé LLM** (Gemini, Claude ou DeepSeek) doit être configurée dans les Réglages.`,
+4. Une **clé LLM** (Gemini, Claude ou DeepSeek) doit être configurée dans les Paramètres.`,
     },
     {
       type: 'menu-link',

@@ -3,7 +3,7 @@ import type { HelpSection } from './types'
 
 export const importIdmlSection: HelpSection = {
   id: 'import-idml',
-  title: 'Import InDesign (IDML)',
+  title: 'Import IDML',
   category: 'Import',
   intro: 'Récupérer une maquette InDesign et la transformer en template Web2Print.',
   blocks: [

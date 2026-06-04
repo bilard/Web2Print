@@ -3,7 +3,7 @@ import type { HelpSection } from './types'
 
 export const importSvgSection: HelpSection = {
   id: 'import-svg',
-  title: 'Importer SVG (vectoriel)',
+  title: 'Importer SVG',
   category: 'Import',
   intro: 'Charger un .svg comme calques vectoriels éditables.',
   blocks: [

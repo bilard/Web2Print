@@ -4,7 +4,7 @@ import { DamGridMock } from './mockups/DamGridMock'
 
 export const damSection: HelpSection = {
   id: 'dam',
-  title: 'Bibliothèque d\'assets (DAM)',
+  title: 'DAM',
   category: 'Édition',
   intro: 'Banque d\'images, génération IA, édition, variantes et organisation des visuels.',
   blocks: [

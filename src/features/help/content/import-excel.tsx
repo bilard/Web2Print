@@ -5,7 +5,7 @@ import { EnrichmentPanelMock } from './mockups/EnrichmentPanelMock'
 
 export const importExcelSection: HelpSection = {
   id: 'import-excel',
-  title: 'Import Excel & PIM',
+  title: 'Importer Excel',
   category: 'Import',
   intro: 'Alimenter le PIM depuis Excel, CSV, JSON ou Google Sheets — et enrichir par IA.',
   blocks: [

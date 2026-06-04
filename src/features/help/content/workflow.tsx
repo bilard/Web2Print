@@ -3,7 +3,7 @@ import type { HelpSection } from './types'
 
 export const workflowSection: HelpSection = {
   id: 'workflow',
-  title: 'Workflows (automatisation)',
+  title: 'Workflows',
   category: 'Automatisation',
   intro: "Enchaîner les fonctions de l'app en pipelines visuels — façon Zapier / Make.",
   blocks: [

@@ -50,7 +50,7 @@ export const chatSection: HelpSection = {
       type: 'text',
       md: `### Choix du modèle
 
-Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, le suivant prend le relais automatiquement. Chaque réponse affiche **par quel modèle** elle a été produite. L'ordre de la cascade et le modèle de chaque fournisseur se règlent dans les **Réglages → IA**.`,
+Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, le suivant prend le relais automatiquement. Chaque réponse affiche **par quel modèle** elle a été produite. L'ordre de la cascade et le modèle de chaque fournisseur se règlent dans les **Paramètres → IA**.`,
     },
     {
       type: 'menu-link',
@@ -64,7 +64,7 @@ Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, l
 
 - Le Chat IA est **conversationnel** : il **n'accède pas au web** et **n'agit pas sur l'app** (il ne crée pas de projets, ne scrape pas, ne lance pas de workflows).
 - Pour un assistant **avec accès web** et capable d'**exécuter des workflows**, c'est le **bot Telegram** qu'il faut utiliser.
-- Une **clé LLM** doit être configurée dans les Réglages pour que le Chat réponde.`,
+- Une **clé LLM** doit être configurée dans les Paramètres pour que le Chat réponde.`,
     },
     {
       type: 'menu-link',

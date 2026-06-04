@@ -3,13 +3,13 @@ import type { HelpSection } from './types'
 
 export const settingsSection: HelpSection = {
   id: 'settings',
-  title: 'Réglages',
+  title: 'Paramètres',
   category: 'Administration',
   intro: 'Clés API et modèles IA, connecteurs (Drive, Telegram, scraping), cookies, statistiques d\'usage.',
   blocks: [
     {
       type: 'text',
-      md: `Les **Réglages** regroupent toute la configuration de ton compte. On les ouvre via l'**engrenage** en bas de la barre latérale, près de ton nom (pas dans le menu principal).`,
+      md: `Les **Paramètres** regroupent toute la configuration de ton compte. On les ouvre via l'**engrenage** en bas de la barre latérale, près de ton nom (pas dans le menu principal).`,
     },
     {
       type: 'text',
