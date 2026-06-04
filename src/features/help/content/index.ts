@@ -24,7 +24,6 @@ import { settingsSection } from './settings'
 export const helpSections: HelpSection[] = [
   gettingStarted,
   editorSection,
-  damSection,
   hyperframesSection,
   importIdmlSection,
   importPptxSection,
@@ -33,6 +32,7 @@ export const helpSections: HelpSection[] = [
   importSvgSection,
   importImageToSvgSection,
   importPdfToSvgSection,
+  damSection,
   pimSection,
   taxonomiesSection,
   briefsSection,
