@@ -15,11 +15,16 @@ import { scrapingSection } from './scraping'
 import { exportSection } from './export'
 import { telegramSection } from './telegram'
 import { workflowSection } from './workflow'
+import { hyperframesSection } from './hyperframes'
+import { chatSection } from './chat'
+import { accessSection } from './access'
+import { settingsSection } from './settings'
 
 export const helpSections: HelpSection[] = [
   gettingStarted,
   editorSection,
   damSection,
+  hyperframesSection,
   importIdmlSection,
   importPptxSection,
   importExcelSection,
@@ -33,6 +38,9 @@ export const helpSections: HelpSection[] = [
   exportSection,
   workflowSection,
   telegramSection,
+  chatSection,
+  accessSection,
+  settingsSection,
 ]
 
 export const helpSectionsById: Map<string, HelpSection> = new Map(
