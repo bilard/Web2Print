@@ -4,324 +4,260 @@
 <meta charset="UTF-8" />
 <script>document.documentElement.className += ' js';</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>IBS-Studio — Éditeur de production graphique tout-en-un | IBS Studio</title>
-<meta name="description" content="IBS-Studio : éditeur visuel en ligne type Canva + 13 modules pour toute la chaîne de production graphique print et écran. Import fidèle InDesign (IDML), PowerPoint, PDF, SVG, image et Excel ; décomposition par IA ; DAM et génération d'images ; PIM et publipostage ; scraping ; workflows d'automatisation no-code ; bot Telegram ; chat IA ; animations ; export aux normes d'imprimerie (DPI, fond perdu, traits de coupe). Édité par IBS Studio." />
-<meta name="keywords" content="web2print, éditeur graphique en ligne, production print, import IDML InDesign, import PPTX PowerPoint, PDF vers SVG éditable, publipostage, PIM, DAM, génération image IA, Nano Banana, scraping produits, automatisation workflow no-code, bot Telegram, chat IA, export PDF print, fond perdu, traits de coupe, repères de montage, zone de sécurité, taxonomies, rôles permissions, PLV, catalogue, fiche produit, IBS Studio" />
+<title>IBS-Studio — Toute votre chaîne graphique, de la donnée à l'imprimé | IBS Studio</title>
+<meta name="description" content="IBS-Studio : la chaîne de production graphique complète en ligne. Scrapez vos données produit, éditez vos fichiers InDesign (IDML) et Illustrator (SVG) directement dans le navigateur, puis publiez sur tous vos canaux — impression aux normes, réseaux sociaux, PowerPoint, web, vidéo. 13 modules connectés : éditeur visuel, imports pro, IA générative, DAM, PIM, publipostage, scraping, workflows no-code, bot Telegram, chat IA. Édité par IBS Studio." />
+<meta name="keywords" content="web2print, éditeur graphique en ligne, scraping produits, import IDML InDesign, SVG Illustrator en ligne, publication multi-canal, PIM, DAM, génération image IA, Nano Banana, publipostage, automatisation workflow no-code, bot Telegram, export PDF print, fond perdu, traits de coupe, PLV, catalogue, fiche produit, IBS Studio" />
 <meta name="author" content="IBS Studio" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="IBS-Studio — Éditeur de production graphique tout-en-un" />
-<meta property="og:description" content="13 modules pour concevoir, importer, enrichir, automatiser et imprimer : éditeur visuel, imports pro, IA, DAM, PIM, publipostage, scraping, workflows, Telegram, export print." />
+<meta property="og:title" content="IBS-Studio — Toute votre chaîne graphique, de la donnée à l'imprimé" />
+<meta property="og:description" content="Scrapez, éditez vos fichiers InDesign & Illustrator en ligne, publiez partout. 13 modules connectés : éditeur, imports pro, IA, DAM, PIM, publipostage, scraping, workflows, Telegram, export print." />
 <meta property="og:url" content="https://ibs-studio.com/promo/" />
 <meta name="robots" content="index, follow" />
 <link rel="canonical" href="https://ibs-studio.com/promo/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Jura:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Jura:wght@300..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
-  :root {
-    --bg: #0a0a0c; --bg-2: #101015; --surface: #141419; --surface-2: #1a1a21;
-    --line: rgba(255,255,255,0.10); --line-strong: rgba(255,255,255,0.18);
-    --ink: #f3f1ec; --muted: rgba(243,241,236,0.62); --faint: rgba(243,241,236,0.40);
-    --accent: #6366f1; --accent-soft: #8b8df6;
-    --display: "Jura", system-ui, sans-serif; --body: "Jura", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
-    --maxw: 1240px;
+  :root{
+    --bg:#060609; --bg2:#0a0a10; --surface:#101019; --surface2:#16161f;
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+    --ink:#f4f3f0; --muted:rgba(244,243,240,.60); --faint:rgba(244,243,240,.38);
+    --indigo:#6366f1; --violet:#a855f7; --cyan:#22d3ee; --pink:#f472b6; --lime:#a3e635;
+    --grad:linear-gradient(108deg,#818cf8 0%,#a855f7 38%,#22d3ee 100%);
+    --display:"Jura",system-ui,sans-serif; --body:"Jura",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --maxw:1280px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.6; overflow-x: hidden; position: relative; }
-  body::after { content:""; position: fixed; inset:0; z-index:9999; pointer-events:none; opacity:.035; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.6;overflow-x:hidden;position:relative}
 
-  .frame { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
-  .crop { position: fixed; width: 26px; height: 26px; }
-  .crop::before, .crop::after { content:""; position:absolute; background: var(--line-strong); }
-  .crop::before { width:26px; height:1px; } .crop::after { width:1px; height:26px; }
-  .crop.tl{top:22px;left:22px}.crop.tl::before{top:0;left:0}.crop.tl::after{top:0;left:0}
-  .crop.tr{top:22px;right:22px}.crop.tr::before{top:0;right:0}.crop.tr::after{top:0;right:0}
-  .crop.bl{bottom:22px;left:22px}.crop.bl::before{bottom:0;left:0}.crop.bl::after{bottom:0;left:0}
-  .crop.br{bottom:22px;right:22px}.crop.br::before{bottom:0;right:0}.crop.br::after{bottom:0;right:0}
-  @media (max-width:720px){ .frame{display:none} }
+  /* Atmosphère : aurores dégradées + grain */
+  .aurora{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden}
+  .aurora b{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;mix-blend-mode:screen}
+  .aurora .a1{width:60vw;height:60vw;left:-10vw;top:-20vw;background:radial-gradient(circle,#6366f1,transparent 65%);animation:float1 22s ease-in-out infinite}
+  .aurora .a2{width:48vw;height:48vw;right:-12vw;top:6vw;background:radial-gradient(circle,#a855f7,transparent 65%);animation:float2 26s ease-in-out infinite}
+  .aurora .a3{width:42vw;height:42vw;left:24vw;top:60vh;background:radial-gradient(circle,#22d3ee,transparent 65%);opacity:.32;animation:float3 30s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,4vw) scale(1.12)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,5vw) scale(1.15)}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vw,-6vw) scale(1.1)}}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
-  .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 40px; }
-  @media (max-width:720px){ .wrap{padding:0 22px} }
-  .mono { font-family: var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color: var(--faint); }
-  a { color: inherit; text-decoration: none; }
+  .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 40px}
+  @media(max-width:720px){.wrap{padding:0 20px}}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
+  .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-  header.nav { position: sticky; top:0; z-index:100; backdrop-filter: blur(14px); background: rgba(10,10,12,.72); border-bottom:1px solid var(--line); }
-  .nav-inner { display:flex; align-items:center; justify-content:space-between; height:66px; }
-  .brand { display:flex; align-items:center; gap:11px; font-family:var(--mono); font-weight:500; letter-spacing:.04em; font-size:14px; }
-  .brand .dot { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,var(--accent),#4f46e5); display:grid; place-items:center; box-shadow:0 0 22px rgba(99,102,241,.45); }
-  .brand .dot svg { width:15px; height:15px; }
-  .nav-links { display:flex; align-items:center; gap:28px; }
-  .nav-links a.link { font-size:13.5px; color:var(--muted); transition:color .2s; }
-  .nav-links a.link:hover { color:var(--ink); }
-  .btn { display:inline-flex; align-items:center; gap:9px; font-size:14px; font-weight:500; padding:11px 20px; border-radius:10px; transition:transform .18s, box-shadow .25s, background .2s; }
-  .btn-primary { background:var(--accent); color:#fff; box-shadow:0 8px 30px -8px rgba(99,102,241,.65); }
-  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 14px 40px -8px rgba(99,102,241,.8); }
-  .btn-ghost { border:1px solid var(--line-strong); color:var(--ink); }
-  .btn-ghost:hover { background:var(--surface); border-color:var(--accent); }
-  @media (max-width:860px){ .nav-links a.link{display:none} }
+  /* NAV */
+  header.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:rgba(6,6,9,.6);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-weight:700;letter-spacing:.14em;font-size:14px}
+  .brand .dot{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center;box-shadow:0 0 26px rgba(124,108,255,.6)}
+  .brand .dot svg{width:16px;height:16px}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a.link{font-size:13px;font-weight:500;letter-spacing:.04em;color:var(--muted);transition:color .2s}
+  .nav-links a.link:hover{color:var(--ink)}
+  @media(max-width:920px){.nav-links a.link{display:none}}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--body);font-size:14px;font-weight:600;letter-spacing:.02em;padding:12px 22px;border-radius:11px;transition:transform .18s,box-shadow .25s,background .2s;cursor:pointer;border:0}
+  .btn-primary{background:var(--grad);color:#0b0b12;box-shadow:0 10px 36px -10px rgba(124,108,255,.8)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 50px -10px rgba(124,108,255,.95)}
+  .btn-ghost{border:1px solid var(--line2);color:var(--ink)}
+  .btn-ghost:hover{background:var(--surface);border-color:var(--indigo)}
 
-  .hero { position: relative; padding: 92px 0 60px; }
-  .hero-glow { position:absolute; top:-140px; left:50%; transform:translateX(-50%); width:900px; height:620px; pointer-events:none; z-index:-1; background:radial-gradient(ellipse at center, rgba(99,102,241,.30), rgba(99,102,241,.05) 45%, transparent 70%); filter:blur(8px); }
-  .hero-grid { position:absolute; inset:0; z-index:-1; pointer-events:none; opacity:.5; background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:64px 64px; mask-image:radial-gradient(ellipse 80% 60% at 50% 25%,#000 30%,transparent 75%); }
-  .eyebrow { display:inline-flex; align-items:center; gap:10px; padding:7px 14px; border:1px solid var(--line); border-radius:100px; background:rgba(255,255,255,.02); margin-bottom:28px; }
-  .eyebrow .pulse { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:pulse 2.2s infinite; }
-  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(99,102,241,.6)}70%{box-shadow:0 0 0 9px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)} }
-  h1.hero-title { font-family:var(--display); font-weight:600; font-optical-sizing:auto; font-size:clamp(40px,6.4vw,86px); line-height:1.02; letter-spacing:-.022em; max-width:16ch; margin-bottom:24px; }
-  h1.hero-title em { font-style:italic; color:var(--accent-soft); }
-  .hero-sub { font-size:clamp(16px,1.5vw,19px); color:var(--muted); max-width:58ch; margin-bottom:34px; }
-  .hero-cta { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:42px; }
-  .tech-strip { display:flex; flex-wrap:wrap; gap:10px 22px; padding-top:24px; border-top:1px solid var(--line); }
-  .tech-strip span { display:inline-flex; align-items:center; gap:8px; }
-  .tech-strip span::before { content:"+"; color:var(--accent); }
+  /* HERO */
+  .hero{position:relative;min-height:94vh;display:flex;flex-direction:column;justify-content:center;padding:60px 0 40px}
+  .hero-grid{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.4;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 40%,#000 30%,transparent 78%)}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border:1px solid var(--line2);border-radius:100px;background:rgba(255,255,255,.025);margin-bottom:30px;width:fit-content}
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,211,238,.6)}70%{box-shadow:0 0 0 9px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+  h1.hero-title{font-family:var(--display);font-weight:700;font-size:clamp(44px,8.4vw,128px);line-height:.96;letter-spacing:-.03em;text-transform:uppercase;max-width:15ch;margin-bottom:26px}
+  h1.hero-title .l2{display:block}
+  .hero-sub{font-size:clamp(16px,1.6vw,20px);color:var(--muted);max-width:62ch;margin-bottom:36px;font-weight:400}
+  .hero-sub b{color:var(--ink);font-weight:600}
+  .hero-cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:54px}
+  .hero-screen{margin-top:8px}
 
-  .reveal { opacity:0; transform:translateY(22px); animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards; }
-  @keyframes rise { to { opacity:1; transform:none; } }
-  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.25s}.d4{animation-delay:.35s}.d5{animation-delay:.45s}
-  @media (prefers-reduced-motion:reduce){ .reveal{animation:none;opacity:1;transform:none}.pulse{animation:none} }
+  /* Reveal au chargement */
+  .reveal{opacity:0;transform:translateY(26px);animation:rise 1s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .d1{animation-delay:.05s}.d2{animation-delay:.16s}.d3{animation-delay:.28s}.d4{animation-delay:.4s}.d5{animation-delay:.52s}
 
-  section.block { padding: 88px 0; position: relative; }
-  .section-head { display:flex; align-items:baseline; gap:18px; margin-bottom:48px; flex-wrap:wrap; }
-  .section-head .idx { font-family:var(--mono); font-size:12px; color:var(--accent); letter-spacing:.12em; }
-  .section-head h2 { font-family:var(--display); font-weight:600; font-size:clamp(28px,4vw,50px); letter-spacing:-.02em; line-height:1.05; }
-  .section-head .lead { color:var(--muted); max-width:48ch; font-size:16px; margin-left:auto; }
-  .divider { height:1px; background:var(--line); }
+  /* SCREEN — cadre de maquette UI réutilisable (lisible, homogène, 100% code) */
+  .screen{border:1px solid var(--line2);border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:0 50px 110px -50px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.02);position:relative}
+  .screen .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -8%,rgba(124,108,255,.18),transparent 60%);pointer-events:none;z-index:2}
+  .sbar{display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-bottom:1px solid var(--line);background:#0b0b11;position:relative;z-index:3}
+  .sdots{display:flex;gap:7px}.sdots i{width:11px;height:11px;border-radius:50%;display:block}
+  .stitle{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em}
+  .sact{margin-left:auto;display:flex;gap:8px}
+  .spill{font-family:var(--body);font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:7px}
 
-  /* Pillars grid */
-  .features { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:18px; overflow:hidden; }
-  @media (max-width:940px){ .features{grid-template-columns:repeat(2,1fr)} }
-  @media (max-width:620px){ .features{grid-template-columns:1fr} }
-  .feature { background:var(--bg); padding:32px 28px; transition:background .3s; }
-  .feature:hover { background:var(--surface); }
-  .feature .num { font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.1em; }
-  .feature .ficon { width:42px; height:42px; border-radius:11px; background:var(--surface-2); border:1px solid var(--line); display:grid; place-items:center; margin:16px 0; color:var(--accent-soft); transition:border-color .3s,transform .3s; }
-  .feature:hover .ficon { border-color:var(--accent); transform:translateY(-3px); }
-  .feature .ficon svg { width:20px; height:20px; }
-  .feature h3 { font-size:18px; font-weight:600; letter-spacing:-.01em; margin-bottom:9px; }
-  .feature p { font-size:14.5px; color:var(--muted); }
+  /* Maquette ÉDITEUR */
+  .ed-body{display:grid;grid-template-columns:48px 1fr 226px;min-height:392px}
+  @media(max-width:680px){.ed-body{grid-template-columns:40px 1fr}.ed-panel{display:none}}
+  .ed-tools{border-right:1px solid var(--line);background:#0b0b11;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0}
+  .ed-tools i{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--faint)}
+  .ed-tools i.on{background:rgba(124,108,255,.2);color:#c7c4ff}
+  .ed-tools i svg{width:16px;height:16px}
+  .ed-canvas{position:relative;display:grid;place-items:center;padding:30px;background:radial-gradient(circle at 50% 35%,rgba(124,108,255,.08),transparent 60%),#08080d;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:22px 22px}
+  .poster{width:190px;aspect-ratio:50/74;background:#fff;border-radius:14px;position:relative;box-shadow:0 26px 54px -18px rgba(0,0,0,.7);overflow:hidden;outline:2px solid var(--indigo);outline-offset:3px}
+  .poster .ph{position:absolute;left:13%;top:11%;width:74%;height:42%;border-radius:10px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9 55%,#e0f2fe)}
+  .poster .badge{position:absolute;top:9%;right:10%;width:40px;height:40px;border-radius:50%;background:#ef4444;color:#fff;font-weight:700;font-size:12px;display:grid;place-items:center}
+  .poster .price{position:absolute;top:50%;left:13%;background:#facc15;color:#dc2626;font-weight:700;font-size:22px;padding:5px 8px;border-radius:6px}
+  .poster .price small{font-size:10px;vertical-align:super}
+  .poster .tt{position:absolute;bottom:14%;left:13%;font-size:15px;font-weight:700;color:#3730a3;line-height:1.1}
+  .poster .hand{position:absolute;width:9px;height:9px;border:1.5px solid var(--indigo);border-radius:2px;background:#fff}
+  .poster .h1{top:-6px;left:-6px}.poster .h2{top:-6px;right:-6px}.poster .h3{bottom:-6px;left:-6px}.poster .h4{bottom:-6px;right:-6px}
+  .ed-panel{border-left:1px solid var(--line);background:#0b0b11;padding:14px}
+  .ph-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase;margin:14px 0 9px}
+  .ph-h:first-child{margin-top:0}
+  .ed-row{display:flex;gap:8px;margin-bottom:9px}
+  .ed-in{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:11px;color:var(--ink)}
+  .ed-seg{display:flex;gap:5px}
+  .ed-seg span{flex:1;text-align:center;font-size:10px;padding:6px 0;border-radius:6px;border:1px solid var(--line);color:var(--muted)}
+  .ed-seg span.on{background:rgba(124,108,255,.16);border-color:var(--indigo);color:#c7c4ff}
+  .lay{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);padding:5px 7px;border-radius:6px;margin-bottom:3px}
+  .lay.on{background:rgba(124,108,255,.14);color:#d8d6ff}
+  .lay .sw{width:10px;height:10px;border-radius:3px}
+  .swatches{display:flex;gap:6px}.swatches i{width:20px;height:20px;border-radius:6px;border:1px solid var(--line2)}
 
-  /* Module directory (exhaustive) */
-  .modules { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
-  @media (max-width:820px){ .modules{grid-template-columns:1fr} }
-  .module { position:relative; border:1px solid var(--line); border-left:3px solid var(--mc,var(--accent)); border-radius:14px; background:var(--bg-2); padding:24px 26px 22px; transition:border-color .25s, background .25s, box-shadow .25s, transform .25s; overflow:hidden; }
-  .module::before { content:""; position:absolute; top:0; left:0; right:0; height:120px; background:radial-gradient(ellipse at top left, color-mix(in srgb, var(--mc,var(--accent)) 16%, transparent), transparent 70%); pointer-events:none; opacity:.7; }
-  .module:hover { background:var(--surface); transform:translateY(-3px); border-color:color-mix(in srgb, var(--mc,var(--accent)) 45%, var(--line)); box-shadow:0 18px 44px -22px color-mix(in srgb, var(--mc,var(--accent)) 60%, transparent); }
-  .module > * { position:relative; }
-  .module .mshot { display:block; width:100%; aspect-ratio:3/2; object-fit:cover; border-radius:11px; border:1px solid var(--line); margin-bottom:18px; background:#0c0c10; transition:transform .3s ease; }
-  .module:hover .mshot { transform:scale(1.015); }
-  .module .mhead { display:flex; align-items:center; gap:12px; margin-bottom:13px; }
-  .module .mnum { font-family:var(--mono); font-size:11px; color:var(--mc,var(--accent)); background:color-mix(in srgb, var(--mc,var(--accent)) 14%, transparent); border:1px solid color-mix(in srgb, var(--mc,var(--accent)) 35%, transparent); border-radius:6px; padding:3px 7px; }
-  .module .mfeat li { border-color: color-mix(in srgb, var(--mc,var(--accent)) 22%, var(--line)); }
-  .module:hover .mfeat li { border-color: color-mix(in srgb, var(--mc,var(--accent)) 38%, var(--line)); }
-  .module h3 { font-size:18px; font-weight:600; letter-spacing:-.01em; }
-  .module .mdesc { font-size:14px; color:var(--muted); margin-bottom:14px; line-height:1.55; }
-  .module .mdesc code { font-family:var(--mono); font-size:.84em; color:var(--accent-soft); background:rgba(99,102,241,.12); padding:1px 5px; border-radius:4px; }
-  .mfeat { list-style:none; display:flex; flex-wrap:wrap; gap:7px; }
-  .mfeat li { font-size:12px; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:4px 9px; font-family:var(--mono); letter-spacing:.01em; }
+  /* Maquette SCRAPER */
+  .sc-body{padding:18px;display:grid;grid-template-columns:1fr;gap:14px;min-height:392px;background:#08080d}
+  .sc-url{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:11px 14px}
+  .sc-url svg{width:16px;height:16px;color:var(--cyan);flex-shrink:0}
+  .sc-url .u{font-family:var(--mono);font-size:12px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .sc-url .go{margin-left:auto;font-size:11px;font-weight:700;color:#0b0b12;background:var(--grad);padding:6px 12px;border-radius:7px;flex-shrink:0}
+  .sc-cols{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+  @media(max-width:560px){.sc-cols{grid-template-columns:1fr}}
+  .sc-card{border:1px solid var(--line);border-radius:11px;background:var(--surface);overflow:hidden}
+  .sc-card .ch{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;font-weight:600}
+  .sc-card .ch .tg{width:8px;height:8px;border-radius:3px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;padding:11px 12px}
+  .kv dt{font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;align-self:center}
+  .kv dd{font-size:12px;color:var(--ink);text-align:right}
+  .kv .row{display:contents}
+  .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:11px 12px}
+  .thumbs i{aspect-ratio:1;border-radius:7px;display:block}
+  .sc-route{display:flex;gap:8px;flex-wrap:wrap}
+  .route{flex:1;min-width:120px;display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+  .route .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex-shrink:0}
+  .route b{font-size:12px;display:block}.route span{font-size:10.5px;color:var(--muted)}
 
-  /* Two-col spec lists */
-  .cols2 { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
-  @media (max-width:820px){ .cols2{grid-template-columns:1fr} }
-  .spec { border:1px solid var(--line); border-radius:16px; background:var(--bg-2); padding:28px; }
-  .spec h3 { font-size:16px; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:10px; }
-  .spec .sub { font-size:13px; color:var(--faint); margin-bottom:18px; }
-  .speclist { list-style:none; display:flex; flex-direction:column; gap:13px; }
-  .speclist li { display:grid; grid-template-columns:auto 1fr; column-gap:12px; row-gap:3px; font-size:14px; }
-  .speclist li::before { content:""; grid-column:1; grid-row:1; width:6px; height:6px; margin-top:7px; border-radius:2px; background:var(--accent); }
-  .speclist li b { grid-column:2; grid-row:1; font-weight:600; color:var(--ink); }
-  .speclist li span { grid-column:2; grid-row:2; color:var(--muted); }
+  /* Maquette PUBLIER */
+  .pub-body{padding:24px;min-height:392px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:radial-gradient(circle at 50% 30%,rgba(124,108,255,.1),transparent 60%),#08080d}
+  .pub-src{width:120px;aspect-ratio:50/68;background:#fff;border-radius:10px;position:relative;box-shadow:0 18px 40px -16px rgba(0,0,0,.7);outline:2px solid var(--indigo);outline-offset:3px;overflow:hidden}
+  .pub-src .ph{position:absolute;inset:12% 14% 46%;border-radius:6px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9)}
+  .pub-src .price{position:absolute;bottom:14%;left:14%;background:#facc15;color:#dc2626;font-weight:700;font-size:13px;padding:3px 6px;border-radius:4px}
+  .pub-fan{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .chan{display:flex;flex-direction:column;align-items:center;gap:7px;width:84px}
+  .chan .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line2);background:var(--surface)}
+  .chan .ic svg{width:20px;height:20px}
+  .chan span{font-size:10.5px;color:var(--muted);text-align:center}
 
-  /* Deep dives */
-  .deepdive { display:grid; grid-template-columns:1.05fr 1fr; gap:54px; align-items:center; padding:38px 0; }
-  .deepdive:nth-child(even) .dd-text { order:2; }
-  @media (max-width:860px){ .deepdive{grid-template-columns:1fr;gap:26px} .deepdive:nth-child(even) .dd-text{order:0} }
-  .dd-text h3 { font-family:var(--display); font-weight:600; font-size:clamp(24px,3vw,36px); letter-spacing:-.02em; line-height:1.1; margin:14px 0 16px; }
-  .dd-text p { color:var(--muted); font-size:16px; margin-bottom:16px; }
-  .dd-list { list-style:none; display:flex; flex-direction:column; gap:11px; }
-  .dd-list li { display:flex; gap:12px; font-size:14.5px; }
-  .dd-list li::before { content:"→"; color:var(--accent); flex-shrink:0; }
-  .dd-visual { position:relative; aspect-ratio:4/3; border-radius:16px; border:1px solid var(--line); background:radial-gradient(circle at 30% 20%, rgba(99,102,241,.18), transparent 50%), var(--surface); overflow:hidden; }
-  .dd-visual .annot { position:absolute; top:16px; left:16px; }
-  .dd-canvas { position:absolute; inset:26px; border:1px dashed var(--line-strong); border-radius:8px; }
-  .dd-canvas::before { content:""; position:absolute; inset:14px; border:1px solid rgba(99,102,241,.35); border-radius:5px; }
-  .dd-chip { position:absolute; padding:6px 12px; border-radius:8px; background:rgba(20,20,25,.9); border:1px solid var(--line-strong); font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:var(--muted); }
-  .regmark { position:absolute; bottom:14px; right:14px; opacity:.5; }
+  /* SCÈNES (la chaîne) */
+  .chain{padding:40px 0 20px}
+  .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:70px 0;position:relative}
+  .scene:nth-child(even) .scene-text{order:2}
+  @media(max-width:900px){.scene{grid-template-columns:1fr;gap:32px}.scene:nth-child(even) .scene-text{order:0}}
+  .scene-num{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.2em}
+  .scene-text h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,60px);line-height:1.0;letter-spacing:-.025em;text-transform:uppercase;margin:14px 0 18px}
+  .scene-text p{color:var(--muted);font-size:17px;margin-bottom:22px;max-width:42ch}
+  .scene-text p b{color:var(--ink);font-weight:600}
+  .scene-list{list-style:none;display:flex;flex-direction:column;gap:11px}
+  .scene-list li{display:flex;gap:12px;font-size:14.5px;color:var(--ink)}
+  .scene-list li::before{content:"→";color:var(--cyan);flex-shrink:0;font-weight:700}
+  .scene-visual{position:relative}
 
-  /* Steps */
-  .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:22px; }
-  @media (max-width:820px){ .steps{grid-template-columns:repeat(2,1fr)} }
-  @media (max-width:460px){ .steps{grid-template-columns:1fr} }
-  .step { padding:24px 20px; border:1px solid var(--line); border-radius:14px; background:var(--bg-2); }
-  .step .sn { font-family:var(--mono); font-size:13px; color:var(--accent); }
-  .step h4 { margin:14px 0 8px; font-size:16px; font-weight:600; }
-  .step p { font-size:14px; color:var(--muted); }
+  /* STATS band */
+  .stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(124,108,255,.05),transparent)}
+  .stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line)}
+  @media(max-width:860px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:460px){.stats-grid{grid-template-columns:1fr}}
+  .stat{background:var(--bg);padding:38px 26px;text-align:center}
+  .stat b{display:block;font-family:var(--display);font-weight:700;font-size:clamp(34px,5vw,56px);line-height:1;letter-spacing:-.02em}
+  .stat span{display:block;font-size:13px;color:var(--muted);margin-top:12px}
 
-  .tags { display:flex; flex-wrap:wrap; gap:11px; }
-  .tag { padding:11px 18px; border:1px solid var(--line); border-radius:100px; font-size:14px; color:var(--muted); background:var(--bg-2); transition:all .2s; }
-  .tag:hover { color:var(--ink); border-color:var(--accent); transform:translateY(-2px); }
+  section.block{padding:96px 0;position:relative}
+  .shead{margin-bottom:54px;max-width:60ch}
+  .shead .idx{font-family:var(--mono);font-size:12px;letter-spacing:.18em}
+  .shead h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,62px);letter-spacing:-.025em;line-height:1.0;text-transform:uppercase;margin:14px 0 14px}
+  .shead .lead{color:var(--muted);font-size:17px;max-width:54ch}
 
-  .cta-card { position:relative; border:1px solid var(--line-strong); border-radius:22px; padding:68px 48px; text-align:center; overflow:hidden; background:linear-gradient(180deg,var(--surface),var(--bg)); }
-  .cta-card .glow { position:absolute; inset:0; z-index:0; background:radial-gradient(circle at 50% 0%, rgba(99,102,241,.28), transparent 60%); }
-  .cta-card > * { position:relative; z-index:1; }
-  .cta-card h2 { font-family:var(--display); font-weight:600; font-size:clamp(30px,4.5vw,54px); letter-spacing:-.022em; line-height:1.05; margin-bottom:16px; }
-  .cta-card p { color:var(--muted); max-width:50ch; margin:0 auto 30px; font-size:17px; }
+  /* MODULES grid */
+  .modules{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:900px){.modules{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.modules{grid-template-columns:1fr}}
+  .mod{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--bg2);padding:24px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s}
+  .mod::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--mc,var(--indigo));opacity:.8}
+  .mod::after{content:"";position:absolute;top:-40%;right:-30%;width:60%;height:80%;background:radial-gradient(circle,color-mix(in srgb,var(--mc,var(--indigo)) 26%,transparent),transparent 70%);opacity:.5;pointer-events:none}
+  .mod:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--mc,var(--indigo)) 50%,var(--line));box-shadow:0 24px 60px -30px color-mix(in srgb,var(--mc,var(--indigo)) 70%,transparent)}
+  .mod>*{position:relative}
+  .mod .mh{display:flex;align-items:center;gap:13px;margin-bottom:13px}
+  .mod .mic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--mc,var(--indigo)) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--mc,var(--indigo)) 40%,transparent);color:#fff;flex-shrink:0}
+  .mod .mic svg{width:20px;height:20px}
+  .mod .mn{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .mod h3{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .mod p{font-size:13.5px;color:var(--muted);margin:8px 0 14px;line-height:1.55}
+  .mod .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .mod .chips span{font-family:var(--mono);font-size:10px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
 
-  footer { border-top:1px solid var(--line); padding:58px 0 50px; margin-top:30px; }
-  .foot-grid { display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:36px; margin-bottom:44px; }
-  @media (max-width:860px){ .foot-grid{grid-template-columns:1fr 1fr} }
-  @media (max-width:520px){ .foot-grid{grid-template-columns:1fr} }
-  .foot-col h5 { font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:15px; }
-  .foot-col ul { list-style:none; display:flex; flex-direction:column; gap:8px; }
-  .foot-col li { font-size:13.5px; color:var(--muted); }
-  .foot-col p { font-size:14px; color:var(--muted); max-width:34ch; }
-  .foot-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:24px; border-top:1px solid var(--line); flex-wrap:wrap; gap:14px; }
-  .foot-bottom .mono { font-size:11px; }
+  /* SPEC two-col */
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.cols2{grid-template-columns:1fr}}
+  .spec{border:1px solid var(--line);border-radius:18px;background:var(--bg2);padding:30px}
+  .spec h3{font-size:15px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+  .spec .sub{font-size:13px;color:var(--faint);margin-bottom:20px}
+  .speclist{list-style:none;display:flex;flex-direction:column;gap:14px}
+  .speclist li{display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:3px;font-size:14px}
+  .speclist li::before{content:"";grid-column:1;grid-row:1;width:6px;height:6px;margin-top:7px;border-radius:2px;background:var(--grad)}
+  .speclist li b{grid-column:2;font-weight:700}
+  .speclist li span{grid-column:2;color:var(--muted);font-size:13px}
 
-  /* ============ SECTION PHARE : SCRAPING (moteur de données) ============ */
-  .spotlight { position:relative; border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line-strong)); border-radius:24px; padding:clamp(28px,5vw,56px); overflow:hidden; background:linear-gradient(165deg, color-mix(in srgb, var(--accent) 9%, var(--surface)), var(--bg) 70%); }
-  .spotlight .sglow { position:absolute; inset:0; z-index:0; pointer-events:none; background:radial-gradient(ellipse 50% 60% at 18% 0%, rgba(99,102,241,.25), transparent 60%); }
-  .spotlight > * { position:relative; z-index:1; }
-  .spotlight .badge { display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); background:rgba(99,102,241,.1); padding:6px 13px; border-radius:100px; margin-bottom:22px; }
-  .spotlight h2 { font-family:var(--display); font-weight:600; font-size:clamp(28px,4.2vw,48px); letter-spacing:-.02em; line-height:1.04; margin-bottom:16px; max-width:18ch; }
-  .spotlight .lead { color:var(--muted); font-size:clamp(15px,1.5vw,18px); max-width:62ch; margin-bottom:38px; }
-  .spotlight .lead b { color:var(--ink); font-weight:600; }
-  .sstats { display:flex; flex-wrap:wrap; gap:18px 44px; margin-bottom:38px; padding-bottom:30px; border-bottom:1px solid var(--line); }
-  .stat b { display:block; font-family:var(--display); font-weight:400; font-size:clamp(24px,3vw,34px); letter-spacing:-.02em; color:var(--accent-soft); line-height:1; }
-  .stat span { display:block; font-size:12.5px; color:var(--muted); margin-top:8px; max-width:22ch; }
-  .flow { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:16px; align-items:center; }
-  @media (max-width:980px){ .flow{ grid-template-columns:1fr; gap:16px; } .flow .arrow{ transform:rotate(90deg); justify-self:center; } }
-  .flow-card { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--bg-2); box-shadow:0 18px 40px -24px rgba(0,0,0,.7); }
-  .flow-card img { display:block; width:100%; aspect-ratio:3/2; object-fit:cover; }
-  .flow-card .cap { padding:13px 16px; display:flex; align-items:center; gap:10px; }
-  .flow-card .cap .tg { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
-  .flow-card .cap b { font-size:14px; font-weight:600; }
-  .flow-card .cap span { font-size:12px; color:var(--muted); }
-  .arrow { position:relative; display:grid; place-items:center; width:44px; height:44px; border-radius:50%; border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); color:var(--accent-soft); background:rgba(99,102,241,.08); }
-  .arrow svg { width:20px; height:20px; animation:nudge 1.9s ease-in-out infinite; }
-  .arrow::after { content:""; position:absolute; inset:-1px; border-radius:50%; animation:aglow 1.9s ease-in-out infinite; }
-  .arrow.a2 svg, .arrow.a2::after { animation-delay:.5s; }
-  @keyframes nudge { 0%,100%{ transform:translateX(-2px); opacity:.65 } 50%{ transform:translateX(2px); opacity:1 } }
-  @keyframes aglow { 0%,100%{ box-shadow:0 0 0 0 rgba(99,102,241,.5) } 50%{ box-shadow:0 0 0 8px rgba(99,102,241,0) } }
-  .flow-split { display:flex; flex-direction:column; gap:16px; }
+  .tags{display:flex;flex-wrap:wrap;gap:11px}
+  .tag{padding:11px 18px;border:1px solid var(--line);border-radius:100px;font-size:14px;color:var(--muted);background:var(--bg2);transition:all .2s}
+  .tag:hover{color:var(--ink);border-color:var(--indigo);transform:translateY(-2px)}
 
-  /* ============ MAQUETTES D'ÉCRANS (recréation fidèle de l'UI) ============ */
-  .appwin { margin-top:48px; border:1px solid var(--line-strong); border-radius:16px; overflow:hidden; background:var(--surface); box-shadow:0 40px 90px -40px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02); position:relative; }
-  .appwin .glow2 { position:absolute; inset:0; background:radial-gradient(ellipse 60% 50% at 50% -10%, rgba(99,102,241,.16), transparent 60%); pointer-events:none; }
-  .aw-bar { display:flex; align-items:center; gap:10px; height:42px; padding:0 14px; border-bottom:1px solid var(--line); background:#0e0e12; position:relative; }
-  .aw-dots { display:flex; gap:7px; }
-  .aw-dots i { width:11px; height:11px; border-radius:50%; display:block; }
-  .aw-title { font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.06em; }
-  .aw-actions { margin-left:auto; display:flex; gap:8px; }
-  .aw-pill { font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:7px; }
-  .aw-body { display:grid; grid-template-columns:46px 1fr 232px; min-height:380px; }
-  @media (max-width:680px){ .aw-body{ grid-template-columns:40px 1fr; } .aw-panel{ display:none } }
-  .aw-tools { border-right:1px solid var(--line); background:#0e0e12; display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 0; }
-  .aw-tools i { width:30px; height:30px; border-radius:8px; display:grid; place-items:center; color:var(--faint); }
-  .aw-tools i.on { background:rgba(99,102,241,.18); color:var(--accent-soft); }
-  .aw-tools i svg { width:16px; height:16px; }
-  .aw-canvas { position:relative; display:grid; place-items:center; padding:30px; background:
-      radial-gradient(circle at 50% 40%, rgba(99,102,241,.08), transparent 60%), #0c0c10;
-      background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px); background-size:22px 22px; }
-  /* Affiche promo recréée */
-  .poster { width:188px; aspect-ratio:50/76; background:#fff; border:3px solid #2563eb; border-radius:16px; position:relative; box-shadow:0 24px 50px -18px rgba(0,0,0,.7); overflow:hidden; }
-  .poster .tab { position:absolute; top:14px; left:0; background:#2563eb; color:#fff; font-size:8px; font-weight:700; letter-spacing:.12em; padding:14px 4px; writing-mode:vertical-rl; transform:rotate(180deg); border-radius:0 4px 4px 0; }
-  .poster .tube { position:absolute; left:24%; top:14%; width:52%; height:62%; border-radius:14px 14px 30px 30px; background:linear-gradient(160deg,#1e3a8a 0%,#0ea5e9 40%,#e9eef5 70%,#fff 100%); }
-  .poster .free { position:absolute; top:13%; left:14%; width:46px; height:46px; border-radius:50%; background:#1d4ed8; color:#fff; font-size:8px; font-weight:700; display:grid; place-items:center; text-align:center; line-height:1.1; }
-  .poster .price { position:absolute; top:30%; left:30%; background:#facc15; color:#dc2626; font-weight:800; font-size:21px; padding:6px 9px 6px 7px; border-radius:6px; box-shadow:0 6px 14px -6px rgba(0,0,0,.4); }
-  .poster .price small { font-size:9px; vertical-align:super; }
-  .poster .disc { position:absolute; top:25%; right:8%; width:42px; height:42px; border-radius:50%; background:#dc2626; color:#fff; font-weight:800; font-size:13px; display:grid; place-items:center; }
-  .poster .ml { position:absolute; bottom:24%; left:24%; font-size:15px; font-weight:600; color:#3730a3; }
-  .poster .vars { position:absolute; bottom:7%; right:8%; text-align:right; font-size:9px; font-weight:700; line-height:1.3; }
-  .poster .vars .v1{ color:#4f46e5 } .poster .vars .v2{ color:#db2777 } .poster .vars .v3{ color:#64748b; font-weight:500 }
-  .poster .handle { position:absolute; width:9px; height:9px; border:1.5px solid #2563eb; border-radius:2px; background:#fff; }
-  .poster .h1{ top:-5px; left:-5px } .poster .h2{ top:-5px; right:-5px } .poster .h3{ bottom:-5px; left:-5px } .poster .h4{ bottom:-5px; right:-5px }
-  .aw-panel { border-left:1px solid var(--line); background:#0e0e12; padding:14px 14px; }
-  .aw-panel .ph { font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--faint); text-transform:uppercase; margin:4px 0 10px; }
-  .aw-panel .ph:first-child{ margin-top:0 }
-  .aw-row { display:flex; gap:8px; margin-bottom:10px; }
-  .aw-input { flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:7px; padding:7px 9px; font-size:11px; color:var(--ink); }
-  .aw-chips { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
-  .aw-chip { font-size:9.5px; padding:4px 7px; border-radius:5px; border:1px solid var(--line); color:var(--muted); background:var(--surface-2); }
-  .aw-chip.on { border-color:var(--accent); color:var(--accent-soft); background:rgba(99,102,241,.12); }
-  .aw-seg { display:flex; gap:5px; }
-  .aw-seg span { flex:1; text-align:center; font-size:10px; padding:6px 0; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
-  .aw-seg span.on { background:rgba(99,102,241,.14); border-color:var(--accent); color:var(--accent-soft); }
+  /* CTA */
+  .cta{position:relative;border:1px solid var(--line2);border-radius:26px;padding:clamp(40px,7vw,90px) 40px;text-align:center;overflow:hidden;background:linear-gradient(180deg,var(--surface),var(--bg))}
+  .cta .g{position:absolute;inset:0;background:radial-gradient(circle at 50% -10%,rgba(124,108,255,.4),transparent 60%)}
+  .cta>*{position:relative}
+  .cta h2{font-family:var(--display);font-weight:700;font-size:clamp(32px,5.6vw,72px);letter-spacing:-.03em;line-height:.98;text-transform:uppercase;margin-bottom:18px}
+  .cta p{color:var(--muted);max-width:52ch;margin:0 auto 32px;font-size:18px}
 
-  /* ============ ANIMATIONS QUI RENFORCENT LES SUJETS ============ */
-  /* Révélation au scroll (contenu visible si JS désactivé / pour les crawlers) */
-  html.js .section-head,
-  html.js .feature,
-  html.js .module,
-  html.js .spec,
-  html.js .step,
-  html.js .tag,
-  html.js .deepdive .dd-text,
-  html.js .deepdive .dd-visual,
-  html.js .cta-card {
-    opacity: 0; transform: translateY(28px);
-    transition: opacity .7s ease, transform .8s cubic-bezier(.2,.7,.2,1);
-    transition-delay: var(--sd, 0s);
-  }
-  html.js .is-in { opacity: 1 !important; transform: none !important; }
+  footer{border-top:1px solid var(--line);padding:64px 0 54px;margin-top:40px}
+  .fgrid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:36px;margin-bottom:46px}
+  @media(max-width:860px){.fgrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.fgrid{grid-template-columns:1fr}}
+  .fcol h5{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:15px}
+  .fcol ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .fcol li{font-size:13.5px;color:var(--muted)}
+  .fcol p{font-size:14px;color:var(--muted);max-width:36ch}
+  .fbot{display:flex;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--line);flex-wrap:wrap;gap:14px}
 
-  /* Hero : la lueur indigo respire (sujet « énergie créative ») */
-  .hero-glow { animation: drift 16s ease-in-out infinite; }
-  @keyframes drift { 0%,100%{ transform:translateX(-50%) scale(1); opacity:.9 } 50%{ transform:translateX(-50%) scale(1.08); opacity:1 } }
+  /* Scroll reveal */
+  html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--sd,0s)}
+  html.js .is-in{opacity:1!important;transform:none!important}
 
-  /* Repères de montage qui tournent lentement (sujet « calage / print pro ») */
-  .regmark { animation: spin 22s linear infinite; transform-origin: center; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Cadre d'épreuve : le liseré d'accent « cale » en pulsant (sujet « alignement ») */
-  .dd-canvas::before { animation: align 4s ease-in-out infinite; }
-  @keyframes align { 0%,100%{ border-color: rgba(99,102,241,.18); box-shadow:0 0 0 0 rgba(99,102,241,0) } 50%{ border-color: rgba(99,102,241,.55); box-shadow:0 0 18px -4px rgba(99,102,241,.5) } }
-
-  /* Chips de données « vivantes » (sujet « variables / publipostage ») */
-  .dd-chip { animation: chipGlow 3.4s ease-in-out infinite; }
-  .dd-chip:nth-of-type(2){ animation-delay:.6s } .dd-chip:nth-of-type(3){ animation-delay:1.2s }
-  @keyframes chipGlow { 0%,100%{ border-color: var(--line-strong) } 50%{ border-color: rgba(99,102,241,.5) } }
-
-  /* Ligne de scan sur les épreuves (sujet « rendu / export ») */
-  .dd-canvas { overflow: hidden; }
-  .dd-scan { position:absolute; left:0; right:0; height:38%; top:-38%;
-    background: linear-gradient(180deg, transparent, rgba(99,102,241,.16), transparent);
-    animation: scan 4.5s ease-in-out infinite; pointer-events:none; }
-  @keyframes scan { 0%{ top:-40% } 55%,100%{ top:100% } }
-
-  /* Icônes des piliers : léger flottement quand survolées déjà géré ; halo doux au repos */
-  .feature .ficon { animation: floaty 6s ease-in-out infinite; }
-  .feature:nth-child(3n+2) .ficon{ animation-delay:1s } .feature:nth-child(3n) .ficon{ animation-delay:2s }
-  @keyframes floaty { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-4px) } }
-
-  /* Puce de progression de la méthode : barre qui se remplit */
-  .step::after { content:""; position:absolute; left:0; bottom:0; height:2px; width:0; background:var(--accent); border-radius:2px; transition: width 1s ease .2s; }
-  html.js .step.is-in::after { width:100%; }
-  .step { position: relative; overflow: hidden; }
-
-  @media (prefers-reduced-motion: reduce){
-    html.js .section-head, html.js .feature, html.js .module, html.js .spec, html.js .step,
-    html.js .tag, html.js .deepdive .dd-text, html.js .deepdive .dd-visual, html.js .cta-card { opacity:1; transform:none; transition:none; }
-    .hero-glow, .regmark, .dd-canvas::before, .dd-chip, .dd-scan, .feature .ficon, .arrow svg, .arrow::after { animation: none; }
-    .step::after { display:none; }
+  @media(prefers-reduced-motion:reduce){
+    .reveal{animation:none;opacity:1;transform:none}
+    .aurora b,.pulse{animation:none}
+    html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:1;transform:none;transition:none}
   }
 </style>
 </head>
 <body>
 
-<div class="frame" aria-hidden="true"><span class="crop tl"></span><span class="crop tr"></span><span class="crop bl"></span><span class="crop br"></span></div>
+<div class="aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
 
 <header class="nav">
   <div class="wrap nav-inner">
-    <a class="brand" href="#top"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
+    <a class="brand" href="#top"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
     <nav class="nav-links">
-      <a class="link" href="#scraping">Scraping</a>
-      <a class="link" href="#edition">Édition → multi-canal</a>
-      <a class="link" href="#piliers">Piliers</a>
-      <a class="link" href="#modules">Modules</a>
-      <a class="link" href="#io">Imports/Exports</a>
-      <a class="link" href="#editeur">Éditeur</a>
-      <a class="link" href="#ia">IA &amp; intégrations</a>
-      <a class="btn btn-primary" href="/dashboard">Ouvrir l'application <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a class="link" href="#scraper">Scraper</a>
+      <a class="link" href="#editer">Éditer</a>
+      <a class="link" href="#publier">Publier</a>
+      <a class="link" href="#modules">13 modules</a>
+      <a class="link" href="#io">I/O</a>
+      <a class="btn btn-primary" href="/dashboard">Ouvrir l'app <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </nav>
   </div>
 </header>
@@ -330,284 +266,284 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-glow" aria-hidden="true"></div>
     <div class="hero-grid" aria-hidden="true"></div>
     <div class="wrap">
       <span class="eyebrow reveal d1"><span class="pulse"></span><span class="mono" style="color:var(--muted)">13 modules · 1 plateforme · 0 logiciel à installer</span></span>
-      <h1 class="hero-title reveal d2">Concevez, importez, automatisez. <em>Imprimez</em> sans friction.</h1>
-      <p class="hero-sub reveal d3">IBS-Studio est un studio de production graphique complet en ligne : <b style="color:var(--ink);font-weight:600">ouvrez et modifiez vos fichiers InDesign (IDML) et Illustrator (SVG) directement dans le navigateur</b>, enrichissez vos catalogues par <b style="color:var(--ink);font-weight:600">scraping</b>, puis <b style="color:var(--ink);font-weight:600">publiez sur tous vos canaux</b> — impression, réseaux sociaux, PowerPoint, web. Éditeur visuel type Canva, IA générative, données produit et automatisation no-code, réunis dans treize modules connectés.</p>
+      <h1 class="hero-title reveal d2">Votre chaîne <span class="l2 grad-text">graphique,</span><span class="l2">de A à Z.</span></h1>
+      <p class="hero-sub reveal d3">Une seule plateforme pour <b>scraper vos données produit</b>, <b>éditer vos fichiers InDesign &amp; Illustrator dans le navigateur</b>, puis <b>publier sur tous vos canaux</b> — impression aux normes, réseaux sociaux, PowerPoint, web, vidéo. Treize modules connectés, du brief à l'imprimeur, sans rien installer.</p>
       <div class="hero-cta reveal d4">
-        <a class="btn btn-primary" href="/dashboard">Ouvrir l'application <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <a class="btn btn-ghost" href="#modules">Voir les 13 modules</a>
-      </div>
-      <div class="tech-strip mono reveal d5">
-        <span>6 formats d'import</span><span>Export PDF · PPTX · Image · Vidéo</span><span>300 DPI · CMJN</span><span>Publipostage data</span><span>Workflows no-code</span><span>Bot Telegram</span>
+        <a class="btn btn-primary" href="/dashboard">Ouvrir l'application <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-ghost" href="#scraper">Voir la chaîne en action</a>
       </div>
 
-      <div class="appwin reveal d5" role="img" aria-label="Aperçu de l'éditeur IBS-Studio : barre d'outils, plan de travail avec une affiche promotionnelle, et panneau de propriétés.">
-        <div class="glow2" aria-hidden="true"></div>
-        <div class="aw-bar">
-          <span class="aw-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
-          <span class="aw-title">IBS-Studio — éditeur · Snipet_PROMO</span>
-          <span class="aw-actions"><span class="aw-pill" style="background:rgba(16,185,129,.16);color:#34d399;border:1px solid rgba(16,185,129,.3)">Sauvegardé</span><span class="aw-pill" style="background:var(--accent);color:#fff">Exporter</span></span>
+      <!-- Maquette éditeur (100% code, lisible) -->
+      <div class="hero-screen reveal d5">
+        <div class="screen" role="img" aria-label="Aperçu de l'éditeur IBS-Studio : barre d'outils, plan de travail avec une affiche promotionnelle sélectionnée, et panneau de propriétés.">
+          <div class="glow" aria-hidden="true"></div>
+          <div class="sbar">
+            <span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+            <span class="stitle">IBS-Studio — éditeur · Affiche_Promo</span>
+            <span class="sact"><span class="spill" style="background:rgba(16,185,129,.16);color:#34d399;border:1px solid rgba(16,185,129,.3)">Sauvegardé</span><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span>
+          </div>
+          <div class="ed-body">
+            <div class="ed-tools" aria-hidden="true">
+              <i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19L19 5"/></svg></i>
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5L5 21"/></svg></i>
+            </div>
+            <div class="ed-canvas">
+              <div class="poster">
+                <span class="ph"></span><span class="badge">-30%</span>
+                <span class="price">19<small>€90</small></span>
+                <span class="tt">GRANDE<br/>VENTE FLASH</span>
+                <span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span>
+              </div>
+            </div>
+            <div class="ed-panel" aria-hidden="true">
+              <div class="ph-h">Propriétés</div>
+              <div class="ed-row"><span class="ed-in">X 240</span><span class="ed-in">Y 180</span></div>
+              <div class="ed-row"><span class="ed-in">L 595</span><span class="ed-in">H 842</span></div>
+              <div class="ph-h">Calques</div>
+              <div class="lay on"><span class="sw" style="background:#facc15"></span>Prix · 19€90</div>
+              <div class="lay"><span class="sw" style="background:#ef4444"></span>Badge · -30%</div>
+              <div class="lay"><span class="sw" style="background:#3730a3"></span>Titre principal</div>
+              <div class="lay"><span class="sw" style="background:#0ea5e9"></span>Image produit</div>
+              <div class="ph-h">Impression</div>
+              <div class="ed-seg"><span>72</span><span class="on">300 DPI</span><span>600</span></div>
+              <div class="ph-h">Palette</div>
+              <div class="swatches"><i style="background:#6366f1"></i><i style="background:#22d3ee"></i><i style="background:#facc15"></i><i style="background:#ef4444"></i><i style="background:#fff"></i></div>
+            </div>
+          </div>
         </div>
-        <img src="img/editor.webp" loading="eager" width="1200" height="800" alt="Aperçu de l'éditeur visuel IBS-Studio : barre d'outils à gauche, plan de travail au centre, panneau de propriétés à droite." style="display:block;width:100%;height:auto;border-top:1px solid var(--line)" />
       </div>
     </div>
   </section>
 
-  <div class="wrap"><div class="divider"></div></div>
-
-  <!-- SCRAPING — section phare : moteur de données -->
-  <section class="block" id="scraping" style="padding-top:64px">
+  <!-- LA CHAÎNE : 3 scènes -->
+  <section class="chain">
     <div class="wrap">
-      <div class="spotlight">
-        <div class="sglow" aria-hidden="true"></div>
-        <span class="badge"><span class="pulse" style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Au cœur de la plateforme</span>
-        <h2>Le scraping, moteur de toute votre data.</h2>
-        <p class="lead">Une URL suffit. IBS-Studio en extrait automatiquement les caractéristiques, descriptions et visuels d'un produit, puis répartit la donnée là où elle sert : les <b>informations alimentent le PIM</b>, les <b>images alimentent le DAM</b>. Vos fiches produits et votre bibliothèque média se construisent presque seules — la base de tout publipostage et de toute création.</p>
-        <div class="sstats">
-          <div class="stat"><b>1 URL</b><span>et tout est extrait : specs, textes, visuels</span></div>
-          <div class="stat"><b>2 cibles</b><span>PIM + DAM alimentés en une seule passe</span></div>
-          <div class="stat"><b>3 moteurs</b><span>anti-bot : Bright Data, Jina, Firecrawl</span></div>
-          <div class="stat"><b>×N</b><span>variantes générées ensuite par publipostage</span></div>
+
+      <!-- SCÈNE 1 — SCRAPER -->
+      <div class="scene" id="scraper">
+        <div class="scene-text">
+          <span class="scene-num grad-text">01 — COLLECTER</span>
+          <h2>La donnée se<br/>collecte seule.</h2>
+          <p>Une URL suffit. IBS-Studio extrait automatiquement <b>specs, descriptions et visuels</b> d'un produit, puis répartit : les informations alimentent le <b>PIM</b>, les images alimentent le <b>DAM</b>. Vos fiches et votre bibliothèque média se construisent presque seules — la base de toute création.</p>
+          <ul class="scene-list">
+            <li>1 URL → caractéristiques, textes et images extraits</li>
+            <li>Escalade anti-bot : Bright Data · Jina · Firecrawl</li>
+            <li>PIM + DAM alimentés en une seule passe</li>
+          </ul>
         </div>
-        <div class="flow">
-          <div class="flow-card">
-            <img src="img/templates.webp" loading="lazy" width="600" height="400" alt="Extraction par scraping : une page web avec des zones de sélection mises en évidence." />
-            <div class="cap"><span class="tg" style="background:#818cf8"></span><b>Scraping</b><span>— extraction depuis vos URLs</span></div>
-          </div>
-          <div class="arrow a1" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </div>
-          <div class="flow-split">
-            <div class="flow-card">
-              <img src="img/pim.webp" loading="lazy" width="600" height="400" alt="PIM : tableau de fiches produits alimenté par le scraping." />
-              <div class="cap"><span class="tg" style="background:#34d399"></span><b>PIM</b><span>— caractéristiques &amp; descriptions</span></div>
+        <div class="scene-visual">
+          <div class="screen">
+            <div class="glow" aria-hidden="true"></div>
+            <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Scraping Hub — enrichissement</span></div>
+            <div class="sc-body">
+              <div class="sc-url">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+                <span class="u">https://fournisseur.com/produit/perceuse-18v</span>
+                <span class="go">Scraper</span>
+              </div>
+              <div class="sc-cols">
+                <div class="sc-card">
+                  <div class="ch"><span class="tg" style="background:#34d399"></span>PIM — caractéristiques</div>
+                  <dl class="kv">
+                    <dt>Référence</dt><dd>REF-67890</dd>
+                    <dt>Nom</dt><dd>Perceuse 18V Brushless</dd>
+                    <dt>Prix</dt><dd>129,00 €</dd>
+                    <dt>Marque</dt><dd>TechMaster</dd>
+                    <dt>Couple</dt><dd>60 Nm</dd>
+                  </dl>
+                </div>
+                <div class="sc-card">
+                  <div class="ch"><span class="tg" style="background:#f472b6"></span>DAM — visuels</div>
+                  <div class="thumbs">
+                    <i style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></i>
+                    <i style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></i>
+                    <i style="background:linear-gradient(135deg,#dc2626,#facc15)"></i>
+                    <i style="background:linear-gradient(135deg,#059669,#a3e635)"></i>
+                    <i style="background:linear-gradient(135deg,#0ea5e9,#e0f2fe)"></i>
+                    <i style="background:linear-gradient(135deg,#6366f1,#f472b6)"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="sc-route">
+                <div class="route"><span class="ic" style="background:rgba(52,211,153,.16);color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z"/></svg></span><div><b>→ PIM</b><span>fiches produits</span></div></div>
+                <div class="route"><span class="ic" style="background:rgba(244,114,182,.16);color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><b>→ DAM</b><span>bibliothèque</span></div></div>
+              </div>
             </div>
-            <div class="flow-card">
-              <img src="img/dam.webp" loading="lazy" width="600" height="400" alt="DAM : bibliothèque d'images alimentée par le scraping." />
-              <div class="cap"><span class="tg" style="background:#f472b6"></span><b>DAM</b><span>— visuels &amp; médias produits</span></div>
-            </div>
-          </div>
-          <div class="arrow a2" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </div>
-          <div class="flow-card">
-            <img src="img/editor.webp" loading="lazy" width="600" height="400" alt="Éditeur : création et publipostage à grande échelle à partir des données." />
-            <div class="cap"><span class="tg" style="background:#6366f1"></span><b>Création</b><span>— publipostage &amp; visuels à grande échelle</span></div>
           </div>
         </div>
       </div>
+
+      <!-- SCÈNE 2 — ÉDITER -->
+      <div class="scene" id="editer">
+        <div class="scene-text">
+          <span class="scene-num grad-text">02 — ÉDITER</span>
+          <h2>InDesign &amp;<br/>Illustrator,<br/>en ligne.</h2>
+          <p>Ouvrez un <b>InDesign (IDML)</b> ou un <b>vectoriel type Illustrator (SVG)</b> directement dans le navigateur : chaque <b>bloc, texte et forme reste éditable</b>, pas une capture aplatie. Composez, déclinez, mettez à la marque — éditeur visuel complet, IA générative et publipostage inclus.</p>
+          <ul class="scene-list">
+            <li>Imports fidèles : IDML · PowerPoint · SVG · PDF · Image · Excel</li>
+            <li>Image &amp; PDF décomposés en calques par IA</li>
+            <li>Publipostage : 1 gabarit → des centaines de variantes</li>
+          </ul>
+        </div>
+        <div class="scene-visual">
+          <div class="screen">
+            <div class="glow" aria-hidden="true"></div>
+            <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — IDML importé</span><span class="sact"><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
+            <div class="ed-body">
+              <div class="ed-tools" aria-hidden="true">
+                <i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i>
+                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i>
+                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i>
+                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i>
+                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5L5 21"/></svg></i>
+              </div>
+              <div class="ed-canvas">
+                <div class="poster">
+                  <span class="ph"></span><span class="badge">NEW</span>
+                  <span class="price">24<small>€90</small></span>
+                  <span class="tt">CATALOGUE<br/>PRINTEMPS</span>
+                  <span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span>
+                </div>
+              </div>
+              <div class="ed-panel" aria-hidden="true">
+                <div class="ph-h">Source</div>
+                <div class="lay on"><span class="sw" style="background:#fbbf24"></span>catalogue.idml</div>
+                <div class="ph-h">Données (publipostage)</div>
+                <div class="ed-row"><span class="ed-in">{{ prix }}</span></div>
+                <div class="ed-row"><span class="ed-in">{{ libellé }}</span></div>
+                <div class="ph-h">Texte</div>
+                <div class="ed-seg"><span>Régulier</span><span class="on">Gras</span><span>Italique</span></div>
+                <div class="ph-h">Remplissage</div>
+                <div class="swatches"><i style="background:#3730a3"></i><i style="background:#facc15"></i><i style="background:#ef4444"></i><i style="background:#22d3ee"></i><i style="background:#fff"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCÈNE 3 — PUBLIER -->
+      <div class="scene" id="publier">
+        <div class="scene-text">
+          <span class="scene-num grad-text">03 — PUBLIER</span>
+          <h2>Une source,<br/>tous vos canaux.</h2>
+          <p>Le même contenu part <b>partout</b> : un PDF aux normes pour l'imprimeur (DPI, fond perdu, traits de coupe), des visuels pour les réseaux, un PPTX, une vidéo, du web. <b>Une seule création, autant de sorties qu'il vous faut</b> — manuellement ou en masse via les workflows.</p>
+          <ul class="scene-list">
+            <li>Export PDF · Image · PowerPoint · Vidéo (WebM)</li>
+            <li>Normes imprimerie : DPI, fond perdu, repères, zone de sécurité</li>
+            <li>Diffusion automatisée : workflows, Telegram, Gmail</li>
+          </ul>
+        </div>
+        <div class="scene-visual">
+          <div class="screen">
+            <div class="glow" aria-hidden="true"></div>
+            <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Publier — 1 source → N canaux</span></div>
+            <div class="pub-body">
+              <div class="pub-src" aria-hidden="true"><span class="ph"></span><span class="price">19€90</span></div>
+              <div class="pub-fan">
+                <div class="chan"><span class="ic" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><span>Impression<br/>PDF/X</span></div>
+                <div class="chan"><span class="ic" style="color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></span><span>Réseaux<br/>sociaux</span></div>
+                <div class="chan"><span class="ic" style="color:#fb923c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span>PowerPoint</span></div>
+                <div class="chan"><span class="ic" style="color:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><span>Web</span></div>
+                <div class="chan"><span class="ic" style="color:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><span>Vidéo<br/>WebM</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
-  <!-- ÉDITION PRO EN LIGNE → MULTI-CANAL — 2e section phare -->
-  <section class="block" id="edition" style="padding-top:36px">
-    <div class="wrap">
-      <div class="spotlight">
-        <div class="sglow" aria-hidden="true"></div>
-        <span class="badge"><span class="pulse" style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Édition pro, sans logiciel</span>
-        <h2>Modifiez vos fichiers InDesign et Illustrator en ligne, publiez-les partout.</h2>
-        <p class="lead">Ouvrez un <b>InDesign (IDML)</b> ou un <b>vectoriel type Illustrator (SVG)</b> directement dans le navigateur : vous retrouvez chaque <b>bloc de texte, forme et image — éditable</b>, pas une capture aplatie. Retouchez, déclinez, mettez à la marque, puis <b>diffusez le même contenu sur tous vos canaux</b> : impression aux normes, réseaux sociaux, PowerPoint, web. Une seule source, autant de sorties qu'il vous faut — zéro logiciel à installer.</p>
-        <div class="sstats">
-          <div class="stat"><b>0 logiciel</b><span>tout se passe dans le navigateur</span></div>
-          <div class="stat"><b>IDML · SVG · PDF</b><span>InDesign &amp; Illustrator, fidèles et éditables</span></div>
-          <div class="stat"><b>1 source</b><span>→ N canaux de diffusion</span></div>
-          <div class="stat"><b>4 sorties</b><span>PDF print · image · PPTX · vidéo</span></div>
-        </div>
-        <div class="flow">
-          <div class="flow-card">
-            <img src="img/import.webp" loading="lazy" width="600" height="400" alt="Import fidèle de fichiers InDesign (IDML) et Illustrator (SVG)." />
-            <div class="cap"><span class="tg" style="background:#fbbf24"></span><b>Fichiers pro</b><span>— IDML · SVG · PDF</span></div>
-          </div>
-          <div class="arrow a1" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </div>
-          <div class="flow-card">
-            <img src="img/editor.webp" loading="lazy" width="600" height="400" alt="Édition du fichier dans l'éditeur en ligne, blocs et textes modifiables." />
-            <div class="cap"><span class="tg" style="background:#6366f1"></span><b>Édition navigateur</b><span>— blocs &amp; textes éditables</span></div>
-          </div>
-          <div class="arrow a2" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </div>
-          <div class="flow-split">
-            <div class="flow-card">
-              <img src="img/export.webp" loading="lazy" width="600" height="400" alt="Export imprimerie : PDF aux normes avec traits de coupe." />
-              <div class="cap"><span class="tg" style="background:#34d399"></span><b>Impression</b><span>— PDF aux normes (DPI, fond perdu)</span></div>
-            </div>
-            <div class="flow-card">
-              <img src="img/animation.webp" loading="lazy" width="600" height="400" alt="Diffusion multi-canal : réseaux sociaux, PowerPoint, web, vidéo." />
-              <div class="cap"><span class="tg" style="background:#e879f9"></span><b>Canaux</b><span>— réseaux · PPTX · web · vidéo</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="tags" style="margin-top:30px">
-          <span class="tag">Impression PDF</span><span class="tag">Instagram · Facebook · LinkedIn</span><span class="tag">PowerPoint</span><span class="tag">Web</span><span class="tag">Vidéo / WebM</span><span class="tag">Telegram &amp; Gmail (workflows)</span>
-        </div>
-      </div>
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-grid">
+      <div class="stat"><b class="grad-text"><span class="count" data-to="13">0</span></b><span>modules connectés</span></div>
+      <div class="stat"><b class="grad-text"><span class="count" data-to="6">0</span></b><span>formats d'import</span></div>
+      <div class="stat"><b class="grad-text"><span class="count" data-to="4">0</span></b><span>formats d'export</span></div>
+      <div class="stat"><b class="grad-text"><span class="count" data-to="300">0</span></b><span>DPI · CMJN print</span></div>
+      <div class="stat"><b class="grad-text">∞</b><span>variantes (publipostage)</span></div>
     </div>
   </section>
 
-  <!-- PILIERS -->
-  <section class="block" id="piliers">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="idx">01 — Piliers</span>
-        <h2>Neuf capacités,<br/>de l'idée à l'imprimeur.</h2>
-        <p class="lead">Les grandes forces de la plateforme, déclinées ensuite en treize modules détaillés.</p>
-      </div>
-      <div class="features">
-        <article class="feature"><span class="num">01</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg></div><h3>Éditeur visuel</h3><p>Canvas type Canva : texte, formes, images, calques, palette de marque, dégradés, masques, animations 3D.</p></article>
-        <article class="feature"><span class="num">02</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><h3>Imports fidèles</h3><p>InDesign (IDML), PowerPoint, SVG, PDF, image et Excel — mise en page et texte préservés, éditables.</p></article>
-        <article class="feature"><span class="num">03</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.5L18 9l-4.1 1.5L12 15l-1.9-4.5L6 9l4.1-1.5L12 3z"/></svg></div><h3>IA générative &amp; vision</h3><p>Génération d'images, décomposition de visuels en calques éditables, briefs et assistance par IA.</p></article>
-        <article class="feature"><span class="num">04</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div><h3>Médias &amp; données</h3><p>DAM pour les visuels, PIM pour les fiches produits, taxonomies pour tout organiser et filtrer.</p></article>
-        <article class="feature"><span class="num">05</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg></div><h3>Publipostage</h3><p>Un gabarit, des centaines de déclinaisons : reliez vos données produit aux éléments du visuel.</p></article>
-        <article class="feature"><span class="num">06</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div><h3>Scraping web</h3><p>Enrichissez vos produits depuis des URLs : specs, images et descriptions extraites automatiquement.</p></article>
-        <article class="feature"><span class="num">07</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6"/></svg></div><h3>Automatisation no-code</h3><p>Workflows visuels enchaînant les modules, déclenchables à la main, par IA ou depuis Telegram.</p></article>
-        <article class="feature"><span class="num">08</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></div><h3>Export print pro</h3><p>PDF, PowerPoint, image et vidéo, avec DPI, fond perdu, traits de coupe et repères de montage.</p></article>
-        <article class="feature"><span class="num">09</span><div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5-3.5 7.5-8.5 9C7.5 19.5 4 17 4 12V6l8-3 8 3z"/></svg></div><h3>Collaboration &amp; rôles</h3><p>Bibliothèque partagée, taxonomies, et contrôle d'accès fin par rôles et permissions (RBAC).</p></article>
-      </div>
-    </div>
-  </section>
-
-  <!-- MODULES (exhaustif) -->
+  <!-- MODULES -->
   <section class="block" id="modules">
     <div class="wrap">
-      <div class="section-head">
-        <span class="idx">02 — Les 13 modules</span>
-        <h2>Tout ce que fait<br/>IBS-Studio, en détail.</h2>
-        <p class="lead">Chaque module est accessible depuis la barre latérale du tableau de bord. Voici l'inventaire complet.</p>
+      <div class="shead">
+        <span class="idx grad-text">— L'INVENTAIRE COMPLET</span>
+        <h2>Treize modules,<br/>une plateforme.</h2>
+        <p class="lead">Toute la chaîne de production graphique, accessible depuis une seule barre latérale. Rien à installer, tout est connecté.</p>
       </div>
       <div class="modules">
 
-        <div class="module" style="--mc:#a78bfa"><img class="mshot" src="img/blank.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Nouveau document de IBS-Studio"><div class="mhead"><span class="mnum">01</span><h3>Nouveau document</h3></div>
-          <p class="mdesc">Choisissez un format prédéfini (impression, écran, réseaux sociaux) ou des dimensions sur mesure en pixels, puis un fond uni, dégradé ou image. La composition s'ouvre directement dans l'éditeur, prête à habiller.</p>
-          <ul class="mfeat"><li>A4 / A3 / A5 / Letter</li><li>Full HD · 4K · 16:9</li><li>Instagram · Facebook · Twitter · LinkedIn</li><li>Format personnalisé</li><li>Fond uni</li><li>Dégradé</li><li>Image</li></ul></div>
+        <div class="mod" style="--mc:#a78bfa"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg></span><div><div class="mn">01</div><h3>Nouveau document</h3></div></div><p>Formats prédéfinis (print, écran, réseaux) ou sur mesure, fond uni, dégradé ou image — prêt à habiller dans l'éditeur.</p><div class="chips"><span>A4·A3·Letter</span><span>4K·16:9</span><span>Réseaux</span><span>Sur mesure</span></div></div>
 
-        <div class="module" style="--mc:#fbbf24"><img class="mshot" src="img/import.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Importer de IBS-Studio"><div class="mhead"><span class="mnum">02</span><h3>Importer</h3></div>
-          <p class="mdesc">Repartez d'un fichier existant : mise en page, styles et texte conservés et modifiables — pas une capture aplatie. Les conversions image et PDF vers SVG sont automatiquement décomposées en calques éditables par IA.</p>
-          <ul class="mfeat"><li>IDML (InDesign)</li><li>PowerPoint</li><li>Image PNG/JPG/SVG/WebP</li><li>SVG vectoriel</li><li>Excel / CSV</li><li>Image → SVG éditable</li><li>PDF → SVG éditable</li></ul></div>
+        <div class="mod" style="--mc:#fbbf24"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><div><div class="mn">02</div><h3>Importer</h3></div></div><p>Mise en page, styles et texte conservés et modifiables — pas une capture aplatie. Image &amp; PDF décomposés en calques par IA.</p><div class="chips"><span>IDML</span><span>PPTX</span><span>SVG</span><span>PDF→SVG</span><span>Excel</span></div></div>
 
-        <div class="module" style="--mc:#38bdf8"><img class="mshot" src="img/library.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Bibliothèque de IBS-Studio"><div class="mhead"><span class="mnum">03</span><h3>Bibliothèque</h3></div>
-          <p class="mdesc">Retrouvez tous vos projets en vue vignettes ou liste, filtrés par taxonomie. Sélection multiple pour la suppression groupée, duplication en un clic, et ouverture directe dans l'éditeur.</p>
-          <ul class="mfeat"><li>Vue vignettes / liste</li><li>Filtre par taxonomie</li><li>Sélection multiple</li><li>Suppression groupée</li><li>Duplication</li><li>Rattachement taxonomique</li></ul></div>
+        <div class="mod" style="--mc:#38bdf8"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><div><div class="mn">03</div><h3>Bibliothèque</h3></div></div><p>Tous vos projets en vignettes ou liste, filtrés par taxonomie. Sélection multiple, duplication, ouverture directe dans l'éditeur.</p><div class="chips"><span>Vignettes/liste</span><span>Filtre taxo</span><span>Duplication</span></div></div>
 
-        <div class="module" style="--mc:#f472b6"><img class="mshot" src="img/dam.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran DAM de IBS-Studio"><div class="mhead"><span class="mnum">04</span><h3>DAM — médias</h3></div>
-          <p class="mdesc">Centralisez tous vos visuels — banques libres de droits, uploads, favoris, collections, assets de marque — et générez des images par IA. Recherche par mot-clé ou par image, filtres par source, orientation et couleur dominante.</p>
-          <ul class="mfeat"><li>Banque d'images (Pexels · Unsplash)</li><li>Mes images</li><li>Favoris</li><li>Collections</li><li>Récents</li><li>Projets</li><li>Création d'image (IA)</li><li>Animations HTML</li><li>Google Drive</li><li>Filtres source/orientation/couleur</li><li>Recherche par image</li></ul></div>
+        <div class="mod" style="--mc:#f472b6"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><div class="mn">04</div><h3>DAM — médias</h3></div></div><p>Centralisez visuels, banques libres de droits, collections et assets de marque, et générez des images par IA. Recherche par mot-clé ou par image.</p><div class="chips"><span>Pexels·Unsplash</span><span>Génération IA</span><span>Collections</span><span>Drive</span></div></div>
 
-        <div class="module" style="--mc:#34d399"><img class="mshot" src="img/pim.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran PIM de IBS-Studio"><div class="mhead"><span class="mnum">05</span><h3>PIM — données produits</h3></div>
-          <p class="mdesc">Gérez plusieurs bases de fiches produits : import Excel/CSV, création manuelle, colonnes et rattachement taxonomique. Enrichissez automatiquement chaque fiche en scrapant des URLs (specs, images, descriptions) — la base de tout publipostage.</p>
-          <ul class="mfeat"><li>Bases de données multiples</li><li>Import Excel / CSV</li><li>Scraper le web</li><li>Créer un tableau vide</li><li>Gestion des colonnes</li><li>Taxonomie produits</li><li>Enrichissement IA</li></ul></div>
+        <div class="mod" style="--mc:#34d399"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z"/></svg></span><div><div class="mn">05</div><h3>PIM — données</h3></div></div><p>Plusieurs bases de fiches produits : import Excel, création, colonnes, taxonomie. Enrichissement automatique par scraping d'URL.</p><div class="chips"><span>Bases multiples</span><span>Import Excel</span><span>Scraping</span><span>Enrich. IA</span></div></div>
 
-        <div class="module" style="--mc:#2dd4bf"><img class="mshot" src="img/taxonomies.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Taxonomies de IBS-Studio"><div class="mhead"><span class="mnum">06</span><h3>Taxonomies</h3></div>
-          <p class="mdesc">Construisez une arborescence de classification à N niveaux (catégories, gammes, familles). Reliez-y vos projets et produits pour les filtrer dans la Bibliothèque et structurer vos exports.</p>
-          <ul class="mfeat"><li>Hiérarchie N-niveaux</li><li>Catégories &amp; gammes</li><li>Liaison aux projets</li><li>Filtrage Bibliothèque</li></ul></div>
+        <div class="mod" style="--mc:#2dd4bf"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h6l2 2h10v10H3z"/><path d="M9 12h8M9 15h5"/></svg></span><div><div class="mn">06</div><h3>Taxonomies</h3></div></div><p>Arborescence de classification à N niveaux (catégories, gammes, familles). Reliez projets et produits pour filtrer et structurer.</p><div class="chips"><span>N niveaux</span><span>Liaison projets</span><span>Filtrage</span></div></div>
 
-        <div class="module" style="--mc:#818cf8"><img class="mshot" src="img/templates.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Templates scraping de IBS-Studio"><div class="mhead"><span class="mnum">07</span><h3>Templates scraping</h3></div>
-          <p class="mdesc">Définissez visuellement les règles d'extraction — sélecteurs et mapping des champs — réutilisables d'un produit à l'autre. Le constructeur visuel permet de créer ces gabarits sans écrire de code.</p>
-          <ul class="mfeat"><li>Sélecteurs</li><li>Mapping des champs</li><li>Constructeur visuel</li><li>Réutilisable par produit</li></ul></div>
+        <div class="mod" style="--mc:#818cf8"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 9h4M7 13h7"/><rect x="14" y="7" width="4" height="4" rx="1"/></svg></span><div><div class="mn">07</div><h3>Templates scraping</h3></div></div><p>Règles d'extraction visuelles — sélecteurs et mapping des champs — réutilisables d'un produit à l'autre, sans écrire de code.</p><div class="chips"><span>Sélecteurs</span><span>Mapping</span><span>Constructeur visuel</span></div></div>
 
-        <div class="module" style="--mc:#22d3ee"><img class="mshot" src="img/scraping.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Scraping Hub de IBS-Studio"><div class="mhead"><span class="mnum">08</span><h3>Scraping Hub</h3></div>
-          <p class="mdesc">Lancez et supervisez les extractions à grande échelle : lots, sources et suivi des résultats en un seul endroit. Escalade anti-bot automatique via Bright Data, Jina et Firecrawl.</p>
-          <ul class="mfeat"><li>Lots &amp; sources</li><li>Suivi des résultats</li><li>Bright Data</li><li>Jina · Firecrawl</li></ul></div>
+        <div class="mod" style="--mc:#22d3ee"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span><div><div class="mn">08</div><h3>Scraping Hub</h3></div></div><p>Lancez et supervisez les extractions à grande échelle. Escalade anti-bot automatique via Bright Data, Jina et Firecrawl.</p><div class="chips"><span>Lots &amp; sources</span><span>Bright Data</span><span>Jina·Firecrawl</span></div></div>
 
-        <div class="module" style="--mc:#6366f1"><img class="mshot" src="img/workflows.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Workflows de IBS-Studio"><div class="mhead"><span class="mnum">09</span><h3>Workflows</h3></div>
-          <p class="mdesc">Automatisez l'enchaînement des modules avec un éditeur de graphe no-code, façon Zapier : sept catégories de nodes (import, enrichissement, transformation, sauvegarde, export, logique, communication). Un workflow complet peut être généré par IA depuis une simple description.</p>
-          <ul class="mfeat"><li>Import (14 nodes)</li><li>Enrichissement</li><li>Transformation</li><li>Sauvegarde</li><li>Export</li><li>Logique</li><li>Communication</li><li>Génération par IA (prompt)</li></ul></div>
+        <div class="mod" style="--mc:#6366f1"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6"/></svg></span><div><div class="mn">09</div><h3>Workflows</h3></div></div><p>Automatisez l'enchaînement des modules, façon Zapier : sept catégories de nodes. Un workflow complet généré par IA depuis un prompt.</p><div class="chips"><span>No-code</span><span>7 catégories</span><span>Génération IA</span></div></div>
 
-        <div class="module" style="--mc:#60a5fa"><img class="mshot" src="img/telegram.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Telegram de IBS-Studio"><div class="mhead"><span class="mnum">10</span><h3>Telegram</h3></div>
-          <p class="mdesc">Pilotez l'application depuis un bot : chat IA avec accès web, <code>/flow</code> pour générer et exécuter un workflow, <code>/run</code> pour relancer un workflow sauvegardé. Le fichier produit vous est renvoyé dans la conversation.</p>
-          <ul class="mfeat"><li>Chat IA avec accès web</li><li>/flow — générer + exécuter</li><li>/run — workflow sauvegardé</li><li>/clear — vider la boîte</li></ul></div>
+        <div class="mod" style="--mc:#60a5fa"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><div><div class="mn">10</div><h3>Telegram</h3></div></div><p>Pilotez l'app depuis un bot : chat IA avec accès web, génération &amp; exécution de workflows, fichier renvoyé dans la conversation.</p><div class="chips"><span>Chat IA</span><span>/flow</span><span>/run</span></div></div>
 
-        <div class="module" style="--mc:#e879f9"><img class="mshot" src="img/animation.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Animation de IBS-Studio"><div class="mhead"><span class="mnum">11</span><h3>Animation</h3></div>
-          <p class="mdesc">Créez des vidéos et animations HTML (HyperFrames) à partir d'un prompt ou d'une image, avec compositions, transitions et fichiers de référence. Exportables et réutilisables dans vos projets et workflows.</p>
-          <ul class="mfeat"><li>À partir d'un prompt</li><li>À partir d'une image</li><li>Fichiers de référence</li><li>Compositions &amp; transitions</li></ul></div>
+        <div class="mod" style="--mc:#e879f9"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><div><div class="mn">11</div><h3>Animation</h3></div></div><p>Vidéos et animations HTML (HyperFrames) depuis un prompt ou une image : compositions, transitions, fichiers de référence.</p><div class="chips"><span>Prompt</span><span>Image</span><span>Transitions</span></div></div>
 
-        <div class="module" style="--mc:#c084fc"><img class="mshot" src="img/chat.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Chat IA de IBS-Studio"><div class="mhead"><span class="mnum">12</span><h3>Chat IA</h3></div>
-          <p class="mdesc">Un assistant conversationnel intégré : conversation multitour, pièces jointes, génération d'images et saisie vocale. Interrogez vos données, produisez du contenu et réutilisez une bibliothèque de prompts.</p>
-          <ul class="mfeat"><li>Conversation multitour</li><li>Pièces jointes</li><li>Génération d'images</li><li>Saisie vocale</li><li>Bibliothèque de prompts</li></ul></div>
+        <div class="mod" style="--mc:#c084fc"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><div><div class="mn">12</div><h3>Chat IA</h3></div></div><p>Assistant conversationnel intégré : multitour, pièces jointes, génération d'images, saisie vocale, bibliothèque de prompts.</p><div class="chips"><span>Multitour</span><span>Images</span><span>Voix</span></div></div>
 
-        <div class="module" style="--mc:#fb7185"><img class="mshot" src="img/access.webp" loading="lazy" width="600" height="400" alt="Illustration de l'écran Utilisateurs et rôles de IBS-Studio"><div class="mhead"><span class="mnum">13</span><h3>Utilisateurs &amp; rôles</h3></div>
-          <p class="mdesc">Contrôle d'accès complet (RBAC) : attribuez des rôles, ajoutez des surcharges de permission granulaires par module, et bloquez ou réactivez des comptes. Le propriétaire garde toujours la main.</p>
-          <ul class="mfeat"><li>Attribuer un rôle</li><li>Surcharges granulaires</li><li>Bloquer / réactiver</li><li>Permissions par module</li></ul></div>
+        <div class="mod" style="--mc:#fb7185"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5-3.5 7.5-8.5 9C7.5 19.5 4 17 4 12V6l8-3 8 3z"/></svg></span><div><div class="mn">13</div><h3>Utilisateurs &amp; rôles</h3></div></div><p>Contrôle d'accès complet (RBAC) : rôles, surcharges de permission par module, blocage/réactivation. Le propriétaire garde la main.</p><div class="chips"><span>Rôles</span><span>Permissions fines</span><span>RBAC</span></div></div>
 
       </div>
-      <p class="mono" style="margin-top:22px; text-align:center; color:var(--faint)">+ Briefs &amp; génération IA · Paramètres &amp; intégrations · Génération vidéo depuis l'éditeur</p>
+      <p class="mono" style="margin-top:24px;text-align:center;color:var(--faint)">+ Briefs &amp; génération IA · Paramètres &amp; modèles · Génération vidéo depuis l'éditeur</p>
     </div>
   </section>
 
-  <div class="wrap"><div class="divider"></div></div>
-
-  <!-- IMPORTS / EXPORTS -->
+  <!-- I/O -->
   <section class="block" id="io">
     <div class="wrap">
-      <div class="section-head">
-        <span class="idx">03 — Entrées &amp; sorties</span>
+      <div class="shead">
+        <span class="idx grad-text">— ENTRÉES &amp; SORTIES</span>
         <h2>Six imports,<br/>quatre exports.</h2>
-        <p class="lead">IBS-Studio s'intègre à votre chaîne existante, en amont comme en aval.</p>
+        <p class="lead">IBS-Studio s'intègre à votre chaîne existante, en amont comme en aval — et toujours aux normes de l'imprimerie.</p>
       </div>
       <div class="cols2">
         <div class="spec">
-          <h3><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Imports</h3>
+          <h3>Imports</h3>
           <p class="sub">Mise en page et texte préservés, éditables.</p>
           <ul class="speclist">
-            <li><b>IDML</b><span>Projet Adobe InDesign : styles, polices et mise en page conservés.</span></li>
+            <li><b>IDML — InDesign</b><span>Styles, polices et mise en page conservés.</span></li>
             <li><b>PowerPoint</b><span>Chaque diapositive devient une page éditable.</span></li>
-            <li><b>Image</b><span>PNG, JPG, SVG, WebP — placée sur le canvas.</span></li>
-            <li><b>SVG</b><span>Vectoriel : chaque forme et texte reste indépendant.</span></li>
+            <li><b>SVG — Illustrator</b><span>Chaque forme et texte reste indépendant.</span></li>
+            <li><b>PDF</b><span>Rasterisé puis décomposé en calques par IA.</span></li>
+            <li><b>Image</b><span>PNG, JPG, WebP — ou conversion en SVG éditable.</span></li>
             <li><b>Excel / CSV</b><span>Données produit dans le PIM, base du publipostage.</span></li>
-            <li><b>Image → SVG · PDF → SVG</b><span>Fond verrouillé + textes détectés par IA, éditables.</span></li>
           </ul>
         </div>
         <div class="spec">
-          <h3><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5"/><path d="M5 3h14"/></svg> Exports</h3>
+          <h3>Exports</h3>
           <p class="sub">Aux normes, avec paramètres d'impression.</p>
           <ul class="speclist">
-            <li><b>PDF</b><span>Haute définition, prêt pour l'offset comme le numérique.</span></li>
+            <li><b>PDF print</b><span>Haute définition, offset comme numérique.</span></li>
             <li><b>Image</b><span>PNG haute résolution selon le DPI choisi.</span></li>
             <li><b>PowerPoint</b><span>Export PPTX de vos compositions.</span></li>
             <li><b>Vidéo</b><span>Génération et export WebM depuis l'éditeur.</span></li>
-            <li><b>Paramètres print</b><span>DPI, fond perdu, traits de coupe, repères de montage, zone de sécurité.</span></li>
-            <li><b>Presets réutilisables</b><span>Familles de paramètres d'impression d'un projet à l'autre.</span></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ÉDITEUR -->
-  <section class="block" id="editeur">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="idx">04 — L'éditeur</span>
-        <h2>Un éditeur complet,<br/>panneau par panneau.</h2>
-        <p class="lead">Tous les outils de création et de mise en forme, dans une interface dark soignée.</p>
-      </div>
-      <div class="cols2">
-        <div class="spec">
-          <h3>Outils &amp; objets</h3>
-          <p class="sub">Création directe sur le canvas (moteur Fabric.js).</p>
-          <ul class="speclist">
-            <li><b>Outils</b><span>Sélection, texte, rectangle, ellipse, ligne, image.</span></li>
-            <li><b>Texte</b><span>Police, taille, style, alignement, interligne, casse, couleur.</span></li>
-            <li><b>Remplissage &amp; contour</b><span>Aplat, dégradé, image ; épaisseur, tirets, angles.</span></li>
-            <li><b>Effets</b><span>Opacité, modes de fusion, ombre portée, cadrage d'image.</span></li>
-            <li><b>Disposition</b><span>Ordre, alignement, répartition, miroir, verrou, calques.</span></li>
-            <li><b>Animation 3D</b><span>Relief, géométrie, éclairage ; presets vibration, bounce, wave, glow, particules.</span></li>
-          </ul>
-        </div>
-        <div class="spec">
-          <h3>Panneaux</h3>
-          <p class="sub">Tout est paramétrable, avec aide contextuelle intégrée.</p>
-          <ul class="speclist">
-            <li><b>Propriétés</b><span>Tous les réglages de l'objet sélectionné, selon son type.</span></li>
-            <li><b>Page</b><span>Dimensions, format, arrière-plan, multi-pages.</span></li>
-            <li><b>Impression</b><span>DPI, fond perdu, repères, zone de sécurité, presets.</span></li>
-            <li><b>Données</b><span>Publipostage : liaison des champs PIM/Excel au gabarit.</span></li>
-            <li><b>Calques · Palette · Assets</b><span>Arborescence, couleurs/dégradés de marque, polices.</span></li>
-            <li><b>Images</b><span>Génération et insertion d'images par IA depuis l'éditeur.</span></li>
+            <li><b>Paramètres print</b><span>DPI, fond perdu, traits de coupe, repères, zone de sécurité.</span></li>
+            <li><b>Presets réutilisables</b><span>Familles de paramètres d'un projet à l'autre.</span></li>
           </ul>
         </div>
       </div>
@@ -615,10 +551,10 @@
   </section>
 
   <!-- IA & INTÉGRATIONS -->
-  <section class="block" id="ia">
+  <section class="block">
     <div class="wrap">
-      <div class="section-head">
-        <span class="idx">05 — IA &amp; intégrations</span>
+      <div class="shead">
+        <span class="idx grad-text">— IA &amp; INTÉGRATIONS</span>
         <h2>Connecté à vos outils<br/>et aux meilleurs modèles.</h2>
       </div>
       <div class="cols2">
@@ -626,10 +562,10 @@
           <h3>Intelligence artificielle</h3>
           <p class="sub">Modèles configurables selon la tâche.</p>
           <ul class="speclist">
-            <li><b>Génération d'images</b><span>Création de visuels par IA (Nano Banana), prompt, références, format de sortie.</span></li>
-            <li><b>Vision &amp; décomposition</b><span>Détection des textes d'un visuel pour les rendre éditables.</span></li>
+            <li><b>Génération d'images</b><span>Visuels par IA (Nano Banana), prompts, références.</span></li>
+            <li><b>Vision &amp; décomposition</b><span>Détection des textes pour les rendre éditables.</span></li>
             <li><b>LLM multi-fournisseurs</b><span>Claude, Gemini, GPT, Qwen, Kimi — au choix.</span></li>
-            <li><b>Assistance &amp; briefs</b><span>Chat IA, génération de briefs, workflows générés par prompt.</span></li>
+            <li><b>Briefs &amp; workflows</b><span>Chat IA, briefs, workflows générés par prompt.</span></li>
           </ul>
         </div>
         <div class="spec">
@@ -637,46 +573,12 @@
           <p class="sub">Données, médias et diffusion.</p>
           <ul class="speclist">
             <li><b>Google Drive</b><span>Import et sauvegarde des assets (DAM).</span></li>
-            <li><b>Telegram &amp; Gmail</b><span>Pilotage par bot et envoi automatisé via workflows.</span></li>
+            <li><b>Telegram &amp; Gmail</b><span>Pilotage par bot et envoi via workflows.</span></li>
             <li><b>Scraping</b><span>Bright Data, Jina, Firecrawl, Remove.bg.</span></li>
             <li><b>Banques d'images</b><span>Pexels, Unsplash.</span></li>
-            <li><b>Infrastructure</b><span>Hébergement cloud, sauvegarde automatique, accès par rôles.</span></li>
+            <li><b>Infrastructure</b><span>Cloud, sauvegarde auto, accès par rôles.</span></li>
           </ul>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="wrap"><div class="divider"></div></div>
-
-  <!-- DIFFÉRENCIATEURS -->
-  <section class="block">
-    <div class="wrap">
-      <div class="section-head"><span class="idx">06 — Différenciateurs</span><h2>Ce qui change vraiment<br/>la production.</h2></div>
-      <div class="deepdive">
-        <div class="dd-text"><span class="mono">Import sans perte</span><h3>Vos fichiers pro, intacts et éditables</h3><p>Récupérez un projet InDesign complet ou une présentation PowerPoint et retrouvez chaque bloc, style et image — modifiables. Plus besoin de tout reconstruire pour une retouche.</p><ul class="dd-list"><li>IDML : cascade de styles et polices conservées</li><li>PowerPoint : une diapositive = une page éditable</li><li>Image &amp; PDF : décomposition automatique en calques</li></ul></div>
-        <div class="dd-visual" aria-hidden="true"><span class="annot mono">SOURCE → ÉDITABLE</span><div class="dd-canvas"><span class="dd-scan"></span></div><span class="dd-chip" style="top:40px;right:30px">IDML</span><span class="dd-chip" style="bottom:50px;left:38px">PPTX</span><span class="dd-chip" style="top:50%;left:50%;transform:translate(-50%,-50%);border-color:var(--accent);color:var(--accent-soft)">SVG · PDF</span><svg class="regmark" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="var(--accent-soft)" stroke-width="1"><circle cx="13" cy="13" r="7"/><path d="M13 0v26M0 13h26"/></svg></div>
-      </div>
-      <div class="deepdive">
-        <div class="dd-text"><span class="mono">Data-driven</span><h3>Du tableau de données au visuel, en masse</h3><p>Importez vos produits depuis Excel ou enrichissez-les en scrapant des URLs, puis reliez ces données à un gabarit : une déclinaison du visuel par ligne — catalogues, PLV, fiches, étiquettes.</p><ul class="dd-list"><li>Base produits centralisée (PIM)</li><li>Enrichissement IA par scraping d'URL</li><li>Un gabarit, des centaines de variantes</li></ul></div>
-        <div class="dd-visual" aria-hidden="true"><span class="annot mono">1 GABARIT → N VISUELS</span><div class="dd-canvas"><span class="dd-scan"></span></div><span class="dd-chip" style="top:34px;left:30px">{{ prix }}</span><span class="dd-chip" style="top:90px;left:30px">{{ libellé }}</span><span class="dd-chip" style="bottom:46px;right:34px;border-color:var(--accent);color:var(--accent-soft)">×<b class="count" data-to="248" style="font-weight:500">0</b></span></div>
-      </div>
-      <div class="deepdive">
-        <div class="dd-text"><span class="mono">Prêt pour l'imprimeur</span><h3>Conforme aux normes, dès l'export</h3><p>Réglez résolution, fond perdu et repères en millimètres — identiques quel que soit le format. L'export embarque traits de coupe, repères de montage et zone de sécurité.</p><ul class="dd-list"><li>72 → 600 DPI selon la destination</li><li>Fond perdu et repères réutilisables en presets</li><li>Export PDF, PowerPoint, image et vidéo</li></ul></div>
-        <div class="dd-visual" aria-hidden="true"><span class="annot mono">300 DPI · BLEED 3MM</span><div class="dd-canvas"><span class="dd-scan"></span></div><span class="dd-chip" style="top:40px;right:28px">CMJN</span><span class="dd-chip" style="bottom:44px;left:32px;border-color:var(--accent);color:var(--accent-soft)">PDF/X</span><svg class="regmark" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="var(--accent-soft)" stroke-width="1"><circle cx="13" cy="13" r="7"/><path d="M13 0v26M0 13h26"/></svg></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- MÉTHODE -->
-  <section class="block">
-    <div class="wrap">
-      <div class="section-head"><span class="idx">07 — Méthode</span><h2>Quatre étapes,<br/>du brief au fichier final.</h2><p class="lead">Linéaire pour un visuel unique, automatisé pour la série.</p></div>
-      <div class="steps">
-        <div class="step"><span class="sn">01</span><h4>Importez ou partez de zéro</h4><p>Nouveau document, ou import InDesign, PowerPoint, PDF, SVG, image ou Excel.</p></div>
-        <div class="step"><span class="sn">02</span><h4>Composez dans l'éditeur</h4><p>Texte, formes, images, calques. Ou laissez l'IA décomposer un visuel existant.</p></div>
-        <div class="step"><span class="sn">03</span><h4>Branchez vos données</h4><p>Reliez une base produits (PIM / Excel) pour générer en masse.</p></div>
-        <div class="step"><span class="sn">04</span><h4>Exportez ou automatisez</h4><p>Export aux normes print, ou workflow déclenché à la main, par IA ou via Telegram.</p></div>
       </div>
     </div>
   </section>
@@ -684,22 +586,22 @@
   <!-- CAS D'USAGE -->
   <section class="block">
     <div class="wrap">
-      <div class="section-head"><span class="idx">08 — Cas d'usage</span><h2>Pensé pour le retail,<br/>le marketing et le print.</h2></div>
+      <div class="shead"><span class="idx grad-text">— CAS D'USAGE</span><h2>Pensé pour le retail,<br/>le marketing &amp; le print.</h2></div>
       <div class="tags">
-        <span class="tag">PLV &amp; affiches promotionnelles</span><span class="tag">Catalogues produits</span><span class="tag">Fiches produits à grande échelle</span><span class="tag">Étiquettes &amp; pricing</span><span class="tag">Visuels réseaux sociaux</span><span class="tag">Présentations PowerPoint</span><span class="tag">Déclinaisons multi-formats</span><span class="tag">Production pilotée par données</span><span class="tag">Habillage de marque</span><span class="tag">Animations &amp; vidéos</span><span class="tag">Automatisation éditoriale</span><span class="tag">Veille &amp; enrichissement produit</span>
+        <span class="tag">PLV &amp; affiches</span><span class="tag">Catalogues produits</span><span class="tag">Fiches à grande échelle</span><span class="tag">Étiquettes &amp; pricing</span><span class="tag">Réseaux sociaux</span><span class="tag">Présentations</span><span class="tag">Multi-formats</span><span class="tag">Production par données</span><span class="tag">Habillage de marque</span><span class="tag">Animations &amp; vidéos</span><span class="tag">Automatisation éditoriale</span><span class="tag">Veille &amp; enrichissement</span>
       </div>
     </div>
   </section>
 
   <!-- CTA -->
-  <section class="block" style="padding-top:18px">
+  <section class="block" style="padding-top:20px">
     <div class="wrap">
-      <div class="cta-card">
-        <div class="glow" aria-hidden="true"></div>
-        <span class="mono" style="color:var(--accent-soft)">Production sans friction</span>
-        <h2>Prêt à produire<br/>plus vite, et mieux ?</h2>
-        <p>Lancez votre premier document, importez un fichier existant, ou automatisez toute votre chaîne de création depuis le navigateur.</p>
-        <a class="btn btn-primary" href="/dashboard" style="font-size:15px;padding:14px 26px">Ouvrir l'application <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <div class="cta">
+        <div class="g" aria-hidden="true"></div>
+        <span class="mono grad-text">Production sans friction</span>
+        <h2 style="margin-top:14px">Scrapez. Éditez.<br/>Publiez.</h2>
+        <p>Lancez votre premier document, importez un InDesign ou un Illustrator, ou automatisez toute votre chaîne — depuis le navigateur.</p>
+        <a class="btn btn-primary" href="/dashboard" style="font-size:15px;padding:15px 28px">Ouvrir l'application <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
     </div>
   </section>
@@ -708,69 +610,43 @@
 
 <footer>
   <div class="wrap">
-    <div class="foot-grid">
-      <div class="foot-col">
-        <a class="brand" href="#top" style="margin-bottom:18px"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
-        <p>Éditeur visuel et studio de production graphique en ligne pour le print et l'écran. Import professionnel, IA générative, médias, données, automatisation et export aux normes d'imprimerie. Édité par IBS Studio.</p>
+    <div class="fgrid">
+      <div class="fcol">
+        <a class="brand" href="#top" style="margin-bottom:18px"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
+        <p>La chaîne de production graphique complète en ligne : scraping, édition pro (InDesign &amp; Illustrator), IA, données, automatisation et publication multi-canal aux normes d'imprimerie. Édité par IBS Studio.</p>
       </div>
-      <div class="foot-col"><h5>Créer</h5><ul><li>Nouveau document</li><li>Éditeur visuel</li><li>Imports IDML · PPTX · PDF · SVG · Image · Excel</li><li>Décomposition IA</li><li>Animation &amp; vidéo</li><li>Export PDF · PPTX · Image · WebM</li></ul></div>
-      <div class="foot-col"><h5>Médias &amp; données</h5><ul><li>DAM — bibliothèque média</li><li>Génération d'images IA</li><li>PIM — fiches produits</li><li>Publipostage</li><li>Taxonomies</li><li>Templates &amp; Scraping Hub</li></ul></div>
-      <div class="foot-col"><h5>Automatiser &amp; gérer</h5><ul><li>Workflows no-code</li><li>Bot Telegram</li><li>Chat IA</li><li>Intégrations Drive · Gmail</li><li>Paramètres &amp; modèles IA</li><li>Utilisateurs &amp; rôles</li></ul></div>
+      <div class="fcol"><h5>Créer</h5><ul><li>Éditeur visuel</li><li>Imports IDML·PPTX·SVG·PDF</li><li>Décomposition IA</li><li>Animation &amp; vidéo</li><li>Export PDF·PPTX·Image·WebM</li></ul></div>
+      <div class="fcol"><h5>Données</h5><ul><li>Scraping Hub</li><li>PIM — fiches produits</li><li>DAM — médias</li><li>Publipostage</li><li>Taxonomies</li></ul></div>
+      <div class="fcol"><h5>Automatiser</h5><ul><li>Workflows no-code</li><li>Bot Telegram</li><li>Chat IA</li><li>Drive · Gmail</li><li>Utilisateurs &amp; rôles</li></ul></div>
     </div>
-    <div class="foot-bottom">
+    <div class="fbot">
       <span class="mono">© 2026 IBS Studio — IBS-Studio</span>
-      <span class="mono">13 modules · Production print &amp; écran · 300 DPI · CMJN</span>
+      <span class="mono">Scraper · Éditer · Publier · 300 DPI · CMJN</span>
     </div>
   </div>
 </footer>
 
 <script>
-(function () {
+(function(){
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Révélation au scroll, avec léger décalage en cascade par groupe
-  var targets = document.querySelectorAll(
-    '.section-head, .feature, .module, .spec, .step, .tag, .deepdive .dd-text, .deepdive .dd-visual, .cta-card'
-  );
-  if (!('IntersectionObserver' in window) || reduce) {
-    targets.forEach(function (el) { el.classList.add('is-in'); });
-  } else {
-    // cascade : index au sein du même parent → délai
-    var lastParent = null, i = 0;
-    targets.forEach(function (el) {
-      if (el.parentElement !== lastParent) { lastParent = el.parentElement; i = 0; }
-      el.style.setProperty('--sd', (Math.min(i, 6) * 0.07) + 's');
-      i++;
-    });
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-    targets.forEach(function (el) { io.observe(el); });
+  var targets = document.querySelectorAll('.scene-text,.scene-visual,.shead,.mod,.spec,.stat,.tag,.cta');
+  if(!('IntersectionObserver' in window)||reduce){ targets.forEach(function(el){el.classList.add('is-in')}); }
+  else{
+    var lastParent=null,i=0;
+    targets.forEach(function(el){ if(el.parentElement!==lastParent){lastParent=el.parentElement;i=0;} el.style.setProperty('--sd',(Math.min(i,6)*0.06)+'s'); i++; });
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+    targets.forEach(function(el){io.observe(el)});
   }
-
-  // Compteur ×248 qui s'incrémente quand visible (sujet « génération en masse »)
-  document.querySelectorAll('.count').forEach(function (el) {
-    var to = parseInt(el.getAttribute('data-to'), 10) || 0;
-    if (reduce || !('IntersectionObserver' in window)) { el.textContent = to; return; }
-    var done = false;
-    var io2 = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting && !done) {
-          done = true; io2.disconnect();
-          var start = null, dur = 1400;
-          function tick(t) {
-            if (!start) start = t;
-            var p = Math.min((t - start) / dur, 1);
-            var eased = 1 - Math.pow(1 - p, 3);
-            el.textContent = Math.round(to * eased);
-            if (p < 1) requestAnimationFrame(tick);
-          }
-          requestAnimationFrame(tick);
-        }
-      });
-    }, { threshold: 0.5 });
+  document.querySelectorAll('.count').forEach(function(el){
+    var to=parseInt(el.getAttribute('data-to'),10)||0;
+    if(reduce||!('IntersectionObserver' in window)){el.textContent=to;return;}
+    var done=false;
+    var io2=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(e.isIntersecting&&!done){done=true;io2.disconnect();
+        var start=null,dur=1500;
+        function tick(t){if(!start)start=t;var p=Math.min((t-start)/dur,1);var eased=1-Math.pow(1-p,3);el.textContent=Math.round(to*eased);if(p<1)requestAnimationFrame(tick);}
+        requestAnimationFrame(tick);
+      }})},{threshold:.6});
     io2.observe(el);
   });
 })();
