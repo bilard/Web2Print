@@ -9,6 +9,7 @@ import { importImageSection } from './import-image'
 import { importSvgSection } from './import-svg'
 import { importImageToSvgSection } from './import-image-to-svg'
 import { importPdfToSvgSection } from './import-pdf-to-svg'
+import { pimSection } from './pim'
 import { taxonomiesSection } from './taxonomies'
 import { briefsSection } from './briefs'
 import { scrapingSection } from './scraping'
@@ -32,6 +33,7 @@ export const helpSections: HelpSection[] = [
   importSvgSection,
   importImageToSvgSection,
   importPdfToSvgSection,
+  pimSection,
   taxonomiesSection,
   briefsSection,
   scrapingSection,

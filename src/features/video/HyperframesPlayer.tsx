@@ -335,7 +335,7 @@ export function HyperframesPlayer({
         return
       }
       if (performance.now() - start > 5000) {
-        setFetchError('Timeline Annimation introuvable après 5s')
+        setFetchError('Timeline Animation introuvable après 5s')
         return
       }
       window.setTimeout(tryAttach, 50)
@@ -475,7 +475,7 @@ export function HyperframesPlayer({
               key={renderToken}
               srcDoc={srcDoc}
               onLoad={handleLoad}
-              title="Annimation preview"
+              title="Animation preview"
               sandbox="allow-scripts allow-same-origin"
               style={{
                 width: native.width,

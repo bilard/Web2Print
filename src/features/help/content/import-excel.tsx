@@ -1,22 +1,15 @@
-import { Database, Sparkles } from 'lucide-react'
+import { Database } from 'lucide-react'
 import type { HelpSection } from './types'
-import { PimGridMock } from './mockups/PimGridMock'
-import { EnrichmentPanelMock } from './mockups/EnrichmentPanelMock'
 
 export const importExcelSection: HelpSection = {
   id: 'import-excel',
   title: 'Importer Excel',
   category: 'Import',
-  intro: 'Alimenter le PIM depuis Excel, CSV, JSON ou Google Sheets — et enrichir par IA.',
+  intro: 'Alimenter le PIM depuis un fichier Excel, CSV, JSON ou Google Sheets.',
   blocks: [
     {
       type: 'text',
-      md: `Le PIM (Product Information Management) est ta source de vérité pour tout merge avec un template graphique. Plusieurs façons de l'alimenter.`,
-    },
-    { type: 'mockup', Component: PimGridMock },
-    {
-      type: 'text',
-      md: `_Vue d'une BDD : chaque ligne est un produit, l'icône violette signale une fiche enrichie par IA._`,
+      md: `Cet import crée (ou complète) une **base de données produits** dans le PIM à partir d'un fichier. C'est le point d'entrée le plus rapide pour démarrer un catalogue.`,
     },
     {
       type: 'text',
@@ -29,19 +22,17 @@ export const importExcelSection: HelpSection = {
 | **.json** | \`{ sheets: [{ columns, rows }] }\` — pour intégration custom |
 | **Google Sheets** | Via OAuth Google, sync à la demande |
 
-L'import détecte automatiquement les types : texte, nombre, booléen, date, formule, dictionnaire.`,
+L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, formule, dictionnaire.`,
     },
     {
       type: 'text',
       md: `### Importer un fichier
 
-1. Va dans **PIM** depuis le menu
-2. Clique **Importer un fichier** (ou crée une BDD vide pour commencer)
-3. Sélectionne ton fichier
-4. Vérifie les colonnes détectées
-5. Valide → la BDD est créée et synchronisée Firestore
-
-Tes BDD sont stockées sur Firebase et accessibles depuis n'importe quel poste connecté à ton compte.`,
+1. Ouvre **PIM** depuis le menu.
+2. Clique **Importer un fichier** (ou *Créer vide* pour partir d'une base vierge).
+3. Sélectionne ton fichier.
+4. Vérifie les colonnes détectées.
+5. Valide → la base est créée et synchronisée sur Firebase.`,
     },
     {
       type: 'menu-link',
@@ -51,38 +42,9 @@ Tes BDD sont stockées sur Firebase et accessibles depuis n'importe quel poste c
     },
     {
       type: 'text',
-      md: `### Enrichir une ligne par IA`,
-    },
-    { type: 'mockup', Component: EnrichmentPanelMock },
-    {
-      type: 'text',
-      md: `Clique sur une ligne → panneau **Enrichi par IA** à droite.
+      md: `### Et ensuite ?
 
-**Mode AUTO** (violet) : si la ligne a un \`title\`, \`brand\` ou \`reference\`, recherche Google + LLM trouve l'URL et extrait. Risque d'hallucination — à privilégier quand tu n'as pas d'URL.
-
-**Mode TEMPLATE** (vert) : si l'URL est connue ET un template scraping matche le domaine, extraction déterministe par CSS selectors + LLM uniquement pour la rédaction. Précision maximale.
-
-**Astuce** : si ta ligne a **uniquement une URL** (colonne nommée \`url\`, \`URL\`, \`product_url\`…), le pipeline détecte la colonne, matche le template et lance Mode TEMPLATE sans avoir besoin de titre. Workflow idéal pour batcher 1000 URLs.`,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-templates' },
-      label: 'Gérer les templates scraping',
-      icon: Sparkles,
-    },
-    {
-      type: 'text',
-      md: `### Champs structurés
-
-Au-delà du texte simple, le PIM stocke :
-
-- **Formules Excel** : évaluées à la volée
-- **Spécifications** : \`[{group, name, value}]\` (ex: dimensions, matériaux)
-- **Variants** : tableau de références produit (ref, label, propriétés)
-- **Documents** : liens PDF, fiches techniques, vidéos
-- **Images** : URLs ou Storage Firebase
-
-Tous ces champs structurés sont accessibles dans le data-merge pour alimenter un template.`,
+Une fois la base importée, tout se passe dans le **PIM** : enrichir les fiches par IA, gérer les champs structurés (spécifications, variants, documents, images) et exporter en série. Voir la section **PIM**.`,
     },
   ],
 }
