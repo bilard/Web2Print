@@ -186,7 +186,7 @@ export function Animation3DPanel() {
       </div>
 
       {/* Duration */}
-      <div className="space-y-1.5">
+      <div data-tour="opt-anim-duration" className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-white/60">
           <span className="flex items-center gap-1">
             Durée par cycle
@@ -206,7 +206,7 @@ export function Animation3DPanel() {
       </div>
 
       {/* Intensity */}
-      <div className="space-y-1.5">
+      <div data-tour="opt-anim-intensity" className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-white/60">
           <span className="flex items-center gap-1">
             Intensité

@@ -19,6 +19,14 @@ const prepareProps = () => {
   selectFirstObject()
 }
 
+/** Déplie le panneau Animation 3D ET sélectionne un objet (panneau vide sans sélection). */
+const prepareAnimPanel = () => {
+  const ui = useUIStore.getState()
+  ui.setRightPanelOpen(true)
+  ui.setRightPanels(ui.rightPanels.map((p) => ({ ...p, collapsed: p.id !== 'animation3d' })))
+  selectFirstObject()
+}
+
 /**
  * Ouvre le stack de panneaux droits et déplie un panneau précis (les autres
  * sont repliés pour garder la cible visible). Les panneaux ne sont pas lazy ;
@@ -208,7 +216,29 @@ export const editorTourSteps: TourStep[] = [
     requireSelector: '[data-tour="panel-page"]',
     popover: {
       title: 'Panneau Page',
-      description: 'Gérez les pages / plans de travail : ajout, suppression, format et fond de chaque page.',
+      description: 'Gérez les pages / plans de travail. Détaillons ses options — survolez les « ? » pour l’aide en continu.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-page-dims"]',
+    prepare: openPanel('page'),
+    requireSelector: '[data-tour="opt-page-dims"]',
+    popover: {
+      title: 'Dimensions',
+      description: 'Taille de la page en mm : saisie largeur/hauteur ou format prédéfini (A4, Instagram…).',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-page-bg"]',
+    prepare: openPanel('page'),
+    requireSelector: '[data-tour="opt-page-bg"]',
+    popover: {
+      title: 'Arrière-plan',
+      description: 'Fond de la page : couleur unie, dégradé paramétrable, ou image verrouillée derrière les objets.',
       side: 'left',
       align: 'start',
     },
@@ -219,7 +249,62 @@ export const editorTourSteps: TourStep[] = [
     requireSelector: '[data-tour="panel-print"]',
     popover: {
       title: 'Panneau Impression',
-      description: 'DPI, fond perdu (bleed) et repères de coupe — en dimensions physiques (mm) pour un export prêt à imprimer.',
+      description: 'Paramètres pour un export prêt à imprimer. Détaillons chaque réglage.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-print-presets"]',
+    prepare: openPanel('print'),
+    requireSelector: '[data-tour="opt-print-presets"]',
+    popover: {
+      title: 'Famille de paramètres',
+      description: 'Enregistrez vos réglages d’impression comme preset réutilisable d’un projet à l’autre.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-print-dpi"]',
+    prepare: openPanel('print'),
+    requireSelector: '[data-tour="opt-print-dpi"]',
+    popover: {
+      title: 'Résolution (DPI)',
+      description: 'Densité de l’export. 300 DPI = standard offset/impression ; 72 DPI = web.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-print-bleed"]',
+    prepare: openPanel('print'),
+    requireSelector: '[data-tour="opt-print-bleed"]',
+    popover: {
+      title: 'Fond perdu (bleed)',
+      description: 'Marge de débord rognée après impression : évite les liserés blancs. 3 mm offset, 5 mm numérique.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-print-marks"]',
+    prepare: openPanel('print'),
+    requireSelector: '[data-tour="opt-print-marks"]',
+    popover: {
+      title: 'Repères d’impression',
+      description: 'Traits de coupe, repères de fond perdu et hirondelles (calage des couleurs) pour l’imprimeur.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-print-safe"]',
+    prepare: openPanel('print'),
+    requireSelector: '[data-tour="opt-print-safe"]',
+    popover: {
+      title: 'Zone de sécurité',
+      description: 'Marge intérieure où garder le texte et les éléments importants pour ne pas qu’ils soient coupés.',
       side: 'left',
       align: 'start',
     },
@@ -252,7 +337,29 @@ export const editorTourSteps: TourStep[] = [
     requireSelector: '[data-tour="panel-palette"]',
     popover: {
       title: 'Panneau Palette',
-      description: 'Vos couleurs et dégradés de marque, applicables en un clic aux objets sélectionnés.',
+      description: 'Vos couleurs et dégradés de marque. Détaillons ses deux sections.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-palette-colors"]',
+    prepare: openPanel('palette'),
+    requireSelector: '[data-tour="opt-palette-colors"]',
+    popover: {
+      title: 'Couleurs du projet',
+      description: 'Vos couleurs de marque enregistrées, réutilisables en un clic. Sauvegardées avec le projet.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-palette-gradients"]',
+    prepare: openPanel('palette'),
+    requireSelector: '[data-tour="opt-palette-gradients"]',
+    popover: {
+      title: 'Dégradés du projet',
+      description: 'Vos dégradés enregistrés (linéaires/radiaux), applicables aux objets et aux fonds.',
       side: 'left',
       align: 'start',
     },
@@ -270,11 +377,33 @@ export const editorTourSteps: TourStep[] = [
   },
   {
     element: '[data-tour="panel-animation3d"]',
-    prepare: openPanel('animation3d'),
+    prepare: prepareAnimPanel,
     requireSelector: '[data-tour="panel-animation3d"]',
     popover: {
       title: 'Panneau Animation 3D',
-      description: 'Effets et transformations 3D applicables aux objets pour des rendus dynamiques.',
+      description: 'Effets et transformations 3D (un objet est sélectionné pour la démo). Choisissez un preset puis réglez les paramètres.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-anim-duration"]',
+    prepare: prepareAnimPanel,
+    requireSelector: '[data-tour="opt-anim-duration"]',
+    popover: {
+      title: 'Durée par cycle',
+      description: 'Temps d’une boucle complète de l’animation, en secondes. Plus court = mouvement plus rapide.',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="opt-anim-intensity"]',
+    prepare: prepareAnimPanel,
+    requireSelector: '[data-tour="opt-anim-intensity"]',
+    popover: {
+      title: 'Intensité',
+      description: 'Amplitude de l’effet (× le mouvement de base). Plus élevé = animation plus marquée.',
       side: 'left',
       align: 'start',
     },

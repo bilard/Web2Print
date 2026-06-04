@@ -111,7 +111,7 @@ export function PagePanel() {
   return (
     <div className="p-3 flex flex-col gap-4">
       {/* ── Dimensions ── */}
-      <section className="flex flex-col gap-2">
+      <section data-tour="opt-page-dims" className="flex flex-col gap-2">
         <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Dimensions
           <OptionHelp text="Taille de la page en millimètres. Saisissez largeur/hauteur, ou choisissez un format prédéfini ci-dessous (A4, Instagram…). Modifiable à tout moment." />
@@ -152,7 +152,7 @@ export function PagePanel() {
       </section>
 
       {/* ── Arrière-plan ── */}
-      <section className="flex flex-col gap-2 pt-3 border-t border-white/5">
+      <section data-tour="opt-page-bg" className="flex flex-col gap-2 pt-3 border-t border-white/5">
         <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Arrière-plan
           <OptionHelp text="Fond de la page : couleur unie, dégradé, ou image. L'image de fond est verrouillée derrière les objets ; le dégradé est paramétrable (angle, étapes)." />

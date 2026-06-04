@@ -130,7 +130,7 @@ export function PrintPanel() {
   return (
     <div className="p-3 flex flex-col gap-4">
       {/* ── Famille de paramètres (presets réutilisables entre projets) ── */}
-      <section className="flex flex-col gap-1.5">
+      <section data-tour="opt-print-presets" className="flex flex-col gap-1.5">
         <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Famille de paramètres
           <OptionHelp text="Enregistrez vos réglages d'impression comme preset réutilisable d'un projet à l'autre. Les icônes à droite : créer, mettre à jour, supprimer une famille." />
@@ -195,7 +195,7 @@ export function PrintPanel() {
       </div>
 
       {/* ── Résolution ── */}
-      <section className="flex flex-col gap-1">
+      <section data-tour="opt-print-dpi" className="flex flex-col gap-1">
         <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Résolution (DPI)
           <OptionHelp text="Densité de l'export en points par pouce. 300 DPI = standard offset/impression. 72 DPI = web. Plus le DPI est élevé, plus le fichier est lourd et net." />
@@ -213,7 +213,7 @@ export function PrintPanel() {
       </section>
 
       {/* ── Fond perdu ── */}
-      <section className="flex flex-col gap-1.5">
+      <section data-tour="opt-print-bleed" className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
             Fond perdu (bleed)
@@ -239,7 +239,7 @@ export function PrintPanel() {
       </section>
 
       {/* ═══ REPÈRES D'IMPRESSION ═══ */}
-      <section className="flex flex-col gap-3 pt-3 border-t border-white/5">
+      <section data-tour="opt-print-marks" className="flex flex-col gap-3 pt-3 border-t border-white/5">
         <h3 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Repères d'impression
           <OptionHelp text="Marques ajoutées hors page pour guider l'imprimeur : traits de coupe (où rogner), repères de fond perdu, et hirondelles (calage des couleurs)." />
@@ -323,7 +323,7 @@ export function PrintPanel() {
       </section>
 
       {/* ═══ ZONE DE SÉCURITÉ ═══ */}
-      <section className="flex flex-col gap-3 pt-3 border-t border-white/5">
+      <section data-tour="opt-print-safe" className="flex flex-col gap-3 pt-3 border-t border-white/5">
         <h3 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
           Zone de sécurité
           <OptionHelp text="Marge intérieure de sécurité : gardez-y le texte et les éléments importants pour qu'ils ne soient pas coupés au rognage." />
