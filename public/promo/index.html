@@ -112,7 +112,8 @@
   .module .mfeat li { border-color: color-mix(in srgb, var(--mc,var(--accent)) 22%, var(--line)); }
   .module:hover .mfeat li { border-color: color-mix(in srgb, var(--mc,var(--accent)) 38%, var(--line)); }
   .module h3 { font-size:18px; font-weight:600; letter-spacing:-.01em; }
-  .module .mdesc { font-size:14px; color:var(--muted); margin-bottom:14px; }
+  .module .mdesc { font-size:14px; color:var(--muted); margin-bottom:14px; line-height:1.55; }
+  .module .mdesc code { font-family:var(--mono); font-size:.84em; color:var(--accent-soft); background:rgba(99,102,241,.12); padding:1px 5px; border-radius:4px; }
   .mfeat { list-style:none; display:flex; flex-wrap:wrap; gap:7px; }
   .mfeat li { font-size:12px; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:4px 9px; font-family:var(--mono); letter-spacing:.01em; }
 
@@ -388,55 +389,55 @@
       <div class="modules">
 
         <div class="module" style="--mc:#a78bfa"><div class="mhead"><span class="mnum">01</span><h3>Nouveau document</h3></div>
-          <p class="mdesc">Créez une composition vierge dans n'importe quel format, print ou écran.</p>
+          <p class="mdesc">Choisissez un format prédéfini (impression, écran, réseaux sociaux) ou des dimensions sur mesure en pixels, puis un fond uni, dégradé ou image. La composition s'ouvre directement dans l'éditeur, prête à habiller.</p>
           <ul class="mfeat"><li>A4 / A3 / A5 / Letter</li><li>Full HD · 4K · 16:9</li><li>Instagram · Facebook · Twitter · LinkedIn</li><li>Format personnalisé</li><li>Fond uni</li><li>Dégradé</li><li>Image</li></ul></div>
 
         <div class="module" style="--mc:#fbbf24"><div class="mhead"><span class="mnum">02</span><h3>Importer</h3></div>
-          <p class="mdesc">Repartez d'un fichier existant — six formats, mise en page conservée et éditable.</p>
+          <p class="mdesc">Repartez d'un fichier existant : mise en page, styles et texte conservés et modifiables — pas une capture aplatie. Les conversions image et PDF vers SVG sont automatiquement décomposées en calques éditables par IA.</p>
           <ul class="mfeat"><li>IDML (InDesign)</li><li>PowerPoint</li><li>Image PNG/JPG/SVG/WebP</li><li>SVG vectoriel</li><li>Excel / CSV</li><li>Image → SVG éditable</li><li>PDF → SVG éditable</li></ul></div>
 
         <div class="module" style="--mc:#38bdf8"><div class="mhead"><span class="mnum">03</span><h3>Bibliothèque</h3></div>
-          <p class="mdesc">Tous vos projets, organisés et filtrables.</p>
+          <p class="mdesc">Retrouvez tous vos projets en vue vignettes ou liste, filtrés par taxonomie. Sélection multiple pour la suppression groupée, duplication en un clic, et ouverture directe dans l'éditeur.</p>
           <ul class="mfeat"><li>Vue vignettes / liste</li><li>Filtre par taxonomie</li><li>Sélection multiple</li><li>Suppression groupée</li><li>Duplication</li><li>Rattachement taxonomique</li></ul></div>
 
         <div class="module" style="--mc:#f472b6"><div class="mhead"><span class="mnum">04</span><h3>DAM — médias</h3></div>
-          <p class="mdesc">Bibliothèque d'images centralisée et génération par IA. Neuf rubriques.</p>
+          <p class="mdesc">Centralisez tous vos visuels — banques libres de droits, uploads, favoris, collections, assets de marque — et générez des images par IA. Recherche par mot-clé ou par image, filtres par source, orientation et couleur dominante.</p>
           <ul class="mfeat"><li>Banque d'images (Pexels · Unsplash)</li><li>Mes images</li><li>Favoris</li><li>Collections</li><li>Récents</li><li>Projets</li><li>Création d'image (IA)</li><li>Animations HTML</li><li>Google Drive</li><li>Filtres source/orientation/couleur</li><li>Recherche par image</li></ul></div>
 
         <div class="module" style="--mc:#34d399"><div class="mhead"><span class="mnum">05</span><h3>PIM — données produits</h3></div>
-          <p class="mdesc">Centralisez et enrichissez vos fiches produits, base de tout publipostage.</p>
+          <p class="mdesc">Gérez plusieurs bases de fiches produits : import Excel/CSV, création manuelle, colonnes et rattachement taxonomique. Enrichissez automatiquement chaque fiche en scrapant des URLs (specs, images, descriptions) — la base de tout publipostage.</p>
           <ul class="mfeat"><li>Bases de données multiples</li><li>Import Excel / CSV</li><li>Scraper le web</li><li>Créer un tableau vide</li><li>Gestion des colonnes</li><li>Taxonomie produits</li><li>Enrichissement IA</li></ul></div>
 
         <div class="module" style="--mc:#2dd4bf"><div class="mhead"><span class="mnum">06</span><h3>Taxonomies</h3></div>
-          <p class="mdesc">Arborescence de classification pour structurer projets et produits.</p>
+          <p class="mdesc">Construisez une arborescence de classification à N niveaux (catégories, gammes, familles). Reliez-y vos projets et produits pour les filtrer dans la Bibliothèque et structurer vos exports.</p>
           <ul class="mfeat"><li>Hiérarchie N-niveaux</li><li>Catégories &amp; gammes</li><li>Liaison aux projets</li><li>Filtrage Bibliothèque</li></ul></div>
 
         <div class="module" style="--mc:#818cf8"><div class="mhead"><span class="mnum">07</span><h3>Templates scraping</h3></div>
-          <p class="mdesc">Définissez visuellement les règles d'extraction réutilisables.</p>
+          <p class="mdesc">Définissez visuellement les règles d'extraction — sélecteurs et mapping des champs — réutilisables d'un produit à l'autre. Le constructeur visuel permet de créer ces gabarits sans écrire de code.</p>
           <ul class="mfeat"><li>Sélecteurs</li><li>Mapping des champs</li><li>Constructeur visuel</li><li>Réutilisable par produit</li></ul></div>
 
         <div class="module" style="--mc:#22d3ee"><div class="mhead"><span class="mnum">08</span><h3>Scraping Hub</h3></div>
-          <p class="mdesc">Lancez et suivez les extractions à grande échelle.</p>
+          <p class="mdesc">Lancez et supervisez les extractions à grande échelle : lots, sources et suivi des résultats en un seul endroit. Escalade anti-bot automatique via Bright Data, Jina et Firecrawl.</p>
           <ul class="mfeat"><li>Lots &amp; sources</li><li>Suivi des résultats</li><li>Bright Data</li><li>Jina · Firecrawl</li></ul></div>
 
         <div class="module" style="--mc:#6366f1"><div class="mhead"><span class="mnum">09</span><h3>Workflows</h3></div>
-          <p class="mdesc">Automatisation no-code façon Zapier. Sept catégories de nodes, génération par IA.</p>
+          <p class="mdesc">Automatisez l'enchaînement des modules avec un éditeur de graphe no-code, façon Zapier : sept catégories de nodes (import, enrichissement, transformation, sauvegarde, export, logique, communication). Un workflow complet peut être généré par IA depuis une simple description.</p>
           <ul class="mfeat"><li>Import (14 nodes)</li><li>Enrichissement</li><li>Transformation</li><li>Sauvegarde</li><li>Export</li><li>Logique</li><li>Communication</li><li>Génération par IA (prompt)</li></ul></div>
 
         <div class="module" style="--mc:#60a5fa"><div class="mhead"><span class="mnum">10</span><h3>Telegram</h3></div>
-          <p class="mdesc">Pilotez l'app depuis un bot : demande → workflow généré et exécuté → fichier renvoyé.</p>
+          <p class="mdesc">Pilotez l'application depuis un bot : chat IA avec accès web, <code>/flow</code> pour générer et exécuter un workflow, <code>/run</code> pour relancer un workflow sauvegardé. Le fichier produit vous est renvoyé dans la conversation.</p>
           <ul class="mfeat"><li>Chat IA avec accès web</li><li>/flow — générer + exécuter</li><li>/run — workflow sauvegardé</li><li>/clear — vider la boîte</li></ul></div>
 
         <div class="module" style="--mc:#e879f9"><div class="mhead"><span class="mnum">11</span><h3>Animation</h3></div>
-          <p class="mdesc">Créez des vidéos et animations HTML (HyperFrames).</p>
+          <p class="mdesc">Créez des vidéos et animations HTML (HyperFrames) à partir d'un prompt ou d'une image, avec compositions, transitions et fichiers de référence. Exportables et réutilisables dans vos projets et workflows.</p>
           <ul class="mfeat"><li>À partir d'un prompt</li><li>À partir d'une image</li><li>Fichiers de référence</li><li>Compositions &amp; transitions</li></ul></div>
 
         <div class="module" style="--mc:#c084fc"><div class="mhead"><span class="mnum">12</span><h3>Chat IA</h3></div>
-          <p class="mdesc">Un assistant conversationnel intégré pour produire et déclencher des actions.</p>
+          <p class="mdesc">Un assistant conversationnel intégré : conversation multitour, pièces jointes, génération d'images et saisie vocale. Interrogez vos données, produisez du contenu et réutilisez une bibliothèque de prompts.</p>
           <ul class="mfeat"><li>Conversation multitour</li><li>Pièces jointes</li><li>Génération d'images</li><li>Saisie vocale</li><li>Bibliothèque de prompts</li></ul></div>
 
         <div class="module" style="--mc:#fb7185"><div class="mhead"><span class="mnum">13</span><h3>Utilisateurs &amp; rôles</h3></div>
-          <p class="mdesc">Contrôle d'accès fin (RBAC) par module.</p>
+          <p class="mdesc">Contrôle d'accès complet (RBAC) : attribuez des rôles, ajoutez des surcharges de permission granulaires par module, et bloquez ou réactivez des comptes. Le propriétaire garde toujours la main.</p>
           <ul class="mfeat"><li>Attribuer un rôle</li><li>Surcharges granulaires</li><li>Bloquer / réactiver</li><li>Permissions par module</li></ul></div>
 
       </div>
