@@ -1,4 +1,4 @@
-# SCRIPT.md — Web2Print
+# SCRIPT.md — IBS-Studio
 
 **Durée cible :** 134 secondes (audio = 133.68 s)
 **Voix :** française, posée, B2B produit (macOS `say` Thomas, 200 wpm)
@@ -6,7 +6,7 @@
 
 ---
 
-> Web2Print. La plateforme tout-en-un qui orchestre votre catalogue produit, du brief au print imprimeur.
+> IBS-Studio. La plateforme tout-en-un qui orchestre votre catalogue produit, du brief au print imprimeur.
 >
 > Importez vos sources : Excel, InDesign IDML, PowerPoint, SVG, PDF. Tout est converti, tout reste éditable.
 >
@@ -24,7 +24,7 @@
 >
 > L'éditeur graphique. Canvas Fabric, outils texte, formes, images. Calques avec groupes, palette projet, presets A4 à Facebook Cover.
 >
-> Au cœur de l'éditeur, Web2Print parle nativement InDesign. Ouvrez un IDML, conservez calques, frames, styles paragraphes et character styles Adobe. Modifiez, puis ré-exportez en IDML pour réinjecter dans votre chaîne Adobe.
+> Au cœur de l'éditeur, IBS-Studio parle nativement InDesign. Ouvrez un IDML, conservez calques, frames, styles paragraphes et character styles Adobe. Modifiez, puis ré-exportez en IDML pour réinjecter dans votre chaîne Adobe.
 >
 > L'arme cachée, le data merge. Branchez une base PIM, un Google Sheets ou un fichier Excel. Posez vos placeholders dans la maquette, ajoutez des formules — concaténation, conditions, formatage prix — et batch-exportez cent fiches en un clic.
 >
@@ -32,4 +32,4 @@
 >
 > Pour l'imprimeur, tout est configurable. Fond perdu, marges sécurité, traits de coupe, profils ICC, quadrichromie 300 dpi. L'export final propose six formats. PNG haute résolution, PDF imprimeur quadri, PowerPoint, HTML responsive, SVG vectoriel, et IDML pour InDesign.
 >
-> Web2Print. Du data au print, sans changer d'outil.
+> IBS-Studio. Du data au print, sans changer d'outil.

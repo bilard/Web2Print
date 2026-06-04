@@ -1,6 +1,6 @@
-# Web2Print Capture — Extension Chrome
+# IBS-Studio Capture — Extension Chrome
 
-Extension Manifest V3 qui permet à Web2Print d'injecter son mode capture directement dans un onglet natif. Évite le rendu dégradé de l'iframe (polices custom, icon-fonts).
+Extension Manifest V3 qui permet à IBS-Studio d'injecter son mode capture directement dans un onglet natif. Évite le rendu dégradé de l'iframe (polices custom, icon-fonts).
 
 ## Build
 
@@ -18,9 +18,9 @@ Produit `extension/dist/` (à charger dans Chrome).
 4. Sélectionner le dossier `extension/dist/`
 5. Copier l'**ID de l'extension** affiché sous le nom (ex : `abcdef…`)
 
-## Configuration Web2Print
+## Configuration IBS-Studio
 
-Créer / éditer `/Applications/_IA/Claude_workspace/Web2Print/.env.local` :
+Créer / éditer `/Applications/_IA/Claude_workspace/IBS-Studio/.env.local` :
 
 ```
 VITE_CHROME_EXTENSION_ID=<l'ID copié à l'étape 5>
@@ -34,12 +34,12 @@ Relancer `npm run dev`. Dans le Scraping Hub → n'importe quel template, l'édi
 2. Cliquer **Ouvrir dans Chrome & tagger** → un nouvel onglet s'ouvre avec la page réelle (polices natives, JS exécuté).
 3. Un bandeau « Onglet Chrome actif » s'affiche dans le Scraping Hub.
 4. Dans l'onglet source : **double-clic** pour capturer un élément (simple-clic navigue, accordéons ouvrent…).
-5. La modal de mappage apparaît dans Web2Print → assigner à un field.
+5. La modal de mappage apparaît dans IBS-Studio → assigner à un field.
 6. Les surbrillances multi-couleurs suivent en temps réel dans l'onglet.
 
 ## Désinstaller / désactiver
 
-`chrome://extensions` → interrupteur de l'extension. Web2Print bascule automatiquement sur le mode iframe (fallback).
+`chrome://extensions` → interrupteur de l'extension. IBS-Studio bascule automatiquement sur le mode iframe (fallback).
 
 ## Permissions expliquées
 
@@ -47,4 +47,4 @@ Relancer `npm run dev`. Dans le Scraping Hub → n'importe quel template, l'édi
 - `tabs` : ouvrir / fermer l'onglet de capture.
 - `host_permissions: <all_urls>` : l'utilisateur saisit des URLs de fournisseurs variés ; pas de liste fixe possible.
 - `storage` : mémoriser l'état de connexion pour la popup.
-- `externally_connectable` : seules les origines Web2Print connues (`localhost:5173/4173`, `web2print-6fe5a.web.app`, `web2print-6fe5a.firebaseapp.com`) peuvent communiquer avec l'extension.
+- `externally_connectable` : seules les origines IBS-Studio connues (`localhost:5173/4173`, `web2print-6fe5a.web.app`, `web2print-6fe5a.firebaseapp.com`) peuvent communiquer avec l'extension.

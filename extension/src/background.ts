@@ -1,12 +1,12 @@
 /**
- * Service worker de l'extension Web2Print Capture.
+ * Service worker de l'extension IBS-Studio Capture.
  *
  * Rôles :
- *  1. Répondre au ping de Web2Print (externally_connectable → sendMessage).
- *  2. Accepter une connexion port (chrome.runtime.connect) depuis Web2Print
+ *  1. Répondre au ping de IBS-Studio (externally_connectable → sendMessage).
+ *  2. Accepter une connexion port (chrome.runtime.connect) depuis IBS-Studio
  *     et la garder ouverte tant que le user utilise le Scraping Hub.
  *  3. Ouvrir un onglet cible (open-and-capture) et injecter le content script.
- *  4. Relayer les messages dans les 2 sens entre le port Web2Print et l'onglet.
+ *  4. Relayer les messages dans les 2 sens entre le port IBS-Studio et l'onglet.
  */
 
 type TabId = number
@@ -145,7 +145,7 @@ chrome.webNavigation.onDOMContentLoaded.addListener(async ({ tabId, frameId }) =
   }
 })
 
-// ─── Relais des messages depuis le content script vers Web2Print ───────────
+// ─── Relais des messages depuis le content script vers IBS-Studio ───────────
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (!webPort || sender.tab?.id !== webPort.activeTabId) return false
   const m = msg as { type: string }

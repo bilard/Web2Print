@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Capture authenticated Web2Print views by connecting to an already-running
+ * Capture authenticated IBS-Studio views by connecting to an already-running
  * Chrome instance via CDP (Chrome DevTools Protocol).
  *
  * Prerequisites — user must launch Chrome with remote debugging enabled:

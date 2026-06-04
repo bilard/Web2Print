@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Web2Print Capture",
+  "name": "IBS-Studio Capture",
   "version": "0.1.0",
-  "description": "Capture d'éléments pour le Scraping Hub de Web2Print",
+  "description": "Capture d'éléments pour le Scraping Hub de IBS-Studio",
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -11,7 +11,7 @@
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Web2Print Capture"
+    "default_title": "IBS-Studio Capture"
   },
   "icons": {
     "16": "icons/16.png",

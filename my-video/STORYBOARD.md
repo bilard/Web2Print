@@ -1,4 +1,4 @@
-# STORYBOARD.md — Web2Print
+# STORYBOARD.md — IBS-Studio
 
 Format : 1920×1080, 30 fps.
 Durée finale : **134 secondes** (audio narration = 133.68 s, Thomas FR · 200 wpm).
@@ -10,7 +10,7 @@ Durée finale : **134 secondes** (audio narration = 133.68 s, Thomas FR · 200 w
 
 | # | Beat                       | Comp. | Durée | Range       | Headline                                  | Eyebrow                       |
 | - | -------------------------- | ----- | ----- | ----------- | ----------------------------------------- | ----------------------------- |
-| 1 | Hook + Library             | beat-hook                       | 5  | 0:00–0:05   | Web2Print + claim                         | —                             |
+| 1 | Hook + Library             | beat-hook                       | 5  | 0:00–0:05   | IBS-Studio + claim                         | —                             |
 | 2 | Importer                   | beat-import                     | 6  | 0:05–0:11   | Importer                                  | Sources catalogues            |
 | 3 | PIM Scraping               | beat-pim-scraping               | 11 | 0:11–0:22   | Catalogue centralisé                      | Data layer                    |
 | 4 | Taxonomies                 | beat-taxonomies                 | 7  | 0:22–0:29   | Taxonomies                                | Glissez · déposez             |
@@ -24,7 +24,7 @@ Durée finale : **134 secondes** (audio narration = 133.68 s, Thomas FR · 200 w
 | 12 | Data merge                 | beat-editor-merge               | 13 | 1:31–1:44   | Cent fiches en un clic                    | Mailmerge moderne             |
 | 13 | Imports SVG / PPTX / PDF  | beat-editor-imports             | 8  | 1:44–1:52   | SVG · PowerPoint · PDF                    | Éditables, pas rasterisés     |
 | 14 | Print + Export 6 formats  | beat-editor-export              | 18 | 1:52–2:10   | Six formats                               | Print pro · paramétrage       |
-| 15 | Outro                      | beat-outro                      | 4  | 2:10–2:14   | Web2Print · claim                         | —                             |
+| 15 | Outro                      | beat-outro                      | 4  | 2:10–2:14   | IBS-Studio · claim                         | —                             |
 
 ## Contenu détaillé par beat
 
@@ -47,7 +47,7 @@ UI 3 colonnes :
 
 3 cards parallèles :
 - **SVG** : preview avec rectangle gradient, cercle orange, triangle vert + stats (14 paths, 4 textes, 3 groupes) + 4 bullets sur fidélité calques/textes/dégradés/placeholders.
-- **PPTX** : 4 mini-slides (Titre 1-4 avec barres et images) + stats (12 slides, 38 objets, 4 masters) + 4 bullets sur conversion 1 slide → 1 page Web2Print.
+- **PPTX** : 4 mini-slides (Titre 1-4 avec barres et images) + stats (12 slides, 38 objets, 4 masters) + 4 bullets sur conversion 1 slide → 1 page IBS-Studio.
 - **PDF** : doc miniature avec en-tête, paragraphes, image rouge, marques de coupe + stats (8 pages, OCR texte, CMJN détecté) + 4 bullets sur OCR / marques / profil ICC.
 
 ### Beat 14 — Print + Export 6 formats (18 s, 1:52–2:10)

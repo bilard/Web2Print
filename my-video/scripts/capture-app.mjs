@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Capture authenticated views of Web2Print dashboard for the HyperFrames video.
+ * Capture authenticated views of IBS-Studio dashboard for the HyperFrames video.
  *
  * First run: a Chrome window opens — log in with Google. The script waits for
  * the dashboard to appear, then runs the capture sequence. Subsequent runs
@@ -43,7 +43,7 @@ async function waitForLogin(page) {
   console.log("→ Vérification session …");
   await page.goto(`${APP_URL}/dashboard`, { waitUntil: "domcontentloaded" });
 
-  // Attendre soit le bouton login Google soit le dashboard ("Mes projets" ou sidebar Web2Print).
+  // Attendre soit le bouton login Google soit le dashboard ("Mes projets" ou sidebar IBS-Studio).
   const start = Date.now();
   while (Date.now() - start < 240_000) {
     const state = await page.evaluate(() => {

@@ -1,4 +1,4 @@
-# Web2Print
+# IBS-Studio
 
 Source: http://localhost:5173/dashboard
 

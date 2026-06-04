@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
- * Détecte la présence de l'extension Web2Print Capture et fournit les
+ * Détecte la présence de l'extension IBS-Studio Capture et fournit les
  * primitives de contrôle (ouvrir un onglet, synchroniser les tags, capter
  * les événements de capture).
  *

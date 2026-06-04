@@ -1,4 +1,4 @@
-[h1] Web2Print
+[h1] IBS-Studio
 [p] Éditeur graphique professionnel
 [button] Se connecter avec Google
 [p] En vous connectant, vous acceptez nos conditions d'utilisation

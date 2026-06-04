@@ -1,4 +1,4 @@
-# DESIGN.md — Web2Print
+# DESIGN.md — IBS-Studio
 
 ## Identité
 
