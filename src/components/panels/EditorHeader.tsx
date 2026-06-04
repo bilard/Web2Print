@@ -29,7 +29,7 @@ export function EditorHeader() {
 
   return (
     <>
-    <header className="h-12 bg-[#1a1a1a] border-b border-white/10 flex items-center px-3 gap-2 shrink-0 z-30">
+    <header data-tour="header" className="h-12 bg-[#1a1a1a] border-b border-white/10 flex items-center px-3 gap-2 shrink-0 z-30">
       {/* Back */}
       <button
         onClick={() => navigate('/dashboard')}
@@ -104,6 +104,7 @@ export function EditorHeader() {
 
       {/* Save */}
       <button
+        data-tour="save"
         ref={saveHighlight.ref}
         onClick={() => globalSave?.()}
         disabled={saveStatus === 'saving'}
@@ -154,6 +155,7 @@ export function EditorHeader() {
 
       {/* Export */}
       <button
+        data-tour="export"
         ref={exportHighlight.ref}
         onClick={() => setModal('export')}
         className={`flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${exportHighlight.className}`}

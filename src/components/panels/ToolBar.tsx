@@ -142,7 +142,7 @@ function ImageMenuButton() {
 
 export function ToolBar() {
   return (
-    <div className="w-11 bg-[#1a1a1a] border-r border-white/10 flex flex-col items-center py-2 gap-0.5 shrink-0">
+    <div data-tour="toolbar" className="w-11 bg-[#1a1a1a] border-r border-white/10 flex flex-col items-center py-2 gap-0.5 shrink-0">
       {/* Group 1: Selection */}
       <ToolButton tool="select" icon={MousePointer2} tooltip="Sélection (V)" />
 

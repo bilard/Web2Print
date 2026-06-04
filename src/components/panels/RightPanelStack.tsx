@@ -49,7 +49,7 @@ export function RightPanelStack() {
 
   return (
     <>
-      <div className="w-[300px] bg-[#1a1a1a] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
+      <div data-tour="right-panel" className="w-[300px] bg-[#1a1a1a] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
         {/* Properties always on top */}
         <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '70%' }}>
           <PropertiesPanel />

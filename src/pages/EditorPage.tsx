@@ -27,6 +27,7 @@ import { useLockBgImage } from '@/features/svg/useLockBgImage'
 import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
+import { TourLauncher } from '@/features/tour/TourLauncher'
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -186,7 +187,7 @@ export default function EditorPage() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <ToolBar />
-        <div className="flex-1 min-w-0 relative overflow-hidden">
+        <div data-tour="canvas" className="flex-1 min-w-0 relative overflow-hidden">
           <CanvasContainer />
 
           {idmlImporting && (
@@ -220,6 +221,7 @@ export default function EditorPage() {
       </div>
 
       <EditorFooter />
+      <TourLauncher />
       <Suspense fallback={null}>
         {settingsOpen && <SettingsSheet />}
         {damPickerOpen && <DamPickerModal />}
