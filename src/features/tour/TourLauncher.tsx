@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { Compass } from 'lucide-react'
-import { useTourStore, type TourId } from './tour.store'
+import { useTourStore, hasSeenTour, markTourSeen, type TourId } from './tour.store'
 import { useGuidedTour } from './useGuidedTour'
 
 interface TourLauncherProps {
@@ -7,13 +8,28 @@ interface TourLauncherProps {
   tourId?: TourId
 }
 
+/** Délai avant l'auto-démarrage : laisse l'UI (ancres data-tour) se monter. */
+const AUTO_START_DELAY_MS = 1200
+
 /**
  * Bouton flottant « Visite guidée » + montage du moteur driver.js.
  * Placé à gauche du bouton d'aide « ? » (bottom-right).
+ * Déclenche aussi le tour automatiquement à la première ouverture de l'éditeur.
  */
 export function TourLauncher({ tourId = 'editor' }: TourLauncherProps) {
   const startTour = useTourStore((s) => s.startTour)
   useGuidedTour()
+
+  // Auto-démarrage une seule fois (flag localStorage). On marque « vu » juste
+  // avant de lancer ; quitter la page avant le délai laisse le tour réapparaître.
+  useEffect(() => {
+    if (hasSeenTour(tourId)) return
+    const timer = setTimeout(() => {
+      markTourSeen(tourId)
+      startTour(tourId)
+    }, AUTO_START_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [tourId, startTour])
 
   return (
     <button
