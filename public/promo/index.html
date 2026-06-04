@@ -46,7 +46,8 @@
   @media(max-width:720px){.wrap{padding:0 20px}}
   a{color:inherit;text-decoration:none}
   .mono{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
-  .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .grad-text{background:var(--grad);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 7s linear infinite}
+  @keyframes shimmer{to{background-position:220% center}}
 
   /* NAV */
   header.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:rgba(6,6,9,.6);border-bottom:1px solid var(--line)}
@@ -237,10 +238,69 @@
   html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--sd,0s)}
   html.js .is-in{opacity:1!important;transform:none!important}
 
+  /* ====== DÉMO HERO : l'affiche s'assemble en boucle ====== */
+  .hero-screen .poster .ph,.hero-screen .poster .badge,.hero-screen .poster .price,.hero-screen .poster .tt{animation:build 6s ease-in-out infinite}
+  .hero-screen .poster .ph{animation-delay:.3s}
+  .hero-screen .poster .price{animation-delay:1.1s}
+  .hero-screen .poster .badge{animation-delay:1.7s}
+  .hero-screen .poster .tt{animation-delay:2.3s}
+  @keyframes build{0%{opacity:0;transform:translateY(10px) scale(.92)}8%,90%{opacity:1;transform:none}100%{opacity:0;transform:translateY(10px) scale(.92)}}
+  .hero-screen .poster{animation:posterglow 6s ease-in-out infinite}
+  @keyframes posterglow{0%,100%{outline-color:rgba(99,102,241,.35)}45%{outline-color:rgba(99,102,241,1);box-shadow:0 26px 54px -18px rgba(0,0,0,.7),0 0 26px -6px rgba(124,108,255,.7)}}
+  .hero-screen .poster .hand{animation:handpulse 6s ease-in-out infinite}
+  @keyframes handpulse{0%,42%{opacity:0;transform:scale(.4)}52%{opacity:1;transform:scale(1.25)}60%,90%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.4)}}
+  .demo-cursor{position:absolute;width:20px;height:20px;z-index:6;pointer-events:none;color:#fff;filter:drop-shadow(0 2px 5px rgba(0,0,0,.6));animation:cursor 6s ease-in-out infinite}
+  @keyframes cursor{0%{left:62%;top:82%;opacity:0}8%{opacity:1}28%{left:46%;top:48%}40%{left:40%;top:58%}58%{left:60%;top:24%}74%{left:30%;top:70%}90%{left:52%;top:50%;opacity:1}100%{opacity:0}}
+  .hero-screen .spill:last-child{background-size:220% auto;animation:shimmer 3.5s linear infinite}
+
+  /* ====== MICRO-ANIMATIONS DES SCÈNES (déclenchées au scroll) ====== */
+  /* Scraper : valeurs qui se remplissent + vignettes qui apparaissent + scan + bouton qui pulse */
+  html.js #scraper .kv dd,html.js #scraper .thumbs i,html.js #scraper .route{opacity:0}
+  #scraper .scene-visual.is-in .kv dd{animation:fadeup .5s ease forwards}
+  #scraper .scene-visual.is-in .kv dd:nth-of-type(1){animation-delay:.25s}
+  #scraper .scene-visual.is-in .kv dd:nth-of-type(2){animation-delay:.4s}
+  #scraper .scene-visual.is-in .kv dd:nth-of-type(3){animation-delay:.55s}
+  #scraper .scene-visual.is-in .kv dd:nth-of-type(4){animation-delay:.7s}
+  #scraper .scene-visual.is-in .kv dd:nth-of-type(5){animation-delay:.85s}
+  #scraper .scene-visual.is-in .thumbs i{animation:pop .45s cubic-bezier(.2,.9,.3,1.4) forwards}
+  #scraper .scene-visual.is-in .thumbs i:nth-child(1){animation-delay:.5s}#scraper .scene-visual.is-in .thumbs i:nth-child(2){animation-delay:.6s}#scraper .scene-visual.is-in .thumbs i:nth-child(3){animation-delay:.7s}#scraper .scene-visual.is-in .thumbs i:nth-child(4){animation-delay:.8s}#scraper .scene-visual.is-in .thumbs i:nth-child(5){animation-delay:.9s}#scraper .scene-visual.is-in .thumbs i:nth-child(6){animation-delay:1s}
+  #scraper .scene-visual.is-in .route{animation:fadeup .5s ease forwards 1.05s}
+  #scraper .scene-visual.is-in .route:last-child{animation-delay:1.2s}
+  #scraper .scene-visual.is-in .sc-url .go{animation:gopulse 1.8s ease-in-out infinite .3s}
+  #scraper .scene-visual .sc-body{position:relative;overflow:hidden}
+  #scraper .scene-visual.is-in .sc-body::after{content:"";position:absolute;left:0;right:0;height:40%;top:-40%;background:linear-gradient(180deg,transparent,rgba(34,211,238,.14),transparent);animation:scan 2.4s ease-in-out .2s 1;pointer-events:none}
+  @keyframes fadeup{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  @keyframes pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+  @keyframes gopulse{0%,100%{box-shadow:0 0 0 0 rgba(124,108,255,.5)}50%{box-shadow:0 0 0 7px rgba(124,108,255,0)}}
+  @keyframes scan{0%{top:-40%}60%,100%{top:110%}}
+
+  /* Éditer : l'affiche se monte une fois à l'arrivée */
+  html.js #editer .poster .ph,html.js #editer .poster .badge,html.js #editer .poster .price,html.js #editer .poster .tt,html.js #editer .poster .hand{opacity:0}
+  #editer .scene-visual.is-in .poster .ph{animation:fadeup .5s ease forwards .2s}
+  #editer .scene-visual.is-in .poster .price{animation:fadeup .5s ease forwards .5s}
+  #editer .scene-visual.is-in .poster .tt{animation:fadeup .5s ease forwards .8s}
+  #editer .scene-visual.is-in .poster .badge{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) forwards 1.1s}
+  #editer .scene-visual.is-in .poster .hand{animation:pop .4s ease forwards 1.3s}
+  #editer .scene-visual.is-in .lay.on{animation:rowflash 2.4s ease-in-out infinite 1.4s}
+  @keyframes rowflash{0%,100%{background:rgba(124,108,255,.14)}50%{background:rgba(124,108,255,.32)}}
+
+  /* Publier : la source pulse, les canaux s'allument en cascade dans leur couleur */
+  #publier .scene-visual.is-in .pub-src{animation:srcpulse 2.6s ease-in-out infinite}
+  @keyframes srcpulse{0%,100%{transform:scale(1);outline-color:rgba(99,102,241,.5)}50%{transform:scale(1.04);outline-color:rgba(124,108,255,1)}}
+  html.js #publier .chan{opacity:0}
+  #publier .scene-visual.is-in .chan{animation:fadeup .45s ease forwards}
+  #publier .scene-visual.is-in .chan:nth-child(1){animation-delay:.25s}#publier .scene-visual.is-in .chan:nth-child(2){animation-delay:.4s}#publier .scene-visual.is-in .chan:nth-child(3){animation-delay:.55s}#publier .scene-visual.is-in .chan:nth-child(4){animation-delay:.7s}#publier .scene-visual.is-in .chan:nth-child(5){animation-delay:.85s}
+  #publier .scene-visual.is-in .chan .ic{animation:chanlight 3s ease-in-out infinite}
+  #publier .scene-visual.is-in .chan:nth-child(1) .ic{animation-delay:1s}#publier .scene-visual.is-in .chan:nth-child(2) .ic{animation-delay:1.25s}#publier .scene-visual.is-in .chan:nth-child(3) .ic{animation-delay:1.5s}#publier .scene-visual.is-in .chan:nth-child(4) .ic{animation-delay:1.75s}#publier .scene-visual.is-in .chan:nth-child(5) .ic{animation-delay:2s}
+  @keyframes chanlight{0%,100%{box-shadow:0 0 0 0 transparent;border-color:var(--line2)}50%{box-shadow:0 0 20px -4px currentColor;border-color:currentColor}}
+
   @media(prefers-reduced-motion:reduce){
     .reveal{animation:none;opacity:1;transform:none}
-    .aurora b,.pulse{animation:none}
+    .aurora b,.pulse,.grad-text{animation:none}
     html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:1;transform:none;transition:none}
+    .hero-screen .poster .ph,.hero-screen .poster .badge,.hero-screen .poster .price,.hero-screen .poster .tt,.hero-screen .poster,.hero-screen .poster .hand,.demo-cursor,.hero-screen .spill:last-child{animation:none}
+    html.js #scraper .kv dd,html.js #scraper .thumbs i,html.js #scraper .route,html.js #editer .poster .ph,html.js #editer .poster .badge,html.js #editer .poster .price,html.js #editer .poster .tt,html.js #editer .poster .hand,html.js #publier .chan{opacity:1;animation:none}
+    .demo-cursor{display:none}
   }
 </style>
 </head>
@@ -301,6 +361,7 @@
                 <span class="tt">GRANDE<br/>VENTE FLASH</span>
                 <span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span>
               </div>
+              <svg class="demo-cursor" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l15 9-6 1.5L17 19l-2.5 1.2L11 14l-4 4z" stroke="#0b0b12" stroke-width="1"/></svg>
             </div>
             <div class="ed-panel" aria-hidden="true">
               <div class="ph-h">Propriétés</div>
