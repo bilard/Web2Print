@@ -3,6 +3,7 @@ import { FileText, Monitor, Smartphone, Image, LayoutGrid, Loader2 } from 'lucid
 import { BackgroundPicker, backgroundCss, type BackgroundValue } from './BackgroundPicker'
 import { DEFAULT_GRADIENT } from './GradientPicker'
 import { useCan } from '@/features/access/useAccess'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 import type { CanvasBgType } from '@/stores/ui.store'
 import type { GradientConfig } from '@/stores/editor.store'
 
@@ -112,8 +113,11 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
         {/* Left: Formats */}
         <div className="lg:col-span-2 space-y-6">
           {/* Title */}
-          <div>
-            <label className="text-xs text-white/50 mb-1.5 block font-medium uppercase tracking-wider">Nom du document</label>
+          <div data-tour="opt-newdoc-name">
+            <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-medium uppercase tracking-wider">
+              Nom du document
+              <OptionHelp text="Le nom de votre projet, affiché dans la Bibliothèque. Modifiable à tout moment depuis l'éditeur." />
+            </label>
             <input
               autoFocus
               value={title}
@@ -125,8 +129,11 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
           </div>
 
           {/* Category tabs */}
-          <div>
-            <label className="text-xs text-white/50 mb-3 block font-medium uppercase tracking-wider">Format</label>
+          <div data-tour="opt-newdoc-format">
+            <label className="text-xs text-white/50 mb-3 flex items-center gap-1 font-medium uppercase tracking-wider">
+              Format
+              <OptionHelp text="Dimensions du document. Choisissez un preset par catégorie (Impression, Écran, Réseaux sociaux) ou « Personnalisé » pour saisir une taille en pixels." />
+            </label>
             <div className="flex gap-1 mb-4">
               {CATEGORIES.map((cat) => (
                 <button
@@ -198,8 +205,11 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
           </div>
 
           {/* Background — solid / gradient / image */}
-          <div>
-            <label className="text-xs text-white/50 mb-3 block font-medium uppercase tracking-wider">Arrière-plan</label>
+          <div data-tour="opt-newdoc-bg">
+            <label className="text-xs text-white/50 mb-3 flex items-center gap-1 font-medium uppercase tracking-wider">
+              Arrière-plan
+              <OptionHelp text="Fond initial du document : couleur unie, dégradé, ou image. Modifiable ensuite depuis le panneau Page de l'éditeur." />
+            </label>
             <BackgroundPicker value={bg} onChange={setBg} />
           </div>
         </div>

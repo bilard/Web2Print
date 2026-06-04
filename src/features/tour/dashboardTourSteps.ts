@@ -4,6 +4,14 @@ import { navigateTourSection } from './tour.store'
 /** Ouvre une section du dashboard avant d'afficher l'étape. */
 const openSection = (section: string) => () => navigateTourSection(section)
 
+/** Sous-étape « option » : ouvre la section puis surligne une option précise. */
+const optStep = (section: string, anchor: string, title: string, description: string): TourStep => ({
+  element: `[data-tour="${anchor}"]`,
+  prepare: openSection(section),
+  requireSelector: `[data-tour="${anchor}"]`,
+  popover: { title, description, side: 'right', align: 'start' },
+})
+
 /**
  * Tour guidé du tableau de bord (français), navigation automatique.
  * Chaque étape ouvre sa section (`prepare`) puis attend son conteneur
@@ -34,24 +42,32 @@ export const dashboardTourSteps: TourStep[] = [
     requireSelector: '[data-tour="section-blank"]',
     popover: {
       title: '1 · Nouveau document',
-      description:
-        'Choisissez un format prédéfini (A4, réseaux sociaux…) ou des dimensions sur mesure, un fond uni / dégradé / image, puis créez la composition vierge.',
+      description: 'Créez une composition vierge. Détaillons ses options.',
       side: 'right',
       align: 'start',
     },
   },
+  optStep('blank', 'opt-newdoc-name', 'Nom du document', 'Le nom du projet, affiché dans la Bibliothèque. Modifiable ensuite.'),
+  optStep('blank', 'opt-newdoc-format', 'Format', 'Dimensions : preset (Impression, Écran, Réseaux sociaux) ou taille personnalisée en pixels.'),
+  optStep('blank', 'opt-newdoc-bg', 'Arrière-plan', 'Fond initial : couleur unie, dégradé ou image.'),
   {
     element: '[data-tour="section-import"]',
     prepare: openSection('import'),
     requireSelector: '[data-tour="section-import"]',
     popover: {
       title: '2 · Importer',
-      description:
-        'Partez d’un fichier existant : IDML (InDesign), PowerPoint, Excel (données), image, SVG, ou PDF. Les conversions image/PDF → SVG sont décomposées en éléments éditables.',
+      description: 'Partez d’un fichier existant. Voici les formats supportés.',
       side: 'right',
       align: 'start',
     },
   },
+  optStep('import', 'opt-import-idml', 'Import IDML', 'Projet Adobe InDesign (IDML + PDF + polices) : conserve la mise en page et le texte éditable.'),
+  optStep('import', 'opt-import-pptx', 'Importer PPTX', 'Présentation PowerPoint : chaque diapositive devient une page éditable.'),
+  optStep('import', 'opt-import-image', 'Importer une image', 'Crée un projet à partir d’une image (PNG, JPG, SVG, WebP).'),
+  optStep('import', 'opt-import-svg', 'Importer SVG', 'Vectoriel SVG : chaque forme/texte reste éditable.'),
+  optStep('import', 'opt-import-excel', 'Importer Excel', 'Tableau Excel/CSV dans le PIM : alimente le publipostage.'),
+  optStep('import', 'opt-import-image-to-svg', 'Image → SVG éditable', 'Image verrouillée en fond + textes détectés (Vision) éditables par-dessus.'),
+  optStep('import', 'opt-import-pdf-to-svg', 'PDF → SVG éditable', 'Page 1 du PDF rasterisée en fond + textes éditables en surimpression.'),
   {
     element: '[data-tour="section-library"]',
     prepare: openSection('library'),
@@ -70,24 +86,34 @@ export const dashboardTourSteps: TourStep[] = [
     requireSelector: '[data-tour="section-images"]',
     popover: {
       title: '4 · DAM — médias',
-      description:
-        'Votre bibliothèque d’images : stock, uploads, générations IA (Nano Banana) et assets de marque. Réutilisables directement sur le canvas.',
+      description: 'Votre bibliothèque d’images. Parcourons ses rubriques.',
       side: 'right',
       align: 'center',
     },
   },
+  optStep('images', 'opt-dam-stock', 'Banque d’images', 'Images libres de droits (Pexels, Unsplash) à insérer sur le canvas.'),
+  optStep('images', 'opt-dam-my-images', 'Mes images', 'Vos images uploadées, réutilisables dans tous vos projets.'),
+  optStep('images', 'opt-dam-favorites', 'Favoris', 'Les images marquées d’une étoile.'),
+  optStep('images', 'opt-dam-collections', 'Collections', 'Vos images regroupées par thème ou campagne.'),
+  optStep('images', 'opt-dam-recent', 'Récents', 'Les dernières images utilisées ou ajoutées.'),
+  optStep('images', 'opt-dam-projects', 'Projets', 'Les visuels rattachés à chaque projet.'),
+  optStep('images', 'opt-dam-generate', 'Création d’image', 'Génération d’images par IA (Nano Banana) depuis une description.'),
+  optStep('images', 'opt-dam-videos', 'Animations HTML', 'Vos animations / vidéos HTML (HyperFrames).'),
+  optStep('images', 'opt-dam-gdrive', 'Google Drive', 'Importez des fichiers depuis votre Drive connecté.'),
   {
     element: '[data-tour="section-data"]',
     prepare: openSection('data'),
     requireSelector: '[data-tour="section-data"]',
     popover: {
       title: '5 · PIM — données produits',
-      description:
-        'Vos fiches produits en tableau : import Excel, enrichissement IA (scraping d’URL), gestion des colonnes. Ces données alimentent le publipostage dans l’éditeur.',
+      description: 'Vos fiches produits en tableau. Voici les actions principales (sélectionnez d’abord une base à gauche).',
       side: 'right',
       align: 'center',
     },
   },
+  optStep('data', 'opt-pim-import', 'Importer un fichier', 'Charge un Excel/CSV dans la base : chaque ligne = une fiche produit.'),
+  optStep('data', 'opt-pim-scrape', 'Scraper le web', 'Enrichit les produits depuis des URL (specs, images, descriptions via Jina + IA).'),
+  optStep('data', 'opt-pim-create', 'Créer vide', 'Crée un tableau vierge pour saisir des produits ou définir vos colonnes.'),
   {
     element: '[data-tour="section-taxonomies"]',
     prepare: openSection('taxonomies'),
@@ -130,12 +156,13 @@ export const dashboardTourSteps: TourStep[] = [
     requireSelector: '[data-tour="section-workflows"]',
     popover: {
       title: '9 · Workflows',
-      description:
-        'Automatisez l’enchaînement des modules (scraping → décomposition → export → Drive/Gmail/Telegram), façon Zapier. Génération possible par IA depuis un prompt.',
+      description: 'Automatisez l’enchaînement des modules, façon Zapier.',
       side: 'right',
       align: 'center',
     },
   },
+  optStep('workflows', 'opt-wf-title', 'À quoi ça sert', 'Enchaînez scraping → décomposition → export → Drive/Gmail/Telegram. Un workflow peut être généré par IA depuis un prompt.'),
+  optStep('workflows', 'opt-wf-new', 'Nouveau workflow', 'Crée un workflow vierge et ouvre l’éditeur de graphe (nodes + liens).'),
   {
     element: '[data-tour="section-telegram"]',
     prepare: openSection('telegram'),
