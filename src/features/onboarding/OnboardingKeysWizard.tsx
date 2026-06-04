@@ -19,10 +19,14 @@ export function OnboardingKeysWizard() {
   // pour tout user de retour dont les clés vivent côté serveur). On lit le booléen
   // synchrone ET on écoute les events — selon que le wizard monte avant/après.
   useEffect(() => {
+    // Auto-OUVERTURE uniquement : ne jamais refermer ici, sinon enregistrer une
+    // 1re clé (event `apikeys:updated`) ferait disparaître le wizard avant que
+    // l'utilisateur ait pu en ajouter d'autres. La fermeture est pilotée par les
+    // boutons « Terminer » / « Plus tard ».
     const evaluate = () => {
       if (!areApiKeysHydrated()) return
       const dismissed = sessionStorage.getItem(ONBOARDING_DISMISS_KEY) === '1'
-      setOpen(!dismissed && !hasAnyLlmKey())
+      if (!dismissed && !hasAnyLlmKey()) setOpen(true)
     }
     evaluate()
     window.addEventListener(API_KEYS_HYDRATED_EVENT, evaluate)
