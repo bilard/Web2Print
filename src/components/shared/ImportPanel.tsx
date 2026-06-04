@@ -5,6 +5,7 @@ import { useCan } from '@/features/access/useAccess'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
 import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
 import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
 import { convertPdfToEditableSvg } from '@/features/svg/pdfToSvg'
 import { withProgress } from '@/stores/progress.store'
@@ -191,8 +192,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center">
             <FolderOpen className="w-7 h-7 text-amber-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">Import IDML</p>
+          <div data-tour="opt-import-idml" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Import IDML
+              <OptionHelp text="Importe un projet Adobe InDesign (dossier IDML + PDF + polices). Conserve la mise en page, les styles et le texte éditable." />
+            </p>
             <p className="text-xs text-white/30 mt-1">IDML + PDF + Fonts</p>
           </div>
           <input
@@ -221,8 +225,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center">
             <Presentation className="w-7 h-7 text-orange-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">Importer PPTX</p>
+          <div data-tour="opt-import-pptx" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Importer PPTX
+              <OptionHelp text="Importe une présentation PowerPoint. Chaque diapositive devient une page éditable (textes, formes, images)." />
+            </p>
             <p className="text-xs text-white/30 mt-1">PowerPoint, slides éditables</p>
           </div>
           <input
@@ -251,8 +258,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center">
             <ImageIcon className="w-7 h-7 text-sky-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">Importer une image</p>
+          <div data-tour="opt-import-image" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Importer une image
+              <OptionHelp text="Crée un projet à partir d'une image (PNG, JPG, SVG, WebP). L'image est placée sur le canvas, prête à être habillée." />
+            </p>
             <p className="text-xs text-white/30 mt-1">PNG, JPG, SVG, WebP</p>
           </div>
           <input
@@ -281,8 +291,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center">
             <Shapes className="w-7 h-7 text-purple-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">Importer SVG</p>
+          <div data-tour="opt-import-svg" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Importer SVG
+              <OptionHelp text="Importe un fichier vectoriel SVG. Chaque forme et texte reste éditable individuellement sur le canvas." />
+            </p>
             <p className="text-xs text-white/30 mt-1">Vectoriel éditable</p>
           </div>
           <input
@@ -311,8 +324,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
             <FileSpreadsheet className="w-7 h-7 text-emerald-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">Importer Excel</p>
+          <div data-tour="opt-import-excel" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Importer Excel
+              <OptionHelp text="Importe un tableau (Excel/CSV) dans le PIM. Ces données alimentent le publipostage : une variante du visuel par ligne." />
+            </p>
             <p className="text-xs text-white/30 mt-1">Données & fusion variable</p>
           </div>
           <input
@@ -341,8 +357,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center">
             <Wand2 className="w-7 h-7 text-pink-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">Image → SVG éditable</p>
+          <div data-tour="opt-import-image-to-svg" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Image → SVG éditable
+              <OptionHelp text="Convertit une image : le visuel est verrouillé en fond et les textes détectés (Vision) deviennent des calques éditables par-dessus." />
+            </p>
             <p className="text-xs text-white/30 mt-1">Raster verrouillé + overlays</p>
           </div>
           <input
@@ -371,8 +390,11 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           <div className="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center">
             <FileText className="w-7 h-7 text-pink-400" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">PDF → SVG éditable</p>
+          <div data-tour="opt-import-pdf-to-svg" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              PDF → SVG éditable
+              <OptionHelp text="Rasterise la page 1 d'un PDF en fond verrouillé, puis détecte les textes pour les rendre éditables en surimpression." />
+            </p>
             <p className="text-xs text-white/30 mt-1">Page 1 rasterisée + overlays</p>
           </div>
           <input

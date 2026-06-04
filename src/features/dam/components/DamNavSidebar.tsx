@@ -7,6 +7,7 @@ import { useProjects } from '../../projects/useProjects'
 import { useUserAnimations } from '../../video/useUserAnimations'
 import { useAccessStore } from '../../../stores/access.store'
 import type { DamTab } from '../types'
+import { OptionHelp } from '../../../components/shared/OptionHelp'
 
 interface NavItem {
   id: DamTab
@@ -14,18 +15,20 @@ interface NavItem {
   icon: typeof Home
   /** Permission requise pour afficher l'entrée (absent = toujours visible). */
   perm?: string
+  /** Texte d'aide contextuelle affiché au survol du « ? ». */
+  help?: string
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'stock', label: 'Banque d\'images', icon: Home },
-  { id: 'my-images', label: 'Mes images', icon: ImagePlus },
-  { id: 'favorites', label: 'Favoris', icon: Star },
-  { id: 'collections', label: 'Collections', icon: FolderOpen },
-  { id: 'recent', label: 'Récents', icon: Clock },
-  { id: 'projects', label: 'Projets', icon: Briefcase },
-  { id: 'generate', label: 'Création d\'image', icon: Sparkles, perm: 'dam.generate' },
-  { id: 'videos', label: 'Animations HTML', icon: FileCode2, perm: 'dam.animations' },
-  { id: 'gdrive', label: 'Google Drive', icon: HardDrive, perm: 'dam.gdrive' },
+  { id: 'stock', label: 'Banque d\'images', icon: Home, help: 'Recherchez des images libres de droits (Pexels, Unsplash) à insérer directement sur le canvas.' },
+  { id: 'my-images', label: 'Mes images', icon: ImagePlus, help: 'Vos images uploadées et enregistrées, réutilisables dans tous vos projets.' },
+  { id: 'favorites', label: 'Favoris', icon: Star, help: 'Les images que vous avez marquées d\'une étoile pour les retrouver vite.' },
+  { id: 'collections', label: 'Collections', icon: FolderOpen, help: 'Regroupez vos images par thème ou campagne dans des dossiers.' },
+  { id: 'recent', label: 'Récents', icon: Clock, help: 'Les dernières images utilisées ou ajoutées récemment.' },
+  { id: 'projects', label: 'Projets', icon: Briefcase, help: 'Les visuels rattachés à chacun de vos projets.' },
+  { id: 'generate', label: 'Création d\'image', icon: Sparkles, perm: 'dam.generate', help: 'Générez des images par IA (Nano Banana) à partir d\'une description texte.' },
+  { id: 'videos', label: 'Animations HTML', icon: FileCode2, perm: 'dam.animations', help: 'Vos animations / vidéos HTML (HyperFrames) réutilisables.' },
+  { id: 'gdrive', label: 'Google Drive', icon: HardDrive, perm: 'dam.gdrive', help: 'Parcourez et importez des fichiers depuis votre Google Drive connecté.' },
 ]
 
 export function DamNavSidebar() {
@@ -71,6 +74,7 @@ export function DamNavSidebar() {
                 type="button"
                 onClick={() => setActiveTab(item.id)}
                 aria-current={isActive ? 'page' : undefined}
+                data-tour={`opt-dam-${item.id}`}
                 className={`w-full flex items-center gap-3 h-10 pl-4 pr-3 rounded-full text-[13px] font-medium transition-colors ${
                   isActive
                     ? 'bg-indigo-500/15 text-indigo-300'
@@ -84,6 +88,7 @@ export function DamNavSidebar() {
                   strokeWidth={isActive ? 2.2 : 1.8}
                 />
                 <span className="flex-1 truncate text-left">{item.label}</span>
+                {item.help && <OptionHelp text={item.help} />}
                 {count !== undefined && count > 0 && (
                   <span
                     className={`text-[11px] tabular-nums px-1.5 py-px rounded ${

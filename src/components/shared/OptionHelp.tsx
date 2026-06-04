@@ -32,7 +32,7 @@ export function OptionHelp({ text }: OptionHelpProps) {
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
-        onClick={(e) => e.preventDefault()}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
         aria-label={`Aide : ${text}`}
         className="inline-flex items-center justify-center text-white/25 hover:text-indigo-400 focus:text-indigo-400 transition-colors focus:outline-none shrink-0"
       >
