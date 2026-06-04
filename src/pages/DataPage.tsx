@@ -40,6 +40,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
 import { useCan } from '@/features/access/useAccess'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 
 type RightTab = 'fields' | 'taxonomy'
 
@@ -561,11 +562,13 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <button
               onClick={() => setImportModalOpen(true)}
               disabled={!hasSelectedDb}
+              data-tour="opt-pim-import"
               className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/5 disabled:hover:bg-white/5 disabled:text-white/25 disabled:cursor-not-allowed text-white text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
               title={hasSelectedDb ? 'Importer un fichier' : 'Sélectionnez une base de données'}
             >
               <Upload className="w-4 h-4" />
               Importer un fichier
+              <OptionHelp text="Charge un fichier Excel/CSV dans la base sélectionnée : chaque ligne devient une fiche produit." />
             </button>
             )}
             {canScrape && (
@@ -577,6 +580,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             >
               <Globe className="w-4 h-4" />
               Scraper le web
+              <OptionHelp text="Enrichit vos produits depuis une ou plusieurs URL : extraction des specs, images et descriptions (via Jina + IA)." />
             </button>
             )}
             {canCreate && (
@@ -588,6 +592,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             >
               <Plus className="w-4 h-4" />
               Creer vide
+              <OptionHelp text="Crée un tableau de données vierge dans la base, pour saisir des produits à la main ou définir vos colonnes." />
             </button>
             )}
           </div>

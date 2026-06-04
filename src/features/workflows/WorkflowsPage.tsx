@@ -4,6 +4,7 @@ import { ArrowLeft, LayoutGrid, List, Plus, Trash2, Workflow as WorkflowIcon } f
 import { useAuthStore } from '@/stores/auth.store'
 import { listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow } from './persistence/workflowsApi'
 import { useCan } from '@/features/access/useAccess'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 import type { Workflow } from './types'
 
 interface WorkflowsPageProps {
@@ -63,9 +64,10 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
-          <h1 className="text-2xl font-semibold flex items-center gap-3">
+          <h1 data-tour="opt-wf-title" className="text-2xl font-semibold flex items-center gap-3">
             <WorkflowIcon className="w-6 h-6 text-indigo-400" />
             Workflows
+            <OptionHelp text="Automatisez l'enchaînement des modules (scraping → décomposition → export → Drive/Gmail/Telegram), façon Zapier. Un workflow peut être généré par IA depuis un prompt." />
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -100,9 +102,11 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           {canCreate && (
             <button
               onClick={create}
+              data-tour="opt-wf-new"
               className="px-4 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" /> Nouveau workflow
+              <OptionHelp text="Crée un workflow vierge et ouvre l'éditeur de graphe. Vous pourrez y ajouter des nodes ou le générer par IA." />
             </button>
           )}
         </div>
