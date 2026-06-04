@@ -39,6 +39,9 @@ npm-debug.log*
 .worktrees/
 
 # Local data dumps (not part of source)
+IMPORTS/
+Milwaukee/
+Illustrator/
 Monoprix/
 Monoprix V2/
 Doublet/
