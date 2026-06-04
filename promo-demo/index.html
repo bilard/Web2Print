@@ -36,9 +36,10 @@
   .sc-url{display:flex;align-items:center;gap:16px;background:var(--elev);border:1px solid var(--line);border-radius:14px;padding:16px 22px;margin-bottom:22px}
   .sc-url .u{font-family:"JetBrains Mono",monospace;font-size:23px;color:var(--mut)}
   .sc-url .go{margin-left:auto;font-size:21px;font-weight:700;color:#fff;background:var(--indigo);padding:11px 24px;border-radius:11px}
-  .sc-cols{display:grid;grid-template-columns:1fr 70px 1fr;gap:18px;align-items:center}
+  .sc-cols{display:grid;grid-template-columns:1fr 124px 1fr;gap:16px;align-items:start}
   /* page web (source) */
-  .webpage{border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#fff;color:#111}
+  .webpage{position:relative;border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#fff;color:#111}
+  .scanbeam{position:absolute;left:0;right:0;top:0;height:70px;z-index:5;background:linear-gradient(180deg,transparent,rgba(99,102,241,.5),transparent);pointer-events:none;opacity:0}
   .wp-bar{height:42px;background:#e9eef3;display:flex;align-items:center;gap:10px;padding:0 16px}
   .wp-bar .d{width:11px;height:11px;border-radius:50%;background:#c3ccd6}
   .wp-bar .addr{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:15px;color:#5b6470;background:#fff;border-radius:7px;padding:6px 12px;flex:1}
@@ -49,19 +50,20 @@
   .wp-specs{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
   .wp-specs span{font-size:18px;color:#475569}
   .wp-cart{display:inline-block;font-size:18px;font-weight:700;color:#fff;background:#2563eb;padding:11px 22px;border-radius:9px}
-  .sc-mid{display:flex;flex-direction:column;align-items:center;gap:26px;color:var(--indigo)}
-  .sc-mid svg{width:38px;height:38px}
-  .sc-mid .lab{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--mut);writing-mode:horizontal-tb}
+  .sc-mid{display:flex;flex-direction:column;justify-content:space-around;align-items:center;gap:30px}
+  .rt{display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--mut)}
+  .rt b{font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:.05em}
+  .rt svg{width:36px;height:36px}
   .sc-dest{display:flex;flex-direction:column;gap:16px}
   .card{border:1px solid var(--line);border-radius:14px;background:var(--elev);overflow:hidden}
   .card .ch{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:20px;font-weight:600}
-  .card .ch .tg{width:12px;height:12px;border-radius:4px}
+  .card .ch .cdot{width:12px;height:12px;flex:0 0 12px;border-radius:4px}
   .kv-row{display:flex;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--line);font-size:21px}
   .kv-row:last-child{border-bottom:0}
   .kv-row .k{font-family:"JetBrains Mono",monospace;font-size:16px;color:var(--mut);text-transform:uppercase}
   .kv-row .val{font-variant-numeric:tabular-nums}
-  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;padding:18px}
-  .thumb{aspect-ratio:1;border-radius:9px}
+  .thumbs{display:flex;gap:11px;padding:18px;flex-wrap:wrap}
+  .thumb{width:122px;height:122px;border-radius:9px;flex:0 0 122px}
 
   /* IMPORTER */
   .fcards{display:flex;gap:20px;margin-bottom:30px}
@@ -117,7 +119,7 @@
   .bindchips{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
   .bindchips i{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--sky);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.12);border-radius:9px;padding:8px 14px;font-style:normal}
   .variants{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;width:100%}
-  .variants i{aspect-ratio:50/66;border-radius:6px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(99,102,241,.4);position:relative}
+  .variants i{height:64px;border-radius:6px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(99,102,241,.4);position:relative}
   .vcount{font-size:24px;color:var(--mut)}.vcount b{font-size:42px;color:var(--ink);font-weight:800}
 
   /* EXPORTER */
@@ -210,6 +212,7 @@
         <div class="sc-cols">
           <!-- Source : page web -->
           <div class="webpage">
+            <span class="scanbeam" id="scanbeam"></span>
             <div class="wp-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="addr">fournisseur.com</span></div>
             <div class="wp-in">
               <div class="wp-img"></div>
@@ -219,22 +222,21 @@
               <span class="wp-cart">Ajouter au panier</span>
             </div>
           </div>
-          <!-- Flux -->
+          <!-- Routes étiquetées : texte → PIM, images → DAM -->
           <div class="sc-mid">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            <span class="lab">extrait<br/>&amp; range</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <div class="rt" id="rt-text"><b>TEXTE →</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+            <div class="rt" id="rt-img"><b>IMAGES →</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
           </div>
           <!-- Destinations -->
           <div class="sc-dest">
             <div class="card">
-              <div class="ch"><span class="tg" style="background:var(--emerald)"></span>PIM — texte</div>
+              <div class="ch"><span class="cdot" style="background:var(--emerald)"></span>PIM — fiche produit</div>
               <div class="kv-row"><span class="k">Nom</span><span class="val">Perceuse 18V Brushless</span></div>
               <div class="kv-row"><span class="k">Prix</span><span class="val">129,00 €</span></div>
               <div class="kv-row"><span class="k">Couple</span><span class="val">60 Nm</span></div>
             </div>
             <div class="card">
-              <div class="ch"><span class="tg" style="background:var(--pink)"></span>DAM — images</div>
+              <div class="ch"><span class="cdot" style="background:var(--pink)"></span>DAM — médias</div>
               <div class="thumbs">
                 <span class="thumb" style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></span>
                 <span class="thumb" style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></span>
@@ -434,28 +436,28 @@
     tl.from("#s1 .s1-title",{y:46,opacity:0,duration:.7,ease:"expo.out"},.32);
     tl.from("#s1 .pill",{y:26,opacity:0,duration:.5,ease:"power2.out",stagger:.09},.62);
 
-    /* S2 — scraper : page → lecture → PIM/DAM */
+    /* S2 — scraper : on LIT la page (balayage), puis TEXTE→PIM, puis IMAGES→DAM */
     slide("#s2",2.8);
     tl.from("#s2 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},3.3);
     tl.from("#s2 .sc-url",{y:22,opacity:0,duration:.5,ease:"power2.out"},3.5);
-    tl.fromTo("#s2 .go",{scale:1},{scale:1.06,duration:.45,yoyo:true,repeat:1,ease:"sine.inOut"},3.9);
     tl.from("#s2 .webpage",{x:-40,opacity:0,duration:.6,ease:"power3.out"},3.7);
-    // lecture séquentielle des éléments de la page (highlight) puis arrivée dans PIM/DAM
-    tl.set("#s2 .sc-dest .kv-row",{opacity:0},0);
-    tl.set("#s2 .sc-dest .thumb",{opacity:0,scale:.5},0);
-    tl.from("#s2 .sc-mid",{opacity:0,duration:.5,ease:"sine.out"},4.4);
-    // titre
-    tl.to("#s2 .wp-title",{boxShadow:"0 0 0 3px var(--indigo)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},4.7);
-    tl.to("#s2 .sc-dest .kv-row:nth-child(2)",{opacity:1,duration:.4,ease:"power2.out"},5.0);
-    // prix
-    tl.to("#s2 .wp-price",{boxShadow:"0 0 0 3px var(--indigo)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},5.4);
-    tl.to("#s2 .sc-dest .kv-row:nth-child(3)",{opacity:1,duration:.4,ease:"power2.out"},5.7);
-    // spec
-    tl.to("#s2 .wp-specs",{boxShadow:"0 0 0 3px var(--indigo)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},6.1);
-    tl.to("#s2 .sc-dest .kv-row:nth-child(4)",{opacity:1,duration:.4,ease:"power2.out"},6.4);
-    // image → DAM
-    tl.to("#s2 .wp-img",{boxShadow:"0 0 0 3px var(--pink)",duration:.35,yoyo:true,repeat:1,ease:"sine.inOut"},6.8);
-    tl.to("#s2 .sc-dest .thumb",{opacity:1,scale:1,duration:.4,ease:"power3.out",stagger:.12},7.1);
+    tl.fromTo("#s2 .go",{scale:1},{scale:1.06,duration:.45,yoyo:true,repeat:1,ease:"sine.inOut"},4.0);
+    // états de départ : routes éteintes, destinations vides
+    tl.set("#s2 .sc-dest .kv-row",{opacity:0,x:-16},0);
+    tl.set("#s2 .sc-dest .thumb",{opacity:0,scale:.4},0);
+    tl.from("#s2 .rt",{opacity:0,x:-12,duration:.4,ease:"power2.out",stagger:.12},4.2);
+    // 1) BALAYAGE de lecture qui descend sur la page web
+    tl.to("#scanbeam",{opacity:1,duration:.2,ease:"sine.out"},4.6);
+    tl.fromTo("#scanbeam",{top:0},{top:420,duration:1.2,ease:"power1.inOut"},4.7);
+    tl.to("#scanbeam",{opacity:0,duration:.25,ease:"sine.in"},5.65);
+    // 2) TEXTE → PIM : la flèche TEXTE devient verte, les lignes se remplissent une à une
+    tl.to("#rt-text",{color:"#34D399",scale:1.14,duration:.4,ease:"power2.out"},5.7);
+    tl.to("#rt-text svg",{x:7,duration:.4,yoyo:true,repeat:3,ease:"sine.inOut"},5.8);
+    tl.to("#s2 .sc-dest .kv-row",{opacity:1,x:0,duration:.45,ease:"power2.out",stagger:.32},5.95);
+    // 3) IMAGES → DAM : la flèche IMAGES devient rose, les vignettes apparaissent
+    tl.to("#rt-img",{color:"#F472B6",scale:1.14,duration:.4,ease:"power2.out"},7.5);
+    tl.to("#rt-img svg",{x:7,duration:.4,yoyo:true,repeat:3,ease:"sine.inOut"},7.6);
+    tl.to("#s2 .sc-dest .thumb",{opacity:1,scale:1,duration:.4,ease:"power3.out",stagger:.16},7.7);
 
     /* S3 — importer : curseur choisit IDML → décomposition */
     slide("#s3",9.8);
