@@ -6,6 +6,7 @@ import { GradientPicker } from '@/components/shared/GradientPicker'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
 import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
+import { OptionHelp } from '@/components/shared/OptionHelp'
 
 // Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
 // Les formats print sont exprimés en pt pour rester cohérents avec l'import
@@ -111,7 +112,10 @@ export function PagePanel() {
     <div className="p-3 flex flex-col gap-4">
       {/* ── Dimensions ── */}
       <section className="flex flex-col gap-2">
-        <label className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">Dimensions</label>
+        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+          Dimensions
+          <OptionHelp text="Taille de la page en millimètres. Saisissez largeur/hauteur, ou choisissez un format prédéfini ci-dessous (A4, Instagram…). Modifiable à tout moment." />
+        </label>
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Largeur</span>
@@ -149,7 +153,10 @@ export function PagePanel() {
 
       {/* ── Arrière-plan ── */}
       <section className="flex flex-col gap-2 pt-3 border-t border-white/5">
-        <label className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">Arrière-plan</label>
+        <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+          Arrière-plan
+          <OptionHelp text="Fond de la page : couleur unie, dégradé, ou image. L'image de fond est verrouillée derrière les objets ; le dégradé est paramétrable (angle, étapes)." />
+        </label>
 
         <div className="flex gap-1">
           {([
