@@ -147,15 +147,15 @@ export function UsersTab() {
                     className={`flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors ${u.accessBlocked ? 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10' : 'border-red-500/40 text-red-300 hover:bg-red-500/10'}`}>
                     {u.accessBlocked ? <><CheckCircle2 className="w-3.5 h-3.5" /> Réactiver</> : <><Ban className="w-3.5 h-3.5" /> Bloquer</>}
                   </button>
+                  <button onClick={() => setConfirmDelete(confirmDelete === u.uid ? null : u.uid)}
+                    className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                  </button>
                   {(u.accessGrants.length > 0 || u.accessRevokes.length > 0) && (
                     <button onClick={() => resetOverrides(u)} className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 transition-colors">
                       <RotateCcw className="w-3.5 h-3.5" /> Réinitialiser les surcharges
                     </button>
                   )}
-                  <button onClick={() => setConfirmDelete(confirmDelete === u.uid ? null : u.uid)}
-                    className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-white/10 text-white/40 hover:text-red-300 hover:border-red-500/40 transition-colors ml-auto">
-                    <Trash2 className="w-3.5 h-3.5" /> Supprimer
-                  </button>
                 </div>
 
                 {/* Confirmation de suppression (2 temps) */}
