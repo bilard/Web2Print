@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="promo-hero"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:var(--font);color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+  .cap{position:absolute;top:72px;left:96px;font-size:30px;font-weight:700;letter-spacing:.04em}
+  .cap .n{font-family:ui-monospace,monospace;color:var(--indigo);margin-right:14px}
+  .cap .v{color:var(--ink)}
+  .cap small{display:block;font-size:21px;font-weight:400;color:var(--mut);letter-spacing:0;margin-top:8px;text-transform:none}
+
+  /* Fenêtre app */
+  .win{width:1480px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:ui-monospace,monospace;font-size:19px;color:var(--mut)}
+  .wact{margin-left:auto;display:flex;gap:10px}
+  .wpill{font-size:17px;font-weight:600;padding:8px 16px;border-radius:9px}
+  .wbody{padding:30px;min-height:560px}
+
+  /* Scraper */
+  .urlbar{display:flex;align-items:center;gap:16px;background:var(--elev);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:24px}
+  .urlbar .u{font-family:ui-monospace,monospace;font-size:24px;color:var(--mut)}
+  .urlbar .go{margin-left:auto;font-size:21px;font-weight:700;color:#fff;background:var(--indigo);padding:12px 24px;border-radius:11px}
+  .sc-cols{display:grid;grid-template-columns:1.2fr 1fr;gap:24px}
+  .card{border:1px solid var(--line);border-radius:16px;background:var(--elev);overflow:hidden}
+  .card .ch{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);font-size:21px;font-weight:600}
+  .card .ch .tg{width:12px;height:12px;border-radius:4px}
+  .kv-row{display:flex;justify-content:space-between;padding:15px 22px;border-bottom:1px solid var(--line);font-size:23px}
+  .kv-row:last-child{border-bottom:0}
+  .kv-row .k{font-family:ui-monospace,monospace;font-size:18px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+  .kv-row .val{font-variant-numeric:tabular-nums}
+  .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:22px}
+  .thumb{aspect-ratio:1;border-radius:11px}
+
+  /* Import */
+  .fcards{display:flex;gap:20px;margin-bottom:34px}
+  .fcard{flex:1;border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:26px 22px;display:flex;flex-direction:column;gap:14px}
+  .fcard.hot{border-color:var(--amber)}
+  .fcard .fi{width:54px;height:54px;border-radius:13px;display:grid;place-items:center}
+  .fcard .fi svg{width:28px;height:28px}
+  .fcard b{font-family:ui-monospace,monospace;font-size:24px}
+  .fcard span{font-size:18px;color:var(--mut)}
+  .imp-res{display:flex;align-items:center;gap:30px;border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:26px}
+  .imp-res .arrow{color:var(--amber)}
+  .imp-res .arrow svg{width:40px;height:40px}
+  .layers{display:flex;flex-direction:column;gap:12px;flex:1}
+  .layers .lr{display:flex;align-items:center;gap:14px;font-size:22px;color:var(--ink)}
+  .layers .lr .sw{width:16px;height:16px;border-radius:5px}
+  .layers .lr small{margin-left:auto;font-size:17px;color:var(--mut);font-family:ui-monospace,monospace}
+  .impnote{font-size:21px;color:var(--mut);margin-left:6px}
+
+  /* Editor */
+  .editor{display:grid;grid-template-columns:70px 1fr 360px;gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:540px}
+  .etools{background:#101010;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 0}
+  .etools i{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;color:var(--mut)}
+  .etools i.on{background:rgba(99,102,241,.18);color:#c7c4ff}
+  .etools i svg{width:24px;height:24px}
+  .ecanvas{position:relative;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(99,102,241,.07),transparent 60%),#0c0c0c;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:30px 30px}
+  .poster{width:300px;aspect-ratio:50/72;background:#fff;border-radius:16px;position:relative;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+  .poster .pimg{position:absolute;inset:9% 11% 50%;border-radius:9px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9 60%,#e0f2fe)}
+  .poster .pbadge{position:absolute;top:8%;right:9%;width:64px;height:64px;border-radius:50%;background:#ef4444;color:#fff;font-weight:800;font-size:22px;display:grid;place-items:center}
+  .poster .pprice{position:absolute;top:50%;left:11%;background:#facc15;color:#dc2626;font-weight:800;font-size:36px;padding:7px 12px;border-radius:9px}
+  .poster .pprice small{font-size:18px;vertical-align:super}
+  .poster .ptitle{position:absolute;bottom:13%;left:11%;font-size:25px;font-weight:800;color:#3730a3;line-height:1.05}
+  .poster .ph{position:absolute;width:16px;height:16px;border:2px solid var(--indigo);border-radius:3px;background:#fff}
+  .poster .ph1{top:-8px;left:-8px}.poster .ph2{top:-8px;right:-8px}.poster .ph3{bottom:-8px;left:-8px}.poster .ph4{bottom:-8px;right:-8px}
+  .epanel{background:#101010;border-left:1px solid var(--line);padding:22px}
+  .ep-h{font-family:ui-monospace,monospace;font-size:16px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase;margin:22px 0 13px}
+  .ep-h:first-child{margin-top:0}
+  .ep-row{display:flex;gap:12px;margin-bottom:12px}
+  .ep-in{flex:1;background:var(--elev);border:1px solid var(--line);border-radius:9px;padding:12px 14px;font-size:19px}
+  .ep-lay{display:flex;align-items:center;gap:12px;font-size:19px;color:var(--mut);padding:9px 11px;border-radius:8px;margin-bottom:5px}
+  .ep-lay.on{background:rgba(99,102,241,.16);color:#d8d6ff}
+  .ep-lay .sw{width:14px;height:14px;border-radius:4px}
+  .ep-seg{display:flex;gap:8px}
+  .ep-seg span{flex:1;text-align:center;font-size:17px;padding:11px 0;border-radius:9px;border:1px solid var(--line);color:var(--mut)}
+  .ep-seg span.on{background:rgba(99,102,241,.16);border-color:var(--indigo);color:#c7c4ff}
+
+  /* Connecter base */
+  .db{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+  .dtable{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--elev);font-size:21px}
+  .dtable .tr{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;padding:15px 22px;border-bottom:1px solid var(--line)}
+  .dtable .tr:last-child{border-bottom:0}
+  .dtable .tr.th{background:#101010;color:var(--mut);font-family:ui-monospace,monospace;font-size:16px;text-transform:uppercase;letter-spacing:.05em}
+  .dtable .tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .bindwrap{display:flex;flex-direction:column;align-items:center;gap:22px}
+  .bindchips{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .bindchips i{font-family:ui-monospace,monospace;font-size:19px;color:var(--sky);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.12);border-radius:9px;padding:8px 14px;font-style:normal}
+  .variants{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;width:100%}
+  .variants i{aspect-ratio:50/68;border-radius:6px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(99,102,241,.4)}
+  .vcount{font-size:24px;color:var(--mut)}
+  .vcount b{font-size:40px;color:var(--ink);font-weight:800}
+
+  /* Exporter */
+  .exp{display:flex;flex-direction:column;align-items:center;gap:44px;padding:30px 0}
+  .exp-src{width:200px;aspect-ratio:50/68;background:#fff;border-radius:14px;position:relative;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+  .exp-src .pimg{position:absolute;inset:11% 13% 48%;border-radius:7px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9)}
+  .exp-src .pprice{position:absolute;bottom:14%;left:13%;background:#facc15;color:#dc2626;font-weight:800;font-size:22px;padding:5px 9px;border-radius:6px}
+  .channels{display:flex;gap:28px}
+  .chan{display:flex;flex-direction:column;align-items:center;gap:14px;width:170px}
+  .chan .ic{width:96px;height:96px;border-radius:22px;display:grid;place-items:center;border:1px solid var(--line2);background:var(--elev)}
+  .chan .ic svg{width:42px;height:42px}
+  .chan b{font-size:22px;font-weight:600}
+  .chan span{font-size:17px;color:var(--mut)}
+
+  /* Intro / Outro */
+  .center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:30px}
+  .logo{display:flex;align-items:center;gap:22px}
+  .logo .sq{width:84px;height:84px;border-radius:21px;background:var(--indigo);display:grid;place-items:center;box-shadow:0 0 40px -6px rgba(99,102,241,.7)}
+  .logo .sq svg{width:46px;height:46px}
+  .logo .wm{font-family:ui-monospace,monospace;font-size:42px;font-weight:700;letter-spacing:.12em}
+  .big{font-size:108px;font-weight:800;letter-spacing:-.02em;line-height:1.02;max-width:18ch}
+  .big .hl{color:var(--indigo)}
+  .pills{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .pill{font-size:24px;font-weight:600;padding:13px 24px;border:1px solid var(--line2);border-radius:100px;color:var(--ink);background:var(--surface)}
+  .pill .d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:11px;vertical-align:middle}
+  .sub{font-size:30px;color:var(--mut)}
+  .cta{font-size:28px;font-weight:700;color:#fff;background:var(--indigo);padding:18px 36px;border-radius:14px;box-shadow:0 0 44px -8px rgba(99,102,241,.7)}
+  .url-out{font-family:ui-monospace,monospace;font-size:26px;color:var(--mut);letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div data-composition-id="promo-hero" data-start="0" data-duration="22" data-width="1920" data-height="1080">
+
+  <!-- S1 — INTRO -->
+  <div id="s1" class="scene clip" data-start="0" data-duration="2.5" data-track-index="0" style="z-index:1">
+    <div class="glow"></div>
+    <div class="center">
+      <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
+      <div class="big s1-title">De la donnée<br/>à <span class="hl">l'imprimé.</span></div>
+      <div class="pills">
+        <span class="pill"><span class="d" style="background:var(--sky)"></span>Scraper</span>
+        <span class="pill"><span class="d" style="background:var(--amber)"></span>Importer</span>
+        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Modifier</span>
+        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Connecter</span>
+        <span class="pill"><span class="d" style="background:var(--violet)"></span>Exporter</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2 — SCRAPER -->
+  <div id="s2" class="scene clip" data-start="2.0" data-duration="4.0" data-track-index="1" style="z-index:2">
+    <div class="glow"></div>
+    <div class="cap"><span class="n">01</span><span class="v">SCRAPER</span><small>Une URL → specs, textes et visuels extraits, routés vers le PIM et le DAM.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Scraping Hub — enrichissement</span></div>
+      <div class="wbody">
+        <div class="urlbar"><span class="u">https://fournisseur.com/produit/perceuse-18v</span><span class="go">Scraper</span></div>
+        <div class="sc-cols">
+          <div class="card">
+            <div class="ch"><span class="tg" style="background:var(--emerald)"></span>PIM — caractéristiques</div>
+            <div class="kv-row"><span class="k">Référence</span><span class="val">REF-67890</span></div>
+            <div class="kv-row"><span class="k">Nom</span><span class="val">Perceuse 18V Brushless</span></div>
+            <div class="kv-row"><span class="k">Prix</span><span class="val">129,00 €</span></div>
+            <div class="kv-row"><span class="k">Marque</span><span class="val">TechMaster</span></div>
+          </div>
+          <div class="card">
+            <div class="ch"><span class="tg" style="background:var(--pink)"></span>DAM — visuels</div>
+            <div class="thumbs">
+              <span class="thumb" style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></span>
+              <span class="thumb" style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></span>
+              <span class="thumb" style="background:linear-gradient(135deg,#dc2626,#facc15)"></span>
+              <span class="thumb" style="background:linear-gradient(135deg,#059669,#a3e635)"></span>
+              <span class="thumb" style="background:linear-gradient(135deg,#0ea5e9,#e0f2fe)"></span>
+              <span class="thumb" style="background:linear-gradient(135deg,#6366f1,#f472b6)"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 — IMPORTER -->
+  <div id="s3" class="scene clip" data-start="5.5" data-duration="4.0" data-track-index="0" style="z-index:3">
+    <div class="glow"></div>
+    <div class="cap"><span class="n">02</span><span class="v">IMPORTER</span><small>InDesign (IDML) et Illustrator (SVG) ouverts dans le navigateur — blocs et textes éditables.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Importer un fichier</span></div>
+      <div class="wbody">
+        <div class="fcards">
+          <div class="fcard hot"><span class="fi" style="background:rgba(251,191,36,.18);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg></span><b>IDML</b><span>InDesign</span></div>
+          <div class="fcard"><span class="fi" style="background:rgba(56,189,248,.18);color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l8 8M3 11V3h8"/><rect x="11" y="11" width="10" height="10" rx="2"/></svg></span><b>SVG</b><span>Illustrator</span></div>
+          <div class="fcard"><span class="fi" style="background:rgba(244,114,182,.18);color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h4"/></svg></span><b>PDF</b><span>→ SVG</span></div>
+          <div class="fcard"><span class="fi" style="background:rgba(52,211,153,.18);color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span><b>Excel</b><span>données</span></div>
+        </div>
+        <div class="imp-res">
+          <span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <div class="layers">
+            <div class="lr"><span class="sw" style="background:#facc15"></span>Titre · « Soldes »<small>texte</small></div>
+            <div class="lr"><span class="sw" style="background:#3730a3"></span>Sous-titre éditable<small>texte</small></div>
+            <div class="lr"><span class="sw" style="background:#0ea5e9"></span>Image produit<small>image</small></div>
+            <div class="lr"><span class="sw" style="background:#ef4444"></span>Bandeau prix<small>forme</small></div>
+          </div>
+          <span class="impnote">calques éditables</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4 — MODIFIER -->
+  <div id="s4" class="scene clip" data-start="9.0" data-duration="4.0" data-track-index="1" style="z-index:4">
+    <div class="glow"></div>
+    <div class="cap"><span class="n">03</span><span class="v">MODIFIER</span><small>Composez le template dans l'éditeur : texte, formes, images, marque, calques.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Éditeur — Affiche_Promo</span><span class="wact"><span class="wpill" style="background:rgba(52,211,153,.16);color:var(--emerald)">Sauvegardé</span></span></div>
+      <div class="wbody" style="padding:0">
+        <div class="editor">
+          <div class="etools">
+            <i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5L5 21"/></svg></i>
+          </div>
+          <div class="ecanvas">
+            <div class="poster">
+              <span class="pimg"></span><span class="pbadge">-30%</span>
+              <span class="pprice">19<small>€90</small></span>
+              <span class="ptitle">GRANDE<br/>VENTE FLASH</span>
+              <span class="ph ph1"></span><span class="ph ph2"></span><span class="ph ph3"></span><span class="ph ph4"></span>
+            </div>
+          </div>
+          <div class="epanel">
+            <div class="ep-h">Propriétés</div>
+            <div class="ep-row"><span class="ep-in">X 240</span><span class="ep-in">Y 180</span></div>
+            <div class="ep-row"><span class="ep-in">L 595</span><span class="ep-in">H 842</span></div>
+            <div class="ep-h">Calques</div>
+            <div class="ep-lay on"><span class="sw" style="background:#facc15"></span>Prix · 19€90</div>
+            <div class="ep-lay"><span class="sw" style="background:#ef4444"></span>Badge · -30%</div>
+            <div class="ep-lay"><span class="sw" style="background:#3730a3"></span>Titre principal</div>
+            <div class="ep-h">Impression</div>
+            <div class="ep-seg"><span>72</span><span class="on">300 DPI</span><span>600</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5 — CONNECTER UNE BASE -->
+  <div id="s5" class="scene clip" data-start="12.5" data-duration="4.0" data-track-index="0" style="z-index:5">
+    <div class="glow"></div>
+    <div class="cap"><span class="n">04</span><span class="v">CONNECTER UNE BASE</span><small>Reliez vos données au gabarit : un visuel par ligne — des centaines de variantes.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Publipostage — liaison des données</span></div>
+      <div class="wbody">
+        <div class="db">
+          <div class="dtable">
+            <div class="tr th"><span>Nom</span><span class="num">Prix</span><span class="num">Réf.</span></div>
+            <div class="tr"><span>Perceuse 18V</span><span class="num">129,00 €</span><span class="num">67890</span></div>
+            <div class="tr"><span>Meuleuse 750W</span><span class="num">79,90 €</span><span class="num">54321</span></div>
+            <div class="tr"><span>Scie circulaire</span><span class="num">149,00 €</span><span class="num">13579</span></div>
+            <div class="tr"><span>Visseuse 12V</span><span class="num">59,00 €</span><span class="num">24680</span></div>
+          </div>
+          <div class="bindwrap">
+            <div class="bindchips"><i>{{ nom }}</i><i>{{ prix }}</i><i>{{ image }}</i></div>
+            <div class="variants">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="vcount"><b id="vc">248</b> variantes générées</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6 — EXPORTER -->
+  <div id="s6" class="scene clip" data-start="16.0" data-duration="4.0" data-track-index="1" style="z-index:6">
+    <div class="glow"></div>
+    <div class="cap"><span class="n">05</span><span class="v">EXPORTER SUR N SUPPORTS</span><small>Une source, tous vos canaux — impression aux normes, réseaux, PPTX, web, vidéo.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Exporter — 1 source → N canaux</span></div>
+      <div class="wbody">
+        <div class="exp">
+          <div class="exp-src"><span class="pimg"></span><span class="pprice">19€90</span></div>
+          <div class="channels">
+            <div class="chan"><span class="ic" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><b>Impression</b><span>PDF/X · 300 DPI</span></div>
+            <div class="chan"><span class="ic" style="color:var(--pink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"/></svg></span><b>Réseaux</b><span>image · story</span></div>
+            <div class="chan"><span class="ic" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><b>PowerPoint</b><span>PPTX</span></div>
+            <div class="chan"><span class="ic" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><b>Web</b><span>responsive</span></div>
+            <div class="chan"><span class="ic" style="color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><b>Vidéo</b><span>WebM</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7 — OUTRO -->
+  <div id="s7" class="scene clip" data-start="19.5" data-duration="2.5" data-track-index="0" style="z-index:7">
+    <div class="glow"></div>
+    <div class="center s7-wrap">
+      <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
+      <div class="big" style="font-size:88px">Scraper. Éditer.<br/><span class="hl">Publier.</span></div>
+      <span class="cta">Ouvrir l'application</span>
+      <span class="url-out">ibs-studio.com</span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    const slide = (id,t)=>tl.from(id,{xPercent:100,duration:.55,ease:"power3.out"},t);
+
+    /* S1 — intro */
+    tl.from("#s1 .logo",{y:34,opacity:0,duration:.6,ease:"power3.out"},.15);
+    tl.from("#s1 .s1-title",{y:46,opacity:0,duration:.7,ease:"expo.out"},.32);
+    tl.from("#s1 .pill",{y:26,opacity:0,duration:.5,ease:"power2.out",stagger:.08},.62);
+
+    /* S2 — scraper */
+    slide("#s2",2.0);
+    tl.from("#s2 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},2.5);
+    tl.from("#s2 .urlbar",{y:22,opacity:0,duration:.5,ease:"power2.out"},2.7);
+    tl.from("#s2 .go",{scale:.85,opacity:0,duration:.4,ease:"expo.out"},2.9);
+    tl.to("#s2 .go",{scale:1.05,duration:.5,yoyo:true,repeat:1,ease:"sine.inOut"},3.3);
+    tl.from("#s2 .card",{y:34,opacity:0,duration:.55,ease:"power4.out",stagger:.14},3.05);
+    tl.from("#s2 .kv-row",{x:-18,opacity:0,duration:.4,ease:"sine.out",stagger:.08},3.4);
+    tl.from("#s2 .thumb",{scale:.5,opacity:0,duration:.4,ease:"power3.out",stagger:.06},3.55);
+
+    /* S3 — importer */
+    slide("#s3",5.5);
+    tl.from("#s3 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},6.0);
+    tl.from("#s3 .fcard",{y:36,opacity:0,duration:.5,ease:"expo.out",stagger:.1},6.2);
+    tl.to("#s3 .fcard.hot",{boxShadow:"0 0 38px -6px rgba(251,191,36,.8)",duration:.5,ease:"power2.out"},6.85);
+    tl.from("#s3 .imp-res",{y:30,opacity:0,duration:.55,ease:"power3.out"},6.9);
+    tl.from("#s3 .lr",{x:-20,opacity:0,duration:.4,ease:"sine.out",stagger:.1},7.15);
+
+    /* S4 — modifier */
+    slide("#s4",9.0);
+    tl.from("#s4 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},9.5);
+    tl.from("#s4 .etools i",{x:-16,opacity:0,duration:.4,ease:"power2.out",stagger:.06},9.6);
+    tl.from("#s4 .pimg",{opacity:0,scale:.9,duration:.5,ease:"power3.out"},9.7);
+    tl.from("#s4 .pprice",{y:20,opacity:0,duration:.45,ease:"expo.out"},9.95);
+    tl.from("#s4 .ptitle",{y:18,opacity:0,duration:.45,ease:"power2.out"},10.15);
+    tl.from("#s4 .pbadge",{scale:.4,opacity:0,duration:.45,ease:"power4.out"},10.35);
+    tl.from("#s4 .ph",{scale:0,opacity:0,duration:.35,ease:"power3.out",stagger:.05},10.5);
+    tl.from("#s4 .epanel > *",{x:24,opacity:0,duration:.4,ease:"sine.out",stagger:.05},9.85);
+    tl.to("#s4 .ep-lay.on",{backgroundColor:"rgba(99,102,241,.3)",duration:.5,yoyo:true,repeat:1,ease:"sine.inOut"},11.0);
+
+    /* S5 — connecter une base */
+    slide("#s5",12.5);
+    tl.from("#s5 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},13.0);
+    tl.from("#s5 .dtable .tr",{x:-22,opacity:0,duration:.4,ease:"power2.out",stagger:.08},13.15);
+    tl.from("#s5 .bindchips i",{y:18,opacity:0,duration:.4,ease:"expo.out",stagger:.1},13.5);
+    tl.from("#s5 .variants i",{scale:.3,opacity:0,duration:.35,ease:"power3.out",stagger:.035},13.7);
+    tl.from("#s5 .vcount",{opacity:0,y:16,duration:.5,ease:"power2.out"},14.4);
+    tl.from("#vc",{textContent:0,duration:1.1,ease:"power1.out",snap:{textContent:1}},14.4);
+
+    /* S6 — exporter */
+    slide("#s6",16.0);
+    tl.from("#s6 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},16.5);
+    tl.from("#s6 .exp-src",{y:30,opacity:0,duration:.55,ease:"power3.out"},16.65);
+    tl.from("#s6 .chan",{y:34,opacity:0,duration:.5,ease:"expo.out",stagger:.1},16.95);
+    tl.to("#s6 .chan:nth-child(1) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.5);
+    tl.to("#s6 .chan:nth-child(2) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.65);
+    tl.to("#s6 .chan:nth-child(3) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.8);
+    tl.to("#s6 .chan:nth-child(4) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},17.95);
+    tl.to("#s6 .chan:nth-child(5) .ic",{boxShadow:"0 0 30px -4px currentColor",borderColor:"currentColor",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},18.1);
+
+    /* S7 — outro */
+    slide("#s7",19.5);
+    tl.from("#s7 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},20.0);
+    tl.from("#s7 .big",{y:36,opacity:0,duration:.6,ease:"expo.out"},20.2);
+    tl.from("#s7 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},20.5);
+    tl.from("#s7 .url-out",{opacity:0,duration:.4,ease:"sine.out"},20.7);
+    tl.to("#s7 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},21.5);
+
+    window.__timelines["promo-hero"] = tl;
+  </script>
+</div>
+</body>
+</html>
