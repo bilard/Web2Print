@@ -166,17 +166,23 @@
   .chan .done svg{width:20px;height:20px}
 
   /* WORKFLOWS (Zapier) */
-  .wf{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;padding:40px 6px;min-height:520px}
-  .wf-node{width:198px;border:1px solid var(--line2);border-radius:14px;background:var(--elev);padding:18px;display:flex;flex-direction:column;gap:10px}
-  .wf-node .nh{display:flex;align-items:center;gap:11px}
-  .wf-node .ni{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#fff;flex-shrink:0}
-  .wf-node .ni svg{width:20px;height:20px}
-  .wf-node b{font-size:18px}
+  .wf-canvas{position:relative;width:100%;height:450px;border-radius:14px;border:1px solid var(--line);overflow:hidden;background:radial-gradient(circle at 50% 26%,rgba(99,102,241,.07),transparent 58%),#0b0b0e}
+  .wf-canvas::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.09) 1.4px,transparent 1.4px);background-size:28px 28px;opacity:.55}
+  .wf-wires{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+  .wf-wires .wire{fill:none;stroke:currentColor;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;filter:drop-shadow(0 0 6px)}
+  .wf-wires .wpulse{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;stroke-dasharray:12 100;stroke-dashoffset:112;opacity:0;filter:drop-shadow(0 0 9px)}
+  .wf-wires .ahead{stroke:none;fill:currentColor;filter:drop-shadow(0 0 5px)}
+  .wf-node{position:absolute;width:224px;height:104px;border:1px solid var(--line2);border-radius:16px;background:linear-gradient(180deg,#1d1d25,#141418);padding:0 22px;display:flex;flex-direction:column;justify-content:center;gap:9px;z-index:2;box-shadow:0 20px 44px -24px #000,0 0 30px -16px var(--accent,#6366f1)}
+  .wf-node .nh{display:flex;align-items:center;gap:13px}
+  .wf-node .ni{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;flex-shrink:0;box-shadow:0 6px 16px -5px var(--accent,#6366f1)}
+  .wf-node .ni svg{width:23px;height:23px}
+  .wf-node b{font-size:19px}
   .wf-node span{font-size:14px;color:var(--mut)}
-  .wf-node.run{border-color:var(--indigo);box-shadow:0 0 30px -6px rgba(99,102,241,.8)}
-  .wf-arr{width:50px;display:grid;place-items:center;color:var(--mut)}
-  .wf-arr svg{width:28px;height:28px}
-  .wf-run{display:inline-flex;align-items:center;gap:10px;margin:26px auto 0;font-size:19px;font-weight:700;color:#fff;background:var(--indigo);padding:12px 24px;border-radius:11px}
+  .wf-node .tag{position:absolute;top:-11px;left:16px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent);background:#0b0b0e;border:1px solid var(--accent);border-radius:6px;padding:2px 9px;z-index:3}
+  .wf-node::before,.wf-node::after{content:"";position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#0b0b0e;border:3px solid var(--accent,#6366f1);transform:translateY(-50%);box-shadow:0 0 11px -1px var(--accent,#6366f1);z-index:3}
+  .wf-node::before{left:-7px}
+  .wf-node::after{right:-7px}
+  .wf-run{display:inline-flex;align-items:center;gap:10px;margin:24px auto 0;font-size:19px;font-weight:700;color:#fff;background:var(--indigo);padding:13px 26px;border-radius:12px;box-shadow:0 0 34px -8px rgba(99,102,241,.7)}
   .wf-run svg{width:18px;height:18px}
 
   /* TELEGRAM */
@@ -441,16 +447,26 @@
     <div class="win">
       <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Workflows — éditeur de flux</span></div>
       <div class="wbody">
-        <div class="wf">
-          <div class="wf-node" id="wn1"><div class="nh"><span class="ni" style="background:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><b>Scraper URL</b></div><span>source produit</span></div>
-          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <div class="wf-node" id="wn2"><div class="nh"><span class="ni" style="background:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 .5-4 3.5 1.5 5L12 19l-4.5 3 1.5-5-4-3.5 5-.5z"/></svg></span><b>Enrichir</b></div><span>PIM + DAM</span></div>
-          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <div class="wf-node" id="wn3"><div class="nh"><span class="ni" style="background:var(--indigo)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><b>Composer</b></div><span>gabarit + data</span></div>
-          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <div class="wf-node" id="wn4"><div class="nh"><span class="ni" style="background:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><b>Exporter</b></div><span>PDF · image</span></div>
-          <div class="wf-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <div class="wf-node" id="wn5"><div class="nh"><span class="ni" style="background:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><b>Telegram</b></div><span>envoi auto</span></div>
+        <div class="wf-canvas">
+          <svg class="wf-wires" width="1440" height="450" viewBox="0 0 1440 450" preserveAspectRatio="none" data-layout-allow-overflow>
+            <path id="wire1" class="wire" pathLength="100" style="color:#38BDF8" d="M232 242 C274 242 266 202 308 202"/>
+            <path id="wire2" class="wire" pathLength="100" style="color:#34D399" d="M532 202 C574 202 566 247 608 247"/>
+            <path id="wire3" class="wire" pathLength="100" style="color:#6366F1" d="M832 247 C874 247 866 287 908 287"/>
+            <path id="wire4" class="wire" pathLength="100" style="color:#A78BFA" d="M1132 287 C1174 287 1166 242 1208 242"/>
+            <path id="wpulse1" class="wpulse" pathLength="100" style="color:#38BDF8" d="M232 242 C274 242 266 202 308 202"/>
+            <path id="wpulse2" class="wpulse" pathLength="100" style="color:#34D399" d="M532 202 C574 202 566 247 608 247"/>
+            <path id="wpulse3" class="wpulse" pathLength="100" style="color:#6366F1" d="M832 247 C874 247 866 287 908 287"/>
+            <path id="wpulse4" class="wpulse" pathLength="100" style="color:#A78BFA" d="M1132 287 C1174 287 1166 242 1208 242"/>
+            <path class="ahead" style="color:#38BDF8" d="M308 202 L295 195 L295 209 Z"/>
+            <path class="ahead" style="color:#34D399" d="M608 247 L595 240 L595 254 Z"/>
+            <path class="ahead" style="color:#6366F1" d="M908 287 L895 280 L895 294 Z"/>
+            <path class="ahead" style="color:#A78BFA" d="M1208 242 L1195 235 L1195 249 Z"/>
+          </svg>
+          <div class="wf-node" id="wn1" style="left:8px;top:190px;--accent:#38BDF8"><span class="tag">ENTRÉE</span><div class="nh"><span class="ni" style="background:#38BDF8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><b>Scraper URL</b></div><span>source produit</span></div>
+          <div class="wf-node" id="wn2" style="left:308px;top:150px;--accent:#34D399"><div class="nh"><span class="ni" style="background:#34D399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 .5-4 3.5 1.5 5L12 19l-4.5 3 1.5-5-4-3.5 5-.5z"/></svg></span><b>Enrichir</b></div><span>PIM + DAM</span></div>
+          <div class="wf-node" id="wn3" style="left:608px;top:195px;--accent:#6366F1"><div class="nh"><span class="ni" style="background:#6366F1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><b>Composer</b></div><span>gabarit + data</span></div>
+          <div class="wf-node" id="wn4" style="left:908px;top:235px;--accent:#A78BFA"><div class="nh"><span class="ni" style="background:#A78BFA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><b>Exporter</b></div><span>PDF · image</span></div>
+          <div class="wf-node" id="wn5" style="left:1208px;top:190px;--accent:#60A5FA"><span class="tag">SORTIE</span><div class="nh"><span class="ni" style="background:#60A5FA"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><b>Telegram</b></div><span>envoi auto</span></div>
         </div>
         <div style="text-align:center"><span class="wf-run" id="wfrun"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Lancer le workflow</span></div>
       </div>
@@ -589,15 +605,24 @@
     tl.to("#s6 .chan:nth-child(5) .ic",{borderColor:"currentColor",boxShadow:"0 0 26px -4px currentColor",duration:.35,ease:"power2.out"},31.8);
     tl.to("#s6 .chan:nth-child(5) .done",{opacity:1,scale:1,duration:.35,ease:"power3.out"},31.9);
 
-    /* S7 — workflows (Zapier) : le flux s'exécute node par node */
+    /* S7 — workflows : graphe (entrée → étapes → sortie), câbles tracés, puis exécution avec pulse le long des fils */
     slide("#s7",34.0);
     tl.from("#s7 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},34.5);
-    tl.from("#s7 .wf-node",{y:30,opacity:0,duration:.45,ease:"expo.out",stagger:.12},34.6);
-    tl.from("#s7 .wf-arr",{scale:.4,opacity:0,duration:.35,ease:"power3.out",stagger:.12},34.95);
-    tl.from("#s7 .wf-run",{scale:.9,opacity:0,duration:.4,ease:"power3.out"},35.7);
-    tl.fromTo("#wfrun",{scale:1},{scale:1.06,duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},36.1);
-    var RUN={borderColor:"var(--indigo)",boxShadow:"0 0 30px -6px rgba(99,102,241,.85)",duration:.32,yoyo:true,repeat:1,ease:"sine.inOut"};
-    tl.to("#wn1",RUN,36.4); tl.to("#wn2",RUN,36.8); tl.to("#wn3",RUN,37.2); tl.to("#wn4",RUN,37.6); tl.to("#wn5",RUN,38.0);
+    tl.from("#s7 .wf-node",{y:28,scale:.9,opacity:0,duration:.5,ease:"expo.out",stagger:.13},34.6);
+    tl.from("#s7 .wf-node .tag",{y:7,opacity:0,duration:.35,ease:"back.out(2)",stagger:.45},35.1);
+    // les câbles se tracent entre les ports
+    tl.to("#s7 .wire",{strokeDashoffset:0,duration:.6,ease:"power2.inOut",stagger:.13},35.0);
+    tl.from("#s7 .ahead",{opacity:0,duration:.3,ease:"power2.out",stagger:.13},35.45);
+    tl.from("#s7 .wf-run",{scale:.9,opacity:0,duration:.4,ease:"power3.out"},35.8);
+    tl.fromTo("#wfrun",{scale:1},{scale:1.07,duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},36.15);
+    // exécution : chaque node s'allume, puis un pulse file vers le suivant le long du câble
+    function lite(id,col,t){tl.to(id,{boxShadow:"0 20px 44px -24px #000,0 0 42px -6px "+col,borderColor:col,duration:.34,yoyo:true,repeat:1,ease:"sine.inOut"},t);}
+    function pulse(id,t){tl.set(id,{opacity:1},t);tl.fromTo(id,{strokeDashoffset:112},{strokeDashoffset:12,duration:.46,ease:"power1.inOut"},t);tl.to(id,{opacity:0,duration:.16},t+.46);}
+    lite("#wn1","#38BDF8",36.4); pulse("#wpulse1",36.6);
+    lite("#wn2","#34D399",36.95); pulse("#wpulse2",37.15);
+    lite("#wn3","#6366F1",37.5); pulse("#wpulse3",37.7);
+    lite("#wn4","#A78BFA",38.05); pulse("#wpulse4",38.25);
+    lite("#wn5","#60A5FA",38.6);
 
     /* S8 — telegram : commande → exécution → fichier renvoyé */
     slide("#s8",39.6);
