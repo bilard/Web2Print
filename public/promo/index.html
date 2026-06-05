@@ -386,7 +386,9 @@
   @media(max-width:860px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:460px){.stats-grid{grid-template-columns:1fr}}
   .stat{background:var(--bg);padding:52px 24px;text-align:center}
-  .stat b{display:block;font-family:var(--display);font-weight:700;font-size:clamp(56px,6.4vw,96px);line-height:1;letter-spacing:-.02em;filter:drop-shadow(0 0 24px rgba(124,108,255,.35))}
+  .stat b{display:block;font-family:var(--display);font-weight:700;font-size:clamp(56px,6.4vw,96px);line-height:1;letter-spacing:-.02em;filter:drop-shadow(0 0 24px rgba(124,108,255,.35));white-space:nowrap}
+  .stat b .count{display:inline;font-size:inherit}
+  .stat b .u{display:inline;font-size:.34em;font-weight:600;letter-spacing:.02em;margin-left:.1em;vertical-align:baseline}
   .stat span{display:block;font-size:clamp(15px,1.3vw,18px);font-weight:500;color:var(--ink);opacity:.85;margin-top:16px;letter-spacing:.005em}
 
   section.block{padding:96px 0;position:relative}
@@ -1165,7 +1167,7 @@
       <div class="stat"><b class="grad-text"><span class="count" data-to="13">0</span></b><span>modules connectés</span></div>
       <div class="stat"><b class="grad-text"><span class="count" data-to="6">0</span></b><span>formats d'import</span></div>
       <div class="stat"><b class="grad-text"><span class="count" data-to="4">0</span></b><span>formats d'export</span></div>
-      <div class="stat"><b class="grad-text"><span class="count" data-to="300">0</span></b><span>DPI · CMJN print</span></div>
+      <div class="stat"><b class="grad-text"><span class="count" data-to="300">0</span><span class="u">DPI</span></b><span>exports prêts pour l'imprimeur · CMJN</span></div>
       <div class="stat"><b class="grad-text">∞</b><span>variantes (publipostage)</span></div>
     </div>
   </section>
