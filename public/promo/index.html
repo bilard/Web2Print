@@ -65,6 +65,25 @@
   .btn-ghost{border:1px solid var(--line2);color:var(--ink)}
   .btn-ghost:hover{background:var(--surface);border-color:var(--indigo)}
 
+  /* SOMMAIRE LATÉRAL DES MODULES (scroll-spy) */
+  .modnav{position:fixed;top:50%;left:24px;transform:translateY(-50%);z-index:90;width:178px;max-height:86vh;overflow-y:auto;padding:14px 12px;background:rgba(16,16,25,.55);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;box-shadow:0 24px 60px -24px rgba(0,0,0,.7);scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+  .modnav::-webkit-scrollbar{width:6px}
+  .modnav::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+  .modnav .mn-head{font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);padding:2px 8px 10px}
+  .modnav ol{list-style:none;display:flex;flex-direction:column;gap:1px}
+  .modnav a{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:9px;color:var(--muted);font-size:12.5px;font-weight:500;letter-spacing:.01em;transition:color .18s,background .18s;position:relative}
+  .modnav a .mn-num{font-family:var(--mono);font-size:9.5px;color:var(--faint);min-width:15px;transition:color .18s}
+  .modnav a:hover{color:var(--ink);background:rgba(255,255,255,.045)}
+  .modnav a.on{color:var(--ink);background:rgba(99,102,241,.13)}
+  .modnav a.on .mn-num{color:transparent;background:var(--grad);-webkit-background-clip:text;background-clip:text}
+  .modnav a.on::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:15px;border-radius:3px;background:var(--grad)}
+  .modnav-foot{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .modnav-foot a{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px;border-radius:10px;background:var(--grad);color:#0b0b12;font-size:12px;font-weight:700;letter-spacing:.02em}
+  .modnav-foot a:hover{background:var(--grad);filter:brightness(1.08)}
+  /* Affiché seulement quand il y a de la marge à gauche du contenu centré (≥1500px) */
+  .modnav{display:none}
+  @media(min-width:1500px){.modnav{display:block}}
+
   /* HERO */
   .hero{position:relative;min-height:94vh;display:flex;flex-direction:column;justify-content:center;padding:60px 0 40px}
   .hero-grid{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.4;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 40%,#000 30%,transparent 78%)}
@@ -709,6 +728,33 @@
   </div>
 </header>
 
+<nav class="modnav" aria-label="Sommaire des modules">
+  <div class="mn-head">Les 18 modules</div>
+  <ol>
+    <li><a href="#nouveau"     data-spy="nouveau"><span class="mn-num">01</span>Créer</a></li>
+    <li><a href="#import"      data-spy="import"><span class="mn-num">02</span>Importer</a></li>
+    <li><a href="#editer"      data-spy="editer"><span class="mn-num">03</span>Éditer</a></li>
+    <li><a href="#bibliotheque" data-spy="bibliotheque"><span class="mn-num">04</span>Organiser</a></li>
+    <li><a href="#dam"         data-spy="dam"><span class="mn-num">05</span>Médias</a></li>
+    <li><a href="#imgen"       data-spy="imgen"><span class="mn-num">06</span>Générer</a></li>
+    <li><a href="#pim"         data-spy="pim"><span class="mn-num">07</span>Données</a></li>
+    <li><a href="#taxonomies"  data-spy="taxonomies"><span class="mn-num">08</span>Classer</a></li>
+    <li><a href="#templates"   data-spy="templates"><span class="mn-num">09</span>Mapper</a></li>
+    <li><a href="#scraper"     data-spy="scraper"><span class="mn-num">10</span>Collecter</a></li>
+    <li><a href="#publipostage" data-spy="publipostage"><span class="mn-num">11</span>Décliner</a></li>
+    <li><a href="#workflows"   data-spy="workflows"><span class="mn-num">12</span>Automatiser</a></li>
+    <li><a href="#telegram"    data-spy="telegram"><span class="mn-num">13</span>Piloter</a></li>
+    <li><a href="#animation"   data-spy="animation"><span class="mn-num">14</span>Animer</a></li>
+    <li><a href="#chat"        data-spy="chat"><span class="mn-num">15</span>Assister</a></li>
+    <li><a href="#export"      data-spy="export"><span class="mn-num">16</span>Publier</a></li>
+    <li><a href="#roles"       data-spy="roles"><span class="mn-num">17</span>Gouverner</a></li>
+    <li><a href="#settings"    data-spy="settings"><span class="mn-num">18</span>Paramétrer</a></li>
+  </ol>
+  <div class="modnav-foot">
+    <a href="/dashboard">Ouvrir l'app <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </div>
+</nav>
+
 <main id="top">
 
   <!-- HERO -->
@@ -1339,6 +1385,28 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+  })();
+
+  /* Sommaire latéral : surbrillance du module visible (scroll-spy) */
+  (function(){
+    var links=[].slice.call(document.querySelectorAll('.modnav a[data-spy]'));
+    if(!links.length || !('IntersectionObserver' in window)) return;
+    var byId={};
+    links.forEach(function(a){ byId[a.getAttribute('data-spy')]=a; });
+    var visible={};
+    var spy=new IntersectionObserver(function(es){
+      es.forEach(function(e){ visible[e.target.id]=e.isIntersecting?e.intersectionRatio:0; });
+      var bestId=null, bestRatio=0;
+      Object.keys(visible).forEach(function(id){ if(visible[id]>bestRatio){bestRatio=visible[id];bestId=id;} });
+      if(bestId){
+        links.forEach(function(a){ a.classList.remove('on'); });
+        if(byId[bestId]){
+          byId[bestId].classList.add('on');
+          byId[bestId].scrollIntoView({block:'nearest'});
+        }
+      }
+    },{threshold:[0,.25,.5,.75],rootMargin:'-30% 0px -45% 0px'});
+    Object.keys(byId).forEach(function(id){ var el=document.getElementById(id); if(el) spy.observe(el); });
   })();
 })();
 </script>
