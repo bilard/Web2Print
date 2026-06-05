@@ -84,6 +84,25 @@
   .modnav{display:none}
   @media(min-width:1500px){.modnav{display:block}}
 
+  /* PANNEAU « COMPRENDRE CE MODULE » (dépliable) */
+  .scene-more{margin-top:24px;display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:100px;padding:10px 18px;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+  .scene-more:hover{color:var(--ink);border-color:var(--line2);background:rgba(255,255,255,.06)}
+  .scene-more .chev{width:13px;height:13px;transition:transform .3s ease}
+  .scene-more[aria-expanded="true"]{color:var(--ink);border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.1)}
+  .scene-more[aria-expanded="true"] .chev{transform:rotate(180deg)}
+  .scene-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s ease,opacity .3s ease,margin-top .38s ease;opacity:0;margin-top:0}
+  .scene-more[aria-expanded="true"] + .scene-detail{grid-template-rows:1fr;opacity:1;margin-top:20px}
+  .scene-detail-inner{overflow:hidden;display:flex;flex-direction:column;gap:16px;min-height:0}
+  .sd-block{border-left:2px solid var(--line2);padding:1px 0 1px 16px}
+  .sd-k{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .sd-block p{font-size:14.5px;color:var(--muted);line-height:1.62}
+  .sd-block p b{color:var(--ink);font-weight:600}
+  .sd-steps{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .sd-steps li{position:relative;padding-left:32px;font-size:14px;color:var(--muted);line-height:1.55}
+  .sd-steps li b{color:var(--ink);font-weight:600}
+  .sd-steps li::before{counter-increment:sd;content:counter(sd);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:50%;background:rgba(99,102,241,.16);color:#c7d2fe;font-family:var(--mono);font-size:10px;font-weight:700;display:grid;place-items:center}
+  .sd-steps{counter-reset:sd}
+
   /* HERO */
   .hero{position:relative;min-height:94vh;display:flex;flex-direction:column;justify-content:center;padding:60px 0 40px}
   .hero-grid{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.4;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:70px 70px;mask-image:radial-gradient(ellipse 90% 70% at 50% 40%,#000 30%,transparent 78%)}
@@ -795,6 +814,8 @@
           <h2>Une toile,<br/>tous les formats.</h2>
           <p>Lancez une création en quelques secondes. Choisissez un <b>format prêt à l'emploi</b> — print A4/A3, écran 4K, formats réseaux sociaux — ou définissez vos dimensions <b>au millimètre près</b>. Fond uni, dégradé ou image de départ : la toile s'ouvre directement dans l'éditeur, sans gabarit à chercher ni réglage technique à faire à la main.</p>
           <ul class="scene-list"><li>Print · écran · réseaux · sur mesure</li><li>Fond uni, dégradé ou image</li><li>Ouverture directe dans l'éditeur</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-nouveau"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-nouveau"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Démarrer une création print ou écran impose de connaître les bonnes dimensions, la résolution et le profil colorimétrique — une barrière technique avant même d'avoir posé le premier élément.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Choisissez un <b>format prêt à l'emploi</b> (A4/A3 impression, 4K, formats réseaux) ou saisissez vos dimensions au millimètre ou au pixel près.</li><li>Définissez le fond : <b>uni, dégradé ou image de départ</b>.</li><li>La toile s'ouvre <b>directement dans l'éditeur</b>, déjà calibrée 300 DPI / CMJN si c'est du print.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Une toile aux bonnes normes en quelques secondes, sans gabarit à chercher ni réglage manuel.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Nouveau document</span></div>
@@ -816,6 +837,8 @@
           <h2>Vos fichiers,<br/>fidèles et éditables.</h2>
           <p>Ouvrez vos fichiers existants sans les recréer. IBS-Studio importe <b>InDesign (IDML), PowerPoint, SVG, PDF et Excel</b> en conservant mise en page, styles et typographie — pas une capture aplatie, mais des <b>calques réellement éditables</b>. Mieux : images et PDF sont <b>décomposés en calques par IA</b> (textes, formes et visuels séparés), prêts à modifier bloc par bloc.</p>
           <ul class="scene-list"><li>IDML · PPTX · SVG · PDF→SVG · Excel</li><li>Pas une capture aplatie : tout reste éditable</li><li>Décomposition en calques par IA</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-import"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-import"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Vos fichiers existants (InDesign, PowerPoint, PDF) sont prisonniers de leur logiciel. Les rouvrir ailleurs les aplatit en image ou casse la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Déposez un <b>IDML, PPTX, SVG, PDF ou Excel</b>.</li><li>Le parseur reconstruit <b>calques, styles et typographie à l'identique</b> — pas une capture figée.</li><li>Pour les images et PDF, une <b>IA décompose la maquette en calques</b> (textes, formes et visuels séparés).</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vos documents redeviennent éditables bloc par bloc, sans avoir à les recréer.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un fichier</span></div>
@@ -840,6 +863,8 @@
           <h2>Un éditeur visuel,<br/>complet et précis.</h2>
           <p>Un véritable éditeur visuel dans le navigateur, pensé pour les pros du print. Manipulez <b>calques, textes, formes, couleurs et alignements</b> avec la simplicité d'un Canva, mais aux exigences de l'imprimerie : <b>repères de coupe, fond perdu, zone de sécurité, 300 DPI et CMJN</b>. IA générative et publipostage sont intégrés directement à la zone de travail.</p>
           <ul class="scene-list"><li>Calques, texte, formes, couleurs</li><li>Type Canva, qualité imprimeur</li><li>IA générative &amp; publipostage intégrés</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-editer"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-editer"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Les éditeurs grand public ignorent les contraintes de l'imprimerie ; les outils pro exigent un logiciel lourd installé sur un poste précis.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Manipulez <b>calques, textes, formes, couleurs et alignements</b> dans le navigateur.</li><li>Activez <b>repères de coupe, fond perdu et zone de sécurité</b>, en 300 DPI / CMJN.</li><li>Appelez l'<b>IA générative et le publipostage</b> directement dans la zone de travail.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>La simplicité d'un Canva avec les exigences d'un imprimeur — et rien à installer.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — IDML importé</span><span class="sact"><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
@@ -857,6 +882,8 @@
           <h2>Tous vos projets,<br/>au même endroit.</h2>
           <p>Retrouvez tous vos projets au même endroit, en <b>vignettes ou en liste</b>, et filtrez-les par taxonomie pour naviguer dans des catalogues entiers. <b>Sélection multiple, duplication, ouverture directe dans l'éditeur</b> : votre production reste rangée, accessible et réutilisable — fini les fichiers éparpillés sur des disques ou des Drive.</p>
           <ul class="scene-list"><li>Vue vignettes ou liste</li><li>Filtrage par taxonomie</li><li>Duplication &amp; ouverture directe</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-bibliotheque"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-bibliotheque"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Les fichiers finis s'éparpillent sur des disques et des Drive. Impossible de retrouver rapidement, ou de réutiliser, une création passée.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Tous vos projets sont réunis au même endroit, en <b>vignettes ou en liste</b>.</li><li>Filtrez-les <b>par taxonomie</b> pour parcourir des catalogues entiers.</li><li><b>Dupliquez, sélectionnez en masse</b> ou rouvrez dans l'éditeur d'un seul clic.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Une production rangée, accessible et réutilisable — fini les fichiers perdus.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Bibliothèque — projets</span></div>
@@ -882,6 +909,8 @@
           <h2>Une bibliothèque<br/>média centrale.</h2>
           <p>Un gestionnaire d'actifs numériques (DAM) complet. Centralisez <b>visuels, banques libres de droits (Pexels, Unsplash), collections et chartes de marque</b>, et <b>générez de nouvelles images par IA</b> sans quitter l'outil. La <b>recherche par mot-clé ou par image</b> retrouve le bon visuel en un instant, et tout se synchronise avec Google Drive.</p>
           <ul class="scene-list"><li>Pexels · Unsplash intégrés</li><li>Génération d'image par IA</li><li>Collections · Google Drive</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-dam"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-dam"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Logos, packshots et visuels validés circulent par mail en versions multiples. On ne sait jamais laquelle est la bonne, ni où elle se trouve.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Centralisez tous vos médias dans un <b>DAM unique</b>, relié à Google Drive.</li><li><b>Recherchez, filtrez et prévisualisez</b> vos assets.</li><li>Insérez-les directement dans l'<b>éditeur ou un workflow</b>.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Une source unique de vérité pour vos visuels, partagée et toujours à jour.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">DAM — bibliothèque média</span></div>
@@ -899,6 +928,8 @@
           <h2>Des visuels produit,<br/>générés par IA.</h2>
           <p>Créez des visuels produit sur mesure à partir d'un simple texte. Décrivez un <b>packshot ou une mise en situation</b>, ajoutez une référence issue du DAM, et <b>Nano Banana Pro</b> génère des images photoréalistes en quelques secondes. Déclinez à l'infini styles, fonds et ambiances — studio, lifestyle, premium — pour nourrir fiches et campagnes.</p>
           <ul class="scene-list"><li>Génération depuis prompt + référence</li><li>Packshots, ambiances, déclinaisons</li><li>Rangé directement dans le DAM</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-imgen"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-imgen"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Produire un visuel produit propre — packshot, mise en ambiance — réclame un studio photo ou un graphiste, et ce pour chaque déclinaison.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Décrivez l'image voulue <b>en langage naturel</b>, avec un produit du DAM en référence.</li><li><b>Nano Banana Pro</b> génère plusieurs variantes (packshot, lifestyle, studio).</li><li>Choisissez le <b>format</b> (1:1, 16:9, 9:16, A4) et envoyez le résultat dans l'éditeur.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Des visuels sur mesure en quelques secondes, sans shooting ni détourage.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Création d'image — Nano Banana Pro</span></div>
@@ -930,6 +961,8 @@
           <h2>Vos fiches produits,<br/>structurées.</h2>
           <p>Un PIM pour structurer toutes vos fiches produits. Créez <b>plusieurs bases</b>, importez vos catalogues <b>Excel</b>, ajoutez des <b>colonnes sur mesure</b> et reliez-les à votre taxonomie. L'<b>enrichissement automatique par scraping d'URL</b> remplit specs, descriptions et prix à votre place — vos données restent à jour et prêtes pour le publipostage.</p>
           <ul class="scene-list"><li>Bases multiples · import Excel</li><li>Colonnes &amp; taxonomie</li><li>Enrichissement par scraping</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-pim"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-pim"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Les données produit vivent dans des Excel épars, vite périmés et jamais vraiment prêts pour la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Créez <b>plusieurs bases</b> et importez vos catalogues Excel.</li><li>Ajoutez des <b>colonnes sur mesure</b> et reliez chaque fiche à votre taxonomie.</li><li>Laissez l'<b>enrichissement par scraping d'URL</b> remplir specs, descriptions et prix.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Un référentiel produit structuré, à jour et directement exploitable en publipostage.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">PIM — fiches produits</span></div>
@@ -951,6 +984,8 @@
           <h2>Un catalogue<br/>bien rangé.</h2>
           <p>Organisez votre catalogue dans une <b>arborescence à autant de niveaux que nécessaire</b> — univers, catégories, gammes, familles. Reliez-y vos <b>projets et vos produits</b> pour filtrer, structurer et retrouver n'importe quel élément, à n'importe quelle échelle. Une même classification sert le PIM, la bibliothèque et le scraping.</p>
           <ul class="scene-list"><li>Arborescence à N niveaux</li><li>Liaison projets &amp; produits</li><li>Filtrage transversal</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-taxonomies"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-taxonomies"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Sans arborescence commune, projets et produits ne se retrouvent pas : chaque équipe range à sa façon.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Construisez des <b>taxonomies à N niveaux</b> (familles, gammes, rayons).</li><li>Reliez-y <b>projets et fiches produits</b>.</li><li>Filtrez <b>bibliothèque et PIM</b> par nœud, d'un clic.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Un classement partagé qui rend tout votre catalogue navigable.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Taxonomies — arborescence</span></div>
@@ -975,6 +1010,8 @@
           <h2>Le scraping,<br/>sans écrire de code.</h2>
           <p>Apprenez à IBS-Studio à lire n'importe quel site, <b>sans écrire une ligne de code</b>. <b>Cliquez l'élément à capturer</b> sur la page : le sélecteur CSS le plus stable est détecté automatiquement, et vous l'<b>assignez au bon champ</b> (titre, prix, description, images…). La règle est enregistrée et <b>réutilisable</b> sur tous les produits d'un même fournisseur.</p>
           <ul class="scene-list"><li>Capture visuelle des éléments</li><li>Sélecteurs &amp; mapping de champs</li><li>Règles réutilisables</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-templates"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-templates"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Chaque site fournisseur a sa propre structure ; en extraire proprement les données demande d'habitude un développement sur mesure, site par site.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Définissez un <b>template de scraping</b> (sélecteurs, champs clé/valeur, onglets).</li><li><b>Mappez</b> chaque zone de la page vers vos colonnes PIM ou vos assets DAM.</li><li><b>Réutilisez</b> le template sur toutes les URL du même fournisseur.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Une collecte fiable et répétable, sans coder un parseur par marque.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Templates scraping — mapping</span></div>
@@ -992,6 +1029,8 @@
           <h2>La donnée se<br/>collecte seule.</h2>
           <p>Transformez une <b>URL en fiche complète</b>. IBS-Studio lit la page, extrait <b>specs, descriptions et visuels</b>, puis répartit automatiquement : les textes alimentent le <b>PIM</b>, les images le <b>DAM</b>. L'<b>escalade anti-bot</b> (Bright Data, Jina, Firecrawl) garantit la collecte même sur les sites les plus protégés, à l'unité ou par lots.</p>
           <ul class="scene-list"><li>1 URL → textes &amp; images extraits</li><li>Anti-bot : Bright Data · Jina · Firecrawl</li><li>PIM + DAM en une seule passe</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-scraper"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-scraper"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Recopier à la main specs, prix et photos depuis les sites fournisseurs est long, fastidieux et truffé d'erreurs.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Collez une ou <b>plusieurs URL produit</b>.</li><li>Le moteur (<b>Jina + IA + extracteur structurel</b>, avec escalade anti-bot) lit la page.</li><li>Les <b>textes partent au PIM</b>, les <b>images au DAM</b> — routage automatique.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Des fiches produit complètes en minutes, données et visuels rangés au bon endroit.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Scraping Hub — enrichissement</span></div>
@@ -1012,6 +1051,8 @@
           <h2>Une base,<br/>des centaines de variantes.</h2>
           <p>Générez des <b>centaines de visuels personnalisés d'un seul coup</b>. Reliez les colonnes de votre PIM aux champs {{ }} du gabarit : chaque ligne de données produit une <b>déclinaison automatique</b> — prix, libellés et images toujours à jour. Idéal pour les catalogues, la PLV et les campagnes multi-produits.</p>
           <ul class="scene-list"><li>1 colonne → 1 variante par ligne</li><li>Champs {{ }} liés au gabarit</li><li>Génération en masse</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-publipostage"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-publipostage"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Décliner une affiche pour 200 références, c'est 200 copier-coller manuels — source d'oublis, de fautes et de versions incohérentes.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Insérez des <b>champs {{ variables }}</b> dans la maquette (prix, libellé, image).</li><li><b>Connectez une base</b> du PIM.</li><li><b>Générez automatiquement</b> une déclinaison par ligne.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Des centaines de visuels personnalisés à partir d'un seul gabarit, sans erreur.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Publipostage — liaison des données</span></div>
@@ -1038,6 +1079,8 @@
           <h2>Enchaînez tout,<br/>en no-code.</h2>
           <p>Enchaînez les modules <b>en no-code, façon Zapier</b>. Reliez des nodes parmi <b>sept catégories</b> (scraping, enrichissement, composition, export, diffusion…) pour bâtir un pipeline qui tourne tout seul. Un workflow complet peut même être <b>généré par IA depuis un simple prompt</b>, puis s'exécuter à la demande ou en masse.</p>
           <ul class="scene-list"><li>Éditeur de flux no-code</li><li>7 catégories de nodes</li><li>Génération du flux par IA</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-workflows"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-workflows"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>La chaîne scraper → enrichir → composer → exporter → diffuser enchaîne plusieurs outils à la main, à refaire intégralement à chaque campagne.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Reliez les <b>modules de l'app en nodes</b> (façon Zapier/Make), sans code.</li><li>Décrivez le besoin en langage naturel : une <b>IA génère le graphe complet</b>.</li><li>Lancez : le workflow <b>exécute chaque étape</b> de bout en bout.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vos chaînes de production tournent toutes seules, du brief au livrable.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Workflows — éditeur de flux</span></div>
@@ -1064,6 +1107,8 @@
           <h2>Toute l'app,<br/>depuis un bot.</h2>
           <p>Pilotez toute l'application <b>depuis un bot Telegram</b>. Une commande déclenche un <b>chat IA avec accès web</b>, génère et exécute un workflow, et <b>renvoie le fichier final</b> directement dans la conversation. Idéal pour lancer une création depuis votre téléphone, sans même ouvrir l'app.</p>
           <ul class="scene-list"><li>Chat IA avec accès web</li><li>Commandes /flow · /run</li><li>Fichier renvoyé dans le chat</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-telegram"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-telegram"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Lancer une production suppose d'ouvrir l'app sur un poste — impossible à déclencher depuis un téléphone, en déplacement.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Envoyez une <b>commande ou un message</b> au bot Telegram.</li><li>Une <b>IA génère puis exécute</b> le workflow correspondant.</li><li>Le <b>fichier produit vous revient</b> dans la conversation.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vous pilotez votre chaîne graphique depuis votre poche, par simple message.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Telegram — bot IBS-Studio</span></div>
@@ -1085,6 +1130,8 @@
           <h2>Des vidéos,<br/>depuis un prompt.</h2>
           <p>Produisez des <b>vidéos et animations HTML</b> à partir d'un prompt ou d'une image. L'IA génère une <b>composition multi-scènes (HyperFrames)</b> avec transitions, en quelques secondes — rejouable, modifiable et rangée dans le DAM. Parfait pour le digital signage, les réseaux sociaux ou une démo produit animée.</p>
           <ul class="scene-list"><li>Génération depuis prompt ou image</li><li>Compositions &amp; transitions</li><li>Rejouable · sauvegardée au DAM</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-animation"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-animation"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Transformer un visuel fixe en vidéo pour les réseaux exige un logiciel de motion design et un vrai temps de production.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li><b>Décrivez l'animation</b> voulue.</li><li>Le moteur <b>HyperFrames</b> compose une vidéo HTML déterministe (titres, transitions, sync audio).</li><li><b>Exportez en MP4</b> prêt à publier.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Des vidéos animées générées depuis vos contenus, sans After Effects.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Studio d'animation — génération IA</span></div>
@@ -1110,6 +1157,8 @@
           <h2>Un assistant,<br/>tous les modèles.</h2>
           <p>Un assistant conversationnel connecté à <b>tous vos modèles</b> — Claude, Gemini, GPT, Qwen, Kimi… — que vous <b>changez en un clic</b>. Multitour, <b>pièces jointes, génération d'images, saisie vocale</b> et bibliothèque de prompts : il rédige, traduit, code et imagine au fil de votre travail.</p>
           <ul class="scene-list"><li>Multi-LLM en un clic</li><li>Pièces jointes &amp; images</li><li>Voix &amp; bibliothèque de prompts</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-chat"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-chat"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Rédiger accroches, descriptions et variantes au fil de l'eau ralentit la création et casse le flux de travail.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Ouvrez le <b>chat IA</b>, en mode texte ou image (Nano Banana).</li><li>Demandez <b>accroches, reformulations ou visuels</b>.</li><li>Réutilisez votre <b>bibliothèque de prompts</b> enregistrés.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Un copilote créatif intégré, pour produire et itérer sans quitter l'app.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Assistant IA</span></div>
@@ -1131,6 +1180,8 @@
           <h2>Une source,<br/>tous vos canaux.</h2>
           <p>Une seule création, <b>autant de sorties qu'il vous faut</b>. Exportez un <b>PDF aux normes imprimeur</b> (300 DPI, CMJN, fond perdu, repères de coupe), des visuels pour les réseaux, un PPTX, une vidéo ou du web. À l'unité ou <b>en masse via les workflows</b> — le bon format, aux bonnes dimensions, à chaque fois.</p>
           <ul class="scene-list"><li>PDF/X · Image · PowerPoint · Vidéo · Web</li><li>Normes print : DPI, fond perdu, repères</li><li>Diffusion manuelle ou automatisée</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-export"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-export"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Chaque canal réclame son format : PDF imprimeur, image réseaux, PowerPoint, web — autant d'exports manuels à régler un par un.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Choisissez vos <b>cibles de sortie</b>.</li><li>L'export applique automatiquement <b>marques de coupe, fond perdu et profils</b> selon le canal.</li><li>Récupérez <b>tous les fichiers</b> depuis une seule source.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Une création, tous les supports — aux normes propres à chaque destination.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Exporter — 1 source → N canaux</span></div>
@@ -1153,6 +1204,8 @@
           <h2>Le bon accès,<br/>au bon rôle.</h2>
           <p>Un contrôle d'accès complet (RBAC) pour les équipes. Attribuez des <b>rôles</b>, puis affinez avec des <b>surcharges de permission module par module</b>, et <b>bloquez ou réactivez</b> un compte à tout moment. Le propriétaire garde toujours la main, et chacun ne voit que ce qui le concerne.</p>
           <ul class="scene-list"><li>Rôles &amp; permissions fines</li><li>Surcharges par module</li><li>Blocage / réactivation</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-roles"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-roles"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Donner accès à toute l'équipe sans contrôle expose données produit et réglages sensibles à des modifications non voulues.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Définissez des <b>rôles et des permissions par module</b>.</li><li>Invitez les utilisateurs ; les nouveaux arrivent <b>en attente</b>.</li><li><b>Attribuez, restreignez ou bloquez</b> l'accès finement.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Chacun voit exactement ce qu'il doit voir, vos données restent protégées.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Utilisateurs &amp; rôles</span></div>
@@ -1180,6 +1233,8 @@
           <h2>Vos clés,<br/>vos modèles.</h2>
           <p>Centralisez toute la configuration au même endroit. Renseignez vos <b>clés API multi-fournisseurs</b> (Claude, Gemini, GPT, Qwen…), choisissez vos <b>modèles par défaut</b> et une <b>cascade de repli automatique</b> en cas d'indisponibilité. Connecteurs (Drive, Gmail, Telegram, Bright Data), cookies de session et Firebase se gèrent depuis ce même tableau de bord.</p>
           <ul class="scene-list"><li>Clés API multi-fournisseurs</li><li>Modèles par défaut + cascade de repli</li><li>Connecteurs · cookies · Firebase</li></ul>
+          <button class="scene-more" aria-expanded="false" aria-controls="d-settings"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
+          <div class="scene-detail" id="d-settings"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Brancher ses propres clés IA, ses budgets et ses préférences au cas par cas est vite opaque — et risqué si une clé fuite.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Renseignez vos <b>clés LLM</b> et configurez la <b>cascade de modèles</b>.</li><li>Fixez <b>budgets et préférences</b>, synchronisés par utilisateur.</li><li>Suivez la <b>consommation en direct</b>.</li></ol></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Une plateforme à votre main, maîtrisée et sous budget.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Paramètres — IA &amp; connecteurs</span></div>
@@ -1407,6 +1462,16 @@
       }
     },{threshold:[0,.25,.5,.75],rootMargin:'-30% 0px -45% 0px'});
     Object.keys(byId).forEach(function(id){ var el=document.getElementById(id); if(el) spy.observe(el); });
+  })();
+
+  /* Panneau « Comprendre ce module » : bascule dépliable */
+  (function(){
+    document.querySelectorAll('.scene-more').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!open));
+      });
+    });
   })();
 })();
 </script>
