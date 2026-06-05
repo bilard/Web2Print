@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, FilePlus, FileSpreadsheet, Settings, Upload, FolderTree, LayoutGrid, List, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, Trash2, X, ExternalLink, ShieldCheck } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, Settings, LayoutGrid, List, Trash2, X, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useIsPending, useIsBlocked, useAccessLoading, useCan } from '@/features/access/useAccess'
@@ -28,6 +28,7 @@ import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
+import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, type Section } from '@/features/navigation/modules'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -37,38 +38,6 @@ const ChatPage = lazy(() => import('@/features/chat/ChatPage').then((m) => ({ de
 const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage').then((m) => ({ default: m.WorkflowsPage })))
 const HyperframesPage = lazy(() => import('@/features/video/HyperframesPage').then((m) => ({ default: m.HyperframesPage })))
 const TelegramInboxView = lazy(() => import('@/features/telegram/TelegramInboxView').then((m) => ({ default: m.TelegramInboxView })))
-
-type Section = 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings' | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows' | 'hyperframes' | 'telegram' | 'access'
-
-const menuItems: { id: Section; icon: React.ComponentType<{ className?: string }>; label: string; accent: string; activeBg: string; activeText: string }[] = [
-  { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
-  { id: 'import', icon: Upload,         label: 'Importer',         accent: 'text-amber-400',   activeBg: 'bg-amber-500/[0.1]',   activeText: 'text-amber-300' },
-  { id: 'library',icon: Library,        label: 'Bibliothèque',     accent: 'text-sky-400',     activeBg: 'bg-sky-500/[0.1]',     activeText: 'text-sky-300' },
-  { id: 'images', icon: ImageIcon,      label: 'DAM',              accent: 'text-pink-400',    activeBg: 'bg-pink-500/[0.1]',    activeText: 'text-pink-300' },
-  { id: 'data',   icon: FileSpreadsheet,label: 'PIM',              accent: 'text-emerald-400', activeBg: 'bg-emerald-500/[0.1]', activeText: 'text-emerald-300' },
-  { id: 'taxonomies', icon: FolderTree, label: 'Taxonomies',       accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300' },
-  { id: 'scraping-templates', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
-  { id: 'scraping-hub', icon: BookOpen, label: 'Scraping Hub', accent: 'text-sky-400', activeBg: 'bg-sky-500/[0.1]', activeText: 'text-sky-300' },
-  { id: 'workflows', icon: Workflow, label: 'Workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
-  { id: 'telegram', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300' },
-  { id: 'hyperframes', icon: Film, label: 'Animation', accent: 'text-fuchsia-400', activeBg: 'bg-fuchsia-500/[0.1]', activeText: 'text-fuchsia-300' },
-  { id: 'chat', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300' },
-  { id: 'access', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300' },
-]
-
-const SECTION_PERMISSION: Partial<Record<Section, string>> = {
-  import: 'import.view',
-  library: 'library.view',
-  images: 'dam.view',
-  data: 'pim.view',
-  taxonomies: 'taxonomies.view',
-  'scraping-templates': 'scrapingTemplates.view',
-  'scraping-hub': 'scrapingHub.view',
-  workflows: 'workflows.view',
-  hyperframes: 'hyperframes.view',
-  chat: 'chat.view',
-  telegram: 'telegram.view',
-}
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
