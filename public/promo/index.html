@@ -338,6 +338,34 @@
   .ig-tile .vshot{position:absolute;inset:0}
   .poster .ph,.pub-src .ph{overflow:hidden;background:radial-gradient(ellipse 82% 72% at 50% 36%,#fff,#eef2f7 64%,#cbd5e1)}
 
+  /* Enrichissements de maquettes */
+  .ig-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .ig-chips span{font-size:10px;padding:6px 11px;border:1px solid var(--line);border-radius:7px;color:var(--muted)}
+  .ig-chips span.on{border-color:#a855f7;background:rgba(168,85,247,.16);color:#e9d5ff}
+  .ig-recent{grid-column:1 / -1;margin-top:4px}
+  .ig-recent .h{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.06em;margin-bottom:8px}
+  .ig-recent .row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .ig-recent .row i{aspect-ratio:1;border-radius:7px;overflow:hidden;border:1px solid var(--line2);display:block;position:relative}
+  .tlg-bar{display:flex;align-items:center;gap:10px;margin-top:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 13px}
+  .tlg-bar .ph{flex:1;font-size:11px;color:var(--muted)}
+  .tlg-bar .send{width:30px;height:30px;border-radius:8px;background:var(--indigo);display:grid;place-items:center;color:#fff;flex:0 0 auto}
+  .tlg-bar .send svg{width:15px;height:15px}
+  .tpl-saved{grid-column:1 / -1;border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:13px}
+  .tpl-saved .h{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.06em;margin-bottom:11px}
+  .tpl-saved .row{display:flex;gap:8px;flex-wrap:wrap}
+  .tpl-saved .row span{font-size:10.5px;border:1px solid var(--line2);border-radius:7px;padding:6px 11px;display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .tpl-saved .row span i{width:7px;height:7px;border-radius:2px;flex:0 0 auto}
+  .tpl-saved .row span b{color:var(--muted);font-weight:500;font-size:9.5px}
+  .set-card.set-wide{grid-column:1 / -1}
+  .set-conn{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .set-conn .item{display:flex;align-items:center;gap:10px;font-size:11px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);padding:9px 12px}
+  .set-conn .item .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex:0 0 auto}.set-conn .item .ic svg{width:13px;height:13px}
+  .set-conn .item .tog{margin-left:auto;width:30px;height:17px;border-radius:10px;background:rgba(52,211,153,.5);position:relative;flex:0 0 auto}
+  .set-conn .item .tog::after{content:"";position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;background:#34d399}
+  .set-conn .item .tog.off{background:var(--line2)}.set-conn .item .tog.off::after{left:2px;right:auto;background:var(--muted)}
+  .aic-chips{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+  .aic-chips span{font-size:11px;padding:8px 15px;border:1px solid var(--line2);border-radius:100px;color:var(--ink)}
+
   /* SCÈNES (la chaîne) */
   .chain{padding:40px 0 20px}
   .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:70px 0;position:relative}
@@ -811,7 +839,7 @@
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">DAM — bibliothèque média</span></div>
           <div class="dam-body mk-body">
             <div class="dam-bar"><div class="dam-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Rechercher un visuel… ou déposer une image</div><span class="dam-ia"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>Générer (IA)</span></div>
-            <div class="dam-grid"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shoe"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-head"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-chair"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-land"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-port"/></svg></i></div>
+            <div class="dam-grid"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shoe"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-head"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-chair"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-land"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-port"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i></div>
             <div class="dam-tags"><span>Pexels</span><span>Unsplash</span><span>Collections</span><span>Assets de marque</span><span>Google Drive</span></div>
           </div>
         </div></div>
@@ -832,6 +860,10 @@
               <div class="ig-prompt">Perceuse 18V sur fond studio gris, éclairage premium, rendu packshot e-commerce ultra net.</div>
               <div class="ig-ref"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i>Référence : produit du DAM</div>
               <div class="ig-gen">✦ Générer (Nano Banana Pro)</div>
+              <div class="ig-lbl" style="margin-top:14px">STYLE</div>
+              <div class="ig-chips"><span class="on">Packshot</span><span>Lifestyle</span><span>Studio</span><span>Néon</span></div>
+              <div class="ig-lbl" style="margin-top:12px">FORMAT</div>
+              <div class="ig-chips"><span class="on">1:1</span><span>16:9</span><span>9:16</span><span>A4</span></div>
             </div>
             <div class="ig-res">
               <div class="ig-tile"><span class="vshot "><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="b">IA</span></div>
@@ -839,6 +871,7 @@
               <div class="ig-tile"><span class="vshot vt-dark"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="b">IA</span></div>
               <div class="ig-tile"><span class="vshot vt-warm"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="b">IA</span></div>
             </div>
+            <div class="ig-recent"><div class="h">GÉNÉRATIONS RÉCENTES</div><div class="row"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shoe"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-head"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-chair"/></svg></i></div></div>
           </div>
         </div></div>
       </div>
@@ -881,6 +914,9 @@
             <div class="txo-node l2"><span class="cv">▸</span><span class="fi" style="color:#38bdf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Meuleuses<span class="ct">21</span></div>
             <div class="txo-node l2"><span class="cv">▸</span><span class="fi" style="color:#38bdf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Scies circulaires<span class="ct">17</span></div>
             <div class="txo-node"><span class="cv">▸</span><span class="fi" style="color:#fbbf24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Jardin &amp; extérieur<span class="ct">56</span></div>
+            <div class="txo-node l2"><span class="cv"></span><span class="fi" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/></svg></span>Taille-haies<span class="ct">14</span></div>
+            <div class="txo-node l2"><span class="cv"></span><span class="fi" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/></svg></span>Tondeuses<span class="ct">19</span></div>
+            <div class="txo-node l2"><span class="cv"></span><span class="fi" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/></svg></span>Souffleurs<span class="ct">8</span></div>
           </div>
         </div></div>
       </div>
@@ -897,6 +933,7 @@
           <div class="tpl-body mk-body">
             <div class="tpl-card"><div class="h2">Élément capturé <span class="x">✕</span></div><div class="tpl-sel">div.product-description--marketing-text</div><div class="tpl-path">div.article_info › div.product-container › div.product-info › div.product-description › …</div></div>
             <div class="tpl-card"><div class="tpl-fl">Assigner à un champ :</div><div class="tpl-fields"><span class="tpl-field">Titre</span><span class="tpl-field on">Description</span><span class="tpl-field">Marque</span><span class="tpl-field">Prix</span><span class="tpl-field">Réf. / SKU</span><span class="tpl-field">Images</span></div></div>
+            <div class="tpl-saved"><div class="h">TEMPLATES ENREGISTRÉS · 14</div><div class="row"><span><i style="background:#fbbf24"></i>leroymerlin.fr <b>12 champs</b></span><span><i style="background:#38bdf8"></i>manomano.fr <b>10 champs</b></span><span><i style="background:#34d399"></i>castorama.fr <b>11 champs</b></span><span><i style="background:#f472b6"></i>bricodepot.fr <b>9 champs</b></span><span><i style="background:#a855f7"></i>amazon.fr <b>13 champs</b></span></div></div>
           </div>
         </div></div>
       </div>
@@ -986,6 +1023,10 @@
             <div class="tlg-msg tlg-me"><code>/flow</code> Génère une PLV A4 pour la perceuse 18V, prix 129 €</div>
             <div class="tlg-msg tlg-bot">Workflow généré ✓ — scraping, composition et export en cours…</div>
             <div class="tlg-file"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><div><b>perceuse-18v-PLV.pdf</b><span class="m">A4 · 300 DPI · 2,4 Mo</span></div><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>
+            <div class="tlg-msg tlg-me">Parfait ! Décline-la aussi en story 9:16 pour Instagram</div>
+            <div class="tlg-msg tlg-bot">C'est parti — recadrage et export story…</div>
+            <div class="tlg-file"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><b>perceuse-18v-story.png</b><span class="m">1080×1920 · 9:16 · 0,8 Mo</span></div><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>
+            <div class="tlg-bar"><span class="ph">Message…</span><span class="send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span></div>
           </div>
         </div></div>
       </div>
@@ -1031,6 +1072,7 @@
               <div class="aic-bar"><span class="aic-plus">+</span><span class="aic-model">Claude Opus 4.7 <span class="pr">Anthropic</span> ▴</span></div>
               <div class="aic-drop"><div class="aic-opt on"><span class="dot" style="background:#d97757"></span>Claude Opus 4.7<span class="pv">Anthropic</span></div><div class="aic-opt"><span class="dot" style="background:#38bdf8"></span>Gemini 3.5 Pro<span class="pv">Google</span></div><div class="aic-opt"><span class="dot" style="background:#34d399"></span>GPT-5.1<span class="pv">OpenAI</span></div><div class="aic-opt"><span class="dot" style="background:#a855f7"></span>Qwen3 Max<span class="pv">Alibaba</span></div><div class="aic-opt"><span class="dot" style="background:#fbbf24"></span>Kimi K2.6<span class="pv">Moonshot</span></div></div>
             </div>
+            <div class="aic-chips"><span>✍ Écrire</span><span>‹/› Code</span><span>🎓 Apprendre</span><span>💡 Idées</span><span>🖼 Image</span></div>
           </div>
         </div></div>
       </div>
@@ -1099,6 +1141,8 @@
               <div class="set-key"><span class="nm">Claude</span><span class="val">sk-ant-•••••••••••••••</span><span class="ok"></span></div>
               <div class="set-key"><span class="nm">Gemini</span><span class="val">AIza•••••••••••••••</span><span class="ok"></span></div>
               <div class="set-key"><span class="nm">OpenAI</span><span class="val">sk-•••••••••••••••••</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">Qwen</span><span class="val">sk-•••••••••••••••••</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">Bright D.</span><span class="val">•••••••••••••••</span><span class="ok"></span></div>
             </div>
             <div class="set-card">
               <div class="set-h">Modèles par défaut</div>
@@ -1107,6 +1151,7 @@
               <div class="set-h" style="margin-top:13px">Cascade de repli</div>
               <div class="db-chips" style="justify-content:flex-start"><i>Claude</i><i>→ Gemini</i><i>→ GPT</i></div>
             </div>
+            <div class="set-card set-wide"><div class="set-h">Connecteurs</div><div class="set-conn"><div class="item"><span class="ic" style="background:#34d39922;color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 16H3z"/></svg></span>Google Drive<span class="tog"></span></div><div class="item"><span class="ic" style="background:#ef444422;color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>Gmail<span class="tog"></span></div><div class="item"><span class="ic" style="background:#60a5fa22;color:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span>Telegram<span class="tog"></span></div><div class="item"><span class="ic" style="background:#a855f722;color:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span>Bright Data<span class="tog off"></span></div></div></div>
           </div>
         </div></div>
       </div>
