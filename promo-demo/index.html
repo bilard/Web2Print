@@ -296,6 +296,27 @@
   .us-perm i{font-style:normal;font-weight:700}.us-perm .g{color:var(--emerald)}.us-perm .r{color:var(--mut)}
   .us-perm.granted{border-color:var(--emerald);background:rgba(52,211,153,.16);box-shadow:0 0 20px -7px var(--emerald)}
 
+  /* 13 — CRÉATION D'IMAGE IA (Nano Banana) */
+  .ig-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:30px;align-items:start}
+  .ig-label{font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:.07em;color:var(--mut);margin:0 0 10px}
+  .ig-prompt{border:1px solid var(--line);border-radius:13px;background:var(--surface2);padding:16px 18px;font-size:19px;line-height:1.5;min-height:120px;color:var(--ink);overflow:hidden}
+  .ig-ref{display:flex;align-items:center;gap:13px;margin-top:18px;font-size:16px;color:var(--mut)}
+  .ig-ref .rimg{width:58px;height:58px;border-radius:10px;overflow:hidden;border:1px solid var(--line2);flex:0 0 auto}
+  .ig-gen{margin-top:18px;text-align:center;font-size:19px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6366f1,#a78bfa);padding:15px;border-radius:13px;box-shadow:0 0 36px -8px #a78bfa}
+  .ig-gen svg{width:19px;height:19px;vertical-align:-3px;margin-right:8px}
+  .ig-results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .ig-tile{aspect-ratio:4/3;border-radius:13px;overflow:hidden;position:relative;border:1px solid var(--line2);box-shadow:0 16px 38px -20px #000}
+  .ig-tile .shot{width:100%;height:100%}
+  .ig-tile.t2 .shot{background:radial-gradient(ellipse 80% 68% at 50% 36%,#eaf2ff,#bfdbfe 64%,#7cb0f5)}
+  .ig-tile.t2 .drill{transform:rotate(-6deg)}
+  .ig-tile.t3 .shot{background:radial-gradient(ellipse 80% 70% at 50% 36%,#243043,#0b1120 70%,#020617)}
+  .ig-tile.t3 .shot::before{opacity:.45}
+  .ig-tile.t3 .drill{transform:rotate(5deg)}
+  .ig-tile.t4 .shot{background:radial-gradient(ellipse 80% 70% at 50% 36%,#fff7ed,#fed7aa 64%,#fb923c)}
+  .ig-tile.t4 .drill{transform:rotate(8deg) scale(.97)}
+  .ig-badge{position:absolute;top:10px;right:10px;font-size:12px;font-weight:700;color:#fff;background:rgba(124,108,255,.9);border-radius:7px;padding:4px 9px;display:flex;gap:6px;align-items:center;box-shadow:0 6px 16px -6px #7c6cff}
+  .ig-badge svg{width:13px;height:13px}
+
   /* Intro / Outro */
   .center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:30px}
   .logo{display:flex;align-items:center;gap:22px}
@@ -312,7 +333,7 @@
 </style>
 </head>
 <body>
-<div data-composition-id="promo-hero" data-start="0" data-duration="74.5" data-width="1920" data-height="1080">
+<div data-composition-id="promo-hero" data-start="0" data-duration="80" data-width="1920" data-height="1080">
 
   <!-- Illustration produit réutilisable (perceuse 18V) — le héros du récit -->
   <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -358,6 +379,7 @@
         <span class="pill"><span class="d" style="background:var(--violet)"></span>Animations IA</span>
         <span class="pill"><span class="d" style="background:var(--indigo)"></span>Assistant IA</span>
         <span class="pill"><span class="d" style="background:var(--pink)"></span>Rôles</span>
+        <span class="pill"><span class="d" style="background:var(--violet)"></span>Image IA</span>
       </div>
     </div>
   </div>
@@ -760,8 +782,33 @@
     </div>
   </div>
 
+  <!-- S15 — CRÉATION D'IMAGE IA (Nano Banana) -->
+  <div id="s15" class="scene clip" data-start="71.8" data-duration="6.0" data-track-index="1" style="z-index:14">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">13</span>CRÉATION D'IMAGE IA</div><small>Générez des visuels produit par IA (Nano Banana Pro) : un prompt, une référence — et déclinez packshots et ambiances à l'infini.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Création d'image — Nano Banana Pro</span></div>
+      <div class="wbody">
+        <div class="ig-grid">
+          <div class="ig-form">
+            <div class="ig-label">PROMPT</div>
+            <div class="ig-prompt"><span class="typed" id="ig-typed">Perceuse 18V Brushless sur fond studio gris, éclairage premium, rendu packshot e-commerce ultra net — puis ambiance atelier.</span></div>
+            <div class="ig-ref"><span class="rimg"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span>Référence : produit scrappé du DAM</div>
+            <div class="ig-gen" id="ig-gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>Générer (Nano Banana Pro)</div>
+          </div>
+          <div class="ig-results">
+            <div class="ig-tile t1"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+            <div class="ig-tile t2" data-layout-allow-overflow><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+            <div class="ig-tile t3" data-layout-allow-overflow><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+            <div class="ig-tile t4"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- S9 — OUTRO -->
-  <div id="s9" class="scene clip" data-start="71.8" data-duration="2.6" data-track-index="1" style="z-index:14">
+  <div id="s9" class="scene clip" data-start="77.4" data-duration="2.6" data-track-index="0" style="z-index:15">
     <div class="glow"></div>
     <div class="center s7-wrap">
       <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
@@ -972,13 +1019,25 @@
     tl.to("#us-grant",{borderColor:"#34D399",backgroundColor:"rgba(52,211,153,.16)",boxShadow:"0 0 20px -7px #34D399",duration:.4,ease:"power2.out"},69.0);
     tl.fromTo("#us-damn",{textContent:2},{textContent:3,duration:.4,ease:"power1.out",snap:{textContent:1}},69.1);
 
+    /* S15 — création d'image IA : prompt → génération → déclinaisons du produit */
+    slide("#s15",71.8);
+    tl.from("#s15 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},72.3);
+    tl.from("#s15 .ig-prompt",{y:18,opacity:0,duration:.45,ease:"power3.out"},72.4);
+    tl.from("#s15 .ig-ref",{y:14,opacity:0,duration:.4,ease:"power2.out"},72.7);
+    tl.from("#s15 .ig-gen",{y:14,opacity:0,duration:.4,ease:"power3.out"},72.9);
+    tl.set("#ig-typed",{clipPath:"inset(0 100% 0 0)"},71.8);
+    tl.to("#ig-typed",{clipPath:"inset(0 0% 0 0)",duration:1.0,ease:"none"},72.6);
+    tl.fromTo("#ig-gen",{scale:1},{scale:1.05,duration:.3,yoyo:true,repeat:1,ease:"sine.inOut"},74.0);
+    tl.set("#s15 .ig-tile",{opacity:0,scale:.86,transformOrigin:"50% 50%"},71.8);
+    tl.to("#s15 .ig-tile",{opacity:1,scale:1,duration:.5,ease:"back.out(1.5)",stagger:.22},74.4);
+
     /* S9 — outro */
-    slide("#s9",71.8);
-    tl.from("#s9 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},72.1);
-    tl.from("#s9 .big",{y:36,opacity:0,duration:.55,ease:"expo.out"},72.3);
-    tl.from("#s9 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},72.6);
-    tl.from("#s9 .url-out",{opacity:0,duration:.4,ease:"sine.out"},72.8);
-    tl.to("#s9 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},74.0);
+    slide("#s9",77.4);
+    tl.from("#s9 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},77.7);
+    tl.from("#s9 .big",{y:36,opacity:0,duration:.55,ease:"expo.out"},77.9);
+    tl.from("#s9 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},78.2);
+    tl.from("#s9 .url-out",{opacity:0,duration:.4,ease:"sine.out"},78.4);
+    tl.to("#s9 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},79.6);
 
     window.__timelines["promo-hero"] = tl;
   </script>
