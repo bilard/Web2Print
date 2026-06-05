@@ -426,7 +426,7 @@
   @keyframes breatheG{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}50%{box-shadow:0 0 16px -2px rgba(52,211,153,.55)}}
   @keyframes shimmerCard{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22) saturate(1.12)}}
   @keyframes rowsweep{0%,100%{background:transparent}50%{background:rgba(124,108,255,.14)}}
-  @keyframes nodeflow{0%,100%{box-shadow:0 0 0 0 transparent;border-color:var(--line2)}50%{box-shadow:0 0 20px -3px rgba(124,108,255,.85);border-color:var(--indigo)}}
+  @keyframes nodeflow{0%,100%{box-shadow:0 0 0 0 transparent;border-color:var(--line2);transform:scale(1)}50%{box-shadow:0 0 22px -2px rgba(124,108,255,.9);border-color:var(--indigo);transform:scale(1.05)}}
   @keyframes optflash{0%,100%{background:transparent}50%{background:rgba(124,108,255,.2)}}
   @keyframes dlbob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
   @keyframes slidein{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
@@ -493,13 +493,11 @@
   .scene-visual .screen{will-change:transform}
 
   @media(prefers-reduced-motion:reduce){
-    html.js .scene-visual .screen{transform:none!important}
-    html.js .scene-visual *{animation:none!important}
     .reveal{animation:none;opacity:1;transform:none}
     .aurora b,.pulse,.grad-text{animation:none}
     html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:1;transform:none;transition:none}
     .hero-screen .poster .ph,.hero-screen .poster .badge,.hero-screen .poster .price,.hero-screen .poster .tt,.hero-screen .poster,.hero-screen .poster .hand,.demo-cursor,.hero-screen .spill:last-child{animation:none}
-    html.js #scraper .kv dd,html.js #scraper .thumbs i,html.js #scraper .route,html.js #editer .poster .ph,html.js #editer .poster .badge,html.js #editer .poster .price,html.js #editer .poster .tt,html.js #editer .poster .hand,html.js #publier .chan{opacity:1;animation:none}
+    html.js #scraper .kv dd,html.js #scraper .thumbs i,html.js #scraper .route,html.js #editer .poster .ph,html.js #editer .poster .badge,html.js #editer .poster .price,html.js #editer .poster .tt,html.js #editer .poster .hand{opacity:1}
     .demo-cursor{display:none}
   }
 </style>
@@ -1003,26 +1001,26 @@
     });
   }
 
-  // Parallax léger : les écrans de maquette dérivent avec le scroll (profondeur)
-  if(!reduce){
+  // Parallax : les écrans de maquette dérivent avec le scroll (profondeur).
+  // Volontairement actif même en "réduire les animations" (demande explicite).
+  (function(){
     var pels=[].slice.call(document.querySelectorAll('.scene-visual .screen'));
-    if(pels.length){
-      var ticking=false;
-      var run=function(){
-        var vh=window.innerHeight||document.documentElement.clientHeight;
-        for(var i=0;i<pels.length;i++){
-          var s=pels[i],r=s.getBoundingClientRect();
-          if(r.bottom<-160||r.top>vh+160) continue;
-          var d=((r.top+r.height/2)-vh/2)/vh;
-          s.style.transform='translate3d(0,'+(d*-26).toFixed(1)+'px,0)';
-        }
-        ticking=false;
-      };
-      window.addEventListener('scroll',function(){ if(!ticking){ ticking=true; requestAnimationFrame(run); } },{passive:true});
-      window.addEventListener('resize',run,{passive:true});
-      run();
-    }
-  }
+    if(!pels.length) return;
+    var ticking=false;
+    var run=function(){
+      var vh=window.innerHeight||document.documentElement.clientHeight;
+      for(var i=0;i<pels.length;i++){
+        var s=pels[i],r=s.getBoundingClientRect();
+        if(r.bottom<-200||r.top>vh+200) continue;
+        var d=((r.top+r.height/2)-vh/2)/vh;          // -0.5 (haut) .. +0.5 (bas)
+        s.style.transform='translate3d(0,'+(d*-48).toFixed(1)+'px,0)';
+      }
+      ticking=false;
+    };
+    window.addEventListener('scroll',function(){ if(!ticking){ ticking=true; requestAnimationFrame(run); } },{passive:true});
+    window.addEventListener('resize',run,{passive:true});
+    run();
+  })();
 })();
 </script>
 
