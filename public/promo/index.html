@@ -280,6 +280,52 @@
   .usr-perm{font-size:9.5px;border:1px solid var(--line);border-radius:6px;padding:4px 9px;color:var(--muted)}
   .usr-perm.on{border-color:#34d399;background:rgba(52,211,153,.14);color:#86efac}
 
+  /* Importer (formats → calques) */
+  .imp-body{display:flex;flex-direction:column;gap:16px;justify-content:center}
+  .imp-formats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .imp-fmt{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:9px 13px;font-family:var(--mono);font-size:12px;font-weight:700}
+  .imp-fmt.on{border-color:#fbbf24;box-shadow:0 0 0 1px #fbbf24}
+  .imp-fmt .d{width:8px;height:8px;border-radius:2px}
+  .imp-res{display:flex;align-items:center;gap:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px}
+  .imp-res .ar{color:#fbbf24}.imp-res .ar svg{width:24px;height:24px}
+  .imp-layers{display:flex;flex-direction:column;gap:8px;flex:1}
+  .imp-lay{display:flex;align-items:center;gap:10px;font-size:12px}
+  .imp-lay .sw{width:11px;height:11px;border-radius:3px}
+  .imp-lay .ed{margin-left:auto;font-family:var(--mono);font-size:9px;color:#34d399;border:1px solid rgba(52,211,153,.4);border-radius:5px;padding:2px 7px}
+  /* Création d'image IA */
+  .ig-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .ig-lbl{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.07em;margin-bottom:8px}
+  .ig-prompt{border:1px solid var(--line);border-radius:10px;background:var(--surface2);padding:11px;font-size:11.5px;line-height:1.45;color:var(--ink);min-height:76px}
+  .ig-ref{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:10.5px;color:var(--muted)}
+  .ig-ref i{width:34px;height:34px;border-radius:7px;display:block}
+  .ig-gen{margin-top:13px;text-align:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6366f1,#a855f7);padding:10px;border-radius:9px}
+  .ig-res{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .ig-tile{aspect-ratio:4/3;border-radius:9px;position:relative;overflow:hidden;border:1px solid var(--line2)}
+  .ig-tile .b{position:absolute;top:6px;right:6px;font-size:8.5px;font-weight:700;color:#fff;background:rgba(124,108,255,.85);border-radius:5px;padding:2px 6px}
+  /* Publipostage (données → variantes) */
+  .db-body{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center}
+  .db-table{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);font-size:11px}
+  .db-tr{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;padding:8px 12px;border-top:1px solid var(--line)}
+  .db-tr.th{border-top:0;background:#0b0b11;color:var(--faint);font-family:var(--mono);font-size:9px;text-transform:uppercase}
+  .db-tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .db-bind{display:flex;flex-direction:column;align-items:center;gap:13px}
+  .db-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .db-chips i{font-family:var(--mono);font-size:10px;color:var(--cyan);border:1px solid rgba(34,211,238,.4);background:rgba(34,211,238,.1);border-radius:6px;padding:4px 9px;font-style:normal}
+  .db-variants{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;width:100%}
+  .db-variants i{aspect-ratio:1;border-radius:4px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(124,108,255,.4)}
+  .db-count{font-size:11px;color:var(--muted);text-align:center}.db-count b{font-size:24px;color:var(--ink);font-weight:800;display:block}
+  /* Paramètres (clés & modèles) */
+  .set-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .set-card{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px}
+  .set-h{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px}
+  .set-key{display:flex;align-items:center;gap:9px;margin-bottom:10px;font-size:11px}
+  .set-key .nm{width:60px;color:var(--muted);flex:0 0 60px}
+  .set-key .val{flex:1;font-family:var(--mono);font-size:10px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .set-key .ok{width:7px;height:7px;border-radius:50%;background:#34d399;flex:0 0 7px}
+  .set-model{display:flex;align-items:center;justify-content:space-between;font-size:11px;border:1px solid var(--line);border-radius:7px;padding:8px 10px;margin-bottom:7px}
+  .set-model .pr{color:var(--muted);font-size:10px}
+  .set-model .c{color:var(--faint)}
+
   /* SCÈNES (la chaîne) */
   .chain{padding:40px 0 20px}
   .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:70px 0;position:relative}
@@ -489,6 +535,39 @@
   #roles .scene-visual.is-in .usr-cat:nth-child(2){animation-delay:.05s}#roles .scene-visual.is-in .usr-cat:nth-child(3){animation-delay:.1s}#roles .scene-visual.is-in .usr-cat:nth-child(4){animation-delay:.15s}#roles .scene-visual.is-in .usr-cat:nth-child(5){animation-delay:.2s}#roles .scene-visual.is-in .usr-cat:nth-child(6){animation-delay:.25s}#roles .scene-visual.is-in .usr-cat:nth-child(7){animation-delay:.3s}#roles .scene-visual.is-in .usr-cat:nth-child(8){animation-delay:.35s}
   #roles .scene-visual.is-in .usr-perm.on{animation:breatheG 2.6s ease-in-out infinite}
 
+  /* 02 Importer — formats surgissent, calques se déplient */
+  #import .scene-visual.is-in .imp-fmt{animation:pop .45s cubic-bezier(.2,.9,.3,1.4) backwards}
+  #import .scene-visual.is-in .imp-fmt:nth-child(2){animation-delay:.07s}#import .scene-visual.is-in .imp-fmt:nth-child(3){animation-delay:.14s}#import .scene-visual.is-in .imp-fmt:nth-child(4){animation-delay:.21s}#import .scene-visual.is-in .imp-fmt:nth-child(5){animation-delay:.28s}
+  #import .scene-visual.is-in .imp-fmt.on{animation:pop .45s cubic-bezier(.2,.9,.3,1.4),breathe 2.8s ease-in-out infinite .7s}
+  #import .scene-visual.is-in .imp-lay{animation:slidein .5s ease backwards}
+  #import .scene-visual.is-in .imp-lay:nth-child(2){animation-delay:.12s}#import .scene-visual.is-in .imp-lay:nth-child(3){animation-delay:.24s}#import .scene-visual.is-in .imp-lay:nth-child(4){animation-delay:.36s}
+  #import .scene-visual.is-in .imp-res .ar{animation:arrflow 2.6s ease-in-out infinite}
+
+  /* 06 Création d'image IA — Générer pulse, déclinaisons surgissent */
+  #imgen .scene-visual.is-in .ig-gen{animation:gopulse 2.2s ease-in-out infinite .4s}
+  #imgen .scene-visual.is-in .ig-tile{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) backwards}
+  #imgen .scene-visual.is-in .ig-tile:nth-child(2){animation-delay:.12s}#imgen .scene-visual.is-in .ig-tile:nth-child(3){animation-delay:.24s}#imgen .scene-visual.is-in .ig-tile:nth-child(4){animation-delay:.36s}
+  #imgen .scene-visual.is-in .ig-ref i{animation:breathe 2.8s ease-in-out infinite}
+
+  /* 11 Publipostage — variantes se multiplient, base surlignée */
+  #publipostage .scene-visual.is-in .db-variants i{animation:pop .4s cubic-bezier(.2,.9,.3,1.4) backwards}
+  #publipostage .scene-visual.is-in .db-variants i:nth-child(2n){animation-delay:.1s}#publipostage .scene-visual.is-in .db-variants i:nth-child(3n){animation-delay:.2s}#publipostage .scene-visual.is-in .db-variants i:nth-child(4n){animation-delay:.3s}
+  #publipostage .scene-visual.is-in .db-tr:not(.th){animation:rowsweep 4s ease-in-out infinite}
+  #publipostage .scene-visual.is-in .db-tr:nth-of-type(2){animation-delay:.3s}#publipostage .scene-visual.is-in .db-tr:nth-of-type(3){animation-delay:.6s}#publipostage .scene-visual.is-in .db-tr:nth-of-type(4){animation-delay:.9s}#publipostage .scene-visual.is-in .db-tr:nth-of-type(5){animation-delay:1.2s}
+  #publipostage .scene-visual.is-in .db-chips i{animation:breathe 2.6s ease-in-out infinite}
+
+  /* 16 Export — la source pulse, les canaux s'allument en cascade */
+  #export .scene-visual.is-in .pub-src{animation:srcpulse 2.6s ease-in-out infinite}
+  #export .scene-visual.is-in .chan{animation:fadeup .5s ease backwards}
+  #export .scene-visual.is-in .chan:nth-child(2){animation-delay:.1s}#export .scene-visual.is-in .chan:nth-child(3){animation-delay:.2s}#export .scene-visual.is-in .chan:nth-child(4){animation-delay:.3s}#export .scene-visual.is-in .chan:nth-child(5){animation-delay:.4s}
+  #export .scene-visual.is-in .chan .ic{animation:chanlight 3s ease-in-out infinite}
+  #export .scene-visual.is-in .chan:nth-child(2) .ic{animation-delay:.4s}#export .scene-visual.is-in .chan:nth-child(3) .ic{animation-delay:.8s}#export .scene-visual.is-in .chan:nth-child(4) .ic{animation-delay:1.2s}#export .scene-visual.is-in .chan:nth-child(5) .ic{animation-delay:1.6s}
+
+  /* 18 Paramètres — clés validées clignotent, modèle actif respire */
+  #settings .scene-visual.is-in .set-key .ok{animation:breatheG 2.4s ease-in-out infinite}
+  #settings .scene-visual.is-in .set-key:nth-child(3) .ok{animation-delay:.3s}#settings .scene-visual.is-in .set-key:nth-child(4) .ok{animation-delay:.6s}
+  #settings .scene-visual.is-in .set-model:first-of-type{animation:breathe 2.8s ease-in-out infinite}
+
   /* Parallax — l'écran de maquette dérive avec le scroll */
   .scene-visual .screen{will-change:transform}
 
@@ -510,7 +589,7 @@
   <div class="wrap nav-inner">
     <a class="brand" href="#top"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
     <nav class="nav-links">
-      <a class="link" href="#modules">13 modules</a>
+      <a class="link" href="#modules">Modules</a>
       <a class="link" href="#scraper">Collecter</a>
       <a class="link" href="#editer">Éditer</a>
       <a class="link" href="#workflows">Automatiser</a>
@@ -575,12 +654,36 @@
         </div></div>
       </div>
 
-      <div class="scene" id="editer">
+      <div class="scene" id="import">
         <div class="scene-text">
           <span class="scene-num grad-text">02 — IMPORTER</span>
-          <h2>InDesign &amp; Illustrator,<br/>éditables en ligne.</h2>
-          <p>Ouvrez un IDML, un PPTX, un SVG ou un PDF : mise en page, styles et texte restent modifiables — pas une capture aplatie. Image et PDF sont même décomposés en calques par IA.</p>
-          <ul class="scene-list"><li>IDML · PPTX · SVG · PDF→SVG · Excel</li><li>Image &amp; PDF décomposés par IA</li><li>Chaque bloc reste éditable</li></ul>
+          <h2>Vos fichiers,<br/>fidèles et éditables.</h2>
+          <p>Importez un InDesign (IDML), un PowerPoint, un SVG, un PDF ou un Excel : mise en page, styles et texte sont conservés et modifiables. Image et PDF sont décomposés en calques par IA.</p>
+          <ul class="scene-list"><li>IDML · PPTX · SVG · PDF→SVG · Excel</li><li>Pas une capture aplatie : tout reste éditable</li><li>Décomposition en calques par IA</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un fichier</span></div>
+          <div class="imp-body mk-body">
+            <div class="imp-formats"><span class="imp-fmt on"><span class="d" style="background:#fbbf24"></span>IDML</span><span class="imp-fmt"><span class="d" style="background:#38bdf8"></span>SVG</span><span class="imp-fmt"><span class="d" style="background:#f472b6"></span>PDF</span><span class="imp-fmt"><span class="d" style="background:#fb923c"></span>PPTX</span><span class="imp-fmt"><span class="d" style="background:#34d399"></span>Excel</span></div>
+            <div class="imp-res">
+              <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              <div class="imp-layers">
+                <div class="imp-lay"><span class="sw" style="background:#facc15"></span>Titre « Soldes »<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#ef4444"></span>Bandeau prix<span class="ed">éditable</span></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="editer">
+        <div class="scene-text">
+          <span class="scene-num grad-text">03 — ÉDITER</span>
+          <h2>Un éditeur visuel,<br/>complet et précis.</h2>
+          <p>Composez et mettez à la marque dans le navigateur : calques, texte, formes, couleurs, alignement. Type Canva, mais avec les exigences du print — repères, fond perdu, 300 DPI.</p>
+          <ul class="scene-list"><li>Calques, texte, formes, couleurs</li><li>Type Canva, qualité imprimeur</li><li>IA générative &amp; publipostage intégrés</li></ul>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — IDML importé</span><span class="sact"><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
@@ -594,7 +697,7 @@
 
       <div class="scene" id="bibliotheque">
         <div class="scene-text">
-          <span class="scene-num grad-text">03 — ORGANISER</span>
+          <span class="scene-num grad-text">04 — ORGANISER</span>
           <h2>Tous vos projets,<br/>au même endroit.</h2>
           <p>Vignettes ou liste, filtrés par taxonomie. Sélection multiple, duplication, ouverture directe dans l'éditeur — votre production reste rangée et accessible.</p>
           <ul class="scene-list"><li>Vue vignettes ou liste</li><li>Filtrage par taxonomie</li><li>Duplication &amp; ouverture directe</li></ul>
@@ -619,7 +722,7 @@
 
       <div class="scene" id="dam">
         <div class="scene-text">
-          <span class="scene-num grad-text">04 — MÉDIAS</span>
+          <span class="scene-num grad-text">05 — MÉDIAS</span>
           <h2>Une bibliothèque<br/>média centrale.</h2>
           <p>Visuels, banques libres de droits, collections et assets de marque réunis — et la génération d'images par IA intégrée. Recherchez par mot-clé ou par image.</p>
           <ul class="scene-list"><li>Pexels · Unsplash intégrés</li><li>Génération d'image par IA</li><li>Collections · Google Drive</li></ul>
@@ -634,9 +737,35 @@
         </div></div>
       </div>
 
+      <div class="scene" id="imgen">
+        <div class="scene-text">
+          <span class="scene-num grad-text">06 — GÉNÉRER</span>
+          <h2>Des visuels produit,<br/>générés par IA.</h2>
+          <p>Décrivez un packshot ou une ambiance : Nano Banana Pro génère des images à partir d'un prompt et d'une référence du DAM. Déclinez packshots et mises en situation à l'infini.</p>
+          <ul class="scene-list"><li>Génération depuis prompt + référence</li><li>Packshots, ambiances, déclinaisons</li><li>Rangé directement dans le DAM</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Création d'image — Nano Banana Pro</span></div>
+          <div class="ig-body mk-body">
+            <div>
+              <div class="ig-lbl">PROMPT</div>
+              <div class="ig-prompt">Perceuse 18V sur fond studio gris, éclairage premium, rendu packshot e-commerce ultra net.</div>
+              <div class="ig-ref"><i style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></i>Référence : produit du DAM</div>
+              <div class="ig-gen">✦ Générer (Nano Banana Pro)</div>
+            </div>
+            <div class="ig-res">
+              <div class="ig-tile" style="background:radial-gradient(circle at 50% 38%,#eef2f7,#cbd5e1)"><span class="b">IA</span></div>
+              <div class="ig-tile" style="background:radial-gradient(circle at 50% 38%,#dbeafe,#7cb0f5)"><span class="b">IA</span></div>
+              <div class="ig-tile" style="background:radial-gradient(circle at 50% 38%,#243043,#0b1120)"><span class="b">IA</span></div>
+              <div class="ig-tile" style="background:radial-gradient(circle at 50% 38%,#fff7ed,#fb923c)"><span class="b">IA</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
       <div class="scene" id="pim">
         <div class="scene-text">
-          <span class="scene-num grad-text">05 — DONNÉES</span>
+          <span class="scene-num grad-text">07 — DONNÉES</span>
           <h2>Vos fiches produits,<br/>structurées.</h2>
           <p>Plusieurs bases de fiches : import Excel, création, colonnes sur mesure, taxonomie. Et l'enrichissement automatique par scraping d'URL qui remplit tout.</p>
           <ul class="scene-list"><li>Bases multiples · import Excel</li><li>Colonnes &amp; taxonomie</li><li>Enrichissement par scraping</li></ul>
@@ -657,7 +786,7 @@
 
       <div class="scene" id="taxonomies">
         <div class="scene-text">
-          <span class="scene-num grad-text">06 — CLASSER</span>
+          <span class="scene-num grad-text">08 — CLASSER</span>
           <h2>Un catalogue<br/>bien rangé.</h2>
           <p>Une arborescence à N niveaux — catégories, gammes, familles. Reliez projets et produits pour filtrer, structurer et retrouver, à n'importe quelle échelle.</p>
           <ul class="scene-list"><li>Arborescence à N niveaux</li><li>Liaison projets &amp; produits</li><li>Filtrage transversal</li></ul>
@@ -678,7 +807,7 @@
 
       <div class="scene" id="templates">
         <div class="scene-text">
-          <span class="scene-num grad-text">07 — MAPPER</span>
+          <span class="scene-num grad-text">09 — MAPPER</span>
           <h2>Le scraping,<br/>sans écrire de code.</h2>
           <p>Cliquez l'élément à capturer sur la page : le sélecteur CSS est détecté, vous l'assignez au bon champ. Une règle réutilisable d'un produit à l'autre.</p>
           <ul class="scene-list"><li>Capture visuelle des éléments</li><li>Sélecteurs &amp; mapping de champs</li><li>Règles réutilisables</li></ul>
@@ -694,7 +823,7 @@
 
       <div class="scene" id="scraper">
         <div class="scene-text">
-          <span class="scene-num grad-text">08 — COLLECTER</span>
+          <span class="scene-num grad-text">10 — COLLECTER</span>
           <h2>La donnée se<br/>collecte seule.</h2>
           <p>Une URL suffit : IBS-Studio extrait specs, descriptions et visuels, puis répartit — les textes alimentent le PIM, les images le DAM. Escalade anti-bot automatique.</p>
           <ul class="scene-list"><li>1 URL → textes &amp; images extraits</li><li>Anti-bot : Bright Data · Jina · Firecrawl</li><li>PIM + DAM en une seule passe</li></ul>
@@ -712,9 +841,35 @@
         </div></div>
       </div>
 
+      <div class="scene" id="publipostage">
+        <div class="scene-text">
+          <span class="scene-num grad-text">11 — DÉCLINER</span>
+          <h2>Une base,<br/>des centaines de variantes.</h2>
+          <p>Reliez une colonne de votre PIM au gabarit : une déclinaison par ligne. Des centaines de visuels personnalisés générés d'un coup — prix, libellés et images toujours à jour.</p>
+          <ul class="scene-list"><li>1 colonne → 1 variante par ligne</li><li>Champs {{ }} liés au gabarit</li><li>Génération en masse</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Publipostage — liaison des données</span></div>
+          <div class="db-body mk-body">
+            <div class="db-table">
+              <div class="db-tr th"><span>Nom</span><span class="num">Prix</span></div>
+              <div class="db-tr"><span>Perceuse 18V</span><span class="num">129,00 €</span></div>
+              <div class="db-tr"><span>Meuleuse 750W</span><span class="num">79,90 €</span></div>
+              <div class="db-tr"><span>Scie circulaire</span><span class="num">149,00 €</span></div>
+              <div class="db-tr"><span>Visseuse 12V</span><span class="num">59,00 €</span></div>
+            </div>
+            <div class="db-bind">
+              <div class="db-chips"><i>{{ nom }}</i><i>{{ prix }}</i><i>{{ image }}</i></div>
+              <div class="db-variants"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="db-count"><b>248</b> variantes générées</div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
       <div class="scene" id="workflows">
         <div class="scene-text">
-          <span class="scene-num grad-text">09 — AUTOMATISER</span>
+          <span class="scene-num grad-text">12 — AUTOMATISER</span>
           <h2>Enchaînez tout,<br/>en no-code.</h2>
           <p>Reliez les modules façon Zapier : sept catégories de nodes. Un workflow complet peut même être généré par IA depuis un simple prompt, puis s'exécute seul.</p>
           <ul class="scene-list"><li>Éditeur de flux no-code</li><li>7 catégories de nodes</li><li>Génération du flux par IA</li></ul>
@@ -740,7 +895,7 @@
 
       <div class="scene" id="telegram">
         <div class="scene-text">
-          <span class="scene-num grad-text">10 — PILOTER</span>
+          <span class="scene-num grad-text">13 — PILOTER</span>
           <h2>Toute l'app,<br/>depuis un bot.</h2>
           <p>Une commande Telegram déclenche un chat IA, génère et exécute un workflow, et renvoie le fichier final directement dans la conversation.</p>
           <ul class="scene-list"><li>Chat IA avec accès web</li><li>Commandes /flow · /run</li><li>Fichier renvoyé dans le chat</li></ul>
@@ -757,7 +912,7 @@
 
       <div class="scene" id="animation">
         <div class="scene-text">
-          <span class="scene-num grad-text">11 — ANIMER</span>
+          <span class="scene-num grad-text">14 — ANIMER</span>
           <h2>Des vidéos,<br/>depuis un prompt.</h2>
           <p>Décrivez une animation : l'IA génère une composition HTML multi-scènes (HyperFrames) avec transitions, rejouable et rangée dans le DAM — en quelques secondes.</p>
           <ul class="scene-list"><li>Génération depuis prompt ou image</li><li>Compositions &amp; transitions</li><li>Rejouable · sauvegardée au DAM</li></ul>
@@ -782,7 +937,7 @@
 
       <div class="scene" id="chat">
         <div class="scene-text">
-          <span class="scene-num grad-text">12 — ASSISTER</span>
+          <span class="scene-num grad-text">15 — ASSISTER</span>
           <h2>Un assistant,<br/>tous les modèles.</h2>
           <p>Un chat connecté à Claude, Gemini, GPT, Qwen… : multitour, pièces jointes, génération d'images et saisie vocale. Changez de LLM en un clic.</p>
           <ul class="scene-list"><li>Multi-LLM en un clic</li><li>Pièces jointes &amp; images</li><li>Voix &amp; bibliothèque de prompts</li></ul>
@@ -800,9 +955,31 @@
         </div></div>
       </div>
 
+      <div class="scene" id="export">
+        <div class="scene-text">
+          <span class="scene-num grad-text">16 — PUBLIER</span>
+          <h2>Une source,<br/>tous vos canaux.</h2>
+          <p>Le même contenu part partout : un PDF aux normes imprimeur, des visuels réseaux, un PPTX, une vidéo, du web. Une seule création, autant de sorties qu'il vous faut — à la main ou en masse via les workflows.</p>
+          <ul class="scene-list"><li>PDF/X · Image · PowerPoint · Vidéo · Web</li><li>Normes print : DPI, fond perdu, repères</li><li>Diffusion manuelle ou automatisée</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Exporter — 1 source → N canaux</span></div>
+          <div class="pub-body">
+            <div class="pub-src" aria-hidden="true"><span class="ph"></span><span class="price">19€90</span></div>
+            <div class="pub-fan">
+              <div class="chan"><span class="ic" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><span>Impression<br/>PDF/X</span></div>
+              <div class="chan"><span class="ic" style="color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></span><span>Réseaux<br/>sociaux</span></div>
+              <div class="chan"><span class="ic" style="color:#fb923c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span>PowerPoint</span></div>
+              <div class="chan"><span class="ic" style="color:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><span>Web</span></div>
+              <div class="chan"><span class="ic" style="color:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><span>Vidéo<br/>WebM</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
       <div class="scene" id="roles">
         <div class="scene-text">
-          <span class="scene-num grad-text">13 — GOUVERNER</span>
+          <span class="scene-num grad-text">17 — GOUVERNER</span>
           <h2>Le bon accès,<br/>au bon rôle.</h2>
           <p>Contrôle d'accès complet : rôles, surcharges de permission module par module, blocage et réactivation. Le propriétaire garde toujours la main.</p>
           <ul class="scene-list"><li>Rôles &amp; permissions fines</li><li>Surcharges par module</li><li>Blocage / réactivation</li></ul>
@@ -823,6 +1000,33 @@
               <div class="usr-cat"><span class="ci" style="background:rgba(232,121,249,.13);color:#e879f9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M9 4v14"/></svg></span>ANIMATION<span class="cc">0/1</span></div>
             </div>
             <div class="usr-perms"><span class="usr-perm on">Voir le DAM</span><span class="usr-perm on">Création d'image (IA)</span><span class="usr-perm">Animations HTML</span><span class="usr-perm">Uploader</span><span class="usr-perm">Collections</span></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="settings">
+        <div class="scene-text">
+          <span class="scene-num grad-text">18 — PARAMÉTRER</span>
+          <h2>Vos clés,<br/>vos modèles.</h2>
+          <p>Configurez vos accès IA et vos modèles par défaut — Claude, Gemini, GPT… — avec cascade de repli automatique. Connecteurs, cookies et Firebase réunis au même endroit.</p>
+          <ul class="scene-list"><li>Clés API multi-fournisseurs</li><li>Modèles par défaut + cascade de repli</li><li>Connecteurs · cookies · Firebase</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Paramètres — IA &amp; connecteurs</span></div>
+          <div class="set-body mk-body">
+            <div class="set-card">
+              <div class="set-h">Clés API</div>
+              <div class="set-key"><span class="nm">Claude</span><span class="val">sk-ant-•••••••••••••••</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">Gemini</span><span class="val">AIza•••••••••••••••</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">OpenAI</span><span class="val">sk-•••••••••••••••••</span><span class="ok"></span></div>
+            </div>
+            <div class="set-card">
+              <div class="set-h">Modèles par défaut</div>
+              <div class="set-model"><span>Claude Opus 4.7 <span class="pr">Anthropic</span></span><span class="c">▾</span></div>
+              <div class="set-model"><span>Gemini 3.5 Pro <span class="pr">Google</span></span><span class="c">▾</span></div>
+              <div class="set-h" style="margin-top:13px">Cascade de repli</div>
+              <div class="db-chips" style="justify-content:flex-start"><i>Claude</i><i>→ Gemini</i><i>→ GPT</i></div>
+            </div>
           </div>
         </div></div>
       </div>
