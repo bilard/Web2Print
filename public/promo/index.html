@@ -162,6 +162,124 @@
   .chan .ic svg{width:20px;height:20px}
   .chan span{font-size:10.5px;color:var(--muted);text-align:center}
 
+  /* ===== Maquettes par module (compactes) ===== */
+  .mk-body{padding:18px;min-height:392px;background:#08080d}
+  /* 01 Nouveau document */
+  .nd-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center}
+  .nd-formats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .nd-fmt{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:11px;display:flex;flex-direction:column;gap:7px}
+  .nd-fmt.on{border-color:#a78bfa;box-shadow:0 0 0 1px #a78bfa}
+  .nd-fmt .pv{height:42px;border-radius:6px;background:linear-gradient(135deg,#1a1a28,#10101a);border:1px solid var(--line);display:grid;place-items:center;color:var(--faint);font-family:var(--mono);font-size:9.5px}
+  .nd-fmt b{font-size:12px}.nd-fmt span{font-size:9.5px;color:var(--muted)}
+  .nd-canvas{border:1px dashed var(--line2);border-radius:12px;min-height:236px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--faint);background:radial-gradient(circle at 50% 40%,rgba(124,108,255,.08),transparent 60%);font-size:11px}
+  .nd-canvas .pg{width:104px;aspect-ratio:1/1.41;border-radius:8px;background:#fff;box-shadow:0 18px 40px -18px rgba(0,0,0,.7)}
+  /* 03 Bibliothèque */
+  .lib-body{display:grid;grid-template-columns:122px 1fr;gap:14px}
+  .lib-side .lh{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}
+  .lib-side .li{font-size:11px;color:var(--muted);padding:6px 8px;border-radius:6px;display:flex;align-items:center;gap:7px;margin-bottom:2px}
+  .lib-side .li.on{background:rgba(124,108,255,.14);color:#d8d6ff}
+  .lib-side .li i{width:7px;height:7px;border-radius:2px}
+  .lib-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .lib-card{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+  .lib-card .t{height:62px}.lib-card .c{padding:6px 8px;font-size:9px;color:var(--muted)}
+  /* 04 DAM */
+  .dam-body{display:flex;flex-direction:column;gap:12px}
+  .dam-bar{display:flex;gap:9px;align-items:center}
+  .dam-search{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:11px;color:var(--muted)}
+  .dam-search svg{width:14px;height:14px}
+  .dam-ia{font-size:11px;font-weight:700;color:#0b0b12;background:var(--grad);padding:8px 13px;border-radius:8px;display:flex;align-items:center;gap:6px}.dam-ia svg{width:13px;height:13px}
+  .dam-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .dam-grid i{aspect-ratio:1;border-radius:7px;display:block;border:1px solid var(--line)}
+  .dam-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .dam-tags span{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 11px}
+  /* 05 PIM */
+  .pim-body{padding:0}
+  .pim-tabs{display:flex;gap:6px;padding:13px 14px}
+  .pim-tab{font-size:10.5px;color:var(--muted);padding:5px 11px;border-radius:7px;border:1px solid var(--line)}
+  .pim-tab.on{background:var(--surface);color:var(--ink);border-color:var(--line2)}
+  .pim-tr{display:grid;grid-template-columns:1.6fr 1fr .8fr 1fr;gap:10px;padding:11px 16px;border-top:1px solid var(--line);font-size:12px}
+  .pim-tr.th{background:#0b0b11;color:var(--faint);font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em}
+  .pim-tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  /* 06 Taxonomies */
+  .txo-node{display:flex;align-items:center;gap:9px;padding:8px;border-radius:7px;font-size:13px}
+  .txo-node .cv{width:11px;color:var(--faint);flex:0 0 11px}
+  .txo-node .fi{display:grid;place-items:center;flex:0 0 auto}.txo-node .fi svg{width:15px;height:15px;display:block}
+  .txo-node .ct{margin-left:auto;font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:1px 9px}
+  .txo-node.l2{padding-left:30px}.txo-node.l3{padding-left:54px;font-size:12px}
+  .txo-node.on{background:rgba(124,108,255,.14);box-shadow:inset 2px 0 0 var(--indigo)}
+  /* 07 Templates scraping */
+  .tpl-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .tpl-card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:14px}
+  .tpl-card .h2{font-size:12px;font-weight:700;margin-bottom:11px;display:flex;justify-content:space-between;color:var(--ink)}
+  .tpl-card .h2 .x{color:var(--faint)}
+  .tpl-sel{font-family:var(--mono);font-size:11px;color:#c7c4ff;background:rgba(124,108,255,.13);border:1px solid rgba(124,108,255,.4);border-radius:7px;padding:8px 10px;margin-bottom:9px}
+  .tpl-path{font-family:var(--mono);font-size:9px;color:var(--faint);line-height:1.55}
+  .tpl-fl{font-size:10px;color:var(--muted);margin-bottom:9px}
+  .tpl-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .tpl-field{font-size:10.5px;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
+  .tpl-field.on{border-color:#818cf8;background:rgba(129,140,248,.16);color:#c7c4ff;box-shadow:0 0 16px -5px #818cf8}
+  /* 09 Workflows */
+  .wfl-body{background:radial-gradient(circle at 50% 28%,rgba(124,108,255,.08),transparent 60%),#08080d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+  .wfl-flow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center}
+  .wfl-node{border:1px solid var(--line2);border-radius:10px;background:var(--surface);padding:9px 11px;display:flex;align-items:center;gap:9px}
+  .wfl-node .ni{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:#fff;flex:0 0 auto}.wfl-node .ni svg{width:14px;height:14px}
+  .wfl-node b{font-size:11px;display:block;line-height:1.2}.wfl-node span{font-size:9px;color:var(--muted)}
+  .wfl-arr{color:var(--faint)}.wfl-arr svg{width:15px;height:15px;display:block}
+  .wfl-run{font-size:11px;font-weight:700;color:#fff;background:var(--indigo);padding:9px 18px;border-radius:9px;display:inline-flex;align-items:center;gap:8px}.wfl-run svg{width:13px;height:13px}
+  /* 10 Telegram */
+  .tlg-body{display:flex;flex-direction:column;gap:10px}
+  .tlg-msg{max-width:80%;padding:10px 13px;border-radius:13px;font-size:12px;line-height:1.42}
+  .tlg-me{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:5px}
+  .tlg-me code{font-family:var(--mono);font-size:.92em;background:rgba(255,255,255,.18);padding:1px 6px;border-radius:4px}
+  .tlg-bot{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .tlg-file{align-self:flex-start;display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line2);border-radius:11px;padding:10px 13px;min-width:230px}
+  .tlg-file .fi{width:34px;height:34px;border-radius:8px;background:rgba(96,165,250,.18);color:#60a5fa;display:grid;place-items:center;flex:0 0 auto}.tlg-file .fi svg{width:17px;height:17px}
+  .tlg-file b{font-size:12px;display:block}.tlg-file .m{font-size:9.5px;color:var(--muted)}
+  .tlg-file .dl{margin-left:auto;color:#60a5fa}.tlg-file .dl svg{width:16px;height:16px}
+  /* 11 Animation */
+  .anm-body{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start}
+  .anm-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--faint);margin-bottom:7px}
+  .anm-seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+  .anm-chip{font-size:10px;padding:6px 11px;border:1px solid var(--line);border-radius:7px;color:var(--muted)}
+  .anm-chip.on{border-color:#e879f9;background:rgba(232,121,249,.16);color:#f5d0fe}
+  .anm-brief{border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:11px;font-size:11.5px;line-height:1.45;color:var(--ink);min-height:62px}
+  .anm-gen{margin-top:13px;text-align:center;font-size:11px;font-weight:700;color:#fff;background:#a855f7;padding:10px;border-radius:9px}
+  .anm-lib{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:11px}
+  .anm-lh{font-family:var(--mono);font-size:9px;color:var(--faint);margin-bottom:9px;letter-spacing:.06em}
+  .anm-card{display:flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface2);padding:8px;margin-bottom:8px}
+  .anm-card:last-child{margin-bottom:0}
+  .anm-thumb{width:54px;height:32px;border-radius:5px;display:grid;place-items:center;color:#fff;flex:0 0 auto}.anm-thumb svg{width:13px;height:13px}
+  .anm-card b{font-size:10.5px;display:block;line-height:1.2}.anm-card span{font-size:9px;color:var(--muted)}
+  /* 12 Chat IA */
+  .aic-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+  .aic-title{font-size:25px;font-weight:800;text-align:center}
+  .aic-box{width:100%;max-width:440px;border:1px solid var(--line2);border-radius:12px;background:var(--surface2);padding:14px;position:relative}
+  .aic-ph{font-size:12px;color:var(--muted);margin-bottom:26px}
+  .aic-bar{display:flex;align-items:center;gap:8px}
+  .aic-plus{width:26px;height:26px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;color:var(--muted);font-size:15px}
+  .aic-model{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;border:1px solid var(--line2);border-radius:8px;padding:7px 11px}.aic-model .pr{color:var(--muted);font-weight:500}
+  .aic-drop{position:absolute;right:14px;bottom:52px;width:216px;background:#15151d;border:1px solid var(--line2);border-radius:10px;box-shadow:0 30px 70px -20px #000;padding:5px}
+  .aic-opt{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;font-size:11px}
+  .aic-opt .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .aic-opt .pv{margin-left:auto;font-size:9px;color:var(--faint)}
+  .aic-opt.on{background:rgba(124,108,255,.16)}
+  /* 13 Utilisateurs & rôles */
+  .usr-body{display:flex;flex-direction:column;gap:12px}
+  .usr-row{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:11px 14px}
+  .usr-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;flex:0 0 auto}
+  .usr-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .usr-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:6px}
+  .usr-mail{font-size:10px;color:var(--muted);margin-top:2px}
+  .usr-role{margin-left:auto;font-size:11px;border:1px solid var(--line2);border-radius:8px;padding:6px 11px;color:var(--muted)}
+  .usr-cats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .usr-cat{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:9px 11px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:600}
+  .usr-cat .ci{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:0 0 auto}.usr-cat .ci svg{width:13px;height:13px}
+  .usr-cat .cc{margin-left:auto;font-size:9.5px;color:var(--muted)}
+  .usr-cat.span3{grid-column:1 / -1}
+  .usr-perms{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .usr-perm{font-size:9.5px;border:1px solid var(--line);border-radius:6px;padding:4px 9px;color:var(--muted)}
+  .usr-perm.on{border-color:#34d399;background:rgba(52,211,153,.14);color:#86efac}
+
   /* SCÈNES (la chaîne) */
   .chain{padding:40px 0 20px}
   .scene{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:70px 0;position:relative}
@@ -320,10 +438,10 @@
   <div class="wrap nav-inner">
     <a class="brand" href="#top"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
     <nav class="nav-links">
-      <a class="link" href="#scraper">Scraper</a>
-      <a class="link" href="#editer">Éditer</a>
-      <a class="link" href="#publier">Publier</a>
       <a class="link" href="#modules">13 modules</a>
+      <a class="link" href="#scraper">Collecter</a>
+      <a class="link" href="#editer">Éditer</a>
+      <a class="link" href="#workflows">Automatiser</a>
       <a class="link" href="#io">I/O</a>
       <a class="btn btn-primary" href="/dashboard">Ouvrir l'app <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </nav>
@@ -360,139 +478,281 @@
   </section>
 
   <!-- LA CHAÎNE : 3 scènes -->
-  <section class="chain">
+  <section class="chain" id="modules">
     <div class="wrap">
 
-      <!-- SCÈNE 1 — SCRAPER -->
-      <div class="scene" id="scraper">
+      <!-- 13 MODULES -->
+      <div class="scene" id="nouveau">
         <div class="scene-text">
-          <span class="scene-num grad-text">01 — COLLECTER</span>
-          <h2>La donnée se<br/>collecte seule.</h2>
-          <p>Une URL suffit. IBS-Studio extrait automatiquement <b>specs, descriptions et visuels</b> d'un produit, puis répartit : les informations alimentent le <b>PIM</b>, les images alimentent le <b>DAM</b>. Vos fiches et votre bibliothèque média se construisent presque seules — la base de toute création.</p>
-          <ul class="scene-list">
-            <li>1 URL → caractéristiques, textes et images extraits</li>
-            <li>Escalade anti-bot : Bright Data · Jina · Firecrawl</li>
-            <li>PIM + DAM alimentés en une seule passe</li>
-          </ul>
+          <span class="scene-num grad-text">01 — CRÉER</span>
+          <h2>Une toile,<br/>tous les formats.</h2>
+          <p>Démarrez d'un format prêt à l'emploi — print A4/A3, écran 4K, réseaux sociaux — ou sur mesure au millimètre. Fond uni, dégradé ou image : la page est prête à habiller dans l'éditeur.</p>
+          <ul class="scene-list"><li>Print · écran · réseaux · sur mesure</li><li>Fond uni, dégradé ou image</li><li>Ouverture directe dans l'éditeur</li></ul>
         </div>
-        <div class="scene-visual">
-          <div class="screen">
-            <div class="glow" aria-hidden="true"></div>
-            <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Scraping Hub — enrichissement</span></div>
-            <div class="sc-body">
-              <div class="sc-url">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-                <span class="u">https://fournisseur.com/produit/perceuse-18v</span>
-                <span class="go">Scraper</span>
-              </div>
-              <div class="sc-cols">
-                <div class="sc-card">
-                  <div class="ch"><span class="tg" style="background:#34d399"></span>PIM — caractéristiques</div>
-                  <dl class="kv">
-                    <dt>Référence</dt><dd>REF-67890</dd>
-                    <dt>Nom</dt><dd>Perceuse 18V Brushless</dd>
-                    <dt>Prix</dt><dd>129,00 €</dd>
-                    <dt>Marque</dt><dd>TechMaster</dd>
-                    <dt>Couple</dt><dd>60 Nm</dd>
-                  </dl>
-                </div>
-                <div class="sc-card">
-                  <div class="ch"><span class="tg" style="background:#f472b6"></span>DAM — visuels</div>
-                  <div class="thumbs">
-                    <i style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></i>
-                    <i style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></i>
-                    <i style="background:linear-gradient(135deg,#dc2626,#facc15)"></i>
-                    <i style="background:linear-gradient(135deg,#059669,#a3e635)"></i>
-                    <i style="background:linear-gradient(135deg,#0ea5e9,#e0f2fe)"></i>
-                    <i style="background:linear-gradient(135deg,#6366f1,#f472b6)"></i>
-                  </div>
-                </div>
-              </div>
-              <div class="sc-route">
-                <div class="route"><span class="ic" style="background:rgba(52,211,153,.16);color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z"/></svg></span><div><b>→ PIM</b><span>fiches produits</span></div></div>
-                <div class="route"><span class="ic" style="background:rgba(244,114,182,.16);color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><b>→ DAM</b><span>bibliothèque</span></div></div>
-              </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Nouveau document</span></div>
+          <div class="nd-body mk-body">
+            <div class="nd-formats">
+              <div class="nd-fmt on"><div class="pv">210 × 297 mm</div><b>A4 — Impression</b><span>300 DPI · CMJN</span></div>
+              <div class="nd-fmt"><div class="pv">3840 × 2160</div><b>Écran 4K</b><span>16:9</span></div>
+              <div class="nd-fmt"><div class="pv">1080 × 1080</div><b>Réseaux</b><span>1:1 · 4:5 · 9:16</span></div>
+              <div class="nd-fmt"><div class="pv">sur mesure</div><b>Personnalisé</b><span>mm · px</span></div>
             </div>
+            <div class="nd-canvas"><span class="pg"></span>Toile vierge — prête à habiller</div>
           </div>
-        </div>
+        </div></div>
       </div>
 
-      <!-- SCÈNE 2 — ÉDITER -->
       <div class="scene" id="editer">
         <div class="scene-text">
-          <span class="scene-num grad-text">02 — ÉDITER</span>
-          <h2>InDesign &amp;<br/>Illustrator,<br/>en ligne.</h2>
-          <p>Ouvrez un <b>InDesign (IDML)</b> ou un <b>vectoriel type Illustrator (SVG)</b> directement dans le navigateur : chaque <b>bloc, texte et forme reste éditable</b>, pas une capture aplatie. Composez, déclinez, mettez à la marque — éditeur visuel complet, IA générative et publipostage inclus.</p>
-          <ul class="scene-list">
-            <li>Imports fidèles : IDML · PowerPoint · SVG · PDF · Image · Excel</li>
-            <li>Image &amp; PDF décomposés en calques par IA</li>
-            <li>Publipostage : 1 gabarit → des centaines de variantes</li>
-          </ul>
+          <span class="scene-num grad-text">02 — IMPORTER</span>
+          <h2>InDesign &amp; Illustrator,<br/>éditables en ligne.</h2>
+          <p>Ouvrez un IDML, un PPTX, un SVG ou un PDF : mise en page, styles et texte restent modifiables — pas une capture aplatie. Image et PDF sont même décomposés en calques par IA.</p>
+          <ul class="scene-list"><li>IDML · PPTX · SVG · PDF→SVG · Excel</li><li>Image &amp; PDF décomposés par IA</li><li>Chaque bloc reste éditable</li></ul>
         </div>
-        <div class="scene-visual">
-          <div class="screen">
-            <div class="glow" aria-hidden="true"></div>
-            <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — IDML importé</span><span class="sact"><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
-            <div class="ed-body">
-              <div class="ed-tools" aria-hidden="true">
-                <i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i>
-                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i>
-                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i>
-                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i>
-                <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5L5 21"/></svg></i>
-              </div>
-              <div class="ed-canvas">
-                <div class="poster">
-                  <span class="ph"></span><span class="badge">NEW</span>
-                  <span class="price">24<small>€90</small></span>
-                  <span class="tt">CATALOGUE<br/>PRINTEMPS</span>
-                  <span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span>
-                </div>
-              </div>
-              <div class="ed-panel" aria-hidden="true">
-                <div class="ph-h">Source</div>
-                <div class="lay on"><span class="sw" style="background:#fbbf24"></span>catalogue.idml</div>
-                <div class="ph-h">Données (publipostage)</div>
-                <div class="ed-row"><span class="ed-in">{{ prix }}</span></div>
-                <div class="ed-row"><span class="ed-in">{{ libellé }}</span></div>
-                <div class="ph-h">Texte</div>
-                <div class="ed-seg"><span>Régulier</span><span class="on">Gras</span><span>Italique</span></div>
-                <div class="ph-h">Remplissage</div>
-                <div class="swatches"><i style="background:#3730a3"></i><i style="background:#facc15"></i><i style="background:#ef4444"></i><i style="background:#22d3ee"></i><i style="background:#fff"></i></div>
-              </div>
-            </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — IDML importé</span><span class="sact"><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
+          <div class="ed-body">
+            <div class="ed-tools" aria-hidden="true"><i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i></div>
+            <div class="ed-canvas"><div class="poster"><span class="ph"></span><span class="badge">NEW</span><span class="price">24<small>€90</small></span><span class="tt">CATALOGUE<br/>PRINTEMPS</span><span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span></div></div>
+            <div class="ed-panel" aria-hidden="true"><div class="ph-h">Source</div><div class="lay on"><span class="sw" style="background:#fbbf24"></span>catalogue.idml</div><div class="ph-h">Données (publipostage)</div><div class="ed-row"><span class="ed-in">{{ prix }}</span></div><div class="ed-row"><span class="ed-in">{{ libellé }}</span></div><div class="ph-h">Texte</div><div class="ed-seg"><span>Régulier</span><span class="on">Gras</span><span>Italique</span></div><div class="ph-h">Remplissage</div><div class="swatches"><i style="background:#3730a3"></i><i style="background:#facc15"></i><i style="background:#ef4444"></i><i style="background:#22d3ee"></i><i style="background:#fff"></i></div></div>
           </div>
-        </div>
+        </div></div>
       </div>
 
-      <!-- SCÈNE 3 — PUBLIER -->
-      <div class="scene" id="publier">
+      <div class="scene" id="bibliotheque">
         <div class="scene-text">
-          <span class="scene-num grad-text">03 — PUBLIER</span>
-          <h2>Une source,<br/>tous vos canaux.</h2>
-          <p>Le même contenu part <b>partout</b> : un PDF aux normes pour l'imprimeur (DPI, fond perdu, traits de coupe), des visuels pour les réseaux, un PPTX, une vidéo, du web. <b>Une seule création, autant de sorties qu'il vous faut</b> — manuellement ou en masse via les workflows.</p>
-          <ul class="scene-list">
-            <li>Export PDF · Image · PowerPoint · Vidéo (WebM)</li>
-            <li>Normes imprimerie : DPI, fond perdu, repères, zone de sécurité</li>
-            <li>Diffusion automatisée : workflows, Telegram, Gmail</li>
-          </ul>
+          <span class="scene-num grad-text">03 — ORGANISER</span>
+          <h2>Tous vos projets,<br/>au même endroit.</h2>
+          <p>Vignettes ou liste, filtrés par taxonomie. Sélection multiple, duplication, ouverture directe dans l'éditeur — votre production reste rangée et accessible.</p>
+          <ul class="scene-list"><li>Vue vignettes ou liste</li><li>Filtrage par taxonomie</li><li>Duplication &amp; ouverture directe</li></ul>
         </div>
-        <div class="scene-visual">
-          <div class="screen">
-            <div class="glow" aria-hidden="true"></div>
-            <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Publier — 1 source → N canaux</span></div>
-            <div class="pub-body">
-              <div class="pub-src" aria-hidden="true"><span class="ph"></span><span class="price">19€90</span></div>
-              <div class="pub-fan">
-                <div class="chan"><span class="ic" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><span>Impression<br/>PDF/X</span></div>
-                <div class="chan"><span class="ic" style="color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></span><span>Réseaux<br/>sociaux</span></div>
-                <div class="chan"><span class="ic" style="color:#fb923c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span>PowerPoint</span></div>
-                <div class="chan"><span class="ic" style="color:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span><span>Web</span></div>
-                <div class="chan"><span class="ic" style="color:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><span>Vidéo<br/>WebM</span></div>
-              </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Bibliothèque — projets</span></div>
+          <div class="lib-body mk-body">
+            <div class="lib-side"><div class="lh">Taxonomie</div><div class="li on"><i style="background:#818cf8"></i>Tous · 128</div><div class="li"><i style="background:#34d399"></i>Affiches</div><div class="li"><i style="background:#fbbf24"></i>Catalogues</div><div class="li"><i style="background:#f472b6"></i>Réseaux</div><div class="li"><i style="background:#22d3ee"></i>PLV</div></div>
+            <div class="lib-grid">
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#1e3a8a,#0ea5e9)"></div><div class="c">Soldes A4</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#7c3aed,#22d3ee)"></div><div class="c">Catalogue P.</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#dc2626,#facc15)"></div><div class="c">Promo 1:1</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#059669,#a3e635)"></div><div class="c">PLV magasin</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#0ea5e9,#e0f2fe)"></div><div class="c">Story 9:16</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#6366f1,#f472b6)"></div><div class="c">Flyer A5</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#f59e0b,#ef4444)"></div><div class="c">Bannière web</div></div>
+              <div class="lib-card"><div class="t" style="background:linear-gradient(150deg,#2dd4bf,#3b82f6)"></div><div class="c">Menu A3</div></div>
             </div>
           </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="dam">
+        <div class="scene-text">
+          <span class="scene-num grad-text">04 — MÉDIAS</span>
+          <h2>Une bibliothèque<br/>média centrale.</h2>
+          <p>Visuels, banques libres de droits, collections et assets de marque réunis — et la génération d'images par IA intégrée. Recherchez par mot-clé ou par image.</p>
+          <ul class="scene-list"><li>Pexels · Unsplash intégrés</li><li>Génération d'image par IA</li><li>Collections · Google Drive</li></ul>
         </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">DAM — bibliothèque média</span></div>
+          <div class="dam-body mk-body">
+            <div class="dam-bar"><div class="dam-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Rechercher un visuel… ou déposer une image</div><span class="dam-ia"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>Générer (IA)</span></div>
+            <div class="dam-grid"><i style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></i><i style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></i><i style="background:linear-gradient(135deg,#dc2626,#facc15)"></i><i style="background:linear-gradient(135deg,#059669,#a3e635)"></i><i style="background:linear-gradient(135deg,#0ea5e9,#e0f2fe)"></i><i style="background:linear-gradient(135deg,#6366f1,#f472b6)"></i><i style="background:linear-gradient(135deg,#f59e0b,#ef4444)"></i><i style="background:linear-gradient(135deg,#2dd4bf,#3b82f6)"></i><i style="background:linear-gradient(135deg,#a855f7,#ec4899)"></i><i style="background:linear-gradient(135deg,#14b8a6,#84cc16)"></i><i style="background:linear-gradient(135deg,#3b82f6,#06b6d4)"></i><i style="background:linear-gradient(135deg,#ef4444,#f97316)"></i></div>
+            <div class="dam-tags"><span>Pexels</span><span>Unsplash</span><span>Collections</span><span>Assets de marque</span><span>Google Drive</span></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="pim">
+        <div class="scene-text">
+          <span class="scene-num grad-text">05 — DONNÉES</span>
+          <h2>Vos fiches produits,<br/>structurées.</h2>
+          <p>Plusieurs bases de fiches : import Excel, création, colonnes sur mesure, taxonomie. Et l'enrichissement automatique par scraping d'URL qui remplit tout.</p>
+          <ul class="scene-list"><li>Bases multiples · import Excel</li><li>Colonnes &amp; taxonomie</li><li>Enrichissement par scraping</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">PIM — fiches produits</span></div>
+          <div class="pim-body mk-body">
+            <div class="pim-tabs"><span class="pim-tab on">Base outillage</span><span class="pim-tab">Base jardin</span><span class="pim-tab">+ Nouvelle base</span></div>
+            <div class="pim-tr th"><span>Nom</span><span>Réf.</span><span class="num">Prix</span><span>Marque</span></div>
+            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num">129,00 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num">79,90 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num">149,00 €</span><span>ProTools</span></div>
+            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num">59,00 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num">64,90 €</span><span>ProTools</span></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="taxonomies">
+        <div class="scene-text">
+          <span class="scene-num grad-text">06 — CLASSER</span>
+          <h2>Un catalogue<br/>bien rangé.</h2>
+          <p>Une arborescence à N niveaux — catégories, gammes, familles. Reliez projets et produits pour filtrer, structurer et retrouver, à n'importe quelle échelle.</p>
+          <ul class="scene-list"><li>Arborescence à N niveaux</li><li>Liaison projets &amp; produits</li><li>Filtrage transversal</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Taxonomies — arborescence</span></div>
+          <div class="txo-body mk-body">
+            <div class="txo-node"><span class="cv">▾</span><span class="fi" style="color:#fbbf24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Outillage électroportatif<span class="ct">124</span></div>
+            <div class="txo-node l2"><span class="cv">▾</span><span class="fi" style="color:#38bdf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Perceuses-visseuses<span class="ct">38</span></div>
+            <div class="txo-node l3 on"><span class="cv"></span><span class="fi" style="color:#6366f1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/></svg></span>Perceuses 18V<span class="ct">12</span></div>
+            <div class="txo-node l3"><span class="cv"></span><span class="fi" style="color:#6366f1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/></svg></span>Visseuses à choc<span class="ct">9</span></div>
+            <div class="txo-node l2"><span class="cv">▸</span><span class="fi" style="color:#38bdf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Meuleuses<span class="ct">21</span></div>
+            <div class="txo-node l2"><span class="cv">▸</span><span class="fi" style="color:#38bdf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Scies circulaires<span class="ct">17</span></div>
+            <div class="txo-node"><span class="cv">▸</span><span class="fi" style="color:#fbbf24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Jardin &amp; extérieur<span class="ct">56</span></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="templates">
+        <div class="scene-text">
+          <span class="scene-num grad-text">07 — MAPPER</span>
+          <h2>Le scraping,<br/>sans écrire de code.</h2>
+          <p>Cliquez l'élément à capturer sur la page : le sélecteur CSS est détecté, vous l'assignez au bon champ. Une règle réutilisable d'un produit à l'autre.</p>
+          <ul class="scene-list"><li>Capture visuelle des éléments</li><li>Sélecteurs &amp; mapping de champs</li><li>Règles réutilisables</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Templates scraping — mapping</span></div>
+          <div class="tpl-body mk-body">
+            <div class="tpl-card"><div class="h2">Élément capturé <span class="x">✕</span></div><div class="tpl-sel">div.product-description--marketing-text</div><div class="tpl-path">div.article_info › div.product-container › div.product-info › div.product-description › …</div></div>
+            <div class="tpl-card"><div class="tpl-fl">Assigner à un champ :</div><div class="tpl-fields"><span class="tpl-field">Titre</span><span class="tpl-field on">Description</span><span class="tpl-field">Marque</span><span class="tpl-field">Prix</span><span class="tpl-field">Réf. / SKU</span><span class="tpl-field">Images</span></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="scraper">
+        <div class="scene-text">
+          <span class="scene-num grad-text">08 — COLLECTER</span>
+          <h2>La donnée se<br/>collecte seule.</h2>
+          <p>Une URL suffit : IBS-Studio extrait specs, descriptions et visuels, puis répartit — les textes alimentent le PIM, les images le DAM. Escalade anti-bot automatique.</p>
+          <ul class="scene-list"><li>1 URL → textes &amp; images extraits</li><li>Anti-bot : Bright Data · Jina · Firecrawl</li><li>PIM + DAM en une seule passe</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Scraping Hub — enrichissement</span></div>
+          <div class="sc-body">
+            <div class="sc-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="u">https://fournisseur.com/produit/perceuse-18v</span><span class="go">Scraper</span></div>
+            <div class="sc-cols">
+              <div class="sc-card"><div class="ch"><span class="tg" style="background:#34d399"></span>PIM — caractéristiques</div><dl class="kv"><dt>Référence</dt><dd>REF-67890</dd><dt>Nom</dt><dd>Perceuse 18V Brushless</dd><dt>Prix</dt><dd>129,00 €</dd><dt>Marque</dt><dd>TechMaster</dd><dt>Couple</dt><dd>60 Nm</dd></dl></div>
+              <div class="sc-card"><div class="ch"><span class="tg" style="background:#f472b6"></span>DAM — visuels</div><div class="thumbs"><i style="background:linear-gradient(135deg,#1e3a8a,#0ea5e9)"></i><i style="background:linear-gradient(135deg,#7c3aed,#22d3ee)"></i><i style="background:linear-gradient(135deg,#dc2626,#facc15)"></i><i style="background:linear-gradient(135deg,#059669,#a3e635)"></i><i style="background:linear-gradient(135deg,#0ea5e9,#e0f2fe)"></i><i style="background:linear-gradient(135deg,#6366f1,#f472b6)"></i></div></div>
+            </div>
+            <div class="sc-route"><div class="route"><span class="ic" style="background:rgba(52,211,153,.16);color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z"/></svg></span><div><b>→ PIM</b><span>fiches produits</span></div></div><div class="route"><span class="ic" style="background:rgba(244,114,182,.16);color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><b>→ DAM</b><span>bibliothèque</span></div></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="workflows">
+        <div class="scene-text">
+          <span class="scene-num grad-text">09 — AUTOMATISER</span>
+          <h2>Enchaînez tout,<br/>en no-code.</h2>
+          <p>Reliez les modules façon Zapier : sept catégories de nodes. Un workflow complet peut même être généré par IA depuis un simple prompt, puis s'exécute seul.</p>
+          <ul class="scene-list"><li>Éditeur de flux no-code</li><li>7 catégories de nodes</li><li>Génération du flux par IA</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Workflows — éditeur de flux</span></div>
+          <div class="wfl-body mk-body">
+            <div class="wfl-flow">
+              <div class="wfl-node"><span class="ni" style="background:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><div><b>Scraper</b><span>URL</span></div></div>
+              <span class="wfl-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              <div class="wfl-node"><span class="ni" style="background:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 .5-4 3.5 1.5 5L12 19l-4.5 3 1.5-5-4-3.5 5-.5z"/></svg></span><div><b>Enrichir</b><span>PIM+DAM</span></div></div>
+              <span class="wfl-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              <div class="wfl-node"><span class="ni" style="background:#6366f1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><div><b>Composer</b><span>gabarit</span></div></div>
+              <span class="wfl-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              <div class="wfl-node"><span class="ni" style="background:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><div><b>Exporter</b><span>PDF</span></div></div>
+              <span class="wfl-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              <div class="wfl-node"><span class="ni" style="background:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><div><b>Telegram</b><span>envoi</span></div></div>
+            </div>
+            <span class="wfl-run"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Lancer le workflow</span>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="telegram">
+        <div class="scene-text">
+          <span class="scene-num grad-text">10 — PILOTER</span>
+          <h2>Toute l'app,<br/>depuis un bot.</h2>
+          <p>Une commande Telegram déclenche un chat IA, génère et exécute un workflow, et renvoie le fichier final directement dans la conversation.</p>
+          <ul class="scene-list"><li>Chat IA avec accès web</li><li>Commandes /flow · /run</li><li>Fichier renvoyé dans le chat</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Telegram — bot IBS-Studio</span></div>
+          <div class="tlg-body mk-body">
+            <div class="tlg-msg tlg-me"><code>/flow</code> Génère une PLV A4 pour la perceuse 18V, prix 129 €</div>
+            <div class="tlg-msg tlg-bot">Workflow généré ✓ — scraping, composition et export en cours…</div>
+            <div class="tlg-file"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><div><b>perceuse-18v-PLV.pdf</b><span class="m">A4 · 300 DPI · 2,4 Mo</span></div><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="animation">
+        <div class="scene-text">
+          <span class="scene-num grad-text">11 — ANIMER</span>
+          <h2>Des vidéos,<br/>depuis un prompt.</h2>
+          <p>Décrivez une animation : l'IA génère une composition HTML multi-scènes (HyperFrames) avec transitions, rejouable et rangée dans le DAM — en quelques secondes.</p>
+          <ul class="scene-list"><li>Génération depuis prompt ou image</li><li>Compositions &amp; transitions</li><li>Rejouable · sauvegardée au DAM</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Studio d'animation — génération IA</span></div>
+          <div class="anm-body mk-body">
+            <div class="anm-form">
+              <div class="anm-lbl">FORMAT</div><div class="anm-seg"><span class="anm-chip">Auto</span><span class="anm-chip">9:16</span><span class="anm-chip on">16:9</span><span class="anm-chip">1:1</span></div>
+              <div class="anm-lbl">DURÉE</div><div class="anm-seg"><span class="anm-chip">5 s</span><span class="anm-chip on">10 s</span><span class="anm-chip">15 s</span></div>
+              <div class="anm-lbl">BRIEF</div><div class="anm-brief">Perceuse 18V en promo —30 %, digital signage magasin, rythme énergique, palette néon.</div>
+              <div class="anm-gen">✦ Générer l'animation</div>
+            </div>
+            <div class="anm-lib"><div class="anm-lh">BIBLIOTHÈQUE</div>
+              <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#6366f1,#a855f7)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Perceuse —30 %</b><span>16:9 · 10 s</span></div></div>
+              <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#0ea5e9,#22d3ee)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Salle de trading</b><span>16:9 · 10 s</span></div></div>
+              <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Signage magasin</b><span>1:1 · 10 s</span></div></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="chat">
+        <div class="scene-text">
+          <span class="scene-num grad-text">12 — ASSISTER</span>
+          <h2>Un assistant,<br/>tous les modèles.</h2>
+          <p>Un chat connecté à Claude, Gemini, GPT, Qwen… : multitour, pièces jointes, génération d'images et saisie vocale. Changez de LLM en un clic.</p>
+          <ul class="scene-list"><li>Multi-LLM en un clic</li><li>Pièces jointes &amp; images</li><li>Voix &amp; bibliothèque de prompts</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Assistant IA</span></div>
+          <div class="aic-body mk-body">
+            <div class="aic-title">Comment puis-je vous aider&nbsp;?</div>
+            <div class="aic-box">
+              <div class="aic-ph">Posez votre question…</div>
+              <div class="aic-bar"><span class="aic-plus">+</span><span class="aic-model">Claude Opus 4.7 <span class="pr">Anthropic</span> ▴</span></div>
+              <div class="aic-drop"><div class="aic-opt on"><span class="dot" style="background:#d97757"></span>Claude Opus 4.7<span class="pv">Anthropic</span></div><div class="aic-opt"><span class="dot" style="background:#38bdf8"></span>Gemini 3.5 Pro<span class="pv">Google</span></div><div class="aic-opt"><span class="dot" style="background:#34d399"></span>GPT-5.1<span class="pv">OpenAI</span></div><div class="aic-opt"><span class="dot" style="background:#a855f7"></span>Qwen3 Max<span class="pv">Alibaba</span></div><div class="aic-opt"><span class="dot" style="background:#fbbf24"></span>Kimi K2.6<span class="pv">Moonshot</span></div></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="scene" id="roles">
+        <div class="scene-text">
+          <span class="scene-num grad-text">13 — GOUVERNER</span>
+          <h2>Le bon accès,<br/>au bon rôle.</h2>
+          <p>Contrôle d'accès complet : rôles, surcharges de permission module par module, blocage et réactivation. Le propriétaire garde toujours la main.</p>
+          <ul class="scene-list"><li>Rôles &amp; permissions fines</li><li>Surcharges par module</li><li>Blocage / réactivation</li></ul>
+        </div>
+        <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Utilisateurs &amp; rôles</span></div>
+          <div class="usr-body mk-body">
+            <div class="usr-row"><span class="usr-av" style="background:linear-gradient(135deg,#a78bfa,#f472b6)">J</span><div><div class="usr-name">Jean Bernard <span class="usr-badge" style="background:rgba(167,139,250,.2);color:#c4b5fd">Lecteur</span></div><div class="usr-mail">j.bernard@pimalion.com</div></div><span class="usr-role">Lecteur ▾</span></div>
+            <div class="usr-cats">
+              <div class="usr-cat"><span class="ci" style="background:rgba(251,191,36,.13);color:#fbbf24"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg></span>IMPORT<span class="cc">0/8</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(56,189,248,.13);color:#38bdf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M11 4v16M16 4v16"/></svg></span>BIBLIO<span class="cc">0/4</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(244,114,182,.13);color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span>DAM<span class="cc">2/8</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(52,211,153,.13);color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>PIM<span class="cc">0/7</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(45,212,191,.13);color:#2dd4bf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v5h8v-1"/></svg></span>TAXO<span class="cc">0/3</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(34,211,238,.13);color:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg></span>SCRAPING<span class="cc">0/4</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(99,102,241,.13);color:#6366f1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>WORKFLOWS<span class="cc">0/5</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(96,165,250,.13);color:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span>TELEGRAM<span class="cc">0/1</span></div>
+              <div class="usr-cat"><span class="ci" style="background:rgba(232,121,249,.13);color:#e879f9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M9 4v14"/></svg></span>ANIMATION<span class="cc">0/1</span></div>
+            </div>
+            <div class="usr-perms"><span class="usr-perm on">Voir le DAM</span><span class="usr-perm on">Création d'image (IA)</span><span class="usr-perm">Animations HTML</span><span class="usr-perm">Uploader</span><span class="usr-perm">Collections</span></div>
+          </div>
+        </div></div>
       </div>
 
     </div>
@@ -509,46 +769,6 @@
     </div>
   </section>
 
-  <!-- MODULES -->
-  <section class="block" id="modules">
-    <div class="wrap">
-      <div class="shead">
-        <span class="idx grad-text">— L'INVENTAIRE COMPLET</span>
-        <h2>Treize modules,<br/>une plateforme.</h2>
-        <p class="lead">Toute la chaîne de production graphique, accessible depuis une seule barre latérale. Rien à installer, tout est connecté.</p>
-      </div>
-      <div class="modules">
-
-        <div class="mod" style="--mc:#a78bfa"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg></span><div><div class="mn">01</div><h3>Nouveau document</h3></div></div><p>Formats prédéfinis (print, écran, réseaux) ou sur mesure, fond uni, dégradé ou image — prêt à habiller dans l'éditeur.</p><div class="chips"><span>A4·A3·Letter</span><span>4K·16:9</span><span>Réseaux</span><span>Sur mesure</span></div></div>
-
-        <div class="mod" style="--mc:#fbbf24"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><div><div class="mn">02</div><h3>Importer</h3></div></div><p>Mise en page, styles et texte conservés et modifiables — pas une capture aplatie. Image &amp; PDF décomposés en calques par IA.</p><div class="chips"><span>IDML</span><span>PPTX</span><span>SVG</span><span>PDF→SVG</span><span>Excel</span></div></div>
-
-        <div class="mod" style="--mc:#38bdf8"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><div><div class="mn">03</div><h3>Bibliothèque</h3></div></div><p>Tous vos projets en vignettes ou liste, filtrés par taxonomie. Sélection multiple, duplication, ouverture directe dans l'éditeur.</p><div class="chips"><span>Vignettes/liste</span><span>Filtre taxo</span><span>Duplication</span></div></div>
-
-        <div class="mod" style="--mc:#f472b6"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><div class="mn">04</div><h3>DAM — médias</h3></div></div><p>Centralisez visuels, banques libres de droits, collections et assets de marque, et générez des images par IA. Recherche par mot-clé ou par image.</p><div class="chips"><span>Pexels·Unsplash</span><span>Génération IA</span><span>Collections</span><span>Drive</span></div></div>
-
-        <div class="mod" style="--mc:#34d399"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z"/></svg></span><div><div class="mn">05</div><h3>PIM — données</h3></div></div><p>Plusieurs bases de fiches produits : import Excel, création, colonnes, taxonomie. Enrichissement automatique par scraping d'URL.</p><div class="chips"><span>Bases multiples</span><span>Import Excel</span><span>Scraping</span><span>Enrich. IA</span></div></div>
-
-        <div class="mod" style="--mc:#2dd4bf"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h6l2 2h10v10H3z"/><path d="M9 12h8M9 15h5"/></svg></span><div><div class="mn">06</div><h3>Taxonomies</h3></div></div><p>Arborescence de classification à N niveaux (catégories, gammes, familles). Reliez projets et produits pour filtrer et structurer.</p><div class="chips"><span>N niveaux</span><span>Liaison projets</span><span>Filtrage</span></div></div>
-
-        <div class="mod" style="--mc:#818cf8"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 9h4M7 13h7"/><rect x="14" y="7" width="4" height="4" rx="1"/></svg></span><div><div class="mn">07</div><h3>Templates scraping</h3></div></div><p>Règles d'extraction visuelles — sélecteurs et mapping des champs — réutilisables d'un produit à l'autre, sans écrire de code.</p><div class="chips"><span>Sélecteurs</span><span>Mapping</span><span>Constructeur visuel</span></div></div>
-
-        <div class="mod" style="--mc:#22d3ee"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span><div><div class="mn">08</div><h3>Scraping Hub</h3></div></div><p>Lancez et supervisez les extractions à grande échelle. Escalade anti-bot automatique via Bright Data, Jina et Firecrawl.</p><div class="chips"><span>Lots &amp; sources</span><span>Bright Data</span><span>Jina·Firecrawl</span></div></div>
-
-        <div class="mod" style="--mc:#6366f1"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 0 0 3 3h6"/></svg></span><div><div class="mn">09</div><h3>Workflows</h3></div></div><p>Automatisez l'enchaînement des modules, façon Zapier : sept catégories de nodes. Un workflow complet généré par IA depuis un prompt.</p><div class="chips"><span>No-code</span><span>7 catégories</span><span>Génération IA</span></div></div>
-
-        <div class="mod" style="--mc:#60a5fa"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><div><div class="mn">10</div><h3>Telegram</h3></div></div><p>Pilotez l'app depuis un bot : chat IA avec accès web, génération &amp; exécution de workflows, fichier renvoyé dans la conversation.</p><div class="chips"><span>Chat IA</span><span>/flow</span><span>/run</span></div></div>
-
-        <div class="mod" style="--mc:#e879f9"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span><div><div class="mn">11</div><h3>Animation</h3></div></div><p>Vidéos et animations HTML (HyperFrames) depuis un prompt ou une image : compositions, transitions, fichiers de référence.</p><div class="chips"><span>Prompt</span><span>Image</span><span>Transitions</span></div></div>
-
-        <div class="mod" style="--mc:#c084fc"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><div><div class="mn">12</div><h3>Chat IA</h3></div></div><p>Assistant conversationnel intégré : multitour, pièces jointes, génération d'images, saisie vocale, bibliothèque de prompts.</p><div class="chips"><span>Multitour</span><span>Images</span><span>Voix</span></div></div>
-
-        <div class="mod" style="--mc:#fb7185"><div class="mh"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5-3.5 7.5-8.5 9C7.5 19.5 4 17 4 12V6l8-3 8 3z"/></svg></span><div><div class="mn">13</div><h3>Utilisateurs &amp; rôles</h3></div></div><p>Contrôle d'accès complet (RBAC) : rôles, surcharges de permission par module, blocage/réactivation. Le propriétaire garde la main.</p><div class="chips"><span>Rôles</span><span>Permissions fines</span><span>RBAC</span></div></div>
-
-      </div>
-      <p class="mono" style="margin-top:24px;text-align:center;color:var(--faint)">+ Briefs &amp; génération IA · Paramètres &amp; modèles · Génération vidéo depuis l'éditeur</p>
-    </div>
-  </section>
 
   <!-- I/O -->
   <section class="block" id="io">
