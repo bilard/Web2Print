@@ -420,7 +420,81 @@
   #publier .scene-visual.is-in .chan:nth-child(1) .ic{animation-delay:1s}#publier .scene-visual.is-in .chan:nth-child(2) .ic{animation-delay:1.25s}#publier .scene-visual.is-in .chan:nth-child(3) .ic{animation-delay:1.5s}#publier .scene-visual.is-in .chan:nth-child(4) .ic{animation-delay:1.75s}#publier .scene-visual.is-in .chan:nth-child(5) .ic{animation-delay:2s}
   @keyframes chanlight{0%,100%{box-shadow:0 0 0 0 transparent;border-color:var(--line2)}50%{box-shadow:0 0 20px -4px currentColor;border-color:currentColor}}
 
+  /* ===== Vie des maquettes (effets logiques par module) ===== */
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(124,108,255,0)}50%{box-shadow:0 0 18px -2px rgba(124,108,255,.55)}}
+  @keyframes breatheG{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}50%{box-shadow:0 0 16px -2px rgba(52,211,153,.55)}}
+  @keyframes shimmerCard{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22) saturate(1.12)}}
+  @keyframes rowsweep{0%,100%{background:transparent}50%{background:rgba(124,108,255,.14)}}
+  @keyframes nodeflow{0%,100%{box-shadow:0 0 0 0 transparent;border-color:var(--line2)}50%{box-shadow:0 0 20px -3px rgba(124,108,255,.85);border-color:var(--indigo)}}
+  @keyframes optflash{0%,100%{background:transparent}50%{background:rgba(124,108,255,.2)}}
+  @keyframes dlbob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  @keyframes slidein{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+  @keyframes arrflow{0%,100%{opacity:.35;transform:translateX(0)}50%{opacity:1;transform:translateX(2px)}}
+
+  /* 01 Nouveau document — le format sélectionné respire, la toile flotte */
+  #nouveau .scene-visual.is-in .nd-fmt{animation:pop .5s cubic-bezier(.2,.9,.3,1.4) backwards}
+  #nouveau .scene-visual.is-in .nd-fmt:nth-child(2){animation-delay:.08s}#nouveau .scene-visual.is-in .nd-fmt:nth-child(3){animation-delay:.16s}#nouveau .scene-visual.is-in .nd-fmt:nth-child(4){animation-delay:.24s}
+  #nouveau .scene-visual.is-in .nd-fmt.on{animation:pop .5s cubic-bezier(.2,.9,.3,1.4),breathe 2.8s ease-in-out infinite .8s}
+  #nouveau .scene-visual.is-in .nd-canvas .pg{animation:floaty 4.2s ease-in-out infinite}
+
+  /* 03 Bibliothèque — les projets surgissent, vignettes scintillent en vague */
+  #bibliotheque .scene-visual.is-in .lib-card{animation:pop .42s cubic-bezier(.2,.9,.3,1.4) backwards}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(2){animation-delay:.05s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(3){animation-delay:.1s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(4){animation-delay:.15s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(5){animation-delay:.2s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(6){animation-delay:.25s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(7){animation-delay:.3s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(8){animation-delay:.35s}
+  #bibliotheque .scene-visual.is-in .lib-card .t{animation:shimmerCard 4.5s ease-in-out infinite}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(2n) .t{animation-delay:.7s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(3n) .t{animation-delay:1.4s}
+  #bibliotheque .scene-visual.is-in .lib-side .li.on{animation:breathe 2.8s ease-in-out infinite}
+
+  /* 04 DAM — la grille média se charge, le bouton IA pulse */
+  #dam .scene-visual.is-in .dam-grid i{animation:pop .42s cubic-bezier(.2,.9,.3,1.4) backwards,shimmerCard 5s ease-in-out infinite 1s}
+  #dam .scene-visual.is-in .dam-grid i:nth-child(3n){animation-delay:.08s,1.4s}#dam .scene-visual.is-in .dam-grid i:nth-child(3n+1){animation-delay:.16s,.7s}
+  #dam .scene-visual.is-in .dam-ia{animation:gopulse 2.2s ease-in-out infinite .4s}
+
+  /* 05 PIM — un surlignage balaie les lignes du tableau */
+  #pim .scene-visual.is-in .pim-tr:not(.th){animation:rowsweep 4.5s ease-in-out infinite}
+  #pim .scene-visual.is-in .pim-tr:nth-of-type(3){animation-delay:.35s}#pim .scene-visual.is-in .pim-tr:nth-of-type(4){animation-delay:.7s}#pim .scene-visual.is-in .pim-tr:nth-of-type(5){animation-delay:1.05s}#pim .scene-visual.is-in .pim-tr:nth-of-type(6){animation-delay:1.4s}#pim .scene-visual.is-in .pim-tr:nth-of-type(7){animation-delay:1.75s}
+
+  /* 06 Taxonomies — l'arbre se déploie, la catégorie active respire */
+  #taxonomies .scene-visual.is-in .txo-node{animation:slidein .5s ease backwards}
+  #taxonomies .scene-visual.is-in .txo-node:nth-child(2){animation-delay:.08s}#taxonomies .scene-visual.is-in .txo-node:nth-child(3){animation-delay:.16s}#taxonomies .scene-visual.is-in .txo-node:nth-child(4){animation-delay:.24s}#taxonomies .scene-visual.is-in .txo-node:nth-child(5){animation-delay:.32s}#taxonomies .scene-visual.is-in .txo-node:nth-child(6){animation-delay:.4s}#taxonomies .scene-visual.is-in .txo-node:nth-child(7){animation-delay:.48s}
+  #taxonomies .scene-visual.is-in .txo-node.on{animation:slidein .5s ease backwards .16s,breathe 2.8s ease-in-out infinite .8s}
+
+  /* 07 Templates scraping — le champ assigné pulse, le sélecteur clignote */
+  #templates .scene-visual.is-in .tpl-field.on{animation:breathe 2.6s ease-in-out infinite}
+  #templates .scene-visual.is-in .tpl-sel{animation:breathe 2.6s ease-in-out infinite 1.3s}
+
+  /* 09 Workflows — l'exécution file de node en node, le bouton pulse */
+  #workflows .scene-visual.is-in .wfl-node{animation:nodeflow 3s ease-in-out infinite}
+  #workflows .scene-visual.is-in .wfl-flow>div:nth-child(3){animation-delay:.45s}#workflows .scene-visual.is-in .wfl-flow>div:nth-child(5){animation-delay:.9s}#workflows .scene-visual.is-in .wfl-flow>div:nth-child(7){animation-delay:1.35s}#workflows .scene-visual.is-in .wfl-flow>div:nth-child(9){animation-delay:1.8s}
+  #workflows .scene-visual.is-in .wfl-arr svg{animation:arrflow 3s ease-in-out infinite}
+  #workflows .scene-visual.is-in .wfl-flow>span:nth-child(4) svg{animation-delay:.45s}#workflows .scene-visual.is-in .wfl-flow>span:nth-child(6) svg{animation-delay:.9s}#workflows .scene-visual.is-in .wfl-flow>span:nth-child(8) svg{animation-delay:1.35s}
+  #workflows .scene-visual.is-in .wfl-run{animation:gopulse 2.2s ease-in-out infinite .5s}
+
+  /* 10 Telegram — les messages arrivent, le fichier appelle au téléchargement */
+  #telegram .scene-visual.is-in .tlg-msg,#telegram .scene-visual.is-in .tlg-file{animation:slidein .5s ease backwards}
+  #telegram .scene-visual.is-in .tlg-msg.tlg-bot{animation-delay:.3s}#telegram .scene-visual.is-in .tlg-file{animation-delay:.6s}
+  #telegram .scene-visual.is-in .tlg-file .dl{animation:dlbob 1.8s ease-in-out infinite 1s}
+
+  /* 11 Animation — le bouton Générer pulse, la dernière création brille */
+  #animation .scene-visual.is-in .anm-gen{animation:gopulse 2.2s ease-in-out infinite .4s}
+  #animation .scene-visual.is-in .anm-card:first-child{animation:breathe 2.8s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-chip.on{animation:breathe 2.8s ease-in-out infinite 1s}
+
+  /* 12 Chat IA — un balayage parcourt les modèles du menu */
+  #chat .scene-visual.is-in .aic-opt{animation:optflash 3.6s ease-in-out infinite}
+  #chat .scene-visual.is-in .aic-opt:nth-child(2){animation-delay:.45s}#chat .scene-visual.is-in .aic-opt:nth-child(3){animation-delay:.9s}#chat .scene-visual.is-in .aic-opt:nth-child(4){animation-delay:1.35s}#chat .scene-visual.is-in .aic-opt:nth-child(5){animation-delay:1.8s}
+
+  /* 13 Utilisateurs & rôles — les modules surgissent, la permission accordée brille */
+  #roles .scene-visual.is-in .usr-cat{animation:pop .4s cubic-bezier(.2,.9,.3,1.4) backwards}
+  #roles .scene-visual.is-in .usr-cat:nth-child(2){animation-delay:.05s}#roles .scene-visual.is-in .usr-cat:nth-child(3){animation-delay:.1s}#roles .scene-visual.is-in .usr-cat:nth-child(4){animation-delay:.15s}#roles .scene-visual.is-in .usr-cat:nth-child(5){animation-delay:.2s}#roles .scene-visual.is-in .usr-cat:nth-child(6){animation-delay:.25s}#roles .scene-visual.is-in .usr-cat:nth-child(7){animation-delay:.3s}#roles .scene-visual.is-in .usr-cat:nth-child(8){animation-delay:.35s}
+  #roles .scene-visual.is-in .usr-perm.on{animation:breatheG 2.6s ease-in-out infinite}
+
+  /* Parallax — l'écran de maquette dérive avec le scroll */
+  .scene-visual .screen{will-change:transform}
+
   @media(prefers-reduced-motion:reduce){
+    html.js .scene-visual .screen{transform:none!important}
+    html.js .scene-visual *{animation:none!important}
     .reveal{animation:none;opacity:1;transform:none}
     .aurora b,.pulse,.grad-text{animation:none}
     html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:1;transform:none;transition:none}
@@ -927,6 +1001,27 @@
         else if (a === 'pause') { demo.pause(); }
       });
     });
+  }
+
+  // Parallax léger : les écrans de maquette dérivent avec le scroll (profondeur)
+  if(!reduce){
+    var pels=[].slice.call(document.querySelectorAll('.scene-visual .screen'));
+    if(pels.length){
+      var ticking=false;
+      var run=function(){
+        var vh=window.innerHeight||document.documentElement.clientHeight;
+        for(var i=0;i<pels.length;i++){
+          var s=pels[i],r=s.getBoundingClientRect();
+          if(r.bottom<-160||r.top>vh+160) continue;
+          var d=((r.top+r.height/2)-vh/2)/vh;
+          s.style.transform='translate3d(0,'+(d*-26).toFixed(1)+'px,0)';
+        }
+        ticking=false;
+      };
+      window.addEventListener('scroll',function(){ if(!ticking){ ticking=true; requestAnimationFrame(run); } },{passive:true});
+      window.addEventListener('resize',run,{passive:true});
+      run();
+    }
   }
 })();
 </script>
