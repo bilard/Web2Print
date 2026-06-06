@@ -1,15 +1,41 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Shapes, Download, Workflow, Sparkles } from 'lucide-react'
+import { FileText, Shapes, Database, Table, Download, Workflow, Sparkles } from 'lucide-react'
 import { FirebaseError } from 'firebase/app'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignInWithGoogle } from '@/features/auth/useAuth'
 
 const FEATURES = [
-  { icon: FileText, label: 'Import PDF & IDML', desc: 'Vos fichiers print, prêts à éditer' },
-  { icon: Shapes, label: 'SVG éditable', desc: 'Décomposition intelligente par blocs' },
-  { icon: Download, label: 'Export multi-format', desc: 'PDF, PPTX, images haute définition' },
-  { icon: Workflow, label: 'Workflows IA', desc: 'Automatisez scraping, design et envoi' },
+  {
+    icon: FileText,
+    label: 'Import print pro',
+    desc: 'PDF, IDML (InDesign) & SVG (Illustrator) éditables directement dans le navigateur',
+  },
+  {
+    icon: Shapes,
+    label: 'SVG éditable par blocs',
+    desc: 'Textes, formes et images détourés automatiquement, chacun modifiable séparément',
+  },
+  {
+    icon: Database,
+    label: 'PIM & DAM intégrés',
+    desc: 'Données produit et médias centralisés, réutilisables dans tous vos visuels',
+  },
+  {
+    icon: Table,
+    label: 'Publipostage données',
+    desc: 'Des centaines de déclinaisons générées depuis un tableau ou une base produit',
+  },
+  {
+    icon: Download,
+    label: 'Export multi-format',
+    desc: 'PDF print (fond perdu, traits de coupe), PPTX et images haute définition',
+  },
+  {
+    icon: Workflow,
+    label: 'Workflows IA no-code',
+    desc: 'Scraping, design et envoi (Telegram, Drive, Gmail) enchaînés automatiquement',
+  },
 ] as const
 
 function errorMessage(err: unknown): string {
@@ -58,7 +84,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#242424] grid lg:grid-cols-[1.1fr_1fr]">
       {/* Colonne gauche — vitrine brandée */}
-      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden p-12 text-white">
+      <aside className="relative hidden lg:flex flex-col justify-center gap-10 overflow-hidden p-12 text-white">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-900 to-[#242424]" />
         <div className="absolute -top-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-indigo-500/30 blur-3xl" />
         <div
@@ -71,21 +97,25 @@ export default function LoginPage() {
         />
 
         <div className="relative flex items-center">
-          <img src="/logo.png" alt="IBS Studio" className="h-80 w-auto object-contain" />
+          <img src="/logo.png" alt="IBS Studio" className="h-64 w-auto object-contain" />
         </div>
 
         <div className="relative max-w-md">
-          <h2 className="text-4xl font-bold leading-tight">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/70">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+            18 modules · 1 plateforme · 0 logiciel à installer
+          </div>
+          <h2 className="mt-5 text-4xl font-bold leading-tight">
             Créez, importez,
             <br />
             exportez en un flux.
           </h2>
           <p className="mt-4 text-white/60">
-            L'éditeur graphique professionnel qui transforme vos fichiers print et vos données en
-            créations prêtes à diffuser.
+            L'éditeur graphique professionnel qui transforme vos fichiers print et vos données
+            produit en créations prêtes à diffuser — du brief à l'imprimeur, sans rien installer.
           </p>
 
-          <ul className="mt-10 space-y-5">
+          <ul className="mt-8 space-y-4">
             {FEATURES.map(({ icon: Icon, label, desc }) => (
               <li key={label} className="flex items-start gap-3.5">
                 <div className="mt-0.5 w-9 h-9 shrink-0 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
@@ -99,8 +129,6 @@ export default function LoginPage() {
             ))}
           </ul>
         </div>
-
-        <p className="relative text-xs text-white/40">app.ibs-studio.com</p>
       </aside>
 
       {/* Colonne droite — connexion */}
