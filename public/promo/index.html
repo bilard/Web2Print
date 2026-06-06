@@ -238,9 +238,16 @@
   .pim-tabs{display:flex;gap:6px;padding:13px 14px}
   .pim-tab{font-size:10.5px;color:var(--muted);padding:5px 11px;border-radius:7px;border:1px solid var(--line)}
   .pim-tab.on{background:var(--surface);color:var(--ink);border-color:var(--line2)}
-  .pim-tr{display:grid;grid-template-columns:1.6fr 1fr .8fr 1fr;gap:10px;padding:11px 16px;border-top:1px solid var(--line);font-size:12px}
+  .pim-tr{display:grid;grid-template-columns:1.5fr .8fr .75fr .8fr .9fr;gap:10px;padding:11px 16px;border-top:1px solid var(--line);font-size:12px}
   .pim-tr.th{background:#0b0b11;color:var(--faint);font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em}
   .pim-tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pim-tr .calc{color:#a5b4fc}
+  .pim-tr.th .calc{color:#818cf8}
+  .pim-fx{display:inline-block;text-transform:none;font-family:var(--mono);font-size:8px;line-height:1;color:#818cf8;border:1px solid rgba(129,140,248,.45);background:rgba(129,140,248,.15);border-radius:4px;padding:1px 3px;margin-left:4px;vertical-align:middle}
+  .pim-foot{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--line);background:rgba(129,140,248,.06)}
+  .pim-foot .pim-fx{margin-left:0}
+  .pim-formula{font-family:var(--mono);font-size:10.5px;color:#c7c4ff}
+  .pim-formula b{color:#a5b4fc;font-weight:600}
   /* 06 Taxonomies */
   .txo-node{display:flex;align-items:center;gap:9px;padding:8px;border-radius:7px;font-size:13px}
   .txo-node .cv{width:11px;color:var(--faint);flex:0 0 11px}
@@ -961,21 +968,22 @@
         <div class="scene-text">
           <span class="scene-num grad-text">07 — DONNÉES</span>
           <h2>Vos fiches produits,<br/>structurées.</h2>
-          <p>Un PIM pour structurer toutes vos fiches produits. Créez <b>plusieurs bases</b>, importez vos catalogues <b>Excel</b>, ajoutez des <b>colonnes sur mesure</b> et reliez-les à votre taxonomie. L'<b>enrichissement automatique par scraping d'URL</b> remplit specs, descriptions et prix à votre place — vos données restent à jour et prêtes pour le publipostage.</p>
-          <ul class="scene-list"><li>Bases multiples · import Excel</li><li>Colonnes &amp; taxonomie</li><li>Enrichissement par scraping</li></ul>
+          <p>Un PIM pour structurer toutes vos fiches produits. Créez <b>plusieurs bases</b>, importez vos catalogues <b>Excel</b>, ajoutez des <b>colonnes sur mesure</b> ou des <b>champs calculés par formule</b> (prix TTC, marge, remise…) et reliez le tout à votre taxonomie. L'<b>enrichissement automatique par scraping d'URL</b> remplit specs, descriptions et prix à votre place — vos données restent à jour et prêtes pour le publipostage.</p>
+          <ul class="scene-list"><li>Bases multiples · import Excel</li><li>Champs calculés &amp; formules</li><li>Enrichissement par scraping</li></ul>
           <button class="scene-more" aria-expanded="false" aria-controls="d-pim"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
-          <div class="scene-detail" id="d-pim"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Les données produit vivent dans des Excel épars, vite périmés et jamais vraiment prêts pour la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Créez <b>plusieurs bases</b> et importez vos catalogues <b>Excel / CSV</b>.</li><li>Ajoutez des <b>colonnes sur mesure</b> et reliez chaque fiche à votre <b>taxonomie</b>.</li><li>Laissez l'<b>enrichissement par scraping d'URL</b> remplir specs, descriptions et prix.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>Bases multiples</span><span>Import Excel / CSV</span><span>Colonnes sur mesure</span><span>Liaison taxonomie</span><span>Enrichissement par scraping d'URL</span><span>Prêt pour le publipostage</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Un référentiel produit structuré, à jour et directement exploitable en publipostage.</p></div></div></div>
+          <div class="scene-detail" id="d-pim"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Les données produit vivent dans des Excel épars, vite périmés et jamais vraiment prêts pour la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Créez <b>plusieurs bases</b> et importez vos catalogues <b>Excel / CSV</b>.</li><li>Ajoutez des <b>colonnes sur mesure</b> ou des <b>champs calculés par formule</b> (ARRONDI, SI, CONCAT, opérations sur d'autres colonnes), et reliez chaque fiche à votre <b>taxonomie</b>.</li><li>Laissez l'<b>enrichissement par scraping d'URL</b> remplir specs, descriptions et prix.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>Bases multiples</span><span>Import Excel / CSV</span><span>Colonnes sur mesure</span><span>Champs calculés (formules)</span><span>Liaison taxonomie</span><span>Enrichissement par scraping d'URL</span><span>Prêt pour le publipostage</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Un référentiel produit structuré, à jour et directement exploitable en publipostage.</p></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">PIM — fiches produits</span></div>
           <div class="pim-body mk-body">
             <div class="pim-tabs"><span class="pim-tab on">Base outillage</span><span class="pim-tab">Base jardin</span><span class="pim-tab">+ Nouvelle base</span></div>
-            <div class="pim-tr th"><span>Nom</span><span>Réf.</span><span class="num">Prix</span><span>Marque</span></div>
-            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num">129,00 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num">79,90 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num">149,00 €</span><span>ProTools</span></div>
-            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num">59,00 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num">64,90 €</span><span>ProTools</span></div>
+            <div class="pim-tr th"><span>Nom</span><span>Réf.</span><span class="num">Prix HT</span><span class="num calc">Prix TTC<span class="pim-fx">ƒx</span></span><span>Marque</span></div>
+            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num">129,00 €</span><span class="num calc">154,80 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num">79,90 €</span><span class="num calc">95,88 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num">149,00 €</span><span class="num calc">178,80 €</span><span>ProTools</span></div>
+            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num">59,00 €</span><span class="num calc">70,80 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num">64,90 €</span><span class="num calc">77,88 €</span><span>ProTools</span></div>
+            <div class="pim-foot"><span class="pim-fx">ƒx</span><span class="pim-formula">Prix TTC = ARRONDI(<b>[Prix HT]</b> × 1,20 ; 2)</span></div>
           </div>
         </div></div>
       </div>
