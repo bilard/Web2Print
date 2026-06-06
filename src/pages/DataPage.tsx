@@ -50,8 +50,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const {
     sheets, activeSheetIndex, importModalOpen, searchQuery, currentFileName, currentDocId, currentPath,
     sheetRowId, taxonomyNavFilter, groupByTaxonomy,
-    setImportModalOpen, setActiveSheet, setSearchQuery, setSheets, setCurrentFileName, setCurrentDocId, setCurrentPath,
-    setSheetRowId, setGroupByTaxonomy, deleteSheet, pruneEmptySheet,
+    setImportModalOpen, setSearchQuery, setSheets, setCurrentFileName, setCurrentDocId, setCurrentPath,
+    setSheetRowId, setGroupByTaxonomy, pruneEmptySheet,
   } = useExcelStore()
   const { exportToXlsx, createEmpty } = useExcelImport()
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile, reorderFiles } = useExcelFirebase()

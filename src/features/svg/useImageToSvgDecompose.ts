@@ -73,16 +73,6 @@ const firstImageIn = (g: Group): FabricImage | null => {
   return null
 }
 
-const findBgImage = (): FabricImage | null => {
-  const canvas = globalFabricCanvas
-  if (!canvas) return null
-  const root = canvas.getObjects().find(isBgLockedMarker)
-  if (!root) return null
-  if (root instanceof FabricImage) return root
-  if (root instanceof Group) return firstImageIn(root)
-  return null
-}
-
 const findBgImageIn = (canvas: Canvas): FabricImage | null => {
   const root = canvas.getObjects().find(isBgLockedMarker)
   if (!root) return null
