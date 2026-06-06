@@ -181,7 +181,7 @@ export default function EditorPage() {
   }, [autoDecomposePending, canDecompose, decomposing, hasDecomposition, runDecompose])
 
   return (
-    <div className="flex flex-col h-screen bg-[#1c1c1c] overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#242424] overflow-hidden">
       <EditorHeader />
       <TextToolbar />
 

@@ -135,7 +135,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
           {existingFiles.map((f, idx) => (
             <div
               key={`${f.url}_${idx}`}
-              className="flex items-center gap-3 bg-[#1c1c1c] border border-white/[0.08] rounded-md px-3 py-1.5"
+              className="flex items-center gap-3 bg-[#242424] border border-white/[0.08] rounded-md px-3 py-1.5"
             >
               <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
               <a
@@ -178,7 +178,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading}
-          className="flex-1 flex items-center justify-center gap-2 bg-[#1c1c1c] border border-dashed border-white/[0.12] hover:border-indigo-500/60 rounded-md px-3 py-3 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 bg-[#242424] border border-dashed border-white/[0.12] hover:border-indigo-500/60 rounded-md px-3 py-3 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
         >
           {uploading ? <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> : <FileUp className="w-4 h-4 text-indigo-400" />}
           Fichiers
@@ -187,7 +187,7 @@ export function BrandKitUploadField({ field, value, onChange, disabled, briefId,
           type="button"
           onClick={() => folderInputRef.current?.click()}
           disabled={disabled || uploading}
-          className="flex-1 flex items-center justify-center gap-2 bg-[#1c1c1c] border border-dashed border-white/[0.12] hover:border-indigo-500/60 rounded-md px-3 py-3 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 bg-[#242424] border border-dashed border-white/[0.12] hover:border-indigo-500/60 rounded-md px-3 py-3 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
         >
           {uploading ? <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> : <FolderUp className="w-4 h-4 text-indigo-400" />}
           Dossier complet

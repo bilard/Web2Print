@@ -66,7 +66,7 @@ export function FieldEditor({ field, onChange, onDelete }: Props) {
             value={(field.options ?? []).join('\n')}
             onChange={(e) => onChange({ options: e.target.value.split('\n').filter(Boolean) })}
             rows={5}
-            className="bg-[#1c1c1c] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white focus:outline-none focus:border-indigo-500/60 font-mono"
+            className="bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white focus:outline-none focus:border-indigo-500/60 font-mono"
           />
         </>
       )}
@@ -94,7 +94,7 @@ function Input({ value, onChange }: { value: string; onChange: (v: string) => vo
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-[#1c1c1c] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white focus:outline-none focus:border-indigo-500/60"
+      className="bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white focus:outline-none focus:border-indigo-500/60"
     />
   )
 }

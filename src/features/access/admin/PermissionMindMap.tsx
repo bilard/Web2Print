@@ -189,7 +189,7 @@ export function PermissionMindMap({
         zoomOnScroll={false} panOnScroll={false} preventScrolling={false} minZoom={0.25} maxZoom={2}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#1c1c1c" gap={20} />
+        <Background color="#242424" gap={20} />
         <MindControls />
       </ReactFlow>
     </div>

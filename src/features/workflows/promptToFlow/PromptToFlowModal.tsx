@@ -30,7 +30,7 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg rounded-xl border border-neutral-800 bg-[#282828] p-4 space-y-3"
+        className="w-full max-w-lg rounded-xl border border-neutral-800 bg-[#303030] p-4 space-y-3"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -49,14 +49,14 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Décris ce que le workflow doit faire…"
               rows={4}
-              className="w-full rounded-md border border-neutral-700 bg-[#1c1c1c] p-2.5 text-sm text-white outline-none focus:border-indigo-500 resize-none"
+              className="w-full rounded-md border border-neutral-700 bg-[#242424] p-2.5 text-sm text-white outline-none focus:border-indigo-500 resize-none"
             />
             <div className="flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
                 <button
                   key={ex}
                   onClick={() => setPrompt(ex)}
-                  className="text-[11px] text-left rounded border border-neutral-700 bg-[#1c1c1c] px-2 py-1 text-white/50 hover:text-white/80 hover:border-neutral-600"
+                  className="text-[11px] text-left rounded border border-neutral-700 bg-[#242424] px-2 py-1 text-white/50 hover:text-white/80 hover:border-neutral-600"
                 >
                   {ex}
                 </button>
@@ -67,7 +67,7 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
               <select
                 value={provider}
                 onChange={(e) => setProvider(e.target.value as '' | LLMProviderId)}
-                className="rounded-md border border-neutral-700 bg-[#1c1c1c] px-2 py-1.5 text-xs text-white/70 outline-none"
+                className="rounded-md border border-neutral-700 bg-[#242424] px-2 py-1.5 text-xs text-white/70 outline-none"
                 aria-label="Modèle"
               >
                 <option value="">Modèle auto</option>

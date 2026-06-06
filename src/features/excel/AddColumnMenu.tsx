@@ -79,7 +79,7 @@ export function AddColumnMenu({ onAdd }: Props) {
       {open && createPortal(
         <div
           ref={menuRef}
-          className="fixed w-64 bg-[#1e1e1e] border border-white/15 rounded-xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="fixed w-64 bg-[#262626] border border-white/15 rounded-xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
           style={{ top: pos.top, left: pos.left }}
         >
           {/* Search */}

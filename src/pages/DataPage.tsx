@@ -381,7 +381,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const headerBtn = 'flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-md text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-colors'
 
   return (
-    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#1c1c1c] text-white flex flex-col overflow-hidden`}>
+    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#242424] text-white flex flex-col overflow-hidden`}>
       {/* Portal for sidebar toolbar */}
       {portalTarget && createPortal(sidebarToolbar, portalTarget)}
 
@@ -1008,7 +1008,7 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
   const canScrape = useCan('pim.scrape')
   return (
     <div
-      className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden"
+      className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
       {canImport && (
@@ -1036,7 +1036,7 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
 function CreateMenu({ onCreateDb }: { onCreateDb: () => void }) {
   return (
     <div
-      className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden"
+      className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
       <button
@@ -1280,7 +1280,7 @@ function FileRow({
 
       {!isRenaming && !isMoving && openMenu === f.docId && (
         <div
-          className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden"
+          className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <button

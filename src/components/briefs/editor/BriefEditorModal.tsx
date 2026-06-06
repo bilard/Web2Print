@@ -59,7 +59,7 @@ export function BriefEditorModal({ taxonomy }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-stretch p-6">
-      <div className="flex-1 bg-[#1c1c1c] border border-white/[0.06] rounded-lg flex flex-col overflow-hidden">
+      <div className="flex-1 bg-[#242424] border border-white/[0.06] rounded-lg flex flex-col overflow-hidden">
         <div className="h-14 bg-[#161616] border-b border-white/[0.06] flex items-center px-4 gap-4 shrink-0">
           <h2 className="text-[13px] font-semibold text-white/80 truncate max-w-[240px]">
             {brief?.clientName || 'Nouveau brief'}

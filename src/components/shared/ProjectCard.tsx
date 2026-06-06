@@ -102,13 +102,13 @@ export function ProjectCard({
     return (
       <>
       <div
-        className={`group relative flex items-center gap-3 bg-[#282828] border rounded-lg px-2 py-2 hover:border-indigo-500/50 hover:bg-[#1f1f1f] transition-all cursor-pointer ${selectedRing} ${selected ? 'bg-indigo-500/[0.06]' : ''}`}
+        className={`group relative flex items-center gap-3 bg-[#303030] border rounded-lg px-2 py-2 hover:border-indigo-500/50 hover:bg-[#1f1f1f] transition-all cursor-pointer ${selectedRing} ${selected ? 'bg-indigo-500/[0.06]' : ''}`}
         onClick={open}
       >
         <SelectCheckbox selected={selected} onClick={handleCheckboxClick} />
 
         {/* Thumbnail */}
-        <div className="w-12 h-12 bg-[#1e] rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-white/[0.06]">
+        <div className="w-12 h-12 bg-[#26] rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-white/[0.06]">
           {project.thumbnail ? (
             <img
               src={project.thumbnail}
@@ -184,7 +184,7 @@ export function ProjectCard({
   // ─── Mode GRID (par défaut) ───────────────────────────────────────────────
   return (
     <>
-    <div className={`group relative bg-[#282828] border rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all cursor-pointer ${selectedRing}`}>
+    <div className={`group relative bg-[#303030] border rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all cursor-pointer ${selectedRing}`}>
       {/* Case à cocher (overlay) — toujours visible */}
       <SelectCheckbox
         selected={selected}
@@ -194,7 +194,7 @@ export function ProjectCard({
 
       {/* Thumbnail */}
       <div
-        className="aspect-[4/3] bg-[#1e] flex items-center justify-center overflow-hidden"
+        className="aspect-[4/3] bg-[#26] flex items-center justify-center overflow-hidden"
         onClick={open}
       >
         {project.thumbnail ? (

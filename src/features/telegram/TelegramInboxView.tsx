@@ -67,7 +67,7 @@ export function TelegramInboxView() {
   }
 
   return (
-    <div className="h-full bg-[#1c1c1c] text-white flex flex-col overflow-hidden">
+    <div className="h-full bg-[#242424] text-white flex flex-col overflow-hidden">
       <header className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
         <Inbox className="w-4 h-4 text-blue-400" />
         <h1 className="text-[13px] font-semibold text-white/80">Boîte de réception Telegram</h1>
@@ -142,7 +142,7 @@ export function TelegramInboxView() {
               rows={2}
               autoFocus
               placeholder={`Message à envoyer sur Telegram (chat ${effectiveChatId || '— écris d’abord au bot'})…`}
-              className="w-full bg-[#1c1c1c] border border-neutral-700 rounded-md px-2 py-1 text-[13px] text-white placeholder:text-neutral-600 outline-none resize-y"
+              className="w-full bg-[#242424] border border-neutral-700 rounded-md px-2 py-1 text-[13px] text-white placeholder:text-neutral-600 outline-none resize-y"
             />
             <div className="flex gap-1.5">
               <button

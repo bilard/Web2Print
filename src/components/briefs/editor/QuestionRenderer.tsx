@@ -7,7 +7,7 @@ interface Props {
 }
 
 const baseInput =
-  'bg-[#1c1c1c] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60'
+  'bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60'
 
 export function QuestionRenderer({ questions, values, onChange }: Props) {
   return (
@@ -89,7 +89,7 @@ function renderField(
                 className={`text-[12px] px-2.5 py-1 rounded-md border ${
                   on
                     ? 'bg-indigo-500/20 border-indigo-500/60 text-white'
-                    : 'bg-[#1c1c1c] border-white/[0.08] text-white/60 hover:text-white/90'
+                    : 'bg-[#242424] border-white/[0.08] text-white/60 hover:text-white/90'
                 }`}
               >
                 {opt}

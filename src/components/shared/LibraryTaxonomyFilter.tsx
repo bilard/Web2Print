@@ -203,7 +203,7 @@ export function LibraryTaxonomyFilter({ selectedNodeId, onSelectNode }: LibraryT
   if (trees.length === 0) return null
 
   return (
-    <div className="w-56 shrink-0 bg-[#212121] border-r border-white/[0.06] flex flex-col overflow-hidden">
+    <div className="w-56 shrink-0 bg-[#2a2a2a] border-r border-white/[0.06] flex flex-col overflow-hidden">
       <div className="px-3 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-2 text-white/50">
           <FolderTree className="w-3.5 h-3.5" />

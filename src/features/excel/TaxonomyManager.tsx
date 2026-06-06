@@ -219,7 +219,7 @@ export function TaxonomyManager() {
               {taxonomies.map((t) => {
                 const count = Object.keys(t.nodes).length
                 return (
-                  <option key={t.id} value={t.id} className="bg-[#282828]">
+                  <option key={t.id} value={t.id} className="bg-[#303030]">
                     {t.name} ({count} nœuds)
                   </option>
                 )
@@ -355,7 +355,7 @@ export function TaxonomyManager() {
                   <button className="p-0.5 text-white/20 hover:text-white/50">
                     <Palette className="w-3 h-3" />
                   </button>
-                  <div className="hidden group-hover:flex absolute right-0 top-full mt-1 bg-[#1e1e1e] border border-white/15 rounded-lg p-1.5 gap-1 flex-wrap w-28 z-50 shadow-xl">
+                  <div className="hidden group-hover:flex absolute right-0 top-full mt-1 bg-[#262626] border border-white/15 rounded-lg p-1.5 gap-1 flex-wrap w-28 z-50 shadow-xl">
                     {TAG_COLORS.map((color) => (
                       <button
                         key={color}

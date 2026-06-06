@@ -142,7 +142,7 @@ export function ChatComposer({
   const canSubmit = (value.trim().length > 0 || attachments.length > 0) && !isLoading
 
   return (
-    <div className="bg-[#282828] border border-white/[0.08] rounded-2xl shadow-lg shadow-black/20 px-4 pt-3 pb-2.5">
+    <div className="bg-[#303030] border border-white/[0.08] rounded-2xl shadow-lg shadow-black/20 px-4 pt-3 pb-2.5">
       <input
         ref={fileInputRef}
         type="file"

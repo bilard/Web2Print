@@ -116,7 +116,7 @@ function DrivePickerUi({ value, onChange, mode, mimeFilter = 'all', emptyLabel }
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-md border-2 border-dashed border-neutral-700 bg-[#1c1c1c] text-neutral-400 hover:border-blue-500/40 hover:text-blue-300 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-md border-2 border-dashed border-neutral-700 bg-[#242424] text-neutral-400 hover:border-blue-500/40 hover:text-blue-300 transition-colors"
           >
             {isFolder ? <Folder className="w-4 h-4" /> : <FolderSearch className="w-4 h-4" />}
             <span className="text-[12px]">{emptyLabel}</span>
@@ -249,7 +249,7 @@ function GSheetsImportConfigUi({
           min={0}
           value={config.sheetIndex}
           onChange={(e) => onChange({ ...config, sheetIndex: Number(e.target.value) })}
-          className="w-full bg-[#1c1c1c] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+          className="w-full bg-[#242424] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
         />
         <p className="text-[10px] text-neutral-600 mt-1">0 = premier onglet</p>
       </div>
@@ -349,7 +349,7 @@ function GSheetsExportConfigUi({
           type="text"
           value={config.name}
           onChange={(e) => onChange({ ...config, name: e.target.value })}
-          className="w-full bg-[#1c1c1c] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+          className="w-full bg-[#242424] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
           placeholder="Workflow Export"
         />
       </div>
@@ -469,7 +469,7 @@ function GDriveExportConfigUi({
           type="text"
           value={config.name}
           onChange={(e) => onChange({ ...config, name: e.target.value })}
-          className="w-full bg-[#1c1c1c] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+          className="w-full bg-[#242424] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
           placeholder="(vide = nom d'origine)"
         />
       </div>
@@ -621,7 +621,7 @@ function SaveDamConfigUi({
         value={config.folderName}
         onChange={(e) => onChange({ ...config, folderName: e.target.value })}
         placeholder="Web2Print DAM"
-        className="w-full bg-[#1c1c1c] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+        className="w-full bg-[#242424] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
       />
       <p className="text-[10px] text-neutral-600 leading-snug">
         L'app crée/réutilise un dossier de ce nom dans ton Drive. Pas de sélection d'un dossier

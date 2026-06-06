@@ -66,7 +66,7 @@ export function VideoPromptLibrary({
   }
 
   return (
-    <div className="flex flex-col h-full border-l border-white/10 bg-[#212121]">
+    <div className="flex flex-col h-full border-l border-white/10 bg-[#2a2a2a]">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 shrink-0">
         <Library className="w-4 h-4 text-indigo-300" />
         <h3 className="text-xs font-semibold text-white/80 uppercase tracking-wider">

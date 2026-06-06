@@ -447,7 +447,7 @@ export function DamGenerate() {
   return (
     <div className="flex h-full">
       {/* Config sidebar */}
-      <div className="w-[260px] bg-[#212121] border-r border-white/5 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
+      <div className="w-[260px] bg-[#2a2a2a] border-r border-white/5 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="w-4 h-4 text-indigo-400" />
           <span className="text-xs font-medium text-white/80">Création d'image</span>
@@ -497,7 +497,7 @@ export function DamGenerate() {
             onPaste={handlePromptPaste}
             placeholder="Décrivez l'image à générer... (collez une image ou du texte)"
             rows={4}
-            className="w-full min-h-[96px] bg-[#1e] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50 resize-y"
+            className="w-full min-h-[96px] bg-[#26] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50 resize-y"
           />
         </div>
 
@@ -524,7 +524,7 @@ export function DamGenerate() {
               if (e.dataTransfer.files?.length) void handleAddRefs(e.dataTransfer.files)
             }}
             className={`rounded-lg border border-dashed p-2 flex flex-col gap-1.5 transition ${
-              dragging ? 'border-indigo-400 bg-indigo-500/10' : 'border-white/10 bg-[#1e]'
+              dragging ? 'border-indigo-400 bg-indigo-500/10' : 'border-white/10 bg-[#26]'
             }`}
           >
             {refs.length > 0 && (
@@ -774,7 +774,7 @@ export function DamGenerate() {
                   <button
                     type="button"
                     onClick={() => setZoomSrc(img.url)}
-                    className="group rounded-lg overflow-hidden bg-[#1e] relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    className="group rounded-lg overflow-hidden bg-[#26] relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                     title="Cliquer pour agrandir"
                   >
                     <img

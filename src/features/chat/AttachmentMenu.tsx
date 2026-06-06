@@ -32,7 +32,7 @@ export function AttachmentMenu({ open, onClose, onPickFiles, onScreenshot }: Att
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 mb-2 w-[280px] bg-[#1c1c1c] border border-white/[0.1] rounded-xl shadow-2xl shadow-black/50 overflow-hidden py-1.5 z-50"
+      className="absolute bottom-full left-0 mb-2 w-[280px] bg-[#242424] border border-white/[0.1] rounded-xl shadow-2xl shadow-black/50 overflow-hidden py-1.5 z-50"
     >
       <button
         type="button"

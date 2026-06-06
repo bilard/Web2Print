@@ -57,7 +57,7 @@ export default function ScrapingTemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1c1c1c] text-white/90">
+    <div className="min-h-screen bg-[#242424] text-white/90">
       <div className="border-b border-white/[0.06] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button

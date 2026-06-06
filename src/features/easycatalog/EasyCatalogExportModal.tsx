@@ -51,7 +51,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[#282828] border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
+      <div className="bg-[#303030] border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <h2 className="text-sm font-medium text-white/90">Exporter pour EasyCatalog</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white/70">

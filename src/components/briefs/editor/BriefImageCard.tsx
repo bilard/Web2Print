@@ -13,9 +13,9 @@ export function BriefImageCard({ label, imageUrl, loading, onRegenerate }: Props
 
   return (
     <>
-      <div className="bg-[#212121] border border-white/[0.06] rounded-md overflow-hidden flex flex-col">
+      <div className="bg-[#2a2a2a] border border-white/[0.06] rounded-md overflow-hidden flex flex-col">
         <div
-          className="aspect-square bg-[#1c1c1c] flex items-center justify-center relative cursor-zoom-in"
+          className="aspect-square bg-[#242424] flex items-center justify-center relative cursor-zoom-in"
           onDoubleClick={() => imageUrl && setIsFullscreen(true)}
           title={imageUrl ? 'Double-clic pour agrandir' : undefined}
         >

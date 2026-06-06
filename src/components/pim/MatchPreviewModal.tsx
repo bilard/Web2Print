@@ -24,7 +24,7 @@ export function MatchPreviewModal({ open, preview, loading, sourceName, onConfir
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="bg-[#282828] border border-white/10 rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div className="bg-[#303030] border border-white/10 rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
         <header className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
           <h2 className="text-sm font-medium text-white/85">
             Aperçu de l'import · {sourceName} <span className="text-white/40">· {stats.total} ligne{stats.total > 1 ? 's' : ''}</span>

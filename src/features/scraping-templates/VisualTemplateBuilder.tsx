@@ -225,7 +225,7 @@ export function VisualTemplateBuilder({ template, onChange }: Props) {
     <div className="flex flex-col gap-3">
       {/* Bloc sticky : état du template + toolbar + notice.
           Empilé sous la barre d'actions de TemplateEditor (top ≈ 52px). */}
-      <div className="sticky top-[52px] z-20 bg-[#282828] pt-2 pb-3 -mx-4 px-4 flex flex-col gap-3 border-b border-white/[0.04]">
+      <div className="sticky top-[52px] z-20 bg-[#303030] pt-2 pb-3 -mx-4 px-4 flex flex-col gap-3 border-b border-white/[0.04]">
       {/* État actuel du template — visible DÈS l'ouverture, avant l'iframe */}
       <div className="p-3 bg-black/40 border border-white/10 rounded-lg">
         <div className="flex items-center justify-between mb-2">
@@ -512,7 +512,7 @@ function AssignmentModal({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="bg-[#282828] border border-white/10 rounded-lg p-4 max-w-xl w-full">
+      <div onClick={(e) => e.stopPropagation()} className="bg-[#303030] border border-white/10 rounded-lg p-4 max-w-xl w-full">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-white/90">Élément capturé</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white/80"><X className="w-4 h-4" /></button>

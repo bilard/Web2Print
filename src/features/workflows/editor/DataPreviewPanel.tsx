@@ -662,7 +662,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
               </tr>
             ) : (
               visibleRows.map((row, i) => (
-                <tr key={start + i} className="odd:bg-[#1c1c1c] even:bg-[#212121]">
+                <tr key={start + i} className="odd:bg-[#242424] even:bg-[#2a2a2a]">
                   {cols.map((c) => {
                     const isFocused = c.key === focusedKey
                     return (
@@ -814,7 +814,7 @@ function JsonPreview({ value, maxLen = 4000 }: { value: unknown; maxLen?: number
     text = String(value)
   }
   return (
-    <pre className="text-[11px] text-neutral-300 bg-[#1c1c1c] border border-neutral-800 rounded p-2 whitespace-pre-wrap break-words">
+    <pre className="text-[11px] text-neutral-300 bg-[#242424] border border-neutral-800 rounded p-2 whitespace-pre-wrap break-words">
       {text.slice(0, maxLen)}
       {text.length > maxLen ? '\n…' : ''}
     </pre>
@@ -983,7 +983,7 @@ export function DataPreviewPanel() {
 
   return (
     <div
-      className="border-t border-neutral-800 bg-[#1c1c1c] text-sm flex flex-col shrink-0 relative"
+      className="border-t border-neutral-800 bg-[#242424] text-sm flex flex-col shrink-0 relative"
       style={{ height: collapsed ? 30 : height }}
     >
       {!collapsed ? (

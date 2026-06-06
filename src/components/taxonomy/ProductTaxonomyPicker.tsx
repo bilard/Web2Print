@@ -325,7 +325,7 @@ export function ProductTaxonomyPicker({
         aria-modal="true"
         aria-labelledby="product-taxo-picker-title"
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#282828] border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[82vh] flex flex-col"
+        className="bg-[#303030] border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[82vh] flex flex-col"
       >
         <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.06]">
           <div className="min-w-0">

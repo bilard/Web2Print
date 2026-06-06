@@ -9,9 +9,9 @@ const projects = [
 
 export function DashboardMock() {
   return (
-    <div className="w-full max-w-[480px] bg-[#1c1c1c] border border-white/10 rounded-md overflow-hidden pointer-events-none">
+    <div className="w-full max-w-[480px] bg-[#242424] border border-white/10 rounded-md overflow-hidden pointer-events-none">
       <div className="grid grid-cols-[120px_1fr]">
-        <div className="bg-[#282828] border-r border-white/10 py-2 flex flex-col gap-0.5">
+        <div className="bg-[#303030] border-r border-white/10 py-2 flex flex-col gap-0.5">
           <SideItem Icon={LayoutGrid} label="Projets" active />
           <SideItem Icon={Database} label="PIM" />
           <SideItem Icon={Tags} label="Taxonomies" />
@@ -33,7 +33,7 @@ export function DashboardMock() {
             {projects.map((p, i) => (
               <div key={i} className="rounded border border-white/10 overflow-hidden">
                 <div className={`aspect-[4/3] bg-gradient-to-br ${p.gradient}`} />
-                <div className="px-2 py-1 text-[10px] text-white/70 truncate bg-[#282828]">{p.name}</div>
+                <div className="px-2 py-1 text-[10px] text-white/70 truncate bg-[#303030]">{p.name}</div>
               </div>
             ))}
           </div>

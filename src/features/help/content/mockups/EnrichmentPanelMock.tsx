@@ -2,7 +2,7 @@ import { Sparkles, Wand2, CheckCircle2 } from 'lucide-react'
 
 export function EnrichmentPanelMock() {
   return (
-    <div className="w-full max-w-[320px] bg-[#282828] border border-white/10 rounded-md overflow-hidden pointer-events-none">
+    <div className="w-full max-w-[320px] bg-[#303030] border border-white/10 rounded-md overflow-hidden pointer-events-none">
       <div className="h-9 px-3 flex items-center gap-2 border-b border-white/5">
         <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
         <span className="text-[11px] font-medium text-white/80">Enrichi par IA</span>

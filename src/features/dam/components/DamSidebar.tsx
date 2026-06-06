@@ -20,7 +20,7 @@ export function DamSidebar() {
   const { filters, setFilters } = useDamStore()
 
   return (
-    <div className="w-[220px] bg-[#212121] border-r border-white/5 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
+    <div className="w-[220px] bg-[#2a2a2a] border-r border-white/5 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
       <DamSearchBar />
       <DamSearchByImage />
 

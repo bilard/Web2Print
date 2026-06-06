@@ -97,7 +97,7 @@ export function InboxItem({ message }: { message: InboxMessage }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={2}
-            className="w-full bg-[#1c1c1c] border border-cyan-500/40 rounded-md px-2 py-1 text-[13px] text-white outline-none resize-y"
+            className="w-full bg-[#242424] border border-cyan-500/40 rounded-md px-2 py-1 text-[13px] text-white outline-none resize-y"
           />
           <div className="flex gap-1.5">
             <button
@@ -136,7 +136,7 @@ export function InboxItem({ message }: { message: InboxMessage }) {
         <>
           {/* overlay invisible : ferme le menu au clic extérieur */}
           <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-2 top-9 z-20 w-32 rounded-md border border-white/10 bg-[#282828] shadow-xl py-1">
+          <div className="absolute right-2 top-9 z-20 w-32 rounded-md border border-white/10 bg-[#303030] shadow-xl py-1">
             {!isOut && (
               <button
                 onClick={() => {

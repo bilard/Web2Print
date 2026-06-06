@@ -90,7 +90,7 @@ export function TaxonomySearchBar({ taxonomy }: TaxonomySearchBarProps) {
           <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
           <div
             ref={dropdownRef}
-            className="absolute top-full left-0 right-0 mt-1 z-20 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-56 overflow-y-auto"
+            className="absolute top-full left-0 right-0 mt-1 z-20 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-56 overflow-y-auto"
           >
             {results.map((r) => (
               <button

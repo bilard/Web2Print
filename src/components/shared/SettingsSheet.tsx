@@ -20,7 +20,7 @@ export function SettingsSheet() {
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setSettingsOpen(false)} />
-      <div className="fixed left-14 top-0 bottom-0 z-50 w-80 bg-[#282828] border-r border-white/10 flex flex-col shadow-2xl overflow-hidden">
+      <div className="fixed left-14 top-0 bottom-0 z-50 w-80 bg-[#303030] border-r border-white/10 flex flex-col shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">

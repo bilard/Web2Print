@@ -58,7 +58,7 @@ export function ModuleNavDrawer() {
         aria-expanded={open}
         className="fixed bottom-4 left-4 z-30
           w-10 h-10 rounded-full
-          bg-[#282828] border border-white/10 hover:border-indigo-500/50
+          bg-[#303030] border border-white/10 hover:border-indigo-500/50
           text-white/60 hover:text-indigo-400
           flex items-center justify-center
           shadow-lg
@@ -79,7 +79,7 @@ export function ModuleNavDrawer() {
           <nav
             role="menu"
             aria-label="Modules"
-            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#212121] border-r border-white/[0.06]
+            className="fixed inset-y-0 left-0 z-50 w-64 bg-[#2a2a2a] border-r border-white/[0.06]
               flex flex-col shadow-2xl
               animate-in slide-in-from-left duration-200"
           >
@@ -105,7 +105,7 @@ export function ModuleNavDrawer() {
                   className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-[13px]
                     text-white/45 hover:text-white/80 hover:bg-white/[0.04]
                     transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-                    focus-visible:ring-offset-1 focus-visible:ring-offset-[#212121]"
+                    focus-visible:ring-offset-1 focus-visible:ring-offset-[#2a2a2a]"
                 >
                   <Icon className={`w-4 h-4 shrink-0 opacity-60 ${accent}`} />
                   <span className="flex-1 text-left">{label}</span>

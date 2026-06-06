@@ -2,7 +2,7 @@ import { ChevronLeft, Save, Download, Undo2, Redo2 } from 'lucide-react'
 
 export function EditorHeaderMock() {
   return (
-    <div className="w-full max-w-[480px] bg-[#282828] border border-white/10 rounded-md pointer-events-none">
+    <div className="w-full max-w-[480px] bg-[#303030] border border-white/10 rounded-md pointer-events-none">
       <div className="h-12 flex items-center px-3 gap-3">
         <div className="flex items-center gap-1.5 text-white/40">
           <ChevronLeft className="w-4 h-4" />

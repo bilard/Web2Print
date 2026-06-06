@@ -29,7 +29,7 @@ export function EditorHeader() {
 
   return (
     <>
-    <header data-tour="header" className="h-12 bg-[#282828] border-b border-white/10 flex items-center px-3 gap-2 shrink-0 z-30">
+    <header data-tour="header" className="h-12 bg-[#303030] border-b border-white/10 flex items-center px-3 gap-2 shrink-0 z-30">
       {/* Back */}
       <button
         onClick={() => navigate('/dashboard')}

@@ -312,7 +312,7 @@ export function WorkflowEditor() {
   )
 
   return (
-    <div className="flex-1 bg-[#1c1c1c]" onDragOver={onDragOver} onDrop={onDrop}>
+    <div className="flex-1 bg-[#242424]" onDragOver={onDragOver} onDrop={onDrop}>
       <FlowEdgeDefs />
       <ReactFlow
         nodes={nodes}
@@ -336,11 +336,11 @@ export function WorkflowEditor() {
       >
         <Background color="#1f1f1f" gap={24} size={1} />
         <Controls
-          className="!bg-[#282828] !border-neutral-800 [&>button]:!bg-[#282828] [&>button]:!border-neutral-800 [&>button]:!text-neutral-400 [&>button:hover]:!bg-[#2d]"
+          className="!bg-[#303030] !border-neutral-800 [&>button]:!bg-[#303030] [&>button]:!border-neutral-800 [&>button]:!text-neutral-400 [&>button:hover]:!bg-[#34]"
           showInteractive={false}
         />
         <MiniMap
-          className="!bg-[#1c1c1c] !border !border-neutral-800"
+          className="!bg-[#242424] !border !border-neutral-800"
           maskColor="rgba(15,15,15,0.85)"
           nodeColor="#6366f1"
           nodeBorderRadius={4}

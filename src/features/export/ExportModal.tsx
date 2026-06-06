@@ -66,7 +66,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#282828] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+      <div className="bg-[#303030] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">

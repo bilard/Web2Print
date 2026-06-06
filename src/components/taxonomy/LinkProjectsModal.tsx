@@ -151,7 +151,7 @@ export function LinkProjectsModal({
         aria-labelledby="link-modal-title"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#282828] border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[82vh] flex flex-col"
+        className="bg-[#303030] border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[82vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.06]">
@@ -294,7 +294,7 @@ export function LinkProjectsModal({
                       </span>
 
                       {/* Thumbnail */}
-                      <div className="w-10 h-10 bg-[#1e] rounded-md flex items-center justify-center shrink-0 overflow-hidden border border-white/[0.06]">
+                      <div className="w-10 h-10 bg-[#26] rounded-md flex items-center justify-center shrink-0 overflow-hidden border border-white/[0.06]">
                         {project.thumbnail ? (
                           <img
                             src={project.thumbnail}

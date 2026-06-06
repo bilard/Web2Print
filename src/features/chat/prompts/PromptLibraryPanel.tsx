@@ -113,7 +113,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
 
   return (
     <>
-      <aside className="h-full w-full bg-[#282828] border-l border-white/10 flex flex-col">
+      <aside className="h-full w-full bg-[#303030] border-l border-white/10 flex flex-col">
         <div className="flex items-center gap-2 px-5 py-4 border-b border-white/10 shrink-0">
           <Sparkles className="w-4 h-4 text-violet-300" />
           <h2 className="text-[14px] font-semibold text-white">Bibliothèque de prompts</h2>
@@ -127,7 +127,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un prompt…"
-              className="w-full bg-[#1c1c1c] border border-white/10 focus:border-violet-500/50 rounded-lg pl-9 pr-3 py-2 text-[13px] text-white placeholder:text-white/30 outline-none transition-colors"
+              className="w-full bg-[#242424] border border-white/10 focus:border-violet-500/50 rounded-lg pl-9 pr-3 py-2 text-[13px] text-white placeholder:text-white/30 outline-none transition-colors"
             />
           </div>
 

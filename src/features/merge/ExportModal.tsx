@@ -69,7 +69,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[#282828] border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
+      <div className="bg-[#303030] border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <h3 className="text-sm font-semibold text-white">Export en masse</h3>

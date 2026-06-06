@@ -12,7 +12,7 @@ export function PromptToFlowPreview({ graph }: { graph: ValidatedGraph }) {
         {graph.summary && <p className="text-xs text-white/40 mt-0.5">{graph.summary}</p>}
       </div>
 
-      <div className="rounded-md border border-neutral-800 bg-[#1c1c1c] p-3 space-y-1.5 max-h-64 overflow-auto">
+      <div className="rounded-md border border-neutral-800 bg-[#242424] p-3 space-y-1.5 max-h-64 overflow-auto">
         {graph.nodes.map((n, i) => (
           <div key={n.id}>
             {i > 0 && <ArrowDown className="w-3 h-3 text-white/20 mx-auto my-0.5" />}

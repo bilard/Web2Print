@@ -24,7 +24,7 @@ export function DamPickerModal() {
   if (!damPickerOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[90] bg-[#1c1c1c] flex flex-col">
+    <div className="fixed inset-0 z-[90] bg-[#242424] flex flex-col">
       {/* Header with close button */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 shrink-0">
         <div className="text-xs font-medium text-white/70">Bibliothèque d'images</div>

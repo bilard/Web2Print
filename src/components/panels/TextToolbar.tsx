@@ -95,7 +95,7 @@ export function TextToolbar() {
   }
 
   return (
-    <div className="bg-[#1e1e1e] border-b border-white/10 px-3 py-1.5 flex items-center gap-1 flex-wrap shrink-0 z-20">
+    <div className="bg-[#262626] border-b border-white/10 px-3 py-1.5 flex items-center gap-1 flex-wrap shrink-0 z-20">
       {/* Font family */}
       <select
         value={style.fontFamily}

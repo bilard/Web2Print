@@ -11,7 +11,7 @@ export function ScreenshotBlock({ src, alt, caption }: ScreenshotBlockProps) {
         src={src}
         alt={alt}
         loading="lazy"
-        className="w-full rounded-lg border border-white/10 bg-[#1c1c1c]"
+        className="w-full rounded-lg border border-white/10 bg-[#242424]"
       />
       {caption && (
         <figcaption className="mt-1.5 text-[11px] text-white/40 text-center italic">

@@ -57,7 +57,7 @@ interface SendTelegramConfigUiProps {
 }
 
 const inputCls =
-  'w-full bg-[#1c1c1c] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
+  'w-full bg-[#242424] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
 
 function SendTelegramConfigUi({ config, onChange }: SendTelegramConfigUiProps) {
   return (

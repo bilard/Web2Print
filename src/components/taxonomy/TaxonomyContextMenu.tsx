@@ -18,7 +18,7 @@ export function TaxonomyContextMenu({
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="absolute right-2 top-8 z-50 w-36 bg-[#1e1e1e] border border-white/10 rounded-lg shadow-xl overflow-hidden">
+      <div className="absolute right-2 top-8 z-50 w-36 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden">
         <button
           onClick={(e) => { e.stopPropagation(); onRename() }}
           className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-white/60 hover:bg-white/[0.06] transition-colors"

@@ -39,7 +39,7 @@ export function TourLauncher({ tourId = 'editor' }: TourLauncherProps) {
       aria-label="Démarrer la visite guidée"
       className="fixed bottom-4 right-16 z-30
         w-10 h-10 rounded-full
-        bg-[#282828] border border-white/10 hover:border-indigo-500/50
+        bg-[#303030] border border-white/10 hover:border-indigo-500/50
         text-white/60 hover:text-indigo-400
         flex items-center justify-center
         shadow-lg

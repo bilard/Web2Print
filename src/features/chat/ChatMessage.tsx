@@ -129,7 +129,7 @@ const MARKDOWN_CLASSES =
   'prose-headings:text-white prose-headings:font-semibold ' +
   'prose-strong:text-white ' +
   'prose-code:text-indigo-300 prose-code:bg-white/[0.06] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:hidden prose-code:after:hidden ' +
-  'prose-pre:bg-[#191919] prose-pre:border prose-pre:border-white/10 ' +
+  'prose-pre:bg-[#222222] prose-pre:border prose-pre:border-white/10 ' +
   'prose-ul:text-white/80 prose-ol:text-white/80 prose-li:my-0.5 ' +
   'prose-a:text-indigo-400 hover:prose-a:text-indigo-300 ' +
   'prose-hr:border-white/10 prose-blockquote:text-white/60 prose-blockquote:border-l-white/20'

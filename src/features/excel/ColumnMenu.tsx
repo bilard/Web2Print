@@ -74,7 +74,7 @@ export function ColumnMenu({
       {open && createPortal(
         <div
           ref={menuRef}
-          className="fixed w-56 bg-[#1e1e1e] border border-white/15 rounded-xl shadow-2xl py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150"
+          className="fixed w-56 bg-[#262626] border border-white/15 rounded-xl shadow-2xl py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150"
           style={{ top: pos.top, left: pos.left, zIndex: 9999 }}
         >
           {/* Sort section */}

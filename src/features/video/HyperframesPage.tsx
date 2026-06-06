@@ -11,8 +11,8 @@ export function HyperframesPage({ embedded = false }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className={`flex flex-col h-full ${embedded ? '' : 'min-h-screen bg-[#1c1c1c]'}`}>
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1c1c1c]">
+    <div className={`flex flex-col h-full ${embedded ? '' : 'min-h-screen bg-[#242424]'}`}>
+      <header className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#242424]">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-fuchsia-500/15 border border-fuchsia-500/30 flex items-center justify-center">
             <FileCode2 className="w-4 h-4 text-fuchsia-300" />

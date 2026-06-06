@@ -100,7 +100,7 @@ function buildCss(): string {
   return `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: #1e;
+  background: #26;
   display: flex;
   flex-direction: column;
   align-items: center;
