@@ -1,7 +1,7 @@
 # EasyCatalog ↔ Web2Print — Interopérabilité (design)
 
 > Date : 2026-06-06
-> Statut : moitié **DATA** spécifiée (prête à planifier) · moitié **DOCUMENT** gelée (en attente d'échantillons + test)
+> Statut : moitié **DATA** spécifiée · moitié **DOCUMENT** spécifiée (verrou levé par échantillon réel, voir §2 + §11)
 
 ## 1. Contexte & objectif
 
@@ -12,11 +12,19 @@ EasyCatalog (65bit Software) est le plug-in InDesign de référence pour le publ
 
 L'intention globale est un **aller-retour** : Web2Print comme front web d'un workflow print piloté par EasyCatalog/InDesign.
 
-## 2. Le verrou technique & sa résolution
+## 2. Le verrou supposé — et sa levée par l'échantillon réel
 
-Les liens de champs EasyCatalog (« field specifiers », crochets verts) sont stockés comme **données privées du plug-in** dans le document InDesign, pas dans le modèle natif. **L'export IDML ne préserve pas de façon fiable les données privées d'un plug-in tiers** → le texte des champs risque d'arriver dans Web2Print comme du texte statique (dernière valeur fusionnée).
+**Hypothèse initiale (prudente, finalement infirmée)** : les liens de champs EasyCatalog seraient stockés comme données privées du plug-in et perdus à l'export IDML → texte statique côté Web2Print. Plan de repli : **Adopt Fields** (ré-adoption par motif contre une data source plate).
 
-**Résolution : ne pas dépendre de la préservation des données privées.** Le pont de retour est **Adopt Fields** — EasyCatalog ré-adopte des champs en faisant correspondre, par motif/regex, le **texte du document** à une **data source plate** (CSV/XLSX). Le levier qu'on contrôle est donc le **nommage des champs + une convention de texte reconnaissable**, pas la donnée privée.
+**Constat empirique sur `IMPORTS/EasyCatalog/test-easycatalog.idml` (InDesign 2026, DOMVersion 21.4)** : EasyCatalog sérialise **tout son modèle** dans l'IDML via des **attributs custom préservés** par l'export. Le verrou n'existe pas dans ce cas. Voir le format complet en §11.
+
+- Champs **texte** : paire de marqueurs `ECTagData="$ID/4 <champ>"` (début) / `ECTagData="$ID/5 <champ>"` (fin) autour d'un run, sur des `CharacterStyleRange` ; le marqueur lui-même est un `<Content>﻿</Content>` (U+FEFF invisible). Une 2ᵉ paire `$ID/2`/`$ID/3` porte la référence pleinement qualifiée (data source + workspace + clé d'enregistrement + champ).
+- Champs **image** : `ECPageItemData="2 2 <champ>"` sur le `Rectangle` du cadre image.
+- Structure de pagination : `ECPaginationContainerData`, `ECPaginationPageItemData`, `ECParentRelationships`, `ECChildRelationships`, `ECAppliedRuleSetsData`.
+
+**Conséquence design** : import **déterministe** (pas d'heuristique) et round-trip **preserve-and-patch** (on conserve les attributs `EC*` verbatim, on ne patche que le contenu visible) → EasyCatalog reconnaît ses champs **nativement, sans Adopt Fields**.
+
+**Réserves** : preuve sur **un** échantillon ; la survie peut dépendre de la version InDesign/EasyCatalog. Adopt Fields (§ repli) reste pertinent pour les documents **créés ex nihilo dans Web2Print** (pas d'attributs EC à préserver) → on émet alors un texte de champ reconnaissable + la data source.
 
 Réf. : [EasyCatalog – 65bit](https://www.65bit.com/docs/easycatalog-documentation/easycatalog/) · [Convert XML tags ↔ EasyCatalog](https://www.65bit.com/docs/converting-xml-tags-easycatalog-tags/) · [Exporting custom fields to data source](https://www.65bit.com/docs/exporting-custom-fields-easycatalog-data-source/) · [Supported data sources](https://easycatalog.nousmedis.com/setting-up-your-data/2.-importing-your-data/supported-data-sources)
 
@@ -105,31 +113,38 @@ Tout dans un zip **`EasyCatalog_<source>.zip`** : `data.csv` (ou `.xlsx`), `fiel
 
 La config interne d'un dossier data source EasyCatalog est **propriétaire** ([FAQ 65bit](https://www.65bit.com/docs/easycatalog-documentation/easycatalog-faqs/)). Mais EasyCatalog **importe directement CSV/XLSX** et fabrique le dossier lui-même → le natif est un *nice-to-have*. À reverse-engineerer **sur un échantillon réel** (`ecDataSourceFolder.ts`), jamais à l'aveugle. CSV/XLSX couvre le besoin data du round-trip.
 
-## 7. Moitié DOCUMENT — GELÉE (ne pas planifier avant levée de blocage)
+## 7. Moitié DOCUMENT — spécifiée (verrou levé)
 
-Bloquée sur un test + deux échantillons à fournir par l'utilisateur.
+Delta par rapport à l'import IDML existant (`src/features/idml/`), qui lit déjà spreads/stories/styles/anchored frames mais **ignore** toute notion de champ. Format de référence en §11.
 
-**Test décisif (le SI)** : doc EasyCatalog → export IDML → réouverture de l'IDML → **les champs se mettent-ils encore à jour** contre la data source ? Répond oui/non à « le lien survit-il à l'IDML ». L'inspection XML dira seulement *comment*.
+### 7.1 Import — détection des champs (déterministe)
 
-**Échantillons** :
-1. un `.idml` exporté depuis un doc piloté EasyCatalog (avec **un champ image**),
-2. un dossier data source natif EasyCatalog (pour 5.6 différé).
+- **Champs texte** : pendant le parse des stories (`idmlParser.ts:parseStory`), repérer les `CharacterStyleRange` portant `ECTagData`. Une paire `$ID/4 <champ>` … `$ID/5 <champ>` délimite un champ ; le run de contenu entre les deux est sa valeur courante. Émettre le placeholder `{{ecFieldName(<champ>)}}` dans le `templateText` du Textbox (mécanisme merge existant, cf. `useDataMerge`), en mappant `<champ>` → `ecFieldName` (même contrat qu'en §5.1).
+- **Champs image** : sur un `Rectangle`/cadre portant `ECPageItemData="… <champ>"`, poser `obj.data.bindings.src = ecFieldName(<champ>)`.
+- **Marqueurs** : les `<Content>﻿</Content>` (U+FEFF) sont des marqueurs invisibles → ne pas les rendre comme texte (filtrage U+FEFF).
+- **Préservation** : conserver l'`ECTagData`/`ECPageItemData`/pagination d'origine dans `obj.data.ec` (verbatim) pour le round-trip. On **n'interprète pas** la pagination (`ECPaginationContainerData`, parent/child) — on la transporte.
 
-**Questions ouvertes (à trancher sur le factuel)** :
-- Que contient réellement l'IDML : données privées EC ? structure XML InDesign (`<XMLElement>`) ? texte nu ?
-- Stratégie d'import : si XML présent → mapping `<XMLElement>` → `{{ecFieldName}}` + `obj.data.bindings` (ton merge sait déjà consommer ça). Sinon → heuristique Adopt-like (regex sur le texte) côté import.
-- Stratégie d'export document : émettre dans l'IDML (via ton `idmlExporter.ts` / `idmlPatcher.ts`) un texte de champ = `ecFieldName` reconnaissable par Adopt Fields, + livrer la data source de §5.
+### 7.2 Export — preserve-and-patch (round-trip natif)
 
-L'import existant (`src/features/idml/`) lit déjà spreads/stories/styles/anchored frames mais **aucune** notion de champ lié — c'est exactement le delta à concevoir une fois les échantillons en main.
+- **Cas document importé d'EasyCatalog** (chemin d'or) : repartir du **buffer IDML d'origine** (`idmlSource.ts`, déjà conservé) ; ne patcher que le **contenu visible** des runs de champ (texte entre marqueurs `$ID/4`/`$ID/5`, lien des cadres image), en **laissant tous les attributs `EC*` intacts**. EasyCatalog rouvre et reconnaît ses champs sans Adopt Fields. S'appuie sur `idmlExporter.ts` / `idmlPatcher.ts` (patch ciblé déjà en place).
+- **Cas document créé dans Web2Print** (repli) : pas d'attributs EC à préserver → émettre un texte de champ = `ecFieldName` reconnaissable, + livrer la data source de §5 → ré-adoption via **Adopt Fields** côté EasyCatalog.
+
+### 7.3 Hors interprétation (transport seulement)
+
+Le moteur de pagination EasyCatalog (regroupement record→champs, rule sets) n'est **pas** reproduit dans Web2Print. On édite des champs et on round-trip ; la re-pagination reste l'affaire d'EasyCatalog côté print.
 
 ## 8. Hors scope (YAGNI)
 
 - Téléchargement/rezippage des binaires images (sidecar `images.csv` suffit pour l'instant).
-- Dossier data source natif (différé sur échantillon).
-- Toute la moitié document (gelée).
+- Dossier data source natif (différé : EasyCatalog ingère CSV/XLSX directement ; à reverse-engineerer seulement sur demande + échantillon de dossier).
+- **Interprétation** du moteur de pagination EasyCatalog (on transporte les attributs, on ne les reproduit pas).
 - Connecteur live / ODBC vers EasyCatalog.
 
-## 9. Plan d'implémentation (moitié data uniquement)
+## 9. Plan d'implémentation
+
+Deux plans séquençables. Recommandation : **data d'abord** (autonome, faible risque, fournit le contrat `ecFieldName` que la moitié document réutilise), puis **document** (import détection champs → édition/merge → export preserve-and-patch, à valider sur `IMPORTS/EasyCatalog/test-easycatalog.idml`).
+
+### 9.A Moitié data
 
 1. `ecFieldName.ts` + tests (déterminisme, collisions, assainissement).
 2. `ecExport.ts` : CSV (délimiteurs, échappement, BOM), XLSX, `fields.json`, `images.csv`, champ-clé + tests.
@@ -144,3 +159,27 @@ L'import existant (`src/features/idml/`) lit déjà spreads/stories/styles/ancho
 - Champ-clé : isPrimary unique → utilisée ; non-unique → `_ec_key` synthétisée.
 - `fields.json` : mapping des types corrects.
 - Champs image : filename dérivé, `images.csv` cohérent.
+
+## 11. Annexe — format EasyCatalog dans l'IDML (relevé sur `IMPORTS/EasyCatalog/test-easycatalog.idml`)
+
+InDesign 2026, `idPkg DOMVersion="21.4"`. Aucune trace `XML/Tags.xml` (doc non tagué XML) ; tout passe par des attributs custom `EC*`.
+
+### Champs texte — dans `Stories/*.xml`, sur `CharacterStyleRange`
+```xml
+<CharacterStyleRange ... ECTagData="$ID/4 Description"><Content>﻿</Content></CharacterStyleRange>  <!-- début -->
+<CharacterStyleRange ...><Content>Description</Content></CharacterStyleRange>                      <!-- valeur courante -->
+<CharacterStyleRange ... ECTagData="$ID/5 Description"><Content>﻿</Content></CharacterStyleRange>  <!-- fin -->
+```
+- Codes marqueurs : `$ID/4` = début, `$ID/5` = fin (paire nom court). `$ID/2`/`$ID/3` = paire qualifiée : `$ID/<n> <dataSource> <workspace> <recordKey> <champ>`, ex. `…Trafic Z2524 Belgique Bazar Folder French_easycatWorkspace_20250516_115901 596756 Unité de vente`.
+- Marqueur visible = `<Content>﻿</Content>` (U+FEFF, BOM/zero-width no-break space).
+- Noms de champs **URL-encodés** dans l'attribut (`%20` espace, `%3a` `:`). À décoder.
+- Champs relevés : `Name`, `Description`, `References_page`, `Disponibilité FR-NL`, `Price`, `Prix Malin`, `Plus Produit 1/2/3`, `Asterisque Promo`, `Astérisque Exclusion`, `Note de bas page`, `Exclusion produits`, `Meca GG`, `Remarque PAO`…
+
+### Champs image — dans `Spreads/*.xml`, sur `Rectangle`
+```xml
+<Rectangle Self="ue2" ... ECPageItemData="2 2 Asset_001_page" ECPaginationContainerData="" ECParentRelationships="" ECChildRelationships="">
+```
+- `ECPageItemData="2 2 <champ>"`. Champs relevés : `Asset_001_page`…`Asset_020_page`, `Picto_1/2/3_Assets_page`, `Suppliers_01`…`Suppliers_04`.
+
+### Pagination (transport seulement)
+`ECPaginationContainerData`, `ECPaginationPageItemData` (ex. `1 1 5 Type 0x53500kInCatIsNameKey STUNT`), `ECParentRelationships`, `ECChildRelationships`, `ECAppliedRuleSetsData`.
