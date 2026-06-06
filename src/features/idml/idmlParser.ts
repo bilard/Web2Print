@@ -10,7 +10,7 @@
  * - Style cascade: CharacterStyleRange → AppliedCharacterStyle → ParagraphStyleRange → AppliedParagraphStyle
  */
 
-import { parseEcTag } from '@/features/easycatalog/ecIdmlImport'
+import { parseEcTag, parseEcImageField } from '@/features/easycatalog/ecIdmlImport'
 
 export interface IdmlColor {
   r: number; g: number; b: number; a: number
@@ -71,6 +71,8 @@ export interface IdmlObject {
   noLineBreaks?: boolean
   // True for anchored frames (position relative to parent text flow, not absolute)
   isAnchored?: boolean
+  // EasyCatalog : nom du champ image lié (cadre Rectangle portant ECPageItemData="2 2 <champ>")
+  ecImageField?: string
 }
 
 export interface CharStyleOverride {
@@ -1679,6 +1681,9 @@ function parseElement(
 
   const id = attr(el, 'Self') || `item_${Math.random().toString(36).slice(2)}`
 
+  // EasyCatalog : cadre image (Rectangle vide avec ECPageItemData="2 2 <champ>")
+  const ecImageField = parseEcImageField(el.getAttribute('ECPageItemData')) ?? undefined
+
   // Image/graphic child — InDesign uses different elements depending on file type:
   // <Image> for raster (JPG, PNG, TIF, PSD...), <EPS>, <PDF>, <WMF>, <ImportedPage>
   // All share <Link> child with LinkResourceURI pointing to the placed file.
@@ -1794,7 +1799,7 @@ function parseElement(
     rotation: Math.round(angle * 10) / 10,
     fill, stroke, strokeWeight, strokeAlignment, opacity,
     shadow,
-    hasImage, imagePath,
+    hasImage, imagePath, ecImageField,
     imageScaleX, imageScaleY, imageOffsetX, imageOffsetY, imageWidth, imageHeight,
     cornerRadius,
     localCenterX: localCx,
