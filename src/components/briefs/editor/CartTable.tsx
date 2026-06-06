@@ -124,7 +124,7 @@ export function CartTable({ items, onChange }: Props) {
           )}
         </tbody>
       </table>
-      <div className="border-t border-white/[0.06] bg-[#141414] px-3 py-2">
+      <div className="border-t border-white/[0.06] bg-[#212121] px-3 py-2">
         <button
           onClick={addManual}
           className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white"

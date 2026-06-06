@@ -69,7 +69,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
   }
 
   return (
-    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#0f0f0f] text-white flex flex-col overflow-hidden`}>
+    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#1c1c1c] text-white flex flex-col overflow-hidden`}>
       {!embedded && (
         <header className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0">
           <button
@@ -83,7 +83,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
         </header>
       )}
       <div className="flex-1 flex overflow-hidden">
-        <aside className="w-52 bg-[#141414] border-r border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
+        <aside className="w-52 bg-[#212121] border-r border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
           <TaxonomySidebar taxonomies={taxonomies ?? []} onImport={() => setImportOpen(true)} />
         </aside>
         <main className="flex-1 flex flex-col overflow-hidden">

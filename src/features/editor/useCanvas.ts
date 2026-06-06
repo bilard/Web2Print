@@ -134,7 +134,7 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
     const canvas = new Canvas(el, {
       width: canvasWidth,
       height: canvasHeight,
-      backgroundColor: '#111111',  // Dark background around the page
+      backgroundColor: '#1e1e1e',  // Dark background around the page
       selection: true,
       preserveObjectStacking: true,
     })

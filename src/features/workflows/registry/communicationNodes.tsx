@@ -293,7 +293,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
   }
 
   const inputCls =
-    'w-full bg-[#0f0f0f] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
+    'w-full bg-[#1c1c1c] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
 
   return (
     <div className="space-y-3">
@@ -427,7 +427,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             className={`${inputCls} resize-y font-mono`}
           />
           {autocomplete?.open && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#1a1a1a] border border-cyan-500/40 rounded-md shadow-xl z-20">
+            <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#282828] border border-cyan-500/40 rounded-md shadow-xl z-20">
               {availableColumns.length === 0 && (
                 <div className="px-2 py-1.5 text-[10px] text-neutral-500 italic border-b border-neutral-800">
                   Aucune colonne détectée upstream — connecte un Upload CSV.
@@ -511,7 +511,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
               value={config.attachmentFilename}
               onChange={(e) => onChange({ ...config, attachmentFilename: e.target.value })}
               placeholder="extract.csv"
-              className="w-full bg-[#0f0f0f] border border-neutral-700 rounded-md px-2 py-1 text-[11px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none"
+              className="w-full bg-[#1c1c1c] border border-neutral-700 rounded-md px-2 py-1 text-[11px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none"
             />
           </div>
         )}

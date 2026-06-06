@@ -158,11 +158,11 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
       onClick={onClose}
     >
       <div
-        className="w-[860px] max-w-[95vw] h-[640px] max-h-[90vh] bg-[#0f0f0f] border border-white/10 rounded-xl shadow-2xl flex overflow-hidden"
+        className="w-[860px] max-w-[95vw] h-[640px] max-h-[90vh] bg-[#1c1c1c] border border-white/10 rounded-xl shadow-2xl flex overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sidebar */}
-        <aside className="w-48 shrink-0 bg-[#0a0a0a] border-r border-white/[0.06] flex flex-col gap-3 p-3">
+        <aside className="w-48 shrink-0 bg-[#171717] border-r border-white/[0.06] flex flex-col gap-3 p-3">
           <div className="flex items-center gap-2">
             <svg viewBox="0 0 87.3 78" className="w-6 h-6 shrink-0">
               <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H1.1c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />

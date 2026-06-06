@@ -161,7 +161,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
             </button>
             {showCollections && (
               <div
-                className="absolute top-full right-0 mt-1 w-40 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-50 py-1 max-h-48 overflow-y-auto"
+                className="absolute top-full right-0 mt-1 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-xl z-50 py-1 max-h-48 overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {collections.length === 0 ? (

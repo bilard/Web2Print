@@ -15,8 +15,8 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
 export function ScrapingHubPage() {
   const [tab, setTab] = useState<Tab>('rules')
   return (
-    <div className="h-full flex flex-col bg-[#0f0f0f]">
-      <header className="flex items-center gap-1 px-4 py-2 border-b border-white/10 bg-[#1a1a1a]">
+    <div className="h-full flex flex-col bg-[#1c1c1c]">
+      <header className="flex items-center gap-1 px-4 py-2 border-b border-white/10 bg-[#282828]">
         <h1 className="text-sm font-semibold text-white/90 mr-4">Scraping Hub</h1>
         {TABS.map((t) => {
           const Icon = t.icon

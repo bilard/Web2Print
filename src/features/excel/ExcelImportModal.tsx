@@ -229,7 +229,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
 
     return (<>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '85vh' }}>
+        <div className="bg-[#282828] border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '85vh' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
             <div className="flex items-center gap-2">
@@ -393,7 +393,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   // Step 1: File selection
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex" style={{ height: 480 }}>
+      <div className="bg-[#282828] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex" style={{ height: 480 }}>
         {/* Left sidebar - sources */}
         <div className="w-48 bg-[#161616] border-r border-white/10 py-2 shrink-0">
           {sources.map((s) => (

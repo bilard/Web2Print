@@ -75,7 +75,7 @@ export function RulesTab() {
           placeholder={"# Règles de scraping\n\n## Conventions\n- Jamais de parser par marque\n- Les prix sont toujours TTC sauf mention contraire\n\n## Pièges connus\n- Puppeteer mass-click…\n"}
           className="p-4 bg-black/40 text-white/80 font-mono text-[12px] leading-relaxed resize-none outline-none border-r border-white/10"
         />
-        <div className="p-4 overflow-auto bg-[#0f0f0f] prose prose-invert prose-sm max-w-none prose-headings:text-white/90 prose-a:text-indigo-300 prose-code:text-amber-300 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded">
+        <div className="p-4 overflow-auto bg-[#1c1c1c] prose prose-invert prose-sm max-w-none prose-headings:text-white/90 prose-a:text-indigo-300 prose-code:text-amber-300 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content || '_Zone vide — écris du markdown à gauche_'}
           </ReactMarkdown>

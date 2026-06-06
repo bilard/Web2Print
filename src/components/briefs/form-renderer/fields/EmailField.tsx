@@ -20,7 +20,7 @@ export function EmailField({ field, value, onChange, disabled }: Props) {
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.placeholder ?? 'contact@exemple.fr'}
         disabled={disabled}
-        className="bg-[#0f0f0f] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+        className="bg-[#1c1c1c] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
       />
       {field.helpText && (
         <p className="text-[11px] text-white/40">{field.helpText}</p>

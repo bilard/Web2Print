@@ -124,7 +124,7 @@ function ImageMenuButton() {
       </button>
 
       {open && (
-        <div className="absolute left-full top-0 ml-2 bg-[#1a1a1a] border border-white/10 rounded-lg py-1 w-[170px] shadow-xl z-50">
+        <div className="absolute left-full top-0 ml-2 bg-[#282828] border border-white/10 rounded-lg py-1 w-[170px] shadow-xl z-50">
           {IMAGE_MENU_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -143,7 +143,7 @@ function ImageMenuButton() {
 
 export function ToolBar() {
   return (
-    <div data-tour="toolbar" className="w-11 bg-[#1a1a1a] border-r border-white/10 flex flex-col items-center py-2 gap-0.5 shrink-0">
+    <div data-tour="toolbar" className="w-11 bg-[#282828] border-r border-white/10 flex flex-col items-center py-2 gap-0.5 shrink-0">
       {/* Group 1: Selection */}
       <ToolButton tool="select" icon={MousePointer2} tooltip="Sélection (V)" />
 

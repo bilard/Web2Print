@@ -35,7 +35,7 @@ export function DamPage() {
   const canGdrive = useCan('dam.gdrive')
 
   return (
-    <div className="flex h-full bg-[#0f0f0f]">
+    <div className="flex h-full bg-[#1c1c1c]">
       <DamNavSidebar />
 
       {activeTab === 'stock' && <DamSidebar />}

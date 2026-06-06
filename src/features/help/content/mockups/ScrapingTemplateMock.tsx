@@ -2,7 +2,7 @@ import { MousePointer2, FileCode2, CheckCircle2 } from 'lucide-react'
 
 export function ScrapingTemplateMock() {
   return (
-    <div className="w-full max-w-[440px] bg-[#1a1a1a] border border-white/10 rounded-md overflow-hidden pointer-events-none">
+    <div className="w-full max-w-[440px] bg-[#282828] border border-white/10 rounded-md overflow-hidden pointer-events-none">
       <div className="h-9 px-3 flex items-center gap-2 border-b border-white/5">
         <span className="text-[11px] font-medium text-white">Nicoll</span>
         <span className="text-[10px] text-white/40 font-mono">nicoll.fr</span>
@@ -23,7 +23,7 @@ export function ScrapingTemplateMock() {
         </div>
       </div>
       <div className="grid grid-cols-[1fr_120px]">
-        <div className="p-3 bg-[#0a0a0a] border-r border-white/5">
+        <div className="p-3 bg-[#171717] border-r border-white/5">
           <div className="text-[9px] uppercase text-white/30 mb-1.5">Aperçu page</div>
           <div className="space-y-1.5">
             <div className="h-2 rounded bg-indigo-500/40 w-2/3" />

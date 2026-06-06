@@ -257,7 +257,7 @@ export default function DashboardPage() {
   const blocked = useIsBlocked()
   if (accessLoading) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -273,12 +273,12 @@ export default function DashboardPage() {
   const visibleMenuItems = menuItems.filter((m) => canSee(m.id))
 
   return (
-    <div className="h-screen bg-[#0f0f0f] text-white flex overflow-hidden">
+    <div className="h-screen bg-[#1c1c1c] text-white flex overflow-hidden">
       {/* Onboarding : réclame une clé LLM si aucune n'est configurée */}
       <OnboardingWizard />
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? 'w-56' : 'w-14'} bg-[#141414] border-r border-white/[0.06] flex flex-col shrink-0 transition-[width] duration-200`}
+        className={`${sidebarOpen ? 'w-56' : 'w-14'} bg-[#212121] border-r border-white/[0.06] flex flex-col shrink-0 transition-[width] duration-200`}
         aria-label="Menu principal"
       >
         {/* Logo (clic = toggle sidebar) */}
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                 title={!sidebarOpen ? label : undefined}
                 onClick={() => setActiveSection(id)}
                 onKeyDown={(e) => handleKeyDown(e, id)}
-                className={`w-full flex items-center ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'} py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[#141414] ${
+                className={`w-full flex items-center ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'} py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[#212121] ${
                   isActive
                     ? `${activeBg} ${activeText} font-medium`
                     : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04]'
@@ -427,7 +427,7 @@ export default function DashboardPage() {
       {activeSection === 'data' && canSee('data') ? (
         <div data-tour="section-data" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           }>
@@ -437,7 +437,7 @@ export default function DashboardPage() {
       ) : activeSection === 'taxonomies' && canSee('taxonomies') ? (
         <div data-tour="section-taxonomies" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
             </div>
           }>
@@ -447,7 +447,7 @@ export default function DashboardPage() {
       ) : activeSection === 'scraping-templates' && canSee('scraping-templates') ? (
         <div data-tour="section-scraping-templates" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           }>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
       ) : activeSection === 'scraping-hub' && canSee('scraping-hub') ? (
         <div data-tour="section-scraping-hub" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
             </div>
           }>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
       ) : activeSection === 'chat' && canSee('chat') ? (
         <div data-tour="section-chat" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
             </div>
           }>
@@ -477,7 +477,7 @@ export default function DashboardPage() {
       ) : activeSection === 'workflows' && canSee('workflows') ? (
         <div data-tour="section-workflows" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           }>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
       ) : activeSection === 'telegram' && canSee('telegram') ? (
         <div data-tour="section-telegram" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
             </div>
           }>
@@ -501,7 +501,7 @@ export default function DashboardPage() {
       ) : activeSection === 'hyperframes' && canSee('hyperframes') ? (
         <div data-tour="section-hyperframes" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#0f0f0f]">
+            <div className="flex-1 flex items-center justify-center h-full bg-[#1c1c1c]">
               <Loader2 className="w-8 h-8 text-fuchsia-500 animate-spin" />
             </div>
           }>
@@ -631,7 +631,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-white/20">Créez votre premier document pour commencer</p>
                   <button
                     onClick={() => setActiveSection('blank')}
-                    className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f0f]"
+                    className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1c1c1c]"
                   >
                     <Plus className="w-4 h-4" aria-hidden="true" />
                     Créer un document

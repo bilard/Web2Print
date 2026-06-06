@@ -92,7 +92,7 @@ export function UpdatePreviewModal({ open, onClose, onApply }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '80vh' }}>
+      <div className="bg-[#282828] border border-white/10 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '80vh' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">

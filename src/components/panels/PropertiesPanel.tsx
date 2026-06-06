@@ -138,7 +138,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
           <ChevronDown size={12} className="text-white/30" />
         </button>
         {menuOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-md shadow-xl overflow-hidden z-40">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-[#282828] border border-white/10 rounded-md shadow-xl overflow-hidden z-40">
             {FILL_IMAGE_SOURCES.map((source) => {
               const Icon = source.icon
               return (

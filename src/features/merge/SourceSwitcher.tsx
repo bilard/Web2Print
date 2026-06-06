@@ -100,7 +100,7 @@ export function SourceSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl z-40 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-[#282828] border border-white/10 rounded-lg shadow-xl z-40 overflow-hidden">
           <div className="px-3 py-1.5 border-b border-white/[0.06]">
             <span className="text-[9px] font-semibold text-white/40 uppercase tracking-wider">
               Sources de données

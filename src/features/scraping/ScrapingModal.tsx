@@ -729,11 +729,11 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               className="flex-1 bg-black/30 border border-white/10 rounded-md px-2 py-1 text-[11px] text-white/75 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer"
               title="Classer automatiquement les produits importés dans cette taxonomie"
             >
-              <option value="" className="bg-[#1a1a1a]">— Pas d'auto-classement</option>
+              <option value="" className="bg-[#282828]">— Pas d'auto-classement</option>
               {taxonomies.map((t) => {
                 const count = Object.keys(t.nodes).length
                 return (
-                  <option key={t.id} value={t.id} className="bg-[#1a1a1a]">
+                  <option key={t.id} value={t.id} className="bg-[#282828]">
                     {t.name} ({count} nœuds)
                   </option>
                 )

@@ -23,7 +23,7 @@ function TextInputConfigUi({ config, onChange }: TextInputConfigUiProps) {
         onChange={(e) => onChange({ ...config, text: e.target.value })}
         rows={5}
         placeholder="Saisis ton texte ici…"
-        className="w-full bg-[#0f0f0f] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none resize-y font-mono"
+        className="w-full bg-[#1c1c1c] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none resize-y font-mono"
       />
       <p className="text-[10px] text-neutral-600 leading-snug">
         Produit ce texte en sortie (port <code className="text-emerald-300/80">text</code>),

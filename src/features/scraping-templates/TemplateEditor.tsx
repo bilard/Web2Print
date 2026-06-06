@@ -136,10 +136,10 @@ export function TemplateEditor({ template, onChange, onSaved }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-[#1a1a1a] border border-white/10 rounded-lg">
+    <div className="flex flex-col gap-4 p-4 bg-[#282828] border border-white/10 rounded-lg">
       {/* Barre sticky : onglets à gauche + actions (Importer / Exporter / Enregistrer) à droite.
           Reste accrochée en haut du scroll pour toujours avoir Enregistrer sous la main. */}
-      <div className="sticky top-0 z-30 bg-[#1a1a1a] -mx-4 px-4 -mt-4 pt-4 pb-2 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
+      <div className="sticky top-0 z-30 bg-[#282828] -mx-4 px-4 -mt-4 pt-4 pb-2 border-b border-white/10 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setTab('visual')}

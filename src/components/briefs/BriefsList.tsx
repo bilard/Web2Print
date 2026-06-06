@@ -167,7 +167,7 @@ export function BriefsList({ taxonomy }: Props) {
             <div
               key={b.id}
               onClick={() => openBriefEditor(b.id)}
-              className="group flex items-center gap-3 bg-[#141414] border border-white/[0.06] rounded-md px-3 py-2 cursor-pointer hover:border-indigo-500/40 transition-colors"
+              className="group flex items-center gap-3 bg-[#212121] border border-white/[0.06] rounded-md px-3 py-2 cursor-pointer hover:border-indigo-500/40 transition-colors"
             >
               <FileText className="w-3.5 h-3.5 text-white/30 shrink-0" />
               <h4 className="text-[13px] text-white/90 font-medium truncate flex-1">
@@ -204,7 +204,7 @@ function BriefThumbnailCard({ brief, onOpen, onDelete }: BriefThumbnailCardProps
   return (
     <div
       onClick={onOpen}
-      className="group bg-[#141414] border border-white/[0.06] rounded-md overflow-hidden cursor-pointer hover:border-indigo-500/40 transition-colors"
+      className="group bg-[#212121] border border-white/[0.06] rounded-md overflow-hidden cursor-pointer hover:border-indigo-500/40 transition-colors"
     >
       <div className="aspect-video bg-white/[0.03] flex items-center justify-center overflow-hidden">
         {thumb ? (

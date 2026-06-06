@@ -12,7 +12,7 @@ React 18, Vite 8, TypeScript strict (cible ES2022), Fabric.js v7, Zustand v4, Re
 - Typer explicitement les props (pas d'`any`)
 - Fabric.js : logique d'édition centralisée dans `features/editor/`. Les modules d'import/export (`features/idml`, `features/pptx`, `features/export`, `features/merge`) et les panneaux d'édition (`components/panels`, `components/canvas`) peuvent importer Fabric directement pour le parsing et le rendu.
 - Firebase : accès uniquement via hooks de `features/`
-- **Dark mode obligatoire** : fond `#0f0f0f`, surfaces `#1a1a1a`, accents `#6366f1`
+- **Dark mode obligatoire** (palette adoucie) : fond `#1c1c1c`, surfaces `#282828`, accents `#6366f1`
 - Répondre toujours en **français**
 
 ## Fichiers à ne jamais modifier

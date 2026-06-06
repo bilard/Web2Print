@@ -381,7 +381,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const headerBtn = 'flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-md text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-colors'
 
   return (
-    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#0f0f0f] text-white flex flex-col overflow-hidden`}>
+    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#1c1c1c] text-white flex flex-col overflow-hidden`}>
       {/* Portal for sidebar toolbar */}
       {portalTarget && createPortal(sidebarToolbar, portalTarget)}
 

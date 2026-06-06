@@ -143,7 +143,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
                 {brief.deck?.slides.map((s, i) => (
                   <li
                     key={i}
-                    className="text-[11px] text-white/70 bg-[#141414] border border-white/[0.06] rounded px-3 py-2 truncate"
+                    className="text-[11px] text-white/70 bg-[#212121] border border-white/[0.06] rounded px-3 py-2 truncate"
                     title={s.title}
                   >
                     <span className="text-indigo-300">{i + 1}.</span>{' '}
@@ -205,7 +205,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
           </section>
         </div>
       </div>
-      <div className="border-t border-white/[0.06] bg-[#141414] px-6 py-3 flex justify-end shrink-0">
+      <div className="border-t border-white/[0.06] bg-[#212121] px-6 py-3 flex justify-end shrink-0">
         <button
           onClick={handleNext}
           disabled={update.isPending}

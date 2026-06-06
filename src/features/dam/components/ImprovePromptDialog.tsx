@@ -105,7 +105,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
 
   return (
     <div className="fixed inset-0 z-[95] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-[#1a1a1a] border border-white/10 rounded-xl flex flex-col shadow-2xl">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#282828] border border-white/10 rounded-xl flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
                           setCustomInputs((c) => ({ ...c, [q.id]: e.target.value }))
                         }
                         placeholder="Ta réponse…"
-                        className="w-full bg-[#111] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
+                        className="w-full bg-[#1e] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
                       />
                     )}
                   </div>

@@ -46,7 +46,7 @@ function CollectionCard({
       className="group relative rounded-lg overflow-hidden cursor-pointer bg-white/5 hover:bg-white/10 transition"
     >
       {/* Preview mosaic */}
-      <div className="aspect-[4/3] bg-[#111] relative overflow-hidden">
+      <div className="aspect-[4/3] bg-[#1e] relative overflow-hidden">
         {previews.length === 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="w-10 h-10 text-white/10" />
@@ -56,7 +56,7 @@ function CollectionCard({
         ) : (
           <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-px">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="overflow-hidden bg-[#111]">
+              <div key={i} className="overflow-hidden bg-[#1e]">
                 {previews[i] ? (
                   <img src={previews[i]} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -131,7 +131,7 @@ function CollectionRow({
       {/* Mini previews */}
       <div className="flex -space-x-2 shrink-0">
         {previews.length === 0 ? (
-          <div className="w-10 h-10 rounded bg-[#111] flex items-center justify-center">
+          <div className="w-10 h-10 rounded bg-[#1e] flex items-center justify-center">
             <ImageIcon className="w-4 h-4 text-white/10" />
           </div>
         ) : (
@@ -140,7 +140,7 @@ function CollectionRow({
               key={i}
               src={url}
               alt=""
-              className="w-10 h-10 rounded object-cover border-2 border-[#1a1a1a]"
+              className="w-10 h-10 rounded object-cover border-2 border-[#282828]"
             />
           ))
         )}
@@ -286,7 +286,7 @@ export function DamCollections() {
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Nom de la collection"
-            className="flex-1 bg-[#111] border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
+            className="flex-1 bg-[#1e] border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
           />
           <button onClick={handleCreate} className="px-3 py-1.5 rounded bg-indigo-500 text-white text-sm hover:bg-indigo-600">
             OK

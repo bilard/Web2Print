@@ -11,7 +11,7 @@ const layers = [
 
 export function LayersPanelMock() {
   return (
-    <div className="w-full max-w-[260px] bg-[#1a1a1a] border border-white/10 rounded-md pointer-events-none">
+    <div className="w-full max-w-[260px] bg-[#282828] border border-white/10 rounded-md pointer-events-none">
       <div className="h-9 px-3 flex items-center justify-between border-b border-white/5">
         <span className="text-[11px] font-medium text-white/80 uppercase tracking-wider">Calques</span>
         <span className="text-[10px] text-white/40">{layers.length}</span>

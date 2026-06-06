@@ -10,7 +10,7 @@ interface Props {
 
 export function CartSummary({ subtotal, total, discount, onDiscountChange }: Props) {
   return (
-    <div className="border border-white/[0.06] rounded-md p-4 bg-[#141414] flex flex-col gap-3 text-[12px]">
+    <div className="border border-white/[0.06] rounded-md p-4 bg-[#212121] flex flex-col gap-3 text-[12px]">
       <div className="flex justify-between text-white/60">
         <span>Sous-total</span>
         <span>{formatPrice(subtotal)}</span>
@@ -25,7 +25,7 @@ export function CartSummary({ subtotal, total, discount, onDiscountChange }: Pro
             if (!t) onDiscountChange(undefined)
             else onDiscountChange({ type: t as 'percent' | 'amount', value: discount?.value ?? 0 })
           }}
-          className="bg-[#0f0f0f] border border-white/[0.08] rounded px-2 py-1 text-[11px] text-white"
+          className="bg-[#1c1c1c] border border-white/[0.08] rounded px-2 py-1 text-[11px] text-white"
         >
           <option value="">Aucune</option>
           <option value="percent">%</option>
@@ -39,7 +39,7 @@ export function CartSummary({ subtotal, total, discount, onDiscountChange }: Pro
           onChange={(e) =>
             discount && onDiscountChange({ ...discount, value: Number(e.target.value) })
           }
-          className="bg-[#0f0f0f] border border-white/[0.08] rounded px-2 py-1 w-20 text-right text-[11px] text-white disabled:opacity-40"
+          className="bg-[#1c1c1c] border border-white/[0.08] rounded px-2 py-1 w-20 text-right text-[11px] text-white disabled:opacity-40"
         />
       </div>
 

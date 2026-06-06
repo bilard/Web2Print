@@ -28,7 +28,7 @@ export function RunPanel() {
 
   return (
     <div
-      className="border-t border-neutral-800 bg-[#0f0f0f] text-sm shrink-0 relative flex flex-col"
+      className="border-t border-neutral-800 bg-[#1c1c1c] text-sm shrink-0 relative flex flex-col"
       style={{ height: collapsed ? 30 : height }}
     >
       {!collapsed ? (
@@ -63,7 +63,7 @@ export function RunPanel() {
             const spec = node ? nodeRegistry.get(node.type) : undefined
             const exportResult = st.status === 'success' ? findExportResult(st.outputs) : null
             return (
-              <div key={id} className="bg-[#1a1a1a] rounded p-2 text-xs">
+              <div key={id} className="bg-[#282828] rounded p-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-neutral-300 truncate">
                     {spec?.label ?? node?.type ?? id} <span className="text-neutral-600">· {st.status}</span>

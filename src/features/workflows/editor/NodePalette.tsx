@@ -188,7 +188,7 @@ export function NodePalette() {
   }
 
   return (
-    <aside className="w-60 border-r border-neutral-800 bg-[#0f0f0f] overflow-y-auto p-3">
+    <aside className="w-60 border-r border-neutral-800 bg-[#1c1c1c] overflow-y-auto p-3">
       <h3 className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 tracking-wider">
         Blocs
       </h3>
@@ -280,7 +280,7 @@ export function NodePalette() {
                     return (
                       <li key={spec.type}>
                         <div
-                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-[#0d0d0d] border border-neutral-900 text-neutral-700 cursor-not-allowed select-none"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-[#191919] border border-neutral-900 text-neutral-700 cursor-not-allowed select-none"
                           title={prevLabel ? `Disponible après ${prevLabel}.` : 'Verrouillé.'}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0 text-neutral-700" />

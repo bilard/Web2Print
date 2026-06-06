@@ -43,7 +43,7 @@ export function OptionHelp({ text }: OptionHelpProps) {
           <div
             role="tooltip"
             style={{ position: 'fixed', right: box.right, top: box.top, maxWidth: 240 }}
-            className="z-[60] pointer-events-none bg-[#1a1a1a] border border-indigo-500/40 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug text-white/85 shadow-xl"
+            className="z-[60] pointer-events-none bg-[#282828] border border-indigo-500/40 rounded-lg px-2.5 py-1.5 text-[11px] leading-snug text-white/85 shadow-xl"
           >
             {text}
           </div>,

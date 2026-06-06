@@ -249,7 +249,7 @@ function LinkVendorModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#1a1a1a] border border-white/10 rounded-lg w-full max-w-lg flex flex-col max-h-[75vh]"
+        className="bg-[#282828] border border-white/10 rounded-lg w-full max-w-lg flex flex-col max-h-[75vh]"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
           <div className="flex items-center gap-2">

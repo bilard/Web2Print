@@ -6,7 +6,7 @@ interface MockupBlockProps {
 
 export function MockupBlock({ Component }: MockupBlockProps) {
   return (
-    <div className="my-3 p-4 rounded-lg border border-white/10 bg-[#0f0f0f] flex items-center justify-center">
+    <div className="my-3 p-4 rounded-lg border border-white/10 bg-[#1c1c1c] flex items-center justify-center">
       <Component />
     </div>
   )

@@ -352,7 +352,7 @@ export function CanvasContainer() {
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full relative overflow-hidden bg-[#111] ${dragOver ? 'ring-2 ring-inset ring-indigo-500/50' : ''}`}
+      className={`w-full h-full relative overflow-hidden bg-[#1e] ${dragOver ? 'ring-2 ring-inset ring-indigo-500/50' : ''}`}
       onDragOver={(e) => {
         if (
           e.dataTransfer.types.includes('application/x-asset-image') ||

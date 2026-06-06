@@ -54,7 +54,7 @@ export function DamNavSidebar() {
   return (
     <nav
       aria-label="Navigation DAM"
-      className="w-[230px] bg-[#0f0f0f] border-r border-white/5 flex flex-col shrink-0"
+      className="w-[230px] bg-[#1c1c1c] border-r border-white/5 flex flex-col shrink-0"
     >
       <div className="flex items-center gap-2.5 px-5 h-14 border-b border-white/5">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">

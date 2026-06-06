@@ -7,7 +7,7 @@ import { RolesTab } from './RolesTab'
 export function AccessAdminPage() {
   const [tab, setTab] = useState<'users' | 'roles'>('users')
   return (
-    <div className="flex-1 overflow-y-auto bg-[#0f0f0f] p-6">
+    <div className="flex-1 overflow-y-auto bg-[#1c1c1c] p-6">
       <div className="max-w-[1800px] mx-auto flex flex-col gap-4">
         <h1 className="text-xl font-bold text-white">Utilisateurs & rôles</h1>
         <nav className="flex gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1 self-start">

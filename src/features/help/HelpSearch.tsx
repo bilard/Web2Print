@@ -133,7 +133,7 @@ export function HelpSearch() {
       {showDropdown && (
         <div
           className="absolute left-0 right-0 top-full mt-1 z-50
-            bg-[#1a1a1a] border border-white/10 rounded-md shadow-2xl
+            bg-[#282828] border border-white/10 rounded-md shadow-2xl
             max-h-[60vh] overflow-y-auto"
         >
           {suggestions.length > 0 && (

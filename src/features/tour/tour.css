@@ -1,8 +1,8 @@
 /* Thème dark de la popover driver.js, aligné sur les tokens Web2Print
-   (surface #1a1a1a, accent #6366f1). Classe appliquée via popoverClass. */
+   (surface #282828, accent #6366f1). Classe appliquée via popoverClass. */
 
 .driver-popover.w2p-tour {
-  background-color: #1a1a1a;
+  background-color: #282828;
   color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 0.75rem;
@@ -66,14 +66,14 @@
 
 /* Flèche colorée à la teinte de la surface, quel que soit le côté */
 .driver-popover.w2p-tour .driver-popover-arrow-side-left.driver-popover-arrow {
-  border-left-color: #1a1a1a;
+  border-left-color: #282828;
 }
 .driver-popover.w2p-tour .driver-popover-arrow-side-right.driver-popover-arrow {
-  border-right-color: #1a1a1a;
+  border-right-color: #282828;
 }
 .driver-popover.w2p-tour .driver-popover-arrow-side-top.driver-popover-arrow {
-  border-top-color: #1a1a1a;
+  border-top-color: #282828;
 }
 .driver-popover.w2p-tour .driver-popover-arrow-side-bottom.driver-popover-arrow {
-  border-bottom-color: #1a1a1a;
+  border-bottom-color: #282828;
 }

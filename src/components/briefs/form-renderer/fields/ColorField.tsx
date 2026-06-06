@@ -21,14 +21,14 @@ export function ColorField({ field, value, onChange, disabled }: Props) {
           value={hex}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className="w-10 h-10 rounded-md bg-[#0f0f0f] border border-white/[0.08] cursor-pointer disabled:opacity-50"
+          className="w-10 h-10 rounded-md bg-[#1c1c1c] border border-white/[0.08] cursor-pointer disabled:opacity-50"
         />
         <input
           type="text"
           value={hex}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className="flex-1 bg-[#0f0f0f] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white font-mono focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+          className="flex-1 bg-[#1c1c1c] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white font-mono focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
         />
       </div>
       {field.helpText && (

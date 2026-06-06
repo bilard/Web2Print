@@ -219,7 +219,7 @@ export function TaxonomyManager() {
               {taxonomies.map((t) => {
                 const count = Object.keys(t.nodes).length
                 return (
-                  <option key={t.id} value={t.id} className="bg-[#1a1a1a]">
+                  <option key={t.id} value={t.id} className="bg-[#282828]">
                     {t.name} ({count} nœuds)
                   </option>
                 )

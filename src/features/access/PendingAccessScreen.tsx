@@ -7,8 +7,8 @@ export function PendingAccessScreen({ blocked = false }: { blocked?: boolean }) 
   const signOut = useSignOut()
   const email = useAuthStore((s) => s.user?.email)
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-6">
-      <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-10 max-w-md text-center flex flex-col items-center gap-4">
+    <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center p-6">
+      <div className="bg-[#282828] border border-white/10 rounded-2xl p-10 max-w-md text-center flex flex-col items-center gap-4">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${blocked ? 'bg-red-500/15' : 'bg-amber-500/15'}`}>
           <ShieldAlert className={`w-6 h-6 ${blocked ? 'text-red-400' : 'text-amber-400'}`} />
         </div>

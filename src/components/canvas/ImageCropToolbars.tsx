@@ -148,7 +148,7 @@ export function ImageCropToolbars({ canvas }: Props) {
       style={{ left: centerX, top: Math.max(8, screenTop - 76) }}
     >
       {cropping ? (
-        <div className="flex items-stretch rounded-md border border-white/10 bg-[#1a1a1a] shadow-xl overflow-hidden">
+        <div className="flex items-stretch rounded-md border border-white/10 bg-[#282828] shadow-xl overflow-hidden">
           <button
             type="button"
             onClick={cancelCrop}
@@ -169,7 +169,7 @@ export function ImageCropToolbars({ canvas }: Props) {
         </div>
       ) : (
         <div ref={replaceMenuRef} className="relative">
-          <div className="flex items-stretch rounded-md border border-white/10 bg-[#1a1a1a] shadow-xl overflow-hidden">
+          <div className="flex items-stretch rounded-md border border-white/10 bg-[#282828] shadow-xl overflow-hidden">
             <button
               type="button"
               onClick={() => activeImage && enterCropMode(activeImage)}
@@ -209,7 +209,7 @@ export function ImageCropToolbars({ canvas }: Props) {
             )}
           </div>
           {replaceMenuOpen && (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 min-w-[180px] rounded-md border border-white/10 bg-[#1a1a1a] shadow-xl overflow-hidden z-40">
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 min-w-[180px] rounded-md border border-white/10 bg-[#282828] shadow-xl overflow-hidden z-40">
               {REPLACE_SOURCES.map((source) => {
                 const Icon = source.icon
                 return (

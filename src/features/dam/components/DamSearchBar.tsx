@@ -110,7 +110,7 @@ export function DamSearchBar() {
 
   return (
     <div className="relative">
-      <div className="flex items-center bg-[#111] border border-white/10 rounded-lg h-9 px-3 gap-2 focus-within:border-indigo-500/50">
+      <div className="flex items-center bg-[#1e] border border-white/10 rounded-lg h-9 px-3 gap-2 focus-within:border-indigo-500/50">
         <Search className="w-4 h-4 text-white/30 shrink-0" />
         <input
           ref={inputRef}
@@ -143,7 +143,7 @@ export function DamSearchBar() {
         <ul
           id="dam-autocomplete-list"
           role="listbox"
-          className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-lg py-2 z-50 shadow-xl overflow-hidden"
+          className="absolute top-full left-0 right-0 mt-1 bg-[#282828] border border-white/10 rounded-lg py-2 z-50 shadow-xl overflow-hidden"
         >
           {suggestions.map((s, i) => {
             const active = i === activeIndex

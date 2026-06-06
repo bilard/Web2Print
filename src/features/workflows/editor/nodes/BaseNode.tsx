@@ -111,29 +111,29 @@ const CATEGORY_STYLES: Record<NodeSpec['category'], CategoryStyle> = {
 const STATUS_DOT: Record<string, ReactNode> = {
   pending: null,
   running: (
-    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-indigo-500 flex items-center justify-center">
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1c1c1c] border border-indigo-500 flex items-center justify-center">
       <Loader2 className="w-2.5 h-2.5 text-indigo-400 animate-spin" />
     </div>
   ),
   success: (
-    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-emerald-500 flex items-center justify-center">
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1c1c1c] border border-emerald-500 flex items-center justify-center">
       <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
     </div>
   ),
   error: (
-    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-red-500 flex items-center justify-center">
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1c1c1c] border border-red-500 flex items-center justify-center">
       <AlertCircle className="w-2.5 h-2.5 text-red-400" />
     </div>
   ),
   skipped: (
-    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0f0f0f] border border-neutral-600 flex items-center justify-center">
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1c1c1c] border border-neutral-600 flex items-center justify-center">
       <MinusCircle className="w-2.5 h-2.5 text-neutral-500" />
     </div>
   ),
 }
 
 const HANDLE_BASE =
-  '!w-2.5 !h-2.5 !border-2 !border-[#0f0f0f] hover:!w-3 hover:!h-3 transition-all'
+  '!w-2.5 !h-2.5 !border-2 !border-[#1c1c1c] hover:!w-3 hover:!h-3 transition-all'
 
 type DragHighlight = 'compatible' | 'incompatible' | 'inactive' | 'idle'
 

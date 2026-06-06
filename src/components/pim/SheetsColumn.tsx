@@ -51,7 +51,7 @@ export function SheetsColumn() {
   }, [sheets, filter])
 
   return (
-    <aside className="w-[200px] shrink-0 border-r border-white/[0.06] bg-[#0f0f0f] flex flex-col">
+    <aside className="w-[200px] shrink-0 border-r border-white/[0.06] bg-[#1c1c1c] flex flex-col">
       <div className="p-2 border-b border-white/[0.06]">
         <p className="text-[10px] uppercase tracking-wider text-white/30 px-1 mb-1.5">
           Sources <span className="text-white/20">· {sheets.length}</span>

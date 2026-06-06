@@ -455,7 +455,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     (generating || !!(preview && (preview.svg || preview.composition)))
 
   const previewPanel = previewMode ? (
-    <div className="flex flex-col gap-3 border-t lg:border-t-0 lg:border-l border-white/5 bg-[#141414]/40 p-5 min-h-[60vh] lg:min-h-0 overflow-y-auto">
+    <div className="flex flex-col gap-3 border-t lg:border-t-0 lg:border-l border-white/5 bg-[#212121]/40 p-5 min-h-[60vh] lg:min-h-0 overflow-y-auto">
       {generating && (
         <div className="shrink-0">
           <RenderProgress
@@ -513,8 +513,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   ) : null
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-sm flex flex-col">
-      <div className="sticky top-0 z-30 flex items-center justify-between px-5 py-3 border-b border-white/10 bg-[#141414] shrink-0 shadow-sm">
+    <div className="fixed inset-0 z-50 bg-[#171717]/95 backdrop-blur-sm flex flex-col">
+      <div className="sticky top-0 z-30 flex items-center justify-between px-5 py-3 border-b border-white/10 bg-[#212121] shrink-0 shadow-sm">
         <div className="flex items-center gap-2">
           <Film className="w-4 h-4 text-indigo-400" />
           <h2 className="font-semibold text-white text-sm">
@@ -534,7 +534,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           En mode preview/génération, la 2e colonne passe à 1fr pour donner toute
           la place à la preview et la bibliothèque est masquée. */}
       <div
-        className={`flex-1 grid grid-cols-1 min-h-0 bg-[#1a1a1a] ${
+        className={`flex-1 grid grid-cols-1 min-h-0 bg-[#282828] ${
           previewMode ? 'lg:grid-cols-2' : 'lg:grid-cols-[1fr_360px]'
         }`}
       >
@@ -723,7 +723,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   </div>
                 )}
 
-                <div className="flex items-stretch gap-2 sticky bottom-0 bg-[#1a1a1a] pt-2 -mx-5 px-5 pb-1">
+                <div className="flex items-stretch gap-2 sticky bottom-0 bg-[#282828] pt-2 -mx-5 px-5 pb-1">
                   <button
                     onClick={handleGenerate}
                     disabled={generating}

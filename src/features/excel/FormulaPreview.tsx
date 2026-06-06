@@ -39,7 +39,7 @@ export function FormulaPreview({ formula, columns, rows, decimals }: FormulaPrev
       <p className="text-[11px] text-white/40 uppercase tracking-wider mb-1.5">
         Apercu (5 premieres lignes)
       </p>
-      <div className="bg-[#141414] border border-white/[0.06] rounded-lg divide-y divide-white/[0.04]">
+      <div className="bg-[#212121] border border-white/[0.06] rounded-lg divide-y divide-white/[0.04]">
         {previewRows.map((row, i) => {
           const result = evaluateFormula(formula, row, columns)
           const isError = typeof result === 'string' && result.startsWith('#ERREUR')

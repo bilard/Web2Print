@@ -473,13 +473,13 @@ export function DataTable() {
         <thead>
           {/* Row 1: Column name */}
           <tr>
-            <th className="sticky top-0 left-0 z-30 w-10 bg-[#141414] border-b-2 border-r border-white/[0.08] align-middle">
+            <th className="sticky top-0 left-0 z-30 w-10 bg-[#212121] border-b-2 border-r border-white/[0.08] align-middle">
               <AddColumnMenu onAdd={(type, label) => handleAddColumn(type, label, 'start')} />
             </th>
             {visibleColumns.map((col, colIdx) => (
               <th
                 key={col.key}
-                className={`sticky top-0 z-20 bg-[#141414] border-b-2 border-r border-white/[0.08] text-left relative group/col transition-all ${
+                className={`sticky top-0 z-20 bg-[#212121] border-b-2 border-r border-white/[0.08] text-left relative group/col transition-all ${
                   dragOverIdx === colIdx && dragColIdx !== null && dragColIdx !== colIdx
                     ? 'border-l-2 border-l-indigo-500'
                     : ''
@@ -579,19 +579,19 @@ export function DataTable() {
                 />
               </th>
             ))}
-            <th className="sticky top-0 z-20 w-10 bg-[#141414] border-b-2 border-white/[0.08] align-middle">
+            <th className="sticky top-0 z-20 w-10 bg-[#212121] border-b-2 border-white/[0.08] align-middle">
               <AddColumnMenu onAdd={handleAddColumn} />
             </th>
-            <th className="sticky top-0 right-0 z-30 w-10 bg-[#141414] border-b-2 border-l border-white/[0.08]" />
+            <th className="sticky top-0 right-0 z-30 w-10 bg-[#212121] border-b-2 border-l border-white/[0.08]" />
           </tr>
 
           {/* Row 2: Type + Stats — sticky below row 1 (top ~37px) */}
           <tr>
-            <th className="sticky top-[37px] left-0 z-30 w-10 bg-[#111111] border-b border-r border-white/[0.06]" />
+            <th className="sticky top-[37px] left-0 z-30 w-10 bg-[#1e1e1e] border-b border-r border-white/[0.06]" />
             {visibleColumns.map((col, vColIdx) => (
               <th
                 key={col.key}
-                className={`sticky top-[37px] z-20 bg-[#111111] border-b border-r border-white/[0.06] text-left ${dragColIdx !== null && dragColIdx === vColIdx ? 'opacity-30' : ''}`}
+                className={`sticky top-[37px] z-20 bg-[#1e1e1e] border-b border-r border-white/[0.06] text-left ${dragColIdx !== null && dragColIdx === vColIdx ? 'opacity-30' : ''}`}
                 style={{ width: getColWidth(col) }}
               >
                 <div className="flex flex-col gap-1 px-3 py-1.5">
@@ -619,8 +619,8 @@ export function DataTable() {
                 </div>
               </th>
             ))}
-            <th className="sticky top-[37px] z-20 w-10 bg-[#111111] border-b border-white/[0.06]" />
-            <th className="sticky top-[37px] right-0 z-30 w-10 bg-[#111111] border-b border-l border-white/[0.06]" />
+            <th className="sticky top-[37px] z-20 w-10 bg-[#1e1e1e] border-b border-white/[0.06]" />
+            <th className="sticky top-[37px] right-0 z-30 w-10 bg-[#1e1e1e] border-b border-l border-white/[0.06]" />
           </tr>
         </thead>
 
@@ -816,7 +816,7 @@ function DataRow({
       className={`group transition-colors hover:bg-white/[0.07] cursor-pointer ${rowIdx % 2 === 1 ? 'bg-white/[0.025]' : ''}`}
     >
       <td
-        className={`sticky left-0 z-10 relative px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a] cursor-grab active:cursor-grabbing`}
+        className={`sticky left-0 z-10 relative px-1 py-[7px] border-b border-r border-white/[0.05] text-center align-middle ${rowIdx % 2 === 1 ? 'bg-[#212121]' : 'bg-[#1c1c1c]'} group-hover:bg-[#282828] cursor-grab active:cursor-grabbing`}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
@@ -905,7 +905,7 @@ function DataRow({
       })}
 
       <td
-        className={`sticky right-0 z-10 px-1 py-1.5 border-b border-l border-white/[0.05] text-center ${rowIdx % 2 === 1 ? 'bg-[#141414]' : 'bg-[#0f0f0f]'} group-hover:bg-[#1a1a1a]`}
+        className={`sticky right-0 z-10 px-1 py-1.5 border-b border-l border-white/[0.05] text-center ${rowIdx % 2 === 1 ? 'bg-[#212121]' : 'bg-[#1c1c1c]'} group-hover:bg-[#282828]`}
         onClick={(e) => e.stopPropagation()}
       >
         {canDelete && (

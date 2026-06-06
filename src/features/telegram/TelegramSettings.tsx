@@ -5,7 +5,7 @@ import { useTelegramStore } from '@/stores/telegram.store'
 import { getTelegramBotInfo } from '@/lib/telegramApi'
 
 const inputCls =
-  'w-full bg-[#0f0f0f] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
+  'w-full bg-[#1c1c1c] border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
 
 type ConnStatus =
   | { kind: 'idle' }

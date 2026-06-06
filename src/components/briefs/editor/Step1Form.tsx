@@ -124,7 +124,7 @@ export function Step1Form({ brief, onAdvance }: Props) {
           />
         </div>
       </div>
-      <div className="border-t border-white/[0.06] bg-[#141414] px-6 py-3 flex justify-end shrink-0">
+      <div className="border-t border-white/[0.06] bg-[#212121] px-6 py-3 flex justify-end shrink-0">
         <button
           onClick={handleNext}
           disabled={update.isPending}
