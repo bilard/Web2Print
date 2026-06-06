@@ -27,3 +27,11 @@ export function parseEcTag(raw: string | null): EcTagInfo {
   if (close) return { kind: 'close', field: decodeEcName(close[1]) }
   return { kind: 'none' }
 }
+
+/** Extrait le nom de champ d'un cadre image EasyCatalog : ECPageItemData="2 2 <nom>". */
+export function parseEcImageField(raw: string | null): string | null {
+  if (!raw) return null
+  const m = /^2 2 (.+)$/.exec(raw.trim())
+  if (!m) return null
+  return decodeEcName(m[1])
+}

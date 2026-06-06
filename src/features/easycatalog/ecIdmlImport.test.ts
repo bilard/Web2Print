@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseEcTag, decodeEcName } from './ecIdmlImport'
+import { parseEcTag, decodeEcName, parseEcImageField } from './ecIdmlImport'
 
 describe('decodeEcName', () => {
   it('décode les espaces URL-encodés', () => {
@@ -32,5 +32,20 @@ describe('parseEcTag', () => {
     expect(parseEcTag(null)).toEqual({ kind: 'none' })
     expect(parseEcTag('')).toEqual({ kind: 'none' })
     expect(parseEcTag('AllCaps')).toEqual({ kind: 'none' })
+  })
+})
+
+describe('parseEcImageField', () => {
+  it('extrait le nom de champ d’un cadre image "2 2 <nom>"', () => {
+    expect(parseEcImageField('2 2 Asset_001_page')).toBe('Asset_001_page')
+    expect(parseEcImageField('2 2 Suppliers_01')).toBe('Suppliers_01')
+  })
+  it('décode les espaces URL-encodés', () => {
+    expect(parseEcImageField('2 2 Picto%201')).toBe('Picto 1')
+  })
+  it('ignore les formes non-image (ECPaginationPageItemData, vide, null)', () => {
+    expect(parseEcImageField('1 1 5 Type 0x53 STUNT')).toBeNull()
+    expect(parseEcImageField('')).toBeNull()
+    expect(parseEcImageField(null)).toBeNull()
   })
 })
