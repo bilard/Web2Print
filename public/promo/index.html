@@ -48,6 +48,9 @@
   .mono{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
   .grad-text{background:var(--grad);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 7s linear infinite}
   @keyframes shimmer{to{background-position:220% center}}
+  /* Titres de section : dégradé animé en couleur (balayage fluide) */
+  .scene-text h2,.shead h2,.cta h2{background:var(--grad);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:titleHue 8s ease-in-out infinite}
+  @keyframes titleHue{0%,100%{background-position:0% center}50%{background-position:100% center}}
 
   /* NAV */
   header.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:rgba(6,6,9,.6);border-bottom:1px solid var(--line)}
@@ -663,7 +666,7 @@
 
   @media(prefers-reduced-motion:reduce){
     .reveal{animation:none;opacity:1;transform:none}
-    .aurora b,.pulse,.grad-text{animation:none}
+    .aurora b,.pulse,.grad-text,.scene-text h2,.shead h2,.cta h2{animation:none}
     html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .mod,html.js .spec,html.js .stat,html.js .tag,html.js .cta{opacity:1;transform:none;transition:none}
     .hero-screen .poster .ph,.hero-screen .poster .badge,.hero-screen .poster .price,.hero-screen .poster .tt,.hero-screen .poster,.hero-screen .poster .hand,.demo-cursor,.hero-screen .spill:last-child{animation:none}
     html.js #scraper .kv dd,html.js #scraper .thumbs i,html.js #scraper .route,html.js #editer .poster .ph,html.js #editer .poster .badge,html.js #editer .poster .price,html.js #editer .poster .tt,html.js #editer .poster .hand{opacity:1}
