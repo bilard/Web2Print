@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import { ecTypeFor, imageFileName, resolveKeyInfo } from './ecExport'
 import { buildCsv } from './ecExport'
+import { buildFieldDescriptors, buildImagesCsv, buildXlsxRows } from './ecExport'
 import { buildEcFieldNames } from './ecFieldName'
 import type { ExcelSheet, ExcelColumn, ExcelRow } from '@/features/excel/types'
 
@@ -102,5 +103,67 @@ describe('buildCsv', () => {
     const csv = buildCsv(s2, names2, key2, 'tab').replace('﻿', '')
     expect(csv.split('\r\n')[0]).toBe('_ec_key\tSKU')
     expect(csv.split('\r\n')[1]).toBe('row_1\tA1')
+  })
+})
+
+describe('buildFieldDescriptors', () => {
+  const cols = [
+    col('sku', 'SKU', { isPrimary: true }),
+    col('price', 'Prix', { fieldType: 'currency' }),
+    col('img', 'Visuel', { fieldType: 'image' }),
+  ]
+  const s = sheet(cols, [{ _id: 'r0', sku: 'A1', price: 10, img: 'u' }])
+  const names = buildEcFieldNames(cols)
+  const key = resolveKeyInfo(s, names)
+
+  it('décrit chaque colonne avec son type EC et marque la clé', () => {
+    const d = buildFieldDescriptors(s, names, key)
+    expect(d).toEqual([
+      { ecFieldName: 'SKU', sourceKey: 'sku', label: 'SKU', ecType: 'alphanumeric', isKey: true },
+      { ecFieldName: 'Prix', sourceKey: 'price', label: 'Prix', ecType: 'numeric', isKey: false },
+      { ecFieldName: 'Visuel', sourceKey: 'img', label: 'Visuel', ecType: 'image', isKey: false },
+    ])
+  })
+  it('ajoute un descripteur _ec_key en tête si synthétisée', () => {
+    const cols2 = [col('sku', 'SKU', { isPrimary: true })]
+    const s2 = sheet(cols2, [{ _id: 'r0', sku: 'A1' }, { _id: 'r1', sku: 'A1' }])
+    const n2 = buildEcFieldNames(cols2)
+    const d = buildFieldDescriptors(s2, n2, resolveKeyInfo(s2, n2))
+    expect(d[0]).toEqual({ ecFieldName: '_ec_key', sourceKey: '_ec_key', label: 'Clé EasyCatalog', ecType: 'alphanumeric', isKey: true })
+  })
+})
+
+describe('buildImagesCsv', () => {
+  it('renvoie null sans colonne image', () => {
+    const cols = [col('sku', 'SKU')]
+    expect(buildImagesCsv(sheet(cols, [{ _id: 'r0', sku: 'A' }]), buildEcFieldNames(cols))).toBeNull()
+  })
+  it('liste url→filename pour les cellules image non vides', () => {
+    const cols = [col('img', 'Visuel', { fieldType: 'image' })]
+    const s = sheet(cols, [
+      { _id: 'r0', img: 'https://x/o/p%2Fm.png?token=z' },
+      { _id: 'r1', img: '' },
+    ])
+    const csv = buildImagesCsv(s, buildEcFieldNames(cols))!.replace('﻿', '')
+    expect(csv.split('\r\n')).toEqual([
+      'ecFieldName,row_key,url,filename',
+      'Visuel,row_1,https://x/o/p%2Fm.png?token=z,m.png',
+    ])
+  })
+})
+
+describe('buildXlsxRows', () => {
+  it('produit des objets clés par ecFieldName, images en nom de fichier', () => {
+    const cols = [col('sku', 'SKU', { isPrimary: true }), col('img', 'Visuel', { fieldType: 'image' })]
+    const s = sheet(cols, [{ _id: 'r0', sku: 'A1', img: 'https://x/o/m.png?t=1' }])
+    const names = buildEcFieldNames(cols)
+    expect(buildXlsxRows(s, names, resolveKeyInfo(s, names))).toEqual([{ SKU: 'A1', Visuel: 'm.png' }])
+  })
+  it('inclut _ec_key quand synthétisée', () => {
+    const cols = [col('sku', 'SKU', { isPrimary: true })]
+    const s = sheet(cols, [{ _id: 'r0', sku: 'A1' }, { _id: 'r1', sku: 'A1' }])
+    const names = buildEcFieldNames(cols)
+    const rows = buildXlsxRows(s, names, resolveKeyInfo(s, names))
+    expect(rows[0]).toEqual({ _ec_key: 'row_1', SKU: 'A1' })
   })
 })

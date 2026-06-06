@@ -84,3 +84,70 @@ export function buildCsv(
   })
   return '﻿' + lines.join('\r\n')
 }
+
+export interface EcFieldDescriptor {
+  ecFieldName: string
+  sourceKey: string
+  label: string
+  ecType: EcFieldType
+  isKey: boolean
+}
+
+/** Décrit chaque colonne exportée (type EC + clé), pour fields.json et l’UI. */
+export function buildFieldDescriptors(
+  sheet: ExcelSheet,
+  ecNames: Map<string, string>,
+  keyInfo: EcKeyInfo,
+): EcFieldDescriptor[] {
+  const out: EcFieldDescriptor[] = []
+  if (keyInfo.synthesized) {
+    out.push({ ecFieldName: '_ec_key', sourceKey: '_ec_key', label: 'Clé EasyCatalog', ecType: 'alphanumeric', isKey: true })
+  }
+  for (const c of sheet.columns) {
+    const ecFieldName = ecNames.get(c.key) ?? c.key
+    out.push({
+      ecFieldName,
+      sourceKey: c.key,
+      label: c.label,
+      ecType: ecTypeFor(c.fieldType),
+      isKey: !keyInfo.synthesized && ecFieldName === keyInfo.keyName,
+    })
+  }
+  return out
+}
+
+/** Manifeste url→filename des champs image, ou null si aucun. */
+export function buildImagesCsv(sheet: ExcelSheet, ecNames: Map<string, string>): string | null {
+  const imageCols = sheet.columns.filter((c) => c.fieldType === 'image')
+  if (imageCols.length === 0) return null
+  const lines: string[] = ['ecFieldName,row_key,url,filename']
+  sheet.rows.forEach((row, idx) => {
+    for (const c of imageCols) {
+      const url = cellToString(row[c.key])
+      if (!url) continue
+      lines.push(
+        [ecNames.get(c.key) ?? c.key, `row_${idx + 1}`, url, imageFileName(url)]
+          .map((v) => escapeCsv(v, ','))
+          .join(','),
+      )
+    }
+  })
+  return '﻿' + lines.join('\r\n')
+}
+
+/** Objets de lignes clés par ecFieldName (pour l’export XLSX). */
+export function buildXlsxRows(
+  sheet: ExcelSheet,
+  ecNames: Map<string, string>,
+  keyInfo: EcKeyInfo,
+): Record<string, unknown>[] {
+  return sheet.rows.map((row, idx) => {
+    const obj: Record<string, unknown> = {}
+    if (keyInfo.synthesized) obj['_ec_key'] = `row_${idx + 1}`
+    for (const c of sheet.columns) {
+      obj[ecNames.get(c.key) ?? c.key] =
+        c.fieldType === 'image' ? imageFileName(cellToString(row[c.key])) : (row[c.key] ?? '')
+    }
+    return obj
+  })
+}
