@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node dev.mjs",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/promo-as-root.mjs",
     "build:ext": "cd extension && vite build",
     "lint": "eslint . --max-warnings=99999",
     "preview": "vite preview",

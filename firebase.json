@@ -2,13 +2,18 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "redirects": [
-      { "source": "/", "destination": "/promo/", "type": 302 }
-    ],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "rewrites": [{ "source": "**", "destination": "/_app.html" }],
     "headers": [
       {
+        "source": "/",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      },
+      {
         "source": "/index.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      },
+      {
+        "source": "/_app.html",
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       },
       {
