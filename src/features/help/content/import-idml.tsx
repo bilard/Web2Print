@@ -34,6 +34,10 @@ Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, image
 L'éditeur reconstitue la maquette à l'identique sur un canvas Fabric.js. Tu peux ensuite ajouter des placeholders (\`{{title}}\`, \`{{price}}\`…) pour le data-merge.`,
     },
     {
+      type: 'text',
+      md: `> **Gabarit issu d'EasyCatalog ?** Ses champs sont reconnus **automatiquement** (texte → \`{{placeholders}}\`, cadres image liés) et le réexport IDML les conserve. Voir la rubrique dédiée **EasyCatalog (InDesign)**.`,
+    },
+    {
       type: 'menu-link',
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.import' },
       label: 'Importer un fichier',

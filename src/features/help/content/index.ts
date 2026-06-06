@@ -3,6 +3,7 @@ import { gettingStarted } from './getting-started'
 import { editorSection } from './editor'
 import { damSection } from './dam'
 import { importIdmlSection } from './import-idml'
+import { easyCatalogSection } from './easycatalog'
 import { importPptxSection } from './import-pptx'
 import { importExcelSection } from './import-excel'
 import { importImageSection } from './import-image'
@@ -26,6 +27,7 @@ export const helpSections: HelpSection[] = [
   editorSection,
   hyperframesSection,
   importIdmlSection,
+  easyCatalogSection,
   importPptxSection,
   importExcelSection,
   importImageSection,
