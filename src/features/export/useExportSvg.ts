@@ -173,7 +173,7 @@ function normalizeGradientStops(svg: string): string {
       const fixedBody = body.replace(
         /<stop\b([^/>]*?)\/?>/g,
         (_stopMatch, attrs: string) => {
-          let fixed = attrs.replace(
+          const fixed = attrs.replace(
             /style="([^"]*)"/,
             (_, style: string) => {
               const m = /stop-color\s*:\s*(rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\s*\))/i.exec(style)

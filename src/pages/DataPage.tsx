@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Upload, Download, Search, ArrowLeft,
   Table2, Tag, Plus, Save, Cloud, CloudOff,
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
-  MoreVertical, ExternalLink, Sparkles, Layers,
+  MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
 } from 'lucide-react'
@@ -25,7 +25,7 @@ import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 const ExcelImportModal = lazy(() =>
   import('@/features/excel/ExcelImportModal').then((m) => ({ default: m.ExcelImportModal })),
 )
-import { DataTable, isRowEnriched } from '@/features/excel/DataTable'
+import { DataTable } from '@/features/excel/DataTable'
 import { TaxonomyManager } from '@/features/excel/TaxonomyManager'
 import { FieldsPanel } from '@/features/excel/FieldsPanel'
 import { TaxonomyNavigator } from '@/features/excel/TaxonomyNavigator'

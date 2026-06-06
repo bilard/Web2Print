@@ -1,6 +1,5 @@
 // src/features/workflows/registry/builtin.ts
 import { portTypeRegistry, registerBuiltinPorts } from '../runtime/ports'
-import { nodeRegistry } from './index'
 
 // Side-effect imports register node specs into nodeRegistry
 import './importNodes'

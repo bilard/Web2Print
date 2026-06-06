@@ -1581,7 +1581,7 @@ export async function decomposeOnCanvas(
   let kept: number
   try {
     const toastId: string | number = 'wf'
-    let keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId)
+    const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId)
     if (keptSem === null) {
       kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId)
     } else {

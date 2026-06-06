@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag } from 'lucide-react'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'

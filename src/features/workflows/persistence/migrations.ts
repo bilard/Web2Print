@@ -10,7 +10,7 @@ const migrators: Record<number, Migrator> = {
 }
 
 export function migrate(wf: Partial<Workflow> & { schemaVersion?: number }): Workflow {
-  let from = wf.schemaVersion ?? 1
+  const from = wf.schemaVersion ?? 1
   if (from > CURRENT_SCHEMA_VERSION) {
     throw new Error(`Workflow schemaVersion ${from} is from the future (current=${CURRENT_SCHEMA_VERSION})`)
   }

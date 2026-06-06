@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { LayoutSchema, type LayoutBlock } from './semanticLayout'
+import { LayoutSchema } from './semanticLayout'
 
 describe('semanticLayout schema', () => {
   it('parse une réponse Gemini valide', () => {
