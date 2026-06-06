@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const setDoc = vi.fn(() => Promise.resolve())
-const doc = vi.fn((_db: unknown, _col: unknown, uid: unknown) => ({ _path: `users/${uid}` }))
+const setDoc = vi.fn((..._a: unknown[]): Promise<void> => Promise.resolve())
+const doc = vi.fn((..._a: unknown[]) => ({ _path: `users/${_a[2]}` }))
 vi.mock('firebase/firestore', () => ({ setDoc: (...a: unknown[]) => setDoc(...a), doc: (...a: unknown[]) => doc(...a) }))
 vi.mock('@/lib/firebase/config', () => ({ db: {} }))
 
