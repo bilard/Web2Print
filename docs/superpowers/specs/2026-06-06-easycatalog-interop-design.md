@@ -131,6 +131,8 @@ Delta par rapport à l'import IDML existant (`src/features/idml/`), qui lit déj
 - **Cas document importé d'EasyCatalog** (chemin d'or) : repartir du **buffer IDML d'origine** (`idmlSource.ts`, déjà conservé) ; ne patcher que le **contenu visible** des runs de champ (texte entre marqueurs `$ID/4`/`$ID/5`, lien des cadres image), en **laissant tous les attributs `EC*` intacts**. EasyCatalog rouvre et reconnaît ses champs sans Adopt Fields. S'appuie sur `idmlExporter.ts` / `idmlPatcher.ts` (patch ciblé déjà en place).
 - **Cas document créé dans Web2Print** (repli) : pas d'attributs EC à préserver → émettre un texte de champ = `ecFieldName` reconnaissable, + livrer la data source de §5 → ré-adoption via **Adopt Fields** côté EasyCatalog.
 
+> **Statut 2026-06-06** : export IDML batch round-trip LIVRÉ — `templatizeEcContents` (`src/features/merge/ecTemplatizer.ts`) réinjecte `{{champ}}` entre les marqueurs conservés avant `buildMultiPageIdml`. Images : passe-plat (cadre + `ECPageItemData` conservés). Reste éventuel : forme qualifiée `$ID/2`/`$ID/3`, champs vides sans run de valeur.
+
 ### 7.3 Hors interprétation (transport seulement)
 
 Le moteur de pagination EasyCatalog (regroupement record→champs, rule sets) n'est **pas** reproduit dans Web2Print. On édite des champs et on round-trip ; la re-pagination reste l'affaire d'EasyCatalog côté print.
