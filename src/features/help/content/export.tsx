@@ -6,11 +6,11 @@ export const exportSection: HelpSection = {
   id: 'export',
   title: 'Export multi-format',
   category: 'Export',
-  intro: 'Sortir un PDF imprimeur, un IDML, un PPTX, un SVG ou un PNG — unitaire ou en série.',
+  intro: 'Sortir un PDF imprimeur, un IDML, un PPTX, un SVG, un PNG ou un dossier web HTML — unitaire ou en série.',
   blocks: [
     {
       type: 'text',
-      md: `L'éditeur exporte vers cinq formats. Chaque format vise un usage précis.`,
+      md: `L'éditeur exporte vers six formats. Chaque format vise un usage précis.`,
     },
     { type: 'mockup', Component: ExportDialogMock },
     {
@@ -28,6 +28,7 @@ export const exportSection: HelpSection = {
 | **PPTX** | Présentation commerciale, démo client |
 | **SVG** | Web, intégration site, réseaux sociaux statiques |
 | **PNG** | Vignettes, miniatures, social media |
+| **HTML** | Dossier web complet (ZIP : \`index.html\`, \`style.css\`, \`assets/\`) — textes sélectionnables, formes en CSS |
 
 Tous les exports sont fidèles à la maquette en cours dans l'éditeur. Le data-merge actif influence le contenu mais pas le format.`,
     },

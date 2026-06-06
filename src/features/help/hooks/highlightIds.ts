@@ -14,6 +14,7 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.telegram',
   'dashboard.sidebar.hyperframes',
   'dashboard.sidebar.access',
+  'dashboard.sidebar.settings',
 
   // Editor header
   'editor-header.save',

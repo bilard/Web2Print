@@ -20,12 +20,12 @@ Exemples de briefs :
       type: 'text',
       md: `### Modèles IA utilisés
 
-IBS-Studio utilise par défaut :
+IBS-Studio s'appuie par défaut sur :
 
-- **Claude Opus 4.7** (Anthropic) — synthèse rédactionnelle, traduction, restructuration
-- **Gemini 3.1 Pro** (Google) — fallback + génération d'images
+- **Claude Opus** (Anthropic) — synthèse rédactionnelle, traduction, restructuration
+- **Gemini** (Google) — fallback + génération d'images
 
-Les clés API sont configurées dans les paramètres de l'app. Aucun envoi automatique : chaque appel est explicite (clic utilisateur).`,
+Le modèle exact de chaque fournisseur se choisit dans _Réglages → IA_ ; le bouton **« Mettre à jour tous les LLM »** réaligne la sélection sur les dernières versions. Les clés API sont configurées dans les paramètres de l'app. Aucun envoi automatique : chaque appel est explicite (clic utilisateur).`,
     },
     {
       type: 'text',
@@ -47,7 +47,7 @@ Les clés API sont configurées dans les paramètres de l'app. Aucun envoi autom
       type: 'text',
       md: `### Génération d'images
 
-Le DAM intègre la génération d'images via Gemini (modèle dit « Nano Banana »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.
+Le DAM intègre la génération d'images via Gemini (modèle image dit « Nano Banana 2 »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.
 
 Cas d'usage : visuels d'ambiance, mockups, illustrations éditoriales. Pour des photos produits réelles, scraping et upload restent prioritaires.`,
     },

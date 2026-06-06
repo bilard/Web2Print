@@ -367,6 +367,7 @@ export default function DashboardPage() {
                 <p className="text-[12px] text-white/50 truncate">{user?.displayName}</p>
               </div>
               <button
+                data-help-id="dashboard.sidebar.settings"
                 onClick={() => setActiveSection('settings')}
                 className={`flex-shrink-0 p-1 rounded transition-colors ${
                   activeSection === 'settings'
@@ -397,6 +398,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <button
+                data-help-id="dashboard.sidebar.settings"
                 onClick={() => setActiveSection('settings')}
                 className={`p-1 rounded transition-colors ${
                   activeSection === 'settings'

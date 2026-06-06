@@ -1,5 +1,7 @@
 import type { HelpSection } from './types'
 import { gettingStarted } from './getting-started'
+import { onboardingSection } from './onboarding'
+import { navigationSection } from './navigation'
 import { editorSection } from './editor'
 import { damSection } from './dam'
 import { importIdmlSection } from './import-idml'
@@ -24,6 +26,8 @@ import { settingsSection } from './settings'
 
 export const helpSections: HelpSection[] = [
   gettingStarted,
+  onboardingSection,
+  navigationSection,
   editorSection,
   hyperframesSection,
   importIdmlSection,

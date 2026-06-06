@@ -54,7 +54,7 @@ export const editorSection: HelpSection = {
     { type: 'mockup', Component: ToolBarMock },
     {
       type: 'text',
-      md: `Les outils de création (Texte, Rectangle, Ellipse, Ligne) ajoutent immédiatement une forme sur le canvas puis reviennent à l'outil Sélection. L'outil Image ouvre le panneau Images dans la colonne de droite.`,
+      md: `Les outils de création (Texte, Rectangle, Ellipse, Ligne) ajoutent immédiatement une forme sur le canvas puis reviennent à l'outil Sélection. L'outil **Image** ouvre un petit menu — **Stock images**, **Mes images**, **Uploader** ou **Générer (IA)** — puis le sélecteur d'images correspondant.`,
     },
     {
       type: 'menu-link',
@@ -154,7 +154,7 @@ export const editorSection: HelpSection = {
     { type: 'text', md: '### Sauvegarder & exporter' },
     {
       type: 'text',
-      md: `La sauvegarde est **automatique** mais le bouton Sauvegarder permet un commit manuel. Le bouton Exporter (voir _Header_ plus haut) ouvre la fenêtre de choix de format (PDF, IDML, PPTX, SVG, PNG) — détaillée dans la section _Export multi-format_.`,
+      md: `La sauvegarde est **automatique** mais le bouton Sauvegarder permet un commit manuel. Le bouton Exporter (voir _Header_ plus haut) ouvre la fenêtre de choix de format (PDF, IDML, PPTX, SVG, PNG, HTML) — détaillée dans la section _Export multi-format_.`,
     },
     { type: 'mockup', Component: ExportButtonMock },
     { type: 'text', md: '### Raccourcis de l\'éditeur' },
