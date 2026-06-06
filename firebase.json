@@ -2,6 +2,9 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      { "source": "/", "destination": "/promo/", "type": 302 }
+    ],
     "rewrites": [{ "source": "**", "destination": "/index.html" }],
     "headers": [
       {
@@ -9,11 +12,11 @@
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       },
       {
-        "source": "/",
+        "source": "/promo{,/**}",
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       },
       {
-        "source": "/promo{,/**}",
+        "source": "/@(dashboard|login|editor|onboarding){,/**}",
         "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       },
       {
