@@ -1128,6 +1128,12 @@ function parseStory(
       // Rebuild: check which CSRs had a named style
       {
         let pos = 0
+        // Reproduit la substitution EasyCatalog ({{champ}}) afin que `pos` reste align\u00e9
+        // sur combinedText \u2014 sinon les nested styles situ\u00e9s apr\u00e8s un champ EC, dont la
+        // valeur brute (ex. "12,99") a \u00e9t\u00e9 remplac\u00e9e par un placeholder de longueur
+        // diff\u00e9rente ("{{Prix}}"), seraient appliqu\u00e9s aux mauvaises positions.
+        let ecF: string | null = null
+        let ecE = false
         for (let c = 0; c < charEls.length; c++) {
           const charEl = charEls[c]
           const csId = attr(charEl, 'AppliedCharacterStyle')
@@ -1146,7 +1152,20 @@ function parseStory(
               }
             }
           }
-          const text = textParts.join('')
+          let text = textParts.join('')
+          const ecTag = parseEcTag(charEl.getAttribute('ECTagData'))
+          if (ecTag.kind === 'open') { ecF = ecTag.field ?? null; ecE = false; continue }
+          if (ecTag.kind === 'close') {
+            if (ecF && !ecE) pos += `{{${ecF}}}`.length
+            ecF = null
+            ecE = false
+            continue
+          }
+          if (ecF) {
+            if (ecE) continue
+            text = `{{${ecF}}}`
+            ecE = true
+          }
           if (!isNoStyle) {
             for (let i = 0; i < text.length; i++) hasExplicitStyle.add(pos + i)
           }
