@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useAccessLoading, useIsPending, useIsBlocked } from '@/features/access/useAccess'
 import { useVisibleModules, type Section } from './modules'
+import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 
 /**
  * Menu de navigation global des modules, sous forme de drawer.
@@ -110,6 +111,9 @@ export function ModuleNavDrawer() {
                   <span className="flex-1 text-left">{label}</span>
                 </button>
               ))}
+              <div className="mt-2 pt-2 border-t border-white/[0.06]">
+                <ResumeSetupButton variant="item" />
+              </div>
             </div>
           </nav>
         </>
