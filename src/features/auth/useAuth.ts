@@ -5,6 +5,11 @@ import { useAuthStore } from '@/stores/auth.store'
 import { writeUserProfile } from '@/features/access/writeUserProfile'
 
 const googleProvider = new GoogleAuthProvider()
+// Force le sélecteur de compte Google à CHAQUE connexion. Sans ce paramètre,
+// signInWithPopup réutilise silencieusement l'unique session Google active du
+// navigateur — impossible alors de se connecter avec un autre compte (on est
+// reconnecté direct au compte déjà actif, sans choix ni erreur).
+googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 /** Compte propriétaire de l'app. Sert UNIQUEMENT à masquer les données financières
  *  personnelles du compte Bright Data partagé (solde/facturation) aux autres comptes —
