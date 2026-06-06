@@ -84,7 +84,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#242424] grid lg:grid-cols-[1.1fr_1fr]">
       {/* Colonne gauche — vitrine brandée */}
-      <aside className="relative hidden lg:flex flex-col justify-center gap-10 overflow-hidden p-12 text-white">
+      <aside className="relative hidden lg:flex flex-col justify-center gap-8 overflow-hidden p-12 text-white">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-900 to-[#242424]" />
         <div className="absolute -top-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-indigo-500/30 blur-3xl" />
         <div
@@ -97,7 +97,7 @@ export default function LoginPage() {
         />
 
         <div className="relative flex items-center">
-          <img src="/logo.png" alt="IBS Studio" className="h-64 w-auto object-contain" />
+          <img src="/logo.png" alt="IBS Studio" className="h-48 w-auto object-contain" />
         </div>
 
         <div className="relative max-w-md">
@@ -115,7 +115,7 @@ export default function LoginPage() {
             produit en créations prêtes à diffuser — du brief à l'imprimeur, sans rien installer.
           </p>
 
-          <ul className="mt-8 space-y-4">
+          <ul className="mt-7 space-y-3.5">
             {FEATURES.map(({ icon: Icon, label, desc }) => (
               <li key={label} className="flex items-start gap-3.5">
                 <div className="mt-0.5 w-9 h-9 shrink-0 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
