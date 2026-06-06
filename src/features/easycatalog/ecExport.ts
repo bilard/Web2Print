@@ -46,3 +46,41 @@ export function resolveKeyInfo(sheet: ExcelSheet, ecNames: Map<string, string>):
   }
   return { keyName: '_ec_key', synthesized: true }
 }
+
+function cellToString(v: unknown): string {
+  if (v === null || v === undefined) return ''
+  return String(v)
+}
+
+function escapeCsv(value: string, sep: string): string {
+  if (value.includes(sep) || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
+/** Construit le CSV flat-file : BOM UTF-8, en-têtes ecFieldName, colonne _ec_key si synthétisée, images → nom de fichier. */
+export function buildCsv(
+  sheet: ExcelSheet,
+  ecNames: Map<string, string>,
+  keyInfo: EcKeyInfo,
+  delimiter: EcDelimiter,
+): string {
+  const sep = delimiter === 'tab' ? '\t' : ','
+  const headers: string[] = []
+  if (keyInfo.synthesized) headers.push('_ec_key')
+  for (const c of sheet.columns) headers.push(ecNames.get(c.key) ?? c.key)
+
+  const lines: string[] = [headers.map((h) => escapeCsv(h, sep)).join(sep)]
+  sheet.rows.forEach((row, idx) => {
+    const cells: string[] = []
+    if (keyInfo.synthesized) cells.push(escapeCsv(`row_${idx + 1}`, sep))
+    for (const c of sheet.columns) {
+      const raw =
+        c.fieldType === 'image' ? imageFileName(cellToString(row[c.key])) : cellToString(row[c.key])
+      cells.push(escapeCsv(raw, sep))
+    }
+    lines.push(cells.join(sep))
+  })
+  return '﻿' + lines.join('\r\n')
+}
