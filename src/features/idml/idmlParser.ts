@@ -10,6 +10,8 @@
  * - Style cascade: CharacterStyleRange → AppliedCharacterStyle → ParagraphStyleRange → AppliedParagraphStyle
  */
 
+import { parseEcTag } from '@/features/easycatalog/ecIdmlImport'
+
 export interface IdmlColor {
   r: number; g: number; b: number; a: number
 }
@@ -958,6 +960,9 @@ function parseStory(
     let combinedText = ''
     let resolvedStyle: IdmlParagraph | null = null
     const charStylesMap: Record<number, CharStyleOverride> = {}
+    // EasyCatalog : champ ouvert en cours (entre $ID/4 et $ID/5) + flag d’émission unique
+    let ecField: string | null = null
+    let ecEmitted = false
 
     for (let c = 0; c < charEls.length; c++) {
       const charEl = charEls[c]
@@ -987,7 +992,28 @@ function parseStory(
         }
       }
 
-      const text = textParts.join('')
+      let text = textParts.join('')
+
+      // ── EasyCatalog : marqueurs de champ ($ID/4 ouvre, $ID/5 ferme) ──
+      const ecTag = parseEcTag(charEl.getAttribute('ECTagData'))
+      if (ecTag.kind === 'open') {
+        ecField = ecTag.field ?? null
+        ecEmitted = false
+        continue
+      }
+      if (ecTag.kind === 'close') {
+        // champ vide (aucun run de valeur) → émettre quand même le placeholder
+        if (ecField && !ecEmitted) combinedText += `{{${ecField}}}`
+        ecField = null
+        ecEmitted = false
+        continue
+      }
+      if (ecField) {
+        if (ecEmitted) continue // un seul placeholder par champ, même si la valeur s’étale sur plusieurs runs
+        text = `{{${ecField}}}`
+        ecEmitted = true
+      }
+
       if (!text || fontSize < 0.5) continue
 
       const startIdx = combinedText.length
