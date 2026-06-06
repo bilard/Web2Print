@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Rocket, Pencil, FileUp, Database, Download, Workflow, Bot, ShieldCheck, type LucideIcon } from 'lucide-react'
-import { helpSections } from './content/index'
 import { HELP_CATEGORIES, type HelpCategory, type HelpSection } from './content/types'
 import { useHelpStore } from './help.store'
+import { useVisibleHelpSections } from './useVisibleHelpSections'
 
 interface CategoryStyle {
   Icon: LucideIcon
@@ -102,7 +102,8 @@ export function HelpTableOfContents() {
   const currentSectionId = useHelpStore((s) => s.currentSectionId)
   const goToSection = useHelpStore((s) => s.goToSection)
 
-  const grouped = useMemo(() => groupByCategory(helpSections), [])
+  const visibleSections = useVisibleHelpSections()
+  const grouped = useMemo(() => groupByCategory(visibleSections), [visibleSections])
 
   return (
     <nav className="flex flex-col gap-2">

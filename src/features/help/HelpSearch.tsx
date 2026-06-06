@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useHelpStore } from './help.store'
 import { suggestWords, searchSections, type SearchHit } from './searchIndex'
+import { useIsHelpSectionVisible } from './useVisibleHelpSections'
 
 const MAX_SUGGESTIONS = 6
 const MAX_HITS = 8
@@ -9,6 +10,7 @@ const MAX_HITS = 8
 export function HelpSearch() {
   const goToSection = useHelpStore((s) => s.goToSection)
   const setSearchQuery = useHelpStore((s) => s.setSearchQuery)
+  const isVisible = useIsHelpSectionVisible()
   const [query, setQueryLocal] = useState('')
   const [open, setOpen] = useState(false)
   const [activeIdx, setActiveIdx] = useState(0)
@@ -27,7 +29,12 @@ export function HelpSearch() {
     [trimmed],
   )
 
-  const hits = useMemo(() => (trimmed ? searchSections(trimmed, MAX_HITS) : []), [trimmed])
+  // On récupère large puis on filtre par visibilité (rôle) avant de tronquer à MAX_HITS,
+  // pour ne pas perdre des résultats visibles masqués derrière des sections inaccessibles.
+  const hits = useMemo(
+    () => (trimmed ? searchSections(trimmed, MAX_HITS * 4).filter((h) => isVisible(h.sectionId)).slice(0, MAX_HITS) : []),
+    [trimmed, isVisible],
+  )
 
   type Item =
     | { kind: 'word'; word: string }
