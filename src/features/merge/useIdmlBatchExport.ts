@@ -10,6 +10,7 @@ import { useMergeStore } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { getIdmlBuffer } from '@/features/idml/idmlSource'
 import { extractIdmlContents, buildMultiPageIdml, type PatchOptions } from './idmlPatcher'
+import { templatizeEcContents } from './ecTemplatizer'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { resolveFileName } from './mergeEngine'
 
@@ -54,8 +55,8 @@ export function useIdmlBatchExport() {
         throw new Error('Source IDML indisponible')
       }
 
-      // Extract XML contents
-      const contents = await extractIdmlContents(buffer)
+      // Extract XML contents, puis templatiser les champs EasyCatalog ({{champ}} entre marqueurs)
+      const contents = templatizeEcContents(await extractIdmlContents(buffer))
 
       // Collect bindings from canvas objects
       const canvas = globalFabricCanvas
