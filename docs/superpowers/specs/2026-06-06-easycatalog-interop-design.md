@@ -124,7 +124,7 @@ Delta par rapport à l'import IDML existant (`src/features/idml/`), qui lit déj
 - **Marqueurs** : les `<Content>﻿</Content>` (U+FEFF) sont des marqueurs invisibles → ne pas les rendre comme texte (filtrage U+FEFF).
 - **Préservation** : conserver l'`ECTagData`/`ECPageItemData`/pagination d'origine dans `obj.data.ec` (verbatim) pour le round-trip. On **n'interprète pas** la pagination (`ECPaginationContainerData`, parent/child) — on la transporte.
 
-> **Statut 2026-06-06** : import des champs TEXTE (forme `$ID/4`/`$ID/5`) LIVRÉ. Reste : champs image (`ECPageItemData`) et export IDML natif preserve-and-patch.
+> **Statut 2026-06-06** : import des champs TEXTE (`$ID/4`/`$ID/5`) ET IMAGE (`ECPageItemData`) LIVRÉ. Reste : export IDML natif preserve-and-patch (templatisation).
 
 ### 7.2 Export — preserve-and-patch (round-trip natif)
 
