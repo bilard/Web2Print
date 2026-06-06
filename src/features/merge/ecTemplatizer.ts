@@ -43,7 +43,10 @@ export function templatizeEcStory(xml: string): string {
     }
   }
 
-  return new XMLSerializer().serializeToString(doc)
+  const serialized = new XMLSerializer().serializeToString(doc)
+  // XMLSerializer omet le prologue <?xml … ?> (hors arbre DOM) ; IDML l'exige → on le réinjecte.
+  const prolog = /^\s*<\?xml[^>]*\?>/.exec(xml)
+  return prolog && !serialized.startsWith('<?xml') ? `${prolog[0]}\n${serialized}` : serialized
 }
 
 /** Applique la templatisation à toutes les stories d'un IdmlZipContents (autres champs inchangés). */

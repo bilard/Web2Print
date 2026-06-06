@@ -36,4 +36,10 @@ describe('templatizeEcStory', () => {
     expect(out).not.toContain('12')
     expect(out).not.toContain(',99')
   })
+
+  it('conserve le prologue <?xml … ?> (XMLSerializer l’omet, IDML l’exige)', () => {
+    const xml = STORY(`${MARK_OPEN}<CharacterStyleRange><Content>12,99</Content></CharacterStyleRange>${MARK_CLOSE}`)
+    const out = templatizeEcStory(xml)
+    expect(out.startsWith('<?xml')).toBe(true)
+  })
 })
