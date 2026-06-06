@@ -85,12 +85,18 @@ export function sanitizeEcName(label: string): string {
   return cleaned || 'field'
 }
 
-/** Construit un ecFieldName stable et unique par clé de colonne. */
+/** Construit un ecFieldName stable et unique par clé de colonne.
+ *  La dédup est insensible à la casse et ancre le suffixe sur la casse vue en
+ *  premier (Prix / Prix / prix → Prix / Prix_2 / Prix_3). */
 export function buildEcFieldNames(columns: ExcelColumn[]): Map<string, string> {
   const result = new Map<string, string>()
   const used = new Set<string>()
+  const canonicalByLower = new Map<string, string>()
   for (const col of columns) {
-    const base = sanitizeEcName(col.label || col.key)
+    const rawBase = sanitizeEcName(col.label || col.key)
+    const lower = rawBase.toLowerCase()
+    const base = canonicalByLower.get(lower) ?? rawBase
+    if (!canonicalByLower.has(lower)) canonicalByLower.set(lower, rawBase)
     let name = base
     let n = 2
     while (used.has(name.toLowerCase())) {
