@@ -60,6 +60,8 @@
   .brand .dot svg{width:16px;height:16px}
   .brand-logo{height:46px;width:auto;display:block}
   .brand-logo--lg{height:62px}
+  .foot-baseline{display:flex;align-items:center;gap:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;font-weight:600;font-size:12px;margin:-6px 0 16px}
+  .foot-baseline::before{content:"";width:28px;height:2px;border-radius:2px;background:var(--grad);flex:0 0 auto}
   .nav-links{display:flex;align-items:center;gap:30px}
   .nav-links a.link{font-size:13px;font-weight:500;letter-spacing:.04em;color:var(--muted);transition:color .2s}
   .nav-links a.link:hover{color:var(--ink)}
@@ -74,8 +76,9 @@
   .modnav{position:fixed;top:50%;left:24px;transform:translateY(-50%);z-index:90;width:172px;max-height:90vh;overflow-y:auto;padding:10px 10px;background:rgba(16,16,25,.55);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px -24px rgba(0,0,0,.7);scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
   .modnav::-webkit-scrollbar{width:6px}
   .modnav::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
-  .modnav .mn-logo{display:block;padding:2px 2px 8px;margin-bottom:8px;border-bottom:1px solid var(--line)}
+  .modnav .mn-logo{display:block;padding:2px 2px 9px;margin-bottom:8px;border-bottom:1px solid var(--line)}
   .modnav .mn-logo img{width:100%;height:auto;display:block}
+  .modnav .mn-baseline{display:block;text-align:center;font-family:var(--mono);font-size:7.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-top:7px;line-height:1.35}
   .modnav .mn-head{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);padding:1px 8px 4px}
   .modnav .mn-grp{font-family:var(--mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:#8e88cf;padding:8px 8px 2px;display:flex;align-items:center;gap:7px}
   .modnav .mn-grp::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -765,7 +768,7 @@
 </header>
 
 <nav class="modnav" aria-label="Sommaire des modules">
-  <a class="mn-logo" href="#top" aria-label="IBS Studio — haut de page"><img src="/logo.png" alt="IBS Studio" width="275" height="215" /></a>
+  <a class="mn-logo" href="#top" aria-label="IBS Studio — haut de page"><img src="/logo.png" alt="IBS Studio" width="275" height="215" /><span class="mn-baseline">L'innovation par la contrainte</span></a>
   <div class="mn-head">Les 18 modules</div>
 
   <div class="mn-grp">Créer &amp; éditer</div>
@@ -1401,7 +1404,8 @@
   <div class="wrap">
     <div class="fgrid">
       <div class="fcol">
-        <a class="brand" href="#top" style="margin-bottom:18px" aria-label="IBS Studio — accueil"><img class="brand-logo brand-logo--lg" src="/logo.png" alt="IBS Studio" width="275" height="215" /></a>
+        <a class="brand" href="#top" style="margin-bottom:14px" aria-label="IBS Studio — accueil"><img class="brand-logo brand-logo--lg" src="/logo.png" alt="IBS Studio" width="275" height="215" /></a>
+        <p class="foot-baseline"><span class="grad-text">L'innovation par la contrainte</span></p>
         <p>La chaîne de production graphique complète en ligne : scraping, édition pro (InDesign &amp; Illustrator), IA, données, automatisation et publication multi-canal aux normes d'imprimerie. Édité par IBS Studio.</p>
       </div>
       <div class="fcol"><h5>Créer</h5><ul><li>Éditeur visuel</li><li>Imports IDML·PPTX·SVG·PDF</li><li>Décomposition IA</li><li>Animation &amp; vidéo</li><li>Export PDF·PPTX·Image·WebM</li></ul></div>
