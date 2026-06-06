@@ -51,7 +51,7 @@
 
   /* NAV */
   header.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:rgba(6,6,9,.6);border-bottom:1px solid var(--line)}
-  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .nav-inner{display:flex;align-items:center;justify-content:flex-end;height:70px}
   .brand{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-weight:700;letter-spacing:.14em;font-size:14px}
   .brand .dot{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center;box-shadow:0 0 26px rgba(124,108,255,.6)}
   .brand .dot svg{width:16px;height:16px}
@@ -749,7 +749,6 @@
 
 <header class="nav">
   <div class="wrap nav-inner">
-    <a class="brand" href="#top"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
     <nav class="nav-links">
       <a class="link" href="#modules">Modules</a>
       <a class="link" href="#io">Imports/Exports</a>
