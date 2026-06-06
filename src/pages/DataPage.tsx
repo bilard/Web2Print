@@ -40,6 +40,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
 import { useCan } from '@/features/access/useAccess'
+import { EasyCatalogExportModal } from '@/features/easycatalog/EasyCatalogExportModal'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 
 type RightTab = 'fields' | 'taxonomy'
@@ -70,6 +71,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [savedFiles, setSavedFiles] = useState<SavedFileEntry[]>([])
   const [loadingFiles, setLoadingFiles] = useState(false)
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
+  const [ecExportOpen, setEcExportOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
 
   // DataPage = flux legacy BDD uniquement. Reset toute sélection PIM laissée
@@ -444,6 +446,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                   Exporter
                 </button>
               )}
+              {canExport && (
+                <button onClick={() => setEcExportOpen(true)} className={headerBtn}>
+                  <Download className="w-3.5 h-3.5" />
+                  EasyCatalog
+                </button>
+              )}
             </>
           )}
         </div>
@@ -738,6 +746,13 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           />
         )}
       </Suspense>
+
+      <EasyCatalogExportModal
+        open={ecExportOpen}
+        onClose={() => setEcExportOpen(false)}
+        sheet={sheet ?? null}
+        sourceName={currentFileName ?? sheet?.name ?? 'export'}
+      />
 
     </div>
   )
