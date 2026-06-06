@@ -81,7 +81,6 @@ export function SheetsColumn() {
         {filtered.map(({ sheet, index }) => {
           const isHost = /\.[a-z]{2,}/i.test(sheet.name)
           const Icon = isHost ? Globe : FileText
-          const active = index === activeSheetIndex
           const isRenaming = renamingIndex === index
           const isSelected = selectedSourceIds.includes(sheet.name)
           const handleSelect = () => {

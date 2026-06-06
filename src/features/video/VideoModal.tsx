@@ -12,7 +12,6 @@ import { FileDropzone } from './FileDropzone'
 import { VideoPromptLibrary } from './VideoPromptLibrary'
 import { useVideoPromptLibrary, type VideoPrompt } from './useVideoPromptLibrary'
 import { useEnrichComposition } from './useEnrichComposition'
-import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
 import { detectAspect } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
@@ -140,7 +139,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   const progress = useRenderProgress()
   const promptLib = useVideoPromptLibrary()
   const enrich = useEnrichComposition()
-  const authUser = useAuthStore((s) => s.user)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   /** AbortController de la mutation en cours. handleStop l'aborte pour couper
    *  réellement la requête HTTP /render (sinon Cloud Run continue de tourner). */

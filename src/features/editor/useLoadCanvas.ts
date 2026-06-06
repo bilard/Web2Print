@@ -429,6 +429,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
                     const docH = obj.height ?? reloaded.height ?? 100
                     reloaded.set({
                       left: obj.left, top: obj.top,
+                      width: docW, height: docH,
                       scaleX: obj.scaleX, scaleY: obj.scaleY,
                       angle: obj.angle, opacity: obj.opacity,
                       selectable: obj.selectable, evented: obj.evented,
