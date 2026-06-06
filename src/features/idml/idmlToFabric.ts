@@ -12,6 +12,11 @@ import type { FabricObject } from 'fabric'
 import type { IdmlObject, IdmlColor, IdmlParagraph } from './idmlParser'
 import { resolveAvailableFont } from '@/features/assets/useFonts'
 
+// GIF 1×1 transparent : src sûr pour un FabricImage placeholder (pas de crash Fabric v6,
+// instanceof FabricImage = true → débloque la branche binding 'src' du merge).
+const EC_TRANSPARENT_1PX =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+
 /**
  * Extract per-character charSpacing from Fabric styles into a serializable map.
 /**
@@ -239,6 +244,22 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
 
     case 'Rectangle': {
       const cr = obj.cornerRadius ? obj.cornerRadius * Math.min(Math.abs(obj.scaleX), Math.abs(obj.scaleY)) : 0
+      // EasyCatalog : cadre image → FabricImage placeholder lié au champ (merge y chargera l'image)
+      if (obj.ecImageField) {
+        const imgEl = new Image()
+        imgEl.src = EC_TRANSPARENT_1PX
+        return new FabricImage(imgEl, {
+          left: cx, top: cy, originX: 'center', originY: 'center',
+          width: displayW, height: displayH, angle,
+          shadow: makeShadow(obj),
+          data: {
+            ...makeData(obj, obj.ecImageField),
+            type: 'image',
+            ecImageField: obj.ecImageField,
+            bindings: { src: obj.ecImageField },
+          },
+        })
+      }
       if (obj.hasImage) {
         // Image placeholder — no rounded corners on images
         return new Rect({
