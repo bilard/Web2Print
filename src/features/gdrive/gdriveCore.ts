@@ -27,25 +27,6 @@ export class GoogleAuthMissingError extends Error {
   }
 }
 
-/** Extrait l'ID Drive/Sheets depuis une URL ou retourne la chaîne brute si elle
- *  ressemble déjà à un ID (≥ 20 caractères alphanumériques + tirets/underscores). */
-export function extractDriveId(input: string): string | null {
-  const s = input.trim()
-  if (!s) return null
-  // Format : https://docs.google.com/spreadsheets/d/<ID>/edit ou /document/d/<ID>
-  const docMatch = s.match(/\/d\/([a-zA-Z0-9_-]{20,})/)
-  if (docMatch) return docMatch[1]
-  // Format : https://drive.google.com/file/d/<ID>/view
-  const fileMatch = s.match(/\/file\/d\/([a-zA-Z0-9_-]{20,})/)
-  if (fileMatch) return fileMatch[1]
-  // Format : https://drive.google.com/open?id=<ID>
-  const idParam = s.match(/[?&]id=([a-zA-Z0-9_-]{20,})/)
-  if (idParam) return idParam[1]
-  // ID brut
-  if (/^[a-zA-Z0-9_-]{20,}$/.test(s)) return s
-  return null
-}
-
 /** Récupère les métadonnées d'un fichier Drive. */
 export async function getDriveFileMeta(fileId: string, token: string): Promise<DriveFileMeta> {
   const params = new URLSearchParams({ fields: 'id,name,mimeType,webViewLink' })

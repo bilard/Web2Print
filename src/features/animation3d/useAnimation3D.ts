@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import type { FabricObject, Canvas } from 'fabric'
 import { Shadow } from 'fabric'
 import type { Animation3DConfig } from './types'
@@ -298,26 +297,4 @@ function mixHex(a: string, b: string, k: number): string {
   const g = Math.round(ag + (bg - ag) * k)
   const bl = Math.round(ab + (bb - ab) * k)
   return `#${((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0').toUpperCase()}`
-}
-
-/**
- * React hook variant — convenience for components that want a "preview mode"
- * tied to React state lifecycle.
- */
-export function useAnimation3DPreview(
-  active: boolean,
-  fObj: FabricObject | null,
-  canvas: Canvas | null,
-  config: Animation3DConfig
-) {
-  const ctrlRef = useRef<Animation3DController | null>(null)
-
-  useEffect(() => {
-    if (!active || !fObj || !canvas) return
-    ctrlRef.current = startObjectAnimation(fObj, canvas, config)
-    return () => {
-      ctrlRef.current?.stop()
-      ctrlRef.current = null
-    }
-  }, [active, fObj, canvas, config])
 }

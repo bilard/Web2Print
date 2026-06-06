@@ -506,14 +506,6 @@ export async function buildHtmlZipBlob(opts: ExportOptions): Promise<Blob> {
   return zip.generateAsync({ type: 'blob' })
 }
 
-/** Variante directe : retourne juste le HTML self-contained, sans ZIP. Utile
- *  pour la card DAM qui veut l'ouvrir directement dans un nouvel onglet via
- *  blob URL sans passer par JSZip côté lecture. */
-export async function buildHtmlBlob(opts: ExportOptions): Promise<Blob> {
-  const html = await buildSelfContainedHtml(opts)
-  return new Blob([html], { type: 'text/html' })
-}
-
 /** Construit le ZIP et déclenche le téléchargement navigateur. */
 export async function downloadHtmlZip(opts: ExportOptions): Promise<void> {
   const blob = await buildHtmlZipBlob(opts)

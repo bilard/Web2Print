@@ -41,5 +41,3 @@ export const HIGHLIGHT_IDS = [
   // Right panels
   'layers-panel',
 ] as const
-
-export type HighlightId = typeof HIGHLIGHT_IDS[number]

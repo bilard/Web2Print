@@ -70,10 +70,6 @@ export function isHostKnownBlocked(url: string): boolean {
   return true
 }
 
-export function clearHostCache(): void {
-  if (typeof localStorage !== 'undefined') localStorage.removeItem(HOST_CACHE_KEY)
-}
-
 // ─── PDF link extraction ─────────────────────────────────────────────────────
 
 export function extractPdfLinksFromHtml(html: string, baseUrl: string): Array<{ name: string; url: string }> {
@@ -212,22 +208,6 @@ async function callScrape(url: string): Promise<string | null> {
     console.warn('[brightdata] scraping browser failed:', lastError)
   }
   return null
-}
-
-/**
- * Récupère le markdown rendu d'une page via Bright Data Web Unlocker.
- * 
- */
-export async function brightDataScrape(url: string): Promise<BrightDataResult | null> {
-  const html = await callScrape(url)
-  if (!html) return null
-  try {
-    const markdown = turndown.turndown(html)
-    return { markdown }
-  } catch (e) {
-    console.warn('[brightdata] turndown failed:', e)
-    return null
-  }
 }
 
 /**

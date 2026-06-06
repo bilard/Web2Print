@@ -630,19 +630,6 @@ export function enrichedProductsToSheet(
   return { name, columns, rows, taxonomy: [] }
 }
 
-export function crawlPagesToSheet(pages: CrawlPage[], name: string): ExcelSheet {
-  return {
-    name,
-    columns: [
-      { key: 'url', label: 'URL', fieldType: 'url', detectedType: 'url', isPrimary: true, width: 280 },
-      { key: 'title', label: 'Titre', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 200 },
-      { key: 'content', label: 'Contenu', fieldType: 'text_long', detectedType: 'text_long', isPrimary: false, width: 400 },
-    ],
-    rows: pages.map((p, i) => ({ _id: `crawl_${i}`, url: p.url, title: p.title, content: p.content })),
-    taxonomy: [],
-  }
-}
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 // ─── Jina Reader ─────────────────────────────────────────────────────────────

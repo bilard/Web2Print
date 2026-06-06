@@ -118,22 +118,6 @@ export function addOutboxMessage(
   })
 }
 
-/**
- * Ajoute un message manuellement (test / note). id = timestamp pour éviter toute
- * collision avec les update_id réels de Telegram. status 'done' : pas de retraitement.
- */
-export function addInboxMessage(chatId: number, text: string): Promise<void> {
-  const id = Date.now()
-  return setDoc(doc(db, 'telegramInbox', String(id)), {
-    updateId: id,
-    chatId,
-    fromUsername: null,
-    text,
-    status: 'done',
-    receivedAt: serverTimestamp(),
-  })
-}
-
 /** Supprime tous les messages fournis (par lots de 450 — limite Firestore 500/batch). */
 export async function deleteAllInboxMessages(updateIds: (number | string)[]): Promise<void> {
   for (let i = 0; i < updateIds.length; i += 450) {

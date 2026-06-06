@@ -77,7 +77,6 @@ const preActionSchema = z.object({
   selector: z.string().optional(),
   value: z.union([z.string(), z.number()]).optional(),
 })
-export type PreAction = z.infer<typeof preActionSchema>
 
 export const scrapingTemplateSchema = z.object({
   /** ID Firestore. */

@@ -4,7 +4,6 @@ import { generateJson } from '@/features/briefs/ai/geminiClient'
 const HEX = /^#[0-9a-fA-F]{6}$/
 
 export const SceneTypeSchema = z.enum(['hook', 'visual', 'cta'])
-export type SceneType = z.infer<typeof SceneTypeSchema>
 
 /** Thème visuel du mockup affiché en arrière-plan des scènes 'visual'.
  *
@@ -96,7 +95,6 @@ export const AnimPropsSchema = z.object({
   saturate: z.number().min(0).max(3).optional(),
   contrast: z.number().min(0).max(3).optional(),
 })
-export type AnimProps = z.infer<typeof AnimPropsSchema>
 
 /** Directive d'animation libre, en complément (ou à la place) des presets
  *  entryAnim/transition. Permet à Gemini d'exprimer n'importe quelle anim
@@ -132,7 +130,6 @@ export type AnimDirective = z.infer<typeof AnimDirectiveSchema>
 /** Type de chart inline pour scènes 'visual'. Si présent, les templates
  *  Remotion affichent un vrai chart animé frame-by-frame avec les dataPoints. */
 export const ChartHintSchema = z.enum(['line', 'bars', 'donut'])
-export type ChartHint = z.infer<typeof ChartHintSchema>
 
 /** Point de donnée pour les charts inline ou KPIs enrichis. */
 export const DataPointSchema = z.object({
@@ -140,7 +137,6 @@ export const DataPointSchema = z.object({
   value: z.number(),
   unit: z.string().max(8).optional(),
 })
-export type DataPoint = z.infer<typeof DataPointSchema>
 
 export const SceneSchema = z.object({
   type: SceneTypeSchema,
