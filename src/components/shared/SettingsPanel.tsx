@@ -12,6 +12,7 @@ import { useIsOwner } from '@/features/auth/useAuth'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { API_KEYS } from '@/lib/apiKeys'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
+import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ApiKeyRow } from './ApiKeyRow'
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
@@ -567,6 +568,7 @@ export function SettingsPanel({
   const headerBlock = (
     <div className="flex flex-col gap-4 shrink-0">
       {header}
+      <ResumeSetupButton variant="banner" />
       <nav
         aria-label="Sections des paramètres"
         className="flex flex-wrap gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1"
