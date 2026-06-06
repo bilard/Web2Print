@@ -55,6 +55,8 @@
   .brand{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-weight:700;letter-spacing:.14em;font-size:14px}
   .brand .dot{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center;box-shadow:0 0 26px rgba(124,108,255,.6)}
   .brand .dot svg{width:16px;height:16px}
+  .brand-logo{height:46px;width:auto;display:block}
+  .brand-logo--lg{height:62px}
   .nav-links{display:flex;align-items:center;gap:30px}
   .nav-links a.link{font-size:13px;font-weight:500;letter-spacing:.04em;color:var(--muted);transition:color .2s}
   .nav-links a.link:hover{color:var(--ink)}
@@ -745,7 +747,7 @@
 
 <header class="nav">
   <div class="wrap nav-inner">
-    <a class="brand" href="#top"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
+    <a class="brand" href="#top" aria-label="IBS Studio — accueil"><img class="brand-logo" src="/logo.png" alt="IBS Studio" width="275" height="215" /></a>
     <nav class="nav-links">
       <a class="link" href="#modules">Modules</a>
       <a class="link" href="#io">Imports/Exports</a>
@@ -1391,7 +1393,7 @@
   <div class="wrap">
     <div class="fgrid">
       <div class="fcol">
-        <a class="brand" href="#top" style="margin-bottom:18px"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>IBS-STUDIO</a>
+        <a class="brand" href="#top" style="margin-bottom:18px" aria-label="IBS Studio — accueil"><img class="brand-logo brand-logo--lg" src="/logo.png" alt="IBS Studio" width="275" height="215" /></a>
         <p>La chaîne de production graphique complète en ligne : scraping, édition pro (InDesign &amp; Illustrator), IA, données, automatisation et publication multi-canal aux normes d'imprimerie. Édité par IBS Studio.</p>
       </div>
       <div class="fcol"><h5>Créer</h5><ul><li>Éditeur visuel</li><li>Imports IDML·PPTX·SVG·PDF</li><li>Décomposition IA</li><li>Animation &amp; vidéo</li><li>Export PDF·PPTX·Image·WebM</li></ul></div>
