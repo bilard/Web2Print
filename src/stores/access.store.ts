@@ -11,8 +11,12 @@ interface AccessState {
   blocked: boolean
   /** true tant que l'accès n'a pas été hydraté depuis Firestore. */
   loading: boolean
-  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean }) => void
+  /** Flag Firestore users/{uid}.onboardingComplete — lu en piggyback à l'hydratation de l'accès. */
+  onboardingComplete: boolean
+  setAccess: (a: { permissions: Set<string>; roleId: string | null; isOwner: boolean; blocked: boolean; onboardingComplete: boolean }) => void
   setLoading: (loading: boolean) => void
+  /** Mise à jour locale après clic « Terminer » (évite la réouverture dans la session). */
+  setOnboardingComplete: (v: boolean) => void
   reset: () => void
 }
 
@@ -22,7 +26,9 @@ export const useAccessStore = create<AccessState>((set) => ({
   isOwner: false,
   blocked: false,
   loading: true,
+  onboardingComplete: false,
   setAccess: (a) => set({ ...a, loading: false }),
   setLoading: (loading) => set({ loading }),
-  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, loading: true }),
+  setOnboardingComplete: (v) => set({ onboardingComplete: v }),
+  reset: () => set({ permissions: new Set(), roleId: null, isOwner: false, blocked: false, loading: true, onboardingComplete: false }),
 }))

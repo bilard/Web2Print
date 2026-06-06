@@ -25,6 +25,7 @@ export function useAccessInit() {
         const roleId = (data.accessRoleId as string | undefined) ?? null
         const grants = (data.accessGrants as string[] | undefined) ?? []
         const revokes = (data.accessRevokes as string[] | undefined) ?? []
+        const onboardingComplete = (data.onboardingComplete as boolean | undefined) ?? false
         // Compte suspendu par un admin → aucun accès (l'owner ne peut jamais être bloqué).
         const blocked = !isOwner && ((data.accessBlocked as boolean | undefined) ?? false)
         let rolePermissions: string[] | null = null
@@ -46,11 +47,12 @@ export function useAccessInit() {
           roleId: resolvedRoleId,
           isOwner,
           blocked,
+          onboardingComplete,
         })
       } catch (e) {
         if (cancelled) return
         console.warn('[useAccessInit] load failed:', e)
-        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false })
+        setAccess({ permissions: computeEffectivePermissions({ isOwner, rolePermissions: null, grants: [], revokes: [] }), roleId: null, isOwner, blocked: false, onboardingComplete: false })
       }
     })()
 
