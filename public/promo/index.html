@@ -80,9 +80,6 @@
   .modnav a.on{color:var(--ink);background:rgba(99,102,241,.13)}
   .modnav a.on .mn-num{color:transparent;background:var(--grad);-webkit-background-clip:text;background-clip:text}
   .modnav a.on::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:15px;border-radius:3px;background:var(--grad)}
-  .modnav-foot{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-  .modnav-foot a{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px;border-radius:10px;background:var(--grad);color:#0b0b12;font-size:12px;font-weight:700;letter-spacing:.02em}
-  .modnav-foot a:hover{background:var(--grad);filter:brightness(1.08)}
   /* Affiché seulement quand il y a de la marge à gauche du contenu centré (≥1500px) */
   .modnav{display:none}
   @media(min-width:1500px){.modnav{display:block}}
@@ -803,9 +800,6 @@
     <li><a href="#roles"    data-spy="roles"><span class="mn-num">17</span>Gouverner</a></li>
     <li><a href="#settings" data-spy="settings"><span class="mn-num">18</span>Paramétrer</a></li>
   </ol>
-  <div class="modnav-foot">
-    <a href="/dashboard">Ouvrir l'app <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-  </div>
 </nav>
 
 <main id="top">
