@@ -37,6 +37,30 @@ describe('buildEcZip', () => {
     expect(Object.keys(json[0])).toContain('Visuel')
     expect(json[0].Visuel).toBe('m.png')
   })
+  it('assainit un nom de feuille XLSX illégal sans crasher', async () => {
+    const dirty: ExcelSheet = {
+      name: 'Catalogue 2026/2027',
+      columns: [col('sku', 'SKU', { isPrimary: true })],
+      rows: [{ _id: 'r0', sku: 'A1' }],
+      taxonomy: [],
+    }
+    const zip = await buildEcZip(dirty, 'S', { format: 'xlsx' })
+    expect(Object.keys(zip.files)).toContain('data.xlsx')
+  })
+  it('produit des en-têtes ecFieldName pour une feuille XLSX sans ligne', async () => {
+    const empty = sheet(
+      [col('sku', 'SKU', { isPrimary: true }), col('img', 'Visuel', { fieldType: 'image' })],
+      [],
+    )
+    const zip = await buildEcZip(empty, 'S', { format: 'xlsx' })
+    const buf = await zip.file('data.xlsx')!.async('uint8array')
+    const XLSX = await import('xlsx')
+    const wb = XLSX.read(buf, { type: 'array' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const headers = (XLSX.utils.sheet_to_json(ws, { header: 1 })[0] ?? []) as string[]
+    expect(headers).toContain('SKU')
+    expect(headers).toContain('Visuel')
+  })
 })
 
 // garantit que JSZip est bien la dépendance utilisée

@@ -1,6 +1,7 @@
 // src/features/easycatalog/EasyCatalogExportModal.tsx
 import { useMemo, useState } from 'react'
 import { Download, X } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ExcelSheet } from '@/features/excel/types'
 import { buildEcFieldNames } from './ecFieldName'
 import { buildFieldDescriptors, resolveKeyInfo } from './ecExport'
@@ -40,6 +41,9 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
     try {
       await exportSheet(sheet, sourceName, { format })
       onClose()
+    } catch (err) {
+      console.error('EasyCatalog export failed', err)
+      toast.error('Export échoué : ' + (err instanceof Error ? err.message : 'erreur inconnue'))
     } finally {
       setBusy(false)
     }

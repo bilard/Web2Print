@@ -136,18 +136,42 @@ describe('buildFieldDescriptors', () => {
 describe('buildImagesCsv', () => {
   it('renvoie null sans colonne image', () => {
     const cols = [col('sku', 'SKU')]
-    expect(buildImagesCsv(sheet(cols, [{ _id: 'r0', sku: 'A' }]), buildEcFieldNames(cols))).toBeNull()
+    const s = sheet(cols, [{ _id: 'r0', sku: 'A' }])
+    const names = buildEcFieldNames(cols)
+    expect(buildImagesCsv(s, names, resolveKeyInfo(s, names))).toBeNull()
   })
-  it('liste url→filename pour les cellules image non vides', () => {
+  it('utilise row_N quand la clé est synthétisée', () => {
     const cols = [col('img', 'Visuel', { fieldType: 'image' })]
     const s = sheet(cols, [
       { _id: 'r0', img: 'https://x/o/p%2Fm.png?token=z' },
       { _id: 'r1', img: '' },
     ])
-    const csv = buildImagesCsv(s, buildEcFieldNames(cols))!.replace('﻿', '')
+    const names = buildEcFieldNames(cols)
+    const keyInfo = resolveKeyInfo(s, names)
+    expect(keyInfo.synthesized).toBe(true)
+    const csv = buildImagesCsv(s, names, keyInfo)!.replace('﻿', '')
     expect(csv.split('\r\n')).toEqual([
       'ecFieldName,row_key,url,filename',
       'Visuel,row_1,https://x/o/p%2Fm.png?token=z,m.png',
+    ])
+  })
+  it('utilise la valeur de la colonne primaire comme row_key quand non synthétisée', () => {
+    const cols = [
+      col('sku', 'SKU', { isPrimary: true }),
+      col('img', 'Visuel', { fieldType: 'image' }),
+    ]
+    const s = sheet(cols, [
+      { _id: 'r0', sku: 'A1', img: 'https://x/o/m.png?t=1' },
+      { _id: 'r1', sku: 'A2', img: 'https://x/o/n.png?t=2' },
+    ])
+    const names = buildEcFieldNames(cols)
+    const keyInfo = resolveKeyInfo(s, names)
+    expect(keyInfo.synthesized).toBe(false)
+    const csv = buildImagesCsv(s, names, keyInfo)!.replace('﻿', '')
+    expect(csv.split('\r\n')).toEqual([
+      'ecFieldName,row_key,url,filename',
+      'Visuel,A1,https://x/o/m.png?t=1,m.png',
+      'Visuel,A2,https://x/o/n.png?t=2,n.png',
     ])
   })
 })

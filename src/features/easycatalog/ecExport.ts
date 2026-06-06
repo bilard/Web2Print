@@ -117,16 +117,24 @@ export function buildFieldDescriptors(
 }
 
 /** Manifeste url→filename des champs image, ou null si aucun. */
-export function buildImagesCsv(sheet: ExcelSheet, ecNames: Map<string, string>): string | null {
+export function buildImagesCsv(
+  sheet: ExcelSheet,
+  ecNames: Map<string, string>,
+  keyInfo: EcKeyInfo,
+): string | null {
   const imageCols = sheet.columns.filter((c) => c.fieldType === 'image')
   if (imageCols.length === 0) return null
+  const primaryKey = (sheet.columns.find((c) => c.isPrimary) ?? sheet.columns[0])?.key
   const lines: string[] = ['ecFieldName,row_key,url,filename']
   sheet.rows.forEach((row, idx) => {
+    const rowKey = keyInfo.synthesized
+      ? `row_${idx + 1}`
+      : String((primaryKey !== undefined ? row[primaryKey] : undefined) ?? '')
     for (const c of imageCols) {
       const url = cellToString(row[c.key])
       if (!url) continue
       lines.push(
-        [ecNames.get(c.key) ?? c.key, `row_${idx + 1}`, url, imageFileName(url)]
+        [ecNames.get(c.key) ?? c.key, rowKey, url, imageFileName(url)]
           .map((v) => escapeCsv(v, ','))
           .join(','),
       )

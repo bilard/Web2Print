@@ -42,14 +42,25 @@ export async function buildEcZip(
   const ecNames = buildEcFieldNames(sheet.columns)
   const keyInfo = resolveKeyInfo(sheet, ecNames)
   const descriptors = buildFieldDescriptors(sheet, ecNames, keyInfo)
-  const imagesCsv = buildImagesCsv(sheet, ecNames)
+  const imagesCsv = buildImagesCsv(sheet, ecNames, keyInfo)
 
   const zip = new JSZip()
 
   if (options.format === 'xlsx') {
     const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(buildXlsxRows(sheet, ecNames, keyInfo))
-    XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31) || 'Data')
+    const rows = buildXlsxRows(sheet, ecNames, keyInfo)
+    let ws
+    if (rows.length > 0) {
+      ws = XLSX.utils.json_to_sheet(rows)
+    } else {
+      const headers = [
+        ...(keyInfo.synthesized ? ['_ec_key'] : []),
+        ...sheet.columns.map((c) => ecNames.get(c.key) ?? c.key),
+      ]
+      ws = XLSX.utils.aoa_to_sheet([headers])
+    }
+    const safeName = sheet.name.replace(/[:\\/?*[\]]/g, '_').slice(0, 31) || 'Data'
+    XLSX.utils.book_append_sheet(wb, ws, safeName)
     const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer
     zip.file('data.xlsx', wbout)
   } else {
