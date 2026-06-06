@@ -323,17 +323,90 @@
   .logo .sq{width:84px;height:84px;border-radius:21px;background:var(--indigo);display:grid;place-items:center;box-shadow:0 0 40px -6px rgba(99,102,241,.7)}
   .logo .sq svg{width:46px;height:46px}
   .logo .wm{font-family:"JetBrains Mono",monospace;font-size:42px;font-weight:700;letter-spacing:.1em}
+  .logo-img{height:158px;width:auto;display:block;filter:drop-shadow(0 14px 38px rgba(45,212,191,.28))}
+  .logo-img.sm{height:118px}
   .big{font-size:104px;font-weight:800;letter-spacing:-.02em;line-height:1.02}
   .big .hl{color:var(--indigo)}
-  .pills{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-  .pill{font-size:24px;font-weight:600;padding:13px 24px;border:1px solid var(--line2);border-radius:100px;background:var(--surface)}
+  .pills{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:1500px}
+  .pill{font-size:22px;font-weight:600;padding:11px 21px;border:1px solid var(--line2);border-radius:100px;background:var(--surface)}
   .pill .d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:11px;vertical-align:middle}
   .cta{font-size:28px;font-weight:700;color:#fff;background:var(--indigo);padding:18px 36px;border-radius:14px;box-shadow:0 0 44px -8px rgba(99,102,241,.7)}
   .url-out{font-family:"JetBrains Mono",monospace;font-size:26px;color:var(--mut);letter-spacing:.06em}
+
+  /* ===== NOUVEAUX MODULES (14–18) ===== */
+  /* 14 CRÉER — formats */
+  .nf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .nf-card{border:1px solid var(--line);border-radius:16px;background:var(--elev);padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;position:relative}
+  .nf-card.sel{border-color:var(--violet);box-shadow:0 0 0 2px rgba(167,139,250,.45),0 0 40px -10px var(--violet)}
+  .nf-prev{background:#fff;border-radius:6px;box-shadow:0 12px 26px -14px rgba(0,0,0,.8);position:relative;overflow:hidden}
+  .nf-prev::after{content:"";position:absolute;left:14%;right:14%;top:18%;height:9px;border-radius:3px;background:#cbd5e1;box-shadow:0 22px 0 -2px #e2e8f0,0 40px 0 -3px #eef2f7}
+  .nf-card b{font-size:23px;font-weight:700}
+  .nf-card span{font-family:"JetBrains Mono",monospace;font-size:16px;color:var(--mut)}
+  .nf-ok{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:var(--violet);color:#fff;display:grid;place-items:center;opacity:0}
+  .nf-ok svg{width:20px;height:20px}
+  /* 15 ORGANISER — bibliothèque */
+  .lib-wrap{display:grid;grid-template-columns:300px 1fr;gap:22px}
+  .lib-side{border:1px solid var(--line);border-radius:14px;background:var(--elev);padding:14px;display:flex;flex-direction:column;gap:5px}
+  .lib-item{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:10px;font-size:21px;color:var(--mut)}
+  .lib-item .fi{color:var(--amber);display:grid;place-items:center}.lib-item .fi svg{width:22px;height:22px}
+  .lib-item .ct{margin-left:auto;font-size:15px;font-family:"JetBrains Mono",monospace;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2px 11px}
+  .lib-item.on{background:rgba(99,102,241,.16);color:var(--ink);box-shadow:inset 3px 0 0 var(--indigo)}
+  .lib-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-content:start}
+  .lib-card{border:1px solid var(--line);border-radius:13px;background:var(--elev);overflow:hidden}
+  .lib-thumb{aspect-ratio:5/4;position:relative;border-bottom:1px solid var(--line)}
+  .lib-mini{position:absolute;inset:14% 18% 20%;background:#fff;border-radius:5px;overflow:hidden}
+  .lib-mini .ip-tag{position:absolute;left:9%;bottom:10%;font-size:11px;font-weight:800;color:#dc2626;background:#facc15;padding:2px 6px;border-radius:4px}
+  .lib-meta{padding:12px 15px;font-size:18px;font-weight:600}
+  .lib-meta span{display:block;font-size:14px;color:var(--mut);font-weight:400;margin-top:3px}
+  /* 16 MÉDIAS — DAM */
+  .dam-search{display:flex;align-items:center;gap:14px;background:var(--elev);border:1px solid var(--line);border-radius:13px;padding:15px 20px;margin-bottom:18px}
+  .dam-search svg{width:26px;height:26px;color:var(--mut)}
+  .dam-search .q{font-family:"JetBrains Mono",monospace;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden}
+  .dam-search .cnt{margin-left:auto;font-size:18px;color:var(--mut)}
+  .dam-tags{display:flex;gap:11px;margin-bottom:20px;flex-wrap:wrap}
+  .dam-tag{font-size:18px;color:var(--mut);border:1px solid var(--line2);border-radius:100px;padding:8px 19px}
+  .dam-tag.on{border-color:var(--pink);background:rgba(244,114,182,.16);color:#fbcfe8}
+  .dam-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:15px}
+  .dam-cell{aspect-ratio:1;border-radius:11px;overflow:hidden;border:1px solid var(--line);position:relative}
+  .dam-cell .ig-badge{position:absolute;top:auto;right:8px;bottom:8px;display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:#fff;background:rgba(99,102,241,.85);padding:3px 8px;border-radius:6px;box-shadow:none}
+  .dam-cell .ig-badge svg{width:12px;height:12px}
+  /* 17 DONNÉES — PIM */
+  .pbases{display:flex;gap:10px;margin-bottom:18px}
+  .pbase{font-size:18px;color:var(--mut);padding:9px 18px;border-radius:9px;border:1px solid var(--line)}
+  .pbase.on{background:var(--elev);color:var(--ink);border-color:var(--line2)}
+  .ptable{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--elev)}
+  .ptr{display:grid;grid-template-columns:1.6fr .9fr .9fr 1fr .9fr;gap:14px;padding:16px 22px;border-top:1px solid var(--line);font-size:21px;align-items:center}
+  .ptr:first-child{border-top:0}
+  .ptr.th{background:#0e0e0e;font-family:"JetBrains Mono",monospace;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  .ptr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .ptr .calc{text-align:right;color:#a5b4fc;font-variant-numeric:tabular-nums}
+  .ptr.th .calc{color:var(--indigo)}
+  .pfx{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--indigo);border:1px solid rgba(99,102,241,.5);background:rgba(99,102,241,.16);border-radius:5px;padding:1px 6px;margin-left:8px}
+  .pform{display:flex;align-items:center;gap:12px;padding:14px 22px;border-top:1px solid var(--line);background:rgba(99,102,241,.07);font-family:"JetBrains Mono",monospace;font-size:17px;color:#c7c4ff}
+  .pform b{color:#a5b4fc}
+  /* 18 PARAMÉTRER — réglages IA */
+  .set-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .set-col{border:1px solid var(--line);border-radius:14px;background:var(--elev);padding:20px}
+  .set-h{font-family:"JetBrains Mono",monospace;font-size:16px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin-bottom:16px}
+  .set-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+  .set-row:first-of-type{border-top:0}
+  .set-dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px}
+  .set-row b{font-size:21px;font-weight:600}
+  .set-row .key{font-family:"JetBrains Mono",monospace;font-size:16px;color:var(--mut);margin-left:4px}
+  .set-status{margin-left:auto;font-size:16px;font-weight:700;color:var(--mut);display:flex;align-items:center;gap:7px}
+  .set-status.ok{color:var(--emerald)}.set-status svg{width:18px;height:18px}
+  .set-casc{display:flex;flex-direction:column;gap:11px}
+  .set-step{display:flex;align-items:center;gap:13px;font-size:20px;padding:11px 15px;border:1px solid var(--line);border-radius:10px}
+  .set-step .ord{font-family:"JetBrains Mono",monospace;font-size:15px;color:var(--indigo)}
+  .set-step .prov{margin-left:auto;font-size:15px;color:var(--mut)}
+  .set-budget{margin-top:18px}
+  .set-budget .bl{display:flex;justify-content:space-between;font-size:17px;color:var(--mut);margin-bottom:9px}
+  .set-bar{height:14px;border-radius:8px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+  .set-bar i{display:block;height:100%;width:42%;background:linear-gradient(90deg,var(--indigo),var(--violet));border-radius:8px}
 </style>
 </head>
 <body>
-<div data-composition-id="promo-hero" data-start="0" data-duration="80" data-width="1920" data-height="1080">
+<div data-composition-id="promo-hero" data-start="0" data-duration="108" data-width="1920" data-height="1080">
 
   <!-- Illustration produit réutilisable (perceuse 18V) — le héros du récit -->
   <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -364,22 +437,27 @@
   <div id="s1" class="scene clip" data-start="0" data-duration="3.2" data-track-index="0" style="z-index:1">
     <div class="glow"></div>
     <div class="center">
-      <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
+      <div class="logo"><img class="logo-img" src="logo.png" alt="IBS Studio"/></div>
       <div class="big s1-title">De la donnée<br/>à <span class="hl">l'imprimé.</span></div>
       <div class="pills">
-        <span class="pill"><span class="d" style="background:var(--sky)"></span>Scraper</span>
+        <span class="pill"><span class="d" style="background:var(--violet)"></span>Créer</span>
         <span class="pill"><span class="d" style="background:var(--amber)"></span>Importer</span>
-        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Modifier</span>
-        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Connecter</span>
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Exporter</span>
-        <span class="pill"><span class="d" style="background:var(--sky)"></span>Telegram</span>
-        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Capture visuelle</span>
-        <span class="pill"><span class="d" style="background:var(--teal)"></span>Taxonomie</span>
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Animations IA</span>
-        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Assistant IA</span>
-        <span class="pill"><span class="d" style="background:var(--pink)"></span>Rôles</span>
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Image IA</span>
-        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Automatiser</span>
+        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Éditer</span>
+        <span class="pill"><span class="d" style="background:var(--sky)"></span>Organiser</span>
+        <span class="pill"><span class="d" style="background:var(--pink)"></span>Médias</span>
+        <span class="pill"><span class="d" style="background:var(--violet)"></span>Générer</span>
+        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Données</span>
+        <span class="pill"><span class="d" style="background:var(--teal)"></span>Classer</span>
+        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Mapper</span>
+        <span class="pill"><span class="d" style="background:var(--sky)"></span>Collecter</span>
+        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Décliner</span>
+        <span class="pill"><span class="d" style="background:var(--violet)"></span>Automatiser</span>
+        <span class="pill"><span class="d" style="background:var(--sky)"></span>Piloter</span>
+        <span class="pill"><span class="d" style="background:var(--pink)"></span>Animer</span>
+        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Assister</span>
+        <span class="pill"><span class="d" style="background:var(--violet)"></span>Publier</span>
+        <span class="pill"><span class="d" style="background:var(--pink)"></span>Gouverner</span>
+        <span class="pill"><span class="d" style="background:var(--amber)"></span>Paramétrer</span>
       </div>
     </div>
   </div>
@@ -807,11 +885,138 @@
     </div>
   </div>
 
+  <!-- S16 — CRÉER -->
+  <div id="s16" class="scene clip" data-start="77.4" data-duration="6.0" data-track-index="0" style="z-index:16">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">14</span>CRÉER</div><small>Démarrez un document vierge — au bon format dès le départ, prêt pour l'impression.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Nouveau document</span></div>
+      <div class="wbody">
+        <div class="nf-grid">
+          <div class="nf-card sel" id="nf-a4"><span class="nf-ok" id="nf-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span class="nf-prev" style="width:118px;height:166px"></span><b>A4 portrait</b><span>210 × 297 mm</span></div>
+          <div class="nf-card"><span class="nf-prev" style="width:170px;height:120px"></span><b>A3 paysage</b><span>420 × 297 mm</span></div>
+          <div class="nf-card"><span class="nf-prev" style="width:94px;height:166px"></span><b>Story 9:16</b><span>1080 × 1920 px</span></div>
+          <div class="nf-card"><span class="nf-prev" style="width:148px;height:148px"></span><b>Carré 1:1</b><span>1080 × 1080 px</span></div>
+          <div class="nf-card"><span class="nf-prev" style="width:188px;height:98px"></span><b>Bannière web</b><span>1200 × 628 px</span></div>
+          <div class="nf-card"><span class="nf-prev" style="width:150px;height:150px;background:repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 9px,#f6f8fb 9px,#f6f8fb 18px)"></span><b>Format perso</b><span>sur mesure</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S17 — ORGANISER -->
+  <div id="s17" class="scene clip" data-start="83.0" data-duration="6.0" data-track-index="1" style="z-index:17">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">15</span>ORGANISER</div><small>La bibliothèque range tous vos projets — filtrables par taxonomie, retrouvés en un clic.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Bibliothèque — projets</span></div>
+      <div class="wbody">
+        <div class="lib-wrap">
+          <div class="lib-side">
+            <div class="lib-item on"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Outillage<span class="ct">42</span></div>
+            <div class="lib-item"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Jardin &amp; extérieur<span class="ct">28</span></div>
+            <div class="lib-item"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Promos soldes<span class="ct">16</span></div>
+            <div class="lib-item"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>PLV magasin<span class="ct">9</span></div>
+            <div class="lib-item"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Réseaux sociaux<span class="ct">23</span></div>
+          </div>
+          <div class="lib-grid" id="lib-grid">
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ip-tag">−15%</span></span></div><div class="lib-meta">Perceuse 18V<span>A4 · modifié 2 h</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot v2"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ip-tag">SOLDES</span></span></div><div class="lib-meta">Meuleuse 750W<span>Story · hier</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot v3"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span></div><div class="lib-meta">Scie circulaire<span>Carré · hier</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot v4"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ip-tag">−20%</span></span></div><div class="lib-meta">Visseuse 12V<span>Bannière · 3 j</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span></div><div class="lib-meta">Ponceuse exc.<span>A4 · 3 j</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot v2"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ip-tag">NEW</span></span></div><div class="lib-meta">Pack promo<span>Story · 4 j</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot v3"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span></div><div class="lib-meta">Catalogue T1<span>A3 · 5 j</span></div></div>
+            <div class="lib-card"><div class="lib-thumb"><span class="lib-mini"><span class="shot v4"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ip-tag">−30%</span></span></div><div class="lib-meta">Vente flash<span>Carré · 6 j</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S18 — MÉDIAS (DAM) -->
+  <div id="s18" class="scene clip" data-start="88.6" data-duration="6.0" data-track-index="0" style="z-index:18">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">16</span>MÉDIAS</div><small>Le DAM centralise tous vos visuels — cherchables, tagués, prêts à glisser dans une maquette.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">DAM — médias</span></div>
+      <div class="wbody">
+        <div class="dam-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="q" id="dam-q">perceuse 18v</span><span class="cnt" id="dam-cnt">18 médias</span></div>
+        <div class="dam-tags"><span class="dam-tag on">Outillage</span><span class="dam-tag">Packshot</span><span class="dam-tag">Ambiance</span><span class="dam-tag">Détouré</span><span class="dam-tag">Généré IA</span></div>
+        <div class="dam-grid" id="dam-grid">
+          <div class="dam-cell"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot v2"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+          <div class="dam-cell"><span class="shot v3"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot v4"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot v2"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+          <div class="dam-cell"><span class="shot v3"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot v4"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot v2"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+          <div class="dam-cell"><span class="shot v3"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+          <div class="dam-cell"><span class="shot v4"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S19 — DONNÉES (PIM) -->
+  <div id="s19" class="scene clip" data-start="94.2" data-duration="6.0" data-track-index="1" style="z-index:19">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">17</span>DONNÉES</div><small>Le PIM structure vos fiches — avec champs calculés par formule, prêtes pour le publipostage.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">PIM — fiches produits</span></div>
+      <div class="wbody">
+        <div class="pbases"><span class="pbase on">Base outillage</span><span class="pbase">Base jardin</span><span class="pbase">+ Nouvelle base</span></div>
+        <div class="ptable">
+          <div class="ptr th"><span>Nom</span><span class="num">Réf.</span><span class="num">Prix HT</span><span class="calc">Prix TTC<span class="pfx">ƒx</span></span><span>Marque</span></div>
+          <div class="ptr" id="pr1"><span>Perceuse 18V Brushless</span><span class="num">67890</span><span class="num">129,00 €</span><span class="calc">154,80 €</span><span>TechMaster</span></div>
+          <div class="ptr" id="pr2"><span>Meuleuse 750W</span><span class="num">54321</span><span class="num">79,90 €</span><span class="calc">95,88 €</span><span>TechMaster</span></div>
+          <div class="ptr" id="pr3"><span>Scie circulaire 1400W</span><span class="num">13579</span><span class="num">149,00 €</span><span class="calc">178,80 €</span><span>ProTools</span></div>
+          <div class="ptr" id="pr4"><span>Visseuse 12V</span><span class="num">24680</span><span class="num">59,00 €</span><span class="calc">70,80 €</span><span>TechMaster</span></div>
+          <div class="pform"><span class="pfx">ƒx</span><span>Prix TTC = ARRONDI(<b>[Prix HT]</b> × 1,20 ; 2)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S20 — PARAMÉTRER -->
+  <div id="s20" class="scene clip" data-start="99.8" data-duration="6.0" data-track-index="0" style="z-index:20">
+    <div class="glow"></div>
+    <div class="cap"><div class="t"><span class="n">18</span>PARAMÉTRER</div><small>Vos clés IA, la cascade de modèles et les budgets — branchés et synchronisés, sous votre contrôle.</small></div>
+    <div class="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Réglages — IA</span></div>
+      <div class="wbody">
+        <div class="set-grid">
+          <div class="set-col">
+            <div class="set-h">Clés LLM par fournisseur</div>
+            <div class="set-row"><span class="set-dot" style="background:#d97757"></span><b>Anthropic</b><span class="key">sk-ant-•••••7Q2</span><span class="set-status ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Connecté</span></div>
+            <div class="set-row"><span class="set-dot" style="background:#38bdf8"></span><b>Google</b><span class="key">AIza•••••b4K</span><span class="set-status ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Connecté</span></div>
+            <div class="set-row"><span class="set-dot" style="background:#34d399"></span><b>OpenAI</b><span class="key">sk-•••••9Xv</span><span class="set-status" id="set-openai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Connecté</span></div>
+          </div>
+          <div class="set-col">
+            <div class="set-h">Cascade de modèles</div>
+            <div class="set-casc">
+              <div class="set-step"><span class="ord">1</span>Claude Opus 4.7<span class="prov">Anthropic</span></div>
+              <div class="set-step"><span class="ord">2</span>Gemini 3.5 Pro<span class="prov">Google</span></div>
+              <div class="set-step"><span class="ord">3</span>GPT-5.1<span class="prov">OpenAI</span></div>
+            </div>
+            <div class="set-budget">
+              <div class="bl"><span>Budget mensuel</span><span><b style="color:var(--ink)">42 €</b> / 100 €</span></div>
+              <div class="set-bar"><i id="set-bar-i"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- S9 — OUTRO -->
-  <div id="s9" class="scene clip" data-start="77.4" data-duration="2.6" data-track-index="0" style="z-index:15">
+  <div id="s9" class="scene clip" data-start="105.4" data-duration="2.6" data-track-index="1" style="z-index:21">
     <div class="glow"></div>
     <div class="center s7-wrap">
-      <div class="logo"><span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span class="wm">IBS-STUDIO</span></div>
+      <div class="logo"><img class="logo-img sm" src="logo.png" alt="IBS Studio"/></div>
       <div class="big" style="font-size:84px">Scraper. Éditer.<br/><span class="hl">Publier.</span></div>
       <span class="cta">Ouvrir l'application</span>
       <span class="url-out">ibs-studio.com</span>
@@ -1031,13 +1236,61 @@
     tl.set("#s15 .ig-tile",{opacity:0,scale:.86,transformOrigin:"50% 50%"},66.2);
     tl.to("#s15 .ig-tile",{opacity:1,scale:1,duration:.5,ease:"back.out(1.5)",stagger:.22},68.8);
 
+    /* S16 — créer : choix d'un format → document prêt */
+    slide("#s16",77.4);
+    tl.from("#s16 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},77.9);
+    tl.from("#s16 .nf-card",{y:34,opacity:0,duration:.5,ease:"expo.out",stagger:.08},78.0);
+    tl.set("#nf-ok",{scale:.3,opacity:0},77.4);
+    tl.fromTo("#nf-a4",{boxShadow:"0 0 0 0 rgba(167,139,250,0)"},{boxShadow:"0 0 0 2px rgba(167,139,250,.45),0 0 44px -10px #A78BFA",duration:.45,ease:"power2.out"},79.3);
+    tl.to("#nf-ok",{scale:1,opacity:1,duration:.45,ease:"back.out(1.7)"},79.6);
+
+    /* S17 — organiser : la bibliothèque se remplit, un dossier est filtré */
+    slide("#s17",83);
+    tl.from("#s17 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},83.5);
+    tl.from("#s17 .lib-item",{x:-22,opacity:0,duration:.4,ease:"power2.out",stagger:.08},83.6);
+    tl.set("#s17 .lib-card",{opacity:0,scale:.9,transformOrigin:"50% 50%"},83);
+    tl.to("#s17 .lib-card",{opacity:1,scale:1,duration:.45,ease:"back.out(1.4)",stagger:.07},84.2);
+    tl.fromTo("#s17 .lib-item.on",{backgroundColor:"rgba(99,102,241,.16)"},{backgroundColor:"rgba(99,102,241,.34)",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},85.4);
+
+    /* S18 — médias (DAM) : recherche → la grille se peuple, un tag actif */
+    slide("#s18",88.6);
+    tl.from("#s18 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},89.1);
+    tl.from("#s18 .dam-search",{y:18,opacity:0,duration:.45,ease:"power3.out"},89.2);
+    tl.from("#s18 .dam-tag",{y:14,opacity:0,duration:.35,ease:"power2.out",stagger:.06},89.4);
+    tl.set("#dam-q",{clipPath:"inset(0 100% 0 0)"},88.6);
+    tl.to("#dam-q",{clipPath:"inset(0 0% 0 0)",duration:.9,ease:"none"},89.5);
+    tl.set("#s18 .dam-cell",{opacity:0,scale:.86,transformOrigin:"50% 50%"},88.6);
+    tl.to("#s18 .dam-cell",{opacity:1,scale:1,duration:.4,ease:"back.out(1.4)",stagger:.05},90);
+    tl.fromTo("#s18 .dam-tag.on",{boxShadow:"0 0 0 0 rgba(244,114,182,0)"},{boxShadow:"0 0 18px -5px #F472B6",duration:.4,yoyo:true,repeat:1,ease:"sine.inOut"},91.2);
+
+    /* S19 — données (PIM) : les lignes arrivent, la colonne calculée se remplit */
+    slide("#s19",94.2);
+    tl.from("#s19 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},94.7);
+    tl.from("#s19 .pbase",{y:16,opacity:0,duration:.4,ease:"power2.out",stagger:.08},94.8);
+    tl.from("#s19 .ptr",{x:-20,opacity:0,duration:.4,ease:"power2.out",stagger:.1},95);
+    tl.set("#s19 .ptr:not(.th) .calc",{opacity:0,x:-10},94.2);
+    tl.to("#s19 .ptr:not(.th) .calc",{opacity:1,x:0,duration:.4,ease:"power2.out",stagger:.12},95.9);
+    tl.set("#s19 .pform",{opacity:0,y:12},94.2);
+    tl.to("#s19 .pform",{opacity:1,y:0,duration:.45,ease:"power2.out"},96.6);
+
+    /* S20 — paramétrer : clés, cascade, budget — une clé se valide */
+    slide("#s20",99.8);
+    tl.from("#s20 .cap",{y:24,opacity:0,duration:.5,ease:"power3.out"},100.3);
+    tl.from("#s20 .set-col",{y:26,opacity:0,duration:.5,ease:"power3.out",stagger:.12},100.4);
+    tl.from("#s20 .set-row",{x:-18,opacity:0,duration:.4,ease:"power2.out",stagger:.1},100.7);
+    tl.from("#s20 .set-step",{x:18,opacity:0,duration:.4,ease:"power2.out",stagger:.1},100.95);
+    tl.set("#set-bar-i",{scaleX:0,transformOrigin:"left center"},99.8);
+    tl.set("#set-openai",{color:"rgba(255,255,255,.46)"},99.8);
+    tl.to("#set-openai",{color:"#34D399",duration:.4,ease:"power2.out"},101.5);
+    tl.to("#set-bar-i",{scaleX:1,duration:.9,ease:"power2.out"},101.7);
+
     /* S9 — outro */
-    slide("#s9",77.4);
-    tl.from("#s9 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},77.7);
-    tl.from("#s9 .big",{y:36,opacity:0,duration:.55,ease:"expo.out"},77.9);
-    tl.from("#s9 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},78.2);
-    tl.from("#s9 .url-out",{opacity:0,duration:.4,ease:"sine.out"},78.4);
-    tl.to("#s9 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},79.6);
+    slide("#s9",105.4);
+    tl.from("#s9 .logo",{y:30,opacity:0,duration:.5,ease:"power3.out"},105.7);
+    tl.from("#s9 .big",{y:36,opacity:0,duration:.55,ease:"expo.out"},105.9);
+    tl.from("#s9 .cta",{scale:.9,opacity:0,duration:.45,ease:"power3.out"},106.2);
+    tl.from("#s9 .url-out",{opacity:0,duration:.4,ease:"sine.out"},106.4);
+    tl.to("#s9 .s7-wrap",{opacity:0,duration:.4,ease:"power2.in"},107.6);
 
     window.__timelines["promo-hero"] = tl;
   </script>
