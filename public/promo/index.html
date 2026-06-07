@@ -186,7 +186,8 @@
   /* Éditeur — poster = fiche produit détaillée (scopé, n'affecte pas le hero) */
   #editer .poster{width:216px;aspect-ratio:auto;display:flex;flex-direction:column;padding:11px;gap:6px;color:#0f172a}
   #editer .poster .ph{position:static;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1/.78;margin:0;display:grid;place-items:center;border-radius:9px;overflow:hidden}
-  #editer .poster .ph .vico{width:98%;height:98%}
+  #editer .poster .ph .vico{width:98%;height:98%;z-index:1}
+  #editer .poster .ph .badge,#editer .poster .ph .promo{z-index:3}
   #editer .poster .badge{top:7px;right:7px;left:auto;width:34px;height:34px;font-size:10px}
   #editer .poster .promo{position:absolute;top:7px;left:7px;background:#dc2626;color:#fff;font-weight:800;font-size:13px;padding:4px 9px;border-radius:9px;transform:rotate(-7deg);box-shadow:0 6px 14px -4px rgba(220,38,38,.6);letter-spacing:.02em}
   #editer .poster .tt{position:static;bottom:auto;left:auto;font-size:15px;font-weight:800;color:#3730a3;line-height:1.05;margin-top:1px}
@@ -362,9 +363,9 @@
   .dm-top{display:flex;align-items:center;justify-content:space-between}
   .dm-top b{font-size:10px;font-family:var(--mono);letter-spacing:.08em;color:var(--faint);text-transform:uppercase;font-weight:700}
   .dm-ai{font-size:8.5px;color:#c7c4ff;border:1px solid rgba(124,108,255,.45);border-radius:20px;padding:2px 8px}
-  .dm-prev{height:90px;border-radius:9px;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line2)}
+  .dm-prev{height:132px;border-radius:9px;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line2);background:#0a0a10}
   .dm-prev .vico{width:100%;height:100%}
-  .dm-prev img{width:100%;height:100%;object-fit:cover;display:block}
+  .dm-prev img{width:100%;height:100%;object-fit:contain;display:block}
   .dm-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--ink);word-break:break-all}
   .dm-rows{display:flex;flex-direction:column;gap:5px}
   .dm-rows>div{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;gap:8px}
@@ -436,7 +437,7 @@
   .tpl-wbar{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--line)}
   .tpl-wbar .d{width:7px;height:7px;border-radius:50%;background:#3a3a46;flex:0 0 auto}
   .tpl-wbar .u{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-family:var(--mono);font-size:9px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tpl-page{background:#fff;color:#1e293b;padding:11px 12px;display:grid;grid-template-columns:auto 1fr;gap:10px 11px;align-items:start}
+  .tpl-page{background:#fff;color:#1e293b;padding:13px 12px;display:grid;grid-template-columns:auto 1fr;gap:12px 11px;align-items:start;min-height:250px;align-content:start}
   .tpl-img{grid-row:1 / span 4;width:84px;height:104px;border-radius:8px;overflow:hidden;position:relative}
   .tpl-img .vico{width:100%;height:100%}
   .tpl-el{position:relative;border-radius:6px;transition:box-shadow .2s,background .2s;padding:2px 4px;margin:-2px -4px;cursor:pointer}
@@ -583,7 +584,8 @@
   .ig-gen{margin-top:13px;text-align:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6366f1,#a855f7);padding:10px;border-radius:9px}
   .ig-res{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   .ig-tile{aspect-ratio:4/3;border-radius:9px;position:relative;overflow:hidden;border:1px solid var(--line2)}
-  .ig-tile .b{position:absolute;top:6px;right:6px;font-size:8.5px;font-weight:700;color:#fff;background:rgba(124,108,255,.85);border-radius:5px;padding:2px 6px}
+  .ig-tile .b{position:absolute;top:6px;right:6px;font-size:8.5px;font-weight:700;color:#fff;background:rgba(124,108,255,.85);border-radius:5px;padding:2px 6px;z-index:3}
+  .ig-tile .vshot{z-index:1}
   /* Publipostage (données → variantes) */
   .db-body{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center}
   .db-table{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);font-size:11px}
