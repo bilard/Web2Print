@@ -2460,9 +2460,24 @@
 </script>
 
 <script>
+/* ===== Utilitaires partagés des démos (dédup du boilerplate) ===== */
+window.PRM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+/* Boucle pilotée par la visibilité : (re)démarre tick() en boucle quand l'élément
+   entre dans le viewport, l'arrête (+ cleanup) à la sortie. Remplace le bloc
+   IntersectionObserver + setInterval répété dans chaque démo.
+   opt = {delay, tick, enter?, leave?, immediate=true, threshold=0.3} */
+window.loopInView = function(el, opt){
+  var iv=null;
+  function start(){ if(iv) return; if(opt.enter) opt.enter(); if(opt.immediate!==false) opt.tick(); iv=setInterval(opt.tick, opt.delay); }
+  function stop(){ if(iv){ clearInterval(iv); iv=null; } if(opt.leave) opt.leave(); }
+  if(!('IntersectionObserver' in window)){ start(); return; }
+  new IntersectionObserver(function(es){ es.forEach(function(e){ e.isIntersecting?start():stop(); }); },{threshold:opt.threshold||0.3}).observe(el);
+};
+</script>
+<script>
 /* Templates scraping — pointer & cliquer sur le site : sélection d'un élément → assignation à un champ */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#templates .scene-visual'); if(!sv) return;
   var page=sv.querySelector('.tpl-page'); if(!page) return;
   var els=[].slice.call(page.querySelectorAll('.tpl-el'));
@@ -2471,7 +2486,7 @@
   var seq=['Titre','Prix','Réf. / SKU','EAN','Description','Images'];
   function elByF(f){ for(var i=0;i<els.length;i++){ if(els[i].dataset.f===f) return els[i]; } return null; }
   function reset(){ els.forEach(function(e){e.classList.remove('hi','mapped');}); fields.forEach(function(f){f.classList.remove('on');}); }
-  var i=0, iv=null, t=[];
+  var i=0, t=[];
   function clearT(){ t.forEach(clearTimeout); t=[]; }
   function step(){
     if(i===0) reset();
@@ -2487,17 +2502,13 @@
     }
     i=(i+1)%(seq.length+2);
   }
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,1600); } }
-    else { if(iv){ clearInterval(iv); iv=null; } clearT(); i=0; reset(); }
-  }); },{threshold:0.3}).observe(sv);
+  loopInView(sv,{delay:1600,tick:step,enter:function(){i=0;},leave:function(){clearT();i=0;reset();}});
 })();
 </script>
 <script>
 /* Publipostage — mail-merge animé : ligne sélectionnée → champs {{ }} résolus → poster tamponné dans la grille, ligne par ligne */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#publipostage .scene-visual'); if(!sv) return;
   var rows=[].slice.call(sv.querySelectorAll('.db-tr')).filter(function(r){return !r.classList.contains('th');});
   var vars=[].slice.call(sv.querySelectorAll('.db-var'));
@@ -2510,7 +2521,7 @@
   var refs=['REF-67890','MEU-0750','SCI-1490','VIS-0120','PON-0649','RAB-0900'];
   var rem=['−10 %','−15 %','−20 %','−12 %','−18 %','−25 %'];
   var data=rows.map(function(r,i){ var s=r.querySelectorAll('span'); return {nom:s[0].textContent, prix:s[1].textContent, ico:icos[i%icos.length], ref:refs[i%refs.length], rem:rem[i%rem.length]}; });
-  var n=Math.min(rows.length, vars.length), TOTAL=248, t=[], iv=null, i=0;
+  var n=Math.min(rows.length, vars.length), TOTAL=248, t=[], i=0;
   function clearT(){ t.forEach(clearTimeout); t=[]; }
   function setProg(done){ var p=Math.min(1, done/n); if(prog) prog.style.width=(p*100).toFixed(0)+'%'; if(progN) progN.textContent=Math.round(p*TOTAL); }
   function unbind(){ tpl.classList.remove('bound'); im.classList.remove('bound'); phNom.classList.remove('bound'); phPrix.classList.remove('bound'); if(phRef) phRef.classList.remove('bound'); }
@@ -2529,22 +2540,18 @@
     t.push(setTimeout(function(){ v.classList.remove('lit'); unbind(); }, 1340));
     i++;
   }
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ reset(); i=0; step(); iv=setInterval(step,1600); } }
-    else { if(iv){ clearInterval(iv); iv=null; } clearT(); reset(); i=0; }
-  }); },{threshold:0.3}).observe(sv);
+  loopInView(sv,{delay:1600,tick:step,enter:function(){reset();i=0;},leave:function(){clearT();reset();i=0;}});
 })();
 </script>
 <script>
 /* Publier — export séquentiel : chaque canal s'allume puis ✓, barre de progression + compteur de fichiers */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#export .scene-visual'); if(!sv) return;
   var chans=[].slice.call(sv.querySelectorAll('.chan'));
   var bar=sv.querySelector('.pub-pbar i'), pn=sv.querySelector('.pub-pn b');
   if(!chans.length) return;
-  var n=chans.length, t=[], iv=null, i=0;
+  var n=chans.length, t=[], i=0;
   function clearT(){ t.forEach(clearTimeout); t=[]; }
   function setBar(done){ if(bar) bar.style.width=Math.round(done/n*100)+'%'; if(pn) pn.textContent=done; }
   function reset(){ chans.forEach(function(c){c.classList.remove('lit','done');}); setBar(0); }
@@ -2555,17 +2562,13 @@
     t.push(setTimeout(function(){ c.classList.remove('lit'); c.classList.add('done'); setBar(k+1); }, 340));
     i++;
   }
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ reset(); i=0; step(); iv=setInterval(step,560); } }
-    else { if(iv){ clearInterval(iv); iv=null; } clearT(); reset(); i=0; }
-  }); },{threshold:0.3}).observe(sv);
+  loopInView(sv,{delay:560,tick:step,enter:function(){reset();i=0;},leave:function(){clearT();reset();i=0;}});
 })();
 </script>
 <script>
 /* Paramètres — monitoring live : compteur requêtes + barres de conso qui respirent */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#settings .scene-visual'); if(!sv) return;
   var el=sv.querySelector('#setReq');
   var bars=[].slice.call(sv.querySelectorAll('.set-use .set-bar .tr i'));
@@ -2587,7 +2590,7 @@
 <script>
 /* DAM — clic sur une image → panneau de métadonnées (taille, espace color., DPI, mots-clés IA) */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#dam .scene-visual'); if(!sv) return;
   var grid=sv.querySelector('.dam-grid'); var panel=document.getElementById('damMeta'); if(!grid||!panel) return;
   var cells=[].slice.call(grid.querySelectorAll('i')); var $=function(id){return document.getElementById(id);};
@@ -2596,7 +2599,7 @@
     {idx:11,ico:'#ic-port',bg:'linear-gradient(160deg,#f7b8c6,#c98fd6)',name:'portrait-studio.png',dim:'2400 × 3000 px',size:'3,1 Mo',fmt:'PNG',cs:'RVB · Display P3',dpi:'240 DPI',tags:['portrait','personne','studio','rose'],pal:['#f3a3b5','#a855f7','#fde68a','#7c3a6b']},
     {idx:0,ico:'#ic-drill',bg:'linear-gradient(160deg,#dbe7f5,#aebfd0)',name:'perceuse-18v.png',dim:'2000 × 2000 px',size:'1,4 Mo',fmt:'PNG',cs:'RVB → CMJN',dpi:'300 DPI',tags:['outil','perceuse','packshot','bleu'],pal:['#1d4ed8','#5cc6fb','#94a3b8','#0f172a']}
   ];
-  var i=0, iv=null;
+  var i=0;
   function fill(d){
     $('dmImg').src='/promo/assets/'+d.ico.replace('#ic-','')+'.jpg'; $('dmName').textContent=d.name;
     $('dmDim').textContent=d.dim; $('dmSize').textContent=d.size; $('dmFmt').textContent=d.fmt; $('dmCs').textContent=d.cs; $('dmDpi').textContent=d.dpi;
@@ -2604,24 +2607,20 @@
     $('dmPal').innerHTML=d.pal.map(function(c){return '<i style="background:'+c+'"></i>';}).join('');
   }
   function step(){ var d=data[i%data.length]; cells.forEach(function(c,k){c.classList.toggle('sel',k===d.idx);}); fill(d); panel.classList.add('open'); i++; }
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,3200); } }
-    else { if(iv){ clearInterval(iv); iv=null; } panel.classList.remove('open'); cells.forEach(function(c){c.classList.remove('sel');}); }
-  }); },{threshold:0.3}).observe(sv);
+  loopInView(sv,{delay:3200,tick:step,enter:function(){i=0;},leave:function(){panel.classList.remove('open');cells.forEach(function(c){c.classList.remove('sel');});}});
 })();
 </script>
 <script>
 /* Bibliothèque — active le menu de gauche en boucle + tri/filtre virtuel des projets */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#bibliotheque .scene-visual'); if(!sv) return;
   var lis=[].slice.call(sv.querySelectorAll('.lib-side .li'));
   var cards=[].slice.call(sv.querySelectorAll('.lib-card'));
   if(lis.length<5 || cards.length<6) return;
   /* index des projets par catégorie : Tous, Affiches[Soldes,Flyer], Catalogues[Catalogue], Réseaux[Story,Bannière], PLV[PLV] */
   var filters=[null,[1,4],[0],[2,5],[3]];
-  var i=0, iv=null;
+  var i=0;
   function step(){
     var f=filters[i];
     lis.forEach(function(li,k){ li.classList.toggle('on',k===i); });
@@ -2632,17 +2631,13 @@
     });
     i=(i+1)%filters.length;
   }
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,2300); } }
-    else { if(iv){ clearInterval(iv); iv=null; } lis.forEach(function(li,k){li.classList.toggle('on',k===0);}); cards.forEach(function(c){c.classList.remove('dim','hot');}); }
-  }); },{threshold:0.3}).observe(sv);
+  loopInView(sv,{delay:2300,tick:step,enter:function(){i=0;},leave:function(){lis.forEach(function(li,k){li.classList.toggle('on',k===0);});cards.forEach(function(c){c.classList.remove('dim','hot');});}});
 })();
 </script>
 <script>
 /* Taxonomies — démo : glisser pour trier les niveaux + éditer un nom */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#taxonomies .scene-visual'); if(!sv) return;
   var body=sv.querySelector('.txo-body'); if(!body) return;
   var nodes=[].slice.call(body.querySelectorAll('.txo-node'));
@@ -2655,7 +2650,7 @@
   /* marqueur de la position d'origine de « Souffleurs » pour pouvoir le restaurer à l'identique */
   var home=document.createComment('txo-home'); drag.parentNode.insertBefore(home, drag.nextSibling);
   var dl=document.createElement('div'); dl.className='txo-dropline'; body.appendChild(dl);
-  var timers=[], iv=null;
+  var timers=[];
   function clearT(){ timers.forEach(clearTimeout); timers=[]; }
   function dropAt(t){ var r=t.getBoundingClientRect(), b=body.getBoundingClientRect(); dl.style.top=Math.round(r.top-b.top-1)+'px'; }
   function clearMove(n){ n.style.transition=''; n.style.transform=''; n.classList.remove('shift'); }
@@ -2690,20 +2685,16 @@
     timers.push(setTimeout(function(){ var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses autoportées'; },4700));
     timers.push(setTimeout(function(){ edit.classList.remove('editing'); },6300));
   }
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,8000); } }
-    else { if(iv){ clearInterval(iv); iv=null; } clearT(); }
-  }); },{threshold:0.3}).observe(sv);
+  loopInView(sv,{delay:8000,tick:seq,leave:clearT});
 })();
 </script>
 <script>
 /* Assistant IA — séquence du sélecteur de LLM : ouvre → sélectionne → ferme, en boucle */
 (function(){
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(PRM) return;
   var sv=document.querySelector('#chat .scene-visual'); if(!sv) return;
   var drop=sv.querySelector('.aic-drop'); if(!drop) return;
-  var timers=[], iv=null;
+  var timers=[];
   function clearT(){ timers.forEach(clearTimeout); timers=[]; }
   function seq(){
     clearT(); drop.classList.remove('open','picked');
@@ -2711,11 +2702,7 @@
     timers.push(setTimeout(function(){ drop.classList.add('picked'); },3300));
     timers.push(setTimeout(function(){ drop.classList.remove('open'); },5100));
   }
-  if(!('IntersectionObserver' in window)){ drop.classList.add('open','picked'); return; }
-  new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,7000); } }
-    else { if(iv){ clearInterval(iv); iv=null; } clearT(); drop.classList.remove('open','picked'); }
-  }); },{threshold:0.35}).observe(sv);
+  loopInView(sv,{delay:7000,threshold:0.35,tick:seq,leave:function(){clearT();drop.classList.remove('open','picked');}});
 })();
 </script>
 <script>
