@@ -2896,5 +2896,109 @@
   mBrowse.addEventListener('click',function(){ if(touring) stopTour(); });
 })();
 </script>
+<style>
+/* ============================================================
+   CINÉMATIQUE SCROLL — « Profondeur cinéma »
+   Couches à vitesses décalées + recul du hero + numéros fantômes
+   en arrière-plan + faisceau de progression. Tout en propriété CSS
+   `translate` (indépendante de `transform`) pour ne JAMAIS entrer en
+   conflit avec le reveal `.is-in` (transform:none!important) ni avec
+   le tilt 3D des maquettes. Désactivé si prefers-reduced-motion.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference){
+  html.js .hero .wrap{will-change:transform,opacity;transform-origin:50% 18%}
+  html.js .hero-grid{will-change:transform}
+  html.js .aurora .a1,html.js .aurora .a2,html.js .aurora .a3{will-change:translate}
+
+  /* Numéro de module géant, fantôme, dérivant en arrière-plan */
+  .scene{overflow:visible}
+  .scene-text,.scene-visual{position:relative;z-index:1}
+  .cine-ghost{position:absolute;top:50%;z-index:0;pointer-events:none;user-select:none;
+    font-family:var(--mono);font-weight:700;font-size:clamp(150px,24vw,400px);
+    line-height:.78;letter-spacing:-.05em;white-space:nowrap;
+    background:var(--grad);background-size:200% auto;-webkit-background-clip:text;background-clip:text;
+    color:transparent;opacity:.05;translate:0 0;will-change:translate,opacity;
+    animation:shimmer 9s linear infinite}
+  .scene:nth-child(odd) .cine-ghost{right:-3%}
+  .scene:nth-child(even) .cine-ghost{left:-3%}
+  @media(max-width:900px){.cine-ghost{font-size:34vw;opacity:.04}}
+
+  /* Faisceau de progression du scroll (haut de page) */
+  #cineBeam{position:fixed;top:0;left:0;z-index:200;height:2px;width:0;pointer-events:none;
+    background:var(--grad);background-size:200% auto;box-shadow:0 0 14px 1px rgba(124,108,255,.65);
+    animation:shimmer 7s linear infinite}
+}
+</style>
+<script>
+/* Cinématique scroll — Profondeur cinéma (rAF piloté par le scroll, throttlé) */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  /* Numéros fantômes : un par scène, extraits du « 01 — CRÉER » */
+  [].slice.call(document.querySelectorAll('.scene')).forEach(function(sc){
+    var num=sc.querySelector('.scene-num'); if(!num) return;
+    var m=(num.textContent||'').match(/\d+/); if(!m) return;
+    var g=document.createElement('span'); g.className='cine-ghost';
+    g.textContent=m[0]; g.setAttribute('aria-hidden','true');
+    sc.insertBefore(g, sc.firstChild);
+  });
+
+  /* Faisceau de progression */
+  var beam=document.createElement('div'); beam.id='cineBeam'; document.body.appendChild(beam);
+
+  var hero=document.querySelector('.hero .wrap');
+  var heroGrid=document.querySelector('.hero-grid');
+  var a1=document.querySelector('.aurora .a1'),
+      a2=document.querySelector('.aurora .a2'),
+      a3=document.querySelector('.aurora .a3');
+  var ghosts=[].slice.call(document.querySelectorAll('.cine-ghost'));
+  var visuals=[].slice.call(document.querySelectorAll('.scene-visual'));
+  var texts=[].slice.call(document.querySelectorAll('.scene-text'));
+
+  var vh=window.innerHeight||document.documentElement.clientHeight, dirty=true;
+  window.addEventListener('scroll',function(){dirty=true;},{passive:true});
+  window.addEventListener('resize',function(){vh=window.innerHeight||document.documentElement.clientHeight;dirty=true;});
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  /* position normalisée du centre d'un élément vs centre de l'écran : -1 (bas) → +1 (haut) */
+  function dist(el){var r=el.getBoundingClientRect();return ((r.top+r.height/2)-vh/2)/vh;}
+  function near(el){var r=el.getBoundingClientRect();return r.bottom>-260 && r.top<vh+260;}
+
+  function frame(){
+    if(dirty){
+      dirty=false;
+      var y=window.pageYOffset||document.documentElement.scrollTop||0;
+
+      /* HERO : recule, rétrécit et s'efface en sortant du champ (effet caméra) */
+      if(hero){
+        var hp=clamp(y/(vh*0.85),0,1);
+        hero.style.transform='translateY('+(hp*-72).toFixed(1)+'px) scale('+(1-hp*0.07).toFixed(3)+')';
+        hero.style.opacity=(1-hp*0.92).toFixed(3);
+      }
+      if(heroGrid) heroGrid.style.transform='translateY('+(y*0.20).toFixed(1)+'px)';
+
+      /* AURORES : trois plans de fond à vitesses opposées = profondeur */
+      if(a1) a1.style.translate='0 '+(y*0.07).toFixed(1)+'px';
+      if(a2) a2.style.translate='0 '+(y*-0.11).toFixed(1)+'px';
+      if(a3) a3.style.translate='0 '+(y*0.16).toFixed(1)+'px';
+
+      /* FAISCEAU : progression du scroll */
+      var docH=(document.documentElement.scrollHeight-vh);
+      beam.style.width=(docH>0?clamp(y/docH,0,1)*100:0).toFixed(2)+'%';
+
+      /* NUMÉROS FANTÔMES : dérive lente (plan lointain) + apparition au centre */
+      ghosts.forEach(function(g){ if(!near(g))return; var d=dist(g);
+        g.style.translate='0 '+(d*vh*0.16).toFixed(1)+'px';
+        g.style.opacity=(0.065*clamp(1-Math.abs(d)*1.25,0,1)).toFixed(3);
+      });
+      /* COUCHES DE SCÈNE : maquette plus rapide que le texte (séparation de profondeur) */
+      visuals.forEach(function(v){ if(!near(v))return; v.style.translate='0 '+(dist(v)*vh*-0.05).toFixed(1)+'px'; });
+      texts.forEach(function(t){ if(!near(t))return; t.style.translate='0 '+(dist(t)*vh*-0.018).toFixed(1)+'px'; });
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
