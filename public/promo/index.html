@@ -1324,22 +1324,33 @@
   <style>
   #decouverte .dx{position:relative;margin-top:34px;border:1px solid var(--line);border-radius:20px;background:var(--bg2);overflow:hidden}
   #decouverte .dx-track{display:flex;transition:transform .55s cubic-bezier(.2,.8,.3,1)}
-  #decouverte .dx-slide{flex:0 0 100%;display:grid;grid-template-columns:minmax(0,40%) 1fr;min-height:512px}
-  #decouverte .dx-media{position:relative;overflow:hidden;background:#000}
-  #decouverte .dx-media img{width:100%;height:100%;object-fit:cover;display:block;opacity:.9}
-  #decouverte .dx-media::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 50%,var(--bg2)),linear-gradient(0deg,rgba(0,0,0,.45),transparent 55%)}
-  #decouverte .dx-tag{position:absolute;top:16px;left:16px;z-index:2;font-family:var(--mono);font-size:34px;font-weight:700;color:var(--ax);opacity:.85;text-shadow:0 2px 18px rgba(0,0,0,.6)}
-  #decouverte .dx-body{padding:34px 42px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
-  #decouverte .dx-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ax)}
-  #decouverte .dx-sector{font-size:13px;color:var(--muted);margin-top:4px}
-  #decouverte .dx-title{font-size:clamp(20px,2.2vw,27px);font-weight:700;line-height:1.16;margin:10px 0 16px;color:var(--ink)}
-  #decouverte .dx-steps{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0}
-  #decouverte .dx-steps li{display:flex;gap:12px;font-size:13.5px;color:var(--muted);line-height:1.42}
-  #decouverte .dx-n{flex:0 0 auto;width:23px;height:23px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ax);border:1px solid var(--ax);background:rgba(255,255,255,.03)}
-  #decouverte .dx-steps a{color:var(--ink);font-weight:600;border-bottom:1px solid rgba(255,255,255,.18);transition:border-color .15s,color .15s}
-  #decouverte .dx-steps a:hover{border-color:var(--ax);color:#fff}
-  #decouverte .dx-cover{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--faint)}
-  #decouverte .dx-cover b{color:var(--ax);font-weight:700}
+  #decouverte .dx-slide{flex:0 0 100%;display:flex;flex-direction:column;justify-content:center;padding:32px 56px;min-height:430px}
+  #decouverte .dx-top{display:flex;align-items:center;gap:13px;margin-bottom:13px}
+  #decouverte .dx-thumb{width:42px;height:42px;border-radius:11px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line2);box-shadow:0 0 0 3px rgba(255,255,255,.02)}
+  #decouverte .dx-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ax)}
+  #decouverte .dx-sector{font-size:14px;color:var(--ink);font-weight:600;margin-top:2px}
+  #decouverte .dx-num{margin-left:auto;font-family:var(--mono);font-size:30px;font-weight:700;color:var(--ax);opacity:.5}
+  #decouverte .dx-title{font-size:clamp(21px,2.4vw,30px);font-weight:700;line-height:1.12;margin:0 0 9px;color:var(--ink);max-width:760px}
+  #decouverte .dx-pitch{font-size:14.5px;color:var(--muted);line-height:1.5;max-width:760px}
+  #decouverte .dx-kpis{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  #decouverte .dx-kpis span{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ax);padding:5px 11px;border-radius:999px;border:1px solid var(--ax);background:rgba(255,255,255,.02)}
+  /* Workflow animé par secteur — réutilise l'esthétique des nodes du module Automatiser */
+  #decouverte .dxf{position:relative;margin-top:20px;border:1px solid var(--line2);border-radius:14px;background:radial-gradient(circle at 50% -12%,rgba(124,108,255,.13),transparent 60%),#0a0a10;padding:30px 20px 24px;overflow:hidden}
+  #decouverte .dxf::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.075) 1.1px,transparent 1.1px);background-size:22px 22px;opacity:.5;pointer-events:none}
+  #decouverte .dxf-cap{position:absolute;top:9px;left:13px;font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:6px}
+  #decouverte .dxf-cap i{width:6px;height:6px;border-radius:50%;background:var(--ax);box-shadow:0 0 8px 1px var(--ax)}
+  #decouverte .dxf-flow{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px}
+  #decouverte .dxf-node{position:relative;flex:0 0 auto;width:146px;border:1px solid var(--line2);border-radius:11px;background:linear-gradient(180deg,#16161d,#101015);padding:9px 11px;display:flex;align-items:center;gap:9px;text-align:left;box-shadow:0 14px 30px -18px #000,0 0 22px -16px var(--nc);transition:border-color .2s;animation:dxfNode 5s ease-in-out infinite;animation-delay:calc(var(--i)*.45s)}
+  #decouverte a.dxf-node:hover{border-color:var(--nc)}
+  #decouverte .dxf-node .ni{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;flex:0 0 auto;background:var(--nc);box-shadow:0 5px 14px -6px var(--nc)}
+  #decouverte .dxf-node .ni svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #decouverte .dxf-node b{font-size:12px;display:block;line-height:1.2;color:var(--ink)}
+  #decouverte .dxf-node em{font-size:9.5px;color:var(--muted);display:block;margin-top:1px;font-style:normal}
+  #decouverte .dxf-node .ntype{position:absolute;top:-8px;left:10px;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.1em;color:var(--nc);background:#0a0a10;border:1px solid var(--nc);border-radius:5px;padding:1px 6px;text-transform:uppercase}
+  #decouverte .dxf-link{flex:0 0 26px;align-self:center;position:relative;height:2px;background:var(--line2);border-radius:2px}
+  #decouverte .dxf-link::after{content:"";position:absolute;top:50%;left:0;width:6px;height:6px;border-radius:50%;background:var(--ax);box-shadow:0 0 8px 1px var(--ax);transform:translateY(-50%);animation:dxfDot 5s ease-in-out infinite;animation-delay:calc(var(--i)*.45s)}
+  @keyframes dxfNode{0%,100%{border-color:var(--line2);box-shadow:0 14px 30px -18px #000,0 0 22px -16px var(--nc)}10%,22%{border-color:var(--nc);box-shadow:0 14px 30px -18px #000,0 0 0 1px var(--nc),0 0 26px -7px var(--nc)}}
+  @keyframes dxfDot{0%,7%{left:0;opacity:0}13%{opacity:1}26%{left:100%;opacity:1}30%,100%{left:100%;opacity:0}}
   #decouverte .dx-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:42px;height:42px;border-radius:50%;border:1px solid var(--line2);background:rgba(10,10,16,.7);backdrop-filter:blur(6px);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .2s,border-color .2s}
   #decouverte .dx-nav:hover{background:var(--surface);border-color:var(--ax)}
   #decouverte .dx-nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -1356,12 +1367,14 @@
   #decouverte .dx-grp-chips{display:flex;flex-wrap:wrap;gap:6px}
   #decouverte .dx-grp-chips a{font-size:12px;color:var(--muted);padding:4px 11px;border-radius:999px;border:1px solid var(--line2);transition:color .15s,border-color .15s,background .15s}
   #decouverte .dx-grp-chips a:hover{color:var(--ink);border-color:var(--indigo);background:rgba(99,102,241,.13)}
+  @media(prefers-reduced-motion:reduce){#decouverte .dxf-node{animation:none}#decouverte .dxf-link::after{animation:none;opacity:.5;left:50%}}
   @media(max-width:760px){
-    #decouverte .dx-slide{grid-template-columns:1fr;min-height:0}
-    #decouverte .dx-media{height:160px}
-    #decouverte .dx-media::after{background:linear-gradient(0deg,var(--bg2),transparent 62%)}
-    #decouverte .dx-body{padding:26px 24px}
-    #decouverte .dx-nav{top:80px}
+    #decouverte .dx-slide{padding:24px 22px;min-height:0}
+    #decouverte .dx-nav{top:64px}
+    #decouverte .dxf-flow{flex-direction:column;align-items:stretch}
+    #decouverte .dxf-node{width:auto}
+    #decouverte .dxf-link{width:2px;height:16px;align-self:center}
+    #decouverte .dxf-link::after{display:none}
     #decouverte .dx-map-grid{grid-template-columns:1fr}
   }
   </style>
@@ -1369,99 +1382,141 @@
     <div class="wrap">
       <div class="shead" style="text-align:center;max-width:760px;margin:0 auto">
         <span class="mono grad-text">Découverte</span>
-        <h2 style="font-size:clamp(26px,3.4vw,40px);font-weight:700;line-height:1.1;margin:12px 0 14px">Cinq secteurs, les 18 modules</h2>
-        <p style="color:var(--muted);font-size:15px">Chaque secteur déroule un vrai parcours — du premier clic au support diffusé. Bout à bout, ces cinq scénarios font travailler <b style="color:var(--ink)">l’ensemble des 18 modules</b> de la plateforme.</p>
+        <h2 style="font-size:clamp(26px,3.4vw,40px);font-weight:700;line-height:1.1;margin:12px 0 14px">Cinq workflows, vos 18 modules au travail</h2>
+        <p style="color:var(--muted);font-size:15px">Pour chaque secteur, un <b style="color:var(--ink)">workflow concret</b> enchaîne les modules de la plateforme — avec l’argument business qui va avec. Bout à bout, ces cinq scénarios mobilisent <b style="color:var(--ink)">les 18 modules</b>.</p>
       </div>
 
       <div class="dx" aria-roledescription="diaporama" aria-label="Cas d'usage par secteur">
         <div class="dx-track">
 
           <article class="dx-slide" style="--ax:#fbbf24">
-            <div class="dx-media"><span class="dx-tag">01</span><img src="/promo/assets/drill.jpg" alt="Outillage" loading="lazy"/></div>
-            <div class="dx-body">
-              <div class="dx-eyebrow">Secteur 01 · B2B</div>
-              <div class="dx-sector">Bricolage &amp; Outillage</div>
-              <h3 class="dx-title">Du site fournisseur au catalogue imprimeur</h3>
-              <ol class="dx-steps">
-                <li><span class="dx-n">1</span><span><a href="#scraper">Collecter</a> — scrape Milwaukee &amp; Bosch : specs clé/valeur + visuels HD.</span></li>
-                <li><span class="dx-n">2</span><span><a href="#templates">Mapper</a> — un modèle de correspondance par site source.</span></li>
-                <li><span class="dx-n">3</span><span><a href="#pim">Données</a> — fiches produit structurées, complétées par l’IA.</span></li>
-                <li><span class="dx-n">4</span><span><a href="#taxonomies">Classer</a> — arborescence marque × catégorie.</span></li>
-                <li><span class="dx-n">5</span><span><a href="#dam">Médias</a> — photos HD centralisées et réutilisables.</span></li>
-                <li><span class="dx-n">6</span><span><a href="#publipostage">Décliner</a> — 300 fiches générées depuis la base.</span></li>
-                <li><span class="dx-n">7</span><span><a href="#export">Publier</a> — IDML EasyCatalog + PDF imprimeur.</span></li>
-              </ol>
-              <div class="dx-cover"><b>7 modules</b> enchaînés sur ce parcours</div>
+            <div class="dx-top">
+              <img class="dx-thumb" src="/promo/assets/drill.jpg" alt="" loading="lazy"/>
+              <div><div class="dx-eyebrow">Secteur 01 · B2B</div><div class="dx-sector">Bricolage &amp; Outillage</div></div>
+              <span class="dx-num">01</span>
+            </div>
+            <h3 class="dx-title">300 références à jour, du fournisseur à l’imprimeur</h3>
+            <p class="dx-pitch">Le catalogue qui se tient à jour tout seul : on scrape les sites fournisseurs, la donnée se structure, se range et se met en page — vous n’éditez plus une seule fiche à la main.</p>
+            <div class="dx-kpis"><span>300 réf</span><span>1 seul run</span><span>0 ressaisie</span></div>
+            <div class="dxf">
+              <span class="dxf-cap"><i></i>workflow.flow · 6 modules</span>
+              <div class="dxf-flow">
+                <a class="dxf-node" href="#scraper" style="--i:0;--nc:#22d3ee"><span class="ntype">collecter</span><span class="ni"><svg><use href="#m-collecter"/></svg></span><div><b>Collecter</b><em>sites fournisseurs</em></div></a>
+                <span class="dxf-link" style="--i:0"></span>
+                <a class="dxf-node" href="#templates" style="--i:1;--nc:#818cf8"><span class="ntype">mapper</span><span class="ni"><svg><use href="#m-mapper"/></svg></span><div><b>Mapper</b><em>modèle par site</em></div></a>
+                <span class="dxf-link" style="--i:1"></span>
+                <a class="dxf-node" href="#pim" style="--i:2;--nc:#34d399"><span class="ntype">données</span><span class="ni"><svg><use href="#m-donnees"/></svg></span><div><b>Données</b><em>fiches clé/valeur</em></div></a>
+                <span class="dxf-link" style="--i:2"></span>
+                <a class="dxf-node" href="#taxonomies" style="--i:3;--nc:#2dd4bf"><span class="ntype">classer</span><span class="ni"><svg><use href="#m-classer"/></svg></span><div><b>Classer</b><em>marque × catégorie</em></div></a>
+                <span class="dxf-link" style="--i:3"></span>
+                <a class="dxf-node" href="#publipostage" style="--i:4;--nc:#a855f7"><span class="ntype">décliner</span><span class="ni"><svg><use href="#m-decliner"/></svg></span><div><b>Décliner</b><em>300 fiches</em></div></a>
+                <span class="dxf-link" style="--i:4"></span>
+                <a class="dxf-node" href="#export" style="--i:5;--nc:#f472b6"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>IDML + PDF</em></div></a>
+              </div>
             </div>
           </article>
 
           <article class="dx-slide" style="--ax:#a3e635">
-            <div class="dx-media"><span class="dx-tag">02</span><img src="/promo/assets/plant.jpg" alt="Produit alimentaire" loading="lazy"/></div>
-            <div class="dx-body">
-              <div class="dx-eyebrow">Secteur 02 · B2C</div>
-              <div class="dx-sector">Alimentaire &amp; GMS</div>
-              <h3 class="dx-title">La promo hebdo industrialisée</h3>
-              <ol class="dx-steps">
-                <li><span class="dx-n">1</span><span><a href="#import">Importer</a> — packaging décomposé en blocs (Image → SVG).</span></li>
-                <li><span class="dx-n">2</span><span><a href="#nouveau">Créer</a> — un gabarit PLV au bon format.</span></li>
-                <li><span class="dx-n">3</span><span><a href="#editer">Éditer</a> — prix, bandeau et fond verrouillé.</span></li>
-                <li><span class="dx-n">4</span><span><a href="#bibliotheque">Organiser</a> — gabarits rangés, réutilisés chaque semaine.</span></li>
-                <li><span class="dx-n">5</span><span><a href="#publipostage">Décliner</a> — 200 PLV depuis un simple tableau.</span></li>
-                <li><span class="dx-n">6</span><span><a href="#export">Publier</a> — PDF multi-pages prêt à imprimer.</span></li>
-              </ol>
-              <div class="dx-cover"><b>6 modules</b> enchaînés sur ce parcours</div>
+            <div class="dx-top">
+              <img class="dx-thumb" src="/promo/assets/plant.jpg" alt="" loading="lazy"/>
+              <div><div class="dx-eyebrow">Secteur 02 · B2C</div><div class="dx-sector">Alimentaire &amp; GMS</div></div>
+              <span class="dx-num">02</span>
+            </div>
+            <h3 class="dx-title">Une promo, 200 magasins — chaque lundi matin</h3>
+            <p class="dx-pitch">Votre catalogue promo hebdo industrialisé : un gabarit, votre tableau de prix, et toutes les PLV partent à l’impression — sans copier-coller, sans erreur de prix.</p>
+            <div class="dx-kpis"><span>1 gabarit</span><span>200 PLV</span><span>prix auto</span></div>
+            <div class="dxf">
+              <span class="dxf-cap"><i></i>workflow.flow · 6 modules</span>
+              <div class="dxf-flow">
+                <a class="dxf-node" href="#import" style="--i:0;--nc:#fbbf24"><span class="ntype">importer</span><span class="ni"><svg><use href="#m-importer"/></svg></span><div><b>Importer</b><em>packaging → SVG</em></div></a>
+                <span class="dxf-link" style="--i:0"></span>
+                <a class="dxf-node" href="#nouveau" style="--i:1;--nc:#a855f7"><span class="ntype">créer</span><span class="ni"><svg><use href="#m-creer"/></svg></span><div><b>Créer</b><em>gabarit PLV</em></div></a>
+                <span class="dxf-link" style="--i:1"></span>
+                <a class="dxf-node" href="#editer" style="--i:2;--nc:#38bdf8"><span class="ntype">éditer</span><span class="ni"><svg><use href="#m-editer"/></svg></span><div><b>Éditer</b><em>prix · bandeau</em></div></a>
+                <span class="dxf-link" style="--i:2"></span>
+                <a class="dxf-node" href="#bibliotheque" style="--i:3;--nc:#818cf8"><span class="ntype">organiser</span><span class="ni"><svg><use href="#m-organiser"/></svg></span><div><b>Organiser</b><em>gabarits rangés</em></div></a>
+                <span class="dxf-link" style="--i:3"></span>
+                <a class="dxf-node" href="#publipostage" style="--i:4;--nc:#34d399"><span class="ntype">décliner</span><span class="ni"><svg><use href="#m-decliner"/></svg></span><div><b>Décliner</b><em>200 PLV</em></div></a>
+                <span class="dxf-link" style="--i:4"></span>
+                <a class="dxf-node" href="#export" style="--i:5;--nc:#f472b6"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>PDF print</em></div></a>
+              </div>
             </div>
           </article>
 
           <article class="dx-slide" style="--ax:#f472b6">
-            <div class="dx-media"><span class="dx-tag">03</span><img src="/promo/assets/shirt.jpg" alt="Textile" loading="lazy"/></div>
-            <div class="dx-body">
-              <div class="dx-eyebrow">Secteur 03 · B2C / B2B</div>
-              <div class="dx-sector">Textile &amp; Mode</div>
-              <h3 class="dx-title">Une collection, du print au lookbook animé</h3>
-              <ol class="dx-steps">
-                <li><span class="dx-n">1</span><span><a href="#import">Importer</a> — maquette agence (PDF → SVG) éditable bloc par bloc.</span></li>
-                <li><span class="dx-n">2</span><span><a href="#editer">Éditer</a> — tailles, coloris et accroches.</span></li>
-                <li><span class="dx-n">3</span><span><a href="#imgen">Générer</a> — visuels d’ambiance IA, fidèles à la charte.</span></li>
-                <li><span class="dx-n">4</span><span><a href="#animation">Animer</a> — un lookbook vidéo pour le web.</span></li>
-                <li><span class="dx-n">5</span><span><a href="#export">Publier</a> — SVG web + PPTX showroom.</span></li>
-              </ol>
-              <div class="dx-cover"><b>5 modules</b> enchaînés sur ce parcours</div>
+            <div class="dx-top">
+              <img class="dx-thumb" src="/promo/assets/shirt.jpg" alt="" loading="lazy"/>
+              <div><div class="dx-eyebrow">Secteur 03 · B2C / B2B</div><div class="dx-sector">Textile &amp; Mode</div></div>
+              <span class="dx-num">03</span>
+            </div>
+            <h3 class="dx-title">Une collection déclinée partout : print, web, vidéo</h3>
+            <p class="dx-pitch">La maquette de l’agence devient un terrain de jeu éditable : coloris, tailles, ambiances IA et même un lookbook animé — sans jamais repasser par le studio.</p>
+            <div class="dx-kpis"><span>1 source</span><span>print + web + vidéo</span><span>0 aller-retour</span></div>
+            <div class="dxf">
+              <span class="dxf-cap"><i></i>workflow.flow · 5 modules</span>
+              <div class="dxf-flow">
+                <a class="dxf-node" href="#import" style="--i:0;--nc:#fbbf24"><span class="ntype">importer</span><span class="ni"><svg><use href="#m-importer"/></svg></span><div><b>Importer</b><em>PDF → SVG</em></div></a>
+                <span class="dxf-link" style="--i:0"></span>
+                <a class="dxf-node" href="#editer" style="--i:1;--nc:#38bdf8"><span class="ntype">éditer</span><span class="ni"><svg><use href="#m-editer"/></svg></span><div><b>Éditer</b><em>tailles · coloris</em></div></a>
+                <span class="dxf-link" style="--i:1"></span>
+                <a class="dxf-node" href="#imgen" style="--i:2;--nc:#a855f7"><span class="ntype">générer</span><span class="ni"><svg><use href="#m-generer"/></svg></span><div><b>Générer</b><em>ambiances IA</em></div></a>
+                <span class="dxf-link" style="--i:2"></span>
+                <a class="dxf-node" href="#animation" style="--i:3;--nc:#e879f9"><span class="ntype">animer</span><span class="ni"><svg><use href="#m-animer"/></svg></span><div><b>Animer</b><em>lookbook vidéo</em></div></a>
+                <span class="dxf-link" style="--i:3"></span>
+                <a class="dxf-node" href="#export" style="--i:4;--nc:#6366f1"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>SVG + PPTX</em></div></a>
+              </div>
             </div>
           </article>
 
           <article class="dx-slide" style="--ax:#a855f7">
-            <div class="dx-media"><span class="dx-tag">04</span><img src="/promo/assets/bottle.jpg" alt="Flacon cosmétique" loading="lazy"/></div>
-            <div class="dx-body">
-              <div class="dx-eyebrow">Secteur 04 · B2C premium</div>
-              <div class="dx-sector">Cosmétique &amp; Beauté</div>
-              <h3 class="dx-title">Six ambiances fidèles à la charte</h3>
-              <ol class="dx-steps">
-                <li><span class="dx-n">1</span><span><a href="#import">Importer</a> — affiche détourée : photo, titre, prix isolés.</span></li>
-                <li><span class="dx-n">2</span><span><a href="#chat">Assister</a> — brief et accroches proposés par le Chat IA.</span></li>
-                <li><span class="dx-n">3</span><span><a href="#imgen">Générer</a> — six déclinaisons par parfum.</span></li>
-                <li><span class="dx-n">4</span><span><a href="#dam">Médias</a> — visuels rangés et versionnés.</span></li>
-                <li><span class="dx-n">5</span><span><a href="#export">Publier</a> — print boutique + formats réseaux sociaux.</span></li>
-              </ol>
-              <div class="dx-cover"><b>5 modules</b> enchaînés sur ce parcours</div>
+            <div class="dx-top">
+              <img class="dx-thumb" src="/promo/assets/bottle.jpg" alt="" loading="lazy"/>
+              <div><div class="dx-eyebrow">Secteur 04 · B2C premium</div><div class="dx-sector">Cosmétique &amp; Beauté</div></div>
+              <span class="dx-num">04</span>
+            </div>
+            <h3 class="dx-title">Le premium à l’échelle : six ambiances, une charte</h3>
+            <p class="dx-pitch">Six parfums, six ambiances générées par l’IA et fidèles à votre identité — détourées, rangées dans le DAM, prêtes pour la boutique comme pour Instagram.</p>
+            <div class="dx-kpis"><span>6 ambiances</span><span>charte respectée</span><span>print + social</span></div>
+            <div class="dxf">
+              <span class="dxf-cap"><i></i>workflow.flow · 5 modules</span>
+              <div class="dxf-flow">
+                <a class="dxf-node" href="#import" style="--i:0;--nc:#fbbf24"><span class="ntype">importer</span><span class="ni"><svg><use href="#m-importer"/></svg></span><div><b>Importer</b><em>affiche détourée</em></div></a>
+                <span class="dxf-link" style="--i:0"></span>
+                <a class="dxf-node" href="#chat" style="--i:1;--nc:#a78bfa"><span class="ntype">assister</span><span class="ni"><svg><use href="#m-assister"/></svg></span><div><b>Assister</b><em>accroches IA</em></div></a>
+                <span class="dxf-link" style="--i:1"></span>
+                <a class="dxf-node" href="#imgen" style="--i:2;--nc:#f472b6"><span class="ntype">générer</span><span class="ni"><svg><use href="#m-generer"/></svg></span><div><b>Générer</b><em>6 parfums</em></div></a>
+                <span class="dxf-link" style="--i:2"></span>
+                <a class="dxf-node" href="#dam" style="--i:3;--nc:#38bdf8"><span class="ntype">médias</span><span class="ni"><svg><use href="#m-medias"/></svg></span><div><b>Médias</b><em>visuels rangés</em></div></a>
+                <span class="dxf-link" style="--i:3"></span>
+                <a class="dxf-node" href="#export" style="--i:4;--nc:#6366f1"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>print + social</em></div></a>
+              </div>
             </div>
           </article>
 
           <article class="dx-slide" style="--ax:#22d3ee">
-            <div class="dx-media"><span class="dx-tag">05</span><img src="/promo/assets/head.jpg" alt="Accessoire auto-moto" loading="lazy"/></div>
-            <div class="dx-body">
-              <div class="dx-eyebrow">Secteur 05 · B2B terrain</div>
-              <div class="dx-sector">Accessoires auto / moto</div>
-              <h3 class="dx-title">Une fiche sur-mesure, par simple message</h3>
-              <ol class="dx-steps">
-                <li><span class="dx-n">1</span><span><a href="#telegram">Piloter</a> — le commercial demande la fiche via le bot Telegram.</span></li>
-                <li><span class="dx-n">2</span><span><a href="#workflows">Automatiser</a> — un workflow IA s’assemble : enrichir → composer → exporter.</span></li>
-                <li><span class="dx-n">3</span><span><a href="#pim">Données</a> — enrichissement produit à la volée.</span></li>
-                <li><span class="dx-n">4</span><span><a href="#settings">Paramétrer</a> — connecteurs Drive/Gmail + modèle IA par tâche.</span></li>
-                <li><span class="dx-n">5</span><span><a href="#roles">Gouverner</a> — chaque rôle voit ce qu’il a le droit de faire.</span></li>
-                <li><span class="dx-n">6</span><span><a href="#export">Publier</a> — le PDF revient dans la conversation.</span></li>
-              </ol>
-              <div class="dx-cover"><b>6 modules</b> enchaînés sur ce parcours</div>
+            <div class="dx-top">
+              <img class="dx-thumb" src="/promo/assets/head.jpg" alt="" loading="lazy"/>
+              <div><div class="dx-eyebrow">Secteur 05 · B2B terrain</div><div class="dx-sector">Accessoires auto / moto</div></div>
+              <span class="dx-num">05</span>
+            </div>
+            <h3 class="dx-title">Vos commerciaux produisent leurs fiches, par message</h3>
+            <p class="dx-pitch">Un message au bot Telegram, l’IA monte le workflow, le PDF revient dans la conversation — pendant le rendez-vous, sans ouvrir l’app, dans le respect des droits de chacun.</p>
+            <div class="dx-kpis"><span>par message</span><span>fiche en minutes</span><span>sans poste</span></div>
+            <div class="dxf">
+              <span class="dxf-cap"><i></i>workflow.flow · 6 modules</span>
+              <div class="dxf-flow">
+                <a class="dxf-node" href="#telegram" style="--i:0;--nc:#60a5fa"><span class="ntype">piloter</span><span class="ni"><svg><use href="#m-piloter"/></svg></span><div><b>Piloter</b><em>demande /flow</em></div></a>
+                <span class="dxf-link" style="--i:0"></span>
+                <a class="dxf-node" href="#workflows" style="--i:1;--nc:#818cf8"><span class="ntype">automatiser</span><span class="ni"><svg><use href="#m-automatiser"/></svg></span><div><b>Automatiser</b><em>workflow monté</em></div></a>
+                <span class="dxf-link" style="--i:1"></span>
+                <a class="dxf-node" href="#pim" style="--i:2;--nc:#34d399"><span class="ntype">données</span><span class="ni"><svg><use href="#m-donnees"/></svg></span><div><b>Données</b><em>enrichissement</em></div></a>
+                <span class="dxf-link" style="--i:2"></span>
+                <a class="dxf-node" href="#settings" style="--i:3;--nc:#22d3ee"><span class="ntype">paramétrer</span><span class="ni"><svg><use href="#m-parametrer"/></svg></span><div><b>Paramétrer</b><em>Drive · Gmail</em></div></a>
+                <span class="dxf-link" style="--i:3"></span>
+                <a class="dxf-node" href="#roles" style="--i:4;--nc:#fb7185"><span class="ntype">gouverner</span><span class="ni"><svg><use href="#m-gouverner"/></svg></span><div><b>Gouverner</b><em>droits par rôle</em></div></a>
+                <span class="dxf-link" style="--i:4"></span>
+                <a class="dxf-node" href="#export" style="--i:5;--nc:#f472b6"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>PDF renvoyé</em></div></a>
+              </div>
             </div>
           </article>
 
