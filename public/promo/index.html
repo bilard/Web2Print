@@ -516,7 +516,7 @@
   .anm-rv .rstage{position:absolute;right:0%;top:40%;left:auto;transform:translateY(-50%);width:54%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(103,232,249,.22),rgba(232,121,249,.1) 45%,transparent 66%);z-index:0;pointer-events:none}
   .anm-rv .drill{position:absolute;right:3%;top:40%;left:auto;transform:translateY(-50%);width:48%;z-index:1;filter:drop-shadow(0 0 28px rgba(34,211,238,1)) drop-shadow(0 0 12px rgba(232,121,249,.6))}
   .anm-rv .rinfo,.anm-rv .rctrl,.anm-rv .rpromo,.anm-rv .rgen{z-index:2}
-  .anm-rv .rinfo{position:absolute;left:15px;bottom:46px;display:flex;flex-direction:column;gap:9px;max-width:56%}
+  .anm-rv .rinfo{position:absolute;left:15px;bottom:42px;display:flex;flex-direction:column;gap:8px;max-width:52%}
   .anm-rv .rpictos{display:flex;gap:6px;flex-wrap:wrap}
   .anm-rv .rpictos span{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:600;color:#e9d5ff;background:rgba(168,85,247,.2);border:1px solid rgba(232,121,249,.35);border-radius:6px;padding:4px 7px}
   .anm-rv .rpictos svg{width:12px;height:12px;color:#67e8f9}
@@ -528,6 +528,19 @@
   .anm-rv .rgen{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10px;color:#f5d0fe;background:rgba(168,85,247,.25);border:1px solid rgba(232,121,249,.5);border-radius:20px;padding:4px 11px}
   .anm-rv .rtitle{font-weight:800;font-size:21px;letter-spacing:.04em;color:#67e8f9;text-shadow:0 0 14px rgba(34,211,238,.9);line-height:1.1}
   .anm-rv .rtitle small{display:block;font-size:10px;font-weight:600;color:#f5d0fe;letter-spacing:.05em;text-shadow:0 0 10px rgba(232,121,249,.8);margin-top:3px}
+  .anm-rv .rdesc{font-size:9.5px;line-height:1.45;color:#ede9fe;max-width:99%;text-shadow:0 0 9px rgba(168,85,247,.55)}
+  .anm-rv .rdesc b{color:#fde047;font-weight:800}
+  /* balayage de lumière sur tout le cadre (passe énergique) */
+  .anm-rv .rshine{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.5) 49%,transparent 60%);mix-blend-mode:screen;transform:translateX(-120%)}
+  /* particules néon scintillantes */
+  .anm-rv .rsparks{position:absolute;inset:0;z-index:2;pointer-events:none}
+  .anm-rv .rsparks i{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(103,232,249,.95);opacity:0}
+  .anm-rv .rsparks i:nth-child(1){left:60%;top:24%}.anm-rv .rsparks i:nth-child(2){left:88%;top:46%;background:#fde047;box-shadow:0 0 8px 2px rgba(250,204,21,.9)}
+  .anm-rv .rsparks i:nth-child(3){left:72%;top:70%}.anm-rv .rsparks i:nth-child(4){left:54%;top:54%;background:#f0abfc;box-shadow:0 0 8px 2px rgba(232,121,249,.9)}
+  .anm-rv .rsparks i:nth-child(5){left:80%;top:18%}
+  /* halo rotatif derrière le badge promo */
+  .anm-rv .rpromo{isolation:isolate}
+  .anm-rv .rpromo::after{content:"";position:absolute;inset:-45%;z-index:-1;border-radius:50%;background:conic-gradient(from 0deg,rgba(250,204,21,0),rgba(250,204,21,.65) 18%,rgba(232,121,249,0) 40%,rgba(34,211,238,.55) 64%,rgba(250,204,21,0) 86%);filter:blur(3px)}
   .anm-rv .rctrl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:11px;padding:11px 14px;background:linear-gradient(transparent,rgba(0,0,0,.6))}
   .anm-rv .rctrl .pp{color:#fff;display:grid;place-items:center}.anm-rv .rctrl .pp svg{width:15px;height:15px;display:block}
   .anm-rv .rbar{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.25);position:relative;overflow:hidden}
@@ -981,6 +994,15 @@
   @keyframes anmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   @keyframes anmPrice{0%,100%{transform:scale(1);box-shadow:0 0 18px -3px rgba(250,204,21,.8)}50%{transform:scale(1.09);box-shadow:0 0 26px -2px rgba(250,204,21,1)}}
   @keyframes anmBlink{0%,100%{opacity:1}50%{opacity:.4}}
+  #animation .scene-visual.is-in .anm-rv .rshine{animation:anmShine 3.8s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rsparks i{animation:anmSpark 2.2s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(2){animation-delay:.5s}#animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(3){animation-delay:.9s}#animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(4){animation-delay:1.3s}#animation .scene-visual.is-in .anm-rv .rsparks i:nth-child(5){animation-delay:1.7s}
+  #animation .scene-visual.is-in .anm-rv .rpromo::after{animation:anmSpin 6s linear infinite}
+  #animation .scene-visual.is-in .anm-rv .rdesc{animation:anmDesc 5.4s ease-in-out infinite}
+  @keyframes anmShine{0%{transform:translateX(-120%)}48%,100%{transform:translateX(120%)}}
+  @keyframes anmSpark{0%,100%{opacity:0;transform:scale(.4)}45%{opacity:1;transform:scale(1.25)}}
+  @keyframes anmSpin{to{transform:rotate(360deg)}}
+  @keyframes anmDesc{0%,100%{opacity:.72}50%{opacity:1}}
   #animation .scene-visual.is-in .anm-card{animation:cycleRise 4.6s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-card:nth-child(3){animation-delay:.3s}#animation .scene-visual.is-in .anm-card:nth-child(4){animation-delay:.6s}
   #animation .scene-visual.is-in .anm-chip.on{animation:breathe 2.6s ease-in-out infinite}
@@ -1711,10 +1733,13 @@
                 <span class="ngrid"></span>
                 <span class="rstage"></span>
                 <svg class="drill vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg>
+                <span class="rsparks"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="rshine"></span>
                 <span class="rpromo">−30 %</span>
                 <span class="rgen">✦ généré · 16:9 · 10 s</span>
                 <div class="rinfo">
                   <span class="rtitle">PERCEUSE 18V<small>Brushless · 2 batteries · mandrin 13 mm</small></span>
+                  <span class="rdesc">La sans-fil nouvelle génération : moteur <b>brushless</b> 60 Nm, 2 batteries XR 2 Ah et mandrin 13 mm auto-serrant. Légère, increvable, <b>garantie 3 ans</b> — l'alliée puissance de tous vos chantiers.</span>
                   <span class="rpictos"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4"/></svg>2×2 Ah</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>60 Nm</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>3 ans</span></span>
                   <span class="rprice"><span class="rold">31,10 €</span><span class="rnew">24<small>€90</small></span></span>
                 </div>
