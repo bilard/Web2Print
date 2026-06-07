@@ -282,10 +282,21 @@
   .pub-main{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;flex:1;min-height:0}
   .pub-srccol{display:flex;flex-direction:column;align-items:center;gap:11px}
   .pub-srclbl{font-family:var(--mono);font-size:9px;letter-spacing:.09em;color:var(--faint);text-transform:uppercase}
-  .pub-src{width:150px;aspect-ratio:50/64;background:#fff;border-radius:11px;position:relative;box-shadow:0 22px 48px -18px rgba(0,0,0,.75);outline:2px solid var(--indigo);outline-offset:3px;overflow:hidden}
-  .pub-src .ph{position:absolute;inset:11% 13% 40%;border-radius:7px;background:radial-gradient(ellipse 80% 72% at 50% 38%,#fff,#e7edf4);overflow:hidden}
-  .pub-src .ph .vico{position:absolute;inset:0;width:100%;height:100%}
-  .pub-src .price{position:absolute;bottom:12%;left:13%;background:#facc15;color:#dc2626;font-weight:800;font-size:15px;padding:4px 9px;border-radius:5px;box-shadow:0 0 16px -3px rgba(250,204,21,.8)}
+  .pub-src{width:194px;aspect-ratio:50/70;background:#fff;border-radius:12px;position:relative;box-shadow:0 22px 48px -18px rgba(0,0,0,.75);outline:2px solid var(--indigo);outline-offset:3px;overflow:hidden;display:flex;flex-direction:column;padding:11px 11px 0;gap:6px}
+  .pub-src .psrc-brand{display:flex;align-items:center;gap:5px;font-size:8px;font-weight:800;letter-spacing:.14em;color:#0f172a;text-transform:uppercase}
+  .pub-src .psrc-brand i{width:14px;height:5px;border-radius:2px;background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+  .pub-src .psrc-promo{position:absolute;top:9px;right:9px;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#fb7185,#e11d48);color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center;box-shadow:0 5px 13px -2px rgba(225,29,72,.7);transform:rotate(8deg);border:2px solid #fff;z-index:2}
+  .pub-src .psrc-img{flex:0 0 38%;border-radius:8px;background:radial-gradient(ellipse 80% 72% at 50% 40%,#fff,#eef2f7);position:relative;overflow:hidden;border:1px solid #eef2f7}
+  .pub-src .psrc-img .vico{position:absolute;inset:3%;width:94%;height:94%}
+  .pub-src .psrc-title{font-size:13px;font-weight:900;color:#0f172a;line-height:1.05;letter-spacing:.01em}
+  .pub-src .psrc-title small{display:block;font-size:8px;font-weight:600;color:#64748b;letter-spacing:.04em;margin-top:2px}
+  .pub-src .psrc-specs{display:flex;gap:4px}
+  .pub-src .psrc-specs span{flex:1;font-size:7.5px;font-weight:700;color:#334155;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:3px 1px;text-align:center}
+  .pub-src .psrc-price{display:flex;align-items:center;gap:8px;margin-top:1px}
+  .pub-src .psrc-old{font-size:10px;color:#94a3b8;text-decoration:line-through;font-weight:600}
+  .pub-src .psrc-new{font-size:18px;font-weight:900;color:#dc2626;background:#facc15;padding:3px 10px;border-radius:7px;box-shadow:0 0 14px -3px rgba(250,204,21,.85)}
+  .pub-src .psrc-new small{font-size:10px;vertical-align:super;margin-left:1px}
+  .pub-src .psrc-foot{margin:auto -11px 0;background:linear-gradient(90deg,#6366f1,#a855f7);color:#fff;font-size:7.5px;font-weight:700;letter-spacing:.05em;text-align:center;padding:5px 0}
   .pub-srcmeta{font-size:10px;color:var(--muted);text-align:center;line-height:1.5}.pub-srcmeta b{color:var(--ink);font-weight:700}
   .pub-chans{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   .chan{display:flex;align-items:center;gap:11px;border:1px solid var(--line2);border-radius:11px;background:var(--surface);padding:10px 12px;position:relative;transition:border-color .3s,box-shadow .3s,transform .25s}
@@ -1833,7 +1844,15 @@
             <div class="pub-main">
               <div class="pub-srccol">
                 <span class="pub-srclbl">1 source</span>
-                <div class="pub-src" aria-hidden="true"><span class="ph"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="price">19€90</span></div>
+                <div class="pub-src" aria-hidden="true">
+                  <span class="psrc-promo">−30%</span>
+                  <div class="psrc-brand"><i></i>TechMaster</div>
+                  <div class="psrc-img"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div>
+                  <div class="psrc-title">PERCEUSE 18V<small>Brushless · sans-fil · mandrin 13 mm</small></div>
+                  <div class="psrc-specs"><span>2×2 Ah</span><span>60 Nm</span><span>3 ans</span></div>
+                  <div class="psrc-price"><span class="psrc-old">28€90</span><span class="psrc-new">19<small>€90</small></span></div>
+                  <div class="psrc-foot">OFFRE −30 % · JUSQU'AU 30/06</div>
+                </div>
                 <span class="pub-srcmeta"><b>Perceuse 18V — PLV</b><br/>A4 · 210 × 297 mm</span>
               </div>
               <div class="pub-chans">
