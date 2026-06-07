@@ -609,17 +609,32 @@
   .db-tr .num{text-align:right;font-variant-numeric:tabular-nums}
   .db-right{display:flex;flex-direction:column}
   .db-merge{display:flex;align-items:stretch;gap:9px}
-  .db-tpl{flex:0 0 96px;border:1.5px dashed rgba(34,211,238,.55);border-radius:9px;background:rgba(34,211,238,.05);padding:8px;display:flex;flex-direction:column;gap:5px}
-  .db-tpl .im{height:40px;border-radius:6px;border:1px dashed rgba(34,211,238,.5);display:grid;place-items:center;font-family:var(--mono);font-size:8px;color:var(--cyan)}
-  .db-ph{font-family:var(--mono);font-size:8.5px;color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.35);border-radius:5px;padding:2px 6px;align-self:flex-start}
-  .db-arrow{display:grid;place-items:center;color:var(--indigo);flex:0 0 auto}.db-arrow svg{width:24px;height:24px}
+  .db-tpl{flex:0 0 104px;border:1.5px dashed rgba(34,211,238,.55);border-radius:9px;background:rgba(34,211,238,.05);padding:8px;display:flex;flex-direction:column;gap:5px;transition:border-color .25s,box-shadow .25s}
+  .db-tpl.bound{border-color:rgba(124,108,255,.6);box-shadow:0 0 16px -6px var(--indigo)}
+  .db-tpl .im{height:44px;border-radius:6px;border:1px dashed rgba(34,211,238,.5);display:grid;place-items:center;font-family:var(--mono);font-size:8px;color:var(--cyan);position:relative;overflow:hidden;transition:border-color .25s}
+  .db-tpl .im .vico{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .3s}
+  .db-tpl .im.bound{border-style:solid;border-color:var(--indigo)}
+  .db-tpl .im.bound .ph{opacity:0}.db-tpl .im.bound .vico{opacity:1}
+  .db-tpl .im .ph{transition:opacity .25s}
+  .db-ph{font-family:var(--mono);font-size:8.5px;color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.35);border-radius:5px;padding:2px 6px;align-self:stretch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .25s,border-color .25s,color .25s}
+  .db-ph .val{display:none}.db-ph.bound .ph{display:none}.db-ph.bound .val{display:inline}
+  .db-ph.bound{color:#fff;background:var(--indigo);border-color:var(--indigo);font-weight:700}
+  .db-arrow{display:grid;place-items:center;color:var(--indigo);flex:0 0 auto;position:relative}.db-arrow svg{width:24px;height:24px;transition:transform .25s}
+  .db-arrow.flow svg{transform:scale(1.18)}
+  .db-arrow .spark{position:absolute;top:50%;left:0;width:7px;height:7px;border-radius:50%;background:var(--indigo);box-shadow:0 0 9px 2px var(--indigo);opacity:0;transform:translateY(-50%)}
+  .db-arrow.flow .spark{animation:dbSpark .55s ease-out}
+  @keyframes dbSpark{0%{opacity:1;left:-2px}80%{opacity:1}100%{opacity:0;left:26px}}
   .db-out{flex:1;min-width:0}
   .db-variants{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .db-var{border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:#fff}
+  .db-var{border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:#fff;transition:box-shadow .3s,transform .25s,opacity .3s}
+  .db-var.pending{opacity:.32;filter:grayscale(.4)}
+  .db-var.stamp{animation:dbStamp .5s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes dbStamp{0%{transform:scale(.55);opacity:0}55%{transform:scale(1.07);opacity:1}100%{transform:scale(1);opacity:1}}
+  .db-var.lit{box-shadow:0 0 0 2px var(--indigo),0 9px 22px -7px rgba(99,102,241,.7)}
   .db-var .im{height:38px;position:relative;background:radial-gradient(ellipse 80% 72% at 50% 36%,#fff,#e7edf4)}
   .db-var .im .vico{position:absolute;inset:0;width:100%;height:100%}
   .db-var .tx{padding:4px 6px 6px}
-  .db-var .nm{font-size:8px;font-weight:700;color:#1e293b;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .db-var .nm{font-size:8px;font-weight:700;color:#1e293b;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .db-var .pr{font-size:9.5px;font-weight:800;color:#dc2626;margin-top:1px}
   .db-count{font-size:11px;color:var(--muted);margin-top:11px}.db-count b{font-size:22px;color:var(--ink);font-weight:800;margin-right:6px}
   /* Paramètres (clés & modèles) */
@@ -894,11 +909,7 @@
   #scraper .scene-visual.is-in .thumbs i{animation:cyclePop 5s ease-in-out infinite}
   #scraper .scene-visual.is-in .thumbs i:nth-child(2){animation-delay:.18s}#scraper .scene-visual.is-in .thumbs i:nth-child(3){animation-delay:.36s}#scraper .scene-visual.is-in .thumbs i:nth-child(4){animation-delay:.54s}#scraper .scene-visual.is-in .thumbs i:nth-child(5){animation-delay:.72s}#scraper .scene-visual.is-in .thumbs i:nth-child(6){animation-delay:.9s}
 
-  /* 11 Publipostage — variantes qui se multiplient en vague (6 colonnes) */
-  #publipostage .scene-visual.is-in .db-var{animation:cyclePop 4.8s ease-in-out infinite}
-  #publipostage .scene-visual.is-in .db-var:nth-child(2){animation-delay:.12s}#publipostage .scene-visual.is-in .db-var:nth-child(3){animation-delay:.24s}#publipostage .scene-visual.is-in .db-var:nth-child(4){animation-delay:.36s}#publipostage .scene-visual.is-in .db-var:nth-child(5){animation-delay:.48s}#publipostage .scene-visual.is-in .db-var:nth-child(6){animation-delay:.6s}
-  #publipostage .scene-visual.is-in .db-ph{animation:breathe 2.6s ease-in-out infinite}
-  #publipostage .scene-visual.is-in .db-tpl{animation:breathe 3.2s ease-in-out infinite}
+  /* 11 Publipostage — mail-merge piloté en JS (voir IIFE en bas) : sélection ligne → résolution {{champs}} → tampon poster */
 
   /* 12 Workflows — câblage tracé puis flux de données qui circule, nœuds allumés dans l'ordre */
   .wfl-wire{stroke-dasharray:100;stroke-dashoffset:100}
@@ -1516,25 +1527,27 @@
               <div class="db-lbl"><span>Base produits</span><span>248 lignes</span></div>
               <div class="db-table">
                 <div class="db-tr th"><span>Nom</span><span class="num">Prix</span></div>
-                <div class="db-tr on"><span>Perceuse 18V</span><span class="num">129,00 €</span></div>
+                <div class="db-tr"><span>Perceuse 18V</span><span class="num">129,00 €</span></div>
                 <div class="db-tr"><span>Meuleuse 750W</span><span class="num">79,90 €</span></div>
                 <div class="db-tr"><span>Scie circulaire</span><span class="num">149,00 €</span></div>
                 <div class="db-tr"><span>Visseuse 12V</span><span class="num">59,00 €</span></div>
+                <div class="db-tr"><span>Ponceuse exc.</span><span class="num">64,90 €</span></div>
+                <div class="db-tr"><span>Rabot 900W</span><span class="num">89,00 €</span></div>
               </div>
             </div>
             <div class="db-right">
               <div class="db-lbl"><span>Gabarit → 1 déclinaison / ligne</span></div>
               <div class="db-merge">
-                <div class="db-tpl"><div class="im">{{ image }}</div><span class="db-ph">{{ nom }}</span><span class="db-ph">{{ prix }}</span></div>
-                <div class="db-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+                <div class="db-tpl"><div class="im"><span class="ph">{{ image }}</span><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><span class="db-ph" data-k="nom"><span class="ph">{{ nom }}</span><span class="val"></span></span><span class="db-ph" data-k="prix"><span class="ph">{{ prix }}</span><span class="val"></span></span></div>
+                <div class="db-arrow"><span class="spark"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
                 <div class="db-out">
                   <div class="db-variants">
-                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Perceuse 18V</div><div class="pr">129,00 €</div></div></div>
-                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Meuleuse 750W</div><div class="pr">79,90 €</div></div></div>
-                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Scie circulaire</div><div class="pr">149,00 €</div></div></div>
-                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Visseuse 12V</div><div class="pr">59,00 €</div></div></div>
-                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Ponceuse exc.</div><div class="pr">64,90 €</div></div></div>
-                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Rabot 900W</div><div class="pr">89,00 €</div></div></div>
+                    <div class="db-var pending"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Perceuse 18V</div><div class="pr">129,00 €</div></div></div>
+                    <div class="db-var pending"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill2"/></svg></div><div class="tx"><div class="nm">Meuleuse 750W</div><div class="pr">79,90 €</div></div></div>
+                    <div class="db-var pending"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill3"/></svg></div><div class="tx"><div class="nm">Scie circulaire</div><div class="pr">149,00 €</div></div></div>
+                    <div class="db-var pending"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill4"/></svg></div><div class="tx"><div class="nm">Visseuse 12V</div><div class="pr">59,00 €</div></div></div>
+                    <div class="db-var pending"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill5"/></svg></div><div class="tx"><div class="nm">Ponceuse exc.</div><div class="pr">64,90 €</div></div></div>
+                    <div class="db-var pending"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill6"/></svg></div><div class="tx"><div class="nm">Rabot 900W</div><div class="pr">89,00 €</div></div></div>
                   </div>
                 </div>
               </div>
@@ -2043,6 +2056,42 @@
   new IntersectionObserver(function(es){ es.forEach(function(e){
     if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,1600); } }
     else { if(iv){ clearInterval(iv); iv=null; } clearT(); i=0; reset(); }
+  }); },{threshold:0.3}).observe(sv);
+})();
+</script>
+<script>
+/* Publipostage — mail-merge animé : ligne sélectionnée → champs {{ }} résolus → poster tamponné dans la grille, ligne par ligne */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#publipostage .scene-visual'); if(!sv) return;
+  var rows=[].slice.call(sv.querySelectorAll('.db-tr')).filter(function(r){return !r.classList.contains('th');});
+  var vars=[].slice.call(sv.querySelectorAll('.db-var'));
+  var tpl=sv.querySelector('.db-tpl'); if(!tpl) return;
+  var im=tpl.querySelector('.im'), imUse=im.querySelector('use'), arrow=sv.querySelector('.db-arrow');
+  var phNom=sv.querySelector('.db-ph[data-k="nom"]'), phPrix=sv.querySelector('.db-ph[data-k="prix"]');
+  if(!phNom||!phPrix||!rows.length||!vars.length) return;
+  var icos=['#ic-drill','#ic-drill2','#ic-drill3','#ic-drill4','#ic-drill5','#ic-drill6'];
+  var data=rows.map(function(r,i){ var s=r.querySelectorAll('span'); return {nom:s[0].textContent, prix:s[1].textContent, ico:icos[i%icos.length]}; });
+  var n=Math.min(rows.length, vars.length), t=[], iv=null, i=0;
+  function clearT(){ t.forEach(clearTimeout); t=[]; }
+  function unbind(){ tpl.classList.remove('bound'); im.classList.remove('bound'); phNom.classList.remove('bound'); phPrix.classList.remove('bound'); }
+  function reset(){ rows.forEach(function(r){r.classList.remove('on');}); vars.forEach(function(v){v.classList.add('pending'); v.classList.remove('lit','stamp');}); unbind(); }
+  function bind(d){ phNom.querySelector('.val').textContent=d.nom; phPrix.querySelector('.val').textContent=d.prix; imUse.setAttribute('href', d.ico);
+    tpl.classList.add('bound'); im.classList.add('bound'); phNom.classList.add('bound'); phPrix.classList.add('bound'); }
+  function step(){
+    if(i>=n){ reset(); i=0; return; } /* tour plein : on tient l'aperçu une tick puis on relance */
+    var d=data[i], row=rows[i], v=vars[i];
+    rows.forEach(function(r){r.classList.remove('on');}); row.classList.add('on');
+    t.push(setTimeout(function(){ bind(d); }, 240));
+    t.push(setTimeout(function(){ arrow.classList.add('flow'); }, 700));
+    t.push(setTimeout(function(){ arrow.classList.remove('flow'); v.classList.remove('pending'); v.classList.add('stamp','lit'); }, 1040));
+    t.push(setTimeout(function(){ v.classList.remove('lit'); unbind(); }, 1340));
+    i++;
+  }
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv){ reset(); i=0; step(); iv=setInterval(step,1600); } }
+    else { if(iv){ clearInterval(iv); iv=null; } clearT(); reset(); i=0; }
   }); },{threshold:0.3}).observe(sv);
 })();
 </script>
