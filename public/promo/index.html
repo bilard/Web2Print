@@ -1360,7 +1360,13 @@
   #decouverte .dx-nav:hover{background:var(--surface);border-color:var(--ax)}
   #decouverte .dx-nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
   #decouverte .dx-prev{left:15px}#decouverte .dx-next{right:15px}
-  #decouverte .dx-dots{display:flex;justify-content:center;gap:8px;padding:16px;border-top:1px solid var(--line)}
+  #decouverte .dx-foot{display:flex;align-items:center;justify-content:center;gap:22px;padding:13px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+  #decouverte .dx-ctrl{display:flex;align-items:center;gap:6px}
+  #decouverte .dx-ctrl button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.02);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+  #decouverte .dx-ctrl button:hover{color:var(--ink);border-color:var(--ax)}
+  #decouverte .dx-ctrl button.on{color:var(--ax);border-color:var(--ax);background:rgba(255,255,255,.05)}
+  #decouverte .dx-ctrl button svg{width:15px;height:15px;fill:currentColor}
+  #decouverte .dx-dots{display:flex;justify-content:center;gap:8px;padding:0}
   #decouverte .dx-dots button{width:8px;height:8px;border-radius:999px;border:0;background:var(--line2);cursor:pointer;padding:0;transition:width .25s,background .25s}
   #decouverte .dx-dots button.on{width:26px;background:var(--grad)}
   #decouverte .dx-map{margin-top:22px;border:1px solid var(--line);border-radius:18px;background:var(--bg2);padding:22px 24px}
@@ -1567,7 +1573,15 @@
         </div>
         <button class="dx-nav dx-prev" type="button" aria-label="Secteur précédent"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
         <button class="dx-nav dx-next" type="button" aria-label="Secteur suivant"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
-        <div class="dx-dots" role="tablist" aria-label="Secteurs"></div>
+        <div class="dx-foot">
+          <div class="dx-ctrl" role="group" aria-label="Contrôles du diaporama">
+            <button class="dx-c-prev" type="button" aria-label="Secteur précédent" title="Précédent"><svg viewBox="0 0 24 24"><path d="M7 6h2.2v12H7zM20 6v12l-9.6-6z"/></svg></button>
+            <button class="dx-c-play" type="button" aria-label="Lecture automatique" title="Lecture"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+            <button class="dx-c-pause" type="button" aria-label="Pause" title="Pause"><svg viewBox="0 0 24 24"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></svg></button>
+            <button class="dx-c-next" type="button" aria-label="Secteur suivant" title="Suivant"><svg viewBox="0 0 24 24"><path d="M14.8 6H17v12h-2.2zM4 6v12l9.6-6z"/></svg></button>
+          </div>
+          <div class="dx-dots" role="tablist" aria-label="Secteurs"></div>
+        </div>
       </div>
 
       <!-- Couverture explicite des 18 modules -->
@@ -2750,28 +2764,37 @@
   var track=root.querySelector('.dx-track');
   var slides=[].slice.call(root.querySelectorAll('.dx-slide'));
   var dotsWrap=root.querySelector('.dx-dots');
-  var n=slides.length, i=0, iv=null;
+  var n=slides.length, i=0, iv=null, paused=false;
+  var btnPlay=root.querySelector('.dx-c-play'), btnPause=root.querySelector('.dx-c-pause');
   var dots=slides.map(function(_,k){
     var b=document.createElement('button'); b.type='button'; b.setAttribute('role','tab');
     b.setAttribute('aria-label','Secteur '+(k+1));
-    b.addEventListener('click',function(){ go(k); rest(); });
+    b.addEventListener('click',function(){ go(k); if(!paused) rest(); });
     dotsWrap.appendChild(b); return b;
   });
+  function sync(){ btnPlay.classList.toggle('on',!paused); btnPause.classList.toggle('on',paused); }
   function render(){
     track.style.transform='translateX(-'+(i*100)+'%)';
     dots.forEach(function(d,k){ d.classList.toggle('on',k===i); d.setAttribute('aria-selected',k===i?'true':'false'); });
   }
   function go(k){ i=(k%n+n)%n; render(); }
-  root.querySelector('.dx-prev').addEventListener('click',function(){ go(i-1); rest(); });
-  root.querySelector('.dx-next').addEventListener('click',function(){ go(i+1); rest(); });
-  function play(){ if(iv) return; iv=setInterval(function(){ go(i+1); },6000); }
+  function play(){ if(paused||iv) return; iv=setInterval(function(){ go(i+1); },6000); }
   function stop(){ if(iv){ clearInterval(iv); iv=null; } }
   function rest(){ stop(); play(); }
-  root.addEventListener('mouseenter',stop); root.addEventListener('mouseleave',play);
-  render();
-  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function prev(){ go(i-1); if(!paused) rest(); }
+  function next(){ go(i+1); if(!paused) rest(); }
+  root.querySelector('.dx-prev').addEventListener('click',prev);
+  root.querySelector('.dx-next').addEventListener('click',next);
+  root.querySelector('.dx-c-prev').addEventListener('click',prev);
+  root.querySelector('.dx-c-next').addEventListener('click',next);
+  btnPlay.addEventListener('click',function(){ paused=false; play(); sync(); });
+  btnPause.addEventListener('click',function(){ paused=true; stop(); sync(); });
+  root.addEventListener('mouseenter',function(){ if(!paused) stop(); });
+  root.addEventListener('mouseleave',function(){ if(!paused) play(); });
+  render(); sync();
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){ paused=true; sync(); return; }
   if('IntersectionObserver' in window){
-    new IntersectionObserver(function(es){ es.forEach(function(e){ e.isIntersecting?play():stop(); }); },{threshold:.3}).observe(root);
+    new IntersectionObserver(function(es){ es.forEach(function(e){ if(paused) return; e.isIntersecting?play():stop(); }); },{threshold:.3}).observe(root);
   } else { play(); }
 })();
 </script>
