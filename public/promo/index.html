@@ -1116,9 +1116,27 @@
   #roles .scene-visual.is-in .usr-perm.on{animation:okBlink 2.2s ease-in-out infinite}
 
   /* 18 Paramètres — clés validées qui clignotent en séquence */
-  #settings .scene-visual.is-in .set-key .ok{animation:okBlink 2.6s ease-in-out infinite}
-  #settings .scene-visual.is-in .set-key:nth-child(3) .ok{animation-delay:.45s}#settings .scene-visual.is-in .set-key:nth-child(4) .ok{animation-delay:.9s}
-  #settings .scene-visual.is-in .set-model:first-of-type{animation:breathe 2.8s ease-in-out infinite}
+  /* vague sur les pastilles vertes des clés (vérification en boucle) */
+  #settings .scene-visual.is-in .set-key .ok{animation:okBlink 2s ease-in-out infinite}
+  #settings .scene-visual.is-in .set-key:nth-child(3) .ok{animation-delay:.2s}#settings .scene-visual.is-in .set-key:nth-child(4) .ok{animation-delay:.4s}#settings .scene-visual.is-in .set-key:nth-child(5) .ok{animation-delay:.6s}#settings .scene-visual.is-in .set-key:nth-child(6) .ok{animation-delay:.8s}
+  /* le statut « ✓ ok » scintille légèrement en cascade */
+  #settings .scene-visual.is-in .set-key .st{animation:stFlicker 3.6s ease-in-out infinite}
+  #settings .scene-visual.is-in .set-key:nth-child(3) .st{animation-delay:.3s}#settings .scene-visual.is-in .set-key:nth-child(4) .st{animation-delay:.6s}#settings .scene-visual.is-in .set-key:nth-child(5) .st{animation-delay:.9s}#settings .scene-visual.is-in .set-key:nth-child(6) .st{animation-delay:1.2s}
+  @keyframes stFlicker{0%,88%,100%{opacity:.6}94%{opacity:1;text-shadow:0 0 8px rgba(110,231,183,.9)}}
+  /* bouton « Mettre à jour tous les LLM » qui respire */
+  #settings .scene-visual.is-in .set-btn{animation:btnPulse 2.8s ease-in-out infinite}
+  /* flux qui parcourt la cascade de repli Claude → GPT → DeepSeek → Qwen */
+  #settings .scene-visual.is-in .db-chips i{animation:cascFlow 4.2s ease-in-out infinite}
+  #settings .scene-visual.is-in .db-chips i:nth-child(2){animation-delay:.45s}#settings .scene-visual.is-in .db-chips i:nth-child(3){animation-delay:.9s}#settings .scene-visual.is-in .db-chips i:nth-child(4){animation-delay:1.35s}
+  @keyframes cascFlow{0%,70%,100%{opacity:.5;text-shadow:none}9%,17%{opacity:1;text-shadow:0 0 12px rgba(124,108,255,.95)}}
+  /* boutons des connecteurs actifs : léger halo qui pulse */
+  #settings .scene-visual.is-in .set-conn .item .tog:not(.off){animation:togGlow 3.2s ease-in-out infinite}
+  #settings .scene-visual.is-in .set-conn .item:nth-child(2) .tog:not(.off){animation-delay:.4s}#settings .scene-visual.is-in .set-conn .item:nth-child(3) .tog:not(.off){animation-delay:.8s}#settings .scene-visual.is-in .set-conn .item:nth-child(4) .tog:not(.off){animation-delay:1.2s}#settings .scene-visual.is-in .set-conn .item:nth-child(6) .tog:not(.off){animation-delay:1.6s}
+  @keyframes togGlow{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}50%{box-shadow:0 0 12px -2px rgba(52,211,153,.75)}}
+  /* tuiles de stats qui respirent doucement */
+  #settings .scene-visual.is-in .set-stat{animation:statBreathe 4s ease-in-out infinite}
+  #settings .scene-visual.is-in .set-stat:nth-child(2){animation-delay:.5s}#settings .scene-visual.is-in .set-stat:nth-child(3){animation-delay:1s}#settings .scene-visual.is-in .set-stat:nth-child(4){animation-delay:1.5s}
+  @keyframes statBreathe{0%,100%{border-color:var(--line)}50%{border-color:rgba(124,108,255,.32)}}
 
   /* ====== CURSEUR DE DÉMO : un curseur réalise le geste clé, avec onde de « tap » ====== */
   .dcur{position:absolute;width:22px;height:22px;z-index:9;pointer-events:none;opacity:0;left:var(--x0,80%);top:var(--y0,88%);transform:translate(-2px,-1px)}
@@ -2273,16 +2291,23 @@
 })();
 </script>
 <script>
-/* Paramètres — compteur « Requêtes · 24 h » qui s'incrémente (effet live) */
+/* Paramètres — monitoring live : compteur requêtes + barres de conso qui respirent */
 (function(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var sv=document.querySelector('#settings .scene-visual'); if(!sv) return;
-  var el=sv.querySelector('#setReq'); if(!el) return;
-  var n=1248, iv=null;
-  function tick(){ n+=Math.floor(1+Math.random()*4); el.textContent=n.toLocaleString('fr-FR'); }
+  var el=sv.querySelector('#setReq');
+  var bars=[].slice.call(sv.querySelectorAll('.set-use .set-bar .tr i'));
+  var bases=bars.map(function(b){ return parseFloat(b.style.getPropertyValue('--w'))||40; });
+  if(!el && !bars.length) return;
+  var n=1248, iv=null, started=false;
+  function tick(){
+    if(el){ n+=Math.floor(1+Math.random()*4); el.textContent=n.toLocaleString('fr-FR'); }
+    /* léger jitter autour de la valeur de base → effet « données en direct » (transition CSS 1s = lissage) */
+    bars.forEach(function(b,k){ var w=Math.max(6,Math.min(98, bases[k]+(Math.random()*5-2.5))); b.style.width=w.toFixed(1)+'%'; });
+  }
   if(!('IntersectionObserver' in window)) return;
   new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv) iv=setInterval(tick,1400); }
+    if(e.isIntersecting){ if(!iv){ /* laisse la pousse initiale finir avant le jitter */ setTimeout(function(){ if(!started){started=true;tick();} },1200); iv=setInterval(tick,1900); } }
     else { if(iv){ clearInterval(iv); iv=null; } }
   }); },{threshold:0.3}).observe(sv);
 })();
