@@ -168,7 +168,7 @@
   .spill{font-family:var(--body);font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:7px}
 
   /* Maquette ÉDITEUR */
-  .ed-body{display:grid;grid-template-columns:48px 1fr 226px;min-height:392px}
+  .ed-body{display:grid;grid-template-columns:52px 1fr 252px;min-height:392px}
   @media(max-width:680px){.ed-body{grid-template-columns:40px 1fr}.ed-panel{display:none}}
   .ed-tools{border-right:1px solid var(--line);background:#0b0b11;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0}
   .ed-tools i{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--faint)}
@@ -183,6 +183,21 @@
   .poster .tt{position:absolute;bottom:14%;left:13%;font-size:15px;font-weight:700;color:#3730a3;line-height:1.1}
   .poster .hand{position:absolute;width:9px;height:9px;border:1.5px solid var(--indigo);border-radius:2px;background:#fff}
   .poster .h1{top:-6px;left:-6px}.poster .h2{top:-6px;right:-6px}.poster .h3{bottom:-6px;left:-6px}.poster .h4{bottom:-6px;right:-6px}
+  /* Éditeur — poster = fiche produit détaillée (scopé, n'affecte pas le hero) */
+  #editer .poster{width:216px;aspect-ratio:auto;display:flex;flex-direction:column;padding:11px;gap:6px;color:#0f172a}
+  #editer .poster .ph{position:static;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1/.72;margin:0;display:grid;place-items:center;border-radius:9px}
+  #editer .poster .ph .vico{width:70%;height:70%}
+  #editer .poster .badge{top:7px;right:7px;left:auto;width:34px;height:34px;font-size:10px}
+  #editer .poster .promo{position:absolute;top:7px;left:7px;background:#dc2626;color:#fff;font-weight:800;font-size:13px;padding:4px 9px;border-radius:9px;transform:rotate(-7deg);box-shadow:0 6px 14px -4px rgba(220,38,38,.6);letter-spacing:.02em}
+  #editer .poster .tt{position:static;bottom:auto;left:auto;font-size:15px;font-weight:800;color:#3730a3;line-height:1.05;margin-top:1px}
+  #editer .poster .desc{font-size:9.5px;color:#64748b;line-height:1.3}
+  #editer .poster .ref{font-family:var(--mono);font-size:8.5px;color:#94a3b8;letter-spacing:.04em}
+  #editer .poster .pictos{display:flex;gap:5px;margin:2px 0 1px}
+  #editer .poster .pictos span{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:7.5px;font-weight:600;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;padding:5px 2px;text-align:center;line-height:1.1}
+  #editer .poster .pictos svg{width:14px;height:14px;color:#4f46e5}
+  #editer .poster .priceline{display:flex;align-items:baseline;gap:9px;margin-top:3px}
+  #editer .poster .old{font-size:13px;color:#94a3b8;text-decoration:line-through;font-weight:600}
+  #editer .poster .price{position:static;top:auto;left:auto;background:#facc15;color:#dc2626;font-weight:800;font-size:23px;padding:3px 9px;border-radius:8px}
   .ed-panel{border-left:1px solid var(--line);background:#0b0b11;padding:14px}
   .ph-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase;margin:14px 0 9px}
   .ph-h:first-child{margin-top:0}
@@ -194,7 +209,35 @@
   .lay{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);padding:5px 7px;border-radius:6px;margin-bottom:3px}
   .lay.on{background:rgba(124,108,255,.14);color:#d8d6ff}
   .lay .sw{width:10px;height:10px;border-radius:3px}
-  .swatches{display:flex;gap:6px}.swatches i{width:20px;height:20px;border-radius:6px;border:1px solid var(--line2)}
+  .swatches{display:flex;gap:6px;flex-wrap:wrap}.swatches i{width:20px;height:20px;border-radius:6px;border:1px solid var(--line2)}.swatches i.on{outline:2px solid var(--indigo);outline-offset:1px}
+  /* Éditeur — panneau enrichi + repères print */
+  .ed-tools .sep{width:18px;height:1px;background:var(--line);margin:4px 0}
+  .ed-h-acts{display:inline-flex;align-items:center;gap:9px;margin-right:10px}
+  .ed-h-acts i{color:var(--faint);display:grid;place-items:center}.ed-h-acts i svg{width:13px;height:13px;display:block}
+  .ed-h-zoom{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .ed-stage{position:relative;display:grid;place-items:center;padding:20px}
+  .ed-bleed{position:absolute;inset:8px;border:1px dashed rgba(244,114,182,.45);border-radius:5px;pointer-events:none}
+  .ed-cmark{position:absolute;width:13px;height:13px;pointer-events:none}
+  .ed-cmark.tl{top:0;left:0;border-top:1.5px solid rgba(255,255,255,.5);border-left:1.5px solid rgba(255,255,255,.5)}
+  .ed-cmark.tr{top:0;right:0;border-top:1.5px solid rgba(255,255,255,.5);border-right:1.5px solid rgba(255,255,255,.5)}
+  .ed-cmark.bl{bottom:0;left:0;border-bottom:1.5px solid rgba(255,255,255,.5);border-left:1.5px solid rgba(255,255,255,.5)}
+  .ed-cmark.br{bottom:0;right:0;border-bottom:1.5px solid rgba(255,255,255,.5);border-right:1.5px solid rgba(255,255,255,.5)}
+  .ed-blabel{position:absolute;left:8px;top:-7px;font-family:var(--mono);font-size:8px;color:rgba(244,114,182,.8);background:#08080d;padding:0 4px}
+  .lay .eye{margin-left:auto;color:var(--faint);display:grid;place-items:center}.lay .eye svg{width:13px;height:13px;display:block}
+  .lay .eye.off{opacity:.4}
+  .ed-font{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:11px;color:var(--ink);margin-bottom:7px}
+  .ed-font .sz{font-family:var(--mono);color:var(--muted);font-size:10px}
+  .ed-align{display:flex;gap:5px;margin-top:7px}
+  .ed-align i{flex:1;display:grid;place-items:center;padding:6px 0;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
+  .ed-align i.on{background:rgba(124,108,255,.16);border-color:var(--indigo);color:#c7c4ff}
+  .ed-align i svg{width:14px;height:14px}
+  .ed-opacity{margin-top:9px}
+  .ed-opacity .bar{height:5px;border-radius:3px;background:linear-gradient(90deg,var(--indigo) 78%,var(--line) 78%);position:relative}
+  .ed-opacity .bar::after{content:"";position:absolute;left:78%;top:50%;width:11px;height:11px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .ed-print{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .ed-print span{font-size:9px;font-family:var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:4px 7px}
+  .ed-print span.ok{color:#34d399;border-color:rgba(52,211,153,.4)}
+  .ed-print span.cmjn{color:#c7c4ff;border-color:var(--indigo)}
 
   /* Maquette SCRAPER */
   .sc-body{padding:18px;display:grid;grid-template-columns:1fr;gap:14px;min-height:392px;background:#08080d}
@@ -1013,12 +1056,32 @@
           <div class="scene-detail" id="d-editer"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Les éditeurs grand public ignorent les contraintes de l'imprimerie ; les outils pro exigent un logiciel lourd installé sur un poste précis.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Manipulez <b>calques, textes, formes, couleurs et alignements</b> dans le navigateur, avec annuler/rétablir.</li><li>Activez <b>repères de coupe, fond perdu et zone de sécurité</b>, en 300 DPI / CMJN.</li><li>Appelez l'<b>IA générative et le publipostage</b> directement dans la zone de travail.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>Calques & objets</span><span>Texte riche (polices, gras, italique)</span><span>Formes & dessin</span><span>Palette & remplissages</span><span>Repères de coupe · fond perdu</span><span>Zone de sécurité · 300 DPI · CMJN</span><span>Annuler / rétablir</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>La simplicité d'un Canva avec les exigences d'un imprimeur — et rien à installer.</p></div><div class="sd-block"><span class="sd-k help">Aide intégrée</span><p class="sd-note">Extrait du manuel intégré (bouton « ? » dans l'app) — section « L'éditeur ».</p><span class="sd-sub">Interface</span><div class="sd-help"><div class="sdh"><b>Header</b> — titre et état de sauvegarde, Annuler / Rétablir, Sauvegarder (commit manuel) et Exporter.</div><div class="sdh"><b>Barre d'outils</b> — Sélection, Texte, Rectangle, Ellipse, Ligne (ajout immédiat puis retour à Sélection), Image (ouvre le panneau Images).</div><div class="sdh"><b>Calques</b> — liste des objets ; masquer (œil), supprimer, réordonner par glisser-déposer ; les textes se déplient segment par segment.</div><div class="sdh"><b>Naviguer</b> — zoom 1 % → 400 % (boutons −/+, molette, clic sur la valeur = 100 %), pan = espace + glisser, plus grille et snap (aimantation).</div><div class="sdh"><b>Sauvegarde</b> — automatique, avec commit manuel possible ; Exporter ouvre le choix de format (PDF, IDML, PPTX, SVG, PNG).</div></div><span class="sd-sub">Raccourcis</span><div class="sd-opts"><span><b>V</b> Sélection</span><span><b>T</b> Texte</span><span><b>R</b> Rectangle</span><span><b>E</b> Ellipse</span><span><b>Espace + glisser</b> Pan</span><span><b>⌘0</b> Zoom 100 %</span></div></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
-          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — IDML importé</span><span class="sact"><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Éditeur — InDesign importé</span><span class="sact"><span class="ed-h-acts"><i title="Annuler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg></i><i title="Rétablir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg></i><span class="ed-h-zoom">100 %</span></span><span class="spill" style="background:var(--grad);color:#0b0b12">Exporter</span></span></div>
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:86%;--y1:86%;--x2:42%;--y2:52%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="ed-body">
-            <div class="ed-tools" aria-hidden="true"><i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i></div>
-            <div class="ed-canvas"><div class="poster"><span class="ph"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="badge">NEW</span><span class="price">24<small>€90</small></span><span class="tt">CATALOGUE<br/>PRINTEMPS</span><span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span></div></div>
-            <div class="ed-panel" aria-hidden="true"><div class="ph-h">Source</div><div class="lay on"><span class="sw" style="background:#fbbf24"></span>catalogue.idml</div><div class="ph-h">Données (publipostage)</div><div class="ed-row"><span class="ed-in">{{ prix }}</span></div><div class="ed-row"><span class="ed-in">{{ libellé }}</span></div><div class="ph-h">Texte</div><div class="ed-seg"><span>Régulier</span><span class="on">Gras</span><span>Italique</span></div><div class="ph-h">Remplissage</div><div class="swatches"><i style="background:#3730a3"></i><i style="background:#facc15"></i><i style="background:#ef4444"></i><i style="background:#22d3ee"></i><i style="background:#fff"></i></div></div>
+            <div class="ed-tools" aria-hidden="true"><i class="on" title="Sélection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7 18 2-7 7-2L3 3z"/></svg></i><i title="Texte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></i><i title="Rectangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></i><i title="Ellipse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></i><i title="Ligne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19 19 5"/></svg></i><i title="Image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 21"/></svg></i><span class="sep"></span><i title="Zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3M11 8v6M8 11h6"/></svg></i></div>
+            <div class="ed-canvas"><div class="ed-stage"><span class="ed-bleed"></span><span class="ed-blabel">fond perdu 3 mm</span><span class="ed-cmark tl"></span><span class="ed-cmark tr"></span><span class="ed-cmark bl"></span><span class="ed-cmark br"></span><div class="poster"><span class="ph"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><span class="badge">NEW</span><span class="promo">−20 %</span></span><span class="tt">Perceuse 18V Brushless</span><span class="desc">Visseuse sans-fil · 2 batteries · mandrin 13 mm</span><span class="ref">Réf. 4892-18V · garantie 3 ans</span><span class="pictos"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4"/></svg>2×2 Ah</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>60 Nm</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Garantie</span></span><span class="priceline"><span class="old">31,10 €</span><span class="price">24<small>€90</small></span></span><span class="hand h1"></span><span class="hand h2"></span><span class="hand h3"></span><span class="hand h4"></span></div></div></div>
+            <div class="ed-panel" aria-hidden="true">
+              <div class="ph-h">Source</div>
+              <div class="lay"><span class="sw" style="background:#fbbf24"></span>catalogue.indd</div>
+              <div class="ph-h">Calques</div>
+              <div class="lay"><span class="sw" style="background:#3730a3"></span>Titre<span class="eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span></div>
+              <div class="lay on"><span class="sw" style="background:#facc15"></span>Prix produit<span class="eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span></div>
+              <div class="lay"><span class="sw" style="background:#0ea5e9"></span>Image<span class="eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span></div>
+              <div class="lay"><span class="sw" style="background:#ef4444"></span>Badge NEW<span class="eye off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 2 20 20M6.7 6.7C3.6 8.6 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.3-1.6M9.9 4.2A10.9 10.9 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.2 3"/></svg></span></div>
+              <div class="ph-h">Données (publipostage)</div>
+              <div class="ed-row"><span class="ed-in">{{ prix }}</span></div>
+              <div class="ed-row"><span class="ed-in">{{ libellé }}</span></div>
+              <div class="ph-h">Typographie</div>
+              <div class="ed-font">Inter <span class="sz">24 pt</span></div>
+              <div class="ed-seg"><span>Régulier</span><span class="on">Gras</span><span>Italique</span></div>
+              <div class="ed-align"><i class="on" title="Gauche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg></i><i title="Centre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M5 18h14"/></svg></i><i title="Droite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 12h10M7 18h13"/></svg></i><i title="Justifié"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></i></div>
+              <div class="ph-h">Remplissage</div>
+              <div class="swatches"><i style="background:#3730a3"></i><i class="on" style="background:#facc15"></i><i style="background:#ef4444"></i><i style="background:#22d3ee"></i><i style="background:#34d399"></i><i style="background:#fff"></i></div>
+              <div class="ed-opacity"><div class="ph-h" style="margin:9px 0 6px">Opacité · 78 %</div><div class="bar"></div></div>
+              <div class="ph-h">Préparation print</div>
+              <div class="ed-print"><span class="ok">Repères ✓</span><span class="ok">Fond perdu 3 mm</span><span>Zone sûre</span><span class="cmjn">300 DPI · CMJN</span></div>
+            </div>
           </div>
         </div></div>
       </div>
