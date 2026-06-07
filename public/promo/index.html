@@ -352,6 +352,26 @@
   .dam-grid i{aspect-ratio:1;border-radius:7px;display:block;border:1px solid var(--line)}
   .dam-tags{display:flex;gap:6px;flex-wrap:wrap}
   .dam-tags span{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 11px}
+  /* DAM — panneau de métadonnées au clic sur une image */
+  .dam-body{position:relative}
+  .dam-grid i{position:relative;cursor:pointer}
+  .dam-grid i.sel{outline:2px solid var(--indigo);outline-offset:1px;box-shadow:0 0 18px -4px var(--indigo);z-index:2}
+  #dam .dam-grid i.sel{animation:none}
+  .dam-meta{position:absolute;top:0;right:0;bottom:0;width:298px;max-width:54%;background:#13131a;border-left:1px solid var(--line2);box-shadow:-22px 0 50px -22px #000;padding:13px 14px;transform:translateX(106%);transition:transform .42s cubic-bezier(.2,.8,.3,1);z-index:7;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+  .dam-meta.open{transform:none}
+  .dm-top{display:flex;align-items:center;justify-content:space-between}
+  .dm-top b{font-size:10px;font-family:var(--mono);letter-spacing:.08em;color:var(--faint);text-transform:uppercase;font-weight:700}
+  .dm-ai{font-size:8.5px;color:#c7c4ff;border:1px solid rgba(124,108,255,.45);border-radius:20px;padding:2px 8px}
+  .dm-prev{height:90px;border-radius:9px;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line2)}
+  .dm-prev .vico{width:62%;height:62%}
+  .dm-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--ink);word-break:break-all}
+  .dm-rows{display:flex;flex-direction:column;gap:5px}
+  .dm-rows>div{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;gap:8px}
+  .dm-rows span{color:var(--muted)}.dm-rows b{color:var(--ink);font-family:var(--mono);font-weight:600;text-align:right}
+  .dm-h{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .dm-tags{display:flex;flex-wrap:wrap;gap:5px}
+  .dm-tags span{font-size:9.5px;color:#c7c4ff;border:1px solid rgba(124,108,255,.4);background:rgba(124,108,255,.12);border-radius:20px;padding:2px 8px}
+  .dm-pal{display:flex;gap:5px}.dm-pal i{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.15)}
   /* 05 PIM */
   .pim-body{padding:0}
   .pim-tabs{display:flex;gap:6px;padding:13px 14px}
@@ -1288,11 +1308,27 @@
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">DAM — bibliothèque média</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:82%;--y1:24%;--x2:48%;--y2:62%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:62%;--y1:38%;--x2:70%;--y2:50%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="dam-body mk-body">
             <div class="dam-bar"><div class="dam-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Rechercher un visuel… ou déposer une image</div><span class="dam-ia"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>Générer (IA)</span></div>
             <div class="dam-grid"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shoe"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-head"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-chair"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-land"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-port"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i></div>
             <div class="dam-tags"><span>Pexels</span><span>Unsplash</span><span>Collections</span><span>Assets de marque</span><span>Google Drive</span></div>
+            <div class="dam-meta" id="damMeta">
+              <div class="dm-top"><b>Métadonnées</b><span class="dm-ai">✦ analysé par IA</span></div>
+              <div class="dm-prev" id="dmPrev"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-land" id="dmUse"/></svg></div>
+              <div class="dm-name" id="dmName">paysage-montagne.jpg</div>
+              <div class="dm-rows">
+                <div><span>Dimensions</span><b id="dmDim">3840 × 2160 px</b></div>
+                <div><span>Taille</span><b id="dmSize">4,8 Mo</b></div>
+                <div><span>Format</span><b id="dmFmt">JPEG</b></div>
+                <div><span>Espace color.</span><b id="dmCs">RVB · sRGB</b></div>
+                <div><span>Résolution</span><b id="dmDpi">300 DPI</b></div>
+              </div>
+              <div class="dm-h">Mots-clés IA</div>
+              <div class="dm-tags" id="dmTags"><span>paysage</span><span>montagne</span><span>ciel</span><span>nature</span></div>
+              <div class="dm-h">Couleurs dominantes</div>
+              <div class="dm-pal" id="dmPal"><i style="background:#5b8c5a"></i><i style="background:#3b6ea5"></i><i style="background:#cfe3a9"></i><i style="background:#1e3a5f"></i></div>
+            </div>
           </div>
         </div></div>
       </div>
@@ -1920,6 +1956,33 @@
 })();
 </script>
 
+<script>
+/* DAM — clic sur une image → panneau de métadonnées (taille, espace color., DPI, mots-clés IA) */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#dam .scene-visual'); if(!sv) return;
+  var grid=sv.querySelector('.dam-grid'); var panel=document.getElementById('damMeta'); if(!grid||!panel) return;
+  var cells=[].slice.call(grid.querySelectorAll('i')); var $=function(id){return document.getElementById(id);};
+  var data=[
+    {idx:10,ico:'#ic-land',bg:'linear-gradient(160deg,#bfe0ff,#8fc78f)',name:'paysage-montagne.jpg',dim:'3840 × 2160 px',size:'4,8 Mo',fmt:'JPEG',cs:'RVB · sRGB',dpi:'300 DPI',tags:['paysage','montagne','ciel','nature','été'],pal:['#5b8c5a','#3b6ea5','#cfe3a9','#1e3a5f']},
+    {idx:11,ico:'#ic-port',bg:'linear-gradient(160deg,#f7b8c6,#c98fd6)',name:'portrait-studio.png',dim:'2400 × 3000 px',size:'3,1 Mo',fmt:'PNG',cs:'RVB · Display P3',dpi:'240 DPI',tags:['portrait','personne','studio','rose'],pal:['#f3a3b5','#a855f7','#fde68a','#7c3a6b']},
+    {idx:0,ico:'#ic-drill',bg:'linear-gradient(160deg,#dbe7f5,#aebfd0)',name:'perceuse-18v.png',dim:'2000 × 2000 px',size:'1,4 Mo',fmt:'PNG',cs:'RVB → CMJN',dpi:'300 DPI',tags:['outil','perceuse','packshot','bleu'],pal:['#1d4ed8','#5cc6fb','#94a3b8','#0f172a']}
+  ];
+  var i=0, iv=null;
+  function fill(d){
+    $('dmUse').setAttribute('href',d.ico); $('dmPrev').style.background=d.bg; $('dmName').textContent=d.name;
+    $('dmDim').textContent=d.dim; $('dmSize').textContent=d.size; $('dmFmt').textContent=d.fmt; $('dmCs').textContent=d.cs; $('dmDpi').textContent=d.dpi;
+    $('dmTags').innerHTML=d.tags.map(function(t){return '<span>'+t+'</span>';}).join('');
+    $('dmPal').innerHTML=d.pal.map(function(c){return '<i style="background:'+c+'"></i>';}).join('');
+  }
+  function step(){ var d=data[i%data.length]; cells.forEach(function(c,k){c.classList.toggle('sel',k===d.idx);}); fill(d); panel.classList.add('open'); i++; }
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,3200); } }
+    else { if(iv){ clearInterval(iv); iv=null; } panel.classList.remove('open'); cells.forEach(function(c){c.classList.remove('sel');}); }
+  }); },{threshold:0.3}).observe(sv);
+})();
+</script>
 <script>
 /* Bibliothèque — active le menu de gauche en boucle + tri/filtre virtuel des projets */
 (function(){
