@@ -641,7 +641,16 @@
   .ig-recent .h{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.06em;margin-bottom:8px}
   .ig-recent .row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
   .ig-recent .row i{aspect-ratio:1;border-radius:7px;overflow:hidden;border:1px solid var(--line2);display:block;position:relative}
+  .tlg-body{position:relative}
+  .tlg-cmds{position:absolute;left:0;right:0;bottom:54px;background:#15151d;border:1px solid var(--line2);border-radius:12px;box-shadow:0 24px 56px -22px #000;overflow:hidden;z-index:6}
+  .tlg-cmds .h{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;padding:8px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+  .tlg-cmd{display:flex;align-items:baseline;gap:10px;padding:7px 13px;border-top:1px solid var(--line)}
+  .tlg-cmd:first-of-type{border-top:0}
+  .tlg-cmd.on{background:rgba(96,165,250,.12)}
+  .tlg-cmd b{font-family:var(--mono);color:#60a5fa;font-weight:700;flex:0 0 auto;min-width:84px;font-size:11px}
+  .tlg-cmd span{color:var(--muted);font-size:10px;line-height:1.3}
   .tlg-bar{display:flex;align-items:center;gap:10px;margin-top:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 13px}
+  .tlg-bar .ph code{font-family:var(--mono);color:#60a5fa}
   .tlg-bar .ph{flex:1;font-size:11px;color:var(--muted)}
   .tlg-bar .send{width:30px;height:30px;border-radius:8px;background:var(--indigo);display:grid;place-items:center;color:#fff;flex:0 0 auto}
   .tlg-bar .send svg{width:15px;height:15px}
@@ -1570,7 +1579,16 @@
             <div class="tlg-msg tlg-me">Parfait ! Décline-la aussi en story 9:16 pour Instagram</div>
             <div class="tlg-msg tlg-bot">C'est parti — recadrage et export story…</div>
             <div class="tlg-file"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><b>perceuse-18v-story.png</b><span class="m">1080×1920 · 9:16 · 0,8 Mo</span></div><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>
-            <div class="tlg-bar"><span class="ph">Message…</span><span class="send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span></div>
+            <div class="tlg-cmds">
+              <div class="h"><span>Commandes du bot</span><span>6</span></div>
+              <div class="tlg-cmd on"><b>/flow</b><span>Décrivez une demande → workflow IA généré puis exécuté</span></div>
+              <div class="tlg-cmd"><b>/scrape</b><span>Scraper une URL produit → PIM + DAM</span></div>
+              <div class="tlg-cmd"><b>/decliner</b><span>Décliner le dernier visuel (story, post, A4…)</span></div>
+              <div class="tlg-cmd"><b>/export</b><span>Renvoyer le dernier livrable (PDF · PNG · PPTX)</span></div>
+              <div class="tlg-cmd"><b>/status</b><span>État du worker et de la file d'attente</span></div>
+              <div class="tlg-cmd"><b>/aide</b><span>Afficher toutes les commandes disponibles</span></div>
+            </div>
+            <div class="tlg-bar"><span class="ph"><code>/</code></span><span class="send"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span></div>
           </div>
         </div></div>
       </div>
