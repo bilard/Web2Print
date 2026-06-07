@@ -328,6 +328,10 @@
   .logo-img.lg{height:248px;filter:drop-shadow(0 20px 54px rgba(45,212,191,.34))}
   .big{font-size:104px;font-weight:800;letter-spacing:-.02em;line-height:1.02}
   .big .hl{color:var(--indigo)}
+  /* Mot « propulsées » en dégradé animé (position pilotée par GSAP) */
+  .grad-anim{display:inline-block;background-image:linear-gradient(90deg,#6366F1,#A78BFA,#38BDF8,#2DD4BF,#A78BFA,#6366F1);background-size:220% 100%;background-position:0% 50%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+  /* Bloc logo+titre remonté dans la slide intro */
+  #s1 .center{transform:translateY(-74px)}
   .pills{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:1500px}
   .pill{display:inline-flex;align-items:center;font-size:22px;font-weight:600;padding:11px 21px;border:1px solid var(--line2);border-radius:100px;background:var(--surface)}
   .pill .d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:11px;vertical-align:middle}
@@ -461,7 +465,7 @@
     <div class="glow"></div>
     <div class="center">
       <div class="logo"><img class="logo-img lg" src="logo.png" alt="IBS Studio"/></div>
-      <div class="big s1-title">Vos data<br/>propulsées par <span class="hl">l'IA</span></div>
+      <div class="big s1-title">Vos data<br/><span class="grad-anim">propulsées</span> par <span class="hl">l'IA</span></div>
     </div>
     <div class="pills s1-pills">
       <span class="pill"><svg class="pic" style="color:var(--violet)"><use href="#m-creer"/></svg>Créer</span>
@@ -1061,6 +1065,7 @@
     tl.from("#s1 .logo",{y:34,opacity:0,duration:.6,ease:"power3.out"},.15);
     tl.from("#s1 .s1-title",{y:46,opacity:0,duration:.7,ease:"expo.out"},.32);
     tl.from("#s1 .pill",{y:26,opacity:0,duration:.5,ease:"power2.out",stagger:.09},.62);
+    tl.fromTo("#s1 .grad-anim",{backgroundPosition:"0% 50%"},{backgroundPosition:"220% 50%",duration:1.5,ease:"none",repeat:1},.5);
 
     /* S2 — scraper : on LIT la page (balayage), puis TEXTE→PIM, puis IMAGES→DAM */
     slide("#s2",2.8);
