@@ -1339,18 +1339,23 @@
   #decouverte .dxf::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.075) 1.1px,transparent 1.1px);background-size:22px 22px;opacity:.5;pointer-events:none}
   #decouverte .dxf-cap{position:absolute;top:9px;left:13px;font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:6px}
   #decouverte .dxf-cap i{width:6px;height:6px;border-radius:50%;background:var(--ax);box-shadow:0 0 8px 1px var(--ax)}
-  #decouverte .dxf-flow{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px}
-  #decouverte .dxf-node{position:relative;flex:0 0 auto;width:146px;border:1px solid var(--line2);border-radius:11px;background:linear-gradient(180deg,#16161d,#101015);padding:9px 11px;display:flex;align-items:center;gap:9px;text-align:left;box-shadow:0 14px 30px -18px #000,0 0 22px -16px var(--nc);transition:border-color .2s;animation:dxfNode 5s ease-in-out infinite;animation-delay:calc(var(--i)*.45s)}
+  #decouverte .dxf-flow{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:5px}
+  #decouverte .dxf-node{position:relative;flex:1 1 0;min-width:0;border:1px solid var(--line2);border-radius:11px;background:linear-gradient(180deg,#16161d,#101015);padding:8px 9px;display:flex;align-items:center;gap:8px;text-align:left;box-shadow:0 14px 30px -18px #000,0 0 22px -16px var(--nc);transition:border-color .2s;animation:dxfNode 5s ease-in-out infinite;animation-delay:calc(var(--i)*.45s)}
   #decouverte a.dxf-node:hover{border-color:var(--nc)}
-  #decouverte .dxf-node .ni{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:#fff;flex:0 0 auto;background:var(--nc);box-shadow:0 5px 14px -6px var(--nc)}
-  #decouverte .dxf-node .ni svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  #decouverte .dxf-node b{font-size:12px;display:block;line-height:1.2;color:var(--ink)}
-  #decouverte .dxf-node em{font-size:9.5px;color:var(--muted);display:block;margin-top:1px;font-style:normal}
+  #decouverte .dxf-node .ni{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff;flex:0 0 auto;background:var(--nc);box-shadow:0 5px 14px -6px var(--nc)}
+  #decouverte .dxf-node .ni svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #decouverte .dxf-node b{font-size:11px;display:block;line-height:1.18;color:var(--ink)}
+  #decouverte .dxf-node em{font-size:9px;color:var(--muted);display:block;margin-top:1px;font-style:normal}
   #decouverte .dxf-node .ntype{position:absolute;top:-8px;left:10px;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.1em;color:var(--nc);background:#0a0a10;border:1px solid var(--nc);border-radius:5px;padding:1px 6px;text-transform:uppercase}
-  #decouverte .dxf-link{flex:0 0 26px;align-self:center;position:relative;height:2px;background:var(--line2);border-radius:2px}
+  #decouverte .dxf-link{flex:0 0 18px;align-self:center;position:relative;height:2px;background:var(--line2);border-radius:2px}
   #decouverte .dxf-link::after{content:"";position:absolute;top:50%;left:0;width:6px;height:6px;border-radius:50%;background:var(--ax);box-shadow:0 0 8px 1px var(--ax);transform:translateY(-50%);animation:dxfDot 5s ease-in-out infinite;animation-delay:calc(var(--i)*.45s)}
   @keyframes dxfNode{0%,100%{border-color:var(--line2);box-shadow:0 14px 30px -18px #000,0 0 22px -16px var(--nc)}10%,22%{border-color:var(--nc);box-shadow:0 14px 30px -18px #000,0 0 0 1px var(--nc),0 0 26px -7px var(--nc)}}
   @keyframes dxfDot{0%,7%{left:0;opacity:0}13%{opacity:1}26%{left:100%;opacity:1}30%,100%{left:100%;opacity:0}}
+  #decouverte .dxf-steps{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:11px 30px;list-style:none}
+  #decouverte .dxf-steps li{display:flex;gap:11px;font-size:12.5px;color:var(--muted);line-height:1.46}
+  #decouverte .dxf-steps .sn{flex:0 0 auto;width:21px;height:21px;border-radius:6px;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ax);border:1px solid var(--ax);background:rgba(255,255,255,.03)}
+  #decouverte .dxf-steps a{color:var(--ink);font-weight:600;border-bottom:1px solid rgba(255,255,255,.18);transition:border-color .15s}
+  #decouverte .dxf-steps a:hover{border-color:var(--ax)}
   #decouverte .dx-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:42px;height:42px;border-radius:50%;border:1px solid var(--line2);background:rgba(10,10,16,.7);backdrop-filter:blur(6px);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .2s,border-color .2s}
   #decouverte .dx-nav:hover{background:var(--surface);border-color:var(--ax)}
   #decouverte .dx-nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -1372,9 +1377,10 @@
     #decouverte .dx-slide{padding:24px 22px;min-height:0}
     #decouverte .dx-nav{top:64px}
     #decouverte .dxf-flow{flex-direction:column;align-items:stretch}
-    #decouverte .dxf-node{width:auto}
+    #decouverte .dxf-node{flex:0 0 auto;width:auto}
     #decouverte .dxf-link{width:2px;height:16px;align-self:center}
     #decouverte .dxf-link::after{display:none}
+    #decouverte .dxf-steps{grid-template-columns:1fr}
     #decouverte .dx-map-grid{grid-template-columns:1fr}
   }
   </style>
@@ -1414,6 +1420,14 @@
                 <a class="dxf-node" href="#export" style="--i:5;--nc:#f472b6"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>IDML + PDF</em></div></a>
               </div>
             </div>
+            <ol class="dxf-steps">
+              <li><span class="sn">1</span><span><a href="#scraper">Collecter</a> — collez les URLs Milwaukee &amp; Bosch : le scraper lit specs (couple, Ah, vitesse), prix et photos HD ; escalade Bright Data si le site bloque.</span></li>
+              <li><span class="sn">2</span><span><a href="#templates">Mapper</a> — un modèle de correspondance par fournisseur range chaque valeur dans le bon champ (réf, marque, prix, caractéristiques).</span></li>
+              <li><span class="sn">3</span><span><a href="#pim">Données</a> — les fiches arrivent structurées en clé/valeur dans le PIM ; l’IA complète les manques (description, EAN).</span></li>
+              <li><span class="sn">4</span><span><a href="#taxonomies">Classer</a> — rangement auto dans l’arbre Perçage › Perceuses-visseuses › 18 V.</span></li>
+              <li><span class="sn">5</span><span><a href="#publipostage">Décliner</a> — un gabarit de fiche + les 300 lignes du PIM = 300 fiches mises en page d’un coup.</span></li>
+              <li><span class="sn">6</span><span><a href="#export">Publier</a> — IDML pour InDesign (champs EasyCatalog {{prix}}/{{réf}} conservés) + PDF 300 DPI fond perdu pour l’imprimeur.</span></li>
+            </ol>
           </article>
 
           <article class="dx-slide" style="--ax:#a3e635">
@@ -1441,6 +1455,14 @@
                 <a class="dxf-node" href="#export" style="--i:5;--nc:#f472b6"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>PDF print</em></div></a>
               </div>
             </div>
+            <ol class="dxf-steps">
+              <li><span class="sn">1</span><span><a href="#import">Importer</a> — déposez le packaging (JPG/PDF) : la décomposition Image→SVG isole logo, prix et bandeau en blocs éditables, fond verrouillé.</span></li>
+              <li><span class="sn">2</span><span><a href="#nouveau">Créer</a> — ouvrez un gabarit PLV au format magasin (A4, A5, stop-rayon), calibré 300 DPI.</span></li>
+              <li><span class="sn">3</span><span><a href="#editer">Éditer</a> — posez les zones dynamiques : {{produit}}, {{prix}}, {{prix_barré}}, couleur du bandeau promo.</span></li>
+              <li><span class="sn">4</span><span><a href="#bibliotheque">Organiser</a> — le gabarit validé est rangé dans la bibliothèque, réutilisable chaque semaine.</span></li>
+              <li><span class="sn">5</span><span><a href="#publipostage">Décliner</a> — importez le tableau Excel des 200 promos : prix et visuels remplis automatiquement, 200 PLV générées.</span></li>
+              <li><span class="sn">6</span><span><a href="#export">Publier</a> — un seul PDF multi-pages prêt à imprimer, ou un ZIP d’images par magasin.</span></li>
+            </ol>
           </article>
 
           <article class="dx-slide" style="--ax:#f472b6">
@@ -1466,6 +1488,13 @@
                 <a class="dxf-node" href="#export" style="--i:4;--nc:#6366f1"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>SVG + PPTX</em></div></a>
               </div>
             </div>
+            <ol class="dxf-steps">
+              <li><span class="sn">1</span><span><a href="#import">Importer</a> — la maquette agence (PDF/IDML) s’ouvre éditable bloc par bloc, polices et calques préservés.</span></li>
+              <li><span class="sn">2</span><span><a href="#editer">Éditer</a> — déclinez tailles (XS→XXL), coloris et accroches sans rouvrir InDesign.</span></li>
+              <li><span class="sn">3</span><span><a href="#imgen">Générer</a> — Nano Banana Pro produit des visuels d’ambiance (studio, lifestyle) fidèles à la charte.</span></li>
+              <li><span class="sn">4</span><span><a href="#animation">Animer</a> — montez un lookbook vidéo (transitions, textes animés) exporté en MP4/WebM.</span></li>
+              <li><span class="sn">5</span><span><a href="#export">Publier</a> — SVG pour le web, PPTX pour le showroom, PDF pour le print — depuis le même document.</span></li>
+            </ol>
           </article>
 
           <article class="dx-slide" style="--ax:#a855f7">
@@ -1491,6 +1520,13 @@
                 <a class="dxf-node" href="#export" style="--i:4;--nc:#6366f1"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>print + social</em></div></a>
               </div>
             </div>
+            <ol class="dxf-steps">
+              <li><span class="sn">1</span><span><a href="#import">Importer</a> — l’affiche est détourée : photo produit, nom, prix et pied de page isolés et modifiables.</span></li>
+              <li><span class="sn">2</span><span><a href="#chat">Assister</a> — le Chat IA (accès web) propose des accroches et un brief par parfum.</span></li>
+              <li><span class="sn">3</span><span><a href="#imgen">Générer</a> — 6 ambiances par parfum (floral, boisé, agrume…), cohérentes avec l’identité de marque.</span></li>
+              <li><span class="sn">4</span><span><a href="#dam">Médias</a> — tous les visuels rangés et versionnés dans le DAM, prêts à réutiliser.</span></li>
+              <li><span class="sn">5</span><span><a href="#export">Publier</a> — print boutique (CMJN, fond perdu) + formats réseaux (1:1, 4:5, 9:16).</span></li>
+            </ol>
           </article>
 
           <article class="dx-slide" style="--ax:#22d3ee">
@@ -1518,6 +1554,14 @@
                 <a class="dxf-node" href="#export" style="--i:5;--nc:#f472b6"><span class="ntype">publier</span><span class="ni"><svg><use href="#m-publier"/></svg></span><div><b>Publier</b><em>PDF renvoyé</em></div></a>
               </div>
             </div>
+            <ol class="dxf-steps">
+              <li><span class="sn">1</span><span><a href="#telegram">Piloter</a> — le commercial écrit au bot : « /flow fiche A4 pour l’amortisseur réf. 12345, prix 89 € ».</span></li>
+              <li><span class="sn">2</span><span><a href="#workflows">Automatiser</a> — le Prompt-to-Flow assemble le workflow (enrichir → composer → exporter) et l’exécute.</span></li>
+              <li><span class="sn">3</span><span><a href="#pim">Données</a> — le produit est enrichi à la volée (specs, compatibilité véhicule) via le PIM.</span></li>
+              <li><span class="sn">4</span><span><a href="#settings">Paramétrer</a> — connecteurs Drive/Gmail + modèle IA choisi par tâche, définis une seule fois.</span></li>
+              <li><span class="sn">5</span><span><a href="#roles">Gouverner</a> — les droits RBAC garantissent que chaque commercial ne touche que ses gammes.</span></li>
+              <li><span class="sn">6</span><span><a href="#export">Publier</a> — le PDF (A4, 300 DPI) revient dans la conversation Telegram, copie sur Drive.</span></li>
+            </ol>
           </article>
 
         </div>
