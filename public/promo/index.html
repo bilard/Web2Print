@@ -801,11 +801,16 @@
   /* 15 Chat IA — balayage des modèles du menu */
   /* Leaderboard : barre de score proportionnelle, croissance en cascade */
   #chat .aic-drop .aic-opt:nth-child(2){--w:100%}#chat .aic-drop .aic-opt:nth-child(3){--w:95%}#chat .aic-drop .aic-opt:nth-child(4){--w:90%}#chat .aic-drop .aic-opt:nth-child(5){--w:84%}#chat .aic-drop .aic-opt:nth-child(6){--w:79%}#chat .aic-drop .aic-opt:nth-child(7){--w:74%}#chat .aic-drop .aic-opt:nth-child(8){--w:69%}#chat .aic-drop .aic-opt:nth-child(9){--w:64%}#chat .aic-drop .aic-opt:nth-child(10){--w:59%}#chat .aic-drop .aic-opt:nth-child(11){--w:55%}
-  #chat .scene-visual.is-in .aic-opt::before{animation:aicBar 1.1s cubic-bezier(.3,.8,.3,1) forwards}
-  #chat .scene-visual.is-in .aic-opt:nth-child(3)::before{animation-delay:.1s}#chat .scene-visual.is-in .aic-opt:nth-child(4)::before{animation-delay:.2s}#chat .scene-visual.is-in .aic-opt:nth-child(5)::before{animation-delay:.3s}#chat .scene-visual.is-in .aic-opt:nth-child(6)::before{animation-delay:.4s}#chat .scene-visual.is-in .aic-opt:nth-child(7)::before{animation-delay:.5s}#chat .scene-visual.is-in .aic-opt:nth-child(8)::before{animation-delay:.6s}#chat .scene-visual.is-in .aic-opt:nth-child(9)::before{animation-delay:.7s}#chat .scene-visual.is-in .aic-opt:nth-child(10)::before{animation-delay:.8s}#chat .scene-visual.is-in .aic-opt:nth-child(11)::before{animation-delay:.9s}
-  #chat .scene-visual.is-in .aic-opt.on{animation:aicSel 2.6s ease-in-out infinite}
-  @keyframes aicBar{from{width:0}to{width:var(--w,60%)}}
-  @keyframes aicSel{0%,100%{box-shadow:inset 0 0 0 1px rgba(124,108,255,.4)}50%{box-shadow:inset 0 0 0 1px rgba(124,108,255,.9),0 0 16px -6px rgba(124,108,255,.8)}}
+  /* séquence pilotée par JS : ouvre (.open) → bascule des barres → sélectionne (.picked, coche) → ferme */
+  #chat .aic-drop{opacity:0;transform:translateY(14px) scale(.96);transition:opacity .45s cubic-bezier(.2,.8,.3,1.2),transform .45s cubic-bezier(.2,.8,.3,1.2);pointer-events:none}
+  #chat .aic-drop.open{opacity:1;transform:none}
+  #chat .aic-opt::before{width:0;transition:width .85s cubic-bezier(.3,.8,.3,1)}
+  #chat .aic-drop.open .aic-opt::before{width:var(--w,60%)}
+  #chat .aic-drop.open .aic-opt:nth-child(3)::before{transition-delay:.08s}#chat .aic-drop.open .aic-opt:nth-child(4)::before{transition-delay:.16s}#chat .aic-drop.open .aic-opt:nth-child(5)::before{transition-delay:.24s}#chat .aic-drop.open .aic-opt:nth-child(6)::before{transition-delay:.32s}#chat .aic-drop.open .aic-opt:nth-child(7)::before{transition-delay:.4s}#chat .aic-drop.open .aic-opt:nth-child(8)::before{transition-delay:.48s}#chat .aic-drop.open .aic-opt:nth-child(9)::before{transition-delay:.56s}#chat .aic-drop.open .aic-opt:nth-child(10)::before{transition-delay:.64s}#chat .aic-drop.open .aic-opt:nth-child(11)::before{transition-delay:.72s}
+  #chat .aic-opt .ok{display:inline-flex;align-items:center;margin-left:7px;color:#34d399;opacity:0;transform:scale(.4);flex:0 0 auto;transition:opacity .35s,transform .35s cubic-bezier(.2,.9,.3,1.6)}
+  #chat .aic-opt .ok svg{width:13px;height:13px}
+  #chat .aic-drop.picked .aic-opt.on .ok{opacity:1;transform:scale(1)}
+  #chat .aic-drop.picked .aic-opt.on{box-shadow:inset 0 0 0 1px rgba(124,108,255,.95),0 0 18px -5px rgba(124,108,255,.85)}
 
   /* 16 Export — chaque canal s'allume en cascade */
   #export .scene-visual.is-in .chan{animation:cyclePop 4.6s ease-in-out infinite}
@@ -1485,7 +1490,7 @@
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Assistant IA</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:72%;--y1:62%;--x2:76%;--y2:36%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:74%;--y1:58%;--x2:74%;--y2:23%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="aic-body mk-body">
             <div class="aic-title">Comment puis-je vous aider&nbsp;?</div>
             <div class="aic-box">
@@ -1493,7 +1498,7 @@
               <div class="aic-bar"><span class="aic-plus">+</span><span class="aic-model">Claude Opus 4.8 <span class="pr">Anthropic</span> ▴</span></div>
               <div class="aic-drop">
                 <div class="aic-lbh"><b><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v3a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4zM4 4h2v3a2 2 0 0 1-2-2zm16 0a2 2 0 0 1-2 2V4zM10 12h4v4h-4zM8 18h8v2H8z"/></svg>Classement · type</b><span class="aic-tabs"><span class="on">Texte</span><span>Code</span><span>Vision</span></span></div>
-                <div class="aic-opt on r1" style="--c:#d97757"><span class="rk">1</span><span class="dot" style="background:#d97757"></span><span class="nm">Claude Opus 4.8</span><span class="pv">Anthropic</span><span class="sc">1504</span></div>
+                <div class="aic-opt on r1" style="--c:#d97757"><span class="rk">1</span><span class="dot" style="background:#d97757"></span><span class="nm">Claude Opus 4.8</span><span class="pv">Anthropic</span><span class="sc">1504</span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
                 <div class="aic-opt r2" style="--c:#34d399"><span class="rk">2</span><span class="dot" style="background:#34d399"></span><span class="nm">GPT 5.5</span><span class="pv">OpenAI</span><span class="sc">1489</span></div>
                 <div class="aic-opt r3" style="--c:#4d6bfe"><span class="rk">3</span><span class="dot" style="background:#4d6bfe"></span><span class="nm">DeepSeek V4 Pro</span><span class="pv">DeepSeek</span><span class="sc">1472</span></div>
                 <div class="aic-opt" style="--c:#e5e7eb"><span class="rk">4</span><span class="dot" style="background:#e5e7eb"></span><span class="nm">Grok</span><span class="pv">xAI</span><span class="sc">1455</span></div>
@@ -1816,5 +1821,26 @@
 })();
 </script>
 
+<script>
+/* Assistant IA — séquence du sélecteur de LLM : ouvre → sélectionne → ferme, en boucle */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#chat .scene-visual'); if(!sv) return;
+  var drop=sv.querySelector('.aic-drop'); if(!drop) return;
+  var timers=[], iv=null;
+  function clearT(){ timers.forEach(clearTimeout); timers=[]; }
+  function seq(){
+    clearT(); drop.classList.remove('open','picked');
+    timers.push(setTimeout(function(){ drop.classList.add('open'); },1400));
+    timers.push(setTimeout(function(){ drop.classList.add('picked'); },3300));
+    timers.push(setTimeout(function(){ drop.classList.remove('open'); },5100));
+  }
+  if(!('IntersectionObserver' in window)){ drop.classList.add('open','picked'); return; }
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,7000); } }
+    else { if(iv){ clearInterval(iv); iv=null; } clearT(); drop.classList.remove('open','picked'); }
+  }); },{threshold:0.35}).observe(sv);
+})();
+</script>
 </body>
 </html>
