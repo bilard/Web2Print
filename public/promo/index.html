@@ -368,7 +368,8 @@
   .tlg-file b{font-size:12px;display:block}.tlg-file .m{font-size:9.5px;color:var(--muted)}
   .tlg-file .dl{margin-left:auto;color:#60a5fa}.tlg-file .dl svg{width:16px;height:16px}
   /* 11 Animation */
-  .anm-body{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start}
+  .anm-body{display:flex;flex-direction:column;gap:15px}
+  .anm-top{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start}
   .anm-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--faint);margin-bottom:7px}
   .anm-seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
   .anm-chip{font-size:10px;padding:6px 11px;border:1px solid var(--line);border-radius:7px;color:var(--muted)}
@@ -386,16 +387,17 @@
   .anm-rlbl b{color:#f5d0fe;font-weight:700;font-family:var(--body);letter-spacing:0}
   .anm-rv{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid rgba(232,121,249,.4);background:radial-gradient(ellipse 80% 90% at 28% 18%,rgba(232,121,249,.38),transparent 55%),radial-gradient(ellipse 80% 90% at 82% 82%,rgba(34,211,238,.32),transparent 55%),linear-gradient(135deg,#1a0833,#2b0a52 52%,#06203f);box-shadow:0 0 34px -12px rgba(232,121,249,.6)}
   .anm-rv .ngrid{position:absolute;inset:0;background-image:linear-gradient(rgba(232,121,249,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.13) 1px,transparent 1px);background-size:26px 26px;-webkit-mask:linear-gradient(transparent,#000 85%);mask:linear-gradient(transparent,#000 85%)}
-  .anm-rv .drill{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%);width:44%;filter:drop-shadow(0 0 14px rgba(34,211,238,.85))}
-  .anm-rv .rpromo{position:absolute;top:9px;left:9px;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(135deg,#e879f9,#a855f7);padding:4px 10px;border-radius:8px;box-shadow:0 0 18px -2px rgba(232,121,249,.9);transform:rotate(-5deg)}
-  .anm-rv .rgen{position:absolute;top:9px;right:9px;font-family:var(--mono);font-size:8px;color:#f5d0fe;background:rgba(168,85,247,.25);border:1px solid rgba(232,121,249,.5);border-radius:20px;padding:3px 8px}
-  .anm-rv .rtitle{position:absolute;left:11px;bottom:28px;font-weight:800;font-size:14px;letter-spacing:.04em;color:#67e8f9;text-shadow:0 0 12px rgba(34,211,238,.9);line-height:1.1}
-  .anm-rv .rtitle small{display:block;font-size:8px;font-weight:700;color:#f5d0fe;letter-spacing:.2em;text-shadow:0 0 10px rgba(232,121,249,.8);margin-top:2px}
-  .anm-rv .rctrl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:7px 9px;background:linear-gradient(transparent,rgba(0,0,0,.55))}
-  .anm-rv .rctrl .pp{color:#fff;display:grid;place-items:center}.anm-rv .rctrl .pp svg{width:12px;height:12px;display:block}
-  .anm-rv .rbar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.25);position:relative;overflow:hidden}
-  .anm-rv .rbar i{position:absolute;left:0;top:0;bottom:0;width:62%;background:linear-gradient(90deg,#e879f9,#22d3ee);border-radius:2px}
-  .anm-rv .rtime{font-family:var(--mono);font-size:8.5px;color:#fff;letter-spacing:.03em}
+  .anm-rv .drill{position:absolute;right:6%;top:34%;left:auto;transform:translateY(-50%);width:30%;z-index:1;filter:drop-shadow(0 0 18px rgba(34,211,238,.85))}
+  .anm-rv .rtitle,.anm-rv .rctrl,.anm-rv .rpromo,.anm-rv .rgen{z-index:2}
+  .anm-rv .rpromo{position:absolute;top:13px;left:13px;font-weight:800;font-size:20px;color:#fff;background:linear-gradient(135deg,#e879f9,#a855f7);padding:6px 14px;border-radius:10px;box-shadow:0 0 22px -2px rgba(232,121,249,.9);transform:rotate(-5deg)}
+  .anm-rv .rgen{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10px;color:#f5d0fe;background:rgba(168,85,247,.25);border:1px solid rgba(232,121,249,.5);border-radius:20px;padding:4px 11px}
+  .anm-rv .rtitle{position:absolute;left:15px;bottom:40px;font-weight:800;font-size:22px;letter-spacing:.04em;color:#67e8f9;text-shadow:0 0 14px rgba(34,211,238,.9);line-height:1.1}
+  .anm-rv .rtitle small{display:block;font-size:11px;font-weight:700;color:#f5d0fe;letter-spacing:.2em;text-shadow:0 0 10px rgba(232,121,249,.8);margin-top:4px}
+  .anm-rv .rctrl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:11px;padding:11px 14px;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+  .anm-rv .rctrl .pp{color:#fff;display:grid;place-items:center}.anm-rv .rctrl .pp svg{width:15px;height:15px;display:block}
+  .anm-rv .rbar{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.25);position:relative;overflow:hidden}
+  .anm-rv .rbar i{position:absolute;left:0;top:0;bottom:0;width:62%;background:linear-gradient(90deg,#e879f9,#22d3ee);border-radius:3px}
+  .anm-rv .rtime{font-family:var(--mono);font-size:11px;color:#fff;letter-spacing:.03em}
   /* 12 Chat IA */
   .aic-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
   .aic-title{font-size:25px;font-weight:800;text-align:center}
@@ -1395,11 +1397,20 @@
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Studio d'animation — génération IA</span></div>
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:24%;--y1:64%;--x2:74%;--y2:42%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="anm-body mk-body">
-            <div class="anm-form">
-              <div class="anm-lbl">FORMAT</div><div class="anm-seg"><span class="anm-chip">Auto</span><span class="anm-chip">9:16</span><span class="anm-chip on">16:9</span><span class="anm-chip">1:1</span></div>
-              <div class="anm-lbl">DURÉE</div><div class="anm-seg"><span class="anm-chip">5 s</span><span class="anm-chip on">10 s</span><span class="anm-chip">15 s</span></div>
-              <div class="anm-lbl">BRIEF</div><div class="anm-brief">Perceuse 18V en promo —30 %, digital signage magasin, rythme énergique, palette néon.</div>
-              <div class="anm-gen">✦ Générer l'animation</div>
+            <div class="anm-top">
+              <div class="anm-form">
+                <div class="anm-lbl">FORMAT</div><div class="anm-seg"><span class="anm-chip">Auto</span><span class="anm-chip">9:16</span><span class="anm-chip on">16:9</span><span class="anm-chip">1:1</span></div>
+                <div class="anm-lbl">DURÉE</div><div class="anm-seg"><span class="anm-chip">5 s</span><span class="anm-chip on">10 s</span><span class="anm-chip">15 s</span></div>
+                <div class="anm-lbl">BRIEF</div><div class="anm-brief">Perceuse 18V en promo —30 %, digital signage magasin, rythme énergique, palette néon.</div>
+                <div class="anm-gen">✦ Générer l'animation</div>
+              </div>
+              <div class="anm-lib"><div class="anm-lh">BIBLIOTHÈQUE</div>
+                <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#6366f1,#a855f7)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Perceuse —30 %</b><span>16:9 · 10 s</span></div></div>
+                <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#0ea5e9,#22d3ee)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Salle de trading</b><span>16:9 · 10 s</span></div></div>
+                <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Signage magasin</b><span>1:1 · 10 s</span></div></div>
+              </div>
+            </div>
+            <div class="anm-result">
               <div class="anm-rlbl">RÉSULTAT · <b>conforme au brief</b></div>
               <div class="anm-rv">
                 <span class="ngrid"></span>
@@ -1409,11 +1420,6 @@
                 <span class="rtitle">PERCEUSE 18V<small>DIGITAL SIGNAGE · NÉON</small></span>
                 <span class="rctrl"><span class="pp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></span><span class="rbar"><i></i></span><span class="rtime">0:06 / 0:10</span></span>
               </div>
-            </div>
-            <div class="anm-lib"><div class="anm-lh">BIBLIOTHÈQUE</div>
-              <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#6366f1,#a855f7)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Perceuse —30 %</b><span>16:9 · 10 s</span></div></div>
-              <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#0ea5e9,#22d3ee)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Salle de trading</b><span>16:9 · 10 s</span></div></div>
-              <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Signage magasin</b><span>1:1 · 10 s</span></div></div>
             </div>
           </div>
         </div></div>
