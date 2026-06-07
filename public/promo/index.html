@@ -309,7 +309,7 @@
   .pim-tabs{display:flex;gap:6px;padding:13px 14px}
   .pim-tab{font-size:10.5px;color:var(--muted);padding:5px 11px;border-radius:7px;border:1px solid var(--line)}
   .pim-tab.on{background:var(--surface);color:var(--ink);border-color:var(--line2)}
-  .pim-tr{display:grid;grid-template-columns:1.5fr .8fr .75fr .8fr .9fr;gap:10px;padding:11px 16px;border-top:1px solid var(--line);font-size:12px}
+  .pim-tr{display:grid;grid-template-columns:1.35fr .62fr .72fr .8fr .82fr .75fr;gap:9px;padding:11px 16px;border-top:1px solid var(--line);font-size:12px}
   .pim-tr.th{background:#0b0b11;color:var(--faint);font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em}
   .pim-tr .num{text-align:right;font-variant-numeric:tabular-nums}
   .pim-tr .calc{color:#a5b4fc}
@@ -319,6 +319,17 @@
   .pim-foot .pim-fx{margin-left:0}
   .pim-formula{font-family:var(--mono);font-size:10.5px;color:#c7c4ff}
   .pim-formula b{color:#a5b4fc;font-weight:600}
+  /* Panneau détaillé des champs calculés */
+  .pim-formulas{padding:12px 16px 14px;border-top:1px solid var(--line);background:rgba(129,140,248,.06);display:flex;flex-direction:column;gap:8px}
+  .pim-fh{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+  .pim-frow{display:flex;align-items:baseline;gap:8px;font-family:var(--mono);font-size:10.5px;color:#c7c4ff;flex-wrap:wrap}
+  .pim-frow .nm{color:#a5b4fc;font-weight:700;min-width:74px}
+  .pim-frow .eq{color:var(--muted)}
+  .pim-frow .ex b{color:#a5b4fc;font-weight:600}
+  .pim-frow .ex em{color:#34d399;font-style:normal}
+  .pim-funcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+  .pim-funcs span{font-family:var(--mono);font-size:9px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:3px 7px}
+  .pim-funcs span.k{color:#818cf8;border-color:rgba(129,140,248,.45);background:rgba(129,140,248,.12)}
   /* 06 Taxonomies */
   .txo-node{display:flex;align-items:center;gap:9px;padding:8px;border-radius:7px;font-size:13px}
   .txo-node .cv{width:11px;color:var(--faint);flex:0 0 11px}
@@ -326,6 +337,19 @@
   .txo-node .ct{margin-left:auto;font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:1px 9px}
   .txo-node.l2{padding-left:30px}.txo-node.l3{padding-left:54px;font-size:12px}
   .txo-node.on{background:rgba(124,108,255,.14);box-shadow:inset 2px 0 0 var(--indigo)}
+  /* Taxonomies — drag-and-drop (tri) + édition de nom */
+  #taxonomies .txo-body{position:relative}
+  #taxonomies .txo-node{position:relative;cursor:grab}
+  #taxonomies .txo-node::before{content:"⠿";font-size:11px;line-height:1;color:var(--faint);opacity:.3;flex:0 0 auto;margin-right:-1px;cursor:grab}
+  #taxonomies .txo-node.dragging{cursor:grabbing;background:linear-gradient(180deg,#24242f,#16161d);border-radius:8px;box-shadow:0 18px 42px -12px #000,0 0 26px -8px var(--indigo);outline:1px solid rgba(124,108,255,.6);z-index:8;opacity:.97}
+  #taxonomies .txo-node.dragging::before{opacity:.85;color:var(--indigo)}
+  #taxonomies .txo-dropline{position:absolute;left:54px;right:48px;height:2px;background:var(--indigo);border-radius:2px;box-shadow:0 0 10px var(--indigo);opacity:0;z-index:7;transition:opacity .18s,top .25s}
+  #taxonomies .txo-dropline.show{opacity:1}
+  #taxonomies .txo-dropline::before{content:"";position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;border:2px solid var(--indigo);background:#0b0b11}
+  #taxonomies .txo-node.editing{cursor:text}
+  #taxonomies .txo-node.editing .nm{border:1px solid var(--indigo);border-radius:5px;padding:1px 7px;background:rgba(124,108,255,.12);box-shadow:0 0 0 3px rgba(124,108,255,.12)}
+  #taxonomies .txo-node.editing .nm::after{content:"";display:inline-block;width:1.5px;height:12px;background:var(--indigo);margin-left:2px;vertical-align:-2px;animation:caretBlink 1s steps(1) infinite}
+  @keyframes caretBlink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
   /* 07 Templates scraping */
   .tpl-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .tpl-card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:14px}
@@ -729,8 +753,7 @@
   #pim .scene-visual.is-in .pim-tr:nth-of-type(3){animation-delay:.4s}#pim .scene-visual.is-in .pim-tr:nth-of-type(4){animation-delay:.8s}#pim .scene-visual.is-in .pim-tr:nth-of-type(5){animation-delay:1.2s}#pim .scene-visual.is-in .pim-tr:nth-of-type(6){animation-delay:1.6s}#pim .scene-visual.is-in .pim-tr:nth-of-type(7){animation-delay:2s}
 
   /* 08 Taxonomies — l'arbre se construit, la catégorie active respire */
-  #taxonomies .scene-visual.is-in .txo-node{animation:cycleSlide 5.2s ease-in-out infinite}
-  #taxonomies .scene-visual.is-in .txo-node:nth-child(2){animation-delay:.18s}#taxonomies .scene-visual.is-in .txo-node:nth-child(3){animation-delay:.36s}#taxonomies .scene-visual.is-in .txo-node:nth-child(4){animation-delay:.54s}#taxonomies .scene-visual.is-in .txo-node:nth-child(5){animation-delay:.72s}#taxonomies .scene-visual.is-in .txo-node:nth-child(6){animation-delay:.9s}#taxonomies .scene-visual.is-in .txo-node:nth-child(7){animation-delay:1.08s}
+  /* drag-and-drop + édition pilotés par JS (voir script en bas) */
 
   /* 09 Templates — champ assigné qui pulse */
   #templates .scene-visual.is-in .tpl-field.on{animation:breathe 2.4s ease-in-out infinite}
@@ -1253,13 +1276,20 @@
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:78%;--y1:27%;--x2:52%;--y2:86%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="pim-body mk-body">
             <div class="pim-tabs"><span class="pim-tab on">Base outillage</span><span class="pim-tab">Base jardin</span><span class="pim-tab">+ Nouvelle base</span></div>
-            <div class="pim-tr th"><span>Nom</span><span>Réf.</span><span class="num">Prix HT</span><span class="num calc">Prix TTC<span class="pim-fx">ƒx</span></span><span>Marque</span></div>
-            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num">129,00 €</span><span class="num calc">154,80 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num">79,90 €</span><span class="num calc">95,88 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num">149,00 €</span><span class="num calc">178,80 €</span><span>ProTools</span></div>
-            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num">59,00 €</span><span class="num calc">70,80 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num">64,90 €</span><span class="num calc">77,88 €</span><span>ProTools</span></div>
-            <div class="pim-foot"><span class="pim-fx">ƒx</span><span class="pim-formula">Prix TTC = ARRONDI(<b>[Prix HT]</b> × 1,20 ; 2)</span></div>
+            <div class="pim-tr th"><span>Nom</span><span>Réf.</span><span class="num">Prix HT</span><span class="num calc">Prix TTC<span class="pim-fx">ƒx</span></span><span class="num calc">Promo<span class="pim-fx">ƒx</span></span><span>Marque</span></div>
+            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num">129,00 €</span><span class="num calc">154,80 €</span><span class="num calc">123,84 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num">79,90 €</span><span class="num calc">95,88 €</span><span class="num calc">76,70 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num">149,00 €</span><span class="num calc">178,80 €</span><span class="num calc">143,04 €</span><span>ProTools</span></div>
+            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num">59,00 €</span><span class="num calc">70,80 €</span><span class="num calc">56,64 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num">64,90 €</span><span class="num calc">77,88 €</span><span class="num calc">62,30 €</span><span>ProTools</span></div>
+            <div class="pim-formulas">
+              <div class="pim-fh">Champs calculés — recalcul automatique à chaque modification</div>
+              <div class="pim-frow"><span class="pim-fx">ƒx</span><span class="nm">Prix TTC</span><span class="eq">=</span><span class="ex">ARRONDI(<b>[Prix HT]</b> × 1,20 ; 2)</span></div>
+              <div class="pim-frow"><span class="pim-fx">ƒx</span><span class="nm">Promo</span><span class="eq">=</span><span class="ex">ARRONDI(<b>[Prix TTC]</b> × 0,80 ; 2)</span></div>
+              <div class="pim-frow"><span class="pim-fx">ƒx</span><span class="nm">Étiquette</span><span class="eq">=</span><span class="ex">CONCAT(<b>[Nom]</b> ; <em>" — réf "</em> ; <b>[Réf.]</b>)</span></div>
+              <div class="pim-frow"><span class="pim-fx">ƒx</span><span class="nm">Disponibilité</span><span class="eq">=</span><span class="ex">SI(<b>[Stock]</b> &gt; 0 ; <em>"En stock"</em> ; <em>"Sur commande"</em>)</span></div>
+              <div class="pim-funcs"><span class="k">ARRONDI</span><span class="k">SI</span><span class="k">CONCAT</span><span class="k">SOMME</span><span class="k">MOYENNE</span><span class="k">MAJUSCULE</span><span class="k">MIN/MAX</span><span>+ − × ÷ %</span><span>références [Colonne]</span></div>
+            </div>
           </div>
         </div></div>
       </div>
@@ -1821,6 +1851,40 @@
 })();
 </script>
 
+<script>
+/* Taxonomies — démo : glisser pour trier les niveaux + éditer un nom */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#taxonomies .scene-visual'); if(!sv) return;
+  var body=sv.querySelector('.txo-body'); if(!body) return;
+  var nodes=[].slice.call(body.querySelectorAll('.txo-node'));
+  nodes.forEach(function(n){ for(var i=0;i<n.childNodes.length;i++){ var c=n.childNodes[i];
+    if(c.nodeType===3 && c.textContent.trim()){ var sp=document.createElement('span'); sp.className='nm'; sp.textContent=c.textContent.trim(); n.replaceChild(sp,c); break; } } });
+  function byName(t){ for(var i=0;i<nodes.length;i++){ var s=nodes[i].querySelector('.nm'); if(s&&s.textContent.indexOf(t)>=0) return nodes[i]; } return null; }
+  var drag=byName('Scies circulaires'), meul=byName('Meuleuses'), edit=byName('Tondeuses');
+  if(!drag||!meul||!edit) return;
+  var dl=document.createElement('div'); dl.className='txo-dropline'; body.appendChild(dl);
+  var timers=[], iv=null;
+  function clearT(){ timers.forEach(clearTimeout); timers=[]; }
+  function rowH(){ return Math.round(meul.getBoundingClientRect().height); }
+  function dropAt(target){ var r=target.getBoundingClientRect(), b=body.getBoundingClientRect(); dl.style.top=Math.round(r.top-b.top-1)+'px'; }
+  function reset(){ drag.style.transition=''; drag.style.transform=''; drag.classList.remove('dragging'); dl.classList.remove('show'); edit.classList.remove('editing'); var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses'; if(meul.previousElementSibling===drag) body.insertBefore(drag, meul.nextSibling); }
+  function seq(){
+    clearT(); reset();
+    timers.push(setTimeout(function(){ drag.classList.add('dragging'); dropAt(meul); dl.classList.add('show'); },700));
+    timers.push(setTimeout(function(){ drag.style.transition='transform .55s cubic-bezier(.2,.8,.3,1)'; drag.style.transform='translateY(-'+rowH()+'px)'; },1150));
+    timers.push(setTimeout(function(){ drag.style.transition=''; drag.style.transform=''; drag.classList.remove('dragging'); dl.classList.remove('show'); body.insertBefore(drag, meul); },1950));
+    timers.push(setTimeout(function(){ edit.classList.add('editing'); },3100));
+    timers.push(setTimeout(function(){ var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses autoportées'; },3700));
+    timers.push(setTimeout(function(){ edit.classList.remove('editing'); },5300));
+  }
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,7200); } }
+    else { if(iv){ clearInterval(iv); iv=null; } clearT(); }
+  }); },{threshold:0.3}).observe(sv);
+})();
+</script>
 <script>
 /* Assistant IA — séquence du sélecteur de LLM : ouvre → sélectionne → ferme, en boucle */
 (function(){
