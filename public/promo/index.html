@@ -419,17 +419,35 @@
   #taxonomies .txo-node.editing .nm{border:1px solid var(--indigo);border-radius:5px;padding:1px 7px;background:rgba(124,108,255,.12);box-shadow:0 0 0 3px rgba(124,108,255,.12)}
   #taxonomies .txo-node.editing .nm::after{content:"";display:inline-block;width:1.5px;height:12px;background:var(--indigo);margin-left:2px;vertical-align:-2px;animation:caretBlink 1s steps(1) infinite}
   @keyframes caretBlink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
-  /* 07 Templates scraping */
-  .tpl-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
-  .tpl-card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:14px}
-  .tpl-card .h2{font-size:12px;font-weight:700;margin-bottom:11px;display:flex;justify-content:space-between;color:var(--ink)}
+  /* 07 Templates scraping — pointer & cliquer sur un site existant */
+  .tpl-body{display:grid;grid-template-columns:1.4fr 1fr;gap:13px;align-items:start}
+  .tpl-card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:13px}
+  .tpl-card .h2{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;color:var(--ink)}
   .tpl-card .h2 .x{color:var(--faint)}
-  .tpl-sel{font-family:var(--mono);font-size:11px;color:#c7c4ff;background:rgba(124,108,255,.13);border:1px solid rgba(124,108,255,.4);border-radius:7px;padding:8px 10px;margin-bottom:9px}
-  .tpl-path{font-family:var(--mono);font-size:9px;color:var(--faint);line-height:1.55}
+  .tpl-sel{font-family:var(--mono);font-size:10.5px;color:#c7c4ff;background:rgba(124,108,255,.13);border:1px solid rgba(124,108,255,.4);border-radius:7px;padding:7px 9px;margin-bottom:8px;word-break:break-all}
+  .tpl-path{font-family:var(--mono);font-size:9px;color:var(--faint);line-height:1.55;word-break:break-all}
   .tpl-fl{font-size:10px;color:var(--muted);margin-bottom:9px}
   .tpl-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .tpl-field{font-size:10.5px;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
+  .tpl-field{font-size:10.5px;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:8px;color:var(--muted);transition:all .2s}
   .tpl-field.on{border-color:#818cf8;background:rgba(129,140,248,.16);color:#c7c4ff;box-shadow:0 0 16px -5px #818cf8}
+  /* navigateur + page produit du fournisseur (site réel) */
+  .tpl-web{border:1px solid var(--line2);border-radius:11px;background:#0e0e14;overflow:hidden}
+  .tpl-wbar{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--line)}
+  .tpl-wbar .d{width:7px;height:7px;border-radius:50%;background:#3a3a46;flex:0 0 auto}
+  .tpl-wbar .u{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-family:var(--mono);font-size:9px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tpl-page{background:#fff;color:#1e293b;padding:11px 12px;display:grid;grid-template-columns:auto 1fr;gap:10px 11px;align-items:start}
+  .tpl-img{grid-row:1 / span 4;width:84px;height:104px;border-radius:8px;overflow:hidden;position:relative}
+  .tpl-img .vico{width:100%;height:100%}
+  .tpl-el{position:relative;border-radius:6px;transition:box-shadow .2s,background .2s;padding:2px 4px;margin:-2px -4px;cursor:pointer}
+  .tpl-el.hi{box-shadow:0 0 0 2px var(--indigo);background:rgba(124,108,255,.08);z-index:2}
+  .tpl-el .tag{position:absolute;top:-8px;right:6px;font-family:var(--mono);font-size:7.5px;font-weight:700;color:#fff;background:var(--indigo);border-radius:5px;padding:1px 6px;opacity:0;transform:translateY(3px);transition:opacity .25s,transform .25s;white-space:nowrap;box-shadow:0 4px 10px -3px rgba(99,102,241,.7)}
+  .tpl-el.mapped .tag{opacity:1;transform:none}
+  .tpl-h1{font-size:14px;font-weight:800;color:#0f172a;line-height:1.15}
+  .tpl-rate{font-size:10px;color:#f59e0b}
+  .tpl-pr{font-size:19px;font-weight:800;color:#dc2626}.tpl-pr s{font-size:11px;color:#94a3b8;font-weight:600;margin-left:6px}
+  .tpl-rf{font-family:var(--mono);font-size:9.5px;color:#64748b}
+  .tpl-ds{font-size:9.5px;color:#475569;line-height:1.5;grid-column:1 / -1}
+  .tpl-right{display:flex;flex-direction:column;gap:11px}
   /* 09 Workflows — canvas d'éditeur de nodes */
   .wfl-body{background:#08080d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px}
   .wfl-canvas{position:relative;width:100%;aspect-ratio:100/60;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 32%,rgba(124,108,255,.11),transparent 62%),#0a0a10;box-shadow:inset 0 0 60px -20px #000}
@@ -1490,10 +1508,23 @@
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Templates scraping — mapping</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:36%;--y1:31%;--x2:80%;--y2:33%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:24%;--y1:30%;--x2:30%;--y2:52%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="tpl-body mk-body">
-            <div class="tpl-card"><div class="h2">Élément capturé <span class="x">✕</span></div><div class="tpl-sel">div.product-description--marketing-text</div><div class="tpl-path">div.article_info › div.product-container › div.product-info › div.product-description › …</div></div>
-            <div class="tpl-card"><div class="tpl-fl">Assigner à un champ :</div><div class="tpl-fields"><span class="tpl-field">Titre</span><span class="tpl-field on">Description</span><span class="tpl-field">Marque</span><span class="tpl-field">Prix</span><span class="tpl-field">Réf. / SKU</span><span class="tpl-field">Images</span></div></div>
+            <div class="tpl-web">
+              <div class="tpl-wbar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">https://fournisseur.com/produit/perceuse-18v-brushless</span></div>
+              <div class="tpl-page">
+                <div class="tpl-img tpl-el vshot vt-blue" data-f="Images" data-sel="img.product-gallery__main"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><span class="tag">Images</span></div>
+                <div class="tpl-h1 tpl-el" data-f="Titre" data-sel="h1.product-title">Perceuse 18V Brushless<span class="tag">Titre</span></div>
+                <div class="tpl-rate">★★★★★ <span style="color:#94a3b8">· 214 avis</span></div>
+                <div class="tpl-pr tpl-el" data-f="Prix" data-sel="span.price--final">129,00 €<s>152,00 €</s><span class="tag">Prix</span></div>
+                <div class="tpl-rf tpl-el" data-f="Réf. / SKU" data-sel="span.product-reference">Réf. 4892-18V<span class="tag">Réf.</span></div>
+                <div class="tpl-ds tpl-el" data-f="Description" data-sel="div.product-description--marketing-text">Visseuse sans-fil · 2 batteries 2,0 Ah · mandrin 13 mm · couple 60 Nm · garantie 3 ans.<span class="tag">Description</span></div>
+              </div>
+            </div>
+            <div class="tpl-right">
+              <div class="tpl-card"><div class="h2">Élément capturé <span class="x">✕</span></div><div class="tpl-sel" id="tplSel">h1.product-title</div><div class="tpl-path" id="tplPath">body › main › div.product › h1.product-title</div></div>
+              <div class="tpl-card"><div class="tpl-fl">Assigner à un champ :</div><div class="tpl-fields"><span class="tpl-field" data-f="Titre">Titre</span><span class="tpl-field" data-f="Description">Description</span><span class="tpl-field" data-f="Marque">Marque</span><span class="tpl-field" data-f="Prix">Prix</span><span class="tpl-field" data-f="Réf. / SKU">Réf. / SKU</span><span class="tpl-field" data-f="Images">Images</span></div></div>
+            </div>
             <div class="tpl-saved"><div class="h">TEMPLATES ENREGISTRÉS · 14</div><div class="row"><span><i style="background:#fbbf24"></i>leroymerlin.fr <b>12 champs</b></span><span><i style="background:#38bdf8"></i>manomano.fr <b>10 champs</b></span><span><i style="background:#34d399"></i>castorama.fr <b>11 champs</b></span><span><i style="background:#f472b6"></i>bricodepot.fr <b>9 champs</b></span><span><i style="background:#a855f7"></i>amazon.fr <b>13 champs</b></span></div></div>
           </div>
         </div></div>
@@ -2009,6 +2040,41 @@
 })();
 </script>
 
+<script>
+/* Templates scraping — pointer & cliquer sur le site : sélection d'un élément → assignation à un champ */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#templates .scene-visual'); if(!sv) return;
+  var page=sv.querySelector('.tpl-page'); if(!page) return;
+  var els=[].slice.call(page.querySelectorAll('.tpl-el'));
+  var fields=[].slice.call(sv.querySelectorAll('.tpl-field'));
+  var sel=document.getElementById('tplSel'), path=document.getElementById('tplPath');
+  var seq=['Titre','Prix','Réf. / SKU','Description','Images'];
+  function elByF(f){ for(var i=0;i<els.length;i++){ if(els[i].dataset.f===f) return els[i]; } return null; }
+  function reset(){ els.forEach(function(e){e.classList.remove('hi','mapped');}); fields.forEach(function(f){f.classList.remove('on');}); }
+  var i=0, iv=null, t=[];
+  function clearT(){ t.forEach(clearTimeout); t=[]; }
+  function step(){
+    if(i===0) reset();
+    if(i<seq.length){
+      var f=seq[i], el=elByF(f); if(el){
+        els.forEach(function(e){e.classList.remove('hi');});
+        el.classList.add('hi');
+        sel.textContent=el.dataset.sel;
+        path.textContent='body › main › div.product › '+el.dataset.sel;
+        fields.forEach(function(x){x.classList.toggle('on',x.dataset.f===f);});
+        t.push(setTimeout(function(){ el.classList.add('mapped'); el.classList.remove('hi'); },900));
+      }
+    }
+    i=(i+1)%(seq.length+2);
+  }
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,1600); } }
+    else { if(iv){ clearInterval(iv); iv=null; } clearT(); i=0; reset(); }
+  }); },{threshold:0.3}).observe(sv);
+})();
+</script>
 <script>
 /* DAM — clic sur une image → panneau de métadonnées (taille, espace color., DPI, mots-clés IA) */
 (function(){
