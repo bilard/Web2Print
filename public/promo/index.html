@@ -2105,41 +2105,46 @@
   nodes.forEach(function(n){ for(var i=0;i<n.childNodes.length;i++){ var c=n.childNodes[i];
     if(c.nodeType===3 && c.textContent.trim()){ var sp=document.createElement('span'); sp.className='nm'; sp.textContent=c.textContent.trim(); n.replaceChild(sp,c); break; } } });
   function byName(t){ for(var i=0;i<nodes.length;i++){ var s=nodes[i].querySelector('.nm'); if(s&&s.textContent.indexOf(t)>=0) return nodes[i]; } return null; }
-  var drag=byName('Scies circulaires'), meul=byName('Meuleuses'), edit=byName('Tondeuses');
-  if(!drag||!meul||!edit) return;
+  /* Démo : « Souffleurs » est importé en dernier (ordre brut) ; on le glisse en tête pour trier A→Z. */
+  var drag=byName('Souffleurs'), target=byName('Taille-haies'), edit=byName('Tondeuses');
+  if(!drag||!target||!edit) return;
+  /* marqueur de la position d'origine de « Souffleurs » pour pouvoir le restaurer à l'identique */
+  var home=document.createComment('txo-home'); drag.parentNode.insertBefore(home, drag.nextSibling);
   var dl=document.createElement('div'); dl.className='txo-dropline'; body.appendChild(dl);
   var timers=[], iv=null;
   function clearT(){ timers.forEach(clearTimeout); timers=[]; }
-  function rowH(){ return Math.round(meul.getBoundingClientRect().height); }
-  function dropAt(target){ var r=target.getBoundingClientRect(), b=body.getBoundingClientRect(); dl.style.top=Math.round(r.top-b.top-1)+'px'; }
-  function clearMove(el){ el.style.transition=''; el.style.transform=''; el.classList.remove('shift'); }
+  function dropAt(t){ var r=t.getBoundingClientRect(), b=body.getBoundingClientRect(); dl.style.top=Math.round(r.top-b.top-1)+'px'; }
+  function clearMove(n){ n.style.transition=''; n.style.transform=''; n.classList.remove('shift'); }
+  /* FLIP généralisé : capture la position de TOUS les nœuds, applique le déplacement DOM, puis anime chacun de son ancienne place vers la nouvelle (aucun chevauchement) */
+  function flipMove(domOp){
+    var firsts=nodes.map(function(n){ return n.getBoundingClientRect().top; });
+    domOp();
+    var moved=[];
+    nodes.forEach(function(n,i){
+      var d=firsts[i]-n.getBoundingClientRect().top;
+      if(Math.abs(d)<1) return;
+      n.style.transition='none'; n.style.transform='translateY('+d+'px)'; moved.push(n);
+    });
+    void body.offsetWidth;
+    moved.forEach(function(n){ n.style.transition='transform .55s cubic-bezier(.2,.8,.3,1)'; n.style.transform=''; });
+  }
   function reset(){
-    clearMove(drag); drag.classList.remove('dragging'); clearMove(meul);
+    nodes.forEach(clearMove); drag.classList.remove('dragging');
     dl.classList.remove('show'); edit.classList.remove('editing');
     var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses';
-    if(meul.previousElementSibling===drag) body.insertBefore(meul, drag); /* restaure : Meuleuses avant Scies */
-  }
-  /* FLIP : réordonne dans le DOM puis anime chaque nœud de son ancienne place vers la nouvelle (aucun chevauchement) */
-  function flipReorder(){
-    var f1=drag.getBoundingClientRect().top, f2=meul.getBoundingClientRect().top;
-    body.insertBefore(drag, meul);
-    var l1=drag.getBoundingClientRect().top, l2=meul.getBoundingClientRect().top;
-    drag.style.transition='none'; drag.style.transform='translateY('+(f1-l1)+'px)';
-    meul.classList.add('shift'); meul.style.transition='none'; meul.style.transform='translateY('+(f2-l2)+'px)';
-    void body.offsetWidth;
-    drag.style.transition='transform .5s cubic-bezier(.2,.8,.3,1)'; drag.style.transform='';
-    meul.style.transition='transform .5s cubic-bezier(.2,.8,.3,1)'; meul.style.transform='';
+    home.parentNode.insertBefore(drag, home); /* « Souffleurs » remis en dernier (ordre brut, instantané) */
   }
   function seq(){
     clearT(); reset();
-    /* PHASE 1 — glisser pour trier */
-    timers.push(setTimeout(function(){ drag.classList.add('dragging'); dropAt(meul); dl.classList.add('show'); },800));
-    timers.push(setTimeout(function(){ dl.classList.remove('show'); flipReorder(); },1700));
-    timers.push(setTimeout(function(){ clearMove(drag); drag.classList.remove('dragging'); clearMove(meul); },2350));
-    /* PHASE 2 — renommer (après le tri, pour rester lisible) */
-    timers.push(setTimeout(function(){ edit.classList.add('editing'); },3700));
-    timers.push(setTimeout(function(){ var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses autoportées'; },4400));
-    timers.push(setTimeout(function(){ edit.classList.remove('editing'); },6100));
+    /* PHASE 1 — saisir « Souffleurs » et viser le haut du groupe */
+    timers.push(setTimeout(function(){ drag.classList.add('dragging'); dropAt(target); dl.classList.add('show'); },800));
+    /* PHASE 2 — déposer : glisse en tête, les autres descendent (tri A→Z : Souffleurs ‹ Taille-haies ‹ Tondeuses) */
+    timers.push(setTimeout(function(){ dl.classList.remove('show'); flipMove(function(){ target.parentNode.insertBefore(drag, target); }); },1700));
+    timers.push(setTimeout(function(){ clearMove(drag); drag.classList.remove('dragging'); },2400));
+    /* PHASE 3 — renommer un nœud en place (l'arbre reste trié, lisible) */
+    timers.push(setTimeout(function(){ edit.classList.add('editing'); },4000));
+    timers.push(setTimeout(function(){ var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses autoportées'; },4700));
+    timers.push(setTimeout(function(){ edit.classList.remove('editing'); },6300));
   }
   if(!('IntersectionObserver' in window)) return;
   new IntersectionObserver(function(es){ es.forEach(function(e){
