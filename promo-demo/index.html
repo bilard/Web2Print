@@ -325,11 +325,15 @@
   .logo .wm{font-family:"JetBrains Mono",monospace;font-size:42px;font-weight:700;letter-spacing:.1em}
   .logo-img{height:158px;width:auto;display:block;filter:drop-shadow(0 14px 38px rgba(45,212,191,.28))}
   .logo-img.sm{height:118px}
+  .logo-img.lg{height:248px;filter:drop-shadow(0 20px 54px rgba(45,212,191,.34))}
   .big{font-size:104px;font-weight:800;letter-spacing:-.02em;line-height:1.02}
   .big .hl{color:var(--indigo)}
   .pills{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:1500px}
-  .pill{font-size:22px;font-weight:600;padding:11px 21px;border:1px solid var(--line2);border-radius:100px;background:var(--surface)}
+  .pill{display:inline-flex;align-items:center;font-size:22px;font-weight:600;padding:11px 21px;border:1px solid var(--line2);border-radius:100px;background:var(--surface)}
   .pill .d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:11px;vertical-align:middle}
+  .pill .pic{width:20px;height:20px;margin-right:10px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  /* Bande des modules ancrée en bas de la slide intro */
+  .s1-pills{position:absolute;left:0;right:0;bottom:56px;margin:0 auto;max-width:1780px;padding:0 50px;box-sizing:border-box}
   .cta{font-size:28px;font-weight:700;color:#fff;background:var(--indigo);padding:18px 36px;border-radius:14px;box-shadow:0 0 44px -8px rgba(99,102,241,.7)}
   .url-out{font-family:"JetBrains Mono",monospace;font-size:26px;color:var(--mut);letter-spacing:.06em}
 
@@ -431,34 +435,53 @@
       <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
       <path d="M206 64 l5 4 M214 64 l5 4 M222 64 l5 4" stroke="#94a3b8" stroke-width="1.4"/>
     </symbol>
+    <!-- Pictos des modules (slide intro) — stroke hérité via currentColor -->
+    <symbol id="m-creer" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 11v6M9 14h6"/></symbol>
+    <symbol id="m-importer" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+    <symbol id="m-editer" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="m-organiser" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="m-medias" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="m-generer" viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 14.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/></symbol>
+    <symbol id="m-donnees" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="m-classer" viewBox="0 0 24 24"><path d="M21 12h-8M21 6H8M21 18h-8"/><path d="M3 6v4c0 1.1.9 2 2 2h3"/><path d="M3 10v6c0 1.1.9 2 2 2h3"/></symbol>
+    <symbol id="m-mapper" viewBox="0 0 24 24"><path d="m9 3-6 3v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></symbol>
+    <symbol id="m-collecter" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 12h20"/></symbol>
+    <symbol id="m-decliner" viewBox="0 0 24 24"><path d="m12 2 9 4-9 4-9-4z"/><path d="m21 12-9 4-9-4"/><path d="m21 17-9 4-9-4"/></symbol>
+    <symbol id="m-automatiser" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+    <symbol id="m-piloter" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/><path d="M14 2v4M8 10v4M16 18v4"/></symbol>
+    <symbol id="m-animer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/></symbol>
+    <symbol id="m-assister" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="m-publier" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="m-gouverner" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="m-parametrer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
   </svg>
 
   <!-- S1 — INTRO -->
   <div id="s1" class="scene clip" data-start="0" data-duration="3.2" data-track-index="0" style="z-index:1">
     <div class="glow"></div>
     <div class="center">
-      <div class="logo"><img class="logo-img" src="logo.png" alt="IBS Studio"/></div>
-      <div class="big s1-title">De la donnée<br/>à <span class="hl">l'imprimé.</span></div>
-      <div class="pills">
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Créer</span>
-        <span class="pill"><span class="d" style="background:var(--amber)"></span>Importer</span>
-        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Éditer</span>
-        <span class="pill"><span class="d" style="background:var(--sky)"></span>Organiser</span>
-        <span class="pill"><span class="d" style="background:var(--pink)"></span>Médias</span>
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Générer</span>
-        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Données</span>
-        <span class="pill"><span class="d" style="background:var(--teal)"></span>Classer</span>
-        <span class="pill"><span class="d" style="background:var(--emerald)"></span>Mapper</span>
-        <span class="pill"><span class="d" style="background:var(--sky)"></span>Collecter</span>
-        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Décliner</span>
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Automatiser</span>
-        <span class="pill"><span class="d" style="background:var(--sky)"></span>Piloter</span>
-        <span class="pill"><span class="d" style="background:var(--pink)"></span>Animer</span>
-        <span class="pill"><span class="d" style="background:var(--indigo)"></span>Assister</span>
-        <span class="pill"><span class="d" style="background:var(--violet)"></span>Publier</span>
-        <span class="pill"><span class="d" style="background:var(--pink)"></span>Gouverner</span>
-        <span class="pill"><span class="d" style="background:var(--amber)"></span>Paramétrer</span>
-      </div>
+      <div class="logo"><img class="logo-img lg" src="logo.png" alt="IBS Studio"/></div>
+      <div class="big s1-title">Vos data<br/>propulsées par <span class="hl">l'IA</span></div>
+    </div>
+    <div class="pills s1-pills">
+      <span class="pill"><svg class="pic" style="color:var(--violet)"><use href="#m-creer"/></svg>Créer</span>
+      <span class="pill"><svg class="pic" style="color:var(--amber)"><use href="#m-importer"/></svg>Importer</span>
+      <span class="pill"><svg class="pic" style="color:var(--indigo)"><use href="#m-editer"/></svg>Éditer</span>
+      <span class="pill"><svg class="pic" style="color:var(--sky)"><use href="#m-organiser"/></svg>Organiser</span>
+      <span class="pill"><svg class="pic" style="color:var(--pink)"><use href="#m-medias"/></svg>Médias</span>
+      <span class="pill"><svg class="pic" style="color:var(--violet)"><use href="#m-generer"/></svg>Générer</span>
+      <span class="pill"><svg class="pic" style="color:var(--emerald)"><use href="#m-donnees"/></svg>Données</span>
+      <span class="pill"><svg class="pic" style="color:var(--teal)"><use href="#m-classer"/></svg>Classer</span>
+      <span class="pill"><svg class="pic" style="color:var(--emerald)"><use href="#m-mapper"/></svg>Mapper</span>
+      <span class="pill"><svg class="pic" style="color:var(--sky)"><use href="#m-collecter"/></svg>Collecter</span>
+      <span class="pill"><svg class="pic" style="color:var(--indigo)"><use href="#m-decliner"/></svg>Décliner</span>
+      <span class="pill"><svg class="pic" style="color:var(--violet)"><use href="#m-automatiser"/></svg>Automatiser</span>
+      <span class="pill"><svg class="pic" style="color:var(--sky)"><use href="#m-piloter"/></svg>Piloter</span>
+      <span class="pill"><svg class="pic" style="color:var(--pink)"><use href="#m-animer"/></svg>Animer</span>
+      <span class="pill"><svg class="pic" style="color:var(--indigo)"><use href="#m-assister"/></svg>Assister</span>
+      <span class="pill"><svg class="pic" style="color:var(--violet)"><use href="#m-publier"/></svg>Publier</span>
+      <span class="pill"><svg class="pic" style="color:var(--pink)"><use href="#m-gouverner"/></svg>Gouverner</span>
+      <span class="pill"><svg class="pic" style="color:var(--amber)"><use href="#m-parametrer"/></svg>Paramétrer</span>
     </div>
   </div>
 
