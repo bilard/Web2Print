@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, Compass } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -16,7 +16,7 @@ import { useAccessStore } from '@/stores/access.store'
  * liste : ajouter un module ici le fait apparaître dans les deux automatiquement.
  */
 export type Section =
-  | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
+  | 'discover' | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access'
 
@@ -30,6 +30,7 @@ export interface ModuleItem {
 }
 
 export const MODULE_ITEMS: ModuleItem[] = [
+  { id: 'discover', icon: Compass,      label: 'Découverte',       accent: 'text-cyan-400',    activeBg: 'bg-cyan-500/[0.1]',    activeText: 'text-cyan-300' },
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
   { id: 'import', icon: Upload,         label: 'Importer',         accent: 'text-amber-400',   activeBg: 'bg-amber-500/[0.1]',   activeText: 'text-amber-300' },
   { id: 'library',icon: Library,        label: 'Bibliothèque',     accent: 'text-sky-400',     activeBg: 'bg-sky-500/[0.1]',     activeText: 'text-sky-300' },

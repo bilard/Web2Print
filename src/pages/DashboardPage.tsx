@@ -30,6 +30,7 @@ import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
 import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, type Section } from '@/features/navigation/modules'
 
+const DiscoverPage = lazy(() => import('@/features/discover/DiscoverPage').then((m) => ({ default: m.DiscoverPage })))
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
 const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
@@ -424,7 +425,17 @@ export default function DashboardPage() {
       </aside>
 
       {/* Content */}
-      {activeSection === 'data' && canSee('data') ? (
+      {activeSection === 'discover' ? (
+        <div data-tour="section-discover" className="flex-1 overflow-hidden">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+              <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+            </div>
+          }>
+            <DiscoverPage onNavigate={setActiveSection} />
+          </Suspense>
+        </div>
+      ) : activeSection === 'data' && canSee('data') ? (
         <div data-tour="section-data" className="flex-1 overflow-hidden">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
