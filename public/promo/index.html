@@ -387,7 +387,8 @@
   .anm-rlbl b{color:#f5d0fe;font-weight:700;font-family:var(--body);letter-spacing:0}
   .anm-rv{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid rgba(232,121,249,.4);background:radial-gradient(ellipse 80% 90% at 28% 18%,rgba(232,121,249,.38),transparent 55%),radial-gradient(ellipse 80% 90% at 82% 82%,rgba(34,211,238,.32),transparent 55%),linear-gradient(135deg,#1a0833,#2b0a52 52%,#06203f);box-shadow:0 0 34px -12px rgba(232,121,249,.6)}
   .anm-rv .ngrid{position:absolute;inset:0;background-image:linear-gradient(rgba(232,121,249,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.13) 1px,transparent 1px);background-size:26px 26px;-webkit-mask:linear-gradient(transparent,#000 85%);mask:linear-gradient(transparent,#000 85%)}
-  .anm-rv .drill{position:absolute;right:2%;top:38%;left:auto;transform:translateY(-50%);width:46%;z-index:1;filter:drop-shadow(0 0 26px rgba(34,211,238,.95)) drop-shadow(0 0 10px rgba(232,121,249,.5))}
+  .anm-rv .rstage{position:absolute;right:0%;top:40%;left:auto;transform:translateY(-50%);width:54%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(103,232,249,.22),rgba(232,121,249,.1) 45%,transparent 66%);z-index:0;pointer-events:none}
+  .anm-rv .drill{position:absolute;right:3%;top:40%;left:auto;transform:translateY(-50%);width:48%;z-index:1;filter:drop-shadow(0 0 28px rgba(34,211,238,1)) drop-shadow(0 0 12px rgba(232,121,249,.6))}
   .anm-rv .rinfo,.anm-rv .rctrl,.anm-rv .rpromo,.anm-rv .rgen{z-index:2}
   .anm-rv .rinfo{position:absolute;left:15px;bottom:46px;display:flex;flex-direction:column;gap:9px;max-width:56%}
   .anm-rv .rpictos{display:flex;gap:6px;flex-wrap:wrap}
@@ -758,11 +759,29 @@
   #telegram .scene-visual.is-in .tlg-msg.tlg-bot{animation-delay:.6s}#telegram .scene-visual.is-in .tlg-file{animation-delay:1.2s}
 
   /* 14 Animation — cartes de la bibliothèque qui apparaissent */
-  #animation .scene-visual.is-in .anm-rv .rbar i{animation:anmplay 10s linear infinite}
-  #animation .scene-visual.is-in .anm-rv .drill{animation:floaty 3.4s ease-in-out infinite}
+  /* Le résultat « joue » : chaque élément est animé en continu (rythme énergique) */
+  #animation .scene-visual.is-in .anm-rv .rbar i{animation:anmplay 5s linear infinite}
+  #animation .scene-visual.is-in .anm-rv .ngrid{animation:anmGrid 1.6s linear infinite}
+  #animation .scene-visual.is-in .anm-rv .rstage{animation:anmStage 2.4s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .drill{animation:anmDrill 2.4s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rpromo{animation:anmPromo 1.7s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rgen{animation:anmGen 3s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-rv .rtitle{animation:neonpulse 2.2s ease-in-out infinite}
-  @keyframes anmplay{0%{width:4%}100%{width:100%}}
-  @keyframes neonpulse{0%,100%{text-shadow:0 0 12px rgba(34,211,238,.9)}50%{text-shadow:0 0 20px rgba(34,211,238,1),0 0 30px rgba(232,121,249,.65)}}
+  #animation .scene-visual.is-in .anm-rv .rpictos span{animation:anmBob 1.5s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(2){animation-delay:.18s}
+  #animation .scene-visual.is-in .anm-rv .rpictos span:nth-child(3){animation-delay:.36s}
+  #animation .scene-visual.is-in .anm-rv .rnew{animation:anmPrice 1.4s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .pp{animation:anmBlink 1s steps(1) infinite}
+  @keyframes anmplay{0%{width:3%}100%{width:100%}}
+  @keyframes anmGrid{to{background-position:0 -26px}}
+  @keyframes anmStage{0%,100%{transform:translateY(-50%) scale(1);opacity:.85}50%{transform:translateY(-50%) scale(1.08);opacity:1}}
+  @keyframes anmDrill{0%{transform:translateY(-50%) rotate(-4deg) scale(1)}50%{transform:translateY(-54%) rotate(4deg) scale(1.07)}100%{transform:translateY(-50%) rotate(-4deg) scale(1)}}
+  @keyframes anmPromo{0%,100%{transform:rotate(-5deg) scale(1)}50%{transform:rotate(-5deg) scale(1.1)}}
+  @keyframes anmGen{0%,100%{opacity:.75}50%{opacity:1;box-shadow:0 0 14px -2px rgba(232,121,249,.7)}}
+  @keyframes neonpulse{0%,100%{text-shadow:0 0 12px rgba(34,211,238,.9)}50%{text-shadow:0 0 22px rgba(34,211,238,1),0 0 34px rgba(232,121,249,.7)}}
+  @keyframes anmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes anmPrice{0%,100%{transform:scale(1);box-shadow:0 0 18px -3px rgba(250,204,21,.8)}50%{transform:scale(1.09);box-shadow:0 0 26px -2px rgba(250,204,21,1)}}
+  @keyframes anmBlink{0%,100%{opacity:1}50%{opacity:.4}}
   #animation .scene-visual.is-in .anm-card{animation:cycleRise 4.6s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-card:nth-child(3){animation-delay:.3s}#animation .scene-visual.is-in .anm-card:nth-child(4){animation-delay:.6s}
   #animation .scene-visual.is-in .anm-chip.on{animation:breathe 2.6s ease-in-out infinite}
@@ -1422,6 +1441,7 @@
               <div class="anm-rlbl">RÉSULTAT · <b>conforme au brief</b></div>
               <div class="anm-rv">
                 <span class="ngrid"></span>
+                <span class="rstage"></span>
                 <svg class="drill vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg>
                 <span class="rpromo">−30 %</span>
                 <span class="rgen">✦ généré · 16:9 · 10 s</span>
