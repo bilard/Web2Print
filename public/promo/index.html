@@ -185,8 +185,8 @@
   .poster .h1{top:-6px;left:-6px}.poster .h2{top:-6px;right:-6px}.poster .h3{bottom:-6px;left:-6px}.poster .h4{bottom:-6px;right:-6px}
   /* Éditeur — poster = fiche produit détaillée (scopé, n'affecte pas le hero) */
   #editer .poster{width:216px;aspect-ratio:auto;display:flex;flex-direction:column;padding:11px;gap:6px;color:#0f172a}
-  #editer .poster .ph{position:static;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1/.72;margin:0;display:grid;place-items:center;border-radius:9px}
-  #editer .poster .ph .vico{width:70%;height:70%}
+  #editer .poster .ph{position:static;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1/.78;margin:0;display:grid;place-items:center;border-radius:9px;overflow:hidden}
+  #editer .poster .ph .vico{width:98%;height:98%}
   #editer .poster .badge{top:7px;right:7px;left:auto;width:34px;height:34px;font-size:10px}
   #editer .poster .promo{position:absolute;top:7px;left:7px;background:#dc2626;color:#fff;font-weight:800;font-size:13px;padding:4px 9px;border-radius:9px;transform:rotate(-7deg);box-shadow:0 6px 14px -4px rgba(220,38,38,.6);letter-spacing:.02em}
   #editer .poster .tt{position:static;bottom:auto;left:auto;font-size:15px;font-weight:800;color:#3730a3;line-height:1.05;margin-top:1px}
@@ -381,6 +381,21 @@
   .anm-card:last-child{margin-bottom:0}
   .anm-thumb{width:54px;height:32px;border-radius:5px;display:grid;place-items:center;color:#fff;flex:0 0 auto}.anm-thumb svg{width:13px;height:13px}
   .anm-card b{font-size:10.5px;display:block;line-height:1.2}.anm-card span{font-size:9px;color:var(--muted)}
+  /* Animation — aperçu du résultat généré (conforme au brief : néon, -30%, signage) */
+  .anm-rlbl{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--faint);margin:14px 0 7px;display:flex;align-items:center;gap:7px}
+  .anm-rlbl b{color:#f5d0fe;font-weight:700;font-family:var(--body);letter-spacing:0}
+  .anm-rv{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid rgba(232,121,249,.4);background:radial-gradient(ellipse 80% 90% at 28% 18%,rgba(232,121,249,.38),transparent 55%),radial-gradient(ellipse 80% 90% at 82% 82%,rgba(34,211,238,.32),transparent 55%),linear-gradient(135deg,#1a0833,#2b0a52 52%,#06203f);box-shadow:0 0 34px -12px rgba(232,121,249,.6)}
+  .anm-rv .ngrid{position:absolute;inset:0;background-image:linear-gradient(rgba(232,121,249,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.13) 1px,transparent 1px);background-size:26px 26px;-webkit-mask:linear-gradient(transparent,#000 85%);mask:linear-gradient(transparent,#000 85%)}
+  .anm-rv .drill{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%);width:44%;filter:drop-shadow(0 0 14px rgba(34,211,238,.85))}
+  .anm-rv .rpromo{position:absolute;top:9px;left:9px;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(135deg,#e879f9,#a855f7);padding:4px 10px;border-radius:8px;box-shadow:0 0 18px -2px rgba(232,121,249,.9);transform:rotate(-5deg)}
+  .anm-rv .rgen{position:absolute;top:9px;right:9px;font-family:var(--mono);font-size:8px;color:#f5d0fe;background:rgba(168,85,247,.25);border:1px solid rgba(232,121,249,.5);border-radius:20px;padding:3px 8px}
+  .anm-rv .rtitle{position:absolute;left:11px;bottom:28px;font-weight:800;font-size:14px;letter-spacing:.04em;color:#67e8f9;text-shadow:0 0 12px rgba(34,211,238,.9);line-height:1.1}
+  .anm-rv .rtitle small{display:block;font-size:8px;font-weight:700;color:#f5d0fe;letter-spacing:.2em;text-shadow:0 0 10px rgba(232,121,249,.8);margin-top:2px}
+  .anm-rv .rctrl{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:7px 9px;background:linear-gradient(transparent,rgba(0,0,0,.55))}
+  .anm-rv .rctrl .pp{color:#fff;display:grid;place-items:center}.anm-rv .rctrl .pp svg{width:12px;height:12px;display:block}
+  .anm-rv .rbar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.25);position:relative;overflow:hidden}
+  .anm-rv .rbar i{position:absolute;left:0;top:0;bottom:0;width:62%;background:linear-gradient(90deg,#e879f9,#22d3ee);border-radius:2px}
+  .anm-rv .rtime{font-family:var(--mono);font-size:8.5px;color:#fff;letter-spacing:.03em}
   /* 12 Chat IA */
   .aic-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
   .aic-title{font-size:25px;font-weight:800;text-align:center}
@@ -733,6 +748,11 @@
   #telegram .scene-visual.is-in .tlg-msg.tlg-bot{animation-delay:.6s}#telegram .scene-visual.is-in .tlg-file{animation-delay:1.2s}
 
   /* 14 Animation — cartes de la bibliothèque qui apparaissent */
+  #animation .scene-visual.is-in .anm-rv .rbar i{animation:anmplay 10s linear infinite}
+  #animation .scene-visual.is-in .anm-rv .drill{animation:floaty 3.4s ease-in-out infinite}
+  #animation .scene-visual.is-in .anm-rv .rtitle{animation:neonpulse 2.2s ease-in-out infinite}
+  @keyframes anmplay{0%{width:4%}100%{width:100%}}
+  @keyframes neonpulse{0%,100%{text-shadow:0 0 12px rgba(34,211,238,.9)}50%{text-shadow:0 0 20px rgba(34,211,238,1),0 0 30px rgba(232,121,249,.65)}}
   #animation .scene-visual.is-in .anm-card{animation:cycleRise 4.6s ease-in-out infinite}
   #animation .scene-visual.is-in .anm-card:nth-child(3){animation-delay:.3s}#animation .scene-visual.is-in .anm-card:nth-child(4){animation-delay:.6s}
   #animation .scene-visual.is-in .anm-chip.on{animation:breathe 2.6s ease-in-out infinite}
@@ -1380,6 +1400,15 @@
               <div class="anm-lbl">DURÉE</div><div class="anm-seg"><span class="anm-chip">5 s</span><span class="anm-chip on">10 s</span><span class="anm-chip">15 s</span></div>
               <div class="anm-lbl">BRIEF</div><div class="anm-brief">Perceuse 18V en promo —30 %, digital signage magasin, rythme énergique, palette néon.</div>
               <div class="anm-gen">✦ Générer l'animation</div>
+              <div class="anm-rlbl">RÉSULTAT · <b>conforme au brief</b></div>
+              <div class="anm-rv">
+                <span class="ngrid"></span>
+                <svg class="drill vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg>
+                <span class="rpromo">−30 %</span>
+                <span class="rgen">✦ généré · 16:9 · 10 s</span>
+                <span class="rtitle">PERCEUSE 18V<small>DIGITAL SIGNAGE · NÉON</small></span>
+                <span class="rctrl"><span class="pp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></span><span class="rbar"><i></i></span><span class="rtime">0:06 / 0:10</span></span>
+              </div>
             </div>
             <div class="anm-lib"><div class="anm-lh">BIBLIOTHÈQUE</div>
               <div class="anm-card"><span class="anm-thumb" style="background:linear-gradient(135deg,#6366f1,#a855f7)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><div><b>Perceuse —30 %</b><span>16:9 · 10 s</span></div></div>
