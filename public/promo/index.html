@@ -408,21 +408,21 @@
   .anm-rv .rbar i{position:absolute;left:0;top:0;bottom:0;width:62%;background:linear-gradient(90deg,#e879f9,#22d3ee);border-radius:3px}
   .anm-rv .rtime{font-family:var(--mono);font-size:11px;color:#fff;letter-spacing:.03em}
   /* 12 Chat IA */
-  .aic-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+  .aic-body{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:470px}
   .aic-title{font-size:25px;font-weight:800;text-align:center}
-  .aic-box{width:100%;max-width:440px;border:1px solid var(--line2);border-radius:12px;background:var(--surface2);padding:14px;position:relative}
+  .aic-box{width:100%;max-width:440px;border:1px solid var(--line2);border-radius:12px;background:var(--surface2);padding:14px}
   .aic-ph{font-size:12px;color:var(--muted);margin-bottom:26px}
   .aic-bar{display:flex;align-items:center;gap:8px}
   .aic-plus{width:26px;height:26px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;color:var(--muted);font-size:15px}
   .aic-model{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;border:1px solid var(--line2);border-radius:8px;padding:7px 11px}.aic-model .pr{color:var(--muted);font-weight:500}
-  .aic-drop{position:absolute;right:14px;bottom:52px;width:294px;background:#15151d;border:1px solid var(--line2);border-radius:11px;box-shadow:0 30px 70px -20px #000;padding:8px}
+  .aic-drop{position:absolute;right:16px;top:8px;width:300px;background:#15151d;border:1px solid var(--line2);border-radius:11px;box-shadow:0 30px 70px -20px #000;padding:8px;z-index:5}
   .aic-lbh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:1px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:3px}
   .aic-lbh b{font-size:9.5px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
   .aic-lbh b svg{width:12px;height:12px;color:#fbbf24}
   .aic-tabs{display:flex;gap:4px}
   .aic-tabs span{font-size:8.5px;padding:3px 7px;border-radius:20px;color:var(--faint);border:1px solid transparent}
   .aic-tabs span.on{color:#c7c4ff;background:rgba(124,108,255,.16);border-color:rgba(124,108,255,.4)}
-  .aic-opt{position:relative;display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:11px;margin-top:4px;overflow:hidden}
+  .aic-opt{position:relative;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:11px;margin-top:3px;overflow:hidden}
   .aic-opt>*{position:relative;z-index:1}
   .aic-opt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--c,#6366f1),transparent);opacity:.18;border-radius:7px;z-index:0}
   .aic-opt .rk{width:15px;text-align:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--faint);flex:0 0 auto}
@@ -800,9 +800,9 @@
 
   /* 15 Chat IA — balayage des modèles du menu */
   /* Leaderboard : barre de score proportionnelle, croissance en cascade */
-  #chat .aic-drop .aic-opt:nth-child(2){--w:100%}#chat .aic-drop .aic-opt:nth-child(3){--w:92%}#chat .aic-drop .aic-opt:nth-child(4){--w:83%}#chat .aic-drop .aic-opt:nth-child(5){--w:74%}#chat .aic-drop .aic-opt:nth-child(6){--w:64%}
+  #chat .aic-drop .aic-opt:nth-child(2){--w:100%}#chat .aic-drop .aic-opt:nth-child(3){--w:95%}#chat .aic-drop .aic-opt:nth-child(4){--w:90%}#chat .aic-drop .aic-opt:nth-child(5){--w:84%}#chat .aic-drop .aic-opt:nth-child(6){--w:79%}#chat .aic-drop .aic-opt:nth-child(7){--w:74%}#chat .aic-drop .aic-opt:nth-child(8){--w:69%}#chat .aic-drop .aic-opt:nth-child(9){--w:64%}#chat .aic-drop .aic-opt:nth-child(10){--w:59%}#chat .aic-drop .aic-opt:nth-child(11){--w:55%}
   #chat .scene-visual.is-in .aic-opt::before{animation:aicBar 1.1s cubic-bezier(.3,.8,.3,1) forwards}
-  #chat .scene-visual.is-in .aic-opt:nth-child(3)::before{animation-delay:.13s}#chat .scene-visual.is-in .aic-opt:nth-child(4)::before{animation-delay:.26s}#chat .scene-visual.is-in .aic-opt:nth-child(5)::before{animation-delay:.39s}#chat .scene-visual.is-in .aic-opt:nth-child(6)::before{animation-delay:.52s}
+  #chat .scene-visual.is-in .aic-opt:nth-child(3)::before{animation-delay:.1s}#chat .scene-visual.is-in .aic-opt:nth-child(4)::before{animation-delay:.2s}#chat .scene-visual.is-in .aic-opt:nth-child(5)::before{animation-delay:.3s}#chat .scene-visual.is-in .aic-opt:nth-child(6)::before{animation-delay:.4s}#chat .scene-visual.is-in .aic-opt:nth-child(7)::before{animation-delay:.5s}#chat .scene-visual.is-in .aic-opt:nth-child(8)::before{animation-delay:.6s}#chat .scene-visual.is-in .aic-opt:nth-child(9)::before{animation-delay:.7s}#chat .scene-visual.is-in .aic-opt:nth-child(10)::before{animation-delay:.8s}#chat .scene-visual.is-in .aic-opt:nth-child(11)::before{animation-delay:.9s}
   #chat .scene-visual.is-in .aic-opt.on{animation:aicSel 2.6s ease-in-out infinite}
   @keyframes aicBar{from{width:0}to{width:var(--w,60%)}}
   @keyframes aicSel{0%,100%{box-shadow:inset 0 0 0 1px rgba(124,108,255,.4)}50%{box-shadow:inset 0 0 0 1px rgba(124,108,255,.9),0 0 16px -6px rgba(124,108,255,.8)}}
@@ -1498,6 +1498,11 @@
                 <div class="aic-opt r3" style="--c:#4d6bfe"><span class="rk">3</span><span class="dot" style="background:#4d6bfe"></span><span class="nm">DeepSeek V4 Pro</span><span class="pv">DeepSeek</span><span class="sc">1472</span></div>
                 <div class="aic-opt" style="--c:#e5e7eb"><span class="rk">4</span><span class="dot" style="background:#e5e7eb"></span><span class="nm">Grok</span><span class="pv">xAI</span><span class="sc">1455</span></div>
                 <div class="aic-opt" style="--c:#a855f7"><span class="rk">5</span><span class="dot" style="background:#a855f7"></span><span class="nm">OpenRouter</span><span class="pv">Multi-LLM</span><span class="sc">1438</span></div>
+                <div class="aic-opt" style="--c:#38bdf8"><span class="rk">6</span><span class="dot" style="background:#38bdf8"></span><span class="nm">Gemini 3.5 Pro</span><span class="pv">Google</span><span class="sc">1421</span></div>
+                <div class="aic-opt" style="--c:#60a5fa"><span class="rk">7</span><span class="dot" style="background:#60a5fa"></span><span class="nm">Llama 4.2</span><span class="pv">Meta</span><span class="sc">1405</span></div>
+                <div class="aic-opt" style="--c:#a78bfa"><span class="rk">8</span><span class="dot" style="background:#a78bfa"></span><span class="nm">Qwen3 Max</span><span class="pv">Alibaba</span><span class="sc">1390</span></div>
+                <div class="aic-opt" style="--c:#fb7185"><span class="rk">9</span><span class="dot" style="background:#fb7185"></span><span class="nm">Mistral Large 3</span><span class="pv">Mistral</span><span class="sc">1376</span></div>
+                <div class="aic-opt" style="--c:#fbbf24"><span class="rk">10</span><span class="dot" style="background:#fbbf24"></span><span class="nm">Kimi K2.6</span><span class="pv">Moonshot</span><span class="sc">1362</span></div>
               </div>
             </div>
             <div class="aic-chips"><span>✍ Écrire</span><span>‹/› Code</span><span>🎓 Apprendre</span><span>💡 Idées</span><span>🖼 Image</span></div>
