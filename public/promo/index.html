@@ -240,6 +240,8 @@
   .nd-fmt b{font-size:12px}.nd-fmt span{font-size:9.5px;color:var(--muted)}
   .nd-canvas{border:1px dashed var(--line2);border-radius:12px;min-height:236px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--faint);background:radial-gradient(circle at 50% 40%,rgba(124,108,255,.08),transparent 60%);font-size:11px}
   .nd-canvas .pg{width:104px;aspect-ratio:1/1.41;border-radius:8px;background:#fff;box-shadow:0 18px 40px -18px rgba(0,0,0,.7)}
+  .nd-create{margin-top:5px;font-size:11px;font-weight:700;color:#fff;background:var(--indigo);padding:9px 22px;border-radius:9px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 0 24px -6px var(--indigo);cursor:pointer}
+  .nd-create svg{width:13px;height:13px}
   /* 03 Bibliothèque */
   .lib-body{display:grid;grid-template-columns:122px 1fr;gap:14px}
   .lib-side .lh{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}
@@ -372,6 +374,7 @@
   .imp-fmt{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:9px 13px;font-family:var(--mono);font-size:12px;font-weight:700}
   .imp-fmt.on{border-color:#fbbf24;box-shadow:0 0 0 1px #fbbf24}
   .imp-fmt .d{width:8px;height:8px;border-radius:2px}
+  .imp-fmt i{font-style:normal;font-weight:600;font-size:9px;color:var(--muted);margin-left:1px}
   .imp-res{display:flex;align-items:center;gap:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px}
   .imp-res .ar{color:#fbbf24}.imp-res .ar svg{width:24px;height:24px}
   .imp-layers{display:flex;flex-direction:column;gap:8px;flex:1}
@@ -609,7 +612,7 @@
   @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(124,108,255,0);transform:scale(1)}50%{box-shadow:0 0 22px -2px rgba(124,108,255,.65);transform:scale(1.07)}}
 
   /* Bouton d'action qui pulse */
-  #imgen .scene-visual.is-in .ig-gen,#animation .scene-visual.is-in .anm-gen,#scraper .scene-visual.is-in .sc-url .go,#dam .scene-visual.is-in .dam-ia,#workflows .scene-visual.is-in .wfl-run{animation:btnPulse 2.2s ease-in-out infinite}
+  #imgen .scene-visual.is-in .ig-gen,#animation .scene-visual.is-in .anm-gen,#scraper .scene-visual.is-in .sc-url .go,#dam .scene-visual.is-in .dam-ia,#workflows .scene-visual.is-in .wfl-run,#nouveau .scene-visual.is-in .nd-create{animation:btnPulse 2.2s ease-in-out infinite}
 
   /* 01 Nouveau doc */
   #nouveau .scene-visual.is-in .nd-fmt.on{animation:breathe 2.6s ease-in-out infinite}
@@ -956,7 +959,7 @@
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Nouveau document</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:20%;--y1:33%;--x2:60%;--y2:70%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:18%;--y1:30%;--x2:73%;--y2:82%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="nd-body mk-body">
             <div class="nd-formats">
               <div class="nd-fmt on"><div class="pv">210 × 297 mm</div><b>A4 — Impression</b><span>300 DPI · CMJN</span></div>
@@ -964,7 +967,7 @@
               <div class="nd-fmt"><div class="pv">1080 × 1080</div><b>Réseaux</b><span>1:1 · 4:5 · 9:16</span></div>
               <div class="nd-fmt"><div class="pv">sur mesure</div><b>Personnalisé</b><span>mm · px</span></div>
             </div>
-            <div class="nd-canvas"><span class="pg"></span>Toile vierge — prête à habiller</div>
+            <div class="nd-canvas"><span class="pg"></span>Toile vierge — prête à habiller<span class="nd-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Créer</span></div>
           </div>
         </div></div>
       </div>
@@ -974,7 +977,7 @@
           <span class="scene-num grad-text">02 — IMPORTER</span>
           <h2>Vos fichiers,<br/>fidèles et éditables.</h2>
           <p>Ouvrez vos fichiers existants sans les recréer. IBS-Studio importe <b>InDesign (IDML), PowerPoint, SVG, PDF et Excel</b> en conservant mise en page, styles et typographie — pas une capture aplatie, mais des <b>calques réellement éditables</b>. Mieux : images et PDF sont <b>décomposés en calques par IA</b> (textes, formes et visuels séparés), prêts à modifier bloc par bloc.</p>
-          <ul class="scene-list"><li>IDML · PPTX · SVG · PDF→SVG · Excel</li><li>Pas une capture aplatie : tout reste éditable</li><li>Décomposition en calques par IA</li></ul>
+          <ul class="scene-list"><li>InDesign · Illustrator · PDF · PPTX · Excel · Image</li><li>Pas une capture aplatie : tout reste éditable</li><li>Décomposition en calques par IA</li></ul>
           <button class="scene-more" aria-expanded="false" aria-controls="d-import"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
           <div class="scene-detail" id="d-import"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Vos fichiers existants (InDesign, PowerPoint, PDF) sont prisonniers de leur logiciel. Les rouvrir ailleurs les aplatit en image ou casse la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Déposez un <b>IDML, PPTX, SVG, PDF, image ou Excel</b>.</li><li>Le parseur reconstruit <b>calques, styles, polices et mise en page à l'identique</b> — pas une capture figée.</li><li>Pour les images et PDF, la <b>décomposition IA (Google Vision)</b> sépare textes, formes et visuels en calques éditables.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>IDML — InDesign</span><span>PPTX — PowerPoint</span><span>SVG — Illustrator</span><span>PDF → SVG</span><span>Image PNG/JPG/WebP</span><span>Excel / CSV</span><span>Décomposition IA en calques</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vos documents redeviennent éditables bloc par bloc, sans avoir à les recréer.</p></div><div class="sd-block"><span class="sd-k help">Aide intégrée</span><p class="sd-note">Extrait du manuel intégré (bouton « ? » dans l'app) — sections « Import » par format.</p><div class="sd-help"><div class="sdh"><b>Import IDML (InDesign)</b> — parse l'IDML (ZIP XML + ressources) et reconstruit la maquette à l'identique (formes, textes, images, fonts, gradients, ombres) ; ajoute ensuite des placeholders {{title}}, {{price}} pour le data-merge. Fonts non installées → fallback Arial.</div><div class="sdh"><b>Importer PPTX</b> — chaque diapositive d'un .pptx devient une page éditable ; idéal pour transformer une présentation en template. Animations PowerPoint non supportées.</div><div class="sdh"><b>Importer Excel</b> — crée ou complète une base produits du PIM depuis .xlsx, .csv, .json ou Google Sheets ; les types de colonnes sont détectés automatiquement.</div><div class="sdh"><b>Importer une image</b> — pose une image (PNG, JPG, WebP, GIF, SVG) sur le canvas ; elle reste une image (pas de décomposition).</div><div class="sdh"><b>Importer SVG</b> — charge un .svg en calques vectoriels éditables (formes, textes, chemins).</div><div class="sdh"><b>Image → SVG éditable</b> — le raster est verrouillé en fond et l'IA (Google Vision) détecte les textes, recréés en calques éditables par-dessus.</div><div class="sdh"><b>PDF → SVG éditable</b> — la page 1 du PDF est rasterisée en fond, avec les mêmes overlays texte éditables.</div></div></div></div></div>
         </div>
@@ -982,7 +985,7 @@
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un fichier</span></div>
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:14%;--y1:30%;--x2:64%;--y2:60%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="imp-body mk-body">
-            <div class="imp-formats"><span class="imp-fmt on"><span class="d" style="background:#fbbf24"></span>IDML</span><span class="imp-fmt"><span class="d" style="background:#38bdf8"></span>SVG</span><span class="imp-fmt"><span class="d" style="background:#f472b6"></span>PDF</span><span class="imp-fmt"><span class="d" style="background:#fb923c"></span>PPTX</span><span class="imp-fmt"><span class="d" style="background:#34d399"></span>Excel</span></div>
+            <div class="imp-formats"><span class="imp-fmt on"><span class="d" style="background:#fbbf24"></span>InDesign<i>.idml</i></span><span class="imp-fmt"><span class="d" style="background:#38bdf8"></span>Illustrator<i>.svg</i></span><span class="imp-fmt"><span class="d" style="background:#f472b6"></span>PDF<i>.pdf</i></span><span class="imp-fmt"><span class="d" style="background:#fb923c"></span>PPTX<i>.pptx</i></span><span class="imp-fmt"><span class="d" style="background:#34d399"></span>Excel<i>.xlsx</i></span><span class="imp-fmt"><span class="d" style="background:#a78bfa"></span>Image<i>.png</i></span></div>
             <div class="imp-res">
               <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
               <div class="imp-layers">
@@ -990,6 +993,10 @@
                 <div class="imp-lay"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">éditable</span></div>
                 <div class="imp-lay"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">éditable</span></div>
                 <div class="imp-lay"><span class="sw" style="background:#ef4444"></span>Bandeau prix<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#a855f7"></span>Logo marque<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#fb923c"></span>Badge « -20 % »<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#34d399"></span>Mentions légales<span class="ed">éditable</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#f472b6"></span>Référence produit<span class="ed">éditable</span></div>
               </div>
             </div>
           </div>
