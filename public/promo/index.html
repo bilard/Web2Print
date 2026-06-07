@@ -447,15 +447,16 @@
   .tpl-wbar{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--line)}
   .tpl-wbar .d{width:7px;height:7px;border-radius:50%;background:#3a3a46;flex:0 0 auto}
   .tpl-wbar .u{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-family:var(--mono);font-size:9px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tpl-page{background:#fff;color:#1e293b;padding:16px 60px 16px 15px;display:grid;grid-template-columns:auto 1fr;gap:13px 15px;align-items:start;min-height:284px;align-content:start}
+  .tpl-page{background:#fff;color:#1e293b;padding:16px 16px 16px 15px;display:grid;grid-template-columns:auto 1fr;gap:13px 15px;align-items:start;min-height:284px;align-content:start}
   .tpl-img{grid-row:1 / span 5;width:118px;height:146px;border-radius:9px;overflow:hidden;position:relative}
   .tpl-img .vico{width:100%;height:100%}
   .tpl-el{position:relative;border-radius:6px;transition:box-shadow .2s,background .2s;padding:2px 5px;margin:-2px -5px;cursor:pointer}
   .tpl-el.hi{box-shadow:0 0 0 2px var(--indigo);background:rgba(124,108,255,.08);z-index:2}
-  .tpl-el .tag{position:absolute;top:50%;right:-58px;transform:translateY(-50%);font-family:var(--mono);font-size:9px;font-weight:800;color:#fff;background:var(--indigo);border-radius:6px;padding:2px 8px;opacity:0;transition:opacity .25s;white-space:nowrap;box-shadow:0 5px 13px -3px rgba(99,102,241,.75);letter-spacing:.02em}
+  /* tag = chip inline juste après le texte du champ → toujours collé à son élément, jamais coupé */
+  .tpl-el .tag{display:inline-flex;align-items:center;vertical-align:middle;margin-left:8px;font-family:var(--mono);font-size:9px;font-weight:800;color:#fff;background:var(--indigo);border-radius:6px;padding:2px 8px;opacity:0;transition:opacity .25s;white-space:nowrap;box-shadow:0 5px 13px -3px rgba(99,102,241,.75);letter-spacing:.02em}
   .tpl-el.mapped .tag{opacity:1}
-  .tpl-img .tag{top:auto;bottom:8px;right:8px;transform:none}
-  .tpl-h1{font-size:16px;font-weight:900;color:#0f172a;line-height:1.12;white-space:nowrap}
+  .tpl-img .tag{position:absolute;top:auto;bottom:8px;right:8px;margin:0;transform:none}
+  .tpl-h1{font-size:16px;font-weight:900;color:#0f172a;line-height:1.12}
   .tpl-rate{font-size:11px;font-weight:700;color:#f59e0b}
   .tpl-pr{font-size:23px;font-weight:900;color:#dc2626;letter-spacing:-.01em}.tpl-pr s{font-size:13px;color:#94a3b8;font-weight:700;margin-left:7px}
   .tpl-rf{font-family:var(--mono);font-size:11px;font-weight:600;color:#475569}
@@ -1442,12 +1443,12 @@
               <div class="tpl-wbar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">https://fournisseur.com/produit/perceuse-18v-brushless</span></div>
               <div class="tpl-page">
                 <div class="tpl-img tpl-el vshot vt-blue" data-f="Images" data-sel="img.product-gallery__main"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><span class="tag">Images</span></div>
-                <div class="tpl-h1 tpl-el" data-f="Titre" data-sel="h1.product-title">Perceuse 18V Brushless<span class="tag">Titre</span></div>
+                <div class="tpl-h1 tpl-el" data-f="Titre" data-sel="h1.product-title">Perceuse 18V Brushless <span class="tag">Titre</span></div>
                 <div class="tpl-rate">★★★★★ <span style="color:#94a3b8">· 214 avis</span></div>
-                <div class="tpl-pr tpl-el" data-f="Prix" data-sel="span.price--final">129,00 €<s>152,00 €</s><span class="tag">Prix</span></div>
-                <div class="tpl-rf tpl-el" data-f="Réf. / SKU" data-sel="span.product-reference">Réf. 4892-18V<span class="tag">Réf.</span></div>
-                <div class="tpl-ean tpl-el" data-f="EAN" data-sel="span.product-ean">EAN 3 661234 567890<span class="tag">EAN</span></div>
-                <div class="tpl-ds tpl-el" data-f="Description" data-sel="div.product-description--marketing-text">Visseuse sans-fil · 2 batteries 2,0 Ah · mandrin 13 mm · couple 60 Nm · garantie 3 ans.<span class="tag">Description</span></div>
+                <div class="tpl-pr tpl-el" data-f="Prix" data-sel="span.price--final">129,00 €<s>152,00 €</s> <span class="tag">Prix</span></div>
+                <div class="tpl-rf tpl-el" data-f="Réf. / SKU" data-sel="span.product-reference">Réf. 4892-18V <span class="tag">Réf.</span></div>
+                <div class="tpl-ean tpl-el" data-f="EAN" data-sel="span.product-ean">EAN 3 661234 567890 <span class="tag">EAN</span></div>
+                <div class="tpl-ds tpl-el" data-f="Description" data-sel="div.product-description--marketing-text">Visseuse sans-fil · 2 batteries 2,0 Ah · mandrin 13 mm · couple 60 Nm · garantie 3 ans. <span class="tag">Description</span></div>
               </div>
             </div>
             <div class="tpl-right">
