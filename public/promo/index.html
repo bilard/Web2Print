@@ -586,18 +586,29 @@
   .ig-tile{aspect-ratio:4/3;border-radius:9px;position:relative;overflow:hidden;border:1px solid var(--line2)}
   .ig-tile .b{position:absolute;top:6px;right:6px;font-size:8.5px;font-weight:700;color:#fff;background:rgba(124,108,255,.85);border-radius:5px;padding:2px 6px;z-index:3}
   .ig-tile .vshot{z-index:1}
-  /* Publipostage (données → variantes) */
-  .db-body{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center}
+  /* Publipostage : 1 gabarit + 1 base → 1 déclinaison par ligne */
+  .db-body{display:grid;grid-template-columns:.86fr 1.14fr;gap:15px;align-items:start}
+  .db-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.07em;color:var(--faint);text-transform:uppercase;margin-bottom:7px;display:flex;justify-content:space-between}
   .db-table{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);font-size:11px}
-  .db-tr{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;padding:8px 12px;border-top:1px solid var(--line)}
+  .db-tr{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;padding:7px 11px;border-top:1px solid var(--line)}
   .db-tr.th{border-top:0;background:#0b0b11;color:var(--faint);font-family:var(--mono);font-size:9px;text-transform:uppercase}
+  .db-tr.on{background:rgba(124,108,255,.13);box-shadow:inset 2px 0 0 var(--indigo)}
   .db-tr .num{text-align:right;font-variant-numeric:tabular-nums}
-  .db-bind{display:flex;flex-direction:column;align-items:center;gap:13px}
-  .db-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-  .db-chips i{font-family:var(--mono);font-size:10px;color:var(--cyan);border:1px solid rgba(34,211,238,.4);background:rgba(34,211,238,.1);border-radius:6px;padding:4px 9px;font-style:normal}
-  .db-variants{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;width:100%}
-  .db-variants i{aspect-ratio:1;border-radius:4px;background:linear-gradient(150deg,#1e3a8a,#0ea5e9);outline:1px solid rgba(124,108,255,.4)}
-  .db-count{font-size:11px;color:var(--muted);text-align:center}.db-count b{font-size:24px;color:var(--ink);font-weight:800;display:block}
+  .db-right{display:flex;flex-direction:column}
+  .db-merge{display:flex;align-items:stretch;gap:9px}
+  .db-tpl{flex:0 0 96px;border:1.5px dashed rgba(34,211,238,.55);border-radius:9px;background:rgba(34,211,238,.05);padding:8px;display:flex;flex-direction:column;gap:5px}
+  .db-tpl .im{height:40px;border-radius:6px;border:1px dashed rgba(34,211,238,.5);display:grid;place-items:center;font-family:var(--mono);font-size:8px;color:var(--cyan)}
+  .db-ph{font-family:var(--mono);font-size:8.5px;color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.35);border-radius:5px;padding:2px 6px;align-self:flex-start}
+  .db-arrow{display:grid;place-items:center;color:var(--indigo);flex:0 0 auto}.db-arrow svg{width:24px;height:24px}
+  .db-out{flex:1;min-width:0}
+  .db-variants{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .db-var{border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:#fff}
+  .db-var .im{height:38px;position:relative;background:radial-gradient(ellipse 80% 72% at 50% 36%,#fff,#e7edf4)}
+  .db-var .im .vico{position:absolute;inset:0;width:100%;height:100%}
+  .db-var .tx{padding:4px 6px 6px}
+  .db-var .nm{font-size:8px;font-weight:700;color:#1e293b;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .db-var .pr{font-size:9.5px;font-weight:800;color:#dc2626;margin-top:1px}
+  .db-count{font-size:11px;color:var(--muted);margin-top:11px}.db-count b{font-size:22px;color:var(--ink);font-weight:800;margin-right:6px}
   /* Paramètres (clés & modèles) */
   .set-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .set-card{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px}
@@ -862,9 +873,10 @@
   #scraper .scene-visual.is-in .thumbs i:nth-child(2){animation-delay:.18s}#scraper .scene-visual.is-in .thumbs i:nth-child(3){animation-delay:.36s}#scraper .scene-visual.is-in .thumbs i:nth-child(4){animation-delay:.54s}#scraper .scene-visual.is-in .thumbs i:nth-child(5){animation-delay:.72s}#scraper .scene-visual.is-in .thumbs i:nth-child(6){animation-delay:.9s}
 
   /* 11 Publipostage — variantes qui se multiplient en vague (6 colonnes) */
-  #publipostage .scene-visual.is-in .db-variants i{animation:cyclePop 4.8s ease-in-out infinite}
-  #publipostage .scene-visual.is-in .db-variants i:nth-child(6n+2){animation-delay:.1s}#publipostage .scene-visual.is-in .db-variants i:nth-child(6n+3){animation-delay:.2s}#publipostage .scene-visual.is-in .db-variants i:nth-child(6n+4){animation-delay:.3s}#publipostage .scene-visual.is-in .db-variants i:nth-child(6n+5){animation-delay:.4s}#publipostage .scene-visual.is-in .db-variants i:nth-child(6n){animation-delay:.5s}#publipostage .scene-visual.is-in .db-variants i:nth-child(n+7){animation-delay:.6s}
-  #publipostage .scene-visual.is-in .db-chips i{animation:breathe 2.6s ease-in-out infinite}
+  #publipostage .scene-visual.is-in .db-var{animation:cyclePop 4.8s ease-in-out infinite}
+  #publipostage .scene-visual.is-in .db-var:nth-child(2){animation-delay:.12s}#publipostage .scene-visual.is-in .db-var:nth-child(3){animation-delay:.24s}#publipostage .scene-visual.is-in .db-var:nth-child(4){animation-delay:.36s}#publipostage .scene-visual.is-in .db-var:nth-child(5){animation-delay:.48s}#publipostage .scene-visual.is-in .db-var:nth-child(6){animation-delay:.6s}
+  #publipostage .scene-visual.is-in .db-ph{animation:breathe 2.6s ease-in-out infinite}
+  #publipostage .scene-visual.is-in .db-tpl{animation:breathe 3.2s ease-in-out infinite}
 
   /* 12 Workflows — câblage tracé puis flux de données qui circule, nœuds allumés dans l'ordre */
   .wfl-wire{stroke-dasharray:100;stroke-dashoffset:100}
@@ -1461,17 +1473,33 @@
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Publipostage — liaison des données</span></div>
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:20%;--y1:36%;--x2:70%;--y2:56%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="db-body mk-body">
-            <div class="db-table">
-              <div class="db-tr th"><span>Nom</span><span class="num">Prix</span></div>
-              <div class="db-tr"><span>Perceuse 18V</span><span class="num">129,00 €</span></div>
-              <div class="db-tr"><span>Meuleuse 750W</span><span class="num">79,90 €</span></div>
-              <div class="db-tr"><span>Scie circulaire</span><span class="num">149,00 €</span></div>
-              <div class="db-tr"><span>Visseuse 12V</span><span class="num">59,00 €</span></div>
+            <div>
+              <div class="db-lbl"><span>Base produits</span><span>248 lignes</span></div>
+              <div class="db-table">
+                <div class="db-tr th"><span>Nom</span><span class="num">Prix</span></div>
+                <div class="db-tr on"><span>Perceuse 18V</span><span class="num">129,00 €</span></div>
+                <div class="db-tr"><span>Meuleuse 750W</span><span class="num">79,90 €</span></div>
+                <div class="db-tr"><span>Scie circulaire</span><span class="num">149,00 €</span></div>
+                <div class="db-tr"><span>Visseuse 12V</span><span class="num">59,00 €</span></div>
+              </div>
             </div>
-            <div class="db-bind">
-              <div class="db-chips"><i>{{ nom }}</i><i>{{ prix }}</i><i>{{ image }}</i></div>
-              <div class="db-variants"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shoe"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-head"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-chair"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-land"/></svg></i><i class="vshot vphoto"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-port"/></svg></i></div>
-              <div class="db-count"><b>248</b> variantes générées</div>
+            <div class="db-right">
+              <div class="db-lbl"><span>Gabarit → 1 déclinaison / ligne</span></div>
+              <div class="db-merge">
+                <div class="db-tpl"><div class="im">{{ image }}</div><span class="db-ph">{{ nom }}</span><span class="db-ph">{{ prix }}</span></div>
+                <div class="db-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+                <div class="db-out">
+                  <div class="db-variants">
+                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Perceuse 18V</div><div class="pr">129,00 €</div></div></div>
+                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Meuleuse 750W</div><div class="pr">79,90 €</div></div></div>
+                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Scie circulaire</div><div class="pr">149,00 €</div></div></div>
+                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Visseuse 12V</div><div class="pr">59,00 €</div></div></div>
+                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Ponceuse exc.</div><div class="pr">64,90 €</div></div></div>
+                    <div class="db-var"><div class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="tx"><div class="nm">Rabot 900W</div><div class="pr">89,00 €</div></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="db-count"><b>248</b> déclinaisons générées — une par produit, prêtes à exporter</div>
             </div>
           </div>
         </div></div>
