@@ -2,7 +2,7 @@
  * LLM Router — point d'entrée unique pour toutes les générations JSON structurées.
  *
  * Stratégie : Claude Opus 4.7 au centre du raisonnement, Gemini en fallback (et
- * pour les tâches rapides où la latence prime). Nano Banana reste géré séparément
+ * pour les tâches rapides où la latence prime). Image IA reste géré séparément
  * dans `geminiImageClient.ts` pour la génération d'images.
  *
  * Routage par tâche dans TASK_ROUTING ci-dessous. Chaque appel essaie le provider

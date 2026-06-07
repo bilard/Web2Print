@@ -35,7 +35,7 @@ const FILL_IMAGE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }
   { tab: 'favorites', label: 'Favoris', icon: Heart },
   { tab: 'collections', label: 'Collections', icon: FolderHeart },
   { tab: 'recent', label: 'Récents', icon: Clock },
-  { tab: 'generate', label: 'Nano Banana', icon: Sparkles },
+  { tab: 'generate', label: 'Image IA', icon: Sparkles },
 ]
 
 // ── Image fill picker (galerie + upload) ────────────────────────────────────

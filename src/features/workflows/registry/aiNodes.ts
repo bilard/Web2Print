@@ -48,9 +48,9 @@ export const generateImageNode: NodeSpec<
 > = {
   type: 'generate-image',
   category: 'enrichment',
-  label: 'Génération image (Nano Banana)',
+  label: 'Génération image (Image IA)',
   description:
-    "Génère une ou plusieurs images via Gemini Nano Banana à partir d'un prompt (option : image de référence en entrée).",
+    "Génère une ou plusieurs images via Gemini Image IA à partir d'un prompt (option : image de référence en entrée).",
   icon: ImagePlus,
   inputs: [{ name: 'reference', type: 'file', required: false }],
   outputs: [
@@ -109,7 +109,7 @@ export const generateImageNode: NodeSpec<
 
     const finalPrompt = `${prompt}\n\n[Aspect ratio cible : ${config.aspectRatio}]`
     const total = Math.max(1, Math.min(4, Math.floor(Number(config.count) || 1)))
-    ctx.log('info', `Génération ${total} image(s) Nano Banana…`)
+    ctx.log('info', `Génération ${total} image(s) Image IA…`)
 
     const assets: GeneratedAsset[] = []
     for (let i = 0; i < total; i++) {

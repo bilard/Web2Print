@@ -39,7 +39,7 @@
         pointer-events: none;
         z-index: 0;
       }
-      /* Image IA (Nano Banana 2) en background plein écran avec Ken Burns. */
+      /* Image IA (Image IA) en background plein écran avec Ken Burns. */
       .scene-image {
         position: absolute; inset: 0;
         overflow: hidden;
@@ -223,7 +223,7 @@
           container.appendChild(bg);
         }
 
-        /** Si la scène a une imageUrl (Phase 2 — Nano Banana 2 enrichissement),
+        /** Si la scène a une imageUrl (Phase 2 — Image IA enrichissement),
          *  on l'affiche en background plein écran. Elle masque visuellement
          *  le mockup SVG (qui reste dans le DOM mais derrière). */
         function addImageBg(container, imageUrl) {
@@ -301,7 +301,7 @@
         }
 
         function animateBackgroundLayers(container, sceneDur, tl) {
-          // Image IA (Nano Banana 2) — Ken Burns plein écran si présente.
+          // Image IA (Image IA) — Ken Burns plein écran si présente.
           // Va dans le DOM par-dessus le mockup-bg/halo/decor → ces derniers
           // restent dans le DOM mais sont visuellement masqués par l'image.
           const imgWrap = container.querySelector('.scene-image');
@@ -522,7 +522,7 @@
         // uniquement quand toutes les images ont fini (ou ont fail).
         const imageUrls = comp.scenes.filter((s) => s && s.imageUrl).map((s) => s.imageUrl);
         if (imageUrls.length > 0) {
-          console.log('[multi-scene-square] preloading', imageUrls.length, 'Nano Banana images...');
+          console.log('[multi-scene-square] preloading', imageUrls.length, 'Image IA images...');
           await Promise.all(imageUrls.map((url) => new Promise((resolve) => {
             const img = new Image();
             img.onload = () => resolve();

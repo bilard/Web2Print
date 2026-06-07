@@ -112,7 +112,7 @@ export interface ChatMessageData {
   fallbacks?: { provider: string; error: string }[]
   /** Pièces jointes (uniquement messages user). */
   attachments?: ChatAttachment[]
-  /** Image générée (mode Nano Banana) — blob URL. */
+  /** Image générée (mode Image IA) — blob URL. */
   imageDataUri?: string
   imageMimeType?: string
   /** Prompt qui a déclenché la génération — utilisé comme description DAM. */
@@ -188,7 +188,7 @@ function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageAct
         fullUrl: url,
         width: dims.w,
         height: dims.h,
-        photographer: 'Nano Banana',
+        photographer: 'Image IA',
         photographerUrl: '',
         description: prompt?.trim() ?? '',
         tags: [],
@@ -323,7 +323,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 >
                   <img
                     src={message.imageDataUri}
-                    alt="Image générée par Nano Banana"
+                    alt="Image générée par Image IA"
                     className="w-full h-auto block"
                   />
                 </a>

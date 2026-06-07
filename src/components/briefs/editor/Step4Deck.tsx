@@ -161,7 +161,7 @@ export function Step4Deck({ brief, onAdvance }: Props) {
 
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[14px] font-semibold text-white/80">Visuels (Nano Banana)</h2>
+              <h2 className="text-[14px] font-semibold text-white/80">Visuels (Image IA)</h2>
               <button
                 onClick={handleGenerateAllImages}
                 disabled={generateAllImages.isPending || !brief.cart?.items.length}

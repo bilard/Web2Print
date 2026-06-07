@@ -152,7 +152,7 @@ function AnimationTitle({ animation, onRename }: AnimationTitleProps) {
 }
 
 /** Card animation DAM. Poster statique + métadonnées + actions. Pas de preview
- *  live ici : les compositions enrichies (Nano Banana + base64/Storage URLs) ne
+ *  live ici : les compositions enrichies (Image IA + base64/Storage URLs) ne
  *  rendent pas fiablement dans une iframe miniature avec srcDoc, et la card est
  *  contrainte par aspect-ratio donc les contrôles du player débordent. L'aperçu
  *  complet se fait via "Voir" (ouvre le ZIP dans un nouvel onglet) ou en

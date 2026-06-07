@@ -20,7 +20,7 @@ interface Props {
 type Stage = 'loading-questions' | 'answering' | 'generating' | 'error'
 
 /**
- * Modale Q&A pour améliorer un prompt Nano Banana 2 :
+ * Modale Q&A pour améliorer un prompt Image IA :
  * 1. Gemini analyse le brief + les refs et propose 2-5 questions ciblées
  * 2. L'utilisateur répond (option suggérée ou champ libre)
  * 3. Gemini réécrit le prompt en intégrant les réponses comme source autoritaire

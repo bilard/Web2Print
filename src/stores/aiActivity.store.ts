@@ -19,7 +19,7 @@ export interface AiActivityRecord {
   id: string
   provider: LLMProviderId | 'gemini-image'
   model: string
-  /** Étiquette lisible (ex: "design.templateFill", "chat", "Nano Banana"). */
+  /** Étiquette lisible (ex: "design.templateFill", "chat", "Image IA"). */
   label: string
   kind: AiActivityKind
   startedAt: number

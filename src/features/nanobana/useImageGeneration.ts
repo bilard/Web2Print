@@ -4,7 +4,7 @@ import { useImageGallery } from './useImageGallery'
 import { getApiKey } from '@/lib/apiKeys'
 import type { GenerationRequest } from './types'
 
-// Nano Banana 2, fallback to other live image models if not available
+// Image IA, fallback to other live image models if not available
 const NANO_BANANA_MODELS = [
   'gemini-2.5-flash-image',
   'gemini-3.1-flash-image-preview',
@@ -12,7 +12,7 @@ const NANO_BANANA_MODELS = [
   'nano-banana-pro-preview',
 ] as const
 
-/** Map target dimensions to the best Nano Banana imageSize */
+/** Map target dimensions to the best Image IA imageSize */
 function pickImageSize(w?: number, h?: number): string {
   if (!w || !h) return '1K'
   const maxDim = Math.max(w, h)
@@ -59,7 +59,7 @@ export function useImageGeneration() {
     async (request: GenerationRequest) => {
       const apiKey = getApiKey('gemini')
       if (!apiKey) {
-        setGenerationError('Clé API Nano Banana manquante — configurez-la dans Paramètres')
+        setGenerationError('Clé API Image IA manquante — configurez-la dans Paramètres')
         return null
       }
 
@@ -83,7 +83,7 @@ export function useImageGeneration() {
           parts.push({ text: `Generate an image: ${request.prompt}` })
         }
 
-        // Nano Banana imageConfig
+        // Image IA imageConfig
         const aspectRatio = pickAspectRatio(request.targetWidth, request.targetHeight, request.aspectRatio)
         const imageSize = pickImageSize(request.targetWidth, request.targetHeight)
 
@@ -198,7 +198,7 @@ export function useImageGeneration() {
             ? 'Accès refusé — vérifiez que vous êtes bien connecté'
             : msg
         setGenerationError(finalMsg)
-        console.error('Nano Banana generation error', err)
+        console.error('Image IA generation error', err)
         return null
       } finally {
         setGenerating(false)

@@ -28,12 +28,12 @@ export interface ImprovementAnswer {
 // ─── System prompts ──────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT_WITH_REFS =
-  "You write Nano Banana 2 (Gemini 3.1 image) prompts for compositions that combine USER-SUPPLIED REFERENCE IMAGES with a desired scene/branding.\n\n" +
+  "You write Image IA (Gemini 3.1 image) prompts for compositions that combine USER-SUPPLIED REFERENCE IMAGES with a desired scene/branding.\n\n" +
   "CRITICAL — how to use the references:\n" +
-  "Nano Banana 2 receives the same reference images attached to your output prompt. It can SEE them directly. Therefore you must NOT re-describe each product's visual structure in detail (shape of poles, exact silhouette, fabric type, panel layout) — that re-description fights the images and triggers hallucination.\n\n" +
+  "Image IA receives the same reference images attached to your output prompt. It can SEE them directly. Therefore you must NOT re-describe each product's visual structure in detail (shape of poles, exact silhouette, fabric type, panel layout) — that re-description fights the images and triggers hallucination.\n\n" +
   "INSTEAD, in the prompt you write:\n" +
   "1. Identify each reference image briefly: one short noun phrase + dominant color only (e.g. \"the black spider tent (ref 1)\", \"the blue inflatable shelter (ref 2)\", \"the yellow inflatable tent (ref 3)\"). One line max per reference.\n" +
-  "2. Tell Nano Banana to preserve the EXACT structure, geometry, proportions, materials and silhouette from each reference image — do not invent variations.\n" +
+  "2. Tell Image IA to preserve the EXACT structure, geometry, proportions, materials and silhouette from each reference image — do not invent variations.\n" +
   "3. State clearly what CHANGES from the references: branding (logo replacement), baseline text \"...\" rendered legibly, new scene/background.\n" +
   "4. Describe the new SCENE (environment, lighting, composition, camera) in rich English: this is where you can be detailed.\n" +
   "5. Preserve every literal element from the user brief: brand names, slogans (original language + double-quoted), counts, dimensions, color constraints.\n" +
@@ -41,10 +41,10 @@ const SYSTEM_PROMPT_WITH_REFS =
   "OUTPUT: one paragraph, 80-140 words. No preamble, no markdown, no bullets, no surrounding quotes."
 
 const SYSTEM_PROMPT_NO_REFS =
-  "You rewrite short image briefs into rich Nano Banana 2 (Google Gemini 3.1 image) prompts.\n\n" +
+  "You rewrite short image briefs into rich Image IA (Google Gemini 3.1 image) prompts.\n\n" +
   "RULES:\n" +
   "1. Keep EVERY concrete element the user named: brand names, slogans/baselines, exact counts, dimensions, colors, scene intent.\n" +
-  "2. Brands and slogans/baselines stay in their original language. Wrap slogans in double quotes and tell Nano Banana to render them legibly.\n" +
+  "2. Brands and slogans/baselines stay in their original language. Wrap slogans in double quotes and tell Image IA to render them legibly.\n" +
   "3. Use given physical dimensions to drive in-scene scale.\n" +
   "4. Enrich the rest in English: composition, framing, lighting, palette, materials, lens, photographic quality.\n" +
   "5. If clarification answers are supplied, treat them as authoritative for ambiguous points and integrate them faithfully.\n" +
@@ -52,7 +52,7 @@ const SYSTEM_PROMPT_NO_REFS =
 
 const SYSTEM_PROMPT_QUESTIONS =
   "You analyze an image-generation brief (plus optional reference product images) and produce a SHORT list of clarifying questions to ask the user before the prompt is written.\n\n" +
-  "Goal: extract only the AMBIGUITIES that would push Nano Banana 2 in a meaningfully different direction. Skip anything the brief already pins down. Examples of useful axes:\n" +
+  "Goal: extract only the AMBIGUITIES that would push Image IA in a meaningfully different direction. Skip anything the brief already pins down. Examples of useful axes:\n" +
   "- Environment / setting (mountain, forest, urban, studio, beach, desert, indoor stage…)\n" +
   "- Lighting & mood (golden hour, midday, overcast, dusk, studio strobe…)\n" +
   "- Composition / arrangement of multiple products (aligned, triangle, hero+supporting, scattered…)\n" +
@@ -82,8 +82,8 @@ const buildBriefContent = (
     ? `\n\nUser clarifications (authoritative):\n${answers.map((a) => `- ${a.question}\n  → ${a.answer}`).join('\n')}`
     : ''
   const instruction = refs.length
-    ? `Write ONE Nano Banana 2 prompt that composes the ${refs.length} attached reference images into the scene described. Preserve their exact structure; only branding and scene change. Return ONLY the prompt paragraph.`
-    : 'Rewrite the following brief into one Nano Banana 2 prompt following the rules. Return ONLY the rewritten prompt paragraph, nothing else.'
+    ? `Write ONE Image IA prompt that composes the ${refs.length} attached reference images into the scene described. Preserve their exact structure; only branding and scene change. Return ONLY the prompt paragraph.`
+    : 'Rewrite the following brief into one Image IA prompt following the rules. Return ONLY the rewritten prompt paragraph, nothing else.'
   return `${instruction}${refLines}${answersBlock}\n\nBRIEF:\n${brief.trim()}`
 }
 
@@ -140,7 +140,7 @@ function isImprovementQuestion(x: unknown): x is ImprovementQuestion {
 /**
  * Demande à Gemini d'inspecter le brief + les refs, et de produire 2-5 questions
  * de clarification ciblées sur les ambiguïtés qui changeraient vraiment le rendu
- * Nano Banana 2 (environnement, lumière, composition, etc.).
+ * Image IA (environnement, lumière, composition, etc.).
  */
 export async function generateImprovementQuestions(
   brief: string,
@@ -177,11 +177,11 @@ export async function generateImprovementQuestions(
 }
 
 /**
- * Réécrit un prompt utilisateur pour la génération d'image Nano Banana 2.
+ * Réécrit un prompt utilisateur pour la génération d'image Image IA.
  *
  * Délègue à `generateText()` qui respecte la cascade configurée dans
  * Réglages → IA. Les images de référence sont attachées en multimodal — le LLM
- * les VOIT et écrit un prompt qui dit à Nano Banana de préserver leur apparence
+ * les VOIT et écrit un prompt qui dit à Image IA de préserver leur apparence
  * exacte (pas de re-description textuelle qui fait halluciner).
  *
  * Si `answers` est fourni, les réponses de l'utilisateur aux questions de

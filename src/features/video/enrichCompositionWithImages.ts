@@ -4,7 +4,7 @@ import { generateImage } from '@/features/briefs/ai/geminiImageClient'
 import type { Composition, Scene, VisualTheme } from './promptToComposition'
 import type { AspectFormat } from './types'
 
-/** Mots-clés visuels par theme pour piloter Nano Banana. */
+/** Mots-clés visuels par theme pour piloter Image IA. */
 const THEME_KEYWORDS: Record<VisualTheme, string> = {
   dashboard:
     'professional financial trading dashboard interface with live stock charts, candlestick graphs, line plots, donut charts and KPI cards on glowing screens',
@@ -74,11 +74,11 @@ export interface EnrichOptions {
   topic?: string
   brand?: string
   onProgress?: (done: number, total: number, sceneIndex?: number) => void
-  /** Concurrence max (défaut 2). Nano Banana 2 est lourd ; >3 risque le rate limit. */
+  /** Concurrence max (défaut 2). Image IA est lourd ; >3 risque le rate limit. */
   concurrency?: number
 }
 
-/** Génère une image par scène via Nano Banana 2, l'upload vers Firebase Storage,
+/** Génère une image par scène via Image IA, l'upload vers Firebase Storage,
  *  et retourne la composition enrichie avec `imageUrl` sur chaque scène réussie.
  *
  *  Les échecs individuels sont silencieux (warn console) — la scène conserve

@@ -26,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'collections', label: 'Collections', icon: FolderOpen, help: 'Regroupez vos images par thème ou campagne dans des dossiers.' },
   { id: 'recent', label: 'Récents', icon: Clock, help: 'Les dernières images utilisées ou ajoutées récemment.' },
   { id: 'projects', label: 'Projets', icon: Briefcase, help: 'Les visuels rattachés à chacun de vos projets.' },
-  { id: 'generate', label: 'Création d\'image', icon: Sparkles, perm: 'dam.generate', help: 'Générez des images par IA (Nano Banana) à partir d\'une description texte.' },
+  { id: 'generate', label: 'Création d\'image', icon: Sparkles, perm: 'dam.generate', help: 'Générez des images par IA (Image IA) à partir d\'une description texte.' },
   { id: 'videos', label: 'Animations HTML', icon: FileCode2, perm: 'dam.animations', help: 'Vos animations / vidéos HTML (HyperFrames) réutilisables.' },
   { id: 'gdrive', label: 'Google Drive', icon: HardDrive, perm: 'dam.gdrive', help: 'Parcourez et importez des fichiers depuis votre Google Drive connecté.' },
 ]

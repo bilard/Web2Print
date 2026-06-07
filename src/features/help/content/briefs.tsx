@@ -47,7 +47,7 @@ Le modèle exact de chaque fournisseur se choisit dans _Réglages → IA_ ; le b
       type: 'text',
       md: `### Génération d'images
 
-Le DAM intègre la génération d'images via Gemini (modèle image dit « Nano Banana 2 »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.
+Le DAM intègre la génération d'images via Gemini (modèle image dit « Image IA »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.
 
 Cas d'usage : visuels d'ambiance, mockups, illustrations éditoriales. Pour des photos produits réelles, scraping et upload restent prioritaires.`,
     },

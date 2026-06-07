@@ -20,7 +20,7 @@ interface ApiKeyConfig {
 export const API_KEYS: ApiKeyConfig[] = [
   {
     id: 'gemini',
-    label: 'Nano Banana (Gemini)',
+    label: 'Image IA (Gemini)',
     envVar: 'VITE_GEMINI_API_KEY',
     description: 'Clé API Google Gemini pour la génération d\'images IA et tâches rapides',
     links: {
@@ -220,12 +220,12 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
 
   try {
     if (id === 'gemini') {
-      // Test Nano Banana: list models endpoint (lightweight)
+      // Test Image IA: list models endpoint (lightweight)
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
       )
       if (res.ok) {
-        return { status: 'ok', message: 'Connecté à Nano Banana' }
+        return { status: 'ok', message: 'Connecté à Image IA' }
       }
       const err = await res.text()
       if (res.status === 401 || res.status === 403) {

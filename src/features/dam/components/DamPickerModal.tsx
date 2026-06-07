@@ -5,7 +5,7 @@ import { DamPage } from './DamPage'
 
 /**
  * Full-screen modal qui affiche l'interface DamPage (onglets Stock / Mes images /
- * Favoris / Collections / Récents / Nano Banana) par-dessus l'éditeur. Ouvert
+ * Favoris / Collections / Récents / Image IA) par-dessus l'éditeur. Ouvert
  * depuis la ToolBar → dropdown "Image". L'insertion sur le canvas se fait via
  * la DamLightbox déjà intégrée à DamPage (bouton "Canvas").
  */

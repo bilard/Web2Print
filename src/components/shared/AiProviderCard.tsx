@@ -19,7 +19,7 @@ interface AiProviderCardProps {
   logo?: React.ReactNode
   /** URL de la console pour générer / récupérer la clé API. */
   apiKeyUrl?: string
-  /** Si true, affiche la note "image gen utilise toujours Nano Banana" (carte Gemini uniquement). */
+  /** Si true, affiche la note "image gen utilise toujours Image IA" (carte Gemini uniquement). */
   noteForGemini?: boolean
 }
 
@@ -415,7 +415,7 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
       {noteForGemini && (
         <div className="flex items-start gap-1.5 mt-1 text-[10px] text-white/30">
           <Info className="w-3 h-3 shrink-0 mt-0.5" />
-          <span>La génération d'image utilise toujours Nano Banana (<code className="font-mono">gemini-3.1-flash-image-preview</code>).</span>
+          <span>La génération d'image utilise toujours Image IA (<code className="font-mono">gemini-3.1-flash-image-preview</code>).</span>
         </div>
       )}
         </div>

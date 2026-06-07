@@ -31,7 +31,7 @@ Clique un onglet pour l'**ouvrir directement** dans le DAM.` },
         { title: 'Collections', md: 'Des **dossiers d\'organisation** que tu crées et remplis toi-même.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'collections' } },
         { title: 'Récents', md: 'Les **derniers ajouts**, triés par date.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'recent' } },
         { title: 'Projets', md: 'Les **images et les polices** du projet courant, prêtes à glisser sur le canvas.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'projects' } },
-        { title: 'Création d\'image', md: 'Génération d\'images par IA (**Gemini / Nano Banana 2**) — voir le détail des paramètres plus bas.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'generate' } },
+        { title: 'Création d\'image', md: 'Génération d\'images par IA (**Gemini / Image IA**) — voir le détail des paramètres plus bas.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'generate' } },
         { title: 'Animations HTML', md: 'Tes **compositions vidéo** (HyperFrames).', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'videos' } },
         { title: 'Google Drive', md: 'Accès à tes **fichiers Google Drive** une fois ton compte connecté.', target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'gdrive' } },
       ],
@@ -48,7 +48,7 @@ Clique un onglet pour l'**ouvrir directement** dans le DAM.` },
       type: 'text',
       md: `### Créer une image par IA
 
-Onglet **Création d'image** — moteur **Nano Banana 2** (Gemini 3.1 image, texte → image). Déplie chaque paramètre :`,
+Onglet **Création d'image** — moteur **Image IA** (Gemini 3.1 image, texte → image). Déplie chaque paramètre :`,
     },
     {
       type: 'accordion',
@@ -63,7 +63,7 @@ Onglet **Création d'image** — moteur **Nano Banana 2** (Gemini 3.1 image, tex
         {
           title: 'Fichiers de référence',
           md:
-            'Bouton **« Ajouter des fichiers »** (ou colle une image). **Tous formats** : images, logos, **PDF**, **SVG** (rastérisé en PNG, **plafonné à 2048 px**). Les références sont **transmises telles quelles** à Nano Banana 2 qui les **voit** : il préserve leur structure et n\'applique que les changements demandés (branding, texte, décor). Vignette + **✕** pour retirer.',
+            'Bouton **« Ajouter des fichiers »** (ou colle une image). **Tous formats** : images, logos, **PDF**, **SVG** (rastérisé en PNG, **plafonné à 2048 px**). Les références sont **transmises telles quelles** à Image IA qui les **voit** : il préserve leur structure et n\'applique que les changements demandés (branding, texte, décor). Vignette + **✕** pour retirer.',
         },
         {
           title: 'Format de sortie',

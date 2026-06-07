@@ -16,9 +16,9 @@ export interface DamImage {
   tags: string[]
   color: string
   orientation: 'landscape' | 'portrait' | 'square'
-  /** Prompt brut tapé par l'utilisateur avant amélioration IA (Nano Banana uniquement). */
+  /** Prompt brut tapé par l'utilisateur avant amélioration IA (Image IA uniquement). */
   originalPrompt?: string
-  /** Prompt final envoyé à Nano Banana (après amélioration / réponses Q&A). */
+  /** Prompt final envoyé à Image IA (après amélioration / réponses Q&A). */
   improvedPrompt?: string
   /** Questions de clarification posées par l'IA + réponses choisies par l'utilisateur,
    *  uniquement quand le prompt a été amélioré via le mode "Avec questions". */

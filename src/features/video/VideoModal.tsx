@@ -319,7 +319,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     toast.info('Génération annulée')
   }
 
-  /** Lance Nano Banana 2 sur les scènes de la composition courante pour ajouter
+  /** Lance Image IA sur les scènes de la composition courante pour ajouter
    *  des images photo-réalistes en background. Une fois enrichie, on émet
    *  directement le nouveau result (pas besoin de relancer un rendu — la
    *  composition est self-contained et la preview consomme `imageUrl`). */
@@ -480,8 +480,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             <ImageIcon className="w-3.5 h-3.5" />
           )}
           {enrich.enriching && enrich.progress
-            ? `Enrichissement Nano Banana 2 — ${enrich.progress.done}/${enrich.progress.total}`
-            : 'Enrichir avec images IA (Nano Banana 2)'}
+            ? `Enrichissement Image IA — ${enrich.progress.done}/${enrich.progress.total}`
+            : 'Enrichir avec images IA (Image IA)'}
         </button>
       )}
 

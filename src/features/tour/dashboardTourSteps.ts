@@ -97,7 +97,7 @@ export const dashboardTourSteps: TourStep[] = [
   optStep('images', 'opt-dam-collections', 'Collections', 'Vos images regroupées par thème ou campagne.'),
   optStep('images', 'opt-dam-recent', 'Récents', 'Les dernières images utilisées ou ajoutées.'),
   optStep('images', 'opt-dam-projects', 'Projets', 'Les visuels rattachés à chaque projet.'),
-  optStep('images', 'opt-dam-generate', 'Création d’image', 'Génération d’images par IA (Nano Banana) depuis une description.'),
+  optStep('images', 'opt-dam-generate', 'Création d’image', 'Génération d’images par IA (Image IA) depuis une description.'),
   optStep('images', 'opt-dam-videos', 'Animations HTML', 'Vos animations / vidéos HTML (HyperFrames).'),
   optStep('images', 'opt-dam-gdrive', 'Google Drive', 'Importez des fichiers depuis votre Drive connecté.'),
   {

@@ -52,7 +52,7 @@ export function ChatPage() {
   }
 
   const composerPlaceholder = isImageMode
-    ? "Décris l'image à générer (Nano Banana)…"
+    ? "Décris l'image à générer (Image IA)…"
     : 'Comment puis-je vous aider ?'
 
   return (

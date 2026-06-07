@@ -13,7 +13,7 @@ import { syncToStore } from './useAddObject'
  *     donc le rendu Canvas n'affiche pas un frame vide
  *
  * Utilisé par :
- *  - `PropertiesPanel > ImageFillPicker` (upload local ou galerie Nano Banana)
+ *  - `PropertiesPanel > ImageFillPicker` (upload local ou galerie Image IA)
  *  - `DamImageCard` quand `damPickerMode === 'fill'`
  */
 export async function applyImageFill(

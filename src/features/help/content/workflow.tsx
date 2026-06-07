@@ -51,7 +51,7 @@ Déplie une catégorie pour voir ses nodes.` },
           md:
             '| Node | Rôle |\n|---|---|\n' +
             '| Enrichissement | Scrape les URLs d\'une colonne et complète les champs via IA |\n' +
-            '| Génération image (Nano Banana) | Génère des images depuis un prompt |',
+            '| Génération image (Image IA) | Génère des images depuis un prompt |',
         },
         {
           title: 'Transformation',

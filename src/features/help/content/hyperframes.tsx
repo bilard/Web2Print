@@ -67,7 +67,7 @@ Chaque génération mémorise son brief : tu peux le **rejouer**, le **charger**
       type: 'text',
       md: `### Voir aussi
 
-La génération s'appuie sur les modèles IA configurés dans les **Paramètres → IA**. Les visuels de scène utilisent le moteur de génération d'image (Nano Banana), le même que dans le DAM et le Chat IA.`,
+La génération s'appuie sur les modèles IA configurés dans les **Paramètres → IA**. Les visuels de scène utilisent le moteur de génération d'image (Image IA), le même que dans le DAM et le Chat IA.`,
     },
     {
       type: 'menu-link',

@@ -27,10 +27,10 @@ export interface ReferenceImage {
 
 export type OutputFormat = 'images-text' | 'images-only'
 
-/** Tailles supportées par Nano Banana 2 (Gemini 3.1 image preview). */
+/** Tailles supportées par Image IA (Gemini 3.1 image preview). */
 export type ImageSize = '1K' | '2K' | '4K'
 
-/** Ratios supportés par Nano Banana 2. `auto` = ratio natif décidé par le modèle. */
+/** Ratios supportés par Image IA. `auto` = ratio natif décidé par le modèle. */
 export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4'
 
 export interface GenerateImageOptions {
@@ -63,7 +63,7 @@ const BASE_DELAY_MS = 1500
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 /**
- * Génère une image via Gemini 3.1 Nano Banana 2 à partir d'un prompt texte et
+ * Génère une image via Gemini 3.1 Image IA à partir d'un prompt texte et
  * d'images de référence optionnelles (logos, charte graphique rasterisée).
  * Les images de référence sont injectées en inlineData parts avant le prompt
  * pour que le modèle les utilise comme guide stylistique et d'identité.
@@ -87,7 +87,7 @@ export async function generateImage(
     id: activityId,
     provider: 'gemini-image',
     model: MODEL,
-    label: 'Nano Banana 2',
+    label: 'Image IA',
     kind: 'image',
   })
   try {
@@ -189,7 +189,7 @@ async function generateImageInner(
     const inline = outParts.find((p) => p.inlineData)?.inlineData
     if (!inline) {
       const textPart = outParts.find((p) => p.text)?.text
-      // Nano Banana a répondu en texte ("How can I help you today?", "Sure, here's…")
+      // Image IA a répondu en texte ("How can I help you today?", "Sure, here's…")
       // au lieu de générer. Si on était en mode TEXT+IMAGE, on retry une fois en
       // forçant IMAGE-only — ça empêche le modèle de basculer en conversationnel.
       if (!forceImageOnly && outputFormat !== 'images-only') {

@@ -19,7 +19,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'gemini-3.1-pro-preview',         label: 'Gemini 3.1 Pro Preview',          pricing: { input: 1.25,  output: 10 } },
     { id: 'gemini-3.1-flash',               label: 'Gemini 3.1 Flash',                pricing: { input: 0.30,  output: 2.50 } },
     { id: 'gemini-2.5-flash',               label: 'Gemini 2.5 Flash',                pricing: { input: 0.30,  output: 2.50 } },
-    // Génération d'image (Nano Banana 2). Output facturé en "image tokens" :
+    // Génération d'image (Image IA). Output facturé en "image tokens" :
     // ~1290 output tokens / image @ $30/1M → ~$0.039 / image. Input texte standard.
     { id: 'gemini-3.1-flash-image-preview', label: 'Gemini 3.1 Flash Image (NB2)',    pricing: { input: 0.30,  output: 30 } },
   ],

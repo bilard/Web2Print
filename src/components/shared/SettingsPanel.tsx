@@ -128,7 +128,7 @@ function AiTab() {
       <AiProviderCard
         provider="gemini"
         apiKeyId="gemini"
-        label="Nano Banana (Gemini)"
+        label="Image IA (Gemini)"
         description="Génération d'images IA et raisonnement via Google Gemini"
         logo={<GeminiLogo />}
         apiKeyUrl="https://aistudio.google.com/app/apikey"

@@ -62,7 +62,7 @@ interface GeneratedImage {
   blob: Blob
   /** Prompt brut tapé par l'utilisateur (avant amélioration IA). */
   originalPrompt?: string
-  /** Prompt final envoyé à Nano Banana (après amélioration). */
+  /** Prompt final envoyé à Image IA (après amélioration). */
   improvedPrompt: string
   /** Questions Q&A posées + réponses choisies (mode "Avec questions" uniquement). */
   clarifications?: ImprovementAnswer[]
@@ -376,7 +376,7 @@ export function DamGenerate() {
           fullUrl: url,
           width: dims.w,
           height: dims.h,
-          photographer: 'Nano Banana',
+          photographer: 'Image IA',
           photographerUrl: '',
           description: img.improvedPrompt || prompt.trim(),
           improvedPrompt: img.improvedPrompt || prompt.trim(),
@@ -425,7 +425,7 @@ export function DamGenerate() {
         fullUrl: img.url,
         width: 1024,
         height: 1024,
-        photographer: 'Nano Banana',
+        photographer: 'Image IA',
         photographerUrl: '',
         description: img.improvedPrompt || prompt,
         tags: [],
@@ -473,7 +473,7 @@ export function DamGenerate() {
                 onClick={handleImprovePrompt}
                 disabled={!prompt.trim() || improving || generating}
                 className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                title="Réécriture one-shot du prompt pour Nano Banana 2 (sujet, style, composition, éclairage, qualité)"
+                title="Réécriture one-shot du prompt pour Image IA (sujet, style, composition, éclairage, qualité)"
               >
                 {improving ? (
                   <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -591,7 +591,7 @@ export function DamGenerate() {
             }}
           />
           <p className="text-[9px] text-white/30 mt-1 leading-snug">
-            Images, logos, PDF… Tous formats acceptés et passés en référence à Nano Banana 2.
+            Images, logos, PDF… Tous formats acceptés et passés en référence à Image IA.
           </p>
         </div>
 
@@ -732,7 +732,7 @@ export function DamGenerate() {
             <Sparkles className="w-12 h-12" />
             <div className="text-sm">Entrez un prompt pour générer des images</div>
             <div className="text-[10px] text-white/10 max-w-[300px] text-center">
-              Powered by Gemini — Nano Banana 2
+              Powered by Gemini — Image IA
             </div>
           </div>
         )}

@@ -34,7 +34,7 @@ export const chatSection: HelpSection = {
         },
         {
           title: 'Génération d\'images',
-          md: 'Bascule en mode **Image** pour décrire un visuel à générer (moteur Nano Banana). Joins des images de référence pour les éditer. Le résultat se **télécharge** ou se **sauvegarde dans le DAM**.',
+          md: 'Bascule en mode **Image** pour décrire un visuel à générer (moteur Image IA). Joins des images de référence pour les éditer. Le résultat se **télécharge** ou se **sauvegarde dans le DAM**.',
         },
         {
           title: 'Saisie vocale',

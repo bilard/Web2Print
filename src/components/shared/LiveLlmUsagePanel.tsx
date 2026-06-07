@@ -20,7 +20,7 @@ const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: str
 
 const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'openrouter']
 
-/** Modèle image Gemini (Nano Banana 2). Affiché sur sa propre ligne sous le
+/** Modèle image Gemini (Image IA). Affiché sur sa propre ligne sous le
  *  modèle texte Gemini sélectionné — il a son propre pricing ($30 / 1M output)
  *  et il est utile de voir sa consommation isolément. */
 const GEMINI_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview'
@@ -255,7 +255,7 @@ export function LiveLlmUsagePanel() {
           key: `${p}-image`,
           provider: p,
           title: imageInfo?.label ?? 'Gemini 3.1 Flash Image',
-          subtitle: 'Gemini (Google) · image (Nano Banana 2)',
+          subtitle: 'Gemini (Google) · image (Image IA)',
           tokensIn:  imageLeaf?.tokensIn  ?? 0,
           tokensOut: imageLeaf?.tokensOut ?? 0,
           costUsd:   imageLeaf?.costUsd   ?? 0,

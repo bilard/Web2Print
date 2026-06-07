@@ -81,7 +81,7 @@ async function fetchAsBase64(url: string): Promise<{ data: string; mimeType: str
 
 /**
  * Charge les images de référence du kit client en base64, prêtes à être
- * envoyées à Gemini Nano Banana 2 en inlineData parts.
+ * envoyées à Gemini Image IA en inlineData parts.
  *
  * Limite à MAX_REFS fichiers pour éviter de saturer le payload. Priorité
  * aux logos (détectés par nom de fichier).

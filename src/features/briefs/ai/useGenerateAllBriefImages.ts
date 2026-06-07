@@ -22,7 +22,7 @@ interface BatchResult {
 /**
  * Génère séquentiellement : hero + 1 image par produit du panier + 1 image
  * unique de mise en situation 3D (staging scene) regroupant tous les produits
- * personnalisés à la charte. Chaque appel Nano Banana 2 reçoit en références
+ * personnalisés à la charte. Chaque appel Image IA reçoit en références
  * les logos / éléments visuels du kit de communication client.
  *
  * Continue sur erreur (chaque échec est listé dans `failed`).

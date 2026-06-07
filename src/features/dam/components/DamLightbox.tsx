@@ -587,7 +587,7 @@ export function DamLightbox() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-[9px] text-indigo-300 uppercase tracking-wider">
                     <Sparkles className="w-3 h-3" />
-                    Prompt amélioré (envoyé à Nano Banana)
+                    Prompt amélioré (envoyé à Image IA)
                   </div>
                   <button
                     onClick={() => {

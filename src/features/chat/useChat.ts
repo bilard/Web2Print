@@ -28,7 +28,7 @@ export type SendMode = 'text' | 'image'
 export interface SendInput {
   text: string
   attachments?: ChatAttachment[]
-  /** 'image' route vers Nano Banana au lieu du LLM textuel. Défaut : 'text'. */
+  /** 'image' route vers Image IA au lieu du LLM textuel. Défaut : 'text'. */
   mode?: SendMode
 }
 
@@ -88,7 +88,7 @@ export function useChat(): UseChatResult {
       const tracker = { aborted: false }
       abortRef.current = tracker
 
-      // Branche image → Nano Banana (Gemini). Les pièces jointes image servent
+      // Branche image → Image IA (Gemini). Les pièces jointes image servent
       // de références visuelles ; le texte = prompt de génération.
       if (mode === 'image') {
         try {
@@ -96,7 +96,7 @@ export function useChat(): UseChatResult {
             throw new Error("Décrivez l'image à générer dans le composer.")
           }
           const refs = await attachmentsToReferenceImages(attachments)
-          // Préfixe explicite : sans ça, Nano Banana retombe en mode conversation
+          // Préfixe explicite : sans ça, Image IA retombe en mode conversation
           // sur les prompts ambigus (ex: "chat" → "How can I help you today?").
           const prompt = refs.length > 0
             ? `Edit this image: ${input.text}`
@@ -209,7 +209,7 @@ export function useChat(): UseChatResult {
   }, [])
 
   const reset = useCallback(() => {
-    // Révoque les blob URLs (images Nano Banana) pour libérer la mémoire.
+    // Révoque les blob URLs (images Image IA) pour libérer la mémoire.
     for (const m of messagesRef.current) {
       const url = m.imageDataUri
       if (url && url.startsWith('blob:')) URL.revokeObjectURL(url)

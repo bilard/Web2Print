@@ -453,7 +453,7 @@
         const transInEase  = TRANSITION.startsWith('slide') || TRANSITION === 'wipe-lr' ? 'power3.out' : 'power2.out';
         const transOutEase = TRANSITION.startsWith('slide') || TRANSITION === 'wipe-lr' ? 'power3.in'  : 'power2.in';
 
-        // Préload Nano Banana avant de signaler la timeline (cf square).
+        // Préload Image IA avant de signaler la timeline (cf square).
         const imageUrls = comp.scenes.filter((s) => s && s.imageUrl).map((s) => s.imageUrl);
         if (imageUrls.length > 0) {
           await Promise.all(imageUrls.map((url) => new Promise((resolve) => {

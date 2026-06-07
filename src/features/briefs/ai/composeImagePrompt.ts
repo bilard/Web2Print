@@ -6,7 +6,7 @@ export type ImageTarget =
   | { kind: 'staging_scene'; items: CartItem[] }
 
 /**
- * Construit DÉTERMINISTIQUEMENT le prompt Nano Banana depuis le brief.
+ * Construit DÉTERMINISTIQUEMENT le prompt Image IA depuis le brief.
  *
  * Historique : une version précédente déléguait la réécriture à Gemini Pro
  * (meta-prompt → texte → prompt final). Supprimée car elle coûtait 12-18 s
@@ -33,7 +33,7 @@ export async function composeImagePrompt(
     .join('\n')
 
   // Règle exclusive de marque — indispensable quand le brief nomme un vrai
-  // événement (Paris-Roubaix, Tour de France…) : sans ça, Nano Banana peint
+  // événement (Paris-Roubaix, Tour de France…) : sans ça, Image IA peint
   // les vrais sponsors connus (Mavic, Skoda, LCL, ASO…) qu'il associe à
   // l'événement, et le client devient invisible.
   const brandLock = company
@@ -58,7 +58,7 @@ export async function composeImagePrompt(
 
   // Template déterministe. Les champs libres sont cappés : un brief verbeux ou
   // un answerLines markdown sans cap produisait un prompt >100k tokens que
-  // Nano Banana refusait (finishReason IMAGE_OTHER / STOP sans image).
+  // Image IA refusait (finishReason IMAGE_OTHER / STOP sans image).
   const CAP_CONTEXT = 800
   const CAP_ANSWERS = 800
   const capField = (s: string, max: number): string =>

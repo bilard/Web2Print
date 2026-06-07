@@ -15,7 +15,7 @@ interface GroundedResponse {
  * l'événement/lieu/personne mentionnés dans le contexte (ex: "concert de
  * Céline Dion au Stade de France") avant de décrire la scène.
  *
- * Retourne une phrase courte qui sera injectée dans les prompts Nano Banana.
+ * Retourne une phrase courte qui sera injectée dans les prompts Image IA.
  * En cas d'échec, retombe sur un décor générique.
  */
 export async function inferSceneDescription(brief: Brief): Promise<string> {

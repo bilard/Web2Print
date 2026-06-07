@@ -6,7 +6,7 @@ import { getModel, type AiProvider } from '@/lib/aiModels'
 const PROVIDER_STYLE: Record<string, { color: string; ring: string; bg: string; label: string }> = {
   claude:         { color: 'text-orange-300',  ring: 'ring-orange-400/40',  bg: 'bg-orange-500/15',  label: 'Claude' },
   gemini:         { color: 'text-sky-300',     ring: 'ring-sky-400/40',     bg: 'bg-sky-500/15',     label: 'Gemini' },
-  'gemini-image': { color: 'text-amber-300',   ring: 'ring-amber-400/40',   bg: 'bg-amber-500/15',   label: 'Nano Banana' },
+  'gemini-image': { color: 'text-amber-300',   ring: 'ring-amber-400/40',   bg: 'bg-amber-500/15',   label: 'Image IA' },
   openai:         { color: 'text-emerald-300', ring: 'ring-emerald-400/40', bg: 'bg-emerald-500/15', label: 'OpenAI' },
   deepseek:       { color: 'text-violet-300',  ring: 'ring-violet-400/40',  bg: 'bg-violet-500/15',  label: 'DeepSeek' },
   openrouter:     { color: 'text-pink-300',    ring: 'ring-pink-400/40',    bg: 'bg-pink-500/15',    label: 'OpenRouter' },
