@@ -2914,18 +2914,20 @@
   .scene{overflow:visible}
   .scene-text,.scene-visual{position:relative;z-index:1}
   .cine-ghost{position:absolute;top:50%;z-index:0;pointer-events:none;user-select:none;
-    font-family:var(--mono);font-weight:700;font-size:clamp(150px,24vw,400px);
-    line-height:.78;letter-spacing:-.05em;white-space:nowrap;
+    font-family:var(--mono);font-weight:700;font-size:clamp(220px,32vw,560px);
+    line-height:.72;letter-spacing:-.06em;white-space:nowrap;
     background:var(--grad);background-size:200% auto;-webkit-background-clip:text;background-clip:text;
-    color:transparent;opacity:.05;translate:0 0;will-change:translate,opacity;
+    color:transparent;-webkit-text-stroke:1.5px rgba(168,140,255,.16);
+    opacity:.14;translate:0 0;will-change:translate,opacity;
+    filter:drop-shadow(0 0 40px rgba(124,108,255,.18));
     animation:shimmer 9s linear infinite}
-  .scene:nth-child(odd) .cine-ghost{right:-3%}
-  .scene:nth-child(even) .cine-ghost{left:-3%}
-  @media(max-width:900px){.cine-ghost{font-size:34vw;opacity:.04}}
+  .scene:nth-child(odd) .cine-ghost{right:-6%}
+  .scene:nth-child(even) .cine-ghost{left:-6%}
+  @media(max-width:900px){.cine-ghost{font-size:42vw}}
 
   /* Faisceau de progression du scroll (haut de page) */
-  #cineBeam{position:fixed;top:0;left:0;z-index:200;height:2px;width:0;pointer-events:none;
-    background:var(--grad);background-size:200% auto;box-shadow:0 0 14px 1px rgba(124,108,255,.65);
+  #cineBeam{position:fixed;top:0;left:0;z-index:200;height:3px;width:0;pointer-events:none;
+    background:var(--grad);background-size:200% auto;box-shadow:0 0 18px 2px rgba(124,108,255,.85);
     animation:shimmer 7s linear infinite}
 }
 </style>
@@ -2971,29 +2973,29 @@
 
       /* HERO : recule, rétrécit et s'efface en sortant du champ (effet caméra) */
       if(hero){
-        var hp=clamp(y/(vh*0.85),0,1);
-        hero.style.transform='translateY('+(hp*-72).toFixed(1)+'px) scale('+(1-hp*0.07).toFixed(3)+')';
-        hero.style.opacity=(1-hp*0.92).toFixed(3);
+        var hp=clamp(y/(vh*0.8),0,1);
+        hero.style.transform='translateY('+(hp*-120).toFixed(1)+'px) scale('+(1-hp*0.12).toFixed(3)+')';
+        hero.style.opacity=(1-hp*0.95).toFixed(3);
       }
-      if(heroGrid) heroGrid.style.transform='translateY('+(y*0.20).toFixed(1)+'px)';
+      if(heroGrid) heroGrid.style.transform='translateY('+(y*0.35).toFixed(1)+'px)';
 
       /* AURORES : trois plans de fond à vitesses opposées = profondeur */
-      if(a1) a1.style.translate='0 '+(y*0.07).toFixed(1)+'px';
-      if(a2) a2.style.translate='0 '+(y*-0.11).toFixed(1)+'px';
-      if(a3) a3.style.translate='0 '+(y*0.16).toFixed(1)+'px';
+      if(a1) a1.style.translate='0 '+(y*0.14).toFixed(1)+'px';
+      if(a2) a2.style.translate='0 '+(y*-0.22).toFixed(1)+'px';
+      if(a3) a3.style.translate='0 '+(y*0.30).toFixed(1)+'px';
 
       /* FAISCEAU : progression du scroll */
       var docH=(document.documentElement.scrollHeight-vh);
       beam.style.width=(docH>0?clamp(y/docH,0,1)*100:0).toFixed(2)+'%';
 
-      /* NUMÉROS FANTÔMES : dérive lente (plan lointain) + apparition au centre */
+      /* NUMÉROS FANTÔMES : dérive ample (plan lointain) + apparition au centre */
       ghosts.forEach(function(g){ if(!near(g))return; var d=dist(g);
-        g.style.translate='0 '+(d*vh*0.16).toFixed(1)+'px';
-        g.style.opacity=(0.065*clamp(1-Math.abs(d)*1.25,0,1)).toFixed(3);
+        g.style.translate='0 '+(d*vh*0.32).toFixed(1)+'px';
+        g.style.opacity=(0.16*clamp(1-Math.abs(d)*1.1,0,1)).toFixed(3);
       });
-      /* COUCHES DE SCÈNE : maquette plus rapide que le texte (séparation de profondeur) */
-      visuals.forEach(function(v){ if(!near(v))return; v.style.translate='0 '+(dist(v)*vh*-0.05).toFixed(1)+'px'; });
-      texts.forEach(function(t){ if(!near(t))return; t.style.translate='0 '+(dist(t)*vh*-0.018).toFixed(1)+'px'; });
+      /* COUCHES DE SCÈNE : maquette nettement plus rapide que le texte (profondeur franche) */
+      visuals.forEach(function(v){ if(!near(v))return; v.style.translate='0 '+(dist(v)*vh*-0.14).toFixed(1)+'px'; });
+      texts.forEach(function(t){ if(!near(t))return; t.style.translate='0 '+(dist(t)*vh*-0.05).toFixed(1)+'px'; });
     }
     requestAnimationFrame(frame);
   }
