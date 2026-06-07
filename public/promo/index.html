@@ -2955,7 +2955,31 @@
       a3=document.querySelector('.aurora .a3');
   var ghosts=[].slice.call(document.querySelectorAll('.cine-ghost'));
   var visuals=[].slice.call(document.querySelectorAll('.scene-visual'));
-  var texts=[].slice.call(document.querySelectorAll('.scene-text'));
+
+  /* Couches de TEXTE : chaque bloc est décomposé en sous-éléments qui dérivent
+     à des vitesses différentes (titre rapide = 1er plan, numéro/liste lents = fond)
+     → parallaxe DANS le texte. Pré-collecté une fois pour la perf. Tout en `translate`
+     (indépendant de `transform`) pour ne pas casser le reveal .is-in ni le shimmer. */
+  function layers(root, defs){
+    return defs.map(function(d){ return [root.querySelector(d[0]), d[1]]; })
+               .filter(function(x){ return x[0]; });
+  }
+  /* Facteurs NON CROISSANTS de haut en bas : un élément plus bas ne monte jamais
+     plus vite que celui au-dessus → l'espacement ne se referme pas (pas de chevauchement). */
+  var textGroups=[].slice.call(document.querySelectorAll('.scene-text')).map(function(t){
+    return { root:t, parts:layers(t,[
+      ['.scene-num',-0.100],['h2',-0.100],['p',-0.065],
+      ['.scene-list',-0.045],['.scene-more',-0.035]
+    ]) };
+  });
+  var headGroups=[].slice.call(document.querySelectorAll('.shead')).map(function(s){
+    return { root:s, parts:layers(s,[
+      ['.mono',-0.090],['h2',-0.090],['.lead',-0.055]
+    ]) };
+  });
+  var ctaGroups=[].slice.call(document.querySelectorAll('.cta')).map(function(c){
+    return { root:c, parts:layers(c,[['h2',-0.080],['p',-0.050]]) };
+  });
 
   var vh=window.innerHeight||document.documentElement.clientHeight, dirty=true;
   window.addEventListener('scroll',function(){dirty=true;},{passive:true});
@@ -2993,9 +3017,15 @@
         g.style.translate='0 '+(d*vh*0.32).toFixed(1)+'px';
         g.style.opacity=(0.16*clamp(1-Math.abs(d)*1.1,0,1)).toFixed(3);
       });
-      /* COUCHES DE SCÈNE : maquette nettement plus rapide que le texte (profondeur franche) */
+      /* COUCHES DE SCÈNE : maquette nettement plus rapide (profondeur franche) */
       visuals.forEach(function(v){ if(!near(v))return; v.style.translate='0 '+(dist(v)*vh*-0.14).toFixed(1)+'px'; });
-      texts.forEach(function(t){ if(!near(t))return; t.style.translate='0 '+(dist(t)*vh*-0.05).toFixed(1)+'px'; });
+      /* COUCHES DE TEXTE : sous-éléments à vitesses décalées (parallaxe interne) */
+      function driftGroup(g){ if(!near(g.root))return; var d=dist(g.root);
+        for(var i=0;i<g.parts.length;i++){ g.parts[i][0].style.translate='0 '+(d*vh*g.parts[i][1]).toFixed(1)+'px'; }
+      }
+      textGroups.forEach(driftGroup);
+      headGroups.forEach(driftGroup);
+      ctaGroups.forEach(driftGroup);
     }
     requestAnimationFrame(frame);
   }
