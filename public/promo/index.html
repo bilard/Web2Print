@@ -286,14 +286,62 @@
   .nd-create{margin-top:5px;font-size:11px;font-weight:700;color:#fff;background:var(--indigo);padding:9px 22px;border-radius:9px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 0 24px -6px var(--indigo);cursor:pointer}
   .nd-create svg{width:13px;height:13px}
   /* 03 Bibliothèque */
-  .lib-body{display:grid;grid-template-columns:122px 1fr;gap:14px}
-  .lib-side .lh{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}
+  /* 04 Bibliothèque — gestion d'une bibliothèque de documents */
+  .lib-body{display:grid;grid-template-columns:134px 1fr;gap:13px}
+  .lib-side .lh{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:8px}
   .lib-side .li{font-size:11px;color:var(--muted);padding:6px 8px;border-radius:6px;display:flex;align-items:center;gap:7px;margin-bottom:2px}
   .lib-side .li.on{background:rgba(124,108,255,.14);color:#d8d6ff}
-  .lib-side .li i{width:7px;height:7px;border-radius:2px}
-  .lib-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .lib-card{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
-  .lib-card .t{height:62px}.lib-card .c{padding:6px 8px;font-size:9px;color:var(--muted)}
+  .lib-side .li i{width:7px;height:7px;border-radius:2px;flex:0 0 auto}
+  .lib-side .li .n{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--faint)}
+  .lib-store{margin-top:13px;font-family:var(--mono);font-size:8.5px;color:var(--faint);line-height:1.5}
+  .lib-store .bar{height:4px;border-radius:3px;background:var(--line2);margin:5px 0 4px;overflow:hidden}
+  .lib-store .bar i{display:block;height:100%;width:64%;background:linear-gradient(90deg,#818cf8,#22d3ee);border-radius:3px}
+  .lib-main{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .lib-toolbar{display:flex;align-items:center;gap:8px}
+  .lib-search{flex:1;display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:10.5px;color:var(--muted)}
+  .lib-search svg{width:12px;height:12px;color:var(--faint);flex:0 0 auto}
+  .lib-view{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;flex:0 0 auto}
+  .lib-view span{padding:5px 7px;color:var(--faint);display:grid;place-items:center}.lib-view span.on{background:rgba(124,108,255,.16);color:#c7c4ff}.lib-view svg{width:12px;height:12px}
+  .lib-count{font-family:var(--mono);font-size:9px;color:var(--faint);white-space:nowrap;flex:0 0 auto}
+  .lib-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  .lib-card{position:relative;border:1px solid var(--line2);border-radius:10px;background:var(--surface);overflow:hidden}
+  .lib-card.sel{border-color:rgba(124,108,255,.6);box-shadow:0 10px 26px -14px #000,0 0 18px -8px var(--indigo);transform:translateY(-2px)}
+  .lib-thumb{position:relative;height:82px;margin:7px 7px 0;border-radius:7px;background:linear-gradient(180deg,#15151d,#0e0e14);overflow:hidden}
+  .lib-thumb .stk::before,.lib-thumb .stk::after{content:"";position:absolute;left:50%;top:9px;width:50%;height:72%;border-radius:4px;background:#e9edf3;box-shadow:0 4px 9px -4px #000}
+  .lib-thumb .stk::before{transform:translateX(-62%) rotate(-5deg)}
+  .lib-thumb .stk::after{transform:translateX(-38%) rotate(5deg);opacity:.5}
+  .lib-doc{position:absolute;left:50%;top:7px;transform:translateX(-50%);width:54%;height:80%;background:#fff;border-radius:4px;box-shadow:0 6px 14px -5px #000;overflow:hidden}
+  .lib-doc .b{position:absolute;border-radius:1.5px;background:#cdd7e3}
+  .lib-doc .ac{background:var(--ac,#6366f1)}
+  .lib-doc .im{background:linear-gradient(135deg,#dbe3ec,#9aa7b6)}
+  /* catalogue : grille de produits */
+  .d-cat .hd{left:11%;top:8%;width:52%;height:7%}.d-cat .hd{background:var(--ac)}
+  .d-cat .c1{left:11%;top:22%;width:36%;height:30%}.d-cat .c2{left:53%;top:22%;width:36%;height:30%;background:#dbe3ec}
+  .d-cat .c3{left:11%;top:58%;width:36%;height:30%;background:#dbe3ec}.d-cat .c4{left:53%;top:58%;width:36%;height:30%}
+  /* promo : grosse image + gros prix + pastille */
+  .d-promo .im{left:11%;top:9%;width:78%;height:46%}.d-promo .pr{left:11%;top:62%;width:52%;height:27%;background:var(--ac)}
+  .d-promo .bdg{right:9%;top:12%;width:22%;height:0;padding-bottom:22%;border-radius:50%;background:#ef4444}
+  /* story 9:16 : vertical centré + CTA */
+  .d-story .im{left:18%;top:8%;width:64%;height:50%}.d-story .t1{left:18%;top:64%;width:64%;height:6%}.d-story .t2{left:28%;top:74%;width:44%;height:6%;background:#e2e8f0}
+  .d-story .pr{left:33%;top:85%;width:34%;height:9%;border-radius:8px;background:var(--ac)}
+  /* affiche A3 : grand titre + image */
+  .d-poster .hd{left:11%;top:9%;width:78%;height:15%;background:var(--ac)}.d-poster .im{left:11%;top:29%;width:78%;height:47%}.d-poster .pr{left:11%;top:81%;width:42%;height:10%;background:var(--ac);opacity:.85}
+  /* flyer A5 : titre + deux colonnes de texte */
+  .d-flyer .hd{left:11%;top:9%;width:58%;height:8%;background:var(--ac)}
+  .d-flyer .a1{left:11%;top:24%;width:34%;height:5%}.d-flyer .a2{left:11%;top:33%;width:34%;height:5%}.d-flyer .a3{left:11%;top:42%;width:28%;height:5%}
+  .d-flyer .b1{left:53%;top:24%;width:34%;height:5%}.d-flyer .b2{left:53%;top:33%;width:34%;height:5%}.d-flyer .b3{left:53%;top:42%;width:26%;height:5%}
+  .d-flyer .pr{left:11%;top:84%;width:30%;height:9%;background:var(--ac)}
+  /* social 1:1 : carré centré + CTA */
+  .d-social .im{left:13%;top:12%;width:74%;height:54%;border-radius:5px}.d-social .t1{left:20%;top:72%;width:60%;height:6%}.d-social .pr{left:33%;top:84%;width:34%;height:9%;border-radius:8px;background:var(--ac)}
+  /* effet de clic */
+  .lib-card .rip{position:absolute;left:50%;top:40%;width:12px;height:12px;border-radius:50%;background:rgba(124,108,255,.55);transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;z-index:4}
+  .lib-fmt{position:absolute;left:6px;top:6px;font-family:var(--mono);font-size:7.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:1px 5px}
+  .lib-stt{position:absolute;right:6px;top:6px;display:inline-flex;align-items:center;gap:3px;font-size:7px;font-family:var(--mono);color:#dbe3ec;background:rgba(0,0,0,.55);border-radius:10px;padding:2px 6px}
+  .lib-stt i{width:5px;height:5px;border-radius:50%;flex:0 0 auto}
+  .lib-stt.val i{background:#34d399}.lib-stt.exp i{background:#818cf8}.lib-stt.draft i{background:#fbbf24}
+  .lib-meta{padding:7px 9px 9px}
+  .lib-meta b{font-size:11px;display:block;line-height:1.2;color:var(--ink)}
+  .lib-meta span{font-size:9px;color:var(--muted);display:block;margin-top:3px;font-variant-numeric:tabular-nums}
   /* 04 DAM */
   .dam-body{display:flex;flex-direction:column;gap:12px}
   .dam-bar{display:flex;gap:9px;align-items:center}
@@ -737,8 +785,15 @@
   #editer .scene-visual.is-in .lay.on{animation:rowScan 3s ease-in-out infinite}
 
   /* 04 Bibliothèque — projets qui apparaissent en vague (4 colonnes) */
-  #bibliotheque .scene-visual.is-in .lib-card{animation:cyclePop 5s ease-in-out infinite}
-  #bibliotheque .scene-visual.is-in .lib-card:nth-child(4n+2){animation-delay:.2s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(4n+3){animation-delay:.4s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(4n){animation-delay:.6s}#bibliotheque .scene-visual.is-in .lib-card:nth-child(n+5){animation-delay:.8s}
+  #bibliotheque .scene-visual.is-in .lib-card{animation:libBrowse 6s ease-in-out infinite}
+  #bibliotheque .scene-visual.is-in .lib-card .rip{animation:libRipple 6s ease-out infinite}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(2),#bibliotheque .scene-visual.is-in .lib-card:nth-child(2) .rip{animation-delay:1s}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(3),#bibliotheque .scene-visual.is-in .lib-card:nth-child(3) .rip{animation-delay:2s}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(4),#bibliotheque .scene-visual.is-in .lib-card:nth-child(4) .rip{animation-delay:3s}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(5),#bibliotheque .scene-visual.is-in .lib-card:nth-child(5) .rip{animation-delay:4s}
+  #bibliotheque .scene-visual.is-in .lib-card:nth-child(6),#bibliotheque .scene-visual.is-in .lib-card:nth-child(6) .rip{animation-delay:5s}
+  @keyframes libBrowse{0%,4%,18%,100%{border-color:var(--line2);box-shadow:none;transform:none}6%{transform:scale(.975)}9%,13%{border-color:rgba(124,108,255,.6);box-shadow:0 12px 28px -14px #000,0 0 18px -8px var(--indigo);transform:translateY(-3px)}}
+  @keyframes libRipple{0%,5%{transform:translate(-50%,-50%) scale(0);opacity:.6}14%{transform:translate(-50%,-50%) scale(11);opacity:0}14.01%,100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
 
   /* 05 DAM — médias qui se chargent en vague (6 colonnes) */
   #dam .scene-visual.is-in .dam-grid i{animation:cyclePop 5s ease-in-out infinite}
@@ -1194,16 +1249,29 @@
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Bibliothèque — projets</span></div>
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:14%;--y1:42%;--x2:58%;--y2:55%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="lib-body mk-body">
-            <div class="lib-side"><div class="lh">Taxonomie</div><div class="li on"><i style="background:#818cf8"></i>Tous · 128</div><div class="li"><i style="background:#34d399"></i>Affiches</div><div class="li"><i style="background:#fbbf24"></i>Catalogues</div><div class="li"><i style="background:#f472b6"></i>Réseaux</div><div class="li"><i style="background:#22d3ee"></i>PLV</div></div>
-            <div class="lib-grid">
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><div class="c">Soldes A4</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shirt"/></svg></div><div class="c">Catalogue P.</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-bottle"/></svg></div><div class="c">Promo 1:1</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-shoe"/></svg></div><div class="c">PLV magasin</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-cam"/></svg></div><div class="c">Story 9:16</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-plant"/></svg></div><div class="c">Flyer A5</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-watch"/></svg></div><div class="c">Bannière web</div></div>
-              <div class="lib-card"><div class="t vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-lamp"/></svg></div><div class="c">Menu A3</div></div>
+            <div class="lib-side">
+              <div class="lh">Taxonomie</div>
+              <div class="li on"><i style="background:#818cf8"></i>Tous<span class="n">128</span></div>
+              <div class="li"><i style="background:#34d399"></i>Affiches<span class="n">31</span></div>
+              <div class="li"><i style="background:#fbbf24"></i>Catalogues<span class="n">18</span></div>
+              <div class="li"><i style="background:#f472b6"></i>Réseaux<span class="n">54</span></div>
+              <div class="li"><i style="background:#22d3ee"></i>PLV<span class="n">25</span></div>
+              <div class="lib-store">STOCKAGE<div class="bar"><i></i></div>6,4 Go / 10 Go<br>1 248 fichiers</div>
+            </div>
+            <div class="lib-main">
+              <div class="lib-toolbar">
+                <span class="lib-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>Rechercher un projet…</span>
+                <span class="lib-view"><span class="on"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span></span>
+                <span class="lib-count">128 projets · 1 248 docs · 6,4 Go</span>
+              </div>
+              <div class="lib-grid">
+                <div class="lib-card"><div class="lib-thumb" style="--ac:#6366f1"><span class="stk"></span><span class="lib-doc d-cat"><span class="b hd"></span><span class="b c1"></span><span class="b c2"></span><span class="b c3"></span><span class="b c4"></span></span><span class="lib-fmt">A4</span><span class="lib-stt val"><i></i>Validé</span></div><span class="rip"></span><div class="lib-meta"><b>Catalogue Printemps</b><span>64 pages · IDML·PDF · 18,4 Mo</span></div></div>
+                <div class="lib-card"><div class="lib-thumb" style="--ac:#f472b6"><span class="stk"></span><span class="lib-doc d-promo"><span class="b im"></span><span class="b pr"></span><span class="b bdg"></span></span><span class="lib-fmt">A4</span><span class="lib-stt exp"><i></i>Exporté</span></div><span class="rip"></span><div class="lib-meta"><b>Soldes −30 %</b><span>×128 déclinaisons · PDF · 42 Mo</span></div></div>
+                <div class="lib-card"><div class="lib-thumb" style="--ac:#22d3ee"><span class="stk"></span><span class="lib-doc d-story"><span class="b im"></span><span class="b t1"></span><span class="b t2"></span><span class="b pr"></span></span><span class="lib-fmt">9:16</span><span class="lib-stt draft"><i></i>Brouillon</span></div><span class="rip"></span><div class="lib-meta"><b>Story réseaux</b><span>12 visuels · PNG·WebM · 6,1 Mo</span></div></div>
+                <div class="lib-card"><div class="lib-thumb" style="--ac:#fbbf24"><span class="stk"></span><span class="lib-doc d-poster"><span class="b hd"></span><span class="b im"></span><span class="b pr"></span></span><span class="lib-fmt">A3</span><span class="lib-stt val"><i></i>Validé</span></div><span class="rip"></span><div class="lib-meta"><b>PLV magasin</b><span>8 affiches · PDF · 24 Mo</span></div></div>
+                <div class="lib-card"><div class="lib-thumb" style="--ac:#34d399"><span class="stk"></span><span class="lib-doc d-flyer"><span class="b hd"></span><span class="b a1"></span><span class="b a2"></span><span class="b a3"></span><span class="b b1"></span><span class="b b2"></span><span class="b b3"></span><span class="b pr"></span></span><span class="lib-fmt">A5</span><span class="lib-stt val"><i></i>Validé</span></div><span class="rip"></span><div class="lib-meta"><b>Flyer A5</b><span>2 pages · PDF · 1,8 Mo</span></div></div>
+                <div class="lib-card"><div class="lib-thumb" style="--ac:#a855f7"><span class="stk"></span><span class="lib-doc d-social"><span class="b im"></span><span class="b t1"></span><span class="b pr"></span></span><span class="lib-fmt">1:1</span><span class="lib-stt exp"><i></i>Exporté</span></div><span class="rip"></span><div class="lib-meta"><b>Bannière web</b><span>5 formats · SVG·PNG · 0,9 Mo</span></div></div>
+              </div>
             </div>
           </div>
         </div></div>
