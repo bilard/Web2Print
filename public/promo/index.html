@@ -432,7 +432,7 @@
   #taxonomies .txo-node.editing .nm::after{content:"";display:inline-block;width:1.5px;height:12px;background:var(--indigo);margin-left:2px;vertical-align:-2px;animation:caretBlink 1s steps(1) infinite}
   @keyframes caretBlink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
   /* 07 Templates scraping — pointer & cliquer sur un site existant */
-  .tpl-body{display:grid;grid-template-columns:1.4fr 1fr;gap:13px;align-items:start}
+  .tpl-body{display:grid;grid-template-columns:2.25fr 0.85fr;gap:13px;align-items:start}
   .tpl-card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:13px}
   .tpl-card .h2{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;color:var(--ink)}
   .tpl-card .h2 .x{color:var(--faint)}
@@ -447,18 +447,20 @@
   .tpl-wbar{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--line)}
   .tpl-wbar .d{width:7px;height:7px;border-radius:50%;background:#3a3a46;flex:0 0 auto}
   .tpl-wbar .u{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-family:var(--mono);font-size:9px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tpl-page{background:#fff;color:#1e293b;padding:13px 12px;display:grid;grid-template-columns:auto 1fr;gap:12px 11px;align-items:start;min-height:250px;align-content:start}
-  .tpl-img{grid-row:1 / span 4;width:108px;height:130px;border-radius:8px;overflow:hidden;position:relative}
+  .tpl-page{background:#fff;color:#1e293b;padding:16px 60px 16px 15px;display:grid;grid-template-columns:auto 1fr;gap:13px 15px;align-items:start;min-height:284px;align-content:start}
+  .tpl-img{grid-row:1 / span 5;width:118px;height:146px;border-radius:9px;overflow:hidden;position:relative}
   .tpl-img .vico{width:100%;height:100%}
-  .tpl-el{position:relative;border-radius:6px;transition:box-shadow .2s,background .2s;padding:2px 4px;margin:-2px -4px;cursor:pointer}
+  .tpl-el{position:relative;border-radius:6px;transition:box-shadow .2s,background .2s;padding:2px 5px;margin:-2px -5px;cursor:pointer}
   .tpl-el.hi{box-shadow:0 0 0 2px var(--indigo);background:rgba(124,108,255,.08);z-index:2}
-  .tpl-el .tag{position:absolute;top:-8px;right:6px;font-family:var(--mono);font-size:7.5px;font-weight:700;color:#fff;background:var(--indigo);border-radius:5px;padding:1px 6px;opacity:0;transform:translateY(3px);transition:opacity .25s,transform .25s;white-space:nowrap;box-shadow:0 4px 10px -3px rgba(99,102,241,.7)}
-  .tpl-el.mapped .tag{opacity:1;transform:none}
-  .tpl-h1{font-size:15px;font-weight:800;color:#0f172a;line-height:1.15}
-  .tpl-rate{font-size:10.5px;color:#f59e0b}
-  .tpl-pr{font-size:20px;font-weight:800;color:#dc2626}.tpl-pr s{font-size:11.5px;color:#94a3b8;font-weight:600;margin-left:6px}
-  .tpl-rf{font-family:var(--mono);font-size:10px;color:#64748b}
-  .tpl-ds{font-size:10px;color:#475569;line-height:1.55;grid-column:1 / -1;margin-top:2px}
+  .tpl-el .tag{position:absolute;top:50%;right:-58px;transform:translateY(-50%);font-family:var(--mono);font-size:9px;font-weight:800;color:#fff;background:var(--indigo);border-radius:6px;padding:2px 8px;opacity:0;transition:opacity .25s;white-space:nowrap;box-shadow:0 5px 13px -3px rgba(99,102,241,.75);letter-spacing:.02em}
+  .tpl-el.mapped .tag{opacity:1}
+  .tpl-img .tag{top:auto;bottom:8px;right:8px;transform:none}
+  .tpl-h1{font-size:16px;font-weight:900;color:#0f172a;line-height:1.12;white-space:nowrap}
+  .tpl-rate{font-size:11px;font-weight:700;color:#f59e0b}
+  .tpl-pr{font-size:23px;font-weight:900;color:#dc2626;letter-spacing:-.01em}.tpl-pr s{font-size:13px;color:#94a3b8;font-weight:700;margin-left:7px}
+  .tpl-rf{font-family:var(--mono);font-size:11px;font-weight:600;color:#475569}
+  .tpl-ean{font-family:var(--mono);font-size:11px;font-weight:700;color:#0f172a;letter-spacing:.04em}
+  .tpl-ds{font-size:11px;font-weight:500;color:#334155;line-height:1.55;grid-column:1 / -1;margin-top:3px}
   .tpl-right{display:flex;flex-direction:column;gap:11px}
   /* 09 Workflows — canvas d'éditeur de nodes */
   .wfl-body{background:#08080d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px}
@@ -1444,12 +1446,13 @@
                 <div class="tpl-rate">★★★★★ <span style="color:#94a3b8">· 214 avis</span></div>
                 <div class="tpl-pr tpl-el" data-f="Prix" data-sel="span.price--final">129,00 €<s>152,00 €</s><span class="tag">Prix</span></div>
                 <div class="tpl-rf tpl-el" data-f="Réf. / SKU" data-sel="span.product-reference">Réf. 4892-18V<span class="tag">Réf.</span></div>
+                <div class="tpl-ean tpl-el" data-f="EAN" data-sel="span.product-ean">EAN 3 661234 567890<span class="tag">EAN</span></div>
                 <div class="tpl-ds tpl-el" data-f="Description" data-sel="div.product-description--marketing-text">Visseuse sans-fil · 2 batteries 2,0 Ah · mandrin 13 mm · couple 60 Nm · garantie 3 ans.<span class="tag">Description</span></div>
               </div>
             </div>
             <div class="tpl-right">
               <div class="tpl-card"><div class="h2">Élément capturé <span class="x">✕</span></div><div class="tpl-sel" id="tplSel">h1.product-title</div><div class="tpl-path" id="tplPath">body › main › div.product › h1.product-title</div></div>
-              <div class="tpl-card"><div class="tpl-fl">Assigner à un champ :</div><div class="tpl-fields"><span class="tpl-field" data-f="Titre">Titre</span><span class="tpl-field" data-f="Description">Description</span><span class="tpl-field" data-f="Marque">Marque</span><span class="tpl-field" data-f="Prix">Prix</span><span class="tpl-field" data-f="Réf. / SKU">Réf. / SKU</span><span class="tpl-field" data-f="Images">Images</span></div></div>
+              <div class="tpl-card"><div class="tpl-fl">Assigner à un champ :</div><div class="tpl-fields"><span class="tpl-field" data-f="Titre">Titre</span><span class="tpl-field" data-f="Description">Description</span><span class="tpl-field" data-f="Marque">Marque</span><span class="tpl-field" data-f="Prix">Prix</span><span class="tpl-field" data-f="Réf. / SKU">Réf. / SKU</span><span class="tpl-field" data-f="Images">Images</span><span class="tpl-field" data-f="EAN">EAN</span></div></div>
             </div>
             <div class="tpl-saved"><div class="h">TEMPLATES ENREGISTRÉS · 14</div><div class="row"><span><i style="background:#34d399"></i>fresho.fr <b>Alimentaire · 12 champs</b></span><span><i style="background:#fbbf24"></i>bricolux.fr <b>Bricolage · 14 champs</b></span><span><i style="background:#f472b6"></i>modabox.fr <b>Textile · 9 champs</b></span><span><i style="background:#a855f7"></i>shopzone.fr <b>Marketplace · 16 champs</b></span><span><i style="background:#38bdf8"></i>biomarché.fr <b>Alimentaire · 11 champs</b></span></div></div>
           </div>
@@ -2011,7 +2014,7 @@
   var els=[].slice.call(page.querySelectorAll('.tpl-el'));
   var fields=[].slice.call(sv.querySelectorAll('.tpl-field'));
   var sel=document.getElementById('tplSel'), path=document.getElementById('tplPath');
-  var seq=['Titre','Prix','Réf. / SKU','Description','Images'];
+  var seq=['Titre','Prix','Réf. / SKU','EAN','Description','Images'];
   function elByF(f){ for(var i=0;i<els.length;i++){ if(els[i].dataset.f===f) return els[i]; } return null; }
   function reset(){ els.forEach(function(e){e.classList.remove('hi','mapped');}); fields.forEach(function(f){f.classList.remove('on');}); }
   var i=0, iv=null, t=[];
