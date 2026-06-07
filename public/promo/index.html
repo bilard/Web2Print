@@ -781,6 +781,39 @@
   .set-conn .item .tog{margin-left:auto;width:30px;height:17px;border-radius:10px;background:rgba(52,211,153,.5);position:relative;flex:0 0 auto}
   .set-conn .item .tog::after{content:"";position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;background:#34d399}
   .set-conn .item .tog.off{background:var(--line2)}.set-conn .item .tog.off::after{left:2px;right:auto;background:var(--muted)}
+  .set-conn .item .ct{display:flex;flex-direction:column;min-width:0}
+  .set-conn .item .ct b{font-size:11px;font-weight:600;color:var(--ink)}
+  .set-conn .item .ct span{font-size:8.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  /* clés API : statut vérifié + bouton MAJ */
+  .set-key .st{font-size:8px;color:#6ee7b7;font-family:var(--mono);flex:0 0 auto;white-space:nowrap}
+  .set-btn{margin-top:6px;font-size:10px;font-weight:600;color:#c7c4ff;border:1px solid rgba(124,108,255,.4);background:rgba(124,108,255,.12);border-radius:7px;padding:7px 11px;display:inline-flex;align-items:center;gap:7px;width:100%;justify-content:center}
+  .set-btn svg{width:12px;height:12px}
+  /* modèles par tâche */
+  .set-task{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;padding:6px 1px;border-top:1px solid var(--line)}
+  .set-task .tk{color:var(--muted);display:flex;align-items:center;gap:6px}.set-task .tk svg{width:12px;height:12px;color:var(--faint)}
+  .set-task b{font-weight:700;color:var(--ink);font-size:10.5px;white-space:nowrap}.set-task b .pr{color:var(--faint);font-weight:400;font-size:9px}
+  /* Consommation IA & Scraping — live */
+  .set-live{float:right;display:inline-flex;align-items:center;gap:5px;font-size:8px;color:#6ee7b7;letter-spacing:.06em}
+  .set-live::before{content:"";width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:okBlink 1.6s ease-in-out infinite}
+  .set-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:13px}
+  .set-stat{border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:9px 11px}
+  .set-stat .k{font-size:8px;color:var(--faint);font-family:var(--mono);text-transform:uppercase;letter-spacing:.03em}
+  .set-stat .v{font-size:17px;font-weight:800;color:var(--ink);margin-top:3px;font-variant-numeric:tabular-nums}.set-stat .v small{font-size:10px;color:var(--muted);font-weight:600}
+  .set-use{display:grid;grid-template-columns:1fr 1fr;gap:13px 22px}
+  .set-subh{font-family:var(--mono);font-size:8.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;justify-content:space-between}
+  .set-subh span{color:var(--line2);text-transform:none}
+  .set-bar{display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:10px}
+  .set-bar .bn{width:74px;flex:0 0 74px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .set-bar .bn i{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+  .set-bar .tr{flex:1;height:7px;border-radius:4px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+  .set-bar .tr i{display:block;height:100%;border-radius:4px;width:0;transition:width 1s cubic-bezier(.3,.8,.3,1)}
+  #settings .scene-visual.is-in .set-bar .tr i{width:var(--w,40%)}
+  .set-bar .bv{flex:0 0 auto;font-family:var(--mono);font-size:9px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .set-budget{margin-top:11px;border-top:1px solid var(--line);padding-top:10px}
+  .set-budget .bh{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-bottom:6px}.set-budget .bh b{color:var(--ink);font-weight:800}
+  .set-budget .tr{height:8px;border-radius:5px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+  .set-budget .tr i{display:block;height:100%;border-radius:5px;width:0;background:linear-gradient(90deg,#34d399,#fbbf24);transition:width 1.1s cubic-bezier(.3,.8,.3,1)}
+  #settings .scene-visual.is-in .set-budget .tr i{width:43%}
   .aic-chips{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
   .aic-chips span{font-size:11px;padding:8px 15px;border:1px solid var(--line2);border-radius:100px;color:var(--ink)}
 
@@ -1947,21 +1980,56 @@
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:42%;--y1:40%;--x2:42%;--y2:60%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="set-body mk-body">
             <div class="set-card">
-              <div class="set-h">Clés API</div>
-              <div class="set-key"><span class="nm">Claude</span><span class="val">sk-ant-•••••••••••••••</span><span class="ok"></span></div>
-              <div class="set-key"><span class="nm">Gemini</span><span class="val">AIza•••••••••••••••</span><span class="ok"></span></div>
-              <div class="set-key"><span class="nm">OpenAI</span><span class="val">sk-•••••••••••••••••</span><span class="ok"></span></div>
-              <div class="set-key"><span class="nm">Qwen</span><span class="val">sk-•••••••••••••••••</span><span class="ok"></span></div>
-              <div class="set-key"><span class="nm">Bright D.</span><span class="val">•••••••••••••••</span><span class="ok"></span></div>
+              <div class="set-h">Clés API · 5 fournisseurs</div>
+              <div class="set-key"><span class="nm">Claude</span><span class="val">sk-ant-•••••••••••••••</span><span class="st">✓ ok · 0,4 s</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">Gemini</span><span class="val">AIza•••••••••••••••</span><span class="st">✓ ok · 0,3 s</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">OpenAI</span><span class="val">sk-•••••••••••••••••</span><span class="st">✓ ok · 0,6 s</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">Qwen</span><span class="val">sk-•••••••••••••••••</span><span class="st">✓ ok · 0,5 s</span><span class="ok"></span></div>
+              <div class="set-key"><span class="nm">Bright D.</span><span class="val">•••••••••••••••</span><span class="st">✓ ok</span><span class="ok"></span></div>
+              <div class="set-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>Mettre à jour tous les LLM</div>
             </div>
             <div class="set-card">
-              <div class="set-h">Modèles par défaut</div>
-              <div class="set-model"><span>Claude Opus 4.8 <span class="pr">Anthropic</span></span><span class="c">▾</span></div>
-              <div class="set-model"><span>GPT 5.5 <span class="pr">OpenAI</span></span><span class="c">▾</span></div>
+              <div class="set-h">Modèles par tâche</div>
+              <div class="set-task"><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat &amp; texte</span><b>Claude Opus 4.8 <span class="pr">Anthropic</span></b></div>
+              <div class="set-task"><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Image</span><b>Nano Banana Pro <span class="pr">Gemini</span></b></div>
+              <div class="set-task"><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Vision / décompo</span><b>Gemini 3 Pro <span class="pr">Google</span></b></div>
+              <div class="set-task"><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></svg>Structuré JSON</span><b>GPT 5.5 <span class="pr">OpenAI</span></b></div>
               <div class="set-h" style="margin-top:13px">Cascade de repli</div>
-              <div class="db-chips" style="justify-content:flex-start"><i>Claude</i><i>→ GPT</i><i>→ DeepSeek</i></div>
+              <div class="db-chips" style="justify-content:flex-start"><i>Claude</i><i>→ GPT</i><i>→ DeepSeek</i><i>→ Qwen</i></div>
             </div>
-            <div class="set-card set-wide"><div class="set-h">Connecteurs</div><div class="set-conn"><div class="item"><span class="ic" style="background:#34d39922;color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 16H3z"/></svg></span>Google Drive<span class="tog"></span></div><div class="item"><span class="ic" style="background:#ef444422;color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>Gmail<span class="tog"></span></div><div class="item"><span class="ic" style="background:#60a5fa22;color:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span>Telegram<span class="tog"></span></div><div class="item"><span class="ic" style="background:#a855f722;color:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span>Bright Data<span class="tog off"></span></div></div></div>
+            <div class="set-card set-wide"><div class="set-h">Connecteurs · 4 actifs / 6</div><div class="set-conn">
+              <div class="item"><span class="ic" style="background:#34d39922;color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 16H3z"/></svg></span><span class="ct"><b>Google Drive</b><span>m.laurent@gmail.com · synchronisé</span></span><span class="tog"></span></div>
+              <div class="item"><span class="ic" style="background:#ef444422;color:#ef4444"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span class="ct"><b>Gmail</b><span>envoi via workflows · OK</span></span><span class="tog"></span></div>
+              <div class="item"><span class="ic" style="background:#60a5fa22;color:#60a5fa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><span class="ct"><b>Telegram</b><span>@ibsstudio_bot · connecté</span></span><span class="tog"></span></div>
+              <div class="item"><span class="ic" style="background:#22d3ee22;color:#22d3ee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/></svg></span><span class="ct"><b>Jina Reader</b><span>scraping · clé active</span></span><span class="tog"></span></div>
+              <div class="item"><span class="ic" style="background:#a855f722;color:#a855f7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><span class="ct"><b>Bright Data</b><span>anti-bot tier 2 · désactivé</span></span><span class="tog off"></span></div>
+              <div class="item"><span class="ic" style="background:#84cc1622;color:#84cc16"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l5-5 4 4 7-7"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg></span><span class="ct"><b>Remove.bg</b><span>détourage · 120 crédits</span></span><span class="tog"></span></div>
+            </div></div>
+            <div class="set-card set-wide">
+              <div class="set-h">Consommation IA &amp; Scraping<span class="set-live">live</span></div>
+              <div class="set-stats">
+                <div class="set-stat"><div class="k">Coût IA · ce mois</div><div class="v">42,80 <small>€</small></div></div>
+                <div class="set-stat"><div class="k">Requêtes · 24 h</div><div class="v" id="setReq">1 248</div></div>
+                <div class="set-stat"><div class="k">Tokens · ce mois</div><div class="v">3,4 <small>M</small></div></div>
+                <div class="set-stat"><div class="k">Crédits scraping</div><div class="v">6,5<small>k / 10k</small></div></div>
+              </div>
+              <div class="set-use">
+                <div>
+                  <div class="set-subh">Modèles IA <span>tokens · coût</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#d97757"></i>Claude</span><span class="tr"><i style="--w:92%;background:#d97757"></i></span><span class="bv">1,8 M · 24,10 €</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#10a37f"></i>GPT</span><span class="tr"><i style="--w:46%;background:#10a37f"></i></span><span class="bv">0,9 M · 11,40 €</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#4285f4"></i>Gemini</span><span class="tr"><i style="--w:26%;background:#4285f4"></i></span><span class="bv">0,5 M · 4,30 €</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#8b5cf6"></i>DeepSeek</span><span class="tr"><i style="--w:11%;background:#8b5cf6"></i></span><span class="bv">0,2 M · 0,90 €</span></div>
+                </div>
+                <div>
+                  <div class="set-subh">Scraping <span>requêtes</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#a855f7"></i>Bright D.</span><span class="tr"><i style="--w:90%;background:#a855f7"></i></span><span class="bv">4 120</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#22d3ee"></i>Jina</span><span class="tr"><i style="--w:53%;background:#22d3ee"></i></span><span class="bv">2 420</span></div>
+                  <div class="set-bar"><span class="bn"><i style="background:#fb923c"></i>Firecrawl</span><span class="tr"><i style="--w:16%;background:#fb923c"></i></span><span class="bv">680</span></div>
+                  <div class="set-budget"><div class="bh"><span>Budget mensuel</span><span><b>42,80 €</b> / 100 €</span></div><div class="tr"><i></i></div></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div></div>
       </div>
@@ -2284,6 +2352,21 @@
   new IntersectionObserver(function(es){ es.forEach(function(e){
     if(e.isIntersecting){ if(!iv){ reset(); i=0; step(); iv=setInterval(step,560); } }
     else { if(iv){ clearInterval(iv); iv=null; } clearT(); reset(); i=0; }
+  }); },{threshold:0.3}).observe(sv);
+})();
+</script>
+<script>
+/* Paramètres — compteur « Requêtes · 24 h » qui s'incrémente (effet live) */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#settings .scene-visual'); if(!sv) return;
+  var el=sv.querySelector('#setReq'); if(!el) return;
+  var n=1248, iv=null;
+  function tick(){ n+=Math.floor(1+Math.random()*4); el.textContent=n.toLocaleString('fr-FR'); }
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv) iv=setInterval(tick,1400); }
+    else { if(iv){ clearInterval(iv); iv=null; } }
   }); },{threshold:0.3}).observe(sv);
 })();
 </script>
