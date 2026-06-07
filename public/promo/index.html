@@ -341,7 +341,8 @@
   #taxonomies .txo-body{position:relative}
   #taxonomies .txo-node{position:relative;cursor:grab}
   #taxonomies .txo-node::before{content:"⠿";font-size:11px;line-height:1;color:var(--faint);opacity:.3;flex:0 0 auto;margin-right:-1px;cursor:grab}
-  #taxonomies .txo-node.dragging{cursor:grabbing;background:linear-gradient(180deg,#24242f,#16161d);border-radius:8px;box-shadow:0 18px 42px -12px #000,0 0 26px -8px var(--indigo);outline:1px solid rgba(124,108,255,.6);z-index:8;opacity:.97}
+  #taxonomies .txo-node.dragging{cursor:grabbing;background:linear-gradient(180deg,#212129,#17171e);border-radius:8px;box-shadow:0 12px 26px -14px #000,0 0 12px -8px var(--indigo);outline:1px solid rgba(124,108,255,.45);z-index:8}
+  #taxonomies .txo-node.shift{transition:transform .5s cubic-bezier(.2,.8,.3,1)}
   #taxonomies .txo-node.dragging::before{opacity:.85;color:var(--indigo)}
   #taxonomies .txo-dropline{position:absolute;left:54px;right:48px;height:2px;background:var(--indigo);border-radius:2px;box-shadow:0 0 10px var(--indigo);opacity:0;z-index:7;transition:opacity .18s,top .25s}
   #taxonomies .txo-dropline.show{opacity:1}
@@ -1868,19 +1869,38 @@
   function clearT(){ timers.forEach(clearTimeout); timers=[]; }
   function rowH(){ return Math.round(meul.getBoundingClientRect().height); }
   function dropAt(target){ var r=target.getBoundingClientRect(), b=body.getBoundingClientRect(); dl.style.top=Math.round(r.top-b.top-1)+'px'; }
-  function reset(){ drag.style.transition=''; drag.style.transform=''; drag.classList.remove('dragging'); dl.classList.remove('show'); edit.classList.remove('editing'); var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses'; if(meul.previousElementSibling===drag) body.insertBefore(drag, meul.nextSibling); }
+  function clearMove(el){ el.style.transition=''; el.style.transform=''; el.classList.remove('shift'); }
+  function reset(){
+    clearMove(drag); drag.classList.remove('dragging'); clearMove(meul);
+    dl.classList.remove('show'); edit.classList.remove('editing');
+    var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses';
+    if(meul.previousElementSibling===drag) body.insertBefore(meul, drag); /* restaure : Meuleuses avant Scies */
+  }
+  /* FLIP : réordonne dans le DOM puis anime chaque nœud de son ancienne place vers la nouvelle (aucun chevauchement) */
+  function flipReorder(){
+    var f1=drag.getBoundingClientRect().top, f2=meul.getBoundingClientRect().top;
+    body.insertBefore(drag, meul);
+    var l1=drag.getBoundingClientRect().top, l2=meul.getBoundingClientRect().top;
+    drag.style.transition='none'; drag.style.transform='translateY('+(f1-l1)+'px)';
+    meul.classList.add('shift'); meul.style.transition='none'; meul.style.transform='translateY('+(f2-l2)+'px)';
+    void body.offsetWidth;
+    drag.style.transition='transform .5s cubic-bezier(.2,.8,.3,1)'; drag.style.transform='';
+    meul.style.transition='transform .5s cubic-bezier(.2,.8,.3,1)'; meul.style.transform='';
+  }
   function seq(){
     clearT(); reset();
-    timers.push(setTimeout(function(){ drag.classList.add('dragging'); dropAt(meul); dl.classList.add('show'); },700));
-    timers.push(setTimeout(function(){ drag.style.transition='transform .55s cubic-bezier(.2,.8,.3,1)'; drag.style.transform='translateY(-'+rowH()+'px)'; },1150));
-    timers.push(setTimeout(function(){ drag.style.transition=''; drag.style.transform=''; drag.classList.remove('dragging'); dl.classList.remove('show'); body.insertBefore(drag, meul); },1950));
-    timers.push(setTimeout(function(){ edit.classList.add('editing'); },3100));
-    timers.push(setTimeout(function(){ var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses autoportées'; },3700));
-    timers.push(setTimeout(function(){ edit.classList.remove('editing'); },5300));
+    /* PHASE 1 — glisser pour trier */
+    timers.push(setTimeout(function(){ drag.classList.add('dragging'); dropAt(meul); dl.classList.add('show'); },800));
+    timers.push(setTimeout(function(){ dl.classList.remove('show'); flipReorder(); },1700));
+    timers.push(setTimeout(function(){ clearMove(drag); drag.classList.remove('dragging'); clearMove(meul); },2350));
+    /* PHASE 2 — renommer (après le tri, pour rester lisible) */
+    timers.push(setTimeout(function(){ edit.classList.add('editing'); },3700));
+    timers.push(setTimeout(function(){ var n=edit.querySelector('.nm'); if(n) n.textContent='Tondeuses autoportées'; },4400));
+    timers.push(setTimeout(function(){ edit.classList.remove('editing'); },6100));
   }
   if(!('IntersectionObserver' in window)) return;
   new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,7200); } }
+    if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,8000); } }
     else { if(iv){ clearInterval(iv); iv=null; } clearT(); }
   }); },{threshold:0.3}).observe(sv);
 })();
