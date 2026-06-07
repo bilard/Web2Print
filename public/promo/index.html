@@ -1219,6 +1219,7 @@
   <symbol id="ic-land" viewBox="0 0 100 100"><image href="/promo/assets/land.jpg" width="100" height="100" preserveAspectRatio="xMidYMid slice"/></symbol>
   <symbol id="ic-port" viewBox="0 0 100 100"><image href="/promo/assets/port.jpg" width="100" height="100" preserveAspectRatio="xMidYMid slice"/></symbol>
   <!-- Pictos des modules (sommaire latéral) — stroke hérité via currentColor -->
+  <symbol id="m-decouverte" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></symbol>
   <symbol id="m-creer" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 11v6M9 14h6"/></symbol>
   <symbol id="m-importer" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
   <symbol id="m-editer" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
@@ -1252,6 +1253,10 @@
 
 <nav class="modnav" aria-label="Sommaire des modules">
   <a class="mn-logo" href="#top" aria-label="IBS Studio — haut de page"><img src="/logo.png" alt="IBS Studio" width="275" height="215" /><span class="mn-baseline">L'innovation par la contrainte</span></a>
+  <div class="mn-grp">Découverte</div>
+  <ol>
+    <li><a href="#decouverte" data-spy="decouverte"><span class="mn-num"><svg><use href="#m-decouverte"/></svg></span>Par secteur</a></li>
+  </ol>
   <div class="mn-head">Les 18 modules</div>
 
   <div class="mn-grp">Créer &amp; éditer</div>
@@ -1312,6 +1317,134 @@
         <a class="btn btn-ghost" href="#scraper">Voir la chaîne en action</a>
       </div>
 
+    </div>
+  </section>
+
+  <!-- DÉCOUVERTE : slideshow 5 secteurs -->
+  <style>
+  #decouverte .dx{position:relative;margin-top:34px;border:1px solid var(--line);border-radius:20px;background:var(--bg2);overflow:hidden}
+  #decouverte .dx-track{display:flex;transition:transform .55s cubic-bezier(.2,.8,.3,1)}
+  #decouverte .dx-slide{flex:0 0 100%;display:grid;grid-template-columns:minmax(0,42%) 1fr;min-height:436px}
+  #decouverte .dx-media{position:relative;overflow:hidden;background:#000}
+  #decouverte .dx-media img{width:100%;height:100%;object-fit:cover;display:block;opacity:.9}
+  #decouverte .dx-media::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 52%,var(--bg2)),linear-gradient(0deg,rgba(0,0,0,.45),transparent 55%)}
+  #decouverte .dx-tag{position:absolute;top:16px;left:16px;z-index:2;font-family:var(--mono);font-size:34px;font-weight:700;color:var(--ax);opacity:.85;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+  #decouverte .dx-body{padding:36px 42px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
+  #decouverte .dx-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ax)}
+  #decouverte .dx-sector{font-size:13px;color:var(--muted);margin-top:4px}
+  #decouverte .dx-title{font-size:clamp(21px,2.3vw,29px);font-weight:700;line-height:1.16;margin:11px 0 19px;color:var(--ink)}
+  #decouverte .dx-list{list-style:none;display:flex;flex-direction:column;gap:11px}
+  #decouverte .dx-list li{display:flex;gap:11px;font-size:14px;color:var(--muted);line-height:1.45}
+  #decouverte .dx-list li::before{content:"";flex:0 0 auto;width:7px;height:7px;margin-top:7px;border-radius:50%;background:var(--ax)}
+  #decouverte .dx-list b{color:var(--ink);font-weight:600}
+  #decouverte .dx-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:21px}
+  #decouverte .dx-chips span{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:5px 10px;border-radius:999px;border:1px solid var(--line2);color:var(--muted)}
+  #decouverte .dx-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:42px;height:42px;border-radius:50%;border:1px solid var(--line2);background:rgba(10,10,16,.7);backdrop-filter:blur(6px);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .2s,border-color .2s}
+  #decouverte .dx-nav:hover{background:var(--surface);border-color:var(--ax)}
+  #decouverte .dx-nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  #decouverte .dx-prev{left:15px}#decouverte .dx-next{right:15px}
+  #decouverte .dx-dots{display:flex;justify-content:center;gap:8px;padding:16px;border-top:1px solid var(--line)}
+  #decouverte .dx-dots button{width:8px;height:8px;border-radius:999px;border:0;background:var(--line2);cursor:pointer;padding:0;transition:width .25s,background .25s}
+  #decouverte .dx-dots button.on{width:26px;background:var(--grad)}
+  @media(max-width:760px){
+    #decouverte .dx-slide{grid-template-columns:1fr;min-height:0}
+    #decouverte .dx-media{height:170px}
+    #decouverte .dx-media::after{background:linear-gradient(0deg,var(--bg2),transparent 62%)}
+    #decouverte .dx-body{padding:26px 24px}
+    #decouverte .dx-nav{top:86px}
+  }
+  </style>
+  <section class="block" id="decouverte">
+    <div class="wrap">
+      <div class="shead" style="text-align:center;max-width:740px;margin:0 auto">
+        <span class="mono grad-text">Découverte</span>
+        <h2 style="font-size:clamp(26px,3.4vw,40px);font-weight:700;line-height:1.1;margin:12px 0 14px">Cinq secteurs, une seule chaîne</h2>
+        <p style="color:var(--muted);font-size:15px">La même chaîne de production — enrichir, composer, fusionner, exporter, diffuser — déclinée selon votre métier, du B2B au B2C.</p>
+      </div>
+
+      <div class="dx" aria-roledescription="diaporama" aria-label="Cas d'usage par secteur">
+        <div class="dx-track">
+
+          <article class="dx-slide" style="--ax:#fbbf24">
+            <div class="dx-media"><span class="dx-tag">01</span><img src="/promo/assets/drill.jpg" alt="Outillage" loading="lazy"/></div>
+            <div class="dx-body">
+              <div class="dx-eyebrow">Secteur 01 · B2B</div>
+              <div class="dx-sector">Bricolage &amp; Outillage</div>
+              <h3 class="dx-title">300 références, un catalogue prêt à maquetter</h3>
+              <ul class="dx-list">
+                <li><span><b>PIM</b> — specs Milwaukee &amp; Bosch scrapées et structurées (clé/valeur), visuels HD récupérés.</span></li>
+                <li><span><b>Workflows</b> — crawl → enrichir → exporter en lot, avec escalade anti-bot automatique.</span></li>
+                <li><span><b>Export IDML</b> — catalogue InDesign, champs EasyCatalog {{prix}} / {{réf}} conservés.</span></li>
+              </ul>
+              <div class="dx-chips"><span>PIM</span><span>Bright Data</span><span>Workflows</span><span>IDML</span><span>EasyCatalog</span></div>
+            </div>
+          </article>
+
+          <article class="dx-slide" style="--ax:#a3e635">
+            <div class="dx-media"><span class="dx-tag">02</span><img src="/promo/assets/plant.jpg" alt="Produit alimentaire" loading="lazy"/></div>
+            <div class="dx-body">
+              <div class="dx-eyebrow">Secteur 02 · B2C</div>
+              <div class="dx-sector">Alimentaire &amp; GMS</div>
+              <h3 class="dx-title">1 gabarit, 200 promos générées</h3>
+              <ul class="dx-list">
+                <li><span><b>Image → SVG</b> — le packaging est décomposé : fond verrouillé, prix et textes éditables.</span></li>
+                <li><span><b>Publipostage</b> — un template + un tableau → 200 étiquettes et PLV générées automatiquement.</span></li>
+                <li><span><b>Export PDF</b> — un seul fichier multi-pages, prêt pour l’impression hebdo.</span></li>
+              </ul>
+              <div class="dx-chips"><span>Image → SVG</span><span>Publipostage</span><span>Export PDF</span></div>
+            </div>
+          </article>
+
+          <article class="dx-slide" style="--ax:#f472b6">
+            <div class="dx-media"><span class="dx-tag">03</span><img src="/promo/assets/shirt.jpg" alt="Textile" loading="lazy"/></div>
+            <div class="dx-body">
+              <div class="dx-eyebrow">Secteur 03 · B2C / B2B</div>
+              <div class="dx-sector">Textile &amp; Mode</div>
+              <h3 class="dx-title">Une collection, toutes ses déclinaisons</h3>
+              <ul class="dx-list">
+                <li><span><b>Import PDF → SVG</b> — la maquette agence devient éditable, bloc par bloc.</span></li>
+                <li><span><b>Éditeur</b> — tailles, coloris et accroches ajustés sans rouvrir InDesign.</span></li>
+                <li><span><b>Export SVG + PPTX</b> — lookbook web et présentation showroom depuis le même document.</span></li>
+              </ul>
+              <div class="dx-chips"><span>PDF → SVG</span><span>Éditeur</span><span>SVG</span><span>PPTX</span></div>
+            </div>
+          </article>
+
+          <article class="dx-slide" style="--ax:#a855f7">
+            <div class="dx-media"><span class="dx-tag">04</span><img src="/promo/assets/bottle.jpg" alt="Flacon cosmétique" loading="lazy"/></div>
+            <div class="dx-body">
+              <div class="dx-eyebrow">Secteur 04 · B2C premium</div>
+              <div class="dx-sector">Cosmétique &amp; Beauté</div>
+              <h3 class="dx-title">Six ambiances fidèles à la charte</h3>
+              <ul class="dx-list">
+                <li><span><b>Import PDF → SVG</b> — l’affiche est détourée : photo, titre et prix isolés et modifiables.</span></li>
+                <li><span><b>IA générative</b> — déclinaisons visuelles par parfum, fidèles à la marque.</span></li>
+                <li><span><b>DAM + Export</b> — visuels rangés, réutilisables, exportés en print boutique et en social.</span></li>
+              </ul>
+              <div class="dx-chips"><span>PDF → SVG</span><span>IA générative</span><span>DAM</span><span>Export</span></div>
+            </div>
+          </article>
+
+          <article class="dx-slide" style="--ax:#22d3ee">
+            <div class="dx-media"><span class="dx-tag">05</span><img src="/promo/assets/head.jpg" alt="Accessoire auto-moto" loading="lazy"/></div>
+            <div class="dx-body">
+              <div class="dx-eyebrow">Secteur 05 · B2B terrain</div>
+              <div class="dx-sector">Accessoires auto / moto</div>
+              <h3 class="dx-title">Une fiche sur-mesure, par simple message</h3>
+              <ul class="dx-list">
+                <li><span><b>Bot Telegram</b> — le commercial demande la fiche depuis son téléphone, en clientèle.</span></li>
+                <li><span><b>Workflow IA</b> — généré à la volée : enrichir → composer → exporter.</span></li>
+                <li><span><b>Diffusion</b> — le PDF revient dans la conversation, Drive et Gmail en copie.</span></li>
+              </ul>
+              <div class="dx-chips"><span>Telegram</span><span>Workflows</span><span>Drive</span><span>Gmail</span></div>
+            </div>
+          </article>
+
+        </div>
+        <button class="dx-nav dx-prev" type="button" aria-label="Secteur précédent"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="dx-nav dx-next" type="button" aria-label="Secteur suivant"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <div class="dx-dots" role="tablist" aria-label="Secteurs"></div>
+      </div>
     </div>
   </section>
 
@@ -2453,6 +2586,38 @@
     if(e.isIntersecting){ if(!iv){ seq(); iv=setInterval(seq,7000); } }
     else { if(iv){ clearInterval(iv); iv=null; } clearT(); drop.classList.remove('open','picked'); }
   }); },{threshold:0.35}).observe(sv);
+})();
+</script>
+<script>
+/* Découverte — diaporama par secteur : flèches, dots, lecture auto (pause au survol / hors écran) */
+(function(){
+  var root=document.getElementById('decouverte'); if(!root) return;
+  var track=root.querySelector('.dx-track');
+  var slides=[].slice.call(root.querySelectorAll('.dx-slide'));
+  var dotsWrap=root.querySelector('.dx-dots');
+  var n=slides.length, i=0, iv=null;
+  var dots=slides.map(function(_,k){
+    var b=document.createElement('button'); b.type='button'; b.setAttribute('role','tab');
+    b.setAttribute('aria-label','Secteur '+(k+1));
+    b.addEventListener('click',function(){ go(k); rest(); });
+    dotsWrap.appendChild(b); return b;
+  });
+  function render(){
+    track.style.transform='translateX(-'+(i*100)+'%)';
+    dots.forEach(function(d,k){ d.classList.toggle('on',k===i); d.setAttribute('aria-selected',k===i?'true':'false'); });
+  }
+  function go(k){ i=(k%n+n)%n; render(); }
+  root.querySelector('.dx-prev').addEventListener('click',function(){ go(i-1); rest(); });
+  root.querySelector('.dx-next').addEventListener('click',function(){ go(i+1); rest(); });
+  function play(){ if(iv) return; iv=setInterval(function(){ go(i+1); },6000); }
+  function stop(){ if(iv){ clearInterval(iv); iv=null; } }
+  function rest(){ stop(); play(); }
+  root.addEventListener('mouseenter',stop); root.addEventListener('mouseleave',play);
+  render();
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){ es.forEach(function(e){ e.isIntersecting?play():stop(); }); },{threshold:.3}).observe(root);
+  } else { play(); }
 })();
 </script>
 </body>
