@@ -637,6 +637,25 @@
   .db-var .nm{font-size:8px;font-weight:700;color:#1e293b;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .db-var .pr{font-size:9.5px;font-weight:800;color:#dc2626;margin-top:1px}
   .db-count{font-size:11px;color:var(--muted);margin-top:11px}.db-count b{font-size:22px;color:var(--ink);font-weight:800;margin-right:6px}
+  .db-tpl .db-badge{align-self:flex-start;font-family:var(--mono);font-size:8.5px;font-weight:800;color:#fff;background:#dc2626;border-radius:5px;padding:2px 7px;opacity:0;transform:scale(.8);transition:opacity .25s,transform .25s}
+  .db-tpl.bound .db-badge{opacity:1;transform:scale(1)}
+  /* bandeau bas : liaison des champs + export du lot */
+  .db-foot{margin-top:17px;padding-top:16px;border-top:1px solid var(--line);display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start}
+  .db-maprow{display:grid;grid-template-columns:auto 16px 1fr;align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--line)}
+  .db-maprow:first-of-type{border-top:0;padding-top:2px}
+  .db-maprow .mk{font-family:var(--mono);font-size:9px;color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.35);border-radius:5px;padding:2px 7px;justify-self:start}
+  .db-maprow .ar{color:var(--faint);display:grid;place-items:center}.db-maprow .ar svg{width:13px;height:13px}
+  .db-maprow .mc{font-size:11px;color:var(--ink);display:flex;align-items:center;gap:7px;min-width:0}
+  .db-maprow .mc .dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 7px #34d399;flex:0 0 auto}
+  .db-maprow .mc .col{font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .db-fmts{display:flex;gap:6px;margin:10px 0 14px;flex-wrap:wrap}
+  .db-fmts span{font-family:var(--mono);font-size:9px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:3px 9px}
+  .db-fmts span.on{color:#fff;background:var(--indigo);border-color:var(--indigo);box-shadow:0 4px 12px -4px var(--indigo)}
+  .db-progwrap{display:flex;align-items:center;gap:11px;margin-top:2px}
+  .db-prog{flex:1;height:7px;border-radius:5px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+  .db-prog i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,var(--indigo),var(--cyan));transition:width .5s ease}
+  .db-progn{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}.db-progn b{color:var(--ink);font-weight:800}
+  .db-note{font-size:10px;color:var(--faint);margin-top:10px;display:flex;align-items:center;gap:6px}.db-note svg{width:12px;height:12px;flex:0 0 auto;color:#34d399}
   /* Paramètres (clés & modèles) */
   .set-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .set-card{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px}
@@ -1538,7 +1557,7 @@
             <div class="db-right">
               <div class="db-lbl"><span>Gabarit → 1 déclinaison / ligne</span></div>
               <div class="db-merge">
-                <div class="db-tpl"><div class="im"><span class="ph">{{ image }}</span><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><span class="db-ph" data-k="nom"><span class="ph">{{ nom }}</span><span class="val"></span></span><span class="db-ph" data-k="prix"><span class="ph">{{ prix }}</span><span class="val"></span></span></div>
+                <div class="db-tpl"><div class="im"><span class="ph">{{ image }}</span><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></div><span class="db-ph" data-k="nom"><span class="ph">{{ nom }}</span><span class="val"></span></span><span class="db-ph" data-k="prix"><span class="ph">{{ prix }}</span><span class="val"></span></span><span class="db-ph" data-k="ref"><span class="ph">{{ réf }}</span><span class="val"></span></span><span class="db-badge"></span></div>
                 <div class="db-arrow"><span class="spark"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
                 <div class="db-out">
                   <div class="db-variants">
@@ -1552,6 +1571,22 @@
                 </div>
               </div>
               <div class="db-count"><b>248</b> déclinaisons générées — une par produit, prêtes à exporter</div>
+            </div>
+          </div>
+          <div class="db-foot">
+            <div class="db-map">
+              <div class="db-lbl"><span>Liaison des champs</span><span>→ colonnes PIM</span></div>
+              <div class="db-maprow"><span class="mk">{{ image }}</span><span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="mc"><span class="dot"></span>Visuel principal<span class="col">· col. F</span></span></div>
+              <div class="db-maprow"><span class="mk">{{ nom }}</span><span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="mc"><span class="dot"></span>Désignation<span class="col">· col. A</span></span></div>
+              <div class="db-maprow"><span class="mk">{{ prix }}</span><span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="mc"><span class="dot"></span>Prix TTC<span class="col">· col. C</span></span></div>
+              <div class="db-maprow"><span class="mk">{{ réf }}</span><span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="mc"><span class="dot"></span>Référence SKU<span class="col">· col. B</span></span></div>
+              <div class="db-maprow"><span class="mk">{{ remise }}</span><span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span class="mc"><span class="dot"></span>Remise %<span class="col">· col. H</span></span></div>
+            </div>
+            <div class="db-export">
+              <div class="db-lbl"><span>Export du lot</span><span>1 page / ligne</span></div>
+              <div class="db-fmts"><span class="on">PDF</span><span>PNG</span><span>IDML</span><span>PPTX</span><span>A4</span></div>
+              <div class="db-progwrap"><div class="db-prog"><i></i></div><span class="db-progn">Génération <b>0</b> / 248</span></div>
+              <div class="db-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Streaming progressif — abandon possible à tout moment</div>
             </div>
           </div>
         </div></div>
@@ -2068,23 +2103,29 @@
   var vars=[].slice.call(sv.querySelectorAll('.db-var'));
   var tpl=sv.querySelector('.db-tpl'); if(!tpl) return;
   var im=tpl.querySelector('.im'), imUse=im.querySelector('use'), arrow=sv.querySelector('.db-arrow');
-  var phNom=sv.querySelector('.db-ph[data-k="nom"]'), phPrix=sv.querySelector('.db-ph[data-k="prix"]');
+  var phNom=sv.querySelector('.db-ph[data-k="nom"]'), phPrix=sv.querySelector('.db-ph[data-k="prix"]'), phRef=sv.querySelector('.db-ph[data-k="ref"]');
+  var badge=tpl.querySelector('.db-badge'), prog=sv.querySelector('.db-prog i'), progN=sv.querySelector('.db-progn b');
   if(!phNom||!phPrix||!rows.length||!vars.length) return;
   var icos=['#ic-drill','#ic-drill2','#ic-drill3','#ic-drill4','#ic-drill5','#ic-drill6'];
-  var data=rows.map(function(r,i){ var s=r.querySelectorAll('span'); return {nom:s[0].textContent, prix:s[1].textContent, ico:icos[i%icos.length]}; });
-  var n=Math.min(rows.length, vars.length), t=[], iv=null, i=0;
+  var refs=['REF-67890','MEU-0750','SCI-1490','VIS-0120','PON-0649','RAB-0900'];
+  var rem=['−10 %','−15 %','−20 %','−12 %','−18 %','−25 %'];
+  var data=rows.map(function(r,i){ var s=r.querySelectorAll('span'); return {nom:s[0].textContent, prix:s[1].textContent, ico:icos[i%icos.length], ref:refs[i%refs.length], rem:rem[i%rem.length]}; });
+  var n=Math.min(rows.length, vars.length), TOTAL=248, t=[], iv=null, i=0;
   function clearT(){ t.forEach(clearTimeout); t=[]; }
-  function unbind(){ tpl.classList.remove('bound'); im.classList.remove('bound'); phNom.classList.remove('bound'); phPrix.classList.remove('bound'); }
-  function reset(){ rows.forEach(function(r){r.classList.remove('on');}); vars.forEach(function(v){v.classList.add('pending'); v.classList.remove('lit','stamp');}); unbind(); }
+  function setProg(done){ var p=Math.min(1, done/n); if(prog) prog.style.width=(p*100).toFixed(0)+'%'; if(progN) progN.textContent=Math.round(p*TOTAL); }
+  function unbind(){ tpl.classList.remove('bound'); im.classList.remove('bound'); phNom.classList.remove('bound'); phPrix.classList.remove('bound'); if(phRef) phRef.classList.remove('bound'); }
+  function reset(){ rows.forEach(function(r){r.classList.remove('on');}); vars.forEach(function(v){v.classList.add('pending'); v.classList.remove('lit','stamp');}); unbind(); setProg(0); }
   function bind(d){ phNom.querySelector('.val').textContent=d.nom; phPrix.querySelector('.val').textContent=d.prix; imUse.setAttribute('href', d.ico);
+    if(phRef){ phRef.querySelector('.val').textContent=d.ref; phRef.classList.add('bound'); }
+    if(badge) badge.textContent=d.rem;
     tpl.classList.add('bound'); im.classList.add('bound'); phNom.classList.add('bound'); phPrix.classList.add('bound'); }
   function step(){
     if(i>=n){ reset(); i=0; return; } /* tour plein : on tient l'aperçu une tick puis on relance */
-    var d=data[i], row=rows[i], v=vars[i];
+    var d=data[i], row=rows[i], v=vars[i], k=i;
     rows.forEach(function(r){r.classList.remove('on');}); row.classList.add('on');
     t.push(setTimeout(function(){ bind(d); }, 240));
     t.push(setTimeout(function(){ arrow.classList.add('flow'); }, 700));
-    t.push(setTimeout(function(){ arrow.classList.remove('flow'); v.classList.remove('pending'); v.classList.add('stamp','lit'); }, 1040));
+    t.push(setTimeout(function(){ arrow.classList.remove('flow'); v.classList.remove('pending'); v.classList.add('stamp','lit'); setProg(k+1); }, 1040));
     t.push(setTimeout(function(){ v.classList.remove('lit'); unbind(); }, 1340));
     i++;
   }
