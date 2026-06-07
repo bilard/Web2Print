@@ -785,15 +785,15 @@
   #editer .scene-visual.is-in .lay.on{animation:rowScan 3s ease-in-out infinite}
 
   /* 04 Bibliothèque — projets qui apparaissent en vague (4 colonnes) */
-  #bibliotheque .scene-visual.is-in .lib-card{animation:libBrowse 6s ease-in-out infinite}
-  #bibliotheque .scene-visual.is-in .lib-card .rip{animation:libRipple 6s ease-out infinite}
-  #bibliotheque .scene-visual.is-in .lib-card:nth-child(2),#bibliotheque .scene-visual.is-in .lib-card:nth-child(2) .rip{animation-delay:1s}
-  #bibliotheque .scene-visual.is-in .lib-card:nth-child(3),#bibliotheque .scene-visual.is-in .lib-card:nth-child(3) .rip{animation-delay:2s}
-  #bibliotheque .scene-visual.is-in .lib-card:nth-child(4),#bibliotheque .scene-visual.is-in .lib-card:nth-child(4) .rip{animation-delay:3s}
-  #bibliotheque .scene-visual.is-in .lib-card:nth-child(5),#bibliotheque .scene-visual.is-in .lib-card:nth-child(5) .rip{animation-delay:4s}
-  #bibliotheque .scene-visual.is-in .lib-card:nth-child(6),#bibliotheque .scene-visual.is-in .lib-card:nth-child(6) .rip{animation-delay:5s}
-  @keyframes libBrowse{0%,4%,18%,100%{border-color:var(--line2);box-shadow:none;transform:none}6%{transform:scale(.975)}9%,13%{border-color:rgba(124,108,255,.6);box-shadow:0 12px 28px -14px #000,0 0 18px -8px var(--indigo);transform:translateY(-3px)}}
-  @keyframes libRipple{0%,5%{transform:translate(-50%,-50%) scale(0);opacity:.6}14%{transform:translate(-50%,-50%) scale(11);opacity:0}14.01%,100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
+  /* menu de gauche activé + tri/filtre virtuel des projets (piloté par JS) */
+  #bibliotheque .lib-card{transition:opacity .45s ease,filter .45s ease,transform .35s cubic-bezier(.2,.8,.3,1),box-shadow .3s,border-color .3s}
+  #bibliotheque .lib-card.dim{opacity:.15;filter:grayscale(.7) brightness(.82);transform:scale(.96)}
+  #bibliotheque .lib-card.hot{border-color:rgba(124,108,255,.55);box-shadow:0 12px 28px -14px #000,0 0 18px -9px var(--indigo);transform:translateY(-3px)}
+  #bibliotheque .lib-card.hot .rip{animation:libRipple .65s ease-out}
+  @keyframes libRipple{0%{transform:translate(-50%,-50%) scale(0);opacity:.5}100%{transform:translate(-50%,-50%) scale(10);opacity:0}}
+  #bibliotheque .lib-side .li{position:relative;cursor:pointer;transition:background .2s,color .2s}
+  #bibliotheque .lib-side .li.pulse{animation:liPulse .55s ease}
+  @keyframes liPulse{0%{transform:scale(.96)}55%{box-shadow:0 0 15px -2px rgba(124,108,255,.7)}100%{transform:scale(1)}}
 
   /* 05 DAM — médias qui se chargent en vague (6 colonnes) */
   #dam .scene-visual.is-in .dam-grid i{animation:cyclePop 5s ease-in-out infinite}
@@ -1247,7 +1247,7 @@
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
           <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Bibliothèque — projets</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:14%;--y1:42%;--x2:58%;--y2:55%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:13%;--y1:24%;--x2:14%;--y2:46%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="lib-body mk-body">
             <div class="lib-side">
               <div class="lh">Taxonomie</div>
@@ -1920,6 +1920,34 @@
 })();
 </script>
 
+<script>
+/* Bibliothèque — active le menu de gauche en boucle + tri/filtre virtuel des projets */
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var sv=document.querySelector('#bibliotheque .scene-visual'); if(!sv) return;
+  var lis=[].slice.call(sv.querySelectorAll('.lib-side .li'));
+  var cards=[].slice.call(sv.querySelectorAll('.lib-card'));
+  if(lis.length<5 || cards.length<6) return;
+  /* index des projets par catégorie : Tous, Affiches[Soldes,Flyer], Catalogues[Catalogue], Réseaux[Story,Bannière], PLV[PLV] */
+  var filters=[null,[1,4],[0],[2,5],[3]];
+  var i=0, iv=null;
+  function step(){
+    var f=filters[i];
+    lis.forEach(function(li,k){ li.classList.toggle('on',k===i); });
+    var cur=lis[i]; cur.classList.remove('pulse'); void cur.offsetWidth; cur.classList.add('pulse');
+    cards.forEach(function(c,k){ var show=!f || f.indexOf(k)>=0;
+      c.classList.toggle('dim',!show);
+      c.classList.remove('hot'); if(f&&show){ void c.offsetWidth; c.classList.add('hot'); }
+    });
+    i=(i+1)%filters.length;
+  }
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ if(!iv){ i=0; step(); iv=setInterval(step,2300); } }
+    else { if(iv){ clearInterval(iv); iv=null; } lis.forEach(function(li,k){li.classList.toggle('on',k===0);}); cards.forEach(function(c){c.classList.remove('dim','hot');}); }
+  }); },{threshold:0.3}).observe(sv);
+})();
+</script>
 <script>
 /* Taxonomies — démo : glisser pour trier les niveaux + éditer un nom */
 (function(){
