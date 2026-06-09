@@ -1582,6 +1582,10 @@ export async function decomposeOnCanvas(
   let kept: number
   try {
     const toastId: string | number = 'wf'
+    // Snapshot AVANT les passes : permet d'identifier les overlays fraîchement
+    // ajoutés (à re-mapper) sans toucher aux objets préexistants du canvas.
+    const beforeObjects = new Set(canvas.getObjects())
+
     const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId)
     if (keptSem === null) {
       kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId)
@@ -1589,12 +1593,37 @@ export async function decomposeOnCanvas(
       kept = keptSem
     }
 
+    const bgRoot = canvas.getObjects().find(isBgLockedMarker)
+
+    // Re-mappe les overlays des coordonnées IMAGE (pixels du raster analysé par
+    // Vision) vers le repère CANVAS réel du calque bg. Si le canvas projet ≠
+    // pixels du raster (page redimensionnée, PDF importé dans un format
+    // existant), le calque bg est affiché À L'ÉCHELLE — sans re-mapping, les
+    // overlays sortent trop grands et décalés (vu : ×1.75 sur carte promo DT).
+    if (bgRoot) {
+      const r = bgRoot.getBoundingRect()
+      const sx = r.width / width
+      const sy = r.height / height
+      const needsRemap =
+        Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001 ||
+        Math.abs(r.left) > 0.5 || Math.abs(r.top) > 0.5
+      if (needsRemap) {
+        for (const o of canvas.getObjects()) {
+          if (beforeObjects.has(o)) continue
+          o.set({
+            left: r.left + (o.left ?? 0) * sx,
+            top: r.top + (o.top ?? 0) * sy,
+            scaleX: (o.scaleX ?? 1) * sx,
+            scaleY: (o.scaleY ?? 1) * sy,
+          })
+          o.setCoords()
+        }
+      }
+    }
+
     // hideBg (workflow) : cache l'image bg → template propre sur fond blanc.
     // Éditeur (hideBg: false) : le raster reste visible, les overlays recouvrent.
-    if (hideBg) {
-      const bgRoot = canvas.getObjects().find(isBgLockedMarker)
-      if (bgRoot) bgRoot.set({ visible: false })
-    }
+    if (hideBg && bgRoot) bgRoot.set({ visible: false })
 
     canvas.requestRenderAll()
     if (syncStore) syncToStore(canvas)
