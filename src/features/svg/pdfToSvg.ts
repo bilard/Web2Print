@@ -49,6 +49,81 @@ const slugifyFileName = (name: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'pdf'
 
+/** Uint8Array → base64 (chunké : btoa ne digère pas les gros buffers d'un coup). */
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  const CHUNK = 0x8000
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
+  }
+  return btoa(binary)
+}
+
+/**
+ * Ré-encode les images du PDF en PNG RGB via MuPDF lui-même. mutool embarque
+ * les flux JPEG d'ORIGINE dans le SVG — or les JPEG CMYK Adobe (InDesign) sont
+ * mal décodés par les navigateurs (photo noire/inversée). MuPDF, lui, gère
+ * CMYK/ICC correctement : on intercepte chaque image via un Device JS et on
+ * remplace les data-URI du SVG dans l'ordre du flux de contenu.
+ */
+function reencodeMupdfImages(
+  mupdfMod: typeof import('mupdf'),
+  page: { run(device: unknown, matrix: unknown): void },
+  svg: string,
+): string {
+  const pngs: string[] = []
+  try {
+    const dev = new mupdfMod.Device({
+      fillImage(image: { toPixmap(): { asPNG(): Uint8Array; destroy?: () => void } }) {
+        try {
+          const pix = image.toPixmap()
+          pngs.push(`data:image/png;base64,${uint8ToBase64(pix.asPNG())}`)
+          pix.destroy?.()
+        } catch {
+          pngs.push('')
+        }
+      },
+      fillImageMask() {},
+      clipImageMask() {},
+    } as unknown as ConstructorParameters<typeof mupdfMod.Device>[0])
+    page.run(dev, mupdfMod.Matrix.identity)
+  } catch (err) {
+    console.warn('[pdfToSvg] interception images MuPDF partielle:', err)
+  }
+  if (pngs.length === 0) return svg
+  let idx = 0
+  return svg.replace(/(<image\b[^>]*?(?:xlink:)?href=")data:image\/[^"]+(")/g, (full, pre: string, post: string) => {
+    const rep = pngs[idx++]
+    return rep ? pre + rep + post : full
+  })
+}
+
+/**
+ * Nettoie les polices en sous-ensembles PDF (« WRZTFA+ArialNarrow-Bold ») :
+ * retire le préfixe de subset, déduit la graisse du nom, mappe vers des
+ * familles installées avec fallback sans-serif.
+ */
+function cleanSubsetFontFamilies(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  for (const t of Array.from(dom.querySelectorAll('text'))) {
+    const raw = t.getAttribute('font-family') ?? ''
+    if (!raw) continue
+    let family = raw.replace(/^[A-Z]{6}\+/, '')
+    if (/bold|black|heavy/i.test(family) && !t.getAttribute('font-weight')) {
+      t.setAttribute('font-weight', 'bold')
+    }
+    if (/italic|oblique/i.test(family) && !t.getAttribute('font-style')) {
+      t.setAttribute('font-style', 'italic')
+    }
+    // « ArialNarrow-Bold » → « Arial Narrow » ; retire le suffixe de style.
+    family = family.replace(/[-_](Bold|Black|Heavy|Italic|Oblique|Regular|Light|Medium|Condensed)+$/i, '')
+    const spaced = family.replace(/([a-z])([A-Z])/g, '$1 $2')
+    t.setAttribute('font-family', `${spaced}, Arial, sans-serif`)
+  }
+  return new XMLSerializer().serializeToString(dom)
+}
+
 /**
  * Aplatis les <text transform="matrix(a b c d e f)"><tspan y x="x0 x1 …"> de
  * MuPDF en <text x y> simples compréhensibles par l'importeur Fabric. Les
@@ -115,6 +190,10 @@ async function convertWithMupdf(
       // textes horizontaux non déformés sont aplatis ; les rares rotatés
       // gardent leur transform (rendus par Fabric tel quel).
       svg = flattenMupdfTextTransforms(svg)
+      // JPEG CMYK Adobe → PNG RGB décodés par MuPDF (photo noire sinon).
+      svg = reencodeMupdfImages(mupdf, page, svg)
+      // Polices en sous-ensembles (WRZTFA+ArialNarrow-Bold) → familles propres.
+      svg = cleanSubsetFontFamilies(svg)
 
       const wm = svg.match(/width="([\d.]+)"/)
       const hm = svg.match(/height="([\d.]+)"/)
