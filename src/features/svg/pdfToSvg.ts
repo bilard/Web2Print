@@ -50,6 +50,36 @@ const slugifyFileName = (name: string): string =>
     .slice(0, 40) || 'pdf'
 
 /**
+ * Aplatis les <text transform="matrix(a b c d e f)"><tspan y x="x0 x1 …"> de
+ * MuPDF en <text x y> simples compréhensibles par l'importeur Fabric. Les
+ * matrices diagonales (échelle uniforme, pas de rotation) sont absorbées dans
+ * x/y/font-size ; les autres (texte rotaté) sont laissées telles quelles.
+ */
+function flattenMupdfTextTransforms(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  for (const t of Array.from(dom.querySelectorAll('text'))) {
+    const tr = t.getAttribute('transform') ?? ''
+    const m = tr.match(/matrix\(\s*([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)\s*\)/i)
+    const [a, b, c, d, e, f] = m ? m.slice(1).map(Number) : [1, 0, 0, 1, 0, 0]
+    // Rotation / cisaillement / échelle non uniforme → on ne touche pas.
+    if (Math.abs(b) > 0.001 || Math.abs(c) > 0.001 || Math.abs(a - d) > 0.001 || a <= 0) continue
+    const tspan = t.querySelector('tspan')
+    const holder = tspan ?? t
+    const xs = (holder.getAttribute('x') ?? '0').trim().split(/\s+/).map(Number)
+    const y = Number(holder.getAttribute('y') ?? '0')
+    const content = holder.textContent ?? ''
+    const fontSize = Number(t.getAttribute('font-size') ?? '12')
+    t.removeAttribute('transform')
+    t.setAttribute('x', (xs[0] * a + e).toFixed(2))
+    t.setAttribute('y', (y * d + f).toFixed(2))
+    t.setAttribute('font-size', (fontSize * a).toFixed(2))
+    t.textContent = content
+  }
+  return new XMLSerializer().serializeToString(dom)
+}
+
+/**
  * Conversion VECTORIELLE via MuPDF (WASM, moteur de mutool) : le PDF devient un
  * vrai SVG — paths exacts, images embarquées, et TEXTE RÉEL (`text=text`) avec
  * positions par glyphe, couleur, taille et graisse natives. Fidélité totale,
@@ -78,6 +108,13 @@ async function convertWithMupdf(
         .replace(/font-family="Nimbus Sans[^"]*"/g, 'font-family="Arial, Helvetica, sans-serif"')
         .replace(/font-family="Nimbus Roman[^"]*"/g, 'font-family="\'Times New Roman\', serif"')
         .replace(/font-family="Nimbus Mono[^"]*"/g, 'font-family="\'Courier New\', monospace"')
+
+      // Aplatis les <text> MuPDF (transform matrix + tspan avec x PAR GLYPHE)
+      // en <text x y> simples : l'importeur SVG Fabric ne gère ni l'un ni
+      // l'autre (tous les textes atterrissaient empilés en 0,0). Seuls les
+      // textes horizontaux non déformés sont aplatis ; les rares rotatés
+      // gardent leur transform (rendus par Fabric tel quel).
+      svg = flattenMupdfTextTransforms(svg)
 
       const wm = svg.match(/width="([\d.]+)"/)
       const hm = svg.match(/height="([\d.]+)"/)
