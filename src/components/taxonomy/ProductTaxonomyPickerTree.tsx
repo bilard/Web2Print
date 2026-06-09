@@ -78,7 +78,6 @@ export function ProductTaxonomyPickerTree({
       result = result.filter(hasProductInBranch)
     }
     return result
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree, search, withProductsOnly, counts])
 
   const renderNode = (node: TaxonomyNodeWithChildren) => {

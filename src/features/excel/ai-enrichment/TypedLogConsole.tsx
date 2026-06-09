@@ -63,7 +63,7 @@ const TYPE_ORDER: LogType[] = ['warning', 'scrape', 'llm', 'parse', 'network', '
 /** Infère le type d'un log à partir de son contenu — priorité aux marqueurs
  *  d'avertissement (qui peuvent être présents dans n'importe quelle catégorie),
  *  puis classification par mots-clés métier. */
-export function inferLogType(message: string): LogType {
+function inferLogType(message: string): LogType {
   const m = message.toLowerCase()
   // 1. Warning : symboles + lexique d'échec (priorité absolue, peu importe le sujet)
   if (/^[⚠✗]/.test(message) || /\b(?:bloqué|bloque|échou[eé]|insuffisant|abandonn[eé]|erreur|invalidé|invalid|fail)/i.test(m)) {

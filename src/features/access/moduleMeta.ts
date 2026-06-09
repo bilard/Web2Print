@@ -24,7 +24,7 @@ const FALLBACK: ModuleMeta = {
   chipOn: 'bg-white/15 border-white/30 text-white', bar: 'bg-white/20', text: 'text-white/70',
 }
 
-export const MODULE_META: Record<string, ModuleMeta> = {
+const MODULE_META: Record<string, ModuleMeta> = {
   'Bibliothèque': { icon: Library,         dot: 'bg-sky-500/15 text-sky-300',     chipOn: 'bg-sky-500/20 border-sky-500/50 text-sky-100',         bar: 'bg-sky-500',     text: 'text-sky-300' },
   'Import':       { icon: Upload,          dot: 'bg-amber-500/15 text-amber-300', chipOn: 'bg-amber-500/20 border-amber-500/50 text-amber-100',   bar: 'bg-amber-500',   text: 'text-amber-300' },
   'DAM':          { icon: ImageIcon,       dot: 'bg-pink-500/15 text-pink-300',   chipOn: 'bg-pink-500/20 border-pink-500/50 text-pink-100',      bar: 'bg-pink-500',    text: 'text-pink-300' },
@@ -43,7 +43,7 @@ export function moduleMeta(module: string): ModuleMeta {
 }
 
 /** Couleur brute (hex) par module — pour les liens SVG de la carte mentale (React Flow). */
-export const MODULE_HEX: Record<string, string> = {
+const MODULE_HEX: Record<string, string> = {
   'Bibliothèque': '#0ea5e9', 'Import': '#f59e0b', 'DAM': '#ec4899', 'PIM': '#10b981',
   'Taxonomies': '#14b8a6', 'Scraping': '#6366f1', 'Workflows': '#8b5cf6', 'Animation': '#d946ef',
   'Chat IA': '#06b6d4', 'Telegram': '#3b82f6', 'Paramètres': '#94a3b8',
@@ -53,7 +53,7 @@ export function moduleHex(module: string): string {
 }
 
 /** Ordre d'affichage = ordre de navigation de l'app (barre latérale). */
-export const MODULE_ORDER = [
+const MODULE_ORDER = [
   'Import', 'Bibliothèque', 'DAM', 'PIM', 'Taxonomies', 'Scraping',
   'Workflows', 'Telegram', 'Animation', 'Chat IA', 'Paramètres',
 ]

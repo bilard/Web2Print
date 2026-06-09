@@ -12,7 +12,7 @@ export interface PptxColor {
   alpha: number // 0–1 (1 = opaque)
 }
 
-export interface PptxGradientStop {
+interface PptxGradientStop {
   position: number  // 0–1
   color: PptxColor
 }
@@ -30,7 +30,7 @@ export interface PptxShadow {
   offsetY: number   // EMU
 }
 
-export interface PptxTransform {
+interface PptxTransform {
   x: number    // EMU depuis le coin haut-gauche de la slide
   y: number
   cx: number   // largeur EMU
@@ -40,7 +40,7 @@ export interface PptxTransform {
   flipV: boolean
 }
 
-export interface PptxRun {
+interface PptxRun {
   text: string
   bold: boolean
   italic: boolean
@@ -84,7 +84,7 @@ export interface PptxPicture {
   dataUrl: string  // base64 data URL extrait du ZIP
 }
 
-export type PptxElement = PptxShape | PptxPicture
+type PptxElement = PptxShape | PptxPicture
 
 export interface PptxSlide {
   widthEmu: number

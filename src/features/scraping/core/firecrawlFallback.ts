@@ -3,7 +3,7 @@
  * Utilisé en fallback quand Jina retourne un markdown trop pauvre (anti-bot Akamai).
  */
 
-export interface FirecrawlExtract {
+interface FirecrawlExtract {
   description?: string
   advantages?: string[]
   specs?: Array<{ name: string; value: string }>

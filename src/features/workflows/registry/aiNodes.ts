@@ -41,7 +41,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
   return btoa(binary)
 }
 
-export const generateImageNode: NodeSpec<
+const generateImageNode: NodeSpec<
   GenerateImageConfig,
   GenerateImageInputs,
   GenerateImageOutputs

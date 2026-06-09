@@ -2,7 +2,7 @@
 import type { WorkflowNode, WorkflowEdge } from '../types'
 
 /** Node tel que renvoyé par le LLM : ref locale, pas d'id ni de position. */
-export interface RawNode {
+interface RawNode {
   ref: string
   type: string
   label?: string
@@ -12,7 +12,7 @@ export interface RawNode {
 }
 
 /** Edge tel que renvoyé par le LLM : références aux refs locales + noms de ports. */
-export interface RawEdge {
+interface RawEdge {
   from: string
   fromPort: string
   to: string

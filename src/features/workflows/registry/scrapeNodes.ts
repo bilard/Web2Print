@@ -88,7 +88,7 @@ function rowsToSheet(
   return { name, columns, rows: excelRows, taxonomy: [] }
 }
 
-export const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlOutputs> = {
+const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlOutputs> = {
   type: 'scrape-url',
   category: 'import',
   label: 'Scrape URL',

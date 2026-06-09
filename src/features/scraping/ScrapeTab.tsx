@@ -3,7 +3,7 @@ import {
   Sparkles, Loader2, Timer, RefreshCw, Package, Cpu, PackageCheck,
   LayoutList, FileText, Users, ChevronDown, ChevronUp, ChevronLeft, X as XIcon, FileText as FilePdfIcon,
 } from 'lucide-react'
-import type { ScrapingField, ScrapingMode, ScrapeResult, ExtractionTarget } from './useJina'
+import type { ScrapingField, ScrapingMode, ExtractionTarget } from './useJina'
 import { SchemaEditor } from './SchemaEditor'
 import { FIELD_TEMPLATES } from './useJina'
 import { BrandSuggestion } from './BrandSuggestion'
@@ -24,7 +24,6 @@ interface Props {
     mode: ScrapingMode, fields: ScrapingField[], prompt: string,
     opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean; manualBreadcrumb?: string[] }
   ) => void
-  result: ScrapeResult | null
   onUrlSuggestion?: (url: string) => void
   onEnrichMany?: (urls: string[]) => Promise<void> | void
   batchRunning?: boolean
@@ -42,7 +41,7 @@ const TEMPLATES = [
 
 type MultiMode = 'list' | 'file' | 'sheet'
 
-export function ScrapeTab({ url, loading, onScrape, result, onUrlSuggestion, onEnrichMany, batchRunning, logs }: Props) {
+export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMany, batchRunning, logs }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [templateKey, setTemplateKey] = useState<string>('product_full')
   const [showMulti, setShowMulti] = useState(false)

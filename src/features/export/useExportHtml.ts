@@ -152,7 +152,7 @@ export interface ExportHtmlBlobOptions {
  * Cœur paramétré : génère un Blob ZIP HTML autonome depuis le canvas Fabric fourni.
  * Ne déclenche aucun téléchargement. Utilisable depuis les workflows.
  */
-export async function exportHtmlBlob(canvas: Canvas, opts: ExportHtmlBlobOptions): Promise<Blob> {
+async function exportHtmlBlob(canvas: Canvas, opts: ExportHtmlBlobOptions): Promise<Blob> {
   const { canvasWidth, canvasHeight, title = 'Design' } = opts
 
   canvas.discardActiveObject()

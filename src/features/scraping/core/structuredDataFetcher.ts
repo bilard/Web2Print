@@ -2,7 +2,7 @@ import { parseStructuredDataAny, type StructuredProductData } from './structured
 import { looksLikeBotChallenge } from '@/features/excel/ai-enrichment/markdownSanitize'
 import { firecrawlScrapeHtml } from './firecrawlFallback'
 import { isHostKnownBlocked, markHostBlocked } from './brightDataFallback'
-import { brightDataScrapeHtml, getLastBrightDataError } from './brightDataFallback'
+import { brightDataScrapeHtml } from './brightDataFallback'
 import { getApiKey } from '@/lib/apiKeys'
 
 const CORS_PROXIES = [
@@ -162,7 +162,6 @@ export async function extractStructuredDataFromUrl(
   }
 
   // 4. Bright Data Web Unlocker (anti-bot premium via Cloud Function)
-  let bdNotConfigured = false
   try {
     const html = await brightDataScrapeHtml(url)
     if (html && !htmlLooksLikeChallenge(html)) {
@@ -173,10 +172,6 @@ export async function extractStructuredDataFromUrl(
       }
     } else if (html) {
       console.log('[structured-data] Bright Data also returned challenge')
-    } else {
-      // Pas de HTML → vérifier si c'est parce que BD n'est pas configurée
-      const bdErr = getLastBrightDataError()
-      if (bdErr?.code === 'not_configured') bdNotConfigured = true
     }
   } catch (err) {
     console.warn('[structured-data] Bright Data fetch failed:', err)

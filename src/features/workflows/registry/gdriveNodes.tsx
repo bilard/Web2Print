@@ -257,7 +257,7 @@ function GSheetsImportConfigUi({
   )
 }
 
-export const gsheetsImportNode: NodeSpec<
+const gsheetsImportNode: NodeSpec<
   GSheetsImportConfig,
   Record<string, never>,
   { sheet: ExcelSheet }
@@ -358,7 +358,7 @@ function GSheetsExportConfigUi({
   )
 }
 
-export const gsheetsExportNode: NodeSpec<
+const gsheetsExportNode: NodeSpec<
   GSheetsExportConfig,
   { sheet: unknown },
   { result: DriveFileMeta }
@@ -414,7 +414,7 @@ function GDriveImportConfigUi({
   )
 }
 
-export const gdriveImportNode: NodeSpec<
+const gdriveImportNode: NodeSpec<
   GDriveImportConfig,
   Record<string, never>,
   { file: File }
@@ -478,7 +478,7 @@ function GDriveExportConfigUi({
   )
 }
 
-export const gdriveExportNode: NodeSpec<
+const gdriveExportNode: NodeSpec<
   GDriveExportConfig,
   { file: File | Blob | null },
   { result: DriveFileMeta }
@@ -632,7 +632,7 @@ function SaveDamConfigUi({
   )
 }
 
-export const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: DamAsset[] }> = {
+const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: DamAsset[] }> = {
   type: 'save-dam',
   category: 'persistence',
   label: 'Save DAM',

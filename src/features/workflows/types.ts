@@ -10,7 +10,7 @@ export interface Port {
   required?: boolean
 }
 
-export type ConfigFieldKind =
+type ConfigFieldKind =
   | 'text'
   | 'textarea'
   | 'number'
@@ -29,7 +29,7 @@ export interface ConfigField {
   help?: string
 }
 
-export type NodeRuntime = 'client' | 'server' | 'any'
+type NodeRuntime = 'client' | 'server' | 'any'
 
 export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
   type: string

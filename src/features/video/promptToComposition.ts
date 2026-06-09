@@ -3,7 +3,7 @@ import { generateJson } from '@/features/briefs/ai/geminiClient'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
-export const SceneTypeSchema = z.enum(['hook', 'visual', 'cta'])
+const SceneTypeSchema = z.enum(['hook', 'visual', 'cta'])
 
 /** Thème visuel du mockup affiché en arrière-plan des scènes 'visual'.
  *
@@ -14,7 +14,7 @@ export const SceneTypeSchema = z.enum(['hook', 'visual', 'cta'])
  *  - editorial  : colonnes de texte wireframe (médias, blog, contenu long-form)
  *  - default    : juste fond dégradé + blobs (texte pur, citations, branding)
  */
-export const VisualThemeSchema = z.enum([
+const VisualThemeSchema = z.enum([
   'dashboard',
   'mobile',
   'ecommerce',
@@ -33,7 +33,7 @@ export type VisualTheme = z.infer<typeof VisualThemeSchema>
  *  - scale        : pop scale 0.85→1 + opacité.
  *  - blur         : flou décroissant + opacité (effet premium/cinéma).
  */
-export const EntryAnimSchema = z.enum([
+const EntryAnimSchema = z.enum([
   'rise',
   'slide-left',
   'slide-right',
@@ -41,7 +41,7 @@ export const EntryAnimSchema = z.enum([
   'scale',
   'blur',
 ])
-export type EntryAnim = z.infer<typeof EntryAnimSchema>
+type EntryAnim = z.infer<typeof EntryAnimSchema>
 
 /** Transition INTER-scènes (entre la fin d'une scène et le début de la suivante).
  *
@@ -54,7 +54,7 @@ export type EntryAnim = z.infer<typeof EntryAnimSchema>
  *  - zoom     : sortante zoome out, entrante zoome in.
  *  - cut      : coupe sèche, sans transition (signage punchy).
  */
-export const TransitionSchema = z.enum([
+const TransitionSchema = z.enum([
   'fade',
   'slide-lr',
   'slide-rl',
@@ -64,7 +64,7 @@ export const TransitionSchema = z.enum([
   'zoom',
   'cut',
 ])
-export type Transition = z.infer<typeof TransitionSchema>
+type Transition = z.infer<typeof TransitionSchema>
 
 /** Propriétés graphiques tweenables par GSAP. Toutes optionnelles : Gemini ne
  *  remplit que celles qu'il veut animer. Le template construit dynamiquement
@@ -75,7 +75,7 @@ export type Transition = z.infer<typeof TransitionSchema>
  *  - filters    : blur (px), brightness, hueRotate (deg), saturate, contrast
  */
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
-export const AnimPropsSchema = z.object({
+const AnimPropsSchema = z.object({
   x: z.number().optional(),
   y: z.number().optional(),
   scale: z.number().optional(),
@@ -114,7 +114,7 @@ export const AnimPropsSchema = z.object({
  *  - repeat   : 0 = une fois, -1 = infini (mais on clamp à 5 pour éviter les boucles infinies).
  *  - yoyo     : si true et repeat > 0, alterne aller/retour.
  */
-export const AnimDirectiveSchema = z.object({
+const AnimDirectiveSchema = z.object({
   target: z.string().min(1).max(80),
   from: AnimPropsSchema.optional(),
   to: AnimPropsSchema.optional(),
@@ -125,20 +125,20 @@ export const AnimDirectiveSchema = z.object({
   repeat: z.number().int().min(0).max(5).optional(),
   yoyo: z.boolean().optional(),
 })
-export type AnimDirective = z.infer<typeof AnimDirectiveSchema>
+type AnimDirective = z.infer<typeof AnimDirectiveSchema>
 
 /** Type de chart inline pour scènes 'visual'. Si présent, les templates
  *  Remotion affichent un vrai chart animé frame-by-frame avec les dataPoints. */
-export const ChartHintSchema = z.enum(['line', 'bars', 'donut'])
+const ChartHintSchema = z.enum(['line', 'bars', 'donut'])
 
 /** Point de donnée pour les charts inline ou KPIs enrichis. */
-export const DataPointSchema = z.object({
+const DataPointSchema = z.object({
   label: z.string().max(24),
   value: z.number(),
   unit: z.string().max(8).optional(),
 })
 
-export const SceneSchema = z.object({
+const SceneSchema = z.object({
   type: SceneTypeSchema,
   duration: z.number().min(1).max(15),
   title: z.string().max(60).optional(),
@@ -171,7 +171,7 @@ export const SceneSchema = z.object({
 })
 export type Scene = z.infer<typeof SceneSchema>
 
-export const CompositionSchema = z.object({
+const CompositionSchema = z.object({
   scenes: z.array(SceneSchema).min(2).max(5),
   palette: z.object({
     bg: z.string().regex(HEX),
@@ -342,7 +342,7 @@ export interface InterpretCompositionInput {
  *  Gemini peut sortir un total légèrement différent de la cible (8-12s
  *  par défaut). Pour des cibles éloignées du défaut (5s ou 30s par exemple)
  *  on force le rescale pour respecter le contrat avec l'UI. */
-export function normalizeScenesDuration(
+function normalizeScenesDuration(
   composition: Composition,
   targetSec: number,
 ): Composition {
@@ -365,7 +365,7 @@ export function normalizeScenesDuration(
  *  un HINT FORT qui force Gemini à respecter l'intention. Sans ce hint,
  *  l'instruction libre se noie dans le prompt et Gemini retombe sur les
  *  défauts (transition: 'fade', entryAnim non variés). */
-export function extractAnimationHint(prompt: string): string {
+function extractAnimationHint(prompt: string): string {
   const p = prompt.toLowerCase()
   const hints: string[] = []
 
@@ -434,7 +434,7 @@ export function extractAnimationHint(prompt: string): string {
  *
  *  Conservatif : on n'override QUE si un keyword fort matche. Sans match,
  *  on laisse la composition de Gemini intacte. */
-export function enforceAnimationIntent(
+function enforceAnimationIntent(
   composition: Composition,
   prompt: string,
 ): Composition {

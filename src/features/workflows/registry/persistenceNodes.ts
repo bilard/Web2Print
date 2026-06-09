@@ -15,7 +15,7 @@ interface SavePimInputs {
   sheet: { rows?: Array<Record<string, unknown>>; [key: string]: unknown } | null
 }
 
-export const savePimNode: NodeSpec<
+const savePimNode: NodeSpec<
   SavePimConfig,
   SavePimInputs,
   { result: { count: number; projectId: string } }

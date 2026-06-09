@@ -12,8 +12,8 @@
 import { create } from 'zustand'
 import type { LLMProviderId } from '@/features/ai/llmRouter'
 
-export type AiActivityKind = 'json' | 'chat' | 'image'
-export type AiActivityStatus = 'running' | 'success' | 'error'
+type AiActivityKind = 'json' | 'chat' | 'image'
+type AiActivityStatus = 'running' | 'success' | 'error'
 
 export interface AiActivityRecord {
   id: string
@@ -35,7 +35,7 @@ export interface AiActivityRecord {
   costUsd?: number
 }
 
-export interface AiActivityEndPayload {
+interface AiActivityEndPayload {
   inputTokens?: number
   outputTokens?: number
   costUsd?: number

@@ -45,7 +45,7 @@ export interface ExportPdfBlobOptions extends ExportPdfOptions {
  * Cœur paramétré : génère un PDF Blob depuis le canvas Fabric fourni.
  * Ne déclenche aucun téléchargement. Utilisable depuis les workflows.
  */
-export async function exportPdfBlob(canvas: Canvas, opts: ExportPdfBlobOptions): Promise<Blob> {
+async function exportPdfBlob(canvas: Canvas, opts: ExportPdfBlobOptions): Promise<Blob> {
   const { canvasWidth, canvasHeight, bleedMm = 2, withPrintMarks = false, multiplier = 2 } = opts
 
   const withMarks = !!withPrintMarks

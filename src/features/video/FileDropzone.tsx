@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { FilePlus2, X, AlertTriangle } from 'lucide-react'
 
-export const MAX_FILES = 3
-export const MAX_FILE_SIZE = 5 * 1024 * 1024
+const MAX_FILES = 3
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 interface Props {
   files: File[]

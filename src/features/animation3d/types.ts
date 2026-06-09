@@ -13,9 +13,9 @@ export type Animation3DPreset =
   | 'wave'
   | 'relief3D'
 
-export type SlideDirection = 'left' | 'right' | 'top' | 'bottom'
+type SlideDirection = 'left' | 'right' | 'top' | 'bottom'
 
-export interface LightingConfig {
+interface LightingConfig {
   directionalIntensity: number   // 0..3
   directionalColor: string       // hex
   dirPosX: number                // -5..5
@@ -43,7 +43,7 @@ export interface Animation3DConfig {
   relief?: ReliefConfig
 }
 
-export const DEFAULT_LIGHTING: LightingConfig = {
+const DEFAULT_LIGHTING: LightingConfig = {
   directionalIntensity: 1.2,
   directionalColor: '#ffffff',
   dirPosX: 2,

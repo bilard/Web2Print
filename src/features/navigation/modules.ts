@@ -61,7 +61,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
 }
 
 /** `access` = admin uniquement ; sinon owner OU permission `.view` présente. */
-export function canSeeModule(id: Section, isAdmin: boolean, permissions: Set<string>): boolean {
+function canSeeModule(id: Section, isAdmin: boolean, permissions: Set<string>): boolean {
   if (id === 'access') return isAdmin
   const perm = SECTION_PERMISSION[id]
   return isAdmin || !perm || permissions.has(perm)

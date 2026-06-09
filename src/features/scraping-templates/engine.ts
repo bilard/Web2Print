@@ -359,7 +359,6 @@ function applyField(
 function applyGroup(
   doc: Document,
   group: GroupSelector,
-  baseUrl: string | undefined,
 ): { group: string; pairs: Array<{ name: string; value: string }> } | null {
   const containers = resolveStrategy(doc, group.container)
   // resolveStrategy retourne strings, mais on a besoin des noeuds : refaire une requête
@@ -409,7 +408,7 @@ export function applyTemplate(
 
   const specGroups: TemplateApplyResult['specGroups'] = []
   for (const group of template.specGroups) {
-    const result = applyGroup(doc, group, baseUrl)
+    const result = applyGroup(doc, group)
     if (result) specGroups.push(result)
     else warnings.push(`no match for specs group (selector ${group.container.expression})`)
   }

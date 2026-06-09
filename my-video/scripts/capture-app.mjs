@@ -201,9 +201,6 @@ async function main() {
     ],
   });
 
-  // Masque navigator.webdriver = true (autre flag visible par Google)
-  const context = browser.defaultBrowserContext();
-
   try {
     const pages = await browser.pages();
     const page = pages[0] || (await browser.newPage());

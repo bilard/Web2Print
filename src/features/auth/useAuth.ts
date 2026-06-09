@@ -14,7 +14,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 /** Compte propriétaire de l'app. Sert UNIQUEMENT à masquer les données financières
  *  personnelles du compte Bright Data partagé (solde/facturation) aux autres comptes —
  *  pas à restreindre l'accès aux fonctionnalités. */
-export const OWNER_EMAIL = 'ibs.studio@gmail.com'
+const OWNER_EMAIL = 'ibs.studio@gmail.com'
 
 /** Helper pur (utilisable hors composant React, ex: option `enabled` d'une query). */
 export function isOwnerEmail(email: string | null | undefined): boolean {
@@ -81,7 +81,7 @@ const LOCAL_USER_DATA_EXTRA_KEYS = ['dam_recent_searches']
  *  (cf getApiKey() qui lit le localStorage en priorité).
  *  ⚠️ Toute donnée précieuse purgée ici DOIT avoir une sauvegarde Firestore (sinon perte
  *  définitive au changement de compte — cf cookies, ré-synchronisés via useSiteCookiesSync). */
-export function purgeLocalUserData() {
+function purgeLocalUserData() {
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const k = localStorage.key(i)
     if (k && (k.startsWith(LOCAL_USER_DATA_PREFIX) || LOCAL_USER_DATA_EXTRA_KEYS.includes(k))) {

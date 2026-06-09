@@ -103,7 +103,7 @@ export function parseDocumentsCell(raw: string | null | undefined): EnrichedDocu
  *  - { name?, url }, { name?, value }, { name?, href }, { text?, url } → normalisé
  * Renvoie null si l'URL n'est pas exploitable.
  */
-export function coerceDocument(input: unknown): EnrichedDocument | null {
+function coerceDocument(input: unknown): EnrichedDocument | null {
   if (typeof input === 'string') {
     if (input.includes('##')) {
       const idx = input.indexOf('##')

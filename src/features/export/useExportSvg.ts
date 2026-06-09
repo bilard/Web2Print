@@ -287,7 +287,7 @@ function extractFontFamilies(svg: string): Set<string> {
   return families
 }
 
-export interface GenerateSvgFromCanvasOptions extends GenerateSvgOptions {
+interface GenerateSvgFromCanvasOptions extends GenerateSvgOptions {
   /** Largeur de référence pour la bounding box (en px canvas). */
   canvasWidth?: number
   /** Hauteur de référence pour la bounding box (en px canvas). */
@@ -300,7 +300,7 @@ export interface GenerateSvgFromCanvasOptions extends GenerateSvgOptions {
  * Génère un SVG depuis un canvas Fabric explicitement passé en paramètre.
  * Utilisable sans `globalFabricCanvas` (ex. canvas offscreen de workflow).
  */
-export async function generateSvgFromCanvas(
+async function generateSvgFromCanvas(
   canvas: import('fabric').Canvas,
   options?: GenerateSvgFromCanvasOptions,
 ): Promise<{

@@ -33,7 +33,7 @@ function parseLevelMap(raw: string): TaxonomyLevelMap {
   return out
 }
 
-export const importTaxonomyNode: NodeSpec<
+const importTaxonomyNode: NodeSpec<
   ImportTaxonomyConfig,
   ImportTaxonomyInputs,
   ImportTaxonomyOutputs

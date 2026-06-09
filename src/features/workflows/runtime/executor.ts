@@ -6,7 +6,7 @@ import { useRunContext } from './runContext'
 import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
 
-export type Middleware = (
+type Middleware = (
   node: WorkflowNode,
   next: () => Promise<void>
 ) => Promise<void>

@@ -227,7 +227,6 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       if (res.ok) {
         return { status: 'ok', message: 'Connecté à Image IA' }
       }
-      const err = await res.text()
       if (res.status === 401 || res.status === 403) {
         return { status: 'error', message: 'Clé invalide ou non autorisée' }
       }
@@ -416,7 +415,7 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
     }
 
     return { status: 'ok', message: 'OK' }
-  } catch (e) {
+  } catch {
     return { status: 'error', message: 'Erreur réseau' }
   }
 }

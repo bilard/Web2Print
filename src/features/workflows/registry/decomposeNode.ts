@@ -48,7 +48,7 @@ async function inlineExternalSvgImages(svgText: string): Promise<string> {
   return out
 }
 
-export const decomposeNode: NodeSpec<
+const decomposeNode: NodeSpec<
   DecomposeConfig,
   { svg: File },
   { svg: File }

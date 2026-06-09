@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 
-export type LayoutBlockType = 'price' | 'headline' | 'title' | 'description' | 'mention' | 'unitprice'
+type LayoutBlockType = 'price' | 'headline' | 'title' | 'description' | 'mention' | 'unitprice'
 
 export interface LayoutBlock {
   type: LayoutBlockType

@@ -35,7 +35,7 @@ interface SetFieldsConfig {
   assignments: string
 }
 
-export const setFieldsNode: NodeSpec<
+const setFieldsNode: NodeSpec<
   SetFieldsConfig,
   { sheet: SheetLike | null },
   { sheet: SheetLike }
@@ -98,7 +98,7 @@ interface FilterConfig {
   expression: string
 }
 
-export const filterNode: NodeSpec<
+const filterNode: NodeSpec<
   FilterConfig,
   { sheet: SheetLike | null },
   { sheet: SheetLike }
@@ -159,7 +159,7 @@ interface SortConfig {
   type: 'string' | 'number'
 }
 
-export const sortNode: NodeSpec<
+const sortNode: NodeSpec<
   SortConfig,
   { sheet: SheetLike | null },
   { sheet: SheetLike }
@@ -232,7 +232,7 @@ interface RenameConfig {
   mapping: string
 }
 
-export const renameColumnsNode: NodeSpec<
+const renameColumnsNode: NodeSpec<
   RenameConfig,
   { sheet: SheetLike | null },
   { sheet: SheetLike }
@@ -291,7 +291,7 @@ interface TextOpConfig {
   replacement: string
 }
 
-export const textOpNode: NodeSpec<
+const textOpNode: NodeSpec<
   TextOpConfig,
   { sheet: SheetLike | null },
   { sheet: SheetLike }

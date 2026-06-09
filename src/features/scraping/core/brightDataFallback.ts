@@ -72,7 +72,7 @@ export function isHostKnownBlocked(url: string): boolean {
 
 // ─── PDF link extraction ─────────────────────────────────────────────────────
 
-export function extractPdfLinksFromHtml(html: string, baseUrl: string): Array<{ name: string; url: string }> {
+function extractPdfLinksFromHtml(html: string, baseUrl: string): Array<{ name: string; url: string }> {
   if (!html) return []
   let doc: Document
   try { doc = new DOMParser().parseFromString(html, 'text/html') } catch { return [] }
@@ -131,10 +131,6 @@ const callScrapingBrowser = httpsCallable<{ url: string }, { html: string; durat
 let lastSuccess: { country: string; attempts: number; durationMs: number; lengthBytes: number; source?: 'web-unlocker' | 'scraping-browser' } | null = null
 export function getLastBrightDataSuccess() {
   return lastSuccess
-}
-
-export interface BrightDataResult {
-  markdown: string
 }
 
 export interface BrightDataError {

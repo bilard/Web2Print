@@ -110,7 +110,7 @@ const DEFAULT_BG_GRADIENT: GradientConfig = {
   ],
 }
 
-export const useUIStore = create<UIState>((set, get) => ({
+export const useUIStore = create<UIState>((set) => ({
   rightPanelOpen: true,
   activeLeftPanel: 'elements',
   toggleLeftPanel: (id) =>

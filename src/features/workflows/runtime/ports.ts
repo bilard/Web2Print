@@ -2,7 +2,7 @@
 import type { ComponentType } from 'react'
 import type { PortType } from '../types'
 
-export interface PortTypeSpec {
+interface PortTypeSpec {
   type: PortType
   label: string
   validator: (value: unknown) => boolean

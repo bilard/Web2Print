@@ -1088,14 +1088,13 @@ async function decomposeHeuristic(
     fontWeight: number
   }
   const items: Item[] = []
-  let skipped = 0
 
   for (const para of result.paragraphs) {
-    if (isInProductZone(para.bbox, width, height)) { skipped++; continue }
-    if (para.confidence < 0.5) { skipped++; continue }
+    if (isInProductZone(para.bbox, width, height)) continue
+    if (para.confidence < 0.5) continue
     const bgSample = sampleBackground(ctx, para.bbox, width, height)
     // Texte sur fond vert = packaging produit ("A GER" sur l'emballage) → skip.
-    if (isGreenBackground(bgSample.hex)) { skipped++; continue }
+    if (isGreenBackground(bgSample.hex)) continue
     const nLines = countLines(para.words)
     const singleLineH = para.bbox.height / nLines
     const fontSize = Math.max(singleLineH * 0.95, 10)
@@ -1118,7 +1117,6 @@ async function decomposeHeuristic(
     })))
     if (logoIdx.size > 0) {
       editorialItems = items.filter((_, i) => !logoIdx.has(i))
-      skipped += logoIdx.size
     }
   }
 

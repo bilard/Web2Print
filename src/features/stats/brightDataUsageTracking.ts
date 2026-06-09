@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth.store'
  * Le coût exact dépend de la zone et du quota mensuel ; on stocke une
  * estimation pour alimenter le panneau de consommation live côté UI.
  */
-export const BRIGHTDATA_COST_PER_REQUEST_USD = 0.003
+const BRIGHTDATA_COST_PER_REQUEST_USD = 0.003
 
 /**
  * Persiste un appel Bright Data (un par requête réussie). Stocke un compteur

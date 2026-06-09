@@ -63,7 +63,7 @@ export function useCanvasRecorder() {
     // Tick to update durationMs in state
     const tick = () => {
       if (!recorderRef.current) return
-      setState((s) => ({ recording: true, durationMs: performance.now() - startedAtRef.current }))
+      setState({ recording: true, durationMs: performance.now() - startedAtRef.current })
       requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)

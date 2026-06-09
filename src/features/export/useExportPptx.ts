@@ -37,7 +37,7 @@ export interface ExportPptxBlobOptions {
  * Cœur paramétré : génère un Blob PPTX depuis le canvas Fabric fourni.
  * Ne déclenche aucun téléchargement. Utilisable depuis les workflows.
  */
-export async function exportPptxBlob(canvas: Canvas, opts: ExportPptxBlobOptions): Promise<Blob> {
+async function exportPptxBlob(canvas: Canvas, opts: ExportPptxBlobOptions): Promise<Blob> {
   const { canvasWidth, canvasHeight, multiplier = 2 } = opts
 
   const slideW = pxToIn(canvasWidth)

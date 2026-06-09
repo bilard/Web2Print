@@ -130,7 +130,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
 
   const [result, setResult] = useState<ResultState | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [lastAspect, setLastAspect] = useState<AspectFormat>('square')
   const [preview, setPreview] = useState<LivePreviewState | null>(null)
   /** ID du prompt qu'on rejoue/édite — sert à `touchPrompt` (lastUsedAt) plutôt
    *  que de réécrire un nouveau doc à chaque rejeu. */
@@ -139,7 +138,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   const progress = useRenderProgress()
   const promptLib = useVideoPromptLibrary()
   const enrich = useEnrichComposition()
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   /** AbortController de la mutation en cours. handleStop l'aborte pour couper
    *  réellement la requête HTTP /render (sinon Cloud Run continue de tourner). */
   const abortRef = useRef<AbortController | null>(null)
@@ -147,7 +145,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   const mutation = useGenerateVideo({
     onStep: (s) => {
       progress.update(s)
-      if (s.aspect) setLastAspect(s.aspect)
       const currentDurationSec = resolveDurationSec(duration, customDurationSec)
       if (s.composition && s.aspect) {
         setPreview((prev) => ({
@@ -213,7 +210,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
       return
     }
     setResult(null)
-    setSaveState('idle')
     setErrorMsg(null)
     setPreview(null)
     progress.reset()
@@ -270,7 +266,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
 
   const handleRegenerate = () => {
     setResult(null)
-    setSaveState('idle')
     setErrorMsg(null)
     setPreview(null)
     progress.reset()
@@ -297,7 +292,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     setCustomDurationSec(10)
     setEditingPromptId(null)
     setResult(null)
-    setSaveState('idle')
     setErrorMsg(null)
     setPreview(null)
     progress.reset()
@@ -375,7 +369,6 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     }
     setEditingPromptId(p.id)
     setResult(null)
-    setSaveState('idle')
     setErrorMsg(null)
     setPreview(null)
     progress.reset()

@@ -60,7 +60,7 @@ export function classifyImage(url: string, refs: string[]): 'photo' | 'picto' {
  *  emblem ou autre marqueur visuel — par opposition à une photo produit.
  *  Utilisé en fallback par `classifyImage` quand aucune ref produit n'est
  *  disponible. Plus permissif que `isJunkImageUrl` qui rejette en amont. */
-export function isPictoOrLogo(url: string): boolean {
+function isPictoOrLogo(url: string): boolean {
   if (!url) return false
   // SVG = quasi toujours un picto/logo (formats vectoriels marketing).
   if (/\.svg(\?|$)/i.test(url)) return true

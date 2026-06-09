@@ -7,7 +7,7 @@ interface IfElseConfig {
   expression: string
 }
 
-export const ifElseNode: NodeSpec<
+const ifElseNode: NodeSpec<
   IfElseConfig,
   { value: unknown },
   { then?: unknown; else?: unknown }
@@ -51,7 +51,7 @@ interface PipeConfig {
   expressions: string
 }
 
-export const pipeNode: NodeSpec<
+const pipeNode: NodeSpec<
   PipeConfig,
   { value: unknown },
   { result: unknown }
@@ -106,7 +106,7 @@ export const pipeNode: NodeSpec<
  * loop-each et le loop-collect connecté en aval, en injectant `item` dans
  * les configs interpolées ({{item.X}}).
  */
-export const loopEachNode: NodeSpec<
+const loopEachNode: NodeSpec<
   Record<string, never>,
   { items: unknown },
   { item: unknown }
@@ -140,7 +140,7 @@ export const loopEachNode: NodeSpec<
  * Loop Collect : fin d'une boucle. L'executor remplit son output `results`
  * avec l'array des valeurs collectées sur chaque itération.
  */
-export const loopCollectNode: NodeSpec<
+const loopCollectNode: NodeSpec<
   Record<string, never>,
   { item: unknown },
   { results: unknown }

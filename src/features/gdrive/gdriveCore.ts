@@ -28,7 +28,7 @@ export class GoogleAuthMissingError extends Error {
 }
 
 /** Récupère les métadonnées d'un fichier Drive. */
-export async function getDriveFileMeta(fileId: string, token: string): Promise<DriveFileMeta> {
+async function getDriveFileMeta(fileId: string, token: string): Promise<DriveFileMeta> {
   const params = new URLSearchParams({ fields: 'id,name,mimeType,webViewLink' })
   const res = await fetch(`${DRIVE_API}/files/${fileId}?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -121,7 +121,7 @@ async function sheetToXlsxBlob(sheet: ExcelSheet, sheetName: string): Promise<Bl
 
 /** Upload multipart vers Drive. Retourne la metadata du fichier créé.
  *  - `convertToSheets=true` → Drive convertit le XLSX uploadé en Google Sheets natif. */
-export async function uploadToDrive(
+async function uploadToDrive(
   token: string,
   body: Blob,
   options: {

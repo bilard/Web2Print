@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * tous les appels sont des no-ops (fallback iframe reste actif).
  */
 
-export interface CaptureMessage {
+interface CaptureMessage {
   type: 'capture'
   selectors: string[]
   attr: string | null
@@ -19,7 +19,7 @@ export interface CaptureMessage {
   mode?: string
 }
 
-export interface Tag {
+interface Tag {
   selector: string
   label: string
 }

@@ -6,7 +6,7 @@
  * fallback sur Arial/Times.
  */
 
-export interface FontBufferEntry {
+interface FontBufferEntry {
   family: string
   weight: string
   style: string
@@ -54,7 +54,7 @@ export function registerFontBuffer(
   }
 }
 
-export function lookupFontBuffers(family: string): FontBufferEntry[] {
+function lookupFontBuffers(family: string): FontBufferEntry[] {
   return registry.get(family) ?? []
 }
 

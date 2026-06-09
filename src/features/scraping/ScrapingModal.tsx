@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag } from 'lucide-react'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'
@@ -113,42 +113,15 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   // ── PIM branch ───────────────────────────────────────────────────────────
   const pimProjectId = usePimStore((s) => s.currentProjectId)
   const products = usePimStore((s) => s.products)
-  const projects = usePimStore((s) => s.projects)
   const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const upsertProducts = useUpsertProducts(pimProjectId ?? '')
   const upsertSource = useUpsertSource(pimProjectId ?? '')
 
-  /** Source(s) PIM sélectionnée(s) dans la sidebar — affichée en header pour
-   *  rappeler à l'utilisateur dans quelle BDD le scrape sera ingéré.
-   *  Recherche dans TOUS les projets, indépendamment du currentProjectId du modal,
-   *  pour montrer le contexte sidebar même quand ouvert via "Scraper le web".
-   *  Cherche aussi par hostname (ex: nicoll.fr) si l'ID n'est pas un UUID. */
-  const selectedSources = useMemo(() => {
-    if (selectedSourceIds.length === 0) return []
-    // Cherche les sources sélectionnées dans tous les projets
-    for (const project of projects) {
-      // Cherche par ID ou par hostname/name
-      const found = project.sources.filter((s) =>
-        selectedSourceIds.includes(s.id) || selectedSourceIds.includes(s.name)
-      )
-      if (found.length > 0) return found
-    }
-    return []
-  }, [projects, selectedSourceIds])
-
-
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [pendingRows, setPendingRows] = useState<Record<string, unknown>[]>([])
   const [pendingSource, setPendingSource] = useState<Source | null>(null)
   const [frozenPreview, setFrozenPreview] = useState<MergePreview | null>(null)
 
-  const preview: MergePreview | null = useMemo(() => {
-    if (!previewOpen || pendingRows.length === 0) return null
-    return matchRows(pendingRows as never, products)
-  }, [previewOpen, pendingRows, products])
-
   const startPreview = (rows: Record<string, unknown>[], source: Source) => {
-    setPendingRows(rows)
     setPendingSource(source)
     setFrozenPreview(matchRows(rows as never, products))
     setPreviewOpen(true)
@@ -672,7 +645,6 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               // Mode PIM : affiche source sélectionnée depuis SheetsColumn
               if (selectedSourceIds.length > 0) {
                 const sourceId = selectedSourceIds[0]
-                const primary = selectedSources[0]
                 const className = "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-white/60 hover:text-indigo-300 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-colors truncate max-w-[280px]"
                 return (
                   <span className={className} title={`Source : ${sourceId}`}>
@@ -785,7 +757,6 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               url={urlValid ? url : ''}
               loading={loading || enriching}
               onScrape={handleScrape}
-              result={result}
               onUrlSuggestion={(suggested) => setUrl(suggested)}
               onEnrichMany={handleEnrichMany}
               batchRunning={batchRunning}

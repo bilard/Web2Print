@@ -10,7 +10,7 @@ type FabricStyles = Record<number, Record<number, Record<string, unknown>>>
  * Ordre : (1) lookup direct par key, (2) match exact sur label,
  * (3) match insensible casse + trim sur label. Retourne `undefined` si aucun.
  */
-export function getRowValue(
+function getRowValue(
   row: MergeRow,
   variable: string,
   columns?: MergeColumn[],

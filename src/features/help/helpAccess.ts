@@ -11,7 +11,7 @@ import { ADMIN_PERMISSION } from '@/features/access/permissions'
  * Les clés proviennent de `permissions.ts` (source de vérité RBAC) : on aligne l'aide
  * sur l'enforcement déjà appliqué à la sidebar/onglets.
  */
-export const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
+const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   // Import (le module entier est gaté par import.view ; easycatalog = round-trip IDML)
   'import-idml': 'import.view',
   'import-pptx': 'import.view',

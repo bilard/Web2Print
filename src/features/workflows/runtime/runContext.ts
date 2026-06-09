@@ -20,7 +20,7 @@ interface RunContextState {
 
 const blankNode = (): NodeRunState => ({ status: 'pending', logs: [] })
 
-export const useRunContext = create<RunContextState>((set, get) => ({
+export const useRunContext = create<RunContextState>((set) => ({
   isRunning: false,
   abortController: null,
   nodeStates: {},

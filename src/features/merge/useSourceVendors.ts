@@ -3,7 +3,7 @@ import { useMergeStore } from '@/stores/merge.store'
 import { listTemplates } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 
-export type VendorMatchStatus = 'matched' | 'alias' | 'absent'
+type VendorMatchStatus = 'matched' | 'alias' | 'absent'
 
 export interface VendorSummary {
   brand: string

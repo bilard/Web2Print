@@ -19,7 +19,7 @@ export interface EnrichedAdvantage {
   group?: string
 }
 
-export interface ProductVariant {
+interface ProductVariant {
   reference: string
   label: string
   properties: Record<string, string>
@@ -124,7 +124,7 @@ export interface EnrichedProduct {
   blockedByAntiBot?: boolean
 }
 
-export type EnrichmentStatus =
+type EnrichmentStatus =
   | 'idle'
   | 'searching'   // Recherche de la page produit via Jina
   | 'scraping'    // Extraction du contenu via Jina Reader

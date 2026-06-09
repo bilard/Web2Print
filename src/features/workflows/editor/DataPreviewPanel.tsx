@@ -316,7 +316,6 @@ function useStaticNodePreview(
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isUpload, fileKey, mode, nodeId])
 
   return preview
@@ -957,7 +956,6 @@ export function DataPreviewPanel() {
   const effectiveSelectedId = selectedId ?? fallbackUploadId
   const runTarget = useMemo(
     () => pickLatestPreview(states, liveIds, labelFor),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [states, wf],
   )
   const staticTarget = useStaticNodePreview(wf ?? null, effectiveSelectedId, labelFor)
@@ -967,7 +965,6 @@ export function DataPreviewPanel() {
   const [allMode, setAllMode] = useState(false)
   const allData = useMemo(
     () => buildAllNodesData(wf ?? null, states, labelFor),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [wf, states],
   )
 

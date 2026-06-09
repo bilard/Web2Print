@@ -30,7 +30,7 @@ interface CsvConfig {
   headerRow: boolean
 }
 
-export const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown }> = {
+const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown }> = {
   type: 'import-csv',
   category: 'import',
   label: 'Parser Excel/CSV',
@@ -60,7 +60,7 @@ export const importCsvNode: NodeSpec<CsvConfig, { file: File }, { sheet: unknown
 
 interface IdmlConfig {}
 
-export const importIdmlNode: NodeSpec<IdmlConfig, { file?: File; files?: File[] }, { sheet: unknown }> = {
+const importIdmlNode: NodeSpec<IdmlConfig, { file?: File; files?: File[] }, { sheet: unknown }> = {
   type: 'import-idml',
   category: 'import',
   label: 'Import IDML',
@@ -98,7 +98,7 @@ export const importIdmlNode: NodeSpec<IdmlConfig, { file?: File; files?: File[] 
 
 interface SvgConfig {}
 
-export const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown }> = {
+const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown }> = {
   type: 'import-svg',
   category: 'import',
   label: 'Import SVG',
@@ -120,7 +120,7 @@ export const importSvgNode: NodeSpec<SvgConfig, { file: File }, { sheet: unknown
 
 interface ImageToSvgConfig {}
 
-export const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: File }> = {
+const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: File }> = {
   type: 'image-to-svg',
   category: 'import',
   label: 'Image → SVG éditable',
@@ -146,7 +146,7 @@ export const imageToSvgNode: NodeSpec<ImageToSvgConfig, { file: File }, { svg: F
 
 interface PdfToSvgConfig {}
 
-export const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File }> = {
+const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File }> = {
   type: 'pdf-to-svg',
   category: 'import',
   label: 'PDF → SVG éditable',
@@ -172,7 +172,7 @@ export const pdfToSvgNode: NodeSpec<PdfToSvgConfig, { file: File }, { svg: File 
 
 interface ImportPptxConfig {}
 
-export const importPptxNode: NodeSpec<ImportPptxConfig, { file: File }, { file: File }> = {
+const importPptxNode: NodeSpec<ImportPptxConfig, { file: File }, { file: File }> = {
   type: 'import-pptx',
   category: 'import',
   label: 'Import PPTX',
@@ -197,7 +197,7 @@ export const importPptxNode: NodeSpec<ImportPptxConfig, { file: File }, { file: 
 
 interface ImportImageConfig {}
 
-export const importImageNode: NodeSpec<ImportImageConfig, { file: File }, { file: File }> = {
+const importImageNode: NodeSpec<ImportImageConfig, { file: File }, { file: File }> = {
   type: 'import-image',
   category: 'import',
   label: 'Importer une image',
@@ -619,7 +619,7 @@ function CsvSummaryPanel({ summary }: { summary: CsvSummary }) {
   )
 }
 
-export const uploadNode: NodeSpec<
+const uploadNode: NodeSpec<
   UploadConfig,
   Record<string, never>,
   { file?: File; files?: File[]; rows?: unknown[]; sheet?: unknown }

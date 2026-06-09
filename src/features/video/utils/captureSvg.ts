@@ -11,7 +11,7 @@ export interface SvgCaptureResult {
   svg: string
 }
 
-export async function uploadSvgToStorage(
+async function uploadSvgToStorage(
   svg: string,
   width: number,
   height: number,

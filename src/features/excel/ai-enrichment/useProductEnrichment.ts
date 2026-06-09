@@ -1742,7 +1742,7 @@ interface ManufacturerData {
 }
 
 
-export interface DeepScrapeResult {
+interface DeepScrapeResult {
   markdown: string
   html: string | null
   source: 'post-browser' | 'get-fallback' | 'basic-merged'
@@ -3978,7 +3978,6 @@ export async function enrichProductCore(
           )
 
           // ── Palier 4 : Bright Data Web Unlocker (via Cloud Function) ──
-          let brightDataSucceeded = false
           if (needAntiBotPremium && productUrl) {
             log(hostKnownBlocked
               ? `Host connu DataDome — direct Bright Data Web Unlocker`
@@ -4005,7 +4004,6 @@ export async function enrichProductCore(
                     log(`✓ Bright Data : ${bdResult.pdfLinks.length} document(s) PDF détecté(s)`)
                   }
                   markdownContent = `## [Source: ${productUrl}]\n\n${bdSanitized}${pdfBlock}`
-                  brightDataSucceeded = true
                   ;(globalThis as unknown as { __antiBotBlocked?: boolean }).__antiBotBlocked = false
                   // BD a parsé le JSON-LD/microdata du HTML brut (avant Turndown
                   // qui supprime les <script>). Si le fetch parallèle initial a

@@ -110,7 +110,7 @@ async function flushPending() {
 }
 
 /** Flush immédiat — utile sur unmount, beforeunload, navigation route. */
-export function flushAiUsage(): Promise<void> {
+function flushAiUsage(): Promise<void> {
   if (flushTimer) {
     clearTimeout(flushTimer)
     flushTimer = null

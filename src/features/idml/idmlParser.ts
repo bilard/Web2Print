@@ -16,7 +16,7 @@ export interface IdmlColor {
   r: number; g: number; b: number; a: number
 }
 
-export interface IdmlShadow {
+interface IdmlShadow {
   opacity: number   // 0–100
   offsetX: number   // pt
   offsetY: number   // pt
@@ -75,7 +75,7 @@ export interface IdmlObject {
   ecImageField?: string
 }
 
-export interface CharStyleOverride {
+interface CharStyleOverride {
   fontSize?: number
   deltaY?: number       // baseline shift: negative = up (superscript)
   fill?: string         // hex color override

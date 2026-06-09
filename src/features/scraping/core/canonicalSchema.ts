@@ -59,4 +59,3 @@ export const EnrichedProductSchema = z.object({
   }),
 })
 
-export type EnrichedProduct = z.infer<typeof EnrichedProductSchema>

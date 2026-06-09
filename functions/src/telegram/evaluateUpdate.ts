@@ -11,7 +11,7 @@ export interface TelegramUpdate {
   }
 }
 
-export interface InboxRecord {
+interface InboxRecord {
   updateId: number
   chatId: number
   fromUsername: string | null

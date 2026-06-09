@@ -1,4 +1,4 @@
-export interface GDriveUser {
+interface GDriveUser {
   displayName: string
   emailAddress: string
   photoLink?: string

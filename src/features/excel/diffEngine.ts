@@ -1,6 +1,6 @@
 import type { ExcelSheet, ExcelColumn, ExcelRow, CellValue } from './types'
 
-export type DiffType = 'added' | 'removed' | 'modified' | 'unchanged'
+type DiffType = 'added' | 'removed' | 'modified' | 'unchanged'
 
 export interface ColumnDiff {
   key: string
@@ -9,7 +9,7 @@ export interface ColumnDiff {
   oldLabel?: string
 }
 
-export interface CellDiff {
+interface CellDiff {
   colKey: string
   type: DiffType
   oldValue: CellValue

@@ -8,7 +8,7 @@ import type { TspanInfo, TextStyle } from './svgTextParser'
  * ex. uniquement `letterSpacing` ou `textDecoration` brut) fait crasher la
  * sérialisation avec « Cannot read properties of undefined (reading 'end') ».
  */
-export interface FabricCharStyle {
+interface FabricCharStyle {
   fill?: string
   stroke?: string
   strokeWidth?: number
@@ -49,7 +49,7 @@ function cleanFontFamily(ff: string | undefined): string | undefined {
  * - `letterSpacing` est droppé : Fabric n'expose pas de char-spacing par
  *   caractère (charSpacing est un attribut au niveau Textbox).
  */
-export function sanitizeTspanStylesForFabric(s: TextStyle): FabricCharStyle {
+function sanitizeTspanStylesForFabric(s: TextStyle): FabricCharStyle {
   const out: FabricCharStyle = {}
   if (s.fill) out.fill = s.fill
   if (s.fontFamily) {

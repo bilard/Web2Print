@@ -23,9 +23,9 @@ function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export type SendMode = 'text' | 'image'
+type SendMode = 'text' | 'image'
 
-export interface SendInput {
+interface SendInput {
   text: string
   attachments?: ChatAttachment[]
   /** 'image' route vers Image IA au lieu du LLM textuel. Défaut : 'text'. */

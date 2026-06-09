@@ -2,7 +2,7 @@ import { useUIStore } from '@/stores/ui.store'
 
 /** Valeurs par défaut canoniques des paramètres d'impression (vocabulaire InDesign).
  *  Source unique pour `PrintPanel` (bouton Défauts) et l'import depuis le dashboard. */
-export const PRINT_DEFAULTS = {
+const PRINT_DEFAULTS = {
   dpi: 300,
   bleedMm: 2,
   safeAreaMm: 2,

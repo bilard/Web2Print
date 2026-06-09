@@ -29,7 +29,7 @@ export type { InboxLogEntry } from './inboxWorker'
 export type InboxStatus = 'pending' | 'processing' | 'done' | 'error'
 
 /** 'in' = reçu depuis Telegram (worker). 'out' = poussé par l'app (composer / réponse worker). */
-export type InboxDirection = 'in' | 'out'
+type InboxDirection = 'in' | 'out'
 
 export interface InboxMessage {
   // string pour les messages sortants (id synthétique `out-…`), number pour les update_id Telegram.
@@ -119,7 +119,7 @@ export function addOutboxMessage(
 }
 
 /** Supprime tous les messages fournis (par lots de 450 — limite Firestore 500/batch). */
-export async function deleteAllInboxMessages(updateIds: (number | string)[]): Promise<void> {
+async function deleteAllInboxMessages(updateIds: (number | string)[]): Promise<void> {
   for (let i = 0; i < updateIds.length; i += 450) {
     const batch = writeBatch(db)
     for (const id of updateIds.slice(i, i + 450)) {
@@ -200,7 +200,7 @@ export const INBOX_RETENTION_DAYS = 7
  * Telegram : ces messages sont de toute façon hors fenêtre de 48 h, et on ne veut pas effacer
  * silencieusement l'historique Telegram de l'utilisateur. Retourne le nombre de docs supprimés.
  */
-export async function purgeOldInboxMessages(retentionDays = INBOX_RETENTION_DAYS): Promise<number> {
+async function purgeOldInboxMessages(retentionDays = INBOX_RETENTION_DAYS): Promise<number> {
   const cutoff = Timestamp.fromMillis(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
   const snap = await getDocs(query(collection(db, 'telegramInbox'), where('receivedAt', '<', cutoff)))
   if (snap.empty) return 0

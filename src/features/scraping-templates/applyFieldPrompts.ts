@@ -12,7 +12,7 @@ import { generateJson } from '@/features/ai/llmRouter'
  * d'économiser tokens + latence (1 call/produit au lieu de N).
  */
 
-export type FieldPromptValue = string | string[]
+type FieldPromptValue = string | string[]
 
 export interface FieldPromptTarget {
   /** Nom logique du champ tel que défini dans le template (ex: "description", "Fil d'ariane"). */

@@ -1,11 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignoreDependencies": ["dotenv", "express", "@types/chrome"],
   "workspaces": {
     ".": {
       "entry": [
-        "src/main.tsx",
         "index.html",
-        "vite.config.ts",
         "tailwind.config.{js,cjs,ts}",
         "postcss.config.{js,cjs}",
         "src/**/*.test.{ts,tsx}"
@@ -17,13 +16,8 @@
       ]
     },
     "functions": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"],
-      "ignore": ["lib/**"]
+      "ignoreBinaries": ["firebase"]
     }
-  },
-  "ignore": [
-    "scripts/**",
-    "functions/lib/**"
-  ]
+  }
 }

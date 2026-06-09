@@ -33,7 +33,7 @@ const AI_ENRICHMENT_KEYS = [
 ] as const
 
 /** Une ligne est considérée comme enrichie si au moins un de ses champs ai_* est rempli. */
-export function isRowEnriched(row: ExcelRow): boolean {
+function isRowEnriched(row: ExcelRow): boolean {
   return AI_ENRICHMENT_KEYS.some((k) => {
     const v = row[k]
     return typeof v === 'string' ? v.trim().length > 0 : v != null

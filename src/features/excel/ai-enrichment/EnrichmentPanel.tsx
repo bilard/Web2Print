@@ -712,8 +712,6 @@ export function EnrichmentPanel({ input }: Props) {
 
         {/* Row 2 : sources scrapées (groupe unique, aligné avec le titre) */}
         {isDone && data && (() => {
-          const scrapingTool = data.scrapingProvider ?? 'Jina'
-
           const hostFromUrl = (u: string | null | undefined): string | null => {
             if (!u) return null
             try {

@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * Mockups SVG pour les scènes 'visual' des templates multi-scene HyperFrames.
  *

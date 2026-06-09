@@ -38,7 +38,7 @@ export function sanitizeIncomingProduct(data: EnrichedProduct): EnrichedProduct 
 }
 
 /** Cache des données scrapées — persiste entre les re-generates */
-export interface ScrapeCache {
+interface ScrapeCache {
   productUrl: string
   additionalSources: string[]
   markdownContent: string | null
@@ -47,9 +47,9 @@ export interface ScrapeCache {
   sourcesScrapped?: string[]
 }
 
-export type HiddenGroupSection = 'specifications' | 'advantages'
+type HiddenGroupSection = 'specifications' | 'advantages'
 
-export interface HiddenGroups {
+interface HiddenGroups {
   specifications: string[]
   advantages: string[]
 }

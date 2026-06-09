@@ -29,7 +29,7 @@ interface ExportXlsxConfig {
   columns: string
 }
 
-export const exportExcelNode: NodeSpec<
+const exportExcelNode: NodeSpec<
   ExportXlsxConfig,
   SheetInput,
   { result: ExportResult }
@@ -96,7 +96,7 @@ interface ExportPptxConfig {
   titleColumn: string
 }
 
-export const exportPptxNode: NodeSpec<
+const exportPptxNode: NodeSpec<
   ExportPptxConfig,
   SheetInput,
   { result: ExportResult }
@@ -208,7 +208,7 @@ function interpolate(tpl: string, row: Record<string, unknown>): string {
   })
 }
 
-export const exportPdfNode: NodeSpec<
+const exportPdfNode: NodeSpec<
   ExportPdfConfig,
   SheetInput,
   { result: ExportResult }
@@ -447,7 +447,7 @@ async function rasterizeInlinedSvg(
   }
 }
 
-export const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; result: ExportResult }> = {
+const exportDesignNode: NodeSpec<ExportDesignConfig, FileInput, { file: File; result: ExportResult }> = {
   type: 'export-design',
   category: 'export',
   label: 'Export (design)',

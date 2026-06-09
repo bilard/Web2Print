@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/briefs/ai/geminiClient'
 
-export const StyleConfigSchema = z.object({
+const StyleConfigSchema = z.object({
   pace: z.enum(['slow', 'normal', 'fast']),
   intensity: z.enum(['subtle', 'normal', 'punchy']),
   ease: z.enum(['soft', 'classic', 'snappy']),

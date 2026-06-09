@@ -14,7 +14,6 @@ import { generateJson } from '@/features/ai/llmRouter'
 import { gatherWebContext } from '@/features/scraping/webContext'
 import { askLlm } from './askLlmFromInbox'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyOpts = any
 
 /** Réponse de PLAN par défaut (pas de recherche, réponse directe). */

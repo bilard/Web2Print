@@ -61,7 +61,7 @@ export const RESELLER_HOSTS = /leroymerlin|castorama|boulanger|fnac|darty|amazon
  *  Utilisés pour nommer une source à l'import quand l'URL ne révèle pas
  *  de marque produit (ex: `fr.rubix.com` → « Rubix »). L'ordre n'a pas
  *  d'importance : on prend le premier hit du regex source. */
-export const RESELLER_LABELS: Record<string, string> = {
+const RESELLER_LABELS: Record<string, string> = {
   leroymerlin: 'Leroy Merlin',
   castorama: 'Castorama',
   boulanger: 'Boulanger',
@@ -709,54 +709,6 @@ export async function jinaRead(url: string, opts: { timeout?: number; noCache?: 
       appendDebugEntry({ ...entryBase, durationMs: Math.round(performance.now() - startedAt), error: msg })
     }
     throw err
-  }
-}
-
-/** Récupère le HTML brut de la page via Jina Reader (header `X-Return-Format: html`).
- *  Utilisé pour extraire de façon déterministe le fil d'Ariane depuis les
- *  éléments `<nav class*=breadcrumb>` / `<li class*=breadcrumb>`, sans passer
- *  par l'interprétation LLM. Silencieux en cas d'échec (fallback sur Gemini). */
-async function jinaReadHtml(url: string, opts: { timeout?: number; noCache?: boolean } = {}): Promise<string | null> {
-  const timeout = Math.max(opts.timeout ?? 0, 25000)
-  const extra: Record<string, string> = {
-    'X-Timeout': String(Math.ceil(timeout / 1000)),
-    'X-Return-Format': 'html',
-    // Attendre spécifiquement les structures BEM hydratées côté client
-    // (double underscore = pattern React/Vue post-hydration typique).
-    'X-Wait-For-Selector': '[class*="breadcrumbs__"], [class*="breadcrumb__"], [class*="Breadcrumb__"], body',
-    'X-Engine': 'browser',
-  }
-  if (opts.noCache) extra['X-No-Cache'] = 'true'
-  try {
-    const res = await fetch(`${JINA_READER}/${url}`, { headers: jinaHeaders(extra) })
-    if (!res.ok) {
-      console.warn('[jinaReadHtml] HTTP', res.status)
-      return null
-    }
-    const contentType = res.headers.get('content-type') ?? ''
-    let html: string | null = null
-    if (contentType.includes('json')) {
-      const json = await res.json() as { data?: { html?: string; content?: string } }
-      html = json.data?.html ?? json.data?.content ?? null
-    } else {
-      html = await res.text()
-    }
-    console.log('[jinaReadHtml] length:', html?.length ?? 0)
-    if (html) {
-      // Diagnostic : est-ce que la classe BEM du breadcrumb visible est présente ?
-      const hasBemBreadcrumb = /breadcrumbs__breadcrumb-item|breadcrumb__item/i.test(html)
-      const hasHomme = />Homme</.test(html)
-      const hasBaskets = />Baskets</.test(html)
-      const hasTriathlon = />Triathlon</.test(html)
-      const hasHommeSlash = html.includes('href="/homme"') || html.includes("href='/homme'")
-      console.log(
-        `[jinaReadHtml] diagnostic: BEM=${hasBemBreadcrumb} Homme=${hasHomme} Baskets=${hasBaskets} Triathlon=${hasTriathlon} hrefHomme=${hasHommeSlash}`,
-      )
-    }
-    return html
-  } catch (e) {
-    console.warn('[jinaReadHtml] error:', e)
-    return null
   }
 }
 

@@ -520,7 +520,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
   )
 }
 
-export const sendGmailNode: NodeSpec<
+const sendGmailNode: NodeSpec<
   SendGmailConfig,
   { data?: unknown; attachment?: File | Blob },
   { result: SendGmailOutput }

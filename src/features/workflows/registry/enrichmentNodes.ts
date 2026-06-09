@@ -14,7 +14,7 @@ interface EnrichInputs {
   sheet: { rows?: Array<Record<string, unknown>>; [key: string]: unknown } | null
 }
 
-export const enrichmentNode: NodeSpec<
+const enrichmentNode: NodeSpec<
   EnrichConfig,
   EnrichInputs,
   { sheet: unknown; assets: unknown[] }

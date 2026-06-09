@@ -13,7 +13,7 @@ export interface Project {
   updatedAt: number
 }
 
-export type SourceKind = 'scrape' | 'import' | 'manual'
+type SourceKind = 'scrape' | 'import' | 'manual'
 
 export interface Source {
   id: string
