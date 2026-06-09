@@ -93,6 +93,13 @@ export const JinaLogo = () => (
   </svg>
 )
 
+export const GoogleVisionLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+  </svg>
+)
+
 export const RemoveBgLogo = () => (
   <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <rect x="3" y="3" width="18" height="18" rx="3" />

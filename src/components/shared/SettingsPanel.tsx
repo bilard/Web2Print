@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2 } from 'lucide-react'
 import {
   FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo,
-  OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo,
+  OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
 } from '@/features/ai/providerLogos'
 import { TelegramSettings } from '@/features/telegram/TelegramSettings'
 import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, SITE_COOKIES_HYDRATED_EVENT, SITE_COOKIES_UPDATED_EVENT, type SiteCookieEntry } from '@/lib/siteCookies'
@@ -401,6 +401,7 @@ function SiteCookiesSection() {
 function ConnectorsTab() {
   return (
     <div className="flex flex-col gap-2">
+      <ApiKeyRow id="google_vision" label="Google Cloud Vision" description="OCR pour Image/PDF → SVG éditable (décomposition des textes)" logo={<GoogleVisionLogo />} placeholder="AIza..." />
       <ApiKeyRow id="removebg" label="Remove.bg" description="Suppression de fond d'images" logo={<RemoveBgLogo />} />
       <ApiKeyRow id="jina" label="Jina AI" description="Scraping et recherche web" logo={<JinaLogo />} placeholder="jina_..." />
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />

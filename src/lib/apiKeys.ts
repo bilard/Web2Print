@@ -107,6 +107,16 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Bucket de stockage Firebase',
   },
   {
+    id: 'google_vision',
+    label: 'Google Cloud Vision',
+    envVar: 'VITE_GOOGLE_VISION_API_KEY',
+    description: 'Clé API Google Cloud Vision — détection de texte (OCR) pour Image/PDF → SVG éditable',
+    links: {
+      manage: 'https://console.cloud.google.com/apis/credentials',
+      billing: 'https://console.cloud.google.com/billing',
+    },
+  },
+  {
     id: 'removebg',
     label: 'Remove.bg',
     envVar: 'VITE_REMOVEBG_KEY',
@@ -332,6 +342,23 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
       // 404 sur /models = endpoint inexistant mais clé probablement valide
       if (res.status === 404) {
         return { status: 'ok', message: 'Clé acceptée (modèle fixe : kimi-for-coding)' }
+      }
+      return { status: 'error', message: `Erreur ${res.status}` }
+    }
+
+    if (id === 'google_vision') {
+      // Test Vision : annotate avec une requête vide — 200 si la clé est valide,
+      // 400 INVALID_ARGUMENT compte aussi (la clé a passé l'auth), 403 = invalide.
+      const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: [] }),
+      })
+      if (res.ok || res.status === 400) {
+        return { status: 'ok', message: 'Connecté à Cloud Vision' }
+      }
+      if (res.status === 401 || res.status === 403) {
+        return { status: 'error', message: 'Clé invalide ou API Vision non activée sur le projet GCP' }
       }
       return { status: 'error', message: `Erreur ${res.status}` }
     }

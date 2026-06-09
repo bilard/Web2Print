@@ -9,9 +9,12 @@
  * AUCUN filtrage ici (variance, confidence) — fait dans le hook caller pour rester
  * découplé et inspectable.
  *
- * Setup : `VITE_GOOGLE_VISION_API_KEY` dans `.env.local`, Cloud Vision API activée
- * sur le projet GCP. Tarif : ~$0.0015 par appel.
+ * Setup : clé `google_vision` via Paramètres → Connecteurs (synchro Firestore),
+ * fallback `VITE_GOOGLE_VISION_API_KEY` dans `.env.local` en dev. Cloud Vision API
+ * activée sur le projet GCP. Tarif : ~$0.0015 par appel.
  */
+
+import { getApiKey } from '@/lib/apiKeys'
 
 const ENDPOINT = 'https://vision.googleapis.com/v1/images:annotate'
 
@@ -86,8 +89,8 @@ function extractWordText(w: RawWord): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function decomposeWithGoogleVision(dataUri: string): Promise<VisionDecomposeResult> {
-  const apiKey = import.meta.env.VITE_GOOGLE_VISION_API_KEY as string | undefined
-  if (!apiKey) throw new Error('VITE_GOOGLE_VISION_API_KEY absente dans .env.local')
+  const apiKey = getApiKey('google_vision')
+  if (!apiKey) throw new Error('Clé Google Cloud Vision manquante — à renseigner dans Paramètres → Connecteurs.')
 
   const requestImage = dataUri.startsWith('data:')
     ? { content: dataUri.replace(/^data:[^;]+;base64,/, '') }
