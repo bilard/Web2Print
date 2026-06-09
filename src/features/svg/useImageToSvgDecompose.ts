@@ -1401,7 +1401,20 @@ async function decomposeSemantic(
   const renderParagraph = (idx: number): void => {
     if (idx < 0 || idx >= result.paragraphs.length || consumed.has(idx)) return
     consumed.add(idx) // dédup : un paragraphe vu 2× ne se rend qu'une fois
-    const para = result.paragraphs[idx]
+    let para = result.paragraphs[idx]
+    // Filtre les MOTS déjà rendus par une pile de prix (« DT 30% » mergé par
+    // Vision : « DT » = écho de la pile → retiré, « 30% » = contenu propre →
+    // rendu seul sur sa bbox). Tous les mots écho → rien à rendre.
+    if (inPriceZone(para.bbox) && para.words.some((w) => isEchoWord(w.text))) {
+      const keptWords = para.words.filter((w) => !isEchoWord(w.text))
+      if (keptWords.length === 0) return
+      para = {
+        ...para,
+        words: keptWords,
+        bbox: unionBbox(keptWords.map((w) => w.bbox)),
+        text: keptWords.map((w) => w.text).join(' '),
+      }
+    }
     const bg = sampleBackground(ctx, para.bbox, width, height)
     const nLines = countLines(para.words)
     const align = detectTextAlign(para.words, para.bbox) ?? dominantAlign
@@ -1462,23 +1475,26 @@ async function decomposeSemantic(
   // par-paragraphe.
   const overlaps = (a: VisionParagraph['bbox'], c: VisionParagraph['bbox']) =>
     a.left < c.left + c.width && c.left < a.left + a.width && a.top < c.top + c.height && c.top < a.top + a.height
-  const priceUppers: string[] = []
   const priceRects: VisionParagraph['bbox'][] = []
-  // Écho de prix = paragraphe dont CHAQUE token est un composant sans lettre
-  // (chiffres, « 30% », « € » mal OCRisé ₤/₽…) ou le code devise d'un prix rendu
-  // (DT, TND…), ET qui CHEVAUCHE l'emprise d'un bloc prix. Vision merge parfois
-  // « DT 30% » (exposant + bulle voisine) en un paragraphe que Gemini classe dans
-  // un AUTRE bloc → sans ce filtre il ressort en gros textbox dupliqué.
-  const isPriceEcho = (p: VisionParagraph): boolean => {
-    if (priceRects.length === 0) return false
-    if (!priceRects.some((r) => overlaps(r, p.bbox))) return false
-    const tokens = p.text.trim().split(/\s+/).filter(Boolean)
-    if (tokens.length === 0) return false
-    return tokens.every((tok) =>
-      !/[a-zà-ÿ]/i.test(tok) ||
-      (/^[A-Za-z]{1,3}$/.test(tok) && priceUppers.some((pv) => pv.includes(tok.toUpperCase()))),
-    )
+  // Tokens numériques composant les prix rendus (« 22 », « 99 », « 2299 ») et
+  // codes devise (« DT »). Granularité MOT : « 30% » d'une bulle voisine que
+  // Vision a mergée avec le prix (« DT 30% ») n'est PAS un écho — ses chiffres
+  // ne sont pas ceux du prix — et doit rester rendu, sinon il disparaît
+  // (surtout avec le fond nettoyé Nano Banana où le raster ne le montre plus).
+  const priceNumTokens = new Set<string>()
+  const priceCurrencies = new Set<string>()
+  const isEchoWord = (t: string): boolean => {
+    const digits = t.replace(/\D+/g, '')
+    if (digits) return priceNumTokens.has(digits)
+    if (!/[a-zà-ÿ]/i.test(t)) return true // symbole pur collé au prix (€, ₤, virgule…)
+    return priceCurrencies.has(t.toUpperCase().replace(/[^A-Z]/g, ''))
   }
+  const inPriceZone = (b: VisionParagraph['bbox']): boolean =>
+    priceRects.some((r) => overlaps(r, b))
+  // Écho TOTAL = tous les mots du paragraphe sont des composants du prix rendu
+  // (déjà affichés par la pile) ET le paragraphe chevauche un bloc prix.
+  const isPriceEcho = (p: VisionParagraph): boolean =>
+    p.words.length > 0 && inPriceZone(p.bbox) && p.words.every((w) => isEchoWord(w.text))
 
   for (const b of built) {
     if (b.block.type !== 'price') continue
@@ -1498,7 +1514,17 @@ async function decomposeSemantic(
             return t === priceParts.integer || t.startsWith(`${priceParts.integer},`) || t.startsWith(`${priceParts.integer}.`)
           })?.bbox
       : undefined
-    priceUppers.push(priceValue.toUpperCase())
+    if (priceParts) {
+      priceNumTokens.add(priceParts.integer)
+      if (priceParts.decimals) {
+        priceNumTokens.add(priceParts.decimals)
+        priceNumTokens.add(priceParts.integer + priceParts.decimals)
+      }
+      if (/^[A-Za-z]/.test(priceParts.currency)) priceCurrencies.add(priceParts.currency.toUpperCase())
+    } else {
+      // Prix non parsé (fallback mono-Textbox) : tokens numériques bruts.
+      for (const m of priceValue.matchAll(/\d+/g)) priceNumTokens.add(m[0])
+    }
     priceRects.push(b.bbox)
     // Membres rendus via la pile → consommés (via isPriceEcho). Un LABEL bundlé
     // par erreur (« Vendu seul ») contient d'autres lettres → NON consommé →
