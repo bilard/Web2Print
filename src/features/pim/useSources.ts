@@ -16,18 +16,7 @@ export function useUpsertSource(projectId: string) {
         ? project.sources.map((s, i) => (i === idx ? source : s))
         : [...project.sources, source]
       await saveSources(projectId, sources)
-      console.log('[useUpsertSource] before upsertSource, projectId:', projectId)
       upsertSource(projectId, source)
-      const stateAfter = usePimStore.getState()
-      const targetPrj = stateAfter.projects.find((p) => p.id === projectId)
-      console.log('[useUpsertSource] after upsertSource:', {
-        projectId,
-        currentProjectId: stateAfter.currentProjectId,
-        projectsCount: stateAfter.projects.length,
-        targetProjectSourcesCount: targetPrj?.sources.length,
-        targetProjectSourceIds: targetPrj?.sources.map((s) => s.id),
-        newSourceId: source.id,
-      })
       return source
     },
     onSuccess: () => {
