@@ -12,4 +12,6 @@ export let globalFabricCanvas: Canvas | null = null
 
 export function setGlobalFabricCanvas(canvas: Canvas | null): void {
   globalFabricCanvas = canvas
+  // Exposé sur window pour l'inspection en console (debug prod sans source maps).
+  ;(window as Window & { __fabricCanvas?: Canvas | null }).__fabricCanvas = canvas
 }
