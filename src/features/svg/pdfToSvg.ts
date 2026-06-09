@@ -49,6 +49,53 @@ const slugifyFileName = (name: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'pdf'
 
+/**
+ * Conversion VECTORIELLE via MuPDF (WASM, moteur de mutool) : le PDF devient un
+ * vrai SVG — paths exacts, images embarquées, et TEXTE RÉEL (`text=text`) avec
+ * positions par glyphe, couleur, taille et graisse natives. Fidélité totale,
+ * zéro OCR. Retourne null si la conversion échoue (→ fallback raster+OCR).
+ * Chargé dynamiquement : le WASM (~8 Mo) n'est tiré qu'au premier import PDF.
+ */
+async function convertWithMupdf(
+  pdfFile: File,
+): Promise<{ svg: string; width: number; height: number; textCount: number } | null> {
+  try {
+    const mupdf = await import('mupdf')
+    const data = new Uint8Array(await pdfFile.arrayBuffer())
+    const doc = mupdf.Document.openDocument(data, 'application/pdf')
+    try {
+      const buf = new mupdf.Buffer()
+      const writer = new mupdf.DocumentWriter(buf, 'svg', 'text=text')
+      const page = doc.loadPage(0)
+      const device = writer.beginPage(page.getBounds())
+      page.run(device, mupdf.Matrix.identity)
+      writer.endPage()
+      writer.close()
+      let svg = buf.asString()
+
+      // Polices de substitution MuPDF → équivalents installés navigateur.
+      svg = svg
+        .replace(/font-family="Nimbus Sans[^"]*"/g, 'font-family="Arial, Helvetica, sans-serif"')
+        .replace(/font-family="Nimbus Roman[^"]*"/g, 'font-family="\'Times New Roman\', serif"')
+        .replace(/font-family="Nimbus Mono[^"]*"/g, 'font-family="\'Courier New\', monospace"')
+
+      const wm = svg.match(/width="([\d.]+)"/)
+      const hm = svg.match(/height="([\d.]+)"/)
+      const width = wm ? Math.round(parseFloat(wm[1])) : 0
+      const height = hm ? Math.round(parseFloat(hm[1])) : 0
+      const textCount = (svg.match(/<text[\s>]/g) ?? []).length
+      // Marqueur pdf-text-layer (attribut) : EditorPage saute l'auto-décompo OCR.
+      svg = svg.replace('<svg ', '<svg data-pipeline="pdf-to-svg-mupdf" data-text-layer="pdf-text-layer" ')
+      return { svg, width, height, textCount }
+    } finally {
+      doc.destroy()
+    }
+  } catch (err) {
+    console.warn('[pdfToSvg] conversion vectorielle MuPDF échouée — fallback raster:', err)
+    return null
+  }
+}
+
 /** Run de texte NATIF extrait du PDF (calque texte pdf.js, pas d'OCR). */
 interface PdfTextRun {
   text: string
@@ -188,6 +235,26 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
     throw new Error(`Type non supporté : ${pdfFile.type || 'inconnu'} — attendu un PDF.`)
   }
 
+  const baseNameForFile = pdfFile.name.replace(/\.[^.]+$/, '') || 'pdf'
+
+  // 1) Conversion VECTORIELLE MuPDF (fidélité totale + texte natif éditable).
+  //    On ne la retient que si le PDF a du texte réel ; un PDF aplati (texte
+  //    vectorisé/scanné) passe au pipeline raster + OCR qui, lui, sait rendre
+  //    les textes éditables.
+  const vector = await convertWithMupdf(pdfFile)
+  if (vector && vector.width > 0 && vector.height > 0 && vector.textCount > 0) {
+    const svgFile = new File([vector.svg], `${baseNameForFile}.svg`, { type: 'image/svg+xml' })
+    return {
+      file: svgFile,
+      width: vector.width,
+      height: vector.height,
+      imageUrl: '',
+      storagePath: '',
+      hasTextLayer: true,
+    }
+  }
+
+  // 2) Fallback : rasterisation + calque texte pdf.js (ou OCR si aplati).
   const user = auth.currentUser
   if (!user) throw new Error('Utilisateur non connecté — connexion Firebase requise pour uploader le rendu PDF.')
 
