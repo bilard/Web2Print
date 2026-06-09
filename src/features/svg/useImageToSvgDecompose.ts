@@ -1083,6 +1083,10 @@ async function decomposeHeuristic(
   canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
   result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
   maskWhite = false,
+  /** Mode ÉDITEUR « fidélité d'abord » : seuls les placeholders {{…}} deviennent
+   *  éditables (pas de détection de prix fiable sans Gemini sur ce fallback). */
+  selective = false,
+  renderedTexts?: string[],
 ): Promise<number> {
   // PASSE 1 — Collecte des textes éditoriaux valides + leurs analyses
   interface Item {
@@ -1096,11 +1100,14 @@ async function decomposeHeuristic(
   const items: Item[] = []
 
   for (const para of result.paragraphs) {
-    if (isInProductZone(para.bbox, width, height)) continue
+    // Sélectif : seuls les placeholders {{…}} sont extraits, le reste du
+    // graphisme d'origine reste en raster intact.
+    if (selective && !isPlaceholderPara(para)) continue
+    if (!selective && isInProductZone(para.bbox, width, height)) continue
     if (para.confidence < 0.5) continue
     const bgSample = sampleBackground(ctx, para.bbox, width, height)
     // Texte sur fond vert = packaging produit ("A GER" sur l'emballage) → skip.
-    if (isGreenBackground(bgSample.hex)) continue
+    if (!selective && isGreenBackground(bgSample.hex)) continue
     const nLines = countLines(para.words)
     const singleLineH = para.bbox.height / nLines
     const fontSize = Math.max(singleLineH * 0.95, 10)
@@ -1114,7 +1121,7 @@ async function decomposeHeuristic(
   // doivent JAMAIS être extraits comme texte éditable. 1 appel, texte+positions
   // (pas de dico par-vendeur). Échec → on garde tout (comportement d'avant).
   let editorialItems = items
-  if (items.length > 0) {
+  if (items.length > 0 && !selective) {
     toast.loading('Classification logos / éditorial…', { id: toastId })
     const logoIdx = await classifyLogoTexts(items.map((it) => ({
       text: it.para.text,
@@ -1139,11 +1146,11 @@ async function decomposeHeuristic(
   // Puis tous les Textbox de la zone par-dessus.
   const addedTextboxes: Textbox[] = []
   for (const zone of zones) {
-    if (zone.uniform && !isNearWhite(zone.bgHex)) {
+    if (zone.uniform && !selective && !isNearWhite(zone.bgHex)) {
       const maskBox = growBoxToColorExtent(ctx, zone.bbox, zone.bgHex, width, height)
       // Débord minimal (2 px) : évite un filet blanc à la jonction rouge/jaune.
       canvas.add(buildMaskRect(maskBox, zone.bgHex, 2, 2))
-    } else if (zone.uniform && maskWhite) {
+    } else if (zone.uniform && (maskWhite || selective)) {
       // Fond clair + raster VISIBLE derrière (mode éditeur) : masque serré sur la
       // bbox des textes (SANS growBoxToColorExtent : la croissance déborderait sur
       // toute la zone claire de la carte) pour cacher le texte raster d'origine,
@@ -1155,6 +1162,7 @@ async function decomposeHeuristic(
       const tb = buildTextbox(text, it.para.bbox, it.fontSize, it.color, it.fontWeight, styles)
       canvas.add(tb)
       addedTextboxes.push(tb)
+      if (selective) renderedTexts?.push(it.para.text)
     }
   }
   const kept = editorialItems.length
@@ -1162,7 +1170,7 @@ async function decomposeHeuristic(
   // PASSE 4 — Relecture prix composés via Vision LLM (résout "9999" → "9,59 €"
   // et merge les fragments "4" + "€" + "+79" → "4,79 €" sur le main Textbox).
   // Async, ne bloque pas le rendu canvas — UI loading via toast.
-  const priceClusters = detectPriceClusters(addedTextboxes)
+  const priceClusters = selective ? [] : detectPriceClusters(addedTextboxes)
   if (priceClusters.length > 0) {
     toast.loading(`Relecture de ${priceClusters.length} prix…`, { id: toastId })
     for (const cluster of priceClusters) {
@@ -1318,10 +1326,20 @@ function groupBuiltByColor(
   return zones
 }
 
+/** Paragraphe « champ variable » : placeholder de fusion `{{…}}` (Vision OCRise
+ *  souvent avec espaces : « { { Libelle Article } } »). */
+const isPlaceholderPara = (p: VisionParagraph): boolean => /\{\s*\{|\}\s*\}/.test(p.text)
+
 async function decomposeSemantic(
   canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
   result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
   maskWhite = false,
+  /** Mode ÉDITEUR « fidélité d'abord » : seuls les champs VARIABLES (prix +
+   *  placeholders {{…}}) deviennent éditables ; tout le reste du graphisme
+   *  d'origine reste en raster intact (pas d'overlay, pas de masque). */
+  selective = false,
+  /** Out : textes sources rendus éditables (pour l'effacement ciblé Nano Banana). */
+  renderedTexts?: string[],
 ): Promise<number | null> {
   const texts = result.paragraphs.map((p, i) => ({
     i, text: p.text,
@@ -1355,7 +1373,9 @@ async function decomposeSemantic(
   for (const z of maskZones) {
     const grown = growBoxToColorExtent(ctx, z.bbox, z.bgHex, width, height)
     coloredZones.push(grown)
-    canvas.add(buildMaskRect(grown, z.bgHex, 2, 2))
+    // Sélectif : pas de masques génériques — seuls les champs variables rendus
+    // reçoivent un masque ciblé (le reste du graphisme d'origine reste intact).
+    if (!selective) canvas.add(buildMaskRect(grown, z.bgHex, 2, 2))
   }
 
   // Fonds CLAIRS + raster visible derrière (mode éditeur) : masque serré sur la
@@ -1363,7 +1383,7 @@ async function decomposeSemantic(
   // la carte) pour cacher le texte raster d'origine — sinon il reste visible sous
   // le Textbox éditable (« texte en double »). Ces zones ne nourrissent PAS
   // coloredZones (le gate anti-omission reste limité aux aplats promo couleur).
-  if (maskWhite) {
+  if (maskWhite && !selective) {
     const whites = built.filter((b) => b.bgUniform && isNearWhite(b.bgHex))
     for (const z of groupBuiltByColor(whites.map((b) => ({ bbox: b.bbox, bgHex: b.bgHex })))) {
       canvas.add(buildMaskRect(z.bbox, z.bgHex, 4, 4))
@@ -1544,6 +1564,19 @@ async function decomposeSemantic(
       if (glyphBg.uniform) canvas.add(buildMaskRect(glyphBox, glyphBg.hex, 4, 4))
     }
     buildStackedPrice(canvas, priceValue, b.bbox, fontFamily, fontWeight, b.color, anchorBox)
+    renderedTexts?.push(priceValue)
+  }
+
+  // Rend un placeholder {{…}} : masque ciblé sur sa bbox (fond échantillonné,
+  // fallback si Nano Banana échoue) + Textbox éditable + texte source collecté
+  // pour l'effacement Nano Banana.
+  const renderPlaceholder = (idx: number): void => {
+    const p = result.paragraphs[idx]
+    if (!p || consumed.has(idx)) return
+    const bg = sampleBackground(ctx, p.bbox, width, height)
+    if (bg.uniform) canvas.add(buildMaskRect(p.bbox, bg.hex, 4, 4))
+    renderedTexts?.push(p.text)
+    renderParagraph(idx)
   }
 
   for (const b of built) {
@@ -1560,6 +1593,12 @@ async function decomposeSemantic(
           continue // doublon de symbole → ignoré
         }
         if (isPriceEcho(para)) { consumed.add(idx); continue }
+      }
+      // Sélectif (fidélité d'abord) : seuls les placeholders {{…}} deviennent
+      // éditables — le reste du graphisme d'origine reste en raster intact.
+      if (selective) {
+        if (para && isPlaceholderPara(para)) renderPlaceholder(idx)
+        continue
       }
       renderParagraph(idx)
     }
@@ -1585,6 +1624,12 @@ async function decomposeSemantic(
     if (consumed.has(i)) continue
     const p = result.paragraphs[i]
     if (p.confidence < 0.5) continue
+    // Sélectif : la complétude ne concerne que les placeholders {{…}} omis par
+    // Gemini — les labels promo restent en raster d'origine.
+    if (selective) {
+      if (isPlaceholderPara(p)) renderPlaceholder(i)
+      continue
+    }
     if (!inColoredZone(p)) continue
     // Fragment de PRIX = AUCUNE lettre (chiffres, « € » seul, « 5 ₤ 49 » avec € mal
     // OCRisé…) : déjà rendu composé par buildStackedPrice → le re-rendre créerait un
@@ -1596,8 +1641,11 @@ async function decomposeSemantic(
   }
 
   // Filets de séparation (traits horizontaux entre blocs de prix) — invisibles pour
-  // Vision (pas du texte), détectés directement sur l'image.
-  for (const sep of detectSeparatorRects(ctx, width, height)) canvas.add(sep)
+  // Vision (pas du texte), détectés directement sur l'image. Sélectif : le raster
+  // d'origine les montre déjà, pas d'overlay.
+  if (!selective) {
+    for (const sep of detectSeparatorRects(ctx, width, height)) canvas.add(sep)
+  }
 
   canvas.requestRenderAll()
   syncToStore(canvas)
@@ -1673,21 +1721,6 @@ export async function decomposeOnCanvas(
   const prevSkip = _skipStoreSync
   if (!syncStore) _skipStoreSync = true
 
-  // Nettoyage Nano Banana lancé EN PARALLÈLE des passes (éditeur seulement) :
-  // Vision a déjà lu les textes sur l'original ; le fond nettoyé (textes promo
-  // effacés par inpainting, visuel intact) remplace le raster à la fin et rend
-  // les masques rectangulaires inutiles. Échec (clé Gemini absente, quota…) →
-  // fallback silencieux sur les masques classiques.
-  const cleanedUrlPromise: Promise<string | null> = !hideBg
-    ? (log?.('info', 'Nettoyage du fond (Nano Banana) en parallèle…'),
-      import('./nanoBgClean')
-        .then(({ cleanPromoTextsFromImage }) => cleanPromoTextsFromImage(dataUri))
-        .catch((e: unknown) => {
-          log?.('warn', `Nettoyage Nano Banana indisponible (${e instanceof Error ? e.message : String(e)}) — masques utilisés`)
-          return null
-        }))
-    : Promise.resolve(null)
-
   let kept: number
   try {
     const toastId: string | number = 'wf'
@@ -1695,15 +1728,33 @@ export async function decomposeOnCanvas(
     // ajoutés (à re-mapper) sans toucher aux objets préexistants du canvas.
     const beforeObjects = new Set(canvas.getObjects())
 
-    // Fond visible (éditeur) → masquer aussi les textes sur fond clair, sinon le
-    // texte raster d'origine double le Textbox éditable posé par-dessus.
+    // ÉDITEUR (hideBg false) = mode SÉLECTIF « fidélité d'abord » : seuls les
+    // champs VARIABLES (prix + placeholders {{…}}) deviennent éditables, le
+    // reste du graphisme d'origine reste en raster intact. `renderedTexts`
+    // collecte leurs textes sources pour l'effacement ciblé Nano Banana.
+    const selective = !hideBg
     const maskWhite = !hideBg
-    const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite)
+    const renderedTexts: string[] = []
+    const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite, selective, renderedTexts)
     if (keptSem === null) {
-      kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite)
+      kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite, selective, renderedTexts)
     } else {
       kept = keptSem
     }
+
+    // Nettoyage Nano Banana APRÈS les passes (il faut la liste des textes rendus
+    // éditables) : efface UNIQUEMENT ces textes du raster par inpainting, le
+    // reste du graphisme d'origine reste pixel-identique. Échec (clé Gemini
+    // absente, quota…) → fallback silencieux sur les masques ciblés déjà posés.
+    const cleanedUrlPromise: Promise<string | null> = !hideBg && renderedTexts.length > 0
+      ? (log?.('info', `Effacement ciblé Nano Banana (${renderedTexts.length} champs)…`),
+        import('./nanoBgClean')
+          .then(({ cleanPromoTextsFromImage }) => cleanPromoTextsFromImage(dataUri, renderedTexts))
+          .catch((e: unknown) => {
+            log?.('warn', `Nettoyage Nano Banana indisponible (${e instanceof Error ? e.message : String(e)}) — masques utilisés`)
+            return null
+          }))
+      : Promise.resolve(null)
 
     const bgRoot = canvas.getObjects().find(isBgLockedMarker)
 

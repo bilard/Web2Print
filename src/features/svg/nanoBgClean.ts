@@ -15,36 +15,39 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { storage, auth } from '@/lib/firebase/config'
 import { generateImage } from '@/features/briefs/ai/geminiImageClient'
 
-const CLEAN_PROMPT = `This is a retail promo card. Edit the image: ERASE all PROMOTIONAL printed text, keeping everything else pixel-identical.
+/** Prompt SÉLECTIF : n'efface QUE les textes listés (champs variables rendus
+ *  éditables par la décomposition) — tout le reste du graphisme d'origine
+ *  (badges, rubans, labels, photo, packaging) reste pixel-identique. */
+function buildCleanPrompt(textsToErase: string[]): string {
+  const list = textsToErase.map((t) => `- "${t.replace(/\s+/g, ' ').trim()}"`).join('\n')
+  return `This is a retail promo card. Edit the image: ERASE ONLY the following exact printed texts, filling each erased area with the underlying flat background color/shape so the area looks blank:
 
-Erase completely (fill with the underlying flat background color/shape):
-- prices, currency codes and decimals (e.g. "22,99", "DT")
-- percentage/discount badge text (e.g. "30%", "d'économie")
-- offer labels and ribbons text (e.g. "OFFRE", "+55g GRATUIT")
-- template placeholders in double curly braces (e.g. "{{Libelle Article}}")
-- footer file name, page number and date
+${list}
 
-DO NOT modify:
-- the product photo and any text printed ON the product packaging itself (brand logo, volume like "150 ml")
-- shapes, bubbles, ribbons, frames, colors, crop marks, layout
+DO NOT modify ANYTHING else. Keep pixel-identical:
+- every other text, label, badge and ribbon (do NOT erase them)
+- the product photo and any text printed on the product packaging
+- shapes, bubbles, frames, colors, crop marks, layout
 - image dimensions and aspect ratio
 
-Output the SAME image with only the promotional texts removed.`
+Output the SAME image with only the listed texts removed.`
+}
 
 /**
- * Génère le fond nettoyé et l'upload vers Storage. Lève si pas de session
- * Firebase, pas de clé Gemini, ou échec de génération — le caller fait
- * fallback sur les masques classiques.
+ * Génère le fond nettoyé (textes listés effacés) et l'upload vers Storage.
+ * Lève si pas de session Firebase, pas de clé Gemini, ou échec de génération —
+ * le caller fait fallback sur les masques classiques.
  */
-export async function cleanPromoTextsFromImage(dataUri: string): Promise<string> {
+export async function cleanPromoTextsFromImage(dataUri: string, textsToErase: string[]): Promise<string> {
   const user = auth.currentUser
   if (!user) throw new Error('Connexion Firebase requise pour le nettoyage du fond.')
 
+  if (textsToErase.length === 0) throw new Error('Aucun texte à effacer — nettoyage inutile.')
   const m = dataUri.match(/^data:([^;]+);base64,(.*)$/s)
   if (!m) throw new Error('Image source non base64 — nettoyage impossible.')
 
   const { blob } = await generateImage(
-    CLEAN_PROMPT,
+    buildCleanPrompt(textsToErase),
     [{ mimeType: m[1], data: m[2], label: 'Image à nettoyer' }],
     { outputFormat: 'images-only', imageSize: '1K' },
   )
