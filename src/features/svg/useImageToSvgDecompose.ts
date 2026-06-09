@@ -585,6 +585,7 @@ function buildStackedPrice(
   fontFamily: string,
   fontWeight: number | string,
   fill: string,
+  anchorBox?: VisionParagraph['bbox'],
 ): void {
   const parts = parsePriceParts(priceValue)
   if (!parts) {
@@ -597,9 +598,13 @@ function buildStackedPrice(
   // remplit la hauteur du prix, le « € » est en HAUT (sommet de l'entier) et les
   // décimales en BAS, base alignée sur celle de l'entier. € et décimales sont étalés
   // (≈ exposant / indice), PAS empilés serré. 3 Textbox liés par priceGroupId.
-  const leftX = bbox.left
-  const topY = bbox.top
-  const bigFs = Math.max(Math.round(bbox.height), 10)
+  // `anchorBox` (bbox Vision du CHIFFRE ENTIER seul, si identifié) prime sur l'union
+  // bbox du bloc : quand Gemini sur-groupe (entier + devise + « 30% » d'une autre
+  // bulle), l'union sur-dimensionne et décale toute la pile.
+  const anchor = anchorBox ?? bbox
+  const leftX = anchor.left
+  const topY = anchor.top
+  const bigFs = Math.max(Math.round(anchor.height), 10)
   const intWidth = parts.integer.length * bigFs * 0.6
   const smallFs = Math.max(Math.round(bigFs * 0.42), 10) // € et décimales ≈ 0.42× l'entier (mesuré)
   const rightX = leftX + intWidth + Math.round(bigFs * 0.04)
@@ -1451,35 +1456,66 @@ async function decomposeSemantic(
     canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles, align, lineHeight))
   }
 
-  // Blocs Gemini : PRIX composés/empilés (buildStackedPrice), le reste par-paragraphe.
+  // Blocs Gemini : PRIX composés/empilés (buildStackedPrice) traités EN PREMIER —
+  // on collecte leurs valeurs + emprises pour pouvoir écarter ensuite les « échos »
+  // de prix (paragraphes Vision qui re-détectent les mêmes glyphes), le reste
+  // par-paragraphe.
+  const overlaps = (a: VisionParagraph['bbox'], c: VisionParagraph['bbox']) =>
+    a.left < c.left + c.width && c.left < a.left + a.width && a.top < c.top + c.height && c.top < a.top + a.height
+  const priceUppers: string[] = []
+  const priceRects: VisionParagraph['bbox'][] = []
+  // Écho de prix = paragraphe dont CHAQUE token est un composant sans lettre
+  // (chiffres, « 30% », « € » mal OCRisé ₤/₽…) ou le code devise d'un prix rendu
+  // (DT, TND…), ET qui CHEVAUCHE l'emprise d'un bloc prix. Vision merge parfois
+  // « DT 30% » (exposant + bulle voisine) en un paragraphe que Gemini classe dans
+  // un AUTRE bloc → sans ce filtre il ressort en gros textbox dupliqué.
+  const isPriceEcho = (p: VisionParagraph): boolean => {
+    if (priceRects.length === 0) return false
+    if (!priceRects.some((r) => overlaps(r, p.bbox))) return false
+    const tokens = p.text.trim().split(/\s+/).filter(Boolean)
+    if (tokens.length === 0) return false
+    return tokens.every((tok) =>
+      !/[a-zà-ÿ]/i.test(tok) ||
+      (/^[A-Za-z]{1,3}$/.test(tok) && priceUppers.some((pv) => pv.includes(tok.toUpperCase()))),
+    )
+  }
+
   for (const b of built) {
-    if (b.block.type === 'price') {
-      const fontWeight = detectFontWeight(ctx, b.bbox, b.color, width, height)
-      const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
-      buildStackedPrice(canvas, b.block.priceValue ?? b.block.text, b.bbox, fontFamily, fontWeight, b.color)
-      // On ne marque consommés que les COMPOSANTS de prix (chiffres SANS lettre —
-      // tolère un « € » mal OCRisé en ₤/₽/£…), rendus via la pile. Un LABEL bundlé
-      // par erreur (« Vendu seul ») contient des lettres → NON consommé → récupéré
-      // en post-passe.
-      const priceUpper = (b.block.priceValue ?? b.block.text).toUpperCase()
-      b.block.memberIndices.forEach((i) => {
-        const t = (result.paragraphs[i]?.text ?? '').trim()
-        if (t.length === 0) return
-        // Composant de prix = AUCUNE lettre (chiffres, « € » seul, décimales, symbole
-        // mal OCRisé ₤/₽…). Rendu via la pile → consommé. Un label bundlé a des lettres.
-        if (!/[a-zà-ÿ]/i.test(t)) { consumed.add(i); return }
-        // Code devise alphabétique (DT, TND…) présent dans le prix : rendu en exposant
-        // par buildStackedPrice → le re-rendre créerait un doublon superposé.
-        if (/^[A-Za-z]{1,3}$/.test(t) && priceUpper.includes(t.toUpperCase())) consumed.add(i)
-      })
-      continue
-    }
+    if (b.block.type !== 'price') continue
+    const fontWeight = detectFontWeight(ctx, b.bbox, b.color, width, height)
+    const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
+    const priceValue = b.block.priceValue ?? b.block.text
+    // Ancre la pile sur la bbox Vision du chiffre entier seul (le membre « 22 »
+    // ou « 22,99 ») plutôt que l'union du bloc, qui peut englober d'autres bulles
+    // quand Gemini sur-groupe → pile sur-dimensionnée et décalée.
+    const priceParts = parsePriceParts(priceValue)
+    const anchorBox = priceParts
+      ? b.block.memberIndices
+          .map((i) => result.paragraphs[i])
+          .filter(Boolean)
+          .find((p) => {
+            const t = p.text.trim()
+            return t === priceParts.integer || t.startsWith(`${priceParts.integer},`) || t.startsWith(`${priceParts.integer}.`)
+          })?.bbox
+      : undefined
+    buildStackedPrice(canvas, priceValue, b.bbox, fontFamily, fontWeight, b.color, anchorBox)
+    priceUppers.push(priceValue.toUpperCase())
+    priceRects.push(b.bbox)
+    // Membres rendus via la pile → consommés (via isPriceEcho ci-dessous). Un LABEL
+    // bundlé par erreur (« Vendu seul ») contient d'autres lettres → NON consommé →
+    // récupéré en post-passe.
+    b.block.memberIndices.forEach((i) => {
+      const p = result.paragraphs[i]
+      if (p && isPriceEcho(p)) consumed.add(i)
+    })
+  }
+
+  for (const b of built) {
+    if (b.block.type === 'price') continue
     // Dédup symbole isolé : Vision détecte parfois un « % » / « € » À LA FOIS comme
     // glyphe d'un autre membre (« -50% ») ET comme paragraphe isolé qui le chevauche
     // → double affichage. On saute le symbole isolé dans ce cas.
     const memberParas = b.block.memberIndices.map((i) => result.paragraphs[i]).filter(Boolean) as VisionParagraph[]
-    const overlaps = (a: VisionParagraph['bbox'], c: VisionParagraph['bbox']) =>
-      a.left < c.left + c.width && c.left < a.left + a.width && a.top < c.top + c.height && c.top < a.top + a.height
     for (const idx of b.block.memberIndices) {
       const para = result.paragraphs[idx]
       if (para) {
@@ -1487,6 +1523,7 @@ async function decomposeSemantic(
         if (/^[%€$£°®™]{1,2}$/.test(sym) && memberParas.some((m) => m !== para && m.text.includes(sym) && overlaps(m.bbox, para.bbox))) {
           continue // doublon de symbole → ignoré
         }
+        if (isPriceEcho(para)) { consumed.add(idx); continue }
       }
       renderParagraph(idx)
     }
@@ -1518,6 +1555,7 @@ async function decomposeSemantic(
     // DOUBLON superposé (« 9 €€ 59 », « 5 49 » brut). Les labels (« Vendu seul »,
     // « Le kg: 22,88€ ») ont des lettres → toujours rendus.
     if (!/[a-zà-ÿ]/i.test(p.text)) continue
+    if (isPriceEcho(p)) continue
     renderParagraph(i)
   }
 
