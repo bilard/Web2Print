@@ -131,11 +131,14 @@ export default function EditorPage() {
       }
 
       if ((type === 'svg' || type === 'image-to-svg' || type === 'pdf-to-svg') && files.length > 0) {
+        const svgText = type === 'pdf-to-svg' ? await files[0].text() : null
         await parseSvg(files[0])
         // Conversions raster→SVG : on enchaîne automatiquement la décomposition
         // (Vision → textes/formes éditables). Un .svg vectoriel importé n'a pas de
         // calque image-bg-locked, donc canDecompose restera false → pas de décompo.
-        if (type === 'image-to-svg' || type === 'pdf-to-svg') {
+        // EXCEPTION pdf-to-svg : si le PDF avait un calque texte NATIF, le SVG
+        // contient déjà les <text> éditables exacts → l'OCR serait redondant.
+        if (type === 'image-to-svg' || (type === 'pdf-to-svg' && !svgText?.includes('pdf-text-layer'))) {
           setAutoDecomposePending(true)
         }
       }
