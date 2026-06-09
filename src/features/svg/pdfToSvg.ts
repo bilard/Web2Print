@@ -213,8 +213,11 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
   // positions/tailles/couleurs exactes du document (zéro OCR, zéro LLM). Le run
   // a déjà été effacé du raster quand son fond était uniforme.
   const hasTextLayer = textRuns.length > 0
+  // <text> à la RACINE (pas de <g> enveloppant) : chaque run devient un objet
+  // Fabric individuel directement sélectionnable/éditable à l'import. Le
+  // commentaire pdf-text-layer sert de marqueur (EditorPage saute l'OCR).
   const textLayer = hasTextLayer
-    ? `  <g id="pdf-text-layer" data-role="pdf-text-layer">\n${textRuns
+    ? `  <!-- pdf-text-layer : calque texte natif du PDF -->\n${textRuns
         .map((r) => {
           const style = [
             `font-size:${r.fontSize.toFixed(1)}px`,
@@ -223,9 +226,9 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
             r.italic ? 'font-style:italic' : '',
             `fill:${r.fill}`,
           ].filter(Boolean).join(';')
-          return `    <text x="${r.x.toFixed(1)}" y="${r.yBaseline.toFixed(1)}" style="${style}" textLength="${r.width.toFixed(1)}">${escapeXml(r.text)}</text>`
+          return `  <text x="${r.x.toFixed(1)}" y="${r.yBaseline.toFixed(1)}" style="${style}">${escapeXml(r.text)}</text>`
         })
-        .join('\n')}\n  </g>\n`
+        .join('\n')}\n`
     : '  <!-- Pas de calque texte natif (PDF aplati) : overlays via "Décomposer" (OCR) -->\n'
 
   // Calque `image-bg-locked` IDENTIQUE à imageToSvg.ts (data-role sur le <g> ET le
