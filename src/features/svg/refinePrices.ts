@@ -117,12 +117,15 @@ export interface PriceParts {
 }
 
 /**
- * Décompose un prix lu ("9,59 €", "5 €", "2,56 €", "4,79") en parties pour le
- * rendu composé hypermarché : gros entier à gauche + petit bloc "€" empilé sur
- * les décimales à droite. Retourne null si la chaîne n'est pas un prix simple.
+ * Décompose un prix lu ("9,59 €", "5 €", "22,99 DT", "4,79") en parties pour le
+ * rendu composé hypermarché : gros entier à gauche + petit bloc devise empilé sur
+ * les décimales à droite. Devises acceptées : symboles (€ $ £) et codes
+ * alphabétiques en MAJUSCULES 1-3 lettres (DT, TND, CHF…) — les minuscules sont
+ * rejetées pour ne pas transformer une quantité ("150 ml") en prix empilé.
+ * Retourne null si la chaîne n'est pas un prix simple.
  */
 export function parsePriceParts(price: string): PriceParts | null {
-  const m = price.trim().match(/^(\d+)(?:[,.](\d+))?\s*(€)?$/)
+  const m = price.trim().match(/^(\d+)(?:[,.](\d+))?\s*(€|\$|£|[A-Z]{1,3})?$/)
   if (!m) return null
   return { integer: m[1], decimals: m[2] ?? null, currency: m[3] ?? '€' }
 }

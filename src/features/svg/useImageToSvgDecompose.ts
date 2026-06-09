@@ -1441,11 +1441,16 @@ async function decomposeSemantic(
       // tolère un « € » mal OCRisé en ₤/₽/£…), rendus via la pile. Un LABEL bundlé
       // par erreur (« Vendu seul ») contient des lettres → NON consommé → récupéré
       // en post-passe.
+      const priceUpper = (b.block.priceValue ?? b.block.text).toUpperCase()
       b.block.memberIndices.forEach((i) => {
         const t = (result.paragraphs[i]?.text ?? '').trim()
+        if (t.length === 0) return
         // Composant de prix = AUCUNE lettre (chiffres, « € » seul, décimales, symbole
         // mal OCRisé ₤/₽…). Rendu via la pile → consommé. Un label bundlé a des lettres.
-        if (t.length > 0 && !/[a-zà-ÿ]/i.test(t)) consumed.add(i)
+        if (!/[a-zà-ÿ]/i.test(t)) { consumed.add(i); return }
+        // Code devise alphabétique (DT, TND…) présent dans le prix : rendu en exposant
+        // par buildStackedPrice → le re-rendre créerait un doublon superposé.
+        if (/^[A-Za-z]{1,3}$/.test(t) && priceUpper.includes(t.toUpperCase())) consumed.add(i)
       })
       continue
     }
