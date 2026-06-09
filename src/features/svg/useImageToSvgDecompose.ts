@@ -1162,7 +1162,7 @@ async function decomposeHeuristic(
       const tb = buildTextbox(text, it.para.bbox, it.fontSize, it.color, it.fontWeight, styles)
       canvas.add(tb)
       addedTextboxes.push(tb)
-      if (selective) renderedTexts?.push(it.para.text)
+      renderedTexts?.push(it.para.text)
     }
   }
   const kept = editorialItems.length
@@ -1487,6 +1487,7 @@ async function decomposeSemantic(
       ? Math.min(Math.max(para.bbox.height / (nLines * fontSize), 0.75), 1.3)
       : undefined
     canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles, align, lineHeight))
+    renderedTexts?.push(para.text)
   }
 
   // Blocs Gemini : PRIX composés/empilés (buildStackedPrice) traités EN PREMIER —
@@ -1575,8 +1576,7 @@ async function decomposeSemantic(
     if (!p || consumed.has(idx)) return
     const bg = sampleBackground(ctx, p.bbox, width, height)
     if (bg.uniform) canvas.add(buildMaskRect(p.bbox, bg.hex, 4, 4))
-    renderedTexts?.push(p.text)
-    renderParagraph(idx)
+    renderParagraph(idx) // pousse aussi le texte dans renderedTexts
   }
 
   for (const b of built) {
@@ -1728,12 +1728,19 @@ export async function decomposeOnCanvas(
     // ajoutés (à re-mapper) sans toucher aux objets préexistants du canvas.
     const beforeObjects = new Set(canvas.getObjects())
 
-    // ÉDITEUR (hideBg false) = mode SÉLECTIF « fidélité d'abord » : seuls les
-    // champs VARIABLES (prix + placeholders {{…}}) deviennent éditables, le
-    // reste du graphisme d'origine reste en raster intact. `renderedTexts`
-    // collecte leurs textes sources pour l'effacement ciblé Nano Banana.
-    const selective = !hideBg
+    // ÉDITEUR (hideBg false) : la sélectivité dépend du DOCUMENT.
+    //  • Le visuel contient des placeholders {{…}} → c'est un TEMPLATE de fusion
+    //    → mode SÉLECTIF « fidélité d'abord » : seuls les champs VARIABLES
+    //    (prix + placeholders) deviennent éditables, le reste du graphisme
+    //    d'origine reste en raster intact.
+    //  • Pas de placeholders (étiquette promo type Heineken) → décomposition
+    //    COMPLÈTE : tous les textes promo deviennent éditables (usage
+    //    historique du module).
+    // `renderedTexts` collecte les textes rendus pour l'effacement ciblé NB.
+    const hasPlaceholders = result.paragraphs.some(isPlaceholderPara)
+    const selective = !hideBg && hasPlaceholders
     const maskWhite = !hideBg
+    if (!hideBg) log?.('info', selective ? 'Template détecté ({{…}}) — champs variables seuls éditables' : 'Étiquette promo — décomposition complète')
     const renderedTexts: string[] = []
     const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite, selective, renderedTexts)
     if (keptSem === null) {
