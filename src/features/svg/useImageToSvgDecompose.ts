@@ -1077,6 +1077,7 @@ function mergeSameStyleStacks(canvas: Canvas): void {
 async function decomposeHeuristic(
   canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
   result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
+  maskWhite = false,
 ): Promise<number> {
   // PASSE 1 — Collecte des textes éditoriaux valides + leurs analyses
   interface Item {
@@ -1137,6 +1138,12 @@ async function decomposeHeuristic(
       const maskBox = growBoxToColorExtent(ctx, zone.bbox, zone.bgHex, width, height)
       // Débord minimal (2 px) : évite un filet blanc à la jonction rouge/jaune.
       canvas.add(buildMaskRect(maskBox, zone.bgHex, 2, 2))
+    } else if (zone.uniform && maskWhite) {
+      // Fond clair + raster VISIBLE derrière (mode éditeur) : masque serré sur la
+      // bbox des textes (SANS growBoxToColorExtent : la croissance déborderait sur
+      // toute la zone claire de la carte) pour cacher le texte raster d'origine,
+      // sinon il reste visible sous le Textbox éditable (effet « texte en double »).
+      canvas.add(buildMaskRect(zone.bbox, zone.bgHex, 4, 4))
     }
     for (const it of zone.items) {
       const { text, styles } = buildTextAndStyles(it.para.words, it.fontSize)
@@ -1309,6 +1316,7 @@ function groupBuiltByColor(
 async function decomposeSemantic(
   canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
   result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
+  maskWhite = false,
 ): Promise<number | null> {
   const texts = result.paragraphs.map((p, i) => ({
     i, text: p.text,
@@ -1343,6 +1351,18 @@ async function decomposeSemantic(
     const grown = growBoxToColorExtent(ctx, z.bbox, z.bgHex, width, height)
     coloredZones.push(grown)
     canvas.add(buildMaskRect(grown, z.bgHex, 2, 2))
+  }
+
+  // Fonds CLAIRS + raster visible derrière (mode éditeur) : masque serré sur la
+  // bbox du bloc (SANS croissance : elle déborderait sur toute la zone claire de
+  // la carte) pour cacher le texte raster d'origine — sinon il reste visible sous
+  // le Textbox éditable (« texte en double »). Ces zones ne nourrissent PAS
+  // coloredZones (le gate anti-omission reste limité aux aplats promo couleur).
+  if (maskWhite) {
+    const whites = built.filter((b) => b.bgUniform && isNearWhite(b.bgHex))
+    for (const z of groupBuiltByColor(whites.map((b) => ({ bbox: b.bbox, bgHex: b.bgHex })))) {
+      canvas.add(buildMaskRect(z.bbox, z.bgHex, 4, 4))
+    }
   }
 
   // Rendu. Les blocs PRIX sont composés/empilés via buildStackedPrice (sur l'union
@@ -1586,9 +1606,12 @@ export async function decomposeOnCanvas(
     // ajoutés (à re-mapper) sans toucher aux objets préexistants du canvas.
     const beforeObjects = new Set(canvas.getObjects())
 
-    const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId)
+    // Fond visible (éditeur) → masquer aussi les textes sur fond clair, sinon le
+    // texte raster d'origine double le Textbox éditable posé par-dessus.
+    const maskWhite = !hideBg
+    const keptSem = await decomposeSemantic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite)
     if (keptSem === null) {
-      kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId)
+      kept = await decomposeHeuristic(canvas, ctx2d, dataUri, result, width, height, toastId, maskWhite)
     } else {
       kept = keptSem
     }
