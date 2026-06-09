@@ -1520,6 +1520,14 @@ export interface DecomposeOnCanvasOpts {
    * pas écraser l'état de l'éditeur ouvert.
    */
   syncStore?: boolean
+  /**
+   * Cache l'image bg après décomposition (template propre sur fond blanc, pour
+   * le publipostage workflow). Par défaut : true (contrat du node Décomposer).
+   * L'ÉDITEUR passe false : le module Image/PDF → SVG promet « visuel verrouillé
+   * en fond + textes éditables en surimpression » — cacher le fond détruit le
+   * visuel (photo produit, logos, cadre) sur les vraies cartes promo.
+   */
+  hideBg?: boolean
 }
 
 /**
@@ -1534,7 +1542,7 @@ export async function decomposeOnCanvas(
   canvas: Canvas,
   opts: DecomposeOnCanvasOpts = {},
 ): Promise<{ count: number }> {
-  const { log, syncStore = true } = opts
+  const { log, syncStore = true, hideBg = true } = opts
 
   const bg = findBgImageIn(canvas)
   if (!bg) throw new Error('Aucun calque image-bg-locked trouvé dans le canvas')
@@ -1576,9 +1584,12 @@ export async function decomposeOnCanvas(
       kept = keptSem
     }
 
-    // Cache l'image bg (template propre sur fond blanc, comme dans l'éditeur).
-    const bgRoot = canvas.getObjects().find(isBgLockedMarker)
-    if (bgRoot) bgRoot.set({ visible: false })
+    // hideBg (workflow) : cache l'image bg → template propre sur fond blanc.
+    // Éditeur (hideBg: false) : le raster reste visible, les overlays recouvrent.
+    if (hideBg) {
+      const bgRoot = canvas.getObjects().find(isBgLockedMarker)
+      if (bgRoot) bgRoot.set({ visible: false })
+    }
 
     canvas.requestRenderAll()
     if (syncStore) syncToStore(canvas)
@@ -1646,6 +1657,9 @@ export function useImageToSvgDecompose() {
           else toast.loading(msg, { id: toastId })
         },
         syncStore: true,
+        // Éditeur : le visuel rasterisé reste en fond (promesse du module
+        // Image/PDF → SVG) ; seuls les overlays éditables s'ajoutent par-dessus.
+        hideBg: false,
       })
       setState({ canDecompose: true, isRunning: false, hasDecomposition: kept > 0 })
       toast.success(`${kept} textes éditables ajoutés`, { id: toastId })

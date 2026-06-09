@@ -158,6 +158,8 @@ const decomposeNode: NodeSpec<
       const { count } = await decomposeOnCanvas(fabricCanvas, {
         log: (level, msg) => ctx.log(level, msg),
         syncStore: false,
+        // Contrat du node : template publipostage sur fond blanc (bg caché).
+        hideBg: true,
       })
       ctx.log('info', `Décomposition terminée — ${count} texte(s)/forme(s) éditables ajouté(s).`)
     } catch (err) {
