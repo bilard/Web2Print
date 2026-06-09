@@ -1647,6 +1647,21 @@ export async function decomposeOnCanvas(
   const prevSkip = _skipStoreSync
   if (!syncStore) _skipStoreSync = true
 
+  // Nettoyage Nano Banana lancé EN PARALLÈLE des passes (éditeur seulement) :
+  // Vision a déjà lu les textes sur l'original ; le fond nettoyé (textes promo
+  // effacés par inpainting, visuel intact) remplace le raster à la fin et rend
+  // les masques rectangulaires inutiles. Échec (clé Gemini absente, quota…) →
+  // fallback silencieux sur les masques classiques.
+  const cleanedUrlPromise: Promise<string | null> = !hideBg
+    ? (log?.('info', 'Nettoyage du fond (Nano Banana) en parallèle…'),
+      import('./nanoBgClean')
+        .then(({ cleanPromoTextsFromImage }) => cleanPromoTextsFromImage(dataUri))
+        .catch((e: unknown) => {
+          log?.('warn', `Nettoyage Nano Banana indisponible (${e instanceof Error ? e.message : String(e)}) — masques utilisés`)
+          return null
+        }))
+    : Promise.resolve(null)
+
   let kept: number
   try {
     const toastId: string | number = 'wf'
@@ -1695,6 +1710,31 @@ export async function decomposeOnCanvas(
     // hideBg (workflow) : cache l'image bg → template propre sur fond blanc.
     // Éditeur (hideBg: false) : le raster reste visible, les overlays recouvrent.
     if (hideBg && bgRoot) bgRoot.set({ visible: false })
+
+    // Applique le fond nettoyé Nano Banana s'il est arrivé : swap du src de
+    // l'image bg (échelle préservée — NB peut sortir d'autres dimensions) puis
+    // retrait des masques devenus inutiles (le fond n'a plus de texte à cacher).
+    // L'original est mémorisé dans data pour « Annuler décomposition ».
+    const cleanedUrl = await cleanedUrlPromise
+    if (cleanedUrl && bgRoot) {
+      const bgImg = findBgImageIn(canvas)
+      if (bgImg) {
+        log?.('info', 'Application du fond nettoyé (Nano Banana)…')
+        const dispW = (bgImg.width ?? 0) * (bgImg.scaleX ?? 1)
+        const dispH = (bgImg.height ?? 0) * (bgImg.scaleY ?? 1)
+        const imgData = ((bgImg as FabricObject & { data?: Record<string, unknown> }).data ??= {})
+        if (!imgData.originalSrc) imgData.originalSrc = getImageSrc(bgImg)
+        await bgImg.setSrc(cleanedUrl, { crossOrigin: 'anonymous' })
+        bgImg.set({
+          scaleX: dispW / (bgImg.width || 1),
+          scaleY: dispH / (bgImg.height || 1),
+        })
+        for (const o of canvas.getObjects().filter((o) => (o as FabricObject & { data?: Record<string, unknown> }).data?.role === 'image-decompose-mask')) {
+          canvas.remove(o)
+        }
+        bgRoot.set({ dirty: true })
+      }
+    }
 
     canvas.requestRenderAll()
     if (syncStore) syncToStore(canvas)
@@ -1784,6 +1824,22 @@ export function useImageToSvgDecompose() {
     // Restaure la visibilité de l'image bg cachée par run()
     const bgRoot = canvas.getObjects().find(isBgLockedMarker)
     if (bgRoot) bgRoot.set({ visible: true })
+    // Restaure le raster ORIGINAL si run() l'a remplacé par le fond nettoyé
+    // Nano Banana (src mémorisé dans data.originalSrc, échelle recalculée).
+    const bgImg = findBgImageIn(canvas)
+    const imgData = (bgImg as (FabricImage & { data?: Record<string, unknown> }) | null)?.data
+    if (bgImg && typeof imgData?.originalSrc === 'string') {
+      const dispW = (bgImg.width ?? 0) * (bgImg.scaleX ?? 1)
+      const dispH = (bgImg.height ?? 0) * (bgImg.scaleY ?? 1)
+      const src = imgData.originalSrc
+      delete imgData.originalSrc
+      void bgImg.setSrc(src, { crossOrigin: 'anonymous' }).then(() => {
+        bgImg.set({ scaleX: dispW / (bgImg.width || 1), scaleY: dispH / (bgImg.height || 1) })
+        bgRoot?.set({ dirty: true })
+        canvas.requestRenderAll()
+        syncToStore(canvas)
+      })
+    }
     canvas.requestRenderAll()
     syncToStore(canvas)
     setState((s) => ({ ...s, hasDecomposition: false }))
