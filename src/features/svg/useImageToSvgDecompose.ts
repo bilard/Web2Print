@@ -1498,16 +1498,26 @@ async function decomposeSemantic(
             return t === priceParts.integer || t.startsWith(`${priceParts.integer},`) || t.startsWith(`${priceParts.integer}.`)
           })?.bbox
       : undefined
-    buildStackedPrice(canvas, priceValue, b.bbox, fontFamily, fontWeight, b.color, anchorBox)
     priceUppers.push(priceValue.toUpperCase())
     priceRects.push(b.bbox)
-    // Membres rendus via la pile → consommés (via isPriceEcho ci-dessous). Un LABEL
-    // bundlé par erreur (« Vendu seul ») contient d'autres lettres → NON consommé →
+    // Membres rendus via la pile → consommés (via isPriceEcho). Un LABEL bundlé
+    // par erreur (« Vendu seul ») contient d'autres lettres → NON consommé →
     // récupéré en post-passe.
+    const glyphBoxes: VisionParagraph['bbox'][] = []
     b.block.memberIndices.forEach((i) => {
       const p = result.paragraphs[i]
-      if (p && isPriceEcho(p)) consumed.add(i)
+      if (p && isPriceEcho(p)) { consumed.add(i); glyphBoxes.push(p.bbox) }
     })
+    // Masque l'emprise EXACTE des glyphes de prix d'origine (union des membres
+    // consommés, pas l'union du bloc qui peut englober la bulle voisine) si le
+    // fond y est uniforme (bulle jaune…) : sans masque, le prix raster reste
+    // visible sous la pile éditable → prix en double légèrement décalé.
+    if (glyphBoxes.length > 0) {
+      const glyphBox = unionBbox(glyphBoxes)
+      const glyphBg = sampleBackground(ctx, glyphBox, width, height)
+      if (glyphBg.uniform) canvas.add(buildMaskRect(glyphBox, glyphBg.hex, 4, 4))
+    }
+    buildStackedPrice(canvas, priceValue, b.bbox, fontFamily, fontWeight, b.color, anchorBox)
   }
 
   for (const b of built) {
