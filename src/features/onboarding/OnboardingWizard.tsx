@@ -85,7 +85,7 @@ export function OnboardingWizard() {
             {STEP_TITLES.map((t, i) => (
               <div key={t} className="flex items-center gap-1.5">
                 <span className={`w-6 h-6 rounded-full text-[10px] font-semibold flex items-center justify-center transition-colors ${
-                  i === step ? 'bg-indigo-500 text-white' : i < step ? 'bg-indigo-500/30 text-indigo-200' : 'bg-white/5 text-white/30'
+                  i === step ? 'bg-indigo-500 text-[#fff]' : i < step ? 'bg-indigo-500/30 text-indigo-200' : 'bg-white/5 text-white/30'
                 }`}>{i + 1}</span>
                 {i < STEP_TITLES.length - 1 && <span className={`w-4 h-px ${i < step ? 'bg-indigo-500/40' : 'bg-white/10'}`} />}
               </div>

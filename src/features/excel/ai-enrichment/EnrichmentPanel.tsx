@@ -1056,9 +1056,9 @@ function LoadingState({ status, message, logs }: { status: string; message: stri
                 }`}
               >
                 {active ? (
-                  <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 text-[#fff] animate-spin" />
                 ) : done ? (
-                  <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                  <Check className="w-3.5 h-3.5 text-[#fff]" strokeWidth={3} />
                 ) : (
                   <Icon className="w-3 h-3 text-white/30" />
                 )}

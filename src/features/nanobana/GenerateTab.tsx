@@ -264,7 +264,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
               className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-lg transition-colors ${
                 selectedBlock
                   ? 'bg-white/10 hover:bg-white/15 text-white/70'
-                  : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                  : 'bg-indigo-500 hover:bg-indigo-600 text-[#fff]'
               }`}
             >
               <Plus className="w-3.5 h-3.5" />

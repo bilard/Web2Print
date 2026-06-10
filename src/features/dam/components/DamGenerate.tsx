@@ -823,7 +823,7 @@ export function DamGenerate() {
                       disabled={!canInsertCanvas}
                       className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition ${
                         canInsertCanvas
-                          ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                          ? 'bg-indigo-500 hover:bg-indigo-600 text-[#fff]'
                           : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
                       }`}
                       title={

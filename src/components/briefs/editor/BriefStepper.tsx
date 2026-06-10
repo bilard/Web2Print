@@ -30,7 +30,7 @@ export function BriefStepper({ current, onNavigate }: Props) {
               disabled={!clickable}
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold ${
                 done
-                  ? 'bg-indigo-500 text-white'
+                  ? 'bg-indigo-500 text-[#fff]'
                   : active
                     ? 'bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/60'
                     : 'bg-white/[0.06] text-white/40'

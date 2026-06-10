@@ -334,7 +334,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                             className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover/ver:opacity-100 hover:bg-black/80 transition-opacity"
                             title="Zoomer"
                           >
-                            <ZoomIn className="w-3 h-3 text-white" />
+                            <ZoomIn className="w-3 h-3 text-[#fff]" />
                           </button>
                           {isSwapping && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -443,7 +443,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                 )}
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <Plus className="w-6 h-6 text-white" />
+                  <Plus className="w-6 h-6 text-[#fff]" />
                 </div>
                 {/* Zoom button */}
                 <button
@@ -454,7 +454,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                   className="absolute top-1 right-8 w-6 h-6 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/80 transition-all"
                   title="Voir en grand"
                 >
-                  <ZoomIn className="w-3 h-3 text-white" />
+                  <ZoomIn className="w-3 h-3 text-[#fff]" />
                 </button>
                 {/* Delete button */}
                 <button
@@ -462,14 +462,14 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                   className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500/80 transition-all"
                 >
                   {deletingId === img.id ? (
-                    <Loader2 className="w-3 h-3 text-white animate-spin" />
+                    <Loader2 className="w-3 h-3 text-[#fff] animate-spin" />
                   ) : (
-                    <Trash2 className="w-3 h-3 text-white" />
+                    <Trash2 className="w-3 h-3 text-[#fff]" />
                   )}
                 </button>
                 {/* Name */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 opacity-0 group-hover:opacity-100 transition-all">
-                  <p className="text-[10px] text-white truncate">{img.name}</p>
+                  <p className="text-[10px] text-[#fff] truncate">{img.name}</p>
                 </div>
                 {/* AI badge */}
                 {img.tags.includes('ai-generated') && (

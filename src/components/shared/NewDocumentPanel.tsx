@@ -141,7 +141,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                   onClick={() => cat.key === 'custom' ? handleCustom() : (setActiveCategory(cat.key))}
                   className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                     activeCategory === cat.key
-                      ? 'bg-indigo-500 text-white'
+                      ? 'bg-indigo-500 text-[#fff]'
                       : 'text-white/50 hover:text-white hover:bg-white/5'
                   }`}
                 >
