@@ -253,17 +253,17 @@ html.light .bg-\[\#303030\] {
    (0,1,0) mais reste SOUS les variantes d'état comme hover:* (0,2,0), pour ne
    jamais casser un changement de couleur au survol. Scopé .light → sombre intact.
    ─────────────────────────────────────────────────────────────────────────── */
-html:where(.light) .text-white\/15 { color: rgb(var(--base) / 0.28); }
-html:where(.light) .text-white\/20 { color: rgb(var(--base) / 0.35); }
-html:where(.light) .text-white\/25 { color: rgb(var(--base) / 0.40); }
-html:where(.light) .text-white\/30 { color: rgb(var(--base) / 0.46); }
-html:where(.light) .text-white\/35 { color: rgb(var(--base) / 0.52); }
-html:where(.light) .text-white\/40 { color: rgb(var(--base) / 0.56); }
-html:where(.light) .text-white\/45 { color: rgb(var(--base) / 0.60); }
-html:where(.light) .text-white\/50 { color: rgb(var(--base) / 0.64); }
-html:where(.light) .text-white\/55 { color: rgb(var(--base) / 0.68); }
-html:where(.light) .text-white\/60 { color: rgb(var(--base) / 0.72); }
-html:where(.light) .text-white\/65 { color: rgb(var(--base) / 0.76); }
+html:where(.light) .text-white\/15 { color: rgb(var(--base) / 0.30); }
+html:where(.light) .text-white\/20 { color: rgb(var(--base) / 0.38); }
+html:where(.light) .text-white\/25 { color: rgb(var(--base) / 0.44); }
+html:where(.light) .text-white\/30 { color: rgb(var(--base) / 0.52); }
+html:where(.light) .text-white\/35 { color: rgb(var(--base) / 0.57); }
+html:where(.light) .text-white\/40 { color: rgb(var(--base) / 0.62); }
+html:where(.light) .text-white\/45 { color: rgb(var(--base) / 0.66); }
+html:where(.light) .text-white\/50 { color: rgb(var(--base) / 0.70); }
+html:where(.light) .text-white\/55 { color: rgb(var(--base) / 0.73); }
+html:where(.light) .text-white\/60 { color: rgb(var(--base) / 0.76); }
+html:where(.light) .text-white\/65 { color: rgb(var(--base) / 0.80); }
 
 html:where(.light) .border-white\/\[0\.04\],
 html:where(.light) .border-white\/5,
@@ -275,6 +275,16 @@ html:where(.light) .border-white\/\[0\.1\] { border-color: rgb(var(--base) / 0.1
 html:where(.light) .border-white\/\[0\.12\] { border-color: rgb(var(--base) / 0.20); }
 html:where(.light) .border-white\/15 { border-color: rgb(var(--base) / 0.22); }
 html:where(.light) .border-white\/20 { border-color: rgb(var(--base) / 0.28); }
+
+/* Fonds `bg-black/{20,30,40}` détournés comme CHAMPS/PANNEAUX en creux (pattern dark-mode
+   « plus sombre que la surface »). En mode clair ils restaient gris foncé → illisibles.
+   On les remappe vers des wells thémables clairs. Le guard `:where(:not(.absolute):not(.fixed))`
+   EXCLUT les overlays (modales `fixed inset-0`, voiles d'image `absolute inset-0`) et les
+   boutons posés sur image — qui doivent rester sombres dans les deux thèmes. `:where(…)` garde
+   la spécificité à (0,1,1) → ne casse aucun `hover:*`. Sombre intact (règle scopée .light). */
+html:where(.light) .bg-black\/20:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface-2)); }
+html:where(.light) .bg-black\/30:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface-2)); }
+html:where(.light) .bg-black\/40:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--well)); }
 
 @keyframes progress-indeterminate {
   0%   { left: -35%; }

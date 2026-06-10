@@ -7,6 +7,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import { Check, Lock, Maximize } from 'lucide-react'
 import { permissionParent, type PermissionDef } from '@/features/access/permissions'
+import { useThemeStore } from '@/stores/theme.store'
 import { moduleHex } from '@/features/access/moduleMeta'
 
 interface MindData {
@@ -28,6 +29,9 @@ const LEAF_W = 188
 
 function MindNode({ data }: NodeProps) {
   const d = data as MindData
+  // En mode clair, les nœuds reçoivent une carte de fond pleine (sinon texte flottant illisible
+  // sur le canvas). En sombre : transparent comme avant.
+  const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   if (d.kind === 'root') {
     return (
       <div className="px-4 py-2 rounded-full bg-indigo-500 text-[#fff] text-sm font-bold shadow-[0_0_24px_rgba(99,102,241,0.4)] border border-indigo-300/40">
@@ -39,7 +43,7 @@ function MindNode({ data }: NodeProps) {
   if (d.kind === 'module') {
     return (
       <div
-        style={{ width: MOD_W, borderColor: d.hex, background: d.selected ? `${d.hex}26` : 'rgb(var(--base) / 0.025)' }}
+        style={{ width: MOD_W, borderColor: d.hex, background: d.selected ? `${d.hex}26` : (isLight ? 'rgb(var(--surface))' : 'rgb(var(--base) / 0.025)') }}
         className="cursor-pointer px-3 py-2 rounded-lg border text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:brightness-125 transition">
         <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !border-0" style={{ background: d.hex }} />
         {d.selected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: d.hex }} />}
@@ -54,7 +58,7 @@ function MindNode({ data }: NodeProps) {
   return (
     <div
       title={d.locked ? "Active aussi l'accès au module" : undefined}
-      style={{ width: LEAF_W, ...(d.selected ? { borderColor: d.hex, background: `${d.hex}1f`, color: '#fff' } : {}) }}
+      style={{ width: LEAF_W, ...(d.selected ? { borderColor: d.hex, background: `${d.hex}1f`, color: '#fff' } : (isLight ? { background: 'rgb(var(--surface))' } : {})) }}
       className={`cursor-pointer pl-2.5 pr-2 py-1.5 rounded-md border text-[11px] flex items-center gap-1.5 transition ${
         d.selected ? ''
           : d.locked ? 'border-white/[0.08] text-white/35 hover:text-white/70 hover:border-white/25'
