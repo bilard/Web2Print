@@ -7,6 +7,9 @@ interface RunContextState {
   abortController: AbortController | null
   nodeStates: Record<string, NodeRunState>
   edgesActive: Set<string>
+  /** Mode pas-à-pas : node en attente du clic « Étape suivante » (null sinon). */
+  pausedNodeId: string | null
+  stepResolver: (() => void) | null
   startRun: () => AbortController
   endRun: () => void
   resetRun: () => void
@@ -16,22 +19,27 @@ interface RunContextState {
   appendLog: (id: string, level: 'info' | 'warn' | 'error', msg: string) => void
   setNodeOutputs: (id: string, outputs: Record<string, unknown>) => void
   clearNodes: (ids: string[]) => void
+  /** Bloque jusqu'au clic « Étape suivante » (ou abort du run). */
+  waitForStep: (nodeId: string) => Promise<void>
+  continueStep: () => void
 }
 
 const blankNode = (): NodeRunState => ({ status: 'pending', logs: [] })
 
-export const useRunContext = create<RunContextState>((set) => ({
+export const useRunContext = create<RunContextState>((set, get) => ({
   isRunning: false,
   abortController: null,
   nodeStates: {},
   edgesActive: new Set(),
+  pausedNodeId: null,
+  stepResolver: null,
   startRun: () => {
     const ac = new AbortController()
-    set({ isRunning: true, abortController: ac, nodeStates: {}, edgesActive: new Set() })
+    set({ isRunning: true, abortController: ac, nodeStates: {}, edgesActive: new Set(), pausedNodeId: null, stepResolver: null })
     return ac
   },
-  endRun: () => set({ isRunning: false, abortController: null }),
-  resetRun: () => set({ isRunning: false, abortController: null, nodeStates: {}, edgesActive: new Set() }),
+  endRun: () => set({ isRunning: false, abortController: null, pausedNodeId: null, stepResolver: null }),
+  resetRun: () => set({ isRunning: false, abortController: null, nodeStates: {}, edgesActive: new Set(), pausedNodeId: null, stepResolver: null }),
   setNodeStatus: (id, status) =>
     set((s) => ({
       nodeStates: { ...s.nodeStates, [id]: { ...(s.nodeStates[id] ?? blankNode()), status } },
@@ -84,4 +92,32 @@ export const useRunContext = create<RunContextState>((set) => ({
       for (const id of ids) delete next[id]
       return { nodeStates: next }
     }),
+  waitForStep: (nodeId) => {
+    const ac = get().abortController
+    if (!ac || ac.signal.aborted) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      const finish = () => {
+        ac.signal.removeEventListener('abort', finish)
+        set({ pausedNodeId: null, stepResolver: null })
+        resolve()
+      }
+      // Un Stop pendant la pause doit débloquer la promesse (l'executor verra
+      // ensuite signal.aborted et terminera proprement).
+      ac.signal.addEventListener('abort', finish)
+      set({ pausedNodeId: nodeId, stepResolver: finish })
+    })
+  },
+  continueStep: () => {
+    get().stepResolver?.()
+  },
 }))
+
+/**
+ * Middleware « pas-à-pas » pour executeWorkflow : met le run en pause AVANT chaque
+ * node jusqu'au clic « Étape suivante ». Les bodies de loop (exécutés hors topo
+ * principal) ne sont pas concernés.
+ */
+export async function stepMiddleware(node: { id: string }, next: () => Promise<void>): Promise<void> {
+  await useRunContext.getState().waitForStep(node.id)
+  await next()
+}

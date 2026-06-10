@@ -2,13 +2,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Play, Square, Sparkles, Workflow as WorkflowIcon } from 'lucide-react'
+import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
-import { useRunContext } from '../runtime/runContext'
+import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
+import { nodeRegistry } from '../registry'
 import { initWorkflowsRegistry } from '../registry/builtin'
 import { WorkflowEditor } from './WorkflowEditor'
 import { NodePalette } from './NodePalette'
@@ -27,6 +28,7 @@ export function WorkflowEditorPage() {
   const setCurrent = useWorkflowStore((s) => s.setCurrent)
   const dirty = useWorkflowStore((s) => s.dirty)
   const isRunning = useRunContext((s) => s.isRunning)
+  const pausedNodeId = useRunContext((s) => s.pausedNodeId)
   const canRun = useCan('workflows.run')
   const canEdit = useCan('workflows.edit')
   const ac = useRunContext((s) => s.abortController)
@@ -75,8 +77,9 @@ export function WorkflowEditorPage() {
   if (!wf) return <div className="min-h-screen bg-background text-white p-8">Workflow introuvable</div>
 
   // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
-  const run = async () => {
-    await executeWorkflow(wf)
+  // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
+  const run = async (stepByStep = false) => {
+    await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
     const states = Object.values(useRunContext.getState().nodeStates)
     const errors = states.filter((s) => s.status === 'error')
     const ok = states.filter((s) => s.status === 'success').length
@@ -133,14 +136,38 @@ export function WorkflowEditorPage() {
           </button>
           <CronStatusPanel workflowId={wf.id} />
           {isRunning ? (
-            <button onClick={stop} className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 flex items-center gap-2 text-sm">
-              <Square className="w-4 h-4" /> Stop
-            </button>
+            <>
+              {pausedNodeId && (() => {
+                const pausedNode = wf.nodes.find((n) => n.id === pausedNodeId)
+                const label = pausedNode ? nodeRegistry.get(pausedNode.type)?.label ?? pausedNode.type : '?'
+                return (
+                  <button
+                    onClick={() => useRunContext.getState().continueStep()}
+                    className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-600 text-[#000] flex items-center gap-2 text-sm font-medium"
+                    title={`En pause avant « ${label} » — cliquer pour exécuter ce node`}
+                  >
+                    <StepForward className="w-4 h-4" /> Étape : {label}
+                  </button>
+                )
+              })()}
+              <button onClick={stop} className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 flex items-center gap-2 text-sm">
+                <Square className="w-4 h-4" /> Stop
+              </button>
+            </>
           ) : (
             canRun && (
-              <button onClick={run} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
-                <Play className="w-4 h-4" /> Run
-              </button>
+              <>
+                <button
+                  onClick={() => void run(true)}
+                  className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
+                  title="Exécuter node par node : pause avant chaque étape pour inspecter les sorties"
+                >
+                  <StepForward className="w-4 h-4 text-amber-400" /> Pas à pas
+                </button>
+                <button onClick={() => void run()} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
+                  <Play className="w-4 h-4" /> Run
+                </button>
+              </>
             )
           )}
           {canEdit && (
