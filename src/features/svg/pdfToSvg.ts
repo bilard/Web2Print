@@ -99,6 +99,23 @@ function reencodeMupdfImages(
 }
 
 /**
+ * Retire les masques de luminosité MuPDF (ombres portées douces) : Fabric
+ * ignore <mask> et dessine son CONTENU comme des objets pleins → voile gris
+ * opaque par-dessus le visuel. On supprime les <mask>, leurs groupes de
+ * contenu et les éléments qui les référencent (l'ombre douce est perdue,
+ * le reste devient propre).
+ */
+function stripMupdfMasks(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  let touched = false
+  for (const el of Array.from(dom.querySelectorAll('[mask]'))) { el.remove(); touched = true }
+  for (const el of Array.from(dom.querySelectorAll('mask'))) { el.remove(); touched = true }
+  for (const el of Array.from(dom.querySelectorAll('g[id^="mask_"]'))) { el.remove(); touched = true }
+  return touched ? new XMLSerializer().serializeToString(dom) : svg
+}
+
+/**
  * Nettoie les polices en sous-ensembles PDF (« WRZTFA+ArialNarrow-Bold ») :
  * retire le préfixe de subset, déduit la graisse du nom, mappe vers des
  * familles installées avec fallback sans-serif.
@@ -213,6 +230,9 @@ async function convertWithMupdf(
       svg = flattenMupdfTextTransforms(svg)
       // JPEG CMYK Adobe → PNG RGB décodés par MuPDF (photo noire sinon).
       svg = reencodeMupdfImages(mupdf, page, svg)
+      // Masques de luminosité (ombres douces) : Fabric les rendrait en voile
+      // gris opaque → retirés.
+      svg = stripMupdfMasks(svg)
       // Polices en sous-ensembles (WRZTFA+ArialNarrow-Bold) → familles propres.
       svg = cleanSubsetFontFamilies(svg)
 
