@@ -52,7 +52,7 @@ export function CartGenerationLog({ events, isRunning }: Props) {
 
   return (
     <div className="border border-white/[0.08] rounded-lg bg-well overflow-hidden shadow-inner shadow-black/30">
-      <div className="flex items-center gap-2 border-b border-white/[0.06] bg-gradient-to-r from-[#26] to-background px-3 py-2">
+      <div className="flex items-center gap-2 border-b border-white/[0.06] bg-gradient-to-r from-surface-2 to-background px-3 py-2">
         <Globe className="w-3.5 h-3.5 text-indigo-400" />
         <span className="text-[11px] font-medium text-white/80 tracking-wide">
           Journal de génération

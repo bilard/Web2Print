@@ -336,7 +336,7 @@ export function WorkflowEditor() {
       >
         <Background color="#1f1f1f" gap={24} size={1} />
         <Controls
-          className="!bg-surface !border-neutral-800 [&>button]:!bg-surface [&>button]:!border-neutral-800 [&>button]:!text-neutral-400 [&>button:hover]:!bg-[#34]"
+          className="!bg-surface !border-neutral-800 [&>button]:!bg-surface [&>button]:!border-neutral-800 [&>button]:!text-neutral-400 [&>button:hover]:!bg-surface"
           showInteractive={false}
         />
         <MiniMap
