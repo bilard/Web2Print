@@ -5,6 +5,7 @@ import { AuthProvider } from '@/features/auth/AuthProvider'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { AiLiveIndicator } from '@/components/shared/AiLiveIndicator'
 import { TopProgressBar } from '@/components/shared/TopProgressBar'
+import { useThemeStore } from '@/stores/theme.store'
 import { router } from './router'
 
 const queryClient = new QueryClient({
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
 })
 
 export default function App() {
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -24,7 +26,7 @@ export default function App() {
           <RouterProvider router={router} />
           <TopProgressBar />
           <AiLiveIndicator />
-          <Toaster theme="dark" position="bottom-right" richColors />
+          <Toaster theme={resolvedTheme} position="bottom-right" richColors />
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

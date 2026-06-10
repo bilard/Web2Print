@@ -14,6 +14,7 @@ import { API_KEYS } from '@/lib/apiKeys'
 import { GDriveConnectorRow } from '@/features/gdrive/GDriveConnectorRow'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
 import { ApiKeyRow } from './ApiKeyRow'
+import { ThemeSettingsSection } from './ThemeSettingsSection'
 import { AiProviderCard } from './AiProviderCard'
 import type { AiProvider } from '@/lib/aiModels'
 import { AiCascadeEditor } from '@/features/ai/AiCascadeEditor'
@@ -105,16 +106,19 @@ function StorageBar({ used, quota }: { used: number; quota: number }) {
 function ProfileTab() {
   const user = useAuthStore((s) => s.user)
   return (
-    <div className="bg-white/[0.03] rounded-xl p-4 flex items-center gap-4">
-      {user?.photoURL
-        ? <img src={user.photoURL} alt="" className="w-14 h-14 rounded-full shrink-0 ring-1 ring-white/10" />
-        : <div className="w-14 h-14 rounded-full bg-indigo-500/30 flex items-center justify-center text-indigo-300 font-bold text-xl shrink-0">
-            {user?.displayName?.[0] ?? '?'}
-          </div>
-      }
-      <div className="min-w-0 flex-1">
-        <p className="text-base font-medium text-white truncate">{user?.displayName}</p>
-        <p className="text-xs text-white/40 truncate">{user?.email}</p>
+    <div className="flex flex-col gap-3">
+      <ThemeSettingsSection />
+      <div className="bg-white/[0.03] rounded-xl p-4 flex items-center gap-4">
+        {user?.photoURL
+          ? <img src={user.photoURL} alt="" className="w-14 h-14 rounded-full shrink-0 ring-1 ring-white/10" />
+          : <div className="w-14 h-14 rounded-full bg-indigo-500/30 flex items-center justify-center text-indigo-300 font-bold text-xl shrink-0">
+              {user?.displayName?.[0] ?? '?'}
+            </div>
+        }
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-medium text-white truncate">{user?.displayName}</p>
+          <p className="text-xs text-white/40 truncate">{user?.email}</p>
+        </div>
       </div>
     </div>
   )

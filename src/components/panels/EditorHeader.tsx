@@ -10,6 +10,7 @@ import { VideoModal } from '@/features/video/VideoModal'
 import { EditorTaxonomyBreadcrumb } from './EditorTaxonomyBreadcrumb'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
 import { useImageToSvgDecompose } from '@/features/svg/useImageToSvgDecompose'
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
 export function EditorHeader() {
   const navigate = useNavigate()
@@ -99,6 +100,9 @@ export function EditorHeader() {
       >
         <Redo2 className="w-4 h-4" />
       </button>
+
+      {/* Theme */}
+      <ThemeToggle />
 
       <div className="w-px h-5 bg-white/10 mx-1" />
 

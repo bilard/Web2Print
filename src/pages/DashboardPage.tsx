@@ -18,6 +18,7 @@ import { ProjectCard, type ProjectViewMode } from '@/components/shared/ProjectCa
 import { NewDocumentPanel } from '@/components/shared/NewDocumentPanel'
 import { ImportPanel } from '@/components/shared/ImportPanel'
 import { SettingsPanel } from '@/components/shared/SettingsPanel'
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { LiveLlmUsagePanel } from '@/components/shared/LiveLlmUsagePanel'
 import type { DocumentConfig } from '@/components/shared/NewDocumentPanel'
 import type { ImportSelection } from '@/components/shared/ImportPanel'
@@ -366,6 +367,10 @@ export default function DashboardPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] text-white/50 truncate">{user?.displayName}</p>
               </div>
+              <ThemeToggle
+                className="flex-shrink-0 p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
+                iconClassName="w-3.5 h-3.5"
+              />
               <button
                 data-help-id="dashboard.sidebar.settings"
                 onClick={() => setActiveSection('settings')}
@@ -397,6 +402,10 @@ export default function DashboardPage() {
                   <span className="text-[11px] font-medium text-white/40">{user?.displayName?.charAt(0) ?? '?'}</span>
                 </div>
               )}
+              <ThemeToggle
+                className="p-1 rounded text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
+                iconClassName="w-3.5 h-3.5"
+              />
               <button
                 data-help-id="dashboard.sidebar.settings"
                 onClick={() => setActiveSection('settings')}
