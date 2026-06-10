@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase/config'
 import { usePrintPresets, type PrintPresetParams } from '@/features/print/usePrintPresets'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { PreflightSection } from './PreflightSection'
 
 /**
  * Panneau "Repères et fonds perdus" — vocabulaire InDesign.
@@ -362,6 +363,9 @@ export function PrintPanel() {
           <ColorControl label="Couleur" value={safeColor} onChange={setSafeColor} />
         </MarkGroup>
       </section>
+
+      {/* Contrôle pré-impression (résolution images, hors page, textes) */}
+      <PreflightSection />
     </div>
   )
 }
