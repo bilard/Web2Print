@@ -1,6 +1,6 @@
 // functions/src/workflow/cronSchedule.test.ts
 import { describe, it, expect } from 'vitest'
-import { computeNextRun, normalizeEvery, type CronConfig } from './cronSchedule'
+import { computeNextRun, normalizeEvery } from './cronSchedule'
 
 const base = Date.UTC(2026, 0, 15, 12, 0, 0) // 2026-01-15T12:00:00Z
 
