@@ -53,7 +53,7 @@ export function GDriveConnect() {
       <button
         onClick={handleConnect}
         disabled={loading}
-        className="flex items-center gap-2.5 bg-white hover:bg-white/90 text-gray-800 font-medium text-sm px-6 py-2.5 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
+        className="flex items-center gap-2.5 bg-[#fff] hover:bg-[#fff]/90 text-gray-800 font-medium text-sm px-6 py-2.5 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin text-gray-600" />

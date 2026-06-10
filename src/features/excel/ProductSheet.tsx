@@ -390,13 +390,13 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             {activeImg > 0 && (
               <button onClick={() => setActiveImg(i => i - 1)}
-                className="absolute left-2 p-1 rounded-full bg-black/50 text-white/60 hover:text-white hover:bg-black/70 transition-colors">
+                className="absolute left-2 p-1 rounded-full bg-black/50 text-[#fff]/60 hover:text-[#fff] hover:bg-black/70 transition-colors">
                 <ChevronLeft className="w-4 h-4" />
               </button>
             )}
             {activeImg < uniqueImages.length - 1 && (
               <button onClick={() => setActiveImg(i => i + 1)}
-                className="absolute right-2 p-1 rounded-full bg-black/50 text-white/60 hover:text-white hover:bg-black/70 transition-colors">
+                className="absolute right-2 p-1 rounded-full bg-black/50 text-[#fff]/60 hover:text-[#fff] hover:bg-black/70 transition-colors">
                 <ChevronRight className="w-4 h-4" />
               </button>
             )}

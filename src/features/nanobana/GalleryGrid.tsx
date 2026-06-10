@@ -338,14 +338,14 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                           </button>
                           {isSwapping && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                              <Loader2 className="w-4 h-4 text-white animate-spin" />
+                              <Loader2 className="w-4 h-4 text-[#fff] animate-spin" />
                             </div>
                           )}
                           {/* Badge */}
                           <span className={`absolute bottom-0 left-0 right-0 text-center text-[8px] font-medium py-0.5 ${
                             v.isOriginal
-                              ? 'bg-teal-500/80 text-white'
-                              : 'bg-indigo-500/80 text-white'
+                              ? 'bg-teal-500/80 text-[#fff]'
+                              : 'bg-indigo-500/80 text-[#fff]'
                           }`}>
                             {v.isOriginal ? (
                               <span className="flex items-center justify-center gap-0.5">
@@ -491,7 +491,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
           <button
             type="button"
             onClick={() => setLightboxSrc(null)}
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-lg transition-colors"
+            className="absolute top-4 right-4 p-2 text-[#fff]/70 hover:text-[#fff] bg-black/50 hover:bg-black/80 rounded-lg transition-colors"
             title="Fermer"
           >
             <X className="w-5 h-5" />

@@ -57,13 +57,13 @@ export function BriefImageCard({ label, imageUrl, loading, onRegenerate }: Props
             />
             <button
               onClick={() => setIsFullscreen(false)}
-              className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 rounded-full p-2 text-white transition-colors"
+              className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 rounded-full p-2 text-[#fff] transition-colors"
               aria-label="Fermer"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="absolute bottom-4 left-4 bg-black/50 rounded px-3 py-2">
-              <p className="text-white text-sm">{label}</p>
+              <p className="text-[#fff] text-sm">{label}</p>
             </div>
           </div>
         </div>

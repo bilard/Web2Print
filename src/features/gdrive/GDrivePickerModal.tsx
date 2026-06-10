@@ -275,7 +275,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
               <button
                 onClick={handleConnect}
                 disabled={connecting}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white text-gray-800 font-medium text-sm hover:bg-white/90 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#fff] text-gray-800 font-medium text-sm hover:bg-[#fff]/90 disabled:opacity-50 transition-colors"
               >
                 {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
                 {connecting ? 'Connexion…' : 'Se connecter avec Google'}

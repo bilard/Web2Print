@@ -188,7 +188,7 @@ export function DamVariantsPanel({
                         e.stopPropagation()
                         startRename(v)
                       }}
-                      className="p-1 rounded bg-black/60 text-white/70 hover:text-white"
+                      className="p-1 rounded bg-black/60 text-[#fff]/70 hover:text-[#fff]"
                       title="Renommer"
                     >
                       <Pencil className="w-3 h-3" />

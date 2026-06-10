@@ -141,7 +141,7 @@ export function AssetsPanel() {
         >
           <button
             onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 p-2 text-white/50 hover:text-white bg-black/40 hover:bg-black/60 rounded-lg transition-colors"
+            className="absolute top-4 right-4 p-2 text-[#fff]/50 hover:text-[#fff] bg-black/40 hover:bg-black/60 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

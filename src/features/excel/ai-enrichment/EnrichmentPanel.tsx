@@ -120,7 +120,7 @@ function SortableImageItem({
         <button
           {...attributes}
           {...listeners}
-          className="absolute top-1 left-1 w-5 h-5 flex items-center justify-center rounded bg-black/70 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/90 hover:text-white cursor-grab active:cursor-grabbing touch-none transition-all"
+          className="absolute top-1 left-1 w-5 h-5 flex items-center justify-center rounded bg-black/70 text-[#fff]/70 opacity-0 group-hover:opacity-100 hover:bg-black/90 hover:text-[#fff] cursor-grab active:cursor-grabbing touch-none transition-all"
           title="Glisser pour réordonner"
         >
           <GripVertical className="w-3 h-3" />
