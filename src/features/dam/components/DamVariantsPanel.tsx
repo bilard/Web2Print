@@ -198,7 +198,7 @@ export function DamVariantsPanel({
                         e.stopPropagation()
                         if (confirm(`Supprimer la variante "${v.name}" ?`)) onDelete(v)
                       }}
-                      className="p-1 rounded bg-black/60 text-white/70 hover:text-red-400"
+                      className="p-1 rounded bg-black/60 text-[#fff]/70 hover:text-red-400"
                       title="Supprimer"
                     >
                       <Trash2 className="w-3 h-3" />

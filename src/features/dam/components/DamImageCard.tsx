@@ -154,7 +154,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                 e.stopPropagation()
                 setShowCollections((v) => !v)
               }}
-              className="p-1 rounded bg-black/60 text-white/80 hover:bg-black/80"
+              className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-black/80"
               title="Ajouter à une collection"
             >
               <FolderPlus className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
               </div>
             )}
           </div>
-          <button onClick={handleDownload} className="p-1 rounded bg-black/60 text-white/80 hover:bg-black/80" title="Télécharger">
+          <button onClick={handleDownload} className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-black/80" title="Télécharger">
             <Download className="w-3.5 h-3.5" />
           </button>
           {saved && canDelete && (
@@ -227,13 +227,13 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
         </div>
 
         <div className="absolute bottom-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="px-1.5 py-0.5 rounded text-[8px] bg-black/60 text-white/80 capitalize">
+          <span className="px-1.5 py-0.5 rounded text-[8px] bg-black/60 text-[#fff]/80 capitalize">
             {image.sourceProvider}
           </span>
         </div>
 
         <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="px-1.5 py-0.5 rounded text-[8px] bg-black/60 text-white/70 truncate max-w-[120px] block">
+          <span className="px-1.5 py-0.5 rounded text-[8px] bg-black/60 text-[#fff]/70 truncate max-w-[120px] block">
             {image.photographer}
           </span>
         </div>

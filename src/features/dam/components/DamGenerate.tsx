@@ -782,7 +782,7 @@ export function DamGenerate() {
                       alt={`Generated ${i + 1}`}
                       className="w-full object-contain"
                     />
-                    <div className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-white/0 group-hover:text-white/90 transition pointer-events-none">
+                    <div className="absolute top-2 right-2 p-1.5 rounded-md bg-black/60 text-[#fff]/0 group-hover:text-[#fff]/90 transition pointer-events-none">
                       <ZoomIn className="w-3.5 h-3.5" />
                     </div>
                   </button>
