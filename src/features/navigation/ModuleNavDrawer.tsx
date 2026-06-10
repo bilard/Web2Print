@@ -105,7 +105,7 @@ export function ModuleNavDrawer() {
                   className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-[13px]
                     text-white/45 hover:text-white/80 hover:bg-white/[0.04]
                     transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-                    focus-visible:ring-offset-1 focus-visible:ring-offset-[#2a2a2a]"
+                    focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2"
                 >
                   <Icon className={`w-4 h-4 shrink-0 opacity-60 ${accent}`} />
                   <span className="flex-1 text-left">{label}</span>

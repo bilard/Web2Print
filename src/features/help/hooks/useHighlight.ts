@@ -2,7 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 import { useHelpStore } from '../help.store'
 
 const HIGHLIGHT_CLASS =
-  'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[#242424] animate-pulse'
+  'ring-2 ring-indigo-500 ring-offset-2 ring-offset-background animate-pulse'
 
 /**
  * À placer sur un composant cible. Quand help.store.highlightTarget === id,
