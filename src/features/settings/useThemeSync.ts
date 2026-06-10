@@ -26,6 +26,9 @@ export function useThemeSync() {
       .then((snap) => {
         if (cancelled) return
         const remote = (snap.data()?.uiSettings as { theme?: unknown } | undefined)?.theme
+        // Pas de backfill local→Firestore ni de reset au switch de compte (≠ Telegram/ApiKeys) :
+        // le thème est une préférence d'appareil tant que le compte n'a rien stocké — un compte
+        // sans uiSettings.theme hérite du thème courant de la machine, par design.
         // N'applique le distant que si l'utilisateur n'a pas basculé pendant l'hydratation.
         if (isPref(remote) && useThemeStore.getState().themePref === baseline) {
           useThemeStore.getState().setThemePref(remote)
