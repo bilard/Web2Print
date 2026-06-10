@@ -15,6 +15,7 @@ import { NodePalette } from './NodePalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
 import { RunPanel } from './RunPanel'
 import { DataPreviewPanel } from './DataPreviewPanel'
+import { CronStatusPanel } from './CronStatusPanel'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 import { useCan } from '@/features/access/useAccess'
 
@@ -130,6 +131,7 @@ export function WorkflowEditorPage() {
           >
             <Sparkles className="w-4 h-4 text-indigo-400" /> Générer (IA)
           </button>
+          <CronStatusPanel workflowId={wf.id} />
           {isRunning ? (
             <button onClick={stop} className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 flex items-center gap-2 text-sm">
               <Square className="w-4 h-4" /> Stop
