@@ -8,6 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
+import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import type { ExcelSheet, CellValue } from '@/features/excel/types'
@@ -29,45 +30,55 @@ export function useDataMerge() {
   const applyRowRef = useRef<((row: MergeRow, cols?: MergeColumn[]) => Promise<void>) | null>(null)
 
   const connectSource = useCallback(async (source: DataSourceRef) => {
-    // Lit d'abord les méta dans `excel_data` (toujours autorisé) ; si `sheets`
-    // est encore inline (legacy non migré), on l'utilise direct, sinon on va
-    // chercher le blob dans `excel_data_payload`. NB : on n'attaque PAS le
-    // payload en premier — la rule deny les reads sur doc inexistant.
-    const metaSnap = await getDoc(doc(db, 'excel_data', source.excelDocId))
-    if (!metaSnap.exists()) throw new Error('Dataset introuvable')
-    const meta = metaSnap.data()
-    let sheets: ExcelSheet[]
-    if (typeof meta.sheets === 'string') {
-      sheets = JSON.parse(meta.sheets)
+    let cols: MergeColumn[]
+    let mergeRows: MergeRow[]
+
+    if (isPimSource(source)) {
+      // Source PIM (« re-skin de promo ») : les produits master du projet sont les lignes.
+      const data = await loadPimMergeData(pimProjectIdFromSource(source))
+      cols = data.columns
+      mergeRows = data.rows
     } else {
-      const payloadSnap = await getDoc(doc(db, 'excel_data_payload', source.excelDocId))
-      if (!payloadSnap.exists()) throw new Error('Dataset vide ou corrompu')
-      sheets = JSON.parse(payloadSnap.data().json)
-    }
-    const sheet = sheets[source.sheetIndex] ?? sheets[0]
-
-    const cols: MergeColumn[] = sheet.columns.map((c) => ({
-      key: c.key,
-      label: c.label,
-      fieldType: c.fieldType,
-      aliases: ENRICHMENT_ALIASES[c.key],
-    }))
-
-    // Pre-compute formula columns so {{formula_key}} resolves correctly in templates
-    const formulaCols = sheet.columns.filter((c) => c.fieldType === 'formula' && c.formula)
-    const mergeRows: MergeRow[] = sheet.rows.map((r) => {
-      const row: MergeRow = { ...r }
-      for (const col of formulaCols) {
-        const value = evaluateExcelFormula(col.formula!, row as Record<string, CellValue>, sheet.columns)
-        if (col.formulaResultType === 'number' && col.formulaDecimals != null) {
-          const num = typeof value === 'number' ? value : parseFloat(String(value ?? '').replace(',', '.'))
-          row[col.key] = isNaN(num) ? String(value ?? '') : num.toFixed(col.formulaDecimals)
-        } else {
-          row[col.key] = value == null ? '' : String(value)
-        }
+      // Lit d'abord les méta dans `excel_data` (toujours autorisé) ; si `sheets`
+      // est encore inline (legacy non migré), on l'utilise direct, sinon on va
+      // chercher le blob dans `excel_data_payload`. NB : on n'attaque PAS le
+      // payload en premier — la rule deny les reads sur doc inexistant.
+      const metaSnap = await getDoc(doc(db, 'excel_data', source.excelDocId))
+      if (!metaSnap.exists()) throw new Error('Dataset introuvable')
+      const meta = metaSnap.data()
+      let sheets: ExcelSheet[]
+      if (typeof meta.sheets === 'string') {
+        sheets = JSON.parse(meta.sheets)
+      } else {
+        const payloadSnap = await getDoc(doc(db, 'excel_data_payload', source.excelDocId))
+        if (!payloadSnap.exists()) throw new Error('Dataset vide ou corrompu')
+        sheets = JSON.parse(payloadSnap.data().json)
       }
-      return row
-    })
+      const sheet = sheets[source.sheetIndex] ?? sheets[0]
+
+      cols = sheet.columns.map((c) => ({
+        key: c.key,
+        label: c.label,
+        fieldType: c.fieldType,
+        aliases: ENRICHMENT_ALIASES[c.key],
+      }))
+
+      // Pre-compute formula columns so {{formula_key}} resolves correctly in templates
+      const formulaCols = sheet.columns.filter((c) => c.fieldType === 'formula' && c.formula)
+      mergeRows = sheet.rows.map((r) => {
+        const row: MergeRow = { ...r }
+        for (const col of formulaCols) {
+          const value = evaluateExcelFormula(col.formula!, row as Record<string, CellValue>, sheet.columns)
+          if (col.formulaResultType === 'number' && col.formulaDecimals != null) {
+            const num = typeof value === 'number' ? value : parseFloat(String(value ?? '').replace(',', '.'))
+            row[col.key] = isNaN(num) ? String(value ?? '') : num.toFixed(col.formulaDecimals)
+          } else {
+            row[col.key] = value == null ? '' : String(value)
+          }
+        }
+        return row
+      })
+    }
 
     // Capturer les templateText AVANT connect() (sinon le re-render
     // déclenché par connect() exécute le memo avant la capture)

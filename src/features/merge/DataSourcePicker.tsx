@@ -6,9 +6,10 @@ import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { SheetsFilePicker } from './SheetsFilePicker'
 import { useDataMerge } from './useDataMerge'
-import { Database, Upload, Loader2, FileSpreadsheet, Table2, X } from 'lucide-react'
+import { Database, Upload, Loader2, FileSpreadsheet, Table2, X, Package } from 'lucide-react'
 import { useMergeStore } from '@/stores/merge.store'
 import type { DataSourceRef } from '@/stores/merge.store'
+import { listPimProjects, makePimSourceRef, type PimProjectSummary } from './pimSource'
 
 interface SavedDataset {
   docId: string
@@ -27,9 +28,11 @@ export function DataSourcePicker() {
   const { saveToFirebase } = useExcelFirebase()
 
   const [datasets, setDatasets] = useState<SavedDataset[]>([])
+  const [pimProjects, setPimProjects] = useState<PimProjectSummary[]>([])
   const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<'choose' | 'list' | 'sheets'>('choose')
+  const [mode, setMode] = useState<'choose' | 'list' | 'sheets' | 'pim'>('choose')
   const [importing, setImporting] = useState(false)
+  const [pimError, setPimError] = useState<string | null>(null)
 
   const loadDatasets = useCallback(async () => {
     if (!user) return
@@ -60,6 +63,24 @@ export function DataSourcePicker() {
   useEffect(() => {
     if (mode === 'list') loadDatasets()
   }, [mode, loadDatasets])
+
+  useEffect(() => {
+    if (mode !== 'pim' || !user) return
+    setLoading(true)
+    listPimProjects(user.uid)
+      .then(setPimProjects)
+      .catch((err) => console.error('[DataSourcePicker] PIM load error:', err))
+      .finally(() => setLoading(false))
+  }, [mode, user])
+
+  const handleSelectPim = async (p: PimProjectSummary) => {
+    setPimError(null)
+    try {
+      await connectSource(makePimSourceRef(p.id, p.name))
+    } catch (err) {
+      setPimError(err instanceof Error ? err.message : String(err))
+    }
+  }
 
   const handleSelect = async (ds: SavedDataset) => {
     const source: DataSourceRef = {
@@ -155,6 +176,59 @@ export function DataSourcePicker() {
           <Table2 className="w-4 h-4 text-green-400" />
           Importer depuis Google Sheets
         </button>
+        <button
+          onClick={() => setMode('pim')}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 text-sm text-white/70 transition-colors"
+        >
+          <Package className="w-4 h-4 text-emerald-400" />
+          Produits PIM (re-skin)
+        </button>
+      </div>
+    )
+  }
+
+  if (mode === 'pim') {
+    return (
+      <div className="p-3 space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-white/60 font-medium">Projets PIM</span>
+          <button onClick={() => setMode('choose')} className="text-xs text-white/40 hover:text-white/70">
+            Retour
+          </button>
+        </div>
+        {pimError && (
+          <p className="text-xs text-red-400/90 px-1">{pimError}</p>
+        )}
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+          </div>
+        ) : pimProjects.length === 0 ? (
+          <p className="text-xs text-white/30 text-center py-4">Aucun projet PIM</p>
+        ) : (
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {pimProjects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => handleSelectPim(p)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 hover:bg-emerald-500/20 text-left transition-colors"
+              >
+                <Package className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white/80 truncate">{p.name}</div>
+                  {p.path.length > 0 && (
+                    <div className="text-xs text-white/30 truncate">{p.path.join(' / ')}</div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        <p className="text-[10px] text-white/25 leading-snug pt-1">
+          Chaque produit du projet devient une ligne : liez vos textes avec{' '}
+          <code className="text-emerald-300/70">{'{{champ}}'}</code>, puis naviguez entre les
+          produits pour re-skinner le visuel.
+        </p>
       </div>
     )
   }
