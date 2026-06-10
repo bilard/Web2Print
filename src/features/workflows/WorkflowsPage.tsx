@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { listWorkflows, newWorkflow, saveWorkflow, deleteWorkflow } from './persistence/workflowsApi'
 import { useCan } from '@/features/access/useAccess'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { WORKFLOW_TEMPLATES, workflowFromTemplate, type WorkflowTemplate } from './templates'
 import type { Workflow } from './types'
 
 interface WorkflowsPageProps {
@@ -41,6 +42,12 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const create = async () => {
     if (!uid) return
     const wf = newWorkflow(uid)
+    await saveWorkflow(uid, wf)
+    nav(`/workflows/${wf.id}`)
+  }
+  const createFromTemplate = async (template: WorkflowTemplate) => {
+    if (!uid) return
+    const wf = workflowFromTemplate(template, uid)
     await saveWorkflow(uid, wf)
     nav(`/workflows/${wf.id}`)
   }
@@ -111,6 +118,28 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           )}
         </div>
       </header>
+      {/* Galerie de recettes prêtes à l'emploi */}
+      {canCreate && (
+        <section className="mb-8" aria-label="Modèles de workflows">
+          <h2 className="text-[11px] uppercase tracking-wider text-white/30 mb-3">
+            Démarrer depuis un modèle
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {WORKFLOW_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => void createFromTemplate(t)}
+                className="text-left bg-surface border border-white/[0.06] rounded-lg p-3.5 hover:border-indigo-500/60 hover:bg-white/[0.02] transition-colors group"
+              >
+                <div className="text-xl mb-2" aria-hidden="true">{t.emoji}</div>
+                <div className="text-[13px] font-medium text-white/80 group-hover:text-white">{t.name}</div>
+                <p className="text-[11px] text-white/35 mt-1 leading-snug">{t.description}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {loading ? (
         <p className="text-neutral-400">Chargement…</p>
       ) : items.length === 0 ? (
