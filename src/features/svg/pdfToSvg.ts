@@ -99,6 +99,32 @@ function reencodeMupdfImages(
 }
 
 /**
+ * Déballe le(s) <g> RACINE de mutool : tout le contenu de page est enveloppé
+ * dans un unique groupe (clip de page) → Fabric importerait UN SEUL objet
+ * groupé, rien d'éditable individuellement. On remonte les enfants à la
+ * racine tant que le wrapper est unique et sans transform significative.
+ */
+function unwrapMupdfRootGroups(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  const root = dom.documentElement
+  const NON_CONTENT = new Set(['defs', 'title', 'desc', 'metadata', 'clippath', 'mask', 'symbol'])
+  let changed = false
+  for (let pass = 0; pass < 4; pass++) {
+    const kids = Array.from(root.children).filter((el) => !NON_CONTENT.has(el.tagName.toLowerCase()))
+    if (kids.length !== 1 || kids[0].tagName.toLowerCase() !== 'g') break
+    const g = kids[0]
+    const tr = (g.getAttribute('transform') ?? '').trim()
+    // Transform non triviale → on ne déballe pas (elle porterait sur les enfants).
+    if (tr && !/^matrix\(\s*1[ ,]+-?0[ ,]+-?0[ ,]+1[ ,]+-?0[ ,]+-?0\s*\)$/.test(tr)) break
+    while (g.firstChild) root.insertBefore(g.firstChild, g)
+    g.remove()
+    changed = true
+  }
+  return changed ? new XMLSerializer().serializeToString(dom) : svg
+}
+
+/**
  * Retire les masques de luminosité MuPDF (ombres portées douces) : Fabric
  * ignore <mask> et dessine son CONTENU comme des objets pleins → voile gris
  * opaque par-dessus le visuel. On supprime les <mask>, leurs groupes de
@@ -233,6 +259,8 @@ async function convertWithMupdf(
       // Masques de luminosité (ombres douces) : Fabric les rendrait en voile
       // gris opaque → retirés.
       svg = stripMupdfMasks(svg)
+      // Wrapper <g> de page mutool → déballé, sinon UN SEUL objet groupé.
+      svg = unwrapMupdfRootGroups(svg)
       // Polices en sous-ensembles (WRZTFA+ArialNarrow-Bold) → familles propres.
       svg = cleanSubsetFontFamilies(svg)
 
