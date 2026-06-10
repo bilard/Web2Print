@@ -232,7 +232,9 @@ html.light .bg-indigo-600.text-white {
 
 /* shadcn alert-dialog (src/components/ui — immuable) : surface thémable malgré
    le `bg-[#303030]` en dur. Après la migration des tokens, plus aucun fichier
-   applicatif n'utilise cette classe arbitraire → la règle est chirurgicale. */
+   applicatif n'utilise cette classe arbitraire → la règle est chirurgicale.
+   ⚠️ NE PAS réutiliser bg-[#303030] dans de nouveaux composants (utiliser
+   bg-surface) — cette règle l'écraserait en mode clair. */
 html.light .bg-\[\#303030\] {
   background-color: rgb(var(--surface));
 }

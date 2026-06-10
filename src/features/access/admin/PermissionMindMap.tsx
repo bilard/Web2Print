@@ -60,7 +60,7 @@ function MindNode({ data }: NodeProps) {
           : d.locked ? 'border-white/[0.08] text-white/35 hover:text-white/70 hover:border-white/25'
             : 'border-white/12 text-white/55 hover:text-white/85 hover:border-white/30'
       }`}>
-      <Handle type="target" position={Position.Left} className="!w-1 !h-1 !border-0" style={{ background: d.selected || !d.locked ? d.hex : '#3a3a3a' }} />
+      <Handle type="target" position={Position.Left} className="!w-1 !h-1 !border-0" style={{ background: d.selected || !d.locked ? d.hex : 'rgb(var(--base) / 0.18)' }} />
       {d.selected ? <Check className="w-2.5 h-2.5 shrink-0" style={{ color: d.hex }} />
         : d.locked ? <Lock className="w-2.5 h-2.5 opacity-50 shrink-0" /> : null}
       <span className="truncate">{d.label}</span>
