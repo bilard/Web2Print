@@ -14,8 +14,12 @@ function resolve(pref: ThemePref): 'light' | 'dark' {
 }
 
 export function initialThemePref(): ThemePref {
-  const v = localStorage.getItem(STORAGE_KEY)
-  return v === 'light' || v === 'dark' || v === 'system' ? v : 'dark'
+  try {
+    const v = localStorage.getItem(STORAGE_KEY)
+    return v === 'light' || v === 'dark' || v === 'system' ? v : 'dark'
+  } catch {
+    return 'dark' // localStorage indisponible (Safari privé) : défaut sombre
+  }
 }
 
 function applyToDom(resolved: 'light' | 'dark') {
@@ -30,11 +34,15 @@ interface ThemeState {
   setThemePref: (pref: ThemePref) => void
 }
 
+const pref = initialThemePref()
+
 export const useThemeStore = create<ThemeState>((set) => ({
-  themePref: initialThemePref(),
-  resolvedTheme: resolve(initialThemePref()),
+  themePref: pref,
+  resolvedTheme: resolve(pref),
   setThemePref: (pref) => {
-    localStorage.setItem(STORAGE_KEY, pref)
+    try {
+      localStorage.setItem(STORAGE_KEY, pref)
+    } catch { /* localStorage indisponible (Safari privé) : pas de persistance */ }
     const resolved = resolve(pref)
     applyToDom(resolved)
     set({ themePref: pref, resolvedTheme: resolved })
@@ -43,7 +51,7 @@ export const useThemeStore = create<ThemeState>((set) => ({
 
 // Init à l'import : aligne le DOM (l'anti-flash d'index.html a déjà posé la classe
 // pour les utilisateurs en clair ; ici on couvre aussi le cas « system »).
-applyToDom(resolve(initialThemePref()))
+applyToDom(resolve(pref))
 
 // Suit les changements de thème OS quand la préférence est « system ».
 if (typeof window.matchMedia === 'function') {

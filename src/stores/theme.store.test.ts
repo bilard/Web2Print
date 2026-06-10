@@ -39,4 +39,18 @@ describe('theme.store', () => {
     localStorage.setItem('themePref', 'banana')
     expect(initialThemePref()).toBe('dark')
   })
+
+  it('retourne dark si localStorage.getItem throw (Safari privé)', () => {
+    // NB : le setup de test remplace localStorage par un objet en mémoire
+    // (src/test/setup.ts) qui n'hérite pas de Storage.prototype → on spy
+    // directement l'instance, sinon le mock ne serait jamais invoqué.
+    const spy = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+      throw new Error('denied')
+    })
+    try {
+      expect(initialThemePref()).toBe('dark')
+    } finally {
+      spy.mockRestore()
+    }
+  })
 })
