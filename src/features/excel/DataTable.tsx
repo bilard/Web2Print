@@ -15,6 +15,7 @@ import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/featur
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 import { useCan } from '@/features/access/useAccess'
 import { useThemeStore } from '@/stores/theme.store'
+import { rowCompleteness, completenessTone } from './completeness'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -690,6 +691,25 @@ export function DataTable() {
         Ajouter une ligne
       </button>
 
+      {/* Barre d'état : volume + complétude moyenne des lignes affichées */}
+      {filteredRows.length > 0 && (() => {
+        const avg = Math.round(
+          filteredRows.reduce((acc, r) => acc + rowCompleteness(r, visibleColumns).pct, 0) /
+            filteredRows.length,
+        )
+        const avgTone = completenessTone(avg)
+        const dotCls =
+          avgTone === 'emerald' ? 'bg-emerald-400/80' : avgTone === 'amber' ? 'bg-amber-400/80' : 'bg-red-400/80'
+        return (
+          <div className="flex items-center gap-2 px-4 py-1.5 text-[10px] text-white/30 border-b border-white/5">
+            <span>{filteredRows.length} ligne{filteredRows.length > 1 ? 's' : ''}</span>
+            <span className="text-white/15">·</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} aria-hidden />
+            <span>complétude moyenne {avg} %</span>
+          </div>
+        )
+      })()}
+
       {filteredRows.length === 0 && sheet.rows.length > 0 && (
         <div className="flex items-center justify-center py-12">
           <p className="text-sm text-white/30">Aucun resultat pour "{searchQuery}"</p>
@@ -793,6 +813,15 @@ function DataRow({
 }: DataRowProps) {
   const canDelete = useCan('pim.delete')
   const enriched = isRowEnriched(row)
+  // Score de complétude sur les colonnes visibles (pastille + tooltip des manquants).
+  const completeness = rowCompleteness(row, visibleColumns)
+  const tone = completenessTone(completeness.pct)
+  const toneCls =
+    tone === 'emerald' ? 'bg-emerald-400/80' : tone === 'amber' ? 'bg-amber-400/80' : 'bg-red-400/80'
+  const completenessTitle =
+    completeness.missing.length === 0
+      ? `Complétude : 100 %`
+      : `Complétude : ${completeness.pct} % (${completeness.filled}/${completeness.total})\nManquants : ${completeness.missing.slice(0, 8).join(', ')}${completeness.missing.length > 8 ? '…' : ''}`
   // Différencie simple-clic (ouvre la fiche) et double-clic (édite la cellule)
   // via un délai court : si un dblclick arrive avant l'expiration, on annule.
   const openTimerRef = useRef<number | null>(null)
@@ -835,7 +864,12 @@ function DataRow({
             aria-hidden
           />
         )}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-1">
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${toneCls}`}
+            title={completenessTitle}
+            aria-label={`Complétude ${completeness.pct} %`}
+          />
           <span className="text-[10px] text-white/15 tabular-nums">{rowIdx + 1}</span>
         </div>
       </td>
