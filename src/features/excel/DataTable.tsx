@@ -14,6 +14,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
 import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 import { useCan } from '@/features/access/useAccess'
+import { useThemeStore } from '@/stores/theme.store'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -41,6 +42,8 @@ function isRowEnriched(row: ExcelRow): boolean {
 }
 
 export function DataTable() {
+  // Heatmap des cellules numériques : texte foncé en mode clair (les teintes vives sont illisibles sur fond pâle).
+  const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const {
     sheets, activeSheetIndex, searchQuery, taxonomyNavFilter, groupByTaxonomy,
     updateColumnType, setColumnPrimary, updateCell, deleteRow, addRow,
@@ -445,16 +448,16 @@ export function DataTable() {
     if (ratio <= 0.33) {
       // Tiers inférieur → bleu, intensité croissante vers le min
       const intensity = 0.06 + (1 - ratio / 0.33) * 0.10
-      return { bg: `rgba(59,130,246,${intensity.toFixed(2)})`, text: '#60a5fa' }
+      return { bg: `rgba(59,130,246,${intensity.toFixed(2)})`, text: isLight ? '#1d4ed8' : '#60a5fa' }
     }
     if (ratio >= 0.67) {
       // Tiers supérieur → vert, intensité croissante vers le max
       const intensity = 0.06 + ((ratio - 0.67) / 0.33) * 0.10
-      return { bg: `rgba(34,197,94,${intensity.toFixed(2)})`, text: '#4ade80' }
+      return { bg: `rgba(34,197,94,${intensity.toFixed(2)})`, text: isLight ? '#15803d' : '#4ade80' }
     }
 
     // Tiers central → jaune subtil
-    return { bg: 'rgba(234,179,8,0.07)', text: '#facc15' }
+    return { bg: 'rgba(234,179,8,0.07)', text: isLight ? '#a16207' : '#facc15' }
   }
 
   return (
