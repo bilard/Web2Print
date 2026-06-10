@@ -230,6 +230,13 @@ html.light .bg-indigo-600.text-white {
   color: #fff;
 }
 
+/* shadcn alert-dialog (src/components/ui — immuable) : surface thémable malgré
+   le `bg-[#303030]` en dur. Après la migration des tokens, plus aucun fichier
+   applicatif n'utilise cette classe arbitraire → la règle est chirurgicale. */
+html.light .bg-\[\#303030\] {
+  background-color: rgb(var(--surface));
+}
+
 @keyframes progress-indeterminate {
   0%   { left: -35%; }
   60%  { left: 100%; }
@@ -253,7 +260,7 @@ html.light .bg-indigo-600.text-white {
 .help-highlight-ring {
   position: relative;
   z-index: 1;
-  box-shadow: 0 0 0 2px rgb(99 102 241), 0 0 0 4px rgb(36, 36, 36);
+  box-shadow: 0 0 0 2px rgb(99 102 241), 0 0 0 4px rgb(var(--bg));
   border-radius: 0.375rem;
 }
 

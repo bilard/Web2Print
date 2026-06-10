@@ -1,9 +1,11 @@
-/* Thème dark de la popover driver.js, aligné sur les tokens Web2Print
-   (surface #303030, accent #6366f1). Classe appliquée via popoverClass. */
+/* Thème de la popover driver.js, aligné sur les tokens Web2Print
+   (surface thémable, accent #6366f1). Classe appliquée via popoverClass.
+   `--base`/`--surface` basculent avec html.light → popover lisible dans les deux thèmes.
+   L'overlay d'assombrissement driver.js (hors de ce fichier) reste sombre par design. */
 
 .driver-popover.w2p-tour {
-  background-color: #303030;
-  color: rgba(255, 255, 255, 0.85);
+  background-color: rgb(var(--surface));
+  color: rgb(var(--base) / 0.85);
   border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 0.75rem;
   /* Liseré d'accent en haut + halo indigo pour relier la bulle au surlignage */
@@ -13,35 +15,35 @@
 }
 
 .driver-popover.w2p-tour .driver-popover-title {
-  color: #a5b4fc; /* indigo-300 : titre coloré, bien détaché du corps */
+  color: rgb(var(--indigo-300)); /* titre coloré, bien détaché du corps */
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .driver-popover.w2p-tour .driver-popover-description {
-  color: rgba(255, 255, 255, 0.78); /* contraste renforcé pour la lecture */
+  color: rgb(var(--base) / 0.78); /* contraste renforcé pour la lecture */
   font-size: 0.82rem;
   line-height: 1.55;
 }
 
 .driver-popover.w2p-tour .driver-popover-progress-text {
-  color: #818cf8; /* indigo-400 */
+  color: rgb(var(--indigo-400));
   font-size: 0.72rem;
   font-weight: 600;
 }
 
 .driver-popover.w2p-tour .driver-popover-close-btn {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--base) / 0.4);
 }
 .driver-popover.w2p-tour .driver-popover-close-btn:hover {
-  color: #ffffff;
+  color: rgb(var(--base));
 }
 
 .driver-popover.w2p-tour .driver-popover-footer button {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgb(var(--base) / 0.08);
+  color: rgb(var(--base) / 0.7);
+  border: 1px solid rgb(var(--base) / 0.1);
   border-radius: 0.5rem;
   text-shadow: none;
   padding: 0.3rem 0.7rem;
@@ -49,11 +51,12 @@
   transition: background-color 0.15s, color 0.15s;
 }
 .driver-popover.w2p-tour .driver-popover-footer button:hover {
-  background-color: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
+  background-color: rgb(var(--base) / 0.14);
+  color: rgb(var(--base));
 }
 
-/* Bouton principal (Suivant / Terminer) en accent indigo */
+/* Bouton principal (Suivant / Terminer) en accent indigo — blanc véritable
+   dans les deux thèmes (fond coloré). */
 .driver-popover.w2p-tour .driver-popover-next-btn {
   background-color: #6366f1;
   color: #ffffff;
@@ -66,14 +69,14 @@
 
 /* Flèche colorée à la teinte de la surface, quel que soit le côté */
 .driver-popover.w2p-tour .driver-popover-arrow-side-left.driver-popover-arrow {
-  border-left-color: #303030;
+  border-left-color: rgb(var(--surface));
 }
 .driver-popover.w2p-tour .driver-popover-arrow-side-right.driver-popover-arrow {
-  border-right-color: #303030;
+  border-right-color: rgb(var(--surface));
 }
 .driver-popover.w2p-tour .driver-popover-arrow-side-top.driver-popover-arrow {
-  border-top-color: #303030;
+  border-top-color: rgb(var(--surface));
 }
 .driver-popover.w2p-tour .driver-popover-arrow-side-bottom.driver-popover-arrow {
-  border-bottom-color: #303030;
+  border-bottom-color: rgb(var(--surface));
 }

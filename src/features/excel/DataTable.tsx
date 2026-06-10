@@ -894,7 +894,7 @@ function DataRow({
                           ? 'text-[13px] tabular-nums font-medium'
                           : 'text-[12px]'
                   }`}
-                  style={{ color: colorStyle?.text ?? (col.isPrimary ? 'rgba(255,255,255,0.95)' : numericTypes.includes(col.fieldType) ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.50)') }}
+                  style={{ color: colorStyle?.text ?? (col.isPrimary ? 'rgb(var(--base) / 0.95)' : numericTypes.includes(col.fieldType) ? 'rgb(var(--base) / 0.75)' : 'rgb(var(--base) / 0.50)') }}
                 >
                   {formatCell(value, col)}
                 </span>

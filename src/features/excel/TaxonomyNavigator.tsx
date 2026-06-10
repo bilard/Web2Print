@@ -454,7 +454,7 @@ function TreeLevel({ nodes, onSelect, dropTargetKey, setDropTargetKey, onDropRow
               }`}
               style={{
                 fontSize: node.level === 1 ? '13px' : node.level === 2 ? '12px' : '11px',
-                color: node.isSelected ? node.color : node.level === 1 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
+                color: node.isSelected ? node.color : node.level === 1 ? 'rgb(var(--base) / 0.7)' : 'rgb(var(--base) / 0.5)',
               }}
             >
               {node.value}
@@ -670,7 +670,7 @@ function GlobalTaxoLevel({
                 className={`flex-1 truncate leading-tight ${tn.isSelected ? 'font-semibold' : ''}`}
                 style={{
                   fontSize: depth === 0 ? '13px' : depth === 1 ? '12px' : '11px',
-                  color: isActive ? color : depth === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)',
+                  color: isActive ? color : depth === 0 ? 'rgb(var(--base) / 0.7)' : 'rgb(var(--base) / 0.5)',
                 }}
               >
                 {tn.node.label}
@@ -680,7 +680,7 @@ function GlobalTaxoLevel({
                 className="tabular-nums"
                 style={{
                   fontSize: depth === 0 ? '10px' : '9px',
-                  color: isActive ? `${color}b3` : 'rgba(255,255,255,0.2)',
+                  color: isActive ? `${color}b3` : 'rgb(var(--base) / 0.2)',
                 }}
               >
                 {tn.count}

@@ -39,11 +39,11 @@ function MindNode({ data }: NodeProps) {
   if (d.kind === 'module') {
     return (
       <div
-        style={{ width: MOD_W, borderColor: d.hex, background: d.selected ? `${d.hex}26` : 'rgba(255,255,255,0.025)' }}
+        style={{ width: MOD_W, borderColor: d.hex, background: d.selected ? `${d.hex}26` : 'rgb(var(--base) / 0.025)' }}
         className="cursor-pointer px-3 py-2 rounded-lg border text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:brightness-125 transition">
         <Handle type="target" position={Position.Top} className="!w-1.5 !h-1.5 !border-0" style={{ background: d.hex }} />
         {d.selected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: d.hex }} />}
-        <span style={{ color: d.selected ? d.hex : 'rgba(255,255,255,0.6)' }}>{d.label}</span>
+        <span style={{ color: d.selected ? d.hex : 'rgb(var(--base) / 0.6)' }}>{d.label}</span>
         {d.count && <span className="text-[9px] text-white/35 tabular-nums">{d.count}</span>}
         <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !border-0" style={{ background: d.hex }} />
       </div>
