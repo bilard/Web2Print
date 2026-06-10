@@ -112,10 +112,10 @@
     /* Tokens thémables — valeurs claires (échelle d'élévation : canvas gris → cartes blanches).
        Hiérarchie : well (creux, le plus gris) < bg (canvas) < surface-2 < surface (blanc, le plus élevé). */
     --base: 24 24 27;         /* avant-plan : near-black cool #18181b (zinc-900) */
-    --bg: 235 237 241;        /* #ebedf1 — canvas/page, gris franc pour faire ressortir le blanc */
+    --bg: 226 229 235;        /* #e2e5eb — canvas/page, gris franc → les cartes blanches ressortent nettement */
     --surface: 255 255 255;   /* #ffffff — cartes, panneaux, en-têtes */
-    --surface-2: 246 247 250; /* #f6f7fa — sidebar, panneaux secondaires */
-    --well: 239 240 244;      /* #eff0f4 — champs/inputs (gris très clair, défini par sa bordure) */
+    --surface-2: 240 242 246; /* #f0f2f6 — sidebar, panneaux secondaires (distinct du blanc) */
+    --well: 248 249 251;      /* #f8f9fb — champs/inputs (quasi-blanc, défini par sa bordure) */
 
     /* === crans pâles — valeurs claires (600-900) === */
     --indigo-100: 49 46 129;
@@ -192,7 +192,7 @@
     --gray-400: 75 85 99;
 
     /* shadcn — palette claire (alignée sur les tokens : canvas gris, texte near-black) */
-    --background: 228 18% 93%;
+    --background: 222 16% 90%;
     --foreground: 240 6% 10%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 12%;
@@ -285,6 +285,12 @@ html:where(.light) .border-white\/20 { border-color: rgb(var(--base) / 0.28); }
 html:where(.light) .bg-black\/20:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface)); }
 html:where(.light) .bg-black\/30:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface)); }
 html:where(.light) .bg-black\/40:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--well)); }
+
+/* Idem pour les états HOVER (sinon un en-tête de section repasse en gris foncé au survol).
+   Feedback subtil : on éclaircit vers le well plutôt que de noircir. */
+html:where(.light) .hover\:bg-black\/20:hover:where(:not(.absolute):not(.fixed)),
+html:where(.light) .hover\:bg-black\/30:hover:where(:not(.absolute):not(.fixed)),
+html:where(.light) .hover\:bg-black\/40:hover:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--well)); }
 
 @keyframes progress-indeterminate {
   0%   { left: -35%; }

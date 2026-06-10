@@ -926,12 +926,14 @@ function DataRow({
   )
 }
 
-/** Styles visuels hiérarchisés par niveau de taxonomie */
-function getGroupLevelStyles(level: number) {
+/** Styles visuels hiérarchisés par niveau de taxonomie.
+ *  En mode clair, les teintes de groupe sont plus soutenues : une couleur à ~5% sur fond
+ *  blanc est un lavis invisible, alors qu'elle ressort sur fond sombre. */
+function getGroupLevelStyles(level: number, isLight: boolean) {
   switch (level) {
     case 1: return {
       py: 'py-3',
-      bgOpacity: '12',
+      bgOpacity: isLight ? '26' : '12',
       hoverBg: 'hover:bg-white/[0.06]',
       borderClass: 'border-b-2 border-white/[0.10]',
       chevronSize: 'w-4.5 h-4.5',
@@ -943,7 +945,7 @@ function getGroupLevelStyles(level: number) {
     }
     case 2: return {
       py: 'py-2.5',
-      bgOpacity: '0a',
+      bgOpacity: isLight ? '1c' : '0a',
       hoverBg: 'hover:bg-white/[0.05]',
       borderClass: 'border-b border-white/[0.08]',
       chevronSize: 'w-4 h-4',
@@ -955,7 +957,7 @@ function getGroupLevelStyles(level: number) {
     }
     case 3: return {
       py: 'py-2',
-      bgOpacity: '08',
+      bgOpacity: isLight ? '16' : '08',
       hoverBg: 'hover:bg-white/[0.04]',
       borderClass: 'border-b border-white/[0.06]',
       chevronSize: 'w-3.5 h-3.5',
@@ -967,7 +969,7 @@ function getGroupLevelStyles(level: number) {
     }
     default: return {
       py: 'py-1.5',
-      bgOpacity: '06',
+      bgOpacity: isLight ? '12' : '06',
       hoverBg: 'hover:bg-white/[0.03]',
       borderClass: 'border-b border-white/[0.05]',
       chevronSize: 'w-3 h-3',
@@ -992,6 +994,7 @@ interface GroupedRowsProps extends Omit<DataRowProps, 'row' | 'rowIdx'> {
 
 function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, dropGroupKey, setDropGroupKey, onDropOnGroup, ...rowProps }: GroupedRowsProps) {
   const totalCols = rowProps.visibleColumns.length + 2 // +2 for # col and action col
+  const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
 
   return (
     <>
@@ -1014,7 +1017,7 @@ function GroupedRows({ items, collapsedGroups, toggleGroup, rowCounter, dropGrou
         const isDropTarget = dropGroupKey === item.key
 
         // Hiérarchie visuelle par niveau
-        const levelStyles = getGroupLevelStyles(item.level)
+        const levelStyles = getGroupLevelStyles(item.level, isLight)
 
         return (
           <Fragment key={item.key}>
