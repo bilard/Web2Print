@@ -5,6 +5,7 @@ import type { NodeSpec } from '../types'
 import { describeCron, type CronConfig } from '../runtime/cronSchedule'
 
 const SERVER_UNITS = [
+  { value: 'minute', label: 'minute(s)' },
   { value: 'hour', label: 'heure(s)' },
   { value: 'day', label: 'jour(s)' },
   { value: 'week', label: 'semaine(s)' },
@@ -26,7 +27,7 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
   category: 'import',
   label: 'Cron (planifié)',
   description:
-    "Déclencheur planifié : exécute le workflow côté serveur à cadence régulière. « Heure » = à HH:MM (jour/semaine/mois) ; « Jour » = jour de semaine ciblé (unité semaine). Fuseau Europe/Paris. Active « Planification » et sauvegarde pour enregistrer le cron.",
+    "Déclencheur planifié : exécute le workflow côté serveur à cadence régulière (minute / heure / jour / semaine / mois). « Heure » = à HH:MM (jour/semaine/mois) ; « Jour » = jour de semaine ciblé (unité semaine). Fuseau Europe/Paris. ⚠️ Plancher effectif : 10 min (le scanner serveur tourne toutes les 10 min) — une cadence < 10 min sera traitée toutes les 10 min. Active « Planification » et sauvegarde pour enregistrer.",
   icon: CalendarClock,
   inputs: [],
   outputs: [{ name: 'tick', type: 'any' }],

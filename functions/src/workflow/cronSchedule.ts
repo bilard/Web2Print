@@ -1,5 +1,5 @@
 // functions/src/workflow/cronSchedule.ts
-type CronUnit = 'hour' | 'day' | 'week' | 'month'
+type CronUnit = 'minute' | 'hour' | 'day' | 'week' | 'month'
 
 export interface CronConfig {
   every: number
@@ -68,6 +68,7 @@ function parseAtTime(s: string | undefined): { h: number; mi: number } {
  */
 export function computeNextRun(cfg: CronConfig, from: number): number {
   const every = normalizeEvery(cfg.every)
+  if (cfg.unit === 'minute') return from + 60_000 * every
   if (cfg.unit === 'hour') return from + 3_600_000 * every
 
   const { h, mi } = parseAtTime(cfg.atTime)

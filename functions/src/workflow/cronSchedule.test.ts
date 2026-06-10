@@ -20,6 +20,9 @@ describe('normalizeEvery', () => {
 })
 
 describe('computeNextRun — intervalle', () => {
+  it('minute = intervalle fixe (ex. toutes les 10 min)', () => {
+    expect(computeNextRun({ enabled: true, every: 10, unit: 'minute' }, from)).toBe(from + 10 * 60_000)
+  })
   it('hour reste un intervalle fixe', () => {
     expect(computeNextRun({ enabled: true, every: 2, unit: 'hour' }, from)).toBe(from + 2 * 3_600_000)
   })
