@@ -54,18 +54,19 @@ export const workflowCronScheduler = onSchedule(
       .where('enabled', '==', true).where('nextRunAt', '<=', now)
       .orderBy('nextRunAt', 'asc').limit(MAX_SCHEDULES_PER_TICK).get()
     for (const docSnap of due.docs) {
-      const s = docSnap.data() as { uid: string; workflowId: string; every: number; unit: CronConfig['unit'] }
+      const s = docSnap.data() as {
+        uid: string; workflowId: string; every: number; unit: CronConfig['unit']
+        atTime?: string | null; weekday?: number | null
+      }
+      const cron: CronConfig = {
+        enabled: true, every: s.every, unit: s.unit,
+        atTime: s.atTime ?? undefined, weekday: s.weekday ?? undefined,
+      }
       try {
         const result = await runOne(s.uid, s.workflowId, 'cron')
-        await docSnap.ref.update({
-          lastRunAt: now, lastStatus: result.status,
-          nextRunAt: computeNextRun({ enabled: true, every: s.every, unit: s.unit }, now),
-        })
+        await docSnap.ref.update({ lastRunAt: now, lastStatus: result.status, nextRunAt: computeNextRun(cron, now) })
       } catch (err) {
-        await docSnap.ref.update({
-          lastRunAt: now, lastStatus: 'error',
-          nextRunAt: computeNextRun({ enabled: true, every: s.every, unit: s.unit }, now),
-        })
+        await docSnap.ref.update({ lastRunAt: now, lastStatus: 'error', nextRunAt: computeNextRun(cron, now) })
         console.error('workflowCronScheduler: échec', s.workflowId, err)
       }
     }

@@ -11,12 +11,22 @@ const SERVER_UNITS = [
   { value: 'month', label: 'mois' },
 ]
 
+const WEEKDAY_OPTIONS = [
+  { value: '1', label: 'Lundi' },
+  { value: '2', label: 'Mardi' },
+  { value: '3', label: 'Mercredi' },
+  { value: '4', label: 'Jeudi' },
+  { value: '5', label: 'Vendredi' },
+  { value: '6', label: 'Samedi' },
+  { value: '0', label: 'Dimanche' },
+]
+
 const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string } }> = {
   type: 'cron',
   category: 'import',
   label: 'Cron (planifié)',
   description:
-    "Déclencheur planifié : exécute le workflow côté serveur à intervalle régulier (toutes les heures / jours / semaines / mois). Active « Planification » et sauvegarde pour enregistrer le cron.",
+    "Déclencheur planifié : exécute le workflow côté serveur à cadence régulière. « Heure » = à HH:MM (jour/semaine/mois) ; « Jour » = jour de semaine ciblé (unité semaine). Fuseau Europe/Paris. Active « Planification » et sauvegarde pour enregistrer le cron.",
   icon: CalendarClock,
   inputs: [],
   outputs: [{ name: 'tick', type: 'any' }],
@@ -24,8 +34,21 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
     { name: 'enabled', kind: 'checkbox', label: 'Planification active' },
     { name: 'every', kind: 'number', label: 'Tous les', default: 1 },
     { name: 'unit', kind: 'select', label: 'Unité', options: SERVER_UNITS, default: 'day' },
+    {
+      name: 'atTime',
+      kind: 'text',
+      label: 'Heure (HH:MM)',
+      help: 'Heure de déclenchement pour jour / semaine / mois (Europe/Paris). Ex : 14:30. Ignoré pour « heure(s) ».',
+    },
+    {
+      name: 'weekday',
+      kind: 'select',
+      label: 'Jour (unité semaine)',
+      options: WEEKDAY_OPTIONS,
+      default: '1',
+    },
   ],
-  defaultConfig: { enabled: false, every: 1, unit: 'day' },
+  defaultConfig: { enabled: false, every: 1, unit: 'day', atTime: '09:00', weekday: 1 },
   runtime: 'server',
   run: async (ctx, config) => {
     const at = new Date().toISOString()
