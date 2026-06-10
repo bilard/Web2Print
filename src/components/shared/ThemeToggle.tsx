@@ -7,6 +7,11 @@ const LABELS: Record<ThemePref, string> = {
   light: 'Mode clair',
   system: 'Suivre le système',
 }
+const ACTION: Record<ThemePref, string> = {
+  dark: 'passer en mode clair',
+  light: 'suivre le système',
+  system: 'passer en mode sombre',
+}
 
 interface ThemeToggleProps {
   /** Classes du bouton — surcharger pour coller au style des boutons voisins */
@@ -26,7 +31,7 @@ export function ThemeToggle({
     <button
       onClick={() => setThemePref(NEXT[themePref])}
       className={`transition-colors ${className}`}
-      title={`${LABELS[themePref]} — cliquer pour changer`}
+      title={`${LABELS[themePref]} actif — ${ACTION[themePref]}`}
       aria-label="Changer de thème"
     >
       <Icon className={iconClassName} aria-hidden="true" />

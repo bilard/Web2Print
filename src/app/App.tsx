@@ -17,8 +17,13 @@ const queryClient = new QueryClient({
   },
 })
 
-export default function App() {
+/** Isolé pour que le changement de thème ne re-rende pas toute la racine. */
+function ThemedToaster() {
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
+  return <Toaster theme={resolvedTheme} position="bottom-right" richColors />
+}
+
+export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -26,7 +31,7 @@ export default function App() {
           <RouterProvider router={router} />
           <TopProgressBar />
           <AiLiveIndicator />
-          <Toaster theme={resolvedTheme} position="bottom-right" richColors />
+          <ThemedToaster />
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

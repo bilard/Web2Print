@@ -1,10 +1,10 @@
 import { useThemeStore, type ThemePref } from '@/stores/theme.store'
 
-const OPTIONS: ReadonlyArray<readonly [ThemePref, string]> = [
+const OPTIONS = [
   ['light', 'Clair'],
   ['dark', 'Sombre'],
   ['system', 'Système'],
-] as const
+] as const satisfies ReadonlyArray<readonly [ThemePref, string]>
 
 export function ThemeSettingsSection() {
   const themePref = useThemeStore((s) => s.themePref)
@@ -17,6 +17,7 @@ export function ThemeSettingsSection() {
           <button
             key={value}
             onClick={() => setThemePref(value)}
+            aria-pressed={themePref === value}
             className={`px-3 py-1.5 rounded-md text-xs border transition-colors ${
               themePref === value
                 ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
