@@ -224,6 +224,12 @@
   }
 }
 
+/* shadcn (src/components/ui — immuable) : préserve le blanc véritable des boutons
+   colorés quand `white` bascule en avant-plan sombre (mode clair). */
+html.light .bg-indigo-600.text-white {
+  color: #fff;
+}
+
 @keyframes progress-indeterminate {
   0%   { left: -35%; }
   60%  { left: 100%; }
