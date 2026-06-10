@@ -88,7 +88,7 @@ export function TextSegmentRow({ segment, objectId }: Props) {
 
       {/* Field picker dropdown */}
       {pickerOpen && (
-        <div className="ml-9 mr-1 bg-[#26] border border-white/10 rounded-md shadow-xl overflow-hidden max-h-44 overflow-y-auto">
+        <div className="ml-9 mr-1 bg-[#262626] border border-white/10 rounded-md shadow-xl overflow-hidden max-h-44 overflow-y-auto">
           {columns.length === 0 ? (
             <p className="text-[11px] text-white/30 px-3 py-2">Aucun champ disponible</p>
           ) : (

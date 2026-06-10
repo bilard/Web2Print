@@ -294,7 +294,7 @@ export function LinkProjectsModal({
                       </span>
 
                       {/* Thumbnail */}
-                      <div className="w-10 h-10 bg-[#26] rounded-md flex items-center justify-center shrink-0 overflow-hidden border border-white/[0.06]">
+                      <div className="w-10 h-10 bg-[#262626] rounded-md flex items-center justify-center shrink-0 overflow-hidden border border-white/[0.06]">
                         {project.thumbnail ? (
                           <img
                             src={project.thumbnail}

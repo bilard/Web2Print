@@ -108,7 +108,7 @@ export function ProjectCard({
         <SelectCheckbox selected={selected} onClick={handleCheckboxClick} />
 
         {/* Thumbnail */}
-        <div className="w-12 h-12 bg-[#26] rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-white/[0.06]">
+        <div className="w-12 h-12 bg-[#262626] rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-white/[0.06]">
           {project.thumbnail ? (
             <img
               src={project.thumbnail}
@@ -194,7 +194,7 @@ export function ProjectCard({
 
       {/* Thumbnail */}
       <div
-        className="aspect-[4/3] bg-[#26] flex items-center justify-center overflow-hidden"
+        className="aspect-[4/3] bg-[#262626] flex items-center justify-center overflow-hidden"
         onClick={open}
       >
         {project.thumbnail ? (

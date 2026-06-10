@@ -497,7 +497,7 @@ export function DamGenerate() {
             onPaste={handlePromptPaste}
             placeholder="Décrivez l'image à générer... (collez une image ou du texte)"
             rows={4}
-            className="w-full min-h-[96px] bg-[#26] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50 resize-y"
+            className="w-full min-h-[96px] bg-white border border-white/10 rounded-lg px-3 py-2 text-sm text-black placeholder:text-black/40 outline-none focus:border-indigo-500/50 resize-y"
           />
         </div>
 
@@ -524,7 +524,7 @@ export function DamGenerate() {
               if (e.dataTransfer.files?.length) void handleAddRefs(e.dataTransfer.files)
             }}
             className={`rounded-lg border border-dashed p-2 flex flex-col gap-1.5 transition ${
-              dragging ? 'border-indigo-400 bg-indigo-500/10' : 'border-white/10 bg-[#26]'
+              dragging ? 'border-indigo-400 bg-indigo-500/10' : 'border-white/10 bg-[#262626]'
             }`}
           >
             {refs.length > 0 && (
@@ -774,7 +774,7 @@ export function DamGenerate() {
                   <button
                     type="button"
                     onClick={() => setZoomSrc(img.url)}
-                    className="group rounded-lg overflow-hidden bg-[#26] relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    className="group rounded-lg overflow-hidden bg-[#262626] relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                     title="Cliquer pour agrandir"
                   >
                     <img

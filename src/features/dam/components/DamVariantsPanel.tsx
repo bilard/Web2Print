@@ -113,7 +113,7 @@ export function DamVariantsPanel({
         >
           <button
             onClick={onLoadOriginal}
-            className="w-full aspect-video bg-[#26] relative overflow-hidden"
+            className="w-full aspect-video bg-[#262626] relative overflow-hidden"
             title="Revenir à l'original"
           >
             <img
@@ -174,7 +174,7 @@ export function DamVariantsPanel({
                       onLoadVariant(v)
                     }
                   }}
-                  className="w-full aspect-video bg-[#26] relative overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                  className="w-full aspect-video bg-[#262626] relative overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                   title="Charger cette variante"
                 >
                   <img
@@ -218,7 +218,7 @@ export function DamVariantsPanel({
                           if (e.key === 'Enter') commitRename()
                           if (e.key === 'Escape') setEditingId(null)
                         }}
-                        className="flex-1 min-w-0 bg-[#26] border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-white outline-none focus:border-indigo-500/50"
+                        className="flex-1 min-w-0 bg-[#262626] border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-white outline-none focus:border-indigo-500/50"
                       />
                       <button onClick={commitRename} className="text-indigo-400 hover:text-indigo-300 p-0.5">
                         <Check className="w-3 h-3" />

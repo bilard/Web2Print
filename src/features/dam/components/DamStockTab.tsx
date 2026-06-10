@@ -76,7 +76,7 @@ export function DamStockTab() {
   return (
     <div className="flex flex-col h-full">
       <div className="p-2">
-        <div className="flex items-center bg-[#26] border border-white/10 rounded-md h-8 px-2 gap-1.5 focus-within:border-indigo-500/50">
+        <div className="flex items-center bg-[#262626] border border-white/10 rounded-md h-8 px-2 gap-1.5 focus-within:border-indigo-500/50">
           <Search className="w-3.5 h-3.5 text-white/30" />
           <input
             ref={inputRef}

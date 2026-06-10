@@ -311,7 +311,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
 
       {/* Éditeur de formule — panneau complet */}
       {editingVar && (
-        <div className="mt-2 p-2.5 rounded-lg bg-[#26] border border-white/10">
+        <div className="mt-2 p-2.5 rounded-lg bg-[#262626] border border-white/10">
           {/* Header */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">

@@ -123,7 +123,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
-              className="w-full max-w-md bg-[#26] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full max-w-md bg-[#262626] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500 transition-colors"
               placeholder="Sans titre"
             />
           </div>
@@ -187,7 +187,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                     type="number"
                     value={customWidth}
                     onChange={(e) => setCustomWidth(Math.max(100, parseInt(e.target.value) || 100))}
-                    className="w-32 bg-[#26] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-32 bg-[#262626] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
                 <span className="text-white/20 mt-5">x</span>
@@ -197,7 +197,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
                     type="number"
                     value={customHeight}
                     onChange={(e) => setCustomHeight(Math.max(100, parseInt(e.target.value) || 100))}
-                    className="w-32 bg-[#26] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-32 bg-[#262626] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>

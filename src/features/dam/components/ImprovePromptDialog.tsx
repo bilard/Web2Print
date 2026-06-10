@@ -201,7 +201,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
                           setCustomInputs((c) => ({ ...c, [q.id]: e.target.value }))
                         }
                         placeholder="Ta réponse…"
-                        className="w-full bg-[#26] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
+                        className="w-full bg-[#262626] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
                       />
                     )}
                   </div>
