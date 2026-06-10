@@ -46,7 +46,7 @@ async function runOne(uid: string, workflowId: string, trigger: 'cron' | 'manual
 
 // Scanner : toutes les 10 min, exécute les plannings dûs.
 export const workflowCronScheduler = onSchedule(
-  { schedule: 'every 10 minutes', region: 'europe-west1', timeoutSeconds: 540, memory: '512MiB' },
+  { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 540, memory: '512MiB' },
   async () => {
     const db = getFirestore()
     const now = Date.now()
