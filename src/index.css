@@ -109,13 +109,13 @@
   }
 
   html.light {
-    /* Tokens thémables — valeurs claires.
-       Page nettement grise pour que les surfaces blanches (cartes/panneaux) ressortent. */
-    --base: 23 23 23;         /* avant-plan : quasi-noir #171717 */
-    --bg: 232 232 237;        /* #e8e8ed — canvas/page */
-    --surface: 255 255 255;   /* #ffffff — cartes, panneaux principaux */
-    --surface-2: 243 243 246; /* #f3f3f6 — sidebar, panneaux secondaires */
-    --well: 222 222 228;      /* #dedee4 — champs/zones en creux */
+    /* Tokens thémables — valeurs claires (échelle d'élévation : canvas gris → cartes blanches).
+       Hiérarchie : well (creux, le plus gris) < bg (canvas) < surface-2 < surface (blanc, le plus élevé). */
+    --base: 24 24 27;         /* avant-plan : near-black cool #18181b (zinc-900) */
+    --bg: 235 237 241;        /* #ebedf1 — canvas/page, gris franc pour faire ressortir le blanc */
+    --surface: 255 255 255;   /* #ffffff — cartes, panneaux, en-têtes */
+    --surface-2: 246 247 250; /* #f6f7fa — sidebar, panneaux secondaires */
+    --well: 239 240 244;      /* #eff0f4 — champs/inputs (gris très clair, défini par sa bordure) */
 
     /* === crans pâles — valeurs claires (600-900) === */
     --indigo-100: 49 46 129;
@@ -191,9 +191,9 @@
     --gray-300: 55 65 81;
     --gray-400: 75 85 99;
 
-    /* shadcn — palette claire */
-    --background: 0 0% 96%;
-    --foreground: 0 0% 12%;
+    /* shadcn — palette claire (alignée sur les tokens : canvas gris, texte near-black) */
+    --background: 228 18% 93%;
+    --foreground: 240 6% 10%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 12%;
     --popover: 0 0% 100%;
@@ -208,8 +208,8 @@
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 85%;
-    --input: 0 0% 85%;
+    --border: 228 12% 84%;
+    --input: 228 12% 84%;
     --ring: 239 84% 60%;
   }
 }
@@ -282,8 +282,8 @@ html:where(.light) .border-white\/20 { border-color: rgb(var(--base) / 0.28); }
    EXCLUT les overlays (modales `fixed inset-0`, voiles d'image `absolute inset-0`) et les
    boutons posés sur image — qui doivent rester sombres dans les deux thèmes. `:where(…)` garde
    la spécificité à (0,1,1) → ne casse aucun `hover:*`. Sombre intact (règle scopée .light). */
-html:where(.light) .bg-black\/20:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface-2)); }
-html:where(.light) .bg-black\/30:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface-2)); }
+html:where(.light) .bg-black\/20:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface)); }
+html:where(.light) .bg-black\/30:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--surface)); }
 html:where(.light) .bg-black\/40:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--well)); }
 
 @keyframes progress-indeterminate {
