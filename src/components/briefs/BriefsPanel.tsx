@@ -15,7 +15,7 @@ export function BriefsPanel({ taxonomy }: Props) {
   return (
     <>
       <div className="h-full flex flex-col">
-        <div className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
+        <div className="h-11 bg-well border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
           <h2 className="text-[13px] font-semibold text-white/70">Briefs clients</h2>
           <div className="flex-1" />
           <button

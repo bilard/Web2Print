@@ -19,7 +19,7 @@ export function SelectField({ field, value, onChange, disabled }: Props) {
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+        className="bg-background border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
       >
         <option value="">—</option>
         {options.map((opt) => (

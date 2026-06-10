@@ -68,7 +68,7 @@ export function FieldTypeSelector({ value, onChange, onSetPrimary, showPrimary, 
       )}
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-72 bg-[#262626] border border-white/15 rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 w-72 bg-surface-2 border border-white/15 rounded-xl shadow-2xl z-50 overflow-hidden">
           {/* Search */}
           <div className="px-3 py-2 border-b border-white/10">
             <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2.5 py-1.5">

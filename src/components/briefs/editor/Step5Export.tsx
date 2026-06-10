@@ -32,7 +32,7 @@ export function Step5Export({ brief }: Props) {
             Le fichier sera téléchargé directement dans votre navigateur.
           </p>
 
-          <div className="bg-[#2a2a2a] border border-white/[0.06] rounded-md p-5 flex flex-col gap-4">
+          <div className="bg-surface-2 border border-white/[0.06] rounded-md p-5 flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <Presentation className="w-5 h-5 text-indigo-400" />
               <div className="flex-1">

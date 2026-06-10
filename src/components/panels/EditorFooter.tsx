@@ -18,7 +18,7 @@ export function EditorFooter() {
   }
 
   return (
-    <footer data-tour="footer" className="shrink-0 bg-[#303030] border-t border-white/10 z-20">
+    <footer data-tour="footer" className="shrink-0 bg-surface border-t border-white/10 z-20">
       {/* Pages bar */}
       <div className="h-[70px] border-b border-white/5">
         <PagesBar />

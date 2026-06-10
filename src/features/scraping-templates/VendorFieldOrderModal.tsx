@@ -100,7 +100,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#303030] border border-white/10 rounded-lg w-full max-w-xl flex flex-col max-h-[85vh]"
+        className="bg-surface border border-white/10 rounded-lg w-full max-w-xl flex flex-col max-h-[85vh]"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
           <div className="flex items-center gap-2">

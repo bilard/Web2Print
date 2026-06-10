@@ -78,7 +78,7 @@ export function OnboardingWizard() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-lg max-h-[88vh] flex flex-col bg-[#303030] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg max-h-[88vh] flex flex-col bg-surface border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         {/* En-tête : progression + fermer */}
         <div className="p-4 border-b border-white/[0.06] flex items-center gap-3">
           <div className="flex-1 flex items-center gap-1.5">

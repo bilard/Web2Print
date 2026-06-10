@@ -51,7 +51,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[#303030] border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
+      <div className="bg-surface border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <h2 className="text-sm font-medium text-white/90">Exporter pour EasyCatalog</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white/70">
@@ -69,7 +69,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
                   onClick={() => setFormat(f.id)}
                   className={`px-3 py-1.5 rounded text-sm border ${
                     format === f.id
-                      ? 'bg-[#6366f1] border-[#6366f1] text-white'
+                      ? 'bg-accent border-accent text-white'
                       : 'border-white/10 text-white/60 hover:border-white/30'
                   }`}
                 >
@@ -81,7 +81,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
 
           <div>
             <div className="text-[11px] uppercase text-white/40 mb-1.5">
-              Champ-clé : <span className="text-[#6366f1]">{keyName}</span>
+              Champ-clé : <span className="text-accent">{keyName}</span>
             </div>
             <div className="max-h-52 overflow-auto rounded border border-white/10 divide-y divide-white/10">
               {descriptors.map((d) => (
@@ -99,7 +99,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
           <button
             onClick={handleExport}
             disabled={busy || !sheet}
-            className="w-full flex items-center justify-center gap-2 bg-[#6366f1] hover:bg-[#5457e5] disabled:opacity-40 text-white rounded py-2 text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-[#5457e5] disabled:opacity-40 text-white rounded py-2 text-sm font-medium"
           >
             <Download className="w-4 h-4" />
             {busy ? 'Export…' : 'Télécharger le zip'}

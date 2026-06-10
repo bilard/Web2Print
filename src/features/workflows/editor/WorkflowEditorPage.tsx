@@ -70,8 +70,8 @@ export function WorkflowEditorPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [goToList, showGenerate])
 
-  if (loading) return <div className="min-h-screen bg-[#242424] text-white p-8">Chargement…</div>
-  if (!wf) return <div className="min-h-screen bg-[#242424] text-white p-8">Workflow introuvable</div>
+  if (loading) return <div className="min-h-screen bg-background text-white p-8">Chargement…</div>
+  if (!wf) return <div className="min-h-screen bg-background text-white p-8">Workflow introuvable</div>
 
   // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
   const run = async () => {
@@ -95,7 +95,7 @@ export function WorkflowEditorPage() {
 
   return (
     <ReactFlowProvider>
-      <div className="h-screen bg-[#242424] text-white flex flex-col">
+      <div className="h-screen bg-background text-white flex flex-col">
         <header className="border-b border-neutral-800 px-3 py-2 flex items-center gap-2">
           <button
             onClick={goToList}

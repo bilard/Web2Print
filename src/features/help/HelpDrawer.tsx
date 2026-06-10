@@ -34,7 +34,7 @@ export function HelpDrawer() {
     <aside
       aria-label="Manuel d'utilisation"
       className={`fixed top-0 right-0 h-screen z-40 w-[480px] max-w-full
-        bg-[#303030] border-l border-white/10 shadow-2xl
+        bg-surface border-l border-white/10 shadow-2xl
         flex flex-col
         transition-transform duration-200 ease-out
         ${open ? 'translate-x-0' : 'translate-x-full pointer-events-none'}`}

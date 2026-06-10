@@ -80,7 +80,7 @@ function MindControls() {
   const { zoomTo, fitView } = useReactFlow()
   const zoom = useStore((s) => s.transform[2])
   return (
-    <Panel position="bottom-left" className="!m-2 flex items-center gap-2 bg-[#161616]/95 border border-white/10 rounded-lg px-2.5 py-1.5 backdrop-blur">
+    <Panel position="bottom-left" className="!m-2 flex items-center gap-2 bg-well/95 border border-white/10 rounded-lg px-2.5 py-1.5 backdrop-blur">
       <button onClick={() => fitView({ padding: 0.18, duration: 250 })} title="Recadrer"
         className="text-white/50 hover:text-white transition-colors"><Maximize className="w-3.5 h-3.5" /></button>
       <input
@@ -180,7 +180,7 @@ export function PermissionMindMap({
   }, [fitWidth])
 
   return (
-    <div ref={wrapRef} className="rounded-xl border border-white/[0.06] bg-[#0c0c0c] overflow-hidden h-[calc(100vh-215px)] min-h-[520px]">
+    <div ref={wrapRef} className="rounded-xl border border-white/[0.06] bg-well overflow-hidden h-[calc(100vh-215px)] min-h-[520px]">
       <ReactFlow
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}

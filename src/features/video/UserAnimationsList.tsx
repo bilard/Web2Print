@@ -213,7 +213,7 @@ function AnimationCard({ animation, onDelete, onRename }: {
   }
 
   return (
-    <div className="bg-[#303030] border border-white/10 rounded-xl overflow-hidden group">
+    <div className="bg-surface border border-white/10 rounded-xl overflow-hidden group">
       <button
         onClick={() => void handleOpenPreview()}
         className="bg-gradient-to-br from-indigo-500/10 to-fuchsia-500/10 flex flex-col items-center justify-center gap-3 relative w-full hover:from-indigo-500/20 hover:to-fuchsia-500/20 transition-colors"

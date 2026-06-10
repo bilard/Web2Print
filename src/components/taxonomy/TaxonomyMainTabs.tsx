@@ -19,7 +19,7 @@ export function TaxonomyMainTabs() {
   const tabs = TABS.filter((tab) => tab.perm !== 'taxonomies.briefs' || canBriefs)
 
   return (
-    <div className="h-10 bg-[#2a2a2a] border-b border-white/[0.06] flex items-center px-2 gap-1 shrink-0">
+    <div className="h-10 bg-surface-2 border-b border-white/[0.06] flex items-center px-2 gap-1 shrink-0">
       {tabs.map((tab) => {
         const active = currentTab === tab.id
         return (

@@ -141,8 +141,8 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
               key={wf.id}
               className={
                 viewMode === 'grid'
-                  ? 'bg-[#303030] border border-neutral-800 rounded-lg p-4 hover:border-indigo-500 transition cursor-pointer'
-                  : 'bg-[#303030] border border-neutral-800 rounded-md px-4 py-2.5 hover:border-indigo-500 transition cursor-pointer'
+                  ? 'bg-surface border border-neutral-800 rounded-lg p-4 hover:border-indigo-500 transition cursor-pointer'
+                  : 'bg-surface border border-neutral-800 rounded-md px-4 py-2.5 hover:border-indigo-500 transition cursor-pointer'
               }
               onClick={() => nav(`/workflows/${wf.id}`)}
             >
@@ -208,7 +208,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#242424] text-white p-8">
+    <div className="min-h-screen bg-background text-white p-8">
       <div className="max-w-5xl mx-auto">{content}</div>
     </div>
   )

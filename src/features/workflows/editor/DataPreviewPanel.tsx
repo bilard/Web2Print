@@ -539,7 +539,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
               aria-expanded={showSuggestions && suggestions.length > 0}
               aria-controls={listboxId}
               aria-autocomplete="list"
-              className="pl-6 pr-6 py-1 text-[11px] bg-[#161616] border border-neutral-800 rounded text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500/60 w-56"
+              className="pl-6 pr-6 py-1 text-[11px] bg-well border border-neutral-800 rounded text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500/60 w-56"
             />
             {query ? (
               <button
@@ -569,7 +569,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
                       transform: 'translateY(-100%)',
                       marginTop: -4,
                     }}
-                    className="z-[10000] max-h-72 overflow-y-auto rounded border border-neutral-800 bg-[#161616] shadow-xl shadow-black/60 py-1"
+                    className="z-[10000] max-h-72 overflow-y-auto rounded border border-neutral-800 bg-well shadow-xl shadow-black/60 py-1"
                   >
                     {suggestions.map((v, i) => {
                       const isActive = i === activeSuggestion
@@ -590,7 +590,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
                           className={`px-2 py-1 text-[11px] cursor-pointer truncate ${
                             isActive
                               ? 'bg-indigo-500/15 text-neutral-100'
-                              : 'text-neutral-300 hover:bg-[#1d1d1d]'
+                              : 'text-neutral-300 hover:bg-background'
                           }`}
                           title={v}
                         >
@@ -609,7 +609,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
             <select
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
-              className="text-[11px] bg-[#161616] border border-neutral-800 rounded px-1.5 py-1 text-neutral-200 focus:outline-none focus:border-indigo-500/60"
+              className="text-[11px] bg-well border border-neutral-800 rounded px-1.5 py-1 text-neutral-200 focus:outline-none focus:border-indigo-500/60"
             >
               {PAGE_SIZE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -627,7 +627,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
         className="flex-1 min-h-0 rounded border border-neutral-800 overflow-auto"
       >
         <table className="text-xs w-max min-w-full">
-          <thead className="bg-[#161616] sticky top-0 z-10 shadow-[inset_0_-1px_0_0_rgb(38,38,38)]">
+          <thead className="bg-well sticky top-0 z-10 shadow-[inset_0_-1px_0_0_rgb(38,38,38)]">
             <tr>
               {cols.map((c) => {
                 const isFocused = c.key === focusedKey
@@ -661,7 +661,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
               </tr>
             ) : (
               visibleRows.map((row, i) => (
-                <tr key={start + i} className="odd:bg-[#242424] even:bg-[#2a2a2a]">
+                <tr key={start + i} className="odd:bg-background even:bg-surface-2">
                   {cols.map((c) => {
                     const isFocused = c.key === focusedKey
                     return (
@@ -698,7 +698,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
               type="button"
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 0}
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-neutral-800 bg-[#161616] hover:bg-[#1d1d1d] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-neutral-800 bg-well hover:bg-background disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-3 h-3" />
               Préc.
@@ -710,7 +710,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
               type="button"
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage >= pageCount - 1}
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-neutral-800 bg-[#161616] hover:bg-[#1d1d1d] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-neutral-800 bg-well hover:bg-background disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Suiv.
               <ChevronRight className="w-3 h-3" />
@@ -739,7 +739,7 @@ function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
           return (
             <div
               key={i}
-              className="aspect-square rounded border border-neutral-800 bg-[#161616] overflow-hidden flex items-center justify-center"
+              className="aspect-square rounded border border-neutral-800 bg-well overflow-hidden flex items-center justify-center"
               title={a.name ?? url ?? ''}
             >
               {isImg && url ? (
@@ -760,7 +760,7 @@ function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
 
 function ExportPreview({ payload }: { payload: ExportLike }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded border border-neutral-800 bg-[#161616]">
+    <div className="flex items-center gap-3 p-3 rounded border border-neutral-800 bg-well">
       <div className="w-10 h-10 rounded bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
         <FileText className="w-5 h-5" />
       </div>
@@ -813,7 +813,7 @@ function JsonPreview({ value, maxLen = 4000 }: { value: unknown; maxLen?: number
     text = String(value)
   }
   return (
-    <pre className="text-[11px] text-neutral-300 bg-[#242424] border border-neutral-800 rounded p-2 whitespace-pre-wrap break-words">
+    <pre className="text-[11px] text-neutral-300 bg-background border border-neutral-800 rounded p-2 whitespace-pre-wrap break-words">
       {text.slice(0, maxLen)}
       {text.length > maxLen ? '\n…' : ''}
     </pre>
@@ -980,7 +980,7 @@ export function DataPreviewPanel() {
 
   return (
     <div
-      className="border-t border-neutral-800 bg-[#242424] text-sm flex flex-col shrink-0 relative"
+      className="border-t border-neutral-800 bg-background text-sm flex flex-col shrink-0 relative"
       style={{ height: collapsed ? 30 : height }}
     >
       {!collapsed ? (

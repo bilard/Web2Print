@@ -188,7 +188,7 @@ export function NodePalette() {
   }
 
   return (
-    <aside className="w-60 border-r border-neutral-800 bg-[#242424] overflow-y-auto p-3">
+    <aside className="w-60 border-r border-neutral-800 bg-background overflow-y-auto p-3">
       <h3 className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 tracking-wider">
         Blocs
       </h3>
@@ -263,7 +263,7 @@ export function NodePalette() {
                           onClick={() => spawn(spec)}
                           draggable
                           onDragStart={(e) => onDragStart(e, spec)}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-[#161616] border ${step.accent.border} ${step.accent.hoverBg} transition-colors cursor-grab active:cursor-grabbing`}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-well border ${step.accent.border} ${step.accent.hoverBg} transition-colors cursor-grab active:cursor-grabbing`}
                           title={spec.description}
                         >
                           <Icon className={`w-3.5 h-3.5 shrink-0 ${step.accent.text}`} />
@@ -280,7 +280,7 @@ export function NodePalette() {
                     return (
                       <li key={spec.type}>
                         <div
-                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-[#222222] border border-neutral-900 text-neutral-700 cursor-not-allowed select-none"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-left bg-background border border-neutral-900 text-neutral-700 cursor-not-allowed select-none"
                           title={prevLabel ? `Disponible après ${prevLabel}.` : 'Verrouillé.'}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0 text-neutral-700" />

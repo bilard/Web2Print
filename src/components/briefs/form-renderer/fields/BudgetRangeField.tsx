@@ -27,7 +27,7 @@ export function BudgetRangeField({ field, value, onChange, disabled }: Props) {
           onChange={(e) => onChange({ ...current, min: e.target.value === '' ? undefined : Number(e.target.value) })}
           placeholder="Min €"
           disabled={disabled}
-          className="flex-1 bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+          className="flex-1 bg-background border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
         />
         <span className="text-white/30 text-[12px]">—</span>
         <input
@@ -36,7 +36,7 @@ export function BudgetRangeField({ field, value, onChange, disabled }: Props) {
           onChange={(e) => onChange({ ...current, max: e.target.value === '' ? undefined : Number(e.target.value) })}
           placeholder="Max €"
           disabled={disabled}
-          className="flex-1 bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+          className="flex-1 bg-background border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
         />
       </div>
       {field.helpText && (

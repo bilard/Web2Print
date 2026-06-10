@@ -20,7 +20,7 @@ function ProjectCard({ project, onOpen }: { project: ProjectData; onOpen: () => 
       onClick={onOpen}
       className="group relative text-left rounded-lg overflow-hidden bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/15 transition"
     >
-      <div className="aspect-[4/3] bg-[#262626] relative overflow-hidden">
+      <div className="aspect-[4/3] bg-surface-2 relative overflow-hidden">
         {project.thumbnail ? (
           <img
             src={project.thumbnail}
@@ -49,7 +49,7 @@ function ProjectRow({ project, onOpen }: { project: ProjectData; onOpen: () => v
       onClick={onOpen}
       className="group w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/15 transition text-left"
     >
-      <div className="w-12 h-12 rounded bg-[#262626] overflow-hidden shrink-0 flex items-center justify-center">
+      <div className="w-12 h-12 rounded bg-surface-2 overflow-hidden shrink-0 flex items-center justify-center">
         {project.thumbnail ? (
           <img
             src={project.thumbnail}

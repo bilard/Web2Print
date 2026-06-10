@@ -168,12 +168,12 @@ export function FormulaInput({ value, onChange, columns, textareaRef }: FormulaI
         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         placeholder='Ex: [Prix] * 1.20 ou CONCAT([Prénom], " ", [Nom])'
         rows={3}
-        className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2.5 text-sm font-mono text-white/80 placeholder-white/20 outline-none focus:border-indigo-500/50 resize-none"
+        className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2.5 text-sm font-mono text-white/80 placeholder-white/20 outline-none focus:border-indigo-500/50 resize-none"
       />
 
       {/* Syntax hint bar */}
       {syntaxHint && !showSuggestions && (
-        <div className="flex items-center gap-2 mt-1 px-3 py-1.5 bg-[#252525] border border-white/[0.06] rounded-lg">
+        <div className="flex items-center gap-2 mt-1 px-3 py-1.5 bg-background border border-white/[0.06] rounded-lg">
           <span className="text-[10px] font-bold text-indigo-400 font-mono shrink-0">
             {syntaxHint.fn.name}(
           </span>
@@ -200,7 +200,7 @@ export function FormulaInput({ value, onChange, columns, textareaRef }: FormulaI
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={menuRef}
-          className="absolute left-0 right-0 top-full mt-1 bg-[#252525] border border-white/10 rounded-lg shadow-2xl z-50 max-h-[220px] overflow-y-auto py-1"
+          className="absolute left-0 right-0 top-full mt-1 bg-background border border-white/10 rounded-lg shadow-2xl z-50 max-h-[220px] overflow-y-auto py-1"
         >
           {suggestions.map((s, i) => (
             <button

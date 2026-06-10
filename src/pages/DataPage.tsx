@@ -381,12 +381,12 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const headerBtn = 'flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-md text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-colors'
 
   return (
-    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#242424] text-white flex flex-col overflow-hidden`}>
+    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-background text-white flex flex-col overflow-hidden`}>
       {/* Portal for sidebar toolbar */}
       {portalTarget && createPortal(sidebarToolbar, portalTarget)}
 
       {/* Header */}
-      <header className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0">
+      <header className="h-11 bg-well border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0">
         {!embedded && (
           <button
             onClick={() => navigate('/dashboard')}
@@ -514,7 +514,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar — Bases de donnees (always available) */}
         {showBdd ? (
-          <div className="w-60 bg-[#161616] border-r border-white/10 flex flex-col shrink-0 overflow-hidden">
+          <div className="w-60 bg-well border-r border-white/10 flex flex-col shrink-0 overflow-hidden">
             <div className="px-3 py-2.5 border-b border-white/10 flex items-center justify-between">
               <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider flex items-center gap-1.5">
                 <Cloud className="w-3.5 h-3.5" />
@@ -548,7 +548,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         ) : (
           <button
             onClick={() => setShowBdd(true)}
-            className="w-8 bg-[#161616] border-r border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
+            className="w-8 bg-well border-r border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
             title="Ouvrir Bases de données"
           >
             <ChevronsRight className="w-5 h-5 text-white/60 group-hover:text-indigo-400" />
@@ -565,7 +565,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         {/* Main area : top import menu + content (data or empty) */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Import type menu — top (désactivé si aucune BDD sélectionnée) */}
-          <div className="h-14 border-b border-white/[0.06] bg-[#131313] flex items-center gap-2 px-4 shrink-0">
+          <div className="h-14 border-b border-white/[0.06] bg-well flex items-center gap-2 px-4 shrink-0">
             {canImport && (
             <button
               onClick={() => setImportModalOpen(true)}
@@ -611,13 +611,13 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             <div className="flex-1 flex overflow-hidden">
               {/* Taxonomy navigation sidebar */}
               {showNav ? (
-                <div className="w-56 bg-[#161616] border-r border-white/10 flex flex-col shrink-0 overflow-hidden">
+                <div className="w-56 bg-well border-r border-white/10 flex flex-col shrink-0 overflow-hidden">
                   <TaxonomyNavigator onClose={() => setShowNav(false)} />
                 </div>
               ) : (
                 <button
                   onClick={() => setShowNav(true)}
-                  className="w-8 bg-[#161616] border-r border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
+                  className="w-8 bg-well border-r border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
                   title="Ouvrir Navigation"
                 >
                   <ChevronsRight className="w-5 h-5 text-white/60 group-hover:text-indigo-400" />
@@ -629,7 +629,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
               {/* Main area : table OU fiche produit plein écran (exclusif) */}
               {sheetRowId ? (
-                <div className="flex-1 min-w-0 bg-[#1a1a1e] flex flex-col overflow-hidden">
+                <div className="flex-1 min-w-0 bg-well flex flex-col overflow-hidden">
                   <ProductSheet
                     rowId={sheetRowId}
                     allRowIds={filteredRowIds}
@@ -643,7 +643,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
 
               {/* Right sidebar — Champs / Taxonomie — masqué quand la fiche produit est ouverte */}
               {!sheetRowId && (showRight ? (
-                <div className="w-72 bg-[#161616] border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
+                <div className="w-72 bg-well border-l border-white/10 flex flex-col shrink-0 overflow-hidden">
                   {/* Tabs + close */}
                   <div className="flex border-b border-white/10 items-stretch">
                     {([
@@ -684,7 +684,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               ) : (
                 <button
                   onClick={() => setShowRight(true)}
-                  className="w-8 bg-[#161616] border-l border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
+                  className="w-8 bg-well border-l border-white/10 hover:bg-white/[0.04] hover:border-indigo-500/30 flex flex-col items-center gap-2 pt-3 shrink-0 transition-colors group"
                   title="Ouvrir Champs / Taxonomie"
                 >
                   <ChevronsLeft className="w-5 h-5 text-white/60 group-hover:text-indigo-400" />
@@ -1008,7 +1008,7 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
   const canScrape = useCan('pim.scrape')
   return (
     <div
-      className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden"
+      className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-2 border border-white/10 rounded-lg shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
       {canImport && (
@@ -1036,7 +1036,7 @@ function AddMenu({ onImport, onScrape }: { onImport: () => void; onScrape: () =>
 function CreateMenu({ onCreateDb }: { onCreateDb: () => void }) {
   return (
     <div
-      className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden"
+      className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-2 border border-white/10 rounded-lg shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
       <button
@@ -1280,7 +1280,7 @@ function FileRow({
 
       {!isRenaming && !isMoving && openMenu === f.docId && (
         <div
-          className="absolute right-0 top-full mt-1 z-50 w-44 bg-[#262626] border border-white/10 rounded-lg shadow-xl overflow-hidden"
+          className="absolute right-0 top-full mt-1 z-50 w-44 bg-surface-2 border border-white/10 rounded-lg shadow-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <button

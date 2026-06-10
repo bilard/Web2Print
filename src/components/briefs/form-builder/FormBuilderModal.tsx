@@ -70,9 +70,9 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-stretch p-6">
-      <div className="flex-1 bg-[#242424] border border-white/[0.06] rounded-lg flex flex-col overflow-hidden">
+      <div className="flex-1 bg-background border border-white/[0.06] rounded-lg flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="h-12 bg-[#161616] border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
+        <div className="h-12 bg-well border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
           <h2 className="text-[13px] font-semibold text-white/80">
             Configurer le formulaire — {taxonomy.name}
           </h2>
@@ -103,7 +103,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
         {/* Body 3 colonnes */}
         <div className="flex-1 grid grid-cols-[260px_320px_1fr] overflow-hidden">
           {/* Col 1 — champs */}
-          <div className="border-r border-white/[0.06] bg-[#2a2a2a] overflow-hidden">
+          <div className="border-r border-white/[0.06] bg-surface-2 overflow-hidden">
             <FieldList
               fields={draft}
               selectedFieldId={selectedId}
@@ -115,7 +115,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
           </div>
 
           {/* Col 2 — éditeur */}
-          <div className="border-r border-white/[0.06] bg-[#2a2a2a] overflow-y-auto">
+          <div className="border-r border-white/[0.06] bg-surface-2 overflow-y-auto">
             <FieldEditor
               field={selectedField}
               onChange={handleFieldChange}
@@ -124,7 +124,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
           </div>
 
           {/* Col 3 — aperçu live */}
-          <div className="overflow-y-auto p-6 bg-[#242424]">
+          <div className="overflow-y-auto p-6 bg-background">
             <h3 className="text-[11px] uppercase tracking-wide text-white/40 font-semibold mb-4">
               Aperçu
             </h3>

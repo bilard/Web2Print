@@ -110,7 +110,7 @@ function FixedTaxonomyHeader({
 }) {
   const totalNodes = Object.keys(taxonomy.nodes).length
   return (
-    <div className="flex items-center justify-between px-5 py-2 bg-[#161618] border-y border-white/[0.06] shrink-0">
+    <div className="flex items-center justify-between px-5 py-2 bg-well border-y border-white/[0.06] shrink-0">
       <span className="text-[10px] uppercase tracking-wider text-white/35 font-medium">
         {taxonomy.name}
       </span>
@@ -325,7 +325,7 @@ export function ProductTaxonomyPicker({
         aria-modal="true"
         aria-labelledby="product-taxo-picker-title"
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#303030] border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[82vh] flex flex-col"
+        className="bg-surface border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[82vh] flex flex-col"
       >
         <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.06]">
           <div className="min-w-0">

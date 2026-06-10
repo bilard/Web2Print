@@ -78,7 +78,7 @@ export function PromptListItem({
           <MoreHorizontal className="w-4 h-4" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-52 bg-[#242424] border border-white/[0.1] rounded-xl shadow-2xl shadow-black/50 overflow-hidden py-1.5 z-50">
+          <div className="absolute right-0 top-full mt-1 w-52 bg-background border border-white/[0.1] rounded-xl shadow-2xl shadow-black/50 overflow-hidden py-1.5 z-50">
             <button
               type="button"
               onClick={() => {

@@ -82,10 +82,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#242424] grid lg:grid-cols-[1.1fr_1fr]">
+    <div className="min-h-screen bg-background grid lg:grid-cols-[1.1fr_1fr]">
       {/* Colonne gauche — vitrine brandée */}
       <aside className="relative hidden lg:flex flex-col justify-center gap-8 overflow-hidden p-12 text-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-900 to-[#242424]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-900 to-background" />
         <div className="absolute -top-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-indigo-500/30 blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -139,7 +139,7 @@ export default function LoginPage() {
             <img src="/logo.png" alt="IBS Studio" className="h-56 w-auto object-contain" />
           </div>
 
-          <div className="bg-[#303030] border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-surface border border-white/10 rounded-2xl p-8 shadow-2xl">
             <div className="flex items-center gap-2 text-indigo-400">
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-medium uppercase tracking-wider">Espace de travail</span>

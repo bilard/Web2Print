@@ -83,7 +83,7 @@ export function FieldList({
           Ajouter un champ
         </button>
         {addMenuOpen && (
-          <div className="absolute bottom-full left-2 right-2 mb-1 bg-[#303030] border border-white/[0.08] rounded-md shadow-lg p-1 z-10">
+          <div className="absolute bottom-full left-2 right-2 mb-1 bg-surface border border-white/[0.08] rounded-md shadow-lg p-1 z-10">
             {ALL_FIELD_TYPES.map((t) => {
               const meta = FIELD_TYPE_REGISTRY[t]
               const Icon = meta.icon

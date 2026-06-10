@@ -63,7 +63,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
   return (
     <div className="space-y-3">
       {/* Type tabs */}
-      <div className="flex gap-1 bg-[#111] border border-white/5 rounded-lg p-1">
+      <div className="flex gap-1 bg-well border border-white/5 rounded-lg p-1">
         {TABS.map(({ value: tabValue, label, icon: Icon }) => {
           const active = value.type === tabValue
           return (
@@ -127,7 +127,7 @@ export function BackgroundPicker({ value, onChange }: BackgroundPickerProps) {
               })}
             </div>
           </div>
-          <div className="bg-[#111] border border-white/5 rounded-lg p-3">
+          <div className="bg-well border border-white/5 rounded-lg p-3">
             <GradientPicker
               value={value.gradient}
               onChange={(g) => onChange({ ...value, type: 'gradient', gradient: g })}

@@ -10,7 +10,7 @@ const formats = [
 
 export function ExportDialogMock() {
   return (
-    <div className="w-full max-w-[360px] bg-[#303030] border border-white/10 rounded-lg overflow-hidden pointer-events-none">
+    <div className="w-full max-w-[360px] bg-surface border border-white/10 rounded-lg overflow-hidden pointer-events-none">
       <div className="px-4 py-2.5 border-b border-white/10">
         <span className="text-xs font-medium text-white">Exporter</span>
       </div>
@@ -34,7 +34,7 @@ export function ExportDialogMock() {
           </div>
         ))}
       </div>
-      <div className="border-t border-white/10 px-3 py-2.5 flex flex-col gap-1.5 bg-[#161616]">
+      <div className="border-t border-white/10 px-3 py-2.5 flex flex-col gap-1.5 bg-well">
         <Option Icon={Scissors} label="Marques de coupe" enabled />
         <Option Icon={Layout} label="Bleed 3 mm" enabled />
       </div>

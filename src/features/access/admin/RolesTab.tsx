@@ -99,7 +99,7 @@ export function RolesTab() {
         </div>
 
         {viewMode === 'mindmap' ? (
-          <Suspense fallback={<div className="h-[380px] rounded-xl border border-white/[0.06] bg-[#0c0c0c] flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}>
+          <Suspense fallback={<div className="h-[380px] rounded-xl border border-white/[0.06] bg-well flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}>
             <PermissionMindMap roleName={editing.name} entries={entries} permissions={editing.permissions} onToggle={toggle} />
           </Suspense>
         ) : viewMode === 'tree' ? (

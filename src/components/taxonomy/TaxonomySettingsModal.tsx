@@ -25,7 +25,7 @@ export function TaxonomySettingsModal({ taxonomy, onClose }: TaxonomySettingsMod
       onClick={onClose}
     >
       <div
-        className="w-[440px] bg-[#303030] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+        className="w-[440px] bg-surface border border-white/10 rounded-xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
@@ -51,7 +51,7 @@ export function TaxonomySettingsModal({ taxonomy, onClose }: TaxonomySettingsMod
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
               placeholder="https://exemple.com/nomenclature"
-              className="w-full bg-[#242424] border border-white/10 rounded-lg px-3 py-2 text-[12px] text-white/90 placeholder:text-white/25 outline-none focus:border-indigo-500/60 transition-colors"
+              className="w-full bg-background border border-white/10 rounded-lg px-3 py-2 text-[12px] text-white/90 placeholder:text-white/25 outline-none focus:border-indigo-500/60 transition-colors"
             />
             {sourceUrl.trim() && (
               <a

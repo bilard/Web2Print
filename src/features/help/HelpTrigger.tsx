@@ -29,7 +29,7 @@ export function HelpTrigger() {
         aria-label="Ouvrir l'aide"
         className="fixed bottom-4 right-4 z-30
           w-10 h-10 rounded-full
-          bg-[#303030] border border-white/10 hover:border-indigo-500/50
+          bg-surface border border-white/10 hover:border-indigo-500/50
           text-white/60 hover:text-indigo-400
           flex items-center justify-center
           shadow-lg

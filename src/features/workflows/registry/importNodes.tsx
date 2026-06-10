@@ -416,7 +416,7 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
             className={`w-full flex flex-col items-center justify-center gap-1.5 px-3 py-4 rounded-md border-2 border-dashed transition-colors ${
               dragOver
                 ? 'border-indigo-500 bg-indigo-500/10 text-indigo-200'
-                : 'border-neutral-700 bg-[#242424] text-neutral-400'
+                : 'border-neutral-700 bg-background text-neutral-400'
             }`}
           >
             <Upload className="w-5 h-5" />
@@ -425,13 +425,13 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
           <div className="flex gap-1.5">
             <label
               htmlFor={fileInputId}
-              className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-md border border-neutral-700 bg-[#242424] text-neutral-300 hover:border-neutral-600 hover:bg-[#161616] transition-colors cursor-pointer select-none"
+              className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-md border border-neutral-700 bg-background text-neutral-300 hover:border-neutral-600 hover:bg-well transition-colors cursor-pointer select-none"
             >
               <FileIcon className="w-3 h-3" /> Choisir un fichier
             </label>
             <label
               htmlFor={folderInputId}
-              className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-md border border-neutral-700 bg-[#242424] text-neutral-300 hover:border-neutral-600 hover:bg-[#161616] transition-colors cursor-pointer select-none"
+              className="flex-1 flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-md border border-neutral-700 bg-background text-neutral-300 hover:border-neutral-600 hover:bg-well transition-colors cursor-pointer select-none"
             >
               <FolderOpen className="w-3 h-3" /> Choisir un dossier
             </label>
@@ -442,7 +442,7 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
           className={`relative flex items-center gap-2 p-2 rounded-md border ${
             missing
               ? 'border-amber-500/40 bg-amber-500/5'
-              : 'border-neutral-700 bg-[#161616]'
+              : 'border-neutral-700 bg-well'
           }`}
         >
           <div
@@ -493,7 +493,7 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
 
       {/* Panel résumé IDML — affiché quand un assembly est détecté dans le dossier */}
       {hasFile && isFolder && analyzing && (
-        <div className="flex items-center justify-center gap-2 px-3 py-3 rounded-md border border-neutral-800 bg-[#242424]">
+        <div className="flex items-center justify-center gap-2 px-3 py-3 rounded-md border border-neutral-800 bg-background">
           <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
           <span className="text-[11px] text-neutral-400">Analyse de l'assembly…</span>
         </div>
@@ -504,7 +504,7 @@ function UploadConfigUi({ config, onChange }: UploadConfigUiProps) {
 
       {/* Panel résumé CSV/Excel — affiché quand un tableur est détecté */}
       {hasFile && !isFolder && analyzing && (
-        <div className="flex items-center justify-center gap-2 px-3 py-3 rounded-md border border-neutral-800 bg-[#242424]">
+        <div className="flex items-center justify-center gap-2 px-3 py-3 rounded-md border border-neutral-800 bg-background">
           <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
           <span className="text-[11px] text-neutral-400">Analyse du tableur…</span>
         </div>
@@ -545,7 +545,7 @@ function IdmlSummaryPanel({ summary }: { summary: IdmlSummary }) {
   const uniqueFamilies = Array.from(new Set(summary.fontFamilies))
 
   return (
-    <div className="border border-neutral-800 rounded-md bg-[#242424] p-3 flex flex-col gap-2.5">
+    <div className="border border-neutral-800 rounded-md bg-background p-3 flex flex-col gap-2.5">
       <p className="text-[9px] font-semibold text-neutral-500 uppercase tracking-wider">Résumé</p>
       <div className="grid grid-cols-2 gap-2.5">
         {rows.map(({ label, value }) => (
@@ -578,7 +578,7 @@ function CsvSummaryPanel({ summary }: { summary: CsvSummary }) {
   const focusColumn = usePreviewFocus((s) => s.focus)
   const focusedColumn = usePreviewFocus((s) => s.columnLabel)
   return (
-    <div className="border border-neutral-800 rounded-md bg-[#242424] p-3 flex flex-col gap-2.5">
+    <div className="border border-neutral-800 rounded-md bg-background p-3 flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between">
         <p className="text-[9px] font-semibold text-neutral-500 uppercase tracking-wider">
           Tableur — {summary.sheetName}

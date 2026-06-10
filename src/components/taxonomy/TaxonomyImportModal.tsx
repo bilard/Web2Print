@@ -101,7 +101,7 @@ export function TaxonomyImportModal({ open, onClose }: TaxonomyImportModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[#303030] border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[80vh] flex flex-col">
+      <div className="bg-surface border border-white/10 rounded-xl shadow-2xl w-[560px] max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
           <h2 className="text-[14px] font-semibold text-white/90">
             {step === 'upload' ? 'Importer une taxonomie' : `Prévisualisation — ${parsedNodes.length} nœuds`}
@@ -147,7 +147,7 @@ export function TaxonomyImportModal({ open, onClose }: TaxonomyImportModalProps)
                   className="w-full bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-2 text-[13px] text-white/80 outline-none focus:border-indigo-500/50"
                 />
               </div>
-              <div className="bg-[#2a2a2a] rounded-lg border border-white/[0.06] max-h-64 overflow-y-auto py-1">
+              <div className="bg-surface-2 rounded-lg border border-white/[0.06] max-h-64 overflow-y-auto py-1">
                 <DndContext>
                   {previewTree.map((node) => (
                     <TaxonomyNodeComponent key={node.id} node={node} taxonomyId="" onLinkProjects={() => {}} searchQuery="" />

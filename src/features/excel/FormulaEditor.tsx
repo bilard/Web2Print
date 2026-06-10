@@ -55,7 +55,7 @@ export function FormulaEditor({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#262626] border border-white/10 rounded-xl shadow-2xl w-[860px] h-[85vh] flex flex-col">
+      <div className="bg-surface-2 border border-white/10 rounded-xl shadow-2xl w-[860px] h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.06]">
           <FunctionSquare className="w-5 h-5 text-indigo-400" />
@@ -79,7 +79,7 @@ export function FormulaEditor({
                   type="text"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
-                  className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
+                  className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
                   placeholder="Nom du champ calculé"
                 />
               </div>
@@ -90,7 +90,7 @@ export function FormulaEditor({
                 <select
                   value={resultType}
                   onChange={(e) => setResultType(e.target.value as ResultType)}
-                  className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
+                  className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
                 >
                   <option value="auto">Auto</option>
                   <option value="number">Nombre</option>
@@ -105,7 +105,7 @@ export function FormulaEditor({
                   <select
                     value={decimals}
                     onChange={(e) => setDecimals(parseInt(e.target.value))}
-                    className="w-full bg-[#2a2a2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
+                    className="w-full bg-surface-2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-indigo-500/50"
                   >
                     {[0, 1, 2, 3, 4, 5].map((d) => (
                       <option key={d} value={d}>{d} {d === 0 ? '(entier)' : ''}</option>
@@ -136,7 +136,7 @@ export function FormulaEditor({
               <p className="text-[11px] text-white/40 uppercase tracking-wider mb-2">
                 Champs disponibles — cliquer pour insérer
               </p>
-              <div className="bg-[#2a2a2a] border border-white/[0.06] rounded-lg divide-y divide-white/[0.04] max-h-[180px] overflow-y-auto">
+              <div className="bg-surface-2 border border-white/[0.06] rounded-lg divide-y divide-white/[0.04] max-h-[180px] overflow-y-auto">
                 {availableColumns.map((col) => {
                   const typeDef = FIELD_TYPES.find((t) => t.id === col.fieldType)
                   return (

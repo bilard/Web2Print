@@ -294,7 +294,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
 
       {open && (
         <div ref={popoverRef}
-          className="absolute z-50 top-full mt-1 left-0 w-[260px] bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl p-3 flex flex-col gap-2.5"
+          className="absolute z-50 top-full mt-1 left-0 w-[260px] bg-well border border-white/10 rounded-lg shadow-2xl p-3 flex flex-col gap-2.5"
           style={{ maxHeight: 500, overflowY: 'auto' }}>
 
           {/* No fill */}

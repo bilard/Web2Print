@@ -16,7 +16,7 @@ interface Props {
 
 export function AddressField({ field, value, onChange, disabled }: Props) {
   const current: AddressValue = value ?? {}
-  const baseInput = "bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+  const baseInput = "bg-background border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
 
   return (
     <div className="flex flex-col gap-1.5">

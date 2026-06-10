@@ -229,7 +229,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
 
     return (<>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-[#303030] border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '85vh' }}>
+        <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '85vh' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
             <div className="flex items-center gap-2">
@@ -326,7 +326,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
             </div>
 
             {/* Right: taxonomy preview */}
-            <div className="w-56 bg-[#161616] border-l border-white/10 overflow-y-auto p-3 shrink-0 flex flex-col gap-3">
+            <div className="w-56 bg-well border-l border-white/10 overflow-y-auto p-3 shrink-0 flex flex-col gap-3">
               <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5" />
                 Taxonomie
@@ -393,9 +393,9 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   // Step 1: File selection
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#303030] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex" style={{ height: 480 }}>
+      <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex" style={{ height: 480 }}>
         {/* Left sidebar - sources */}
-        <div className="w-48 bg-[#161616] border-r border-white/10 py-2 shrink-0">
+        <div className="w-48 bg-well border-r border-white/10 py-2 shrink-0">
           {sources.map((s) => (
             <button
               key={s.id}
@@ -547,7 +547,7 @@ function TypeDropdown({ value, onChange }: { value: FieldTypeId; onChange: (t: F
         {current?.shortLabel ?? current?.label}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-56 bg-[#262626] border border-white/15 rounded-lg shadow-2xl z-50 max-h-64 overflow-y-auto py-1">
+        <div className="absolute right-0 top-full mt-1 w-56 bg-surface-2 border border-white/15 rounded-lg shadow-2xl z-50 max-h-64 overflow-y-auto py-1">
           {FIELD_TYPES.map((ft) => (
             <button
               key={ft.id}

@@ -69,9 +69,9 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
   }
 
   return (
-    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-[#242424] text-white flex flex-col overflow-hidden`}>
+    <div className={`${embedded ? 'h-full' : 'h-screen'} bg-background text-white flex flex-col overflow-hidden`}>
       {!embedded && (
-        <header className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0">
+        <header className="h-11 bg-well border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0">
           <button
             onClick={() => navigate('/dashboard')}
             className="p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.06] rounded-md transition-colors"
@@ -83,7 +83,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
         </header>
       )}
       <div className="flex-1 flex overflow-hidden">
-        <aside className="w-52 bg-[#2a2a2a] border-r border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
+        <aside className="w-52 bg-surface-2 border-r border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
           <TaxonomySidebar taxonomies={taxonomies ?? []} onImport={() => setImportOpen(true)} />
         </aside>
         <main className="flex-1 flex flex-col overflow-hidden">
@@ -102,7 +102,7 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
               <TaxonomyMainTabs />
               {currentTab === 'tree' || !canBriefs ? (
               <>
-              <div className="h-11 bg-[#161616] border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
+              <div className="h-11 bg-well border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0">
                 <div className="flex-1 max-w-sm">
                   <TaxonomySearchBar taxonomy={selectedTaxonomy} />
                 </div>

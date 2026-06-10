@@ -257,7 +257,7 @@ export default function DashboardPage() {
   const blocked = useIsBlocked()
   if (accessLoading) {
     return (
-      <div className="min-h-screen bg-[#242424] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -273,12 +273,12 @@ export default function DashboardPage() {
   const visibleMenuItems = menuItems.filter((m) => canSee(m.id))
 
   return (
-    <div className="h-screen bg-[#242424] text-white flex overflow-hidden">
+    <div className="h-screen bg-background text-white flex overflow-hidden">
       {/* Onboarding : réclame une clé LLM si aucune n'est configurée */}
       <OnboardingWizard />
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? 'w-56' : 'w-14'} bg-[#2a2a2a] border-r border-white/[0.06] flex flex-col shrink-0 transition-[width] duration-200`}
+        className={`${sidebarOpen ? 'w-56' : 'w-14'} bg-surface-2 border-r border-white/[0.06] flex flex-col shrink-0 transition-[width] duration-200`}
         aria-label="Menu principal"
       >
         {/* Logo (clic = toggle sidebar) */}
@@ -427,7 +427,7 @@ export default function DashboardPage() {
       {activeSection === 'data' && canSee('data') ? (
         <div data-tour="section-data" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           }>
@@ -437,7 +437,7 @@ export default function DashboardPage() {
       ) : activeSection === 'taxonomies' && canSee('taxonomies') ? (
         <div data-tour="section-taxonomies" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
             </div>
           }>
@@ -447,7 +447,7 @@ export default function DashboardPage() {
       ) : activeSection === 'scraping-templates' && canSee('scraping-templates') ? (
         <div data-tour="section-scraping-templates" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           }>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
       ) : activeSection === 'scraping-hub' && canSee('scraping-hub') ? (
         <div data-tour="section-scraping-hub" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
             </div>
           }>
@@ -467,7 +467,7 @@ export default function DashboardPage() {
       ) : activeSection === 'chat' && canSee('chat') ? (
         <div data-tour="section-chat" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
             </div>
           }>
@@ -477,7 +477,7 @@ export default function DashboardPage() {
       ) : activeSection === 'workflows' && canSee('workflows') ? (
         <div data-tour="section-workflows" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           }>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
       ) : activeSection === 'telegram' && canSee('telegram') ? (
         <div data-tour="section-telegram" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
             </div>
           }>
@@ -501,7 +501,7 @@ export default function DashboardPage() {
       ) : activeSection === 'hyperframes' && canSee('hyperframes') ? (
         <div data-tour="section-hyperframes" className="flex-1 overflow-hidden">
           <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center h-full bg-[#242424]">
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-fuchsia-500 animate-spin" />
             </div>
           }>

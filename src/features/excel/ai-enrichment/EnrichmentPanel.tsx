@@ -637,7 +637,7 @@ export function EnrichmentPanel({ input }: Props) {
   })()
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-[#111113]">
+    <div className="flex-1 min-h-0 flex flex-col bg-well">
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="border-b border-white/[0.06] bg-gradient-to-r from-indigo-500/[0.06] to-fuchsia-500/[0.04] shrink-0">
         {/* Row 1 : titre + actions */}
@@ -873,7 +873,7 @@ function RegenerateMenu({ onRedo, onForceUrl, matchedTemplate }: { onRedo: (mode
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-72 bg-[#303030] border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1 w-72 bg-surface border border-white/10 rounded-lg shadow-xl z-10 overflow-hidden">
           <button
             onClick={() => { setOpen(false); onRedo('auto') }}
             className="w-full px-3 py-2 flex items-start gap-2 text-left hover:bg-indigo-500/10 transition-colors"

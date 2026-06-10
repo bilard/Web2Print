@@ -57,7 +57,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
     <>
       <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => !saving && onClose()} />
       <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-3xl max-h-[90vh] bg-[#303030] border border-white/10 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col">
+        <div className="pointer-events-auto w-full max-w-3xl max-h-[90vh] bg-surface border border-white/10 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <h2 className="text-[14px] font-semibold text-white">
               {initial ? 'Modifier le prompt' : 'Nouveau prompt'}
@@ -79,7 +79,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="ex. Rédiger un email professionnel"
-                className="w-full bg-[#242424] border border-white/10 focus:border-violet-500/50 rounded-lg px-3 py-2 text-[13.5px] text-white placeholder:text-white/30 outline-none transition-colors"
+                className="w-full bg-background border border-white/10 focus:border-violet-500/50 rounded-lg px-3 py-2 text-[13.5px] text-white placeholder:text-white/30 outline-none transition-colors"
                 autoFocus
               />
             </div>
@@ -119,7 +119,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Décris la requête. Tu peux utiliser des [placeholders] pour les variables."
                 rows={12}
-                className="block w-full bg-[#242424] border border-white/10 focus:border-violet-500/50 rounded-lg px-3 py-2 text-[13px] text-white placeholder:text-white/30 outline-none resize-y font-mono transition-colors min-h-[180px]"
+                className="block w-full bg-background border border-white/10 focus:border-violet-500/50 rounded-lg px-3 py-2 text-[13px] text-white placeholder:text-white/30 outline-none resize-y font-mono transition-colors min-h-[180px]"
               />
             </div>
           </div>

@@ -186,7 +186,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'idml'
               ? 'border-amber-500 bg-amber-500/10'
-              : 'border-white/10 hover:border-amber-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-amber-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center">
@@ -219,7 +219,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'pptx'
               ? 'border-orange-500 bg-orange-500/10'
-              : 'border-white/10 hover:border-orange-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-orange-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center">
@@ -252,7 +252,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'image'
               ? 'border-sky-500 bg-sky-500/10'
-              : 'border-white/10 hover:border-sky-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-sky-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center">
@@ -285,7 +285,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'svg'
               ? 'border-purple-500 bg-purple-500/10'
-              : 'border-white/10 hover:border-purple-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-purple-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center">
@@ -318,7 +318,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'xlsx'
               ? 'border-emerald-500 bg-emerald-500/10'
-              : 'border-white/10 hover:border-emerald-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-emerald-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
@@ -351,7 +351,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'image-to-svg'
               ? 'border-pink-500 bg-pink-500/10'
-              : 'border-white/10 hover:border-pink-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-pink-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center">
@@ -384,7 +384,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver === 'pdf-to-svg'
               ? 'border-pink-500 bg-pink-500/10'
-              : 'border-white/10 hover:border-pink-500/40 bg-[#303030] hover:bg-[#262626]'
+              : 'border-white/10 hover:border-pink-500/40 bg-surface hover:bg-surface-2'
           }`}
         >
           <div className="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center">

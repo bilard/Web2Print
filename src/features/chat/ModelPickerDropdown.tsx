@@ -69,7 +69,7 @@ export function ModelPickerDropdown({
   return (
     <div
       ref={ref}
-      className="absolute bottom-full right-0 mb-2 w-[340px] max-h-[440px] bg-[#242424] border border-white/[0.1] rounded-xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col z-50"
+      className="absolute bottom-full right-0 mb-2 w-[340px] max-h-[440px] bg-background border border-white/[0.1] rounded-xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col z-50"
     >
       <div className="overflow-y-auto flex-1 py-1.5">
         {orderedProviders.map((provider, providerIdx) => {

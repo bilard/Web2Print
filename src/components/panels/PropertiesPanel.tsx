@@ -138,7 +138,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
           <ChevronDown size={12} className="text-white/30" />
         </button>
         {menuOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-[#303030] border border-white/10 rounded-md shadow-xl overflow-hidden z-40">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-white/10 rounded-md shadow-xl overflow-hidden z-40">
             {FILL_IMAGE_SOURCES.map((source) => {
               const Icon = source.icon
               return (
@@ -146,7 +146,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
                   key={source.tab}
                   type="button"
                   onClick={() => handlePickFromDam(source.tab)}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-[#262626] hover:text-white transition-colors text-left"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-surface-2 hover:text-white transition-colors text-left"
                 >
                   <Icon className="w-3.5 h-3.5 opacity-70" />
                   <span>{source.label}</span>
@@ -160,7 +160,7 @@ function ImageFillPicker({ fillImage, objId, applyImageFill }: {
                 fileInputRef.current?.click()
                 setMenuOpen(false)
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-[#262626] hover:text-white transition-colors text-left"
+              className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/80 hover:bg-surface-2 hover:text-white transition-colors text-left"
             >
               <Upload className="w-3.5 h-3.5 opacity-70" />
               <span>Depuis l'ordinateur</span>

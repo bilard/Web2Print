@@ -36,7 +36,7 @@ export function CartTable({ items, onChange }: Props) {
           <col className="w-24" />
           <col className="w-8" />
         </colgroup>
-        <thead className="bg-[#161616] text-white/40 uppercase text-[10px] tracking-wide">
+        <thead className="bg-well text-white/40 uppercase text-[10px] tracking-wide">
           <tr>
             <th className="text-left px-3 py-2">SKU</th>
             <th className="text-left px-3 py-2">Nom</th>
@@ -124,7 +124,7 @@ export function CartTable({ items, onChange }: Props) {
           )}
         </tbody>
       </table>
-      <div className="border-t border-white/[0.06] bg-[#2a2a2a] px-3 py-2">
+      <div className="border-t border-white/[0.06] bg-surface-2 px-3 py-2">
         <button
           onClick={addManual}
           className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white"

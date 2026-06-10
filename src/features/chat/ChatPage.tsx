@@ -56,7 +56,7 @@ export function ChatPage() {
     : 'Comment puis-je vous aider ?'
 
   return (
-    <div className="flex-1 h-full flex bg-[#242424] overflow-hidden">
+    <div className="flex-1 h-full flex bg-background overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0">
         {!isEmpty && (
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">

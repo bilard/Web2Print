@@ -7,7 +7,7 @@ interface FieldProps {
   onChange: (next: unknown) => void
 }
 
-const inputCls = 'w-full bg-[#242424] border border-neutral-700 rounded px-2 py-1.5 text-sm text-white focus:border-indigo-500 outline-none'
+const inputCls = 'w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white focus:border-indigo-500 outline-none'
 
 export function ConfigFieldRenderer({ field, value, onChange }: FieldProps) {
   switch (field.kind) {

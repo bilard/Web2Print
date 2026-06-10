@@ -418,7 +418,7 @@ export function DamLightbox() {
 
       {/* Right panel — Info */}
       <div
-        className="w-[280px] bg-[#2a2a2a] border-l border-white/5 overflow-y-auto shrink-0 flex flex-col"
+        className="w-[280px] bg-surface-2 border-l border-white/5 overflow-y-auto shrink-0 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {(() => {

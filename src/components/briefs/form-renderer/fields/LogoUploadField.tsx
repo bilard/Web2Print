@@ -60,7 +60,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
           onClick={() => inputRef.current?.click()}
           disabled={disabled || uploading}
           title="Importer un logo local"
-          className="w-16 h-16 rounded-md bg-[#242424] border border-white/[0.08] hover:border-indigo-500/60 flex items-center justify-center overflow-hidden disabled:opacity-50 transition-colors"
+          className="w-16 h-16 rounded-md bg-background border border-white/[0.08] hover:border-indigo-500/60 flex items-center justify-center overflow-hidden disabled:opacity-50 transition-colors"
         >
           {uploading ? (
             <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
@@ -76,7 +76,7 @@ export function LogoUploadField({ field, value, onChange, disabled, briefId }: P
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://..."
           disabled={disabled}
-          className="flex-1 bg-[#242424] border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
+          className="flex-1 bg-background border border-white/[0.08] rounded-md px-3 py-2 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-50"
         />
         <input
           ref={inputRef}

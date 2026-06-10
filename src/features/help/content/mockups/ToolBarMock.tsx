@@ -10,7 +10,7 @@ const tools = [
 
 export function ToolBarMock() {
   return (
-    <div className="w-11 bg-[#303030] border border-white/10 rounded-md flex flex-col items-center py-2 gap-0.5 pointer-events-none">
+    <div className="w-11 bg-surface border border-white/10 rounded-md flex flex-col items-center py-2 gap-0.5 pointer-events-none">
       {tools.map((t, i) => (
         <div
           key={i}

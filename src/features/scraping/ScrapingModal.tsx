@@ -631,7 +631,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   return (
     <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#161616] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-well border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] shrink-0">
@@ -701,11 +701,11 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               className="flex-1 bg-black/30 border border-white/10 rounded-md px-2 py-1 text-[11px] text-white/75 outline-none focus:border-indigo-500/50 transition-colors cursor-pointer"
               title="Classer automatiquement les produits importés dans cette taxonomie"
             >
-              <option value="" className="bg-[#303030]">— Pas d'auto-classement</option>
+              <option value="" className="bg-surface">— Pas d'auto-classement</option>
               {taxonomies.map((t) => {
                 const count = Object.keys(t.nodes).length
                 return (
-                  <option key={t.id} value={t.id} className="bg-[#303030]">
+                  <option key={t.id} value={t.id} className="bg-surface">
                     {t.name} ({count} nœuds)
                   </option>
                 )

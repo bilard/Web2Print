@@ -72,7 +72,7 @@ function ConnectionsPanel({ node, wf, onRemoveEdge }: ConnectionsPanelProps) {
     return (
       <div
         key={e.id}
-        className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#161616] border border-neutral-800 hover:border-neutral-700 transition-colors"
+        className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-well border border-neutral-800 hover:border-neutral-700 transition-colors"
       >
         <Icon className="w-3 h-3 text-neutral-500 shrink-0" />
         <div className="flex-1 min-w-0 text-[11px] leading-tight">
@@ -161,7 +161,7 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
       {/* Source */}
       <div className="space-y-1.5">
         <p className="text-[10px] uppercase text-neutral-600 tracking-wider">Source</p>
-        <div className="px-2 py-2 rounded-md bg-[#161616] border border-neutral-800">
+        <div className="px-2 py-2 rounded-md bg-well border border-neutral-800">
           <div className="text-[12px] text-white truncate" title={sourceLabel}>
             {sourceLabel}
           </div>
@@ -184,7 +184,7 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
       {/* Target */}
       <div className="space-y-1.5">
         <p className="text-[10px] uppercase text-neutral-600 tracking-wider">Cible</p>
-        <div className="px-2 py-2 rounded-md bg-[#161616] border border-neutral-800">
+        <div className="px-2 py-2 rounded-md bg-well border border-neutral-800">
           <div className="text-[12px] text-white truncate" title={targetLabel}>
             {targetLabel}
           </div>
@@ -241,7 +241,7 @@ function NodeLogsPanel({ nodeId }: { nodeId: string }) {
         </p>
       )}
       {problemLogs.length > 0 && (
-        <div className="space-y-1 max-h-48 overflow-auto rounded-md bg-[#161616] border border-neutral-800 p-2">
+        <div className="space-y-1 max-h-48 overflow-auto rounded-md bg-well border border-neutral-800 p-2">
           {problemLogs.map((l, i) => (
             <div
               key={i}
@@ -287,7 +287,7 @@ export function NodeConfigPanel() {
   const showEdge = !node && !!selectedEdge
 
   return (
-    <aside className="w-72 border-l border-neutral-800 bg-[#242424] overflow-y-auto p-4">
+    <aside className="w-72 border-l border-neutral-800 bg-background overflow-y-auto p-4">
       <h3 className="text-xs uppercase text-neutral-500 font-semibold mb-3">
         {showEdge ? 'Connexion' : 'Configuration'}
       </h3>

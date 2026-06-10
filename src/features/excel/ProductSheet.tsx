@@ -365,10 +365,10 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-full bg-[#141416] text-white">
+    <div className="flex flex-col h-full bg-well text-white">
 
       {/* Nav bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] shrink-0 bg-[#111113]">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] shrink-0 bg-well">
         <div className="flex items-center gap-0.5">
           <NavBtn disabled={!hasPrev} onClick={() => { setActiveImg(0); onNavigate(allRowIds[currentIdx - 1]) }}>
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -426,7 +426,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       )}
 
       {/* Product title block */}
-      <div className="px-5 pt-4 pb-3 border-b border-white/[0.06] shrink-0 bg-[#141416]">
+      <div className="px-5 pt-4 pb-3 border-b border-white/[0.06] shrink-0 bg-well">
         {taxoCols.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {taxoCols.map(col => {
@@ -553,7 +553,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       >
 
       {/* Source label */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06] bg-[#111113] shrink-0">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06] bg-well shrink-0">
         <div className="w-5 h-5 rounded-md bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
           <Database className="w-3 h-3 text-white/50" />
         </div>
@@ -565,7 +565,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       {/* Tabs — "Général" retiré : c'est la vue par défaut, on n'affiche que les tabs spécialisées.
          Click sur une tab active = retour à la vue générale. */}
       {(hasSpecs || hasDocs) && (
-        <div className="flex border-b border-white/[0.06] shrink-0 bg-[#111113]">
+        <div className="flex border-b border-white/[0.06] shrink-0 bg-well">
           {([
             ...(hasSpecs ? [{ id: 'specs' as Tab, label: 'Spécifications' }] : []),
             ...(hasDocs  ? [{ id: 'documents' as Tab, label: 'Documents' }] : []),

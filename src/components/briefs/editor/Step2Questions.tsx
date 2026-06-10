@@ -125,7 +125,7 @@ export function Step2Questions({ brief, taxonomy, onAdvance }: Props) {
           )}
         </div>
       </div>
-      <div className="border-t border-white/[0.06] bg-[#2a2a2a] px-6 py-3 flex justify-end shrink-0">
+      <div className="border-t border-white/[0.06] bg-surface-2 px-6 py-3 flex justify-end shrink-0">
         <button
           onClick={handleNext}
           disabled={!hasQuestions || update.isPending}

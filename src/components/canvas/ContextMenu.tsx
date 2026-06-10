@@ -63,7 +63,7 @@ export function ContextMenu({ x, y, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-[#262626] border border-white/15 rounded-xl shadow-2xl py-1.5 min-w-[180px]"
+      className="fixed z-[100] bg-surface-2 border border-white/15 rounded-xl shadow-2xl py-1.5 min-w-[180px]"
       style={{ left: x, top: y }}
     >
       <Item icon={Copy} label="Dupliquer" onClick={action(ops.duplicateSelected)} kbd="⌘D" />
