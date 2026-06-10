@@ -137,19 +137,40 @@ function flattenMupdfTextTransforms(svg: string): string {
     const tr = t.getAttribute('transform') ?? ''
     const m = tr.match(/matrix\(\s*([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)\s*\)/i)
     const [a, b, c, d, e, f] = m ? m.slice(1).map(Number) : [1, 0, 0, 1, 0, 0]
-    // Rotation / cisaillement / échelle non uniforme → on ne touche pas.
-    if (Math.abs(b) > 0.001 || Math.abs(c) > 0.001 || Math.abs(a - d) > 0.001 || a <= 0) continue
     const tspan = t.querySelector('tspan')
     const holder = tspan ?? t
     const xs = (holder.getAttribute('x') ?? '0').trim().split(/\s+/).map(Number)
     const y = Number(holder.getAttribute('y') ?? '0')
     const content = holder.textContent ?? ''
     const fontSize = Number(t.getAttribute('font-size') ?? '12')
-    t.removeAttribute('transform')
-    t.setAttribute('x', (xs[0] * a + e).toFixed(2))
-    t.setAttribute('y', (y * d + f).toFixed(2))
-    t.setAttribute('font-size', (fontSize * a).toFixed(2))
-    t.textContent = content
+    // Run vide (espaces InDesign) → objet parasite, on le supprime.
+    if (!content.trim()) {
+      t.remove()
+      continue
+    }
+    if (Math.abs(b) < 0.001 && Math.abs(c) < 0.001 && a > 0 && d > 0) {
+      // Matrice DIAGONALE — y compris échelle non uniforme (texte condensé
+      // InDesign, ex. matrix(.866 0 0 1.1547…)) : la hauteur visuelle est
+      // portée par d → font-size × d ; la chasse (a/d) est approximée.
+      t.removeAttribute('transform')
+      t.setAttribute('x', (xs[0] * a + e).toFixed(2))
+      t.setAttribute('y', (y * d + f).toFixed(2))
+      t.setAttribute('font-size', (fontSize * d).toFixed(2))
+      t.textContent = content
+    } else {
+      // ROTATION (ruban « OFFRE » vertical…) : ancre transformée + rotate()
+      // simple — Fabric sait l'interpréter, contrairement à la matrix brute
+      // combinée aux x par-glyphe.
+      const px = a * xs[0] + c * y + e
+      const py = b * xs[0] + d * y + f
+      const angle = (Math.atan2(b, a) * 180) / Math.PI
+      const scale = Math.hypot(a, b) || 1
+      t.setAttribute('x', px.toFixed(2))
+      t.setAttribute('y', py.toFixed(2))
+      t.setAttribute('font-size', (fontSize * scale).toFixed(2))
+      t.setAttribute('transform', `rotate(${angle.toFixed(1)} ${px.toFixed(2)} ${py.toFixed(2)})`)
+      t.textContent = content
+    }
   }
   return new XMLSerializer().serializeToString(dom)
 }
