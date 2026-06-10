@@ -5,6 +5,18 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IBS Studio</title>
+    <script>
+      // Anti-flash : pose la classe de thème avant le premier paint.
+      // Défaut CSS = sombre ; seuls les utilisateurs en préférence claire sont concernés.
+      try {
+        var p = localStorage.getItem('themePref')
+        var sysLight = window.matchMedia('(prefers-color-scheme: light)').matches
+        if (p === 'light' || (p === 'system' && sysLight)) {
+          document.documentElement.classList.add('light')
+          document.documentElement.classList.remove('dark')
+        }
+      } catch (e) { /* localStorage indisponible : rester en sombre */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>
