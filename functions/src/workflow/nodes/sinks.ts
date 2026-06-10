@@ -69,11 +69,20 @@ registerServerNode({
     if (!projectId) throw new Error('save-pim : projectId manquant.')
     const sourceId = String(config.sourceId ?? '').trim() || 'workflow-import'
 
+    const db: Firestore = getFirestore()
+
+    // ⚠️ L'Admin SDK contourne les règles Firestore : on RÉ-IMPOSE ici la garde de
+    // propriété que `firestore.rules` applique côté client (pim_projects/{id}.userId
+    // == uid), sinon un workflow pourrait écrire dans le PIM d'un autre utilisateur.
+    const projectSnap = await db.collection(PIM_COLLECTION).doc(projectId).get()
+    if (!projectSnap.exists || projectSnap.data()?.userId !== ctx.uid) {
+      throw new Error('save-pim : projet PIM introuvable ou non autorisé.')
+    }
+
     const sheet = (inputs.sheet ?? { rows: [] }) as { rows?: Record<string, unknown>[] }
     const rows = Array.isArray(sheet.rows) ? sheet.rows : []
     const now = Date.now()
 
-    const db: Firestore = getFirestore()
     const productsCol = db.collection(PIM_COLLECTION).doc(projectId).collection(PIM_PRODUCTS_SUB)
 
     let batch = db.batch()
