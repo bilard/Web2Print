@@ -36,7 +36,13 @@ export function AddColumnMenu({ onAdd }: Props) {
         setSearch('')
       }
     }
-    const handleScroll = () => { setOpen(false); setSearch('') }
+    // Ferme le menu si la page/grille scrolle (le menu fixed décrocherait du bouton),
+    // mais PAS quand on scrolle la liste interne du menu lui-même.
+    const handleScroll = (e: Event) => {
+      if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return
+      setOpen(false)
+      setSearch('')
+    }
     document.addEventListener('mousedown', handleClick)
     document.addEventListener('scroll', handleScroll, true)
     return () => {
