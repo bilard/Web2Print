@@ -12,7 +12,7 @@ React 18, Vite 8, TypeScript strict (cible ES2022), Fabric.js v7, Zustand v4, Re
 - Typer explicitement les props (pas d'`any`)
 - Fabric.js : logique d'édition centralisée dans `features/editor/`. Les modules d'import/export (`features/idml`, `features/pptx`, `features/export`, `features/merge`) et les panneaux d'édition (`components/panels`, `components/canvas`) peuvent importer Fabric directement pour le parsing et le rendu.
 - Firebase : accès uniquement via hooks de `features/`
-- **Dark mode obligatoire** (palette adoucie) : fond `#242424`, surfaces `#303030`, accents `#6366f1`
+- **Théming clair/sombre par tokens** (défaut : sombre) : utiliser `bg-background` / `bg-surface` / `bg-surface-2` / `bg-well` — jamais d'hex sombre en dur. Convention : `white` = couleur d'avant-plan THÉMABLE (blanc en sombre, quasi-noir en clair) ; pour du blanc véritable (texte sur bouton/fond coloré, overlay `bg-black/50+`), utiliser `text-[#fff]`. Les crans pâles 100-400 des couleurs d'accent et des gris basculent automatiquement vers 600-900 en clair (variables CSS, cf. `tailwind.config.ts` + `src/index.css`). Couleurs programmatiques (Fabric, ReactFlow) : lire `useThemeStore` (`resolvedTheme`). Préférence : `stores/theme.store.ts` + synchro `users/{uid}.uiSettings.theme`. Accent : `#6366f1`.
 - Répondre toujours en **français**
 
 ## Fichiers à ne jamais modifier
