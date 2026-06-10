@@ -13,6 +13,7 @@ const SERVER_UNITS = [
 ]
 
 const WEEKDAY_OPTIONS = [
+  { value: '-1', label: 'Tous les jours' },
   { value: '1', label: 'Lundi' },
   { value: '2', label: 'Mardi' },
   { value: '3', label: 'Mercredi' },

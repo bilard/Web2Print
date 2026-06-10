@@ -23,6 +23,11 @@ describe('computeNextRun (client)', () => {
     expect(parisWeekday(next)).toBe('Mon')
     expect(parisHM(next)).toBe('09:00')
   })
+  it('week « Tous les jours » (weekday -1) = quotidien', () => {
+    const next = computeNextRun({ enabled: true, every: 1, unit: 'week', weekday: -1, atTime: '14:30' }, from)
+    expect(parisHM(next)).toBe('14:30')
+    expect(next - from).toBeLessThan(86_400_000)
+  })
 })
 
 describe('describeCron', () => {

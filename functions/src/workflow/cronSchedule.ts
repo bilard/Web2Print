@@ -83,7 +83,16 @@ export function computeNextRun(cfg: CronConfig, from: number): number {
   }
 
   if (cfg.unit === 'week') {
-    const target = ((Math.trunc(Number(cfg.weekday ?? p.weekday)) % 7) + 7) % 7
+    const wd = Number(cfg.weekday ?? p.weekday)
+    // weekday < 0 = « Tous les jours » → cadence quotidienne à atTime.
+    if (wd < 0) {
+      for (let k = 0; k < 1000; k++) {
+        const cand = parisWallToEpoch(p.y, p.mo, p.d + k, h, mi)
+        if (cand > from) return cand
+      }
+      return from + 86_400_000
+    }
+    const target = ((Math.trunc(wd) % 7) + 7) % 7
     const delta = (target - p.weekday + 7) % 7
     for (let k = 0; k < 1000; k++) {
       const cand = parisWallToEpoch(p.y, p.mo, p.d + delta + every * 7 * k, h, mi)

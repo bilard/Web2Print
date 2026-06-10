@@ -99,7 +99,16 @@ export function computeNextRun(cfg: CronConfig, from: number): number {
   }
 
   if (cfg.unit === 'week') {
-    const target = ((Math.trunc(Number(cfg.weekday ?? p.weekday)) % 7) + 7) % 7
+    const wd = Number(cfg.weekday ?? p.weekday)
+    // weekday < 0 = « Tous les jours » → cadence quotidienne à atTime.
+    if (wd < 0) {
+      for (let k = 0; k < 1000; k++) {
+        const cand = parisWallToEpoch(p.y, p.mo, p.d + k, h, mi)
+        if (cand > from) return cand
+      }
+      return from + 86_400_000
+    }
+    const target = ((Math.trunc(wd) % 7) + 7) % 7
     const delta = (target - p.weekday + 7) % 7
     for (let k = 0; k < 1000; k++) {
       const cand = parisWallToEpoch(p.y, p.mo, p.d + delta + every * 7 * k, h, mi)
@@ -123,6 +132,7 @@ export function describeCron(cfg: CronConfig): string {
   const unit = CRON_UNIT_OPTIONS.find((u) => u.value === cfg.unit)?.label ?? cfg.unit
   const at = cfg.atTime && /^\d{1,2}:\d{2}$/.test(cfg.atTime) ? ` à ${cfg.atTime}` : ''
   if (cfg.unit === 'week' && cfg.weekday != null) {
+    if (Number(cfg.weekday) < 0) return `tous les jours${at}`
     const wd = WEEKDAY_LABELS[((Math.trunc(Number(cfg.weekday)) % 7) + 7) % 7]
     return every === 1 ? `${wd}${at}` : `${every} sem. (${wd})${at}`
   }

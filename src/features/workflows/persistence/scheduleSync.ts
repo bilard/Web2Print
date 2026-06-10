@@ -12,9 +12,11 @@ function findActiveCron(wf: Workflow): CronConfig | null {
       const unit = (['minute', 'hour', 'day', 'week', 'month'] as CronUnit[]).includes(c.unit as CronUnit)
         ? (c.unit as CronUnit) : 'day'
       const atTime = typeof c.atTime === 'string' && /^\d{1,2}:\d{2}$/.test(c.atTime) ? c.atTime : undefined
-      const weekday = c.weekday != null && Number.isFinite(Number(c.weekday))
-        ? ((Math.trunc(Number(c.weekday)) % 7) + 7) % 7
-        : undefined
+      let weekday: number | undefined
+      if (c.weekday != null && Number.isFinite(Number(c.weekday))) {
+        const n = Math.trunc(Number(c.weekday))
+        weekday = n < 0 ? -1 : ((n % 7) + 7) % 7 // -1 = « Tous les jours »
+      }
       return { enabled: true, every: normalizeEvery(c.every ?? 1), unit, atTime, weekday }
     }
   }

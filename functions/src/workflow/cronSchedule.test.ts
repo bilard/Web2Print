@@ -59,6 +59,12 @@ describe('computeNextRun — jour de la semaine (Europe/Paris)', () => {
     expect(parisHM(next)).toBe('18:00')
     expect(next - from).toBeLessThan(7 * 86_400_000)
   })
+  it('week « Tous les jours » (weekday -1) → cadence quotidienne', () => {
+    const next = computeNextRun({ enabled: true, every: 1, unit: 'week', weekday: -1, atTime: '08:00' }, from)
+    expect(parisHM(next)).toBe('08:00')
+    // 08:00 déjà passé à 10:00 → demain (< 24h après from)
+    expect(next - from).toBeLessThan(86_400_000)
+  })
 })
 
 describe('computeNextRun — mois', () => {
