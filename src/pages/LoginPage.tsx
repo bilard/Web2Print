@@ -84,8 +84,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background grid lg:grid-cols-[1.1fr_1fr]">
       {/* Colonne gauche — vitrine brandée */}
-      <aside className="relative hidden lg:flex flex-col justify-center gap-8 overflow-hidden p-12 text-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-900 to-background" />
+      {/* Vitrine brandée : panneau VOLONTAIREMENT sombre dans les deux thèmes → blancs littéraux */}
+      <aside className="relative hidden lg:flex flex-col justify-center gap-8 overflow-hidden p-12 text-[#fff]">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-900 to-[#242424]" />
         <div className="absolute -top-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-indigo-500/30 blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -101,7 +102,7 @@ export default function LoginPage() {
         </div>
 
         <div className="relative max-w-md">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/70">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#fff]/15 bg-[#fff]/5 px-3 py-1 text-xs font-medium text-[#fff]/70">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
             18 modules · 1 plateforme · 0 logiciel à installer
           </div>
@@ -110,7 +111,7 @@ export default function LoginPage() {
             <br />
             exportez en un flux.
           </h2>
-          <p className="mt-4 text-white/60">
+          <p className="mt-4 text-[#fff]/60">
             L'éditeur graphique professionnel qui transforme vos fichiers print et vos données
             produit en créations prêtes à diffuser — du brief à l'imprimeur, sans rien installer.
           </p>
@@ -118,12 +119,12 @@ export default function LoginPage() {
           <ul className="mt-7 space-y-3.5">
             {FEATURES.map(({ icon: Icon, label, desc }) => (
               <li key={label} className="flex items-start gap-3.5">
-                <div className="mt-0.5 w-9 h-9 shrink-0 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-indigo-200" />
+                <div className="mt-0.5 w-9 h-9 shrink-0 rounded-lg bg-[#fff]/10 backdrop-blur flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-[#c7d2fe]" />
                 </div>
                 <div>
-                  <p className="font-medium text-white">{label}</p>
-                  <p className="text-sm text-white/50">{desc}</p>
+                  <p className="font-medium text-[#fff]">{label}</p>
+                  <p className="text-sm text-[#fff]/50">{desc}</p>
                 </div>
               </li>
             ))}
@@ -150,7 +151,7 @@ export default function LoginPage() {
             <button
               onClick={handleSignIn}
               disabled={loading}
-              className="mt-8 w-full flex items-center justify-center gap-3 bg-[#fff] text-gray-800 font-medium py-3 px-4 rounded-lg hover:bg-[#f3f4f6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-8 w-full flex items-center justify-center gap-3 bg-[#fff] text-gray-800 font-medium py-3 px-4 rounded-lg border border-[#d1d5db]/60 hover:bg-[#f3f4f6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
