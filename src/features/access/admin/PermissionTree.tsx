@@ -2,6 +2,7 @@
 import { ChevronRight, Check, Lock } from 'lucide-react'
 import { permissionParent, permissionLabel, type PermissionDef } from '@/features/access/permissions'
 import { moduleMeta, type ModuleMeta } from '@/features/access/moduleMeta'
+import { useThemeStore } from '@/stores/theme.store'
 
 /** Mode « Arbre » de la matrice de rôle : liste indentée navigable (modules → actions),
  *  dans l'ordre de la navigation de l'app. Sélection binaire (coché / décoché). */
@@ -18,6 +19,8 @@ export function PermissionTree({
   openSet: Set<string>
   onToggleModule: (module: string) => void
 }) {
+  // En clair, on densifie nettement les libellés (le sombre garde sa hiérarchie atténuée).
+  const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] overflow-hidden">
       {entries.map(([module, defs]) => {
@@ -34,7 +37,7 @@ export function PermissionTree({
               className="w-full flex items-center gap-2 py-2 px-2.5 text-left hover:bg-white/[0.025] transition-colors">
               <ChevronRight className={`w-3.5 h-3.5 shrink-0 text-white/35 transition-transform ${open ? 'rotate-90' : ''}`} />
               <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${m.dot}`}><Icon className="w-3 h-3" /></span>
-              <span className={`text-[12px] font-medium ${sel > 0 ? m.text : 'text-white/55'}`}>{module}</span>
+              <span className={`text-[12px] font-medium ${sel > 0 ? m.text : (isLight ? 'text-white/85' : 'text-white/55')}`}>{module}</span>
               {sel > 0 && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor' }} />}
               <span className="ml-auto text-[10px] tabular-nums text-white/30">{sel}/{defs.length}</span>
             </button>
@@ -65,13 +68,14 @@ function TreeLeaf({
   onClick: () => void
   lockHint?: string
 }) {
+  const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   return (
     <button disabled={locked} onClick={onClick}
       title={locked ? `Nécessite : ${lockHint}` : def.key}
       className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] text-left transition-colors ${
-        locked ? 'text-white/20 cursor-not-allowed'
+        locked ? (isLight ? 'text-white/45 cursor-not-allowed' : 'text-white/20 cursor-not-allowed')
           : on ? 'text-white/90 bg-white/[0.04] hover:bg-white/[0.06]'
-            : 'text-white/55 hover:bg-white/[0.03] hover:text-white/80'
+            : (isLight ? 'text-white/80 hover:bg-white/[0.05] hover:text-white/90' : 'text-white/55 hover:bg-white/[0.03] hover:text-white/80')
       }`}>
       <span className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 border ${
         locked ? 'border-white/10'

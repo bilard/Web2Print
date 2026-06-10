@@ -530,7 +530,7 @@ export function DataTable() {
                     />
                   ) : (
                     <span
-                      className="text-[11px] font-bold text-white/60 uppercase tracking-wide truncate flex-1 cursor-pointer"
+                      className={`text-[11px] font-bold ${isLight ? 'text-white/80' : 'text-white/60'} uppercase tracking-wide truncate flex-1 cursor-pointer`}
                       onClick={() => handleSort(col.key)}
                       onDoubleClick={(e) => { e.stopPropagation(); startRename(col.key) }}
                     >
