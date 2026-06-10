@@ -18,6 +18,7 @@ import './logicNodes'
 import './communicationNodes'
 import './telegramNodes'
 import './decomposeNode'
+import './cronNodes'
 
 let initialized = false
 
