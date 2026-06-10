@@ -1,6 +1,6 @@
 // src/features/workflows/editor/WorkflowEditorPage.tsx
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
@@ -88,11 +88,11 @@ export function WorkflowEditorPage() {
       .flatMap((s) => s.logs ?? [])
       .find((l) => l.level === 'warn')
     if (errors.length > 0) {
-      toast.error(`Workflow : ${errors.length} node(s) en erreur — ${errors[0].error ?? 'voir les logs'}`.slice(0, 180))
+      notify.error(`Workflow « ${wf.name} » : ${errors.length} node(s) en erreur`, (errors[0].error ?? 'voir les logs').slice(0, 160))
     } else if (firstWarn) {
-      toast.warning(`Workflow terminé avec avertissement — ${firstWarn.msg}`.slice(0, 200))
+      notify.warning(`Workflow « ${wf.name} » terminé avec avertissement`, firstWarn.msg.slice(0, 160))
     } else {
-      toast.success(`Workflow terminé — ${ok} node(s) exécuté(s).`)
+      notify.success(`Workflow « ${wf.name} » terminé`, `${ok} node(s) exécuté(s).`)
     }
   }
   const stop = () => ac?.abort()

@@ -8,6 +8,7 @@ import { useExportSvg } from './useExportSvg'
 import { useExportIdml } from '@/features/idml/useExportIdml'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { withProgress } from '@/stores/progress.store'
+import { notify } from '@/lib/notify'
 import type { PngDpi } from './useExportPng'
 
 type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml'
@@ -56,11 +57,13 @@ export function ExportModal({ onClose }: ExportModalProps) {
         else if (format === 'idml') await exportIdml()
       })
       setStatus('done')
+      notify.success(`Export ${format.toUpperCase()} terminé`, 'Fichier téléchargé.')
       setTimeout(onClose, 1500)
     } catch (err) {
       console.error(err)
       setError(String(err))
       setStatus('error')
+      notify.error(`Export ${format.toUpperCase()} échoué`, String(err).slice(0, 160))
     }
   }
 
