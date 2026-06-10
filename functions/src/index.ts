@@ -20,3 +20,6 @@ export { imageProxy } from './imageProxy'
 
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
+
+// --- Workflow cron serveur ---
+export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
