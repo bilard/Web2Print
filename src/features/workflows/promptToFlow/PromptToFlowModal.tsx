@@ -77,7 +77,7 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
               <button
                 onClick={onGenerate}
                 disabled={!prompt.trim() || busy}
-                className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 text-sm text-white"
+                className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 text-sm text-[#fff]"
               >
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {busy ? 'Génération…' : 'Générer'}
@@ -91,7 +91,7 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
               <button onClick={reset} className="px-3 py-1.5 rounded text-sm text-white/60 hover:text-white hover:bg-white/5">
                 Recommencer
               </button>
-              <button onClick={onAccept} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-sm text-white">
+              <button onClick={onAccept} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-sm text-[#fff]">
                 Accepter
               </button>
             </div>

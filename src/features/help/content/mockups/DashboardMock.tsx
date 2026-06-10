@@ -24,7 +24,7 @@ export function DashboardMock() {
           <div className="flex items-center gap-2 mb-2.5">
             <span className="text-[11px] font-medium text-white">Mes projets</span>
             <div className="flex-1" />
-            <div className="flex items-center gap-1 bg-indigo-500 text-white text-[10px] px-2 py-1 rounded">
+            <div className="flex items-center gap-1 bg-indigo-500 text-[#fff] text-[10px] px-2 py-1 rounded">
               <Plus className="w-3 h-3" />
               Nouveau
             </div>

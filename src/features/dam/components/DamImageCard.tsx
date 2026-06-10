@@ -133,7 +133,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
               e.stopPropagation()
               toggleFavorite(image)
             }}
-            className={`p-1 rounded ${fav ? 'bg-red-500/80 text-white' : 'bg-black/60 text-white/80 hover:bg-black/80'}`}
+            className={`p-1 rounded ${fav ? 'bg-red-500/80 text-[#fff]' : 'bg-black/60 text-[#fff]/80 hover:bg-black/80'}`}
             title={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           >
             <Heart className="w-3.5 h-3.5" fill={fav ? 'currentColor' : 'none'} />
@@ -143,7 +143,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
               e.stopPropagation()
               toggleSave(image)
             }}
-            className={`p-1 rounded ${saved ? 'bg-indigo-500/80 text-white' : 'bg-black/60 text-white/80 hover:bg-black/80'}`}
+            className={`p-1 rounded ${saved ? 'bg-indigo-500/80 text-[#fff]' : 'bg-black/60 text-[#fff]/80 hover:bg-black/80'}`}
             title={saved ? 'Retirer de mes images' : 'Sauvegarder'}
           >
             <Bookmark className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} />
@@ -205,7 +205,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                   }
                 }
               }}
-              className="p-1 rounded bg-black/60 text-white/80 hover:bg-red-500/80 hover:text-white"
+              className="p-1 rounded bg-black/60 text-[#fff]/80 hover:bg-red-500/80 hover:text-[#fff]"
               title="Supprimer définitivement"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -218,7 +218,7 @@ export function DamImageCard({ image, collectionId, onRemovedFromCollection, onD
                 await removeFromCollection(collectionId, image.id)
                 onRemovedFromCollection?.(image.id)
               }}
-              className="p-1 rounded bg-red-500/60 text-white hover:bg-red-500/80"
+              className="p-1 rounded bg-red-500/60 text-[#fff] hover:bg-red-500/80"
               title="Retirer de la collection"
             >
               <FolderMinus className="w-3.5 h-3.5" />

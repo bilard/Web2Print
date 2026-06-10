@@ -83,7 +83,7 @@ export function MatchPreviewModal({ open, preview, loading, sourceName, onConfir
           <button
             onClick={onConfirm}
             disabled={loading || !preview}
-            className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-md text-[12px] text-white"
+            className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-md text-[12px] text-[#fff]"
           >
             Confirmer l'import
           </button>

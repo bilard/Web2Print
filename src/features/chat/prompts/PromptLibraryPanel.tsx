@@ -194,7 +194,7 @@ export function PromptLibraryPanel({ onPick, categoryFilter }: PromptLibraryPane
             type="button"
             onClick={() => setEditing({ open: true, prompt: null })}
             disabled={!uid}
-            className="w-full flex items-center justify-center gap-2 text-[13px] text-white bg-violet-500 hover:bg-violet-400 disabled:bg-white/[0.06] disabled:text-white/40 rounded-lg py-2 transition-colors"
+            className="w-full flex items-center justify-center gap-2 text-[13px] text-[#fff] bg-violet-500 hover:bg-violet-400 disabled:bg-white/[0.06] disabled:text-white/40 rounded-lg py-2 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Nouveau prompt

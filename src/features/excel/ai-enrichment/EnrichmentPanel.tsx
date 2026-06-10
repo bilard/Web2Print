@@ -113,7 +113,7 @@ function SortableImageItem({
           />
         </a>
         {variant === 'hero' && (
-          <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-indigo-500/80 text-white text-[9px] font-semibold uppercase tracking-wide pointer-events-none">
+          <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-indigo-500/80 text-[#fff] text-[9px] font-semibold uppercase tracking-wide pointer-events-none">
             Principale
           </div>
         )}
@@ -133,7 +133,7 @@ function SortableImageItem({
                 e.stopPropagation()
                 onSwapTab(url)
               }}
-              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-indigo-500/80 hover:text-white transition-all"
+              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-[#fff]/80 opacity-0 group-hover:opacity-100 hover:bg-indigo-500/80 hover:text-[#fff] transition-all"
               title={swapTargetTab === 'pictos' ? 'Déplacer vers Pictos & logos' : 'Déplacer vers Photos'}
             >
               {swapTargetTab === 'pictos' ? <Tag className="w-3 h-3" /> : <Camera className="w-3 h-3" />}
@@ -146,7 +146,7 @@ function SortableImageItem({
                 e.stopPropagation()
                 onRemove(url)
               }}
-              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-white transition-all"
+              className="w-5 h-5 flex items-center justify-center rounded-full bg-black/70 text-[#fff]/80 opacity-0 group-hover:opacity-100 hover:bg-red-500/80 hover:text-[#fff] transition-all"
               title="Supprimer cette image"
             >
               <X className="w-3 h-3" />
@@ -960,7 +960,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
           type="button"
           onClick={() => onLaunch('auto')}
           disabled={!canSearch}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white text-[12px] font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-[#fff] text-[12px] font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Mode AUTO (recherche + IA)
@@ -970,7 +970,7 @@ function IdleState({ onLaunch, canSearch, input, matchedTemplate }: { onLaunch: 
             type="button"
             onClick={() => onLaunch('template')}
             disabled={!canSearch}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[12px] font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-[#fff] text-[12px] font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg>
             Mode TEMPLATE ({matchedTemplate.name})

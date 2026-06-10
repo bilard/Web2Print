@@ -126,7 +126,7 @@ export function OnboardingWizard() {
               </button>
             )}
             {isLast ? (
-              <button onClick={finish} className="text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+              <button onClick={finish} className="text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-[#fff] px-4 py-2 rounded-lg transition-colors">
                 Terminer
               </button>
             ) : (
@@ -134,7 +134,7 @@ export function OnboardingWizard() {
                 onClick={next}
                 disabled={nextDisabled}
                 title={nextDisabled ? 'Renseignez au moins une clé LLM' : undefined}
-                className="text-xs font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
+                className="text-xs font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-[#fff] px-4 py-2 rounded-lg transition-colors"
               >
                 Suivant
               </button>

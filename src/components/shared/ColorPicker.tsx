@@ -156,7 +156,7 @@ function HslPicker({ hue, sat, light, onChange }: {
         <canvas ref={hueBarRef} width={200} height={14}
           className="w-full h-3.5 rounded cursor-pointer"
           onMouseDown={(e) => { dragging.current = 'hue'; handleHue(e) }} />
-        <div className="absolute top-0 w-1 h-full bg-white border border-black/30 rounded pointer-events-none"
+        <div className="absolute top-0 w-1 h-full bg-[#fff] border border-black/30 rounded pointer-events-none"
           style={{ left: `${(hue / 360) * 100}%`, transform: 'translateX(-50%)' }} />
       </div>
     </div>
@@ -431,7 +431,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                   setShowCustom(false)
                   setOpen(false)
                 }}
-                  className="flex-1 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-colors">
+                  className="flex-1 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-600 text-[#fff] rounded transition-colors">
                   Appliquer
                 </button>
                 <button onClick={() => {

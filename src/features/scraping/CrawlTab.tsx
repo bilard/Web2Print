@@ -194,7 +194,7 @@ export function CrawlTab({ url, loading, pages, onCrawl, onAbort, onEnrichMany, 
           <button
             onClick={() => onEnrichMany(Array.from(selected))}
             disabled={batchRunning || selected.size === 0}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {batchRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {batchRunning

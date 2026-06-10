@@ -165,7 +165,7 @@ export function TaxonomyImportModal({ open, onClose }: TaxonomyImportModalProps)
             <button
               onClick={handleConfirm}
               disabled={createTaxonomy.isPending || !taxName.trim()}
-              className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white text-[12px] font-medium px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-[#fff] text-[12px] font-medium px-4 py-2 rounded-lg transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               Importer

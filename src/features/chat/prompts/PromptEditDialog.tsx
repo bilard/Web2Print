@@ -136,7 +136,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
               type="button"
               onClick={handleSave}
               disabled={!canSave}
-              className="text-[13px] font-medium text-white bg-violet-500 hover:bg-violet-400 disabled:bg-white/[0.06] disabled:text-white/40 px-4 py-1.5 rounded-md transition-colors"
+              className="text-[13px] font-medium text-[#fff] bg-violet-500 hover:bg-violet-400 disabled:bg-white/[0.06] disabled:text-white/40 px-4 py-1.5 rounded-md transition-colors"
             >
               {saving ? 'Enregistrement…' : 'Enregistrer'}
             </button>

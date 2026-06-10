@@ -367,7 +367,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
             </button>
             <button
               onClick={handleConfirmImport}
-              className="flex items-center gap-1.5 text-xs px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-colors"
+              className="flex items-center gap-1.5 text-xs px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-[#fff] font-medium transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               Importer
@@ -484,7 +484,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
                       setError(`Erreur de telechargement: ${err}`)
                     }
                   }}
-                  className="self-end bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors"
+                  className="self-end bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium px-6 py-2.5 rounded-lg transition-colors"
                 >
                   Importer
                 </button>
@@ -499,7 +499,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
                 </p>
                 <button
                   onClick={handleCreate}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-[#fff] text-sm font-medium px-6 py-2.5 rounded-lg transition-colors"
                 >
                   Creer un tableau
                 </button>

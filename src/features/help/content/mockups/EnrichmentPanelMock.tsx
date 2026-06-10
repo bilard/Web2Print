@@ -26,7 +26,7 @@ export function EnrichmentPanelMock() {
           <CheckCircle2 className="w-3 h-3" />
           12 champs extraits · score 87
         </div>
-        <div className="flex items-center justify-center gap-1.5 bg-indigo-500 text-white text-[11px] font-medium py-1.5 rounded">
+        <div className="flex items-center justify-center gap-1.5 bg-indigo-500 text-[#fff] text-[11px] font-medium py-1.5 rounded">
           <Wand2 className="w-3 h-3" />
           Réenrichir
         </div>

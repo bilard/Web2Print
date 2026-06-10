@@ -20,7 +20,7 @@ export function TaxonomyEmptyState({ onImport }: TaxonomyEmptyStateProps) {
         </div>
         <button
           onClick={onImport}
-          className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white text-[13px] font-medium px-5 py-2.5 rounded-xl transition-colors"
+          className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-[#fff] text-[13px] font-medium px-5 py-2.5 rounded-xl transition-colors"
         >
           <Upload className="w-4 h-4" />
           Importer une taxonomie

@@ -28,7 +28,7 @@ export function ImageMaskSection({ image }: Props) {
         type="button"
         onClick={() => enterCropMode(image)}
         disabled={isThisCropping}
-        className="flex items-center justify-center gap-2 w-full py-2 text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-md text-white transition-colors"
+        className="flex items-center justify-center gap-2 w-full py-2 text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-md text-[#fff] transition-colors"
       >
         <Crop className="w-3.5 h-3.5" />
         {isThisCropping ? 'Mode crop actif' : 'Recadrer la photo'}

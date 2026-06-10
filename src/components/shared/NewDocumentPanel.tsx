@@ -246,7 +246,7 @@ export function NewDocumentPanel({ onConfirm, loading }: NewDocumentPanelProps) 
               <button
                 onClick={handleSubmit}
                 disabled={loading || !title.trim()}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium px-6 py-3 rounded-lg transition-colors text-sm"
+                className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-[#fff] font-medium px-6 py-3 rounded-lg transition-colors text-sm"
               >
                 {loading ? (
                   <>

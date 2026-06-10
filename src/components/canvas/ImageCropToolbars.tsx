@@ -161,7 +161,7 @@ export function ImageCropToolbars({ canvas }: Props) {
           <button
             type="button"
             onClick={applyCrop}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs text-[#fff] bg-indigo-600 hover:bg-indigo-500 transition-colors"
             title="Appliquer le recadrage (Entrée)"
           >
             <Check className="w-4 h-4" />

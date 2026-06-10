@@ -170,7 +170,7 @@ export function UsersTab() {
                     </p>
                     <div className="flex items-center gap-2">
                       <button onClick={() => removeUser(u)}
-                        className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors">
+                        className="flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-[#fff] transition-colors">
                         <Trash2 className="w-3.5 h-3.5" /> Confirmer la suppression
                       </button>
                       <button onClick={() => setConfirmDelete(null)}

@@ -473,7 +473,7 @@ export function ScrapeTab({ url, loading, onScrape, onUrlSuggestion, onEnrichMan
           <button
             onClick={handleLaunch}
             disabled={resolvedUrls.length === 0 || loading || batchRunning}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading || batchRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {loading || batchRunning

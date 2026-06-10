@@ -413,7 +413,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             <div className="flex gap-1.5 px-3 pb-2.5 overflow-x-auto">
               {uniqueImages.map((url, i) => (
                 <button key={i} onClick={() => setActiveImg(i)}
-                  className={`shrink-0 w-10 h-10 rounded border overflow-hidden bg-white transition-all ${
+                  className={`shrink-0 w-10 h-10 rounded border overflow-hidden bg-[#fff] transition-all ${
                     i === activeImg ? 'border-indigo-400/60 ring-1 ring-indigo-400/20' : 'border-white/10 opacity-60 hover:opacity-100'
                   }`}>
                   <img src={url} alt="" className="w-full h-full object-contain p-0.5"

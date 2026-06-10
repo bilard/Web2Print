@@ -718,7 +718,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   <button
                     onClick={handleGenerate}
                     disabled={generating}
-                    className="flex-1 flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-3 py-2.5 rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-[#fff] text-sm font-medium px-3 py-2.5 rounded-lg transition-colors"
                   >
                     {generating ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

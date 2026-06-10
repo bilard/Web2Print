@@ -121,7 +121,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           {canCreate && (
             <button
               onClick={create}
-              className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
+              className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-[#fff] font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               Nouveau workflow

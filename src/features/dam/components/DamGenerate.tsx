@@ -497,7 +497,7 @@ export function DamGenerate() {
             onPaste={handlePromptPaste}
             placeholder="Décrivez l'image à générer... (collez une image ou du texte)"
             rows={4}
-            className="w-full min-h-[96px] bg-white border border-white/10 rounded-lg px-3 py-2 text-sm text-black placeholder:text-black/40 outline-none focus:border-indigo-500/50 resize-y"
+            className="w-full min-h-[96px] bg-[#fff] border border-white/10 rounded-lg px-3 py-2 text-sm text-[#111] placeholder:text-[#111]/40 outline-none focus:border-indigo-500/50 resize-y"
           />
         </div>
 
@@ -709,7 +709,7 @@ export function DamGenerate() {
         <button
           onClick={handleGenerate}
           disabled={!prompt.trim() || generating}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition mt-2"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-[#fff] text-sm font-medium hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition mt-2"
         >
           {generating ? (
             <>

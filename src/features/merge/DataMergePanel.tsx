@@ -120,7 +120,7 @@ export function DataMergePanel() {
       <div className="px-3 py-2 flex gap-2">
         <button
           onClick={() => setExportOpen(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-xs font-medium transition-colors"
         >
           <Rocket className="w-3.5 h-3.5" />
           Exporter tout ({totalRows})
@@ -431,7 +431,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
             )}
             <button
               onClick={saveFormula}
-              className="flex-1 text-xs px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-colors"
+              className="flex-1 text-xs px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 text-[#fff] font-medium transition-colors"
             >
               Appliquer
             </button>

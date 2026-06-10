@@ -189,7 +189,7 @@ export function BrightDataConnectorRow() {
             <button
               onClick={handleSaveToken}
               disabled={tokenSaving}
-              className="text-xs bg-violet-500 hover:bg-violet-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+              className="text-xs bg-violet-500 hover:bg-violet-600 text-[#fff] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
             >
               {tokenSaving && <Loader2 className="w-3 h-3 animate-spin" />}
               Sauvegarder
@@ -233,7 +233,7 @@ export function BrightDataConnectorRow() {
                 <button
                   onClick={handleSaveWs}
                   disabled={wsSaving}
-                  className="text-xs bg-violet-500 hover:bg-violet-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                  className="text-xs bg-violet-500 hover:bg-violet-600 text-[#fff] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
                 >
                   {wsSaving && <Loader2 className="w-3 h-3 animate-spin" />}
                   Sauvegarder

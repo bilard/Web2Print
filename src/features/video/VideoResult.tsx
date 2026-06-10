@@ -192,7 +192,7 @@ export function VideoResult(props: Props) {
         <button
           onClick={handleDownloadHtmlZip}
           disabled={zipState === 'building'}
-          className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+          className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-[#fff] text-sm font-medium px-3 py-2 rounded-lg transition-colors"
         >
           {zipState === 'building' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

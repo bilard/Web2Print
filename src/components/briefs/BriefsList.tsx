@@ -122,7 +122,7 @@ export function BriefsList({ taxonomy }: Props) {
           <button
             onClick={handleNew}
             disabled={create.isPending}
-            className="flex items-center gap-1.5 text-[12px] text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded-md disabled:opacity-50"
+            className="flex items-center gap-1.5 text-[12px] text-[#fff] bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded-md disabled:opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
             Nouveau brief

@@ -314,7 +314,7 @@ export function DamLightbox() {
             )}
             <button
               onClick={handleInsert}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs bg-indigo-500 text-white hover:bg-indigo-600 transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs bg-indigo-500 text-[#fff] hover:bg-indigo-600 transition"
             >
               <Plus className="w-3.5 h-3.5" />
               {damPickerMode === 'replace' ? 'Remplacer' : 'Canvas'}

@@ -205,7 +205,7 @@ export function ChatComposer({
               type="button"
               onClick={submit}
               title="Envoyer (Entrée)"
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-violet-500 hover:bg-violet-400 text-white transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-violet-500 hover:bg-violet-400 text-[#fff] transition-colors"
             >
               <ArrowUp className="w-4 h-4" />
             </button>

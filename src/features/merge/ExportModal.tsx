@@ -193,7 +193,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
               <button onClick={onClose} className="px-4 py-2 rounded-md bg-white/5 text-white/50 text-sm hover:bg-white/10 transition-colors">
                 Fermer
               </button>
-              <button onClick={handleExport} className="px-4 py-2 rounded-md bg-indigo-500 text-white text-sm hover:bg-indigo-600 transition-colors flex items-center gap-2">
+              <button onClick={handleExport} className="px-4 py-2 rounded-md bg-indigo-500 text-[#fff] text-sm hover:bg-indigo-600 transition-colors flex items-center gap-2">
                 Exporter {rangeAll ? totalRows : Math.max(0, rangeEnd - rangeStart + 1)} lignes
               </button>
             </>

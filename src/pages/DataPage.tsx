@@ -571,7 +571,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               onClick={() => setImportModalOpen(true)}
               disabled={!hasSelectedDb}
               data-tour="opt-pim-import"
-              className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/5 disabled:hover:bg-white/5 disabled:text-white/25 disabled:cursor-not-allowed text-white text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/5 disabled:hover:bg-white/5 disabled:text-white/25 disabled:cursor-not-allowed text-[#fff] text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
               title={hasSelectedDb ? 'Importer un fichier' : 'Sélectionnez une base de données'}
             >
               <Upload className="w-4 h-4" />

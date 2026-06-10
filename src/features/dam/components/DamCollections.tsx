@@ -83,7 +83,7 @@ function CollectionCard({
             e.stopPropagation()
             onDelete()
           }}
-          className="absolute top-2 right-2 p-1 rounded bg-black/50 opacity-0 group-hover:opacity-100 text-white/40 hover:text-red-400 hover:bg-red-500/20 transition"
+          className="absolute top-2 right-2 p-1 rounded bg-black/50 opacity-0 group-hover:opacity-100 text-[#fff]/40 hover:text-red-400 hover:bg-red-500/20 transition"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -288,7 +288,7 @@ export function DamCollections() {
             placeholder="Nom de la collection"
             className="flex-1 bg-surface-2 border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-indigo-500/50"
           />
-          <button onClick={handleCreate} className="px-3 py-1.5 rounded bg-indigo-500 text-white text-sm hover:bg-indigo-600">
+          <button onClick={handleCreate} className="px-3 py-1.5 rounded bg-indigo-500 text-[#fff] text-sm hover:bg-indigo-600">
             OK
           </button>
           <button onClick={() => setCreating(false)} className="px-2 py-1.5 text-white/40 text-sm hover:text-white/60">

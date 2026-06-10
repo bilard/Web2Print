@@ -215,7 +215,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
             <button
               onClick={handleExport}
               disabled={status === 'exporting'}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 text-white rounded-xl transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 text-[#fff] rounded-xl transition-colors"
             >
               {status === 'exporting' && <Loader2 className="w-4 h-4 animate-spin" />}
               {status === 'done' && <CheckCircle className="w-4 h-4" />}

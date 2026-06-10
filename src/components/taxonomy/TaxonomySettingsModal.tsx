@@ -80,7 +80,7 @@ export function TaxonomySettingsModal({ taxonomy, onClose }: TaxonomySettingsMod
           <button
             onClick={handleSave}
             disabled={update.isPending}
-            className="px-3 py-1.5 text-[12px] font-medium bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-[12px] font-medium bg-indigo-500 text-[#fff] rounded-lg hover:bg-indigo-600 disabled:opacity-50 transition-colors"
           >
             {update.isPending ? 'Enregistrement…' : 'Enregistrer'}
           </button>

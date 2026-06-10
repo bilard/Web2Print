@@ -47,7 +47,7 @@ export function Step5Export({ brief }: Props) {
             <button
               onClick={handleExport}
               disabled={exportPptx.isPending}
-              className="flex items-center justify-center gap-2 text-[13px] text-white bg-indigo-500 hover:bg-indigo-600 px-4 py-2.5 rounded-md disabled:opacity-50"
+              className="flex items-center justify-center gap-2 text-[13px] text-[#fff] bg-indigo-500 hover:bg-indigo-600 px-4 py-2.5 rounded-md disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
               {exportPptx.isPending ? 'Génération…' : 'Télécharger le PPTX'}

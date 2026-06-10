@@ -150,7 +150,7 @@ export default function LoginPage() {
             <button
               onClick={handleSignIn}
               disabled={loading}
-              className="mt-8 w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-medium py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-8 w-full flex items-center justify-center gap-3 bg-[#fff] text-gray-800 font-medium py-3 px-4 rounded-lg hover:bg-[#f3f4f6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />

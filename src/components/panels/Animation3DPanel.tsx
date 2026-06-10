@@ -376,7 +376,7 @@ export function Animation3DPanel() {
         {!playing ? (
           <button
             onClick={handleStart}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-[12px] font-semibold py-2 transition"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-[12px] font-semibold py-2 transition"
           >
             <Play className="w-3.5 h-3.5" />
             Lancer l'animation
@@ -384,7 +384,7 @@ export function Animation3DPanel() {
         ) : (
           <button
             onClick={handleStop}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-red-500/90 hover:bg-red-500 text-white text-[12px] font-semibold py-2 transition"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-red-500/90 hover:bg-red-500 text-[#fff] text-[12px] font-semibold py-2 transition"
           >
             <Square className="w-3.5 h-3.5" />
             Arrêter

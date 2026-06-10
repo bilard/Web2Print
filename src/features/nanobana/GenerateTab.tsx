@@ -223,7 +223,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
         <button
           onClick={handleGenerate}
           disabled={!prompt.trim() || generating}
-          className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/10 disabled:text-white/30 text-white font-medium text-sm py-2.5 rounded-xl transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-white/10 disabled:text-white/30 text-[#fff] font-medium text-sm py-2.5 rounded-xl transition-colors"
         >
           {generating ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -245,7 +245,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
               alt={lastGenerated.name}
               className="w-full aspect-square object-cover"
             />
-            <span className="absolute top-1.5 left-1.5 text-[8px] bg-indigo-500/80 text-white px-1.5 py-0.5 rounded font-medium">
+            <span className="absolute top-1.5 left-1.5 text-[8px] bg-indigo-500/80 text-[#fff] px-1.5 py-0.5 rounded font-medium">
               AI
             </span>
           </div>
@@ -253,7 +253,7 @@ export function GenerateTab({ onAddToCanvas, onReplaceSelected }: Props) {
             {selectedBlock && (
               <button
                 onClick={() => onReplaceSelected?.(lastGenerated)}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium py-2 rounded-lg transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-xs font-medium py-2 rounded-lg transition-colors"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
                 Remplacer

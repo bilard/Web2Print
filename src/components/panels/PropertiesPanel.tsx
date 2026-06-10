@@ -640,7 +640,7 @@ export function PropertiesPanel() {
                     <div
                       onClick={() => applyToFabric({ shadow: obj.shadow ? null : { color: 'rgba(0,0,0,0.4)', blur: 10, offsetX: 5, offsetY: 5 } })}
                       className={`w-9 h-5 rounded-full transition-colors relative ${obj.shadow ? 'bg-indigo-500' : 'bg-white/10'}`}>
-                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${obj.shadow ? 'left-4' : 'left-0.5'}`} />
+                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-[#fff] shadow transition-transform ${obj.shadow ? 'left-4' : 'left-0.5'}`} />
                     </div>
                     <span className="text-xs text-white/50">{obj.shadow ? 'Activée' : 'Désactivée'}</span>
                   </label>

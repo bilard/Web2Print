@@ -431,7 +431,7 @@ function ExportPanel({
 
       <button
         onClick={() => onExport(format, quality, scale)}
-        className="ml-auto px-3 py-1.5 rounded-lg bg-indigo-500 text-white text-xs hover:bg-indigo-600 transition shrink-0"
+        className="ml-auto px-3 py-1.5 rounded-lg bg-indigo-500 text-[#fff] text-xs hover:bg-indigo-600 transition shrink-0"
       >
         Exporter
       </button>

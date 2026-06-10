@@ -26,7 +26,7 @@ export function HyperframesPage({ embedded = false }: Props) {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-3.5 py-2 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium px-3.5 py-2 rounded-lg transition-colors"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Générer une animation

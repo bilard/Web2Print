@@ -631,7 +631,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-white/20">Créez votre premier document pour commencer</p>
                   <button
                     onClick={() => setActiveSection('blank')}
-                    className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-[#fff] font-medium px-6 py-2.5 rounded-lg transition-colors text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <Plus className="w-4 h-4" aria-hidden="true" />
                     Créer un document

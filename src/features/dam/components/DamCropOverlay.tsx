@@ -204,7 +204,7 @@ export function DamCropOverlay({ mask, onChange, ratio = null, flipH = false, fl
           <div
             key={h.key}
             onMouseDown={(e) => startResize(e, h.key)}
-            className="absolute w-2.5 h-2.5 bg-white border border-indigo-500 rounded-sm hover:scale-125 transition-transform"
+            className="absolute w-2.5 h-2.5 bg-[#fff] border border-indigo-500 rounded-sm hover:scale-125 transition-transform"
             style={{ ...h.style, cursor: h.cursor }}
           />
         ))}

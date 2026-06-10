@@ -30,7 +30,7 @@ function MindNode({ data }: NodeProps) {
   const d = data as MindData
   if (d.kind === 'root') {
     return (
-      <div className="px-4 py-2 rounded-full bg-indigo-500 text-white text-sm font-bold shadow-[0_0_24px_rgba(99,102,241,0.4)] border border-indigo-300/40">
+      <div className="px-4 py-2 rounded-full bg-indigo-500 text-[#fff] text-sm font-bold shadow-[0_0_24px_rgba(99,102,241,0.4)] border border-indigo-300/40">
         {d.label || 'Rôle'}
         <Handle type="source" position={Position.Bottom} className="!w-1.5 !h-1.5 !border-0 !bg-indigo-300" />
       </div>

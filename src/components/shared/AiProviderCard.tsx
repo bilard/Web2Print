@@ -333,7 +333,7 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
           <button onClick={() => setVisible(!visible)} className="text-white/30 hover:text-white/60 px-1">
             {visible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           </button>
-          <button onClick={handleSaveKey} className="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition-colors">
+          <button onClick={handleSaveKey} className="text-xs bg-indigo-500 hover:bg-indigo-600 text-[#fff] px-3 py-1.5 rounded-lg transition-colors">
             OK
           </button>
         </div>

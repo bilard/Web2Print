@@ -233,7 +233,7 @@ export function UpdatePreviewModal({ open, onClose, onApply }: Props) {
                 <button
                   onClick={handleApply}
                   disabled={totalChanges === 0}
-                  className="text-xs px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="text-xs px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-[#fff] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Appliquer ({totalChanges} changement{totalChanges > 1 ? 's' : ''})

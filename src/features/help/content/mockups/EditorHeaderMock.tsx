@@ -25,7 +25,7 @@ export function EditorHeaderMock() {
           <Save className="w-3.5 h-3.5" />
           Sauvegarder
         </div>
-        <div className="flex items-center gap-1.5 bg-indigo-500 text-white text-xs font-medium px-3 py-1.5 rounded">
+        <div className="flex items-center gap-1.5 bg-indigo-500 text-[#fff] text-xs font-medium px-3 py-1.5 rounded">
           <Download className="w-3.5 h-3.5" />
           Exporter
         </div>

@@ -387,7 +387,7 @@ export function ProductTaxonomyPicker({
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={handleApplySuggestion}
-                  className="text-[11px] font-medium text-white bg-indigo-500 hover:bg-indigo-600 px-2.5 py-1 rounded transition-colors"
+                  className="text-[11px] font-medium text-[#fff] bg-indigo-500 hover:bg-indigo-600 px-2.5 py-1 rounded transition-colors"
                 >
                   Appliquer
                 </button>

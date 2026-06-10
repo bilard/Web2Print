@@ -40,7 +40,7 @@ export function ExportDialogMock() {
       </div>
       <div className="px-3 py-2 flex justify-end gap-2 border-t border-white/10">
         <div className="text-[11px] text-white/50 px-2.5 py-1 rounded">Annuler</div>
-        <div className="text-[11px] text-white font-medium bg-indigo-500 px-3 py-1 rounded">Exporter</div>
+        <div className="text-[11px] text-[#fff] font-medium bg-indigo-500 px-3 py-1 rounded">Exporter</div>
       </div>
     </div>
   )

@@ -158,7 +158,7 @@ export function EditorHeader() {
         data-tour="export"
         ref={exportHighlight.ref}
         onClick={() => setModal('export')}
-        className={`flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${exportHighlight.className}`}
+        className={`flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-[#fff] text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${exportHighlight.className}`}
       >
         <Download className="w-3.5 h-3.5" />
         <span className="hidden sm:block">Exporter</span>

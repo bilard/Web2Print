@@ -473,7 +473,7 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
                 </div>
                 {/* AI badge */}
                 {img.tags.includes('ai-generated') && (
-                  <span className="absolute top-1 left-1 text-[8px] bg-indigo-500/80 text-white px-1.5 py-0.5 rounded font-medium">
+                  <span className="absolute top-1 left-1 text-[8px] bg-indigo-500/80 text-[#fff] px-1.5 py-0.5 rounded font-medium">
                     AI
                   </span>
                 )}

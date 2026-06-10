@@ -224,7 +224,7 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
             <button
               onClick={handleGenerate}
               disabled={stage !== 'answering'}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-indigo-500 hover:bg-indigo-400 text-[#fff] disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               {stage === 'generating' ? (
                 <>
