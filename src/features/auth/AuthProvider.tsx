@@ -1,6 +1,7 @@
 import { useAuthInit } from './useAuth'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAiSettingsSync } from '@/features/settings/useAiSettingsSync'
+import { useThemeSync } from '@/features/settings/useThemeSync'
 import { useApiKeysSync } from '@/features/settings/useApiKeysSync'
 import { useTelegramSettingsSync } from '@/features/settings/useTelegramSettingsSync'
 import { useSiteCookiesSync } from '@/features/settings/useSiteCookiesSync'
@@ -13,6 +14,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   useAuthInit()
   useAiSettingsSync()
+  useThemeSync()
   useApiKeysSync()
   useTelegramSettingsSync()
   useSiteCookiesSync()
