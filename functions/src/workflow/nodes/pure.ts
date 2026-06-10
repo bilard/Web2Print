@@ -26,7 +26,7 @@ registerServerNode({
     try {
       result = Boolean(new Function('value', `return (${expr})`)(inputs.value))
     } catch (err) {
-      throw new Error(`Erreur d'évaluation "${expr}" : ${err instanceof Error ? err.message : err}`)
+      throw new Error(`Erreur d'évaluation "${expr}" : ${err instanceof Error ? err.message : err}`, { cause: err })
     }
     ctx.log('info', `Condition "${expr}" = ${result}`)
     return result ? { then: inputs.value } : { else: inputs.value }
@@ -44,7 +44,7 @@ registerServerNode({
       try {
         value = new Function('value', `return (${lines[i]})`)(value)
       } catch (err) {
-        throw new Error(`Étape ${i + 1} "${lines[i]}" : ${err instanceof Error ? err.message : err}`)
+        throw new Error(`Étape ${i + 1} "${lines[i]}" : ${err instanceof Error ? err.message : err}`, { cause: err })
       }
     }
     return { result: value }
@@ -102,7 +102,7 @@ registerServerNode({
     try {
       fn = new Function('row', `return (${expr})`) as (row: Record<string, unknown>) => unknown
     } catch (err) {
-      throw new Error(`Filtre : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`)
+      throw new Error(`Filtre : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`, { cause: err })
     }
     const kept = rows.filter((row) => {
       try { return Boolean(fn(row)) } catch { return false }
@@ -175,7 +175,7 @@ registerServerNode({
     let regex: RegExp | null = null
     if (op === 'regex-extract') {
       try { regex = new RegExp(String(config.pattern ?? '')) }
-      catch (err) { throw new Error(`Regex invalide — ${err instanceof Error ? err.message : err}`) }
+      catch (err) { throw new Error(`Regex invalide — ${err instanceof Error ? err.message : err}`, { cause: err }) }
     }
     const apply = (raw: unknown): string => {
       const s = raw == null ? '' : String(raw)
