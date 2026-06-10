@@ -12,16 +12,13 @@ export interface CronConfig {
   enabled: boolean
 }
 
-export const CRON_UNIT_OPTIONS: { value: CronUnit; label: string }[] = [
+const CRON_UNIT_OPTIONS: { value: CronUnit; label: string }[] = [
   { value: 'minute', label: 'minute(s)' },
   { value: 'hour', label: 'heure(s)' },
   { value: 'day', label: 'jour(s)' },
   { value: 'week', label: 'semaine(s)' },
   { value: 'month', label: 'mois' },
 ]
-
-/** Limite réelle de setTimeout (~24,8 jours). Au-delà il déborde et tire immédiatement. */
-export const MAX_TIMEOUT = 2_147_483_647
 
 const FIXED_MS: Record<Exclude<CronUnit, 'month'>, number> = {
   minute: 60_000,
@@ -55,33 +52,6 @@ export function describeCron(cfg: CronConfig): string {
   const every = normalizeEvery(cfg.every)
   const unit = CRON_UNIT_OPTIONS.find((u) => u.value === cfg.unit)?.label ?? cfg.unit
   return `${every} ${unit}`
-}
-
-/**
- * setTimeout robuste aux délais supérieurs à MAX_TIMEOUT : re-planifie par
- * tranches jusqu'à atteindre `at`. Renvoie une fonction d'annulation.
- */
-export function scheduleAt(
-  at: number,
-  cb: () => void,
-  now: () => number = Date.now,
-): () => void {
-  let handle: ReturnType<typeof setTimeout>
-  let cancelled = false
-  const tick = (): void => {
-    if (cancelled) return
-    const remaining = at - now()
-    if (remaining <= 0) {
-      cb()
-      return
-    }
-    handle = setTimeout(tick, Math.min(remaining, MAX_TIMEOUT))
-  }
-  tick()
-  return () => {
-    cancelled = true
-    clearTimeout(handle)
-  }
 }
 
 /** Compte à rebours lisible — ex : « 2 j 3 h », « 5 min 12 s », « maintenant ». */

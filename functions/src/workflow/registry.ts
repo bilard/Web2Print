@@ -9,6 +9,3 @@ export function registerServerNode(spec: ServerNodeSpec): void {
 export function getServerNode(type: string): ServerNodeSpec | undefined {
   return registry.get(type)
 }
-export function listServerNodeTypes(): string[] {
-  return [...registry.keys()]
-}

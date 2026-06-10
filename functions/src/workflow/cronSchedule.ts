@@ -1,5 +1,5 @@
 // functions/src/workflow/cronSchedule.ts
-export type CronUnit = 'hour' | 'day' | 'week' | 'month'
+type CronUnit = 'hour' | 'day' | 'week' | 'month'
 
 export interface CronConfig {
   every: number

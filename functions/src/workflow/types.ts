@@ -8,7 +8,7 @@ export interface ServerWorkflow {
   nodes: ServerNode[]; edges: ServerEdge[]
 }
 
-export type LogLevel = 'info' | 'warn' | 'error'
+type LogLevel = 'info' | 'warn' | 'error'
 export interface RunLog { ts: number; level: LogLevel; node?: string; msg: string }
 
 export interface ServerRunCtx {
@@ -17,7 +17,7 @@ export interface ServerRunCtx {
   signal: AbortSignal
 }
 
-export type ServerRun = (
+type ServerRun = (
   ctx: ServerRunCtx,
   config: Record<string, unknown>,
   inputs: Record<string, unknown>,
