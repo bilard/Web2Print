@@ -21,6 +21,7 @@ import '@xyflow/react/dist/style.css'
 import { BaseNode } from './nodes/BaseNode'
 import { FlowEdge, FlowEdgeDefs } from './edges/FlowEdge'
 import { useWorkflowStore } from '../persistence/workflow.store'
+import { useThemeStore } from '@/stores/theme.store'
 import { nodeRegistry } from '../registry'
 import { isCompatible, portTypeRegistry } from '../runtime/ports'
 import { useConnectionDrag } from '../runtime/connectionDragStore'
@@ -78,6 +79,8 @@ const PERSIST_NODE_CHANGE = new Set(['position', 'remove'])
 const PERSIST_EDGE_CHANGE = new Set(['add', 'remove'])
 
 export function WorkflowEditor() {
+  // ReactFlow Background/MiniMap reçoivent des couleurs en props (pas des classes) → thème explicite.
+  const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const wf = useWorkflowStore((s) => s.current)
   const setStoreNodes = useWorkflowStore((s) => s.setNodes)
   const setStoreEdges = useWorkflowStore((s) => s.setEdges)
@@ -334,14 +337,14 @@ export function WorkflowEditor() {
         fitViewOptions={{ padding: 0.3, maxZoom: 1.2 }}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#1f1f1f" gap={24} size={1} />
+        <Background color={isLight ? '#d4d4d8' : '#1f1f1f'} gap={24} size={1} />
         <Controls
-          className="!bg-surface !border-neutral-800 [&>button]:!bg-surface [&>button]:!border-neutral-800 [&>button]:!text-neutral-400 [&>button:hover]:!bg-surface"
+          className="!bg-surface !border-white/15 [&>button]:!bg-surface [&>button]:!border-white/15 [&>button]:!text-neutral-400 [&>button:hover]:!bg-surface"
           showInteractive={false}
         />
         <MiniMap
-          className="!bg-background !border !border-neutral-800"
-          maskColor="rgba(15,15,15,0.85)"
+          className="!bg-background !border !border-white/15"
+          maskColor={isLight ? 'rgba(229,229,231,0.85)' : 'rgba(15,15,15,0.85)'}
           nodeColor="#6366f1"
           nodeBorderRadius={4}
           nodeStrokeWidth={0}

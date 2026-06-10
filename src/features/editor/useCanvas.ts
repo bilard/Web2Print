@@ -5,6 +5,10 @@ import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
 import { gradientToFabric } from '@/components/shared/GradientPicker'
 import { applyCustomControls, applyCustomControlsToObject } from './useCustomControls'
+import { useThemeStore } from '@/stores/theme.store'
+
+/** Contour de page (hors document) — couleur programmatique Fabric, suit le thème. */
+const WORK_AREA_BG = { dark: '#262626', light: '#e4e4e7' } as const
 
 /** ID used for the page-background rectangle */
 const PAGE_BG_ID = '__page_bg__'
@@ -123,6 +127,17 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
   const setSelectedObjectId = useEditorStore((s) => s.setSelectedObjectId)
   const setSelectedObjectIds = useEditorStore((s) => s.setSelectedObjectIds)
 
+  // Le contour de page suit le thème au toggle (couleur programmatique, pas une classe CSS).
+  useEffect(() => {
+    return useThemeStore.subscribe((s, prev) => {
+      if (s.resolvedTheme === prev.resolvedTheme) return
+      const canvas = fabricRef.current
+      if (!canvas) return
+      canvas.backgroundColor = WORK_AREA_BG[s.resolvedTheme]
+      canvas.requestRenderAll()
+    })
+  }, [])
+
   // Init Fabric canvas once
   useEffect(() => {
     const el = canvasElRef.current
@@ -134,7 +149,7 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
     const canvas = new Canvas(el, {
       width: canvasWidth,
       height: canvasHeight,
-      backgroundColor: '#262626',  // Dark background around the page
+      backgroundColor: WORK_AREA_BG[useThemeStore.getState().resolvedTheme],
       selection: true,
       preserveObjectStacking: true,
     })
