@@ -3,6 +3,7 @@ import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, orderBy } f
 import { db } from '@/lib/firebase/config'
 import type { Workflow } from '../types'
 import { CURRENT_SCHEMA_VERSION, migrate } from './migrations'
+import { syncWorkflowSchedule } from './scheduleSync'
 
 const col = (uid: string) => collection(db, 'users', uid, 'workflows')
 
@@ -20,6 +21,7 @@ export async function getWorkflow(uid: string, id: string): Promise<Workflow | n
 export async function saveWorkflow(uid: string, wf: Workflow): Promise<void> {
   const next: Workflow = { ...wf, schemaVersion: CURRENT_SCHEMA_VERSION, updatedAt: Date.now() }
   await setDoc(doc(col(uid), wf.id), next)
+  await syncWorkflowSchedule(uid, wf).catch((e) => console.warn('syncWorkflowSchedule:', e))
 }
 
 export async function deleteWorkflow(uid: string, id: string): Promise<void> {
