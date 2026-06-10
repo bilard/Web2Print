@@ -287,7 +287,7 @@ export function NodeConfigPanel() {
   const showEdge = !node && !!selectedEdge
 
   return (
-    <aside className="w-72 border-l border-neutral-800 bg-background overflow-y-auto p-4">
+    <aside className="w-72 border-l border-neutral-800 bg-surface-2 overflow-y-auto p-4">
       <h3 className="text-xs uppercase text-neutral-500 font-semibold mb-3">
         {showEdge ? 'Connexion' : 'Configuration'}
       </h3>

@@ -292,6 +292,25 @@ html:where(.light) .hover\:bg-black\/20:hover:where(:not(.absolute):not(.fixed))
 html:where(.light) .hover\:bg-black\/30:hover:where(:not(.absolute):not(.fixed)),
 html:where(.light) .hover\:bg-black\/40:hover:where(:not(.absolute):not(.fixed)) { background-color: rgb(var(--well)); }
 
+/* Crans neutral FONCÉS (500-950 non re-pointés) utilisés comme bordures/fonds structurels :
+   ils restaient sombres en mode clair → traits durs et pavés noirs. On les ramène à des
+   valeurs claires thémables. (text-neutral-500..700 = gris lisibles sur blanc, on n'y touche pas.)
+   Spécificité (0,1,1) via :where → bat l'utilitaire de base, ne casse pas les hover. */
+html:where(.light) .border-neutral-600,
+html:where(.light) .border-neutral-700,
+html:where(.light) .border-neutral-800,
+html:where(.light) .border-neutral-900 { border-color: rgb(var(--base) / 0.13); }
+html:where(.light) .bg-neutral-700,
+html:where(.light) .bg-neutral-800,
+html:where(.light) .bg-neutral-900 { background-color: rgb(var(--surface-2)); }
+
+/* PROFONDEUR — en mode clair, la hiérarchie vient de l'OMBRE (le sombre, lui, joue sur le
+   contraste de tons). Ombre douce d'élévation sur les surfaces de type carte/panneau. */
+html:where(.light) .bg-surface,
+html:where(.light) .bg-surface-2 {
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.07);
+}
+
 @keyframes progress-indeterminate {
   0%   { left: -35%; }
   60%  { left: 100%; }
