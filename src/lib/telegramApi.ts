@@ -6,10 +6,16 @@ const API_BASE = 'https://api.telegram.org'
 
 export type TelegramParseMode = 'none' | 'HTML' | 'MarkdownV2'
 
+/** Clavier inline Telegram (boutons sous le message). callback_data ≤ 64 octets. */
+export interface TelegramInlineKeyboard {
+  inline_keyboard: { text: string; callback_data: string }[][]
+}
+
 export interface SendTelegramMessageOptions {
   chatId: string
   text: string
   parseMode?: TelegramParseMode
+  replyMarkup?: TelegramInlineKeyboard
 }
 
 export interface SendTelegramDocumentOptions {
@@ -17,6 +23,7 @@ export interface SendTelegramDocumentOptions {
   file: File | Blob
   caption?: string
   parseMode?: TelegramParseMode
+  replyMarkup?: TelegramInlineKeyboard
 }
 
 interface TelegramOk {
@@ -48,6 +55,7 @@ export async function sendTelegramMessage(
 ): Promise<{ messageId: number }> {
   const body: Record<string, unknown> = { chat_id: opts.chatId, text: opts.text }
   if (opts.parseMode && opts.parseMode !== 'none') body.parse_mode = opts.parseMode
+  if (opts.replyMarkup) body.reply_markup = opts.replyMarkup
 
   const res = await fetch(`${API_BASE}/bot${botToken}/sendMessage`, {
     method: 'POST',
@@ -127,6 +135,49 @@ export async function deleteTelegramMessages(
   }
 }
 
+/**
+ * Répond à un callback_query (clic sur un bouton inline) : ferme le spinner côté client
+ * Telegram et affiche un toast optionnel. Best-effort côté appelant : Telegram refuse les
+ * callback_query trop anciens (~15 s), ce qui est attendu quand l'app répond en différé.
+ */
+export async function answerTelegramCallbackQuery(
+  botToken: string,
+  opts: { callbackQueryId: string; text?: string },
+): Promise<void> {
+  const body: Record<string, unknown> = { callback_query_id: opts.callbackQueryId }
+  if (opts.text) body.text = opts.text
+  const res = await fetch(`${API_BASE}/bot${botToken}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = (await res.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null
+  if (!json?.ok) {
+    throw new Error(`Telegram answerCallbackQuery ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+  }
+}
+
+/**
+ * Remplace le clavier inline d'un message (replyMarkup absent = retire les boutons).
+ * Fonctionne pour les messages texte ET les documents.
+ */
+export async function editTelegramMessageReplyMarkup(
+  botToken: string,
+  opts: { chatId: string | number; messageId: number; replyMarkup?: TelegramInlineKeyboard },
+): Promise<void> {
+  const body: Record<string, unknown> = { chat_id: opts.chatId, message_id: opts.messageId }
+  if (opts.replyMarkup) body.reply_markup = opts.replyMarkup
+  const res = await fetch(`${API_BASE}/bot${botToken}/editMessageReplyMarkup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = (await res.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null
+  if (!json?.ok) {
+    throw new Error(`Telegram editMessageReplyMarkup ${json?.error_code ?? res.status} : ${json?.description ?? 'échec'}`)
+  }
+}
+
 export async function sendTelegramDocument(
   botToken: string,
   opts: SendTelegramDocumentOptions,
@@ -137,6 +188,7 @@ export async function sendTelegramDocument(
   form.append('document', opts.file, filename)
   if (opts.caption) form.append('caption', opts.caption)
   if (opts.parseMode && opts.parseMode !== 'none') form.append('parse_mode', opts.parseMode)
+  if (opts.replyMarkup) form.append('reply_markup', JSON.stringify(opts.replyMarkup))
 
   const res = await fetch(`${API_BASE}/bot${botToken}/sendDocument`, {
     method: 'POST',

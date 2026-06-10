@@ -17,6 +17,7 @@ import './exportNodes'
 import './logicNodes'
 import './communicationNodes'
 import './telegramNodes'
+import './approvalNode'
 import './decomposeNode'
 import './cronNodes'
 

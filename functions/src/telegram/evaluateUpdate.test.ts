@@ -61,4 +61,60 @@ describe('evaluateUpdate', () => {
     )
     expect(r).toEqual({ action: 'ignore', reason: 'not-allowed' })
   })
+
+  describe('callback_query (node Approbation Telegram)', () => {
+    const cq = (data: string, chatId = 8229250033) => ({
+      update_id: 200,
+      callback_query: {
+        id: 'cbq-1',
+        data,
+        from: { username: 'ibs' },
+        message: { chat: { id: chatId } },
+      },
+    })
+
+    it('approval (approve) sur un callback wfappr valide', () => {
+      const r = evaluateUpdate(cq('wfappr:abc-123:approve'), ALLOWED)
+      expect(r).toEqual({
+        action: 'approval',
+        decision: {
+          approvalId: 'abc-123',
+          decision: 'approve',
+          chatId: 8229250033,
+          fromUsername: 'ibs',
+          callbackQueryId: 'cbq-1',
+        },
+      })
+    })
+
+    it('approval (reject) sur un callback wfappr valide', () => {
+      const r = evaluateUpdate(cq('wfappr:abc-123:reject'), ALLOWED)
+      expect(r.action).toBe('approval')
+      if (r.action === 'approval') expect(r.decision.decision).toBe('reject')
+    })
+
+    it('ignore (not-allowed) si le chat du callback est hors allowlist', () => {
+      const r = evaluateUpdate(cq('wfappr:abc-123:approve', 999), ALLOWED)
+      expect(r).toEqual({ action: 'ignore', reason: 'not-allowed' })
+    })
+
+    it('ignore (bad-callback) si data sans préfixe wfappr', () => {
+      const r = evaluateUpdate(cq('autre:donnée'), ALLOWED)
+      expect(r).toEqual({ action: 'ignore', reason: 'bad-callback' })
+    })
+
+    it('ignore (bad-callback) si verdict inconnu ou segments en trop', () => {
+      expect(evaluateUpdate(cq('wfappr:abc:maybe'), ALLOWED)).toEqual({ action: 'ignore', reason: 'bad-callback' })
+      expect(evaluateUpdate(cq('wfappr:abc:approve:x'), ALLOWED)).toEqual({ action: 'ignore', reason: 'bad-callback' })
+      expect(evaluateUpdate(cq('wfappr::approve'), ALLOWED)).toEqual({ action: 'ignore', reason: 'bad-callback' })
+    })
+
+    it('ignore (no-chat-id) si le callback ne porte pas de chat', () => {
+      const r = evaluateUpdate(
+        { update_id: 201, callback_query: { id: 'cbq-2', data: 'wfappr:abc:approve' } },
+        ALLOWED,
+      )
+      expect(r).toEqual({ action: 'ignore', reason: 'no-chat-id' })
+    })
+  })
 })

@@ -325,6 +325,20 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
+    // ── Approbations de workflow (node « Approbation Telegram ») ─────────────
+    // Doc d'attente créé par le run client ; la DÉCISION (approved/rejected) est
+    // écrite par la Function webhook (admin, contourne ces règles). Le client ne
+    // peut que créer ses propres docs, les lire (onSnapshot) et les clôturer
+    // (timeout → status 'expired') — jamais s'auto-approuver via 'approved'.
+    match /workflowApprovals/{approvalId} {
+      allow read:   if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid
+                                         && request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid
+                                         && request.resource.data.status == 'expired';
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+
     // ── Telegram entrant (2a) ──────────────────────────────────
     // File des messages reçus : lisible/modifiable par tout utilisateur connecté
     // (l'app perso est mono-utilisateur ; le mapping chat_id→uid est hors périmètre 2a).

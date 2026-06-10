@@ -38,6 +38,33 @@ export const telegramWebhook = onRequest(
       return
     }
 
+    // Clic ✅/❌ sur un message du node « Approbation Telegram » : on pose la décision
+    // sur le doc d'attente (le run client, en onSnapshot dessus, reprend aussitôt).
+    // Transaction : seul le PREMIER clic gagne (les suivants sont ignorés), et on ne
+    // touche jamais un doc inexistant ou déjà décidé/expiré.
+    if (result.action === 'approval') {
+      const d = result.decision
+      const ref = db.doc(`workflowApprovals/${d.approvalId}`)
+      try {
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(ref)
+          if (!snap.exists || snap.get('status') !== 'pending') return
+          tx.update(ref, {
+            status: d.decision === 'approve' ? 'approved' : 'rejected',
+            decidedBy: d.fromUsername,
+            decidedAt: FieldValue.serverTimestamp(),
+            callbackQueryId: d.callbackQueryId,
+          })
+        })
+      } catch (err) {
+        console.error('telegramWebhook: échec écriture approbation', { approvalId: d.approvalId, err })
+        res.status(500).send('Internal Error')
+        return
+      }
+      res.status(200).send('ok')
+      return
+    }
+
     // create() = idempotent : une réémission du même update_id lève already-exists.
     const ref = db.collection('telegramInbox').doc(String(result.record.updateId))
     try {
