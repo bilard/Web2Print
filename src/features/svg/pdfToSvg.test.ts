@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName } from './pdfToSvg'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName, fitTextWidthsToPdf } from './pdfToSvg'
 
 /** SVG minimal façon mutool : page 200×280, un groupe de contenu clippé à la
  *  carte (non neutre) et un groupe de marques d'impression clippé pleine page. */
@@ -100,6 +100,44 @@ describe('groupMupdfTextBlocks', () => {
       '<text x="12" y="110" font-size="10" fill="#ffffff" transform="rotate(-90 12 110)">PROMO</text>',
     ))
     expect(new DOMParser().parseFromString(out, 'image/svg+xml').querySelectorAll('g')).toHaveLength(0)
+  })
+})
+
+describe('fitTextWidthsToPdf', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  /** jsdom n'implémente pas canvas 2D : mock measureText = 10 px par caractère. */
+  const stubCanvas = () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (s: string) => ({ width: s.length * 10 }),
+    } as unknown as CanvasRenderingContext2D)
+  }
+
+  it('resserre le texte trop large via scaleX ancré sur x (cas « 30 » condensé)', () => {
+    stubCanvas()
+    // Largeur PDF jusqu'au début du dernier glyphe : 6.83 pt ; mesure du run
+    // sans dernier glyphe (« 3 ») : 10 px → scaleX = 0.683.
+    const out = fitTextWidthsToPdf(wrap(
+      '<text x="136.9" y="108.4" font-size="23" fill="#ffffff" data-pdf-run-width="6.83">30</text>',
+    ))
+    const t = new DOMParser().parseFromString(out, 'image/svg+xml').querySelector('text')!
+    expect(t.getAttribute('data-pdf-run-width')).toBeNull()
+    const m = t.getAttribute('transform')!.match(/matrix\(([\d.]+) 0 0 1 ([\d.-]+) 0\)/)
+    expect(m).not.toBeNull()
+    expect(parseFloat(m![1])).toBeCloseTo(0.683, 3)
+    // Ancrage : sx·x + tx = x → le texte ne bouge pas
+    expect(parseFloat(m![1]) * 136.9 + parseFloat(m![2])).toBeCloseTo(136.9, 1)
+  })
+
+  it('ne touche pas un texte déjà à la bonne chasse (±2 %)', () => {
+    stubCanvas()
+    const out = fitTextWidthsToPdf(wrap(
+      '<text x="0" y="10" font-size="12" data-pdf-run-width="9.9">AB</text>',
+    ))
+    const t = new DOMParser().parseFromString(out, 'image/svg+xml').querySelector('text')!
+    expect(t.getAttribute('transform')).toBeNull()
+    expect(t.getAttribute('data-pdf-run-width')).toBeNull()
   })
 })
 

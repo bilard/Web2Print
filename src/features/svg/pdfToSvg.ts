@@ -396,6 +396,50 @@ const toArrayBuffer = (u8: Uint8Array): ArrayBuffer =>
   u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer
 
 /**
+ * Cale la CHASSE de chaque texte sur sa largeur PDF d'origine via scaleX :
+ * la police de rendu (système/Google Fonts) n'a pas les métriques exactes de
+ * celle du PDF, et la compression horizontale InDesign (matrix a≠d, ex.
+ * « 30 % » condensé à 75 %) est perdue à l'aplatissement — sans calage le
+ * texte déborde sur son voisin (le « 30 » recouvrait le « % »). La largeur
+ * cible vient des positions par-glyphe mutool (data-pdf-run-width, jusqu'au
+ * début du dernier glyphe) ; la largeur de rendu est mesurée avec la police
+ * RÉELLEMENT chargée → à appeler APRÈS registerPdfFonts.
+ */
+export function fitTextWidthsToPdf(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  const texts = Array.from(dom.querySelectorAll('text[data-pdf-run-width]'))
+  if (texts.length === 0) return svg
+  const ctx = document.createElement('canvas').getContext('2d')
+  if (!ctx) return svg
+  for (const t of texts) {
+    const target = parseFloat(t.getAttribute('data-pdf-run-width') ?? '')
+    t.removeAttribute('data-pdf-run-width')
+    if (!Number.isFinite(target) || target <= 0) continue
+    if (t.getAttribute('transform')) continue // rotaté : laissé tel quel
+    const content = t.textContent ?? ''
+    if (content.length < 2) continue
+    const fs = parseFloat(t.getAttribute('font-size') ?? '12')
+    const family = (t.getAttribute('font-family') ?? 'sans-serif').replace(/"/g, '')
+    const bold = (t.getAttribute('font-weight') ?? '') === 'bold'
+    const italic = (t.getAttribute('font-style') ?? '') === 'italic'
+    ctx.font = `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${fs}px "${family}"`
+    // Même périmètre que la cible : le run SANS son dernier glyphe.
+    const measured = ctx.measureText(content.slice(0, -1)).width
+    if (!measured || !Number.isFinite(measured)) continue
+    const sx = target / measured
+    if (Math.abs(sx - 1) < 0.02 || sx < 0.4 || sx > 1.8) continue // bruit / mesure aberrante
+    const x = parseFloat(t.getAttribute('x') ?? '0')
+    // Échelle horizontale ANCRÉE sur x (x' = sx·x + tx = x) — Fabric l'importe
+    // en scaleX sans déplacer le texte.
+    t.setAttribute('transform', `matrix(${sx.toFixed(4)} 0 0 1 ${(x * (1 - sx)).toFixed(2)} 0)`)
+  }
+  // Toujours re-sérialiser : les data-pdf-run-width ont été consommés même
+  // quand aucun scaleX n'est posé (sx≈1).
+  return new XMLSerializer().serializeToString(dom)
+}
+
+/**
  * Rend disponibles les polices du SVG converti : les subsets TrueType
  * embarqués dans le PDF sont enregistrés via FontFace sous leur nom de
  * famille nettoyé ; les familles restantes indisponibles (CFF non
@@ -481,11 +525,19 @@ function flattenMupdfTextTransforms(svg: string): string {
     if (Math.abs(b) < 0.001 && Math.abs(c) < 0.001 && a > 0 && d > 0) {
       // Matrice DIAGONALE — y compris échelle non uniforme (texte condensé
       // InDesign, ex. matrix(.866 0 0 1.1547…)) : la hauteur visuelle est
-      // portée par d → font-size × d ; la chasse (a/d) est approximée.
+      // portée par d → font-size × d. La chasse exacte (compression a/d +
+      // métriques de la police d'origine) est mémorisée via la largeur
+      // par-glyphe réelle → fitTextWidthsToPdf la rétablit par scaleX une
+      // fois les polices chargées.
       t.removeAttribute('transform')
       t.setAttribute('x', (xs[0] * a + e).toFixed(2))
       t.setAttribute('y', (y * d + f).toFixed(2))
       t.setAttribute('font-size', (fontSize * d).toFixed(2))
+      if (xs.length === content.length && xs.length >= 2) {
+        // Largeur PDF du run jusqu'au DÉBUT du dernier glyphe (positions
+        // exactes mutool) — référence absolue, indépendante de la police.
+        t.setAttribute('data-pdf-run-width', ((xs[xs.length - 1] - xs[0]) * a).toFixed(2))
+      }
       t.textContent = content
     } else {
       // ROTATION (ruban « OFFRE » vertical…) : ancre transformée + rotate()
@@ -729,7 +781,9 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
     // Polices du PDF rendues disponibles AVANT le rendu Fabric (fidélité :
     // sans elles, « 22 » Bebas Neue retombait sur le serif par défaut).
     const fonts = await registerPdfFonts(vector.pdfFonts, vector.svg)
-    const svgFile = new File([vector.svg], `${baseNameForFile}.svg`, { type: 'image/svg+xml' })
+    // Chasse calée sur les largeurs PDF — nécessite les polices chargées.
+    const fittedSvg = fitTextWidthsToPdf(vector.svg)
+    const svgFile = new File([fittedSvg], `${baseNameForFile}.svg`, { type: 'image/svg+xml' })
     return {
       file: svgFile,
       width: vector.width,
