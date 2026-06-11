@@ -170,6 +170,99 @@ export function unwrapNeutralClipGroups(svg: string): string {
 }
 
 /**
+ * Supprime les <text> imprimés en DOUBLE passe : InDesign émet le slug/la date
+ * (et parfois des labels) deux fois exactement superposés — une passe blanche
+ * de dégagement puis la passe encrée. À l'import chaque passe deviendrait un
+ * objet → doublons dans les calques. Même contenu + même position (±0.5 pt)
+ * = doublon ; on garde le DERNIER du document (celui dessiné au-dessus).
+ */
+export function dedupeMupdfTexts(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  const last = new Map<string, Element>()
+  let removed = false
+  for (const t of Array.from(dom.documentElement.querySelectorAll('text'))) {
+    const key = [
+      (t.textContent ?? '').trim(),
+      Math.round(parseFloat(t.getAttribute('x') ?? '0')),
+      Math.round(parseFloat(t.getAttribute('y') ?? '0')),
+      t.getAttribute('transform') ?? '',
+    ].join('|')
+    const prev = last.get(key)
+    if (prev) { prev.remove(); removed = true }
+    last.set(key, t)
+  }
+  return removed ? new XMLSerializer().serializeToString(dom) : svg
+}
+
+/**
+ * Regroupe les <text> top-level appartenant au même BLOC visuel dans un <g>
+ * (→ un seul Group Fabric, déplaçable d'un tenant) : prix composé « 22 DT ,99 »,
+ * bulle « 30 % d'économie », pastille « +55g GRATUIT »… Critère : même couleur
+ * ET boîtes englobantes estimées (0.52 × fontSize par caractère) gonflées de
+ * 0.6 × fontSize qui se touchent — validé sur PDF réel : la couleur sépare les
+ * blocs adjacents (flash prix rouge vs bulle % blanche à 7.5 pt l'un de l'autre).
+ * Exclus : textes rotatés (transform) et champs de fusion {{…}} — le moteur de
+ * publipostage itère canvas.getObjects() SANS descendre dans les groupes.
+ */
+export function groupMupdfTextBlocks(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  const root = dom.documentElement
+
+  interface Run { el: Element; fs: number; fill: string; l: number; t: number; r: number; b: number }
+  const runs: Run[] = []
+  for (const el of Array.from(root.children)) {
+    if (el.tagName !== 'text') continue
+    if (el.getAttribute('transform')) continue
+    const content = el.textContent ?? ''
+    if (/\{\{|\}\}/.test(content)) continue
+    const fs = parseFloat(el.getAttribute('font-size') ?? '12')
+    const x = parseFloat(el.getAttribute('x') ?? '0')
+    const y = parseFloat(el.getAttribute('y') ?? '0')
+    if (!Number.isFinite(fs) || !Number.isFinite(x) || !Number.isFinite(y)) continue
+    runs.push({
+      el, fs,
+      fill: (el.getAttribute('fill') ?? '#000000').toLowerCase(),
+      l: x, t: y - fs, r: x + content.length * fs * 0.52, b: y + fs * 0.25,
+    })
+  }
+  if (runs.length < 2) return svg
+
+  const near = (a: Run, b: Run): boolean => {
+    if (a.fill !== b.fill) return false
+    const pad = 0.6 * Math.min(a.fs, b.fs)
+    return a.l - pad < b.r && b.l - pad < a.r && a.t - pad < b.b && b.t - pad < a.b
+  }
+  // Union-find : agrège les runs voisins de proche en proche.
+  const parent = runs.map((_, i) => i)
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])))
+  for (let i = 0; i < runs.length; i++) {
+    for (let j = i + 1; j < runs.length; j++) {
+      if (near(runs[i], runs[j])) parent[find(j)] = find(i)
+    }
+  }
+  const clusters = new Map<number, Run[]>()
+  runs.forEach((r, i) => {
+    const root_ = find(i)
+    clusters.set(root_, [...(clusters.get(root_) ?? []), r])
+  })
+
+  let grouped = false
+  for (const members of clusters.values()) {
+    if (members.length < 2) continue
+    const g = dom.createElementNS('http://www.w3.org/2000/svg', 'g')
+    const label = members.map((m) => (m.el.textContent ?? '').trim()).join(' ').slice(0, 30)
+    g.setAttribute('id', `bloc-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'texte'}`)
+    // Inséré à la place du premier membre (ordre document = z-order conservé).
+    root.insertBefore(g, members[0].el)
+    for (const m of members) g.appendChild(m.el)
+    grouped = true
+  }
+  return grouped ? new XMLSerializer().serializeToString(dom) : svg
+}
+
+/**
  * Retire les masques de luminosité MuPDF (ombres portées douces) : Fabric
  * ignore <mask> et dessine son CONTENU comme des objets pleins → voile gris
  * opaque par-dessus le visuel. On supprime les <mask>, leurs groupes de
@@ -309,6 +402,11 @@ async function convertWithMupdf(
       // <g> des marques d'impression clippé pleine page → déballé, sinon il
       // capte tous les clics du canvas (Group bbox = page entière au sommet).
       svg = unwrapNeutralClipGroups(svg)
+      // Double passe d'impression (blanc + encre superposés) → dédoublonné.
+      svg = dedupeMupdfTexts(svg)
+      // Textes d'un même bloc visuel (prix composé, bulle %…) → un <g> = un
+      // Group Fabric déplaçable d'un tenant.
+      svg = groupMupdfTextBlocks(svg)
       // Polices en sous-ensembles (WRZTFA+ArialNarrow-Bold) → familles propres.
       svg = cleanSubsetFontFamilies(svg)
 
