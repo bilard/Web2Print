@@ -107,8 +107,37 @@ partagées entre tous les projets (`users/{uid}.brandKit`), import bidirectionne
 projet ↔ kit, dédoublonnage par hex.
 - Fichiers : `src/features/brandkit/useBrandKit.ts`, `src/components/panels/BrandKitSection.tsx`.
 
+## Vague 3 — derniers chantiers validés, livrés le même jour
+
+### 14. Styles d'objets réutilisables (`96d27a1`)
+Panneau Palette → **« Styles d'objets (global) »** : capture du style de la
+sélection (fill/stroke/opacité + typo), application 1-clic multi-sélection,
+partagés entre projets (`users/{uid}.objectStyles`).
+
+### 15. Auto-matching sémantique au re-skin (`9e54f1d`)
+Bouton **« Lier automatiquement »** du panneau Données : prix (motif monétaire
+le plus gros), titre (plus grande taille restante), description (texte long)
+→ pose des `{{champs}}` + ré-applique la ligne. Heuristiques génériques testées,
+aucun dictionnaire par marque.
+
+### 16. Node « Veille prix » + template (`226d17a`)
+Compare avec l'état du run précédent (`users/{uid}/priceWatch/{watchId}`),
+n'émet `changes` (ancien_prix/nouveau_prix/variation_pct) que si variation ≥
+seuil — premier relevé silencieux. Template galerie : cron → scrape → veille →
+Telegram (1 message/variation).
+
+### 17. Digest Telegram quotidien (`e103cb3`)
+Function `telegramDailyDigest` (08:00 Europe/Paris, opt-in
+`users/{uid}.telegram.dailyDigest` via toggle dans Réglages → Telegram) :
+résumé 24 h des runs (réussis/échecs nommés) + inbox en attente ; silencieux
+s'il ne s'est rien passé.
+
+### 18. Historique de versions (`c6181cb`)
+Panneau **Versions** (RightPanelStack) : snapshots manuels du contenu du doc
+projet avec miniature (20 max, purge auto), restauration avec confirmation
+inline → ré-écriture + rechargement de l'éditeur. Règles
+`projects/{id}/versions` owner/éditeur.
+
 ## Reste en réserve (non commencé)
-- Auto-matching sémantique prix/titre au re-skin (semanticLayout).
-- Historique visuel des versions, styles d'objets réutilisables.
-- Node « veille prix », digest Telegram quotidien, tagging IA DAM,
-  déclinaisons multi-format, états vides + tours guidés étendus.
+- Tagging IA DAM, déclinaisons multi-format, états vides + tours guidés étendus,
+  ⌘K enrichi (projets récents), veille prix côté serveur (cron sans navigateur).

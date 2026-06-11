@@ -127,6 +127,12 @@ Le node **« Approbation Telegram »** met le run en pause et envoie la question
     },
     {
       type: 'text',
+      md: `### Veille prix
+
+Le node **« Veille prix »** mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port \`changes\` **que si un prix a varié** au-delà du seuil — les lignes émises portent \`ancien_prix\`, \`nouveau_prix\` et \`variation_pct\`, prêtes pour un message Telegram (« 1 message par ligne »). Le premier relevé est silencieux. Modèle prêt à l'emploi : **Veille prix → alerte Telegram** (cron quotidien).`,
+    },
+    {
+      type: 'text',
       md: `### Webhook entrant (déclenchement externe)
 
 Le bouton **Webhook** dans l'en-tête de l'éditeur génère une **URL secrète** pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple \`curl\`) :
