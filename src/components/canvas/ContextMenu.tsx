@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
 import {
   Copy, Trash2, ArrowUp, ArrowDown, ChevronsUp, ChevronsDown,
-  FlipHorizontal, FlipVertical, Lock, Group, Ungroup,
+  FlipHorizontal, FlipVertical, Lock, Group, Ungroup, Layers,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useObjectOperations } from '@/features/editor/useObjectOperations'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { repeatSelectedOnAllPages, removeSelectedFromOtherPages } from '@/features/editor/masterElements'
+import { usePagesStore } from '@/stores/pages.store'
 
 interface ContextMenuProps {
   x: number
@@ -19,6 +22,8 @@ export function ContextMenu({ x, y, onClose }: ContextMenuProps) {
   const activeObj = globalFabricCanvas?.getActiveObject()
   const isGroup = activeObj?.type === 'group'
   const isMulti = (globalFabricCanvas?.getActiveObjects().length ?? 0) > 1
+  const hasMultiplePages = usePagesStore((s) => s.pages.length > 1)
+  const isMaster = Boolean((activeObj?.data as Record<string, unknown> | undefined)?.masterId)
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -83,6 +88,31 @@ export function ContextMenu({ x, y, onClose }: ContextMenuProps) {
         <Item icon={Ungroup} label="Dégrouper" onClick={action(ops.ungroupSelected)} kbd="⌘⇧G" />
       )}
       <Item icon={Lock} label="Verrouiller" onClick={action(ops.lockSelected)} />
+      {hasMultiplePages && !isMulti && (
+        <>
+          <Divider />
+          <Item
+            icon={Layers}
+            label="Répéter sur toutes les pages"
+            onClick={action(() => {
+              const r = repeatSelectedOnAllPages()
+              if (!r) toast.warning('Sélectionne un seul objet à répéter.')
+              else if (r.applied === 0 && r.skipped > 0) toast.warning('Aucune autre page initialisée — visite-les d\'abord.')
+              else toast.success(`Élément répété sur ${r.applied} page(s)${r.skipped ? ` (${r.skipped} page(s) vide(s) ignorée(s))` : ''}.`)
+            })}
+          />
+          {isMaster && (
+            <Item
+              icon={Layers}
+              label="Retirer des autres pages"
+              onClick={action(() => {
+                const n = removeSelectedFromOtherPages()
+                toast.success(n > 0 ? `Copies retirées de ${n} page(s).` : 'Aucune copie sur les autres pages.')
+              })}
+            />
+          )}
+        </>
+      )}
       <Divider />
       <Item icon={Trash2} label="Supprimer" onClick={action(ops.deleteSelected)} danger kbd="Del" />
     </div>
