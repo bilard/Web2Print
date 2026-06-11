@@ -6,7 +6,7 @@ const MAX_LOGS = 200
 
 export async function writeRunHistory(
   uid: string,
-  meta: { workflowId: string; name: string; trigger: 'cron' | 'manual' | 'webhook'; startedAt: number },
+  meta: { workflowId: string; name: string; trigger: 'cron' | 'manual' | 'webhook' | 'telegram'; startedAt: number },
   result: HeadlessResult,
 ): Promise<void> {
   const logs = result.logs.slice(-MAX_LOGS)

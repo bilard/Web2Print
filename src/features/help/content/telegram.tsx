@@ -64,6 +64,18 @@ export const telegramSection: HelpSection = {
     },
     {
       type: 'text',
+      md: `### Réponses sans navigateur (répondeur serveur)
+
+Plus besoin d'avoir l'app ouverte pour la plupart des demandes : un **répondeur serveur** traite vos messages dès leur arrivée —
+
+- **Questions simples** : réponse LLM immédiate (avec vos clés API).
+- **/run <nom>** : exécution serveur du workflow (scrape, enrichissement, veille prix, PIM, Telegram…), résultat résumé en retour.
+- **/flow** et les workflows avec **rendu graphique** (PDF, visuels) ou **fichier manuel** : un message d'attente vous prévient, et la demande est traitée à la prochaine ouverture de l'app (le worker navigateur prend le relais).
+
+Si l'app est ouverte en même temps, un seul des deux répond (jamais de doublon).`,
+    },
+    {
+      type: 'text',
       md: `### Digest quotidien
 
 Dans **Réglages → Connecteurs → Telegram**, activez le **digest quotidien** : chaque matin à **08:00**, le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement. **Rien n'est envoyé s'il ne s'est rien passé.**`,

@@ -24,6 +24,9 @@ export { telegramWebhook } from './telegramWebhook'
 // --- Telegram : digest quotidien (08:00 Europe/Paris, opt-in par user) ---
 export { telegramDailyDigest } from './telegram/dailyDigest'
 
+// --- Telegram : répondeur serveur (réponse sans navigateur ouvert) ---
+export { telegramResponder } from './telegram/responder'
+
 // --- Workflow cron serveur ---
 export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
 
