@@ -4,18 +4,43 @@
 // (insensible aux accents, tous les mots de la requête doivent matcher).
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun, Settings } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
+import { Moon, Sun, Settings, FileText } from 'lucide-react'
+import { db } from '@/lib/firebase/config'
+import { useAuthStore } from '@/stores/auth.store'
 import { useVisibleModules, type Section } from './modules'
 import { useThemeStore } from '@/stores/theme.store'
 
 export interface PaletteCommand {
   id: string
-  group: 'Modules' | 'Actions'
+  group: 'Projets récents' | 'Modules' | 'Actions'
   label: string
   keywords: string
   icon: React.ComponentType<{ className?: string }>
   accent?: string
   run: () => void
+}
+
+/** Projets récents (id + titre), chargés seulement quand la palette est ouverte. */
+function useRecentProjects(enabled: boolean) {
+  const uid = useAuthStore((s) => s.user?.uid)
+  return useQuery({
+    queryKey: ['palette-recent-projects', uid],
+    enabled: enabled && !!uid,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const snap = await getDocs(
+        query(
+          collection(db, 'projects'),
+          where('ownerId', '==', uid),
+          orderBy('updatedAt', 'desc'),
+          limit(8),
+        ),
+      )
+      return snap.docs.map((d) => ({ id: d.id, title: (d.data().title as string | undefined) ?? 'Sans titre' }))
+    },
+  })
 }
 
 // Synonymes de recherche par module (en plus du label) — pensés pour la frappe rapide.
@@ -35,11 +60,12 @@ const MODULE_KEYWORDS: Partial<Record<Section, string>> = {
   access: 'utilisateurs roles permissions admin rbac',
 }
 
-export function usePaletteCommands(close: () => void): PaletteCommand[] {
+export function usePaletteCommands(close: () => void, open = false): PaletteCommand[] {
   const navigate = useNavigate()
   const modules = useVisibleModules()
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
   const setThemePref = useThemeStore((s) => s.setThemePref)
+  const { data: recentProjects } = useRecentProjects(open)
 
   return useMemo(() => {
     const go = (section: Section | 'settings') => {
@@ -55,6 +81,20 @@ export function usePaletteCommands(close: () => void): PaletteCommand[] {
       accent: m.accent,
       run: () => go(m.id),
     }))
+    for (const p of recentProjects ?? []) {
+      commands.push({
+        id: `project:${p.id}`,
+        group: 'Projets récents',
+        label: p.title,
+        keywords: `${p.title} projet document ouvrir editeur`,
+        icon: FileText,
+        accent: 'text-sky-400',
+        run: () => {
+          close()
+          navigate(`/editor/${p.id}`)
+        },
+      })
+    }
     commands.push({
       id: 'action:settings',
       group: 'Actions',
@@ -75,7 +115,7 @@ export function usePaletteCommands(close: () => void): PaletteCommand[] {
       },
     })
     return commands
-  }, [modules, navigate, close, resolvedTheme, setThemePref])
+  }, [modules, navigate, close, resolvedTheme, setThemePref, recentProjects])
 }
 
 /** Minuscules + accents retirés : « Bibliothèque » matche « bibliotheque ». */

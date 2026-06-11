@@ -12,7 +12,7 @@ export function CommandPalette() {
   const [selected, setSelected] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const close = useCallback(() => setOpen(false), [])
-  const commands = usePaletteCommands(close)
+  const commands = usePaletteCommands(close, open)
 
   const accessLoading = useAccessLoading()
   const pending = useIsPending()
@@ -42,7 +42,7 @@ export function CommandPalette() {
 
   const filtered = useMemo(() => filterCommands(commands, query), [commands, query])
   const groups = useMemo(() => {
-    const order: ('Modules' | 'Actions')[] = ['Modules', 'Actions']
+    const order: ('Projets récents' | 'Modules' | 'Actions')[] = ['Projets récents', 'Modules', 'Actions']
     return order
       .map((g) => ({ name: g, items: filtered.filter((c) => c.group === g) }))
       .filter((g) => g.items.length > 0)
