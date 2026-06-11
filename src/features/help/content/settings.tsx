@@ -9,7 +9,14 @@ export const settingsSection: HelpSection = {
   blocks: [
     {
       type: 'text',
-      md: `Les **Paramètres** regroupent toute la configuration de ton compte. On les ouvre via l'**engrenage** en bas de la barre latérale, près de ton nom (pas dans le menu principal).`,
+      md: `Les **Paramètres** regroupent toute la configuration de ton compte, en **six onglets** : Profil, IA, Connecteurs, Cookies, Statistiques et Firebase. On les ouvre via l'**engrenage** en bas de la barre latérale, près de ton nom (pas dans le menu principal).`,
+    },
+    {
+      type: 'text',
+      md: `### Onglet Profil — identité et apparence
+
+- Ton **profil** (nom, e-mail du compte Google).
+- La section **Apparence** bascule le thème : **Clair**, **Sombre** (défaut) ou **Système**. Le choix est mémorisé sur ton compte et te suit d'un poste à l'autre. Le thème se bascule aussi depuis la palette **⌘K**.`,
     },
     {
       type: 'text',
@@ -57,8 +64,8 @@ Gère les **cookies de session** pour scraper des sites **B2B derrière login**.
       type: 'text',
       md: `### Onglets Statistiques & Firebase
 
-- **Statistiques** : nombre de projets, exports du mois, stockage utilisé et **coût IA estimé** (par fournisseur, en EUR).
-- **Firebase** : configuration du backend partagé — **réservé au propriétaire**.`,
+- **Statistiques** : nombre de projets, exports du mois, **stockage Firestore** (barre de progression), **coût IA estimé en EUR par fournisseur** avec les tokens entrants/sortants consommés, et le suivi des requêtes **Bright Data** (quota scraping). Bouton **Rafraîchir** pour recalculer.
+- **Firebase** : configuration du backend partagé (clés du projet Firebase) — **réservé au propriétaire**.`,
     },
     {
       type: 'text',

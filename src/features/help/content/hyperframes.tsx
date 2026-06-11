@@ -39,8 +39,10 @@ export const hyperframesSection: HelpSection = {
       type: 'text',
       md: `### Format et durée
 
-- **Ratio** : portrait (9:16), carré (1:1), paysage (16:9) ou dimensions personnalisées.
-- **Durée** : de quelques secondes à une minute (10 s par défaut).`,
+- **Ratio** : Auto, portrait (9:16), carré (1:1), paysage (16:9) ou **dimensions personnalisées** (largeur × hauteur, 240 à 4096 px, ratio affiché en direct).
+- **Durée** : 5, 10 (défaut), 15, 30 s ou **valeur libre de 3 à 60 s** — en mode brief, l'IA ajuste le nombre et la longueur des scènes pour tenir la durée cible.
+- **Instructions libres** : champ texte optionnel (ex. _« rythme énergique, transitions punchy, palette néon »_), interprété par l'IA en **palette, rythme et intensité** ; le détail du style appliqué (pace, intensity, easing, couleurs, mood) s'affiche sous le résultat.
+- **Effacer** réinitialise le formulaire ; **Stop** (bouton rouge pendant la génération) annule le rendu en cours.`,
     },
     {
       type: 'text',

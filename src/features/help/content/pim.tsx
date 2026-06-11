@@ -30,7 +30,7 @@ export const pimSection: HelpSection = {
 
 Tu peux gérer **plusieurs bases** en parallèle. Trois façons d'en créer une :
 
-- **Importer un fichier** — depuis Excel, CSV, JSON ou Google Sheets (voir *Importer Excel*).
+- **Importer un fichier** — depuis Excel ou CSV/TSV (voir *Importer Excel*).
 - **Scraper le web** — partir d'URLs produits et laisser l'IA remplir les fiches.
 - **Créer vide** — démarrer une base à la main.`,
     },
@@ -43,7 +43,7 @@ Tu peux gérer **plusieurs bases** en parallèle. Trois façons d'en créer une 
       type: 'text',
       md: `Clique sur une ligne → panneau **Enrichi par IA** à droite.
 
-**Mode AUTO** (violet) : si la ligne a un \`title\`, \`brand\` ou \`reference\`, une recherche Google + LLM trouve l'URL et extrait les infos. Risque d'hallucination — à privilégier quand tu n'as pas d'URL.
+**Mode AUTO** (violet) : si la ligne a un \`title\`, \`brand\` ou \`reference\`, une **recherche web (Jina) + LLM** trouve l'URL et extrait les infos (modèle principal : Gemini, secours : Claude). Risque d'hallucination — à privilégier quand tu n'as pas d'URL.
 
 **Mode TEMPLATE** (vert) : si l'URL est connue ET qu'un template de scraping correspond au domaine, l'extraction est **déterministe** (sélecteurs CSS), le LLM ne sert qu'à la rédaction. Précision maximale.
 

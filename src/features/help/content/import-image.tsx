@@ -5,7 +5,7 @@ export const importImageSection: HelpSection = {
   id: 'import-image',
   title: 'Importer une image',
   category: 'Import',
-  intro: 'Placer une image (PNG, JPG, SVG, WebP) sur le canvas d\'un nouveau projet.',
+  intro: 'Placer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d\'un nouveau projet.',
   blocks: [
     {
       type: 'text',

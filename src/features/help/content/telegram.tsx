@@ -80,7 +80,7 @@ Si l'app est ouverte en même temps, un seul des deux répond (jamais de doublon
       type: 'text',
       md: `### Digest quotidien
 
-Dans **Réglages → Connecteurs → Telegram**, activez le **digest quotidien** : chaque matin à **08:00**, le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement. **Rien n'est envoyé s'il ne s'est rien passé.**`,
+Dans **Réglages → Connecteurs → Telegram**, activez le **digest quotidien** : chaque matin à **08:00** (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement. **Rien n'est envoyé s'il ne s'est rien passé.**`,
     },
     {
       type: 'text',

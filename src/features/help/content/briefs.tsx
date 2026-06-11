@@ -22,14 +22,17 @@ Exemples de briefs :
 
 IBS-Studio s'appuie par défaut sur :
 
-- **Claude Opus** (Anthropic) — synthèse rédactionnelle, traduction, restructuration
-- **Gemini** (Google) — fallback + génération d'images
+- **Claude Opus** (Anthropic) — questions dynamiques, composition du panier et structure du deck
+- **Gemini** (Google) — prompts d'images, mots-clés catalogue, génération d'images (Claude en secours)
+- **Enrichissement produit** (PIM/scraping) — Gemini en principal, Claude en secours
 
 Le modèle exact de chaque fournisseur se choisit dans _Réglages → IA_ ; le bouton **« Mettre à jour tous les LLM »** réaligne la sélection sur les dernières versions. Les clés API sont configurées dans les paramètres de l'app. Aucun envoi automatique : chaque appel est explicite (clic utilisateur).`,
     },
     {
       type: 'text',
       md: `### Où utiliser les briefs ?
+
+**Dans les Taxonomies** : l'onglet **Briefs** de la page Taxonomies est le panneau dédié — décris ton besoin, l'IA pose des **questions dynamiques**, compose un **panier de produits** depuis le catalogue et structure un **deck** (avec prompts d'images).
 
 **Dans le PIM** : à la création d'une ligne ou pour réécrire un champ. Le panneau d'enrichissement IA propose une zone prompt par champ.
 

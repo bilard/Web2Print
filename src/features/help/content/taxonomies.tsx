@@ -68,6 +68,12 @@ Cette auto-construction est faite via \`buildTaxonomyFromLevels()\` quand l'extr
     },
     {
       type: 'text',
+      md: `### Onglet Briefs
+
+La page Taxonomies héberge aussi l'onglet **Briefs** : décris un besoin en langage naturel, l'IA pose des questions, compose un panier de produits du catalogue et structure un deck. Détail dans la section **Briefs & génération IA**.`,
+    },
+    {
+      type: 'text',
       md: `### Cas d'usage
 
 - **Catalogue multi-marques** : taxonomie principale par typologie produit (Outillage / Jardin / Électroménager)

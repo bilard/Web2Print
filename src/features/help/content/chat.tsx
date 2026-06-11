@@ -26,15 +26,15 @@ export const chatSection: HelpSection = {
       items: [
         {
           title: 'Conversation multitour',
-          md: 'Le chat garde le **fil de la conversation** pendant la session. ⚠️ L\'historique n\'est **pas conservé** : rafraîchir la page démarre une nouvelle conversation. Le bouton *Nouvelle conversation* remet à zéro.',
+          md: 'Le chat garde le **fil de la conversation** pendant la session (les **30 derniers messages** sont transmis au modèle — au-delà, le début du fil sort du contexte). ⚠️ L\'historique n\'est **pas conservé** : rafraîchir la page démarre une nouvelle conversation. Le bouton *Nouvelle conversation* remet à zéro.',
         },
         {
           title: 'Pièces jointes',
-          md: 'Joins des **images** (PNG, JPEG, WebP, GIF) pour les faire analyser, ou des **fichiers texte** (TXT, MD, CSV, JSON, code…) dont le contenu est lu. Tu peux aussi capturer une **portion d\'écran** directement.',
+          md: 'Joins des **images** (PNG, JPEG, WebP, GIF) pour les faire analyser — analyse possible avec les modèles **multimodaux** (Claude, Gemini, OpenAI) ; les autres fournisseurs ignorent les images. Ou des **fichiers texte** (TXT, MD, CSV, JSON, code…) dont le contenu est lu (tronqué au-delà de ~50 000 caractères). Tu peux aussi **capturer l\'écran** : le navigateur te laisse choisir la fenêtre ou l\'onglet à capturer.',
         },
         {
           title: 'Génération d\'images',
-          md: 'Bascule en mode **Image** pour décrire un visuel à générer (moteur Image IA). Joins des images de référence pour les éditer. Le résultat se **télécharge** ou se **sauvegarde dans le DAM**.',
+          md: 'Choisis la catégorie **Image** : le champ de saisie passe en mode génération (moteur Image IA). Joins des images de référence pour les éditer. Sous chaque image générée : **Télécharger** ou **Sauvegarder dans le DAM** (elle rejoint « Mes images »).',
         },
         {
           title: 'Saisie vocale',
@@ -42,7 +42,7 @@ export const chatSection: HelpSection = {
         },
         {
           title: 'Bibliothèque de prompts',
-          md: 'Des **catégories** (Écrire, Apprendre, Code, Idées, Image…) proposent des prompts prêts à l\'emploi. Crée, modifie et mets en favori tes propres prompts pour les réutiliser.',
+          md: 'Des **catégories** (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l\'emploi. Crée, modifie et mets en **favori** (★) tes propres prompts — les favoris et les plus utilisés remontent en tête de liste.',
         },
       ],
     },
@@ -50,7 +50,7 @@ export const chatSection: HelpSection = {
       type: 'text',
       md: `### Choix du modèle
 
-Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, le suivant prend le relais automatiquement. Chaque réponse affiche **par quel modèle** elle a été produite. L'ordre de la cascade et le modèle de chaque fournisseur se règlent dans les **Paramètres → IA**.`,
+Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, le suivant prend le relais automatiquement. Chaque réponse affiche **par quel modèle** elle a été produite — et si des fournisseurs ont échoué avant, un badge ambre **« Échec du provider »** se déplie pour voir le détail des tentatives. L'ordre de la cascade et le modèle de chaque fournisseur se règlent dans les **Paramètres → IA**.`,
     },
     {
       type: 'menu-link',

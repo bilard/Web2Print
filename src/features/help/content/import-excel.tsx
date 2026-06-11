@@ -5,7 +5,7 @@ export const importExcelSection: HelpSection = {
   id: 'import-excel',
   title: 'Importer Excel',
   category: 'Import',
-  intro: 'Alimenter le PIM depuis un fichier Excel, CSV, JSON ou Google Sheets.',
+  intro: 'Alimenter le PIM depuis un fichier Excel, CSV/TSV ou Google Sheets.',
   blocks: [
     {
       type: 'text',
@@ -18,11 +18,10 @@ export const importExcelSection: HelpSection = {
 | Format | Usage |
 |---|---|
 | **.xlsx / .xls** | Catalogue Excel classique, multi-feuilles supporté |
-| **.csv** | Export ERP, détection auto des types de colonnes |
-| **.json** | \`{ sheets: [{ columns, rows }] }\` — pour intégration custom |
-| **Google Sheets** | Via OAuth Google, sync à la demande |
+| **.csv / .tsv** | Export ERP (séparateur virgule ou tabulation), détection auto des types de colonnes |
+| **Google Sheets** | Via OAuth Google — disponible dans le panneau **Publipostage** de l'éditeur et via les nodes Workflow (pas dans cette modale d'import) |
 
-L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, formule, dictionnaire.`,
+L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, **formule** (stockée puis évaluée au moment de la fusion) et **dictionnaire** (colonne à valeurs répétitives → liste de choix).`,
     },
     {
       type: 'text',

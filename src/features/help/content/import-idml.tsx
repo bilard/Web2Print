@@ -28,8 +28,10 @@ Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, image
 
 1. Tableau de bord → **Importer**
 2. Sélectionne le \`.idml\`
-3. Patiente : le parser extrait formes, textes, images, fonts, gradients, ombres et transparence
+3. Patiente : le parser extrait formes, textes, images, fonts, ombres et transparence — **toutes les pages** du document (chaque planche devient une page IBS-Studio)
 4. Le projet s'ouvre dans l'éditeur
+
+Sont aussi reconnus : les **gabarits (masters)** — leurs objets apparaissent en fond de chaque page —, les **cadres de texte non rectangulaires** (ovale, tracé personnalisé), la **cascade de styles** InDesign (styles de paragraphe/caractère + surcharges locales, styles imbriqués et GREP) et les liens graphiques **EPS / PDF / WMF / pages importées** en plus des images bitmap.
 
 L'éditeur reconstitue la maquette à l'identique sur un canvas Fabric.js. Tu peux ensuite ajouter des placeholders (\`{{title}}\`, \`{{price}}\`…) pour le data-merge.`,
     },
@@ -47,9 +49,8 @@ L'éditeur reconstitue la maquette à l'identique sur un canvas Fabric.js. Tu pe
       type: 'text',
       md: `### Limites connues
 
-- **Masters InDesign** (pasteboard global) non supportés → utilise des artboards classiques
 - **Fonts custom** : si non installées sur la machine → fallback Arial. Pour une fidélité parfaite, charge tes fonts dans \`public/fonts/\`
-- **Gradients radiaux/coniques** : simplifiés en linéaires
+- **Dégradés** : non importés — les objets dégradés reviennent en couleur unie (à recréer dans l'éditeur si besoin)
 - **Effets avancés** (modes de fusion exotiques) : peuvent être approximés
 
 Pour les cas complexes, garde InDesign comme outil de finition : exporte un IDML depuis IBS-Studio après merge, puis ouvre dans InDesign pour ajustement.`,

@@ -18,7 +18,7 @@ export const editorSection: HelpSection = {
   blocks: [
     {
       type: 'text',
-      md: `L'éditeur se compose d'un **header** (titre, sauvegarde, export), d'une **barre d'outils** à gauche, du **canvas** au centre, des **panneaux** à droite (calques, palette, données) et d'une **barre inférieure** (zoom, taille page, grille, snap).`,
+      md: `L'éditeur se compose d'un **header** (titre, sauvegarde, export), d'une **barre d'outils** à gauche, du **canvas** au centre, des **panneaux** à droite (Propriétés, Calques, Palette, Images, Assets, Données, Page, Impression, Versions, Animation 3D) et d'une **barre inférieure** (zoom, taille page, grille, snap).`,
     },
     { type: 'text', md: '### Header' },
     { type: 'mockup', Component: EditorHeaderMock },
@@ -92,6 +92,22 @@ export const editorSection: HelpSection = {
       label: 'Image / DAM',
       icon: ImageIcon,
     },
+    { type: 'text', md: '### Propriétés des objets' },
+    {
+      type: 'text',
+      md: `Le panneau **Propriétés** (à droite) s'adapte à la sélection :
+
+- **Position / taille / rotation** : valeurs X, Y, L, H et angle éditables au chiffre près.
+- **Remplissage** : couleur unie, **dégradé** ou **image** (choisie depuis le DAM : Stock, Mes images, Favoris, Collections, Récents ou génération IA).
+- **Contour, opacité, ombre portée** et **coins arrondis** (rectangles).
+- **Modes de fusion** : 14 modes (Multiplier, Écran, Superposition, Lumière douce/crue, Différence, Teinte, Saturation, Couleur, Luminosité…).
+- **Miroir** horizontal / vertical et **verrou** (cadenas — l'objet ne peut plus être sélectionné ni déplacé).
+- **Cadrage image** : pour une image (ou une forme remplie d'image), recadre la zone visible et zoome dans le cadre sans déformer.
+- **Texte** : police (les polices du projet sont chargées), taille, gras/italique/souligné, alignement, **interligne**, **espacement des caractères**, couleur — et des **styles par caractère** en édition (sélectionne une portion du texte avant d'appliquer). Le bouton **Ajuster au contenu** recale la largeur du bloc sur le texte.
+- **Alignement multi-objets** : six boutons (gauche, centre H, droite, haut, centre V, bas — par rapport à la page) + **distribution** horizontale/verticale pour espacer uniformément 3 objets ou plus.
+
+Pendant les déplacements, des **guides magnétiques** (smart guides) apparaissent : aimantation aux bords/centres de la page et aux autres objets.`,
+    },
     { type: 'text', md: '### Calques' },
     { type: 'mockup', Component: LayersPanelMock },
     {
@@ -151,6 +167,41 @@ export const editorSection: HelpSection = {
       label: 'Snap',
       icon: Magnet,
     },
+    { type: 'text', md: '### Les autres panneaux de droite' },
+    {
+      type: 'accordion',
+      items: [
+        {
+          title: 'Images',
+          md: 'Insertion d\'images sans quitter l\'éditeur : onglets **Galerie**, **Upload**, **IA** (génération depuis un prompt, 5 ratios, image-to-image si un objet est sélectionné), **Stock**, **Mes images**, **Favoris**, **Collections**, **Récents** — les mêmes sources que le DAM.',
+        },
+        {
+          title: 'Assets',
+          md: 'Les **images et polices du projet** (onglets avec compteurs). Glisse une image sur le canvas, ou utilise les polices importées (IDML) dans tes textes.',
+        },
+        {
+          title: 'Page',
+          md: 'Format de page : **presets** (A4/A3/A5, Full HD, 4K, 16:9, post & story Instagram, couverture Facebook) ou dimensions personnalisées en mm. **Fond de page** : couleur unie, dégradé ou image (upload ou glisser-déposer). C\'est aussi ici que se gèrent les pages multiples.',
+        },
+        {
+          title: 'Impression',
+          md: 'Tout le pré-presse : **DPI**, **fond perdu** (bleed), **traits de coupe** (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), **hirondelles de repérage** (registration marks), **zone de sécurité** (marge, pointillés paramétrables) et la section **Preflight** (voir plus bas).',
+        },
+        {
+          title: 'Animation 3D',
+          md: 'Applique des **animations 3D** à un objet (flip 3D, relief, particules…) via des presets, avec lecture/arrêt et **enregistrement vidéo** (export MP4/WebM) du rendu animé.',
+        },
+        {
+          title: 'Palette · Données · Versions',
+          md: 'Détaillés dans leurs sections dédiées plus bas (kit de marque & styles d\'objets, re-skin PIM / publipostage, snapshots).',
+        },
+      ],
+    },
+    { type: 'text', md: '### Menu contextuel (clic droit)' },
+    {
+      type: 'text',
+      md: `Le **clic droit** sur un objet ouvre un menu rapide : dupliquer, ordre d'empilement, grouper/dégrouper, **miroir H/V**, verrouiller, supprimer — et sur un document multi-pages, **« Répéter sur toutes les pages »** / **« Retirer des autres pages »** (éléments maîtres, voir plus bas).`,
+    },
     { type: 'text', md: '### Barre contextuelle & repères de manipulation' },
     {
       type: 'text',
@@ -176,7 +227,9 @@ Cliquer un problème **sélectionne l'objet** concerné sur le canvas.`,
 
 Sur un flyer décomposé, la section **« Fond IA (Nano Banana) »** du même panneau **régénère le fond verrouillé** à partir d'un prompt (le fond actuel sert de référence) — vos textes et images liés restent éditables au-dessus. Nécessite une clé Gemini.
 
-Le bouton **« Lier automatiquement »** détecte le **prix** (motif monétaire le plus gros), le **titre** (plus grande taille restante) et la **description** (texte long) puis pose les \`{{champs}}\` correspondants en un clic.`,
+Le bouton **« Lier automatiquement »** détecte le **prix** (motif monétaire le plus gros), le **titre** (plus grande taille restante) et la **description** (texte long) puis pose les \`{{champs}}\` correspondants en un clic.
+
+Bon à savoir, côté publipostage : les liaisons acceptent des **formules** (syntaxe \`[colonne]\` combinable, ex. \`[prix] € TTC\`), les **flèches ◀ ▶** parcourent les lignes de la source (le canvas se met à jour), le bouton **rafraîchir** recharge la source si elle a changé, et un badge **IDML** signale qu'une source IDML est branchée (export multi-produits).`,
     },
     { type: 'text', md: '### Éléments maîtres & kit de marque' },
     {
@@ -201,7 +254,24 @@ Le bouton **« Lier automatiquement »** détecte le **prix** (motif monétaire 
     { type: 'shortcut', keys: ['T'], label: 'Outil Texte' },
     { type: 'shortcut', keys: ['R'], label: 'Outil Rectangle' },
     { type: 'shortcut', keys: ['E'], label: 'Outil Ellipse' },
+    { type: 'shortcut', keys: ['L'], label: 'Outil Ligne' },
+    { type: 'shortcut', keys: ['I'], label: 'Outil Image / DAM' },
     { type: 'shortcut', keys: ['Espace', '⇧ Glisser'], label: 'Pan du canvas' },
     { type: 'shortcut', keys: ['⌘', '0'], label: 'Zoom 100 %' },
+    { type: 'shortcut', keys: ['⌘', 'S'], label: 'Sauvegarder (commit manuel)' },
+    { type: 'shortcut', keys: ['⌘', 'Z'], label: 'Annuler' },
+    { type: 'shortcut', keys: ['⌘', 'Y'], label: 'Rétablir' },
+    { type: 'shortcut', keys: ['⌘', 'A'], label: 'Tout sélectionner' },
+    { type: 'shortcut', keys: ['⌘', 'D'], label: 'Dupliquer la sélection' },
+    { type: 'shortcut', keys: ['⌘', 'G'], label: 'Grouper' },
+    { type: 'shortcut', keys: ['⌘', '⇧', 'G'], label: 'Dégrouper' },
+    { type: 'shortcut', keys: ['⌘', ']'], label: 'Avancer d\'un plan' },
+    { type: 'shortcut', keys: ['⌘', '['], label: 'Reculer d\'un plan' },
+    { type: 'shortcut', keys: ['⌘', '⇧', ']'], label: 'Premier plan' },
+    { type: 'shortcut', keys: ['⌘', '⇧', '['], label: 'Arrière-plan' },
+    { type: 'shortcut', keys: ['←↑→↓'], label: 'Déplacer de 1 px (⇧ : 10 px)' },
+    { type: 'shortcut', keys: ['Suppr'], label: 'Supprimer la sélection' },
+    { type: 'shortcut', keys: ['Échap'], label: 'Désélectionner' },
+    { type: 'shortcut', keys: ['⌘', '↵'], label: 'Ajouter une page' },
   ],
 }

@@ -15,10 +15,11 @@ export const importPdfToSvgSection: HelpSection = {
       type: 'text',
       md: `### Comment ça marche
 
-1. La **page 1** du PDF est **rasterisée** et verrouillée en fond.
-2. La **même décomposition** que _Image → SVG éditable_ s'applique : les **textes détectés** deviennent des calques éditables (overlays).
+1. Si le PDF contient un **calque texte natif** exploitable, la conversion vectorielle est tentée d'abord : les textes arrivent **exacts** (pas d'OCR).
+2. Sinon, la **page 1** est **rasterisée** et verrouillée en fond, puis la **même décomposition** que _Image → SVG éditable_ s'applique : les **textes détectés** deviennent des calques éditables (overlays).
+3. Les images **CMYK** embarquées sont automatiquement ré-encodées en RGB (pas de couleurs inversées).
 
-Pour repartir d'un **PDF existant** (BAT, ancien document) sans disposer du fichier source InDesign. Pour un import multi-pages fidèle avec fonts, préfère _Import InDesign (IDML)_.`,
+⚠️ **Seule la page 1 est traitée** — les pages suivantes sont ignorées. Pour repartir d'un **PDF existant** (BAT, ancien document) sans disposer du fichier source InDesign. Pour un import multi-pages fidèle avec fonts, préfère _Import InDesign (IDML)_.`,
     },
     {
       type: 'menu-link',

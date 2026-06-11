@@ -27,6 +27,8 @@ const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   taxonomies: 'taxonomies.view',
   briefs: ['taxonomies.briefs', 'taxonomies.view'],
   scraping: ['scrapingHub.view', 'scrapingTemplates.view'],
+  'scraping-templates': 'scrapingTemplates.view',
+  'scraping-hub': 'scrapingHub.view',
   workflow: 'workflows.view',
   hyperframes: 'hyperframes.view',
   telegram: 'telegram.view',

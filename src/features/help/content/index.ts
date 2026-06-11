@@ -17,6 +17,8 @@ import { pimSection } from './pim'
 import { taxonomiesSection } from './taxonomies'
 import { briefsSection } from './briefs'
 import { scrapingSection } from './scraping'
+import { scrapingTemplatesSection } from './scraping-templates'
+import { scrapingHubSection } from './scraping-hub'
 import { exportSection } from './export'
 import { telegramSection } from './telegram'
 import { workflowSection } from './workflow'
@@ -45,6 +47,8 @@ export const helpSections: HelpSection[] = [
   taxonomiesSection,
   briefsSection,
   scrapingSection,
+  scrapingTemplatesSection,
+  scrapingHubSection,
   exportSection,
   workflowSection,
   telegramSection,

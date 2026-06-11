@@ -105,7 +105,7 @@ Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'
       type: 'text',
       md: `### Créer un projet vierge
 
-Ouvre le panneau « Nouveau document » et choisis un format (A4, A3, personnalisé). Le projet s'ouvre directement dans l'éditeur.`,
+Ouvre le panneau « Nouveau document » et choisis un format (A4, A3, formats écran/réseaux sociaux, ou dimensions personnalisées). Le projet s'ouvre directement dans l'éditeur — le format et le **fond de page** (couleur, dégradé ou image) restent modifiables à tout moment dans le panneau **Page**.`,
     },
     {
       type: 'menu-link',
@@ -117,7 +117,12 @@ Ouvre le panneau « Nouveau document » et choisis un format (A4, A3, personnali
       type: 'text',
       md: `### Retrouver un projet existant
 
-La bibliothèque liste tous tes projets. Clic simple pour ouvrir, clic droit pour dupliquer ou supprimer. Les taxonomies permettent de classer les projets par thématique.`,
+La **Bibliothèque** liste tous tes projets :
+
+- **Ouvrir** : clic simple sur la carte. **Dupliquer / supprimer** : boutons de la carte (ou clic droit).
+- **Vignettes ou Liste** : deux boutons en haut à droite basculent l'affichage.
+- **Filtrer par taxonomie** : le volet **Taxonomies** à gauche restreint la liste aux projets classés sous le nœud choisi.
+- **Sélection multiple** : coche plusieurs projets → barre d'actions (**Tout sélectionner**, **Effacer**, **Supprimer (N)**) pour faire le ménage en une opération.`,
     },
     {
       type: 'text',

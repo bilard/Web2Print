@@ -115,7 +115,7 @@ Un clic ouvre la **visionneuse** (lightbox). Outils d'édition non destructive :
       type: 'accordion',
       items: [
         { title: 'Zoom · Rotation · Miroir', md: '**Zoom** avant/arrière + ajustement, **Rotation** par 90°, **Miroir** horizontal et vertical.' },
-        { title: 'Recadrage (crop)', md: 'Masque interactif à **8 poignées**, grille des **tiers**, **contraintes de ratio** (1:1, 4:3, 16:9…).' },
+        { title: 'Recadrage (crop)', md: 'Masque interactif à **8 poignées**, grille des **tiers**, **contraintes de ratio** (libre, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3).' },
         { title: 'Colorimétrie', md: 'Sliders **Luminosité**, **Contraste**, **Saturation**, **Teinte** (rendu via filtre CSS, non destructif).' },
         { title: 'Export', md: 'Formats **PNG / JPEG / WebP**, avec réglage de **qualité** (JPEG/WebP) et d\'**échelle** (% de la résolution native).' },
         { title: 'Réinitialiser', md: 'Annule **toutes** les retouches et revient à l\'image d\'origine.' },
@@ -150,8 +150,8 @@ Dans **Mes images**, le champ **« Filtrer par tags ou description »** permet u
       md: `### Organiser
 
 - **Favoris** (♥) : accès rapide.
-- **Collections** : crée des dossiers, ajoute/retire des images, vue vignettes ou liste.
-- **Projets** : retrouve les images **et les polices** d'un projet.
+- **Collections** : crée des dossiers, ajoute/retire des images, vue **vignettes ou liste**.
+- **Projets** : retrouve les **images** et les **polices** d'un projet (deux sous-onglets avec compteurs), vue vignettes ou liste, bouton **Rafraîchir** pour recharger les assets.
 - **Supprimer** une image sauvegardée la retire **en cascade** (variantes, collections, favoris).`,
     },
     {
@@ -159,8 +159,9 @@ Dans **Mes images**, le champ **« Filtrer par tags ou description »** permet u
       md: `### Utiliser une image dans l'éditeur
 
 - **Clic** : insère l'image au centre du canvas (mise à l'échelle automatique).
-- **Glisser-déposer** : depuis la grille vers le canvas.
-- **Remplacer** : en mode sélection d'objet, double-clic remplace l'objet visé (l'image épouse son cadre, l'historique des sources est conservé).`,
+- **Glisser-déposer** : depuis la grille vers le canvas (équivaut à l'insertion).
+- **Remplacer** : en mode sélection d'objet, **double-clic** remplace le bloc actif — l'image épouse son cadre, et l'**original + les remplacements précédents restent mémorisés** sur l'objet (rien n'est perdu).
+- **Remplissage** : depuis le panneau Propriétés de l'éditeur, une image du DAM peut aussi servir de **fond** à une forme (remplissage image).`,
     },
     {
       type: 'text',

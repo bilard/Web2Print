@@ -17,8 +17,10 @@ export const importPptxSection: HelpSection = {
 
 1. Tableau de bord → **Importer**
 2. Sélectionne le \`.pptx\`
-3. Le parser extrait les slides, textes, images, formes
-4. Chaque slide devient une page éditable dans IBS-Studio
+3. Le parser extrait textes, images et formes — y compris le **thème** (les couleurs de thème sont résolues) et les **transparences** de remplissage
+4. La slide devient une page éditable dans IBS-Studio
+
+⚠️ **Seule la première slide est importée.** Pour une présentation multi-slides, découpe le fichier en plusieurs \`.pptx\` (un par slide à récupérer) ou passe par le chemin IDML.
 
 Une fois importé, tu peux modifier le contenu, ajouter des placeholders pour le data-merge, et exporter dans n'importe quel format.`,
     },
@@ -40,8 +42,9 @@ Une fois importé, tu peux modifier le contenu, ajouter des placeholders pour le
       type: 'text',
       md: `### Limites
 
+- **Multi-slides** : seule la **slide 1** est lue — les suivantes sont ignorées
 - **Animations PowerPoint** : non supportées (IBS-Studio exporte du print/statique)
-- **SmartArt complexes** : peuvent être approximés en formes simples
+- **SmartArt** : ignorés à l'import (non convertis en formes)
 - **Round-trip PPTX → Fabric → PPTX** : fonctionnel sur des slides simples, à valider sur cas complexes (plusieurs masters, mises en page custom)
 
 Pour un export 100% fidèle vers PowerPoint, garde l'export PPTX pour des cas simples ; pour l'impression haut de gamme, privilégie le path PDF ou IDML.`,
