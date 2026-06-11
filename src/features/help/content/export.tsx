@@ -29,6 +29,7 @@ export const exportSection: HelpSection = {
 | **SVG** | Web, intégration site, réseaux sociaux statiques |
 | **PNG** | Vignettes, miniatures, social media |
 | **HTML** | Dossier web complet (ZIP : \`index.html\`, \`style.css\`, \`assets/\`) — textes sélectionnables, formes en CSS |
+| **Pack social** | ZIP de déclinaisons prêtes à poster : post carré 1080×1080, story 1080×1920, paysage 1920×1080, bannière 1500×500 (design centré, fond = couleur de page) |
 
 Tous les exports sont fidèles à la maquette en cours dans l'éditeur. Le data-merge actif influence le contenu mais pas le format.`,
     },

@@ -156,6 +156,19 @@ seulement), clic = ouvre l'éditeur.
 images du Chat) : tags/couleur/sujet via `damAnalyzeImage`. Filtre texte en
 langage naturel dans « Mes images » (tags + description + sujet, accents ignorés).
 
-## Reste en réserve (non commencé)
-- Déclinaisons multi-format (re-layout adaptatif — gros chantier à designer),
-  états vides + tours guidés étendus.
+### 22. Pack social — déclinaisons multi-format v1 (`d7fb550`)
+Format **« Pack social »** dans la fenêtre Exporter : ZIP de 4 déclinaisons
+(carré 1080², story 1080×1920, paysage 1920×1080, bannière 1500×500), design
+rendu 2× puis posé en contain centré, fond = couleur de page. Design doc v2
+(re-layout adaptatif + fonds NB2 au ratio) :
+`docs/superpowers/specs/2026-06-11-declinaisons-multiformat-design.md`.
+
+### 23. Composant EmptyState + états vides DAM actionnables (`39741d6`)
+Convention : un écran vide propose toujours le prochain pas. « Mes images »
+vide → bouton « Créer une image par IA » ; « Projets » vide → indication.
+Composant partagé `src/components/shared/EmptyState.tsx` à généraliser.
+
+## Bilan
+**23 livraisons en une journée**, toutes déployées en production — l'intégralité
+du brainstorm initial validé par l'utilisateur est traitée. Seule la V2 des
+déclinaisons (re-layout adaptatif) reste à designer/valider.
