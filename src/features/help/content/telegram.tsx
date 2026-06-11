@@ -71,6 +71,7 @@ Plus besoin d'avoir l'app ouverte : un **répondeur serveur** traite vos message
 - **Questions** : réponse LLM immédiate, **avec recherche web automatique** (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sources citées.
 - **/flow <demande>** : le workflow est **généré par IA et exécuté côté serveur** (scrape, enrichissement, veille prix, PIM, notification), puis sauvegardé dans l'app.
 - **/run <nom>** : exécution serveur d'un workflow sauvegardé, résumé en retour.
+- **Outils Google sans navigateur** : après avoir connecté **Google (accès serveur)** dans Réglages → Connecteurs (une seule fois), \`/flow\` peut **créer des Google Sheets dans votre Drive** et **envoyer des Gmail** depuis le serveur. Ne collez JAMAIS d'identifiants dans le chat — l'autorisation se donne uniquement dans l'app.
 - Seuls les workflows avec **rendu graphique** (PDF, visuels) ou **fichier manuel** attendent l'ouverture de l'app (un message vous prévient ; le worker navigateur prend le relais).
 
 Si l'app est ouverte en même temps, un seul des deux répond (jamais de doublon).`,
