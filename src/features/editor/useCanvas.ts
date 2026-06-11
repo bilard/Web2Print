@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Canvas, Rect, Gradient, FabricImage, Group, IText, type FabricObject } from 'fabric'
+import { Canvas, Rect, Gradient, FabricImage, Group, IText, Textbox, type FabricObject } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
@@ -184,6 +184,56 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
     }
     canvas.on('object:modified', refreshGroupOf)
     canvas.on('text:changed', refreshGroupOf)
+
+    // Redimensionnement NON UNIFORME d'un Group (poignées latérales) :
+    // répartit l'étirement dans la GÉOMÉTRIE des enfants au lâcher — les
+    // Textbox re-wrappent à la nouvelle largeur, les glyphes ne sont JAMAIS
+    // déformés, les formes s'étirent comme avant. Sans ça, élargir un bloc
+    // texte étirait les lettres (scaleX résiduel du groupe). Le coin reste
+    // un agrandissement proportionnel natif (uniformScaling).
+    const reflowGroupResize = (e: { target?: FabricObject; transform?: { corner?: string } }) => {
+      const g = e.target
+      if (!(g instanceof Group)) return
+      const corner = e.transform?.corner ?? ''
+      if (!['ml', 'mr', 'mt', 'mb'].includes(corner)) return
+      const sx = g.scaleX ?? 1
+      const sy = g.scaleY ?? 1
+      if (Math.abs(sx - sy) < 0.005) return
+      const horizontal = corner === 'ml' || corner === 'mr'
+      const u = horizontal ? sy : sx
+      const fx = horizontal ? sx / sy : 1
+      const fy = horizontal ? 1 : sy / sx
+      const before = g.getBoundingRect()
+      g.set({ scaleX: u, scaleY: u })
+      for (const child of g.getObjects()) {
+        child.set({ left: (child.left ?? 0) * fx, top: (child.top ?? 0) * fy })
+        if (child instanceof Textbox) {
+          // Cadre de texte : reflow à la nouvelle largeur, glyphes intacts.
+          child.set({ width: Math.max(10, (child.width ?? 10) * fx) })
+          ;(child as Textbox & { initDimensions?: () => void }).initDimensions?.()
+        } else if (!(child instanceof IText)) {
+          // Formes : étirement géométrique (équivalent au comportement natif).
+          child.set({ scaleX: (child.scaleX ?? 1) * fx, scaleY: (child.scaleY ?? 1) * fy })
+        }
+        // IText (textes ponctuels) : repositionnés, jamais étirés.
+        child.setCoords()
+      }
+      g.triggerLayout()
+      g.setCoords()
+      // Ré-ancre le bord opposé à la poignée (comportement natif du resize).
+      const after = g.getBoundingRect()
+      const dx = corner === 'mr' ? before.left - after.left
+        : corner === 'ml' ? (before.left + before.width) - (after.left + after.width) : 0
+      const dy = corner === 'mb' ? before.top - after.top
+        : corner === 'mt' ? (before.top + before.height) - (after.top + after.height) : 0
+      if (dx || dy) {
+        g.set({ left: (g.left ?? 0) + dx, top: (g.top ?? 0) + dy })
+        g.setCoords()
+      }
+      canvas.requestRenderAll()
+      syncToStore(canvas)
+    }
+    canvas.on('object:modified', reflowGroupResize)
 
     // Add page rectangle (white area representing the document)
     const pageRect = new Rect({
