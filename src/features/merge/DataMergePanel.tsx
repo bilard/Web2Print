@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { Textbox, FabricImage } from 'fabric'
-import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft, Wand2 } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type FormulaResultType, type FormulaConfig } from '@/stores/merge.store'
 import { useDataMerge } from './useDataMerge'
 import { hasPlaceholders, evaluateFormula, formatFormulaResult, variableMatchesColumn } from './mergeEngine'
 import { syncToStore } from '@/features/editor/useAddObject'
+import { toast } from 'sonner'
 import { DataSourcePicker } from './DataSourcePicker'
 import { RegenerateBgPanel } from './RegenerateBgPanel'
+import { applyAutoMatch } from './autoMatch'
 import { SourceSwitcher } from './SourceSwitcher'
 import { VendorStatusPanel } from './VendorStatusPanel'
 import { ExportModal } from './ExportModal'
@@ -109,6 +111,31 @@ export function DataMergePanel() {
             <ChevronRight className="w-4 h-4 text-white/70" />
           </button>
         </div>
+      </div>
+
+      {/* Auto-matching sémantique : prix / titre / description détectés sur le canvas */}
+      <div className="px-3 py-2 border-b border-white/5">
+        <button
+          onClick={async () => {
+            const canvas = globalFabricCanvas
+            if (!canvas || !dataSource) return
+            const assignments = applyAutoMatch(canvas, columns)
+            if (assignments.length === 0) {
+              toast.warning('Rien à lier automatiquement (prix/titre/description non reconnus ou déjà liés).')
+              return
+            }
+            // Re-capture les templates puis ré-applique la ligne courante.
+            await connectSource(dataSource)
+            const labels = assignments
+              .map((a) => `${a.role === 'price' ? 'prix' : a.role === 'title' ? 'titre' : 'description'} → {{${a.columnKey}}}`)
+              .join(', ')
+            toast.success(`Liaison automatique : ${labels}.`)
+          }}
+          className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[11px] text-indigo-300 transition-colors"
+          title="Détecte le prix (motif monétaire), le titre (plus grande taille) et la description (texte long) puis pose les {{champs}} correspondants"
+        >
+          <Wand2 className="w-3.5 h-3.5" /> Lier automatiquement (prix · titre · description)
+        </button>
       </div>
 
       {/* Bindings actifs */}
