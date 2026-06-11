@@ -2,93 +2,40 @@
 // Connexion Google « accès serveur » (OAuth offline) : autorise UNE FOIS Drive +
 // Gmail ; le refresh token est stocké côté serveur (users/{uid}.googleServer) et
 // permet aux workflows cron/webhook/Telegram d'utiliser les outils Google sans
-// navigateur. La config du client OAuth (clientId/clientSecret, Google Cloud
-// Console) vit dans config/googleOAuth (admin-only — pattern Bright Data).
-import { useEffect, useState } from 'react'
-import { deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
-import { CloudCog, Link2, Unlink, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { db } from '@/lib/firebase/config'
-import { useAuthStore } from '@/stores/auth.store'
-import { useIsAdmin } from '@/features/access/useAccess'
-
-// Doit rester aligné avec OAUTH_REDIRECT_URI de functions/src/google/serverAuth.ts.
-const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
-const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
+// navigateur. Toute la logique vit dans useGoogleServerConnect.
+import { useState } from 'react'
+import { CloudCog, Link2, Unlink, Loader2, Eye, EyeOff, CheckCircle2, XCircle, Wifi } from 'lucide-react'
+import { OAUTH_REDIRECT_URI, useGoogleServerConnect } from './useGoogleServerConnect'
 
 export function GoogleServerConnect() {
-  const uid = useAuthStore((s) => s.user?.uid)
-  const isAdmin = useIsAdmin()
-  const [connectedAt, setConnectedAt] = useState<number | null | undefined>(undefined)
-  const [clientId, setClientId] = useState('')
-  const [clientSecret, setClientSecret] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  // État de connexion (one-shot) + clientId (admin) pour construire l'URL d'auth.
-  useEffect(() => {
-    if (!uid) return
-    let cancelled = false
-    getDoc(doc(db, 'users', uid)).then((snap) => {
-      if (cancelled) return
-      const gs = snap.data()?.googleServer as { connectedAt?: { toMillis?: () => number } } | undefined
-      setConnectedAt(gs ? gs.connectedAt?.toMillis?.() ?? 0 : null)
-    }).catch(() => setConnectedAt(null))
-    if (isAdmin) {
-      getDoc(doc(db, 'config', 'googleOAuth')).then((snap) => {
-        if (!cancelled && snap.exists()) setClientId((snap.data().clientId as string) ?? '')
-      }).catch(() => {})
-    }
-    return () => { cancelled = true }
-  }, [uid, isAdmin])
-
-  const saveOAuthClient = async () => {
-    if (!clientId.trim()) { toast.warning('Client ID requis.'); return }
-    await setDoc(doc(db, 'config', 'googleOAuth'), {
-      clientId: clientId.trim(),
-      ...(clientSecret.trim() ? { clientSecret: clientSecret.trim() } : {}),
-    }, { merge: true })
-    setClientSecret('')
-    toast.success('Client OAuth enregistré.')
-  }
-
-  const connect = async () => {
-    if (!uid) return
-    if (!clientId.trim()) {
-      toast.warning('Renseigne d’abord le client OAuth (Client ID / Secret) ci-dessous.')
-      return
-    }
-    setBusy(true)
-    try {
-      const nonce = crypto.randomUUID()
-      await setDoc(doc(db, 'googleOAuthStates', nonce), { uid, createdAt: serverTimestamp() })
-      const url = new URL('https://accounts.google.com/o/oauth2/v2/auth')
-      url.searchParams.set('client_id', clientId.trim())
-      url.searchParams.set('redirect_uri', OAUTH_REDIRECT_URI)
-      url.searchParams.set('response_type', 'code')
-      url.searchParams.set('access_type', 'offline')
-      url.searchParams.set('prompt', 'consent')
-      url.searchParams.set('scope', SCOPES)
-      url.searchParams.set('state', nonce)
-      window.open(url.toString(), '_blank', 'noopener')
-      toast.info('Valide le consentement Google dans le nouvel onglet, puis reviens ici.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const disconnect = async () => {
-    if (!uid) return
-    await updateDoc(doc(db, 'users', uid), { googleServer: deleteField() })
-    setConnectedAt(null)
-    toast.success('Accès serveur Google déconnecté.')
-  }
+  const {
+    isAdmin, connectedAt, busy, testStatus, testMessage,
+    clientId, setClientId, clientSecret, setClientSecret,
+    saveOAuthClient, connect, disconnect, test,
+  } = useGoogleServerConnect()
+  const [showSecret, setShowSecret] = useState(false)
 
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-start gap-2">
         <CloudCog className="w-4 h-4 text-emerald-400/80 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="text-[12px] text-white/80">Google — accès serveur (Drive + Gmail)</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-white/80">Google — accès serveur (Drive + Gmail)</span>
+            {testStatus === 'testing' && <Loader2 className="w-3 h-3 text-white/30 animate-spin" />}
+            {testStatus === 'ok' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
+            {testStatus === 'error' && <XCircle className="w-3 h-3 text-red-400" />}
+            {testStatus === 'empty' && <XCircle className="w-3 h-3 text-white/20" />}
+            {isAdmin && connectedAt != null && (
+              <button
+                onClick={() => void test()}
+                title="Tester la connexion serveur"
+                className="text-white/20 hover:text-emerald-400 transition-colors p-1 rounded hover:bg-white/5"
+              >
+                <Wifi className="w-3 h-3" />
+              </button>
+            )}
+          </div>
           <p className="text-[10px] text-neutral-500 leading-snug mt-0.5">
             Autorise une fois ; les workflows <strong className="text-neutral-400">cron, webhook et Telegram</strong>{' '}
             pourront créer des Google Sheets et envoyer des Gmail sans navigateur. Aucun secret ne
@@ -114,9 +61,12 @@ export function GoogleServerConnect() {
           </button>
         )}
       </div>
-      {connectedAt !== null && connectedAt !== undefined && (
-        <p className="text-[10px] text-emerald-300/70 px-6">
-          ✅ Connecté{connectedAt > 0 ? ` depuis le ${new Date(connectedAt).toLocaleDateString('fr-FR')}` : ''} — Drive + Gmail utilisables côté serveur.
+      {testStatus && testStatus !== 'testing' && testMessage && (
+        <p className={`text-[10px] px-6 ${testStatus === 'ok' ? 'text-emerald-300/70' : 'text-red-400/70'}`}>
+          {testStatus === 'ok' ? '✅ ' : ''}{testMessage}
+          {testStatus === 'ok' && connectedAt != null && connectedAt > 0
+            ? ` Connecté depuis le ${new Date(connectedAt).toLocaleDateString('fr-FR')}.`
+            : ''}
         </p>
       )}
 
@@ -134,14 +84,24 @@ export function GoogleServerConnect() {
             className="w-full bg-background border border-neutral-700 rounded-md px-2 py-1.5 text-[11px] text-white placeholder:text-neutral-600 focus:border-emerald-500 outline-none"
           />
           <div className="flex gap-1.5">
-            <input
-              type="password"
-              autoComplete="off"
-              value={clientSecret}
-              onChange={(e) => setClientSecret(e.target.value)}
-              placeholder="Client Secret (write-only)"
-              className="flex-1 bg-background border border-neutral-700 rounded-md px-2 py-1.5 text-[11px] text-white placeholder:text-neutral-600 focus:border-emerald-500 outline-none"
-            />
+            <div className="relative flex-1">
+              <input
+                type={showSecret ? 'text' : 'password'}
+                autoComplete="off"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                placeholder="Client Secret (GOCSPX-…)"
+                className="w-full bg-background border border-neutral-700 rounded-md pl-2 pr-8 py-1.5 text-[11px] text-white placeholder:text-neutral-600 focus:border-emerald-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSecret((v) => !v)}
+                title={showSecret ? 'Masquer le secret' : 'Afficher le secret'}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded text-white/30 hover:text-white/70"
+              >
+                {showSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
             <button
               onClick={() => void saveOAuthClient()}
               className="px-2.5 py-1 rounded-md bg-white/[0.06] hover:bg-white/[0.1] text-[11px] text-white/70"
