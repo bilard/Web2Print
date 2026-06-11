@@ -5,6 +5,7 @@ import type { PaletteColor, PaletteGradient } from '@/stores/palette.store'
 import type { GradientConfig } from '@/stores/editor.store'
 import { gradientToCss } from '@/components/shared/GradientPicker'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { BrandKitSection } from './BrandKitSection'
 
 function ColorSwatch({ item, onApply }: { item: PaletteColor; onApply?: (color: string) => void }) {
   const { removeColor, updateColor } = usePaletteStore()
@@ -193,6 +194,9 @@ export function PalettePanel() {
 
   return (
     <div className="p-3 flex flex-col gap-4">
+      {/* Kit de marque global (inter-projets) */}
+      <BrandKitSection onProjectPaletteChange={savePaletteToFirestore} />
+
       {/* Couleurs du projet */}
       <section data-tour="opt-palette-colors">
         <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider mb-2">
