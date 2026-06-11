@@ -20,6 +20,70 @@ const assetUrlCache = new Map<string, string>()
 /** Cache des images téléchargées (URL → dataURL) */
 const imageCache = new Map<string, string>()
 
+/**
+ * « Supprimer la ligne si vide » pour les champs SÉPARÉS d'un bloc (imports
+ * PDF) : resolveText vide bien le texte, mais le Textbox occupait toujours sa
+ * place — le trou ne se refermait pas. Cette passe masque les champs vidés
+ * par l'option et REMONTE les frères du bloc situés en dessous, comme une
+ * vraie suppression de ligne ; tout est réversible à chaque changement de
+ * ligne (positions d'origine mémorisées dans data.mergeBaseTop).
+ */
+function compactHiddenMergeFields(canvas: NonNullable<typeof globalFabricCanvas>): void {
+  const { hideLineIfEmpty } = useMergeStore.getState()
+  const groups = new Set<import('fabric').Group>()
+  for (const obj of collectObjectsDeep(canvas.getObjects())) {
+    const g = (obj as FabricObjectWithData).group
+    if (obj.data?.templateText && g) groups.add(g)
+  }
+  for (const g of groups) {
+    const children = g.getObjects() as FabricObjectWithData[]
+    // 1. Restaure l'état d'origine (positions + visibilité) du bloc.
+    for (const c of children) {
+      if (!c.data) c.data = {}
+      if (c.data.mergeBaseTop === undefined) {
+        c.data.mergeBaseTop = c.top ?? 0
+        c.data.mergeBaseHeight = (c.height ?? 0) * (c.scaleY ?? 1)
+      } else {
+        c.set({ top: c.data.mergeBaseTop as number })
+      }
+      if (c.data.mergeHidden) {
+        c.set({ visible: true })
+        delete c.data.mergeHidden
+      }
+    }
+    // 2. Masque les champs vidés par « Supprimer la ligne si vide ».
+    const hidden: FabricObjectWithData[] = []
+    for (const c of children) {
+      const tmpl = c.data?.templateText as string | undefined
+      if (!tmpl) continue
+      const keys = Array.from(tmpl.matchAll(/\{\{([^}]+)\}\}/g), (m) => m[1])
+      const text = (c as unknown as IText).text ?? ''
+      if (text.trim() === '' && keys.some((k) => hideLineIfEmpty?.[k])) {
+        c.set({ visible: false })
+        c.data!.mergeHidden = true
+        hidden.push(c)
+      }
+    }
+    // 3. Compacte : remonte les frères situés SOUS chaque champ masqué.
+    for (const h of hidden) {
+      const hTop = (h.data?.mergeBaseTop as number) ?? h.top ?? 0
+      const hHeight = (h.data?.mergeBaseHeight as number) ?? 0
+      for (const c of children) {
+        if (c === h || c.data?.mergeHidden) continue
+        if ((c.top ?? 0) > hTop) c.set({ top: (c.top ?? 0) - hHeight })
+      }
+    }
+    for (const c of children) c.setCoords()
+    g.triggerLayout()
+    g.set('dirty', true)
+  }
+}
+
+type FabricObjectWithData = import('fabric').FabricObject & {
+  data?: Record<string, unknown>
+  group?: import('fabric').Group
+}
+
 export function useDataMerge() {
   const projectId = useEditorStore((s) => s.projectId)
   const {
@@ -138,6 +202,9 @@ export function useDataMerge() {
     if (canvas) {
       for (const obj of collectObjectsDeep(canvas.getObjects())) {
         if (obj instanceof IText && obj.data?.templateText) {
+          // Restaure l'état du bloc (champ masqué/compacté par « Supprimer la ligne si vide »)
+          if (obj.data.mergeHidden) { obj.set({ visible: true }); delete obj.data.mergeHidden }
+          if (obj.data.mergeBaseTop !== undefined) obj.set({ top: obj.data.mergeBaseTop as number })
           obj.set('text', obj.data.templateText as string)
           // Restaurer les styles originaux du template
           if (obj.data.templateStyles) {
@@ -286,6 +353,9 @@ export function useDataMerge() {
       }
       refreshAncestorGroups(obj)
     }
+
+    // Champs vidés par « Supprimer la ligne si vide » : masque + compacte le bloc.
+    compactHiddenMergeFields(canvas)
 
     canvas.requestRenderAll()
   }, [loadImage])
