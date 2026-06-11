@@ -8,6 +8,7 @@ import { useDataMerge } from './useDataMerge'
 import { hasPlaceholders, evaluateFormula, formatFormulaResult, variableMatchesColumn } from './mergeEngine'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { DataSourcePicker } from './DataSourcePicker'
+import { RegenerateBgPanel } from './RegenerateBgPanel'
 import { SourceSwitcher } from './SourceSwitcher'
 import { VendorStatusPanel } from './VendorStatusPanel'
 import { ExportModal } from './ExportModal'
@@ -54,7 +55,12 @@ export function DataMergePanel() {
   }
 
   if (!isConnected) {
-    return <DataSourcePicker />
+    return (
+      <>
+        <DataSourcePicker />
+        <RegenerateBgPanel />
+      </>
+    )
   }
 
   return (
@@ -133,6 +139,8 @@ export function DataMergePanel() {
           <Unlink className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      <RegenerateBgPanel />
 
       <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
     </div>
