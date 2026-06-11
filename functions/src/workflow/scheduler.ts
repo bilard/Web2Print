@@ -29,7 +29,7 @@ async function loadWorkflow(uid: string, workflowId: string): Promise<ServerWork
   }
 }
 
-async function runOne(uid: string, workflowId: string, trigger: 'cron' | 'manual') {
+export async function runOne(uid: string, workflowId: string, trigger: 'cron' | 'manual' | 'webhook') {
   const wf = await loadWorkflow(uid, workflowId)
   if (!wf) throw new Error('Workflow introuvable.')
   const startedAt = Date.now()

@@ -23,3 +23,6 @@ export { telegramWebhook } from './telegramWebhook'
 
 // --- Workflow cron serveur ---
 export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
+
+// --- Workflow webhook entrant (déclenchement externe) ---
+export { workflowWebhook } from './workflow/webhookTrigger'

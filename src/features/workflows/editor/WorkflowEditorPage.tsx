@@ -17,6 +17,7 @@ import { NodeConfigPanel } from './NodeConfigPanel'
 import { RunPanel } from './RunPanel'
 import { DataPreviewPanel } from './DataPreviewPanel'
 import { CronStatusPanel } from './CronStatusPanel'
+import { WebhookPanel } from './WebhookPanel'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 import { useCan } from '@/features/access/useAccess'
 
@@ -134,6 +135,7 @@ export function WorkflowEditorPage() {
           >
             <Sparkles className="w-4 h-4 text-indigo-400" /> Générer (IA)
           </button>
+          <WebhookPanel workflowId={wf.id} />
           <CronStatusPanel workflowId={wf.id} />
           {isRunning ? (
             <>

@@ -325,6 +325,18 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
     }
 
+    // ── Webhooks entrants de workflow ─────────────────────────────────────────
+    // Un doc par workflow : { uid, secret, enabled }. Créé/géré par le propriétaire
+    // depuis l'éditeur ; la Function workflowWebhook (admin) le lit pour valider
+    // le secret et met à jour lastTriggeredAt/lastStatus.
+    match /workflowWebhooks/{workflowId} {
+      allow read:   if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid
+                                         && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
     // ── Approbations de workflow (node « Approbation Telegram ») ─────────────
     // Doc d'attente créé par le run client ; la DÉCISION (approved/rejected) est
     // écrite par la Function webhook (admin, contourne ces règles). Le client ne
