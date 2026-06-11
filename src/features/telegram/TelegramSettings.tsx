@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { CheckCircle2, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useTelegramStore } from '@/stores/telegram.store'
 import { getTelegramBotInfo } from '@/lib/telegramApi'
+import { DigestToggle } from './DigestToggle'
 
 const inputCls =
   'w-full bg-background border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
@@ -97,6 +98,8 @@ export function TelegramSettings() {
           className={inputCls}
         />
       </div>
+
+      <DigestToggle />
 
       <p className="text-[10px] text-neutral-600 leading-snug">
         Config Telegram globale : sert au <strong className="text-neutral-400">worker</strong> qui

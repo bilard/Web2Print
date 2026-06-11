@@ -21,6 +21,9 @@ export { imageProxy } from './imageProxy'
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
 
+// --- Telegram : digest quotidien (08:00 Europe/Paris, opt-in par user) ---
+export { telegramDailyDigest } from './telegram/dailyDigest'
+
 // --- Workflow cron serveur ---
 export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
 
