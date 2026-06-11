@@ -83,6 +83,17 @@ service cloud.firestore {
                                   hasEditorRole(projectId));
       }
 
+      // ── Versions (historique du document) ────────────────────────────────
+      // Snapshots de contenu créés/restaurés depuis le panneau Versions.
+      match /versions/{versionId} {
+        allow read:  if isAuthenticated() &&
+                        (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
+                         isCollaborator(projectId));
+        allow create, delete: if isAuthenticated() &&
+                                 (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
+                                  hasEditorRole(projectId));
+      }
+
       // ── Collaborators ──────────────────────────────────────────────────────
 
       match /collaborators/{collaboratorUid} {

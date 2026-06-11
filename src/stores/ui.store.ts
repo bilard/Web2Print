@@ -191,6 +191,7 @@ export const useUIStore = create<UIState>((set) => ({
     { id: 'palette',      collapsed: true },
     { id: 'assets',       collapsed: true },
     { id: 'animation3d',  collapsed: true },
+    { id: 'versions',     collapsed: true },
   ],
   setRightPanels: (panels) => set({ rightPanels: panels }),
   toggleRightPanel: (id) =>

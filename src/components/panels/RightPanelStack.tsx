@@ -6,7 +6,7 @@ import {
 import {
   SortableContext, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
-import { Layers, ImagePlus, Palette, FolderOpen, Database, FileText, Printer, Aperture } from 'lucide-react'
+import { Layers, ImagePlus, Palette, FolderOpen, Database, FileText, Printer, Aperture, History } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { PropertiesPanel } from '@/components/panels/PropertiesPanel'
 import { CollapsiblePanel } from '@/components/panels/CollapsiblePanel'
@@ -18,6 +18,7 @@ import { PagePanel } from '@/components/panels/PagePanel'
 import { PrintPanel } from '@/components/panels/PrintPanel'
 import { DataMergePanel } from '@/features/merge/DataMergePanel'
 import { Animation3DPanel } from '@/components/panels/Animation3DPanel'
+import { VersionsPanel } from '@/components/panels/VersionsPanel'
 
 const panelConfig: Record<string, { title: string; icon: ComponentType<{ className?: string }>; content: ReactNode; onHeaderClick?: () => void }> = {
   page:        { title: 'Page',         icon: FileText,   content: <PagePanel /> },
@@ -28,6 +29,7 @@ const panelConfig: Record<string, { title: string; icon: ComponentType<{ classNa
   palette:     { title: 'Palette',      icon: Palette,    content: <PalettePanel /> },
   assets:      { title: 'Assets',       icon: FolderOpen, content: <AssetsPanel /> },
   animation3d: { title: 'Animation 3D', icon: Aperture,   content: <Animation3DPanel /> },
+  versions:    { title: 'Versions',     icon: History,    content: <VersionsPanel /> },
 }
 
 export function RightPanelStack() {
