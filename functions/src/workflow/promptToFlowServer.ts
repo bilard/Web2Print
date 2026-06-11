@@ -74,6 +74,18 @@ export const SERVER_CATALOG: CatalogNode[] = [
     defaults: { projectId: '', sourceId: 'workflow-import' },
   },
   {
+    type: 'gsheets-export', label: 'Export Google Sheets',
+    desc: 'Puits : crée un Google Sheets dans le Drive de l’utilisateur depuis la sheet (nécessite Google connecté côté serveur).',
+    inputs: [{ name: 'sheet', type: 'sheet', required: true }], outputs: [{ name: 'result', type: 'export-result' }],
+    defaults: { name: 'Workflow Export', parentFolderId: '', parentFolderName: '' },
+  },
+  {
+    type: 'send-gmail', label: 'Envoyer via Gmail',
+    desc: 'Puits : envoie un email ({{Colonne}} supporté ; attachmentMode "filtered" joint le CSV des lignes reçues ; iterate=true → 1 email par ligne).',
+    inputs: [{ name: 'data', type: 'any' }], outputs: [{ name: 'result', type: 'any' }],
+    defaults: { clientId: '', to: '', subject: '', body: '', isHtml: false, iterate: false, attachmentMode: 'filtered', attachmentFilename: 'extract.csv' },
+  },
+  {
     type: 'send-telegram', label: 'Envoyer via Telegram',
     desc: 'Puits : envoie un message Telegram ({{Colonne}} supporté ; iterate=true → 1 message par ligne).',
     inputs: [{ name: 'data', type: 'any' }], outputs: [{ name: 'result', type: 'any' }],

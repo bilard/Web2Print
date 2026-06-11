@@ -5,6 +5,7 @@ import {
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
 } from '@/features/ai/providerLogos'
 import { TelegramSettings } from '@/features/telegram/TelegramSettings'
+import { GoogleServerConnect } from '@/features/settings/GoogleServerConnect'
 import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, SITE_COOKIES_HYDRATED_EVENT, SITE_COOKIES_UPDATED_EVENT, type SiteCookieEntry } from '@/lib/siteCookies'
 import { BrightDataConnectorRow } from '@/features/scraping/BrightDataConnectorRow'
 import { useAuthStore } from '@/stores/auth.store'
@@ -412,6 +413,11 @@ function ConnectorsTab() {
       <BrightDataConnectorRow />
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
       <GDriveConnectorRow />
+
+      {/* ── Google accès serveur (OAuth offline : Drive + Gmail pour cron/webhook/Telegram) ── */}
+      <div className="bg-white/[0.03] rounded-xl p-3">
+        <GoogleServerConnect />
+      </div>
 
       {/* ── Telegram ── */}
       <div className="flex flex-col gap-2">
