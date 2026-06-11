@@ -10,6 +10,7 @@ import {
   Line,
   Polygon,
   FabricImage,
+  Shadow,
   type FabricObject,
 } from 'fabric'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
@@ -228,7 +229,7 @@ function humanName(_type: LayerType, _i: number): string {
  * ----------------------------------------------------------------------- */
 
 type StructNode =
-  | { kind: 'leaf'; index: number; name?: string; role?: string }
+  | { kind: 'leaf'; index: number; name?: string; role?: string; shadowJson?: string }
   | { kind: 'group'; children: StructNode[]; name?: string; role?: string }
 
 const RENDERABLE = new Set([
@@ -283,7 +284,8 @@ function parseSvgStructure(svgText: string): StructNode[] {
       const idx = leafIndex++
       const name = el.getAttribute('id') ?? undefined
       const role = el.getAttribute('data-role') ?? undefined
-      return { kind: 'leaf', index: idx, name, role }
+      const shadowJson = el.getAttribute('data-shadow') ?? undefined
+      return { kind: 'leaf', index: idx, name, role, shadowJson }
     }
 
     // Autre conteneur non skip (rare) : traverser
@@ -316,13 +318,24 @@ function buildHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObjec
         ...(node.name ? { name: node.name } : {}),
         ...(node.role ? { role: node.role } : {}),
       }
+      // data-shadow (ombre portée détectée dans le PDF) → ombre Fabric native,
+      // éditable ensuite via le panneau Ombre et sérialisée par défaut.
+      if (node.shadowJson) {
+        try {
+          const sh = JSON.parse(node.shadowJson) as { color: string; blur: number; offsetX: number; offsetY: number }
+          obj.set('shadow', new Shadow(sh))
+        } catch { /* data-shadow malformé : ignoré */ }
+      }
       return obj
     }
     const children = node.children
       .map(build)
       .filter((c): c is FabricObject => c !== null)
     if (children.length === 0) return null
-    const group = new Group(children)
+    // subTargetCheck SANS interactive : simple clic = le bloc entier
+    // (déplaçable d'un tenant), double-clic = entre dans le groupe (les
+    // subTargets remontent dans mouse:dblclick, cf. useCanvas).
+    const group = new Group(children, { subTargetCheck: true, interactive: false })
     const anyGroup = group as FabricObject & { data?: Record<string, unknown> }
     anyGroup.data = {
       ...(anyGroup.data ?? {}),

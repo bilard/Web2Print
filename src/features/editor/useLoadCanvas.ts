@@ -136,8 +136,13 @@ function fixAndReattach(canvas: Canvas) {
 
     if (obj.type === 'group') {
       const grp = obj as any
+      // subTargetCheck SANS interactive : simple clic = sélectionne le bloc
+      // entier (déplaçable d'un tenant) ; double-clic = entre dans le groupe
+      // pour éditer un enfant (handler mouse:dblclick de useCanvas). Avec
+      // interactive, chaque clic saisissait l'enfant et le déplacement de
+      // bloc devenait impossible.
       grp.subTargetCheck = true
-      grp.interactive = true
+      grp.interactive = false
       if (grp._objects) {
         for (const sub of grp._objects) {
           if (!sub.data) sub.data = {}

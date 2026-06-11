@@ -285,18 +285,90 @@ export function groupMupdfTextBlocks(svg: string): string {
   return grouped ? new XMLSerializer().serializeToString(dom) : svg
 }
 
+/** Bbox approximative d'un path : min/max des points M/L/C/H/V, transformés
+ *  par la matrice InDesign classique matrix(a,b,c,d,e,f). Suffisant pour les
+ *  rounded-rects d'ombre/de carte (les points de contrôle Bézier débordent
+ *  peu). Null si le d est trop exotique. */
+function approxPathBBox(el: Element): { l: number; t: number; r: number; b: number } | null {
+  const d = el.getAttribute('d') ?? ''
+  const tr = el.getAttribute('transform') ?? ''
+  const tm = tr.match(/matrix\(\s*([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)[ ,]+([-\d.e]+)\s*\)/i)
+  const [a, b, c, dd, e, f] = tm ? tm.slice(1).map(Number) : [1, 0, 0, 1, 0, 0]
+  let x = 0, y = 0
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  const add = (px: number, py: number) => {
+    const X = a * px + c * py + e
+    const Y = b * px + dd * py + f
+    if (X < minX) minX = X; if (X > maxX) maxX = X
+    if (Y < minY) minY = Y; if (Y > maxY) maxY = Y
+  }
+  const tokens = d.match(/[MLCHVZmlchvz]|-?[\d.]+(?:e-?\d+)?/gi) ?? []
+  let i = 0
+  let cmd = ''
+  const num = () => parseFloat(tokens[i++])
+  while (i < tokens.length) {
+    const tk = tokens[i]
+    if (/^[MLCHVZ]$/i.test(tk)) { cmd = tk.toUpperCase(); i++; if (cmd === 'Z') continue }
+    switch (cmd) {
+      case 'M': case 'L': x = num(); y = num(); add(x, y); break
+      case 'H': x = num(); add(x, y); break
+      case 'V': y = num(); add(x, y); break
+      case 'C': {
+        const x1 = num(), y1 = num(), x2 = num(), y2 = num()
+        x = num(); y = num()
+        add(x1, y1); add(x2, y2); add(x, y)
+        break
+      }
+      default: return null // commande non gérée (relatives, A, Q…)
+    }
+  }
+  return Number.isFinite(minX) ? { l: minX, t: minY, r: maxX, b: maxY } : null
+}
+
 /**
- * Retire les masques de luminosité MuPDF (ombres portées douces) : Fabric
- * ignore <mask> et dessine son CONTENU comme des objets pleins → voile gris
- * opaque par-dessus le visuel. On supprime les <mask>, leurs groupes de
- * contenu et les éléments qui les référencent (l'ombre douce est perdue,
- * le reste devient propre).
+ * Retire les masques de luminosité MuPDF : Fabric ignore <mask> et dessine
+ * son CONTENU comme des objets pleins → voile gris opaque. Avant suppression,
+ * le pattern « ombre portée InDesign » (groupe maské contenant UN SEUL path
+ * sombre semi-transparent) est CONVERTI en ombre native : un data-shadow est
+ * posé sur l'élément porteur (le sibling suivant, dessiné par-dessus l'ombre)
+ * — svgToFabric le traduira en `shadow` Fabric, éditable via le panneau Ombre.
  */
-function stripMupdfMasks(svg: string): string {
+export function stripMupdfMasks(svg: string): string {
   const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
   if (dom.querySelector('parsererror')) return svg
   let touched = false
-  for (const el of Array.from(dom.querySelectorAll('[mask]'))) { el.remove(); touched = true }
+  for (const el of Array.from(dom.querySelectorAll('[mask]'))) {
+    // Pattern ombre : un unique path au fill sombre et semi-transparent.
+    const paths = Array.from(el.querySelectorAll('path'))
+    const carrier = el.nextElementSibling
+    if (paths.length === 1 && carrier) {
+      const p = paths[0]
+      const fill = p.getAttribute('fill') ?? '#000000'
+      const opacity = parseFloat(p.getAttribute('fill-opacity') ?? '1')
+      const sb = approxPathBBox(p)
+      const cb = carrier.tagName.toLowerCase() === 'path' ? approxPathBBox(carrier) : null
+      if (opacity <= 0.85 && sb && cb) {
+        // L'ombre doit envelopper largement le porteur (sinon ce n'est pas son ombre).
+        const overlapW = Math.min(sb.r, cb.r) - Math.max(sb.l, cb.l)
+        const overlapH = Math.min(sb.b, cb.b) - Math.max(sb.t, cb.t)
+        if (overlapW > (cb.r - cb.l) * 0.7 && overlapH > (cb.b - cb.t) * 0.7) {
+          const m = fill.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+          const [r, g, bl] = m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [0, 0, 0]
+          const offsetX = (sb.l + sb.r) / 2 - (cb.l + cb.r) / 2
+          const offsetY = (sb.t + sb.b) / 2 - (cb.t + cb.b) / 2
+          // Débord du rect d'ombre au-delà du porteur ≈ étendue du flou.
+          const blur = Math.max(2, ((sb.r - sb.l - (cb.r - cb.l)) + (sb.b - sb.t - (cb.b - cb.t))) / 4)
+          carrier.setAttribute('data-shadow', JSON.stringify({
+            color: `rgba(${r},${g},${bl},${Math.min(1, Math.max(0.05, opacity)).toFixed(2)})`,
+            blur: +blur.toFixed(1),
+            offsetX: +offsetX.toFixed(1),
+            offsetY: +offsetY.toFixed(1),
+          }))
+        }
+      }
+    }
+    el.remove(); touched = true
+  }
   for (const el of Array.from(dom.querySelectorAll('mask'))) { el.remove(); touched = true }
   for (const el of Array.from(dom.querySelectorAll('g[id^="mask_"]'))) { el.remove(); touched = true }
   return touched ? new XMLSerializer().serializeToString(dom) : svg

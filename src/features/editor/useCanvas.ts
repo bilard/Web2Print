@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Canvas, Rect, Gradient, FabricImage } from 'fabric'
+import { Canvas, Rect, Gradient, FabricImage, Group, IText, type FabricObject } from 'fabric'
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
@@ -155,6 +155,23 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
       // Halo de visée pour les objets en perPixelTargetFind (imports SVG/PDF) :
       // sans tolérance, les traits fins (marques de coupe…) seraient incliquables.
       targetFindTolerance: 6,
+    })
+
+    // Double-clic sur un Group : ENTRE dans le bloc sans le dégrouper —
+    // sélectionne l'enfant visé, et si c'est un texte, ouvre directement
+    // l'édition inline (le mousedown précédant le dblclick re-sélectionne
+    // toujours le groupe, donc pas de logique « déjà actif »).
+    canvas.on('mouse:dblclick', (e) => {
+      if (!(e.target instanceof Group)) return
+      const subs = (e as { subTargets?: FabricObject[] }).subTargets ?? []
+      const sub = subs.find((o) => o.selectable !== false)
+      if (!sub) return
+      canvas.setActiveObject(sub)
+      if (sub instanceof IText) {
+        sub.enterEditing(e.e as MouseEvent)
+        ;(sub as IText & { setCursorByClick?: (ev: Event) => void }).setCursorByClick?.(e.e)
+      }
+      canvas.requestRenderAll()
     })
 
     // Add page rectangle (white area representing the document)

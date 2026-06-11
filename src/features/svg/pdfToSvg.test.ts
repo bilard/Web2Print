@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName, fitTextWidthsToPdf } from './pdfToSvg'
+import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName, fitTextWidthsToPdf, stripMupdfMasks } from './pdfToSvg'
 
 /** SVG minimal façon mutool : page 200×280, un groupe de contenu clippé à la
  *  carte (non neutre) et un groupe de marques d'impression clippé pleine page. */
@@ -151,6 +151,41 @@ describe('fitTextWidthsToPdf', () => {
     const t = new DOMParser().parseFromString(out, 'image/svg+xml').querySelector('text')!
     expect(t.getAttribute('transform')).toBeNull()
     expect(t.getAttribute('data-pdf-run-width')).toBeNull()
+  })
+})
+
+describe('stripMupdfMasks — conversion ombre portée', () => {
+  // Pattern InDesign réel : groupe maské contenant UN path sombre 50 %,
+  // suivi du path porteur (la carte blanche).
+  const SHADOW_SVG = wrap(
+    '<defs><mask id="mask_2"><rect width="100%" height="100%" fill="white"/></mask></defs>' +
+    '<g mask="url(#mask_2)"><g style="mix-blend-mode:multiply">' +
+    '<path transform="matrix(1,0,0,-1,0,280)" d="M31 248H169V40H31Z" fill="#231f20" fill-opacity=".5"/>' +
+    '</g></g>' +
+    '<path transform="matrix(1,0,0,-1,0,280)" d="M38 241H162V47H38Z" fill="#ffffff"/>',
+  )
+
+  it('pose data-shadow sur le porteur et supprime le masque', () => {
+    const out = stripMupdfMasks(SHADOW_SVG)
+    expect(out).not.toContain('mask')
+    const dom = new DOMParser().parseFromString(out, 'image/svg+xml')
+    const carrier = dom.querySelector('path[fill="#ffffff"]')!
+    const sh = JSON.parse(carrier.getAttribute('data-shadow')!)
+    expect(sh.color).toBe('rgba(35,31,32,0.50)')
+    expect(sh.blur).toBeGreaterThan(2)
+    // Ombre symétrique dans ce cas : offsets quasi nuls
+    expect(Math.abs(sh.offsetX)).toBeLessThan(1)
+    expect(Math.abs(sh.offsetY)).toBeLessThan(1)
+  })
+
+  it('supprime sans data-shadow quand le contenu maské ne ressemble pas à une ombre', () => {
+    const svg = wrap(
+      '<g mask="url(#m)"><path d="M0 0H10V10H0Z" fill="#ff0000"/><path d="M20 0H30V10H20Z" fill="#00ff00"/></g>' +
+      '<path d="M0 0H100V100H0Z" fill="#ffffff"/>',
+    )
+    const out = stripMupdfMasks(svg)
+    expect(out).not.toContain('data-shadow')
+    expect(out).not.toContain('mask=')
   })
 })
 
