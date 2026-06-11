@@ -16,6 +16,8 @@ import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 import { useCan } from '@/features/access/useAccess'
 import { useThemeStore } from '@/stores/theme.store'
 import { rowCompleteness, completenessTone } from './completeness'
+import { GalleryView } from './GalleryView'
+import { LayoutGrid, Table as TableIcon } from 'lucide-react'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -97,6 +99,14 @@ export function DataTable() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   const setSheetRowId = useExcelStore((s) => s.setSheetRowId)
+  // Vue tableau ou galerie (cartes produit), persistée par navigateur.
+  const [dataViewMode, setDataViewModeState] = useState<'table' | 'gallery'>(() =>
+    localStorage.getItem('data.viewMode') === 'gallery' ? 'gallery' : 'table',
+  )
+  const setDataViewMode = (m: 'table' | 'gallery') => {
+    localStorage.setItem('data.viewMode', m)
+    setDataViewModeState(m)
+  }
 
   // Column drag state
   const [dragColIdx, setDragColIdx] = useState<number | null>(null)
@@ -463,6 +473,31 @@ export function DataTable() {
 
   return (
     <div className="flex-1 overflow-auto">
+      {/* Bascule tableau / galerie (cartes produit) */}
+      <div className="sticky left-0 flex justify-end px-2 pt-1.5">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">
+          <button
+            onClick={() => setDataViewMode('table')}
+            className={`p-1 rounded transition-colors ${dataViewMode === 'table' ? 'bg-white/[0.08] text-white' : 'text-neutral-500 hover:text-white'}`}
+            aria-pressed={dataViewMode === 'table'}
+            title="Vue tableau"
+          >
+            <TableIcon className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setDataViewMode('gallery')}
+            className={`p-1 rounded transition-colors ${dataViewMode === 'gallery' ? 'bg-white/[0.08] text-white' : 'text-neutral-500 hover:text-white'}`}
+            aria-pressed={dataViewMode === 'gallery'}
+            title="Vue galerie (cartes produit)"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {dataViewMode === 'gallery' ? (
+        <GalleryView rows={sortedRows} columns={visibleColumns} onOpen={setSheetRowId} />
+      ) : (
       <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
         {/* Colgroup for fixed widths */}
         <colgroup>
@@ -681,8 +716,10 @@ export function DataTable() {
           )}
         </tbody>
       </table>
+      )}
 
       {/* Add row button */}
+      {dataViewMode === 'table' && (
       <button
         onClick={handleAddRow}
         className="w-full flex items-center gap-2 px-4 py-2 text-xs text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors border-b border-white/5"
@@ -690,6 +727,7 @@ export function DataTable() {
         <Plus className="w-3.5 h-3.5" />
         Ajouter une ligne
       </button>
+      )}
 
       {/* Barre d'état : volume + complétude moyenne des lignes affichées */}
       {filteredRows.length > 0 && (() => {
