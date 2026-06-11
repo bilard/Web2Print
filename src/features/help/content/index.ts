@@ -1,5 +1,6 @@
 import type { HelpSection } from './types'
 import { gettingStarted } from './getting-started'
+import { nouveautesSection } from './nouveautes'
 import { onboardingSection } from './onboarding'
 import { navigationSection } from './navigation'
 import { editorSection } from './editor'
@@ -26,6 +27,7 @@ import { settingsSection } from './settings'
 
 export const helpSections: HelpSection[] = [
   gettingStarted,
+  nouveautesSection,
   onboardingSection,
   navigationSection,
   editorSection,

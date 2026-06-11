@@ -6,11 +6,11 @@ export const exportSection: HelpSection = {
   id: 'export',
   title: 'Export multi-format',
   category: 'Export',
-  intro: 'Sortir un PDF imprimeur, un IDML, un PPTX, un SVG, un PNG ou un dossier web HTML — unitaire ou en série.',
+  intro: 'Sortir un PDF imprimeur, un IDML, un PPTX, un SVG, un PNG, un dossier web HTML ou un pack réseaux sociaux — unitaire ou en série.',
   blocks: [
     {
       type: 'text',
-      md: `L'éditeur exporte vers six formats. Chaque format vise un usage précis.`,
+      md: `L'éditeur exporte vers sept formats. Chaque format vise un usage précis.`,
     },
     { type: 'mockup', Component: ExportDialogMock },
     {
