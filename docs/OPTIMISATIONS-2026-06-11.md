@@ -138,6 +138,24 @@ projet avec miniature (20 max, purge auto), restauration avec confirmation
 inline → ré-écriture + rechargement de l'éditeur. Règles
 `projects/{id}/versions` owner/éditeur.
 
+## Vague 4 — compléments livrés le même jour
+
+### 19. Veille prix côté serveur + iterate Telegram fiabilisé (`8496d1f`)
+Node `price-watch` serveur wire-compatible (même état Firestore) → le template
+cron tourne sans navigateur. `send-telegram` serveur : mode « 1 message par
+ligne » (ré-interpolation par row via `ctx.rawConfig`). Sémantique corrigée des
+deux côtés : iterate sans aucune ligne reçue = **aucun envoi** (plus de
+retombée en message unique).
+
+### 20. ⌘K enrichi — projets récents (`b076604`)
+Groupe « Projets récents » dans la palette (8 derniers, chargés à l'ouverture
+seulement), clic = ouvre l'éditeur.
+
+### 21. Tagging IA DAM + recherche par tags (`fad3b4b`)
+`autoTagAsset` (best-effort) après chaque sauvegarde d'asset (génération DAM,
+images du Chat) : tags/couleur/sujet via `damAnalyzeImage`. Filtre texte en
+langage naturel dans « Mes images » (tags + description + sujet, accents ignorés).
+
 ## Reste en réserve (non commencé)
-- Tagging IA DAM, déclinaisons multi-format, états vides + tours guidés étendus,
-  ⌘K enrichi (projets récents), veille prix côté serveur (cron sans navigateur).
+- Déclinaisons multi-format (re-layout adaptatif — gros chantier à designer),
+  états vides + tours guidés étendus.

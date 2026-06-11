@@ -129,7 +129,7 @@ Le node **« Approbation Telegram »** met le run en pause et envoie la question
       type: 'text',
       md: `### Veille prix
 
-Le node **« Veille prix »** mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port \`changes\` **que si un prix a varié** au-delà du seuil — les lignes émises portent \`ancien_prix\`, \`nouveau_prix\` et \`variation_pct\`, prêtes pour un message Telegram (« 1 message par ligne »). Le premier relevé est silencieux. Modèle prêt à l'emploi : **Veille prix → alerte Telegram** (cron quotidien).`,
+Le node **« Veille prix »** mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port \`changes\` **que si un prix a varié** au-delà du seuil — les lignes émises portent \`ancien_prix\`, \`nouveau_prix\` et \`variation_pct\`, prêtes pour un message Telegram (« 1 message par ligne »). Le premier relevé est silencieux, et **aucun message n'est envoyé** quand rien n'a bougé. Fonctionne aussi en **cron serveur** (sans navigateur ouvert). Modèle prêt à l'emploi : **Veille prix → alerte Telegram** (cron quotidien).`,
     },
     {
       type: 'text',

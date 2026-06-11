@@ -139,6 +139,14 @@ Dans la visionneuse, onglet **Analyse IA** → bouton **« Analyser avec IA »**
     },
     {
       type: 'text',
+      md: `### Tagging automatique & recherche par tags
+
+Chaque image **sauvegardée dans Mes images** (génération IA, images du Chat) est **taguée automatiquement** en arrière-plan : tags, couleur dominante et sujet sont posés sur la fiche quelques secondes après la sauvegarde.
+
+Dans **Mes images**, le champ **« Filtrer par tags ou description »** permet une recherche en langage naturel (ex : _bouteille verte_) — il matche les tags IA, la description et le sujet, sans tenir compte des accents.`,
+    },
+    {
+      type: 'text',
       md: `### Organiser
 
 - **Favoris** (♥) : accès rapide.
