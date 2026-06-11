@@ -86,10 +86,23 @@ describe('groupMupdfTextBlocks', () => {
     expect(labels).toContain('30 %')
   })
 
-  it('laisse les champs de fusion {{…}} top-level (le merge ne descend pas dans les groupes)', () => {
+  it('regroupe les champs {{…}} empilés malgré des couleurs différentes (bloc marketing)', () => {
+    // Positions réelles du PDF Monoprix : libellé bleu, marque rose, description noire
+    const out = groupMupdfTextBlocks(wrap(
+      '<text x="99.7" y="206.8" font-size="9" fill="#0054a6">{{Libelle Article}}</text>' +
+      '<text x="127.3" y="216.4" font-size="8" fill="#ec008c">{{brands}}</text>' +
+      '<text x="128.1" y="223.6" font-size="6" fill="#231f20">{{Description}}</text>',
+    ))
+    const dom = new DOMParser().parseFromString(out, 'image/svg+xml')
+    const groups = Array.from(dom.querySelectorAll('g'))
+    expect(groups).toHaveLength(1)
+    expect(groups[0].children).toHaveLength(3)
+  })
+
+  it('ne mélange jamais champs {{…}} et textes ordinaires dans un même bloc', () => {
     const out = groupMupdfTextBlocks(wrap(
       '<text x="100" y="206" font-size="9" fill="#0054a6">{{Libelle Article}}</text>' +
-      '<text x="100" y="216" font-size="9" fill="#0054a6">{{brands}}</text>',
+      '<text x="100" y="216" font-size="9" fill="#0054a6">Prix conseillé</text>',
     ))
     expect(new DOMParser().parseFromString(out, 'image/svg+xml').querySelectorAll('g')).toHaveLength(0)
   })

@@ -13,6 +13,7 @@ import { extractIdmlContents, buildMultiPageIdml, type PatchOptions } from './id
 import { templatizeEcContents } from './ecTemplatizer'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { resolveFileName } from './mergeEngine'
+import { collectObjectsDeep } from './deepObjects'
 
 export interface IdmlExportConfig {
   rangeStart: number     // 0-indexed
@@ -62,7 +63,7 @@ export function useIdmlBatchExport() {
       const canvas = globalFabricCanvas
       const bindings: Record<string, Record<string, string>> = {}
       if (canvas) {
-        for (const obj of canvas.getObjects()) {
+        for (const obj of collectObjectsDeep(canvas.getObjects())) {
           const b = obj.data?.bindings as Record<string, string> | undefined
           if (b && obj.data?.id) {
             bindings[obj.data.id as string] = b

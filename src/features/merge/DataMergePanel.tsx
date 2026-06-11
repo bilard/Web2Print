@@ -6,6 +6,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type FormulaResultType, type FormulaConfig } from '@/stores/merge.store'
 import { useDataMerge } from './useDataMerge'
 import { hasPlaceholders, evaluateFormula, formatFormulaResult, variableMatchesColumn } from './mergeEngine'
+import { collectObjectsDeep } from './deepObjects'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { toast } from 'sonner'
 import { DataSourcePicker } from './DataSourcePicker'
@@ -197,7 +198,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
       const fullCols = columns.map((c) => ({ key: c.key, label: c.label, fieldType: c.fieldType ?? 'text' }))
       const isMatched = (v: string) => variableMatchesColumn(v, fullCols)
 
-      for (const obj of canvas.getObjects()) {
+      for (const obj of collectObjectsDeep(canvas.getObjects())) {
         if (obj.data?.isGrid || obj.data?.isPageBg) continue
         const objId = (obj.data?.id ?? '') as string
         const name = (obj.data?.name ?? obj.type ?? 'Objet') as string

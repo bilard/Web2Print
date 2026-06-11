@@ -216,21 +216,23 @@ export function dedupeMupdfTexts(svg: string): string {
  * ET boîtes englobantes estimées (0.52 × fontSize par caractère) gonflées de
  * 0.6 × fontSize qui se touchent — validé sur PDF réel : la couleur sépare les
  * blocs adjacents (flash prix rouge vs bulle % blanche à 7.5 pt l'un de l'autre).
- * Exclus : textes rotatés (transform) et champs de fusion {{…}} — le moteur de
- * publipostage itère canvas.getObjects() SANS descendre dans les groupes.
+ * Les champs de fusion {{…}} forment leur PROPRE famille de clusters : un bloc
+ * marketing empile des champs de couleurs différentes (libellé bleu, marque
+ * rose, description noire) → proximité seule, jamais mélangés aux non-champs.
+ * Le moteur de publipostage descend dans les groupes (collectObjectsDeep).
+ * Exclus : textes rotatés (transform).
  */
 export function groupMupdfTextBlocks(svg: string): string {
   const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
   if (dom.querySelector('parsererror')) return svg
   const root = dom.documentElement
 
-  interface Run { el: Element; fs: number; fill: string; l: number; t: number; r: number; b: number }
+  interface Run { el: Element; fs: number; fill: string; l: number; t: number; r: number; b: number; ph: boolean }
   const runs: Run[] = []
   for (const el of Array.from(root.children)) {
     if (el.tagName !== 'text') continue
     if (el.getAttribute('transform')) continue
     const content = el.textContent ?? ''
-    if (/\{\{|\}\}/.test(content)) continue
     const fs = parseFloat(el.getAttribute('font-size') ?? '12')
     const x = parseFloat(el.getAttribute('x') ?? '0')
     const y = parseFloat(el.getAttribute('y') ?? '0')
@@ -239,11 +241,18 @@ export function groupMupdfTextBlocks(svg: string): string {
       el, fs,
       fill: (el.getAttribute('fill') ?? '#000000').toLowerCase(),
       l: x, t: y - fs, r: x + content.length * fs * 0.52, b: y + fs * 0.25,
+      ph: /\{\{|\}\}/.test(content),
     })
   }
   if (runs.length < 2) return svg
 
   const near = (a: Run, b: Run): boolean => {
+    if (a.ph !== b.ph) return false
+    if (a.ph) {
+      // Champs {{…}} : interligne d'un bloc marketing (couleurs libres).
+      const pad = 0.8 * Math.max(a.fs, b.fs)
+      return a.l - pad < b.r && b.l - pad < a.r && a.t - pad < b.b && b.t - pad < a.b
+    }
     if (a.fill !== b.fill) return false
     const pad = 0.6 * Math.min(a.fs, b.fs)
     return a.l - pad < b.r && b.l - pad < a.r && a.t - pad < b.b && b.t - pad < a.b

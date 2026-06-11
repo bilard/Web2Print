@@ -6,6 +6,7 @@
 import { Textbox } from 'fabric'
 import type { Canvas } from 'fabric'
 import { syncToStore } from '@/features/editor/useAddObject'
+import { collectObjectsDeep } from './deepObjects'
 
 export interface MatchableText {
   id: string
@@ -86,8 +87,8 @@ export function computeAutoMatch(texts: MatchableText[], columns: ColumnLike[]):
  * Retourne les assignations réalisées (vide si rien de reconnaissable).
  */
 export function applyAutoMatch(canvas: Canvas, columns: ColumnLike[]): MatchAssignment[] {
-  const boxes = canvas
-    .getObjects()
+  // Traversée profonde : les champs peuvent vivre dans un Group (blocs PDF→SVG).
+  const boxes = collectObjectsDeep(canvas.getObjects())
     .filter((o): o is Textbox => o instanceof Textbox && !o.data?.isGrid && !o.data?.isPageBg)
   // Garantit un data.id pour retrouver l'objet.
   boxes.forEach((b, i) => {

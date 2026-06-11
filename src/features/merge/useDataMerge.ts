@@ -8,6 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
+import { collectObjectsDeep, refreshAncestorGroups } from './deepObjects'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
@@ -84,7 +85,7 @@ export function useDataMerge() {
     // déclenché par connect() exécute le memo avant la capture)
     const canvas = globalFabricCanvas
     if (canvas) {
-      for (const obj of canvas.getObjects()) {
+      for (const obj of collectObjectsDeep(canvas.getObjects())) {
         if (obj instanceof Textbox && obj.text && hasPlaceholders(obj.text)) {
           if (!obj.data) obj.data = {}
           obj.data.templateText = obj.text
@@ -105,7 +106,7 @@ export function useDataMerge() {
     if (canvas) {
       await applyRowRef.current?.(mergeRows[0], cols)
       // Auto-fit uniquement les Textbox dont tout le contenu est un placeholder unique
-      for (const obj of canvas.getObjects()) {
+      for (const obj of collectObjectsDeep(canvas.getObjects())) {
         if (!(obj instanceof Textbox)) continue
         if (!obj.data) continue
         const tmpl = obj.data.templateText as string | undefined
@@ -122,6 +123,7 @@ export function useDataMerge() {
           obj.set({ width: fitW, scaleX: 1, scaleY: 1 })
           ;(obj as any).initDimensions?.()
           obj.setCoords()
+          refreshAncestorGroups(obj)
         }
       }
       canvas.requestRenderAll()
@@ -133,7 +135,7 @@ export function useDataMerge() {
   const disconnectSource = useCallback(() => {
     const canvas = globalFabricCanvas
     if (canvas) {
-      for (const obj of canvas.getObjects()) {
+      for (const obj of collectObjectsDeep(canvas.getObjects())) {
         if (obj instanceof Textbox && obj.data?.templateText) {
           obj.set('text', obj.data.templateText as string)
           // Restaurer les styles originaux du template
@@ -142,6 +144,7 @@ export function useDataMerge() {
             ;(obj as any).dirty = true
           }
           obj.setCoords()
+          refreshAncestorGroups(obj)
         }
       }
       canvas.requestRenderAll()
@@ -200,7 +203,7 @@ export function useDataMerge() {
     const canvas = globalFabricCanvas
     if (!canvas) return
 
-    for (const obj of canvas.getObjects()) {
+    for (const obj of collectObjectsDeep(canvas.getObjects())) {
       if (obj.data?.isGrid || obj.data?.isPageBg) continue
 
       // Résolution texte {{variable}}
@@ -244,6 +247,7 @@ export function useDataMerge() {
 
           obj.setCoords()
           ;(obj as any).dirty = true
+          refreshAncestorGroups(obj)
         }
       }
 
@@ -277,6 +281,7 @@ export function useDataMerge() {
           if (!isNaN(num)) obj.set('opacity', Math.min(1, Math.max(0, num)))
         }
       }
+      refreshAncestorGroups(obj)
     }
 
     canvas.requestRenderAll()
