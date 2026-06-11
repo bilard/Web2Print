@@ -17,7 +17,7 @@ export const telegramSection: HelpSection = {
 
 1. **Paramètres → Connecteurs** : colle le *bot token* (obtenu via BotFather) et ton *chat ID*.
 2. Ouvre l'onglet **Telegram** dans le menu latéral : c'est lui qui fait tourner le « worker » qui traite les messages.
-3. ⚠️ **Le bot ne répond que si l'onglet Telegram reste ouvert** — le traitement s'exécute dans ton navigateur, en série.
+3. C'est tout : le **répondeur serveur** traite tes messages même app fermée (voir « Réponses sans navigateur » plus bas). L'onglet Telegram sert à suivre la conversation — et prend le relais pour les workflows à rendu graphique (PDF, visuels) ou à fichier manuel.
 4. Une **clé LLM** (Gemini, Claude ou DeepSeek) doit être configurée dans les Paramètres.`,
     },
     {

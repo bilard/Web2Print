@@ -63,6 +63,7 @@ _Détails : section **PIM**._`,
 - **Galerie de modèles** 1-clic (Scraper → PIM, veille, recherche web…).
 - Node **« Approbation Telegram »** : le run se met en pause jusqu'au clic ✅/❌.
 - Node **« Veille prix »** : alerte seulement quand un prix bouge (fonctionne en cron serveur).
+- Node **« Cron »** : planification **côté serveur** (minute → mois, heure précise, Europe/Paris) — vos workflows tournent navigateur fermé.
 - **Webhook entrant** : déclenchez un workflow depuis l'extérieur (Zapier, ERP, curl).
 - **Mode « Pas à pas »** : exécution node par node avec inspection des sorties.
 
@@ -73,6 +74,16 @@ _Détails : section **Workflows**._`,
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.workflows' },
       label: 'Ouvrir Workflows',
       icon: Workflow,
+    },
+    {
+      type: 'text',
+      md: `### Telegram sans navigateur (répondeur serveur)
+
+- **Le bot répond app fermée** : questions avec recherche web automatique (sources citées), \`/flow\` généré **et exécuté côté serveur**, \`/run\` d'un workflow sauvegardé.
+- **Google côté serveur** : connectez **« Google — accès serveur »** une fois (Paramètres → Connecteurs) → \`/flow\` peut créer des **Google Sheets** dans votre Drive et envoyer des **Gmail**, navigateur fermé.
+- Seuls les workflows à **rendu graphique** (PDF, visuels) attendent l'ouverture de l'app — un message vous prévient.
+
+_Détails : section **Telegram**._`,
     },
     {
       type: 'text',

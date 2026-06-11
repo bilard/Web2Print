@@ -38,6 +38,10 @@ export const settingsSection: HelpSection = {
           md: 'Connecte ton **Google Drive** (OAuth) pour que les workflows et le node *save-dam* y déposent des fichiers.',
         },
         {
+          title: 'Google — accès serveur (Drive + Gmail)',
+          md: 'Autorise **une seule fois** (bouton « Connecter ») le **serveur** à agir pour toi quand l\'app est fermée : les workflows planifiés (cron), le webhook et `/flow` sur Telegram peuvent alors **créer des Google Sheets dans ton Drive** et **envoyer des Gmail**. Distinct de la connexion Google Drive ci-dessus (utilisée par le navigateur). Aucun mot de passe stocké — un jeton révocable à tout moment depuis ton compte Google. Ne colle **jamais** d\'identifiants dans le chat Telegram : l\'autorisation se donne uniquement ici.',
+        },
+        {
           title: 'Scraping (Bright Data, Jina, Firecrawl, Remove.bg)',
           md: 'Tokens des services de scraping et de traitement d\'image. **Bright Data** propose le *Web Unlocker* et, en escalade, le *Scraping Browser* (tier 2) pour les sites les plus protégés.',
         },

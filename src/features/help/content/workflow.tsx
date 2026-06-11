@@ -133,6 +133,15 @@ Le node **« Veille prix »** mémorise les prix du run précédent (par identif
     },
     {
       type: 'text',
+      md: `### Planifier (cron serveur)
+
+Le node **« Cron »** exécute le workflow **côté serveur, navigateur fermé** : cadence à la **minute, heure, jour, semaine ou mois**, heure précise **HH:MM**, jour de semaine ciblé ou **« Tous les jours »** — fuseau **Europe/Paris**, granularité minimale 1 minute. Active **« Planification »** dans le node puis **sauvegarde** le workflow pour armer le cron ; l'éditeur affiche l'état et le compte à rebours du prochain run, et chaque exécution apparaît dans l'historique.
+
+- **Compatibles serveur** : scraping, recherche web, enrichissement IA, transformations, Save PIM, Veille prix, Telegram — et, après connexion **« Google — accès serveur »** (Paramètres → Connecteurs), **Export Google Sheets** et **Envoyer via Gmail**.
+- **Nécessitent le navigateur** : rendus graphiques (PDF, Excel, PPTX, génération d'image, décomposition SVG) et imports de fichiers locaux — un run serveur qui en contient s'arrête avec un message explicite.`,
+    },
+    {
+      type: 'text',
       md: `### Webhook entrant (déclenchement externe)
 
 Le bouton **Webhook** dans l'en-tête de l'éditeur génère une **URL secrète** pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple \`curl\`) :
