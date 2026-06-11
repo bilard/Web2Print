@@ -111,6 +111,7 @@ export function useDataMerge() {
         if (!obj.data) continue
         const tmpl = obj.data.templateText as string | undefined
         if (!tmpl) continue
+        if (obj.data.mergeFrame) continue // cadre fixe (champ PDF) : pas d'auto-fit
         const isSinglePlaceholder = /^\{\{[^}]+\}\}$/.test(tmpl.trim())
         if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {
           // Mémoriser la largeur originale (avant auto-fit) pour restauration à la sauvegarde
@@ -222,7 +223,8 @@ export function useDataMerge() {
           const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
           const tmpl = obj.data.templateText as string
           const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
-          const isSinglePlaceholder = /^\{\{[^}]+\}\}$/.test(tmpl.trim())
+          // Cadre de composition fixe (champ PDF aligné/wrappé) : pas d'auto-fit.
+          const isSinglePlaceholder = !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
           const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           obj.set('text', resolved)
 

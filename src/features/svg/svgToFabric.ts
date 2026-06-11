@@ -229,7 +229,7 @@ function humanName(_type: LayerType, _i: number): string {
  * ----------------------------------------------------------------------- */
 
 type StructNode =
-  | { kind: 'leaf'; index: number; name?: string; role?: string; shadowJson?: string }
+  | { kind: 'leaf'; index: number; name?: string; role?: string; shadowJson?: string; mergeFrame?: string }
   | { kind: 'group'; children: StructNode[]; name?: string; role?: string }
 
 const RENDERABLE = new Set([
@@ -285,7 +285,8 @@ function parseSvgStructure(svgText: string): StructNode[] {
       const name = el.getAttribute('id') ?? undefined
       const role = el.getAttribute('data-role') ?? undefined
       const shadowJson = el.getAttribute('data-shadow') ?? undefined
-      return { kind: 'leaf', index: idx, name, role, shadowJson }
+      const mergeFrame = el.getAttribute('data-merge-frame') ?? undefined
+      return { kind: 'leaf', index: idx, name, role, shadowJson, mergeFrame }
     }
 
     // Autre conteneur non skip (rare) : traverser
@@ -325,6 +326,42 @@ function buildHierarchy(flat: FabricObject[], struct: StructNode[]): FabricObjec
           const sh = JSON.parse(node.shadowJson) as { color: string; blur: number; offsetX: number; offsetY: number }
           obj.set('shadow', new Shadow(sh))
         } catch { /* data-shadow malformé : ignoré */ }
+      }
+      // data-merge-frame (champ {{…}} d'un bloc marketing PDF) → Textbox à
+      // CADRE FIXE : largeur du bloc + alignement du design. La substitution
+      // de fusion garde alors le formatage d'origine (un IText s'étendrait
+      // vers la droite et les valeurs longues déborderaient sans wrap).
+      if (node.mergeFrame && obj instanceof IText && !(obj instanceof Textbox)) {
+        const [l, w, align] = node.mergeFrame.split(',')
+        const left = parseFloat(l)
+        const width = parseFloat(w)
+        if (Number.isFinite(left) && Number.isFinite(width) && width > 0) {
+          const src = obj as IText
+          const tb = new Textbox(src.text ?? '', {
+            left,
+            top: src.top,
+            width,
+            fontSize: src.fontSize,
+            fontFamily: src.fontFamily,
+            fontWeight: src.fontWeight,
+            fontStyle: src.fontStyle,
+            fill: src.fill,
+            lineHeight: src.lineHeight,
+            charSpacing: src.charSpacing,
+            textAlign: align === 'right' || align === 'center' ? align : 'left',
+            originX: 'left',
+            originY: 'top',
+            editable: true,
+            objectCaching: true,
+          })
+          ;(tb as FabricObject & { data?: Record<string, unknown> }).data = {
+            ...(anyObj.data ?? {}),
+            // applyRow NE doit PAS auto-fit ce cadre (l'auto-fit single-
+            // placeholder réduirait width → alignement du design perdu).
+            mergeFrame: true,
+          }
+          return tb
+        }
       }
       return obj
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName, fitTextWidthsToPdf, stripMupdfMasks } from './pdfToSvg'
+import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName, fitTextWidthsToPdf, stripMupdfMasks, annotateMergeFieldFrames } from './pdfToSvg'
 
 /** SVG minimal façon mutool : page 200×280, un groupe de contenu clippé à la
  *  carte (non neutre) et un groupe de marques d'impression clippé pleine page. */
@@ -151,6 +151,37 @@ describe('fitTextWidthsToPdf', () => {
     const t = new DOMParser().parseFromString(out, 'image/svg+xml').querySelector('text')!
     expect(t.getAttribute('transform')).toBeNull()
     expect(t.getAttribute('data-pdf-run-width')).toBeNull()
+  })
+})
+
+describe('annotateMergeFieldFrames', () => {
+  it('pose le cadre du bloc + alignement droite détecté (bords droits communs)', () => {
+    // Géométrie réelle Monoprix : 3 champs aux bords droits alignés (~160)
+    const out = annotateMergeFieldFrames(wrap(
+      '<g id="bloc-marketing">' +
+      '<text x="99.7" y="206.8" font-size="9" data-pdf-run-width="56.6">{{Libelle Article}}</text>' +
+      '<text x="127.3" y="216.4" font-size="8" data-pdf-run-width="29.5">{{brands}}</text>' +
+      '<text x="128.1" y="223.6" font-size="6" data-pdf-run-width="29.4">{{Description}}</text>' +
+      '</g>',
+    ))
+    const dom = new DOMParser().parseFromString(out, 'image/svg+xml')
+    const frames = Array.from(dom.querySelectorAll('text')).map((t) => t.getAttribute('data-merge-frame'))
+    expect(frames).toHaveLength(3)
+    for (const f of frames) {
+      expect(f).not.toBeNull()
+      const [left, width, align] = f!.split(',')
+      expect(parseFloat(left)).toBeCloseTo(99.7, 0)
+      expect(parseFloat(width)).toBeGreaterThan(55)
+      expect(align).toBe('right')
+    }
+  })
+
+  it('ignore les champs isolés et les blocs non-placeholder', () => {
+    const out = annotateMergeFieldFrames(wrap(
+      '<g><text x="10" y="10" font-size="9" data-pdf-run-width="20">{{seul}}</text>' +
+      '<text x="10" y="20" font-size="9" data-pdf-run-width="20">Texte fixe</text></g>',
+    ))
+    expect(out).not.toContain('data-merge-frame')
   })
 })
 

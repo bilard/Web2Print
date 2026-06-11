@@ -285,6 +285,49 @@ export function groupMupdfTextBlocks(svg: string): string {
   return grouped ? new XMLSerializer().serializeToString(dom) : svg
 }
 
+/**
+ * Annote les champs de fusion {{…}} groupés en bloc marketing avec leur CADRE
+ * de composition : largeur = union du bloc, alignement détecté depuis la
+ * géométrie réelle du PDF (bords droits communs → right, centres → center).
+ * svgToFabric convertit ces <text> en **Textbox à cadre fixe** — sans ça la
+ * substitution de fusion perd le formatage d'origine : un IText s'étend vers
+ * la droite depuis son ancre gauche (alignement à droite du design perdu) et
+ * les valeurs longues débordent au lieu de passer à la ligne.
+ */
+export function annotateMergeFieldFrames(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  let changed = false
+  for (const g of Array.from(dom.documentElement.querySelectorAll('g'))) {
+    const texts = Array.from(g.children).filter(
+      (el): el is Element => el.tagName === 'text' && /\{\{/.test(el.textContent ?? ''),
+    )
+    if (texts.length < 2) continue
+    interface F { el: Element; left: number; right: number }
+    const fields: F[] = []
+    for (const el of texts) {
+      const x = parseFloat(el.getAttribute('x') ?? '')
+      const run = parseFloat(el.getAttribute('data-pdf-run-width') ?? '')
+      const n = (el.textContent ?? '').length
+      if (!Number.isFinite(x) || !Number.isFinite(run) || n < 2) continue
+      // data-pdf-run-width va jusqu'au DÉBUT du dernier glyphe → extrapole sa chasse.
+      fields.push({ el, left: x, right: x + (run * n) / (n - 1) })
+    }
+    if (fields.length < 2) continue
+    const frameLeft = Math.min(...fields.map((f) => f.left))
+    const frameRight = Math.max(...fields.map((f) => f.right))
+    const spread = (vals: number[]) => Math.max(...vals) - Math.min(...vals)
+    const align = spread(fields.map((f) => f.right)) <= 2.5 ? 'right'
+      : spread(fields.map((f) => (f.left + f.right) / 2)) <= 2.5 ? 'center'
+      : 'left'
+    for (const f of fields) {
+      f.el.setAttribute('data-merge-frame', `${frameLeft.toFixed(1)},${(frameRight - frameLeft).toFixed(1)},${align}`)
+      changed = true
+    }
+  }
+  return changed ? new XMLSerializer().serializeToString(dom) : svg
+}
+
 /** Bbox approximative d'un path : min/max des points M/L/C/H/V, transformés
  *  par la matrice InDesign classique matrix(a,b,c,d,e,f). Suffisant pour les
  *  rounded-rects d'ombre/de carte (les points de contrôle Bézier débordent
@@ -500,6 +543,10 @@ export function fitTextWidthsToPdf(svg: string): string {
     if (t.getAttribute('transform')) continue // rotaté : laissé tel quel
     const content = t.textContent ?? ''
     if (content.length < 2) continue
+    // Champ de fusion : le contenu sera REMPLACÉ par les données — caler la
+    // chasse du placeholder n'a pas de sens (et le scaleX fausserait le cadre
+    // du Textbox posé par annotateMergeFieldFrames).
+    if (/\{\{/.test(content)) continue
     const fs = parseFloat(t.getAttribute('font-size') ?? '12')
     const family = (t.getAttribute('font-family') ?? 'sans-serif').replace(/"/g, '')
     const bold = (t.getAttribute('font-weight') ?? '') === 'bold'
@@ -689,6 +736,10 @@ async function convertWithMupdf(
       // Textes d'un même bloc visuel (prix composé, bulle %…) → un <g> = un
       // Group Fabric déplaçable d'un tenant.
       svg = groupMupdfTextBlocks(svg)
+      // Champs {{…}} → cadre de composition (largeur du bloc + alignement
+      // détecté) : svgToFabric en fera des Textbox qui gardent le formatage
+      // d'origine à la fusion (alignement, retour à la ligne).
+      svg = annotateMergeFieldFrames(svg)
       // Polices en sous-ensembles (WRZTFA+ArialNarrow-Bold) → familles propres.
       svg = cleanSubsetFontFamilies(svg)
 
