@@ -124,6 +124,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // État du node « Veille prix » (derniers prix vus, par identifiant de suivi).
+    match /users/{uid}/priceWatch/{watchId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // Historique des runs serveur (écrit par les Functions, lu par le propriétaire).
     match /users/{uid}/workflowRuns/{runId} {
       allow read: if isAuthenticated() && request.auth.uid == uid;

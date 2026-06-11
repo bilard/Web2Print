@@ -95,6 +95,26 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     ],
   },
   {
+    id: 'price-watch-telegram',
+    name: 'Veille prix → alerte Telegram',
+    description:
+      'Re-scrape une liste d’URLs (cron), compare avec les prix mémorisés et alerte sur Telegram seulement si un prix a bougé.',
+    emoji: '📉',
+    nodes: [
+      node('n0', 'cron', 80, 40, { enabled: false, every: 1, unit: 'day', atTime: '08:00', weekday: 1 }),
+      node('n1', 'scrape-url', 80, 200, { urls: '', template: 'product_full', customFields: '' }),
+      node('n2', 'price-watch', 460, 200, { watchId: 'veille-1', keyColumn: 'url', valueColumn: 'price', thresholdPct: 0 }),
+      node('n3', 'send-telegram', 840, 200, {
+        botToken: '',
+        chatId: '',
+        text: '📉 {{title}} : {{ancien_prix}} → {{nouveau_prix}} ({{variation_pct}} %)',
+        parseMode: 'none',
+        iterate: true,
+      }),
+    ],
+    edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'changes', 'n3', 'data')],
+  },
+  {
     id: 'web-research-excel',
     name: 'Recherche web → Excel',
     description:
