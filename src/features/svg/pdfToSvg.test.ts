@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks } from './pdfToSvg'
+import { unwrapNeutralClipGroups, dedupeMupdfTexts, groupMupdfTextBlocks, parsePdfFontName } from './pdfToSvg'
 
 /** SVG minimal façon mutool : page 200×280, un groupe de contenu clippé à la
  *  carte (non neutre) et un groupe de marques d'impression clippé pleine page. */
@@ -100,5 +100,20 @@ describe('groupMupdfTextBlocks', () => {
       '<text x="12" y="110" font-size="10" fill="#ffffff" transform="rotate(-90 12 110)">PROMO</text>',
     ))
     expect(new DOMParser().parseFromString(out, 'image/svg+xml').querySelectorAll('g')).toHaveLength(0)
+  })
+})
+
+describe('parsePdfFontName', () => {
+  it.each([
+    // Noms réels du PDF Monoprix — le suffixe de style colle parfois sans tiret
+    ['WRZTFA+BebasNeueBold', 'Bebas Neue', '700', 'normal'],
+    ['WRZTFA+BebasNeue', 'Bebas Neue', '400', 'normal'],
+    ['WRZTFA+ArialNarrow-Bold', 'Arial Narrow', '700', 'normal'],
+    ['WRZTFA+ArialNarrow', 'Arial Narrow', '400', 'normal'],
+    ['WRZTFA+Helvetica', 'Helvetica', '400', 'normal'],
+    ['Foo-BoldItalic', 'Foo', '700', 'italic'],
+    ['MyriadPro-Regular', 'Myriad Pro', '400', 'normal'],
+  ])('%s → %s %s %s', (raw, family, weight, style) => {
+    expect(parsePdfFontName(raw)).toEqual({ family, weight, style })
   })
 })

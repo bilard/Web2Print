@@ -7,7 +7,7 @@ import { IdmlSummaryModal } from '@/features/idml/IdmlSummaryModal'
 import { traverseDataTransfer, dataTransferHasDirectory } from '@/lib/dragdrop'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
-import { convertPdfToEditableSvg } from '@/features/svg/pdfToSvg'
+import { convertPdfToEditableSvg, type PdfFontAsset } from '@/features/svg/pdfToSvg'
 import { withProgress } from '@/stores/progress.store'
 
 export interface ImportSelection {
@@ -15,6 +15,8 @@ export interface ImportSelection {
   files: File[]
   /** Dimensions canvas suggérées (présent pour image-to-svg / pdf-to-svg : matche les pixels natifs de la source). */
   canvas?: { width: number; height: number }
+  /** Polices chargées pour le rendu (pdf-to-svg) — à uploader dans le projet créé. */
+  fonts?: PdfFontAsset[]
 }
 
 interface ImportPanelProps {
@@ -135,8 +137,8 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
     }
     setConvertingPdf(true)
     try {
-      const { file: svgFile, width, height } = await withProgress('Rasterisation PDF → SVG…', () => convertPdfToEditableSvg(file))
-      onImport({ type: 'pdf-to-svg', files: [svgFile], canvas: { width, height } })
+      const { file: svgFile, width, height, fonts } = await withProgress('Rasterisation PDF → SVG…', () => convertPdfToEditableSvg(file))
+      onImport({ type: 'pdf-to-svg', files: [svgFile], canvas: { width, height }, fonts })
     } catch (err) {
       console.error('PDF → SVG conversion error', err)
       toast.error('Échec de la conversion PDF → SVG', { description: err instanceof Error ? err.message : String(err) })

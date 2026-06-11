@@ -16,11 +16,23 @@ import * as pdfjsLib from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage, auth } from '@/lib/firebase/config'
+import { registerDynamicFontVariant } from '@/features/assets/useFonts'
+import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
 /** Côté le plus long visé pour la rasterisation (compromis qualité OCR / coût Vision). */
 const TARGET_MAX_PX = 2000
+
+/** Police rendue disponible pour l'import (extraite du PDF ou tirée de Google
+ *  Fonts) — à uploader dans `projects/{id}/fonts/` pour la réouverture. */
+export interface PdfFontAsset {
+  family: string
+  weight: string
+  style: string
+  data: Uint8Array
+  ext: 'ttf' | 'woff2'
+}
 
 export interface PdfToSvgResult {
   /** Blob SVG prêt à être passé à parseSvg / loadSVGFromString */
@@ -34,6 +46,8 @@ export interface PdfToSvgResult {
   storagePath: string
   /** true = le PDF avait un calque texte natif → <text> SVG exacts, OCR inutile */
   hasTextLayer: boolean
+  /** Polices chargées pour ce PDF (absentes du navigateur) — à persister dans le projet. */
+  fonts: PdfFontAsset[]
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
@@ -280,9 +294,33 @@ function stripMupdfMasks(svg: string): string {
 }
 
 /**
+ * « WRZTFA+ArialNarrow-Bold » → { family: 'Arial Narrow', weight: '700' } :
+ * retire le préfixe de subset, déduit graisse/style du nom (avec OU SANS
+ * séparateur — « BebasNeueBold » compte), retire le suffixe de style, espace
+ * le camelCase. Partagé entre le nettoyage du SVG et l'extraction des polices
+ * embarquées — les deux DOIVENT produire le même nom de famille.
+ */
+export function parsePdfFontName(raw: string): { family: string; weight: string; style: string } {
+  let name = raw.replace(/^[A-Z]{6}\+/, '')
+  const bold = /bold|black|heavy/i.test(name)
+  const italic = /italic|oblique/i.test(name)
+  // Suffixes de style enchaînés (« -BoldItalic », « Bold ») ; « Narrow » /
+  // « Condensed » sont des sous-familles typographiques, on les garde.
+  name = name.replace(/(?:[-_ ]?(?:Extra|Semi|Demi|Ultra)?(?:Bold|Black|Heavy|Italic|Oblique|Regular|Light|Medium|Thin))+$/i, '')
+  const family = name
+    .replace(/[-_]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim() || raw
+  return { family, weight: bold ? '700' : '400', style: italic ? 'italic' : 'normal' }
+}
+
+/**
  * Nettoie les polices en sous-ensembles PDF (« WRZTFA+ArialNarrow-Bold ») :
- * retire le préfixe de subset, déduit la graisse du nom, mappe vers des
- * familles installées avec fallback sans-serif.
+ * famille propre + graisse/style en attributs. La famille est posée SEULE,
+ * sans pile « , Arial, sans-serif » : Fabric ne quote pas un fontFamily
+ * contenant une virgule → ctx.font invalide → le canvas retombait sur sa
+ * police par défaut (serif) même quand la famille était disponible.
  */
 function cleanSubsetFontFamilies(svg: string): string {
   const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
@@ -290,19 +328,130 @@ function cleanSubsetFontFamilies(svg: string): string {
   for (const t of Array.from(dom.querySelectorAll('text'))) {
     const raw = t.getAttribute('font-family') ?? ''
     if (!raw) continue
-    let family = raw.replace(/^[A-Z]{6}\+/, '')
-    if (/bold|black|heavy/i.test(family) && !t.getAttribute('font-weight')) {
-      t.setAttribute('font-weight', 'bold')
-    }
-    if (/italic|oblique/i.test(family) && !t.getAttribute('font-style')) {
-      t.setAttribute('font-style', 'italic')
-    }
-    // « ArialNarrow-Bold » → « Arial Narrow » ; retire le suffixe de style.
-    family = family.replace(/[-_](Bold|Black|Heavy|Italic|Oblique|Regular|Light|Medium|Condensed)+$/i, '')
-    const spaced = family.replace(/([a-z])([A-Z])/g, '$1 $2')
-    t.setAttribute('font-family', `${spaced}, Arial, sans-serif`)
+    const { family, weight, style } = parsePdfFontName(raw)
+    if (weight === '700' && !t.getAttribute('font-weight')) t.setAttribute('font-weight', 'bold')
+    if (style === 'italic' && !t.getAttribute('font-style')) t.setAttribute('font-style', 'italic')
+    t.setAttribute('font-family', family)
   }
   return new XMLSerializer().serializeToString(dom)
+}
+
+/**
+ * Extrait les fichiers de polices EMBARQUÉS du PDF (FontDescriptor →
+ * FontFile/FontFile2 = TrueType/Type1 exploitables par FontFace). Les
+ * FontFile3 (CFF nu, sans tables sfnt) ne sont pas chargeables tels quels —
+ * leurs familles passeront par le fallback Google Fonts.
+ */
+function extractPdfFonts(
+  doc: { countObjects(): number; newIndirect(i: number): { resolve(): unknown } },
+): { name: string; data: Uint8Array }[] {
+  const out: { name: string; data: Uint8Array }[] = []
+  const seen = new Set<string>()
+  let count = 0
+  try { count = doc.countObjects() } catch { return out }
+  for (let i = 1; i < count; i++) {
+    try {
+      const obj = doc.newIndirect(i).resolve() as {
+        isDictionary?: () => boolean
+        get?: (k: string) => { asName?: () => string; isNull?: () => boolean; readStream?: () => { asUint8Array(): Uint8Array } } | null
+      } | null
+      if (!obj?.isDictionary?.() || !obj.get) continue
+      if (obj.get('Type')?.asName?.() !== 'FontDescriptor') continue
+      const name = obj.get('FontName')?.asName?.() ?? ''
+      if (!name || seen.has(name)) continue
+      for (const key of ['FontFile2', 'FontFile']) {
+        const ff = obj.get(key)
+        if (!ff || ff.isNull?.()) continue
+        const data = ff.readStream?.().asUint8Array()
+        if (data && data.length > 0) {
+          out.push({ name, data })
+          seen.add(name)
+        }
+        break
+      }
+    } catch { /* objet illisible — on continue */ }
+  }
+  return out
+}
+
+/** Tire le binaire woff2 d'une famille sur Google Fonts (null si absente). */
+async function fetchGoogleFont(family: string): Promise<Uint8Array | null> {
+  try {
+    const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}`
+    const cssResp = await fetch(url)
+    if (!cssResp.ok) return null
+    const css = await cssResp.text()
+    const fontUrl = css.match(/url\((https:[^)]+\.woff2)\)/)?.[1]
+    if (!fontUrl) return null
+    const binResp = await fetch(fontUrl)
+    if (!binResp.ok) return null
+    return new Uint8Array(await binResp.arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
+/** ArrayBuffer « propre » (sans offset) pour FontFace. */
+const toArrayBuffer = (u8: Uint8Array): ArrayBuffer =>
+  u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer
+
+/**
+ * Rend disponibles les polices du SVG converti : les subsets TrueType
+ * embarqués dans le PDF sont enregistrés via FontFace sous leur nom de
+ * famille nettoyé ; les familles restantes indisponibles (CFF non
+ * extractible, ex. Bebas Neue) sont tirées de Google Fonts (enregistrées en
+ * 400 ET 700 — sinon le navigateur synthétiserait un faux-bold). Retourne les
+ * fichiers chargés pour persistance dans `projects/{id}/fonts/`.
+ */
+async function registerPdfFonts(
+  extracted: { name: string; data: Uint8Array }[],
+  svg: string,
+): Promise<PdfFontAsset[]> {
+  const assets: PdfFontAsset[] = []
+  const isAvailable = (family: string): boolean => {
+    try { return document.fonts.check(`12px "${family.replace(/"/g, '')}"`) } catch { return false }
+  }
+
+  for (const f of extracted) {
+    const { family, weight, style } = parsePdfFontName(f.name)
+    if (isAvailable(family)) continue // police système/déjà chargée : plus complète que le subset
+    try {
+      const buf = toArrayBuffer(f.data)
+      const face = new FontFace(family, buf, { weight, style })
+      await face.load()
+      document.fonts.add(face)
+      const fileName = `${family}__${weight}__${style}.ttf`
+      registerDynamicFontVariant(family, weight, style, fileName)
+      registerFontBuffer(family, weight, style, buf, fileName)
+      assets.push({ family, weight, style, data: f.data, ext: 'ttf' })
+    } catch (err) {
+      console.warn(`[pdfToSvg] police embarquée « ${f.name} » illisible :`, err)
+    }
+  }
+
+  // Familles encore manquantes après les embarquées → Google Fonts.
+  const families = new Set(Array.from(svg.matchAll(/font-family="([^",]+)"/g), (m) => m[1].trim()))
+  for (const family of families) {
+    if (isAvailable(family)) continue
+    const data = await fetchGoogleFont(family)
+    if (!data) {
+      console.warn(`[pdfToSvg] police « ${family} » indisponible (ni embarquée exploitable, ni Google Fonts) — fallback navigateur`)
+      continue
+    }
+    const buf = toArrayBuffer(data)
+    for (const weight of ['400', '700'] as const) {
+      try {
+        const face = new FontFace(family, buf, { weight, style: 'normal' })
+        await face.load()
+        document.fonts.add(face)
+        const fileName = `${family}__${weight}__normal.woff2`
+        registerDynamicFontVariant(family, weight, 'normal', fileName)
+        registerFontBuffer(family, weight, 'normal', buf, fileName)
+        assets.push({ family, weight, style: 'normal', data, ext: 'woff2' })
+      } catch { /* graisse refusée — l'autre suffira */ }
+    }
+  }
+  return assets
 }
 
 /**
@@ -365,7 +514,7 @@ function flattenMupdfTextTransforms(svg: string): string {
  */
 async function convertWithMupdf(
   pdfFile: File,
-): Promise<{ svg: string; width: number; height: number; textCount: number } | null> {
+): Promise<{ svg: string; width: number; height: number; textCount: number; pdfFonts: { name: string; data: Uint8Array }[] } | null> {
   try {
     const mupdf = await import('mupdf')
     const data = new Uint8Array(await pdfFile.arrayBuffer())
@@ -417,7 +566,10 @@ async function convertWithMupdf(
       const textCount = (svg.match(/<text[\s>]/g) ?? []).length
       // Marqueur pdf-text-layer (attribut) : EditorPage saute l'auto-décompo OCR.
       svg = svg.replace('<svg ', '<svg data-pipeline="pdf-to-svg-mupdf" data-text-layer="pdf-text-layer" ')
-      return { svg, width, height, textCount }
+      // Fichiers de polices embarqués (subsets TrueType) : extraits AVANT le
+      // destroy du document, chargés ensuite via FontFace pour un rendu fidèle.
+      const pdfFonts = extractPdfFonts(doc as unknown as Parameters<typeof extractPdfFonts>[0])
+      return { svg, width, height, textCount, pdfFonts }
     } finally {
       doc.destroy()
     }
@@ -574,6 +726,9 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
   //    les textes éditables.
   const vector = await convertWithMupdf(pdfFile)
   if (vector && vector.width > 0 && vector.height > 0 && vector.textCount > 0) {
+    // Polices du PDF rendues disponibles AVANT le rendu Fabric (fidélité :
+    // sans elles, « 22 » Bebas Neue retombait sur le serif par défaut).
+    const fonts = await registerPdfFonts(vector.pdfFonts, vector.svg)
     const svgFile = new File([vector.svg], `${baseNameForFile}.svg`, { type: 'image/svg+xml' })
     return {
       file: svgFile,
@@ -582,6 +737,7 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
       imageUrl: '',
       storagePath: '',
       hasTextLayer: true,
+      fonts,
     }
   }
 
@@ -642,5 +798,5 @@ ${textLayer}</svg>
   const baseName = pdfFile.name.replace(/\.[^.]+$/, '') || 'pdf'
   const svgFile = new File([svg], `${baseName}.svg`, { type: 'image/svg+xml' })
 
-  return { file: svgFile, width, height, imageUrl, storagePath, hasTextLayer }
+  return { file: svgFile, width, height, imageUrl, storagePath, hasTextLayer, fonts: [] }
 }

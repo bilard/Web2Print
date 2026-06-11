@@ -1,10 +1,13 @@
 import { create } from 'zustand'
 import type { IdmlUploadState } from '@/features/idml/useIdmlUpload'
 import type { DamImage } from '@/features/dam/types'
+import type { PdfFontAsset } from '@/features/svg/pdfToSvg'
 
 interface PendingImport {
   type: 'idml' | 'pptx' | 'image' | 'svg' | 'image-to-svg' | 'pdf-to-svg'
   files: File[]
+  /** Polices du PDF importé — uploadées dans projects/{id}/fonts/ par EditorPage. */
+  fonts?: PdfFontAsset[]
 }
 
 interface ProjectState {

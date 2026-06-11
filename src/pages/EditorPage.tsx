@@ -28,6 +28,8 @@ import { FabricImage } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { TourLauncher } from '@/features/tour/TourLauncher'
+import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
+import { storage } from '@/lib/firebase/config'
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -105,8 +107,21 @@ export default function EditorPage() {
   useEffect(() => {
     if (!pendingImport) return
     const timer = setTimeout(async () => {
-      const { type, files } = pendingImport
+      const { type, files, fonts } = pendingImport
       setPendingImport(null)
+
+      // Polices du PDF importé : persistées dans projects/{id}/fonts/ —
+      // loadProjectFonts les rechargera à chaque réouverture (format
+      // {Family}__{weight}__{style}.{ext}). Fire-and-forget : un échec
+      // d'upload ne bloque pas l'import (les FontFace sont déjà actives).
+      if (fonts?.length && id) {
+        for (const f of fonts) {
+          const path = `projects/${id}/fonts/${f.family}__${f.weight}__${f.style}.${f.ext}`
+          uploadBytes(fbStorageRef(storage, path), f.data).catch((err) =>
+            console.warn(`[EditorPage] upload police ${f.family} échoué :`, err),
+          )
+        }
+      }
 
       // Reset des paramètres d'impression aux défauts ; les repères restent
       // désactivés, l'utilisateur les active à la demande depuis le panneau.

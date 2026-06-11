@@ -214,7 +214,7 @@ export default function DashboardPage() {
         title = selection.files[0]?.name.replace(/\.[^.]+$/, '') || 'Import'
       }
 
-      setPendingImport({ type: selection.type, files: selection.files })
+      setPendingImport({ type: selection.type, files: selection.files, fonts: selection.fonts })
 
       const project = await createProject.mutateAsync({
         title,
