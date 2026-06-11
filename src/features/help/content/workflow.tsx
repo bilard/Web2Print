@@ -127,6 +127,18 @@ Le node **« Approbation Telegram »** met le run en pause et envoie la question
     },
     {
       type: 'text',
+      md: `### Webhook entrant (déclenchement externe)
+
+Le bouton **Webhook** dans l'en-tête de l'éditeur génère une **URL secrète** pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple \`curl\`) :
+
+\`\`\`
+curl -X POST -H "X-Webhook-Secret: <secret>" "<URL>?id=<workflowId>"
+\`\`\`
+
+L'exécution se fait **côté serveur** (mêmes nodes que le cron) et apparaît dans l'historique des runs. Le secret se régénère à tout moment ; désactiver le webhook coupe immédiatement l'accès.`,
+    },
+    {
+      type: 'text',
       md: `### Débugger pas à pas
 
 Le bouton **« Pas à pas »** (à côté de Run) exécute le workflow node par node : le run se met en pause avant chaque étape — le bouton ambre **« Étape : <node> »** dans l'en-tête exécute la suivante. Entre deux étapes, inspecte les sorties dans le panneau de prévisualisation. **Stop** interrompt proprement, même en pause.`,

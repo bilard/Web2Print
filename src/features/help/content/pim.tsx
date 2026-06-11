@@ -82,6 +82,12 @@ Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables 
     },
     {
       type: 'text',
+      md: `### Vue galerie
+
+Le basculeur **tableau / galerie** (en haut à droite de la table) affiche les produits en **cartes** : visuel (colonne image détectée automatiquement), titre, prix ou marque, et pastille de complétude. Cliquer une carte ouvre la fiche. Le mode choisi est mémorisé.`,
+    },
+    {
+      type: 'text',
       md: `### Complétude des fiches
 
 Chaque ligne de la table porte une **pastille de complétude** : verte (≥ 90 % des colonnes remplies), ambre (≥ 60 %) ou rouge. Survole-la pour voir les **champs manquants**. La barre d'état sous la table affiche la **complétude moyenne** des lignes visibles — pratique pour prioriser l'enrichissement.`,

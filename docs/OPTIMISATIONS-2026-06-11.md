@@ -73,8 +73,42 @@ Chaque livraison : `tsc -b` propre (app + functions), suite Vitest verte
 `master`, build production et `firebase deploy` (hosting ; + functions/rules pour le
 node d'approbation).
 
-## Chantiers validés à venir
-- **Re-skin v2** : fond régénéré Nano Banana + auto-matching sémantique.
-- **Master pages / Brand kit** : éléments répétés inter-pages, charte verrouillée.
-- **Vue galerie PIM** : cartes produits avec image + complétude.
-- **Webhooks entrants** : URL par workflow pour déclenchement externe (Zapier/ERP).
+## Vague 2 — chantiers validés, livrés le même jour
+
+### 9. Webhook entrant des workflows (`efb8c05`)
+Function `workflowWebhook` (POST `?id=<workflowId>` + header `X-Webhook-Secret`) :
+exécution serveur via le même chemin headless que le cron, historique des runs,
+404 indifférencié / 401 secret faux. Panneau **Webhook** dans l'éditeur de workflow :
+activer, URL + secret copiables, régénérer, désactiver. Règles owner-only.
+- Fichiers : `functions/src/workflow/webhookTrigger.ts`, `src/features/workflows/editor/WebhookPanel.tsx`.
+
+### 10. Vue galerie PIM (`62724ff`)
+Basculeur tableau/galerie au-dessus de la table de données : cartes produit
+(visuel détecté heuristiquement, titre, prix/marque, pastille de complétude),
+clic = ouvre la fiche, mode persisté.
+- Fichiers : `src/features/excel/GalleryView.tsx`, intégration `DataTable.tsx`.
+
+### 11. Re-skin v2 — fond régénéré Nano Banana (`43d227f`)
+Section **« Fond IA »** du panneau Données (visible sur un flyer décomposé) :
+le fond verrouillé actuel part en image de référence, prompt + garde-fous
+(proportions conservées, aucun texte rendu), remplacement in-place — les
+overlays `{{champ}}` restent éditables. Undo possible.
+- Fichiers : `src/features/merge/RegenerateBgPanel.tsx`.
+
+### 12. Éléments maîtres — master pages v1 (`629e76c`)
+Clic droit → **« Répéter sur toutes les pages »** : l'objet (logo, pagination,
+mentions) reçoit un `data.masterId` et est inséré/resynchronisé sur chaque page ;
+« Retirer des autres pages » supprime les copies.
+- Fichiers : `src/features/editor/masterElements.ts`, intégration `ContextMenu.tsx`.
+
+### 13. Kit de marque global (`3e73d9a`)
+Section **« Kit de marque (global) »** en tête du panneau Palette : couleurs
+partagées entre tous les projets (`users/{uid}.brandKit`), import bidirectionnel
+projet ↔ kit, dédoublonnage par hex.
+- Fichiers : `src/features/brandkit/useBrandKit.ts`, `src/components/panels/BrandKitSection.tsx`.
+
+## Reste en réserve (non commencé)
+- Auto-matching sémantique prix/titre au re-skin (semanticLayout).
+- Historique visuel des versions, styles d'objets réutilisables.
+- Node « veille prix », digest Telegram quotidien, tagging IA DAM,
+  déclinaisons multi-format, états vides + tours guidés étendus.
