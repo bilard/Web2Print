@@ -32,8 +32,9 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => onSnapshot(doc(db, 'workflowWebhooks', workflowId), (s) =>
-    setCfg(s.exists() ? (s.data() as WebhookDoc) : null)), [workflowId])
+  useEffect(() => onSnapshot(doc(db, 'workflowWebhooks', workflowId),
+    (s) => setCfg(s.exists() ? (s.data() as WebhookDoc) : null),
+    (err) => console.warn('[webhook] écoute Firestore interrompue :', err.message)), [workflowId])
 
   useEffect(() => {
     if (!open) return
@@ -50,7 +51,10 @@ export function WebhookPanel({ workflowId }: { workflowId: string }) {
   const ref = doc(db, 'workflowWebhooks', workflowId)
 
   const enable = async () => {
-    await setDoc(ref, { uid, secret: cfg?.secret ?? newSecret(), enabled: true, createdAt: serverTimestamp() }, { merge: true })
+    const secret = cfg?.secret ?? newSecret()
+    await setDoc(ref, { uid, secret, enabled: true, createdAt: serverTimestamp() }, { merge: true })
+    // Bascule optimiste : ne pas dépendre du listener pour afficher l'URL + secret.
+    setCfg((prev) => ({ ...(prev ?? { uid, secret }), secret, enabled: true }))
     toast.success('Webhook activé.')
   }
   const disable = () => updateDoc(ref, { enabled: false })

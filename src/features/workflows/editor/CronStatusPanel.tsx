@@ -21,8 +21,9 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
   const [now, setNow] = useState(() => Date.now())
   const [running, setRunning] = useState(false)
 
-  useEffect(() => onSnapshot(doc(db, 'workflowSchedules', workflowId), (s) =>
-    setSched(s.exists() ? (s.data() as ScheduleDoc) : null)), [workflowId])
+  useEffect(() => onSnapshot(doc(db, 'workflowSchedules', workflowId),
+    (s) => setSched(s.exists() ? (s.data() as ScheduleDoc) : null),
+    (err) => console.warn('[cron] écoute Firestore interrompue :', err.message)), [workflowId])
 
   useEffect(() => {
     if (!sched?.enabled) return
