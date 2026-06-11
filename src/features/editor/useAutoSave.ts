@@ -9,6 +9,7 @@ import { usePaletteStore } from '@/stores/palette.store'
 import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
+import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
 export let globalSave: (() => Promise<void>) | null = null
@@ -164,7 +165,7 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
   }
 
   // Step 3: Serialize with all images now having permanent URLs
-  const canvasJson = canvas.toObject(['data'])
+  const canvasJson = canvas.toObject(FABRIC_SERIALIZED_PROPS)
 
   // Step 4: Restore resolved text/styles/size on canvas (user sees data, not templates)
   for (const { obj, resolved, resolvedStyles, resolvedWidth } of resolvedTexts) {

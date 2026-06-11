@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { globalFabricCanvas } from './CanvasContainer'
 import { usePagesStore } from '@/stores/pages.store'
 import { syncToStore } from './useAddObject'
+import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 export function usePageNavigation() {
   const { pages, currentPageIndex, updatePage, setCurrentPage } = usePagesStore()
@@ -12,7 +13,7 @@ export function usePageNavigation() {
     const page = pages[currentPageIndex]
     if (!page) return
 
-    const json = JSON.stringify(canvas.toObject(['data']))
+    const json = JSON.stringify(canvas.toObject(FABRIC_SERIALIZED_PROPS))
     const thumbnail = canvas.toDataURL({ multiplier: 0.15, format: 'jpeg', quality: 0.5 } as any)
     updatePage(page.id, { canvasJSON: json, thumbnail })
   }, [pages, currentPageIndex, updatePage])

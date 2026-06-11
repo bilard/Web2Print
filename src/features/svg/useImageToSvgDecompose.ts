@@ -1824,6 +1824,10 @@ export async function decomposeOnCanvas(
     if (syncStore) syncToStore(canvas)
   } finally {
     _skipStoreSync = prevSkip
+    // Le toast de progression des passes (id 'wf') n'appartient à personne
+    // d'autre : sans dismiss, il reste en « loading » À VIE après la fin
+    // (l'utilisateur croit la décomposition gelée sur « Analyse sémantique… »).
+    toast.dismiss('wf')
   }
 
   log?.('info', `Décomposition terminée — ${kept} textes/formes éditables ajoutés`)

@@ -152,6 +152,9 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
       backgroundColor: WORK_AREA_BG[useThemeStore.getState().resolvedTheme],
       selection: true,
       preserveObjectStacking: true,
+      // Halo de visée pour les objets en perPixelTargetFind (imports SVG/PDF) :
+      // sans tolérance, les traits fins (marques de coupe…) seraient incliquables.
+      targetFindTolerance: 6,
     })
 
     // Add page rectangle (white area representing the document)

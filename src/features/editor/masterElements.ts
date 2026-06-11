@@ -6,6 +6,7 @@ import type { FabricObject } from 'fabric'
 import { usePagesStore } from '@/stores/pages.store'
 import { globalFabricCanvas, globalSnapshot } from './CanvasContainer'
 import { syncToStore } from './useAddObject'
+import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 interface SerializedObject {
   data?: { masterId?: string }
@@ -58,7 +59,7 @@ export function repeatSelectedOnAllPages(): RepeatResult | null {
   const data = (obj.data ?? {}) as Record<string, unknown>
   const masterId = (data.masterId as string | undefined) ?? (data.id as string | undefined) ?? `master_${Date.now()}`
   obj.set({ data: { ...data, id: data.id ?? masterId, masterId } })
-  const objJson = obj.toObject(['data'])
+  const objJson = obj.toObject(FABRIC_SERIALIZED_PROPS)
 
   const { pages, currentPageIndex, updatePage } = usePagesStore.getState()
   let applied = 0

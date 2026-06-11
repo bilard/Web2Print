@@ -375,8 +375,15 @@ function decorateAll(objects: FabricObject[]): void {
       name: (existing.name as string | undefined) ?? humanName(kind, 0),
       role,
     }
+    // Sélection AU PIXEL DESSINÉ pour les formes/groupes : un path au cadre
+    // englobant (contour de carte, marque de coupe traversante, fond) capte
+    // sinon tous les clics de sa bbox et masque les objets situés dessous
+    // (vu : PDF importé où plus aucun texte n'était sélectionnable). Les textes
+    // gardent le ciblage bbox (cliquer entre les glyphes doit sélectionner).
+    const isTextTarget = obj instanceof IText || obj instanceof Textbox || obj instanceof FabricText
     obj.set({
       objectCaching: true,
+      perPixelTargetFind: !isTextTarget,
       selectable: !isBackgroundDecor,
       evented: !isBackgroundDecor,
       hasControls: !isBackgroundDecor,

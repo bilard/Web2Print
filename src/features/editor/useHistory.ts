@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { Canvas } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
+import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 const MAX_HISTORY = 50
 
@@ -17,7 +18,7 @@ export function useHistory(fabricRef: React.RefObject<Canvas | null>) {
   const snapshot = useCallback(() => {
     const canvas = fabricRef.current
     if (!canvas || isRestoring.current) return
-    const json = JSON.stringify(canvas.toObject(['data']))
+    const json = JSON.stringify(canvas.toObject(FABRIC_SERIALIZED_PROPS))
     // Drop redo branch
     stack.current = stack.current.slice(0, cursor.current + 1)
     stack.current.push(json)

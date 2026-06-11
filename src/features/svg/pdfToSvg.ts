@@ -125,6 +125,51 @@ function unwrapMupdfRootGroups(svg: string): string {
 }
 
 /**
+ * Déballe les <g clip-path> NEUTRES : MuPDF enveloppe les marques d'impression
+ * (traits de coupe, cibles de repérage, slug InDesign) dans un <g> clippé à la
+ * PAGE ENTIÈRE, émis en dernier (sommet du z-order). Fabric en ferait UN Group
+ * dont la bbox couvre toute la page — sans test par-pixel, il capte TOUS les
+ * clics du canvas et plus rien ne semble sélectionnable. Un clip pleine page ne
+ * rogne rien : on le retire et on remonte les enfants à la racine (chaque
+ * marque devient un petit objet à bbox locale, les clics passent au travers).
+ */
+export function unwrapNeutralClipGroups(svg: string): string {
+  const dom = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  if (dom.querySelector('parsererror')) return svg
+  const root = dom.documentElement
+  const W = parseFloat(root.getAttribute('width') ?? '0')
+  const H = parseFloat(root.getAttribute('height') ?? '0')
+  if (!W || !H) return svg
+  // clipPath rectangulaires couvrant (au moins) toute la page → neutres.
+  const neutral = new Set<string>()
+  for (const cp of Array.from(dom.querySelectorAll('clipPath'))) {
+    const d = cp.querySelector('path')?.getAttribute('d') ?? ''
+    const m = d.match(/^M\s*(-?[\d.]+)[ ,]\s*(-?[\d.]+)\s*H\s*(-?[\d.]+)\s*V\s*(-?[\d.]+)\s*H\s*-?[\d.]+\s*Z$/i)
+    if (!m) continue
+    const [x0, y0, x1, y1] = m.slice(1).map(Number)
+    if (x0 <= 0.5 && y0 <= 0.5 && x1 >= W - 0.5 && y1 >= H - 0.5) {
+      const id = cp.getAttribute('id')
+      if (id) neutral.add(id)
+    }
+  }
+  if (neutral.size === 0) return svg
+  let changed = false
+  for (const g of Array.from(root.querySelectorAll('g[clip-path]'))) {
+    const ref = (g.getAttribute('clip-path') ?? '').match(/url\(#([^)]+)\)/)?.[1]
+    if (!ref || !neutral.has(ref)) continue
+    // Seul attribut = le clip neutre → déballage sans effet de rendu. Un autre
+    // attribut (transform, style…) porterait sur les enfants : on ne touche pas.
+    if (g.getAttributeNames().some((n) => n !== 'clip-path')) continue
+    const parent = g.parentNode
+    if (!parent) continue
+    while (g.firstChild) parent.insertBefore(g.firstChild, g)
+    g.remove()
+    changed = true
+  }
+  return changed ? new XMLSerializer().serializeToString(dom) : svg
+}
+
+/**
  * Retire les masques de luminosité MuPDF (ombres portées douces) : Fabric
  * ignore <mask> et dessine son CONTENU comme des objets pleins → voile gris
  * opaque par-dessus le visuel. On supprime les <mask>, leurs groupes de
@@ -261,6 +306,9 @@ async function convertWithMupdf(
       svg = stripMupdfMasks(svg)
       // Wrapper <g> de page mutool → déballé, sinon UN SEUL objet groupé.
       svg = unwrapMupdfRootGroups(svg)
+      // <g> des marques d'impression clippé pleine page → déballé, sinon il
+      // capte tous les clics du canvas (Group bbox = page entière au sommet).
+      svg = unwrapNeutralClipGroups(svg)
       // Polices en sous-ensembles (WRZTFA+ArialNarrow-Bold) → familles propres.
       svg = cleanSubsetFontFamilies(svg)
 
