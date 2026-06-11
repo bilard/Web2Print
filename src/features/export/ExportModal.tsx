@@ -1,17 +1,18 @@
 import { useState } from 'react'
-import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes } from 'lucide-react'
+import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes, Share2 } from 'lucide-react'
 import { useExportPng } from './useExportPng'
 import { useExportPdf } from './useExportPdf'
 import { useExportPptx } from './useExportPptx'
 import { useExportHtml } from './useExportHtml'
 import { useExportSvg } from './useExportSvg'
 import { useExportIdml } from '@/features/idml/useExportIdml'
+import { useExportSocialPack } from './useExportSocialPack'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { withProgress } from '@/stores/progress.store'
 import { notify } from '@/lib/notify'
 import type { PngDpi } from './useExportPng'
 
-type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml'
+type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml' | 'pack'
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
 
 interface ExportModalProps {
@@ -25,6 +26,7 @@ const ALL_FORMATS: { id: Format; label: string; icon: React.ComponentType<{ clas
   { id: 'html', label: 'HTML',      icon: Code2,        desc: 'Dossier web complet',     color: 'text-sky-400'     },
   { id: 'svg',  label: 'SVG',       icon: Shapes,       desc: 'Vectoriel éditable',      color: 'text-purple-400'  },
   { id: 'idml', label: 'IDML',      icon: Package,      desc: 'InDesign modifié',        color: 'text-violet-400', idmlOnly: true },
+  { id: 'pack', label: 'Pack social', icon: Share2,      desc: 'Carré, story, paysage, bannière (zip)', color: 'text-pink-400' },
 ]
 
 export function ExportModal({ onClose }: ExportModalProps) {
@@ -43,6 +45,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
   const { exportHtml } = useExportHtml()
   const { exportSvg } = useExportSvg()
   const { exportIdml } = useExportIdml()
+  const { exportSocialPack } = useExportSocialPack()
 
   const handleExport = async () => {
     setStatus('exporting')
@@ -55,6 +58,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
         else if (format === 'html') await exportHtml()
         else if (format === 'svg') await exportSvg()
         else if (format === 'idml') await exportIdml()
+        else if (format === 'pack') await exportSocialPack()
       })
       setStatus('done')
       notify.success(`Export ${format.toUpperCase()} terminé`, 'Fichier téléchargé.')
