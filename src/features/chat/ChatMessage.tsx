@@ -9,6 +9,7 @@ import { db, storage } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { ResponseProviderBadge } from './ModelBadge'
 import type { ChatAttachment } from './attachments'
+import { autoTagAsset } from '@/features/dam/autoTag'
 
 const PROVIDER_DISPLAY: Record<string, string> = {
   claude: 'Claude (Anthropic)',
@@ -198,6 +199,9 @@ function GeneratedImageActions({ imageUrl, mimeType, prompt }: GeneratedImageAct
         addedAt: serverTimestamp(),
         usageCount: 0,
       })
+
+      // Tagging IA en arrière-plan (best-effort).
+      void autoTagAsset(id, url)
       setSavedId(id)
       toast.success('Image sauvegardée dans Mes images')
     } catch (err) {

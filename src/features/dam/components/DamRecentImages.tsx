@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '../../../lib/firebase/config'
 import { useAuthStore } from '../../../stores/auth.store'
@@ -14,6 +14,7 @@ export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
   const user = useAuthStore((s) => s.user)
   const [images, setImages] = useState<DamImage[]>([])
   const [loading, setLoading] = useState(true)
+  const [tagFilter, setTagFilter] = useState('')
 
   useEffect(() => {
     if (!user?.uid) {
@@ -68,6 +69,16 @@ export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
     }
   }, [user?.uid, sortBy])
 
+  const filtered = useMemo(() => {
+    const norm = (x: string) => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const tokens = norm(tagFilter).split(/\s+/).filter(Boolean)
+    if (tokens.length === 0) return images
+    return images.filter((img) => {
+      const hay = norm([...(img.tags ?? []), img.description ?? '', (img as { aiSubject?: string }).aiSubject ?? ''].join(' '))
+      return tokens.every((t) => hay.includes(t))
+    })
+  }, [images, tagFilter])
+
   if (loading) {
     return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Chargement...</div>
   }
@@ -78,8 +89,16 @@ export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pb-4">
+      {/* Filtre par tags IA / description (matching client-side, insensible aux accents) */}
+      <input
+        type="text"
+        value={tagFilter}
+        onChange={(e) => setTagFilter(e.target.value)}
+        placeholder="Filtrer par tags ou description… (ex : bouteille verte)"
+        className="w-full mb-3 bg-white/5 border border-white/10 rounded-md px-3 py-1.5 text-xs text-white placeholder:text-white/25 focus:border-indigo-500 outline-none"
+      />
       <DamMasonry
-        images={images}
+        images={filtered}
         renderItem={(image) => (
           <DamImageCard
             image={image}

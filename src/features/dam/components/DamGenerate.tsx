@@ -22,6 +22,7 @@ import {
 } from '../../briefs/ai/improveImagePrompt'
 import { ImprovePromptDialog } from './ImprovePromptDialog'
 import { ImageZoomOverlay } from './ImageZoomOverlay'
+import { autoTagAsset } from '../autoTag'
 
 type AspectRatio = ImageAspectRatio
 type Resolution = ImageSize
@@ -391,6 +392,9 @@ export function DamGenerate() {
           addedAt: serverTimestamp(),
           usageCount: 0,
         })
+
+        // Tagging IA en arrière-plan (best-effort) : tags + couleur dominante.
+        void autoTagAsset(id, url)
 
         setImages((prev) =>
           prev.map((p, i) =>
