@@ -13,10 +13,10 @@ describe('buildDigestText', () => {
   })
 
   it('limite les noms en échec à 5', () => {
-    const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+    const names = ['wf-a', 'wf-b', 'wf-c', 'wf-d', 'wf-e', 'wf-sixieme', 'wf-septieme']
     const text = buildDigestText({ ok: 0, errors: 7, failedNames: names, pendingInbox: 0 })!
-    expect(text).toContain('(a, b, c, d, e)')
-    expect(text).not.toContain('f')
+    expect(text).toContain('(wf-a, wf-b, wf-c, wf-d, wf-e)')
+    expect(text).not.toContain('wf-sixieme')
   })
 
   it('inbox seule suffit à déclencher le digest', () => {
