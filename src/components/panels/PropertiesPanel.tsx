@@ -28,6 +28,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDamStore } from '@/stores/dam.store'
 import type { DamTab } from '@/features/dam/types'
 import { ImageMaskSection } from './ImageMaskSection'
+import { findStoreObjectDeep } from '@/features/editor/deepObjects'
 
 const FILL_IMAGE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
   { tab: 'stock', label: 'Stock', icon: ImageIcon },
@@ -322,7 +323,7 @@ export function PropertiesPanel() {
   const ops = useObjectOperations()
   const [activeTab, setActiveTab] = useState<'shape' | 'text'>('shape')
 
-  const storeObj = canvasObjects.find((o) => o.id === selectedObjectId)
+  const storeObj = findStoreObjectDeep(canvasObjects, selectedObjectId)
 
   // Track cursor-level text style for per-character properties
   const [cursorTextStyle, setCursorTextStyle] = useState<Record<string, unknown> | null>(null)

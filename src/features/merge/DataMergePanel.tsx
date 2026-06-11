@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { Textbox, FabricImage } from 'fabric'
+import { IText, FabricImage } from 'fabric'
 import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft, Wand2 } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type FormulaResultType, type FormulaConfig } from '@/stores/merge.store'
 import { useDataMerge } from './useDataMerge'
 import { hasPlaceholders, evaluateFormula, formatFormulaResult, variableMatchesColumn } from './mergeEngine'
-import { collectObjectsDeep } from './deepObjects'
+import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { toast } from 'sonner'
 import { DataSourcePicker } from './DataSourcePicker'
@@ -203,7 +203,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
         const objId = (obj.data?.id ?? '') as string
         const name = (obj.data?.name ?? obj.type ?? 'Objet') as string
 
-        if (obj instanceof Textbox) {
+        if (obj instanceof IText) {
           const tmpl = (obj.data?.templateText as string | undefined) ?? obj.text ?? ''
           if (hasPlaceholders(tmpl)) {
             const vars = tmpl.match(/\{\{([^}]+)\}\}/g)?.map((m: string) => m.slice(2, -2)) ?? []
@@ -488,8 +488,8 @@ function VariableTags({ columns }: { columns: { key: string; label: string }[] }
 
     const active = canvas.getActiveObject()
 
-    // Si un Textbox est en mode édition, insérer à la position du curseur
-    if (active instanceof Textbox && (active as any).isEditing) {
+    // Si un texte est en mode édition, insérer à la position du curseur
+    if (active instanceof IText && (active as any).isEditing) {
       const tb = active as any
       const selStart = tb.selectionStart ?? 0
       const selEnd = tb.selectionEnd ?? selStart
@@ -507,14 +507,15 @@ function VariableTags({ columns }: { columns: { key: string; label: string }[] }
       return
     }
 
-    // Si un Textbox est sélectionné (sans mode édition), remplacer son texte par le tag
-    if (active instanceof Textbox) {
+    // Si un texte est sélectionné (sans mode édition), remplacer son texte par le tag
+    if (active instanceof IText) {
       if (!active.data) active.data = {}
       active.data.templateText = tag
       delete active.data.templateStyles
       active.set('text', tag)
       ;(active as any).dirty = true
       active.setCoords()
+      refreshAncestorGroups(active)
       canvas.requestRenderAll()
       syncToStore(canvas)
       canvas.fire('object:modified', { target: active })

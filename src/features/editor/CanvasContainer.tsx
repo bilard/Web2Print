@@ -28,6 +28,7 @@ import { useAutoPlayPersisted } from '@/features/animation3d/useAutoPlayPersiste
 import { useUIStore } from '@/stores/ui.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { setGlobalFabricCanvas } from './globalCanvas'
+import { collectObjectsDeep } from './deepObjects'
 
 // Ré-export pour compat : les consommateurs de l'éditeur (chunks lazy) continuent
 // d'importer `globalFabricCanvas` depuis ce module. La VRAIE déclaration vit dans
@@ -56,11 +57,11 @@ export function CanvasContainer() {
   const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 })
 
   const flip3DTarget = flip3DActive && selectedObjectId && canvasReady
-    ? canvasReady.getObjects().find((o: any) => o.data?.id === selectedObjectId) ?? null
+    ? collectObjectsDeep(canvasReady.getObjects()).find((o: any) => o.data?.id === selectedObjectId) ?? null
     : null
 
   const relief3DTarget = relief3DActive && selectedObjectId && canvasReady
-    ? canvasReady.getObjects().find((o: any) => o.data?.id === selectedObjectId) ?? null
+    ? collectObjectsDeep(canvasReady.getObjects()).find((o: any) => o.data?.id === selectedObjectId) ?? null
     : null
 
   // Auto-play any persisted animations when toggle is on

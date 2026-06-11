@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { Textbox, FabricImage } from 'fabric'
+import { IText, Textbox, FabricImage } from 'fabric'
 import { doc, getDoc } from 'firebase/firestore'
 import { ref, getDownloadURL, listAll } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
@@ -8,7 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
-import { collectObjectsDeep, refreshAncestorGroups } from './deepObjects'
+import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
@@ -86,7 +86,7 @@ export function useDataMerge() {
     const canvas = globalFabricCanvas
     if (canvas) {
       for (const obj of collectObjectsDeep(canvas.getObjects())) {
-        if (obj instanceof Textbox && obj.text && hasPlaceholders(obj.text)) {
+        if (obj instanceof IText && obj.text && hasPlaceholders(obj.text)) {
           if (!obj.data) obj.data = {}
           obj.data.templateText = obj.text
           // Ne pas écraser templateStyles s'il existe déjà (provient d'un bind ou d'un rechargement correct)
@@ -136,7 +136,7 @@ export function useDataMerge() {
     const canvas = globalFabricCanvas
     if (canvas) {
       for (const obj of collectObjectsDeep(canvas.getObjects())) {
-        if (obj instanceof Textbox && obj.data?.templateText) {
+        if (obj instanceof IText && obj.data?.templateText) {
           obj.set('text', obj.data.templateText as string)
           // Restaurer les styles originaux du template
           if (obj.data.templateStyles) {
@@ -206,8 +206,9 @@ export function useDataMerge() {
     for (const obj of collectObjectsDeep(canvas.getObjects())) {
       if (obj.data?.isGrid || obj.data?.isPageBg) continue
 
-      // Résolution texte {{variable}}
-      if (obj instanceof Textbox) {
+      // Résolution texte {{variable}} — IText couvre aussi les Textbox ;
+      // les textes des imports PDF sont des IText.
+      if (obj instanceof IText) {
         // Auto-capture templateText si pas encore stocké mais texte contient {{}}
         if (!obj.data?.templateText && obj.text && hasPlaceholders(obj.text)) {
           if (!obj.data) obj.data = {}
@@ -305,7 +306,7 @@ export function useDataMerge() {
 
     const handleEditingEntered = (e: { target?: unknown }) => {
       const target = e.target
-      if (!(target instanceof Textbox)) return
+      if (!(target instanceof IText)) return
       if (target.data?.templateText) {
         target.set('text', target.data.templateText)
         // Restaurer les styles du template pour que handleEditingExited capture les bons indices
@@ -319,7 +320,7 @@ export function useDataMerge() {
 
     const handleEditingExited = (e: { target?: unknown }) => {
       const target = e.target
-      if (!(target instanceof Textbox)) return
+      if (!(target instanceof IText)) return
       const currentText = target.text ?? ''
 
       if (hasPlaceholders(currentText)) {

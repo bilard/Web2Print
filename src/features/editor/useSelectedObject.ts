@@ -3,6 +3,7 @@ import { Shadow } from 'fabric'
 import type { Canvas } from 'fabric'
 import { useEditorStore } from '@/stores/editor.store'
 import { isInteracting } from './useAddObject'
+import { collectObjectsDeep, findStoreObjectDeep } from './deepObjects'
 
 /**
  * Listens to store changes and applies them to the matching Fabric object.
@@ -19,10 +20,10 @@ export function useSyncPropertiesToCanvas(fabricRef: React.RefObject<Canvas | nu
     // Skip sync while user is actively manipulating (drag/scale/rotate)
     if (isInteracting) return
 
-    const storeObj = canvasObjects.find((o) => o.id === selectedObjectId)
+    const storeObj = findStoreObjectDeep(canvasObjects, selectedObjectId)
     if (!storeObj) return
 
-    const fabricObj = canvas.getObjects().find((o) => (o as any).data?.id === selectedObjectId)
+    const fabricObj = collectObjectsDeep(canvas.getObjects()).find((o) => (o as any).data?.id === selectedObjectId)
     if (!fabricObj) return
 
     // For text objects, ONLY sync positional properties.

@@ -3,10 +3,10 @@
 // {{champ}} sur les Textbox d'un design décomposé — prix (motif monétaire,
 // plus grande taille), titre (plus grande taille restante), description
 // (texte le plus long). Heuristiques génériques, aucun dictionnaire par marque.
-import { Textbox } from 'fabric'
+import { IText, Textbox } from 'fabric'
 import type { Canvas } from 'fabric'
 import { syncToStore } from '@/features/editor/useAddObject'
-import { collectObjectsDeep } from './deepObjects'
+import { collectObjectsDeep } from '@/features/editor/deepObjects'
 
 export interface MatchableText {
   id: string
@@ -89,7 +89,7 @@ export function computeAutoMatch(texts: MatchableText[], columns: ColumnLike[]):
 export function applyAutoMatch(canvas: Canvas, columns: ColumnLike[]): MatchAssignment[] {
   // Traversée profonde : les champs peuvent vivre dans un Group (blocs PDF→SVG).
   const boxes = collectObjectsDeep(canvas.getObjects())
-    .filter((o): o is Textbox => o instanceof Textbox && !o.data?.isGrid && !o.data?.isPageBg)
+    .filter((o): o is IText => o instanceof IText && !o.data?.isGrid && !o.data?.isPageBg)
   // Garantit un data.id pour retrouver l'objet.
   boxes.forEach((b, i) => {
     if (!b.data) b.data = {}

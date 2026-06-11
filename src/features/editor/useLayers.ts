@@ -3,6 +3,7 @@ import { globalFabricCanvas } from './CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
 import { findById, findParentGroup, wouldCreateCycle } from './layerTreeOps'
+import { collectObjectsDeep } from './deepObjects'
 
 export function useLayers() {
   const { setSelectedObjectId, selectedObjectIds, setSelectedObjectIds } = useEditorStore()
@@ -75,7 +76,7 @@ export function useLayers() {
 
     // Build ordered array (bottom to top)
     const reordered = [...orderedIds].reverse().map((id) =>
-      objects.find((o) => o.data?.id === id)
+      collectObjectsDeep(objects).find((o) => o.data?.id === id)
     ).filter(Boolean) as typeof objects
 
     // Remove all non-grid objects and re-add in order

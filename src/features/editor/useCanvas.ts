@@ -5,6 +5,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { syncToStore } from './useAddObject'
 import { gradientToFabric } from '@/components/shared/GradientPicker'
 import { applyCustomControls, applyCustomControlsToObject } from './useCustomControls'
+import { refreshAncestorGroups } from './deepObjects'
 import { useThemeStore } from '@/stores/theme.store'
 
 /** Contour de page (hors document) — couleur programmatique Fabric, suit le thème. */
@@ -173,6 +174,16 @@ export function useCanvas(canvasElRef: React.RefObject<HTMLCanvasElement>) {
       }
       canvas.requestRenderAll()
     })
+
+    // Mutation d'un enfant de Group (style toolbar, frappe, redimension…) :
+    // recalcule layout + cache des ancêtres — Fabric ne le fait pas seul et
+    // le rendu du bloc resterait périmé (texte rogné aux anciennes limites).
+    const refreshGroupOf = (e: { target?: FabricObject }) => {
+      const t = e.target as (FabricObject & { group?: unknown }) | undefined
+      if (t?.group) refreshAncestorGroups(t)
+    }
+    canvas.on('object:modified', refreshGroupOf)
+    canvas.on('text:changed', refreshGroupOf)
 
     // Add page rectangle (white area representing the document)
     const pageRect = new Rect({

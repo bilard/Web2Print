@@ -6,6 +6,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { AVAILABLE_FONTS, getAllFonts } from '@/features/assets/useFonts'
 import type { TextStyle } from '@/features/editor/useTextEditor'
 import type { Canvas } from 'fabric'
+import { flattenStoreObjects } from '@/features/editor/deepObjects'
 
 const FONT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72, 96]
 
@@ -37,14 +38,16 @@ export function TextToolbar() {
   const fabricRef = { current: globalFabricCanvas as Canvas | null }
   const { applyStyle } = useTextEditor(fabricRef)
 
-  // All selected text objects (supports multi-selection)
-  const selectedTextObjects = canvasObjects.filter(
+  // All selected text objects (supports multi-selection) — arbre aplati :
+  // un texte sélectionné DANS un Group (double-clic) doit afficher la toolbar.
+  const flatObjects = flattenStoreObjects(canvasObjects)
+  const selectedTextObjects = flatObjects.filter(
     (o) => o.type === 'text' && selectedObjectIds.includes(o.id)
   )
   const hasTextSelected = selectedTextObjects.length > 0
 
   // Reference object for displaying current style (first selected text)
-  const primaryTextObj = selectedTextObjects[0] ?? canvasObjects.find((o) => o.id === selectedObjectId && o.type === 'text')
+  const primaryTextObj = selectedTextObjects[0] ?? flatObjects.find((o) => o.id === selectedObjectId && o.type === 'text')
 
   // Track style live from canvas (works for single, multi-selection, and editing)
   const [cursorStyle, setCursorStyle] = useState<TextStyle | null>(null)

@@ -13,7 +13,7 @@ import { extractIdmlContents, buildMultiPageIdml, type PatchOptions } from './id
 import { templatizeEcContents } from './ecTemplatizer'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { resolveFileName } from './mergeEngine'
-import { collectObjectsDeep } from './deepObjects'
+import { collectObjectsDeep } from '@/features/editor/deepObjects'
 
 export interface IdmlExportConfig {
   rangeStart: number     // 0-indexed

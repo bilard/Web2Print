@@ -16,6 +16,30 @@ export function collectObjectsDeep(objects: FabricObject[]): FabricObject[] {
   return out
 }
 
+/** Recherche par id dans l'ARBRE du store éditeur (children des groupes inclus). */
+export function findStoreObjectDeep<T extends { id: string; children?: T[] }>(
+  objects: T[],
+  id: string | null | undefined,
+): T | undefined {
+  if (!id) return undefined
+  for (const o of objects) {
+    if (o.id === id) return o
+    const hit = o.children?.length ? findStoreObjectDeep(o.children, id) : undefined
+    if (hit) return hit
+  }
+  return undefined
+}
+
+/** Aplatit l'arbre du store éditeur (groupes + enfants au même niveau). */
+export function flattenStoreObjects<T extends { children?: T[] }>(objects: T[]): T[] {
+  const out: T[] = []
+  for (const o of objects) {
+    out.push(o)
+    if (o.children?.length) out.push(...flattenStoreObjects(o.children))
+  }
+  return out
+}
+
 /**
  * Invalide rendu + layout des Groups ancêtres après mutation d'un enfant :
  * Fabric ne recalcule ni le cache ni la bbox du groupe quand le texte d'un
