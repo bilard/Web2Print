@@ -24,6 +24,23 @@ Un bouton **☰ flottant en bas à gauche** ouvre un tiroir listant tous les mod
     },
     {
       type: 'text',
+      md: `### Palette de commandes (⌘K)
+
+**⌘K** (Mac) ou **Ctrl+K** (PC) ouvre la palette de commandes depuis n'importe quelle page : tape quelques lettres pour **sauter vers un module** (« pim », « workflows », « bibliothèque »…) ou lancer une action rapide (ouvrir les Réglages, basculer le thème clair/sombre). La recherche ignore les accents et comprend des synonymes (« zapier » → Workflows). Navigue avec **↑ ↓**, valide avec **↵**.`,
+    },
+    {
+      type: 'shortcut',
+      keys: ['⌘', 'K'],
+      label: 'Ouvrir la palette de commandes',
+    },
+    {
+      type: 'text',
+      md: `### Notifications (🔔)
+
+La **cloche en bas à gauche** (au-dessus du menu ☰) garde l'historique des évènements importants : fins de runs de workflow, exports réussis ou échoués. Un badge indique les non-lus ; le panneau permet de tout marquer lu ou de vider l'historique.`,
+    },
+    {
+      type: 'text',
       md: `### Visites guidées (🧭)
 
 Un bouton **🧭 « Visite guidée » en bas à droite** (à gauche du bouton d'aide) lance une visite interactive de l'écran courant :

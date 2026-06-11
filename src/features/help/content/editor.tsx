@@ -151,6 +151,29 @@ export const editorSection: HelpSection = {
       label: 'Snap',
       icon: Magnet,
     },
+    { type: 'text', md: '### Barre contextuelle & repères de manipulation' },
+    {
+      type: 'text',
+      md: `Sélectionner un objet fait apparaître une **barre flottante sous la sélection** avec les actions fréquentes : dupliquer, avancer/reculer d'un plan, grouper/dégrouper, verrouiller, supprimer — sans aller-retour vers le panneau de droite.
+
+Pendant une manipulation, un **badge temps réel** remplace la barre : position **X, Y** pendant un déplacement, **L × H** pendant un redimensionnement, **angle** pendant une rotation.`,
+    },
+    { type: 'text', md: '### Preflight d\'impression' },
+    {
+      type: 'text',
+      md: `Dans le panneau **Impression**, la section **Preflight** (bouton _Analyser_) contrôle le document avant export :
+
+- images sous **150 DPI effectifs** (erreur) ou 225 DPI (avertissement) ;
+- objets débordant de la page **au-delà du fond perdu**, ou entièrement hors page ;
+- textes **< 5 pt** ou à moins de **3 mm du bord de coupe**.
+
+Cliquer un problème **sélectionne l'objet** concerné sur le canvas.`,
+    },
+    { type: 'text', md: '### Re-skin par les données PIM' },
+    {
+      type: 'text',
+      md: `Le panneau **Données** accepte la source **« Produits PIM (re-skin) »** : chaque produit du projet devient une ligne. Décompose un flyer (Image/PDF → SVG), pose des \`{{champ}}\` sur les textes (ou des liaisons image), puis **navigue de produit en produit** : le visuel se re-skinne instantanément avec les données du produit courant.`,
+    },
     { type: 'text', md: '### Sauvegarder & exporter' },
     {
       type: 'text',

@@ -82,9 +82,15 @@ Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables 
     },
     {
       type: 'text',
+      md: `### Complétude des fiches
+
+Chaque ligne de la table porte une **pastille de complétude** : verte (≥ 90 % des colonnes remplies), ambre (≥ 60 %) ou rouge. Survole-la pour voir les **champs manquants**. La barre d'état sous la table affiche la **complétude moyenne** des lignes visibles — pratique pour prioriser l'enrichissement.`,
+    },
+    {
+      type: 'text',
       md: `### Voir aussi
 
-L'**export en série** (data-merge) est détaillé dans la section *Export multi-format*.`,
+L'**export en série** (data-merge) est détaillé dans la section *Export multi-format*. Le **re-skin d'un visuel** par les produits PIM est décrit dans la section *L'éditeur*.`,
     },
     {
       type: 'menu-link',

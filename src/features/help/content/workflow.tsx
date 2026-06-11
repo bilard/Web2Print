@@ -111,6 +111,27 @@ Déplie une catégorie pour voir ses nodes.` },
 Les workflows se déclenchent aussi à distance : \`/flow <demande>\` génère et exécute un workflow, \`/run <nom>\` rejoue un workflow sauvegardé — et le fichier produit revient sur Telegram.`,
     },
     {
+      type: 'text',
+      md: `### Modèles prêts à l'emploi
+
+La page Workflows propose une galerie **« Démarrer depuis un modèle »** : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel. Un clic crée le workflow complet — il ne reste qu'à coller tes URLs et choisir le projet cible.`,
+    },
+    {
+      type: 'text',
+      md: `### Approbation humaine (Telegram)
+
+Le node **« Approbation Telegram »** met le run en pause et envoie la question sur Telegram avec des boutons **✅ Approuver / ❌ Refuser**. Le workflow reprend sur le port \`approved\` ou \`rejected\` selon le clic — idéal pour valider un PDF ou un import avant publication.
+
+- Délai maximal configurable ; à expiration : échec du run ou refus automatique.
+- Le chat doit être dans l'**allowlist du webhook** (Réglages → Telegram), sinon les clics sont ignorés.`,
+    },
+    {
+      type: 'text',
+      md: `### Débugger pas à pas
+
+Le bouton **« Pas à pas »** (à côté de Run) exécute le workflow node par node : le run se met en pause avant chaque étape — le bouton ambre **« Étape : <node> »** dans l'en-tête exécute la suivante. Entre deux étapes, inspecte les sorties dans le panneau de prévisualisation. **Stop** interrompt proprement, même en pause.`,
+    },
+    {
       type: 'menu-link',
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.telegram' },
       label: 'Ouvrir Telegram',
