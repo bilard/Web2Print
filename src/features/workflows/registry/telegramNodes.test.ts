@@ -149,15 +149,15 @@ describe('send-telegram node', () => {
     expect(vi.mocked(sendTelegramMessage).mock.calls[0][1].parseMode).toBe('HTML')
   })
 
-  it('iterate sans données en entrée : avertit et envoie un message unique', async () => {
+  it('iterate sans données en entrée : N\'ENVOIE RIEN (ex : veille prix sans variation)', async () => {
     vi.mocked(sendTelegramMessage).mockResolvedValue({ messageId: 1 })
     const ctx = mkCtx()
 
     const res = await sendTelegramNode.run(ctx, { ...baseConfig, iterate: true }, {})
 
-    expect(sendTelegramMessage).toHaveBeenCalledTimes(1)
-    expect(res.result.count).toBe(1)
-    expect(ctx.log).toHaveBeenCalledWith('warn', expect.stringContaining('aucune ligne en entrée'))
+    expect(sendTelegramMessage).not.toHaveBeenCalled()
+    expect(res.result).toEqual({ sent: false, count: 0, messageIds: [] })
+    expect(ctx.log).toHaveBeenCalledWith('info', expect.stringContaining('aucune ligne reçue'))
   })
 
   it('Message vide : utilise le texte reçu sur le port data (fallback)', async () => {

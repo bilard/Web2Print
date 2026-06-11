@@ -5,6 +5,7 @@
 // sortie `result`.
 import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
+import { interpolate, extractRows } from '../interpolate'
 
 // --- save-pim ---------------------------------------------------------------
 // Config client (persistenceNodes.ts:9-12) : { projectId, sourceId }.
@@ -137,12 +138,43 @@ registerServerNode({
   type: 'send-telegram',
   run: async (ctx, config, inputs) => {
     const remote = await readTelegramConfig(ctx.uid)
+    const effToken = (c: unknown) => String(c ?? '').trim() || String(remote.botToken ?? '').trim()
+    const effChat = (c: unknown) => String(c ?? '').trim() || String(remote.chatId ?? '').trim()
 
-    const token = String(config.botToken ?? '').trim() || String(remote.botToken ?? '').trim()
+    // Mode « 1 message par ligne » : ré-interpolation du config brut par ligne
+    // (wire-compatible client). AUCUNE ligne reçue (ex : veille prix sans
+    // variation) → rien n'est envoyé, par design.
+    if (config.iterate) {
+      const rows = extractRows(inputs.data)
+      if (!rows || rows.length === 0) {
+        ctx.log('info', 'Mode « 1 message par ligne » : aucune ligne reçue — rien à envoyer.')
+        return { result: { sent: false, count: 0, messageIds: [] } }
+      }
+      const raw = (ctx.rawConfig ?? {}) as Record<string, unknown>
+      const messageIds: number[] = []
+      for (let i = 0; i < rows.length; i++) {
+        if (ctx.signal.aborted) break
+        const row = rows[i]
+        const r = interpolate(raw, { ...row, row, index: i }) as Record<string, unknown>
+        const token = effToken(r.botToken)
+        const chatId = effChat(r.chatId)
+        const text = String(r.text ?? '').trim()
+        if (!token || !chatId || !text) {
+          ctx.log('warn', `Ligne ${i + 1} ignorée : token, chat ou message manquant.`)
+          continue
+        }
+        const id = await sendTelegramMessage(token, chatId, text, r.parseMode as TelegramParseMode | undefined)
+        messageIds.push(id)
+        ctx.log('info', `[${i + 1}/${rows.length}] → ${chatId} (msg ${id}).`)
+      }
+      return { result: { sent: messageIds.length > 0, count: messageIds.length, messageIds } }
+    }
+
+    const token = effToken(config.botToken)
     if (!token) {
       throw new Error('send-telegram : bot token introuvable (config ou users/{uid}.telegram.botToken).')
     }
-    const chatId = String(config.chatId ?? '').trim() || String(remote.chatId ?? '').trim()
+    const chatId = effChat(config.chatId)
     if (!chatId) {
       throw new Error('send-telegram : chatId introuvable (config ou users/{uid}.telegram.chatId).')
     }
@@ -152,25 +184,33 @@ registerServerNode({
       throw new Error('send-telegram : message vide (champ Message ou port data).')
     }
 
-    const parseMode = config.parseMode as TelegramParseMode | undefined
-    const body: Record<string, unknown> = { chat_id: chatId, text }
-    if (parseMode && parseMode !== 'none') body.parse_mode = parseMode
-
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    const json = (await res.json().catch(() => null)) as
-      | { ok: true; result: { message_id: number } }
-      | { ok: false; error_code: number; description: string }
-      | null
-    if (!res.ok || !json || !json.ok) {
-      const detail = json && !json.ok ? `${json.error_code} : ${json.description}` : `HTTP ${res.status}`
-      throw new Error(`send-telegram : Telegram ${detail}`)
-    }
-
-    ctx.log('info', `Telegram envoyé à ${chatId} (msg ${json.result.message_id}).`)
-    return { result: { sent: true, count: 1, messageIds: [json.result.message_id] } }
+    const messageId = await sendTelegramMessage(token, chatId, text, config.parseMode as TelegramParseMode | undefined)
+    ctx.log('info', `Telegram envoyé à ${chatId} (msg ${messageId}).`)
+    return { result: { sent: true, count: 1, messageIds: [messageId] } }
   },
 })
+
+/** Envoi d'un message texte ; lève une Error lisible sur refus Telegram. */
+async function sendTelegramMessage(
+  token: string,
+  chatId: string,
+  text: string,
+  parseMode?: TelegramParseMode,
+): Promise<number> {
+  const body: Record<string, unknown> = { chat_id: chatId, text }
+  if (parseMode && parseMode !== 'none') body.parse_mode = parseMode
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const json = (await res.json().catch(() => null)) as
+    | { ok: true; result: { message_id: number } }
+    | { ok: false; error_code: number; description: string }
+    | null
+  if (!res.ok || !json || !json.ok) {
+    const detail = json && !json.ok ? `${json.error_code} : ${json.description}` : `HTTP ${res.status}`
+    throw new Error(`send-telegram : Telegram ${detail}`)
+  }
+  return json.result.message_id
+}

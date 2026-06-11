@@ -205,17 +205,17 @@ export const sendTelegramNode: NodeSpec<
     const inputRows = extractRows(inputs.data)
 
     // Mode iterate : 1 message par ligne (ré-interpolation par row, comme send-gmail).
+    // AUCUNE ligne reçue (port non alimenté — ex : veille prix sans variation, branche
+    // non prise) → rien n'est envoyé, par design : pas de retombée en message unique.
     if (config.iterate && !inputRows) {
-      ctx.log(
-        'warn',
-        "Mode « 1 message par ligne » activé mais aucune ligne en entrée (port data) — envoi d'un message unique.",
-      )
+      ctx.log('info', 'Mode « 1 message par ligne » : aucune ligne reçue — rien à envoyer.')
+      return { result: { sent: false, count: 0, messageIds: [] } }
     }
 
     if (config.iterate && inputRows && rawConfig) {
       if (inputRows.length === 0) {
-        ctx.log('warn', 'Mode "1 message par ligne" activé mais le tableau d\'entrée est vide.')
-        return { result: { sent: true, count: 0, messageIds: [] } }
+        ctx.log('info', 'Mode « 1 message par ligne » : tableau vide — rien à envoyer.')
+        return { result: { sent: false, count: 0, messageIds: [] } }
       }
       ctx.log('info', `Mode iterate : envoi de ${inputRows.length} messages…`)
       const messageIds: number[] = []

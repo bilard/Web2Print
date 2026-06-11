@@ -91,7 +91,7 @@ export async function executeWorkflowHeadless(
       const ctx = buildInterpolationContext(subInputs, { ...itemProps, item, index: idx })
       const cfg = interpolate(bn.config, ctx) as Record<string, unknown>
       const result = await spec.run(
-        { uid: opts.uid, signal: opts.signal, log: (lv, m) => log(lv, `[loop#${idx}] ${m}`, bn.id) },
+        { uid: opts.uid, signal: opts.signal, log: (lv, m) => log(lv, `[loop#${idx}] ${m}`, bn.id), rawConfig: bn.config },
         cfg, subInputs,
       )
       sub.set(bn.id, result ?? {})
@@ -137,7 +137,7 @@ export async function executeWorkflowHeadless(
       const ctx = buildInterpolationContext(inputs)
       const cfg = interpolate(node.config, ctx) as Record<string, unknown>
       const result = await spec.run(
-        { uid: opts.uid, signal: opts.signal, log: (lv, m) => log(lv, m, node.id) },
+        { uid: opts.uid, signal: opts.signal, log: (lv, m) => log(lv, m, node.id), rawConfig: node.config },
         cfg, inputs,
       )
       outputs.set(node.id, result ?? {})
