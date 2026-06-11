@@ -100,7 +100,7 @@ function fmtPorts(ports: CatalogPort[]): string {
   return ports.map((p) => `${p.name}:${p.type}${p.required ? '*' : ''}`).join(', ')
 }
 
-export function buildServerCatalogText(): string {
+function buildServerCatalogText(): string {
   return SERVER_CATALOG.map((c) =>
     [
       `- type: ${c.type} | ${c.label}`,

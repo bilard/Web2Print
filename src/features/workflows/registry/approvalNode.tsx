@@ -167,7 +167,7 @@ function ApprovalConfigUi({ config, onChange }: ApprovalConfigUiProps) {
   )
 }
 
-export const telegramApprovalNode: NodeSpec<
+const telegramApprovalNode: NodeSpec<
   ApprovalConfig,
   { data?: unknown; attachment?: File | Blob },
   { approved?: unknown; rejected?: unknown }

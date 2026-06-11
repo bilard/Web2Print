@@ -12,7 +12,7 @@ import type { Product, Source } from '@/features/pim/types'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 
 /** Les refs PIM réutilisent DataSourceRef avec un excelDocId préfixé `pim:`. */
-export const PIM_SOURCE_PREFIX = 'pim:'
+const PIM_SOURCE_PREFIX = 'pim:'
 
 export function isPimSource(source: DataSourceRef): boolean {
   return source.excelDocId.startsWith(PIM_SOURCE_PREFIX)

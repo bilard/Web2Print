@@ -18,7 +18,7 @@ interface SheetLike {
 }
 
 /** Parse un prix depuis une cellule : « 1 299,90 € » → 1299.9. NaN si illisible. */
-export function parsePrice(v: unknown): number {
+function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
   if (typeof v !== 'string') return NaN
   const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
@@ -26,7 +26,7 @@ export function parsePrice(v: unknown): number {
 }
 
 /** Même contrat que le client : changes si variation ≥ seuil, premier relevé silencieux. */
-export function diffPriceRows(
+function diffPriceRows(
   rows: Record<string, unknown>[],
   previous: StoredValue[],
   keyColumn: string,

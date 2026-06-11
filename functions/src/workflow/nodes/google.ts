@@ -15,7 +15,7 @@ interface SheetLike {
 }
 
 /** CSV RFC4180 minimal depuis une sheet (colonnes déclarées, sinon union des clés). */
-export function sheetToCsv(sheet: SheetLike): string {
+function sheetToCsv(sheet: SheetLike): string {
   const rows = sheet.rows ?? []
   let keys = (sheet.columns ?? []).map((c) => c.key).filter((k) => k && k !== '_id')
   if (keys.length === 0) {

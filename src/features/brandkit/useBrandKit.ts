@@ -7,7 +7,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 
-export interface BrandKitColor {
+interface BrandKitColor {
   color: string
   name: string
 }

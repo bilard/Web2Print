@@ -9,7 +9,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 
-export const PACK_TARGETS = [
+const PACK_TARGETS = [
   { id: 'post-carre', label: 'Post carré', w: 1080, h: 1080 },
   { id: 'story', label: 'Story / Reel', w: 1080, h: 1920 },
   { id: 'post-paysage', label: 'Post paysage', w: 1920, h: 1080 },

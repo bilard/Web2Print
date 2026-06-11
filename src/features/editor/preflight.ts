@@ -23,7 +23,7 @@ function objectLabel(o: FabricObject): string {
   return TYPE_LABELS[o.type ?? ''] ?? 'Objet'
 }
 
-export type PreflightKind = 'low-res-image' | 'out-of-page' | 'tiny-text' | 'near-edge-text'
+type PreflightKind = 'low-res-image' | 'out-of-page' | 'tiny-text' | 'near-edge-text'
 
 export interface PreflightIssue {
   /** data.id de l'objet — permet de le sélectionner au clic. */

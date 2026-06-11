@@ -19,9 +19,9 @@ export interface TelegramUpdate {
 }
 
 // Préfixe des callback_data émis par le node « Approbation Telegram » côté app.
-export const APPROVAL_CALLBACK_PREFIX = 'wfappr:'
+const APPROVAL_CALLBACK_PREFIX = 'wfappr:'
 
-export interface ApprovalDecision {
+interface ApprovalDecision {
   approvalId: string
   decision: 'approve' | 'reject'
   chatId: number

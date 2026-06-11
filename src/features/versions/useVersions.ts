@@ -19,7 +19,7 @@ const CONTENT_KEYS = [
   'dpi', 'bleedMm', 'paletteColors', 'paletteGradients', 'thumbnail',
 ] as const
 
-export interface VersionMeta {
+interface VersionMeta {
   id: string
   label: string
   createdAt: number

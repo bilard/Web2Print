@@ -16,9 +16,9 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 if (!getApps().length) initializeApp()
 
 /** URL stable de la function (Cloud Run) — à enregistrer comme URI de redirection. */
-export const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
+const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
 
-export const GOOGLE_SERVER_SCOPES = [
+const GOOGLE_SERVER_SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/gmail.send',
 ]
