@@ -5,6 +5,9 @@ import { useAuthStore } from '../../../stores/auth.store'
 import { DamImageCard } from './DamImageCard'
 import { DamMasonry } from './DamMasonry'
 import type { DamImage } from '../types'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { ImageOff, Sparkles } from 'lucide-react'
+import { useDamStore } from '../../../stores/dam.store'
 
 interface Props {
   sortBy?: 'addedAt' | 'usageCount'
@@ -84,7 +87,14 @@ export function DamRecentImages({ sortBy = 'addedAt' }: Props) {
   }
 
   if (images.length === 0) {
-    return <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Aucune image sauvegardée</div>
+    return (
+      <EmptyState
+        icon={ImageOff}
+        title="Aucune image sauvegardée"
+        hint="Générez une image par IA ou sauvegardez un visuel depuis le Stock — elle sera taguée automatiquement pour la recherche."
+        action={{ label: 'Créer une image par IA', icon: Sparkles, onClick: () => useDamStore.getState().setActiveTab('generate') }}
+      />
+    )
   }
 
   return (

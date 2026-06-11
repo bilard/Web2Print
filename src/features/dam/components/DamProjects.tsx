@@ -3,6 +3,7 @@ import { Briefcase, ImageIcon, LayoutGrid, List } from 'lucide-react'
 import { useProjects } from '@/features/projects/useProjects'
 import { useDamStore } from '@/stores/dam.store'
 import type { ProjectData } from '@/types/project'
+import { EmptyState } from '@/components/shared/EmptyState'
 
 function formatDate(ts: number): string {
   try {
@@ -84,10 +85,11 @@ export function DamProjects() {
 
   if (projects.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 text-white/30">
-        <Briefcase className="w-10 h-10 text-white/10" />
-        <p className="text-sm">Aucun projet</p>
-      </div>
+      <EmptyState
+        icon={Briefcase}
+        title="Aucun projet"
+        hint="Les visuels de vos documents apparaissent ici dès que vous créez un projet dans la Bibliothèque."
+      />
     )
   }
 
