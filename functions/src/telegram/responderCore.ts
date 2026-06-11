@@ -109,14 +109,3 @@ export function truncateForTelegram(text: string): string {
 export function maskToken(msg: string): string {
   return msg.replace(/bot\d+:[A-Za-z0-9_-]+/g, 'bot***')
 }
-
-/** Prompt de la réponse directe (message sans commande). */
-export function buildAnswerPrompt(question: string): string {
-  return [
-    'Tu es l\'assistant Telegram de l\'application Web2Print (PIM, scraping, workflows, éditeur print).',
-    'Réponds en FRANÇAIS, de façon concise et directe (c\'est un chat mobile).',
-    'Pas de markdown lourd : texte simple, listes à puces sobres si besoin.',
-    '',
-    `Question : ${question}`,
-  ].join('\n')
-}

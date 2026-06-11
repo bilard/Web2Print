@@ -66,11 +66,12 @@ export const telegramSection: HelpSection = {
       type: 'text',
       md: `### Réponses sans navigateur (répondeur serveur)
 
-Plus besoin d'avoir l'app ouverte pour la plupart des demandes : un **répondeur serveur** traite vos messages dès leur arrivée —
+Plus besoin d'avoir l'app ouverte : un **répondeur serveur** traite vos messages dès leur arrivée —
 
-- **Questions simples** : réponse LLM immédiate (avec vos clés API).
-- **/run <nom>** : exécution serveur du workflow (scrape, enrichissement, veille prix, PIM, Telegram…), résultat résumé en retour.
-- **/flow** et les workflows avec **rendu graphique** (PDF, visuels) ou **fichier manuel** : un message d'attente vous prévient, et la demande est traitée à la prochaine ouverture de l'app (le worker navigateur prend le relais).
+- **Questions** : réponse LLM immédiate, **avec recherche web automatique** (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sources citées.
+- **/flow <demande>** : le workflow est **généré par IA et exécuté côté serveur** (scrape, enrichissement, veille prix, PIM, notification), puis sauvegardé dans l'app.
+- **/run <nom>** : exécution serveur d'un workflow sauvegardé, résumé en retour.
+- Seuls les workflows avec **rendu graphique** (PDF, visuels) ou **fichier manuel** attendent l'ouverture de l'app (un message vous prévient ; le worker navigateur prend le relais).
 
 Si l'app est ouverte en même temps, un seul des deux répond (jamais de doublon).`,
     },

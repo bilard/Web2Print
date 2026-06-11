@@ -12,12 +12,13 @@ import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { executeWorkflowHeadless } from '../workflow/execute'
 import { writeRunHistory } from '../workflow/runHistory'
-import { callLlm } from '../workflow/llm'
+import { generateAndSaveWorkflowServer } from '../workflow/promptToFlowServer'
 import type { ServerWorkflow } from '../workflow/types'
 import '../workflow/nodes/index' // enregistre les nodes serveur (effet de bord)
+import { askLlmServer } from './askLlmServer'
 import {
   parseInboxCommand, resolveRun, injectInput, browserOnlyTypes,
-  truncateForTelegram, maskToken, buildAnswerPrompt,
+  truncateForTelegram, maskToken,
 } from './responderCore'
 
 if (!getApps().length) initializeApp()
@@ -132,12 +133,45 @@ export const telegramResponder = onDocumentCreated(
         return
       }
 
-      // /flow : la génération IA de workflow reste côté app (v1 serveur).
+      // /flow <demande> : génération serveur (catalogue 100 % serveur) puis exécution.
       if (cmd.kind === 'flow') {
-        step('info', '/flow différé : génération réservée à l’app pour le moment.')
-        await deferToBrowser(
-          '⏳ La génération de workflow (/flow) nécessite l’app ouverte pour le moment — ta demande sera traitée à la prochaine ouverture. Astuce : « /run <nom> » et les questions simples sont traités immédiatement.',
-        )
+        if (!cmd.prompt) {
+          await reply('Pour lancer un workflow, écris ta demande après /flow.\nEx : /flow scrape https://exemple.com et préviens-moi sur Telegram.')
+          await markDone()
+          return
+        }
+        step('info', '🤖 Génération du workflow par IA (serveur)…')
+        let info
+        try {
+          info = await generateAndSaveWorkflowServer(uid, cmd.prompt)
+        } catch (err) {
+          const reason = maskToken(err instanceof Error ? err.message : String(err))
+          step('error', `Génération échouée : ${reason}`)
+          await reply(`❌ Génération échouée : ${reason}`)
+          await markError(reason)
+          return
+        }
+        step('info', `Workflow « ${info.name} » généré (${info.nodeCount} node(s)).`)
+        await snap.ref.update({ generatedWorkflowId: info.workflow.id, generatedWorkflowName: info.name }).catch(() => {})
+
+        step('info', '⏳ Exécution serveur en cours…')
+        const startedAt = Date.now()
+        const ac = new AbortController()
+        const timer = setTimeout(() => ac.abort(), RUN_TIMEOUT_MS)
+        try {
+          const result = await executeWorkflowHeadless(info.workflow, { uid, signal: ac.signal })
+          await writeRunHistory(uid, { workflowId: info.workflow.id, name: info.name, trigger: 'telegram', startedAt }, result)
+          for (const l of result.logs.slice(-30)) step(l.level, l.msg)
+          if (result.errorCount > 0) {
+            const firstError = result.logs.find((l) => l.level === 'error')?.msg ?? 'erreur inconnue'
+            await reply(`⚠️ « ${info.name} » généré, mais exécution : ${result.nodeCount} node(s) OK, ${result.errorCount} erreur(s) — ${maskToken(firstError)}. Le workflow est sauvegardé dans l’app.`)
+          } else {
+            await reply(`✅ « ${info.name} » généré et exécuté côté serveur — ${result.nodeCount} node(s). Retrouve-le dans Workflows.`)
+          }
+        } finally {
+          clearTimeout(timer)
+        }
+        await markDone()
         return
       }
 
@@ -195,17 +229,18 @@ export const telegramResponder = onDocumentCreated(
         return
       }
 
-      // Message simple → réponse LLM directe (clés du compte).
+      // Message simple → réponse LLM avec contexte web (plan → Jina → réponse).
       const question = d.text.trim()
       if (!question) {
         step('info', 'Message vide — rien à faire.')
         await markDone()
         return
       }
-      step('info', '🤖 LLM serveur…')
-      const { text, model } = await callLlm(uid, buildAnswerPrompt(question))
-      step('info', `Réponse du LLM (${model}).`)
-      await reply(`🤖 ${model}\n\n${text}`)
+      step('info', '🤖 LLM serveur (avec recherche web si nécessaire)…')
+      const { answer, model, sources } = await askLlmServer(uid, question)
+      step('info', `Réponse du LLM (${model})${sources.length ? ` — ${sources.length} source(s) web` : ''}.`)
+      const footer = sources.length > 0 ? `\n\n🔗 Sources :\n${sources.map((s) => `• ${s}`).join('\n')}` : ''
+      await reply(`🤖 ${model}\n\n${answer}${footer}`)
       await markDone()
     } catch (err) {
       const reason = maskToken(err instanceof Error ? err.message : String(err))
