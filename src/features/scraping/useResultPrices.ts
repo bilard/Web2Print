@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { getApiKey } from '@/lib/apiKeys'
 import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
+import { RESELLER_HOSTS } from './useJina'
 import { parseStructuredDataAny } from './core/structuredData'
 import { parsePromoPricing } from './core/parsers/parseOriginalPrice'
 
@@ -35,13 +36,23 @@ function formatPrice(n: number, currency: string): string {
   }
 }
 
-/** HTML rendu via Jina Reader (escalade anti-bot). Usage Jina comptabilisé. */
+/** HTML rendu via Jina Reader (escalade anti-bot). Usage Jina comptabilisé.
+ *  Même traitement que `jinaRead` : les gros revendeurs FR (Leroy Merlin,
+ *  Castorama…) sont derrière DataDome/Akamai → moteur navigateur Chromium de
+ *  Jina + attente d'un conteneur produit hydraté, sinon page challenge vide. */
 async function fetchHtmlViaJina(url: string, timeoutMs: number): Promise<string | null> {
   const headers: Record<string, string> = { 'X-Return-Format': 'html', Accept: 'text/html' }
+  let isProtected = false
+  try { isProtected = RESELLER_HOSTS.test(new URL(url).hostname) } catch { /* URL invalide */ }
+  if (isProtected) {
+    headers['X-Engine'] = 'browser'
+    headers['X-Wait-For-Selector'] = 'main, [itemtype*="Product" i], [class*="product" i]'
+    headers['X-Timeout'] = '30'
+  }
   const jinaKey = getApiKey('jina')
   if (jinaKey) headers.Authorization = `Bearer ${jinaKey}`
   const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  const timer = setTimeout(() => ctrl.abort(), isProtected ? Math.max(timeoutMs, 45_000) : timeoutMs)
   try {
     const res = await fetch(`https://r.jina.ai/${url}`, { headers, signal: ctrl.signal })
     if (!res.ok) return null
