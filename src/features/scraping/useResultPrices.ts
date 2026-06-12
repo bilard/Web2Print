@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseStructuredDataAny } from './core/structuredData'
+import { parseOriginalPriceFromHtml } from './core/parsers/parseOriginalPrice'
 
 /**
  * Sondeur de prix des résultats de recherche : scrape RÉEL mais léger.
@@ -13,21 +14,32 @@ import { parseStructuredDataAny } from './core/structuredData'
 
 export interface PriceProbe {
   status: 'loading' | 'done'
+  /** Prix de vente (JSON-LD `offers.price`). */
   value?: string
+  /** Prix barré / avant promo repéré dans le markup (`<del>`, classes old/barré…). */
+  original?: string
 }
 
 const CONCURRENCY = 3
 
-async function fetchPriceForUrl(url: string): Promise<string | undefined> {
-  const html = await fetchSourceHtml(url, 12_000)
-  if (!html) return undefined
-  const offers = parseStructuredDataAny(html)?.offers
-  if (offers?.price == null) return undefined
-  const currency = offers.priceCurrency || 'EUR'
+function formatPrice(n: number, currency: string): string {
   try {
-    return offers.price.toLocaleString('fr-FR', { style: 'currency', currency })
+    return n.toLocaleString('fr-FR', { style: 'currency', currency })
   } catch {
-    return `${offers.price} ${currency}`
+    return `${n} ${currency}`
+  }
+}
+
+async function fetchPriceForUrl(url: string): Promise<Pick<PriceProbe, 'value' | 'original'>> {
+  const html = await fetchSourceHtml(url, 12_000)
+  if (!html) return {}
+  const offers = parseStructuredDataAny(html)?.offers
+  if (offers?.price == null) return {}
+  const currency = offers.priceCurrency || 'EUR'
+  const original = parseOriginalPriceFromHtml(html, offers.price)
+  return {
+    value: formatPrice(offers.price, currency),
+    original: original != null ? formatPrice(original, currency) : undefined,
   }
 }
 
@@ -42,13 +54,13 @@ export function useResultPrices() {
     const queue = [...urls]
     const worker = async () => {
       for (let url = queue.shift(); url && runIdRef.current === runId; url = queue.shift()) {
-        let value: string | undefined
+        let prices: Pick<PriceProbe, 'value' | 'original'> = {}
         try {
-          value = await fetchPriceForUrl(url)
+          prices = await fetchPriceForUrl(url)
         } catch { /* pas de prix structuré — la cellule garde le prix snippet */ }
         if (runIdRef.current !== runId) return
         const u = url
-        setPriceByUrl((prev) => ({ ...prev, [u]: { status: 'done', value } }))
+        setPriceByUrl((prev) => ({ ...prev, [u]: { status: 'done', ...prices } }))
       }
     }
     void Promise.all(Array.from({ length: Math.min(CONCURRENCY, urls.length) }, worker))

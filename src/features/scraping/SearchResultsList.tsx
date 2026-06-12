@@ -32,7 +32,7 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
               <th className="w-8 px-2 py-2" />
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px]">Titre</th>
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px]">Description</th>
-              <th className="px-2 py-2 text-right font-medium text-white/45 uppercase tracking-wide text-[9px] w-24" title="Prix repéré dans le résultat de recherche — le prix fiable vient du scrape">Prix</th>
+              <th className="px-2 py-2 text-right font-medium text-white/45 uppercase tracking-wide text-[9px] w-28" title="Prix de vente scrapé (JSON-LD) + prix barré — le prix consolidé vient du scrape Produit complet">Prix</th>
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px] w-40">Site</th>
               <th className="w-9 px-2 py-2" title="Ouvrir la page source" />
             </tr>
@@ -77,11 +77,18 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                   <td className="px-2 py-2 text-white/40 max-w-[300px]">
                     <span className="line-clamp-2" title={r.description}>{r.description || '—'}</span>
                   </td>
-                  <td className="px-2 py-2 text-right w-24 whitespace-nowrap">
+                  <td className="px-2 py-2 text-right w-28 whitespace-nowrap">
                     {(() => {
                       const probe = priceByUrl[r.url]
                       if (probe?.value) {
-                        return <span className="text-emerald-300/90 font-medium" title="Prix scrapé sur la page (JSON-LD)">{probe.value}</span>
+                        return (
+                          <span title="Prix scrapé sur la page (JSON-LD + prix barré du markup)">
+                            {probe.original && (
+                              <span className="block text-[10px] text-white/30 line-through">{probe.original}</span>
+                            )}
+                            <span className="text-emerald-300/90 font-medium">{probe.value}</span>
+                          </span>
+                        )
                       }
                       if (probe?.status === 'loading') {
                         return <Loader2 className="w-3 h-3 animate-spin text-white/25 inline-block" />
