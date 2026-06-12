@@ -1,29 +1,31 @@
-import { Table2 } from 'lucide-react'
+import { Table2, Loader2 } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
-import { resolveFieldValue, isSourceField, hostOfUrl } from './searchFieldValues'
+import { resolveFieldValue } from './searchFieldValues'
 
 interface Props {
   /** Champs demandés dans le prompt (libellés libres) — seuls les 5 premiers sont affichés. */
   fields: string[]
   /** Produits enrichis par le batch de scrape. */
   products: EnrichedProduct[]
-  /** URLs cochées pas encore scrapées — affichées en lignes d'attente (seule la
-   *  colonne site/source est remplie, le reste se remplit au fil du batch). */
-  pendingUrls?: string[]
+  /** Nombre de pages encore en cours de scrape (batch actif) — affiche la progression. */
+  remaining?: number
 }
 
 /** Tableau récapitulatif de l'onglet Recherche : une colonne par champ demandé
- *  dans le prompt (max 5), une ligne par page — visible dès la recherche,
- *  rempli en live par le batch de scrape. */
-export function SearchFieldsTable({ fields, products, pendingUrls = [] }: Props) {
+ *  dans le prompt (max 5), une ligne par produit scrapé — rempli en live par le batch. */
+export function SearchFieldsTable({ fields, products, remaining = 0 }: Props) {
   const cols = fields.slice(0, 5)
-  if (cols.length === 0 || (products.length === 0 && pendingUrls.length === 0)) return null
+  if (cols.length === 0 || products.length === 0) return null
 
   return (
     <div className="space-y-1.5">
       <span className="inline-flex items-center gap-1.5 text-[10px] text-white/30 uppercase tracking-wider">
         <Table2 className="w-3 h-3" /> Champs demandés — {products.length} produit{products.length > 1 ? 's' : ''}
-        {pendingUrls.length > 0 && <span className="text-white/20 normal-case">· {pendingUrls.length} en attente de scrape</span>}
+        {remaining > 0 && (
+          <span className="inline-flex items-center gap-1 text-white/25 normal-case">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" /> {remaining} page{remaining > 1 ? 's' : ''} en cours
+          </span>
+        )}
       </span>
       <div className="border border-white/[0.06] rounded-lg overflow-x-auto">
         <table className="w-full text-[11px]">
@@ -49,17 +51,6 @@ export function SearchFieldsTable({ fields, products, pendingUrls = [] }: Props)
                     </td>
                   )
                 })}
-              </tr>
-            ))}
-            {pendingUrls.map((url) => (
-              <tr key={url} className="border-b border-white/[0.04] last:border-0">
-                {cols.map((f) => (
-                  <td key={f} className="px-2.5 py-1.5 align-top max-w-[220px]">
-                    {isSourceField(f)
-                      ? <span className="text-white/45">{hostOfUrl(url) || url}</span>
-                      : <span className="text-white/15" title="En attente de scrape">…</span>}
-                  </td>
-                ))}
               </tr>
             ))}
           </tbody>

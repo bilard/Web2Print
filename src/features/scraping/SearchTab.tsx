@@ -30,15 +30,6 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
 
   const hasTargets = !!plan && plan.queries.some((q) => q.site)
 
-  // Lignes « en attente » du tableau : les URLs cochées pas encore scrapées.
-  // Après la fin du batch, seuls les produits réellement extraits restent
-  // (les échecs ne stagnent pas en « … » indéfiniment).
-  const normUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
-  const scrapedUrls = new Set(products.map((p) => (p.sourceUrl ? normUrl(p.sourceUrl) : '')))
-  const pendingUrls = batchRunning || products.length === 0
-    ? Array.from(selected).filter((u) => !scrapedUrls.has(normUrl(u)))
-    : []
-
   const handleSearch = async () => {
     if (!prompt.trim() || searching) return
     setSearching(true)
@@ -113,8 +104,15 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
 
       {plan && <SearchPlanChips plan={plan} />}
 
-      {plan && plan.wantedFields.length > 0 && (
-        <SearchFieldsTable fields={plan.wantedFields} products={products} pendingUrls={pendingUrls} />
+      {plan && plan.wantedFields.length > 0 && (products.length > 0 || batchRunning
+        ? <SearchFieldsTable
+            fields={plan.wantedFields}
+            products={products}
+            remaining={batchRunning ? Math.max(0, selected.size - products.length) : 0}
+          />
+        : <p className="text-[10px] text-white/25">
+            Un tableau récapitulera {plan.wantedFields.slice(0, 5).join(' · ')} pour chaque page scrapée.
+          </p>
       )}
 
       {error && (

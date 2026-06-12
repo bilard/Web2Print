@@ -79,7 +79,7 @@ export function buildQueries(subject: string, sites: string[]): SearchPlanQuery[
 }
 
 /** Interprète le prompt utilisateur en plan de recherche. Fallback : requête brute. */
-export async function planSearch(prompt: string): Promise<SearchPlan> {
+async function planSearch(prompt: string): Promise<SearchPlan> {
   try {
     const raw = await generateJson<z.infer<typeof PlanSchema>>({
       task: 'web.searchPlan',
