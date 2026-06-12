@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
+import { llmFetchViaProxy } from '@/lib/llmProxyClient'
 
 const DEFAULT_MODEL = 'gemini-3.1-pro-preview'
 const ENDPOINT = (model: string) => {
@@ -51,14 +52,11 @@ export function sanitizeSchemaForGemini(node: unknown): unknown {
 }
 
 async function callGemini(
-  apiKey: string,
   model: string,
   prompt: string,
   schemaForGemini: Record<string, unknown>,
   imageDataUris?: string[],
 ): Promise<{ text: string; usage: { input: number; output: number } }> {
-  const ctrl = new AbortController()
-  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
   const sanitized = sanitizeSchemaForGemini(schemaForGemini) as Record<string, unknown>
 
   // Multimodal : les images sont des parts `inlineData` avant le texte. Gemini
@@ -75,32 +73,47 @@ async function callGemini(
   }
   parts.push({ text: prompt })
 
-  const res = await fetch(`${ENDPOINT(model)}?key=${apiKey}`, {
-    method: 'POST',
-    signal: ctrl.signal,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      // Gemini 3.5 est servi sur l'API `v1` qui NE supporte PAS responseMimeType /
-      // responseSchema / thinkingConfig (400 "Cannot find field"). On envoie une
-      // config minimale ; le JSON est obtenu via le prompt + safeJsonParse côté caller.
-      generationConfig: /^gemini-3\.5/.test(model)
-        ? { temperature: 0.4, maxOutputTokens: 8192 }
-        : {
-            responseMimeType: 'application/json',
-            responseSchema: sanitized,
-            temperature: 0.4,
-            maxOutputTokens: 8192,
-            // Gemini 3.x : thinking dynamique consomme maxOutputTokens et peut tronquer
-            // le JSON en sortie. Les modèles antérieurs ignorent ou rejettent ce champ.
-            ...(/^gemini-3/i.test(model)
-              ? { thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false } }
-              : {}),
-          },
-    }),
-  })
+  const requestBody = {
+    contents: [{ parts }],
+    // Gemini 3.5 est servi sur l'API `v1` qui NE supporte PAS responseMimeType /
+    // responseSchema / thinkingConfig (400 "Cannot find field"). On envoie une
+    // config minimale ; le JSON est obtenu via le prompt + safeJsonParse côté caller.
+    generationConfig: /^gemini-3\.5/.test(model)
+      ? { temperature: 0.4, maxOutputTokens: 8192 }
+      : {
+          responseMimeType: 'application/json',
+          responseSchema: sanitized,
+          temperature: 0.4,
+          maxOutputTokens: 8192,
+          // Gemini 3.x : thinking dynamique consomme maxOutputTokens et peut tronquer
+          // le JSON en sortie. Les modèles antérieurs ignorent ou rejettent ce champ.
+          ...(/^gemini-3/i.test(model)
+            ? { thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false } }
+            : {}),
+        },
+  }
 
-  clearTimeout(timeoutId)
+  // Fallback direct navigateur — seulement si le proxy serveur est indisponible
+  // ou que le payload multimodal dépasse la limite des callables.
+  const directFetch = async (): Promise<Response> => {
+    const apiKey = getApiKey('gemini')
+    if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
+    const ctrl = new AbortController()
+    const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
+    try {
+      return await fetch(`${ENDPOINT(model)}?key=${apiKey}`, {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+
+  const res = await llmFetchViaProxy('gemini', model, requestBody as unknown as Record<string, unknown>, directFetch)
+
   if (!res.ok) {
     const body = await res.text()
     throw new Error(`Gemini API ${res.status} : ${body.slice(0, 200)}`)
@@ -122,13 +135,12 @@ async function callGemini(
  * Génère un objet JSON typé via Gemini, avec validation Zod et retry-on-fail.
  */
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> {
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
-
+  // La clé locale n'est plus exigée ici : le chemin principal passe par le proxy
+  // serveur (clé Firestore) ; la garde locale vit dans le fallback direct.
   const model = opts.model ?? DEFAULT_MODEL
 
   // 1er essai
-  const first = await callGemini(apiKey, model, opts.prompt, opts.schemaForGemini, opts.imageDataUris)
+  const first = await callGemini(model, opts.prompt, opts.schemaForGemini, opts.imageDataUris)
   opts.onUsage?.(first.usage)
   const firstParsed = safeJsonParse(first.text)
   const firstValidation = opts.schema.safeParse(firstParsed)
@@ -141,7 +153,7 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<T> 
   const retryPrompt =
     opts.prompt +
     `\n\nErreur précédente : ${errorMessage}. Renvoie un JSON strictement conforme au schéma demandé.`
-  const second = await callGemini(apiKey, model, retryPrompt, opts.schemaForGemini, opts.imageDataUris)
+  const second = await callGemini(model, retryPrompt, opts.schemaForGemini, opts.imageDataUris)
   opts.onUsage?.(second.usage)
   const secondParsed = safeJsonParse(second.text)
   const secondValidation = opts.schema.safeParse(secondParsed)

@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { z } from 'zod'
+
+// Court-circuite le proxy serveur : ces tests valident le parsing/retry du
+// client Gemini sur le chemin direct (fetch mocké), pas la callable Firebase.
+vi.mock('@/lib/llmProxyClient', () => ({
+  llmFetchViaProxy: (
+    _provider: string,
+    _model: string,
+    _body: Record<string, unknown>,
+    directFallback: () => Promise<Response>,
+  ) => directFallback(),
+}))
+
 import { generateJson } from './geminiClient'
 
 const ResponseSchema = z.object({ items: z.array(z.string()) })
