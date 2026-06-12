@@ -39,6 +39,17 @@ interface ExtractBreadcrumbResponse {
    *  hydraté). Sert d'escalade déterministe à la découverte de produits
    *  (Crawl) quand Jina ne rend pas la grille — cas Makita & co. */
   links: string[]
+  /** Ancres situées dans les zones de navigation (header/nav/footer/aside/
+   *  [role=navigation]) — le méga-menu et le footer. La découverte de
+   *  produits (Crawl) les SOUSTRAIT des candidats : sans ça, les centaines
+   *  de liens de catégories du menu consomment tout le quota `limit` avant
+   *  les vraies fiches. */
+  navLinks: string[]
+  /** Ancres « carte produit » : groupes répétés (≥ 3 frères de même
+   *  signature structurelle) en zone contenu, priorité aux groupes avec
+   *  image — c'est la grille produit. Quand ce champ est non-vide, c'est la
+   *  source la plus fiable pour la découverte. */
+  cardLinks: { url: string; title: string }[]
 }
 
 // Cache le browser entre invocations chaudes pour amortir le coût de lancement.
@@ -343,7 +354,76 @@ export const extractBreadcrumb = onCall<ExtractBreadcrumbRequest, Promise<Extrac
       })
       console.log('[extractBreadcrumb] links collected:', links.length)
 
-      return { items: result.items, selector: result.selector, images, links }
+      // Classification des ancres par contexte DOM — générique, aucun code
+      // par-vendeur. Deux familles :
+      //   navLinks  : ancres sous header/nav/footer/aside/[role=navigation]
+      //               (méga-menu, footer) → la découverte de produits les exclut.
+      //   cardLinks : ancres de la zone contenu appartenant à des groupes
+      //               répétés ≥ 3 de même signature structurelle (tag+classes
+      //               du parent + classe de l'ancre). Les groupes contenant
+      //               une image passent en premier : c'est la grille produit
+      //               (cartes hydratées en AJAX, jamais dans le menu).
+      const { navLinks, cardLinks } = await page.evaluate(() => {
+        const NAV_SEL = 'header, nav, footer, aside, [role="navigation"]'
+        // Bannières cookies/consent : leurs listes de liens d'aide (« gérer les
+        // cookies dans Chrome/Firefox… ») forment un groupe répété qui passerait
+        // pour une grille. Ni nav ni carte — on les ignore complètement.
+        const CMP_SEL = '[id*="cookie" i], [class*="cookie" i], [id*="coi" i], [class*="consent" i], [id*="onetrust" i], [id*="didomi" i]'
+        const pageHost = location.hostname.replace(/^www\./, '')
+        const navSet = new Set<string>()
+        interface Group { hasImg: boolean; items: { url: string; title: string }[]; urls: Set<string> }
+        const groups = new Map<string, Group>()
+        for (const el of Array.from(document.querySelectorAll('a[href]'))) {
+          const a = el as HTMLAnchorElement
+          const raw = a.href
+          if (!raw || !/^https?:\/\//.test(raw)) continue
+          const url = raw.replace(/#.*$/, '')
+          if (a.closest(CMP_SEL)) continue
+          if (a.closest(NAV_SEL)) { navSet.add(url); continue }
+          // Une carte produit pointe vers le même site — les liens externes
+          // (réseaux sociaux, aide navigateur…) ne sont jamais des fiches.
+          try {
+            const linkHost = new URL(url).hostname.replace(/^www\./, '')
+            if (linkHost !== pageHost && !linkHost.endsWith('.' + pageHost) && !pageHost.endsWith('.' + linkHost)) continue
+          } catch { continue }
+          const p = a.parentElement
+          const pCls = p && typeof p.className === 'string'
+            ? p.className.trim().split(/\s+/).slice(0, 2).join('.')
+            : ''
+          const aCls = typeof a.className === 'string'
+            ? a.className.trim().split(/\s+/).slice(0, 2).join('.')
+            : ''
+          const key = `${p?.tagName ?? ''}.${pCls}|A.${aCls}`
+          let g = groups.get(key)
+          if (!g) { g = { hasImg: false, items: [], urls: new Set() }; groups.set(key, g) }
+          if (g.urls.has(url)) continue
+          g.urls.add(url)
+          if (a.querySelector('img, picture')) g.hasImg = true
+          const title = (a.textContent ?? '').replace(/\s+/g, ' ').trim()
+            || (a.querySelector('img')?.getAttribute('alt') ?? '').trim()
+          g.items.push({ url, title })
+        }
+        // Groupes répétés uniquement (≥ 3 URLs distinctes), image d'abord,
+        // puis taille décroissante — la grille produit domine naturellement.
+        const ranked = Array.from(groups.values())
+          .filter((g) => g.items.length >= 3)
+          .sort((x, y) => (Number(y.hasImg) - Number(x.hasImg)) || (y.items.length - x.items.length))
+        const cards: { url: string; title: string }[] = []
+        const seenCards = new Set<string>()
+        for (const g of ranked) {
+          for (const it of g.items) {
+            if (seenCards.has(it.url)) continue
+            seenCards.add(it.url)
+            cards.push(it)
+            if (cards.length >= 300) break
+          }
+          if (cards.length >= 300) break
+        }
+        return { navLinks: Array.from(navSet), cardLinks: cards }
+      })
+      console.log('[extractBreadcrumb] navLinks:', navLinks.length, '— cardLinks:', cardLinks.length)
+
+      return { items: result.items, selector: result.selector, images, links, navLinks, cardLinks }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       throw new HttpsError('internal', `Extraction breadcrumb échouée : ${msg}`)

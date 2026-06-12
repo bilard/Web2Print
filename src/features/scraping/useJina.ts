@@ -8,13 +8,23 @@ import { getApiKey } from '@/lib/apiKeys'
 import { functions } from '@/lib/firebase/config'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
+import { selectDiscoveryEntries } from './core/discoverLinks'
 
 /** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
  *  e-commerce (contourne les protections anti-bot qui servent aux crawlers
  *  une version SEO différente du HTML visible). */
 const extractBreadcrumbCloudFn = httpsCallable<
   { url: string },
-  { items: string[]; selector: string | null; images: string[]; links?: string[] }
+  {
+    items: string[]
+    selector: string | null
+    images: string[]
+    links?: string[]
+    /** Ancres en zone de navigation (header/nav/footer/aside) — exclues de la découverte. */
+    navLinks?: string[]
+    /** Ancres « carte produit » (groupes répétés en zone contenu) — source prioritaire. */
+    cardLinks?: { url: string; title: string }[]
+  }
 >(functions, 'extractBreadcrumb')
 
 const JINA_READER = 'https://r.jina.ai'
@@ -1099,16 +1109,22 @@ export function useJina() {
 
   // ── Discover (Crawl) — découverte DÉTERMINISTE des fiches produit ───────────
   // Remplace l'ancienne découverte par LLM (qui échouait en silence sur les
-  // grilles lazy-load type Makita). Stratégie en 2 temps :
+  // grilles lazy-load type Makita). Stratégie :
   //   1) jinaRead(listing) : moteur navigateur Jina → rend le lazy-load, on
-  //      filtre directement le résumé de liens (page.links) par host + regex.
-  //   2) escalade Cloud Function Puppeteer (scrolle + stealth anti-bot) qui
-  //      renvoie tous les <a href> hydratés — filet quand Jina ne passe pas.
+  //      récupère le résumé de liens (page.links).
+  //   2) Cloud Function Puppeteer (scrolle + stealth anti-bot) qui CLASSIFIE
+  //      les ancres hydratées : cartes produit (groupes répétés en zone
+  //      contenu) vs navigation (header/menu/footer).
+  //   3) selectDiscoveryEntries choisit l'étage le plus fiable : cartes
+  //      seules > contenu (union − nav) > union brute (dernier recours).
+  //      Sans ça, les centaines de liens du méga-menu consomment tout le
+  //      `limit` avant les vraies fiches → on enrichissait des pages
+  //      catégorie (mêmes textes partout, qualité déplorable).
   // Retourne {pages, source, error} ; le caller décide du message si vide.
   const discover = useCallback(async (
     url: string,
     opts: { includePaths?: string; excludePaths?: string; limit?: number } = {},
-  ): Promise<{ pages: CrawlPage[]; source: 'jina' | 'cloud' | 'none'; error?: string }> => {
+  ): Promise<{ pages: CrawlPage[]; source: 'cards' | 'content' | 'jina' | 'cloud' | 'none'; error?: string }> => {
     const safeRe = (s?: string): RegExp | null => {
       const t = (s ?? '').trim()
       if (!t) return null
@@ -1152,31 +1168,45 @@ export function useJina() {
 
     setLoading(true); reset()
     try {
-      // On lance EN PARALLÈLE les deux sources et on FUSIONNE :
+      // On lance EN PARALLÈLE les deux sources :
       //   • Jina moteur navigateur (rapide, lazy-load rendu) → résumé de liens.
-      //   • Cloud Function Puppeteer (scrolle jusqu'à 40000px + stealth anti-bot)
-      //     → tous les <a href> hydratés, indispensable pour récupérer les cartes
-      //     chargées plus bas dans la grille (sinon on plafonne aux ~12 premières).
-      // toProducts() dédoublonne par URL absolue → l'union est propre.
+      //   • Cloud Function Puppeteer (scroll itératif + stealth anti-bot) →
+      //     ancres hydratées CLASSIFIÉES (cartes produit vs navigation).
       const errors: string[] = []
-      const [jinaEntries, cloudEntries] = await Promise.all([
+      const emptyCloud = { links: [] as string[], navLinks: [] as string[], cardLinks: [] as { url: string; title: string }[] }
+      const [jinaEntries, cloud] = await Promise.all([
         jinaRead(url, { listing: true, noCache: true })
           .then((p) => Object.entries(p.links ?? {}))
           .catch((e) => { errors.push(`Jina: ${e instanceof Error ? e.message : String(e)}`); return [] as [string, string][] }),
         extractBreadcrumbCloudFn({ url })
-          .then((r) => (r.data.links ?? []).map((h) => [slugTitle(h), h] as [string, string]))
-          .catch((e) => { errors.push(`Escalade: ${e instanceof Error ? e.message : String(e)}`); return [] as [string, string][] }),
+          .then((r) => ({
+            links: r.data.links ?? [],
+            navLinks: r.data.navLinks ?? [],
+            cardLinks: r.data.cardLinks ?? [],
+          }))
+          .catch((e) => { errors.push(`Escalade: ${e instanceof Error ? e.message : String(e)}`); return emptyCloud }),
       ])
 
-      // Compte l'apport NET de l'escalade : nb de produits Jina seul vs union.
-      const jinaProducts = toProducts(jinaEntries)
-      const products = toProducts([...jinaEntries, ...cloudEntries])
+      // Étage le plus fiable : grille produit > contenu sans nav > union brute.
+      const { entries, tier } = selectDiscoveryEntries({
+        jinaEntries,
+        cloudLinks: cloud.links,
+        cloudNavLinks: cloud.navLinks,
+        cloudCardLinks: cloud.cardLinks,
+      })
+      const products = toProducts(entries)
+      console.log('[discover] tier:', tier, '— candidats:', entries.length, '— retenus:', products.length)
+
       if (products.length > 0) {
-        // 'cloud' seulement si le scroll a ajouté des fiches que Jina n'avait pas.
-        const source: 'jina' | 'cloud' = products.length > jinaProducts.length ? 'cloud' : 'jina'
-        return { pages: products, source }
+        if (tier === 'cards' || tier === 'content') return { pages: products, source: tier }
+        // Étage `all` (CF sans classification) : sémantique historique.
+        const jinaProducts = toProducts(jinaEntries)
+        return { pages: products, source: products.length > jinaProducts.length ? 'cloud' : 'jina' }
       }
-      return { pages: [], source: 'none', error: errors.join(' · ') || undefined }
+      const tierHint = tier === 'content'
+        ? 'La page ne contient que des liens de navigation (menu/footer) — probablement une page hub : descends dans une sous-catégorie.'
+        : undefined
+      return { pages: [], source: 'none', error: [errors.join(' · '), tierHint].filter(Boolean).join(' — ') || undefined }
     } finally {
       setLoading(false)
     }

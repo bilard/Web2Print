@@ -224,7 +224,11 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       if (!rootUrl) setCrawlPages([])
       return
     }
-    if (source === 'cloud') {
+    if (source === 'cards') {
+      toast.success(`${pages.length} fiche(s) détectée(s) dans la grille produit (liens de navigation exclus).`)
+    } else if (source === 'content') {
+      toast.info(`${pages.length} lien(s) hors navigation retenus — grille non identifiée, vérifie la liste avant d'enrichir.`)
+    } else if (source === 'cloud') {
       toast.info(`${pages.length} produit(s) — l'escalade scroll a complété la grille lazy-load.`)
     }
 
@@ -275,6 +279,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       status: 'pending',
     }))
     setBatch(initial)
+    const doneNames: string[] = []
 
     try {
       for (let i = 0; i < initial.length; i++) {
@@ -299,6 +304,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               idx === i ? { ...b, status: 'failed', error: 'Annulé' } : b
             ))
           } else if (product) {
+            if (product.name?.trim()) doneNames.push(product.name.trim().toLowerCase())
             setBatch((prev) => prev.map((b, idx) =>
               idx === i ? { ...b, status: 'done', product } : b
             ))
@@ -322,6 +328,16 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       setBatchCurrentIdx(null)
       setBatchRunning(false)
       setBatchAborting(false)
+    }
+
+    // Garde-fou qualité : si plusieurs fiches partagent exactement le même
+    // nom extrait, les URLs enrichies étaient très probablement des pages
+    // catégorie (menu/hub), pas des fiches produit — prévenir AVANT l'import.
+    const dupCount = doneNames.length - new Set(doneNames).size
+    if (dupCount > 0) {
+      toast.warning(
+        `${dupCount + 1} fiches partagent le même nom — les URLs ressemblent à des pages catégorie. Relance la découverte sur une sous-catégorie ou affine le filtre « Inclure ».`,
+      )
     }
   }
 
