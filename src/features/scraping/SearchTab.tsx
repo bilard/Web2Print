@@ -40,10 +40,15 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
       const { plan: p, results: found } = await runPlannedSearch(prompt.trim(), limit)
       setPlan(p)
       setResults(found)
-      // Pré-cocher : si des sites précis sont demandés, seulement leurs pages ;
-      // sinon tout (l'utilisateur décoche les hors-sujet).
+      // Pré-cocher uniquement les fiches produit uniques (les pages liste /
+      // catégorie restent visibles mais décochées), et seulement celles des
+      // sites demandés quand il y en a.
       const targeted = p.queries.some((q) => q.site)
-      setSelected(new Set(found.filter((r) => !targeted || r.onTarget).map((r) => r.url)))
+      setSelected(new Set(
+        found
+          .filter((r) => r.pageType === 'product' && (!targeted || r.onTarget))
+          .map((r) => r.url),
+      ))
       if (found.length === 0) setError('Aucun résultat — reformule la recherche (ajoute marque, type de produit, site…).')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Recherche échouée')

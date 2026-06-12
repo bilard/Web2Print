@@ -1,5 +1,24 @@
 import { describe, it, expect } from 'vitest'
-import { buildQueries, mergePlannedResults } from './searchPlanner'
+import { buildQueries, mergePlannedResults, classifyResultPage } from './searchPlanner'
+
+describe('classifyResultPage', () => {
+  it('fiche produit : slug terminé par une référence numérique', () => {
+    expect(classifyResultPage('https://www.leroymerlin.fr/produits/boulon-lame-tondeuse-electrique-honda-et-ggp-82876154.html')).toBe('product')
+  })
+  it('fiche produit : segment /p/ + identifiant hexadécimal', () => {
+    expect(classifyResultPage('https://www.jardiland.com/p/tondeuse-thermique-tractee-167cc-692ee2f2f86f2123bb201efc')).toBe('product')
+  })
+  it('page liste : arborescence catégorielle profonde sans référence', () => {
+    expect(classifyResultPage('https://www.leroymerlin.fr/produits/terrasse-jardin/outils-motorises-jardin/tondeuse-a-gazon/tondeuse-thermique/')).toBe('listing')
+  })
+  it('page liste : segment catégoriel court (/vb/)', () => {
+    expect(classifyResultPage('https://www.castorama.fr/vb/tondeuse-honda')).toBe('listing')
+  })
+  it('page liste : pagination en query ou titre « Page N »', () => {
+    expect(classifyResultPage('https://example.fr/category/TONDEUSE/2810?p=18')).toBe('listing')
+    expect(classifyResultPage('https://example.fr/tondeuse-honda-electrique-batterie-2024', 'Tous les produits Tondeuse – SAV - Page 3')).toBe('listing')
+  })
+})
 
 describe('buildQueries', () => {
   it('génère une requête site: par enseigne demandée', () => {
@@ -46,6 +65,21 @@ describe('mergePlannedResults', () => {
     ], 10)
     expect(merged.map((m) => m.url)).toEqual(['https://shop.fr/p1'])
     expect(merged[0].onTarget).toBe(false)
+  })
+
+  it('écarte les hôtes communauté/SAV/forum et trie les fiches produit en premier', () => {
+    const merged = mergePlannedResults([
+      { site: 'castorama.fr', results: [
+        r('https://communaute-sav.castorama.fr/category/TONDEUSE/2810'),
+        r('https://www.castorama.fr/vb/tondeuse-honda'),
+        r('https://www.castorama.fr/tondeuse-thermique-tractee-167cc-moteur-honda-3454976543210.html'),
+      ] },
+    ], 10)
+    expect(merged.map((m) => m.url)).toEqual([
+      'https://www.castorama.fr/tondeuse-thermique-tractee-167cc-moteur-honda-3454976543210.html',
+      'https://www.castorama.fr/vb/tondeuse-honda',
+    ])
+    expect(merged.map((m) => m.pageType)).toEqual(['product', 'listing'])
   })
 
   it('tronque au limit demandé', () => {

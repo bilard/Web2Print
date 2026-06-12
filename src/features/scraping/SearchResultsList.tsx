@@ -1,4 +1,4 @@
-import { CheckSquare, Square, ExternalLink, Target } from 'lucide-react'
+import { CheckSquare, Square, ExternalLink, Target, Layers } from 'lucide-react'
 import type { PlannedSearchResult } from './searchPlanner'
 
 interface Props {
@@ -53,11 +53,21 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                   </td>
                   <td className="px-2 py-2 text-white/85 font-medium max-w-[280px]">
                     <span className="line-clamp-2" title={r.title}>{r.title || host}</span>
-                    {hasTargets && r.onTarget && (
-                      <span className="inline-flex items-center gap-0.5 text-[9px] px-1 py-px mt-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
-                        <Target className="w-2.5 h-2.5" /> site demandé
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1 mt-0.5">
+                      {hasTargets && r.onTarget && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] px-1 py-px rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+                          <Target className="w-2.5 h-2.5" /> site demandé
+                        </span>
+                      )}
+                      {r.pageType === 'listing' && (
+                        <span
+                          className="inline-flex items-center gap-0.5 text-[9px] px-1 py-px rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/20"
+                          title="Page multi-produits (catégorie, recherche…) — pas une fiche produit unique"
+                        >
+                          <Layers className="w-2.5 h-2.5" /> page liste
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td className="px-2 py-2 text-white/40 max-w-[300px]">
                     <span className="line-clamp-2" title={r.description}>{r.description || '—'}</span>

@@ -33,6 +33,38 @@ export interface SearchPlan {
 export interface PlannedSearchResult extends SearchResult {
   /** True si le résultat provient d'un des sites explicitement demandés. */
   onTarget: boolean
+  /** 'product' = fiche produit unique ; 'listing' = page multi-produits
+   *  (catégorie, recherche interne, guide…) — affichée mais non pré-cochée. */
+  pageType: 'product' | 'listing'
+}
+
+/** Hôtes bruit : communauté, SAV, forum, blog… — jamais des fiches produit. */
+const NOISY_HOST_RE = /(^|[.-])(communaute|community|forum|blog|sav|aide|support|avis|conseil|conseils|magazine|news)([.-]|$)/i
+
+/** Classifie une URL de résultat : fiche produit unique ou page multi-produits.
+ *  Heuristiques génériques (structure d'URL + titre), AUCUNE règle par enseigne. */
+export function classifyResultPage(url: string, title?: string): 'product' | 'listing' {
+  if (title && (/(\||-|–)\s*page\s+\d+/i.test(title) || /^(tous|toutes) les |^(les )?meilleur|^choisir |^comparatif|^guide |^que valent/i.test(title))) {
+    return 'listing'
+  }
+  let u: URL
+  try { u = new URL(url) } catch { return 'listing' }
+  // Pagination / recherche interne / tri en query string → liste
+  if (/[?&](p|page|q|query|search|tri|sort|filter)=/i.test(u.search)) return 'listing'
+  const path = u.pathname
+  // Signaux forts de fiche produit : slug terminé par une référence numérique,
+  // segment dédié produit, ou identifiant hexadécimal long
+  if (/-\d{4,}(\.html?)?\/?$/i.test(path)) return 'product'
+  if (/\/(p|dp|product|produit|fiche|item|sku|art|ref)\//i.test(path)) return 'product'
+  if (/[0-9a-f]{12,}/i.test(path)) return 'product'
+  // Segments catégoriels explicites
+  if (/\/(c|cat|category|categorie|categories|rayon|univers|marque|marques|brand|brands|vb|search|recherche|l|liste)\//i.test(path + '/')) return 'listing'
+  const segments = path.split('/').filter(Boolean)
+  // Arborescence profonde sans référence = navigation par catégories
+  if (segments.length >= 4) return 'listing'
+  // Slug final long et descriptif (≥ 4 tirets) = nom de produit probable
+  if (((segments[segments.length - 1] ?? '').match(/-/g)?.length ?? 0) >= 4) return 'product'
+  return 'listing'
 }
 
 const PlanSchema = z.object({
@@ -111,18 +143,25 @@ export function mergePlannedResults(
 ): PlannedSearchResult[] {
   const hasTargets = perQuery.some((q) => q.site)
   const seen = new Set<string>()
-  const lanes = perQuery.map(({ site, results }) =>
-    results
+  const lanes = perQuery.map(({ site, results }) => {
+    const lane = results
       .filter((r) => !isJunkUrl(r.url))
       .filter((r) => {
-        if (!site) return true
         try {
           const host = new URL(r.url).hostname.toLowerCase().replace(/^www\./, '')
+          if (NOISY_HOST_RE.test(host)) return false
+          if (!site) return true
           return host === site || host.endsWith('.' + site)
         } catch { return false }
       })
-      .map((r): PlannedSearchResult => ({ ...r, onTarget: hasTargets && !!site })),
-  )
+      .map((r): PlannedSearchResult => ({
+        ...r,
+        onTarget: hasTargets && !!site,
+        pageType: classifyResultPage(r.url, r.title),
+      }))
+    // Fiches produit d'abord — les pages liste passent en fin de lane (tri stable)
+    return [...lane.filter((r) => r.pageType === 'product'), ...lane.filter((r) => r.pageType === 'listing')]
+  })
   const merged: PlannedSearchResult[] = []
   for (let i = 0; merged.length < limit; i++) {
     let added = false
