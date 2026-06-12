@@ -662,7 +662,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   return (
     <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-well border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className={`bg-well border border-white/10 rounded-2xl w-full ${tab === 'search' ? 'max-w-4xl' : 'max-w-2xl'} max-h-[90vh] flex flex-col shadow-2xl transition-[max-width] duration-200`}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] shrink-0">

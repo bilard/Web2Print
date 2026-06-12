@@ -1106,7 +1106,7 @@ const ECOM_NEGATIVE_RE = /\/(blog|news|actualites?|article[s]?\/|help|aide|suppo
  *  ex: amazon.com/s?, /b?, /search, /c/, /category/, /nos-librairies */
 const ECOM_LISTING_RE = /(\?|\/)(s|b|search|recherche|list|liste|c|category|categorie|dept|department|browse)(\/|\?|$)|\/nos-|\/contact|\/pages\/contact/i
 
-function isJunkUrl(url: string): boolean {
+export function isJunkUrl(url: string): boolean {
   try {
     const u = new URL(url)
     const host = u.hostname.toLowerCase()

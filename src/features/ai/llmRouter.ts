@@ -59,6 +59,7 @@ type LLMTask =
   | 'telegram.chat'
   | 'telegram.chatPlan'
   | 'web.answer'
+  | 'web.searchPlan'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -118,6 +119,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // Réponse synthétisée à partir d'un contexte web (node « Question web (IA) »).
   // Gemini 3.1 Pro épinglé (JSON fiable via responseSchema) ; Claude en fallback.
   'web.answer': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Onglet Recherche du scraping : interprète le prompt utilisateur (sujet produit,
+  // enseignes ciblées, champs attendus) → requêtes `site:` ciblées. Même profil que
+  // telegram.chatPlan : JSON court, épinglage Gemini 3.1 Pro (responseSchema fiable).
+  'web.searchPlan': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -140,6 +145,8 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   // Décision structurée (chercher ou non, quelle requête) → plus déterministe.
   'telegram.chatPlan':      0.2,
   'web.answer':             0.3,
+  // Interprétation déterministe du prompt de recherche (sites + sujet exacts).
+  'web.searchPlan':         0.1,
 }
 
 interface GenerateJsonOptions<T> {
