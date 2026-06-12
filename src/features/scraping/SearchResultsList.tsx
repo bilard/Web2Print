@@ -1,5 +1,6 @@
-import { CheckSquare, Square, ExternalLink, Target, Layers } from 'lucide-react'
+import { CheckSquare, Square, ExternalLink, Target, Layers, Loader2 } from 'lucide-react'
 import type { PlannedSearchResult } from './searchPlanner'
+import type { PriceProbe } from './useResultPrices'
 
 interface Props {
   results: PlannedSearchResult[]
@@ -8,10 +9,12 @@ interface Props {
   onToggleAll: () => void
   /** True si le plan ciblait des sites précis (affiche le badge « site demandé »). */
   hasTargets: boolean
+  /** Prix réels scrapés (JSON-LD léger) par URL — prioritaires sur le prix snippet. */
+  priceByUrl: Record<string, PriceProbe>
 }
 
 /** Résultats de l'onglet Recherche en tableau : case à cocher, titre, description, site. */
-export function SearchResultsList({ results, selected, onToggle, onToggleAll, hasTargets }: Props) {
+export function SearchResultsList({ results, selected, onToggle, onToggleAll, hasTargets, priceByUrl }: Props) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -75,9 +78,18 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                     <span className="line-clamp-2" title={r.description}>{r.description || '—'}</span>
                   </td>
                   <td className="px-2 py-2 text-right w-24 whitespace-nowrap">
-                    {r.price
-                      ? <span className="text-emerald-300/90 font-medium">{r.price}</span>
-                      : <span className="text-white/15">—</span>}
+                    {(() => {
+                      const probe = priceByUrl[r.url]
+                      if (probe?.value) {
+                        return <span className="text-emerald-300/90 font-medium" title="Prix scrapé sur la page (JSON-LD)">{probe.value}</span>
+                      }
+                      if (probe?.status === 'loading') {
+                        return <Loader2 className="w-3 h-3 animate-spin text-white/25 inline-block" />
+                      }
+                      return r.price
+                        ? <span className="text-emerald-300/60" title="Prix repéré dans le snippet de recherche (indicatif)">{r.price}</span>
+                        : <span className="text-white/15">—</span>
+                    })()}
                   </td>
                   <td className="px-2 py-2 w-40 max-w-[160px]">
                     <span className="block text-white/45 truncate" title={r.url}>{host}</span>

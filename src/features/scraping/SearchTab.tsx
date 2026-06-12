@@ -5,6 +5,7 @@ import { runPlannedSearch, type SearchPlan, type PlannedSearchResult } from './s
 import { SearchResultsList } from './SearchResultsList'
 import { SearchPromptInput } from './SearchPromptInput'
 import { SearchPlanChips } from './SearchPlanChips'
+import { useResultPrices } from './useResultPrices'
 import { SearchFieldsTable } from './SearchFieldsTable'
 
 interface Props {
@@ -28,6 +29,7 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
   const [results, setResults] = useState<PlannedSearchResult[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const { priceByUrl, probePrices, resetPrices } = useResultPrices()
 
   const hasTargets = !!plan && plan.queries.some((q) => q.site)
 
@@ -37,20 +39,18 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
     setError(null)
     setResults([])
     setPlan(null)
+    resetPrices()
     try {
       const { plan: p, results: found } = await runPlannedSearch(prompt.trim(), limit)
       setPlan(p)
       setResults(found)
-      // Pré-cocher uniquement les fiches produit uniques (les pages liste /
-      // catégorie restent visibles mais décochées), et seulement celles des
-      // sites demandés quand il y en a.
+      // Pré-cocher uniquement les fiches produit uniques (pages liste visibles
+      // mais décochées), et seulement celles des sites demandés quand il y en a.
       const targeted = p.queries.some((q) => q.site)
-      setSelected(new Set(
-        found
-          .filter((r) => r.pageType === 'product' && (!targeted || r.onTarget))
-          .map((r) => r.url),
-      ))
+      setSelected(new Set(found.filter((r) => r.pageType === 'product' && (!targeted || r.onTarget)).map((r) => r.url)))
       if (found.length === 0) setError('Aucun résultat — reformule la recherche (ajoute marque, type de produit, site…).')
+      // Scrape léger du prix réel (JSON-LD) sur les fiches produit affichées
+      probePrices(found.filter((r) => r.pageType === 'product').map((r) => r.url))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Recherche échouée')
     } finally {
@@ -128,6 +128,7 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
             onToggle={toggle}
             onToggleAll={toggleAll}
             hasTargets={hasTargets}
+            priceByUrl={priceByUrl}
           />
           <button
             onClick={() => onEnrichMany(Array.from(selected))}
