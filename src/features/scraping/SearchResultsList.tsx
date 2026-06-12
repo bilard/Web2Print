@@ -30,7 +30,8 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px]">Titre</th>
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px]">Description</th>
               <th className="px-2 py-2 text-right font-medium text-white/45 uppercase tracking-wide text-[9px] w-24" title="Prix repéré dans le résultat de recherche — le prix fiable vient du scrape">Prix</th>
-              <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px] w-44">Site</th>
+              <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px] w-40">Site</th>
+              <th className="w-9 px-2 py-2" title="Ouvrir la page source" />
             </tr>
           </thead>
           <tbody>
@@ -78,17 +79,19 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                       ? <span className="text-emerald-300/90 font-medium">{r.price}</span>
                       : <span className="text-white/15">—</span>}
                   </td>
-                  <td className="px-2 py-2 w-44 max-w-[176px]">
+                  <td className="px-2 py-2 w-40 max-w-[160px]">
+                    <span className="block text-white/45 truncate" title={r.url}>{host}</span>
+                  </td>
+                  <td className="w-9 px-2 py-2">
                     <a
                       href={r.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 text-indigo-300/60 hover:text-indigo-300 max-w-full transition-colors"
-                      title={r.url}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded border border-indigo-500/25 bg-indigo-500/10 text-indigo-300/70 hover:text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+                      title={`Ouvrir la page source : ${r.url}`}
                     >
-                      <span className="truncate">{host}</span>
-                      <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                      <ExternalLink className="w-3 h-3" />
                     </a>
                   </td>
                 </tr>

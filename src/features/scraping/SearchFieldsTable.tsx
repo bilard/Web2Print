@@ -1,4 +1,4 @@
-import { Table2, Loader2 } from 'lucide-react'
+import { Table2, Loader2, ExternalLink } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { resolveFieldValue } from './searchFieldValues'
 
@@ -36,6 +36,7 @@ export function SearchFieldsTable({ fields, products, remaining = 0 }: Props) {
                   {f}
                 </th>
               ))}
+              <th className="w-9 px-2 py-2" title="Ouvrir la page source" />
             </tr>
           </thead>
           <tbody>
@@ -51,6 +52,19 @@ export function SearchFieldsTable({ fields, products, remaining = 0 }: Props) {
                     </td>
                   )
                 })}
+                <td className="w-9 px-2 py-1.5 align-top">
+                  {p.sourceUrl && (
+                    <a
+                      href={p.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-6 h-6 rounded border border-indigo-500/25 bg-indigo-500/10 text-indigo-300/70 hover:text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+                      title={`Ouvrir la page source : ${p.sourceUrl}`}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
