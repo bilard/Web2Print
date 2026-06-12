@@ -30,6 +30,15 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
 
   const hasTargets = !!plan && plan.queries.some((q) => q.site)
 
+  // Lignes « en attente » du tableau : les URLs cochées pas encore scrapées.
+  // Après la fin du batch, seuls les produits réellement extraits restent
+  // (les échecs ne stagnent pas en « … » indéfiniment).
+  const normUrl = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+  const scrapedUrls = new Set(products.map((p) => (p.sourceUrl ? normUrl(p.sourceUrl) : '')))
+  const pendingUrls = batchRunning || products.length === 0
+    ? Array.from(selected).filter((u) => !scrapedUrls.has(normUrl(u)))
+    : []
+
   const handleSearch = async () => {
     if (!prompt.trim() || searching) return
     setSearching(true)
@@ -105,7 +114,7 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
       {plan && <SearchPlanChips plan={plan} />}
 
       {plan && plan.wantedFields.length > 0 && (
-        <SearchFieldsTable fields={plan.wantedFields} products={products} />
+        <SearchFieldsTable fields={plan.wantedFields} products={products} pendingUrls={pendingUrls} />
       )}
 
       {error && (

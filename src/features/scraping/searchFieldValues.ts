@@ -44,10 +44,21 @@ function priceValue(p: EnrichedProduct): string {
   return ''
 }
 
+/** True si le champ demandé désigne le site/l'enseigne source (seule colonne
+ *  remplissable avant scrape, depuis l'URL du résultat). */
+export function isSourceField(field: string): boolean {
+  return /site|source|enseigne|magasin|vendeur|boutique/.test(normalize(field))
+}
+
+/** Host affichable d'une URL (sans www.) — '' si invalide. */
+export function hostOfUrl(url: string): string {
+  return hostOf(url)
+}
+
 /** Valeur du champ `field` (texte libre du prompt) pour le produit `p`. '' si introuvable. */
 export function resolveFieldValue(field: string, p: EnrichedProduct): string {
   const f = normalize(field)
-  if (/site|source|enseigne|magasin|vendeur|boutique/.test(f)) return hostOf(p.sourceUrl)
+  if (isSourceField(f)) return hostOf(p.sourceUrl)
   if (/\bean\b|gtin|code.?barre/.test(f)) return p.ean ?? ''
   if (/ref|sku|\bmpn\b/.test(f)) return p.distributorRef ?? p.manufacturerRef ?? p.model ?? ''
   if (/promo|remise|solde|reduc|barre|discount/.test(f)) return promoValue(p)
