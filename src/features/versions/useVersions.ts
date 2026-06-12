@@ -24,6 +24,8 @@ interface VersionMeta {
   label: string
   createdAt: number
   thumbnail: string | null
+  /** Snapshot automatique (ring buffer de filet de sécurité) vs version manuelle. */
+  auto: boolean
 }
 
 interface UseVersions {
@@ -43,12 +45,13 @@ export function useVersions(projectId: string | null): UseVersions {
     )
     setVersions(
       snap.docs.map((d) => {
-        const data = d.data() as { label?: string; createdAt?: number; snapshot?: { thumbnail?: string } }
+        const data = d.data() as { label?: string; createdAt?: number; auto?: boolean; snapshot?: { thumbnail?: string } }
         return {
           id: d.id,
           label: data.label ?? 'Version',
           createdAt: data.createdAt ?? 0,
           thumbnail: data.snapshot?.thumbnail ?? null,
+          auto: data.auto === true,
         }
       }),
     )
@@ -76,11 +79,14 @@ export function useVersions(projectId: string | null): UseVersions {
         createdAt: Date.now(),
         snapshot,
       })
-      // Purge au-delà du plafond (les plus anciennes).
+      // Purge au-delà du plafond (les plus anciennes). Les snapshots AUTO ont
+      // leur propre ring buffer (autoSnapshot.ts) et ne comptent pas ici —
+      // sinon ils évinceraient des versions manuelles.
       const all = await getDocs(
         query(collection(db, 'projects', projectId, 'versions'), orderBy('createdAt', 'desc')),
       )
-      for (const d of all.docs.slice(MAX_VERSIONS)) {
+      const manualDocs = all.docs.filter((d) => (d.data() as { auto?: boolean }).auto !== true)
+      for (const d of manualDocs.slice(MAX_VERSIONS)) {
         await deleteDoc(d.ref).catch(() => {})
       }
       await reload()

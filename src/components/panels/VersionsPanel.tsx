@@ -42,7 +42,7 @@ export function VersionsPanel() {
       <div className="flex items-center justify-between">
         <h4 className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider">
           <History className="w-3 h-3" /> Versions
-          <OptionHelp text="Snapshots du document : créez une version avant un gros changement, restaurez-la en un clic (l'éditeur se recharge). 20 versions max, les plus anciennes sont purgées." />
+          <OptionHelp text="Snapshots du document : créez une version avant un gros changement, restaurez-la en un clic (l'éditeur se recharge). 20 versions manuelles max + 10 snapshots automatiques (badge « auto », pris à la sauvegarde, au plus toutes les 10 min)." />
         </h4>
         <button
           onClick={() => void onCreate()}
@@ -68,7 +68,14 @@ export function VersionsPanel() {
                 <div className="w-10 h-10 rounded bg-well shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] text-white/75 truncate">{v.label}</div>
+                <div className="flex items-center gap-1 min-w-0">
+                  <span className="text-[11px] text-white/75 truncate">{v.label}</span>
+                  {v.auto && (
+                    <span className="shrink-0 px-1 py-px rounded bg-white/[0.08] text-[8px] uppercase tracking-wide text-white/40">
+                      auto
+                    </span>
+                  )}
+                </div>
                 <div className="text-[9px] text-white/30">{new Date(v.createdAt).toLocaleString('fr-FR')}</div>
               </div>
               {confirmId === v.id ? (

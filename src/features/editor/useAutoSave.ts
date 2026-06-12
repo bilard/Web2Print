@@ -9,6 +9,7 @@ import { usePaletteStore } from '@/stores/palette.store'
 import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
+import { maybeAutoSnapshot } from '@/features/versions/autoSnapshot'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
@@ -257,6 +258,25 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         updatedAt: Date.now(),
       })
       setSaveStatus('saved')
+
+      // Filet de sécurité : snapshot auto (ring buffer, throttle 10 min) en
+      // plus des versions manuelles — fire-and-forget, n'affecte pas le save.
+      void maybeAutoSnapshot(projectId, {
+        title,
+        canvasData: json,
+        charSpacingMaps: Object.keys(charSpacingMaps).length > 0 ? JSON.stringify(charSpacingMaps) : null,
+        canvasWidth,
+        canvasHeight,
+        canvasBg,
+        canvasBgType,
+        canvasBgGradient: JSON.stringify(canvasBgGradient),
+        canvasBgImage,
+        dpi,
+        bleedMm,
+        paletteColors: JSON.stringify(paletteColors),
+        paletteGradients: JSON.stringify(paletteGradients),
+        thumbnail,
+      })
     } catch (err) {
       console.error('Save error', err)
       setSaveStatus('unsaved')
