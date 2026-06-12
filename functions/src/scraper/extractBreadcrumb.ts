@@ -115,27 +115,81 @@ export const extractBreadcrumb = onCall<ExtractBreadcrumbRequest, Promise<Extrac
       const pageUrl = page.url()
       console.log('[extractBreadcrumb] page loaded:', { pageUrl, title: pageTitle })
 
+      // Fermer la bannière de consentement (CMP) AVANT de scroller : en session
+      // headless vierge elle est toujours ouverte et verrouille souvent le
+      // scroll du body (overflow:hidden) → le lazy-load/infinite-scroll ne se
+      // déclenche jamais (symptôme : images collected: 0, batches AJAX absents).
+      // Liste générique des CMP standards + fallback texte ; on préfère
+      // « Refuser » (privacy) et on accepte seulement à défaut.
+      await page.evaluate(() => {
+        const clickFirst = (sels: string[]): boolean => {
+          for (const sel of sels) {
+            const el = document.querySelector<HTMLElement>(sel)
+            if (el) { el.click(); return true }
+          }
+          return false
+        }
+        const declined = clickFirst([
+          '#onetrust-reject-all-handler',
+          '#didomi-notice-disagree-button',
+          '#CybotCookiebotDialogBodyButtonDecline',
+          '.coi-banner__decline', '[data-coi="decline"]',
+          '#axeptio_btn_dismiss', '[data-testid="uc-deny-all-button"]',
+          '.tarteaucitronDeny', '#tarteaucitronAllDenied2',
+        ])
+        const accepted = declined || clickFirst([
+          '#onetrust-accept-btn-handler',
+          '#didomi-notice-agree-button',
+          '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+          '.coi-banner__accept', '[data-coi="accept"]',
+          '#axeptio_btn_acceptAll', '[data-testid="uc-accept-all-button"]',
+          '.tarteaucitronAllow', '#tarteaucitronPersonalize2',
+        ])
+        if (!accepted) {
+          // Fallback texte : bouton dont le libellé évoque refus puis acceptation.
+          const btns = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"]'))
+          const byText = (re: RegExp) => btns.find((b) => re.test((b.textContent ?? '').trim()))
+          const hit = byText(/^(tout\s+)?refuser$|continuer sans accepter|reject all|decline/i)
+            ?? byText(/^(tout\s+)?accepter$|accept all|j'accepte|^agree$/i)
+          hit?.click()
+        }
+        // Dans tous les cas : déverrouiller le scroll si la bannière l'a figé.
+        document.documentElement.style.overflow = ''
+        document.body.style.overflow = ''
+      })
+      await new Promise((r) => setTimeout(r, 600))
+
       // Scroll progressif pour déclencher le lazy-load des images produit
       // (Boulanger/Darty utilisent Intersection Observer — sans scroll, les
       // images ne sont jamais rendues et Jina retourne du vide).
+      // ⚠️ Les listings à INFINITE SCROLL (Magento loadmoreajaxloader & co)
+      // injectent des lots de cartes en AJAX quand on approche du bas : la
+      // hauteur de page GRANDIT pendant le scroll. On re-mesure donc à chaque
+      // passage en bas et on continue tant que la page s'allonge (2 passes
+      // stables = fini), avec garde-fous 60000px / 20s pour rester sous le
+      // timeout de la function.
       await page.evaluate(async () => {
-        await new Promise<void>((resolve) => {
-          let total = 0
-          const step = 500
-          // Cap relevé à 40000px : les pages de listing (grilles produit) sont
-          // bien plus longues qu'une fiche ; il faut scroller loin pour
-          // hydrater toutes les cartes lazy-load avant de collecter les liens.
-          const max = Math.min(document.body.scrollHeight ?? 0, 40000)
-          const timer = setInterval(() => {
-            window.scrollBy(0, step)
-            total += step
-            if (total >= max) {
-              clearInterval(timer)
-              window.scrollTo(0, 0)
-              resolve()
-            }
-          }, 120)
-        })
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+        const step = 600
+        let scrolled = 0
+        let stable = 0
+        let lastHeight = document.body.scrollHeight ?? 0
+        const t0 = Date.now()
+        while (stable < 2 && scrolled < 60000 && Date.now() - t0 < 20000) {
+          window.scrollBy(0, step)
+          scrolled += step
+          const atBottom = window.scrollY + window.innerHeight >= (document.body.scrollHeight ?? 0) - 10
+          if (atBottom) {
+            // En bas : laisser le batch AJAX éventuel arriver puis re-mesurer.
+            await sleep(900)
+            const h = document.body.scrollHeight ?? 0
+            if (h <= lastHeight) stable += 1
+            else { stable = 0; lastHeight = h }
+          } else {
+            await sleep(100)
+          }
+        }
+        window.scrollTo(0, 0)
       })
       // Laisser le temps aux requêtes d'images déclenchées par le scroll d'arriver.
       await new Promise((r) => setTimeout(r, 800))
