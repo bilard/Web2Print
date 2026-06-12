@@ -1590,15 +1590,48 @@ async function decomposeSemantic(
     renderedTexts?.push(priceValue)
   }
 
-  // Rend un placeholder {{…}} : masque ciblé sur sa bbox (fond échantillonné,
-  // fallback si Nano Banana échoue) + Textbox éditable + texte source collecté
-  // pour l'effacement Nano Banana.
+  // Rend un placeholder {{…}} en SÉPARANT chaque champ par LIGNE : couleur,
+  // taille et alignement échantillonnés PAR LIGNE (et non sur l'union du bloc).
+  // Vision regroupe souvent plusieurs champs de couleurs différentes (libellé
+  // bleu, marque rose, description noire) en un seul paragraphe → une couleur
+  // moyenne unique (violet) effaçait les vraies couleurs du design. On reproduit
+  // ici le « bloc marketing » du PDF→SVG : chaque champ garde son style propre.
+  // Masque ciblé par ligne (fond uniforme) + texte normalisé + cadre fixe.
   const renderPlaceholder = (idx: number): void => {
     const p = result.paragraphs[idx]
     if (!p || consumed.has(idx)) return
-    const bg = sampleBackground(ctx, p.bbox, width, height)
-    if (bg.uniform) canvas.add(buildMaskRect(p.bbox, bg.hex, 4, 4))
-    renderParagraph(idx) // pousse aussi le texte dans renderedTexts
+    consumed.add(idx)
+    // Regroupement des words en lignes (même seuil que countLines).
+    const yc = (w: VisionWord) => w.bbox.top + w.bbox.height / 2
+    const sorted = [...p.words].sort((a, b) => yc(a) - yc(b))
+    if (sorted.length === 0) return
+    const hs = p.words.map((w) => w.bbox.height).sort((a, b) => a - b)
+    const medianH = hs[Math.floor(hs.length / 2)] || p.bbox.height
+    const lines: VisionWord[][] = [[sorted[0]]]
+    for (let i = 1; i < sorted.length; i++) {
+      if (yc(sorted[i]) - yc(sorted[i - 1]) > medianH * 0.6) lines.push([sorted[i]])
+      else lines[lines.length - 1].push(sorted[i])
+    }
+    for (const line of lines) {
+      const ws = [...line].sort((a, b) => a.bbox.left - b.bbox.left)
+      const lineBbox = unionBbox(ws.map((w) => w.bbox))
+      // Texte de la ligne (collage ponctuation comme buildTextAndStyles) → normalisé.
+      let raw = ''
+      ws.forEach((w, wi) => {
+        if (wi > 0 && !/^[.,:;%€]/.test(w.text)) raw += ' '
+        raw += w.text
+      })
+      const text = normalizeMergeFields(raw)
+      if (!/\{\{[^}]+\}\}/.test(text)) continue // ligne sans champ valide → ignorée
+      const bg = sampleBackground(ctx, lineBbox, width, height)
+      if (bg.uniform) canvas.add(buildMaskRect(lineBbox, bg.hex, 4, 4))
+      const color = sampleTextColor(ctx, lineBbox, bg.hex, width, height)
+      const fontWeight = detectFontWeight(ctx, lineBbox, color, width, height)
+      const fontSize = Math.max(lineBbox.height * 0.95, 10)
+      const align = detectTextAlign(ws, lineBbox) ?? 'right'
+      canvas.add(buildTextbox(text, lineBbox, fontSize, color, fontWeight, undefined, align, undefined, true))
+      renderedTexts?.push(raw)
+    }
   }
 
   for (const b of built) {
