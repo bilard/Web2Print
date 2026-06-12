@@ -12,7 +12,7 @@
  *   - `navLinks`  : ancres sous header/nav/footer/aside/[role=navigation].
  *  Ici on choisit le meilleur étage de candidats, de façon PURE et testable. */
 
-export interface DiscoveredEntry {
+interface DiscoveredEntry {
   title: string
   url: string
 }

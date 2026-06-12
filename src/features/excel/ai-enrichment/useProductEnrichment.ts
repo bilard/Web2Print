@@ -13,6 +13,8 @@ import { isJunkImageUrl } from './imageFilter'
 export { isJunkImageUrl }
 import { parseDescriptionFromMarkdown as parseDescriptionFromMarkdownExternal } from '@/features/scraping/core/parsers/parseDescription'
 import { parseSpecsFromMarkdown as parseSpecsFromMarkdownExternal } from '@/features/scraping/core/parsers/parseSpecifications'
+import { filterImagesByProductRef } from '@/features/scraping/core/parsers/filterImagesByRef'
+import { parseNamedDocLinks } from '@/features/scraping/core/parsers/parseNamedDocLinks'
 import { parsePricingFromMarkdown } from '@/features/scraping/core/parsers/parsePricing'
 import { parseAdvantagesFromMarkdown } from '@/features/scraping/core/parsers/parseAdvantages'
 import { buildEnrichmentPrompt } from '@/features/scraping-templates/buildEnrichmentPrompt'
@@ -2881,7 +2883,7 @@ function buildManufacturerProduct(
   }
   console.log('[manufacturer-build] images:', images.length)
 
-  // Documents : Jina injected > REDUX downloads > PDFs du markdown
+  // Documents : libellés visibles du markdown > Jina injected > REDUX > PDFs bruts
   const documents: EnrichedDocument[] = []
   const docsByUrl = new Set<string>()
   const pushDocBuild = (url: string, name?: string) => {
@@ -2889,7 +2891,18 @@ function buildManufacturerProduct(
     docsByUrl.add(url)
     documents.push(buildDocument(url, name))
   }
-  // D'abord : extraire depuis le bloc JINA_EXTRACTED_DOWNLOADS injecté par le script
+  // D'abord : les paires « libellé visible ↑ / lien vide [](url.pdf) » — c'est
+  // le seul endroit où le VRAI nom du document existe (« Déclaration de
+  // conformité CE », « Notices », « vue éclatées »…). Passées en premier pour
+  // que la dédup par URL leur donne la priorité sur les noms de fichier.
+  if (markdownContent) {
+    const named = parseNamedDocLinks(markdownContent)
+    for (const d of named) pushDocBuild(d.url, d.name)
+    if (named.length > 0) console.log('[manufacturer-build] ✓ named doc links:', named.length)
+  }
+  // Puis : le bloc JINA_EXTRACTED_DOWNLOADS injecté par le script.
+  // ⚠ injecté au format `titre##url` (cf. jinaScrapeMaufacturerPage) — l'ancien
+  // parse ` | ` ne matchait jamais → tous les noms étaient perdus.
   if (markdownContent) {
     const dlStart = markdownContent.indexOf('JINA_EXTRACTED_DOWNLOADS_START')
     const dlEnd = markdownContent.indexOf('JINA_EXTRACTED_DOWNLOADS_END')
@@ -2898,11 +2911,12 @@ function buildManufacturerProduct(
       for (const line of dlBlock.split('\n')) {
         const trimmed = line.trim()
         if (!trimmed) continue
-        const pipeIdx = trimmed.indexOf(' | ')
-        if (pipeIdx > 0) {
-          const name = trimmed.slice(0, pipeIdx).trim()
-          const url = trimmed.slice(pipeIdx + 3).trim()
-          pushDocBuild(url, name)
+        const sep = trimmed.includes('##') ? '##' : trimmed.includes(' | ') ? ' | ' : null
+        const sepIdx = sep ? trimmed.indexOf(sep) : -1
+        if (sep && sepIdx > 0) {
+          const name = trimmed.slice(0, sepIdx).trim()
+          const url = trimmed.slice(sepIdx + sep.length).trim()
+          if (/^https?:\/\//.test(url)) pushDocBuild(url, name || undefined)
         } else if (/^https?:\/\//.test(trimmed)) {
           pushDocBuild(trimmed)
         }
@@ -2950,6 +2964,17 @@ function buildManufacturerProduct(
   // "18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant".
   const subtitle = markdownContent ? extractSubtitleFromMarkdown(markdownContent) : undefined
 
+  // Images : ne garder que les vues du produit quand sa référence est connue
+  // (élimine carrousels « machines connexes », accessoires, méga-menu — sur
+  // les CDN fabricants le nom de fichier porte la référence).
+  const uniqueImages = [...new Set(images)]
+  const productImages = filterImagesByProductRef(uniqueImages, [
+    identity.model, identity.manufacturerRef, identity.distributorRef, identity.ean,
+  ])
+  if (productImages.length !== uniqueImages.length) {
+    console.log('[manufacturer-build] ✓ images filtrées par référence :', uniqueImages.length, '→', productImages.length)
+  }
+
   return {
     ...identity,
     subtitle,
@@ -2957,7 +2982,7 @@ function buildManufacturerProduct(
     advantages,
     specifications: specsAfterLift,
     variants,
-    images: [...new Set(images)],
+    images: productImages,
     documents: deduplicateDocuments(documents),
     breadcrumb: breadcrumb.length > 0 ? breadcrumb : undefined,
     sourceUrl: productUrl,
