@@ -14,7 +14,7 @@ import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
  *  une version SEO différente du HTML visible). */
 const extractBreadcrumbCloudFn = httpsCallable<
   { url: string },
-  { items: string[]; selector: string | null; images: string[] }
+  { items: string[]; selector: string | null; images: string[]; links?: string[] }
 >(functions, 'extractBreadcrumb')
 
 const JINA_READER = 'https://r.jina.ai'
@@ -647,7 +647,7 @@ interface JinaReaderResponse {
   }
 }
 
-export async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean } = {}): Promise<JinaReaderResponse['data']> {
+export async function jinaRead(url: string, opts: { timeout?: number; noCache?: boolean; listing?: boolean } = {}): Promise<JinaReaderResponse['data']> {
   const extra: Record<string, string> = {}
 
   // Les gros revendeurs FR (Darty, Boulanger, Fnac, Leroy Merlin…) sont derrière
@@ -659,11 +659,21 @@ export async function jinaRead(url: string, opts: { timeout?: number; noCache?: 
     isProtected = RESELLER_HOSTS.test(new URL(url).hostname)
   } catch { /* URL invalide — on garde les defaults */ }
 
-  const timeout = Math.max(opts.timeout ?? 0, isProtected ? 30000 : 10000)
+  // `listing` : page de catégorie/famille en lazy-load (grille de cartes
+  // produit hydratée côté client). Le moteur Jina par défaut ne rend pas la
+  // grille → 0 lien produit. Forcer le moteur navigateur (Puppeteer headless,
+  // qui gère le lazy-load) + attendre les cartes + timeout long.
+  const forceBrowser = isProtected || !!opts.listing
+  const timeout = Math.max(opts.timeout ?? 0, forceBrowser ? 30000 : 10000)
   extra['X-Timeout'] = String(Math.ceil(timeout / 1000))
   if (opts.noCache) extra['X-No-Cache'] = 'true'
 
-  if (isProtected) {
+  if (opts.listing) {
+    extra['X-Engine'] = 'browser'
+    // Attendre qu'une grille/carte produit (ou un lien produit) soit rendue
+    // avant de capturer le résumé des liens.
+    extra['X-Wait-For-Selector'] = 'a[href*="/product" i], a[href*="/produit" i], [class*="product" i], [class*="card" i], main'
+  } else if (isProtected) {
     extra['X-Engine'] = 'browser'
     // Attendre qu'un conteneur produit (pas seulement <body>) soit hydraté.
     extra['X-Wait-For-Selector'] = 'main, [itemtype*="Product" i], [class*="product" i]'
@@ -1087,6 +1097,82 @@ export function useJina() {
     finally { setLoading(false) }
   }, [])
 
+  // ── Discover (Crawl) — découverte DÉTERMINISTE des fiches produit ───────────
+  // Remplace l'ancienne découverte par LLM (qui échouait en silence sur les
+  // grilles lazy-load type Makita). Stratégie en 2 temps :
+  //   1) jinaRead(listing) : moteur navigateur Jina → rend le lazy-load, on
+  //      filtre directement le résumé de liens (page.links) par host + regex.
+  //   2) escalade Cloud Function Puppeteer (scrolle + stealth anti-bot) qui
+  //      renvoie tous les <a href> hydratés — filet quand Jina ne passe pas.
+  // Retourne {pages, source, error} ; le caller décide du message si vide.
+  const discover = useCallback(async (
+    url: string,
+    opts: { includePaths?: string; excludePaths?: string; limit?: number } = {},
+  ): Promise<{ pages: CrawlPage[]; source: 'jina' | 'cloud' | 'none'; error?: string }> => {
+    const safeRe = (s?: string): RegExp | null => {
+      const t = (s ?? '').trim()
+      if (!t) return null
+      try { return new RegExp(t) } catch { return null }
+    }
+    const slugTitle = (u: string): string => {
+      try {
+        const seg = new URL(u).pathname.split('/').filter(Boolean).pop() ?? ''
+        return seg.replace(/\.\w{2,5}$/, '').replace(/[-_]+/g, ' ').trim() || new URL(u).hostname
+      } catch { return u }
+    }
+    let baseHost = ''
+    try { baseHost = new URL(url).hostname.replace(/^www\./, '') } catch { /* URL invalide */ }
+    let startPath = ''
+    try { startPath = new URL(url).pathname } catch { /* idem */ }
+    const includeRe = safeRe(opts.includePaths)
+    const excludeRe = safeRe(opts.excludePaths)
+    const limit = opts.limit ?? 30
+
+    // Filtre commun : host identique, chemin ≠ page de départ, regex include/exclude.
+    const toProducts = (entries: [string, string][]): CrawlPage[] => {
+      const seen = new Set<string>()
+      const out: CrawlPage[] = []
+      for (const [rawTitle, rawHref] of entries) {
+        if (!rawHref) continue
+        let u: URL
+        try { u = new URL(rawHref, url) } catch { continue }
+        const abs = u.toString()
+        if (seen.has(abs)) continue
+        const host = u.hostname.replace(/^www\./, '')
+        if (baseHost && !host.includes(baseHost) && !baseHost.includes(host)) continue
+        if (u.pathname === startPath) continue // lien retour vers la page de listing / ancres
+        if (includeRe && !includeRe.test(u.pathname)) continue
+        if (excludeRe && excludeRe.test(u.pathname)) continue
+        seen.add(abs)
+        out.push({ url: abs, title: rawTitle.trim() || slugTitle(abs), content: '' })
+        if (out.length >= limit) break
+      }
+      return out
+    }
+
+    let lastError: string | undefined
+
+    // 1) Jina moteur navigateur (lazy-load rendu) → résumé de liens déterministe.
+    try {
+      const page = await jinaRead(url, { listing: true, noCache: true })
+      const products = toProducts(Object.entries(page.links ?? {}))
+      if (products.length > 0) return { pages: products, source: 'jina' }
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e)
+    }
+
+    // 2) Escalade Cloud Function Puppeteer (scrolle + stealth) → tous les liens.
+    try {
+      const r = await extractBreadcrumbCloudFn({ url })
+      const products = toProducts((r.data.links ?? []).map((h) => [slugTitle(h), h] as [string, string]))
+      if (products.length > 0) return { pages: products, source: 'cloud' }
+    } catch (e) {
+      lastError = lastError ?? (e instanceof Error ? e.message : String(e))
+    }
+
+    return { pages: [], source: 'none', error: lastError }
+  }, [])
+
   // ── Map (discover URLs) ────────────────────────────────────────────────────
   const map = useCallback(async (url: string, search?: string): Promise<MapLink[] | null> => {
     setLoading(true); reset()
@@ -1223,5 +1309,5 @@ export function useJina() {
 
   const abort = () => { abortRef.current = true }
 
-  return { scrape, map, extract, crawl, abort, loading, error, progress }
+  return { scrape, map, discover, extract, crawl, abort, loading, error, progress }
 }

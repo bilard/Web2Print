@@ -35,6 +35,10 @@ interface ExtractBreadcrumbResponse {
    *  Fallback déterministe pour les revendeurs dont Jina ne capte pas les
    *  images rendues côté client (Boulanger, Darty, Fnac). */
   images: string[]
+  /** Tous les liens <a href> absolus de la page APRÈS scroll (lazy-load
+   *  hydraté). Sert d'escalade déterministe à la découverte de produits
+   *  (Crawl) quand Jina ne rend pas la grille — cas Makita & co. */
+  links: string[]
 }
 
 // Cache le browser entre invocations chaudes pour amortir le coût de lancement.
@@ -118,7 +122,10 @@ export const extractBreadcrumb = onCall<ExtractBreadcrumbRequest, Promise<Extrac
         await new Promise<void>((resolve) => {
           let total = 0
           const step = 500
-          const max = Math.min(document.body.scrollHeight ?? 0, 10000)
+          // Cap relevé à 40000px : les pages de listing (grilles produit) sont
+          // bien plus longues qu'une fiche ; il faut scroller loin pour
+          // hydrater toutes les cartes lazy-load avant de collecter les liens.
+          const max = Math.min(document.body.scrollHeight ?? 0, 40000)
           const timer = setInterval(() => {
             window.scrollBy(0, step)
             total += step
@@ -263,7 +270,26 @@ export const extractBreadcrumb = onCall<ExtractBreadcrumbRequest, Promise<Extrac
       })
       console.log('[extractBreadcrumb] images collected:', images.length)
 
-      return { items: result.items, selector: result.selector, images }
+      // Collecte de TOUS les liens <a href> absolus après hydratation + scroll.
+      // Escalade déterministe pour la découverte de produits (Crawl) : le caller
+      // filtre ensuite par host + regex include/exclude. On résout en absolu et
+      // on dédoublonne pour limiter la charge réseau.
+      const links = await page.evaluate(() => {
+        const out: string[] = []
+        const seen = new Set<string>()
+        for (const a of Array.from(document.querySelectorAll('a[href]'))) {
+          const raw = (a as HTMLAnchorElement).href // déjà absolu via la résolution DOM
+          if (!raw || !/^https?:\/\//.test(raw)) continue
+          const key = raw.replace(/#.*$/, '')
+          if (seen.has(key)) continue
+          seen.add(key)
+          out.push(key)
+        }
+        return out
+      })
+      console.log('[extractBreadcrumb] links collected:', links.length)
+
+      return { items: result.items, selector: result.selector, images, links }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       throw new HttpsError('internal', `Extraction breadcrumb échouée : ${msg}`)

@@ -76,7 +76,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
    *  est actuellement affichée. null = liste seule. */
   const [batchPreviewIdx, setBatchPreviewIdx] = useState<number | null>(null)
   const batchAbortRef = useRef(false)
-  const { scrape, map, abort, loading, error } = useJina()
+  const { scrape, map, discover, abort, loading, error } = useJina()
   const { setSheets, setCurrentFileName, sheets } = useExcelStore()
   const setCurrentPath = useExcelStore((s) => s.setCurrentPath)
 
@@ -197,76 +197,47 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
     return map(rootUrl ?? url, search)
   }
 
-  /** Découvre les produits sur la page fournie en UN SEUL appel Jina + IA :
-   *  `scrape()` lit la page (jinaRead) ET demande au LLM d'extraire le nom +
-   *  l'URL de chaque carte produit visible. Plus rapide que l'ancien flow à
-   *  deux passes (map + scrape). Anti-hallucination par filtres URL côté
-   *  client (host, regex include/exclude) — l'utilisateur peut compléter
-   *  via la sélection manuelle. */
+  /** Découvre les fiches produit d'une page de famille/catégorie via
+   *  `discover()` (hook useJina) : moteur navigateur Jina (lazy-load rendu) →
+   *  filtrage déterministe des liens par host + regex include/exclude, avec
+   *  escalade Cloud Function Puppeteer (scroll) en filet. Plus d'échec
+   *  silencieux : un toast explicite est levé si aucun produit n'est trouvé. */
   const handleCrawl = async (opts: { limit: number; includePaths: string; excludePaths: string }, rootUrl?: string) => {
     const targetUrl = rootUrl ?? url
     // Si on est dans un loop multi-URL, on accumule plutôt qu'on reset
     if (!rootUrl) setCrawlPages([])
 
-    let baseHost = ''
-    try { baseHost = new URL(targetUrl).hostname } catch { /* URL invalide */ }
-    const includeRe = opts.includePaths.trim() ? safeRegex(opts.includePaths.trim()) : null
-    const excludeRe = opts.excludePaths.trim() ? safeRegex(opts.excludePaths.trim()) : null
-    const startPath = (() => { try { return new URL(targetUrl).pathname } catch { return '' } })()
+    // Découverte DÉTERMINISTE (moteur navigateur Jina → lazy-load, puis escalade
+    // Cloud Function Puppeteer qui scrolle). Plus de LLM ni d'échec silencieux.
+    const { pages, source, error } = await discover(targetUrl, {
+      includePaths: opts.includePaths,
+      excludePaths: opts.excludePaths,
+      limit: opts.limit,
+    })
 
-    // Schéma minimal (name + url uniquement) → moins de tokens LLM → plus rapide.
-    const minimalListingFields = [
-      { key: 'name', label: 'Nom', description: 'Nom du produit tel qu\'écrit sur la carte', type: 'string' as const },
-      { key: 'url', label: 'URL', description: 'URL absolue du lien vers la fiche produit', type: 'string' as const },
-    ]
-    const aiRes = await scrape(
-      targetUrl,
-      'schema',
-      minimalListingFields,
-      "Pour CHAQUE produit affiché dans la grille principale de cette page, extrais son nom EXACT (tel qu'écrit sur la carte) et son URL ABSOLUE. Ignore le menu, le header, le footer, les suggestions latérales. Ne pas inventer de produits, n'extraire que ce qui est visible sur la page.",
-      { target: 'multiple' },
-    )
-    if (!aiRes || aiRes.rows.length === 0) return
-
-    const seen = new Set<string>()
-    const products: CrawlPage[] = []
-    for (const row of aiRes.rows) {
-      const r = row as Record<string, unknown>
-      const rawUrl = String(r.url ?? '')
-      const name = String(r.name ?? '').trim()
-      if (!rawUrl) continue
-      try {
-        const u = new URL(rawUrl, targetUrl)
-        const absolute = u.toString()
-        if (seen.has(absolute)) continue
-        if (baseHost && !u.hostname.includes(baseHost)) continue
-        if (u.pathname === startPath && u.hash) continue
-        if (includeRe && !includeRe.test(u.pathname)) continue
-        if (excludeRe && excludeRe.test(u.pathname)) continue
-        seen.add(absolute)
-        products.push({
-          url: absolute,
-          title: name || u.pathname,
-          content: '',
-        })
-        if (products.length >= opts.limit) break
-      } catch { /* URL invalide */ }
+    if (pages.length === 0) {
+      toast.error(
+        error
+          ? `Découverte impossible sur cette page : ${error}. Essaie une sous-catégorie, ajuste le filtre « Inclure », ou colle les URLs en mode « Plusieurs URLs ».`
+          : 'Aucun produit détecté (grille lazy-load non rendue ou aucun lien « produit »). Ajuste le filtre « Inclure » ou colle les URLs en mode « Plusieurs URLs ».',
+      )
+      if (!rootUrl) setCrawlPages([])
+      return
     }
+    if (source === 'cloud') {
+      toast.info(`${pages.length} produit(s) trouvé(s) via l'escalade navigateur (Jina n'a pas rendu la grille).`)
+    }
+
     // Multi-URL : accumule, dédoublonne par URL absolue.
     setCrawlPages((prev) => {
-      if (!rootUrl) return products
+      if (!rootUrl) return pages
       const merged = [...prev]
       const seen = new Set(prev.map((p) => p.url))
-      for (const p of products) {
+      for (const p of pages) {
         if (!seen.has(p.url)) { merged.push(p); seen.add(p.url) }
       }
       return merged
     })
-  }
-
-  /** Compile une regex en silence — retourne null si la chaîne est invalide. */
-  const safeRegex = (s: string): RegExp | null => {
-    try { return new RegExp(s) } catch { return null }
   }
 
   /** Dérive un titre lisible depuis l'URL (slug → "produit xyz"). */
