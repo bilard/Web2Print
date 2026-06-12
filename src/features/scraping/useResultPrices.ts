@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
 import { parseStructuredDataAny } from './core/structuredData'
-import { parseOriginalPriceFromHtml } from './core/parsers/parseOriginalPrice'
+import { parsePromoPricing } from './core/parsers/parseOriginalPrice'
 
 /**
  * Sondeur de prix des résultats de recherche : scrape RÉEL mais léger.
@@ -40,10 +40,12 @@ async function fetchPriceForUrl(url: string): Promise<Pick<PriceProbe, 'value' |
   const name = data.name?.trim() || undefined
   if (data.offers?.price == null) return { name }
   const currency = data.offers.priceCurrency || 'EUR'
-  const original = parseOriginalPriceFromHtml(html, data.offers.price)
+  // Le JSON-LD peut porter le prix AVANT promo (ex. Jardiland) → réconciliation
+  // avec le markup (barré + badge remise) pour retrouver le prix payé.
+  const { selling, original } = parsePromoPricing(html, data.offers.price)
   return {
     name,
-    value: formatPrice(data.offers.price, currency),
+    value: formatPrice(selling, currency),
     original: original != null ? formatPrice(original, currency) : undefined,
   }
 }
