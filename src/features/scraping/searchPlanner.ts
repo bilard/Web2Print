@@ -50,9 +50,6 @@ export interface PlannedSearchResult extends SearchResult {
    *  le titre a été reconstruit depuis le slug de l'URL — le vrai nom arrive
    *  ensuite via le sondage JSON-LD. */
   titleFromUrl?: boolean
-  /** True si le titre/la description matche un terme exclu par le prompt
-   *  (« sans accessoires ») — affiché mais jamais pré-coché. */
-  excluded?: boolean
 }
 
 /** Le texte matche-t-il un des termes d'exclusion (insensible accents/casse) ? */
@@ -353,7 +350,6 @@ export function defaultSelection(
   const sel = new Set<string>()
   for (const r of results) {
     if (r.pageType !== 'product') continue
-    if (r.excluded) continue
     if (targeted && !r.onTarget) continue
     const price = priceOf(r)
     if (plan.maxPriceEur && price !== undefined && price > plan.maxPriceEur) continue
@@ -386,11 +382,10 @@ export async function runPlannedSearch(
     }),
   )
   const merged = mergePlannedResults(perQuery, limit)
-  // Marque les résultats matchant une exclusion du prompt (« sans accessoires »)
+  // Supprime les résultats matchant une exclusion du prompt (« sans accessoires »)
   const terms = plan.excludeTerms ?? []
-  const results = terms.length === 0 ? merged : merged.map((r) => ({
-    ...r,
-    excluded: matchesExclusion(`${r.title ?? ''} ${r.description ?? ''}`, terms),
-  }))
+  const results = terms.length === 0 ? merged : merged.filter(
+    (r) => !matchesExclusion(`${r.title ?? ''} ${r.description ?? ''}`, terms),
+  )
   return { plan, results }
 }

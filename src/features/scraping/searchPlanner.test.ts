@@ -43,14 +43,6 @@ describe('defaultSelection', () => {
     expect(sel.has('https://a.fr/inconnu')).toBe(true)
   })
 
-  it('ne coche jamais un résultat exclu par le prompt', () => {
-    const sel = defaultSelection([
-      { ...pr('https://a.fr/lames-rechange'), excluded: true },
-      pr('https://a.fr/p1'),
-    ], plan)
-    expect(Array.from(sel)).toEqual(['https://a.fr/p1'])
-  })
-
   it('ignore pages liste et hors sites demandés', () => {
     const sel = defaultSelection([
       pr('https://a.fr/liste', undefined, 'listing'),
