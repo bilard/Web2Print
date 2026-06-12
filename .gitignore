@@ -56,3 +56,10 @@ dist/
 .claude/
 env.local
 .agents/
+
+# Playwright (E2E)
+test-results/
+playwright-report/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

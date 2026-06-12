@@ -1,3 +1,4 @@
+import '@/lib/firebase/emulators'
 import '@/stores/theme.store'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
