@@ -21,6 +21,42 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/projects/$(projectId)/collaborators/$(request.auth.uid));
     }
 
+    // ── RBAC serveur (Phase 4) ────────────────────────────────────────────────
+    // Les permissions vivent dans users/{uid} (accessRoleId / accessGrants /
+    // accessRevokes / accessBlocked) + roles/{roleId}.permissions — mêmes données
+    // que useCan côté client (computePermissions.ts). Ici on les RÉ-IMPOSE côté
+    // serveur : un client modifié ne peut pas écrire au-delà de son rôle.
+    // L'owner (isAdmin) bypasse tout, comme côté client. Les get() répétés sur le
+    // même doc sont dédupliqués par Firestore (1 lecture facturée par requête).
+
+    function accessData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRoleAssigned() {
+      return accessData().get('accessRoleId', null) is string && accessData().accessRoleId != '';
+    }
+
+    // Compte actif = non bloqué ET rôle assigné (un compte « pending » de
+    // l'onboarding open+pending ne peut rien écrire ni lire de partagé).
+    function isActiveUser() {
+      return isAuthenticated() && (isAdmin() || (
+        accessData().get('accessBlocked', false) != true && hasRoleAssigned()
+      ));
+    }
+
+    // Permission effective : revokes > grants > permissions du rôle (même
+    // précédence que computeEffectivePermissions côté client).
+    function hasPermission(key) {
+      return isAuthenticated() && (isAdmin() || (
+        accessData().get('accessBlocked', false) != true &&
+        !(key in accessData().get('accessRevokes', [])) &&
+        (key in accessData().get('accessGrants', []) ||
+         (hasRoleAssigned() &&
+          key in get(/databases/$(database)/documents/roles/$(accessData().accessRoleId)).data.get('permissions', [])))
+      ));
+    }
+
     function hasEditorRole(projectId) {
       let collab = get(/databases/$(database)/documents/projects/$(projectId)/collaborators/$(request.auth.uid));
       return collab.data.role == 'editor';
@@ -58,16 +94,17 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                      (isOwner(resource) || isCollaborator(projectId));
 
-      // Création : tout utilisateur connecté (devient propriétaire)
-      allow create: if isAuthenticated() &&
+      // Création : permission library.create (ou import.view — les imports
+      // IDML/PPTX/SVG créent aussi des projets), devient propriétaire.
+      allow create: if (hasPermission('library.create') || hasPermission('import.view')) &&
                        request.resource.data.ownerId == request.auth.uid;
 
-      // Mise à jour : propriétaire ou collaborateur avec rôle editor
-      allow update: if isAuthenticated() &&
+      // Mise à jour : propriétaire ou collaborateur editor, compte actif.
+      allow update: if isActiveUser() &&
                        (isOwner(resource) || hasEditorRole(projectId));
 
-      // Suppression : propriétaire uniquement
-      allow delete: if isAuthenticated() && isOwner(resource);
+      // Suppression : propriétaire avec permission library.delete.
+      allow delete: if hasPermission('library.delete') && isOwner(resource);
 
       // ── Gallery (projet) ─────────────────────────────────────────────────
 
@@ -75,10 +112,10 @@ service cloud.firestore {
         allow read:  if isAuthenticated() &&
                         (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
                          isCollaborator(projectId));
-        allow create: if isAuthenticated() &&
+        allow create: if isActiveUser() &&
                          (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
                           hasEditorRole(projectId));
-        allow update, delete: if isAuthenticated() &&
+        allow update, delete: if isActiveUser() &&
                                  (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
                                   hasEditorRole(projectId));
       }
@@ -91,7 +128,7 @@ service cloud.firestore {
         allow read:  if isAuthenticated() &&
                         (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
                          isCollaborator(projectId));
-        allow create, update, delete: if isAuthenticated() &&
+        allow create, update, delete: if isActiveUser() &&
                                          (isOwner(get(/databases/$(database)/documents/projects/$(projectId))) ||
                                           hasEditorRole(projectId));
       }
@@ -134,7 +171,10 @@ service cloud.firestore {
     // Privés à chaque user — pas de partage au MVP (phase 2 : champ sharedWith).
 
     match /users/{uid}/workflows/{workflowId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read:   if isAuthenticated() && request.auth.uid == uid;
+      allow create: if hasPermission('workflows.create') && request.auth.uid == uid;
+      allow update: if hasPermission('workflows.edit') && request.auth.uid == uid;
+      allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
     }
 
     // État du node « Veille prix » (derniers prix vus, par identifiant de suivi).
@@ -173,15 +213,23 @@ service cloud.firestore {
 
     match /pim_projects/{projectId} {
       allow read:   if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if hasPermission('pim.create') && request.resource.data.userId == request.auth.uid;
+      allow update: if hasPermission('pim.edit') && resource.data.userId == request.auth.uid;
+      allow delete: if hasPermission('pim.delete') && resource.data.userId == request.auth.uid;
 
       // Sous-collection products : autorisé si l'utilisateur possède le projet parent.
       // Note: lors de la création (avant que le parent existe), on autorise si le parent
       // est en cours d'écriture par le même user (le batch écrit parent + products).
       match /products/{productId} {
-        allow read, write: if isAuthenticated() && (
+        allow read: if isAuthenticated() && (
+          (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
+           get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
+          ||
+          !exists(/databases/$(database)/documents/pim_projects/$(projectId))
+        );
+        // Écriture : il faut en plus une permission PIM mutante (edit couvre
+        // l'édition manuelle, import/scrape écrivent aussi des produits).
+        allow write: if (hasPermission('pim.edit') || hasPermission('pim.import') || hasPermission('pim.scrape')) && (
           (exists(/databases/$(database)/documents/pim_projects/$(projectId)) &&
            get(/databases/$(database)/documents/pim_projects/$(projectId)).data.userId == request.auth.uid)
           ||
@@ -199,8 +247,8 @@ service cloud.firestore {
 
     match /briefs/{briefId} {
       allow read:   if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow create: if hasPermission('taxonomies.briefs') && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isActiveUser() && resource.data.ownerId == request.auth.uid;
 
       // Sous-collection : images générées
       match /images/{imageId} {
@@ -213,24 +261,26 @@ service cloud.firestore {
 
     match /taxonomies/{taxonomyId} {
       allow read:   if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow create: if hasPermission('taxonomies.edit') && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if hasPermission('taxonomies.edit') && resource.data.ownerId == request.auth.uid;
     }
 
     // ── DAM Assets ────────────────────────────────────────────────────────────
 
-    // DAM Assets — lecture pour tous les users auth, écriture par le créateur
+    // DAM Assets — données PARTAGÉES entre comptes : lecture réservée aux
+    // comptes actifs (pas aux pending/bloqués), écritures gatées par permission.
     match /dam_assets/{assetId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.addedBy == request.auth.uid;
+      allow read: if isActiveUser();
+      allow create: if hasPermission('dam.upload');
+      allow update: if hasPermission('dam.edit') && resource.data.addedBy == request.auth.uid;
+      allow delete: if hasPermission('dam.delete') && resource.data.addedBy == request.auth.uid;
     }
 
-    // DAM Collections — lecture pour tous les users auth, écriture par owner
+    // DAM Collections — partagées : lecture comptes actifs, écriture par owner
     match /dam_collections/{collectionId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow read: if isActiveUser();
+      allow create: if hasPermission('dam.collection');
+      allow update, delete: if hasPermission('dam.collection') && resource.data.ownerId == request.auth.uid;
     }
 
     // DAM Favorites — chaque user gère ses propres favoris
@@ -243,24 +293,24 @@ service cloud.firestore {
     // DAM Variants — versions éditées d'images, privées à chaque user
     match /dam_variants/{variantId} {
       allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow list: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow list: if isActiveUser();
+      allow create: if hasPermission('dam.edit') && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if hasPermission('dam.edit') && resource.data.ownerId == request.auth.uid;
     }
 
-    // DAM Popular Searches — lecture seule pour les users auth
+    // DAM Popular Searches — lecture seule pour les comptes actifs
     match /dam_popular_searches/{docId} {
-      allow read: if request.auth != null;
+      allow read: if isActiveUser();
     }
 
     // ── Scraping Templates ──────────────────────────────────────────────────
     // Templates de scraping par fournisseur — lecture/écriture pour tous les
     // utilisateurs authentifiés (ressources partagées entre les comptes du PIM).
+    // Ressources partagées entre comptes : lecture = compte actif,
+    // écriture = permission d'édition des templates.
     match /scrapingTemplates/{templateId} {
-      allow read:   if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
+      allow read:   if isActiveUser();
+      allow create, update, delete: if hasPermission('scrapingTemplates.edit');
     }
 
     // ── Scraping Rules ──────────────────────────────────────────────────────
@@ -268,7 +318,8 @@ service cloud.firestore {
     // règles rédactionnelles du scraping. Lecture/écriture pour tous les users
     // authentifiés (édité via l'onglet Règles du Scraping Hub).
     match /scrapingRules/{docId} {
-      allow read, write: if request.auth != null;
+      allow read:  if isActiveUser();
+      allow write: if hasPermission('scrapingHub.edit');
     }
 
     // ── AI Usage tracking — agrégat mensuel par user ────────────────────────
@@ -386,7 +437,7 @@ service cloud.firestore {
     // File des messages reçus : lisible/modifiable par tout utilisateur connecté
     // (l'app perso est mono-utilisateur ; le mapping chat_id→uid est hors périmètre 2a).
     match /telegramInbox/{messageId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isActiveUser();
     }
 
     // Config (secret webhook + allowlist) : JAMAIS accessible au client.
