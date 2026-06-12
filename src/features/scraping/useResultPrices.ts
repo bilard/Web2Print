@@ -1,15 +1,18 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchSourceHtml } from '@/features/scraping-templates/fetchSourceHtml'
+import { getApiKey } from '@/lib/apiKeys'
+import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 import { parseStructuredDataAny } from './core/structuredData'
 import { parsePromoPricing } from './core/parsers/parseOriginalPrice'
 
 /**
  * Sondeur de prix des résultats de recherche : scrape RÉEL mais léger.
- * HTML via la Cloud Function `fetchPageHtml` (gratuit, pas de crédits
- * Jina/Firecrawl/Bright Data) puis prix JSON-LD (Schema.org `offers`) —
- * présent sur l'immense majorité des sites e-commerce. Les sites derrière
- * un anti-bot dur n'exposent pas leur JSON-LD ici : la cellule garde alors
- * le prix repéré dans le snippet, et le prix fiable vient du scrape complet.
+ * 1. HTML via la Cloud Function `fetchPageHtml` (gratuit) → prix JSON-LD
+ *    (Schema.org `offers`) + barré réconcilié depuis le markup.
+ * 2. Si le site bloque le fetch serveur (anti-bot Castorama/LM…) ou n'expose
+ *    pas son prix : escalade Jina Reader en mode HTML (rendu navigateur,
+ *    usage compté dans le chip coût). Pas de Firecrawl/Bright Data ici —
+ *    le scrape « Produit complet » garde la cascade lourde.
  */
 
 export interface PriceProbe {
@@ -32,11 +35,39 @@ function formatPrice(n: number, currency: string): string {
   }
 }
 
+/** HTML rendu via Jina Reader (escalade anti-bot). Usage Jina comptabilisé. */
+async function fetchHtmlViaJina(url: string, timeoutMs: number): Promise<string | null> {
+  const headers: Record<string, string> = { 'X-Return-Format': 'html', Accept: 'text/html' }
+  const jinaKey = getApiKey('jina')
+  if (jinaKey) headers.Authorization = `Bearer ${jinaKey}`
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    const res = await fetch(`https://r.jina.ai/${url}`, { headers, signal: ctrl.signal })
+    if (!res.ok) return null
+    const html = await res.text()
+    recordScrapeUsage({ platform: 'jina', tokens: Math.ceil(html.length / 4) })
+    return html
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function fetchPriceForUrl(url: string): Promise<Pick<PriceProbe, 'value' | 'original' | 'name'>> {
-  const html = await fetchSourceHtml(url, 12_000)
-  if (!html) return {}
-  const data = parseStructuredDataAny(html)
-  if (!data) return {}
+  let html = await fetchSourceHtml(url, 12_000)
+  let data = html ? parseStructuredDataAny(html) : null
+  // Pas de prix via le fetch serveur (anti-bot ou JSON-LD absent) → Jina HTML.
+  if (data?.offers?.price == null) {
+    const jinaHtml = await fetchHtmlViaJina(url, 30_000)
+    const jinaData = jinaHtml ? parseStructuredDataAny(jinaHtml) : null
+    if (jinaData) {
+      html = jinaHtml
+      data = jinaData
+    }
+  }
+  if (!html || !data) return {}
   const name = data.name?.trim() || undefined
   if (data.offers?.price == null) return { name }
   const currency = data.offers.priceCurrency || 'EUR'
