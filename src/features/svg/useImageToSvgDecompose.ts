@@ -560,17 +560,23 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
   // Toute sur-largeur décalerait le centre vers la droite (la textbox est ancrée à
   // gauche), désalignant le bloc des autres (cas « Panachage… » : estimation 830 vs
   // bbox 609 → centre décalé de +110 px).
-  // Cadre fixe pour les champs de fusion (même fer-à-gauche) : la largeur reste
-  // celle du design → un libellé long passe à la ligne dans le cadre au lieu de
-  // déborder à droite (comportement IText) à la substitution.
-  const finalWidth = mergeField ? box.width : align === 'left' ? minWidth : box.width
+  // Champ de fusion : cadre AJUSTÉ pour que le placeholder normalisé tienne sur
+  // UNE ligne (Arial est plus large que la police source → sinon « {{Libelle
+  // Article}} » se replie), mais ANCRÉ sur le bord du design (bord DROIT pour un
+  // bloc fer-à-droite) afin que la pile reste alignée. Texte promo : inchangé.
+  const finalWidth = mergeField ? Math.max(box.width, minWidth) : align === 'left' ? minWidth : box.width
+  let finalLeft = box.left
+  if (mergeField && finalWidth > box.width) {
+    if (align === 'right') finalLeft = box.left + box.width - finalWidth
+    else if (align === 'center') finalLeft = box.left + (box.width - finalWidth) / 2
+  }
   // Pour les graisses très lourdes, Arial Black donne un rendu plus fidèle aux
   // créas retail (où -50%, gros prix utilisent typiquement Arial Black / Heavy).
   const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
   const tb = new Textbox(text, {
     originX: 'left',
     originY: headline ? 'center' : 'top',
-    left: box.left,
+    left: headline ? box.left : finalLeft,
     top: headline ? box.top + box.height / 2 : box.top,
     width: finalWidth,
     fontSize,
@@ -596,6 +602,55 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
     ...(mergeField ? { mergeFrame: true, templateText: text } : {}),
   }
   return tb
+}
+
+/**
+ * Regroupe les champs de fusion {{…}} proches en UN bloc Fabric — même règle que
+ * `groupMupdfTextBlocks` du PDF→SVG. Vision rend chaque champ comme un Textbox
+ * séparé : sans regroupement, la pile « libellé / marque / description » du design
+ * apparaît éclatée. Group `subTargetCheck:true, interactive:false` → simple clic
+ * = déplace le bloc, double-clic = édite un champ (handler `mouse:dblclick` de
+ * useCanvas). Le moteur de publipostage descend dans les groupes
+ * (`collectObjectsDeep`) et `undoDecompose` retire le groupe via `data.role`.
+ * Clustering : chevauchement horizontal + écart vertical < 1.5× hauteur.
+ */
+function groupMergeFieldBlocks(canvas: Canvas): void {
+  const fields = (canvas.getObjects() as FabricObject[]).filter(
+    (o): o is Textbox =>
+      o instanceof Textbox &&
+      (o as FabricObject & { data?: Record<string, unknown> }).data?.mergeFrame === true,
+  )
+  if (fields.length < 2) return
+  const rects = fields.map((f) => f.getBoundingRect())
+  type R = (typeof rects)[number]
+  const parent = fields.map((_, i) => i)
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])))
+  const near = (a: R, b: R): boolean => {
+    const hOverlap = a.left < b.left + b.width && b.left < a.left + a.width
+    const vGap = Math.max(a.top - (b.top + b.height), b.top - (a.top + a.height), 0)
+    return hOverlap && vGap < Math.max(a.height, b.height) * 1.5
+  }
+  for (let i = 0; i < fields.length; i++) {
+    for (let j = i + 1; j < fields.length; j++) {
+      if (near(rects[i], rects[j])) parent[find(j)] = find(i)
+    }
+  }
+  const clusters = new Map<number, Textbox[]>()
+  fields.forEach((f, i) => {
+    const r = find(i)
+    clusters.set(r, [...(clusters.get(r) ?? []), f])
+  })
+  for (const members of clusters.values()) {
+    if (members.length < 2) continue
+    for (const m of members) canvas.remove(m)
+    const g = new Group(members, { subTargetCheck: true, interactive: false })
+    ;(g as FabricObject & { data?: Record<string, unknown> }).data = {
+      role: 'image-decompose-text',
+      type: 'group',
+      name: 'bloc-champs',
+    }
+    canvas.add(g)
+  }
 }
 
 function buildStackedPrice(
@@ -1326,6 +1381,7 @@ async function decomposeHeuristic(
   // de prix (€, décimales).
   mergeSuperscriptInline(canvas)
   mergeSameStyleStacks(canvas)
+  groupMergeFieldBlocks(canvas)
   canvas.requestRenderAll()
   syncToStore(canvas)
 
@@ -1701,6 +1757,9 @@ async function decomposeSemantic(
   if (!selective) {
     for (const sep of detectSeparatorRects(ctx, width, height)) canvas.add(sep)
   }
+
+  // Regroupe les champs {{…}} de la pile marketing en UN bloc Fabric (cf. PDF→SVG).
+  groupMergeFieldBlocks(canvas)
 
   canvas.requestRenderAll()
   syncToStore(canvas)
