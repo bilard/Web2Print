@@ -110,6 +110,42 @@ export function buildQueries(subject: string, sites: string[]): SearchPlanQuery[
   return cleanSites.map((site) => ({ query: `site:${site} ${cleanSubject}`, site }))
 }
 
+const ImprovedPromptSchema = z.object({ improved: z.string() })
+
+const IMPROVED_SCHEMA_FOR_LLM = {
+  type: 'object',
+  properties: {
+    improved: {
+      type: 'string',
+      description:
+        'La demande de recherche réécrite : sujet produit précis (type, marque, caractéristiques), ' +
+        'enseignes/sites explicites, champs de données attendus listés clairement. En français.',
+    },
+  },
+  required: ['improved'],
+}
+
+/** Réécrit le prompt de recherche de l'utilisateur en version optimale via le
+ *  LLM actif (cascade). Conserve toutes les contraintes, n'invente rien. */
+export async function improveSearchPrompt(prompt: string): Promise<string> {
+  const raw = await generateJson<z.infer<typeof ImprovedPromptSchema>>({
+    task: 'web.searchPlan',
+    version: 'web.searchPlan.improve.v1',
+    prompt:
+      'Réécris la demande de recherche produit ci-dessous pour qu\'elle soit optimale pour un ' +
+      'pipeline de scraping e-commerce :\n' +
+      '- sujet produit précis et sans ambiguïté (type, marque, caractéristiques techniques)\n' +
+      '- enseignes/sites marchands explicitement nommés s\'ils sont mentionnés ou clairement implicites\n' +
+      '- champs de données attendus listés clairement (prix, promo, EAN, référence…)\n' +
+      'CONSERVE toutes les contraintes de l\'utilisateur, n\'invente NI site NI champ non demandés. ' +
+      'Reste concis (1 à 3 lignes), en français.\n\n' +
+      `Demande : ${prompt}`,
+    schema: ImprovedPromptSchema,
+    schemaForLLM: IMPROVED_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
+  })
+  return raw.improved.trim() || prompt
+}
+
 /** Interprète le prompt utilisateur en plan de recherche. Fallback : requête brute. */
 async function planSearch(prompt: string): Promise<SearchPlan> {
   try {

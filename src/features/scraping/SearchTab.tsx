@@ -3,6 +3,7 @@ import { Search, Loader2, Sparkles } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { runPlannedSearch, type SearchPlan, type PlannedSearchResult } from './searchPlanner'
 import { SearchResultsList } from './SearchResultsList'
+import { SearchPromptInput } from './SearchPromptInput'
 import { SearchPlanChips } from './SearchPlanChips'
 import { SearchFieldsTable } from './SearchFieldsTable'
 
@@ -75,17 +76,12 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
         <strong className="text-emerald-300">Recherche →</strong> Décris ce que tu cherches et où (« tondeuses Honda chez LeroyMerlin et Castorama »). L'IA interprète ta demande, interroge chaque site demandé, tu coches, chaque page est scrapée avec le moteur <strong className="text-emerald-300">Scrape / Produit complet</strong>.
       </div>
 
-      <div>
-        <label className="text-[10px] text-white/30 uppercase tracking-wider block mb-1">Que cherches-tu ?</label>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSearch() }}
-          placeholder={'Ex : « tondeuses Honda électriques — prix et promos chez LeroyMerlin, Castorama et Jardiland »,\n« perceuses à percussion 18V Makita site officiel »…'}
-          rows={3}
-          className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-emerald-500/50 focus:outline-none resize-none"
-        />
-      </div>
+      <SearchPromptInput
+        prompt={prompt}
+        onPromptChange={setPrompt}
+        onSubmit={handleSearch}
+        disabled={searching || batchRunning}
+      />
 
       <div className="flex items-end gap-3">
         <div>
