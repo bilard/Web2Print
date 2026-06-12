@@ -11,6 +11,7 @@
 
 import { z } from 'zod'
 import { getApiKey } from '@/lib/apiKeys'
+import { llmFetchViaProxy } from '@/lib/llmProxyClient'
 import { generateJson as geminiGenerateJson } from '@/features/briefs/ai/geminiClient'
 import { getSelectedModel, useAiSettingsStore } from '@/stores/aiSettings.store'
 import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTracking'
@@ -457,9 +458,6 @@ async function callOpenAICompatible<T>(
   opts: GenerateJsonOptions<T>,
   model: string,
 ): Promise<T> {
-  const apiKey = getApiKey(config.apiKeyId)
-  if (!apiKey) throw new Error(`Clé ${config.displayName} absente. Configurez-la dans Réglages.`)
-
   const fullPrompt = opts.prompt + SCHEMA_INSTRUCTION_HEADER + JSON.stringify(opts.schemaForLLM, null, 2)
   const temperature = TASK_TEMPERATURE[opts.task]
   const max_tokens = 8192
@@ -475,30 +473,41 @@ async function callOpenAICompatible<T>(
     version: opts.version,
   })
 
-  const ctrl = new AbortController()
-  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
-
-  let res: Response
-  try {
-    res = await fetch(config.endpoint, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        ...(config.extraHeaders ?? {}),
-      },
-      body: JSON.stringify({
-        model,
-        temperature,
-        max_tokens,
-        messages: [{ role: 'user', content: fullPrompt }],
-        response_format: { type: 'json_object' },
-      }),
-    })
-  } finally {
-    clearTimeout(timeoutId)
+  const requestBody = {
+    model,
+    temperature,
+    max_tokens,
+    messages: [{ role: 'user', content: fullPrompt }],
+    response_format: { type: 'json_object' as const },
   }
+
+  const directFetch = async (): Promise<Response> => {
+    const apiKey = getApiKey(config.apiKeyId)
+    if (!apiKey) throw new Error(`Clé ${config.displayName} absente. Configurez-la dans Réglages.`)
+    const ctrl = new AbortController()
+    const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
+    try {
+      return await fetch(config.endpoint, {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          ...(config.extraHeaders ?? {}),
+        },
+        body: JSON.stringify(requestBody),
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+
+  const res = await llmFetchViaProxy(
+    config.providerId,
+    model,
+    requestBody as unknown as Record<string, unknown>,
+    directFetch,
+  )
 
   if (!res.ok) {
     const body = await res.text()
@@ -581,10 +590,32 @@ function deepClean(obj: unknown): unknown {
   return cleaned
 }
 
-async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
+/** Fallback direct navigateur (chemin historique) — utilisé seulement quand le
+ *  proxy serveur est indisponible ou que le payload multimodal dépasse la
+ *  limite des callables. C'est ici (et seulement ici) que la clé locale sert. */
+async function directClaudeFetch(payload: unknown): Promise<Response> {
   const apiKey = getApiKey('anthropic')
   if (!apiKey) throw new Error('Clé Anthropic absente. Configurez-la dans Réglages.')
+  const ctrl = new AbortController()
+  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
+  try {
+    return await fetch(ANTHROPIC_ENDPOINT, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(payload),
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
 
+async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
   // Tool-use forcé : on déclare un outil dont l'input_schema EST le schéma attendu,
   // et on force Claude à l'appeler. C'est la méthode officielle pour obtenir un
   // JSON strictement conforme avec Claude.
@@ -650,9 +681,6 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     version: opts.version,
   })
 
-  const ctrl = new AbortController()
-  const timeoutId = setTimeout(() => ctrl.abort(), 180_000)
-
   const requestPayload = {
     model,
     max_tokens,
@@ -661,22 +689,12 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     messages: [{ role: 'user', content: messageContent }],
   }
 
-  let res: Response
-  try {
-    res = await fetch(ANTHROPIC_ENDPOINT, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': ANTHROPIC_VERSION,
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify(requestPayload),
-    })
-  } finally {
-    clearTimeout(timeoutId)
-  }
+  const res = await llmFetchViaProxy(
+    'claude',
+    model,
+    requestPayload as unknown as Record<string, unknown>,
+    () => directClaudeFetch(requestPayload),
+  )
 
   if (!res.ok) {
     const body = await res.text()
@@ -726,27 +744,19 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
 
   const retryMessageContent = buildRetryMessageContent()
 
-  const retryRes = await fetch(ANTHROPIC_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': ANTHROPIC_VERSION,
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens,
-      tools: [tool],
-      tool_choice: { type: 'tool', name: toolName },
-      messages: [
-        {
-          role: 'user',
-          content: retryMessageContent,
-        },
-      ],
-    }),
-  })
+  const retryPayload = {
+    model,
+    max_tokens,
+    tools: [tool],
+    tool_choice: { type: 'tool', name: toolName },
+    messages: [{ role: 'user', content: retryMessageContent }],
+  }
+  const retryRes = await llmFetchViaProxy(
+    'claude',
+    model,
+    retryPayload as unknown as Record<string, unknown>,
+    () => directClaudeFetch(retryPayload),
+  )
   if (!retryRes.ok) {
     const body = await retryRes.text()
     throw new Error(`Anthropic API retry ${retryRes.status} : ${body.slice(0, 300)}`)
@@ -776,29 +786,34 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function callOpenAI<T>(opts: GenerateJsonOptions<T>, model: string): Promise<T> {
-  const apiKey = getApiKey('openai')
-  if (!apiKey) throw new Error('Clé OpenAI absente. Configurez-la dans Réglages.')
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: TASK_TEMPERATURE[opts.task],
-      messages: [{ role: 'user', content: opts.prompt }],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'response',
-          strict: true,
-          schema: opts.schemaForLLM,
-        },
+  const requestBody = {
+    model,
+    temperature: TASK_TEMPERATURE[opts.task],
+    messages: [{ role: 'user', content: opts.prompt }],
+    response_format: {
+      type: 'json_schema' as const,
+      json_schema: {
+        name: 'response',
+        strict: true,
+        schema: opts.schemaForLLM,
       },
-    }),
-  })
+    },
+  }
+
+  const directFetch = async (): Promise<Response> => {
+    const apiKey = getApiKey('openai')
+    if (!apiKey) throw new Error('Clé OpenAI absente. Configurez-la dans Réglages.')
+    return fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    })
+  }
+
+  const res = await llmFetchViaProxy('openai', model, requestBody as unknown as Record<string, unknown>, directFetch)
   if (!res.ok) {
     const body = await res.text()
     throw new Error(`OpenAI API ${res.status} : ${body.slice(0, 300)}`)
