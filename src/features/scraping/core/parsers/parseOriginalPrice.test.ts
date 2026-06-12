@@ -38,4 +38,20 @@ describe('parsePromoPricing', () => {
   it('sans barré → JSON-LD tel quel', () => {
     expect(parsePromoPricing('<span class="price">549 €</span>', 549)).toEqual({ selling: 549 })
   })
+
+  it('markup Jardiland réel : --bold (prix de vente) ne doit PAS matcher « old »', () => {
+    // Classes exactes du design system Jardiland (ds-ens-pricing) : le prix payé
+    // est en --bold AVANT le barré --crossed dans le DOM → sans \b, « old »
+    // matchait « bold » et la promo était perdue.
+    const html =
+      '<span class="ds-ens-pricing__price-amount ds-ens-pricing__price-amount--xxxl ds-ens-pricing__price-amount--bold">50,22 €</span>' +
+      '<span class="ds-ens-pricing__discount-text ds-ens-pricing__discount-text--crossed">74,72 €</span>' +
+      '<span class="ds-ens-pricing__discount-badge">-24,50 €</span>'
+    expect(parsePromoPricing(html, 74.72)).toEqual({ selling: 50.22, original: 74.72 })
+  })
+
+  it('markup Jardiland sans promo : prix --bold seul → pas de barré', () => {
+    const html = '<span class="ds-ens-pricing__price-amount ds-ens-pricing__price-amount--bold">37,76 €</span>'
+    expect(parsePromoPricing(html, 37.76)).toEqual({ selling: 37.76 })
+  })
 })

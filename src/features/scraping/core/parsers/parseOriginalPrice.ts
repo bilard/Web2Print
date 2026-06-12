@@ -18,10 +18,13 @@ export interface PromoPricing {
 
 const NUM_RE = String.raw`\d{1,3}(?:[ \u00a0\u202f.]\d{3})*(?:[.,]\d{1,2})?`
 
-/** Conteneurs probables de prix barré : balises sémantiques ou classes-indices. */
+/** Conteneurs probables de prix barré : balises sémantiques ou classes-indices.
+ *  ⚠ Frontières de mots obligatoires : sans \b, « old » matche « --bold » (la
+ *  classe du prix de VENTE chez Jardiland) et le parseur prenait le prix payé
+ *  pour un barré — d'où des promos entièrement perdues. */
 const CONTAINER_RES = [
   /<(?:del|s)\b[^>]*>([\s\S]{0,120}?)<\/(?:del|s)>/gi,
-  /<[^>]+class="[^"]*(?:old|barr|strike|was[-_]|regular[-_]|crossed|initial|avant)[^"]*"[^>]*>([\s\S]{0,120}?)<\//gi,
+  /<[^>]+class="[^"]*\b(?:old|barre\w*|strike\w*|was|regular|crossed|initial|avant)\b[^"]*"[^>]*>([\s\S]{0,120}?)<\//gi,
 ]
 
 function toNumber(s: string): number {
