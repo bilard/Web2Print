@@ -28,6 +28,14 @@ export function SearchPlanChips({ plan }: { plan: SearchPlan }) {
           ≤ {plan.maxPriceEur} €
         </span>
       )}
+      {plan.excludeTerms && plan.excludeTerms.length > 0 && (
+        <span
+          className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-300/80 border border-red-500/20 max-w-[260px] truncate"
+          title={`Exclus : ${plan.excludeTerms.join(', ')}`}
+        >
+          sans : {plan.excludeTerms.join(', ')}
+        </span>
+      )}
       {plan.wantedFields.length > 0 && (
         <span className="text-white/30">→ {plan.wantedFields.join(', ')}</span>
       )}

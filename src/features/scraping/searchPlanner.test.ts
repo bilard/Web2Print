@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { buildQueries, mergePlannedResults, classifyResultPage, parseSnippetPrice, priceToNumber, defaultSelection, type PlannedSearchResult } from './searchPlanner'
+import { buildQueries, mergePlannedResults, classifyResultPage, parseSnippetPrice, priceToNumber, defaultSelection, matchesExclusion, type PlannedSearchResult } from './searchPlanner'
+
+describe('matchesExclusion', () => {
+  it('matche insensible à la casse et aux accents', () => {
+    expect(matchesExclusion('Lames de rechange en plastique pour tondeuse Bosch', ['lame', 'kit mulching'])).toBe(true)
+    expect(matchesExclusion('Kit Mulching pour AdvancedRotak', ['kit mulching'])).toBe(true)
+    expect(matchesExclusion('Tondeuse thermique tractée 167CC', ['lame', 'bac de ramassage'])).toBe(false)
+    expect(matchesExclusion('peu importe', [])).toBe(false)
+  })
+})
 
 describe('priceToNumber', () => {
   it('formats affichés', () => {
@@ -32,6 +41,14 @@ describe('defaultSelection', () => {
     expect(sel.has('https://a.fr/cher')).toBe(false)
     expect(sel.has('https://a.fr/ok')).toBe(true)
     expect(sel.has('https://a.fr/inconnu')).toBe(true)
+  })
+
+  it('ne coche jamais un résultat exclu par le prompt', () => {
+    const sel = defaultSelection([
+      { ...pr('https://a.fr/lames-rechange'), excluded: true },
+      pr('https://a.fr/p1'),
+    ], plan)
+    expect(Array.from(sel)).toEqual(['https://a.fr/p1'])
   })
 
   it('ignore pages liste et hors sites demandés', () => {

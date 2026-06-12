@@ -32,6 +32,9 @@ export interface SearchPlan {
   perSiteCount?: number
   /** Prix maximum en euros (« prix inférieur à 1000€ ») — 0 = pas de contrainte. */
   maxPriceEur?: number
+  /** Termes concrets exclus par le prompt (« sans accessoires » → lame, kit,
+   *  bac, rechange…) — déduits par le LLM, jamais de dictionnaire en dur. */
+  excludeTerms?: string[]
 }
 
 export interface PlannedSearchResult extends SearchResult {
@@ -47,6 +50,17 @@ export interface PlannedSearchResult extends SearchResult {
    *  le titre a été reconstruit depuis le slug de l'URL — le vrai nom arrive
    *  ensuite via le sondage JSON-LD. */
   titleFromUrl?: boolean
+  /** True si le titre/la description matche un terme exclu par le prompt
+   *  (« sans accessoires ») — affiché mais jamais pré-coché. */
+  excluded?: boolean
+}
+
+/** Le texte matche-t-il un des termes d'exclusion (insensible accents/casse) ? */
+export function matchesExclusion(text: string, terms: string[]): boolean {
+  if (terms.length === 0) return false
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const t = norm(text)
+  return terms.some((term) => term.trim().length > 1 && t.includes(norm(term.trim())))
 }
 
 /** Titre lisible reconstruit depuis le slug de l'URL
@@ -129,6 +143,7 @@ const PlanSchema = z.object({
   wantedFields: z.array(z.string()),
   perSiteCount: z.number(),
   maxPriceEur: z.number(),
+  excludeTerms: z.array(z.string()),
 })
 
 const PLAN_SCHEMA_FOR_LLM = {
@@ -168,8 +183,17 @@ const PLAN_SCHEMA_FOR_LLM = {
         'Prix maximum en euros (« prix inférieur à 1000€ » → 1000, « moins de 500 € » → 500). ' +
         '0 si aucune contrainte de prix.',
     },
+    excludeTerms: {
+      type: 'array',
+      items: { type: 'string' },
+      description:
+        'Si l\'utilisateur EXCLUT explicitement une catégorie (« sans accessoires », « hors pièces ' +
+        'détachées »), déduis les mots concrets qui trahissent ces produits dans un titre ' +
+        '(ex. pour des tondeuses sans accessoires : "lame", "kit mulching", "bac de ramassage", ' +
+        '"courroie", "rechange", "housse", "huile", "roue"). Tableau vide si aucune exclusion.',
+    },
   },
-  required: ['subject', 'sites', 'wantedFields', 'perSiteCount', 'maxPriceEur'],
+  required: ['subject', 'sites', 'wantedFields', 'perSiteCount', 'maxPriceEur', 'excludeTerms'],
 }
 
 /** Construit les requêtes finales à partir du plan brut du LLM. Pur — testable. */
@@ -230,7 +254,9 @@ async function planSearch(prompt: string): Promise<SearchPlan> {
         'du site marchand français de chaque enseigne ; tableau vide si aucune)\n' +
         '- wantedFields : les données que l\'utilisateur veut extraire des pages\n' +
         '- perSiteCount : le nombre de produits demandés par enseigne (0 si non précisé)\n' +
-        '- maxPriceEur : le prix maximum en euros (0 si aucune contrainte)\n\n' +
+        '- maxPriceEur : le prix maximum en euros (0 si aucune contrainte)\n' +
+        '- excludeTerms : les mots concrets à exclure des titres si une catégorie est exclue ' +
+        '(« sans accessoires » → lame, kit, bac, courroie, rechange…) ; [] sinon\n\n' +
         `Demande : ${prompt}`,
       schema: PlanSchema,
       schemaForLLM: PLAN_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
@@ -242,6 +268,7 @@ async function planSearch(prompt: string): Promise<SearchPlan> {
       wantedFields: raw.wantedFields,
       perSiteCount: raw.perSiteCount > 0 ? Math.round(raw.perSiteCount) : undefined,
       maxPriceEur: raw.maxPriceEur > 0 ? raw.maxPriceEur : undefined,
+      excludeTerms: raw.excludeTerms.filter((t) => t.trim().length > 1),
     }
   } catch (err) {
     console.warn('[search-planner] LLM indisponible — requête brute', err)
@@ -326,6 +353,7 @@ export function defaultSelection(
   const sel = new Set<string>()
   for (const r of results) {
     if (r.pageType !== 'product') continue
+    if (r.excluded) continue
     if (targeted && !r.onTarget) continue
     const price = priceOf(r)
     if (plan.maxPriceEur && price !== undefined && price > plan.maxPriceEur) continue
@@ -357,5 +385,12 @@ export async function runPlannedSearch(
       }
     }),
   )
-  return { plan, results: mergePlannedResults(perQuery, limit) }
+  const merged = mergePlannedResults(perQuery, limit)
+  // Marque les résultats matchant une exclusion du prompt (« sans accessoires »)
+  const terms = plan.excludeTerms ?? []
+  const results = terms.length === 0 ? merged : merged.map((r) => ({
+    ...r,
+    excluded: matchesExclusion(`${r.title ?? ''} ${r.description ?? ''}`, terms),
+  }))
+  return { plan, results }
 }

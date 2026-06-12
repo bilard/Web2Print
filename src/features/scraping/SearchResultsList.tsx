@@ -1,4 +1,4 @@
-import { CheckSquare, Square, ExternalLink, Target, Layers, Loader2 } from 'lucide-react'
+import { CheckSquare, Square, ExternalLink, Target, Layers, Loader2, Ban } from 'lucide-react'
 import type { PlannedSearchResult } from './searchPlanner'
 import type { PriceProbe } from './useResultPrices'
 
@@ -74,6 +74,14 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                           title="Page multi-produits (catégorie, recherche…) — pas une fiche produit unique"
                         >
                           <Layers className="w-2.5 h-2.5" /> page liste
+                        </span>
+                      )}
+                      {r.excluded && (
+                        <span
+                          className="inline-flex items-center gap-0.5 text-[9px] px-1 py-px rounded bg-red-500/10 text-red-300/80 border border-red-500/20"
+                          title="Correspond à une exclusion de ton prompt (« sans accessoires »…) — non coché"
+                        >
+                          <Ban className="w-2.5 h-2.5" /> exclu
                         </span>
                       )}
                     </span>
