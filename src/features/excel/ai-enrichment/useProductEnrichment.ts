@@ -2623,6 +2623,26 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     } catch { /* invalid JSON-LD */ }
   }
 
+  // ── 2bis. Parser canonique structuredData (gère ProductGroup.hasVariant,
+  //     microdata, entités HTML) — couvre les schémas que la passe maison
+  //     ci-dessus rate (Milwaukee/TTI : les Product sont dans hasVariant).
+  if (data.specs.length === 0) {
+    try {
+      const { parseStructuredDataAny } = await import('@/features/scraping/core/structuredData')
+      const sd = parseStructuredDataAny(html)
+      if (sd) {
+        for (const s of sd.specs) data.specs.push({ name: s.name, value: s.value })
+        if (!data.description && sd.description) data.description = sd.description
+        for (const img of sd.images) {
+          if (!data.images.includes(img)) data.images.push(img)
+        }
+        if (sd.specs.length > 0) console.log('[manufacturer] ✓ specs from structured-data (hasVariant aware):', sd.specs.length)
+      }
+    } catch (err) {
+      console.warn('[manufacturer] structured-data parse failed:', err)
+    }
+  }
+
   // ── 3. Parse window.__NEXT_DATA__ (Next.js sites like some Bosch/Makita) ──
   const nextDataMatch = html.match(/window\.__NEXT_DATA__\s*=\s*(\{[\s\S]*?\})(?:\s*<\/script>|;\s*$)/m)
   if (nextDataMatch && data.specs.length === 0) {
@@ -2924,10 +2944,11 @@ function buildManufacturerProduct(
       console.log('[manufacturer-build] ✓ Jina injected downloads:', documents.length)
     }
   }
-  // Fallback : REDUX downloads
-  if (documents.length === 0) {
-    for (const dl of rawData.downloads) pushDocBuild(dl.url, dl.name)
-  }
+  // REDUX/HTML downloads : merge inconditionnel — ils portent les vrais titres
+  // (« Manuels et pièces de rechange », « Déclaration de conformité »…) et
+  // certains n'ont pas d'extension .pdf (ex: partlist .jsp Milwaukee) donc
+  // n'apparaissent dans AUCUNE autre source. La dédup par URL protège.
+  for (const dl of rawData.downloads) pushDocBuild(dl.url, dl.name)
   // Ajouter les PDFs du markdown qui ne sont pas déjà dans les downloads
   if (markdownContent) {
     const mdPdfUrls = [...markdownContent.matchAll(/https?:\/\/[^\s)"'\]]+\.pdf[^\s)"'\]]*/gi)].map(m => m[0])

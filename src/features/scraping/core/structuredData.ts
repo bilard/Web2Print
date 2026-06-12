@@ -33,6 +33,13 @@ const isProduct = (item: unknown): item is Record<string, unknown> => {
   return false
 }
 
+const isType = (item: Record<string, unknown>, type: string): boolean => {
+  const t = item['@type']
+  if (typeof t === 'string') return t === type
+  if (Array.isArray(t)) return t.includes(type)
+  return false
+}
+
 const flattenItems = (items: unknown[]): Record<string, unknown>[] => {
   const out: Record<string, unknown>[] = []
   for (const item of items) {
@@ -40,12 +47,39 @@ const flattenItems = (items: unknown[]): Record<string, unknown>[] => {
     const obj = item as Record<string, unknown>
     if (Array.isArray(obj['@graph'])) {
       out.push(...flattenItems(obj['@graph']))
-    } else {
-      out.push(obj)
+      continue
+    }
+    out.push(obj)
+    // schema.org ProductGroup : les vrais Product (avec sku/additionalProperty)
+    // sont IMBRIQUÉS dans `hasVariant` — pattern des sites multi-variantes
+    // (Milwaukee/TTI & co). On aplatit chaque variante en lui faisant hériter
+    // des champs descriptifs du groupe (image, marque, catégorie, description),
+    // que les variantes ne répètent pas.
+    if (isType(obj, 'ProductGroup') && Array.isArray(obj.hasVariant)) {
+      for (const v of flattenItems(obj.hasVariant)) {
+        out.push({
+          image: obj.image,
+          brand: obj.brand,
+          category: obj.category,
+          description: obj.description,
+          manufacturer: obj.manufacturer,
+          mpn: obj.mpn,
+          ...v,
+        })
+      }
     }
   }
   return out
 }
+
+/** Décode les entités HTML résiduelles des JSON-LD générés côté serveur
+ *  (`Capacit&#233; acier` → `Capacité acier`). Numériques + named courantes. */
+const decodeEntities = (s: string): string =>
+  s
+    .replace(/&#(\d+);/g, (_, c) => String.fromCodePoint(Number(c)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, c) => String.fromCodePoint(parseInt(c, 16)))
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, ' ')
 
 const scoreProduct = (p: Record<string, unknown>): number => {
   let s = 0
@@ -107,10 +141,15 @@ const extractSpecs = (props: unknown): Array<{ name: string; value: string }> =>
       const obj = p as Record<string, unknown>
       const name = typeof obj.name === 'string' ? obj.name : null
       const valueRaw = obj.value
-      const unit = typeof obj.unitText === 'string' ? ' ' + obj.unitText : ''
+      // `unitText` (libellé) ou `unitCode` (souvent un libellé lisible chez les
+      // générateurs pragmatiques : "Nm", "mm", "cps/min" — pas un code UN/ECE).
+      const unitRaw = (typeof obj.unitText === 'string' && obj.unitText)
+        || (typeof obj.unitCode === 'string' && obj.unitCode.length <= 8 && /[a-z/°²³]/.test(obj.unitCode) && obj.unitCode)
+        || ''
+      const unit = unitRaw ? ' ' + unitRaw : ''
       const value = valueRaw == null ? '' : String(valueRaw) + unit
       if (!name || !value) return null
-      return { name: name.trim(), value: value.trim() }
+      return { name: decodeEntities(name.trim()), value: decodeEntities(value.trim()) }
     })
     .filter((x): x is { name: string; value: string } => x !== null)
 }
@@ -149,13 +188,13 @@ export function parseStructuredDataFromHtml(html: string): StructuredProductData
 
   const nameRaw = product.name
   const name = typeof nameRaw === 'string'
-    ? nameRaw
+    ? decodeEntities(nameRaw)
     : Array.isArray(nameRaw) && typeof nameRaw[0] === 'string'
-      ? nameRaw[0]
+      ? decodeEntities(nameRaw[0])
       : undefined
 
   const descRaw = typeof product.description === 'string' ? product.description : undefined
-  const description = descRaw ? stripHtml(descRaw) : undefined
+  const description = descRaw ? decodeEntities(stripHtml(descRaw)) : undefined
 
   const sku = typeof product.sku === 'string' ? product.sku : undefined
   const gtin = (typeof product.gtin13 === 'string' && product.gtin13)

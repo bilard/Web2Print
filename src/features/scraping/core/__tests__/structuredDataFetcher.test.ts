@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { extractStructuredDataFromUrl } from '../structuredDataFetcher'
 
+// La cascade commence désormais par la Cloud Function fetchPageHtml — on la
+// neutralise pour tester les étages proxies/Jina comme avant.
+vi.mock('@/features/scraping-templates/fetchSourceHtml', () => ({
+  fetchSourceHtml: vi.fn(async () => null),
+}))
+
 const realFetch = global.fetch
 
 describe('extractStructuredDataFromUrl', () => {

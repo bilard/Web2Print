@@ -178,3 +178,44 @@ describe('parseMicrodataFromHtml', () => {
     expect(data?.name).toBe('From JSON-LD')
   })
 })
+
+describe('ProductGroup.hasVariant (Milwaukee/TTI-style)', () => {
+  const html = `<html><head><script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "ProductGroup",
+  "name": "M18 FPD3",
+  "brand": { "@type": "Brand", "name": "Milwaukee" },
+  "image": "https://static.milwaukeetool.eu/m18fpd3.png",
+  "variesBy": ["sku"],
+  "hasVariant": [
+    {
+      "@type": "Product",
+      "name": "M18 FPD3-502X",
+      "sku": "4933479860",
+      "additionalProperty": [
+        { "@type": "PropertyValue", "name": "Couple max", "value": "158", "unitCode": "Nm" },
+        { "@type": "PropertyValue", "name": "Capacit&#233; acier", "value": "16", "unitCode": "mm" },
+        { "@type": "PropertyValue", "name": "Emballage", "value": "HD Box" }
+      ]
+    }
+  ]
+}
+</script></head><body></body></html>`
+
+  it('descend dans hasVariant et hérite des champs du groupe', () => {
+    const d = parseStructuredDataFromHtml(html)
+    expect(d).not.toBeNull()
+    expect(d!.name).toBe('M18 FPD3-502X')
+    expect(d!.sku).toBe('4933479860')
+    expect(d!.brand).toBe('Milwaukee')
+    expect(d!.images).toEqual(['https://static.milwaukeetool.eu/m18fpd3.png'])
+  })
+
+  it('specs avec unitCode lisible et entités HTML décodées', () => {
+    const d = parseStructuredDataFromHtml(html)!
+    expect(d.specs).toContainEqual({ name: 'Couple max', value: '158 Nm' })
+    expect(d.specs).toContainEqual({ name: 'Capacité acier', value: '16 mm' })
+    expect(d.specs).toContainEqual({ name: 'Emballage', value: 'HD Box' })
+  })
+})

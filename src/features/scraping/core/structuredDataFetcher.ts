@@ -92,7 +92,25 @@ export async function extractStructuredDataFromUrl(
   }
 
   if (!knownBlocked) {
-    // 1. CORS proxies gratuits
+    // 0. Cloud Function serveur fetchPageHtml — voie principale depuis que les
+    //    proxies CORS publics sont morts (allorigins 522, corsproxy sans ACAO).
+    try {
+      const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
+      const html = await fetchSourceHtml(url, timeoutMs)
+      if (html && !htmlLooksLikeChallenge(html)) {
+        const data = parseStructuredDataAny(html)
+        if (data) {
+          console.log('[structured-data] ✓ Cloud Function HTML extracted product data')
+          return data
+        }
+      } else if (html) {
+        console.log('[structured-data] Cloud Function returned challenge page — cascading')
+      }
+    } catch (err) {
+      console.warn('[structured-data] Cloud Function fetch failed:', err)
+    }
+
+    // 1. CORS proxies gratuits (filet de sécurité historique)
     for (const proxy of CORS_PROXIES) {
       const html = await fetchWithTimeout(proxy(url), timeoutMs)
       if (!html) continue
