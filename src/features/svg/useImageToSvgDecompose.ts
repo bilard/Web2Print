@@ -1174,7 +1174,12 @@ async function decomposeHeuristic(
   }
   const items: Item[] = []
 
-  for (const para of result.paragraphs) {
+  // Dédup placeholders (cf. duplicatePlaceholderIndices) : évite le double rendu
+  // d'un même champ {{…}} double-détecté par Vision.
+  const dropDup = selective ? duplicatePlaceholderIndices(result.paragraphs) : new Set<number>()
+
+  for (const [pIdx, para] of result.paragraphs.entries()) {
+    if (selective && dropDup.has(pIdx)) continue
     // Sélectif : seuls les placeholders {{…}} sont extraits, le reste du
     // graphisme d'origine reste en raster intact.
     if (selective && !isPlaceholderPara(para)) continue
@@ -1408,6 +1413,30 @@ function groupBuiltByColor(
  *  souvent avec espaces : « { { Libelle Article } } »). */
 const isPlaceholderPara = (p: VisionParagraph): boolean => /\{\s*\{|\}\s*\}/.test(p.text)
 
+/**
+ * Indices de paragraphes placeholder à IGNORER : Vision double-détecte parfois un
+ * même champ {{…}} stylisé (une détection « bloc » sur-dimensionnée + un
+ * paragraphe serré → deux « {{Libelle Article}} » de tailles différentes). On
+ * regroupe par texte normalisé et on ne garde que la PLUS PETITE bbox (la
+ * détection fidèle, alignée sur le reste de la pile) ; les autres sont droppées.
+ */
+function duplicatePlaceholderIndices(paras: VisionParagraph[]): Set<number> {
+  const byText = new Map<string, number[]>()
+  paras.forEach((p, i) => {
+    if (!isPlaceholderPara(p)) return
+    const key = normalizeMergeFields(p.text)
+    byText.set(key, [...(byText.get(key) ?? []), i])
+  })
+  const drop = new Set<number>()
+  const area = (i: number) => paras[i].bbox.width * paras[i].bbox.height
+  for (const idxs of byText.values()) {
+    if (idxs.length < 2) continue
+    const keep = idxs.reduce((best, i) => (area(i) < area(best) ? i : best), idxs[0])
+    for (const i of idxs) if (i !== keep) drop.add(i)
+  }
+  return drop
+}
+
 async function decomposeSemantic(
   canvas: Canvas, ctx: CanvasRenderingContext2D, dataUri: string,
   result: VisionDecomposeResult, width: number, height: number, toastId: string | number,
@@ -1478,6 +1507,11 @@ async function decomposeSemantic(
   // logos. fontSize / couleur / poids sont ré-échantillonnés par paragraphe (cf.
   // pipeline heuristique) pour ne pas faire fuiter le style d'un membre sur l'autre.
   const consumed = new Set<number>()
+
+  // Dédup placeholders : Vision double-détecte parfois un même champ {{…}} → on
+  // consomme d'avance les doublons (garde la plus petite bbox) pour qu'aucune des
+  // deux passes de rendu ne les affiche en double.
+  if (selective) for (const i of duplicatePlaceholderIndices(result.paragraphs)) consumed.add(i)
 
   // Alignement DOMINANT de la composition : on tally les alignements détectables
   // (blocs multi-lignes) ; les blocs mono-ligne (indétectables) en hériteront → tous
