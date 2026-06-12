@@ -121,6 +121,7 @@ export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_specifications',  label: 'Spécifications', fieldType: 'text_long', width: 320 },
   { key: 'ai_variants',        label: 'Variantes',      fieldType: 'text_long', width: 320 },
   { key: 'ai_images',          label: 'Images',         fieldType: 'image',     width: 160 },
+  { key: 'ai_image_kinds',     label: 'Classement images', fieldType: 'text_long', width: 120 },
   { key: 'ai_documents',       label: 'Documents',      fieldType: 'text_long', width: 280 },
   { key: 'ai_pricing',         label: 'Prix',           fieldType: 'text_long', width: 200 },
   { key: 'ai_source',          label: 'Source',         fieldType: 'url',       width: 240 },
@@ -184,6 +185,10 @@ export function serializeEnriched(
         : null,
     ai_variants: data.variants.length > 0 ? JSON.stringify(data.variants) : null,
     ai_images: data.images.length > 0 ? data.images.join(' | ') : null,
+    // Classement photo/picto par URL (provenance + swaps manuels) — JSON.
+    ai_image_kinds: data.imageClassOverrides && Object.keys(data.imageClassOverrides).length > 0
+      ? JSON.stringify(data.imageClassOverrides)
+      : null,
     // documents : JSON-encoded array (mirror du pattern variants) pour préserver
     // le triplet name/url/filename. Désérialisation tolère le legacy ' | '.
     ai_documents: data.documents.length > 0 ? JSON.stringify(data.documents) : null,

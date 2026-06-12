@@ -28,6 +28,10 @@ export function deserializeEnrichedFromRow(
   const advantagesRaw = typeof row.ai_advantages === 'string' ? row.ai_advantages : ''
   const specsRaw = typeof row.ai_specifications === 'string' ? row.ai_specifications : ''
   const imagesRaw = typeof row.ai_images === 'string' ? row.ai_images : ''
+  let imageClassOverrides: Record<string, 'photo' | 'picto'> | undefined
+  if (typeof row.ai_image_kinds === 'string' && row.ai_image_kinds.startsWith('{')) {
+    try { imageClassOverrides = JSON.parse(row.ai_image_kinds) } catch { /* JSON invalide — ignorer */ }
+  }
   const documentsRaw = typeof row.ai_documents === 'string' ? row.ai_documents : ''
   const sourceUrl = typeof row.ai_source === 'string' && row.ai_source ? row.ai_source : null
   const scraper = typeof row.ai_scraper === 'string' && row.ai_scraper ? row.ai_scraper : undefined
@@ -152,6 +156,7 @@ export function deserializeEnrichedFromRow(
     manufacturerRef,
     ean,
     subtitle,
+    imageClassOverrides,
     description,
     breadcrumb: breadcrumb && breadcrumb.length > 0 ? breadcrumb : undefined,
     advantages,

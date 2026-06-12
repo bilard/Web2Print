@@ -1775,6 +1775,11 @@ interface ManufacturerData {
   specs: Array<{ name: string; value: string; group?: string }>
   description: string
   breadcrumb: string[]
+  /** URLs d'images dont la PROVENANCE dit que ce sont des pictos/badges
+   *  (ex: REDUX `standardsFeaturesIcons` chez TTI — Ryobi/Milwaukee/AEG :
+   *  badges Garantie, Brushless, labels énergie). Signal plus fiable que
+   *  l'heuristique URL : pré-remplit `imageClassOverrides`. */
+  pictoUrls: string[]
 }
 
 
@@ -2379,7 +2384,7 @@ async function jinaScrapeMaufacturerPageFallback(pageUrl: string, _jinaKey: stri
  */
 async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerData> {
   console.log('[manufacturer] fetching raw HTML →', pageUrl)
-  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [] }
+  const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [], pictoUrls: [] }
 
   // Voie principale : Cloud Function `fetchPageHtml` (serveur, pas de CORS),
   // avec les proxies publics en filet — les proxies seuls sont morts depuis
@@ -2560,6 +2565,36 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
         // Description from REDUX
         if (pd.description && typeof pd.description === 'string' && pd.description.length > 30) {
           data.description = pd.description
+        }
+
+        // Pictos/badges par PROVENANCE : les plateformes TTI (Ryobi, Milwaukee,
+        // AEG) séparent la galerie (`assets`) des icônes marketing
+        // (`standardsFeaturesIcons` : Garantie 2 ans, Brushless, labels
+        // énergie, Home Index…). Tout imageUrl trouvé sous ces clés est un
+        // picto CERTAIN — bien plus fiable que l'heuristique sur l'URL.
+        const PICTO_SOURCE_KEYS = ['standardsFeaturesIcons', 'featureIcons', 'certificationIcons', 'standardsIcons', 'badges']
+        const collectImageUrls = (obj: unknown, depth = 0): string[] => {
+          if (!obj || typeof obj !== 'object' || depth > 4) return []
+          const out: string[] = []
+          if (Array.isArray(obj)) {
+            for (const item of obj) out.push(...collectImageUrls(item, depth + 1))
+            return out
+          }
+          for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+            if (typeof v === 'string' && /^https?:\/\//.test(v) && /image|icon/i.test(k)) {
+              out.push(v)
+            } else if (v && typeof v === 'object') {
+              out.push(...collectImageUrls(v, depth + 1))
+            }
+          }
+          return out
+        }
+        for (const key of PICTO_SOURCE_KEYS) {
+          if (pd[key]) data.pictoUrls.push(...collectImageUrls(pd[key]))
+        }
+        data.pictoUrls = [...new Set(data.pictoUrls)]
+        if (data.pictoUrls.length > 0) {
+          console.log('[manufacturer] ✓ picto/badge URLs (provenance):', data.pictoUrls.length)
         }
       }
 
@@ -2996,6 +3031,17 @@ function buildManufacturerProduct(
     console.log('[manufacturer-build] ✓ images filtrées par référence :', uniqueImages.length, '→', productImages.length)
   }
 
+  // Pictos par provenance (REDUX standardsFeaturesIcons & co) : ré-ajoutés
+  // APRÈS le filtre par référence (ils ne portent jamais la réf produit) et
+  // marqués 'picto' dans imageClassOverrides — l'onglet Photos/Pictos du
+  // panneau les classe alors avec certitude, sans heuristique URL.
+  const finalImages = [...productImages]
+  const imageClassOverrides: Record<string, 'photo' | 'picto'> = {}
+  for (const u of rawData.pictoUrls) {
+    if (!finalImages.includes(u)) finalImages.push(u)
+    imageClassOverrides[u] = 'picto'
+  }
+
   return {
     ...identity,
     subtitle,
@@ -3003,7 +3049,8 @@ function buildManufacturerProduct(
     advantages,
     specifications: specsAfterLift,
     variants,
-    images: productImages,
+    images: finalImages,
+    imageClassOverrides: Object.keys(imageClassOverrides).length > 0 ? imageClassOverrides : undefined,
     documents: deduplicateDocuments(documents),
     breadcrumb: breadcrumb.length > 0 ? breadcrumb : undefined,
     sourceUrl: productUrl,
@@ -4454,6 +4501,7 @@ Réponds UNIQUEMENT via l'outil emit_response.`
               specifications: mfrSpecsAfterLift,
               variants: mergedVariants,
               images: mfrBuild.images, // garder les images scrapées
+              imageClassOverrides: mfrBuild.imageClassOverrides,
               documents: mfrBuild.documents, // garder les PDFs scrapés
               sourceUrl: productUrl,
               additionalSources,

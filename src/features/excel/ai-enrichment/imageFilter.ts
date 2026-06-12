@@ -20,6 +20,11 @@ export function getProductRefs(input: {
     if (!raw) return
     const cleaned = raw.replace(/\s+/g, '').toLowerCase()
     if (cleaned.length >= 4 && /[\w-]{4,}/.test(cleaned)) refs.add(cleaned)
+    // Préfixe modèle (lettres + premiers chiffres) : les CDN nomment souvent
+    // les vues par le modèle de base sans le suffixe commercial
+    // (réf `DDA351RTJ` → fichiers `DDA351_C2L0.jpg`).
+    const prefix = cleaned.replace(/[^a-z0-9]/g, '').match(/^([a-z]{1,6}\d{2,6})/)?.[1]
+    if (prefix && prefix.length >= 4) refs.add(prefix)
   }
   for (const s of input.specifications ?? []) {
     if (s.name && /r[eé]f[eé]rence|^sku$|\bsku\b|^ean$|\bean\b|gencod|code\s+(?:produit|article|barres?|commande)|num[eé]ro\s+(?:de\s+)?(?:s[eé]rie|article)/i.test(s.name)) {
@@ -52,6 +57,21 @@ export function getProductRefs(input: {
 export function classifyImage(url: string, refs: string[]): 'photo' | 'picto' {
   const lower = url.toLowerCase()
   if (refs.some((r) => lower.includes(r))) return 'photo'
+  // Match tolérant aux séparateurs : `M18 FPD3-502X` doit matcher
+  // `M18_FPD3-502X--Hero_1.jpg` — comparaison en alphanumérique pur sur le
+  // nom de fichier (≥ 5 chars pour éviter les collisions de hash).
+  const stemAlnum = (lower.split('/').pop() ?? '').replace(/\?.*$/, '').replace(/[^a-z0-9]/g, '')
+  const refsAlnum = new Set<string>()
+  for (const r of refs) {
+    const norm = r.replace(/[^a-z0-9]/g, '')
+    if (norm.length >= 5) refsAlnum.add(norm)
+    // Préfixe modèle (la réf commerciale `dda351rtj` doit matcher `dda351_view`)
+    const prefix = norm.match(/^([a-z]{1,6}\d{2,6})/)?.[1]
+    if (prefix && prefix.length >= 5) refsAlnum.add(prefix)
+  }
+  for (const r of refsAlnum) {
+    if (stemAlnum.includes(r)) return 'photo'
+  }
   if (isPictoOrLogo(url)) return 'picto'
   return 'photo'
 }
@@ -64,14 +84,32 @@ function isPictoOrLogo(url: string): boolean {
   if (!url) return false
   // SVG = quasi toujours un picto/logo (formats vectoriels marketing).
   if (/\.svg(\?|$)/i.test(url)) return true
+  // GIF = pictogrammes/symboles dans les fiches produit modernes (les photos
+  // produit sont en jpg/png/webp). Appelé APRÈS le match référence, donc une
+  // éventuelle vue produit en .gif portant la réf reste une photo.
+  if (/\.gif(\?|$)/i.test(url)) return true
   try {
     const u = new URL(url)
     const filename = u.pathname.split('/').pop()?.toLowerCase() ?? ''
     const segments = u.pathname.split('/').filter(Boolean).map((s) => s.toLowerCase())
     // Filename commence ou contient logo/picto/badge/certif/flag/seal/etc.
-    if (/(?:^|[-_])(?:logo|favicon|sprite|icon|ico|picto|pictogram|badge|certif|cert|stamp|seal|award|emblem|flag|trust|medal|ribbon|monogram)(?:[-_.]|$)/i.test(filename)) return true
-    // Path segment dédié picto/logo (ex: /logos/, /icons/, /pictos/, /badges/)
-    if (segments.some((s) => /^(logos?|icons?|icones?|pictos?|pictograms?|badges?|certificats?|certificates?|seals?|awards?|emblems?|trust|sprites?)$/i.test(s))) return true
+    // `\d*` : les déclinaisons numérotées (`makita_logo3.png`, `icon2.png`)
+    // sont des pictos au même titre que la forme nue.
+    if (/(?:^|[-_])(?:logo|favicon|sprite|icon|ico|picto|pictogram|badge|certif|cert|stamp|seal|award|emblem|flag|trust|medal|ribbon|monogram|warranty|garantie|guarantee|symbol|symbole|energy[-_]?label|label)s?\d*(?:[-_.]|$)/i.test(filename)) return true
+    // Path segment dédié picto/logo (ex: /logos/, /icons/, /symbols/) —
+    // tolère les préfixes/suffixes numériques des DAM (`305_logos`, `logos_2`).
+    if (segments.some((s) => /^(?:\d+[-_])?(logos?|icons?|icones?|pictos?|pictograms?|badges?|certificats?|certificates?|seals?|awards?|emblems?|trust|sprites?|symbols?|symboles?|standards?|labels?|energy[-_]?labels?|ratings?|warrant(?:y|ies)|garanties?|features?[-_]?icons?)(?:[-_]\d+)?$/i.test(s))) return true
+    // Contrainte de taille dans l'URL : une image demandée ≤ 160 px est un
+    // picto/logo, jamais une photo produit (Cloudinary `w_100`, query
+    // `width=64`, suffixe `_80x80`).
+    const sizeMatches = [
+      ...url.matchAll(/(?:^|[/,_?&-])(?:w|h|width|height)[_=-](\d{2,4})(?:[/,_?&.x-]|$)/gi),
+      ...url.matchAll(/(?<!\d)(\d{2,4})x(\d{2,4})(?!\d)/g),
+    ]
+    for (const m of sizeMatches) {
+      const dims = m.slice(1).filter(Boolean).map(Number)
+      if (dims.length > 0 && dims.every((d) => d <= 160)) return true
+    }
     return false
   } catch {
     return false
