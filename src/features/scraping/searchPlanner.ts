@@ -61,6 +61,19 @@ export function parseSnippetPrice(...texts: Array<string | undefined>): string |
 /** Hôtes bruit : communauté, SAV, forum, blog… — jamais des fiches produit. */
 const NOISY_HOST_RE = /(^|[.-])(communaute|community|forum|blog|sav|aide|support|avis|conseil|conseils|magazine|news)([.-]|$)/i
 
+/** True si le résultat a un vrai contenu : un titre qui n'est pas juste le
+ *  domaine/l'URL, ou une description. Les résultats vides (le moteur n'a rien
+ *  rendu de la page) ne pointent sur rien d'exploitable. */
+function hasUsefulSnippet(r: SearchResult): boolean {
+  const title = (r.title ?? '').trim()
+  let host = ''
+  try { host = new URL(r.url).hostname.replace(/^www\./, '') } catch { /* URL invalide */ }
+  const titleUseful = title.length > 0
+    && title.toLowerCase() !== host.toLowerCase()
+    && title !== r.url
+  return titleUseful || (r.description ?? '').trim().length > 0
+}
+
 /** Classifie une URL de résultat : fiche produit unique ou page multi-produits.
  *  Heuristiques génériques (structure d'URL + titre), AUCUNE règle par enseigne. */
 export function classifyResultPage(url: string, title?: string): 'product' | 'listing' {
@@ -201,7 +214,7 @@ export function mergePlannedResults(
   const seen = new Set<string>()
   const lanes = perQuery.map(({ site, results }) => {
     const lane = results
-      .filter((r) => !isJunkUrl(r.url))
+      .filter((r) => !isJunkUrl(r.url) && hasUsefulSnippet(r))
       .filter((r) => {
         try {
           const host = new URL(r.url).hostname.toLowerCase().replace(/^www\./, '')

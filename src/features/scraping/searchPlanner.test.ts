@@ -58,7 +58,7 @@ describe('buildQueries', () => {
 })
 
 describe('mergePlannedResults', () => {
-  const r = (url: string, title = url) => ({ url, title })
+  const r = (url: string, title = `Fiche ${url}`) => ({ url, title })
 
   it('équilibre les résultats entre sites (round-robin) et marque onTarget', () => {
     const merged = mergePlannedResults([
@@ -97,6 +97,17 @@ describe('mergePlannedResults', () => {
       'https://www.castorama.fr/vb/tondeuse-honda',
     ])
     expect(merged.map((m) => m.pageType)).toEqual(['product', 'listing'])
+  })
+
+  it('supprime les résultats vides (sans titre utile ni description)', () => {
+    const merged = mergePlannedResults([
+      { site: 'leroymerlin.fr', results: [
+        { url: 'https://www.leroymerlin.fr/produits/tondeuse-honda-izy-46-89725431.html' }, // ni titre ni description
+        { url: 'https://www.leroymerlin.fr/produits/tondeuse-electrique-honda-82876154.html', title: 'leroymerlin.fr' }, // titre = domaine
+        { url: 'https://www.leroymerlin.fr/produits/tondeuse-batterie-honda-90011223.html', title: 'Tondeuse à batterie Honda HRG 466' },
+      ] },
+    ], 10)
+    expect(merged.map((m) => m.url)).toEqual(['https://www.leroymerlin.fr/produits/tondeuse-batterie-honda-90011223.html'])
   })
 
   it('tronque au limit demandé', () => {
