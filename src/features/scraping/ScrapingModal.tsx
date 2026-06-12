@@ -225,7 +225,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       return
     }
     if (source === 'cloud') {
-      toast.info(`${pages.length} produit(s) trouvé(s) via l'escalade navigateur (Jina n'a pas rendu la grille).`)
+      toast.info(`${pages.length} produit(s) — l'escalade scroll a complété la grille lazy-load.`)
     }
 
     // Multi-URL : accumule, dédoublonne par URL absolue.

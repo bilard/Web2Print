@@ -1150,27 +1150,36 @@ export function useJina() {
       return out
     }
 
-    let lastError: string | undefined
-
-    // 1) Jina moteur navigateur (lazy-load rendu) → résumé de liens déterministe.
+    setLoading(true); reset()
     try {
-      const page = await jinaRead(url, { listing: true, noCache: true })
-      const products = toProducts(Object.entries(page.links ?? {}))
-      if (products.length > 0) return { pages: products, source: 'jina' }
-    } catch (e) {
-      lastError = e instanceof Error ? e.message : String(e)
-    }
+      // On lance EN PARALLÈLE les deux sources et on FUSIONNE :
+      //   • Jina moteur navigateur (rapide, lazy-load rendu) → résumé de liens.
+      //   • Cloud Function Puppeteer (scrolle jusqu'à 40000px + stealth anti-bot)
+      //     → tous les <a href> hydratés, indispensable pour récupérer les cartes
+      //     chargées plus bas dans la grille (sinon on plafonne aux ~12 premières).
+      // toProducts() dédoublonne par URL absolue → l'union est propre.
+      const errors: string[] = []
+      const [jinaEntries, cloudEntries] = await Promise.all([
+        jinaRead(url, { listing: true, noCache: true })
+          .then((p) => Object.entries(p.links ?? {}))
+          .catch((e) => { errors.push(`Jina: ${e instanceof Error ? e.message : String(e)}`); return [] as [string, string][] }),
+        extractBreadcrumbCloudFn({ url })
+          .then((r) => (r.data.links ?? []).map((h) => [slugTitle(h), h] as [string, string]))
+          .catch((e) => { errors.push(`Escalade: ${e instanceof Error ? e.message : String(e)}`); return [] as [string, string][] }),
+      ])
 
-    // 2) Escalade Cloud Function Puppeteer (scrolle + stealth) → tous les liens.
-    try {
-      const r = await extractBreadcrumbCloudFn({ url })
-      const products = toProducts((r.data.links ?? []).map((h) => [slugTitle(h), h] as [string, string]))
-      if (products.length > 0) return { pages: products, source: 'cloud' }
-    } catch (e) {
-      lastError = lastError ?? (e instanceof Error ? e.message : String(e))
+      // Compte l'apport NET de l'escalade : nb de produits Jina seul vs union.
+      const jinaProducts = toProducts(jinaEntries)
+      const products = toProducts([...jinaEntries, ...cloudEntries])
+      if (products.length > 0) {
+        // 'cloud' seulement si le scroll a ajouté des fiches que Jina n'avait pas.
+        const source: 'jina' | 'cloud' = products.length > jinaProducts.length ? 'cloud' : 'jina'
+        return { pages: products, source }
+      }
+      return { pages: [], source: 'none', error: errors.join(' · ') || undefined }
+    } finally {
+      setLoading(false)
     }
-
-    return { pages: [], source: 'none', error: lastError }
   }, [])
 
   // ── Map (discover URLs) ────────────────────────────────────────────────────
