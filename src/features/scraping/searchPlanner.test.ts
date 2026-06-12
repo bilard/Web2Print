@@ -1,5 +1,48 @@
 import { describe, it, expect } from 'vitest'
-import { buildQueries, mergePlannedResults, classifyResultPage, parseSnippetPrice } from './searchPlanner'
+import { buildQueries, mergePlannedResults, classifyResultPage, parseSnippetPrice, priceToNumber, defaultSelection, type PlannedSearchResult } from './searchPlanner'
+
+describe('priceToNumber', () => {
+  it('formats affichés', () => {
+    expect(priceToNumber('683,41 €')).toBe(683.41)
+    expect(priceToNumber('1 034,78 €')).toBe(1034.78)
+    expect(priceToNumber('1 299,00 €')).toBe(1299)
+    expect(priceToNumber(undefined)).toBeUndefined()
+  })
+})
+
+describe('defaultSelection', () => {
+  const pr = (url: string, price?: string, pageType: 'product' | 'listing' = 'product'): PlannedSearchResult =>
+    ({ url, title: `Fiche ${url}`, onTarget: true, pageType, price })
+  const plan = { queries: [{ query: 'q', site: 'a.fr' }, { query: 'q', site: 'b.fr' }] }
+
+  it('limite à perSiteCount produits par enseigne', () => {
+    const sel = defaultSelection([
+      pr('https://a.fr/p1'), pr('https://a.fr/p2'), pr('https://a.fr/p3'),
+      pr('https://b.fr/p1'), pr('https://b.fr/p2'), pr('https://b.fr/p3'),
+    ], { ...plan, perSiteCount: 2 })
+    expect(Array.from(sel)).toEqual(['https://a.fr/p1', 'https://a.fr/p2', 'https://b.fr/p1', 'https://b.fr/p2'])
+  })
+
+  it('écarte les prix connus au-dessus de maxPriceEur (inconnu = gardé)', () => {
+    const sel = defaultSelection([
+      pr('https://a.fr/cher', '1 250,00 €'),
+      pr('https://a.fr/ok', '683,41 €'),
+      pr('https://a.fr/inconnu'),
+    ], { ...plan, maxPriceEur: 1000 })
+    expect(sel.has('https://a.fr/cher')).toBe(false)
+    expect(sel.has('https://a.fr/ok')).toBe(true)
+    expect(sel.has('https://a.fr/inconnu')).toBe(true)
+  })
+
+  it('ignore pages liste et hors sites demandés', () => {
+    const sel = defaultSelection([
+      pr('https://a.fr/liste', undefined, 'listing'),
+      { ...pr('https://autre.fr/p'), onTarget: false },
+      pr('https://a.fr/p1'),
+    ], plan)
+    expect(Array.from(sel)).toEqual(['https://a.fr/p1'])
+  })
+})
 
 describe('parseSnippetPrice', () => {
   it('formats courants', () => {

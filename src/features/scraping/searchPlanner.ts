@@ -28,6 +28,10 @@ export interface SearchPlan {
   queries: SearchPlanQuery[]
   /** Champs de données demandés par l'utilisateur (prix, EAN…) — affichage UI. */
   wantedFields: string[]
+  /** Nombre de produits demandés PAR enseigne (« 2 produits par enseigne ») — 0 = illimité. */
+  perSiteCount?: number
+  /** Prix maximum en euros (« prix inférieur à 1000€ ») — 0 = pas de contrainte. */
+  maxPriceEur?: number
 }
 
 export interface PlannedSearchResult extends SearchResult {
@@ -104,6 +108,8 @@ const PlanSchema = z.object({
   subject: z.string(),
   sites: z.array(z.string()),
   wantedFields: z.array(z.string()),
+  perSiteCount: z.number(),
+  maxPriceEur: z.number(),
 })
 
 const PLAN_SCHEMA_FOR_LLM = {
@@ -131,8 +137,20 @@ const PLAN_SCHEMA_FOR_LLM = {
         'Champs de données que l\'utilisateur veut récupérer (ex: "prix de vente", "promo", "EAN", ' +
         '"référence"). Tableau vide si non précisé.',
     },
+    perSiteCount: {
+      type: 'number',
+      description:
+        'Nombre de produits demandés PAR enseigne/site (« 2 produits par enseigne » → 2). ' +
+        '0 si non précisé.',
+    },
+    maxPriceEur: {
+      type: 'number',
+      description:
+        'Prix maximum en euros (« prix inférieur à 1000€ » → 1000, « moins de 500 € » → 500). ' +
+        '0 si aucune contrainte de prix.',
+    },
   },
-  required: ['subject', 'sites', 'wantedFields'],
+  required: ['subject', 'sites', 'wantedFields', 'perSiteCount', 'maxPriceEur'],
 }
 
 /** Construit les requêtes finales à partir du plan brut du LLM. Pur — testable. */
@@ -191,13 +209,21 @@ async function planSearch(prompt: string): Promise<SearchPlan> {
         '- subject : les mots-clés produit pour le moteur de recherche\n' +
         '- sites : les domaines réels des enseignes explicitement citées (déduis le vrai domaine ' +
         'du site marchand français de chaque enseigne ; tableau vide si aucune)\n' +
-        '- wantedFields : les données que l\'utilisateur veut extraire des pages\n\n' +
+        '- wantedFields : les données que l\'utilisateur veut extraire des pages\n' +
+        '- perSiteCount : le nombre de produits demandés par enseigne (0 si non précisé)\n' +
+        '- maxPriceEur : le prix maximum en euros (0 si aucune contrainte)\n\n' +
         `Demande : ${prompt}`,
       schema: PlanSchema,
       schemaForLLM: PLAN_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
     })
     const queries = buildQueries(raw.subject || prompt, raw.sites)
-    return { subject: raw.subject || prompt, queries, wantedFields: raw.wantedFields }
+    return {
+      subject: raw.subject || prompt,
+      queries,
+      wantedFields: raw.wantedFields,
+      perSiteCount: raw.perSiteCount > 0 ? Math.round(raw.perSiteCount) : undefined,
+      maxPriceEur: raw.maxPriceEur > 0 ? raw.maxPriceEur : undefined,
+    }
   } catch (err) {
     console.warn('[search-planner] LLM indisponible — requête brute', err)
     return { subject: prompt, queries: [{ query: prompt }], wantedFields: [] }
@@ -246,6 +272,43 @@ export function mergePlannedResults(
     if (!added) break
   }
   return merged
+}
+
+/** Nombre extrait d'un prix affiché (« 1 034,78 € » → 1034.78). */
+export function priceToNumber(s?: string): number | undefined {
+  if (!s) return undefined
+  const m = s.match(/\d[\d \u00a0\u202f.]*(?:[.,]\d{1,2})?/)
+  if (!m) return undefined
+  const n = Number(m[0].replace(/[ \u00a0\u202f]/g, '').replace(/\.(?=\d{3})/g, '').replace(',', '.'))
+  return Number.isFinite(n) ? n : undefined
+}
+
+/** Sélection par défaut respectant les contraintes du prompt : fiches produit
+ *  des sites demandés, prix connu ≤ maxPriceEur (inconnu = gardé), au plus
+ *  perSiteCount produits par enseigne. Pur — testable.
+ *  `priceOf` permet d'injecter le prix le plus fiable connu (sondage JSON-LD). */
+export function defaultSelection(
+  results: PlannedSearchResult[],
+  plan: Pick<SearchPlan, 'queries' | 'perSiteCount' | 'maxPriceEur'>,
+  priceOf: (r: PlannedSearchResult) => number | undefined = (r) => priceToNumber(r.price),
+): Set<string> {
+  const targeted = plan.queries.some((q) => q.site)
+  const perSite = plan.perSiteCount && plan.perSiteCount > 0 ? plan.perSiteCount : Infinity
+  const countByHost = new Map<string, number>()
+  const sel = new Set<string>()
+  for (const r of results) {
+    if (r.pageType !== 'product') continue
+    if (targeted && !r.onTarget) continue
+    const price = priceOf(r)
+    if (plan.maxPriceEur && price !== undefined && price > plan.maxPriceEur) continue
+    let host = ''
+    try { host = new URL(r.url).hostname.replace(/^www\./, '') } catch { continue }
+    const count = countByHost.get(host) ?? 0
+    if (count >= perSite) continue
+    countByHost.set(host, count + 1)
+    sel.add(r.url)
+  }
+  return sel
 }
 
 /** Plan + exécution : 1 recherche Jina par requête, fusion équilibrée. */

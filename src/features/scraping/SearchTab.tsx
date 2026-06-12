@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Search, Loader2, Sparkles } from 'lucide-react'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
-import { runPlannedSearch, type SearchPlan, type PlannedSearchResult } from './searchPlanner'
+import { runPlannedSearch, defaultSelection, type SearchPlan, type PlannedSearchResult } from './searchPlanner'
+import { useMaxPriceGuard } from './useMaxPriceGuard'
 import { SearchResultsList } from './SearchResultsList'
 import { SearchPromptInput } from './SearchPromptInput'
 import { SearchPlanChips } from './SearchPlanChips'
@@ -32,6 +33,7 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
   const { priceByUrl, probePrices, resetPrices } = useResultPrices()
 
   const hasTargets = !!plan && plan.queries.some((q) => q.site)
+  useMaxPriceGuard(plan?.maxPriceEur, priceByUrl, setSelected)
 
   const handleSearch = async () => {
     if (!prompt.trim() || searching) return
@@ -44,10 +46,9 @@ export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
       const { plan: p, results: found } = await runPlannedSearch(prompt.trim(), limit)
       setPlan(p)
       setResults(found)
-      // Pré-cocher uniquement les fiches produit uniques (pages liste visibles
-      // mais décochées), et seulement celles des sites demandés quand il y en a.
-      const targeted = p.queries.some((q) => q.site)
-      setSelected(new Set(found.filter((r) => r.pageType === 'product' && (!targeted || r.onTarget)).map((r) => r.url)))
+      // Pré-cocher selon les contraintes du prompt : fiches produit des sites
+      // demandés, ≤ maxPrice (prix snippet), au plus perSiteCount par enseigne.
+      setSelected(defaultSelection(found, p))
       if (found.length === 0) setError('Aucun résultat — reformule la recherche (ajoute marque, type de produit, site…).')
       // Scrape léger du prix réel (JSON-LD) sur les fiches produit affichées
       probePrices(found.filter((r) => r.pageType === 'product').map((r) => r.url))

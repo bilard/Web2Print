@@ -18,6 +18,16 @@ export function SearchPlanChips({ plan }: { plan: SearchPlan }) {
           {q.site ? `${q.site} · ${plan.subject}` : plan.subject}
         </span>
       ))}
+      {plan.perSiteCount && (
+        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/20">
+          {plan.perSiteCount} / enseigne
+        </span>
+      )}
+      {plan.maxPriceEur && (
+        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/20">
+          ≤ {plan.maxPriceEur} €
+        </span>
+      )}
       {plan.wantedFields.length > 0 && (
         <span className="text-white/30">→ {plan.wantedFields.join(', ')}</span>
       )}
