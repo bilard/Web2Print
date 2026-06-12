@@ -95,6 +95,7 @@ export const ENRICHMENT_ALIASES: Record<string, string[]> = {
   ai_images: ['Image', 'images', 'image_url', 'photo', 'Photo'],
   ai_model: ['Modèle', 'model', 'Reference', 'reference', 'Référence', 'Ref'],
   ai_ean: ['EAN', 'ean', 'Code-barres', 'Codebarres', 'Barcode'],
+  ai_subtitle: ['Sous-titre', 'subtitle', 'Sous titre', 'Accroche', 'Tagline'],
   ai_distributor_ref: ['Référence distributeur', 'SKU', 'sku', 'code'],
   ai_manufacturer_ref: ['Référence fabricant', 'Manufacturer Ref'],
   ai_source: ['URL', 'url', 'Source', 'lien', 'Link'],
@@ -112,6 +113,7 @@ export const ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
   { key: 'ai_distributor_ref',  label: 'Réf. distributeur',  fieldType: 'text',      width: 160 },
   { key: 'ai_manufacturer_ref', label: 'Réf. fabricant',     fieldType: 'text',      width: 160 },
   { key: 'ai_ean',              label: 'EAN',                fieldType: 'text',      width: 160 },
+  { key: 'ai_subtitle',         label: 'Sous-titre',         fieldType: 'text',      width: 240 },
   // ── Contenu enrichi ────────────────────────────────────────────────────────
   { key: 'ai_description',     label: 'Description',   fieldType: 'text_long', width: 320 },
   { key: 'ai_breadcrumb',      label: 'Fil d\'Ariane',  fieldType: 'text_long', width: 260 },
@@ -140,6 +142,7 @@ export const IDENTITY_AI_KEYS = new Set<string>([
   'ai_distributor_ref',
   'ai_manufacturer_ref',
   'ai_ean',
+  'ai_subtitle',
   'ai_description',
   'ai_advantages',
   'ai_specifications',
@@ -169,6 +172,7 @@ export function serializeEnriched(
     ai_distributor_ref: data.distributorRef || null,
     ai_manufacturer_ref: data.manufacturerRef || null,
     ai_ean: data.ean || null,
+    ai_subtitle: data.subtitle || null,
     ai_description: data.description || null,
     ai_breadcrumb: (data.breadcrumb && data.breadcrumb.length > 0) ? data.breadcrumb.join(' › ') : null,
     ai_advantages: data.advantages.length > 0

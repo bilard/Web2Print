@@ -77,6 +77,10 @@ export interface EnrichedProduct {
   /** Code-barres EAN/GTIN (ex: "3165140461214"). Lifté depuis JSON-LD `gtin*`
    *  ou specs identité (chip "EAN : ..."). */
   ean?: string
+  /** Sous-titre / accroche courte affichée sous le titre produit
+   *  (ex: "18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant" chez Makita).
+   *  Extrait de la ligne courte qui suit le H1/la référence dans le markdown. */
+  subtitle?: string
   /** Description marketing reformulée par l'IA */
   description: string
   /** Fil d'Ariane / catégorisation (ex: ["Outillage", "Perceuses", "Visseuses à chocs"]) */

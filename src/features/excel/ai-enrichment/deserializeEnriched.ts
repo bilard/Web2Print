@@ -39,6 +39,7 @@ export function deserializeEnrichedFromRow(
   const distributorRef = typeof row.ai_distributor_ref === 'string' && row.ai_distributor_ref ? row.ai_distributor_ref : undefined
   const manufacturerRef = typeof row.ai_manufacturer_ref === 'string' && row.ai_manufacturer_ref ? row.ai_manufacturer_ref : undefined
   const ean = typeof row.ai_ean === 'string' && row.ai_ean ? row.ai_ean : undefined
+  const subtitle = typeof row.ai_subtitle === 'string' && row.ai_subtitle ? row.ai_subtitle : undefined
 
   // Rien à restaurer si tous les champs sont vides
   if (!description && !advantagesRaw && !specsRaw && !imagesRaw && !sourceUrl && !name && !brand && !ean) {
@@ -150,6 +151,7 @@ export function deserializeEnrichedFromRow(
     distributorRef,
     manufacturerRef,
     ean,
+    subtitle,
     description,
     breadcrumb: breadcrumb && breadcrumb.length > 0 ? breadcrumb : undefined,
     advantages,

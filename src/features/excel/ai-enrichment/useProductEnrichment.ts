@@ -657,6 +657,40 @@ function buildIdentity(args: {
   }
   if (!id.name && inputTitle && inputTitle.length >= 5) id.name = inputTitle
 
+  // Fallback EAN : heading "Code EAN" / "EAN" / "GTIN" / "Code-barres" suivi
+  // d'un code 8-14 chiffres dans les lignes suivantes (pattern fabricant —
+  // Makita rend `## Code EAN` puis le code seul sur sa ligne).
+  if (!id.ean && markdown) {
+    const eanMatch = markdown.match(/^#{0,4}\s*(?:code[\s-]*)?(?:EAN|GTIN|code[\s-]barres?)\s*:?\s*\n+\s*(\d{8,14})\b/im)
+      ?? markdown.match(/\b(?:EAN|GTIN)\s*:?\s+(\d{8,14})\b/i)
+    if (eanMatch) id.ean = eanMatch[1]
+  }
+
+  // Fallback référence/modèle : token SKU dans le H1 ("DDA351RTJ - Perceuse…")
+  // ou ligne isolée SKU-like juste après un H1 (lettres majuscules + chiffres).
+  if (!id.model && markdown) {
+    const SKU_RE = /^[A-Z][A-Z0-9][A-Z0-9./-]{2,18}$/
+    const hasDigit = (s: string) => /\d/.test(s)
+    const h1 = markdown.match(/^#\s+(.+)/m)?.[1]?.trim()
+    const h1Lead = h1?.split(/\s+[-–—]\s+/)[0]?.trim()
+    if (h1Lead && SKU_RE.test(h1Lead) && hasDigit(h1Lead)) {
+      id.model = h1Lead
+    } else {
+      // Scanner les ~8 lignes non vides qui suivent chaque H1
+      const lines = markdown.split('\n')
+      outer: for (let i = 0; i < lines.length; i++) {
+        if (!/^#\s+/.test(lines[i])) continue
+        let scanned = 0
+        for (let j = i + 1; j < lines.length && scanned < 8; j++) {
+          const t = lines[j].trim()
+          if (!t) continue
+          scanned++
+          if (SKU_RE.test(t) && hasDigit(t)) { id.model = t; break outer }
+        }
+      }
+    }
+  }
+
   // Fallback brand : input utilisateur
   if (!id.brand && inputBrand && inputBrand.length >= 2) id.brand = inputBrand
 
@@ -2345,28 +2379,21 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
   console.log('[manufacturer] fetching raw HTML →', pageUrl)
   const data: ManufacturerData = { downloads: [], variants: [], images: [], specs: [], description: '', breadcrumb: [] }
 
-  const corsProxies = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(pageUrl)}`,
-    `https://corsproxy.io/?${encodeURIComponent(pageUrl)}`,
-  ]
-
+  // Voie principale : Cloud Function `fetchPageHtml` (serveur, pas de CORS),
+  // avec les proxies publics en filet — les proxies seuls sont morts depuis
+  // 2026-06 (allorigins 522, corsproxy sans ACAO), ce qui laissait TOUT le
+  // path fabricant sans HTML (ni breadcrumb, ni specs DOM, ni JSON-LD).
   let html = ''
-  for (const proxyUrl of corsProxies) {
-    try {
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(25000) })
-      if (!res.ok) continue
-      html = await res.text()
-      if (html.length > 1000) {
-        console.log('[manufacturer] CORS proxy got', html.length, 'chars from', proxyUrl.split('?')[0])
-        break
-      }
-    } catch (err) {
-      console.warn('[manufacturer] CORS proxy failed:', proxyUrl.split('?')[0], err)
-    }
+  try {
+    const { fetchSourceHtml } = await import('@/features/scraping-templates/fetchSourceHtml')
+    html = (await fetchSourceHtml(pageUrl)) ?? ''
+    if (html) console.log('[manufacturer] HTML fetched:', html.length, 'chars')
+  } catch (err) {
+    console.warn('[manufacturer] fetchSourceHtml failed:', err)
   }
 
   if (!html || html.length < 1000) {
-    console.log('[manufacturer] no HTML from CORS proxies')
+    console.log('[manufacturer] no HTML available (CF + proxies down)')
     return data
   }
 
@@ -2735,6 +2762,56 @@ function deduplicateDocuments(docs: EnrichedDocument[]): EnrichedDocument[] {
   return result
 }
 
+/** Extrait le sous-titre produit : la première ligne courte qui suit un H1
+ *  (en sautant la ligne-référence SKU), avant la description longue.
+ *  Ex Makita : `# Perceuse visseuse d'angle LXT ®` → `DDA351RTJ` (skip) →
+ *  `18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant` (← sous-titre). */
+function extractSubtitleFromMarkdown(md: string): string | undefined {
+  const SKU_RE = /^[A-Z][A-Z0-9][A-Z0-9./-]{2,18}$/
+  const lines = md.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^#\s+/.test(lines[i])) continue
+    let scanned = 0
+    for (let j = i + 1; j < lines.length && scanned < 5; j++) {
+      const t = lines[j].trim()
+      if (!t) continue
+      scanned++
+      if (SKU_RE.test(t)) continue            // ligne référence — pas le sous-titre
+      if (/^#{1,5}\s|^[!\[*>|-]|https?:\/\//.test(t)) break  // heading/lien/image/bullet → pas de sous-titre ici
+      // Sous-titre plausible : court, pas une phrase terminée par un point,
+      // avec un signal "fiche produit" (chiffre+unité ou séparateurs " - ").
+      if (t.length >= 8 && t.length <= 100 && !/[.!?]$/.test(t)
+          && (/\d/.test(t) || / - /.test(t))) {
+        return t
+      }
+      break // 1re ligne candidate non conforme → ce H1 n'a pas de sous-titre
+    }
+  }
+  return undefined
+}
+
+/** Extrait les pictogrammes d'équipement : section dont le heading contient
+ *  "Symbols"/"Symboles"/"Pictogrammes" (ex Makita `## sr132*Symbols:`) suivie
+ *  de courtes lignes texte ("Vitesse variable", "Frein", "Inversion"…).
+ *  Rendus comme avantages groupés « Équipement ». */
+function parsePictosFromMarkdown(md: string): { text: string; group: string }[] {
+  const out: { text: string; group: string }[] = []
+  const lines = md.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^#{1,5}\s.*\b(symbols?|symboles?|pictogrammes?)\b/i.test(lines[i].trim())) continue
+    for (let j = i + 1; j < lines.length; j++) {
+      const t = lines[j].trim()
+      if (!t) continue
+      if (/^#{1,5}\s|^\[|^!\[|https?:\/\//.test(t)) break   // fin de section
+      if (t.length < 3 || t.length > 50 || !/[a-zà-ÿ]/i.test(t)) break
+      out.push({ text: t, group: 'Équipement' })
+      if (out.length >= 20) break
+    }
+    if (out.length > 0) break
+  }
+  return out
+}
+
 function buildManufacturerProduct(
   markdownContent: string | null,
   rawData: ManufacturerData,
@@ -2759,6 +2836,15 @@ function buildManufacturerProduct(
 
   // Advantages : depuis le markdown uniquement (les bullet points)
   const advantages = markdownContent ? parseAdvantagesFromMarkdown(markdownContent) : []
+  // + pictogrammes d'équipement (section "Symbols" des fiches fabricant)
+  if (markdownContent) {
+    const pictos = parsePictosFromMarkdown(markdownContent)
+    const seenAdv = new Set(advantages.map((a) => a.text.toLowerCase()))
+    for (const p of pictos) {
+      if (!seenAdv.has(p.text.toLowerCase())) advantages.push(p)
+    }
+    if (pictos.length > 0) console.log('[manufacturer-build] ✓ pictos:', pictos.length)
+  }
 
   // Description : REDUX > markdown (avec filtrage du cookie/GDPR banner)
   let description = rawData.description || ''
@@ -2860,8 +2946,13 @@ function buildManufacturerProduct(
     markdown: markdownContent,
   })
 
+  // Sous-titre : ligne courte sous le H1 (après la référence) — ex Makita
+  // "18 V Li-Ion - 5 Ah - Ø 10 mm - Auto-serrant".
+  const subtitle = markdownContent ? extractSubtitleFromMarkdown(markdownContent) : undefined
+
   return {
     ...identity,
+    subtitle,
     description,
     advantages,
     specifications: specsAfterLift,
@@ -4193,7 +4284,11 @@ export async function enrichProductCore(
 
             const mfrDataSections: string[] = []
             if (markdownContent) {
-              mfrDataSections.push(`## Contenu de la page produit (markdown rendu)\n${markdownContent.slice(0, 20000)}`)
+              // Nettoyer nav/cookies AVANT la coupe : sur les sites à méga-menu
+              // (Makita & co) les 20k premiers chars sont du menu — le contenu
+              // produit (specs, EAN, sous-titre) n'atteignait jamais le LLM.
+              const cleanedMd = sanitizeJinaMarkdown(markdownContent)
+              mfrDataSections.push(`## Contenu de la page produit (markdown rendu)\n${cleanedMd.slice(0, 20000)}`)
             }
 
             const mfrPrompt = `Tu es un extracteur de données. Le scraping du site fabricant ${manufacturerBrand} a retourné un contenu partiellement structuré.
@@ -4306,6 +4401,8 @@ Réponds UNIQUEMENT via l'outil emit_response.`
 
             enriched = {
               ...mfrIdentity,
+              subtitle: mfrBuild.subtitle,
+              breadcrumb: mfrBuild.breadcrumb,
               description: mfrAi.description || mfrBuild.description,
               advantages: mergedAdvantages,
               specifications: mfrSpecsAfterLift,

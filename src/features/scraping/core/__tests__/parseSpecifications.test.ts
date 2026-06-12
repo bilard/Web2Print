@@ -391,3 +391,49 @@ describe('truncateBeforeNonProductSections', () => {
     expect(truncateBeforeNonProductSections(md)).toBe(md)
   })
 })
+
+describe('Format 6 — bullets à colonnes multi-espaces (PAM CMS / Makita)', () => {
+  const MAKITA_MD = `# DDA351RTJ - Perceuse visseuse d'angle LXT®
+
+## Spécifications techniques
+
+*    Énergie  18 V  
+*    Composant batterie  Li-ion   
+*    Vitesse à vide max  0 - 1800 min⁻¹  
+*    Capacité du mandrin  1,5 - 10 mm  
+*    Niveau de vibration, perçage dans métal  ≤ 2,5 m/s² Décrit les vibrations de la machine. La vibration est dirigée vers l'opérateur.  
+*    Poids net du produit  1,1 kg  
+`
+  it('extrait les paires nom/valeur séparées par ≥ 2 espaces', () => {
+    const specs = parseSpecsFromMarkdown(MAKITA_MD)
+    expect(specs.find((s) => s.name === 'Énergie')?.value).toBe('18 V')
+    expect(specs.find((s) => s.name === 'Composant batterie')?.value).toBe('Li-ion')
+    expect(specs.find((s) => s.name === 'Capacité du mandrin')?.value).toBe('1,5 - 10 mm')
+    expect(specs.find((s) => s.name === 'Poids net du produit')?.value).toBe('1,1 kg')
+  })
+
+  it('tronque la prose explicative collée à la valeur', () => {
+    const specs = parseSpecsFromMarkdown(MAKITA_MD)
+    expect(specs.find((s) => s.name.startsWith('Niveau de vibration'))?.value).toBe('≤ 2,5 m/s²')
+  })
+
+  it('ignore les sections bannière cookies (Strictement nécessaire, Statistique…)', () => {
+    const md = `## Spécifications
+
+Tension : 18 V
+
+### Strictement nécessaire
+
+*    Finalité  Prend en charge les fonctions techniques du site.  
+*    Expiration  un an  
+
+### Statistique
+
+*    Fournisseur  .makita.fr  
+`
+    const specs = parseSpecsFromMarkdown(md)
+    expect(specs.find((s) => s.name === 'Tension')?.value).toBe('18 V')
+    expect(specs.find((s) => s.name === 'Finalité')).toBeUndefined()
+    expect(specs.find((s) => s.name === 'Fournisseur')).toBeUndefined()
+  })
+})

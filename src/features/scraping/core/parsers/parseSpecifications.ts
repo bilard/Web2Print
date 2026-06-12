@@ -381,6 +381,10 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // Cookie banner buttons : "Tout accepter=Enregistrer", "Accepter tout=Refuser"
     if (/^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save|continuer\s+sans\s+accepter)$/i.test(n)
         || /^(tout\s+(accepter|refuser)|accepter\s+(tout|tous)|refuser\s+(tout|tous)|enregistrer|sauvegarder|save)$/i.test(v)) return false
+    // Prose bannière cookies/consentement passée entre les sections
+    if (/\b(consentement|cookies?|rgpd|gdpr)\b/i.test(n) || /derni[eè]re\s+mise\s+[aà]\s+jour/i.test(v)) return false
+    // Toggles d'UI "Voir plus / View less" capturés comme paires
+    if (/^(plus|moins|more|less|voir\s+(plus|moins))$/i.test(n) || /\b(view|show)\s+(less|more)\b|\bvoir\s+(plus|moins)\b/i.test(v)) return false
     if (/^[#]/.test(n)) return false
     if (/^[.\-–—,;:!?]$/.test(v)) return false
     if (n.length > 80 || v.length > 250) return false
@@ -500,6 +504,16 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
     // `### Avis régionaux`, `### Description sommaire de la notation`) → sortir et bloquer
     // l'entrée en spec mode via `isSpecGroup` qui matche faussement "générale".
     if (/^#{1,5}\s*(avis(?:\s+r[eé]gionaux|\s+clients?|\s+v[eé]rifi[eé]s?)?|reviews?|customer\s+reviews?|user\s+reviews?|note\s+g[eé]n[eé]rale|description\s+sommaire|filtrer\s+les\s+avis|trier\s+les\s+avis|avis\s+aliment[eé]s\s+par|foire\s+aux\s+questions|faq)\s*$/i.test(trimmed)) {
+      inSpecSection = false
+      currentGroup = ''
+      continue
+    }
+
+    // Section bannière cookies/consentement (Cookie Information, OneTrust…) :
+    // leurs sous-sections (`### Strictement nécessaire`, `### Statistique`,
+    // `### Marketing`, `Finalité`, `Expiration`, `Fournisseur`) imitent des
+    // groupes de specs → sortir du spec mode pour ne pas capturer ces faux KV.
+    if (/^#{1,5}\s*(strictement\s+n[eé]cessaire|statistiques?|marketing|pr[eé]f[eé]rences?|non\s+class[eé]s?|cookies?\b.*|consentement|confidentialit[eé]|rgpd|gdpr|finalit[eé]s?)\s*:?\s*$/i.test(trimmed)) {
       inSpecSection = false
       currentGroup = ''
       continue
@@ -647,6 +661,31 @@ export function parseSpecsFromMarkdown(md: string): Specification[] {
           add(n, v, currentGroup)
           continue
         }
+      }
+    }
+
+    // Format 6 : Bullet single-line "Nom␣␣Valeur" à séparation multi-espaces.
+    // Style PAM CMS (Makita) : `*    Énergie  18 V`, `*    Capacité du mandrin  1,5 - 10 mm`.
+    // Le nom et la valeur sont sur la MÊME ligne, séparés par ≥ 2 espaces
+    // (rendu Turndown d'un <li> à colonnes). Certaines lignes embarquent une
+    // description prose APRÈS la valeur (`≤ 2,5 m/s² Décrit les vibrations…`) :
+    // on coupe la valeur avant la première phrase explicative.
+    if (inSpecSection) {
+      const bulletCols = trimmed.match(/^[*•·▪●◦-]\s+(\S[^\n]*?)\s{2,}(\S.*)$/)
+      if (bulletCols) {
+        const n = bulletCols[1].trim()
+        let v = bulletCols[2].trim()
+        // Tronquer la prose explicative : si la valeur dépasse ~60 chars,
+        // garder le préfixe qui se termine par un digit/unité avant le début
+        // d'une phrase (Majuscule + mot ≥ 3 lettres + suite).
+        if (v.length > 60) {
+          const cut = v.match(/^(.{1,60}?[\d²³%°)\]"])\s+[A-ZÀ-Ÿ][a-zà-ÿ']+\s/)
+          if (cut) v = cut[1].trim()
+        }
+        // Nom plausible : ≤ 8 mots, pas un lien/heading, contient des lettres.
+        const okName = n.length >= 2 && n.length <= 80 && n.split(/\s+/).length <= 8
+          && /[a-zà-ÿ]/i.test(n) && !n.includes('](')
+        if (okName && v && add(n, v, currentGroup)) continue
       }
     }
 
