@@ -940,7 +940,20 @@ async function llmExtract(
     throw new Error(`Gemini: ${err.error?.message ?? `HTTP ${res.status}`}`)
   }
 
-  const json = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+  const json = await res.json() as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[]
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
+  }
+  // Comptabilise les tokens (coût live dans le header du modal + stats Firestore).
+  if (json.usageMetadata) {
+    const { recordAiUsage } = await import('@/features/stats/aiUsageTracking')
+    recordAiUsage({
+      provider: 'gemini',
+      model: 'gemini-3.1-pro-preview',
+      inputTokens: json.usageMetadata.promptTokenCount ?? 0,
+      outputTokens: json.usageMetadata.candidatesTokenCount ?? 0,
+    })
+  }
   const text = json.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) throw new Error('Gemini n\'a retourné aucun contenu')
   return JSON.parse(text)

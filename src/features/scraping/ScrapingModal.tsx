@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag } from 'lucide-react'
+import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag, Search, Folder, Coins } from 'lucide-react'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
@@ -9,6 +9,7 @@ import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import { ScrapeTab } from './ScrapeTab'
 import { MapExtractTab } from './MapExtractTab'
 import { CrawlTab } from './CrawlTab'
+import { SearchTab } from './SearchTab'
 import { ScrapingPreview } from './ScrapingPreview'
 import { ProductEnrichedView } from './ProductEnrichedView'
 import { useExcelStore } from '@/stores/excel.store'
@@ -26,13 +27,15 @@ import { useBulkAttachToTaxonomy } from '@/features/taxonomy/useBulkAttachToTaxo
 import { MatchPreviewModal } from '@/components/pim/MatchPreviewModal'
 import { scrapeResultToColumns } from './core/scrapeToRows'
 import { toast } from 'sonner'
+import { useEffect } from 'react'
+import { pushAiUsageListener } from '@/features/stats/aiUsageTracking'
 
 /** Clé synthétique : la modal de scraping n'a pas de feuille — on isole dans
  *  un namespace dédié pour ne pas polluer les enrichissements de feuilles
  *  Excel réelles. */
 const SCRAPE_MODAL_SHEET = '__scrape_modal__'
 
-type Tab = 'scrape' | 'map' | 'crawl'
+type Tab = 'scrape' | 'map' | 'crawl' | 'search'
 
 interface Props {
   open: boolean
@@ -47,6 +50,7 @@ const TABS: { id: Tab; label: string; Icon: typeof Globe; color: string }[] = [
   { id: 'scrape', label: 'Scrape', Icon: Sparkles, color: 'text-indigo-400' },
   { id: 'map', label: 'Map + Extract', Icon: MapIcon, color: 'text-blue-400' },
   { id: 'crawl', label: 'Crawl', Icon: FolderSync, color: 'text-amber-400' },
+  { id: 'search', label: 'Recherche', Icon: Search, color: 'text-emerald-400' },
 ]
 
 export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props) {
@@ -112,6 +116,35 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
 
   // ── PIM branch ───────────────────────────────────────────────────────────
   const pimProjectId = usePimStore((s) => s.currentProjectId)
+  const pimProjects = usePimStore((s) => s.projects)
+  const currentPath = useExcelStore((s) => s.currentPath)
+  const currentFileName = useExcelStore((s) => s.currentFileName)
+  /** Libellé du dossier/base cible de l'import — affiché dans le header.
+   *  Mode PIM : nom du projet. Mode DataPage : chemin + base courante
+   *  (le store PIM y est volontairement vide — garde anti-contamination). */
+  const targetLabel = (() => {
+    if (pimProjectId) {
+      const p = pimProjects.find((pr) => pr.id === pimProjectId)
+      if (p?.name) return p.name
+    }
+    const parts = [...(targetPath ?? currentPath ?? []), currentFileName].filter(Boolean) as string[]
+    if (parts.length > 0) return parts.join(' › ')
+    return null
+  })()
+
+  /** Coût LLM (USD) : dernier traitement + cumul depuis l'ouverture du modal.
+   *  Alimenté par `recordAiUsage` via un listener actif tant que le modal est
+   *  ouvert — couvre extraction Gemini, cascade generateJson, boost fabricant. */
+  const [runCostUsd, setRunCostUsd] = useState(0)
+  const [sessionCostUsd, setSessionCostUsd] = useState(0)
+  useEffect(() => {
+    if (!open) return
+    const unsubscribe = pushAiUsageListener(({ costUsd }) => {
+      setRunCostUsd((c) => c + costUsd)
+      setSessionCostUsd((c) => c + costUsd)
+    })
+    return unsubscribe
+  }, [open])
   const products = usePimStore((s) => s.products)
   const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const upsertProducts = useUpsertProducts(pimProjectId ?? '')
@@ -167,6 +200,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
   })()
 
   const handleScrape = async (mode: ScrapingMode, fields: ScrapingField[], prompt: string, opts: { target?: ExtractionTarget; waitFor?: number; noCache?: boolean; manualBreadcrumb?: string[] }) => {
+    setRunCostUsd(0)
     // Mode "Produit unique" : route vers la pipeline d'enrichissement riche
     // (advantages groupés, variants table, specs communes) au lieu de l'extraction
     // Gemini → ligne plate. Les inputs schema/template/prompt sont ignorés ici :
@@ -203,6 +237,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
    *  escalade Cloud Function Puppeteer (scroll) en filet. Plus d'échec
    *  silencieux : un toast explicite est levé si aucun produit n'est trouvé. */
   const handleCrawl = async (opts: { limit: number; includePaths: string; excludePaths: string }, rootUrl?: string) => {
+    if (!rootUrl) setRunCostUsd(0)
     const targetUrl = rootUrl ?? url
     // Si on est dans un loop multi-URL, on accumule plutôt qu'on reset
     if (!rootUrl) setCrawlPages([])
@@ -265,6 +300,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
    *  Mise à jour de `batch` après chaque produit pour un feedback live. */
   const handleEnrichMany = async (urls: string[]) => {
     if (urls.length === 0) return
+    setRunCostUsd(0)
     batchAbortRef.current = false
     setBatchAborting(false)
     setResult(null)
@@ -628,6 +664,23 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
               Jina AI
             </span>
+            {targetLabel && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shrink-0 max-w-[160px]"
+                title={`Les produits seront importés dans : ${targetLabel}`}
+              >
+                <Folder className="w-3 h-3 shrink-0" />
+                <span className="truncate">{targetLabel}</span>
+              </span>
+            )}
+            <span
+              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0"
+              title={`Coût LLM — dernier traitement : $${runCostUsd.toFixed(4)} · session : $${sessionCostUsd.toFixed(4)} (0 = traitement 100 % déterministe, sans IA)`}
+            >
+              <Coins className="w-3 h-3 shrink-0" />
+              ${runCostUsd.toFixed(runCostUsd < 0.01 ? 4 : 2)}
+              <span className="text-emerald-300/50">· Σ ${sessionCostUsd.toFixed(sessionCostUsd < 0.01 ? 4 : 2)}</span>
+            </span>
             {(() => {
               // Mode PIM : affiche source sélectionnée depuis SheetsColumn
               if (selectedSourceIds.length > 0) {
@@ -758,6 +811,12 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               onEnrichMany={handleEnrichMany}
               batchRunning={batchRunning}
               onUrlSuggestion={(suggested) => setUrl(suggested)}
+            />
+          )}
+          {tab === 'search' && (
+            <SearchTab
+              onEnrichMany={handleEnrichMany}
+              batchRunning={batchRunning}
             />
           )}
           {tab === 'crawl' && (
