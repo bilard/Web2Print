@@ -36,6 +36,26 @@ export interface PlannedSearchResult extends SearchResult {
   /** 'product' = fiche produit unique ; 'listing' = page multi-produits
    *  (catégorie, recherche interne, guide…) — affichée mais non pré-cochée. */
   pageType: 'product' | 'listing'
+  /** Prix de vente repéré dans le snippet (titre/description) — indicatif,
+   *  le prix fiable vient du scrape « Produit complet ». */
+  price?: string
+}
+
+/** Extrait un prix du snippet de résultat (titre + description). Formats
+ *  gérés : « 1 234,56 € », « 299€ », « 299.99 EUR », « € 299 ». Pur — testable. */
+export function parseSnippetPrice(...texts: Array<string | undefined>): string | undefined {
+  const text = texts.filter(Boolean).join(' ')
+  const num = '\\d{1,3}(?:[ \\u00a0\\u202f.]\\d{3})*(?:[.,]\\d{1,2})?'
+  // Seuils non-prix : « livraison offerte dès 30€ », « frais de port dès 5€ »…
+  const isThreshold = (idx: number) =>
+    /livraison|frais de port|port offert|offerte?\s+d[eè]s/i.test(text.slice(Math.max(0, idx - 40), idx))
+  for (const re of [new RegExp(`(${num})\\s?(?:€|EUR\\b)`, 'gi'), new RegExp(`€\\s?(${num})`, 'g')]) {
+    let m: RegExpExecArray | null
+    while ((m = re.exec(text)) !== null) {
+      if (!isThreshold(m.index)) return `${m[1].replace(/[\u00a0\u202f]/g, ' ')} €`
+    }
+  }
+  return undefined
 }
 
 /** Hôtes bruit : communauté, SAV, forum, blog… — jamais des fiches produit. */
@@ -194,6 +214,7 @@ export function mergePlannedResults(
         ...r,
         onTarget: hasTargets && !!site,
         pageType: classifyResultPage(r.url, r.title),
+        price: parseSnippetPrice(r.title, r.description),
       }))
     // Fiches produit d'abord — les pages liste passent en fin de lane (tri stable)
     return [...lane.filter((r) => r.pageType === 'product'), ...lane.filter((r) => r.pageType === 'listing')]

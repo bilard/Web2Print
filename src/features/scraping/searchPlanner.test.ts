@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest'
-import { buildQueries, mergePlannedResults, classifyResultPage } from './searchPlanner'
+import { buildQueries, mergePlannedResults, classifyResultPage, parseSnippetPrice } from './searchPlanner'
+
+describe('parseSnippetPrice', () => {
+  it('formats courants', () => {
+    expect(parseSnippetPrice('Tondeuse Honda à 549,99 € livrée')).toBe('549,99 €')
+    expect(parseSnippetPrice('Promo 299€ au lieu de 349€')).toBe('299 €')
+    expect(parseSnippetPrice('Price: 1 234,56 EUR')).toBe('1 234,56 €')
+    expect(parseSnippetPrice('soldé € 89')).toBe('89 €')
+  })
+  it('titre puis description, undefined sans prix', () => {
+    expect(parseSnippetPrice('Tondeuse HRG 416', 'Dès 449 € chez nous')).toBe('449 €')
+    expect(parseSnippetPrice('Tondeuse thermique tractée 167CC', 'Livraison offerte dès 30 produits')).toBeUndefined()
+  })
+  it('ignore les seuils de livraison (« offerte dès 30€ »)', () => {
+    expect(parseSnippetPrice('Tondeuse 167CC', 'Retrait 2h | Livraison magasin offerte dès 30€ | Paiement 4x')).toBeUndefined()
+    expect(parseSnippetPrice('Tondeuse à 549€', 'Livraison offerte dès 30€')).toBe('549 €')
+  })
+})
 
 describe('classifyResultPage', () => {
   it('fiche produit : slug terminé par une référence numérique', () => {

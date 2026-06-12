@@ -29,6 +29,7 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
               <th className="w-8 px-2 py-2" />
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px]">Titre</th>
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px]">Description</th>
+              <th className="px-2 py-2 text-right font-medium text-white/45 uppercase tracking-wide text-[9px] w-24" title="Prix repéré dans le résultat de recherche — le prix fiable vient du scrape">Prix</th>
               <th className="px-2 py-2 text-left font-medium text-white/45 uppercase tracking-wide text-[9px] w-44">Site</th>
             </tr>
           </thead>
@@ -71,6 +72,11 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                   </td>
                   <td className="px-2 py-2 text-white/40 max-w-[300px]">
                     <span className="line-clamp-2" title={r.description}>{r.description || '—'}</span>
+                  </td>
+                  <td className="px-2 py-2 text-right w-24 whitespace-nowrap">
+                    {r.price
+                      ? <span className="text-emerald-300/90 font-medium">{r.price}</span>
+                      : <span className="text-white/15">—</span>}
                   </td>
                   <td className="px-2 py-2 w-44 max-w-[176px]">
                     <a
