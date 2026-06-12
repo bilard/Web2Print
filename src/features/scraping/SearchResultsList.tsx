@@ -44,6 +44,9 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                 try { return new URL(r.url).hostname.replace(/^www\./, '') } catch { return r.url }
               })()
               const isSel = selected.has(r.url)
+              // Titre reconstruit depuis l'URL (snippet bloqué) → remplacé par le
+              // vrai nom produit dès que le sondage JSON-LD l'a récupéré.
+              const title = (r.titleFromUrl && priceByUrl[r.url]?.name) || r.title || host
               return (
                 <tr
                   key={i}
@@ -58,7 +61,7 @@ export function SearchResultsList({ results, selected, onToggle, onToggleAll, ha
                       : <Square className="w-4 h-4 text-white/20" />}
                   </td>
                   <td className="px-2 py-2 text-white/85 font-medium max-w-[280px]">
-                    <span className="line-clamp-2" title={r.title}>{r.title || host}</span>
+                    <span className="line-clamp-2" title={title}>{title}</span>
                     <span className="flex items-center gap-1 mt-0.5">
                       {hasTargets && r.onTarget && (
                         <span className="inline-flex items-center gap-0.5 text-[9px] px-1 py-px rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">

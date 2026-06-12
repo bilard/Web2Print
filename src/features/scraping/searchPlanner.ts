@@ -43,6 +43,25 @@ export interface PlannedSearchResult extends SearchResult {
   /** Prix de vente repéré dans le snippet (titre/description) — indicatif,
    *  le prix fiable vient du scrape « Produit complet ». */
   price?: string
+  /** True si le snippet était vide (anti-bot côté moteur de recherche) et que
+   *  le titre a été reconstruit depuis le slug de l'URL — le vrai nom arrive
+   *  ensuite via le sondage JSON-LD. */
+  titleFromUrl?: boolean
+}
+
+/** Titre lisible reconstruit depuis le slug de l'URL
+ *  (« …/tondeuse-a-gazon-honda-82876154.html » → « Tondeuse a gazon honda 82876154 »). */
+function humanizeUrlTitle(url: string): string {
+  try {
+    const segments = new URL(url).pathname.split('/').filter(Boolean)
+    const last = decodeURIComponent(segments[segments.length - 1] ?? '')
+      .replace(/\.(html?|php|aspx?)$/i, '')
+      .replace(/[-_+]/g, ' ')
+      .trim()
+    return last ? last.charAt(0).toUpperCase() + last.slice(1) : url
+  } catch {
+    return url
+  }
 }
 
 /** Extrait un prix du snippet de résultat (titre + description). Formats
@@ -240,7 +259,7 @@ export function mergePlannedResults(
   const seen = new Set<string>()
   const lanes = perQuery.map(({ site, results }) => {
     const lane = results
-      .filter((r) => !isJunkUrl(r.url) && hasUsefulSnippet(r))
+      .filter((r) => !isJunkUrl(r.url))
       .filter((r) => {
         try {
           const host = new URL(r.url).hostname.toLowerCase().replace(/^www\./, '')
@@ -249,12 +268,21 @@ export function mergePlannedResults(
           return host === site || host.endsWith('.' + site)
         } catch { return false }
       })
-      .map((r): PlannedSearchResult => ({
-        ...r,
-        onTarget: hasTargets && !!site,
-        pageType: classifyResultPage(r.url, r.title),
-        price: parseSnippetPrice(r.title, r.description),
-      }))
+      .map((r): PlannedSearchResult => {
+        const empty = !hasUsefulSnippet(r)
+        return {
+          ...r,
+          title: empty ? humanizeUrlTitle(r.url) : r.title,
+          titleFromUrl: empty,
+          onTarget: hasTargets && !!site,
+          pageType: classifyResultPage(r.url, empty ? undefined : r.title),
+          price: parseSnippetPrice(r.title, r.description),
+        }
+      })
+      // Snippet vide (moteur bloqué par l'anti-bot du site, ex. Leroy Merlin) :
+      // on ne garde que les fiches produit des sites demandés — titre reconstruit
+      // depuis l'URL, nom/prix complétés ensuite par le sondage JSON-LD.
+      .filter((r) => !r.titleFromUrl || (r.onTarget && r.pageType === 'product'))
     // Fiches produit d'abord — les pages liste passent en fin de lane (tri stable)
     return [...lane.filter((r) => r.pageType === 'product'), ...lane.filter((r) => r.pageType === 'listing')]
   })

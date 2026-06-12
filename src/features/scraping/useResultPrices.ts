@@ -18,6 +18,8 @@ export interface PriceProbe {
   value?: string
   /** Prix barré / avant promo repéré dans le markup (`<del>`, classes old/barré…). */
   original?: string
+  /** Nom produit (JSON-LD `name`) — remplace les titres reconstruits depuis l'URL. */
+  name?: string
 }
 
 const CONCURRENCY = 3
@@ -30,15 +32,18 @@ function formatPrice(n: number, currency: string): string {
   }
 }
 
-async function fetchPriceForUrl(url: string): Promise<Pick<PriceProbe, 'value' | 'original'>> {
+async function fetchPriceForUrl(url: string): Promise<Pick<PriceProbe, 'value' | 'original' | 'name'>> {
   const html = await fetchSourceHtml(url, 12_000)
   if (!html) return {}
-  const offers = parseStructuredDataAny(html)?.offers
-  if (offers?.price == null) return {}
-  const currency = offers.priceCurrency || 'EUR'
-  const original = parseOriginalPriceFromHtml(html, offers.price)
+  const data = parseStructuredDataAny(html)
+  if (!data) return {}
+  const name = data.name?.trim() || undefined
+  if (data.offers?.price == null) return { name }
+  const currency = data.offers.priceCurrency || 'EUR'
+  const original = parseOriginalPriceFromHtml(html, data.offers.price)
   return {
-    value: formatPrice(offers.price, currency),
+    name,
+    value: formatPrice(data.offers.price, currency),
     original: original != null ? formatPrice(original, currency) : undefined,
   }
 }
@@ -54,7 +59,7 @@ export function useResultPrices() {
     const queue = [...urls]
     const worker = async () => {
       for (let url = queue.shift(); url && runIdRef.current === runId; url = queue.shift()) {
-        let prices: Pick<PriceProbe, 'value' | 'original'> = {}
+        let prices: Pick<PriceProbe, 'value' | 'original' | 'name'> = {}
         try {
           prices = await fetchPriceForUrl(url)
         } catch { /* pas de prix structuré — la cellule garde le prix snippet */ }

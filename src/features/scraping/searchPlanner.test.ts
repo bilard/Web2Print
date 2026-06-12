@@ -142,15 +142,27 @@ describe('mergePlannedResults', () => {
     expect(merged.map((m) => m.pageType)).toEqual(['product', 'listing'])
   })
 
-  it('supprime les résultats vides (sans titre utile ni description)', () => {
+  it('snippet vide sur un site demandé : fiche produit gardée, titre reconstruit depuis l\'URL', () => {
     const merged = mergePlannedResults([
       { site: 'leroymerlin.fr', results: [
         { url: 'https://www.leroymerlin.fr/produits/tondeuse-honda-izy-46-89725431.html' }, // ni titre ni description
-        { url: 'https://www.leroymerlin.fr/produits/tondeuse-electrique-honda-82876154.html', title: 'leroymerlin.fr' }, // titre = domaine
-        { url: 'https://www.leroymerlin.fr/produits/tondeuse-batterie-honda-90011223.html', title: 'Tondeuse à batterie Honda HRG 466' },
+        { url: 'https://www.leroymerlin.fr/produits/terrasse-jardin/outils/tondeuse/thermique/' }, // page liste vide → supprimée
       ] },
     ], 10)
-    expect(merged.map((m) => m.url)).toEqual(['https://www.leroymerlin.fr/produits/tondeuse-batterie-honda-90011223.html'])
+    expect(merged).toHaveLength(1)
+    expect(merged[0].title).toBe('Tondeuse honda izy 46 89725431')
+    expect(merged[0].titleFromUrl).toBe(true)
+    expect(merged[0].pageType).toBe('product')
+  })
+
+  it('supprime les résultats vides hors sites demandés', () => {
+    const merged = mergePlannedResults([
+      { results: [
+        { url: 'https://shop.fr/tondeuse-electrique-bosch-rotak-82876154.html' }, // vide, pas de site demandé
+        { url: 'https://shop.fr/tondeuse-batterie-bosch-90011223.html', title: 'Tondeuse à batterie Bosch Rotak 36' },
+      ] },
+    ], 10)
+    expect(merged.map((m) => m.url)).toEqual(['https://shop.fr/tondeuse-batterie-bosch-90011223.html'])
   })
 
   it('tronque au limit demandé', () => {
