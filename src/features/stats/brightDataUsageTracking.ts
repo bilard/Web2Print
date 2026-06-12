@@ -1,6 +1,7 @@
 import { doc, setDoc, increment } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { recordScrapeUsage } from './aiUsageTracking'
 
 /**
  * Bright Data Web Unlocker — pricing par requête réussie.
@@ -16,6 +17,8 @@ const BRIGHTDATA_COST_PER_REQUEST_USD = 0.003
  * Les erreurs Firestore sont silencieuses pour ne pas perturber le scraping.
  */
 export async function recordBrightDataUsage(): Promise<void> {
+  // Indicateur live (header du modal de scraping) — synchrone, avant Firestore.
+  recordScrapeUsage({ platform: 'brightdata', requests: 1 })
   try {
     const userId = useAuthStore.getState().user?.uid
     if (!userId) return

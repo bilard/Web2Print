@@ -3,6 +3,8 @@
  * Utilisé en fallback quand Jina retourne un markdown trop pauvre (anti-bot Akamai).
  */
 
+import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
+
 interface FirecrawlExtract {
   description?: string
   advantages?: string[]
@@ -44,7 +46,9 @@ async function firecrawlPostHtml(
       return null
     }
     const json = await r.json() as { data?: { rawHtml?: string; html?: string } }
-    return json.data?.rawHtml ?? json.data?.html ?? null
+    const html = json.data?.rawHtml ?? json.data?.html ?? null
+    if (html) recordScrapeUsage({ platform: 'firecrawl', requests: 1 })
+    return html
   } catch (e) {
     console.warn('[firecrawl] HTML scrape network error:', e)
     return null
@@ -117,6 +121,7 @@ async function firecrawlPost(
     const markdown = json.data?.markdown ?? ''
     const extract = json.data?.json ?? json.data?.extract
     if (!markdown && !extract) return null
+    recordScrapeUsage({ platform: 'firecrawl', requests: 1 })
     return { markdown, extract }
   } catch (e) {
     console.warn('[firecrawl] scrape network error:', e)

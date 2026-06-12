@@ -7,8 +7,33 @@ import { useAuthStore } from '@/stores/auth.store'
  *  est en vol — leur permet de capter tokens+coût pour l'indicateur live sans
  *  refactoriser tous les sites d'appel. Stack pour supporter les appels
  *  imbriqués (rare mais possible si un provider compose un autre). */
-type UsageListener = (entry: { tokensIn: number; tokensOut: number; costUsd: number }) => void
+type UsageListener = (entry: { tokensIn: number; tokensOut: number; costUsd: number; source?: string }) => void
 const listeners: UsageListener[] = []
+
+// ── Coût des plateformes de scraping (Jina / Firecrawl / Bright Data) ────────
+// Tarifs publics approximatifs — l'objectif est un ordre de grandeur fiable
+// dans l'indicateur live, pas une facturation au centime.
+export type ScrapePlatform = 'jina' | 'firecrawl' | 'brightdata'
+const SCRAPE_RATES: Record<ScrapePlatform, { perMTokens?: number; perRequest?: number }> = {
+  jina:       { perMTokens: 0.02 },    // Reader/Search : $0.02 / 1M tokens
+  firecrawl:  { perRequest: 0.005 },   // ≈ 1 crédit/scrape (plan 3000 cr ≈ $16)
+  brightdata: { perRequest: 0.0015 },  // Web Unlocker ≈ $1.5 / 1000 req
+}
+
+/** Comptabilise un appel à une plateforme de scraping et notifie l'indicateur
+ *  live (même canal que les LLM). `tokens` pour Jina (réel si l'API le
+ *  renvoie, sinon estimé chars/4 par l'appelant) ; `requests` pour les
+ *  plateformes facturées à la requête. */
+export function recordScrapeUsage(p: { platform: ScrapePlatform; tokens?: number; requests?: number }): number {
+  const rate = SCRAPE_RATES[p.platform]
+  const costUsd = (rate.perMTokens ? ((p.tokens ?? 0) / 1_000_000) * rate.perMTokens : 0)
+    + (rate.perRequest ? (p.requests ?? 1) * rate.perRequest : 0)
+  const activeListener = listeners[listeners.length - 1]
+  if (activeListener) {
+    activeListener({ tokensIn: p.tokens ?? 0, tokensOut: 0, costUsd, source: p.platform })
+  }
+  return costUsd
+}
 
 /** Enregistre un listener pour la durée d'un bloc — pattern push/pop pour
  *  supporter les appels concurrents. Renvoie une fonction de désinscription. */

@@ -23,6 +23,7 @@ import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { extractStructuredDataFromUrl } from '@/features/scraping/core/structuredDataFetcher'
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
+import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 import { isHostKnownBlocked, markHostBlocked } from '@/features/scraping/core/brightDataFallback'
 import { brightDataScrapeWithDocs, getLastBrightDataError, getLastBrightDataSuccess } from '@/features/scraping/core/brightDataFallback'
 import { getSiteCookieForUrl } from '@/lib/siteCookies'
@@ -1269,6 +1270,7 @@ export async function jinaSearch(query: string, limit = 10): Promise<SearchResul
         .slice(0, limit)
         .map((d) => ({ url: d.url, title: d.title, description: d.description }))
       console.log('[jina-search] [s.jina.ai] parsed', results.length, 'results')
+      recordScrapeUsage({ platform: 'jina', tokens: results.length * 500 })
       if (results.length > 0) return results
     } else {
       console.warn('[jina-search] [s.jina.ai] HTTP', res.status, '— fallback DDG Lite')
@@ -1358,7 +1360,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
   }
 
   const json = await res.json() as {
-    data?: { content?: string; images?: Record<string, string>; links?: Record<string, string> }
+    data?: { content?: string; images?: Record<string, string>; links?: Record<string, string>; usage?: { tokens?: number } }
     content?: string; images?: Record<string, string>; links?: Record<string, string>
   }
   let md = json?.data?.content || json?.content || ''
@@ -1366,6 +1368,7 @@ async function jinaScrapeMarkdown(pageUrl: string): Promise<string | null> {
   const linksMap = json?.data?.links || json?.links
 
   if (!md || md.length < 50) return null
+  recordScrapeUsage({ platform: 'jina', tokens: json?.data?.usage?.tokens ?? Math.round(md.length / 4) })
 
   console.log('[jina-reader] JSON mode → content:', md.length, 'chars, images:', Object.keys(imagesMap ?? {}).length, ', links:', Object.keys(linksMap ?? {}).length)
 
@@ -2323,6 +2326,7 @@ async function jinaScrapeMaufacturerPage(pageUrl: string): Promise<DeepScrapeRes
     md = sanitizeJinaMarkdown(md)
 
     console.log('[jina-manufacturer] POST got', md.length, 'chars (with JS accordion expand)')
+    recordScrapeUsage({ platform: 'jina', tokens: Math.round(md.length / 4) })
 
     // Injecter images et documents PDF depuis le JSON response
     if (postImages && typeof postImages === 'object') {

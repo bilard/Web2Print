@@ -137,14 +137,22 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
    *  ouvert — couvre extraction Gemini, cascade generateJson, boost fabricant. */
   const [runCostUsd, setRunCostUsd] = useState(0)
   const [sessionCostUsd, setSessionCostUsd] = useState(0)
+  const [costBySource, setCostBySource] = useState<Record<string, number>>({})
   useEffect(() => {
     if (!open) return
-    const unsubscribe = pushAiUsageListener(({ costUsd }) => {
+    const unsubscribe = pushAiUsageListener(({ costUsd, source }) => {
       setRunCostUsd((c) => c + costUsd)
       setSessionCostUsd((c) => c + costUsd)
+      const key = source ?? 'llm'
+      setCostBySource((m) => ({ ...m, [key]: (m[key] ?? 0) + costUsd }))
     })
     return unsubscribe
   }, [open])
+  const COST_SOURCE_LABELS: Record<string, string> = { llm: 'LLM', jina: 'Jina', firecrawl: 'Firecrawl', brightdata: 'Bright Data' }
+  const costBreakdown = Object.entries(costBySource)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => `${COST_SOURCE_LABELS[k] ?? k} $${v.toFixed(4)}`)
+    .join(' · ')
   const products = usePimStore((s) => s.products)
   const selectedSourceIds = usePimStore((s) => s.selectedSourceIds)
   const upsertProducts = useUpsertProducts(pimProjectId ?? '')
@@ -675,7 +683,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             )}
             <span
               className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0"
-              title={`Coût LLM — dernier traitement : $${runCostUsd.toFixed(4)} · session : $${sessionCostUsd.toFixed(4)} (0 = traitement 100 % déterministe, sans IA)`}
+              title={`Coût — dernier traitement : $${runCostUsd.toFixed(4)} · session : $${sessionCostUsd.toFixed(4)}${costBreakdown ? `\n${costBreakdown}` : ''}\n(LLM aux tarifs réels par modèle ; Jina/Firecrawl/Bright Data estimés aux tarifs publics)`}
             >
               <Coins className="w-3 h-3 shrink-0" />
               ${runCostUsd.toFixed(runCostUsd < 0.01 ? 4 : 2)}

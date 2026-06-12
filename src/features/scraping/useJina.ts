@@ -9,6 +9,7 @@ import { functions } from '@/lib/firebase/config'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
 import { selectDiscoveryEntries } from './core/discoverLinks'
+import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
 
 /** Cloud Function Puppeteer : extrait le breadcrumb visible d'une page
  *  e-commerce (contourne les protections anti-bot qui servent aux crawlers
@@ -654,6 +655,7 @@ interface JinaReaderResponse {
     links?: Record<string, string>
     images?: Record<string, string>
     html?: string
+    usage?: { tokens?: number }
   }
 }
 
@@ -722,6 +724,8 @@ export async function jinaRead(url: string, opts: { timeout?: number; noCache?: 
       durationMs: Math.round(performance.now() - startedAt),
       response: json.data.content ?? '',
     })
+    // Coût Jina live (tokens réels si l'API les renvoie, sinon estimés chars/4)
+    recordScrapeUsage({ platform: 'jina', tokens: json.data.usage?.tokens ?? Math.round((json.data.content?.length ?? 0) / 4) })
     return json.data
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
