@@ -24,6 +24,7 @@ import { extractStructuredDataFromUrl } from '@/features/scraping/core/structure
 import type { StructuredProductData } from '@/features/scraping/core/structuredData'
 import { firecrawlScrape } from '@/features/scraping/core/firecrawlFallback'
 import { recordScrapeUsage } from '@/features/stats/aiUsageTracking'
+import { recordPipelineRun } from '@/lib/pipelineLog'
 import { isHostKnownBlocked, markHostBlocked } from '@/features/scraping/core/brightDataFallback'
 import { brightDataScrapeWithDocs, getLastBrightDataError, getLastBrightDataSuccess } from '@/features/scraping/core/brightDataFallback'
 import { getSiteCookieForUrl } from '@/lib/siteCookies'
@@ -3429,7 +3430,40 @@ function parseImagesFromMarkdown(md: string): string[] {
  * Zustand via `getState()` ; `onRunning` pilote le spinner UI quand appelé depuis le hook (no-op en
  * headless). Le corps est INCHANGÉ par rapport à l'ancienne `enrich` du hook.
  */
+/** Wrapper d'observabilité : persiste l'issue + les dernières étapes de chaque
+ *  run dans Firestore `pipelineRuns` (diagnostic prod sans reproduction).
+ *  Couvre TOUS les appelants (PIM, node workflow, Telegram) — le moteur réel
+ *  est enrichProductCoreInner. */
 export async function enrichProductCore(
+  input: EnrichmentInput,
+  onRunning?: (b: boolean) => void,
+): Promise<EnrichedProduct | null> {
+  const t0 = Date.now()
+  const label = [input.title, input.brand].filter(Boolean).join(' ') || input.knownUrl || input.rowId
+  const finish = (status: 'success' | 'error', error?: string) => {
+    const { logs, entries } = useEnrichmentStore.getState()
+    const key = enrichmentKey(input.sheetName, input.rowId)
+    recordPipelineRun({
+      module: 'enrichment',
+      label,
+      status,
+      durationMs: Date.now() - t0,
+      error: error ?? entries[key]?.error ?? undefined,
+      steps: logs[key],
+      meta: { sheetName: input.sheetName, rowId: input.rowId, knownUrl: input.knownUrl ?? null },
+    })
+  }
+  try {
+    const product = await enrichProductCoreInner(input, onRunning)
+    finish(product ? 'success' : 'error')
+    return product
+  } catch (err) {
+    finish('error', err instanceof Error ? err.message : String(err))
+    throw err
+  }
+}
+
+async function enrichProductCoreInner(
   input: EnrichmentInput,
   onRunning?: (b: boolean) => void,
 ): Promise<EnrichedProduct | null> {

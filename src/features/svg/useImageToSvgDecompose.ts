@@ -27,6 +27,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { FabricImage, Group, Rect, Textbox } from 'fabric'
 import type { Canvas, FabricObject } from 'fabric'
 import { toast } from 'sonner'
+import { recordPipelineRun } from '@/lib/pipelineLog'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore as _syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
@@ -2029,10 +2030,13 @@ export function useImageToSvgDecompose() {
 
     setState((s) => ({ ...s, isRunning: true }))
     const toastId = toast.loading('Décomposition…', { description: 'Google Vision API analyse l\'image' })
+    const t0 = Date.now()
+    const steps: string[] = []
 
     try {
       const { count: kept } = await decomposeOnCanvas(canvas, {
         log: (level, msg) => {
+          steps.push(`[${level}] ${msg}`)
           if (level === 'error') toast.error(msg, { id: toastId })
           else if (level === 'warn') toast.loading(msg, { id: toastId })
           else toast.loading(msg, { id: toastId })
@@ -2044,10 +2048,18 @@ export function useImageToSvgDecompose() {
       })
       setState({ canDecompose: true, isRunning: false, hasDecomposition: kept > 0 })
       toast.success(`${kept} textes éditables ajoutés`, { id: toastId })
+      recordPipelineRun({
+        module: 'decompose', label: 'Décomposition éditeur', status: 'success',
+        durationMs: Date.now() - t0, steps, meta: { kept },
+      })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setState((s) => ({ ...s, isRunning: false }))
       toast.error('Échec de la décomposition', { id: toastId, description: msg })
+      recordPipelineRun({
+        module: 'decompose', label: 'Décomposition éditeur', status: 'error',
+        durationMs: Date.now() - t0, steps, error: msg,
+      })
     }
   }, [])
 

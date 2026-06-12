@@ -433,6 +433,16 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
 
+    // ── Logs de pipelines (observabilité) ────────────────────────────────────
+    // Issue + dernières étapes des runs longs (enrichissement PIM, décompo
+    // Image/PDF→SVG) écrits par recordPipelineRun (src/lib/pipelineLog.ts).
+    // Create-only par le propriétaire ; lecture de ses propres runs.
+    match /pipelineRuns/{runId} {
+      allow read:   if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // ── Telegram entrant (2a) ──────────────────────────────────
     // File des messages reçus : lisible/modifiable par tout utilisateur connecté
     // (l'app perso est mono-utilisateur ; le mapping chat_id→uid est hors périmètre 2a).
