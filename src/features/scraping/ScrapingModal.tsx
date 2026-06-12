@@ -825,6 +825,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
             <SearchTab
               onEnrichMany={handleEnrichMany}
               batchRunning={batchRunning}
+              products={batch.flatMap((b) => (b.product ? [b.product] : []))}
             />
           )}
           {tab === 'crawl' && (

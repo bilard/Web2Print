@@ -1,19 +1,25 @@
 import { useState } from 'react'
-import { Search, Loader2, Sparkles, Wand2 } from 'lucide-react'
+import { Search, Loader2, Sparkles } from 'lucide-react'
+import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { runPlannedSearch, type SearchPlan, type PlannedSearchResult } from './searchPlanner'
 import { SearchResultsList } from './SearchResultsList'
+import { SearchPlanChips } from './SearchPlanChips'
+import { SearchFieldsTable } from './SearchFieldsTable'
 
 interface Props {
   /** Lance le pipeline d'enrichissement complet (Produit complet) sur les URLs cochées. */
   onEnrichMany: (urls: string[]) => Promise<void> | void
   /** True quand le batch d'enrichissement est en cours. */
   batchRunning: boolean
+  /** Produits déjà enrichis par le batch en cours/terminé — alimente le tableau
+   *  récapitulatif des champs demandés dans le prompt. */
+  products: EnrichedProduct[]
 }
 
 /** Onglet « Recherche » : le prompt utilisateur est interprété par un LLM
  *  (sujet produit + enseignes ciblées) → une requête `site:` par enseigne,
  *  fusion des résultats, puis scrape « Produit complet » des URLs cochées. */
-export function SearchTab({ onEnrichMany, batchRunning }: Props) {
+export function SearchTab({ onEnrichMany, batchRunning, products }: Props) {
   const [prompt, setPrompt] = useState('')
   const [limit, setLimit] = useState(10)
   const [searching, setSearching] = useState(false)
@@ -96,24 +102,10 @@ export function SearchTab({ onEnrichMany, batchRunning }: Props) {
         </button>
       </div>
 
-      {plan && plan.queries.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span className="inline-flex items-center gap-1 text-white/35 shrink-0">
-            <Wand2 className="w-3 h-3" /> Recherche interprétée :
-          </span>
-          {plan.queries.map((q, i) => (
-            <span
-              key={i}
-              className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300/80 border border-indigo-500/20"
-              title={q.query}
-            >
-              {q.site ? `${q.site} · ${plan.subject}` : plan.subject}
-            </span>
-          ))}
-          {plan.wantedFields.length > 0 && (
-            <span className="text-white/30">→ {plan.wantedFields.join(', ')}</span>
-          )}
-        </div>
+      {plan && <SearchPlanChips plan={plan} />}
+
+      {plan && plan.wantedFields.length > 0 && (
+        <SearchFieldsTable fields={plan.wantedFields} products={products} />
       )}
 
       {error && (
