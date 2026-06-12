@@ -510,7 +510,21 @@ function detectSeparatorRects(ctx: CanvasRenderingContext2D, width: number, heig
   return rects
 }
 
-function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: number, color: string, fontWeight: number = 400, styles?: TextStyles, align: 'left' | 'center' | 'right' = 'left', lineHeightOverride?: number): Textbox {
+/**
+ * Normalise un champ de fusion OCRisé par Vision avec des espaces parasites
+ * (`{ { Libelle Article } }`) vers la forme stricte `{{Libelle Article}}` que le
+ * moteur de publipostage attend (regex `/\{\{([^}]+)\}\}/`). Sans ça la
+ * substitution n'a jamais lieu et le champ s'affiche brut, espaces compris.
+ */
+function normalizeMergeFields(s: string): string {
+  return s.replace(/\{\s*\{\s*([^{}]*?)\s*\}\s*\}/g, (_m, inner: string) => `{{${inner.replace(/\s+/g, ' ').trim()}}}`)
+}
+
+function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: number, color: string, fontWeight: number = 400, styles?: TextStyles, align: 'left' | 'center' | 'right' = 'left', lineHeightOverride?: number, mergeField: boolean = false): Textbox {
+  // Champ de fusion {{…}} : même règle que le PDF→SVG (annotateMergeFieldFrames).
+  // Texte normalisé + CADRE FIXE (largeur = bbox, jamais d'auto-fit) → la
+  // substitution garde l'alignement/wrapping du design d'origine.
+  if (mergeField) text = normalizeMergeFields(text)
   // Width minimum basé sur la ligne la PLUS LONGUE (le texte peut contenir des
   // `\n` reconstruits) — pas le total des caractères, sinon une Textbox 2 lignes
   // serait dimensionnée pour les 2 lignes bout à bout.
@@ -546,7 +560,10 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
   // Toute sur-largeur décalerait le centre vers la droite (la textbox est ancrée à
   // gauche), désalignant le bloc des autres (cas « Panachage… » : estimation 830 vs
   // bbox 609 → centre décalé de +110 px).
-  const finalWidth = align === 'left' ? minWidth : box.width
+  // Cadre fixe pour les champs de fusion (même fer-à-gauche) : la largeur reste
+  // celle du design → un libellé long passe à la ligne dans le cadre au lieu de
+  // déborder à droite (comportement IText) à la substitution.
+  const finalWidth = mergeField ? box.width : align === 'left' ? minWidth : box.width
   // Pour les graisses très lourdes, Arial Black donne un rendu plus fidèle aux
   // créas retail (où -50%, gros prix utilisent typiquement Arial Black / Heavy).
   const fontFamily = fontWeight >= 900 ? 'Arial Black' : 'Arial'
@@ -574,6 +591,9 @@ function buildTextbox(text: string, box: VisionParagraph['bbox'], fontSizePx: nu
     role: 'image-decompose-text',
     name: '',
     type: 'text',
+    // mergeFrame : signale au moteur de publipostage un cadre fixe (pas d'auto-fit,
+    // alignement du design conservé). templateText pré-capturé pour fiabilité.
+    ...(mergeField ? { mergeFrame: true, templateText: text } : {}),
   }
   return tb
 }
@@ -1159,7 +1179,9 @@ async function decomposeHeuristic(
     }
     for (const it of zone.items) {
       const { text, styles } = buildTextAndStyles(it.para.words, it.fontSize)
-      const tb = buildTextbox(text, it.para.bbox, it.fontSize, it.color, it.fontWeight, styles)
+      const isMerge = isPlaceholderPara(it.para)
+      const mAlign = isMerge ? (detectTextAlign(it.para.words, it.para.bbox) ?? 'left') : 'left'
+      const tb = buildTextbox(text, it.para.bbox, it.fontSize, it.color, it.fontWeight, styles, mAlign, undefined, isMerge)
       canvas.add(tb)
       addedTextboxes.push(tb)
       renderedTexts?.push(it.para.text)
@@ -1486,7 +1508,7 @@ async function decomposeSemantic(
     const lineHeight = (nLines > 1 && align !== 'left')
       ? Math.min(Math.max(para.bbox.height / (nLines * fontSize), 0.75), 1.3)
       : undefined
-    canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles, align, lineHeight))
+    canvas.add(buildTextbox(text, para.bbox, fontSize, color, fontWeight, styles, align, lineHeight, isPlaceholderPara(para)))
     renderedTexts?.push(para.text)
   }
 
