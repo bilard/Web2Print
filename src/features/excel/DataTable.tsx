@@ -16,6 +16,7 @@ import type { ExcelColumn, ExcelRow, CellValue, FieldTypeId } from './types'
 import { useCan } from '@/features/access/useAccess'
 import { useThemeStore } from '@/stores/theme.store'
 import { rowCompleteness, completenessTone } from './completeness'
+import { cellFreshness } from './fieldFreshness'
 import { GalleryView } from './GalleryView'
 import { LayoutGrid, Table as TableIcon } from 'lucide-react'
 
@@ -853,6 +854,8 @@ function DataRow({
   const enriched = isRowEnriched(row)
   // Score de complétude sur les colonnes visibles (pastille + tooltip des manquants).
   const completeness = rowCompleteness(row, visibleColumns)
+  // Référence temporelle unique par rendu de ligne (pastilles de fraîcheur).
+  const nowMs = Date.now()
   const tone = completenessTone(completeness.pct)
   const toneCls =
     tone === 'emerald' ? 'bg-emerald-400/80' : tone === 'amber' ? 'bg-amber-400/80' : 'bg-red-400/80'
@@ -919,6 +922,14 @@ function DataRow({
           : row[col.key]
         const isEditing = editingCell?.rowId === row._id && editingCell?.colKey === col.key && !isFormulaCol
         const colorStyle = getCellColorStyle(value, col)
+        // Fraîcheur par champ (produits PIM) : pastille ambre ≥ 30 j, rouge ≥ 90 j.
+        const fresh = cellFreshness(row, col.key, nowMs)
+        const freshDot = fresh && !isEditing ? (
+          <span
+            title={`Champ mis à jour il y a ${fresh.ageDays} j`}
+            className={`shrink-0 w-1.5 h-1.5 rounded-full ${fresh.tone === 'red' ? 'bg-red-400/80' : 'bg-amber-400/80'}`}
+          />
+        ) : null
 
         return (
           <td
@@ -956,9 +967,11 @@ function DataRow({
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 />
                 <span className="text-[10px] text-white/25 truncate">{String(value).split('/').pop()}</span>
+                {freshDot}
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
+                {freshDot}
                 <span
                   className={`leading-snug truncate ${
                     col.fieldType === 'checkbox'

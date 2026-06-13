@@ -47,6 +47,10 @@ export interface ProductField {
   value: CellValue
   winningSourceId: string
   overridden?: boolean
+  /** Dernier changement de VALEUR (fraîcheur par champ — pastilles d'âge).
+   *  Absent sur les produits antérieurs à 2026-06-13 ; re-merger identique
+   *  ne le rafraîchit pas (sinon l'âge ne voudrait rien dire). */
+  updatedAt?: number
 }
 
 export interface SourceLink {

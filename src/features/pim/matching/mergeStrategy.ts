@@ -101,7 +101,7 @@ function createMaster(
   const fields: Record<string, ProductField> = {}
   for (const [k, v] of Object.entries(row.snapshot)) {
     if (PER_SOURCE_FIELDS.has(k)) continue
-    fields[k] = { value: v, winningSourceId: sourceId }
+    fields[k] = { value: v, winningSourceId: sourceId, updatedAt: now }
   }
   const link: SourceLink = makeSourceLink(sourceId, row.snapshot)
   return {
@@ -135,7 +135,15 @@ function mergeIntoMaster(
       // Source primaire gagne par défaut → on ne change pas si valeur existante
       if (target.primarySourceId !== sourceId) continue
     }
-    newFields[k] = { ...existing, value: v, winningSourceId: sourceId }
+    // Fraîcheur : updatedAt ne bouge que si la VALEUR change — re-merger des
+    // données identiques ne doit pas rajeunir le champ.
+    const valueChanged = !existing || JSON.stringify(existing.value) !== JSON.stringify(v)
+    newFields[k] = {
+      ...existing,
+      value: v,
+      winningSourceId: sourceId,
+      ...(valueChanged ? { updatedAt: now } : {}),
+    }
   }
   const link: SourceLink = makeSourceLink(sourceId, snapshot)
   // Remplace le link existant pour cette sourceId, ou ajoute
