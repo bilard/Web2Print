@@ -31,6 +31,28 @@ describe('help.store', () => {
     expect(currentSectionId).toBe('editor')
   })
 
+  it('openDrawer jumps to the active context article (images → dam)', () => {
+    useHelpStore.getState().setActiveContext('images')
+    useHelpStore.getState().openDrawer()
+    expect(useHelpStore.getState().currentSectionId).toBe('dam')
+  })
+
+  it('toggleDrawer re-syncs to the context article when opening', () => {
+    // L'utilisateur avait lu un autre article puis fermé le panneau…
+    useHelpStore.setState({ currentSectionId: 'dam', open: false })
+    useHelpStore.getState().setActiveContext('data')
+    useHelpStore.getState().toggleDrawer()
+    expect(useHelpStore.getState().open).toBe(true)
+    expect(useHelpStore.getState().currentSectionId).toBe('pim')
+  })
+
+  it('openDrawer keeps the selection when no context is set', () => {
+    useHelpStore.setState({ currentSectionId: 'editor', open: false })
+    useHelpStore.getState().setActiveContext(null)
+    useHelpStore.getState().openDrawer()
+    expect(useHelpStore.getState().currentSectionId).toBe('editor')
+  })
+
   it('setHighlightTarget stores the id', () => {
     useHelpStore.getState().setHighlightTarget('toolbar.text')
     expect(useHelpStore.getState().highlightTarget).toBe('toolbar.text')

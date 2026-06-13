@@ -1,16 +1,26 @@
 import { create } from 'zustand'
+import { resolveContextArticle, type HelpContext } from './helpContext'
 
 interface HelpState {
   open: boolean
   currentSectionId: string | null
   highlightTarget: string | null
   searchQuery: string
+  /** Module/écran actif de l'app (sections Dashboard + `editor`), pour pré-sélectionner l'article. */
+  activeContext: HelpContext | null
   openDrawer: () => void
   closeDrawer: () => void
   toggleDrawer: () => void
   goToSection: (id: string) => void
+  setActiveContext: (ctx: HelpContext | null) => void
   setHighlightTarget: (id: string | null) => void
   setSearchQuery: (q: string) => void
+}
+
+/** À l'ouverture : article du contexte courant si résolu, sinon on garde la sélection. */
+function openState(s: HelpState): Partial<HelpState> {
+  const target = resolveContextArticle(s.activeContext)
+  return target ? { open: true, currentSectionId: target } : { open: true }
 }
 
 let resetTimer: ReturnType<typeof setTimeout> | null = null
@@ -20,12 +30,17 @@ export const useHelpStore = create<HelpState>((set) => ({
   currentSectionId: null,
   highlightTarget: null,
   searchQuery: '',
+  activeContext: null,
 
-  openDrawer: () => set({ open: true }),
+  // Ouverture « générique » (bouton ?, ⇧?) → bascule sur l'article du contexte courant.
+  // `goToSection` reste le chemin ciblé (MenuLink, recherche, sommaire) qui contourne ça.
+  openDrawer: () => set((s) => openState(s)),
   closeDrawer: () => set({ open: false }),
-  toggleDrawer: () => set((s) => ({ open: !s.open })),
+  toggleDrawer: () => set((s) => (s.open ? { open: false } : openState(s))),
 
   goToSection: (id) => set({ open: true, currentSectionId: id }),
+
+  setActiveContext: (ctx) => set({ activeContext: ctx }),
 
   setSearchQuery: (q) => set({ searchQuery: q }),
 

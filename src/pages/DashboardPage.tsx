@@ -26,6 +26,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { LibraryTaxonomyFilter } from '@/components/shared/LibraryTaxonomyFilter'
 import { DamPage } from '../features/dam/components/DamPage'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
+import { useHelpStore } from '@/features/help/help.store'
 import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
@@ -48,6 +49,7 @@ export default function DashboardPage() {
   const permissions = useAccessStore((s) => s.permissions)
   const navigate = useNavigate()
   const location = useLocation()
+  const setHelpContext = useHelpStore((s) => s.setActiveContext)
   const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
   const [activeSection, setActiveSection] = useState<Section>(initialSection)
   // Ouvre la section demandée par la navigation (ex: lien d'aide « Importer un fichier »
@@ -62,6 +64,11 @@ export default function DashboardPage() {
     registerTourSectionNavigator((section) => setActiveSection(section as Section))
     return () => registerTourSectionNavigator(null)
   }, [])
+  // Aligne l'aide contextuelle sur le module ouvert : ouvrir le panneau d'aide depuis
+  // une section pré-sélectionne l'article correspondant (DAM → « DAM », PIM → « PIM »…).
+  useEffect(() => {
+    setHelpContext(activeSection)
+  }, [activeSection, setHelpContext])
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
     return window.localStorage.getItem('dashboard:sidebarOpen') !== 'false'
