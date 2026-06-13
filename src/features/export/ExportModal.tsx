@@ -64,9 +64,17 @@ export function ExportModal({ onClose }: ExportModalProps) {
       setStatus('exporting')
       setError(null)
       try {
-        const n = declineToPages(targets)
+        const { created, usedFallback } = await withProgress(
+          'Adaptation IA des formats…',
+          () => declineToPages(targets),
+        )
         setStatus('done')
-        notify.success('Déclinaisons créées', `${n} page${n > 1 ? 's' : ''} ajoutée${n > 1 ? 's' : ''} — ajuste-les puis exporte.`)
+        const pages = `${created} page${created > 1 ? 's' : ''} ajoutée${created > 1 ? 's' : ''}`
+        if (usedFallback) {
+          notify.warning('Déclinaisons créées (repli géométrique)', `${pages} — adaptation IA indisponible, mise à l'échelle simple appliquée.`)
+        } else {
+          notify.success('Déclinaisons créées', `${pages} — réadaptées par IA, ajuste-les puis exporte.`)
+        }
         setTimeout(onClose, 1500)
       } catch (err) {
         console.error(err)
@@ -268,7 +276,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
                 })}
               </div>
               <p className="text-[11px] text-white/40 leading-relaxed">
-                Crée une <span className="text-white/60">page éditable</span> par format : le design est mis à l'échelle et centré, puis ajustable à la main avant export. Aucune génération d'image (gratuit).
+                Crée une <span className="text-white/60">page éditable</span> par format : la mise en page est <span className="text-white/60">réadaptée automatiquement au ratio (IA)</span>, puis ajustable à la main avant export. Repli sur mise à l'échelle simple si l'IA est indisponible.
               </p>
             </div>
           )}
