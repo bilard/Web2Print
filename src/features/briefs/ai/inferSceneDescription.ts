@@ -1,8 +1,7 @@
-import { getApiKey } from '@/lib/apiKeys'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import type { Brief } from '@/features/briefs/types'
 
 const MODEL = 'gemini-3.1-pro-preview'
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
 
 interface GroundedResponse {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
@@ -19,9 +18,6 @@ interface GroundedResponse {
  * En cas d'échec, retombe sur un décor générique.
  */
 export async function inferSceneDescription(brief: Brief): Promise<string> {
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) return 'a professional environment'
-
   const v = brief.client.values as Record<string, unknown>
   const str = (k: string) => (typeof v[k] === 'string' ? (v[k] as string).trim() : '')
   const company = str('companyName')
@@ -48,19 +44,12 @@ Be specific and visually concrete: include the actual venue architecture/atmosph
 
 Respond with the sentence only, no preamble.`
 
-  const ctrl = new AbortController()
-  const timeoutId = setTimeout(() => ctrl.abort(), 45_000)
   try {
-    const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.5 },
-      }),
-      signal: ctrl.signal,
-    })
+    const res = await llmPostWithFallback('gemini', MODEL, {
+      contents: [{ parts: [{ text: prompt }] }],
+      tools: [{ google_search: {} }],
+      generationConfig: { temperature: 0.5 },
+    }, 45_000)
     if (!res.ok) {
       console.warn('[inferSceneDescription] HTTP', res.status, (await res.text()).slice(0, 200))
       return 'a professional environment'
@@ -84,7 +73,5 @@ Respond with the sentence only, no preamble.`
       console.warn('[inferSceneDescription] échec', err)
     }
     return 'a professional environment'
-  } finally {
-    clearTimeout(timeoutId)
   }
 }

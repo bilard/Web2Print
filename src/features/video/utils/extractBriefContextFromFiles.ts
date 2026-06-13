@@ -1,8 +1,6 @@
-import { getApiKey } from '@/lib/apiKeys'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 
 const MULTIMODAL_MODEL = 'gemini-3.1-pro-preview'
-const ENDPOINT = (model: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 
 const MAX_INLINE_BYTES = 2 * 1024 * 1024
 const MAX_TEXT_CHARS = 50_000
@@ -60,8 +58,6 @@ export async function extractBriefContextFromFiles(
   const usedFiles: string[] = []
   if (files.length === 0) return { context: '', skipped, usedFiles }
 
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) throw new Error('Clé Gemini absente. Configure-la dans Réglages.')
 
   const parts: GeminiPart[] = [{ text: SYSTEM_PROMPT }]
 
@@ -96,25 +92,19 @@ export async function extractBriefContextFromFiles(
     return { context: '', skipped, usedFiles }
   }
 
-  const ctrl = new AbortController()
-  const linkAbort = () => ctrl.abort()
-  if (opts?.signal) opts.signal.addEventListener('abort', linkAbort)
-  const timeout = setTimeout(() => ctrl.abort(), 120_000)
-
   try {
-    const res = await fetch(`${ENDPOINT(MULTIMODAL_MODEL)}?key=${apiKey}`, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 1024,
-          thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false },
-        },
-      }),
-    })
+    const res = await llmPostWithFallback('gemini', MULTIMODAL_MODEL, {
+      contents: [{ parts }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 1024,
+        thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false },
+      },
+    }, 120_000)
+    // L'annulation externe est honorée à la frontière de l'appel (le proxy
+    // n'accepte pas de signal) : si l'appelant a annulé pendant la requête,
+    // on jette le résultat.
+    if (opts?.signal?.aborted) throw new DOMException('Annulé', 'AbortError')
 
     if (!res.ok) {
       const body = await res.text()
@@ -126,7 +116,5 @@ export async function extractBriefContextFromFiles(
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
     return { context: text.trim(), skipped, usedFiles }
   } finally {
-    clearTimeout(timeout)
-    if (opts?.signal) opts.signal.removeEventListener('abort', linkAbort)
   }
 }

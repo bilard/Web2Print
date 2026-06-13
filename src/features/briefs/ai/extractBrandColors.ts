@@ -1,7 +1,6 @@
-import { getApiKey } from '@/lib/apiKeys'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 
 const MODEL = 'gemini-2.5-flash'
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
 
 interface ExtractedBrandColors {
   primary?: string
@@ -35,37 +34,27 @@ export async function extractBrandColorsFromFile(
   file: File | Blob,
   mimeType: string,
 ): Promise<ExtractedBrandColors> {
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) return {}
   // Gemini accepte PDF et images en inline_data. ZIP non supporté.
   const supported = mimeType === 'application/pdf' || mimeType.startsWith('image/')
   if (!supported) return {}
 
   try {
     const data = await fileToBase64(file)
-    const ctrl = new AbortController()
-    const timeoutId = setTimeout(() => ctrl.abort(), 120_000)
-    const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: PROMPT },
-              { inline_data: { mime_type: mimeType, data } },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: SCHEMA,
-          temperature: 0.1,
+    const res = await llmPostWithFallback('gemini', MODEL, {
+      contents: [
+        {
+          parts: [
+            { text: PROMPT },
+            { inline_data: { mime_type: mimeType, data } },
+          ],
         },
-      }),
-    })
-    clearTimeout(timeoutId)
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: SCHEMA,
+        temperature: 0.1,
+      },
+    }, 120_000)
     if (!res.ok) return {}
     const json = (await res.json()) as {
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>

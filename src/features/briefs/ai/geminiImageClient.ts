@@ -1,10 +1,9 @@
-import { getApiKey } from '@/lib/apiKeys'
 import { base64ToBlob } from './base64ToBlob'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import { recordAiUsage } from '@/features/stats/aiUsageTracking'
 
 const MODEL = 'gemini-3.1-flash-image-preview'
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
 
 interface GenerateImageResult {
   blob: Blob
@@ -78,9 +77,6 @@ export async function generateImage(
   referenceImages: ReferenceImage[] = [],
   options: GenerateImageOptions = {},
 ): Promise<GenerateImageResult> {
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) throw new Error('Clé Gemini absente. Configurez-la dans Réglages.')
-
   const activity = useAiActivityStore.getState()
   const activityId = nextAiActivityId('img')
   activity.start({
@@ -91,7 +87,7 @@ export async function generateImage(
     kind: 'image',
   })
   try {
-    const result = await generateImageInner(apiKey, prompt, referenceImages, options)
+    const result = await generateImageInner(prompt, referenceImages, options)
     activity.end(activityId, 'success', {
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
@@ -106,7 +102,6 @@ export async function generateImage(
 }
 
 async function generateImageInner(
-  apiKey: string,
   prompt: string,
   referenceImages: ReferenceImage[],
   options: GenerateImageOptions,
@@ -134,28 +129,21 @@ async function generateImageInner(
   const imageConfig: Record<string, string> = { imageSize }
   if (aspectRatio !== 'auto') imageConfig.aspectRatio = aspectRatio
 
-  const body = JSON.stringify({
+  const requestBody = {
     contents: [{ parts }],
     generationConfig: {
       responseModalities,
       imageConfig,
     },
-  })
+  }
 
   let lastErr: Error = new Error('Gemini Image : échec inconnu')
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const ctrl = new AbortController()
-    const timeoutId = setTimeout(() => ctrl.abort(), 90_000)
-    let res: Response
+    let res: Awaited<ReturnType<typeof llmPostWithFallback>>
     try {
-      res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        signal: ctrl.signal,
-      })
+      // Proxy serveur (clé Firestore + budget) avec fallback direct standard.
+      res = await llmPostWithFallback('gemini', MODEL, requestBody, 90_000)
     } catch (err) {
-      clearTimeout(timeoutId)
       if ((err as Error).name === 'AbortError') {
         lastErr = new Error('Gemini Image : timeout après 90s')
       } else {
@@ -168,7 +156,6 @@ async function generateImageInner(
       }
       throw lastErr
     }
-    clearTimeout(timeoutId)
 
     if (!res.ok) {
       const text = await res.text()
@@ -196,7 +183,7 @@ async function generateImageInner(
         console.warn(
           `[geminiImageClient] Réponse text-only — retry forcé IMAGE-only. Texte: "${(textPart ?? '').slice(0, 120)}"`,
         )
-        return await generateImageInner(apiKey, prompt, referenceImages, options, true)
+        return await generateImageInner(prompt, referenceImages, options, true)
       }
       console.error('[geminiImageClient] Réponse sans image', JSON.stringify(data).slice(0, 1500))
       throw new Error(

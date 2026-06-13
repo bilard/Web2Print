@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useNanoBanaStore } from '@/stores/nanobana.store'
 import { useImageGallery } from './useImageGallery'
-import { getApiKey } from '@/lib/apiKeys'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import type { GenerationRequest } from './types'
 
 // Image IA, fallback to other live image models if not available
@@ -57,12 +57,6 @@ export function useImageGeneration() {
 
   const generateImage = useCallback(
     async (request: GenerationRequest) => {
-      const apiKey = getApiKey('gemini')
-      if (!apiKey) {
-        setGenerationError('Clé API Image IA manquante — configurez-la dans Paramètres')
-        return null
-      }
-
       setGenerating(true)
       setGenerationError(null)
 
@@ -98,18 +92,12 @@ export function useImageGeneration() {
           },
         }
 
-        // Try each model until one succeeds
-        let response: Response | null = null
+        // Try each model until one succeeds — via le proxy serveur (clé
+        // Firestore + budget bloquant), fallback direct standard.
+        let response: Awaited<ReturnType<typeof llmPostWithFallback>> | null = null
         let lastError = ''
         for (const model of NANO_BANANA_MODELS) {
-          response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(requestBody),
-            },
-          )
+          response = await llmPostWithFallback('gemini', model, requestBody, 90_000)
           if (response.ok) {
             break
           }

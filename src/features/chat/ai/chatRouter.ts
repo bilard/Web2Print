@@ -8,8 +8,8 @@
  *  - OpenAI / DeepSeek / OpenRouter : messages role/content (incl. system)
  */
 
-import { getApiKey } from '@/lib/apiKeys'
 import { recordAiUsage, pushAiUsageListener } from '@/features/stats/aiUsageTracking'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { useAiActivityStore, nextAiActivityId } from '@/stores/aiActivity.store'
 import {
   type LLMProviderId,
@@ -123,58 +123,34 @@ const TIMEOUT_MS = 180_000
 const DEFAULT_TEMP = 0.7
 const DEFAULT_MAX_TOKENS = 4096
 
-function withTimeout(): { signal: AbortSignal; clear: () => void } {
-  const ctrl = new AbortController()
-  const id = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
-  return { signal: ctrl.signal, clear: () => clearTimeout(id) }
-}
-
 // ─── Claude (Anthropic) ──────────────────────────────────────────────────────
 
 async function chatClaude(opts: GenerateTextOptions, model: string): Promise<string> {
-  const apiKey = getApiKey('anthropic')
-  if (!apiKey) throw new Error('Clé Anthropic absente.')
-
-  const { signal, clear } = withTimeout()
-  let res: Response
-  try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
-        temperature: opts.temperature ?? DEFAULT_TEMP,
-        ...(opts.system ? { system: opts.system } : {}),
-        messages: opts.messages.map((m) => {
-          // Multimodal : images d'abord, texte ensuite (Anthropic recommend cet
-          // ordre). Pour les messages sans images, on garde la forme string.
-          if (m.role === 'user' && m.imageDataUris && m.imageDataUris.length > 0) {
-            const blocks: Array<Record<string, unknown>> = []
-            for (const uri of m.imageDataUris) {
-              const match = uri.match(/^data:([^;]+);base64,(.+)$/)
-              if (!match) continue
-              blocks.push({
-                type: 'image',
-                source: { type: 'base64', media_type: match[1], data: match[2] },
-              })
-            }
-            blocks.push({ type: 'text', text: m.content || '' })
-            return { role: m.role, content: blocks }
-          }
-          return { role: m.role, content: m.content }
-        }),
-      }),
-    })
-  } finally {
-    clear()
+  const requestBody = {
+    model,
+    max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+    temperature: opts.temperature ?? DEFAULT_TEMP,
+    ...(opts.system ? { system: opts.system } : {}),
+    messages: opts.messages.map((m) => {
+      // Multimodal : images d'abord, texte ensuite (Anthropic recommend cet
+      // ordre). Pour les messages sans images, on garde la forme string.
+      if (m.role === 'user' && m.imageDataUris && m.imageDataUris.length > 0) {
+        const blocks: Array<Record<string, unknown>> = []
+        for (const uri of m.imageDataUris) {
+          const match = uri.match(/^data:([^;]+);base64,(.+)$/)
+          if (!match) continue
+          blocks.push({
+            type: 'image',
+            source: { type: 'base64', media_type: match[1], data: match[2] },
+          })
+        }
+        blocks.push({ type: 'text', text: m.content || '' })
+        return { role: m.role, content: blocks }
+      }
+      return { role: m.role, content: m.content }
+    }),
   }
+  const res = await llmPostWithFallback('claude', model, requestBody, TIMEOUT_MS)
 
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 2000)}`)
 
@@ -198,9 +174,6 @@ async function chatClaude(opts: GenerateTextOptions, model: string): Promise<str
 // ─── Gemini (Google) ─────────────────────────────────────────────────────────
 
 async function chatGemini(opts: GenerateTextOptions, model: string): Promise<string> {
-  const apiKey = getApiKey('gemini')
-  if (!apiKey) throw new Error('Clé Gemini absente.')
-
   const contents = opts.messages.map((m) => {
     const parts: Array<Record<string, unknown>> = []
     if (m.role === 'user' && m.imageDataUris) {
@@ -217,37 +190,24 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
     return { role: m.role === 'assistant' ? 'model' : 'user', parts }
   })
 
-  const { signal, clear } = withTimeout()
-  let res: Response
-  try {
-    res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          ...(opts.system
-            ? { systemInstruction: { role: 'user', parts: [{ text: opts.system }] } }
-            : {}),
-          generationConfig: {
-            temperature: opts.temperature ?? DEFAULT_TEMP,
-            maxOutputTokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
-            // Gemini 3.x : thinking dynamique consomme maxOutputTokens et tronque la
-            // sortie. On force le plus bas niveau supporté. Les anciens modèles
-            // (1.5/2.0/2.5) ignorent ce champ ou erreur → on ne l'applique qu'à G3+.
-            ...(/^gemini-3/i.test(model)
-              ? { thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false } }
-              : {}),
-            ...(opts.responseFormat === 'json' ? { responseMimeType: 'application/json' } : {}),
-          },
-        }),
-      },
-    )
-  } finally {
-    clear()
+  const requestBody = {
+    contents,
+    ...(opts.system
+      ? { systemInstruction: { role: 'user', parts: [{ text: opts.system }] } }
+      : {}),
+    generationConfig: {
+      temperature: opts.temperature ?? DEFAULT_TEMP,
+      maxOutputTokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+      // Gemini 3.x : thinking dynamique consomme maxOutputTokens et tronque la
+      // sortie. On force le plus bas niveau supporté. Les anciens modèles
+      // (1.5/2.0/2.5) ignorent ce champ ou erreur → on ne l'applique qu'à G3+.
+      ...(/^gemini-3/i.test(model)
+        ? { thinkingConfig: { thinkingLevel: 'LOW', includeThoughts: false } }
+        : {}),
+      ...(opts.responseFormat === 'json' ? { responseMimeType: 'application/json' } : {}),
+    },
   }
+  const res = await llmPostWithFallback('gemini', model, requestBody, TIMEOUT_MS)
 
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 2000)}`)
 
@@ -290,9 +250,6 @@ async function chatGemini(opts: GenerateTextOptions, model: string): Promise<str
 // ─── OpenAI-compatible (factor) ──────────────────────────────────────────────
 
 interface OpenAICompatibleConfig {
-  endpoint: string
-  apiKey: string
-  extraHeaders?: Record<string, string>
   providerKey: 'openai' | 'deepseek' | 'openrouter'
 }
 
@@ -319,28 +276,14 @@ async function chatOpenAICompatible(
     }
   }
 
-  const { signal, clear } = withTimeout()
-  let res: Response
-  try {
-    res = await fetch(cfg.endpoint, {
-      method: 'POST',
-      signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${cfg.apiKey}`,
-        ...(cfg.extraHeaders ?? {}),
-      },
-      body: JSON.stringify({
-        model,
-        temperature: opts.temperature ?? DEFAULT_TEMP,
-        max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
-        messages,
-        ...(opts.responseFormat === 'json' ? { response_format: { type: 'json_object' } } : {}),
-      }),
-    })
-  } finally {
-    clear()
+  const requestBody = {
+    model,
+    temperature: opts.temperature ?? DEFAULT_TEMP,
+    max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+    messages,
+    ...(opts.responseFormat === 'json' ? { response_format: { type: 'json_object' as const } } : {}),
   }
+  const res = await llmPostWithFallback(cfg.providerKey, model, requestBody, TIMEOUT_MS)
 
   if (!res.ok) throw new Error(`${cfg.providerKey} ${res.status}: ${(await res.text()).slice(0, 2000)}`)
 
@@ -362,37 +305,15 @@ async function chatOpenAICompatible(
 }
 
 async function chatOpenAI(opts: GenerateTextOptions, model: string): Promise<string> {
-  const apiKey = getApiKey('openai')
-  if (!apiKey) throw new Error('Clé OpenAI absente.')
-  return chatOpenAICompatible(opts, model, {
-    endpoint: 'https://api.openai.com/v1/chat/completions',
-    apiKey,
-    providerKey: 'openai',
-  })
+  return chatOpenAICompatible(opts, model, { providerKey: 'openai' })
 }
 
 async function chatDeepSeek(opts: GenerateTextOptions, model: string): Promise<string> {
-  const apiKey = getApiKey('deepseek')
-  if (!apiKey) throw new Error('Clé DeepSeek absente.')
-  return chatOpenAICompatible(opts, model, {
-    endpoint: 'https://api.deepseek.com/v1/chat/completions',
-    apiKey,
-    providerKey: 'deepseek',
-  })
+  return chatOpenAICompatible(opts, model, { providerKey: 'deepseek' })
 }
 
 async function chatOpenRouter(opts: GenerateTextOptions, model: string): Promise<string> {
-  const apiKey = getApiKey('openrouter')
-  if (!apiKey) throw new Error('Clé OpenRouter absente.')
-  const cfg = {
-    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
-    apiKey,
-    providerKey: 'openrouter' as const,
-    extraHeaders: {
-      'HTTP-Referer': window.location.origin,
-      'X-Title': 'IBS-Studio',
-    },
-  }
+  const cfg = { providerKey: 'openrouter' as const }
   try {
     return await chatOpenAICompatible(opts, model, cfg)
   } catch (err) {

@@ -15,6 +15,7 @@
  */
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
+import { getApiKey } from '@/lib/apiKeys'
 
 export type LlmProxyProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'openrouter'
 
@@ -42,6 +43,79 @@ export interface LlmHttpResponse {
 }
 
 const callLlmProxy = httpsCallable<LlmProxyRequest, LlmProxyResult>(functions, 'llmProxy', { timeout: 300_000 })
+
+const DIRECT_KEY_IDS: Record<LlmProxyProvider, string> = {
+  claude: 'anthropic',
+  gemini: 'gemini',
+  openai: 'openai',
+  deepseek: 'deepseek',
+  openrouter: 'openrouter',
+}
+
+/** Requête direct-navigateur équivalente à celle du serveur (proxyCore) —
+ *  utilisée par le fallback générique quand le proxy est indisponible. */
+function buildDirectRequest(provider: LlmProxyProvider, model: string, apiKey: string): { url: string; headers: Record<string, string> } {
+  switch (provider) {
+    case 'claude':
+      return {
+        url: 'https://api.anthropic.com/v1/messages',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+      }
+    case 'gemini': {
+      const version = /^gemini-3\.5/.test(model) ? 'v1' : 'v1beta'
+      return { url: `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${apiKey}`, headers: {} }
+    }
+    case 'openai':
+      return { url: 'https://api.openai.com/v1/chat/completions', headers: { Authorization: `Bearer ${apiKey}` } }
+    case 'deepseek':
+      return { url: 'https://api.deepseek.com/v1/chat/completions', headers: { Authorization: `Bearer ${apiKey}` } }
+    case 'openrouter':
+      return {
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
+          'X-Title': 'IBS-Studio',
+        },
+      }
+  }
+}
+
+/**
+ * Variante clé-en-main : POST via le proxy, avec un fallback direct STANDARD
+ * (même endpoint/headers que le serveur). Pour les routeurs qui n'ont pas
+ * besoin d'un fallback sur mesure — la clé locale n'est requise que si le
+ * proxy est indisponible.
+ */
+export async function llmPostWithFallback(
+  provider: LlmProxyProvider,
+  model: string,
+  body: Record<string, unknown>,
+  timeoutMs = 180_000,
+): Promise<LlmHttpResponse | Response> {
+  return llmFetchViaProxy(provider, model, body, async () => {
+    const keyId = DIRECT_KEY_IDS[provider]
+    const apiKey = getApiKey(keyId)
+    if (!apiKey) throw new Error(`Clé ${keyId} absente. Configurez-la dans Réglages.`)
+    const { url, headers } = buildDirectRequest(provider, model, apiKey)
+    const ctrl = new AbortController()
+    const timeoutId = setTimeout(() => ctrl.abort(), timeoutMs)
+    try {
+      return await fetch(url, {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify(body),
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  })
+}
 
 export async function llmFetchViaProxy(
   provider: LlmProxyProvider,

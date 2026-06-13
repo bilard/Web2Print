@@ -5,6 +5,7 @@ import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import { ENRICHMENT_COLUMNS, buildEnrichmentColumn, serializeEnriched } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import { buildTaxonomyFromLevels } from '@/features/excel/taxonomyBuilder'
 import { getApiKey } from '@/lib/apiKeys'
+import { llmPostWithFallback } from '@/lib/llmProxyClient'
 import { functions } from '@/lib/firebase/config'
 import { appendDebugEntry, genId } from '@/features/scraping-hub/debugLog'
 import { sanitizeSchemaForGemini } from '@/features/briefs/ai/geminiClient'
@@ -897,9 +898,6 @@ async function llmExtract(
   images?: Record<string, string>,
   links?: Record<string, string>,
 ): Promise<unknown> {
-  const geminiKey = getApiKey('gemini')
-  if (!geminiKey) throw new Error('Clé API Gemini requise pour l\'extraction structurée (onglet IA → Paramètres)')
-
   const imagesContext = images && Object.keys(images).length > 0
     ? `\n\n── IMAGES trouvées sur la page ──\n${Object.entries(images).map(([alt, url]) => `- ${alt || '(sans alt)'}: ${url}`).join('\n')}`
     : ''
@@ -921,23 +919,16 @@ async function llmExtract(
     docsContext,
   ].join('')
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${geminiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: userPrompt }],
-        }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: sanitizeSchemaForGemini(schema),
-          temperature: 0.1,
-        },
-      }),
+  const res = await llmPostWithFallback('gemini', 'gemini-3.1-pro-preview', {
+    contents: [{
+      parts: [{ text: userPrompt }],
+    }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: sanitizeSchemaForGemini(schema),
+      temperature: 0.1,
     },
-  )
+  })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
