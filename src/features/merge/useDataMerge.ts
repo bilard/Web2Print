@@ -271,6 +271,20 @@ export function useDataMerge() {
     const canvas = globalFabricCanvas
     if (!canvas) return
 
+    // ANCRAGE des blocs de champs : substitutions + triggerLayout recentrent
+    // le groupe à chaque passe → dérive cumulative (le bloc « montait » à
+    // chaque changement de ligne). On mémorise la bbox absolue de chaque bloc
+    // AVANT la passe et on la ré-ancre après — les déplacements manuels de
+    // l'utilisateur restent respectés (le snapshot part de la position courante).
+    const groupAnchors = new Map<import('fabric').Group, { left: number; top: number }>()
+    for (const obj of collectObjectsDeep(canvas.getObjects())) {
+      const g = (obj as FabricObjectWithData).group
+      if (obj.data?.templateText && g && !groupAnchors.has(g)) {
+        const bb = g.getBoundingRect()
+        groupAnchors.set(g, { left: bb.left, top: bb.top })
+      }
+    }
+
     for (const obj of collectObjectsDeep(canvas.getObjects())) {
       if (obj.data?.isGrid || obj.data?.isPageBg) continue
 
@@ -356,6 +370,18 @@ export function useDataMerge() {
 
     // Champs vidés par « Supprimer la ligne si vide » : masque + compacte le bloc.
     compactHiddenMergeFields(canvas)
+
+    // Ré-ancre chaque bloc sur sa bbox d'avant la passe (zéro dérive).
+    for (const [g, before] of groupAnchors) {
+      g.setCoords()
+      const after = g.getBoundingRect()
+      const dx = before.left - after.left
+      const dy = before.top - after.top
+      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+        g.set({ left: (g.left ?? 0) + dx, top: (g.top ?? 0) + dy })
+        g.setCoords()
+      }
+    }
 
     canvas.requestRenderAll()
   }, [loadImage])
