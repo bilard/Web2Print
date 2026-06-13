@@ -622,7 +622,7 @@ function BindingEditor({ selectedObjectId, columns, setFitToZone }: { selectedOb
               Réduire pour tenir dans la zone
             </span>
             <span className="block text-[10px] text-white/30 leading-tight mt-0.5">
-              La taille du texte s'adapte pour chaque produit afin de ne jamais déborder de la boîte actuelle.
+              Réduit le texte de chaque produit pour tenir dans la boîte <span className="text-white/50">telle qu'elle est maintenant</span>. Astuce : active-le quand la boîte est à la taille voulue (ex. sur le produit au texte le plus long).
             </span>
           </span>
         </label>

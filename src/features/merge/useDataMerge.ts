@@ -466,12 +466,16 @@ export function useDataMerge() {
     if (!(obj instanceof IText)) return
     if (!obj.data) obj.data = {}
     if (enabled) {
-      // Replie l'échelle dans la police, puis capture la boîte actuelle = zone.
+      // Capture la boîte TELLE QU'AFFICHÉE (avant tout repli d'échelle) = zone,
+      // puis replie scaleY dans la police pour une base propre.
+      const zoneW = obj.getScaledWidth()
+      const zoneH = obj.getScaledHeight()
       const sy = obj.scaleY ?? 1
       obj.set({ fontSize: (obj.fontSize ?? 16) * sy, scaleX: 1, scaleY: 1 })
+      if (obj instanceof Textbox) obj.set({ width: zoneW })
       ;(obj as unknown as { initDimensions?: () => void }).initDimensions?.()
       obj.data.baseFontSize = obj.fontSize
-      obj.data.fitZone = { width: obj.getScaledWidth(), height: obj.getScaledHeight() }
+      obj.data.fitZone = { width: zoneW, height: zoneH }
       obj.data.fitToZone = true
     } else {
       obj.data.fitToZone = false
