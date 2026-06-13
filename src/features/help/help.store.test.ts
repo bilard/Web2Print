@@ -8,6 +8,8 @@ describe('help.store', () => {
       open: false,
       currentSectionId: null,
       highlightTarget: null,
+      activeContext: null,
+      followContext: false,
     })
     vi.useFakeTimers()
   })
@@ -51,6 +53,31 @@ describe('help.store', () => {
     useHelpStore.getState().setActiveContext(null)
     useHelpStore.getState().openDrawer()
     expect(useHelpStore.getState().currentSectionId).toBe('editor')
+  })
+
+  it('live-refreshes the article when the module changes while following context', () => {
+    useHelpStore.getState().setActiveContext('images')
+    useHelpStore.getState().openDrawer() // affiche « dam », followContext = true
+    expect(useHelpStore.getState().currentSectionId).toBe('dam')
+    // L'utilisateur passe au module PIM sans fermer l'aide → l'article suit en live.
+    useHelpStore.getState().setActiveContext('data')
+    expect(useHelpStore.getState().currentSectionId).toBe('pim')
+  })
+
+  it('stops following context once the user picks an article manually', () => {
+    useHelpStore.getState().setActiveContext('images')
+    useHelpStore.getState().openDrawer()
+    useHelpStore.getState().goToSection('export') // choix explicite
+    useHelpStore.getState().setActiveContext('data') // change de module…
+    // …mais on ne l'arrache pas de l'article qu'il lit.
+    expect(useHelpStore.getState().currentSectionId).toBe('export')
+    expect(useHelpStore.getState().activeContext).toBe('data')
+  })
+
+  it('does not change the article when the drawer is closed', () => {
+    useHelpStore.setState({ currentSectionId: 'dam', open: false, followContext: true })
+    useHelpStore.getState().setActiveContext('data')
+    expect(useHelpStore.getState().currentSectionId).toBe('dam')
   })
 
   it('setHighlightTarget stores the id', () => {
