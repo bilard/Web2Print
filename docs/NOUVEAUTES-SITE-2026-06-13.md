@@ -5,7 +5,7 @@
 > **Commit** : `432c47c` (master) · **Déploiement** : `firebase deploy --only hosting` ✅
 > **Style** : copie + tags + blocs « Comprendre ce module », **et désormais les maquettes UI animées** de chaque module concerné. Pas de nouveau module (les 18 sont conservés).
 >
-> **Mise à jour 2026-06-13 (2ᵉ passe)** : les 6 maquettes animées illustrent maintenant les nouveautés (commit `71bfe6c`). Voir la colonne « Maquette animée » ajoutée à chaque point.
+> **Mise à jour 2026-06-13 (2ᵉ passe)** : les 6 maquettes animées illustrent maintenant les nouveautés (commit `71bfe6c`, déployé). Voir la ligne « Maquette animée » ajoutée à chaque point.
 
 ## Comment vérifier
 
