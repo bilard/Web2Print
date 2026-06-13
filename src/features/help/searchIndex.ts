@@ -53,6 +53,7 @@ function extractText(block: HelpBlock): string {
     case 'accordion':
       return block.items.map((it) => `${it.title} ${it.md}`).join(' ')
     case 'mockup':
+    case 'module-links':
       return ''
     default: {
       const _exhaustive: never = block

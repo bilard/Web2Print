@@ -36,6 +36,8 @@ export type HelpBlock =
   | { type: 'screenshot'; src: string; alt: string; caption?: string }
   | { type: 'mockup'; Component: ComponentType }
   | { type: 'menu-link'; target: MenuTarget; label: string; icon?: LucideIcon }
+  /** Liste dynamique des modules visibles (générée depuis `MODULE_ITEMS`, filtrée par rôle). */
+  | { type: 'module-links' }
   | { type: 'shortcut'; keys: string[]; label: string }
   | { type: 'accordion'; items: AccordionItem[] }
 

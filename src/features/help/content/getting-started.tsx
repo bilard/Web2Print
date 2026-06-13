@@ -1,4 +1,4 @@
-import { LayoutGrid, FilePlus, Upload, Library, Image as ImageIcon, FileSpreadsheet, FolderTree, Database, BookOpen, Workflow, Send, MessageSquare, Film } from 'lucide-react'
+import { LayoutGrid } from 'lucide-react'
 import type { HelpSection } from './types'
 import { DashboardMock } from './mockups/DashboardMock'
 
@@ -27,80 +27,9 @@ export const gettingStarted: HelpSection = {
       type: 'text',
       md: `### Sections du dashboard
 
-Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'app. Cliquer un lien ci-dessous met l'élément en évidence sur l'écran (ouvre d'abord le tableau de bord si nécessaire).`,
+Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'app. Cliquer un lien ci-dessous met l'élément en évidence sur l'écran (ouvre d'abord le tableau de bord si nécessaire). _La liste reflète les modules réellement disponibles pour ton compte._`,
     },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.blank' },
-      label: 'Nouveau document',
-      icon: FilePlus,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.import' },
-      label: 'Importer',
-      icon: Upload,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.library' },
-      label: 'Bibliothèque',
-      icon: Library,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images' },
-      label: 'DAM',
-      icon: ImageIcon,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.data' },
-      label: 'PIM',
-      icon: FileSpreadsheet,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.taxonomies' },
-      label: 'Taxonomies',
-      icon: FolderTree,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-templates' },
-      label: 'Templates scraping',
-      icon: Database,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.scraping-hub' },
-      label: 'Scraping Hub',
-      icon: BookOpen,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.workflows' },
-      label: 'Workflows',
-      icon: Workflow,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.telegram' },
-      label: 'Telegram',
-      icon: Send,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.hyperframes' },
-      label: 'Animation',
-      icon: Film,
-    },
-    {
-      type: 'menu-link',
-      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.chat' },
-      label: 'Chat IA',
-      icon: MessageSquare,
-    },
+    { type: 'module-links' },
     {
       type: 'text',
       md: `### Créer un projet vierge

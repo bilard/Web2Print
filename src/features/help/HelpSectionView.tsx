@@ -4,6 +4,7 @@ import { ScreenshotBlock } from './blocks/ScreenshotBlock'
 import { MockupBlock } from './blocks/MockupBlock'
 import { ShortcutBlock } from './blocks/ShortcutBlock'
 import { AccordionBlock } from './blocks/AccordionBlock'
+import { ModuleLinksBlock } from './blocks/ModuleLinksBlock'
 import { MenuLink } from './MenuLink'
 import { useHelpStore } from './help.store'
 import { highlightNode } from './highlightText'
@@ -42,6 +43,8 @@ function BlockRenderer({ block }: { block: HelpBlock }) {
       return <MockupBlock Component={block.Component} />
     case 'menu-link':
       return <MenuLink target={block.target} label={block.label} icon={block.icon} />
+    case 'module-links':
+      return <ModuleLinksBlock />
     case 'shortcut':
       return <ShortcutBlock keys={block.keys} label={block.label} />
     case 'accordion':
