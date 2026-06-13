@@ -132,7 +132,11 @@ const clamp = (n: number, lo: number, hi: number): number =>
 /**
  * Applique le placement LLM (boîtes en %) aux objets sérialisés vers un format
  * cible. Le LLM PLACE (région), le calcul DIMENSIONNE (cover/contain, ratio
- * préservé). Objets sans placement ou sans dimensions → repli homothétique.
+ * préservé). Tombent dans le repli homothétique (`projectObjectsToFormat`) :
+ * (1) les objets sans placement (aucun `el` pour leur index), ET (2) les objets
+ * dont les dimensions courantes sont nulles (`curW<=0`/`curH<=0`, p. ex. un
+ * groupe Fabric dont width/height ne sont pas sérialisés) MÊME si un `el` de
+ * placement existe — car cover/contain exige une taille source non nulle.
  * Renvoie de NOUVEAUX objets (sources non mutées).
  */
 export function applyRelayout<T extends DesignObject>(

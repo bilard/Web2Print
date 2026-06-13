@@ -71,6 +71,14 @@ describe('applyRelayout', () => {
     expect((out.data as { role?: string }).role).toBe('title')
     expect(out.type).toBe('textbox')
   })
+
+  it('objet sans dimensions (group) avec placement → repli homothétique sans crash', () => {
+    const group: DesignObject = { type: 'group', left: 0, top: 0, scaleX: 1, scaleY: 1, data: { role: 'background' } }
+    const els: RelayoutElement[] = [{ i: 0, xPct: 0, yPct: 0, wPct: 1, hPct: 1, fit: 'cover' }]
+    const [out] = applyRelayout([group], 1000, 1000, dst.w, dst.h, els)
+    expect(out).toBeDefined()
+    expect(out.type).toBe('group')
+  })
 })
 
 describe('RelayoutSchema', () => {
