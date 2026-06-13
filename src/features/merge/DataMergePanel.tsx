@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useReducer } from 'react'
 import { IText, FabricImage } from 'fabric'
-import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft, Wand2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft, Wand2, Shrink } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type FormulaResultType, type FormulaConfig } from '@/stores/merge.store'
@@ -33,7 +33,7 @@ function normalizeForStorage(formula: string, columns: { key: string; label: str
 }
 
 export function DataMergePanel() {
-  const { isConnected, dataSource, columns, currentRowIndex, totalRows, nextRow, prevRow, disconnectSource, connectSource } =
+  const { isConnected, dataSource, columns, currentRowIndex, totalRows, nextRow, prevRow, disconnectSource, connectSource, setFitToZone } =
     useDataMerge()
   const selectedObjectId = useEditorStore((s) => s.selectedObjectId)
   const idmlSourceFileName = useEditorStore((s) => s.idmlSourceFileName)
@@ -147,7 +147,7 @@ export function DataMergePanel() {
 
       {/* Binding pour objet sélectionné */}
       {selectedObjectId && (
-        <BindingEditor selectedObjectId={selectedObjectId} columns={columns} />
+        <BindingEditor selectedObjectId={selectedObjectId} columns={columns} setFitToZone={setFitToZone} />
       )}
 
       {/* Actions */}
@@ -551,12 +551,17 @@ function VariableTags({ columns }: { columns: { key: string; label: string }[] }
   )
 }
 
-function BindingEditor({ selectedObjectId, columns }: { selectedObjectId: string; columns: { key: string; label: string }[] }) {
+function BindingEditor({ selectedObjectId, columns, setFitToZone }: { selectedObjectId: string; columns: { key: string; label: string }[]; setFitToZone: (objectId: string, enabled: boolean) => void }) {
+  const [, force] = useReducer((x) => x + 1, 0)
   const canvas = globalFabricCanvas
   if (!canvas) return null
 
-  const obj = canvas.getObjects().find((o) => o.data?.id === selectedObjectId)
+  // Profondeur : un champ de fusion vit souvent dans un groupe (flyer décomposé).
+  const obj = collectObjectsDeep(canvas.getObjects()).find((o) => o.data?.id === selectedObjectId)
   if (!obj || obj.data?.isGrid || obj.data?.isPageBg) return null
+
+  const isMergeTextField = obj instanceof IText && (!!obj.data?.templateText || hasPlaceholders(obj.text ?? ''))
+  const fitOn = obj.data?.fitToZone === true
 
   const bindableProps: { key: string; label: string; icon: typeof Type }[] = []
   if (obj instanceof FabricImage) {
@@ -602,6 +607,26 @@ function BindingEditor({ selectedObjectId, columns }: { selectedObjectId: string
           </div>
         ))}
       </div>
+
+      {isMergeTextField && (
+        <label className="flex items-start gap-2 mt-2 px-1 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={fitOn}
+            onChange={(e) => { setFitToZone(selectedObjectId, e.target.checked); force() }}
+            className="mt-0.5 accent-indigo-500"
+          />
+          <span className="flex-1">
+            <span className="flex items-center gap-1.5 text-xs text-white/70 group-hover:text-white">
+              <Shrink className="w-3.5 h-3.5 text-white/30" />
+              Réduire pour tenir dans la zone
+            </span>
+            <span className="block text-[10px] text-white/30 leading-tight mt-0.5">
+              La taille du texte s'adapte pour chaque produit afin de ne jamais déborder de la boîte actuelle.
+            </span>
+          </span>
+        </label>
+      )}
     </div>
   )
 }

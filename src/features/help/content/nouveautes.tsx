@@ -39,7 +39,8 @@ _Détails : section **L'éditeur**._`,
 
 - Source **« Produits PIM (re-skin) »** dans le panneau Données : chaque produit devient une ligne — naviguer entre les produits re-skinne le visuel instantanément.
 - **« Lier automatiquement »** : prix, titre et description détectés et liés en un clic.
-- **« Fond IA (Nano Banana) »** : régénère le fond d'un flyer décomposé à partir d'un prompt, sans toucher aux textes éditables.`,
+- **« Fond IA (Nano Banana) »** : régénère le fond d'un flyer décomposé à partir d'un prompt, sans toucher aux textes éditables.
+- **« Réduire pour tenir dans la zone »** (champ texte sélectionné) : la taille du texte s'adapte à chaque produit pour ne jamais déborder de sa boîte — idéal pour des noms ou descriptions de longueurs très variables.`,
     },
     {
       type: 'menu-link',

@@ -8,6 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
+import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
 import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
 import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
@@ -82,6 +83,66 @@ function compactHiddenMergeFields(canvas: NonNullable<typeof globalFabricCanvas>
 type FabricObjectWithData = import('fabric').FabricObject & {
   data?: Record<string, unknown>
   group?: import('fabric').Group
+}
+
+export interface FitZone { width: number; height: number }
+
+/**
+ * « Réduire pour tenir dans la zone » : abaisse la taille de police (et celle
+ * des styles par caractère, ex. le « € » plus petit) jusqu'à ce que la valeur
+ * tienne dans la zone capturée. Une seule ligne → contrainte de largeur
+ * (linéaire) ; cadre qui wrappe (Textbox) → contrainte de hauteur (itératif,
+ * le wrapping rend la hauteur non linéaire). Les styles sont supposés déjà
+ * remappés à leur taille d'origine (remapStyles) au moment de l'appel.
+ */
+function fitTextToZone(obj: IText, zone: FitZone, baseFontSize: number): void {
+  const isWrap = obj instanceof Textbox
+  const anyObj = obj as unknown as {
+    styles?: Record<string, Record<string, { fontSize?: number }>>
+    calcTextWidth?: () => number
+    initDimensions?: () => void
+  }
+  // Tailles par caractère telles que posées par remapStyles (= originales).
+  const styleSizes: { l: string; c: string; size: number }[] = []
+  if (anyObj.styles) {
+    for (const [l, line] of Object.entries(anyObj.styles)) {
+      for (const [c, ch] of Object.entries(line)) {
+        if (typeof ch.fontSize === 'number') styleSizes.push({ l, c, size: ch.fontSize })
+      }
+    }
+  }
+  const apply = (scale: number) => {
+    obj.set('fontSize', clampFitFont(baseFontSize * scale))
+    for (const s of styleSizes) {
+      const cell = anyObj.styles?.[s.l]?.[s.c]
+      if (cell) cell.fontSize = clampFitFont(s.size * scale)
+    }
+    obj.set(isWrap ? { width: zone.width, scaleX: 1, scaleY: 1 } : { scaleX: 1, scaleY: 1 })
+    anyObj.initDimensions?.()
+  }
+  apply(1)
+  if (isWrap) {
+    let scale = 1
+    let guard = 0
+    while ((obj.height ?? 0) > zone.height + 0.5 && baseFontSize * scale > MIN_FIT_FONT && guard < 60) {
+      scale *= FIT_SHRINK_STEP
+      apply(scale)
+      guard++
+    }
+  } else {
+    const w = anyObj.calcTextWidth?.() ?? 0
+    if (w > zone.width) {
+      let scale = fitScaleForWidth(w, zone.width)
+      apply(scale)
+      let guard = 0
+      while ((anyObj.calcTextWidth?.() ?? 0) > zone.width + 0.5 && baseFontSize * scale > MIN_FIT_FONT && guard < 12) {
+        scale *= 0.97
+        apply(scale)
+        guard++
+      }
+    }
+  }
+  obj.setCoords()
 }
 
 export function useDataMerge() {
@@ -176,6 +237,7 @@ export function useDataMerge() {
         const tmpl = obj.data.templateText as string | undefined
         if (!tmpl) continue
         if (obj.data.mergeFrame) continue // cadre fixe (champ PDF) : pas d'auto-fit
+        if (obj.data.fitToZone) continue // « tenir dans la zone » : géré par applyRow
         const isSinglePlaceholder = /^\{\{[^}]+\}\}$/.test(tmpl.trim())
         if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {
           // Mémoriser la largeur originale (avant auto-fit) pour restauration à la sauvegarde
@@ -305,7 +367,8 @@ export function useDataMerge() {
           const tmpl = obj.data.templateText as string
           const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
           // Cadre de composition fixe (champ PDF aligné/wrappé) : pas d'auto-fit.
-          const isSinglePlaceholder = !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
+          const fitToZone = obj.data?.fitToZone === true && !!obj.data?.fitZone
+          const isSinglePlaceholder = !fitToZone && !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
           const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
           obj.set('text', resolved)
 
@@ -315,8 +378,12 @@ export function useDataMerge() {
             ;(obj as any).styles = remapped
           }
 
-          // Auto-fit pour blocs à placeholder unique (taille adaptée à chaque valeur)
-          if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {
+          if (fitToZone) {
+            // « Réduire pour tenir dans la zone » : abaisse la police (styles inclus).
+            const base = (obj.data!.baseFontSize as number | undefined) ?? obj.fontSize ?? 16
+            fitTextToZone(obj, obj.data!.fitZone as FitZone, base)
+          } else if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {
+            // Auto-fit largeur pour blocs à placeholder unique (taille adaptée à chaque valeur)
             ;(obj as any).initDimensions?.()
             const minW = (obj as any).calcTextWidth()
             const fitW = Math.max(minW, 10)
@@ -388,6 +455,36 @@ export function useDataMerge() {
 
   // Synchroniser applyRowRef après chaque render pour éviter dépendance circulaire
   applyRowRef.current = applyRow
+
+  /** Active/désactive « Réduire pour tenir dans la zone » sur un champ texte. */
+  const setFitToZone = useCallback((objectId: string, enabled: boolean) => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    const obj = collectObjectsDeep(canvas.getObjects()).find(
+      (o) => (o as FabricObjectWithData).data?.id === objectId,
+    )
+    if (!(obj instanceof IText)) return
+    if (!obj.data) obj.data = {}
+    if (enabled) {
+      // Replie l'échelle dans la police, puis capture la boîte actuelle = zone.
+      const sy = obj.scaleY ?? 1
+      obj.set({ fontSize: (obj.fontSize ?? 16) * sy, scaleX: 1, scaleY: 1 })
+      ;(obj as unknown as { initDimensions?: () => void }).initDimensions?.()
+      obj.data.baseFontSize = obj.fontSize
+      obj.data.fitZone = { width: obj.getScaledWidth(), height: obj.getScaledHeight() }
+      obj.data.fitToZone = true
+    } else {
+      obj.data.fitToZone = false
+      if (typeof obj.data.baseFontSize === 'number') {
+        obj.set({ fontSize: obj.data.baseFontSize as number })
+      }
+    }
+    const { rows: r, currentRowIndex: idx } = useMergeStore.getState()
+    if (r[idx]) applyRow(r[idx])
+    refreshAncestorGroups(obj)
+    canvas.requestRenderAll()
+    syncToStore(canvas)
+  }, [applyRow])
 
   // Réagir aux changements de ligne
   useEffect(() => {
@@ -483,5 +580,6 @@ export function useDataMerge() {
     prevRow,
     setCurrentRow,
     applyRow,
+    setFitToZone,
   }
 }
