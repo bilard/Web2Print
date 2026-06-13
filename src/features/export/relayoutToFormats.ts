@@ -54,13 +54,18 @@ export async function relayoutToFormats(params: {
       imageDataUris: [imageDataUri],
     })
     const out: Record<string, DesignObject[]> = {}
+    let anyFallback = false
     for (const t of targets) {
       const fmt = res.formats.find((f) => f.id === t.id)
-      out[t.id] = fmt
-        ? applyRelayout(objects, srcW, srcH, t.w, t.h, fmt.elements)
-        : projectObjectsToFormat(objects, srcW, srcH, t.w, t.h)
+      if (fmt) {
+        out[t.id] = applyRelayout(objects, srcW, srcH, t.w, t.h, fmt.elements)
+      } else {
+        // Le LLM a omis ce format → repli homothétique pour cette cible.
+        out[t.id] = projectObjectsToFormat(objects, srcW, srcH, t.w, t.h)
+        anyFallback = true
+      }
     }
-    return { byFormat: out, usedFallback: false }
+    return { byFormat: out, usedFallback: anyFallback }
   } catch (err) {
     console.warn('[relayoutToFormats] LLM indisponible, repli géométrique :', err)
     return { byFormat: geometricFallback(objects, srcW, srcH, targets), usedFallback: true }

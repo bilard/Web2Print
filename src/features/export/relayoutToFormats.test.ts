@@ -49,7 +49,8 @@ describe('relayoutToFormats', () => {
 
   it('repli si un format est absent de la réponse', async () => {
     generateJsonMock.mockResolvedValue({ formats: [{ id: 'story', elements: [{ i: 0, xPct: 0, yPct: 0, wPct: 1, hPct: 1, fit: 'cover' }] }] } as never)
-    const { byFormat } = await relayoutToFormats({ imageDataUri: 'data:,', objects, srcW: 1000, srcH: 1000, targets })
+    const { byFormat, usedFallback } = await relayoutToFormats({ imageDataUri: 'data:,', objects, srcW: 1000, srcH: 1000, targets })
+    expect(usedFallback).toBe(true)
     expect(byFormat.story[0].scaleX).toBeCloseTo(1.92, 5) // LLM
     expect(byFormat.banniere[0].scaleX).toBeCloseTo(0.5, 5) // homothétie : min(1500/1000,500/1000)=0.5
   })

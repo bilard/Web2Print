@@ -22,18 +22,27 @@ export interface DeclineOutcome {
   usedFallback: boolean
 }
 
-/** Rend la page courante en PNG (grille + marques masquées), bornée à 1024 px. */
+/** Rend la page courante en design-space (grille + marques masquées), bornée à
+ * 1024 px de plus grand côté. Neutralise le viewport (zoom/pan) et les dimensions
+ * DOM du conteneur pour que l'image corresponde au repère des descripteurs. */
 function renderSourceDataUri(canvas: Canvas, srcW: number, srcH: number): string | null {
   canvas.discardActiveObject()
   const hidden = canvas.getObjects().filter((o) => o.data?.isGrid || o.data?.isPrintMark)
   hidden.forEach((o) => { o.visible = false })
-  const multiplier = Math.min(1, 1024 / Math.max(srcW, srcH, 1))
+  const savedVt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0]
+  const savedW = canvas.getWidth()
+  const savedH = canvas.getHeight()
+  const scale = Math.min(1, 1024 / Math.max(srcW, srcH, 1))
   try {
-    return canvas.toDataURL({ format: 'png', multiplier, quality: 0.9 })
+    canvas.setViewportTransform([scale, 0, 0, scale, 0, 0])
+    canvas.setDimensions({ width: srcW * scale, height: srcH * scale })
+    return canvas.toDataURL({ format: 'png', multiplier: 1, quality: 0.9 })
   } catch (err) {
     console.warn('[declineToPages] toDataURL a échoué (CORS ?), repli sans image :', err)
     return null
   } finally {
+    canvas.setDimensions({ width: savedW, height: savedH })
+    canvas.setViewportTransform(savedVt as [number, number, number, number, number, number])
     hidden.forEach((o) => { o.visible = true })
     canvas.requestRenderAll()
   }
