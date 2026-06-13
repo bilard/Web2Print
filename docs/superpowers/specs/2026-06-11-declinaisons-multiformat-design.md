@@ -26,3 +26,25 @@ Pistes :
 Questions ouvertes (à trancher avec l'utilisateur) : coût NB2 par pack (4 fonds),
 formats cibles configurables, où vivent les déclinaisons (pages du même doc ?
 nouveaux projets ?).
+
+## V2 — slice livrée (2026-06-13) : « Pages déclinées »
+Décision : la piste « réutiliser les rôles » est **inapplicable** sur un doc
+ordinaire — les rôles sémantiques (prix/titre/visuel) ne sont persistés que sur
+les docs **décomposés** (`useImageToSvgDecompose`) ; `autoMatch` ne fait que des
+affectations transitoires objet→colonne. La V2 livrée n'en dépend donc pas.
+
+- **Pages éditables** (et non un PNG figé) : pour chaque format coché, une page
+  est ajoutée au document avec le design **re-projeté en objets Fabric réels**.
+  Choix « où vivent les déclinaisons » → pages du même doc (le plus utile, réutilise
+  `pages.store`). C'est la piste 3 du design doc.
+- **Re-projection géométrique** (`features/export/declineLayout.ts`, pur + testé) :
+  scale uniforme « contain » + centrage autour de l'origine page — rien n'est perdu,
+  indépendant de originX/originY. Hook : `useDeclineToPages.ts`. UI : format
+  « Pages déclinées » dans `ExportModal` (cases à cocher des formats).
+- **Coût NB2 = zéro** par défaut : aucune génération d'image (re-projection seule).
+  La régénération de fond reste un opt-in séparé (`RegenerateBgPanel`, par page).
+- **Formats configurables** : `DECLINE_TARGETS` (4 par défaut, cochables).
+
+Restent V3 possibles : re-layout par **blocs détectés heuristiquement**
+(prix/titre/visuel via les mêmes heuristiques que la galerie PIM + `autoMatch`),
+gabarits par ratio, régénération de fond au ratio cible.

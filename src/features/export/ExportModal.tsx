@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes, Share2 } from 'lucide-react'
+import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes, Share2, LayoutGrid } from 'lucide-react'
 import { useExportPng } from './useExportPng'
 import { useExportPdf } from './useExportPdf'
 import { useExportPptx } from './useExportPptx'
@@ -7,12 +7,14 @@ import { useExportHtml } from './useExportHtml'
 import { useExportSvg } from './useExportSvg'
 import { useExportIdml } from '@/features/idml/useExportIdml'
 import { useExportSocialPack } from './useExportSocialPack'
+import { useDeclineToPages } from './useDeclineToPages'
+import { DECLINE_TARGETS } from './declineLayout'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { withProgress } from '@/stores/progress.store'
 import { notify } from '@/lib/notify'
 import type { PngDpi } from './useExportPng'
 
-type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml' | 'pack'
+type Format = 'png' | 'pdf' | 'pptx' | 'html' | 'svg' | 'idml' | 'pack' | 'decline'
 type ExportStatus = 'idle' | 'exporting' | 'done' | 'error'
 
 interface ExportModalProps {
@@ -27,6 +29,7 @@ const ALL_FORMATS: { id: Format; label: string; icon: React.ComponentType<{ clas
   { id: 'svg',  label: 'SVG',       icon: Shapes,       desc: 'Vectoriel éditable',      color: 'text-purple-400'  },
   { id: 'idml', label: 'IDML',      icon: Package,      desc: 'InDesign modifié',        color: 'text-violet-400', idmlOnly: true },
   { id: 'pack', label: 'Pack social', icon: Share2,      desc: 'Carré, story, paysage, bannière (zip)', color: 'text-pink-400' },
+  { id: 'decline', label: 'Pages déclinées', icon: LayoutGrid, desc: 'Une page éditable par format', color: 'text-cyan-400' },
 ]
 
 export function ExportModal({ onClose }: ExportModalProps) {
@@ -36,6 +39,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
   const [format, setFormat] = useState<Format>('png')
   const [dpi, setDpi] = useState<PngDpi>(150)
   const [pdfWithMarks, setPdfWithMarks] = useState(false)
+  const [declineTargets, setDeclineTargets] = useState<string[]>(DECLINE_TARGETS.map((t) => t.id))
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -46,8 +50,33 @@ export function ExportModal({ onClose }: ExportModalProps) {
   const { exportSvg } = useExportSvg()
   const { exportIdml } = useExportIdml()
   const { exportSocialPack } = useExportSocialPack()
+  const { declineToPages } = useDeclineToPages()
 
   const handleExport = async () => {
+    // « Pages déclinées » ne télécharge rien : crée des pages dans le document.
+    if (format === 'decline') {
+      const targets = DECLINE_TARGETS.filter((t) => declineTargets.includes(t.id))
+      if (targets.length === 0) {
+        setError('Sélectionne au moins un format.')
+        setStatus('error')
+        return
+      }
+      setStatus('exporting')
+      setError(null)
+      try {
+        const n = declineToPages(targets)
+        setStatus('done')
+        notify.success('Déclinaisons créées', `${n} page${n > 1 ? 's' : ''} ajoutée${n > 1 ? 's' : ''} — ajuste-les puis exporte.`)
+        setTimeout(onClose, 1500)
+      } catch (err) {
+        console.error(err)
+        setError(String(err))
+        setStatus('error')
+        notify.error('Déclinaison échouée', String(err).slice(0, 160))
+      }
+      return
+    }
+
     setStatus('exporting')
     setError(null)
     try {
@@ -206,6 +235,44 @@ export function ExportModal({ onClose }: ExportModalProps) {
             </div>
           )}
 
+          {/* Options Pages déclinées */}
+          {format === 'decline' && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Formats</p>
+              <div className="grid grid-cols-2 gap-2">
+                {DECLINE_TARGETS.map((t) => {
+                  const on = declineTargets.includes(t.id)
+                  return (
+                    <label
+                      key={t.id}
+                      className={`flex items-center gap-2 rounded-xl border p-3 cursor-pointer transition-colors ${
+                        on ? 'border-cyan-500/50 bg-cyan-500/10' : 'border-white/10 bg-white/3 hover:border-white/20'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) =>
+                          setDeclineTargets((prev) =>
+                            e.target.checked ? [...prev, t.id] : prev.filter((id) => id !== t.id),
+                          )
+                        }
+                        className="accent-cyan-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-white/80">{t.label}</p>
+                        <p className="text-[10px] text-white/30">{t.w}×{t.h}</p>
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
+              <p className="text-[11px] text-white/40 leading-relaxed">
+                Crée une <span className="text-white/60">page éditable</span> par format : le design est mis à l'échelle et centré, puis ajustable à la main avant export. Aucune génération d'image (gratuit).
+              </p>
+            </div>
+          )}
+
           {/* Status */}
           {status === 'error' && (
             <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
@@ -226,8 +293,10 @@ export function ExportModal({ onClose }: ExportModalProps) {
             >
               {status === 'exporting' && <Loader2 className="w-4 h-4 animate-spin" />}
               {status === 'done' && <CheckCircle className="w-4 h-4" />}
-              {status === 'idle' || status === 'error' ? <Download className="w-4 h-4" /> : null}
-              {status === 'exporting' ? 'Export...' : status === 'done' ? 'Téléchargé !' : 'Exporter'}
+              {status === 'idle' || status === 'error' ? (format === 'decline' ? <LayoutGrid className="w-4 h-4" /> : <Download className="w-4 h-4" />) : null}
+              {format === 'decline'
+                ? (status === 'exporting' ? 'Création...' : status === 'done' ? 'Créé !' : 'Créer les pages')
+                : (status === 'exporting' ? 'Export...' : status === 'done' ? 'Téléchargé !' : 'Exporter')}
             </button>
           </div>
         </div>

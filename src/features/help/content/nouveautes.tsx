@@ -91,7 +91,8 @@ _Détails : section **Telegram**._`,
 
 - **Tagging IA automatique** des images sauvegardées + **filtre en langage naturel** dans « Mes images ».
 - **Digest Telegram quotidien** (opt-in, 08:00) : résumé des dernières 24 h.
-- **Pack social** à l'export : carré, story, paysage et bannière en un zip.`,
+- **Pack social** à l'export : carré, story, paysage et bannière en un zip.
+- **Pages déclinées** à l'export : crée une page **éditable** par format (carré, story, paysage, bannière), design mis à l'échelle et centré, ajustable à la main — sans génération d'image.`,
     },
     {
       type: 'menu-link',
