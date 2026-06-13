@@ -28,60 +28,57 @@ export function PagesBar() {
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 h-full overflow-x-auto scrollbar-none">
-      {pages.map((page, idx) => (
-        <button
-          key={page.id}
-          onClick={() => handlePageClick(idx)}
-          className={`relative shrink-0 group flex flex-col items-center gap-1 transition-all ${
-            idx === currentPageIndex ? 'opacity-100' : 'opacity-55 hover:opacity-85'
-          }`}
-        >
-          {/* Thumbnail */}
-          <div
-            className={`w-[42px] h-[46px] rounded border-2 overflow-hidden bg-white/5 flex items-center justify-center transition-colors ${
-              idx === currentPageIndex
-                ? 'border-indigo-500 shadow-[0_0_0_1px_rgba(99,102,241,0.3)]'
-                : 'border-white/15 hover:border-white/35'
+    <div className="flex items-center gap-1.5 h-full overflow-x-auto scrollbar-none">
+      {pages.map((page, idx) => {
+        const active = idx === currentPageIndex
+        return (
+          <button
+            key={page.id}
+            onClick={() => handlePageClick(idx)}
+            title={`Page ${idx + 1}`}
+            className={`relative shrink-0 group w-7 h-9 rounded border overflow-hidden bg-white/5 flex items-center justify-center transition-all ${
+              active
+                ? 'border-indigo-500 opacity-100'
+                : 'border-white/15 hover:border-white/35 opacity-55 hover:opacity-90'
             }`}
           >
             {page.thumbnail ? (
               <img src={page.thumbnail} alt={page.label} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-white/8 flex items-center justify-center">
-                <div className="w-4 h-4 bg-white/10 rounded-sm" />
-              </div>
+              <div className="w-2.5 h-2.5 bg-white/15 rounded-sm" />
             )}
-          </div>
 
-          {/* Page number */}
-          <span
-            className={`text-[9px] font-medium leading-none ${
-              idx === currentPageIndex ? 'text-indigo-400' : 'text-white/30'
-            }`}
-          >
-            {idx + 1}
-          </span>
-
-          {/* Delete button */}
-          {pages.length > 1 && (
-            <button
-              onClick={(e) => handleDelete(e, page.id, idx)}
-              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500/80 hover:bg-red-500 rounded-full hidden group-hover:flex items-center justify-center transition-colors z-10"
+            {/* Numéro — affiché sur la page active, et au survol des autres */}
+            <span
+              className={`absolute bottom-0 right-0 px-0.5 rounded-tl bg-black/55 text-[8px] leading-[1.4] font-semibold ${
+                active ? 'text-indigo-300 flex' : 'text-white/70 hidden group-hover:flex'
+              }`}
             >
-              <X className="w-2.5 h-2.5 text-white" />
-            </button>
-          )}
-        </button>
-      ))}
+              {idx + 1}
+            </span>
 
-      {/* Add page */}
+            {/* Suppression — au survol */}
+            {pages.length > 1 && (
+              <span
+                role="button"
+                tabIndex={-1}
+                onClick={(e) => handleDelete(e, page.id, idx)}
+                className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500/80 hover:bg-red-500 rounded-full hidden group-hover:flex items-center justify-center transition-colors z-10"
+              >
+                <X className="w-2 h-2 text-[#fff]" />
+              </span>
+            )}
+          </button>
+        )
+      })}
+
+      {/* Ajouter une page */}
       <button
         onClick={handleAddPage}
         title="Ajouter une page (⌘↵)"
-        className="shrink-0 w-[42px] h-[46px] border-2 border-dashed border-white/15 hover:border-indigo-500/60 rounded flex items-center justify-center transition-colors text-white/25 hover:text-indigo-400"
+        className="shrink-0 w-7 h-9 border border-dashed border-white/15 hover:border-indigo-500/60 rounded flex items-center justify-center transition-colors text-white/25 hover:text-indigo-400"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-3.5 h-3.5" />
       </button>
     </div>
   )

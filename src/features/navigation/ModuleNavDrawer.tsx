@@ -14,8 +14,12 @@ import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
  *
  * Au clic, navigue vers `/dashboard` avec `state: { section }` ; `DashboardPage`
  * ouvre la section correspondante (cf. `features/navigation/modules.ts`).
+ *
+ * - `variant="fab"` (défaut) : rond flottant en bas-gauche.
+ * - `variant="inline"` : bouton compact intégré dans une barre (barre de l'éditeur).
  */
-export function ModuleNavDrawer() {
+export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline' }) {
+  const isInline = variant === 'inline'
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
@@ -56,15 +60,13 @@ export function ModuleNavDrawer() {
         aria-label="Ouvrir le menu des modules"
         aria-haspopup="menu"
         aria-expanded={open}
-        className="fixed bottom-4 left-4 z-30
-          w-10 h-10 rounded-full
-          bg-surface border border-white/10 hover:border-indigo-500/50
-          text-white/60 hover:text-indigo-400
-          flex items-center justify-center
-          shadow-lg
-          transition-colors"
+        className={
+          isInline
+            ? 'w-7 h-7 rounded text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors'
+            : 'fixed bottom-4 left-4 z-30 w-10 h-10 rounded-full bg-surface border border-white/10 hover:border-indigo-500/50 text-white/60 hover:text-indigo-400 flex items-center justify-center shadow-lg transition-colors'
+        }
       >
-        <Menu className="w-5 h-5" />
+        <Menu className={isInline ? 'w-4 h-4' : 'w-5 h-5'} />
       </button>
 
       {open && (

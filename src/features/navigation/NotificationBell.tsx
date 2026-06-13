@@ -20,10 +20,13 @@ function timeAgo(ts: number): string {
 }
 
 /**
- * Cloche globale (bas-gauche, au-dessus du menu modules) : badge non-lus +
- * panneau listant l'historique des notifications (lib/notify.ts).
+ * Cloche de notifications : badge non-lus + panneau listant l'historique
+ * (lib/notify.ts).
+ * - `variant="fab"` (défaut) : rond flottant en bas-gauche (dashboard + modules).
+ * - `variant="inline"` : bouton compact intégré dans une barre (barre de l'éditeur).
  */
-export function NotificationBell() {
+export function NotificationBell({ variant = 'fab' }: { variant?: 'fab' | 'inline' }) {
+  const isInline = variant === 'inline'
   const items = useNotificationsStore((s) => s.items)
   const markAllRead = useNotificationsStore((s) => s.markAllRead)
   const clear = useNotificationsStore((s) => s.clear)
@@ -48,17 +51,20 @@ export function NotificationBell() {
   }, [open, markAllRead])
 
   return (
-    <div ref={panelRef} className="fixed bottom-16 left-4 z-30">
+    <div ref={panelRef} className={isInline ? 'relative' : 'fixed bottom-16 left-4 z-30'}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         title="Notifications"
         aria-label="Ouvrir les notifications"
         aria-expanded={open}
-        className="relative w-10 h-10 rounded-full bg-surface border border-white/10 hover:border-indigo-500/50
-          text-white/60 hover:text-indigo-400 flex items-center justify-center shadow-lg transition-colors"
+        className={
+          isInline
+            ? 'relative w-7 h-7 rounded text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors'
+            : 'relative w-10 h-10 rounded-full bg-surface border border-white/10 hover:border-indigo-500/50 text-white/60 hover:text-indigo-400 flex items-center justify-center shadow-lg transition-colors'
+        }
       >
-        <Bell className="w-5 h-5" />
+        <Bell className={isInline ? 'w-4 h-4' : 'w-5 h-5'} />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-indigo-500 text-[#fff] text-[9px] font-semibold flex items-center justify-center">
             {unread > 9 ? '9+' : unread}
@@ -67,7 +73,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute bottom-12 left-0 w-80 max-h-96 bg-surface-2 border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className={`absolute left-0 ${isInline ? 'bottom-full mb-2' : 'bottom-12'} w-80 max-h-96 bg-surface-2 border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-150 z-50`}>
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
             <span className="text-[12px] font-medium text-white/70">Notifications</span>
             <div className="flex items-center gap-1">
