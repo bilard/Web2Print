@@ -11,14 +11,16 @@
 
 ## A. Priorité haute — features de cette session (jamais vues en live)
 
-### A1. Pages déclinées (export multi-format éditable)
-Éditeur → **Exporter** → format **« Pages déclinées »**.
-- [ ] Cocher 1+ formats (carré / story / paysage / bannière) → **Créer les pages**.
+### A1. Pages déclinées (re-layout multi-format piloté par LLM)
+Éditeur → **Exporter** → format **« Pages déclinées »** (nécessite une clé LLM + budget).
+- [ ] Cocher 1+ formats (carré / story / paysage / bannière) → **Créer les pages** (« Adaptation IA… »).
 - [ ] Une page éditable par format est ajoutée au document.
-- [ ] Le design est mis à l'échelle (« contain ») et centré dans chaque page.
+- [ ] Le **fond pleine-page remplit** chaque ratio (cover) — **aucun vide letterboxé**.
+- [ ] Le contenu (titre, prix, photo, logo) est **replacé cohéremment** selon le ratio (pas juste réduit/centré).
 - [ ] Les objets sont **réellement éditables** (déplaçables, redimensionnables), pas une image figée.
 - [ ] La page source reste affichée et **intacte** après création.
 - [ ] La grille et les marques de coupe ne sont PAS recopiées dans les déclinaisons.
+- [ ] **Repli** : retirer la clé LLM (ou budget épuisé) → toast « repli géométrique », pages créées quand même (mise à l'échelle simple).
 
 ### A2. Auto-fit « Réduire pour tenir dans la zone » (V3, zone explicite)
 Panneau **Données** (mode re-skin) sur un flyer décomposé connecté à une source PIM.

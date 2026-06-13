@@ -61,8 +61,6 @@ export const RelayoutSchema = z.object({
   ),
 })
 
-export type RelayoutResult = z.infer<typeof RelayoutSchema>
-
 /** JSON Schema (Gemini responseSchema / Claude input_schema). */
 export const relayoutJsonSchema = {
   type: 'object',
