@@ -1111,7 +1111,82 @@
     html.js .scene-text,html.js .scene-visual,html.js .shead,html.js .tag,html.js .cta{opacity:1;transform:none;transition:none}
     html.js #scraper .kv dd,html.js #scraper .thumbs i,html.js #scraper .route,html.js #editer .poster .ph,html.js #editer .poster .badge,html.js #editer .poster .price,html.js #editer .poster .tt,html.js #editer .poster .hand{opacity:1}
     .dcur{display:none}
+    .pim-fr.a90,.tlg-srv i,.ss-live i,.set-live::before,.ed-vers .v.on .vd,.db-ratio .rf{animation:none!important}
   }
+
+  /* ===== Nouveautés 2026-06-13 — maquettes ===== */
+  /* 07 PIM — fraîcheur par champ */
+  .pim-tr .num .pim-fr{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .pim-fr.fresh{background:#34d399}
+  .pim-fr.a30{background:#fbbf24}
+  .pim-fr.a90{background:#f87171;box-shadow:0 0 7px #f87171;animation:okBlink 1.9s ease-in-out infinite}
+  .pim-fresh-leg{display:flex;gap:15px;flex-wrap:wrap;align-items:center;font-size:9px;font-family:var(--mono);color:var(--faint);padding:11px 16px 0}
+  .pim-fresh-leg span{display:inline-flex;align-items:center;gap:5px}
+  .pim-fresh-leg i{width:6px;height:6px;border-radius:50%;flex:0 0 auto}
+  .pim-fresh-leg .fresh{color:#6ee7b7}.pim-fresh-leg .fresh i{background:#34d399}
+  .pim-fresh-leg .a30{color:#fcd34d}.pim-fresh-leg .a30 i{background:#fbbf24}
+  .pim-fresh-leg .a90{color:#fca5a5}.pim-fresh-leg .a90 i{background:#f87171}
+
+  /* 13 Telegram — réponse serveur (app fermée) */
+  .tlg-srv{display:flex;align-items:center;gap:6px;margin-top:7px;font-family:var(--mono);font-size:8.5px;color:#6ee7b7;letter-spacing:.02em}
+  .tlg-srv i{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:okBlink 1.7s ease-in-out infinite;flex:0 0 auto}
+
+  /* 11 Déclinaisons — re-layout IA multi-format */
+  .db-multi{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .db-ratios{display:flex;gap:13px;align-items:flex-end;margin-top:10px;flex-wrap:wrap}
+  .db-ratio{text-align:center}
+  .db-ratio b{display:block;font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:5px}
+  .db-ratio .rf{display:flex;padding:5px;gap:4px;border:1px solid var(--line2);border-radius:6px;background:#fff;animation:mfCycle 4.5s ease-in-out infinite}
+  .r-a4 .rf{width:50px;height:66px;flex-direction:column;animation-delay:0s}
+  .r-story .rf{width:40px;height:70px;flex-direction:column;animation-delay:1.5s}
+  .r-sq .rf{width:66px;height:66px;flex-direction:row;align-items:stretch;animation-delay:3s}
+  .db-ratio .rf .im{flex:1;border-radius:3px;position:relative;min-height:16px;background:radial-gradient(ellipse 80% 72% at 50% 40%,#fff,#e7edf4);overflow:hidden}
+  .r-sq .rf .im{flex:0 0 46%}
+  .db-ratio .rf .im .vico{position:absolute;inset:0;width:100%;height:100%}
+  .db-ratio .rf .meta{display:flex;flex-direction:column;gap:3px;justify-content:flex-end}
+  .r-sq .rf .meta{flex:1}
+  .db-ratio .rf .t{height:4px;border-radius:2px;background:#cbd5e1}
+  .db-ratio .rf .t.s{width:68%}
+  .db-ratio .rf .p{height:9px;width:62%;border-radius:3px;background:#dc2626}
+  @keyframes mfCycle{0%,22%,66%,100%{box-shadow:0 4px 12px -7px rgba(0,0,0,.45);border-color:var(--line2)}33%,55%{box-shadow:0 0 0 2px var(--indigo),0 8px 18px -7px rgba(99,102,241,.65);border-color:var(--indigo)}}
+
+  /* 10 Scraping — recherche par prompt + prix réels live */
+  .sc-search{margin-top:4px;border:1px solid var(--line);border-radius:11px;background:var(--surface);overflow:hidden}
+  .sc-search .ss-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px;font-weight:600}
+  .sc-search .ss-h>span:first-child{display:inline-flex;align-items:center}
+  .ss-live{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:8px;font-weight:400;color:#6ee7b7;margin-left:9px}
+  .ss-live i{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;animation:okBlink 1.6s ease-in-out infinite}
+  .ss-h .ss-q{font-family:var(--mono);font-size:9px;color:var(--cyan);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48%}
+  .ss-row{display:grid;grid-template-columns:1fr auto auto 15px;align-items:center;gap:11px;padding:7px 12px;border-top:1px solid rgba(255,255,255,.04);font-size:11px}
+  .ss-row:first-of-type{border-top:0}
+  .ss-row .ss-site{color:var(--ink)}
+  .ss-row .ss-old{font-family:var(--mono);font-size:10px;color:var(--faint);text-decoration:line-through}
+  .ss-row .ss-new{font-weight:800;color:#34d399;font-variant-numeric:tabular-nums}
+  .ss-row .ss-ln{color:var(--cyan);display:grid;place-items:center}.ss-row .ss-ln svg{width:13px;height:13px}
+
+  /* 18 Paramètres — budget bloquant + observabilité des pipelines */
+  .set-budget .bh span:first-child{display:inline-flex;align-items:center;gap:5px}
+  .set-budget .bh svg{width:11px;height:11px;color:#fbbf24}
+  .set-bud-note{font-size:8.5px;color:var(--faint);margin-top:7px;display:flex;align-items:center;gap:6px}
+  .set-bud-note svg{width:11px;height:11px;flex:0 0 auto;color:#fbbf24}
+  .set-runs{display:flex;flex-direction:column;gap:8px}
+  .set-runs .run{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:11px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);padding:9px 12px;font-size:11px}
+  .set-runs .run b{font-weight:600;color:var(--ink);min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .set-runs .run .rs{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .set-runs .run .rs.ok{background:#34d399;box-shadow:0 0 7px #34d399}
+  .set-runs .run .rs.warn{background:#fbbf24;box-shadow:0 0 7px #fbbf24}
+  .set-runs .run .rmeta{font-family:var(--mono);font-size:9px;color:var(--faint);white-space:nowrap}
+  .set-runs .run .rt{font-family:var(--mono);font-size:9.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  /* 03 Éditeur — historique de versions + snapshots auto */
+  .ed-vers{display:flex;flex-direction:column;gap:4px}
+  .ed-vers .v{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted);padding:5px 7px;border-radius:6px;border:1px solid transparent}
+  .ed-vers .v.on{background:rgba(124,108,255,.14);color:#d8d6ff;border-color:rgba(124,108,255,.3)}
+  .ed-vers .v .vd{width:7px;height:7px;border-radius:50%;background:#34d399;flex:0 0 auto}
+  .ed-vers .v.on .vd{box-shadow:0 0 8px #34d399;animation:okBlink 1.8s ease-in-out infinite}
+  .ed-vers .v .vd.nm{background:var(--indigo)}
+  .ed-vers .v b{font-weight:600;font-size:10px;color:inherit}
+  .ed-vers .v .vt{margin-left:auto;font-family:var(--mono);font-size:8px;color:var(--faint)}
 </style>
 </head>
 <body>
@@ -1673,6 +1748,13 @@
               <div class="ed-opacity"><div class="ph-h" style="margin:9px 0 6px">Opacité · 78 %</div><div class="bar"></div></div>
               <div class="ph-h">Préparation print</div>
               <div class="ed-print"><span class="ok">Repères ✓</span><span class="ok">Fond perdu 3 mm</span><span>Zone sûre</span><span class="cmjn">300 DPI · CMJN</span></div>
+              <div class="ph-h">Versions</div>
+              <div class="ed-vers">
+                <div class="v on"><span class="vd"></span><b>Auto · à l'instant</b><span class="vt">snapshot</span></div>
+                <div class="v"><span class="vd"></span><b>Auto · il y a 10 min</b><span class="vt">snapshot</span></div>
+                <div class="v"><span class="vd nm"></span><b>v3 — BAT validé</b><span class="vt">nommée</span></div>
+                <div class="v"><span class="vd"></span><b>Auto · il y a 20 min</b><span class="vt">snapshot</span></div>
+              </div>
             </div>
           </div>
         </div></div>
@@ -1804,11 +1886,12 @@
           <div class="pim-body mk-body">
             <div class="pim-tabs"><span class="pim-tab on">Base outillage</span><span class="pim-tab">Base jardin</span><span class="pim-tab">+ Nouvelle base</span></div>
             <div class="pim-tr th"><span>Nom</span><span>Réf.</span><span class="num">Prix HT</span><span class="num calc">Prix TTC<span class="pim-fx">ƒx</span></span><span class="num calc">Promo<span class="pim-fx">ƒx</span></span><span>Marque</span></div>
-            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num">129,00 €</span><span class="num calc">154,80 €</span><span class="num calc">123,84 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num">79,90 €</span><span class="num calc">95,88 €</span><span class="num calc">76,70 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num">149,00 €</span><span class="num calc">178,80 €</span><span class="num calc">143,04 €</span><span>ProTools</span></div>
-            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num">59,00 €</span><span class="num calc">70,80 €</span><span class="num calc">56,64 €</span><span>TechMaster</span></div>
-            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num">64,90 €</span><span class="num calc">77,88 €</span><span class="num calc">62,30 €</span><span>ProTools</span></div>
+            <div class="pim-tr"><span>Perceuse 18V Brushless</span><span>67890</span><span class="num"><i class="pim-fr a90"></i>129,00 €</span><span class="num calc">154,80 €</span><span class="num calc">123,84 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Meuleuse 750W</span><span>54321</span><span class="num"><i class="pim-fr a30"></i>79,90 €</span><span class="num calc">95,88 €</span><span class="num calc">76,70 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Scie circulaire 1400W</span><span>13579</span><span class="num"><i class="pim-fr fresh"></i>149,00 €</span><span class="num calc">178,80 €</span><span class="num calc">143,04 €</span><span>ProTools</span></div>
+            <div class="pim-tr"><span>Visseuse 12V</span><span>24680</span><span class="num"><i class="pim-fr fresh"></i>59,00 €</span><span class="num calc">70,80 €</span><span class="num calc">56,64 €</span><span>TechMaster</span></div>
+            <div class="pim-tr"><span>Ponceuse excentrique</span><span>11223</span><span class="num"><i class="pim-fr a30"></i>64,90 €</span><span class="num calc">77,88 €</span><span class="num calc">62,30 €</span><span>ProTools</span></div>
+            <div class="pim-fresh-leg">Fraîcheur par champ : <span class="fresh"><i></i>à jour</span><span class="a30"><i></i>+ 30 j</span><span class="a90"><i></i>+ 90 j — à réenrichir</span></div>
             <div class="pim-formulas">
               <div class="pim-fh">Champs calculés — recalcul automatique à chaque modification</div>
               <div class="pim-frow"><span class="pim-fx">ƒx</span><span class="nm">Prix TTC</span><span class="eq">=</span><span class="ex">ARRONDI(<b>[Prix HT]</b> × 1,20 ; 2)</span></div>
@@ -1921,6 +2004,12 @@
               <div class="sc-card"><div class="ch"><span class="tg" style="background:#f472b6"></span>DAM — visuels<span class="cnt">6 fichiers</span></div><div class="thumbs"><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill2"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill3"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill4"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill5"/></svg></i><i class="vshot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill6"/></svg></i></div></div>
             </div>
             <div class="sc-route"><div class="route"><span class="ic" style="background:rgba(52,211,153,.16);color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h18v4H3z"/></svg></span><div><b>→ PIM</b><span>fiches produits</span></div></div><div class="route"><span class="ic" style="background:rgba(244,114,182,.16);color:#f472b6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span><div><b>→ DAM</b><span>bibliothèque</span></div></div></div>
+            <div class="sc-search">
+              <div class="ss-h"><span>Recherche par prompt — prix réels<span class="ss-live"><i></i>live</span></span><span class="ss-q">« perceuse 18V brushless &lt; 150 € »</span></div>
+              <div class="ss-row"><span class="ss-site">Leroy Merlin</span><span class="ss-old">152,00 €</span><span class="ss-new">129,00 €</span><span class="ss-ln"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span></div>
+              <div class="ss-row"><span class="ss-site">ManoMano</span><span class="ss-old">149,90 €</span><span class="ss-new">134,00 €</span><span class="ss-ln"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span></div>
+              <div class="ss-row"><span class="ss-site">Brico Dépôt</span><span class="ss-old">—</span><span class="ss-new">139,00 €</span><span class="ss-ln"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span></div>
+            </div>
           </div>
         </div></div>
       </div>
@@ -1983,6 +2072,14 @@
               <div class="db-fmts"><span class="on">PDF</span><span>PNG</span><span>IDML</span><span>PPTX</span><span>A4</span></div>
               <div class="db-progwrap"><div class="db-prog"><i></i></div><span class="db-progn">Génération <b>0</b> / 248</span></div>
               <div class="db-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Streaming progressif — abandon possible à tout moment</div>
+              <div class="db-multi">
+                <div class="db-lbl"><span>Re-layout IA · multi-format</span><span>1 design → N ratios</span></div>
+                <div class="db-ratios">
+                  <div class="db-ratio r-a4"><b>A4</b><div class="rf"><span class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="meta"><i class="t"></i><i class="t s"></i><i class="p"></i></span></div></div>
+                  <div class="db-ratio r-story"><b>9:16</b><div class="rf"><span class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="meta"><i class="t"></i><i class="t s"></i><i class="p"></i></span></div></div>
+                  <div class="db-ratio r-sq"><b>1:1</b><div class="rf"><span class="im"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg></span><span class="meta"><i class="t"></i><i class="t s"></i><i class="p"></i></span></div></div>
+                </div>
+              </div>
             </div>
           </div>
         </div></div>
@@ -2049,6 +2146,8 @@
           <div class="tlg-layout mk-body">
             <div class="tlg-chat">
               <div class="tlg-body">
+                <div class="tlg-msg tlg-me">La perceuse réf. 4892-18V est-elle compatible 230 V ?</div>
+                <div class="tlg-msg tlg-bot">Oui — moteur universel 110–230 V, mandrin 13 mm, garantie 3 ans.<span class="tlg-srv"><i></i>répondu par le serveur · app fermée</span></div>
                 <div class="tlg-msg tlg-me"><code>/flow</code> Génère une PLV A4 pour la perceuse 18V, prix 129 €</div>
                 <div class="tlg-msg tlg-bot">Workflow généré ✓ — scraping, composition et export en cours…</div>
                 <div class="tlg-file"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><div><b>perceuse-18v-PLV.pdf</b><span class="m">A4 · 300 DPI · 2,4 Mo</span></div><span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>
@@ -2313,8 +2412,16 @@
                   <div class="set-bar"><span class="bn"><i style="background:#a855f7"></i>Bright D.</span><span class="tr"><i style="--w:90%;background:#a855f7"></i></span><span class="bv">4 120</span></div>
                   <div class="set-bar"><span class="bn"><i style="background:#22d3ee"></i>Jina</span><span class="tr"><i style="--w:53%;background:#22d3ee"></i></span><span class="bv">2 420</span></div>
                   <div class="set-bar"><span class="bn"><i style="background:#fb923c"></i>Firecrawl</span><span class="tr"><i style="--w:16%;background:#fb923c"></i></span><span class="bv">680</span></div>
-                  <div class="set-budget"><div class="bh"><span>Budget mensuel</span><span><b>42,80 €</b> / 100 €</span></div><div class="tr"><i></i></div></div>
+                  <div class="set-budget"><div class="bh"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Budget mensuel · bloquant</span><span><b>42,80 €</b> / 100 €</span></div><div class="tr"><i></i></div><div class="set-bud-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Au plafond, le proxy serveur refuse les nouveaux appels</div></div>
                 </div>
+              </div>
+            </div>
+            <div class="set-card set-wide">
+              <div class="set-h">Pipelines — derniers runs<span class="set-live">observabilité</span></div>
+              <div class="set-runs">
+                <div class="run"><span class="rs ok"></span><b>Enrichir 300 réf · Milwaukee</b><span class="rmeta">6 nodes · 0 err</span><span class="rt">2,4 s</span></div>
+                <div class="run"><span class="rs ok"></span><b>Déclinaisons PLV · 200 magasins</b><span class="rmeta">5 nodes · 0 err</span><span class="rt">8,1 s</span></div>
+                <div class="run"><span class="rs warn"></span><b>Scrape + Export PPTX · accessoires auto</b><span class="rmeta">4 nodes · 1 err</span><span class="rt">3,7 s</span></div>
               </div>
             </div>
           </div>
