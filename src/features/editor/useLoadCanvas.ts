@@ -322,6 +322,10 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           if (data.canvasBgImage !== undefined) uiStore.setCanvasBgImage(data.canvasBgImage)
         }
 
+        // Mémorise la taille d'ouverture du document → préréglage « Origine » (PagePanel).
+        const uiOrigin = useUIStore.getState()
+        uiOrigin.setOrigin(uiOrigin.canvasWidth, uiOrigin.canvasHeight)
+
         // Restore ALL print settings from Firestore, with range validation
         // Pre-print-marks projects have undefined or 0 values; new projects have user-set values.
         const uiStoreRef = useUIStore.getState()

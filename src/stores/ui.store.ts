@@ -16,6 +16,10 @@ interface UIState {
   snapEnabled: boolean
   canvasWidth: number
   canvasHeight: number
+  // Dimensions « d'origine » : taille de la page à l'ouverture du document
+  // (capturée au chargement), pour le préréglage « Origine » du panneau PAGE.
+  originWidth: number | null
+  originHeight: number | null
   canvasBg: string
   canvasBgType: CanvasBgType
   canvasBgGradient: GradientConfig
@@ -71,6 +75,7 @@ interface UIState {
   setGridVisible: (v: boolean) => void
   setSnapEnabled: (v: boolean) => void
   setCanvasSize: (w: number, h: number, bg?: string) => void
+  setOrigin: (w: number, h: number) => void
   setCanvasBgType: (t: CanvasBgType) => void
   setCanvasBgGradient: (g: GradientConfig) => void
   setCanvasBgImage: (url: string | null) => void
@@ -121,6 +126,8 @@ export const useUIStore = create<UIState>((set) => ({
   snapEnabled: false,
   canvasWidth: 1200,
   canvasHeight: 900,
+  originWidth: null,
+  originHeight: null,
   canvasBg: '#ffffff',
   canvasBgType: 'solid',
   canvasBgGradient: DEFAULT_BG_GRADIENT,
@@ -133,6 +140,7 @@ export const useUIStore = create<UIState>((set) => ({
   setSnapEnabled: (snapEnabled) => set({ snapEnabled }),
   setCanvasSize: (w, h, bg) =>
     set((s) => ({ canvasWidth: w, canvasHeight: h, canvasBg: bg ?? s.canvasBg })),
+  setOrigin: (w, h) => set({ originWidth: w, originHeight: h }),
   setCanvasBgType: (canvasBgType) => set({ canvasBgType }),
   setCanvasBgGradient: (canvasBgGradient) => set({ canvasBgGradient }),
   setCanvasBgImage: (canvasBgImage) => set({ canvasBgImage }),

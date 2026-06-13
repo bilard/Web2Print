@@ -35,9 +35,16 @@ function roundMm(mm: number): number {
 export function PagePanel() {
   const {
     canvasWidth, canvasHeight, canvasBg,
+    originWidth, originHeight, setOrigin,
     canvasBgType, canvasBgGradient, canvasBgImage,
     setCanvasSize, setCanvasBgType, setCanvasBgGradient, setCanvasBgImage,
   } = useUIStore()
+
+  // Préréglage « Origine » = taille d'ouverture du document (capturée au chargement).
+  const originActive =
+    originWidth != null && originHeight != null &&
+    Math.round(canvasWidth) === Math.round(originWidth) &&
+    Math.round(canvasHeight) === Math.round(originHeight)
 
   // L'UI affiche et saisit en mm ; le store reste en px canvas (= pt).
   const [widthMm, setWidthMm] = useState<number | string>(() => roundMm(canvasPxToMm(canvasWidth)))
@@ -48,6 +55,12 @@ export function PagePanel() {
     setWidthMm(roundMm(canvasPxToMm(canvasWidth)))
     setHeightMm(roundMm(canvasPxToMm(canvasHeight)))
   }, [canvasWidth, canvasHeight])
+
+  // Filet : si l'origine n'a pas été capturée au chargement (session ouverte avant
+  // l'ajout du préréglage), mémorise la taille courante comme origine, une seule fois.
+  useEffect(() => {
+    if (originWidth == null || originHeight == null) setOrigin(canvasWidth, canvasHeight)
+  }, [])
 
   const triggerSave = () => {
     setTimeout(() => {
@@ -137,6 +150,16 @@ export function PagePanel() {
           <span className="text-[10px] text-white/20 mt-4">mm</span>
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
+          {originWidth != null && originHeight != null && (
+            <button
+              onClick={() => applySize(originWidth, originHeight)}
+              title={`Taille d'ouverture du document : ${Math.round(canvasPxToMm(originWidth))}×${Math.round(canvasPxToMm(originHeight))} mm`}
+              className={`px-2 py-1 text-[10px] rounded border transition-colors ${originActive
+                ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
+                : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
+              Origine
+            </button>
+          )}
           {FORMAT_PRESETS.map((p) => {
             const active = Math.round(canvasWidth) === p.w && Math.round(canvasHeight) === p.h
             return (
