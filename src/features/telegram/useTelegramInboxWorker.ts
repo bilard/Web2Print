@@ -144,12 +144,18 @@ export function useTelegramInboxWorker(): void {
 
         // Routage des commandes envoyées depuis Telegram.
         const cmd = parseInboxCommand(msg.text)
-        // /start (commande de service Telegram envoyée par le client iPhone) : on le supprime
-        // de Telegram (pour qu'il ne traîne pas sur le téléphone) ET de la boîte. Aucune réponse.
+        // /start (commande de service Telegram envoyée par le client) : on supprime la ligne
+        // « /start » de Telegram (pour ne pas la laisser traîner) puis on envoie un message de
+        // bienvenue. Indispensable : tant que la conversation est vide, Telegram affiche le bouton
+        // « Démarrer » au lieu du champ de saisie ; une réponse débloque la saisie côté client.
         if (cmd.kind === 'ignore') {
           if (msg.messageId != null) {
             await deleteTelegramMessage(botToken, { chatId: msg.chatId, messageId: msg.messageId }).catch(() => {})
           }
+          await reply(
+            msg.chatId,
+            'Bot prêt ✅\nEnvoie-moi un message, ou lance un workflow :\n• /flow <demande> — génère et exécute un workflow\n• /run <nom> — exécute un workflow sauvegardé\n• /clear — efface la conversation',
+          )
           await deleteInboxMessage(msg.updateId)
           return
         }

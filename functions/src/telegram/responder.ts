@@ -113,7 +113,10 @@ export const telegramResponder = onDocumentCreated(
     try {
       const cmd = parseInboxCommand(d.text)
 
-      // /start : message de service — supprimé de Telegram et de la boîte, sans réponse.
+      // /start : commande de service. On supprime la ligne « /start » de Telegram (pour ne pas
+      // la laisser traîner) puis on envoie un message de bienvenue. Indispensable : tant que la
+      // conversation est vide, Telegram affiche le bouton « Démarrer » au lieu du champ de saisie ;
+      // une réponse garde l'historique non vide et débloque la saisie côté client.
       if (cmd.kind === 'ignore') {
         if (typeof d.messageId === 'number') {
           await fetch(`https://api.telegram.org/bot${botToken}/deleteMessage`, {
@@ -122,7 +125,10 @@ export const telegramResponder = onDocumentCreated(
             body: JSON.stringify({ chat_id: d.chatId, message_id: d.messageId }),
           }).catch(() => {})
         }
-        await snap.ref.delete().catch(() => {})
+        await reply(
+          'Bot prêt ✅\nEnvoie-moi un message, ou lance un workflow :\n• /flow <demande> — génère et exécute un workflow\n• /run <nom> — exécute un workflow sauvegardé\n• /clear — efface la conversation',
+        )
+        await markDone()
         return
       }
 
