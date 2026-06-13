@@ -5,6 +5,7 @@ import {
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
 } from '@/features/ai/providerLogos'
 import { TelegramSettings } from '@/features/telegram/TelegramSettings'
+import { PipelineRunsPanel } from './PipelineRunsPanel'
 import { GoogleServerConnect } from '@/features/settings/GoogleServerConnect'
 import { getSiteCookie, setSiteCookie, removeSiteCookie, listSiteCookies, SITE_COOKIES_HYDRATED_EVENT, SITE_COOKIES_UPDATED_EVENT, type SiteCookieEntry } from '@/lib/siteCookies'
 import { BrightDataConnectorRow } from '@/features/scraping/BrightDataConnectorRow'
@@ -536,6 +537,8 @@ function StatsTab() {
           })}
         </div>
       </div>
+
+      <PipelineRunsPanel />
     </div>
   )
 }
