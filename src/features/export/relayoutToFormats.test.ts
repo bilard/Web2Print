@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/features/ai/llmRouter', () => ({ generateJson: vi.fn() }))
@@ -34,9 +33,12 @@ describe('relayoutToFormats', () => {
     expect(byFormat.banniere[0]).toBeDefined()
   })
 
-  it("retombe sur l'homothétie si le LLM lève", async () => {
-    // Simule un échec LLM en retournant null : res.formats.find() lèvera une TypeError
-    // dans relayoutToFormats (sans créer d'Error dans le contexte de test).
+  // generateJson REJETTE en cas de clé absente/quota, mais une promesse rejetée par
+  // un mock est signalée « unhandled » par Vitest 4.x (fenêtre microtask) avant que
+  // le try/catch de prod n'attache son handler. On simule donc un échec via une
+  // réponse inexploitable (null → TypeError sur res.formats), capturée par le MÊME
+  // catch générique → vérifie bien la branche de repli, sans le faux positif Vitest.
+  it('retombe sur l’homothétie si generateJson échoue (réponse inexploitable)', async () => {
     generateJsonMock.mockResolvedValue(null as never)
     const { byFormat, usedFallback } = await relayoutToFormats({ imageDataUri: 'data:,', objects, srcW: 1000, srcH: 1000, targets })
     expect(usedFallback).toBe(true)
