@@ -47,17 +47,13 @@ Test :
 - [ ] Vérifier qu'une page éditable par format est ajoutée, design mis à l'échelle + centré, ajustable à la main.
 - [ ] Vérifier que la page source reste affichée et intacte après création.
 
-## 8. Auto-fit « Réduire pour tenir dans la zone » (nouveau — 2026-06-13) — NON vérifié en live
+## 8. Auto-fit « Réduire pour tenir dans la zone » (V3, zone explicite — 2026-06-13) — NON vérifié en live
 Logique pure testée + types/build verts, mais le rendu réel (réduction de police
 sur canvas Fabric) n'a PAS pu être observé ici. Test discriminant :
 - [ ] Connecter une source PIM (re-skin) sur un flyer décomposé.
-- [ ] Sélectionner un champ texte de fusion (titre/description), panneau Données → cocher **« Réduire pour tenir dans la zone »** pendant qu'un produit au **texte court** est affiché.
-- [ ] Naviguer vers un produit au **texte long** : la police doit se réduire pour rester dans la boîte, **sans devenir illisible** (plancher 6 px).
-- [ ] Cas idéal (recommandé par le libellé) : activer sur le produit au texte le **plus long** → les autres ne débordent jamais.
+- [ ] Sélectionner un champ texte de fusion (titre/description), panneau Données → cocher **« Réduire pour tenir dans la zone »**.
+- [ ] Régler la **zone cible** : **Largeur (px)** et, pour une description (cadre qui wrappe), **Lignes max**. La zone ne dépend PLUS du produit affiché.
+- [ ] Naviguer entre un produit court et un produit long : la police s'adapte pour tenir dans la zone réglée, **sans devenir illisible** (plancher 6 px).
+- [ ] Modifier « Lignes max » / « Largeur » → l'effet est immédiat sur le produit courant.
 - [ ] Décocher → la police de référence est restaurée.
-- [ ] Vérifier la persistance : sauver, recharger, reconnecter → l'auto-fit s'applique toujours.
-
-⚠️ Limite connue : la zone = la boîte **au moment du toggle**. Activé sur un produit
-court, le résultat peut être très petit sur les longs (d'où l'astuce du libellé).
-Si ça gêne à l'usage, prochaine itération = définir une zone cible explicite
-(hauteur en nombre de lignes, ou poignée de redimensionnement de la boîte).
+- [ ] Persistance : sauver, recharger, reconnecter → l'auto-fit + la zone réglée s'appliquent toujours.

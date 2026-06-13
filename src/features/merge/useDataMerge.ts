@@ -85,7 +85,7 @@ type FabricObjectWithData = import('fabric').FabricObject & {
   group?: import('fabric').Group
 }
 
-export interface FitZone { width: number; height: number }
+export interface FitZone { width: number; height: number; maxLines?: number }
 
 /**
  * « Réduire pour tenir dans la zone » : abaisse la taille de police (et celle
@@ -475,7 +475,13 @@ export function useDataMerge() {
       if (obj instanceof Textbox) obj.set({ width: zoneW })
       ;(obj as unknown as { initDimensions?: () => void }).initDimensions?.()
       obj.data.baseFontSize = obj.fontSize
-      obj.data.fitZone = { width: zoneW, height: zoneH }
+      const fz: FitZone = { width: zoneW, height: zoneH }
+      // Cadre qui wrappe : exposer une cible en nombre de lignes (éditable, V3).
+      if (obj instanceof Textbox) {
+        const lh = obj.lineHeight ?? 1.16
+        fz.maxLines = Math.max(1, Math.round(zoneH / ((obj.fontSize ?? 16) * lh)))
+      }
+      obj.data.fitZone = fz
       obj.data.fitToZone = true
     } else {
       obj.data.fitToZone = false
@@ -483,6 +489,34 @@ export function useDataMerge() {
         obj.set({ fontSize: obj.data.baseFontSize as number })
       }
     }
+    const { rows: r, currentRowIndex: idx } = useMergeStore.getState()
+    if (r[idx]) applyRow(r[idx])
+    refreshAncestorGroups(obj)
+    canvas.requestRenderAll()
+    syncToStore(canvas)
+  }, [applyRow])
+
+  /** Ajuste la zone cible explicite (V3) — largeur px et/ou nombre de lignes. */
+  const setFitZone = useCallback((objectId: string, patch: { width?: number; lines?: number }) => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    const obj = collectObjectsDeep(canvas.getObjects()).find(
+      (o) => (o as FabricObjectWithData).data?.id === objectId,
+    )
+    if (!(obj instanceof IText) || !obj.data) return
+    const zone = (obj.data.fitZone as FitZone | undefined) ?? {
+      width: obj.getScaledWidth(),
+      height: obj.getScaledHeight(),
+    }
+    const base = (obj.data.baseFontSize as number | undefined) ?? obj.fontSize ?? 16
+    const lh = obj.lineHeight ?? 1.16
+    const next: FitZone = { ...zone }
+    if (patch.width != null && patch.width > 0) next.width = patch.width
+    if (patch.lines != null && patch.lines >= 1) {
+      next.maxLines = Math.round(patch.lines)
+      next.height = next.maxLines * base * lh
+    }
+    obj.data.fitZone = next
     const { rows: r, currentRowIndex: idx } = useMergeStore.getState()
     if (r[idx]) applyRow(r[idx])
     refreshAncestorGroups(obj)
@@ -585,5 +619,6 @@ export function useDataMerge() {
     setCurrentRow,
     applyRow,
     setFitToZone,
+    setFitZone,
   }
 }

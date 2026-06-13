@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useReducer } from 'react'
-import { IText, FabricImage } from 'fabric'
+import { IText, Textbox, FabricImage } from 'fabric'
 import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft, Wand2, Shrink } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
@@ -33,7 +33,7 @@ function normalizeForStorage(formula: string, columns: { key: string; label: str
 }
 
 export function DataMergePanel() {
-  const { isConnected, dataSource, columns, currentRowIndex, totalRows, nextRow, prevRow, disconnectSource, connectSource, setFitToZone } =
+  const { isConnected, dataSource, columns, currentRowIndex, totalRows, nextRow, prevRow, disconnectSource, connectSource, setFitToZone, setFitZone } =
     useDataMerge()
   const selectedObjectId = useEditorStore((s) => s.selectedObjectId)
   const idmlSourceFileName = useEditorStore((s) => s.idmlSourceFileName)
@@ -147,7 +147,7 @@ export function DataMergePanel() {
 
       {/* Binding pour objet sélectionné */}
       {selectedObjectId && (
-        <BindingEditor selectedObjectId={selectedObjectId} columns={columns} setFitToZone={setFitToZone} />
+        <BindingEditor selectedObjectId={selectedObjectId} columns={columns} setFitToZone={setFitToZone} setFitZone={setFitZone} />
       )}
 
       {/* Actions */}
@@ -551,7 +551,7 @@ function VariableTags({ columns }: { columns: { key: string; label: string }[] }
   )
 }
 
-function BindingEditor({ selectedObjectId, columns, setFitToZone }: { selectedObjectId: string; columns: { key: string; label: string }[]; setFitToZone: (objectId: string, enabled: boolean) => void }) {
+function BindingEditor({ selectedObjectId, columns, setFitToZone, setFitZone }: { selectedObjectId: string; columns: { key: string; label: string }[]; setFitToZone: (objectId: string, enabled: boolean) => void; setFitZone: (objectId: string, patch: { width?: number; lines?: number }) => void }) {
   const [, force] = useReducer((x) => x + 1, 0)
   const canvas = globalFabricCanvas
   if (!canvas) return null
@@ -562,6 +562,11 @@ function BindingEditor({ selectedObjectId, columns, setFitToZone }: { selectedOb
 
   const isMergeTextField = obj instanceof IText && (!!obj.data?.templateText || hasPlaceholders(obj.text ?? ''))
   const fitOn = obj.data?.fitToZone === true
+  const isWrapField = obj instanceof Textbox
+  const fitZone = obj.data?.fitZone as { width: number; height: number; maxLines?: number } | undefined
+  const fitBase = (obj.data?.baseFontSize as number | undefined) ?? (obj instanceof IText ? obj.fontSize ?? 16 : 16)
+  const fitLh = obj instanceof IText ? (obj.lineHeight ?? 1.16) : 1.16
+  const fitLines = fitZone?.maxLines ?? (fitZone ? Math.max(1, Math.round(fitZone.height / (fitBase * fitLh))) : 1)
 
   const bindableProps: { key: string; label: string; icon: typeof Type }[] = []
   if (obj instanceof FabricImage) {
@@ -622,10 +627,38 @@ function BindingEditor({ selectedObjectId, columns, setFitToZone }: { selectedOb
               Réduire pour tenir dans la zone
             </span>
             <span className="block text-[10px] text-white/30 leading-tight mt-0.5">
-              Réduit le texte de chaque produit pour tenir dans la boîte <span className="text-white/50">telle qu'elle est maintenant</span>. Astuce : active-le quand la boîte est à la taille voulue (ex. sur le produit au texte le plus long).
+              Réduit le texte de chaque produit pour tenir dans la zone cible ci-dessous — indépendamment du produit affiché.
             </span>
           </span>
         </label>
+      )}
+
+      {isMergeTextField && fitOn && (
+        <div className="mt-2 ml-6 flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-1.5 text-[11px] text-white/50">
+            Largeur
+            <input
+              type="number"
+              min={10}
+              value={Math.round(fitZone?.width ?? 0)}
+              onChange={(e) => { setFitZone(selectedObjectId, { width: Number(e.target.value) }); force() }}
+              className="w-16 px-2 py-1 bg-white/5 border border-white/10 rounded text-xs text-white"
+            />
+            <span className="text-white/25">px</span>
+          </label>
+          {isWrapField && (
+            <label className="flex items-center gap-1.5 text-[11px] text-white/50">
+              Lignes max
+              <input
+                type="number"
+                min={1}
+                value={fitLines}
+                onChange={(e) => { setFitZone(selectedObjectId, { lines: Number(e.target.value) }); force() }}
+                className="w-12 px-2 py-1 bg-white/5 border border-white/10 rounded text-xs text-white"
+              />
+            </label>
+          )}
+        </div>
       )}
     </div>
   )
