@@ -3,6 +3,7 @@ import './pure'
 import './network'
 import './sinks'
 import './priceWatch'
+import './priceWatchTrack'
 import './google'
 
 /** Types présents côté client mais non exécutables côté serveur (navigateur/OAuth/canvas). */
