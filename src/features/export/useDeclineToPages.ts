@@ -84,33 +84,21 @@ export function useDeclineToPages() {
           ]),
         )
       } else if (transform === 'fluid') {
-        // Re-layout par blocs piloté LLM (image source requise pour la vision),
-        // repli cover garanti par fluidRelayoutToFormat.
-        const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
-        if (!imageDataUri) {
-          byFormat = Object.fromEntries(
-            targets.map((t) => [
-              t.id,
-              projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h, 'cover'),
-            ]),
-          )
-          usedFallback = true
-        } else {
-          const entries = await Promise.all(
-            targets.map(async (t) => {
-              const out = await fluidRelayoutToFormat({
-                imageDataUri,
-                objects: designObjects,
-                srcW: canvasWidth,
-                srcH: canvasHeight,
-                target: t,
-              })
-              if (out.usedFallback) usedFallback = true
-              return [t.id, out.objects] as const
-            }),
-          )
-          byFormat = Object.fromEntries(entries)
-        }
+        // Re-layout par blocs piloté LLM sur les DESCRIPTEURS seuls (DeepSeek,
+        // text-only) — pas de rendu d'image. Repli cover garanti par fluidRelayoutToFormat.
+        const entries = await Promise.all(
+          targets.map(async (t) => {
+            const out = await fluidRelayoutToFormat({
+              objects: designObjects,
+              srcW: canvasWidth,
+              srcH: canvasHeight,
+              target: t,
+            })
+            if (out.usedFallback) usedFallback = true
+            return [t.id, out.objects] as const
+          }),
+        )
+        byFormat = Object.fromEntries(entries)
       } else {
         const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
         const outcome = imageDataUri

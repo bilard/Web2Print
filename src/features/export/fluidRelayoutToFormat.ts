@@ -1,6 +1,7 @@
 // src/features/export/fluidRelayoutToFormat.ts
-// Orchestration du re-layout « fluide » par blocs : image source + descripteurs
-// par objet → LLM (regroupe en blocs + place les blocs) → applyFluidBlocks.
+// Orchestration du re-layout « fluide » par blocs : descripteurs par objet → LLM
+// (regroupe en blocs + place les blocs) → applyFluidBlocks. Pas d'image : la tâche
+// tourne sur DeepSeek (text-only, économique) à partir des seuls descripteurs.
 // RETOMBE sur projectObjectsToFormat(...,'cover') (composition entière préservée)
 // en cas d'échec/indisponibilité. Ne lève jamais.
 import { generateJson } from '@/features/ai/llmRouter'
@@ -13,7 +14,7 @@ export interface FluidOutcome {
   usedFallback: boolean
 }
 
-const PROMPT = `Tu es directeur artistique. On te donne une AFFICHE/CRÉA (image de référence) et la liste de ses ÉLÉMENTS (index "i", "type", "role" éventuel, "text" éventuel, boîte source "xPct"/"yPct"/"wPct"/"hPct" en fractions [0..1] de la page source).
+const PROMPT = `Tu es directeur artistique. On te donne la liste des ÉLÉMENTS d'une AFFICHE/CRÉA — chacun avec son index "i", son "type", un "role" éventuel, un "text" éventuel, et sa boîte source "xPct"/"yPct"/"wPct"/"hPct" en fractions [0..1] de la page source (sers-toi des positions/tailles/chevauchements pour comprendre la composition).
 
 1) REGROUPE les éléments en 2 ou 3 BLOCS MAXIMUM (vise 3). Chaque index "i" dans EXACTEMENT un bloc. Règles de regroupement STRICTES :
    - Bloc PRIX/PROMO : TOUS les éléments promotionnels qui se chevauchent ou se touchent (le prix, le "%" de remise, les bulles/pastilles, les mentions "OFFRE"/"GRATUIT"/"+Xg") vont ENSEMBLE dans le MÊME bloc. NE SÉPARE JAMAIS un prix de son badge de remise.
@@ -29,13 +30,12 @@ const PROMPT = `Tu es directeur artistique. On te donne une AFFICHE/CRÉA (image
 Réponds UNIQUEMENT en JSON {"formats":[{"id":"<id format>","blocks":[{"indices":[…],"xPct":…,"yPct":…,"wPct":…,"hPct":…}]}]}.`
 
 export async function fluidRelayoutToFormat(params: {
-  imageDataUri: string
   objects: readonly DesignObject[]
   srcW: number
   srcH: number
   target: DeclineTarget
 }): Promise<FluidOutcome> {
-  const { imageDataUri, objects, srcW, srcH, target } = params
+  const { objects, srcW, srcH, target } = params
   const coverFallback = (): FluidOutcome => ({
     objects: projectObjectsToFormat(objects, srcW, srcH, target.w, target.h, 'cover'),
     usedFallback: true,
@@ -61,7 +61,6 @@ ${JSON.stringify(descriptors)}`
       schemaForLLM: fluidJsonSchema,
       schemaForClaude: fluidJsonSchema,
       version: 'fluid-v1',
-      imageDataUris: [imageDataUri],
     })
     const fmt = res.formats.find((f) => f.id === target.id) ?? res.formats[0]
     if (!fmt || fmt.blocks.length === 0) return coverFallback()
