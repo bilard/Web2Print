@@ -21,9 +21,12 @@ export function useReformatPage() {
       const canvas = globalFabricCanvas
       if (!canvas) return false
       const { canvasWidth, canvasHeight } = useUIStore.getState()
+      // Exclut grille, marques de coupe ET fond de page (rect/image toujours
+      // présents) : une page « vide » doit compter 0 objet pour ne PAS déclencher
+      // l'IA (règle anti-spam — cf. spec).
       const designObjectCount = canvas
         .getObjects()
-        .filter((o) => !o.data?.isGrid && !o.data?.isPrintMark).length
+        .filter((o) => !o.data?.isGrid && !o.data?.isPrintMark && !o.data?.isPageBg).length
 
       if (!shouldReformat({ designObjectCount, srcW: canvasWidth, srcH: canvasHeight, dstW: wPt, dstH: hPt })) {
         return false
