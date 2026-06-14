@@ -34,15 +34,18 @@ export function useReformatPage() {
 
       const target = buildReformatTarget(wPt, hPt, presetLabel)
       try {
-        // Mise à l'échelle PROPORTIONNELLE qui préserve la composition (mode
-        // 'cover' : le design remplit le format, le trop-plein est rogné). Pas
-        // de LLM : déterministe, instantané. Réutilise la plomberie déclinées.
-        const { updated } = await withProgress(
-          'Adaptation du format…',
-          () => declineToPages([target], { navigateToLast: true, transform: 'cover' }),
+        // « Mise en page fluide » : l'IA ré-agence le design par BLOCS cohérents
+        // pour le nouveau format ; repli proportionnel (cover) garanti.
+        const { usedFallback, updated } = await withProgress(
+          'Mise en page fluide (IA)…',
+          () => declineToPages([target], { navigateToLast: true, transform: 'fluid' }),
         )
         const verb = updated > 0 ? 'régénérée' : 'créée'
-        notify.success('Format adapté', `Page « ${target.label} » ${verb} — design mis à l'échelle pour remplir le format, page d'origine conservée.`)
+        if (usedFallback) {
+          notify.warning('Format adapté (repli proportionnel)', `Page « ${target.label} » ${verb} — IA indisponible, mise à l'échelle proportionnelle appliquée.`)
+        } else {
+          notify.success('Mise en page fluide appliquée', `Page « ${target.label} » ${verb} — design ré-agencé par l'IA, page d'origine conservée.`)
+        }
       } catch (err) {
         console.error('[reformatPage] échec :', err)
         notify.error('Adaptation du format échouée', String(err).slice(0, 160))
