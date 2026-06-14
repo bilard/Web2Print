@@ -57,7 +57,6 @@ type LLMTask =
   | 'design.logoClassify'
   | 'design.semanticLayout'
   | 'design.relayoutMultiFormat'
-  | 'design.fluidRelayout'
   | 'workflow.generate'
   | 'telegram.chat'
   | 'telegram.chatPlan'
@@ -108,9 +107,6 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // d'objets) → boîtes par format. Même profil que semanticLayout : gemini-3.1-pro-preview
   // (responseSchema fiable sur v1beta), Claude en fallback si la clé Gemini manque.
   'design.relayoutMultiFormat': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
-  // Re-layout fluide par blocs : DeepSeek (économique, text-only) sur les
-  // DESCRIPTEURS seuls (pas d'image — DeepSeek n'a pas de vision). Repli Gemini.
-  'design.fluidRelayout': { primary: 'deepseek', fallback: 'gemini', model: 'deepseek-chat' },
   // Prompt-to-Flow : génération de graphe structuré. gemini-3.1-pro-preview en primary
   // (JSON fiable via responseSchema sur v1beta + disponibilité), Claude Opus 4.7 en
   // fallback (meilleur raisonnement de graphe si la clé Gemini manque).
@@ -151,7 +147,6 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.logoClassify':    0,
   'design.semanticLayout':  0,
   'design.relayoutMultiFormat': 0,
-  'design.fluidRelayout': 0,
   'workflow.generate':      0.2,
   'telegram.chat':          0.4,
   // Décision structurée (chercher ou non, quelle requête) → plus déterministe.

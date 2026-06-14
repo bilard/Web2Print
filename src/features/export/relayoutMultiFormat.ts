@@ -4,7 +4,7 @@
 // pour le LLM, et traduit le placement renvoyé (boîtes en %) en objets transformés
 // (cover/contain déterministe). Voir relayoutToFormats.ts pour l'orchestration.
 import { z } from 'zod'
-import { projectObjectsToFormat, scaleMergeGeometry, type DeclineTarget } from './declineLayout'
+import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
 
 /** Objet Fabric sérialisé, sous-ensemble des champs qu'on lit/transforme. */
 export interface DesignObject {
@@ -161,15 +161,13 @@ export function applyRelayout<T extends DesignObject>(
       el.fit === 'cover'
         ? Math.max(bw / curW, bh / curH)
         : Math.min(bw / curW, bh / curH)
-    const next = {
+    return {
       ...o,
       left: bx + (bw - curW * f) / 2,
       top: by + (bh - curH * f) / 2,
       scaleX: (o.scaleX ?? 1) * f,
       scaleY: (o.scaleY ?? 1) * f,
     }
-    if (o.data !== undefined) next.data = scaleMergeGeometry(o.data, f) as typeof o.data
-    return next
   })
 }
 

@@ -7,10 +7,6 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
 import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
 import { OptionHelp } from '@/components/shared/OptionHelp'
-import { usePageReformat } from '@/features/editor/usePageReformat'
-import { withProgress } from '@/stores/progress.store'
-import { notify } from '@/lib/notify'
-import { Sparkles } from 'lucide-react'
 
 // Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
 // Les formats print sont exprimés en pt pour rester cohérents avec l'import
@@ -43,8 +39,6 @@ export function PagePanel() {
     canvasBgType, canvasBgGradient, canvasBgImage,
     setCanvasSize, setCanvasBgType, setCanvasBgGradient, setCanvasBgImage,
   } = useUIStore()
-  const { resizeProportional, reflowWithAI } = usePageReformat()
-  const [reflowing, setReflowing] = useState(false)
 
   // Préréglage « Origine » = taille d'ouverture du document (capturée au chargement).
   const originActive =
@@ -77,37 +71,14 @@ export function PagePanel() {
     }, 50)
   }
 
-  // Reçoit les dimensions en pt (= px canvas). Change le format de la page COURANTE
-  // et met le contenu à l'échelle proportionnellement (EN PLACE, pas de nouvelle
-  // page) pour qu'il suive le nouveau format.
+  // Reçoit les dimensions en pt (= px canvas).
   const applySize = (wPt: number, hPt: number) => {
     const cw = Math.max(50, wPt)
     const ch = Math.max(50, hPt)
     setWidthMm(roundMm(canvasPxToMm(cw)))
     setHeightMm(roundMm(canvasPxToMm(ch)))
-    resizeProportional(canvasWidth, canvasHeight, cw, ch)
     setCanvasSize(cw, ch)
     triggerSave()
-  }
-
-  // Ré-agencement « fluide » par l'IA, à la demande, sur la page courante (en place).
-  const handleReflowAI = async () => {
-    setReflowing(true)
-    try {
-      const { ok, usedFallback } = await withProgress('Mise en page fluide (IA)…', reflowWithAI)
-      if (!ok) {
-        notify.info('Rien à ré-agencer', 'La page ne contient aucun élément à disposer.')
-      } else if (usedFallback) {
-        notify.warning('IA indisponible', "Ré-agencement non appliqué (clé/budget DeepSeek manquant). Le contenu est inchangé.")
-      } else {
-        notify.success('Mise en page fluide appliquée', 'Le contenu a été ré-agencé pour le format courant.')
-      }
-    } catch (err) {
-      console.error('[reflowAI]', err)
-      notify.error('Ré-agencement échoué', String(err).slice(0, 160))
-    } finally {
-      setReflowing(false)
-    }
   }
 
   // Saisie utilisateur en mm → convertit en pt pour applySize.
@@ -161,20 +132,20 @@ export function PagePanel() {
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Largeur</span>
-            <input type="number" value={widthMm} min={10} step={0.1} disabled={reflowing}
+            <input type="number" value={widthMm} min={10} step={0.1}
               onChange={(e) => setWidthMm(e.target.value === '' ? '' : Number(e.target.value))}
               onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
               onKeyDown={(e) => e.key === 'Enter' && applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
-              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50 disabled:opacity-40 disabled:cursor-not-allowed" />
+              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
           </div>
           <span className="text-white/20 mt-4">x</span>
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Hauteur</span>
-            <input type="number" value={heightMm} min={10} step={0.1} disabled={reflowing}
+            <input type="number" value={heightMm} min={10} step={0.1}
               onChange={(e) => setHeightMm(e.target.value === '' ? '' : Number(e.target.value))}
               onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
               onKeyDown={(e) => e.key === 'Enter' && applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
-              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50 disabled:opacity-40 disabled:cursor-not-allowed" />
+              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
           </div>
           <span className="text-[10px] text-white/20 mt-4">mm</span>
         </div>
@@ -182,9 +153,8 @@ export function PagePanel() {
           {originWidth != null && originHeight != null && (
             <button
               onClick={() => applySize(originWidth, originHeight)}
-              disabled={reflowing}
               title={`Taille d'ouverture du document : ${Math.round(canvasPxToMm(originWidth))}×${Math.round(canvasPxToMm(originHeight))} mm`}
-              className={`px-2 py-1 text-[10px] rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${originActive
+              className={`px-2 py-1 text-[10px] rounded border transition-colors ${originActive
                 ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                 : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
               Origine
@@ -193,27 +163,14 @@ export function PagePanel() {
           {FORMAT_PRESETS.map((p) => {
             const active = Math.round(canvasWidth) === p.w && Math.round(canvasHeight) === p.h
             return (
-              <button key={p.label} onClick={() => applySize(p.w, p.h)} disabled={reflowing}
-                className={`px-2 py-1 text-[10px] rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${active
+              <button key={p.label} onClick={() => applySize(p.w, p.h)}
+                className={`px-2 py-1 text-[10px] rounded border transition-colors ${active
                   ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                   : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
                 {p.label}
               </button>
             )
           })}
-        </div>
-
-        {/* ── Ré-agencement IA (optionnel, en place) ── */}
-        <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-white/5">
-          <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-            Mise en page
-            <OptionHelp text="Changer le format met automatiquement le contenu à l'échelle (proportionnel, sur place). « Ré-agencer avec l'IA » redispose les blocs (produit, prix, texte) pour mieux remplir le format courant — optionnel, nécessite une clé DeepSeek. Le contenu reste éditable et tu peux annuler." />
-          </label>
-          <button onClick={handleReflowAI} disabled={reflowing}
-            className="flex items-center justify-center gap-1.5 py-1.5 text-[10px] rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-white/5 border-white/10 text-white/60 hover:text-indigo-400 hover:border-indigo-500/40">
-            <Sparkles className="w-3 h-3" />
-            {reflowing ? 'Ré-agencement…' : "Ré-agencer avec l'IA (Fluide)"}
-          </button>
         </div>
       </section>
 

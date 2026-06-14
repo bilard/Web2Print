@@ -8,11 +8,9 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { FABRIC_SERIALIZED_PROPS } from '@/features/editor/serializationProps'
 import { usePagesStore } from '@/stores/pages.store'
 import { useUIStore } from '@/stores/ui.store'
-import { usePageNavigation } from '@/features/editor/usePageNavigation'
 import { relayoutToFormats } from './relayoutToFormats'
 import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
 import type { DesignObject } from './relayoutMultiFormat'
-import { fluidRelayoutToFormat } from './fluidRelayoutToFormat'
 
 interface SerializedCanvas {
   objects?: Array<DesignObject & { data?: { isGrid?: boolean; isPrintMark?: boolean; role?: string } }>
@@ -21,7 +19,6 @@ interface SerializedCanvas {
 
 export interface DeclineOutcome {
   created: number
-  updated: number
   usedFallback: boolean
 }
 
@@ -52,17 +49,12 @@ function renderSourceDataUri(canvas: Canvas, srcW: number, srcH: number): string
 }
 
 export function useDeclineToPages() {
-  const { navigateToPage } = usePageNavigation()
   const declineToPages = useCallback(
-    async (
-      targets: readonly DeclineTarget[],
-      options?: { navigateToLast?: boolean; transform?: 'ai' | 'contain' | 'cover' | 'fluid' },
-    ): Promise<DeclineOutcome> => {
+    async (targets: readonly DeclineTarget[]): Promise<DeclineOutcome> => {
       const canvas = globalFabricCanvas
       if (!canvas) throw new Error('Canvas indisponible.')
-      if (targets.length === 0) return { created: 0, updated: 0, usedFallback: false }
+      if (targets.length === 0) return { created: 0, usedFallback: false }
 
-      const transform = options?.transform ?? 'ai'
       const { canvasWidth, canvasHeight } = useUIStore.getState()
       const serialized = canvas.toObject(FABRIC_SERIALIZED_PROPS) as SerializedCanvas
       const allObjects = serialized.objects ?? []
@@ -71,78 +63,33 @@ export function useDeclineToPages() {
         (o) => !o.data?.isGrid && !o.data?.isPrintMark,
       )
 
-      // Transformation DÉTERMINISTE (proportionnelle, composition préservée) :
-      // le « Reformater en proportion » passe par ici (pas de LLM, instantané,
-      // sans coût). Le mode 'ai' (déclinées multi-format) garde le re-layout LLM.
-      let byFormat: Record<string, DesignObject[]>
-      let usedFallback = false
-      if (transform === 'contain' || transform === 'cover') {
-        byFormat = Object.fromEntries(
-          targets.map((t) => [
-            t.id,
-            projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h, transform),
-          ]),
-        )
-      } else if (transform === 'fluid') {
-        // Re-layout par blocs piloté LLM sur les DESCRIPTEURS seuls (DeepSeek,
-        // text-only) — pas de rendu d'image. Repli cover garanti par fluidRelayoutToFormat.
-        const entries = await Promise.all(
-          targets.map(async (t) => {
-            const out = await fluidRelayoutToFormat({
-              objects: designObjects,
-              srcW: canvasWidth,
-              srcH: canvasHeight,
-              target: t,
-            })
-            if (out.usedFallback) usedFallback = true
-            return [t.id, out.objects] as const
-          }),
-        )
-        byFormat = Object.fromEntries(entries)
-      } else {
-        const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
-        const outcome = imageDataUri
-          ? await relayoutToFormats({
-              imageDataUri,
-              objects: designObjects,
-              srcW: canvasWidth,
-              srcH: canvasHeight,
-              targets,
-            })
-          : {
-              // Pas d'image (toDataURL a échoué, ex. CORS) → repli homothétique direct.
-              byFormat: Object.fromEntries(
-                targets.map((t) => [
-                  t.id,
-                  projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h),
-                ]),
-              ),
-              usedFallback: true,
-            }
-        byFormat = outcome.byFormat
-        usedFallback = outcome.usedFallback
-      }
+      const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
+      const { byFormat, usedFallback } = imageDataUri
+        ? await relayoutToFormats({
+            imageDataUri,
+            objects: designObjects,
+            srcW: canvasWidth,
+            srcH: canvasHeight,
+            targets,
+          })
+        : {
+            // Pas d'image (toDataURL a échoué, ex. CORS) → repli homothétique direct.
+            byFormat: Object.fromEntries(
+              targets.map((t) => [
+                t.id,
+                projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h),
+              ]),
+            ),
+            usedFallback: true,
+          }
 
-      const { currentPageIndex, updatePage, addPage, setCurrentPage } = usePagesStore.getState()
+      const { pages, currentPageIndex, updatePage, addPage, setCurrentPage } = usePagesStore.getState()
       const originalIndex = currentPageIndex
       let created = 0
-      let updated = 0
 
       targets.forEach((target) => {
         const projected = byFormat[target.id] ?? []
         const json = JSON.stringify({ ...serialized, objects: projected })
-        const existing = usePagesStore.getState().pages
-        const last = existing[existing.length - 1]
-        // Idempotence de format : ré-appliquer le même format met à jour la
-        // dernière page adaptée au lieu d'en empiler une nouvelle.
-        const reuse =
-          last && last.label === target.label &&
-          Math.round(last.width) === target.w && Math.round(last.height) === target.h
-        if (reuse && last) {
-          updatePage(last.id, { canvasJSON: json, label: target.label })
-          updated++
-          return
-        }
         // addPage déplace currentPageIndex sur la nouvelle page (en fin de liste).
         addPage(target.w, target.h)
         const next = usePagesStore.getState().pages
@@ -153,22 +100,11 @@ export function useDeclineToPages() {
         }
       })
 
-      if (options?.navigateToLast) {
-        const finalPages = usePagesStore.getState().pages
-        const targetIndex = finalPages.length - 1
-        // addPage a déjà déplacé currentPageIndex sur la dernière page : navigateToPage
-        // court-circuiterait (newIndex === currentPageIndex) sans charger le JSON ni
-        // redimensionner le canvas. On repositionne d'abord sur la source.
-        usePagesStore.getState().setCurrentPage(Math.min(originalIndex, finalPages.length - 1))
-        await navigateToPage(targetIndex)
-      } else {
-        // Le canvas affiche toujours la page source : on y recale l'index.
-        const live = usePagesStore.getState().pages
-        setCurrentPage(Math.min(originalIndex, live.length - 1))
-      }
-      return { created, updated, usedFallback }
+      // Le canvas affiche toujours la page source : on y recale l'index.
+      setCurrentPage(Math.min(originalIndex, pages.length - 1))
+      return { created, usedFallback }
     },
-    [navigateToPage],
+    [],
   )
 
   return { declineToPages }

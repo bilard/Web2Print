@@ -29,48 +29,14 @@ interface ProjectableObject {
   top?: number
   scaleX?: number
   scaleY?: number
-  data?: unknown
   [key: string]: unknown
 }
 
 /**
- * Réconcilie les MÉTADONNÉES de fusion (`data.*`) avec une transformation de
- * facteur `s`, pour que l'objet GARDE sa nouvelle position/taille une fois
- * retravaillé (sinon le système de fusion réimpose la géométrie d'origine).
- * - Champs d'ANCRAGE positionnels (`mergeBaseTop`/`mergeBaseHeight`) → SUPPRIMÉS :
- *   le merge les re-capture depuis la nouvelle géométrie (cf. compactHiddenMergeFields).
- * - Champs d'INTENTION (taille de zone `fitZone`, `autoFitWidth`) → mis à l'échelle.
- * Renvoie un NOUVEL objet data (ou la valeur d'origine si rien à faire).
- */
-export function scaleMergeGeometry(data: unknown, s: number): unknown {
-  if (!data || typeof data !== 'object') return data
-  const d = data as Record<string, unknown>
-  const fz = d.fitZone
-  const hasFit = !!fz && typeof fz === 'object'
-  const hasAuto = typeof d.autoFitWidth === 'number'
-  const hasBase = d.mergeBaseTop !== undefined || d.mergeBaseHeight !== undefined
-  if (!hasFit && !hasAuto && !hasBase) return data
-  const next: Record<string, unknown> = { ...d }
-  delete next.mergeBaseTop
-  delete next.mergeBaseHeight
-  if (hasFit) {
-    const z = fz as { width?: number; height?: number; maxLines?: number }
-    next.fitZone = { ...z, width: (z.width ?? 0) * s, height: (z.height ?? 0) * s }
-  }
-  if (hasAuto) next.autoFitWidth = (d.autoFitWidth as number) * s
-  return next
-}
-
-/**
  * Re-projette des objets sérialisés depuis un canvas source `srcW×srcH` vers un
- * cadre cible `dstW×dstH` par un scale UNIFORME + centrage — la composition est
- * préservée (un seul facteur appliqué à TOUS les objets). La transformation
- * s'applique autour de l'origine (0,0 = coin haut-gauche de la page), donc
- * indépendante de originX/originY des objets.
- *
- * - `mode='contain'` (défaut) : `s = min(...)` → tout reste visible, marges possibles.
- * - `mode='cover'` : `s = max(...)` → le design REMPLIT le format cible, le
- *   trop-plein déborde (rogné par la page). Sert au « Reformater » en proportion.
+ * cadre cible `dstW×dstH` : scale uniforme « contain » (rien n'est perdu) +
+ * centrage. La transformation s'applique autour de l'origine (0,0 = coin
+ * haut-gauche de la page), donc indépendante de originX/originY des objets.
  *
  * Renvoie de NOUVEAUX objets (les sources ne sont pas mutées).
  */
@@ -80,23 +46,16 @@ export function projectObjectsToFormat<T extends ProjectableObject>(
   srcH: number,
   dstW: number,
   dstH: number,
-  mode: 'contain' | 'cover' = 'contain',
 ): T[] {
   if (srcW <= 0 || srcH <= 0) return objects.map((o) => ({ ...o }))
-  const s = mode === 'cover'
-    ? Math.max(dstW / srcW, dstH / srcH)
-    : Math.min(dstW / srcW, dstH / srcH)
+  const s = Math.min(dstW / srcW, dstH / srcH)
   const offsetX = (dstW - srcW * s) / 2
   const offsetY = (dstH - srcH * s) / 2
-  return objects.map((o) => {
-    const next: T = {
-      ...o,
-      left: (o.left ?? 0) * s + offsetX,
-      top: (o.top ?? 0) * s + offsetY,
-      scaleX: (o.scaleX ?? 1) * s,
-      scaleY: (o.scaleY ?? 1) * s,
-    }
-    if (o.data !== undefined) next.data = scaleMergeGeometry(o.data, s)
-    return next
-  })
+  return objects.map((o) => ({
+    ...o,
+    left: (o.left ?? 0) * s + offsetX,
+    top: (o.top ?? 0) * s + offsetY,
+    scaleX: (o.scaleX ?? 1) * s,
+    scaleY: (o.scaleY ?? 1) * s,
+  }))
 }
