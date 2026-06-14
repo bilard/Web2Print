@@ -22,19 +22,18 @@
 - [ ] La grille et les marques de coupe ne sont PAS recopiées dans les déclinaisons.
 - [ ] **Repli** : retirer la clé LLM (ou budget épuisé) → toast « repli géométrique », pages créées quand même (mise à l'échelle simple).
 
-### A1bis. Reformater (IA) au changement de format
-Panneau **PAGE** → changer le format d'un projet **qui contient déjà des objets** (nécessite une clé LLM + budget pour l'adaptation IA ; sinon repli géométrique).
-- [ ] Ouvrir un projet avec un seul élément collé en haut-à-gauche d'une grande page (ex. tuile produit sur A4).
-- [ ] Panneau PAGE → choisir un format de ratio différent (preset **A4 Paysage**, ou saisir un grand format type A1).
-- [ ] Vérifier : toast **« Adaptation IA du format… »**, puis une **nouvelle page** au format cible apparaît et devient courante (canvas redimensionné au bon format).
-- [ ] Vérifier : sur la page adaptée, le contenu est **replacé/redimensionné cohéremment** (fond remplissant, contenu recentré), objets **éditables**.
-- [ ] Vérifier : la page d'origine est **intacte** (format + contenu).
-- [ ] **Idempotence** : ré-appliquer le **même** format (depuis la page source) → la page adaptée est **régénérée** (toast « régénérée »), **pas empilée**.
-- [ ] **Page vide** : sur une page sans objet, changer le format → **retaille en place**, aucune nouvelle page créée, pas d'appel IA.
-- [ ] **Dims inchangées** : ré-appliquer le format courant → rien ne se passe (pas de page, pas d'IA).
-- [ ] **Repli** : sans clé LLM (ou budget épuisé) → toast « repli géométrique », contenu mis à l'échelle contain+centré sur la nouvelle page.
+### A1bis. Reformater en proportion au changement de format
+Panneau **PAGE** → changer le format d'un projet **qui contient déjà des objets**. Mise à l'échelle **proportionnelle déterministe** (mode « cover » : le design REMPLIT le format, composition préservée, bords en trop-plein rognés). **Pas de LLM** : instantané, sans coût, sans clé requise.
+- [ ] Ouvrir un projet (ex. flyer produit) qui remplit sa page.
+- [ ] Panneau PAGE → choisir un format de ratio différent (preset **A4 Paysage**, **Instagram Story**, ou saisir un grand format type A1).
+- [ ] Vérifier : toast **« Adaptation du format… »**, puis une **nouvelle page** au format cible apparaît et devient courante (canvas redimensionné au bon format).
+- [ ] Vérifier : sur la page adaptée, **la composition est identique à l'original** (prix sur le tube, badges en place) — le design est juste agrandi/réduit comme un seul bloc pour **remplir** le format ; les bords en trop-plein sont rognés. **Aucun élément éparpillé.**
+- [ ] Vérifier : objets **éditables** ; page d'origine **intacte** (format + contenu).
+- [ ] **Idempotence** : ré-appliquer le **même** format (depuis la page source) → page adaptée **régénérée** (toast « régénérée »), **pas empilée**.
+- [ ] **Page vide** : sur une page sans objet, changer le format → **retaille en place**, aucune nouvelle page.
+- [ ] **Dims inchangées** : ré-appliquer le format courant → rien ne se passe.
 
-> ⚠ Limitation connue (non bloquante, edge case) : si l'utilisateur se place **sur la page adaptée** (dernière page) et relance une régénération du **même** format depuis cette page, le canvas peut rester figé (le store est à jour, un clic manuel sur la page recharge). Inatteignable par le flux normal du panneau PAGE car ré-appliquer le format courant donne « dims inchangées ».
+> ⚠ Limitation connue (non bloquante) : ré-générer le **même** format en étant déjà **sur** la page adaptée (dernière) peut laisser le canvas figé (store à jour, clic manuel recharge). Inatteignable par le flux PAGE car « dims inchangées ».
 
 ### A2. Auto-fit « Réduire pour tenir dans la zone » (V3, zone explicite)
 Panneau **Données** (mode re-skin) sur un flyer décomposé connecté à une source PIM.
