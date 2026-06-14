@@ -8,6 +8,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { FABRIC_SERIALIZED_PROPS } from '@/features/editor/serializationProps'
 import { usePagesStore } from '@/stores/pages.store'
 import { useUIStore } from '@/stores/ui.store'
+import { usePageNavigation } from '@/features/editor/usePageNavigation'
 import { relayoutToFormats } from './relayoutToFormats'
 import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
 import type { DesignObject } from './relayoutMultiFormat'
@@ -19,6 +20,7 @@ interface SerializedCanvas {
 
 export interface DeclineOutcome {
   created: number
+  updated: number
   usedFallback: boolean
 }
 
@@ -49,11 +51,15 @@ function renderSourceDataUri(canvas: Canvas, srcW: number, srcH: number): string
 }
 
 export function useDeclineToPages() {
+  const { navigateToPage } = usePageNavigation()
   const declineToPages = useCallback(
-    async (targets: readonly DeclineTarget[]): Promise<DeclineOutcome> => {
+    async (
+      targets: readonly DeclineTarget[],
+      options?: { navigateToLast?: boolean },
+    ): Promise<DeclineOutcome> => {
       const canvas = globalFabricCanvas
       if (!canvas) throw new Error('Canvas indisponible.')
-      if (targets.length === 0) return { created: 0, usedFallback: false }
+      if (targets.length === 0) return { created: 0, updated: 0, usedFallback: false }
 
       const { canvasWidth, canvasHeight } = useUIStore.getState()
       const serialized = canvas.toObject(FABRIC_SERIALIZED_PROPS) as SerializedCanvas
@@ -83,13 +89,26 @@ export function useDeclineToPages() {
             usedFallback: true,
           }
 
-      const { pages, currentPageIndex, updatePage, addPage, setCurrentPage } = usePagesStore.getState()
+      const { currentPageIndex, updatePage, addPage, setCurrentPage } = usePagesStore.getState()
       const originalIndex = currentPageIndex
       let created = 0
+      let updated = 0
 
       targets.forEach((target) => {
         const projected = byFormat[target.id] ?? []
         const json = JSON.stringify({ ...serialized, objects: projected })
+        const existing = usePagesStore.getState().pages
+        const last = existing[existing.length - 1]
+        // Idempotence de format : ré-appliquer le même format met à jour la
+        // dernière page adaptée au lieu d'en empiler une nouvelle.
+        const reuse =
+          last && last.label === target.label &&
+          Math.round(last.width) === target.w && Math.round(last.height) === target.h
+        if (reuse && last) {
+          updatePage(last.id, { canvasJSON: json, label: target.label })
+          updated++
+          return
+        }
         // addPage déplace currentPageIndex sur la nouvelle page (en fin de liste).
         addPage(target.w, target.h)
         const next = usePagesStore.getState().pages
@@ -100,11 +119,22 @@ export function useDeclineToPages() {
         }
       })
 
-      // Le canvas affiche toujours la page source : on y recale l'index.
-      setCurrentPage(Math.min(originalIndex, pages.length - 1))
-      return { created, usedFallback }
+      if (options?.navigateToLast) {
+        const finalPages = usePagesStore.getState().pages
+        const targetIndex = finalPages.length - 1
+        // addPage a déjà déplacé currentPageIndex sur la dernière page : navigateToPage
+        // court-circuiterait (newIndex === currentPageIndex) sans charger le JSON ni
+        // redimensionner le canvas. On repositionne d'abord sur la source.
+        usePagesStore.getState().setCurrentPage(Math.min(originalIndex, finalPages.length - 1))
+        await navigateToPage(targetIndex)
+      } else {
+        // Le canvas affiche toujours la page source : on y recale l'index.
+        const live = usePagesStore.getState().pages
+        setCurrentPage(Math.min(originalIndex, live.length - 1))
+      }
+      return { created, updated, usedFallback }
     },
-    [],
+    [navigateToPage],
   )
 
   return { declineToPages }

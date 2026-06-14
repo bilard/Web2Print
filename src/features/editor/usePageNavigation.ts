@@ -7,23 +7,24 @@ import { useUIStore } from '@/stores/ui.store'
 import { ensurePageBgRect } from './useCanvas'
 
 export function usePageNavigation() {
-  const { pages, currentPageIndex, updatePage, setCurrentPage } = usePagesStore()
-
   const saveCurrentPage = useCallback(() => {
     const canvas = globalFabricCanvas
     if (!canvas) return
+    const { pages, currentPageIndex, updatePage } = usePagesStore.getState()
     const page = pages[currentPageIndex]
     if (!page) return
 
     const json = JSON.stringify(canvas.toObject(FABRIC_SERIALIZED_PROPS))
     const thumbnail = canvas.toDataURL({ multiplier: 0.15, format: 'jpeg', quality: 0.5 } as any)
     updatePage(page.id, { canvasJSON: json, thumbnail })
-  }, [pages, currentPageIndex, updatePage])
+  }, [])
 
   const navigateToPage = useCallback(
     async (newIndex: number) => {
       const canvas = globalFabricCanvas
-      if (!canvas || newIndex === currentPageIndex) return
+      if (!canvas) return
+      const { pages, currentPageIndex, setCurrentPage } = usePagesStore.getState()
+      if (newIndex === currentPageIndex) return
 
       // Save current page state
       saveCurrentPage()
@@ -51,7 +52,7 @@ export function usePageNavigation() {
       syncToStore(canvas)
       setCurrentPage(newIndex)
     },
-    [pages, currentPageIndex, saveCurrentPage, updatePage, setCurrentPage],
+    [saveCurrentPage],
   )
 
   return { navigateToPage, saveCurrentPage }
