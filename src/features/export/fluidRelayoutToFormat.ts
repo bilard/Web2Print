@@ -15,9 +15,16 @@ export interface FluidOutcome {
 
 const PROMPT = `Tu es directeur artistique. On te donne une AFFICHE/CRÉA (image de référence) et la liste de ses ÉLÉMENTS (index "i", "type", "role" éventuel, "text" éventuel, boîte source "xPct"/"yPct"/"wPct"/"hPct" en fractions [0..1] de la page source).
 
-1) REGROUPE les éléments en 2 à 5 BLOCS cohérents — un bloc = des éléments qui forment une unité visuelle (le VISUEL PRODUIT et ce qui le recouvre, le bloc PRIX/PROMO, le bloc TEXTE, le FOND/CADRE). Chaque index "i" doit appartenir à EXACTEMENT un bloc.
+1) REGROUPE les éléments en 2 ou 3 BLOCS MAXIMUM (vise 3). Chaque index "i" dans EXACTEMENT un bloc. Règles de regroupement STRICTES :
+   - Bloc PRIX/PROMO : TOUS les éléments promotionnels qui se chevauchent ou se touchent (le prix, le "%" de remise, les bulles/pastilles, les mentions "OFFRE"/"GRATUIT"/"+Xg") vont ENSEMBLE dans le MÊME bloc. NE SÉPARE JAMAIS un prix de son badge de remise.
+   - Bloc PRODUIT : la photo/visuel produit + le logo + le contenant (ex. "150 ml"). Le FOND/CADRE pleine page va aussi avec (ou en bloc dédié couvrant toute la page).
+   - Bloc TEXTE : les libellés/champs de fusion ({{...}}, titre, marque, description).
 
-2) Pour le FORMAT CIBLE (ratio différent de la source), PLACE chaque bloc : région "xPct"/"yPct" (coin haut-gauche, fractions [0..1] de la page CIBLE) et "wPct"/"hPct" (taille de la région). EXPLOITE l'espace selon l'orientation : en paysage, dispose les blocs CÔTE À CÔTE (ex. produit à gauche, prix/texte à droite) ; en portrait, EMPILE-les. Le bloc FOND/CADRE couvre toute la page (xPct=0,yPct=0,wPct=1,hPct=1). Préserve la hiérarchie (le prix reste proéminent, le logo petit). Ne fais pas déborder un bloc hors de la page.
+2) Pour le FORMAT CIBLE (ratio différent), PLACE chaque bloc : région "xPct"/"yPct" (coin haut-gauche) + "wPct"/"hPct" (taille), fractions [0..1] de la page CIBLE. IMPÉRATIFS :
+   - REMPLIS la page de façon ÉQUILIBRÉE : agrandis les blocs pour OCCUPER l'espace, PAS de grands vides. La somme des blocs doit couvrir l'essentiel de la page.
+   - En PAYSAGE : dispose les blocs CÔTE À CÔTE (ex. produit à gauche ~50%, prix en haut-droite, texte en bas-droite). En PORTRAIT : EMPILE-les.
+   - Le bloc FOND/CADRE couvre toute la page (xPct=0,yPct=0,wPct=1,hPct=1).
+   - Préserve la hiérarchie (prix gros et proéminent, logo petit). Ne fais JAMAIS déborder un bloc (0 ≤ xPct, xPct+wPct ≤ 1, idem y).
 
 Réponds UNIQUEMENT en JSON {"formats":[{"id":"<id format>","blocks":[{"indices":[…],"xPct":…,"yPct":…,"wPct":…,"hPct":…}]}]}.`
 
