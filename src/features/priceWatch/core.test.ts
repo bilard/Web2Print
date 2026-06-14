@@ -125,3 +125,43 @@ describe('parseMatchVerdict', () => {
     expect(parseMatchVerdict('pas du json')).toBe(0)
   })
 })
+
+import { stableId, parseProductsFromSheet, parseSitesConfig } from './core'
+
+describe('stableId', () => {
+  it('nettoie et borne', () => {
+    expect(stableId('Bosch GBH 5/40')).toBe('bosch_gbh_5_40')
+    expect(stableId('   ')).toBe('x')
+  })
+})
+
+describe('parseProductsFromSheet', () => {
+  const rows = [
+    { Réf: 'SK1', Désignation: 'Perceuse X', Marque: 'Acme', 'Prix': '99,90 €' },
+    { Réf: '', Désignation: 'Sans réf', Marque: 'B' },
+    { Réf: '', Désignation: '', Marque: '' }, // ligne vide → ignorée
+  ]
+  const map = { sku: 'Réf', name: 'Désignation', brand: 'Marque', price: 'Prix' }
+  it('mappe colonnes → produits, ignore lignes sans clé, parse le prix', () => {
+    const out = parseProductsFromSheet(rows, map)
+    expect(out.length).toBe(2)
+    expect(out[0]).toMatchObject({ sku: 'SK1', name: 'Perceuse X', brand: 'Acme', myPrice: 99.9 })
+    expect(out[0].id).toBe('sk1')
+    expect(out[1].id).toBe('b sans réf'.replace(/\s+/g, '_')) // clé = marque+nom
+  })
+  it('id stable et dédupliqué', () => {
+    const dup = parseProductsFromSheet([rows[0], rows[0]], map)
+    expect(dup.length).toBe(1)
+  })
+})
+
+describe('parseSitesConfig', () => {
+  it('parse domaine + champs, défaut price', () => {
+    const out = parseSitesConfig('exemple.com\nhttps://autre.fr/x | price, availability')
+    expect(out[0]).toMatchObject({ domain: 'exemple.com', fields: ['price'] })
+    expect(out[1]).toMatchObject({ domain: 'autre.fr', fields: ['price', 'availability'] })
+  })
+  it('ignore lignes vides et déduplique', () => {
+    expect(parseSitesConfig('\n  \nexemple.com\nexemple.com').length).toBe(1)
+  })
+})

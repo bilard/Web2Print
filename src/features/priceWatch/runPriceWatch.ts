@@ -61,10 +61,11 @@ async function discover(product: TrackedProduct, site: CompetitorSite): Promise<
   return null
 }
 
-/** Scrape prix (+ contenu sérialisé) d'une URL via le moteur PIM. */
-async function scrape(url: string, signal?: AbortSignal): Promise<{ price: number; content: string }> {
+/** Scrape les champs demandés (+ prix/nom/marque) d'une URL via le moteur PIM. */
+async function scrape(url: string, fields: string[], signal?: AbortSignal): Promise<{ price: number; content: string }> {
   const { enrichRow } = await import('@/features/excel/ai-enrichment/enrichRow')
-  const result = await enrichRow({ url, targetFields: ['price', 'name', 'brand'], signal })
+  const targetFields = [...new Set([...fields, 'price', 'name', 'brand'])]
+  const result = await enrichRow({ url, targetFields, signal })
   return { price: parsePrice(result.fields.price), content: JSON.stringify(result.fields) }
 }
 
@@ -91,9 +92,12 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
         url = found
       }
 
+      // Champs d'affichage dénormalisés (les produits sont transitoires : ils viennent du flux).
+      const display = { productName: product.name, domain: site.domain, myPrice: product.myPrice ?? null }
+
       // 2. Scrape
       let priceContent: { price: number; content: string }
-      try { priceContent = await scrape(url, deps.signal) }
+      try { priceContent = await scrape(url, site.fields ?? ['price'], deps.signal) }
       catch (e) { log(`Scrape échoué ${url} : ${String(e)}`); continue }
       if (Number.isNaN(priceContent.price)) { log(`Prix illisible : ${url}`); continue }
 
@@ -104,7 +108,7 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
         const status: PriceMatch['status'] = verdict >= MATCH_THRESHOLD ? 'auto' : 'pending'
         await setDoc(matchRef, {
           productId: product.id, siteId: site.id, url, confidence: verdict, status,
-          lastPrice: priceContent.price, lastDiscoveredAt: Date.now(), updatedAt: Date.now(),
+          lastPrice: priceContent.price, lastDiscoveredAt: Date.now(), updatedAt: Date.now(), ...display,
         } satisfies PriceMatch, { merge: true })
         if (status === 'pending') { log(`À confirmer (${verdict}) : ${product.name} @ ${site.domain}`); continue }
       }
@@ -115,7 +119,7 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
       const previousPrice = history.length ? history[history.length - 1].price : undefined
       const point: HistoryPoint = { price: priceContent.price, at: Date.now() }
       await setDoc(histRef, { values: pushHistory(history, point, HISTORY_MAX) })
-      await setDoc(matchRef, { lastPrice: priceContent.price, confidence, updatedAt: Date.now() }, { merge: true })
+      await setDoc(matchRef, { lastPrice: priceContent.price, confidence, updatedAt: Date.now(), ...display }, { merge: true })
       alerts.push(...evaluate(product, site, priceContent.price, previousPrice, thresholdPct))
     }
   }

@@ -2,8 +2,6 @@
 // Chemins Firestore du module Veille tarifaire. matchKey = `${productId}__${siteId}`.
 // Interne : composé par les helpers de collection ci-dessous (non exporté — cf. knip).
 const watchDoc = (uid: string, watchId: string) => `users/${uid}/priceWatch/${watchId}`
-export const productsCol = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/products`
-export const sitesCol = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/sites`
 export const matchesCol = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/matches`
 export const historyCol = (uid: string, watchId: string) => `${watchDoc(uid, watchId)}/history`
 export const matchKey = (productId: string, siteId: string) => `${productId}__${siteId}`

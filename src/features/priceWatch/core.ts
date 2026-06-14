@@ -2,7 +2,7 @@
 // Logique PURE de la veille tarifaire (aucune dépendance Firebase/React).
 // Dupliquée côté serveur (functions/.../priceWatchTrack.ts) — convention
 // wire-compatible (cf. parsePrice/diffPriceRows du node price-watch).
-import type { TrackedProduct, HistoryPoint, PriceWatchAlert } from './types'
+import type { TrackedProduct, CompetitorSite, HistoryPoint, PriceWatchAlert } from './types'
 
 export interface RelationalKey {
   kind: 'sku' | 'ean' | 'name'
@@ -129,4 +129,79 @@ export function evaluate(
     }
   }
   return alerts
+}
+
+/** Identifiant Firestore stable et déterministe (clé relationnelle nettoyée). */
+export function stableId(value: string): string {
+  return value.toLowerCase().replace(/[/#?[\]\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 200) || 'x'
+}
+
+/** Mapping colonne → champ produit (la valeur est le NOM de colonne dans la feuille). */
+export interface ProductColumnMap {
+  sku?: string
+  ean?: string
+  name: string
+  brand?: string
+  price?: string
+}
+
+function cell(row: Record<string, unknown>, col: string | undefined): string | undefined {
+  if (!col) return undefined
+  const v = row[col]
+  return v == null ? undefined : String(v).trim() || undefined
+}
+
+/**
+ * Construit les produits à surveiller depuis les lignes d'une feuille d'entrée.
+ * L'id est dérivé de la clé relationnelle (SKU → EAN → marque+nom) → stable entre
+ * deux runs (les matchs/historique persistent). Lignes sans clé exploitable ignorées.
+ */
+export function parseProductsFromSheet(
+  rows: Record<string, unknown>[],
+  map: ProductColumnMap,
+): TrackedProduct[] {
+  const out: TrackedProduct[] = []
+  const seen = new Set<string>()
+  for (const row of rows) {
+    const name = cell(row, map.name) ?? ''
+    const sku = cell(row, map.sku)
+    const ean = cell(row, map.ean)
+    const brand = cell(row, map.brand)
+    if (!name && !sku && !ean) continue
+    const priceRaw = cell(row, map.price)
+    const myPrice = priceRaw != null ? parsePrice(priceRaw) : NaN
+    const partial: TrackedProduct = { id: 'x', name: name || (sku ?? ean ?? ''), sku, ean, brand }
+    const id = stableId(relationalKey(partial).value)
+    if (seen.has(id)) continue
+    seen.add(id)
+    out.push({ ...partial, id, myPrice: Number.isNaN(myPrice) ? undefined : myPrice })
+  }
+  return out
+}
+
+/**
+ * Parse la config « sites » (une ligne par site). Format :
+ *   exemple.com
+ *   exemple.com | price, availability
+ * Le `|` sépare le domaine des champs à scraper (défaut : ['price']). id = domaine nettoyé.
+ */
+export function parseSitesConfig(text: string): CompetitorSite[] {
+  const out: CompetitorSite[] = []
+  const seen = new Set<string>()
+  for (const line of (text ?? '').split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const [domainRaw, fieldsRaw] = trimmed.split('|')
+    const domain = domainRaw.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+    if (!domain) continue
+    const id = stableId(domain)
+    if (seen.has(id)) continue
+    seen.add(id)
+    const fields = (fieldsRaw ?? '')
+      .split(',')
+      .map((f) => f.trim())
+      .filter(Boolean)
+    out.push({ id, domain, fields: fields.length ? fields : ['price'] })
+  }
+  return out
 }

@@ -1,58 +1,58 @@
 // src/features/priceWatch/components/ComparisonTab.tsx
-import { useTrackedProducts, useCompetitorSites, usePriceMatches, usePriceWatchMutations } from '../usePriceWatch'
+// Tableau de bord lecture-seule : tout est dérivé des docs `matches` (produits
+// et sites sont configurés dans le flux, pas persistés ici). Affiche la file
+// « à confirmer » + la matrice comparative produit × site.
+import { usePriceMatches, usePriceWatchMutations } from '../usePriceWatch'
+import type { PriceMatch } from '../types'
 
 const btnSecondaryCls = 'text-xs bg-white/10 hover:bg-white/15 text-white px-2 py-1 rounded transition-colors'
 const btnGhostCls = 'text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded transition-colors'
 
+function distinct<T>(items: T[], key: (t: T) => string): T[] {
+  const seen = new Set<string>()
+  return items.filter((t) => {
+    const k = key(t)
+    if (seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+}
+
 export function ComparisonTab() {
-  const products = useTrackedProducts()
-  const sites = useCompetitorSites()
   const matches = usePriceMatches()
   const { setMatchStatus } = usePriceWatchMutations()
 
   const byKey = new Map(matches.map((m) => [`${m.productId}__${m.siteId}`, m]))
   const pending = matches.filter((m) => m.status === 'pending')
+  // Produits et sites dérivés des matchs (champs dénormalisés productName/domain/myPrice).
+  const products = distinct(matches, (m) => m.productId).map((m) => ({
+    id: m.productId, name: m.productName ?? m.productId, myPrice: m.myPrice ?? null,
+  }))
+  const sites = distinct(matches, (m) => m.siteId).map((m) => ({ id: m.siteId, domain: m.domain ?? m.siteId }))
+
+  const label = (m: PriceMatch) => `${m.productName ?? m.productId} @ ${m.domain ?? m.siteId} (${Math.round((m.confidence ?? 0) * 100)}%)`
 
   return (
     <div className="space-y-6">
       {pending.length > 0 && (
         <section>
-          <h3 className="mb-2 text-sm font-semibold text-white">
-            À confirmer ({pending.length})
-          </h3>
+          <h3 className="mb-2 text-sm font-semibold text-white">À confirmer ({pending.length})</h3>
           <ul className="divide-y divide-white/10 rounded-md bg-surface">
-            {pending.map((m) => {
-              const p = products.find((x) => x.id === m.productId)
-              const s = sites.find((x) => x.id === m.siteId)
-              return (
-                <li key={`${m.productId}__${m.siteId}`} className="flex items-center justify-between px-3 py-2 text-sm gap-3">
-                  <a
-                    href={m.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="truncate text-white/80 underline hover:text-white"
-                  >
-                    {p?.name} @ {s?.domain} ({Math.round(m.confidence * 100)}%)
-                  </a>
-                  <span className="flex gap-2 shrink-0">
-                    <button
-                      type="button"
-                      className={btnSecondaryCls}
-                      onClick={() => setMatchStatus(m.productId, m.siteId, 'confirmed')}
-                    >
-                      Confirmer
-                    </button>
-                    <button
-                      type="button"
-                      className={btnGhostCls}
-                      onClick={() => setMatchStatus(m.productId, m.siteId, 'rejected')}
-                    >
-                      Rejeter
-                    </button>
-                  </span>
-                </li>
-              )
-            })}
+            {pending.map((m) => (
+              <li key={`${m.productId}__${m.siteId}`} className="flex items-center justify-between px-3 py-2 text-sm gap-3">
+                <a href={m.url} target="_blank" rel="noreferrer" className="truncate text-white/80 underline hover:text-white">
+                  {label(m)}
+                </a>
+                <span className="flex gap-2 shrink-0">
+                  <button type="button" className={btnSecondaryCls} onClick={() => setMatchStatus(m.productId, m.siteId, 'confirmed')}>
+                    Confirmer
+                  </button>
+                  <button type="button" className={btnGhostCls} onClick={() => setMatchStatus(m.productId, m.siteId, 'rejected')}>
+                    Rejeter
+                  </button>
+                </span>
+              </li>
+            ))}
           </ul>
         </section>
       )}
@@ -73,9 +73,7 @@ export function ComparisonTab() {
               {products.map((p) => (
                 <tr key={p.id} className="border-t border-white/10">
                   <td className="py-1 pr-4 text-white/80">{p.name}</td>
-                  <td className="pr-4 text-white/70">
-                    {p.myPrice != null ? `${p.myPrice} €` : '—'}
-                  </td>
+                  <td className="pr-4 text-white/70">{p.myPrice != null ? `${p.myPrice} €` : '—'}</td>
                   {sites.map((s) => {
                     const m = byKey.get(`${p.id}__${s.id}`)
                     const cheaper = m?.lastPrice != null && p.myPrice != null && m.lastPrice < p.myPrice
@@ -90,7 +88,7 @@ export function ComparisonTab() {
               {products.length === 0 && (
                 <tr>
                   <td colSpan={2 + sites.length} className="py-6 text-center text-white/50">
-                    Aucun produit à comparer.
+                    Aucune donnée — lance un workflow « Veille tarifaire » pour peupler le comparatif.
                   </td>
                 </tr>
               )}

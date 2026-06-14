@@ -1,20 +1,31 @@
 // src/features/workflows/registry/priceWatchTrackNode.ts
-// Node « Veille tarifaire » : exécute un suivi enregistré (catalogue + sites
-// Firestore) → découverte/scrape/validation/diff → port `changes` (alertes) si
-// variations/positionnement. Implémentation CLIENT (aperçu éditeur) ; jumeau
+// Node « Veille tarifaire » : prend une FEUILLE DE PRODUITS en entrée (depuis
+// n'importe quelle source du flux — Upload, PIM, Scrape) + une liste de sites
+// concurrents en config (domaine | champs), retrouve chaque produit chez les
+// concurrents, compare les prix, et n'émet « changes » que s'il y a des alertes
+// (positionnement / variation). Implémentation CLIENT (aperçu éditeur) ; jumeau
 // serveur dans functions/.../priceWatchTrack.ts pour le Cron headless.
 import { TrendingUpDown } from 'lucide-react'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import type { ExcelSheet } from '@/features/excel/types'
 import { useAuthStore } from '@/stores/auth.store'
 import { runPriceWatch } from '@/features/priceWatch/runPriceWatch'
-import { productsCol, sitesCol, DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
-import type { TrackedProduct, CompetitorSite, PriceWatchAlert } from '@/features/priceWatch/types'
+import { parseProductsFromSheet, parseSitesConfig } from '@/features/priceWatch/core'
+import { DEFAULT_WATCH_ID } from '@/features/priceWatch/paths'
+import type { PriceWatchAlert } from '@/features/priceWatch/types'
 
-interface TrackConfig { watchId: string; thresholdPct: number }
+interface TrackConfig {
+  watchId: string
+  thresholdPct: number
+  sites: string
+  skuColumn: string
+  eanColumn: string
+  nameColumn: string
+  brandColumn: string
+  priceColumn: string
+}
+interface TrackInputs { products?: ExcelSheet }
 
 function alertsToSheet(alerts: PriceWatchAlert[]): ExcelSheet {
   return {
@@ -26,56 +37,67 @@ function alertsToSheet(alerts: PriceWatchAlert[]): ExcelSheet {
       { key: 'message', label: 'Détail', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 320 },
     ],
     rows: alerts.map((a, i) => ({
-      _id: `alert_${i}`,
-      product: a.productName,
-      domain: a.domain,
-      kind: a.kind,
-      message: a.message,
+      _id: `alert_${i}`, product: a.productName, domain: a.domain, kind: a.kind, message: a.message,
     })),
     taxonomy: [],
   }
 }
 
-const priceWatchTrackNode: NodeSpec<TrackConfig, Record<string, never>, { changes?: ExcelSheet; all: ExcelSheet }> = {
+const priceWatchTrackNode: NodeSpec<TrackConfig, TrackInputs, { changes?: ExcelSheet; all: ExcelSheet }> = {
   type: 'price-watch-track',
   category: 'logic',
   label: 'Veille tarifaire',
   description:
-    "Exécute un suivi tarifaire enregistré (catalogue + concurrents) : retrouve chaque produit chez les concurrents, compare les prix, et n'émet « changes » que s'il y a des alertes (positionnement / variation).",
+    "Compare les prix de tes produits (feuille en entrée) chez des concurrents (sites en config). " +
+    "Retrouve chaque produit (SKU/EAN, sinon nom+marque), scrape le prix, et n'émet « changes » que s'il y a des alertes (positionnement / variation).",
   icon: TrendingUpDown,
-  inputs: [],
+  inputs: [{ name: 'products', type: 'sheet', required: true }],
   outputs: [
     { name: 'changes', type: 'sheet' },
     { name: 'all', type: 'sheet' },
   ],
   configSchema: [
-    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi', help: 'Suivi configuré dans le module Veille tarifaire.' },
+    {
+      name: 'sites',
+      kind: 'textarea',
+      label: 'Sites concurrents (un par ligne)',
+      required: true,
+      help: 'Format : « domaine » ou « domaine | champ1, champ2 ». Ex : « amazon.fr | price, availability ». Sans champs → price.',
+    },
+    { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', help: 'Colonne du nom produit dans la feuille d’entrée.' },
+    { name: 'brandColumn', kind: 'columnRef', label: 'Colonne Marque', help: 'Repli relationnel avec le nom si pas de SKU/EAN.' },
+    { name: 'skuColumn', kind: 'columnRef', label: 'Colonne SKU' },
+    { name: 'eanColumn', kind: 'columnRef', label: 'Colonne EAN' },
+    { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Mon prix', help: 'Pour l’alerte de positionnement.' },
+    { name: 'watchId', kind: 'text', label: 'Identifiant du suivi', help: 'Mémorise les URLs épinglées et l’historique entre deux runs.' },
     { name: 'thresholdPct', kind: 'number', label: 'Seuil de variation (%)', help: '0 = signaler tout changement.' },
   ],
-  defaultConfig: { watchId: DEFAULT_WATCH_ID, thresholdPct: 0 },
+  defaultConfig: {
+    watchId: DEFAULT_WATCH_ID, thresholdPct: 0, sites: '',
+    skuColumn: 'sku', eanColumn: 'ean', nameColumn: 'name', brandColumn: 'brand', priceColumn: 'price',
+  },
   runtime: 'client',
-  run: async (ctx, config, _inputs) => {
+  run: async (ctx, config, inputs) => {
     const uid = useAuthStore.getState().user?.uid
     if (!uid) throw new Error('Utilisateur non connecté.')
-    const watchId = (config.watchId || DEFAULT_WATCH_ID).trim()
-    const [productsSnap, sitesSnap] = await Promise.all([
-      getDocs(collection(db, productsCol(uid, watchId))),
-      getDocs(collection(db, sitesCol(uid, watchId))),
-    ])
-    const products = productsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as TrackedProduct[]
-    const sites = sitesSnap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as CompetitorSite[]
-    if (products.length === 0 || sites.length === 0) {
-      ctx.log('warn', 'Catalogue ou sites vides — rien à surveiller.')
+    const rows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
+    const products = parseProductsFromSheet(rows, {
+      sku: config.skuColumn, ean: config.eanColumn, name: config.nameColumn,
+      brand: config.brandColumn, price: config.priceColumn,
+    })
+    const sites = parseSitesConfig(config.sites)
+    if (products.length === 0) {
+      ctx.log('warn', 'Aucun produit exploitable en entrée — vérifie le branchement et le mapping des colonnes.')
       return { all: alertsToSheet([]) }
     }
+    if (sites.length === 0) {
+      ctx.log('warn', 'Aucun site concurrent configuré.')
+      return { all: alertsToSheet([]) }
+    }
+    ctx.log('info', `${products.length} produit(s) × ${sites.length} site(s)…`)
     const alerts = await runPriceWatch({
-      uid,
-      watchId,
-      thresholdPct: Math.max(0, config.thresholdPct),
-      products,
-      sites,
-      log: (m) => ctx.log('info', m),
-      signal: ctx.signal,
+      uid, watchId: (config.watchId || DEFAULT_WATCH_ID).trim(), thresholdPct: Math.max(0, config.thresholdPct),
+      products, sites, log: (m) => ctx.log('info', m), signal: ctx.signal,
     })
     const all = alertsToSheet(alerts)
     if (alerts.length === 0) {

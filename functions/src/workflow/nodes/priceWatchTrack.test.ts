@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { relationalKey, buildPatternUrl, discoveryQueries, pickCandidate, evaluate } from './priceWatchTrack'
+import {
+  relationalKey, buildPatternUrl, discoveryQueries, pickCandidate, evaluate,
+  stableId, parseProductsFromSheet, parseSitesConfig,
+} from './priceWatchTrack'
 
 describe('serveur — logique veille tarifaire (wire-compatible client)', () => {
   it('relationalKey SKU→EAN→nom', () => {
@@ -22,5 +25,23 @@ describe('serveur — logique veille tarifaire (wire-compatible client)', () => 
       .some((a) => a.kind === 'positioning')).toBe(true)
     expect(evaluate({ id: 'p', name: 'X' }, { id: 's', domain: 'e.com' }, 120, 100, 10)
       .some((a) => a.kind === 'competitor-variation')).toBe(true)
+  })
+  it('stableId nettoie/borne', () => {
+    expect(stableId('Bosch GBH 5/40')).toBe('bosch_gbh_5_40')
+    expect(stableId('  ')).toBe('x')
+  })
+  it('parseProductsFromSheet mappe + ignore lignes sans clé + déduplique', () => {
+    const rows = [
+      { Réf: 'SK1', Désignation: 'Perceuse X', Marque: 'Acme', Prix: '99,90 €' },
+      { Réf: '', Désignation: '', Marque: '' },
+    ]
+    const out = parseProductsFromSheet(rows, { sku: 'Réf', name: 'Désignation', brand: 'Marque', price: 'Prix' })
+    expect(out.length).toBe(1)
+    expect(out[0]).toMatchObject({ sku: 'SK1', name: 'Perceuse X', myPrice: 99.9, id: 'sk1' })
+  })
+  it('parseSitesConfig parse domaine + champs (défaut price)', () => {
+    const out = parseSitesConfig('exemple.com\nhttps://autre.fr/x | price, availability')
+    expect(out[0]).toMatchObject({ domain: 'exemple.com', fields: ['price'] })
+    expect(out[1]).toMatchObject({ domain: 'autre.fr', fields: ['price', 'availability'] })
   })
 })

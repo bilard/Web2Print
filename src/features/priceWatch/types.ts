@@ -17,6 +17,8 @@ export interface CompetitorSite {
   domain: string // ex: "exemple.com"
   /** Gabarit d'URL avec placeholders {sku} {ean} {name}. Optionnel. */
   urlPattern?: string
+  /** Champs à extraire sur ce site (ex: ['price', 'availability']). Défaut : ['price']. */
+  fields?: string[]
 }
 
 export type MatchStatus = 'auto' | 'confirmed' | 'pending' | 'rejected'
@@ -31,6 +33,12 @@ export interface PriceMatch {
   lastInStock?: boolean
   lastDiscoveredAt?: number
   updatedAt?: number
+  // Champs d'affichage dénormalisés : les produits arrivent par le flux (transitoires),
+  // donc le tableau de bord lecture-seule lit tout depuis les docs `matches`.
+  // myPrice = null (pas undefined) quand absent : Firestore refuse undefined.
+  productName?: string
+  domain?: string
+  myPrice?: number | null
 }
 
 export interface HistoryPoint {
