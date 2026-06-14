@@ -11,6 +11,7 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.scraping-hub',
   'dashboard.sidebar.chat',
   'dashboard.sidebar.workflows',
+  'dashboard.sidebar.price-watch',
   'dashboard.sidebar.telegram',
   'dashboard.sidebar.hyperframes',
   'dashboard.sidebar.access',

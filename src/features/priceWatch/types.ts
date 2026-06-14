@@ -39,7 +39,8 @@ export interface HistoryPoint {
   at: number
 }
 
-export type AlertKind = 'positioning' | 'competitor-variation'
+// Interne : référencé par PriceWatchAlert.kind (non exporté — cf. knip).
+type AlertKind = 'positioning' | 'competitor-variation'
 
 export interface PriceWatchAlert {
   kind: AlertKind

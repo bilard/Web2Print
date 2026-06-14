@@ -177,8 +177,10 @@ service cloud.firestore {
       allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
     }
 
-    // État du node « Veille prix » (derniers prix vus, par identifiant de suivi).
-    match /users/{uid}/priceWatch/{watchId} {
+    // État du node « Veille prix » + module « Veille tarifaire » : le doc de suivi
+    // {watchId} ET ses sous-collections (products / sites / matches / history).
+    // Wildcard récursif car les règles ne cascadent pas aux sous-collections.
+    match /users/{uid}/priceWatch/{document=**} {
       allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
