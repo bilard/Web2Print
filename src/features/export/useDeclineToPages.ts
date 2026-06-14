@@ -12,6 +12,7 @@ import { usePageNavigation } from '@/features/editor/usePageNavigation'
 import { relayoutToFormats } from './relayoutToFormats'
 import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
 import type { DesignObject } from './relayoutMultiFormat'
+import { fluidRelayoutToFormat } from './fluidRelayoutToFormat'
 
 interface SerializedCanvas {
   objects?: Array<DesignObject & { data?: { isGrid?: boolean; isPrintMark?: boolean; role?: string } }>
@@ -55,7 +56,7 @@ export function useDeclineToPages() {
   const declineToPages = useCallback(
     async (
       targets: readonly DeclineTarget[],
-      options?: { navigateToLast?: boolean; transform?: 'ai' | 'contain' | 'cover' },
+      options?: { navigateToLast?: boolean; transform?: 'ai' | 'contain' | 'cover' | 'fluid' },
     ): Promise<DeclineOutcome> => {
       const canvas = globalFabricCanvas
       if (!canvas) throw new Error('Canvas indisponible.')
@@ -82,6 +83,34 @@ export function useDeclineToPages() {
             projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h, transform),
           ]),
         )
+      } else if (transform === 'fluid') {
+        // Re-layout par blocs piloté LLM (image source requise pour la vision),
+        // repli cover garanti par fluidRelayoutToFormat.
+        const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
+        if (!imageDataUri) {
+          byFormat = Object.fromEntries(
+            targets.map((t) => [
+              t.id,
+              projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h, 'cover'),
+            ]),
+          )
+          usedFallback = true
+        } else {
+          const entries = await Promise.all(
+            targets.map(async (t) => {
+              const out = await fluidRelayoutToFormat({
+                imageDataUri,
+                objects: designObjects,
+                srcW: canvasWidth,
+                srcH: canvasHeight,
+                target: t,
+              })
+              if (out.usedFallback) usedFallback = true
+              return [t.id, out.objects] as const
+            }),
+          )
+          byFormat = Object.fromEntries(entries)
+        }
       } else {
         const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
         const outcome = imageDataUri
