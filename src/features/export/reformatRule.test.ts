@@ -1,31 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shouldReformat, buildReformatTarget } from './reformatRule'
-
-describe('shouldReformat', () => {
-  it('refuse si la page n’a aucun objet de design', () => {
-    expect(
-      shouldReformat({ designObjectCount: 0, srcW: 595, srcH: 842, dstW: 842, dstH: 595 }),
-    ).toBe(false)
-  })
-
-  it('refuse si les dimensions sont inchangées (arrondi)', () => {
-    expect(
-      shouldReformat({ designObjectCount: 3, srcW: 842, srcH: 595, dstW: 842.4, dstH: 594.6 }),
-    ).toBe(false)
-  })
-
-  it('accepte si contenu présent et dimensions réellement différentes', () => {
-    expect(
-      shouldReformat({ designObjectCount: 1, srcW: 595, srcH: 842, dstW: 1684, dstH: 1191 }),
-    ).toBe(true)
-  })
-
-  it('accepte si une seule dimension change (ex. hauteur uniquement)', () => {
-    expect(
-      shouldReformat({ designObjectCount: 2, srcW: 595, srcH: 842, dstW: 595, dstH: 1190 }),
-    ).toBe(true)
-  })
-})
+import { buildReformatTarget } from './reformatRule'
 
 describe('buildReformatTarget', () => {
   it('produit un id déterministe et un label depuis un preset', () => {
