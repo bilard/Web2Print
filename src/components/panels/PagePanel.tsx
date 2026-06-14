@@ -42,6 +42,10 @@ export function PagePanel() {
   } = useUIStore()
   const { reformatPage } = useReformatPage()
   const [reformatting, setReformatting] = useState(false)
+  // Mode d'adaptation au changement de format. Défaut « Proportionnel » (cover,
+  // déterministe, prévisible, gratuit). « Fluide (IA) » = ré-agencement par blocs
+  // piloté LLM (à activer volontairement, consomme du budget IA).
+  const [reformatMode, setReformatMode] = useState<'cover' | 'fluid'>('cover')
 
   // Préréglage « Origine » = taille d'ouverture du document (capturée au chargement).
   const originActive =
@@ -84,7 +88,7 @@ export function PagePanel() {
     setHeightMm(roundMm(canvasPxToMm(ch)))
     setReformatting(true)
     try {
-      const handled = await reformatPage(cw, ch, presetLabel)
+      const handled = await reformatPage(cw, ch, presetLabel, reformatMode)
       if (handled) return
       setCanvasSize(cw, ch)
       triggerSave()
@@ -184,6 +188,27 @@ export function PagePanel() {
               </button>
             )
           })}
+        </div>
+
+        {/* ── Mode d'adaptation au changement de format ── */}
+        <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-white/5">
+          <label className="flex items-center gap-1 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+            Adaptation du contenu
+            <OptionHelp text="Au changement de format, une nouvelle page adaptée est créée (l'originale est conservée). « Proportionnel » met le design à l'échelle d'un seul bloc (prévisible, gratuit). « Fluide (IA) » ré-agence les blocs pour le nouveau format via l'IA (consomme du budget IA, résultat à ajuster)." />
+          </label>
+          <div className="flex gap-1">
+            {([
+              { value: 'cover' as const, label: 'Proportionnel' },
+              { value: 'fluid' as const, label: 'Fluide (IA)' },
+            ]).map(({ value, label }) => (
+              <button key={value} onClick={() => setReformatMode(value)} disabled={reformatting}
+                className={`flex-1 py-1.5 text-[10px] rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${reformatMode === value
+                  ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
+                  : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 

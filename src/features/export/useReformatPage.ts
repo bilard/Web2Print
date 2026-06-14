@@ -17,7 +17,12 @@ export function useReformatPage() {
    * Renvoie true si le re-layout a été déclenché (l'appelant ne doit alors PAS
    * retailler la page courante en place). */
   const reformatPage = useCallback(
-    async (wPt: number, hPt: number, presetLabel?: string): Promise<boolean> => {
+    async (
+      wPt: number,
+      hPt: number,
+      presetLabel?: string,
+      mode: 'cover' | 'fluid' = 'cover',
+    ): Promise<boolean> => {
       const canvas = globalFabricCanvas
       if (!canvas) return false
       const { canvasWidth, canvasHeight } = useUIStore.getState()
@@ -34,17 +39,22 @@ export function useReformatPage() {
 
       const target = buildReformatTarget(wPt, hPt, presetLabel)
       try {
-        // « Mise en page fluide » : l'IA ré-agence le design par BLOCS cohérents
-        // pour le nouveau format ; repli proportionnel (cover) garanti.
+        // mode 'cover' (défaut) : mise à l'échelle proportionnelle DÉTERMINISTE
+        // (prévisible, instantanée, sans coût). mode 'fluid' : ré-agencement par
+        // BLOCS piloté IA (repli proportionnel garanti).
         const { usedFallback, updated } = await withProgress(
-          'Mise en page fluide (IA)…',
-          () => declineToPages([target], { navigateToLast: true, transform: 'fluid' }),
+          mode === 'fluid' ? 'Mise en page fluide (IA)…' : 'Adaptation du format…',
+          () => declineToPages([target], { navigateToLast: true, transform: mode }),
         )
         const verb = updated > 0 ? 'régénérée' : 'créée'
-        if (usedFallback) {
-          notify.warning('Format adapté (repli proportionnel)', `Page « ${target.label} » ${verb} — IA indisponible, mise à l'échelle proportionnelle appliquée.`)
+        if (mode === 'fluid') {
+          if (usedFallback) {
+            notify.warning('Format adapté (repli proportionnel)', `Page « ${target.label} » ${verb} — IA indisponible, mise à l'échelle proportionnelle appliquée.`)
+          } else {
+            notify.success('Mise en page fluide appliquée', `Page « ${target.label} » ${verb} — design ré-agencé par l'IA, page d'origine conservée.`)
+          }
         } else {
-          notify.success('Mise en page fluide appliquée', `Page « ${target.label} » ${verb} — design ré-agencé par l'IA, page d'origine conservée.`)
+          notify.success('Format adapté', `Page « ${target.label} » ${verb} — design mis à l'échelle proportionnellement, page d'origine conservée.`)
         }
       } catch (err) {
         console.error('[reformatPage] échec :', err)
