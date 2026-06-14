@@ -22,18 +22,19 @@
 - [ ] La grille et les marques de coupe ne sont PAS recopiées dans les déclinaisons.
 - [ ] **Repli** : retirer la clé LLM (ou budget épuisé) → toast « repli géométrique », pages créées quand même (mise à l'échelle simple).
 
-### A1bis. Reformater en proportion au changement de format
-Panneau **PAGE** → changer le format d'un projet **qui contient déjà des objets**. Mise à l'échelle **proportionnelle déterministe** (mode « cover » : le design REMPLIT le format, composition préservée, bords en trop-plein rognés). **Pas de LLM** : instantané, sans coût, sans clé requise.
+### A1bis. Reformater = « Mise en page fluide » (IA par blocs)
+Panneau **PAGE** → changer le format d'un projet **qui contient déjà des objets**. L'IA **regroupe** le design en 2–5 **blocs cohérents** (produit, prix/promo, texte, fond) et **place les blocs** pour le nouveau format ; chaque bloc est transformé par **une seule affine** (compo interne verrouillée). **Repli proportionnel `cover` garanti** sans clé/budget LLM. Nécessite une clé LLM + budget pour la vraie adaptation (rappel : budget bridé ~1 $/mois).
 - [ ] Ouvrir un projet (ex. flyer produit) qui remplit sa page.
-- [ ] Panneau PAGE → choisir un format de ratio différent (preset **A4 Paysage**, **Instagram Story**, ou saisir un grand format type A1).
-- [ ] Vérifier : toast **« Adaptation du format… »**, puis une **nouvelle page** au format cible apparaît et devient courante (canvas redimensionné au bon format).
-- [ ] Vérifier : sur la page adaptée, **la composition est identique à l'original** (prix sur le tube, badges en place) — le design est juste agrandi/réduit comme un seul bloc pour **remplir** le format ; les bords en trop-plein sont rognés. **Aucun élément éparpillé.**
-- [ ] Vérifier : objets **éditables** ; page d'origine **intacte** (format + contenu).
-- [ ] **Idempotence** : ré-appliquer le **même** format (depuis la page source) → page adaptée **régénérée** (toast « régénérée »), **pas empilée**.
-- [ ] **Page vide** : sur une page sans objet, changer le format → **retaille en place**, aucune nouvelle page.
-- [ ] **Dims inchangées** : ré-appliquer le format courant → rien ne se passe.
+- [ ] **Cas clé — bascule d'orientation** : passer un flyer **portrait → A4 Paysage**.
+- [ ] Vérifier : toast **« Mise en page fluide (IA)… »**, puis une **nouvelle page** au format cible apparaît et devient courante (canvas redimensionné).
+- [ ] Vérifier : les blocs sont **ré-agencés** pour exploiter le paysage (ex. produit à gauche, prix/texte à droite), et **chaque bloc reste cohérent en interne** (prix sur le tube, badges en place). **Aucun éparpillement objet-par-objet.**
+- [ ] Vérifier : objets **éditables** ; page d'origine **intacte**.
+- [ ] **Repli** : sans clé LLM (ou budget épuisé) → toast **« repli proportionnel »**, design mis à l'échelle `cover` (composition entière préservée), jamais bloqué.
+- [ ] **Idempotence** : ré-appliquer le **même** format → page adaptée **régénérée**, pas empilée.
+- [ ] **Page vide** / **dims inchangées** : aucun appel, rien ne se passe.
 
-> ⚠ Limitation connue (non bloquante) : ré-générer le **même** format en étant déjà **sur** la page adaptée (dernière) peut laisser le canvas figé (store à jour, clic manuel recharge). Inatteignable par le flux PAGE car « dims inchangées ».
+> ⚠ La QUALITÉ du ré-agencement IA n'est vérifiable qu'avec une vraie clé LLM + budget. Le pire cas IA = mauvais **placement** de blocs ; l'éparpillement **intra-bloc** est structurellement impossible (1 affine par bloc).
+> ⚠ Limitation connue (non bloquante) : ré-générer le **même** format en étant déjà **sur** la page adaptée peut laisser le canvas figé (store à jour, clic manuel recharge). Inatteignable par le flux PAGE (« dims inchangées »).
 
 ### A2. Auto-fit « Réduire pour tenir dans la zone » (V3, zone explicite)
 Panneau **Données** (mode re-skin) sur un flyer décomposé connecté à une source PIM.
