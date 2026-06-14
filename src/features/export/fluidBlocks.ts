@@ -102,11 +102,17 @@ export function applyFluidBlocks<T extends DesignObject>(
     }
     const bw = x1 - x0
     const bh = y1 - y0
-    if (!(bw > 0) || !(bh > 0)) continue // bbox nulle → laissés au repli cover
-    const rx = clamp(b.xPct, 0, 1) * dstW
-    const ry = clamp(b.yPct, 0, 1) * dstH
-    const rw = Math.max(clamp(b.wPct, 0, 1), 0.01) * dstW
-    const rh = Math.max(clamp(b.hPct, 0, 1), 0.01) * dstH
+    if (!(bw > 0) || !(bh > 0)) continue // bbox nulle → laissés au repli contain
+    // Région clampée À L'INTÉRIEUR de la page : on borne aussi la TAILLE pour que
+    // xPct+wPct ≤ 1 et yPct+hPct ≤ 1 (sinon un bloc placé près du bord déborde).
+    const fx = clamp(b.xPct, 0, 1)
+    const fy = clamp(b.yPct, 0, 1)
+    const fw = Math.min(Math.max(b.wPct, 0.01), 1 - fx)
+    const fh = Math.min(Math.max(b.hPct, 0.01), 1 - fy)
+    const rx = fx * dstW
+    const ry = fy * dstH
+    const rw = fw * dstW
+    const rh = fh * dstH
     const s = Math.min(rw / bw, rh / bh)
     const offX = rx + (rw - bw * s) / 2
     const offY = ry + (rh - bh * s) / 2
@@ -123,8 +129,10 @@ export function applyFluidBlocks<T extends DesignObject>(
     }
   }
 
-  // Objets non assignés (aucun bloc, ou bloc à bbox nulle) → repli cover.
+  // Objets non assignés (aucun bloc, ou bloc à bbox nulle) → repli CONTAIN :
+  // garde la position proportionnelle dans la page SANS jamais déborder (cover
+  // sur-dimensionnerait et ferait déborder l'objet — ex. un cadre pleine page).
   return result.map((o, i) =>
-    assigned.has(i) ? o : projectObjectsToFormat([objects[i]], srcW, srcH, dstW, dstH, 'cover')[0],
+    assigned.has(i) ? o : projectObjectsToFormat([objects[i]], srcW, srcH, dstW, dstH, 'contain')[0],
   )
 }
