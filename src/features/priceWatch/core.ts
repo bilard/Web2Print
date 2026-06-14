@@ -2,7 +2,7 @@
 // Logique PURE de la veille tarifaire (aucune dépendance Firebase/React).
 // Dupliquée côté serveur (functions/.../priceWatchTrack.ts) — convention
 // wire-compatible (cf. parsePrice/diffPriceRows du node price-watch).
-import type { TrackedProduct } from './types'
+import type { TrackedProduct, HistoryPoint, PriceWatchAlert } from './types'
 
 export interface RelationalKey {
   kind: 'sku' | 'ean' | 'name'
@@ -54,4 +54,55 @@ export function pickCandidate(
     catch { return false }
   })
   return hit?.url ?? null
+}
+
+/** Parse un prix : « 1 299,90 € » → 1299.9. NaN si illisible. (Identique au node price-watch.) */
+export function parsePrice(v: unknown): number {
+  if (typeof v === 'number') return v
+  if (typeof v !== 'string') return NaN
+  const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
+  return cleaned ? parseFloat(cleaned) : NaN
+}
+
+/** Ring buffer borné : ajoute un point et garde les `maxLen` plus récents. */
+export function pushHistory(history: HistoryPoint[], point: HistoryPoint, maxLen: number): HistoryPoint[] {
+  const next = [...history, point]
+  return next.length > maxLen ? next.slice(next.length - maxLen) : next
+}
+
+/**
+ * Compare un relevé concurrent au produit et au relevé précédent → alertes.
+ * - positioning : competitorPrice < myPrice
+ * - competitor-variation : |Δ| / prev ≥ thresholdPct (premier relevé = silencieux)
+ */
+export function evaluate(
+  product: { id: string; name: string; myPrice?: number },
+  site: { id: string; domain: string },
+  competitorPrice: number,
+  previousPrice: number | undefined,
+  thresholdPct: number,
+): PriceWatchAlert[] {
+  const alerts: PriceWatchAlert[] = []
+  const common = {
+    productId: product.id, productName: product.name,
+    siteId: site.id, domain: site.domain, myPrice: product.myPrice, competitorPrice,
+  }
+  if (product.myPrice != null && competitorPrice < product.myPrice) {
+    alerts.push({
+      ...common, kind: 'positioning',
+      message: `${product.name} : ${site.domain} à ${competitorPrice} € < votre prix ${product.myPrice} €`,
+    })
+  }
+  if (previousPrice != null && previousPrice !== competitorPrice) {
+    const deltaPct = previousPrice === 0 ? 100 : Math.abs((competitorPrice - previousPrice) / previousPrice) * 100
+    if (deltaPct >= thresholdPct) {
+      alerts.push({
+        ...common, kind: 'competitor-variation',
+        previousPrice,
+        variationPct: Math.round(((competitorPrice - previousPrice) / (previousPrice || 1)) * 1000) / 10,
+        message: `${product.name} : ${site.domain} ${previousPrice} € → ${competitorPrice} €`,
+      })
+    }
+  }
+  return alerts
 }

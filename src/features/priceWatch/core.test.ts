@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { relationalKey, buildPatternUrl, discoveryQueries, pickCandidate } from './core'
-import type { TrackedProduct } from './types'
+import { relationalKey, buildPatternUrl, discoveryQueries, pickCandidate, parsePrice, pushHistory, evaluate } from './core'
+import type { TrackedProduct, HistoryPoint } from './types'
 
 const base: TrackedProduct = { id: 'p1', name: 'Perceuse X', brand: 'Acme' }
 
@@ -65,5 +65,40 @@ describe('pickCandidate', () => {
   })
   it('rend null si aucun résultat sur le domaine', () => {
     expect(pickCandidate([results[0]], 'exemple.com')).toBeNull()
+  })
+})
+
+describe('parsePrice', () => {
+  it('parse « 1 299,90 € »', () => expect(parsePrice('1 299,90 €')).toBe(1299.9))
+  it('NaN si illisible', () => expect(Number.isNaN(parsePrice('n/a'))).toBe(true))
+})
+
+describe('pushHistory (ring buffer)', () => {
+  it('borne à maxLen, garde les plus récents', () => {
+    let h: HistoryPoint[] = []
+    for (let i = 0; i < 35; i++) h = pushHistory(h, { price: i, at: i }, 30)
+    expect(h.length).toBe(30)
+    expect(h[0].price).toBe(5)
+    expect(h[29].price).toBe(34)
+  })
+})
+
+describe('evaluate', () => {
+  const product = { id: 'p1', name: 'Perceuse X', myPrice: 100 }
+  it('alerte positionnement si concurrent sous mon prix', () => {
+    const a = evaluate(product, { id: 's1', domain: 'e.com' }, 90, undefined, 0)
+    expect(a.some((x) => x.kind === 'positioning')).toBe(true)
+  })
+  it('alerte variation concurrent au-delà du seuil', () => {
+    const a = evaluate(product, { id: 's1', domain: 'e.com' }, 120, 100, 10)
+    expect(a.some((x) => x.kind === 'competitor-variation')).toBe(true)
+  })
+  it('pas d\'alerte variation sous le seuil', () => {
+    const a = evaluate(product, { id: 's1', domain: 'e.com' }, 105, 100, 10)
+    expect(a.some((x) => x.kind === 'competitor-variation')).toBe(false)
+  })
+  it('premier relevé : pas d\'alerte variation', () => {
+    const a = evaluate(product, { id: 's1', domain: 'e.com' }, 120, undefined, 0)
+    expect(a.some((x) => x.kind === 'competitor-variation')).toBe(false)
   })
 })
