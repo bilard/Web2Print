@@ -25,6 +25,7 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   hyperframes: 'hyperframes',
   telegram: 'telegram',
   access: 'access',
+  'price-watch': 'price-watch',
   editor: 'editor',
 }
 

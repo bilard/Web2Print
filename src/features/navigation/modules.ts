@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -18,7 +18,7 @@ import { useAccessStore } from '@/stores/access.store'
 export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
-  | 'hyperframes' | 'telegram' | 'access'
+  | 'hyperframes' | 'telegram' | 'access' | 'price-watch'
 
 export interface ModuleItem {
   id: Section
@@ -39,6 +39,7 @@ export const MODULE_ITEMS: ModuleItem[] = [
   { id: 'scraping-templates', icon: Database, label: 'Templates scraping', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
   { id: 'scraping-hub', icon: BookOpen, label: 'Scraping Hub', accent: 'text-sky-400', activeBg: 'bg-sky-500/[0.1]', activeText: 'text-sky-300' },
   { id: 'workflows', icon: Workflow, label: 'Workflows', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300' },
+  { id: 'price-watch', icon: TrendingUpDown, label: 'Veille tarifaire', accent: 'text-orange-400', activeBg: 'bg-orange-500/[0.1]', activeText: 'text-orange-300' },
   { id: 'telegram', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300' },
   { id: 'hyperframes', icon: Film, label: 'Animation', accent: 'text-fuchsia-400', activeBg: 'bg-fuchsia-500/[0.1]', activeText: 'text-fuchsia-300' },
   { id: 'chat', icon: MessageSquare, label: 'Chat IA', accent: 'text-violet-400', activeBg: 'bg-violet-500/[0.1]', activeText: 'text-violet-300' },
@@ -55,6 +56,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   'scraping-templates': 'scrapingTemplates.view',
   'scraping-hub': 'scrapingHub.view',
   workflows: 'workflows.view',
+  'price-watch': 'priceWatch.view',
   hyperframes: 'hyperframes.view',
   chat: 'chat.view',
   telegram: 'telegram.view',

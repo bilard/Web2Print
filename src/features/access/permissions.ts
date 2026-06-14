@@ -49,6 +49,7 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'scrapingHub.view', module: 'Scraping', label: 'Voir le Scraping Hub' },
   { key: 'scrapingHub.edit', module: 'Scraping', label: 'Éditer les règles de scraping' },
   { key: 'workflows.view', module: 'Workflows', label: 'Voir les workflows' },
+  { key: 'priceWatch.view', module: 'Veille tarifaire', label: 'Voir la veille tarifaire' },
   { key: 'workflows.create', module: 'Workflows', label: 'Créer un workflow' },
   { key: 'workflows.edit', module: 'Workflows', label: 'Éditer / enregistrer un workflow' },
   { key: 'workflows.delete', module: 'Workflows', label: 'Supprimer un workflow' },
