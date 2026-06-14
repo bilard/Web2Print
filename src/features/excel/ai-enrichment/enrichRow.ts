@@ -49,6 +49,12 @@ export function mapProductToFields(
     advantages: () => (p.advantages?.length ? p.advantages.map((a) => a.text).join('\n') : null),
     brand: () => p.brand ?? null,
     ean: () => p.ean ?? null,
+    price: () => {
+      if (p.pricing?.ttc != null) return String(p.pricing.ttc)
+      if (p.pricing?.ht != null) return String(p.pricing.ht)
+      if (p.price != null) return String(p.price)
+      return null
+    },
     images: () => (p.images?.length ? p.images.join('\n') : null),
     specifications: () =>
       p.specifications?.length ? p.specifications.map((s) => `${s.name}: ${s.value}`).join('\n') : null,
