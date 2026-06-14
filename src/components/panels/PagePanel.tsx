@@ -7,6 +7,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { ensurePageBgRect } from '@/features/editor/useCanvas'
 import { canvasPxToMm, mmToCanvasPx } from '@/features/print/dimensions'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { useReformatPage } from '@/features/export/useReformatPage'
 
 // Le canvas Fabric stocke des points (1 px canvas = 1 pt = 1/72 inch).
 // Les formats print sont exprimés en pt pour rester cohérents avec l'import
@@ -39,6 +40,8 @@ export function PagePanel() {
     canvasBgType, canvasBgGradient, canvasBgImage,
     setCanvasSize, setCanvasBgType, setCanvasBgGradient, setCanvasBgImage,
   } = useUIStore()
+  const { reformatPage } = useReformatPage()
+  const [reformatting, setReformatting] = useState(false)
 
   // Préréglage « Origine » = taille d'ouverture du document (capturée au chargement).
   const originActive =
@@ -71,14 +74,23 @@ export function PagePanel() {
     }, 50)
   }
 
-  // Reçoit les dimensions en pt (= px canvas).
-  const applySize = (wPt: number, hPt: number) => {
+  // Reçoit les dimensions en pt (= px canvas). Tente le re-layout IA (nouvelle
+  // page adaptée) ; à défaut (page vide / dims inchangées / canvas absent),
+  // retaille la page courante en place comme avant.
+  const applySize = async (wPt: number, hPt: number, presetLabel?: string) => {
     const cw = Math.max(50, wPt)
     const ch = Math.max(50, hPt)
     setWidthMm(roundMm(canvasPxToMm(cw)))
     setHeightMm(roundMm(canvasPxToMm(ch)))
-    setCanvasSize(cw, ch)
-    triggerSave()
+    setReformatting(true)
+    try {
+      const handled = await reformatPage(cw, ch, presetLabel)
+      if (handled) return
+      setCanvasSize(cw, ch)
+      triggerSave()
+    } finally {
+      setReformatting(false)
+    }
   }
 
   // Saisie utilisateur en mm → convertit en pt pour applySize.
@@ -132,20 +144,20 @@ export function PagePanel() {
         <div className="flex items-center gap-2">
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Largeur</span>
-            <input type="number" value={widthMm} min={10} step={0.1}
+            <input type="number" value={widthMm} min={10} step={0.1} disabled={reformatting}
               onChange={(e) => setWidthMm(e.target.value === '' ? '' : Number(e.target.value))}
               onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
               onKeyDown={(e) => e.key === 'Enter' && applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
-              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50 disabled:opacity-40 disabled:cursor-not-allowed" />
           </div>
           <span className="text-white/20 mt-4">x</span>
           <div className="flex-1 flex flex-col gap-1">
             <span className="text-[10px] text-white/30">Hauteur</span>
-            <input type="number" value={heightMm} min={10} step={0.1}
+            <input type="number" value={heightMm} min={10} step={0.1} disabled={reformatting}
               onChange={(e) => setHeightMm(e.target.value === '' ? '' : Number(e.target.value))}
               onBlur={() => applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
               onKeyDown={(e) => e.key === 'Enter' && applySizeMm(Number(widthMm) || 10, Number(heightMm) || 10)}
-              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50 disabled:opacity-40 disabled:cursor-not-allowed" />
           </div>
           <span className="text-[10px] text-white/20 mt-4">mm</span>
         </div>
@@ -153,8 +165,9 @@ export function PagePanel() {
           {originWidth != null && originHeight != null && (
             <button
               onClick={() => applySize(originWidth, originHeight)}
+              disabled={reformatting}
               title={`Taille d'ouverture du document : ${Math.round(canvasPxToMm(originWidth))}×${Math.round(canvasPxToMm(originHeight))} mm`}
-              className={`px-2 py-1 text-[10px] rounded border transition-colors ${originActive
+              className={`px-2 py-1 text-[10px] rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${originActive
                 ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                 : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
               Origine
@@ -163,8 +176,8 @@ export function PagePanel() {
           {FORMAT_PRESETS.map((p) => {
             const active = Math.round(canvasWidth) === p.w && Math.round(canvasHeight) === p.h
             return (
-              <button key={p.label} onClick={() => applySize(p.w, p.h)}
-                className={`px-2 py-1 text-[10px] rounded border transition-colors ${active
+              <button key={p.label} onClick={() => applySize(p.w, p.h, p.label)} disabled={reformatting}
+                className={`px-2 py-1 text-[10px] rounded border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${active
                   ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400'
                   : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}>
                 {p.label}
