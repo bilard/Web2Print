@@ -40,16 +40,18 @@ function applyGeometry(o: FabricObject, g: { left?: number; top?: number; scaleX
 }
 
 export function usePageReformat() {
-  /** Met le contenu à l'échelle (contain) de `old` vers `new`, EN PLACE. */
+  /** Met le contenu à l'échelle (contain) de `old` vers `new`, EN PLACE.
+   * Renvoie un diagnostic { count, scale } pour vérifier l'effet. */
   const resizeProportional = useCallback(
-    (oldW: number, oldH: number, newW: number, newH: number): void => {
+    (oldW: number, oldH: number, newW: number, newH: number): { count: number; scale: number } => {
       const canvas = globalFabricCanvas
-      if (!canvas || oldW <= 0 || oldH <= 0) return
+      if (!canvas || oldW <= 0 || oldH <= 0) return { count: 0, scale: 0 }
       const s = Math.min(newW / oldW, newH / oldH)
-      if (!(s > 0) || (Math.abs(s - 1) < 1e-6 && Math.round(oldW) === Math.round(newW) && Math.round(oldH) === Math.round(newH))) return
+      if (!(s > 0) || (Math.abs(s - 1) < 1e-6 && Math.round(oldW) === Math.round(newW) && Math.round(oldH) === Math.round(newH))) return { count: 0, scale: s }
       const offX = (newW - oldW * s) / 2
       const offY = (newH - oldH * s) / 2
-      for (const o of designObjectsOf(canvas)) {
+      const objs = designObjectsOf(canvas)
+      for (const o of objs) {
         applyGeometry(
           o,
           {
@@ -63,6 +65,7 @@ export function usePageReformat() {
       }
       canvas.requestRenderAll()
       syncToStore(canvas)
+      return { count: objs.length, scale: s }
     },
     [],
   )
