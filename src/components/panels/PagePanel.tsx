@@ -85,11 +85,9 @@ export function PagePanel() {
     const ch = Math.max(50, hPt)
     setWidthMm(roundMm(canvasPxToMm(cw)))
     setHeightMm(roundMm(canvasPxToMm(ch)))
-    const diag = resizeProportional(canvasWidth, canvasHeight, cw, ch)
+    resizeProportional(canvasWidth, canvasHeight, cw, ch)
     setCanvasSize(cw, ch)
     triggerSave()
-    // DIAGNOSTIC TEMPORAIRE : confirme que le nouveau code tourne + l'effet réel.
-    notify.info('Reformat (diag)', `${diag.count} objet(s) · ×${diag.scale.toFixed(2)} · ${Math.round(canvasWidth)}→${Math.round(cw)}`)
   }
 
   // Ré-agencement « fluide » par l'IA, à la demande, sur la page courante (en place).
