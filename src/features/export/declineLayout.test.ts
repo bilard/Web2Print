@@ -1,6 +1,36 @@
 // src/features/export/declineLayout.test.ts
 import { describe, it, expect } from 'vitest'
-import { projectObjectsToFormat } from './declineLayout'
+import { projectObjectsToFormat, scaleMergeGeometry } from './declineLayout'
+
+describe('scaleMergeGeometry', () => {
+  it('supprime les ancrages positionnels et met à l’échelle les zones', () => {
+    const out = scaleMergeGeometry(
+      { mergeBaseTop: 100, mergeBaseHeight: 40, fitZone: { width: 200, height: 50, maxLines: 2 }, autoFitWidth: 80, templateText: '{{x}}' },
+      2,
+    ) as Record<string, unknown>
+    expect(out.mergeBaseTop).toBeUndefined()
+    expect(out.mergeBaseHeight).toBeUndefined()
+    expect(out.fitZone).toEqual({ width: 400, height: 100, maxLines: 2 })
+    expect(out.autoFitWidth).toBe(160)
+    expect(out.templateText).toBe('{{x}}') // champs non concernés préservés
+  })
+
+  it('renvoie la valeur d’origine si aucun champ de fusion', () => {
+    const data = { role: 'photo', id: 'a' }
+    expect(scaleMergeGeometry(data, 3)).toBe(data)
+    expect(scaleMergeGeometry(undefined, 2)).toBeUndefined()
+  })
+
+  it('appliqué par projectObjectsToFormat (cover) : ancrage purgé, zone scalée', () => {
+    const [o] = projectObjectsToFormat(
+      [{ left: 0, top: 0, data: { mergeBaseTop: 10, fitZone: { width: 100, height: 20 } } }],
+      1000, 1000, 2000, 2000, 'cover',
+    )
+    const d = o.data as Record<string, unknown>
+    expect(d.mergeBaseTop).toBeUndefined()
+    expect((d.fitZone as { width: number }).width).toBe(200) // cover s=2
+  })
+})
 
 describe('projectObjectsToFormat', () => {
   it('scale « contain » + centrage vertical sur un cadre plus haut (carré → story)', () => {

@@ -4,7 +4,7 @@
 // sa région) → la composition INTERNE d'un bloc est verrouillée (pas d'éparpillement
 // possible). Module PUR (aucune dépendance Fabric/React). Schémas pour le LLM.
 import { z } from 'zod'
-import { projectObjectsToFormat } from './declineLayout'
+import { projectObjectsToFormat, scaleMergeGeometry } from './declineLayout'
 import type { DesignObject } from './relayoutMultiFormat'
 
 /** Bloc placé par le LLM : indices des objets + région cible (fractions [0..1]). */
@@ -118,13 +118,19 @@ export function applyFluidBlocks<T extends DesignObject>(
     const offY = ry + (rh - bh * s) / 2
     for (const i of idxs) {
       const o = objects[i]
-      result[i] = {
+      const next: T = {
         ...o,
         left: ((o.left ?? 0) - x0) * s + offX,
         top: ((o.top ?? 0) - y0) * s + offY,
         scaleX: (o.scaleX ?? 1) * s,
         scaleY: (o.scaleY ?? 1) * s,
       }
+      // Réconcilie les métadonnées de fusion avec le facteur du bloc (sinon
+      // l'objet revient à sa géométrie d'origine une fois retravaillé).
+      if ((o as { data?: unknown }).data !== undefined) {
+        ;(next as { data?: unknown }).data = scaleMergeGeometry((o as { data?: unknown }).data, s)
+      }
+      result[i] = next
       assigned.add(i)
     }
   }
