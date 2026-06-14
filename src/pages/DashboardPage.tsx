@@ -40,6 +40,7 @@ const ChatPage = lazy(() => import('@/features/chat/ChatPage').then((m) => ({ de
 const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage').then((m) => ({ default: m.WorkflowsPage })))
 const HyperframesPage = lazy(() => import('@/features/video/HyperframesPage').then((m) => ({ default: m.HyperframesPage })))
 const TelegramInboxView = lazy(() => import('@/features/telegram/TelegramInboxView').then((m) => ({ default: m.TelegramInboxView })))
+const PriceWatchPanel = lazy(() => import('@/features/priceWatch/PriceWatchPanel').then((m) => ({ default: m.PriceWatchPanel })))
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
@@ -498,6 +499,16 @@ export default function DashboardPage() {
             </div>
           }>
             <WorkflowsPage embedded />
+          </Suspense>
+        </div>
+      ) : activeSection === 'price-watch' && canSee('price-watch') ? (
+        <div data-tour="section-price-watch" className="flex-1 overflow-auto p-8 bg-background">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
+              <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+            </div>
+          }>
+            <PriceWatchPanel />
           </Suspense>
         </div>
       ) : activeSection === 'access' && isAdmin ? (
