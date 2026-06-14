@@ -32,3 +32,26 @@ export function buildPatternUrl(
   })
   return missing ? null : url
 }
+
+/** Requêtes de recherche scopées domaine, par ordre de fiabilité. */
+export function discoveryQueries(domain: string, p: TrackedProduct): string[] {
+  const queries: string[] = []
+  if (p.sku?.trim()) queries.push(`site:${domain} ${p.sku.trim()}`)
+  else if (p.ean?.trim()) queries.push(`site:${domain} ${p.ean.trim()}`)
+  const nameQuery = [p.brand, p.name].filter(Boolean).join(' ').trim()
+  if (nameQuery) queries.push(`site:${domain} ${nameQuery}`)
+  return queries
+}
+
+/** Premier résultat dont l'URL appartient au domaine cible. */
+export function pickCandidate(
+  results: { url: string }[],
+  domain: string,
+): string | null {
+  const d = domain.replace(/^www\./, '')
+  const hit = results.find((r) => {
+    try { return new URL(r.url).hostname.replace(/^www\./, '').endsWith(d) }
+    catch { return false }
+  })
+  return hit?.url ?? null
+}

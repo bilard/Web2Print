@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { relationalKey, buildPatternUrl } from './core'
+import { relationalKey, buildPatternUrl, discoveryQueries, pickCandidate } from './core'
 import type { TrackedProduct } from './types'
 
 const base: TrackedProduct = { id: 'p1', name: 'Perceuse X', brand: 'Acme' }
@@ -35,5 +35,35 @@ describe('buildPatternUrl', () => {
   })
   it('rend null si pas de pattern', () => {
     expect(buildPatternUrl(undefined, { ...base, sku: 'SK1' })).toBeNull()
+  })
+})
+
+describe('discoveryQueries', () => {
+  it('SKU/EAN d\'abord, puis marque+nom, scopés au domaine', () => {
+    const qs = discoveryQueries('exemple.com', { id: 'p1', name: 'Perceuse X', brand: 'Acme', sku: 'SK1' })
+    expect(qs[0]).toBe('site:exemple.com SK1')
+    expect(qs[1]).toBe('site:exemple.com Acme Perceuse X')
+  })
+  it('replie sur EAN si pas de SKU', () => {
+    const qs = discoveryQueries('exemple.com', { id: 'p1', name: 'Perceuse X', brand: 'Acme', ean: '3614220123456' })
+    expect(qs[0]).toBe('site:exemple.com 3614220123456')
+    expect(qs[1]).toBe('site:exemple.com Acme Perceuse X')
+  })
+  it('sans SKU/EAN : juste marque+nom', () => {
+    const qs = discoveryQueries('exemple.com', { id: 'p1', name: 'Perceuse X', brand: 'Acme' })
+    expect(qs).toEqual(['site:exemple.com Acme Perceuse X'])
+  })
+})
+
+describe('pickCandidate', () => {
+  const results = [
+    { title: 'Autre', url: 'https://autre.com/x', snippet: '' },
+    { title: 'Perceuse X — Exemple', url: 'https://exemple.com/p/sk1', snippet: '' },
+  ]
+  it('garde le premier résultat sur le domaine cible', () => {
+    expect(pickCandidate(results, 'exemple.com')).toBe('https://exemple.com/p/sk1')
+  })
+  it('rend null si aucun résultat sur le domaine', () => {
+    expect(pickCandidate([results[0]], 'exemple.com')).toBeNull()
   })
 })
