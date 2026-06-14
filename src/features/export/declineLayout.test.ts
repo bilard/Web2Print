@@ -32,6 +32,33 @@ describe('projectObjectsToFormat', () => {
     expect(o.top).toBe(100) // 200*0.5 + (500-500)/2
   })
 
+  it('mode « cover » : remplit le cadre plus haut (overscale + recadrage), composition préservée', () => {
+    // Source 1000×1000, cible 1000×2000 → cover s = max(1, 2) = 2.
+    // largeur projetée 2000 (déborde de 1000 → offsetX = (1000-2000)/2 = -500),
+    // hauteur projetée 2000 = cible (offsetY = 0).
+    const [o] = projectObjectsToFormat(
+      [{ left: 100, top: 100, scaleX: 1, scaleY: 1 }],
+      1000,
+      1000,
+      1000,
+      2000,
+      'cover',
+    )
+    expect(o.scaleX).toBe(2)
+    expect(o.scaleY).toBe(2)
+    expect(o.left).toBe(-300) // 100*2 + (1000-2000)/2
+    expect(o.top).toBe(200) // 100*2 + (2000-2000)/2
+  })
+
+  it('mode « cover » identique à « contain » quand le ratio est conservé (mise à l’échelle uniforme)', () => {
+    // Même ratio 1:1, source 1000×1000 → cible 500×500 : s = 0.5 dans les deux modes.
+    const [cover] = projectObjectsToFormat([{ left: 100, top: 100, scaleX: 1, scaleY: 1 }], 1000, 1000, 500, 500, 'cover')
+    const [contain] = projectObjectsToFormat([{ left: 100, top: 100, scaleX: 1, scaleY: 1 }], 1000, 1000, 500, 500, 'contain')
+    expect(cover.scaleX).toBe(0.5)
+    expect(cover.left).toBe(contain.left)
+    expect(cover.top).toBe(contain.top)
+  })
+
   it('préserve les autres champs et ne mute pas la source', () => {
     const src = [{ left: 0, top: 0, fill: '#abc', data: { id: 'x' } }]
     const [o] = projectObjectsToFormat(src, 800, 600, 400, 300)

@@ -34,9 +34,14 @@ interface ProjectableObject {
 
 /**
  * Re-projette des objets sérialisés depuis un canvas source `srcW×srcH` vers un
- * cadre cible `dstW×dstH` : scale uniforme « contain » (rien n'est perdu) +
- * centrage. La transformation s'applique autour de l'origine (0,0 = coin
- * haut-gauche de la page), donc indépendante de originX/originY des objets.
+ * cadre cible `dstW×dstH` par un scale UNIFORME + centrage — la composition est
+ * préservée (un seul facteur appliqué à TOUS les objets). La transformation
+ * s'applique autour de l'origine (0,0 = coin haut-gauche de la page), donc
+ * indépendante de originX/originY des objets.
+ *
+ * - `mode='contain'` (défaut) : `s = min(...)` → tout reste visible, marges possibles.
+ * - `mode='cover'` : `s = max(...)` → le design REMPLIT le format cible, le
+ *   trop-plein déborde (rogné par la page). Sert au « Reformater » en proportion.
  *
  * Renvoie de NOUVEAUX objets (les sources ne sont pas mutées).
  */
@@ -46,9 +51,12 @@ export function projectObjectsToFormat<T extends ProjectableObject>(
   srcH: number,
   dstW: number,
   dstH: number,
+  mode: 'contain' | 'cover' = 'contain',
 ): T[] {
   if (srcW <= 0 || srcH <= 0) return objects.map((o) => ({ ...o }))
-  const s = Math.min(dstW / srcW, dstH / srcH)
+  const s = mode === 'cover'
+    ? Math.max(dstW / srcW, dstH / srcH)
+    : Math.min(dstW / srcW, dstH / srcH)
   const offsetX = (dstW - srcW * s) / 2
   const offsetY = (dstH - srcH * s) / 2
   return objects.map((o) => ({

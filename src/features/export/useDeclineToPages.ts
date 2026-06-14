@@ -55,12 +55,13 @@ export function useDeclineToPages() {
   const declineToPages = useCallback(
     async (
       targets: readonly DeclineTarget[],
-      options?: { navigateToLast?: boolean },
+      options?: { navigateToLast?: boolean; transform?: 'ai' | 'contain' | 'cover' },
     ): Promise<DeclineOutcome> => {
       const canvas = globalFabricCanvas
       if (!canvas) throw new Error('Canvas indisponible.')
       if (targets.length === 0) return { created: 0, updated: 0, usedFallback: false }
 
+      const transform = options?.transform ?? 'ai'
       const { canvasWidth, canvasHeight } = useUIStore.getState()
       const serialized = canvas.toObject(FABRIC_SERIALIZED_PROPS) as SerializedCanvas
       const allObjects = serialized.objects ?? []
@@ -69,25 +70,41 @@ export function useDeclineToPages() {
         (o) => !o.data?.isGrid && !o.data?.isPrintMark,
       )
 
-      const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
-      const { byFormat, usedFallback } = imageDataUri
-        ? await relayoutToFormats({
-            imageDataUri,
-            objects: designObjects,
-            srcW: canvasWidth,
-            srcH: canvasHeight,
-            targets,
-          })
-        : {
-            // Pas d'image (toDataURL a échoué, ex. CORS) → repli homothétique direct.
-            byFormat: Object.fromEntries(
-              targets.map((t) => [
-                t.id,
-                projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h),
-              ]),
-            ),
-            usedFallback: true,
-          }
+      // Transformation DÉTERMINISTE (proportionnelle, composition préservée) :
+      // le « Reformater en proportion » passe par ici (pas de LLM, instantané,
+      // sans coût). Le mode 'ai' (déclinées multi-format) garde le re-layout LLM.
+      let byFormat: Record<string, DesignObject[]>
+      let usedFallback = false
+      if (transform === 'contain' || transform === 'cover') {
+        byFormat = Object.fromEntries(
+          targets.map((t) => [
+            t.id,
+            projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h, transform),
+          ]),
+        )
+      } else {
+        const imageDataUri = renderSourceDataUri(canvas, canvasWidth, canvasHeight)
+        const outcome = imageDataUri
+          ? await relayoutToFormats({
+              imageDataUri,
+              objects: designObjects,
+              srcW: canvasWidth,
+              srcH: canvasHeight,
+              targets,
+            })
+          : {
+              // Pas d'image (toDataURL a échoué, ex. CORS) → repli homothétique direct.
+              byFormat: Object.fromEntries(
+                targets.map((t) => [
+                  t.id,
+                  projectObjectsToFormat(designObjects, canvasWidth, canvasHeight, t.w, t.h),
+                ]),
+              ),
+              usedFallback: true,
+            }
+        byFormat = outcome.byFormat
+        usedFallback = outcome.usedFallback
+      }
 
       const { currentPageIndex, updatePage, addPage, setCurrentPage } = usePagesStore.getState()
       const originalIndex = currentPageIndex

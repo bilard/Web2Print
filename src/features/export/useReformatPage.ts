@@ -34,16 +34,15 @@ export function useReformatPage() {
 
       const target = buildReformatTarget(wPt, hPt, presetLabel)
       try {
-        const { usedFallback, updated } = await withProgress(
-          'Adaptation IA du format…',
-          () => declineToPages([target], { navigateToLast: true }),
+        // Mise à l'échelle PROPORTIONNELLE qui préserve la composition (mode
+        // 'cover' : le design remplit le format, le trop-plein est rogné). Pas
+        // de LLM : déterministe, instantané. Réutilise la plomberie déclinées.
+        const { updated } = await withProgress(
+          'Adaptation du format…',
+          () => declineToPages([target], { navigateToLast: true, transform: 'cover' }),
         )
         const verb = updated > 0 ? 'régénérée' : 'créée'
-        if (usedFallback) {
-          notify.warning('Format adapté (repli géométrique)', `Page « ${target.label} » ${verb} — adaptation IA indisponible, mise à l'échelle simple appliquée.`)
-        } else {
-          notify.success('Format adapté par IA', `Page « ${target.label} » ${verb} — la page d'origine est conservée.`)
-        }
+        notify.success('Format adapté', `Page « ${target.label} » ${verb} — design mis à l'échelle pour remplir le format, page d'origine conservée.`)
       } catch (err) {
         console.error('[reformatPage] échec :', err)
         notify.error('Adaptation du format échouée', String(err).slice(0, 160))
