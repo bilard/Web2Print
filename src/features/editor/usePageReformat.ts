@@ -5,7 +5,7 @@
 // - reflowWithAI : ré-agence le contenu par BLOCS (IA DeepSeek, descripteurs seuls)
 //   pour mieux REMPLIR le format courant ; repli proportionnel garanti.
 import { useCallback } from 'react'
-import type { FabricObject } from 'fabric'
+import { Point, type FabricObject } from 'fabric'
 import { globalFabricCanvas } from './CanvasContainer'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 import { syncToStore } from './useAddObject'
@@ -40,32 +40,33 @@ function applyGeometry(o: FabricObject, g: { left?: number; top?: number; scaleX
 }
 
 export function usePageReformat() {
-  /** Met le contenu à l'échelle (contain) de `old` vers `new`, EN PLACE.
-   * Renvoie un diagnostic { count, scale } pour vérifier l'effet. */
+  /** Adapte le contenu de `old` vers `new`, EN PLACE : le CENTRE de chaque élément
+   * est remappé proportionnellement à la nouvelle largeur ET hauteur (les éléments
+   * se REPOSITIONNENT pour occuper le format), et leur TAILLE est mise à l'échelle
+   * uniformément (facteur min, pas de déformation, pas de débordement). */
   const resizeProportional = useCallback(
     (oldW: number, oldH: number, newW: number, newH: number): { count: number; scale: number } => {
       const canvas = globalFabricCanvas
       if (!canvas || oldW <= 0 || oldH <= 0) return { count: 0, scale: 0 }
-      const s = Math.min(newW / oldW, newH / oldH)
-      if (!(s > 0) || (Math.abs(s - 1) < 1e-6 && Math.round(oldW) === Math.round(newW) && Math.round(oldH) === Math.round(newH))) return { count: 0, scale: s }
-      const offX = (newW - oldW * s) / 2
-      const offY = (newH - oldH * s) / 2
+      const rx = newW / oldW // ratio de position horizontale
+      const ry = newH / oldH // ratio de position verticale
+      const sf = Math.min(rx, ry) // facteur de taille uniforme
+      if (!(sf > 0) || (Math.round(oldW) === Math.round(newW) && Math.round(oldH) === Math.round(newH))) {
+        return { count: 0, scale: sf }
+      }
       const objs = designObjectsOf(canvas)
       for (const o of objs) {
-        applyGeometry(
-          o,
-          {
-            left: (o.left ?? 0) * s + offX,
-            top: (o.top ?? 0) * s + offY,
-            scaleX: (o.scaleX ?? 1) * s,
-            scaleY: (o.scaleY ?? 1) * s,
-          },
-          s,
-        )
+        const c = o.getCenterPoint() // centre AVANT mise à l'échelle
+        o.set({ scaleX: (o.scaleX ?? 1) * sf, scaleY: (o.scaleY ?? 1) * sf })
+        // Repositionne le centre proportionnellement au nouveau format.
+        o.setPositionByOrigin(new Point(c.x * rx, c.y * ry), 'center', 'center')
+        const oo = o as WithData
+        if (oo.data !== undefined) oo.data = scaleMergeGeometry(oo.data, sf) as Record<string, unknown>
+        o.setCoords()
       }
       canvas.requestRenderAll()
       syncToStore(canvas)
-      return { count: objs.length, scale: s }
+      return { count: objs.length, scale: sf }
     },
     [],
   )
