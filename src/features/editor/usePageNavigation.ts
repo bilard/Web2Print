@@ -3,6 +3,8 @@ import { globalFabricCanvas } from './CanvasContainer'
 import { usePagesStore } from '@/stores/pages.store'
 import { syncToStore } from './useAddObject'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
+import { useUIStore } from '@/stores/ui.store'
+import { ensurePageBgRect } from './useCanvas'
 
 export function usePageNavigation() {
   const { pages, currentPageIndex, updatePage, setCurrentPage } = usePagesStore()
@@ -29,6 +31,13 @@ export function usePageNavigation() {
       const newPage = pages[newIndex]
       if (!newPage) return
 
+      // La page cible peut avoir un format différent : on l'applique au canvas
+      // (sinon le contenu chargé s'afficherait aux dimensions de la page précédente).
+      // setCanvasSize recale aussi le viewport via l'effet de CanvasContainer.
+      if (newPage.width && newPage.height) {
+        useUIStore.getState().setCanvasSize(newPage.width, newPage.height)
+      }
+
       // Clear non-grid objects
       const nonGrid = canvas.getObjects().filter((o) => !o.data?.isGrid)
       nonGrid.forEach((o) => canvas.remove(o))
@@ -38,6 +47,7 @@ export function usePageNavigation() {
       }
 
       canvas.requestRenderAll()
+      ensurePageBgRect(canvas)
       syncToStore(canvas)
       setCurrentPage(newIndex)
     },
