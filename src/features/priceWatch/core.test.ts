@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { relationalKey, buildPatternUrl, discoveryQueries, pickCandidate, parsePrice, pushHistory, evaluate } from './core'
+import { relationalKey, buildPatternUrl, discoveryQueries, pickCandidate, parsePrice, pushHistory, evaluate, buildMatchPrompt, parseMatchVerdict } from './core'
 import type { TrackedProduct, HistoryPoint } from './types'
 
 const base: TrackedProduct = { id: 'p1', name: 'Perceuse X', brand: 'Acme' }
@@ -100,5 +100,28 @@ describe('evaluate', () => {
   it('premier relevé : pas d\'alerte variation', () => {
     const a = evaluate(product, { id: 's1', domain: 'e.com' }, 120, undefined, 0)
     expect(a.some((x) => x.kind === 'competitor-variation')).toBe(false)
+  })
+})
+
+describe('buildMatchPrompt', () => {
+  it('inclut nom, marque, sku et un extrait de page', () => {
+    const prompt = buildMatchPrompt({ name: 'Perceuse X', brand: 'Acme', sku: 'SK1' }, 'contenu page…')
+    expect(prompt).toContain('Perceuse X')
+    expect(prompt).toContain('Acme')
+    expect(prompt).toContain('SK1')
+    expect(prompt).toContain('contenu page')
+  })
+})
+
+describe('parseMatchVerdict', () => {
+  it('lit { confidence }', () => {
+    expect(parseMatchVerdict('{"confidence":0.9}')).toBe(0.9)
+  })
+  it('borne 0..1', () => {
+    expect(parseMatchVerdict('{"confidence":5}')).toBe(1)
+    expect(parseMatchVerdict('{"confidence":-2}')).toBe(0)
+  })
+  it('0 si illisible', () => {
+    expect(parseMatchVerdict('pas du json')).toBe(0)
   })
 })

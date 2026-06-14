@@ -70,6 +70,30 @@ export function pushHistory(history: HistoryPoint[], point: HistoryPoint, maxLen
   return next.length > maxLen ? next.slice(next.length - maxLen) : next
 }
 
+/** Prompt de validation : le produit correspond-il à la page candidate ? */
+export function buildMatchPrompt(
+  p: { name: string; brand?: string; sku?: string; ean?: string },
+  pageContent: string,
+): string {
+  return (
+    `On veut vérifier qu'une page concurrente décrit EXACTEMENT le produit suivant.\n` +
+    `Produit : nom="${p.name}", marque="${p.brand ?? ''}", sku="${p.sku ?? ''}", ean="${p.ean ?? ''}".\n` +
+    `Réponds UNIQUEMENT par un JSON {"confidence": number} entre 0 (produit différent) ` +
+    `et 1 (même produit, même variante).\n\n--- PAGE ---\n${pageContent.slice(0, 6000)}`
+  )
+}
+
+/** Lit la confiance d'une réponse LLM, bornée à [0,1]. 0 si illisible. */
+export function parseMatchVerdict(text: string): number {
+  const m = text.match(/\{[\s\S]*\}/)
+  if (!m) return 0
+  try {
+    const n = Number((JSON.parse(m[0]) as { confidence?: unknown }).confidence)
+    if (Number.isNaN(n)) return 0
+    return Math.max(0, Math.min(1, n))
+  } catch { return 0 }
+}
+
 /**
  * Compare un relevé concurrent au produit et au relevé précédent → alertes.
  * - positioning : competitorPrice < myPrice
