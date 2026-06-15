@@ -57,6 +57,7 @@ function FormulaInput({
 }) {
   const ref = useRef<HTMLInputElement>(null)
   const [ac, setAc] = useState<AcState | null>(null)
+  const [focused, setFocused] = useState(false)
 
   const recompute = (input: HTMLInputElement) => {
     const pos = input.selectionStart ?? input.value.length
@@ -162,17 +163,25 @@ function FormulaInput({
           onChange(e.target.value)
           recompute(e.target)
         }}
-        onFocus={() => formulaInsert.setActive(stableInsert)}
+        onFocus={() => {
+          setFocused(true)
+          formulaInsert.setActive(stableInsert)
+        }}
         onClick={(e) => recompute(e.currentTarget)}
         onKeyUp={(e) => {
           if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) recompute(e.currentTarget)
         }}
-        onBlur={() => setTimeout(() => setAc(null), 120)}
+        onBlur={() =>
+          setTimeout(() => {
+            setFocused(false)
+            setAc(null)
+          }, 120)
+        }
         onKeyDown={onKeyDown}
         placeholder="={price} - {price_concurrent}"
         className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-[12px] font-mono text-white outline-none focus:border-indigo-500"
       />
-      {ac && (suggestions.length > 0 || ac.mode === 'col') && (
+      {focused && ac && (suggestions.length > 0 || ac.mode === 'col') && (
         <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-auto rounded-md bg-surface-2 border border-neutral-700 shadow-xl">
           {suggestions.length === 0 && ac.mode === 'col' && (
             <li className="px-2 py-1.5 text-[10px] text-neutral-500 italic leading-snug">
