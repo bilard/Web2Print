@@ -32,11 +32,12 @@ function isBlocked(markdown: string): boolean {
  */
 export async function readPageWithEscalation(
   url: string,
-  opts: { listing?: boolean; log: LogFn },
+  opts: { listing?: boolean; log: LogFn; onConnector?: (id: string) => void },
 ): Promise<EscalatedRead> {
-  const { log, listing } = opts
+  const { log, listing, onConnector } = opts
 
   // Palier 1 — Jina (lecteur markdown, moteur navigateur si `listing`).
+  onConnector?.('jina')
   let jinaMarkdown = ''
   try {
     const data = await jinaRead(url, { listing })
@@ -49,6 +50,7 @@ export async function readPageWithEscalation(
   }
 
   // Palier 2 — Bright Data (Web Unlocker, puis Scraping Browser en escalade interne).
+  onConnector?.('brightdata')
   log('info', 'Page bloquée ou vide sur Jina → escalade Bright Data…')
   try {
     const bd = await brightDataScrapeWithDocs(url)

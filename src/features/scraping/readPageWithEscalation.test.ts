@@ -41,9 +41,12 @@ describe('readPageWithEscalation', () => {
   it('escalade quand Jina renvoie une page de challenge anti-bot', async () => {
     jinaRead.mockResolvedValue({ content: 'CHALLENGE please verify' })
     brightDataScrapeWithDocs.mockResolvedValue({ markdown: 'Vrai contenu', pdfLinks: [], structuredData: null })
-    const res = await readPageWithEscalation('https://x.fr', { log })
+    const onConnector = vi.fn()
+    const res = await readPageWithEscalation('https://x.fr', { log, onConnector })
     expect(res.source).toBe('brightdata')
     expect(res.markdown).toBe('Vrai contenu')
+    // Le connecteur est remonté en live : Jina tenté, puis Bright Data.
+    expect(onConnector.mock.calls.map((c) => c[0])).toEqual(['jina', 'brightdata'])
   })
 
   it('renvoie vide/null quand tous les connecteurs restent bloqués', async () => {

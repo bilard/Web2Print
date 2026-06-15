@@ -150,6 +150,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       const { markdown, source } = await readPageWithEscalation(url, {
         listing: true,
         log: ctx.log,
+        onConnector: ctx.reportConnector,
       })
       if (!markdown.trim()) {
         ctx.log('warn', `Aucun contenu pour ${site} — bloqué malgré l'escalade (Jina + Bright Data).`)
@@ -161,6 +162,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
 
       // Bornage du contexte LLM (les pages liste peuvent être volumineuses).
       const context = markdown.length > 28000 ? markdown.slice(0, 28000) : markdown
+      ctx.reportConnector?.('llm')
       let extracted: Extracted
       try {
         extracted = await generateJson<Extracted>({

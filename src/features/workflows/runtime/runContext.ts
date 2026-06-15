@@ -22,6 +22,8 @@ interface RunContextState {
   startNode: (id: string) => void
   endNode: (id: string, status: NodeStatus, error?: string) => void
   appendLog: (id: string, level: 'info' | 'warn' | 'error', msg: string) => void
+  /** Ajoute (dédupe) un connecteur réellement utilisé par le node ce run — affiché en live. */
+  reportNodeConnector: (id: string, connectorId: string) => void
   setNodeOutputs: (id: string, outputs: Record<string, unknown>) => void
   clearNodes: (ids: string[]) => void
   /** Bloque jusqu'au clic « Étape suivante » (ou abort du run). */
@@ -60,8 +62,9 @@ export const useRunContext = create<RunContextState>((set, get) => ({
   startNode: (id) =>
     set((s) => ({
       nodeStates: {
+        // connectors remis à zéro : le live reflète CE run.
         ...s.nodeStates,
-        [id]: { ...(s.nodeStates[id] ?? blankNode()), status: 'running', startedAt: Date.now() },
+        [id]: { ...(s.nodeStates[id] ?? blankNode()), status: 'running', startedAt: Date.now(), connectors: [] },
       },
     })),
   endNode: (id, status, error) =>
@@ -89,6 +92,15 @@ export const useRunContext = create<RunContextState>((set, get) => ({
           ...s.nodeStates,
           [id]: { ...prev, logs: [...prev.logs, { ts: Date.now(), level, msg }] },
         },
+      }
+    }),
+  reportNodeConnector: (id, connectorId) =>
+    set((s) => {
+      const prev = s.nodeStates[id] ?? blankNode()
+      const current = prev.connectors ?? []
+      if (current.includes(connectorId)) return s
+      return {
+        nodeStates: { ...s.nodeStates, [id]: { ...prev, connectors: [...current, connectorId] } },
       }
     }),
   setNodeOutputs: (id, outputs) =>

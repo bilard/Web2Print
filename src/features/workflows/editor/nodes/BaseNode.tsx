@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useRunContext } from '../../runtime/runContext'
 import { nodeRegistry } from '../../registry'
-import { connectorsForSpec } from '../../registry/connectors'
+import { connectorsForSpec, connectorsByIds } from '../../registry/connectors'
 import { useConnectionDrag } from '../../runtime/connectionDragStore'
 import { isCompatible } from '../../runtime/ports'
 import { executeWorkflow } from '../../runtime/executor'
@@ -176,6 +176,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const nodeType = (data as { type?: string }).type
   const spec = nodeType ? nodeRegistry.get(nodeType) : undefined
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
+  const runConnectors = useRunContext((s) => s.nodeStates[id]?.connectors)
   const isRunning = useRunContext((s) => s.isRunning)
   const canRun = useCan('workflows.run')
   // Config live du node (réactive) — alimente `spec.cardSummary` (ex. planning cron).
@@ -203,7 +204,9 @@ export function BaseNode({ id, data, selected }: NodeProps) {
 
   const Icon = spec.icon
   const cat = CATEGORY_STYLES[spec.category]
-  const connectors = connectorsForSpec(spec)
+  // Connecteurs « live » du run en cours s'ils ont été remontés, sinon déclaration statique.
+  const live = (runConnectors?.length ?? 0) > 0
+  const connectors = live ? connectorsByIds(runConnectors!) : connectorsForSpec(spec)
   let cardSummary: string | null = null
   if (spec.cardSummary) {
     try {
@@ -241,19 +244,28 @@ export function BaseNode({ id, data, selected }: NodeProps) {
             {spec.label}
           </span>
 
-          {/* Connecteurs / services externes utilisés par le node */}
+          {/* Connecteurs / services externes — live pendant un run, sinon déclaration statique */}
           {connectors.length > 0 ? (
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
-              {connectors.map((c) => (
-                <span
-                  key={c.label}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/20 ring-1 ring-white/10 text-[8.5px] font-medium leading-none ${c.color}`}
-                  title={`Connecteur : ${c.label}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} aria-hidden="true" />
-                  {c.label}
-                </span>
-              ))}
+              {connectors.map((c, i) => {
+                // Pendant un run, le dernier connecteur remonté = celui en cours d'usage.
+                const active = live && status === 'running' && i === connectors.length - 1
+                return (
+                  <span
+                    key={c.label}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/20 ring-1 text-[8.5px] font-medium leading-none ${c.color} ${
+                      active ? 'ring-white/40' : 'ring-white/10'
+                    }`}
+                    title={live ? `Connecteur utilisé : ${c.label}` : `Connecteur : ${c.label}`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${c.dot} ${active ? 'animate-pulse' : ''}`}
+                      aria-hidden="true"
+                    />
+                    {c.label}
+                  </span>
+                )
+              })}
             </div>
           ) : null}
 

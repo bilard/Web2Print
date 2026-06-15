@@ -368,6 +368,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       const ctxApi: RunContextApi = {
         signal: ac.signal,
         log: (level, msg) => useRunContext.getState().appendLog(node.id, level, msg),
+        reportConnector: (cid) => useRunContext.getState().reportNodeConnector(node.id, cid),
         rawConfig: node.config,
       }
 

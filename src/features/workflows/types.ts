@@ -121,12 +121,16 @@ export interface NodeRunState {
   logs: { ts: number; level: 'info' | 'warn' | 'error'; msg: string }[]
   error?: string
   outputs?: Record<string, unknown>
+  /** Connecteurs réellement utilisés/tentés pendant ce run (ex. ['jina','brightdata']). */
+  connectors?: string[]
 }
 
 export interface RunContextApi {
   signal: AbortSignal
   log: (level: 'info' | 'warn' | 'error', msg: string) => void
   setProgress?: (pct: number) => void
+  /** Signale le connecteur (ex. 'jina', 'brightdata', 'llm') en cours d'usage — affiché en live sur la carte. */
+  reportConnector?: (connectorId: string) => void
   /**
    * Config brut (sans interpolation des {{...}}) — utile pour les nodes qui
    * ont besoin de ré-interpoler eux-mêmes (ex : Send Gmail en mode "iterate"

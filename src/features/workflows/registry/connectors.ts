@@ -15,7 +15,8 @@ export interface ConnectorMeta {
 
 /** Catalogue des connecteurs connus. */
 const CONNECTORS: Record<string, ConnectorMeta> = {
-  jina:     { label: 'Jina',     color: 'text-sky-300',     dot: 'bg-sky-400/70' },
+  jina:       { label: 'Jina',       color: 'text-sky-300',     dot: 'bg-sky-400/70' },
+  brightdata: { label: 'Bright Data', color: 'text-orange-300', dot: 'bg-orange-400/70' },
   llm:      { label: 'LLM',      color: 'text-violet-300',  dot: 'bg-violet-400/70' },
   vision:   { label: 'Vision',   color: 'text-amber-300',   dot: 'bg-amber-400/70' },
   image:    { label: 'Image IA', color: 'text-pink-300',    dot: 'bg-pink-400/70' },
@@ -62,5 +63,10 @@ const CONNECTORS_BY_TYPE: Record<string, string[]> = {
 /** Retourne les métadonnées des connecteurs d'un node (déclarés ou inférés par type). */
 export function connectorsForSpec(spec: NodeSpec): ConnectorMeta[] {
   const ids = spec.connectors ?? CONNECTORS_BY_TYPE[spec.type] ?? []
+  return connectorsByIds(ids)
+}
+
+/** Mappe une liste d'ids de connecteurs vers leurs métadonnées (ordre conservé, inconnus ignorés). */
+export function connectorsByIds(ids: string[]): ConnectorMeta[] {
   return ids.map((id) => CONNECTORS[id]).filter((c): c is ConnectorMeta => Boolean(c))
 }
