@@ -308,7 +308,9 @@ const gsheetsImportNode: NodeSpec<
 
 interface GSheetsExportConfig {
   name: string
-  /** Dossier parent — sélectionnable via picker (sinon racine). */
+  /** Dossier de destination par NOM : créé/réutilisé par l'app (garanti sous drive.file). Vide = racine. */
+  folderName: string
+  /** Dossier parent pické (legacy) — sinon racine. Conservé pour compat. */
   parentFolderId: string
   parentFolderName: string
   /** 'create' = nouveau fichier à chaque run ; 'update' = réécrit un fichier existant. */
@@ -412,7 +414,22 @@ function GSheetsExportConfigUi({
           placeholder="Workflow Export"
         />
       </div>
-      <FolderPickerForExport config={config} onChange={onChange} />
+      <div>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+          Dossier Drive (par nom)
+        </label>
+        <input
+          type="text"
+          value={config.folderName ?? ''}
+          onChange={(e) => onChange({ ...config, folderName: e.target.value })}
+          className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+          placeholder="Ex : Web2Print (vide = racine)"
+        />
+        <p className="text-[10px] text-neutral-600 leading-snug mt-1">
+          L'app crée (ou réutilise) ce dossier dans ton Drive et y range le fichier — garanti même
+          sous le scope minimal. Laisse vide pour la racine de « Mon Drive ».
+        </p>
+      </div>
       {mode === 'update' && (
         <p className="text-[10px] text-amber-400/70 leading-snug">
           ↳ Nom et dossier ne servent qu'à la <strong>création</strong> d'un nouveau fichier
@@ -436,7 +453,7 @@ const gsheetsExportNode: NodeSpec<
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'export-result' }],
   configSchema: [],
-  defaultConfig: { name: 'Workflow Export', parentFolderId: '', parentFolderName: '', mode: 'create', spreadsheetId: '' },
+  defaultConfig: { name: 'Workflow Export', folderName: '', parentFolderId: '', parentFolderName: '', mode: 'create', spreadsheetId: '' },
   runtime: 'client',
   ConfigComponent: GSheetsExportConfigUi,
   run: async (ctx, config, inputs) => {
@@ -452,11 +469,16 @@ const gsheetsExportNode: NodeSpec<
       ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
       return { result: meta }
     }
+    // Dossier de destination : par NOM (créé/réutilisé par l'app, garanti sous drive.file),
+    // sinon dossier pické legacy, sinon racine.
+    let parentFolderId = config.parentFolderId?.trim() || undefined
+    const folderName = config.folderName?.trim()
+    if (folderName) {
+      ctx.log('info', `Dossier « ${folderName} » (créé/réutilisé par l'app)…`)
+      parentFolderId = await ensureDriveFolder(token, folderName)
+    }
     ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
-    const meta = await exportSheetToGoogleSheets(token, sheet, {
-      name,
-      parentFolderId: config.parentFolderId?.trim() || undefined,
-    })
+    const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId })
     ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
     return { result: meta }
   },
