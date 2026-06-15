@@ -133,7 +133,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       }),
       node('n3', 'compare-prices', 460, 160, {
         nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
-        referenceColumn: '', siteColumn: 'site', onlyMatched: false,
+        referenceColumn: '', urlColumn: 'url', siteColumn: 'site', onlyMatched: false,
       }),
       node('n4', 'export-excel', 840, 160, { columns: '' }),
     ],
@@ -163,7 +163,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       }),
       node('n3', 'compare-prices', 460, 220, {
         nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
-        referenceColumn: '', siteColumn: 'site', onlyMatched: false,
+        referenceColumn: '', urlColumn: 'url', siteColumn: 'site', onlyMatched: false,
       }),
       node('n4', 'gsheets-export', 840, 220, {
         name: 'Comparaison prix Ryobi', parentFolderId: '', mode: 'create', spreadsheetId: '',

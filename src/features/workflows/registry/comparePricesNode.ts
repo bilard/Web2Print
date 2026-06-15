@@ -17,6 +17,7 @@ interface ComparePricesConfig {
   priceColumn: string
   eanColumn: string
   referenceColumn: string
+  urlColumn: string
   siteColumn: string
   onlyMatched: boolean
 }
@@ -45,27 +46,30 @@ export function normName(s: string): string {
     .trim()
 }
 
-/** Extrait un code modèle/SKU d'un intitulé (généraliste, sans dico marque) :
- *  le plus long token alphanumérique mêlant ≥2 lettres et ≥2 chiffres, longueur
- *  6-24 (ex RLM18E40H, RY36LMXSP53A160, FXE1RM20). Évite les unités (1800W, 18V). */
-export function extractReference(name: string): string {
-  const tokens = String(name).toUpperCase().match(/[A-Z0-9][A-Z0-9-]{4,}/g) ?? []
-  let best = ''
-  for (const raw of tokens) {
-    const t = raw.replace(/-/g, '')
-    const letters = (t.match(/[A-Z]/g) ?? []).length
-    const digits = (t.match(/\d/g) ?? []).length
-    if (t.length >= 6 && t.length <= 24 && letters >= 2 && digits >= 2 && t.length > best.length) best = t
+/** Extrait les codes modèle/SKU candidats d'un texte (nom + URL), sans dico marque.
+ *  Découpe sur tout non-alphanumérique (donc gère les slugs d'URL hyphénés comme
+ *  « …-rlm18e40h-ryobi-… ») et retient les tokens mêlant ≥2 lettres et ≥2 chiffres,
+ *  longueur 5-15 (ex RLM18E40H, OLM1833B, RY36LMXSP53A). Écarte les unités
+ *  (1800W, 40CM, 18V) et les ids purement numériques. */
+export function referenceTokens(text: string): string[] {
+  const out = new Set<string>()
+  for (const tok of String(text).toUpperCase().split(/[^A-Z0-9]+/)) {
+    const letters = (tok.match(/[A-Z]/g) ?? []).length
+    const digits = (tok.match(/\d/g) ?? []).length
+    if (tok.length >= 5 && tok.length <= 15 && letters >= 2 && digits >= 2) out.add(tok)
   }
-  return best
+  return [...out]
 }
 
-interface Keys { ean: string; ref: string; name: string }
+interface Keys { ean: string; refs: string[]; name: string }
 function keysOf(row: Record<string, unknown>, c: ComparePricesConfig): Keys {
   const nameVal = String(row[c.nameColumn] ?? '')
+  const urlVal = String(row[c.urlColumn] ?? '')
+  const explicit = c.referenceColumn ? String(row[c.referenceColumn] ?? '').trim() : ''
+  const refs = explicit ? [explicit.toUpperCase()] : referenceTokens(`${nameVal} ${urlVal}`)
   return {
     ean: String(row[c.eanColumn] ?? '').replace(/\D/g, '').slice(0, 13),
-    ref: (c.referenceColumn && String(row[c.referenceColumn] ?? '')) || extractReference(nameVal),
+    refs,
     name: normName(nameVal),
   }
 }
@@ -106,7 +110,7 @@ export function compareSourceToCompetitors(
     if (!(Number.isFinite(price) && price > 0)) continue
     const k = keysOf(row, c)
     push(byEan, k.ean, site, price)
-    push(byRef, k.ref, site, price)
+    for (const ref of k.refs) push(byRef, ref, site, price)
     push(byName, k.name, site, price)
   }
 
@@ -136,13 +140,21 @@ export function compareSourceToCompetitors(
     const nameVal = String(row[c.nameColumn] ?? '').trim()
     const sourceSite = String(row[c.siteColumn] ?? '').trim() || 'source'
     const srcPrice = parsePrice(row[c.priceColumn])
-    // Concurrents appariés : EAN puis référence puis nom (premier non vide).
-    const comp = (k.ean && byEan.get(k.ean)) || (k.ref && byRef.get(k.ref)) || (k.name && byName.get(k.name)) || []
+    // Concurrents appariés : EAN, sinon n'importe quel code modèle partagé, sinon nom.
+    let comp: CompetitorMatch[] = (k.ean && byEan.get(k.ean)) || []
+    if (comp.length === 0) {
+      const seen = new Set<string>()
+      for (const ref of k.refs) for (const m of byRef.get(ref) ?? []) {
+        const sig = `${m.site}|${m.price}`
+        if (!seen.has(sig)) { seen.add(sig); comp.push(m) }
+      }
+    }
+    if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
     const r: ExcelRow = {
       _id: `cmp_${id++}`,
       produit: nameVal,
-      reference: k.ref,
+      reference: k.refs[0] ?? '',
       ean: k.ean,
       source: sourceSite,
       prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
@@ -201,13 +213,14 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', default: 'name' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Prix', default: 'price' },
     { name: 'eanColumn', kind: 'columnRef', label: 'Colonne EAN', default: 'ean', help: 'Clé d’appariement prioritaire.' },
-    { name: 'referenceColumn', kind: 'columnRef', label: 'Colonne Référence', default: '', help: 'Vide = code modèle déduit du nom.' },
+    { name: 'referenceColumn', kind: 'columnRef', label: 'Colonne Référence', default: '', help: 'Vide = code modèle déduit du nom + URL.' },
+    { name: 'urlColumn', kind: 'columnRef', label: 'Colonne URL', default: 'url', help: 'Le slug d’URL porte souvent le code modèle (appariement).' },
     { name: 'siteColumn', kind: 'columnRef', label: 'Colonne Site', default: 'site', help: 'Identifie source et concurrents.' },
     { name: 'onlyMatched', kind: 'checkbox', label: 'Seulement les produits trouvés chez un concurrent', default: false },
   ],
   defaultConfig: {
     nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
-    referenceColumn: '', siteColumn: 'site', onlyMatched: false,
+    referenceColumn: '', urlColumn: 'url', siteColumn: 'site', onlyMatched: false,
   },
   runtime: 'any',
   run: async (ctx, config, inputs) => {

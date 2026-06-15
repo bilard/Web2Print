@@ -9,7 +9,7 @@ import { registerServerNode } from '../registry'
 interface SheetLike { rows?: Record<string, unknown>[]; [k: string]: unknown }
 interface Cfg {
   nameColumn: string; priceColumn: string; eanColumn: string
-  referenceColumn: string; siteColumn: string; onlyMatched: boolean
+  referenceColumn: string; urlColumn: string; siteColumn: string; onlyMatched: boolean
 }
 
 function slug(s: string): string {
@@ -19,16 +19,14 @@ function normName(s: string): string {
   return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
 }
-function extractReference(name: string): string {
-  const tokens = String(name).toUpperCase().match(/[A-Z0-9][A-Z0-9-]{4,}/g) ?? []
-  let best = ''
-  for (const raw of tokens) {
-    const t = raw.replace(/-/g, '')
-    const letters = (t.match(/[A-Z]/g) ?? []).length
-    const digits = (t.match(/\d/g) ?? []).length
-    if (t.length >= 6 && t.length <= 24 && letters >= 2 && digits >= 2 && t.length > best.length) best = t
+function referenceTokens(text: string): string[] {
+  const out = new Set<string>()
+  for (const tok of String(text).toUpperCase().split(/[^A-Z0-9]+/)) {
+    const letters = (tok.match(/[A-Z]/g) ?? []).length
+    const digits = (tok.match(/\d/g) ?? []).length
+    if (tok.length >= 5 && tok.length <= 15 && letters >= 2 && digits >= 2) out.add(tok)
   }
-  return best
+  return [...out]
 }
 function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
@@ -38,9 +36,12 @@ function parsePrice(v: unknown): number {
 }
 function keysOf(row: Record<string, unknown>, c: Cfg) {
   const nameVal = String(row[c.nameColumn] ?? '')
+  const urlVal = String(row[c.urlColumn] ?? '')
+  const explicit = c.referenceColumn ? String(row[c.referenceColumn] ?? '').trim() : ''
+  const refs = explicit ? [explicit.toUpperCase()] : referenceTokens(`${nameVal} ${urlVal}`)
   return {
     ean: String(row[c.eanColumn] ?? '').replace(/\D/g, '').slice(0, 13),
-    ref: (c.referenceColumn && String(row[c.referenceColumn] ?? '')) || extractReference(nameVal),
+    refs,
     name: normName(nameVal),
   }
 }
@@ -54,7 +55,7 @@ registerServerNode({
     const cfg: Cfg = {
       nameColumn: c.nameColumn || 'name', priceColumn: c.priceColumn || 'price',
       eanColumn: c.eanColumn || 'ean', referenceColumn: c.referenceColumn || '',
-      siteColumn: c.siteColumn || 'site', onlyMatched: c.onlyMatched === true,
+      urlColumn: c.urlColumn || 'url', siteColumn: c.siteColumn || 'site', onlyMatched: c.onlyMatched === true,
     }
     const sourceRows = (((inputs.source ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
     const competitorRows = (((inputs.concurrents ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
@@ -82,7 +83,7 @@ registerServerNode({
       if (!(Number.isFinite(price) && price > 0)) continue
       const k = keysOf(row, cfg)
       push(byEan, k.ean, site, price)
-      push(byRef, k.ref, site, price)
+      for (const ref of k.refs) push(byRef, ref, site, price)
       push(byName, k.name, site, price)
     }
 
@@ -109,10 +110,18 @@ registerServerNode({
       const nameVal = String(row[cfg.nameColumn] ?? '').trim()
       const sourceSite = String(row[cfg.siteColumn] ?? '').trim() || 'source'
       const srcPrice = parsePrice(row[cfg.priceColumn])
-      const comp = (k.ean && byEan.get(k.ean)) || (k.ref && byRef.get(k.ref)) || (k.name && byName.get(k.name)) || []
+      let comp: CMatch[] = (k.ean && byEan.get(k.ean)) || []
+      if (comp.length === 0) {
+        const seen = new Set<string>()
+        for (const ref of k.refs) for (const m of byRef.get(ref) ?? []) {
+          const sig = `${m.site}|${m.price}`
+          if (!seen.has(sig)) { seen.add(sig); comp.push(m) }
+        }
+      }
+      if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
       const r: Record<string, unknown> = {
-        _id: `cmp_${id++}`, produit: nameVal, reference: k.ref, ean: k.ean,
+        _id: `cmp_${id++}`, produit: nameVal, reference: k.refs[0] ?? '', ean: k.ean,
         source: sourceSite, prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
       }
       const bySite = new Map<string, number>()
