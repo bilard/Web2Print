@@ -30,6 +30,7 @@ import {
   type DriveFileMeta,
 } from '@/features/gdrive/gdriveCore'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
+import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 
 /**
@@ -377,9 +378,11 @@ function FolderPickerForExport<C extends FolderTargetFields>({
 function GSheetsExportConfigUi({
   config,
   onChange,
+  availableColumns = [],
 }: {
   config: GSheetsExportConfig
   onChange: (next: GSheetsExportConfig) => void
+  availableColumns?: string[]
 }) {
   const hasId = !!config.spreadsheetId?.trim()
   // « Mettre à jour » n'a de sens qu'avec un fichier cible : sans URL/ID, l'option
@@ -459,21 +462,14 @@ function GSheetsExportConfigUi({
       )}
 
       <div className="pt-2 border-t border-neutral-800">
-        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 block">
           Colonnes formule (Google Sheets)
         </label>
-        <textarea
+        <GSheetsFormulaColumns
           value={config.formulaColumns ?? ''}
-          onChange={(e) => onChange({ ...config, formulaColumns: e.target.value })}
-          rows={3}
-          className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500 font-mono text-[11px]"
-          placeholder={'Écart = {price} - {price_concurrent}\n% écart = ({price}/{price_concurrent}-1)'}
+          onChange={(v) => onChange({ ...config, formulaColumns: v })}
+          columns={availableColumns}
         />
-        <p className="text-[10px] text-neutral-600 leading-snug mt-1">
-          Colonnes ajoutées en fin de tableau comme <strong>formules vivantes</strong> (se recalculent
-          dans Google Sheets). Référence une colonne par son nom : <code>{'{price}'}</code> → lettre +
-          n° de ligne (ex. <code>=C2-D2</code>). Une par ligne : <code>En-tête = formule</code>.
-        </p>
       </div>
     </div>
   )

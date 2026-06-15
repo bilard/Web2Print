@@ -1,0 +1,207 @@
+// src/features/workflows/registry/GSheetsFormulaColumns.tsx
+// Éditeur des colonnes-formule de l'export Google Sheets : liste (en-tête + formule)
+// avec autocomplétion des fonctions Google Sheets ET des noms de colonnes ({col}).
+import { useMemo, useRef, useState } from 'react'
+import { Plus, X } from 'lucide-react'
+import { GSHEETS_FUNCTIONS } from '@/features/gdrive/googleSheetsFunctions'
+
+interface Row {
+  header: string
+  formula: string
+}
+
+function parseRows(raw: string): Row[] {
+  return String(raw || '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const eq = line.indexOf('=')
+      if (eq < 0) return { header: line, formula: '' }
+      return { header: line.slice(0, eq).trim(), formula: line.slice(eq + 1).trim() }
+    })
+}
+
+function serialize(rows: Row[]): string {
+  return rows
+    .filter((r) => r.header.trim() || r.formula.trim())
+    .map((r) => `${r.header.trim()} = ${r.formula.trim()}`)
+    .join('\n')
+}
+
+interface Suggestion {
+  name: string
+  hint: string
+}
+interface AcState {
+  mode: 'fn' | 'col'
+  query: string
+  startIdx: number
+  highlight: number
+}
+
+/** Champ formule mono-ligne avec autocomplétion (fonctions GSheets + colonnes). */
+function FormulaInput({
+  value,
+  onChange,
+  columns,
+}: {
+  value: string
+  onChange: (v: string) => void
+  columns: string[]
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  const [ac, setAc] = useState<AcState | null>(null)
+
+  const recompute = (input: HTMLInputElement) => {
+    const pos = input.selectionStart ?? input.value.length
+    const before = input.value.slice(0, pos)
+    const brace = before.lastIndexOf('{')
+    if (brace !== -1 && !before.slice(brace + 1).includes('}')) {
+      setAc({ mode: 'col', query: before.slice(brace + 1), startIdx: brace, highlight: 0 })
+      return
+    }
+    const m = before.match(/[A-Za-z][A-Za-z0-9_]*$/)
+    setAc(m ? { mode: 'fn', query: m[0], startIdx: pos - m[0].length, highlight: 0 } : null)
+  }
+
+  const suggestions: Suggestion[] = useMemo(() => {
+    if (!ac) return []
+    if (ac.mode === 'fn') {
+      const q = ac.query.toUpperCase()
+      return GSHEETS_FUNCTIONS.filter((f) => f.name.startsWith(q)).slice(0, 8)
+    }
+    const q = ac.query.toLowerCase()
+    return columns.filter((c) => c.toLowerCase().includes(q)).slice(0, 8).map((c) => ({ name: c, hint: 'colonne' }))
+  }, [ac, columns])
+
+  const accept = (s: Suggestion) => {
+    const input = ref.current
+    if (!input || !ac) return
+    const pos = input.selectionStart ?? value.length
+    const insert = ac.mode === 'fn' ? `${s.name}(` : `{${s.name}}`
+    const before = value.slice(0, ac.startIdx) + insert
+    onChange(before + value.slice(pos))
+    setAc(null)
+    requestAnimationFrame(() => {
+      input.focus()
+      input.setSelectionRange(before.length, before.length)
+    })
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!ac || suggestions.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setAc({ ...ac, highlight: (ac.highlight + 1) % suggestions.length })
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setAc({ ...ac, highlight: (ac.highlight - 1 + suggestions.length) % suggestions.length })
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault()
+      accept(suggestions[ac.highlight])
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setAc(null)
+    }
+  }
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <input
+        ref={ref}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+          recompute(e.target)
+        }}
+        onClick={(e) => recompute(e.currentTarget)}
+        onKeyUp={(e) => {
+          if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) recompute(e.currentTarget)
+        }}
+        onBlur={() => setTimeout(() => setAc(null), 120)}
+        onKeyDown={onKeyDown}
+        placeholder="={price} - {price_concurrent}"
+        className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-[12px] font-mono text-white outline-none focus:border-indigo-500"
+      />
+      {ac && suggestions.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-auto rounded-md bg-surface-2 border border-neutral-700 shadow-xl">
+          {suggestions.map((s, i) => (
+            <li key={s.name}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  accept(s)
+                }}
+                className={`w-full text-left px-2 py-1.5 flex items-center justify-between gap-2 ${
+                  i === ac.highlight ? 'bg-indigo-500/20' : 'hover:bg-white/[0.05]'
+                }`}
+              >
+                <span className={`text-[12px] font-mono ${ac.mode === 'fn' ? 'text-cyan-300' : 'text-emerald-300'}`}>
+                  {ac.mode === 'fn' ? `${s.name}()` : `{${s.name}}`}
+                </span>
+                <span className="text-[10px] text-neutral-500 truncate">{s.hint}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+/** Liste éditable de colonnes-formule (sérialisée en `En-tête = formule` par ligne). */
+export function GSheetsFormulaColumns({
+  value,
+  onChange,
+  columns,
+}: {
+  value: string
+  onChange: (v: string) => void
+  columns: string[]
+}) {
+  const rows = parseRows(value)
+  const editable = [...rows, { header: '', formula: '' }] // ligne fantôme pour en ajouter une
+
+  const setRow = (i: number, patch: Partial<Row>) => {
+    const next = editable.map((r, j) => (j === i ? { ...r, ...patch } : r))
+    onChange(serialize(next))
+  }
+  const removeRow = (i: number) => onChange(serialize(rows.filter((_, j) => j !== i)))
+
+  return (
+    <div className="space-y-1.5">
+      {editable.map((row, i) => {
+        const ghost = i === rows.length
+        return (
+          <div key={i} className="flex items-center gap-1.5">
+            <input
+              value={row.header}
+              onChange={(e) => setRow(i, { header: e.target.value })}
+              placeholder={ghost ? '+ Nom de colonne' : 'En-tête'}
+              className="w-28 shrink-0 bg-background border border-neutral-700 rounded px-2 py-1.5 text-[12px] text-white outline-none focus:border-indigo-500"
+            />
+            <span className="text-neutral-600 text-xs">=</span>
+            <FormulaInput value={row.formula} onChange={(v) => setRow(i, { formula: v })} columns={columns} />
+            {!ghost && (
+              <button
+                type="button"
+                onClick={() => removeRow(i)}
+                className="shrink-0 p-1 text-neutral-600 hover:text-red-400"
+                aria-label="Supprimer la colonne"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {ghost && <Plus className="w-3.5 h-3.5 text-neutral-700 shrink-0" aria-hidden="true" />}
+          </div>
+        )
+      })}
+      <p className="text-[10px] text-neutral-600 leading-snug">
+        Formules <strong>vivantes</strong> (se recalculent dans Google Sheets). Tape une fonction
+        (ex. <code>IF</code>, <code>ROUND</code>) ou <code>{'{'}</code> pour une colonne — l'autocomplétion guide.
+      </p>
+    </div>
+  )
+}
