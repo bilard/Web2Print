@@ -465,6 +465,9 @@ const gsheetsExportNode: NodeSpec<
     }
     const name = config.name?.trim() || 'Workflow Export'
     const sheet = coerceToExcelSheet(inputs.sheet, name)
+    if (sheet.rows.length === 0) {
+      ctx.log('warn', 'Aucune ligne à exporter — le fichier sera vide. Vérifie le node amont (« Comparer les prix »).')
+    }
     if (config.mode === 'update' && config.spreadsheetId?.trim()) {
       const fileId = config.spreadsheetId.trim()
       const status = await getDriveFileStatus(token, fileId)
@@ -493,6 +496,12 @@ const gsheetsExportNode: NodeSpec<
     ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
     const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId })
     ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
+    // Mode « même fichier » : mémoriser l'ID créé → les prochains runs mettront à jour CE fichier
+    // (1 seule création, puis des mises à jour ; recrée seulement s'il est supprimé).
+    if (config.mode === 'update') {
+      ctx.patchConfig?.({ spreadsheetId: meta.id })
+      ctx.log('info', 'Fichier mémorisé — les prochains runs mettront à jour ce même fichier.')
+    }
     return { result: meta }
   },
 }

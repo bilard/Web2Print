@@ -3,6 +3,7 @@ import type { Workflow, WorkflowNode, WorkflowEdge, RunContextApi } from '../typ
 import { nodeRegistry } from '../registry'
 import { topoSort } from './topo'
 import { useRunContext } from './runContext'
+import { useWorkflowStore } from '../persistence/workflow.store'
 import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
 
@@ -369,6 +370,14 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         signal: ac.signal,
         log: (level, msg) => useRunContext.getState().appendLog(node.id, level, msg),
         reportConnector: (cid) => useRunContext.getState().reportNodeConnector(node.id, cid),
+        patchConfig: (partial) => {
+          // Persiste une maj partielle de config (ex. ID du fichier créé) + autosave.
+          const store = useWorkflowStore.getState()
+          const cur = store.current?.nodes.find((n) => n.id === node.id)
+          if (cur) {
+            store.upsertNode({ ...cur, config: { ...(cur.config as Record<string, unknown>), ...partial } })
+          }
+        },
         rawConfig: node.config,
       }
 

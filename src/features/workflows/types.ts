@@ -132,6 +132,12 @@ export interface RunContextApi {
   /** Signale le connecteur (ex. 'jina', 'brightdata', 'llm') en cours d'usage — affiché en live sur la carte. */
   reportConnector?: (connectorId: string) => void
   /**
+   * Persiste une mise à jour PARTIELLE de la config du node (fusionnée + autosave).
+   * Ex. : un export qui crée un fichier mémorise son ID pour mettre à jour LE MÊME
+   * fichier aux runs suivants. Optionnel : absent en exécution headless (cron).
+   */
+  patchConfig?: (partial: Record<string, unknown>) => void
+  /**
    * Config brut (sans interpolation des {{...}}) — utile pour les nodes qui
    * ont besoin de ré-interpoler eux-mêmes (ex : Send Gmail en mode "iterate"
    * pour envoyer un mail différent par row).
