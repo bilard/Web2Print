@@ -10,7 +10,7 @@ import {
   Folder,
   FolderSearch,
   X,
-  Maximize2,
+  FunctionSquare,
 } from 'lucide-react'
 import { httpsCallable } from 'firebase/functions'
 import { nodeRegistry } from './index'
@@ -31,7 +31,6 @@ import {
   type DriveFileMeta,
 } from '@/features/gdrive/gdriveCore'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
-import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import { GSheetsFormulaModal } from './GSheetsFormulaModal'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 
@@ -387,6 +386,7 @@ function GSheetsExportConfigUi({
   availableColumns?: string[]
 }) {
   const [formulaModal, setFormulaModal] = useState(false)
+  const formulaCount = parseFormulaColumns(config.formulaColumns ?? '').length
   const hasId = !!config.spreadsheetId?.trim()
   // « Mettre à jour » n'a de sens qu'avec un fichier cible : sans URL/ID, l'option
   // est grisée et l'affichage retombe sur « Créer » (le run crée de toute façon).
@@ -465,24 +465,23 @@ function GSheetsExportConfigUi({
       )}
 
       <div className="pt-2 border-t border-neutral-800">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-[10px] uppercase tracking-wider text-neutral-500">
-            Colonnes formule (Google Sheets)
-          </label>
-          <button
-            type="button"
-            onClick={() => setFormulaModal(true)}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Gérer dans une fenêtre plus confortable"
-          >
-            <Maximize2 className="w-3 h-3" /> Agrandir
-          </button>
-        </div>
-        <GSheetsFormulaColumns
-          value={config.formulaColumns ?? ''}
-          onChange={(v) => onChange({ ...config, formulaColumns: v })}
-          columns={availableColumns}
-        />
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 block">
+          Colonnes formule (Google Sheets)
+        </label>
+        <button
+          type="button"
+          onClick={() => setFormulaModal(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/40 text-indigo-200 text-sm transition-colors"
+        >
+          <FunctionSquare className="w-4 h-4" />
+          Formules
+          {formulaCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/30 text-[10px] tabular-nums">{formulaCount}</span>
+          )}
+        </button>
+        <p className="text-[10px] text-neutral-600 mt-1 leading-snug">
+          Colonnes calculées écrites comme formules <strong>vivantes</strong> dans le Google Sheets.
+        </p>
       </div>
       {formulaModal && (
         <GSheetsFormulaModal
