@@ -59,7 +59,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
       onClick={onClose}
     >
       <div
-        className="w-[820px] max-w-[96vw] max-h-[88vh] bg-surface-2 border border-neutral-800 rounded-xl shadow-2xl flex flex-col overflow-hidden"
+        className="w-[1000px] max-w-[97vw] max-h-[90vh] bg-surface-2 border border-neutral-800 rounded-xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 shrink-0">
@@ -77,65 +77,67 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
           </button>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-auto p-4 grid grid-cols-1 md:grid-cols-[1fr_240px] gap-5">
-          {/* Éditeur (large) */}
-          <div className="min-w-0">
-            <GSheetsFormulaColumns value={value} onChange={onChange} columns={columns} />
-          </div>
-
-          {/* Panneau de référence */}
-          <aside className="space-y-4 text-[11px]">
-            <div>
-              <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Formules complexes</h4>
-              <div className="space-y-1">
-                {FORMULA_TEMPLATES.map((t) => (
-                  <button
-                    key={t.label}
-                    type="button"
-                    onClick={() => insertTemplate(t)}
-                    title={`${t.hint} — ${t.template}`}
-                    className="w-full flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-700 bg-well hover:border-indigo-500/50 hover:bg-indigo-500/10 text-left transition-colors group"
-                  >
-                    <Plus className="w-3 h-3 text-indigo-400 shrink-0" />
-                    <span className="text-neutral-200 truncate">{t.label}</span>
-                    <span className="ml-auto text-[9px] text-neutral-600 group-hover:text-neutral-400 truncate max-w-[90px]">{t.hint}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[9px] text-neutral-600 mt-1 leading-snug">
-                Insère une colonne pré-remplie — remplace ensuite <code>{'{col1}'}</code>… par tes colonnes.
-              </p>
+        <div className="flex-1 min-h-0 overflow-auto p-4 space-y-5">
+          {/* Haut : éditeur (gauche) + modèles & colonnes (droite) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+            <div className="min-w-0">
+              <h4 className="uppercase tracking-wider text-neutral-500 text-[11px] mb-2">Colonnes</h4>
+              <GSheetsFormulaColumns value={value} onChange={onChange} columns={columns} />
             </div>
 
-            <div>
-              <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Colonnes disponibles</h4>
-              {columns.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
-                  {columns.map((c) => (
-                    <span
-                      key={c}
-                      className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px]"
-                      title="Référence dans une formule"
+            <aside className="space-y-4 text-[11px]">
+              <div>
+                <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Formules complexes</h4>
+                <div className="space-y-1">
+                  {FORMULA_TEMPLATES.map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={() => insertTemplate(t)}
+                      title={`${t.hint} — ${t.template}`}
+                      className="w-full flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-700 bg-well hover:border-indigo-500/50 hover:bg-indigo-500/10 text-left transition-colors group"
                     >
-                      {'{'}{c}{'}'}
-                    </span>
+                      <Plus className="w-3 h-3 text-indigo-400 shrink-0" />
+                      <span className="text-neutral-200 truncate">{t.label}</span>
+                      <span className="ml-auto text-[9px] text-neutral-600 group-hover:text-neutral-400 truncate max-w-[110px]">{t.hint}</span>
+                    </button>
                   ))}
                 </div>
-              ) : (
-                <p className="text-neutral-600 italic leading-snug">
-                  Lance le workflow une fois pour lister les colonnes du node amont.
-                </p>
-              )}
-            </div>
+              </div>
 
-            <div>
-              <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">
+              <div>
+                <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Colonnes disponibles</h4>
+                {columns.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {columns.map((c) => (
+                      <span
+                        key={c}
+                        className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px]"
+                        title="Référence dans une formule"
+                      >
+                        {'{'}{c}{'}'}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-neutral-600 italic leading-snug">
+                    Lance le workflow une fois pour lister les colonnes du node amont.
+                  </p>
+                )}
+              </div>
+            </aside>
+          </div>
+
+          {/* Bas : fonctions sur toute la largeur, en colonnes (peu de scroll) */}
+          <div className="border-t border-neutral-800 pt-3">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <h4 className="uppercase tracking-wider text-neutral-500 text-[11px]">
                 Fonctions Google Sheets ({GSHEETS_FUNCTIONS.length})
               </h4>
               <select
                 value={activeCat}
                 onChange={(e) => setActiveCat(e.target.value)}
-                className="w-full mb-1.5 px-1.5 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 outline-none focus:border-indigo-500/60"
+                className="px-1.5 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 outline-none focus:border-indigo-500/60"
                 title="Filtrer par groupe de fonctions"
               >
                 <option value="">Tous les groupes</option>
@@ -145,38 +147,36 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                   </option>
                 ))}
               </select>
-              <div className="relative mb-1.5">
+              <div className="relative ml-auto">
                 <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
                 <input
                   value={funcQuery}
                   onChange={(e) => setFuncQuery(e.target.value)}
                   placeholder="Filtrer une fonction…"
-                  className="w-full pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
+                  className="w-48 pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
                 />
               </div>
-              <div className="space-y-2 max-h-56 overflow-auto pr-1">
-                {filteredGroups.length === 0 ? (
-                  <p className="text-neutral-600 italic text-[10px]">Aucune fonction</p>
-                ) : (
-                  filteredGroups.map((g) => (
-                    <div key={g.cat}>
-                      <div className="text-[9px] uppercase tracking-wider text-indigo-300/70 sticky top-0 bg-surface-2 py-0.5">
-                        {g.cat}
-                      </div>
-                      <ul className="space-y-0.5">
-                        {g.fns.map((f) => (
-                          <li key={f.name} className="flex items-baseline gap-2">
-                            <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
-                            <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
-          </aside>
+            {filteredGroups.length === 0 ? (
+              <p className="text-neutral-600 italic text-[10px]">Aucune fonction</p>
+            ) : (
+              <div className="columns-2 md:columns-3 xl:columns-4 gap-x-6">
+                {filteredGroups.map((g) => (
+                  <div key={g.cat} className="break-inside-avoid mb-3">
+                    <div className="text-[9px] uppercase tracking-wider text-indigo-300/70 mb-0.5">{g.cat}</div>
+                    <ul className="space-y-0.5">
+                      {g.fns.map((f) => (
+                        <li key={f.name} className="flex items-baseline gap-1.5">
+                          <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
+                          <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <footer className="px-4 py-3 border-t border-neutral-800 flex items-center justify-between shrink-0">
