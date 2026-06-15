@@ -37,7 +37,7 @@ const CONNECTORS_BY_TYPE: Record<string, string[]> = {
   'web-search': ['jina'],
   enrichment: ['jina', 'llm'],
   'list-products': ['jina', 'llm'],
-  'compare-prices': ['llm'],
+  // 'compare-prices' : pivot déterministe par EAN, aucun service externe → pas de pastille.
   'price-watch': ['jina', 'llm'],
   'price-watch-track': ['jina', 'llm'],
   // Vision + LLM (décomposition d'images / documents)
