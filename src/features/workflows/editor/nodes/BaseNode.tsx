@@ -180,6 +180,10 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const canRun = useCan('workflows.run')
   // Config live du node (réactive) — alimente `spec.cardSummary` (ex. planning cron).
   const liveConfig = useWorkflowStore((s) => s.current?.nodes.find((n) => n.id === id)?.config)
+  // Le node a-t-il au moins une connexion ? Sans lien, on n'offre pas le RUN par carte.
+  const hasLink = useWorkflowStore(
+    (s) => s.current?.edges.some((e) => e.source === id || e.target === id) ?? false,
+  )
   const runOutputs = useRunContext((s) => s.nodeStates[id]?.outputs)
   const exportResult = useMemo(
     () => (status === 'success' ? findExportResult(runOutputs) : null),
@@ -299,7 +303,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
             >
               <Square className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
             </button>
-          ) : (
+          ) : hasLink ? (
             <button
               type="button"
               onClick={(e) => {
@@ -313,7 +317,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
             >
               <Play className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
             </button>
-          )
+          ) : null
         ) : null}
       </div>
 

@@ -1,5 +1,5 @@
 // src/features/workflows/runtime/executor.test.ts
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Box } from 'lucide-react'
 import { executeWorkflow } from './executor'
 import { nodeRegistry } from '../registry'
@@ -93,6 +93,58 @@ describe('executeWorkflow', () => {
     setTimeout(() => useRunContext.getState().abortController?.abort(), 10)
     await promise
     expect(useRunContext.getState().nodeStates['n1'].status).toBe('error')
+  })
+
+  it('arrête le run sans attendre un node bloquant qui ignore le signal', async () => {
+    let resolveNode: () => void = () => {}
+    nodeRegistry.register({
+      ...noopSpec('hang'),
+      // run() ignore délibérément le signal et ne résout jamais tout seul.
+      run: () =>
+        new Promise<Record<string, unknown>>((res) => {
+          resolveNode = () => res({ out: 1 })
+        }),
+    })
+    const wf = makeWorkflow([{ id: 'n1', type: 'hang', position: { x: 0, y: 0 }, config: {} }], [])
+    const p = executeWorkflow(wf)
+    // Attendre que le node démarre réellement (status running).
+    await vi.waitFor(() => expect(useRunContext.getState().nodeStates['n1']?.status).toBe('running'))
+    // Stop : le run doit se terminer SANS attendre la résolution du node.
+    useRunContext.getState().abortController?.abort()
+    await p
+    expect(useRunContext.getState().isRunning).toBe(false)
+    expect(useRunContext.getState().nodeStates['n1'].status).toBe('error')
+    // Le node orphelin se résout plus tard : ne doit pas réécrire l'état en 'success'.
+    resolveNode()
+    await Promise.resolve()
+    expect(useRunContext.getState().nodeStates['n1'].status).toBe('error')
+  }, 2000)
+
+  it('ne fait pas tourner un node sans aucune connexion (orphelin)', async () => {
+    let orphanRan = false
+    nodeRegistry.register({
+      ...noopSpec('orphan'),
+      run: async () => {
+        orphanRan = true
+        return { out: 1 }
+      },
+    })
+    nodeRegistry.register(noopSpec('a', () => 'x'))
+    nodeRegistry.register(noopSpec('b', (inputs) => inputs.in))
+    const wf = makeWorkflow(
+      [
+        { id: 'orph', type: 'orphan', position: { x: 0, y: 0 }, config: {} },
+        { id: 'n1', type: 'a', position: { x: 0, y: 0 }, config: {} },
+        { id: 'n2', type: 'b', position: { x: 0, y: 0 }, config: {} },
+      ],
+      [{ id: 'e1', source: 'n1', sourceHandle: 'out', target: 'n2', targetHandle: 'in' }],
+    )
+    await executeWorkflow(wf)
+    expect(orphanRan).toBe(false)
+    // Le node orphelin n'est jamais touché (pas de spin, pas d'état).
+    expect(useRunContext.getState().nodeStates['orph']).toBeUndefined()
+    // Les nodes connectés tournent normalement.
+    expect(useRunContext.getState().nodeStates['n2'].status).toBe('success')
   })
 
   it('runs loop body N times and aggregates results', async () => {

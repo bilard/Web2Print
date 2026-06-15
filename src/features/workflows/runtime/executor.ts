@@ -22,6 +22,14 @@ export interface ExecuteOptions {
   fromNodeId?: string
 }
 
+/** Promise résolue dès que le signal est abandonné (Stop). Un seul listener par run. */
+function whenAborted(signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return Promise.resolve()
+  return new Promise<void>((resolve) => {
+    signal.addEventListener('abort', () => resolve(), { once: true })
+  })
+}
+
 /** Ensemble { node de départ } ∪ { tous ses descendants } en suivant les edges sortants. */
 function downstreamFrom(startId: string, edges: WorkflowEdge[]): Set<string> {
   const outgoing = new Map<string, string[]>()
@@ -285,6 +293,13 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     const mainEdges = wf.edges.filter((e) => !internalIds.has(e.source) && !internalIds.has(e.target))
 
     const ordered = topoSort(mainNodes, mainEdges)
+    // « Pas de lien → ne pas faire tourner la carte » : ensemble des nodes ayant au
+    // moins une connexion (entrante ou sortante). Les orphelins sont ignorés.
+    const connectedIds = new Set<string>()
+    for (const e of wf.edges) {
+      connectedIds.add(e.source)
+      connectedIds.add(e.target)
+    }
     const outputs = new Map<string, Record<string, unknown>>()
     // RUN partiel : réinjecte les sorties des nodes amont (hors sous-graphe) depuis le cache.
     if (runSet) {
@@ -296,10 +311,16 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     const loopByEach = new Map(loops.map((l) => [l.eachId, l]))
     const loopByCollect = new Map(loops.map((l) => [l.collectId, l]))
 
+    // Un seul listener d'abort pour tout le run (réutilisé à chaque node).
+    const abortedPromise = whenAborted(ac.signal)
+
     let processed = 0
     for (const node of ordered) {
       // RUN partiel : on ne touche pas aux nodes hors sous-graphe (état/logs conservés).
       if (runSet && !runSet.has(node.id)) continue
+      // Node orphelin (aucune connexion) : on ne le fait pas tourner — sauf si le
+      // workflow n'a AUCUN lien (cas mono-node légitime, qu'on exécute normalement).
+      if (wf.edges.length > 0 && !connectedIds.has(node.id)) continue
       useProgressStore.getState().setProgress(++processed / Math.max(1, ordered.length))
       // Skip if any upstream is skipped or errored
       const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
@@ -404,10 +425,14 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
           const ctx = buildInterpolationContext(inputs)
           const interpolatedConfig = interpolate(node.config, ctx)
           const result = (await spec.run(ctxApi, interpolatedConfig, inputs)) as Record<string, unknown>
+          // Si Stop a été cliqué pendant l'exécution, ce node a été abandonné par la
+          // boucle : ne pas réécrire son état (resté « arrêté »).
+          if (ac.signal.aborted) return
           outputs.set(node.id, result ?? {})
           useRunContext.getState().setNodeOutputs(node.id, result ?? {})
           useRunContext.getState().endNode(node.id, 'success')
         } catch (err) {
+          if (ac.signal.aborted) return
           const msg = err instanceof Error ? err.message : String(err)
           useRunContext.getState().endNode(node.id, 'error', msg)
         }
@@ -418,7 +443,18 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         (next, mw) => () => mw(node, next),
         exec
       )
-      await chain()
+      // Course node vs Stop : si l'utilisateur arrête pendant un appel réseau long
+      // (LLM/scraping qui n'observent pas le signal), on abandonne l'attente du node
+      // au lieu de bloquer jusqu'à sa fin naturelle. Le node orphelin se terminera en
+      // arrière-plan sans réécrire l'état (cf. garde `ac.signal.aborted` dans exec).
+      await Promise.race([chain(), abortedPromise])
+      if (ac.signal.aborted) {
+        const st = useRunContext.getState().nodeStates[node.id]
+        if (!st || st.status === 'running' || st.status === 'pending') {
+          useRunContext.getState().endNode(node.id, 'error', 'Run arrêté')
+        }
+        break
+      }
     }
   } finally {
     useRunContext.getState().endRun()
