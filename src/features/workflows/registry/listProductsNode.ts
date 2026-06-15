@@ -136,7 +136,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     }
     const max = Math.max(0, Number(config.maxProducts) || 0)
 
-    const { jinaRead } = await import('@/features/scraping/useJina')
+    const { readPageWithEscalation } = await import('@/features/scraping/readPageWithEscalation')
     const allRows: ExcelRow[] = []
     let rowId = 0
 
@@ -147,17 +147,16 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       ctx.log('info', `(${i + 1}/${urls.length}) Lecture de la page liste ${site}…`)
       ctx.setProgress?.(Math.round((i / urls.length) * 100))
 
-      let markdown = ''
-      try {
-        const data = await jinaRead(url, { listing: true })
-        markdown = data.content ?? ''
-      } catch (e) {
-        ctx.log('error', `Lecture échouée ${url} : ${e instanceof Error ? e.message : String(e)}`)
+      const { markdown, source } = await readPageWithEscalation(url, {
+        listing: true,
+        log: ctx.log,
+      })
+      if (!markdown.trim()) {
+        ctx.log('warn', `Aucun contenu pour ${site} — bloqué malgré l'escalade (Jina + Bright Data).`)
         continue
       }
-      if (!markdown.trim()) {
-        ctx.log('warn', `Aucun contenu pour ${url} — site bloqué ou page vide.`)
-        continue
+      if (source === 'brightdata') {
+        ctx.log('info', `Contenu récupéré via Bright Data pour ${site}.`)
       }
 
       // Bornage du contexte LLM (les pages liste peuvent être volumineuses).
