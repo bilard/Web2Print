@@ -32,13 +32,17 @@ function serialize(rows: Row[]): string {
 interface Suggestion {
   name: string
   hint: string
+  kind: 'fn' | 'col'
 }
 interface AcState {
-  mode: 'fn' | 'col'
+  /** 'fn' = on tape un nom de fonction ; 'col' = après `{` ; 'arg' = début d'argument (après `(`, `;`, opérateur). */
+  mode: 'fn' | 'col' | 'arg'
   query: string
   startIdx: number
   highlight: number
 }
+
+const ARG_STARTERS = '([;,+-*/=<>&%' // caractères après lesquels un nouvel argument commence
 
 /** Champ formule mono-ligne avec autocomplétion (fonctions GSheets + colonnes). */
 function FormulaInput({
@@ -56,36 +60,56 @@ function FormulaInput({
   const recompute = (input: HTMLInputElement) => {
     const pos = input.selectionStart ?? input.value.length
     const before = input.value.slice(0, pos)
+    // 1) Après `{` non fermé → colonnes.
     const brace = before.lastIndexOf('{')
     if (brace !== -1 && !before.slice(brace + 1).includes('}')) {
       setAc({ mode: 'col', query: before.slice(brace + 1), startIdx: brace, highlight: 0 })
       return
     }
+    // 2) On tape un nom de fonction (identifiant en cours).
     const m = before.match(/[A-Za-z][A-Za-z0-9_]*$/)
-    setAc(m ? { mode: 'fn', query: m[0], startIdx: pos - m[0].length, highlight: 0 } : null)
+    if (m) {
+      setAc({ mode: 'fn', query: m[0], startIdx: pos - m[0].length, highlight: 0 })
+      return
+    }
+    // 3) Début d'argument (champ vide, ou après `(`, `;`, opérateur) → propose colonnes + fonctions.
+    const tail = before.replace(/\s+$/, '')
+    if (tail === '' || ARG_STARTERS.includes(tail.slice(-1))) {
+      setAc({ mode: 'arg', query: '', startIdx: pos, highlight: 0 })
+      return
+    }
+    setAc(null)
   }
 
   const suggestions: Suggestion[] = useMemo(() => {
     if (!ac) return []
+    const cols: Suggestion[] = columns.map((c) => ({ name: c, hint: 'colonne', kind: 'col' }))
+    const fns: Suggestion[] = GSHEETS_FUNCTIONS.map((f) => ({ ...f, kind: 'fn' }))
+    if (ac.mode === 'col') {
+      const q = ac.query.toLowerCase()
+      return cols.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8)
+    }
     if (ac.mode === 'fn') {
       const q = ac.query.toUpperCase()
-      return GSHEETS_FUNCTIONS.filter((f) => f.name.startsWith(q)).slice(0, 8)
+      return fns.filter((f) => f.name.startsWith(q)).slice(0, 8)
     }
-    const q = ac.query.toLowerCase()
-    return columns.filter((c) => c.toLowerCase().includes(q)).slice(0, 8).map((c) => ({ name: c, hint: 'colonne' }))
+    // arg : colonnes d'abord (souvent ce qu'on référence), puis fonctions.
+    return [...cols, ...fns].slice(0, 10)
   }, [ac, columns])
 
   const accept = (s: Suggestion) => {
     const input = ref.current
     if (!input || !ac) return
     const pos = input.selectionStart ?? value.length
-    const insert = ac.mode === 'fn' ? `${s.name}(` : `{${s.name}}`
+    const insert = s.kind === 'fn' ? `${s.name}(` : `{${s.name}}`
     const before = value.slice(0, ac.startIdx) + insert
     onChange(before + value.slice(pos))
     setAc(null)
     requestAnimationFrame(() => {
       input.focus()
       input.setSelectionRange(before.length, before.length)
+      // Après une fonction (`DATE(`), propose tout de suite les arguments (colonnes/fonctions).
+      if (s.kind === 'fn') recompute(input)
     })
   }
 
@@ -138,8 +162,8 @@ function FormulaInput({
                   i === ac.highlight ? 'bg-indigo-500/20' : 'hover:bg-white/[0.05]'
                 }`}
               >
-                <span className={`text-[12px] font-mono ${ac.mode === 'fn' ? 'text-cyan-300' : 'text-emerald-300'}`}>
-                  {ac.mode === 'fn' ? `${s.name}()` : `{${s.name}}`}
+                <span className={`text-[12px] font-mono ${s.kind === 'fn' ? 'text-cyan-300' : 'text-emerald-300'}`}>
+                  {s.kind === 'fn' ? `${s.name}()` : `{${s.name}}`}
                 </span>
                 <span className="text-[10px] text-neutral-500 truncate">{s.hint}</span>
               </button>
