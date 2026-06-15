@@ -4,7 +4,7 @@
 // (colonnes disponibles, fonctions courantes).
 import { createPortal } from 'react-dom'
 import { useEffect } from 'react'
-import { X, FunctionSquare } from 'lucide-react'
+import { X, FunctionSquare, Plus } from 'lucide-react'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import { GSHEETS_FUNCTIONS } from '@/features/gdrive/googleSheetsFunctions'
 
@@ -15,12 +15,29 @@ interface Props {
   onClose: () => void
 }
 
+/** Modèles de formules complexes prêts à insérer (les {col1}/{col2}/… sont à
+ *  remplacer par tes colonnes via l'autocomplétion). */
+const FORMULA_TEMPLATES: { label: string; header: string; template: string; hint: string }[] = [
+  { label: 'Écart %', header: 'Écart %', template: '=ROUND(({col1}/{col2}-1)*100; 1)', hint: 'Variation en % entre deux prix' },
+  { label: 'Moins cher ?', header: 'Moins cher', template: '=IF({col1}<{col2}; "oui"; "non")', hint: 'Condition oui/non' },
+  { label: 'Prix le plus bas', header: 'Min', template: '=MIN({col1}; {col2})', hint: 'Minimum de plusieurs colonnes' },
+  { label: 'Recherche (VLOOKUP)', header: 'Recherche', template: '=IFERROR(VLOOKUP({cle}; Feuille2!A:B; 2; FAUX); "—")', hint: 'Va chercher une valeur dans une autre feuille' },
+  { label: 'Libellé concaténé', header: 'Libellé', template: '=CONCATENATE({col1}; " — "; {col2})', hint: 'Assemble plusieurs colonnes en texte' },
+  { label: 'Si vide → tiret', header: 'Sûr', template: '=IFERROR({col1}; "—")', hint: 'Évite les erreurs / cases vides' },
+]
+
 export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // Insère un modèle comme nouvelle colonne (ligne `En-tête = formule`).
+  const insertTemplate = (t: { header: string; template: string }) => {
+    const line = `${t.header} = ${t.template}`
+    onChange(value.trim() ? `${value.trim()}\n${line}` : line)
+  }
 
   return createPortal(
     <div
@@ -54,6 +71,28 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
 
           {/* Panneau de référence */}
           <aside className="space-y-4 text-[11px]">
+            <div>
+              <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Formules complexes</h4>
+              <div className="space-y-1">
+                {FORMULA_TEMPLATES.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => insertTemplate(t)}
+                    title={`${t.hint} — ${t.template}`}
+                    className="w-full flex items-center gap-1.5 px-2 py-1 rounded border border-neutral-700 bg-well hover:border-indigo-500/50 hover:bg-indigo-500/10 text-left transition-colors group"
+                  >
+                    <Plus className="w-3 h-3 text-indigo-400 shrink-0" />
+                    <span className="text-neutral-200 truncate">{t.label}</span>
+                    <span className="ml-auto text-[9px] text-neutral-600 group-hover:text-neutral-400 truncate max-w-[90px]">{t.hint}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[9px] text-neutral-600 mt-1 leading-snug">
+                Insère une colonne pré-remplie — remplace ensuite <code>{'{col1}'}</code>… par tes colonnes.
+              </p>
+            </div>
+
             <div>
               <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Colonnes disponibles</h4>
               {columns.length > 0 ? (
