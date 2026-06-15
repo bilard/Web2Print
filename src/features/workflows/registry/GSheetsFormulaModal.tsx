@@ -50,9 +50,15 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
     if (!formulaInsert.insert(`${name}(`)) insertTemplate({ header: name, template: `=${name}(` })
   }
 
-  // Suggestions « graphiques » du champ de recherche (combobox).
-  // Classement par pertinence : nom qui COMMENCE par la requête > nom qui CONTIENT
-  // > hint qui contient (en dernier, pour éviter les faux positifs ex. « mat » dans « format »).
+  // Regex « début de mot » pour le hint : « mat » matche « matériel » mais PAS « format ».
+  const hintRe = useMemo(() => {
+    const q = funcQuery.trim().toLowerCase()
+    if (!q) return null
+    return new RegExp('\\b' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  }, [funcQuery])
+
+  // Suggestions « graphiques » du champ de recherche (combobox), classées par pertinence :
+  // nom qui COMMENCE par la requête > nom qui CONTIENT > hint en début de mot (en dernier).
   const flatMatches = useMemo(() => {
     const q = funcQuery.trim().toLowerCase()
     if (!q) return []
@@ -63,12 +69,12 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
       let score = -1
       if (name.startsWith(q)) score = 0
       else if (name.includes(q)) score = 1
-      else if (f.hint.toLowerCase().includes(q)) score = 2
+      else if (hintRe?.test(f.hint.toLowerCase())) score = 2
       if (score >= 0) scored.push({ f, score })
     }
     scored.sort((a, b) => a.score - b.score || a.f.name.localeCompare(b.f.name))
     return scored.slice(0, 10).map((s) => s.f)
-  }, [funcQuery, activeCat])
+  }, [funcQuery, activeCat, hintRe])
 
   const filteredGroups = useMemo(() => {
     const q = funcQuery.trim().toLowerCase()
@@ -76,11 +82,11 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
       .map((g) => ({
         cat: g.cat,
         fns: q
-          ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q))
+          ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || hintRe?.test(f.hint.toLowerCase()))
           : g.fns,
       }))
       .filter((g) => g.fns.length > 0)
-  }, [funcQuery, activeCat])
+  }, [funcQuery, activeCat, hintRe])
 
   return createPortal(
     <div
