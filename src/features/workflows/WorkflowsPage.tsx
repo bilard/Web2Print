@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, LayoutGrid, List, Plus, Trash2, Workflow as WorkflowIcon,
-  Folder, FolderPlus, Pencil, Check, X,
+  Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import {
@@ -20,6 +20,7 @@ interface WorkflowsPageProps {
 
 type ViewMode = 'grid' | 'list'
 const VIEW_MODE_KEY = 'workflows.viewMode'
+const COLLAPSED_KEY = 'workflows.collapsedFolders'
 
 export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const uid = useAuthStore((s) => s.user?.uid)
@@ -33,6 +34,27 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
   const [newFolderName, setNewFolderName] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_KEY)
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : [])
+    } catch {
+      return new Set<string>()
+    }
+  })
+  const toggleFolder = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next]))
+      } catch {
+        /* localStorage indisponible : repli en mémoire seule */
+      }
+      return next
+    })
+  }
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY)
     return saved === 'list' ? 'list' : 'grid'
@@ -185,9 +207,9 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   const folderHeader = (folder: WorkflowFolder, count: number) => (
     <div className="flex items-center gap-2 mb-3">
-      <Folder className="w-4 h-4 text-indigo-400 shrink-0" />
       {renamingId === folder.id ? (
         <>
+          <Folder className="w-4 h-4 text-indigo-400 shrink-0" />
           <input
             autoFocus
             value={renameValue}
@@ -207,8 +229,21 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
         </>
       ) : (
         <>
-          <h3 className="text-sm font-semibold text-white/90">{folder.name}</h3>
-          <span className="text-xs text-neutral-500 tabular-nums">{count}</span>
+          <button
+            onClick={() => toggleFolder(folder.id)}
+            className="flex items-center gap-2 min-w-0 text-left hover:opacity-80 transition-opacity"
+            aria-expanded={!collapsed.has(folder.id)}
+            title={collapsed.has(folder.id) ? 'Déplier le dossier' : 'Replier le dossier'}
+          >
+            {collapsed.has(folder.id) ? (
+              <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+            )}
+            <Folder className="w-4 h-4 text-indigo-400 shrink-0" />
+            <h3 className="text-sm font-semibold text-white/90 truncate">{folder.name}</h3>
+            <span className="text-xs text-neutral-500 tabular-nums">{count}</span>
+          </button>
           {canEdit && (
             <button
               onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
@@ -365,11 +400,12 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             return (
               <section key={folder.id}>
                 {folderHeader(folder, gItems.length)}
-                {gItems.length > 0 ? (
-                  cardList(gItems)
-                ) : (
-                  <p className="text-xs text-neutral-600 italic pl-6">Dossier vide — affectez des workflows via leur menu « Dossier ».</p>
-                )}
+                {!collapsed.has(folder.id) &&
+                  (gItems.length > 0 ? (
+                    cardList(gItems)
+                  ) : (
+                    <p className="text-xs text-neutral-600 italic pl-6">Dossier vide — affectez des workflows via leur menu « Dossier ».</p>
+                  ))}
               </section>
             )
           })}
