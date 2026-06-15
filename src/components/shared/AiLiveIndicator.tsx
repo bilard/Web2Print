@@ -123,10 +123,11 @@ function ActivityRow({ record, primary = false }: RowProps) {
 function SessionTotalsBadge() {
   const session = useAiActivityStore((s) => s.session)
   const reset = useAiActivityStore((s) => s.resetSession)
-  // Avec 0 requête → rien à afficher.
-  // Avec 1 requête → l'info est déjà dans la pilule active (même tokens, même coût) :
-  // afficher le cumul ferait doublon. Le badge n'a de sens qu'à partir de 2+ requêtes.
-  if (session.requestCount < 2) return null
+  // Le badge de cumul reste affiché en permanence dès la 1re requête : la pilule
+  // d'activité (provider + temps) est éphémère (disparaît ~4 s après la fin), donc
+  // ce badge est la seule trace persistante des tokens/coût consommés. Le léger
+  // doublon avec la pilule active pendant un appel unique est volontaire.
+  if (session.requestCount < 1) return null
   const totalTokens = session.tokensIn + session.tokensOut
   const tooltipParts = [
     `${session.requestCount} requête${session.requestCount > 1 ? 's' : ''}`,
@@ -202,7 +203,9 @@ export function AiLiveIndicator() {
   const hasActive = activeList.length > 0
   const showLast = !hasActive && lastVisible && last !== null
   const showLiveRow = hasActive || showLast
-  if (!showLiveRow && sessionRequestCount < 2) return null
+  // Tant qu'au moins une requête IA a eu lieu dans la session, on garde l'overlay
+  // monté pour conserver le badge de cumul (tokens/coût) visible en permanence.
+  if (!showLiveRow && sessionRequestCount < 1) return null
 
   const primary = hasActive ? activeList[activeList.length - 1] : showLast ? last : null
   const extraCount = hasActive ? activeList.length - 1 : 0

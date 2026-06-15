@@ -4,9 +4,13 @@ import { useMemo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useRunContext } from '../../runtime/runContext'
 import { nodeRegistry } from '../../registry'
+import { connectorsForSpec } from '../../registry/connectors'
 import { useConnectionDrag } from '../../runtime/connectionDragStore'
 import { isCompatible } from '../../runtime/ports'
-import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download } from 'lucide-react'
+import { executeWorkflow } from '../../runtime/executor'
+import { useWorkflowStore } from '../../persistence/workflow.store'
+import { useCan } from '@/features/access/useAccess'
+import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play } from 'lucide-react'
 import type { NodeSpec, Port } from '../../types'
 
 interface ExportPayload {
@@ -172,6 +176,8 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const nodeType = (data as { type?: string }).type
   const spec = nodeType ? nodeRegistry.get(nodeType) : undefined
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
+  const isRunning = useRunContext((s) => s.isRunning)
+  const canRun = useCan('workflows.run')
   const runOutputs = useRunContext((s) => s.nodeStates[id]?.outputs)
   const exportResult = useMemo(
     () => (status === 'success' ? findExportResult(runOutputs) : null),
@@ -191,6 +197,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
 
   const Icon = spec.icon
   const cat = CATEGORY_STYLES[spec.category]
+  const connectors = connectorsForSpec(spec)
   const inputs = spec.inputs ?? []
   const outputs = spec.outputs ?? []
   const portRows = Math.max(inputs.length, outputs.length, 1)
@@ -220,6 +227,22 @@ export function BaseNode({ id, data, selected }: NodeProps) {
             {spec.label}
           </span>
 
+          {/* Connecteurs / services externes utilisés par le node */}
+          {connectors.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+              {connectors.map((c) => (
+                <span
+                  key={c.label}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/20 ring-1 ring-white/10 text-[8.5px] font-medium leading-none ${c.color}`}
+                  title={`Connecteur : ${c.label}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} aria-hidden="true" />
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
           {/* Download button — appears when an export-result is available */}
           {exportResult ? (
             <button
@@ -239,6 +262,23 @@ export function BaseNode({ id, data, selected }: NodeProps) {
 
         {/* Status dot */}
         {STATUS_DOT[status]}
+
+        {/* Bouton RUN par carte — exécute ce node + tout son aval (amont supposé en cache) */}
+        {canRun && !isRunning ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              const wf = useWorkflowStore.getState().current
+              if (wf) void executeWorkflow(wf, { fromNodeId: id })
+            }}
+            className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+            title="Exécuter depuis ce node (lui + tout l'aval)"
+            aria-label="Exécuter depuis ce node"
+          >
+            <Play className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
+          </button>
+        ) : null}
       </div>
 
       {/* Ports — positioned absolutely on the card edges */}

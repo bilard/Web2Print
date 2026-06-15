@@ -10,7 +10,12 @@ interface RunContextState {
   /** Mode pas-à-pas : node en attente du clic « Étape suivante » (null sinon). */
   pausedNodeId: string | null
   stepResolver: (() => void) | null
-  startRun: () => AbortController
+  /**
+   * Démarre un run. Par défaut tous les états de nodes sont remis à zéro.
+   * Passer `clearIds` pour un run partiel (RUN depuis une carte) : seuls ces
+   * nodes sont réinitialisés, les autres conservent leur état/logs/sorties.
+   */
+  startRun: (opts?: { clearIds?: string[] }) => AbortController
   endRun: () => void
   resetRun: () => void
   setNodeStatus: (id: string, status: NodeStatus) => void
@@ -33,9 +38,17 @@ export const useRunContext = create<RunContextState>((set, get) => ({
   edgesActive: new Set(),
   pausedNodeId: null,
   stepResolver: null,
-  startRun: () => {
+  startRun: (opts) => {
     const ac = new AbortController()
-    set({ isRunning: true, abortController: ac, nodeStates: {}, edgesActive: new Set(), pausedNodeId: null, stepResolver: null })
+    const base = { isRunning: true, abortController: ac, edgesActive: new Set<string>(), pausedNodeId: null, stepResolver: null }
+    if (opts?.clearIds) {
+      // Run partiel : on ne réinitialise que le sous-graphe ciblé.
+      const next = { ...get().nodeStates }
+      for (const id of opts.clearIds) delete next[id]
+      set({ ...base, nodeStates: next })
+    } else {
+      set({ ...base, nodeStates: {} })
+    }
     return ac
   },
   endRun: () => set({ isRunning: false, abortController: null, pausedNodeId: null, stepResolver: null }),

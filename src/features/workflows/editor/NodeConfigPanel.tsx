@@ -1,11 +1,12 @@
 // src/features/workflows/editor/NodeConfigPanel.tsx
+import { useState } from 'react'
 import { useStore } from '@xyflow/react'
-import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertCircle } from 'lucide-react'
+import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertTriangle } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useRunContext } from '../runtime/runContext'
 import { nodeRegistry } from '../registry'
 import { ConfigFieldRenderer } from './configFields'
-import type { Workflow, WorkflowNode, WorkflowEdge } from '../types'
+import type { Workflow, WorkflowNode, WorkflowEdge, NodeStatus } from '../types'
 
 /**
  * Remonte récursivement les edges entrants pour collecter les colonnes
@@ -219,41 +220,80 @@ function EdgeDetailPanel({ edge, wf, onRemove }: EdgeDetailPanelProps) {
   )
 }
 
+const RUN_STATUS_META: Record<NodeStatus, { label: string; color: string; dot: string }> = {
+  pending: { label: 'En attente', color: 'text-neutral-400', dot: 'bg-neutral-500' },
+  running: { label: 'En cours…', color: 'text-indigo-300', dot: 'bg-indigo-400' },
+  success: { label: 'Terminé', color: 'text-emerald-300', dot: 'bg-emerald-400' },
+  error: { label: 'Erreur', color: 'text-red-300', dot: 'bg-red-400' },
+  skipped: { label: 'Ignoré', color: 'text-neutral-400', dot: 'bg-neutral-600' },
+}
+
 /**
- * Logs d'erreur/avertissement du node sélectionné (dernière exécution). Affiché en
- * bas du panneau de config quand le node a échoué ou produit des logs problématiques.
+ * Onglet « Logs » du node sélectionné : statut d'exécution, bandeau d'avertissement
+ * en cas de problème, puis le journal complet (tous niveaux) de la dernière exécution.
+ * Réactif : se met à jour en direct pendant un run.
  */
-function NodeLogsPanel({ nodeId }: { nodeId: string }) {
+function NodeLogsTab({ nodeId }: { nodeId: string }) {
   const state = useRunContext((s) => s.nodeStates[nodeId])
-  if (!state) return null
-  const problemLogs = (state.logs ?? []).filter((l) => l.level === 'error' || l.level === 'warn')
-  const hasError = state.status === 'error' || !!state.error || problemLogs.length > 0
-  if (!hasError) return null
+  const status: NodeStatus = state?.status ?? 'pending'
+  const meta = RUN_STATUS_META[status]
+  const logs = state?.logs ?? []
+  const problemCount = logs.filter((l) => l.level === 'warn' || l.level === 'error').length
+  const hasProblem = status === 'error' || !!state?.error || problemCount > 0
 
   return (
-    <div className="pt-3 mt-3 border-t border-neutral-800 space-y-2">
-      <h4 className="text-xs uppercase font-semibold flex items-center gap-1.5 text-red-400/90">
-        <AlertCircle className="w-3 h-3" /> Logs d'erreur
-      </h4>
-      {state.error && (
+    <div className="space-y-2">
+      {/* Statut d'exécution */}
+      <div className="flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full ${meta.dot} ${status === 'running' ? 'animate-pulse' : ''}`} />
+        <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
+        {typeof state?.durationMs === 'number' && (
+          <span className="text-[10px] text-neutral-500 tabular-nums">
+            {(state.durationMs / 1000).toFixed(1)}s
+          </span>
+        )}
+      </div>
+
+      {/* Bandeau d'avertissement quand il y a un problème */}
+      {hasProblem && (
+        <div className="flex items-start gap-1.5 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1.5 leading-snug">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            {status === 'error'
+              ? 'Ce node a échoué — voir le détail ci-dessous.'
+              : `${problemCount} avertissement${problemCount > 1 ? 's' : ''} pendant le traitement.`}
+          </span>
+        </div>
+      )}
+
+      {/* Message d'erreur principal */}
+      {state?.error && (
         <p className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/30 rounded px-2 py-1.5 leading-snug break-words">
           {state.error}
         </p>
       )}
-      {problemLogs.length > 0 && (
-        <div className="space-y-1 max-h-48 overflow-auto rounded-md bg-well border border-neutral-800 p-2">
-          {problemLogs.map((l, i) => (
+
+      {/* Journal complet (tous niveaux) */}
+      {logs.length > 0 ? (
+        <div className="space-y-1 max-h-72 overflow-auto rounded-md bg-well border border-neutral-800 p-2">
+          {logs.map((l, i) => (
             <div
               key={i}
-              className={`text-[10px] font-mono leading-snug break-words ${
-                l.level === 'error' ? 'text-red-300' : 'text-amber-300'
+              className={`text-[10px] font-mono leading-snug break-words flex gap-1.5 ${
+                l.level === 'error' ? 'text-red-300' : l.level === 'warn' ? 'text-amber-300' : 'text-neutral-400'
               }`}
             >
-              <span className="text-neutral-600">{new Date(l.ts).toLocaleTimeString()} </span>
-              {l.msg}
+              <span className="text-neutral-600 shrink-0">{new Date(l.ts).toLocaleTimeString()}</span>
+              <span>{l.msg}</span>
             </div>
           ))}
         </div>
+      ) : (
+        <p className="text-[11px] text-neutral-600 italic">
+          {status === 'pending'
+            ? 'Aucun traitement pour l’instant. Lancez le node (▶ au survol de la carte) pour suivre les logs ici.'
+            : 'Aucun log.'}
+        </p>
       )}
     </div>
   )
@@ -277,6 +317,13 @@ export function NodeConfigPanel() {
   const wf = useWorkflowStore((s) => s.current)
   const upsertNode = useWorkflowStore((s) => s.upsertNode)
   const removeEdge = useWorkflowStore((s) => s.removeEdge)
+  const [tab, setTab] = useState<'config' | 'logs'>('config')
+  const selectedRunState = useRunContext((s) => (selectedId ? s.nodeStates[selectedId] : undefined))
+  const logsHaveProblem =
+    !!selectedRunState &&
+    (selectedRunState.status === 'error' ||
+      !!selectedRunState.error ||
+      (selectedRunState.logs ?? []).some((l) => l.level === 'warn' || l.level === 'error'))
 
   const node = wf?.nodes.find((n) => n.id === selectedId)
   const spec = node ? nodeRegistry.get(node.type) : undefined
@@ -304,32 +351,71 @@ export function NodeConfigPanel() {
       ) : (
         <div className="space-y-3">
           <div className="text-sm font-medium text-white">{spec.label}</div>
-          {spec.ConfigComponent ? (
-            <spec.ConfigComponent
-              config={node.config as never}
-              onChange={(c) => upsertNode({ ...node, config: c })}
-              availableColumns={availableColumns}
-            />
-          ) : (
-            spec.configSchema.map((f) => (
-              <label key={f.name} className="block">
-                <span className="text-xs text-neutral-400 mb-1 block">{f.label}</span>
-                <ConfigFieldRenderer
-                  field={f}
-                  value={(node.config as Record<string, unknown>)[f.name]}
-                  onChange={(v) =>
-                    upsertNode({
-                      ...node,
-                      config: { ...(node.config as Record<string, unknown>), [f.name]: v },
-                    })
-                  }
+
+          {/* Onglets Config / Logs */}
+          <div className="flex items-center gap-1 border-b border-neutral-800">
+            <button
+              type="button"
+              onClick={() => setTab('config')}
+              className={`px-2.5 py-1.5 text-xs font-medium -mb-px border-b-2 transition-colors ${
+                tab === 'config'
+                  ? 'border-indigo-400 text-white'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              Config
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('logs')}
+              className={`px-2.5 py-1.5 text-xs font-medium -mb-px border-b-2 transition-colors flex items-center gap-1.5 ${
+                tab === 'logs'
+                  ? 'border-indigo-400 text-white'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              Logs
+              {logsHaveProblem && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-amber-400"
+                  title="Avertissement ou erreur"
+                  aria-label="Avertissement ou erreur"
                 />
-                {f.help ? <span className="text-[11px] text-neutral-600 mt-1 block">{f.help}</span> : null}
-              </label>
-            ))
+              )}
+            </button>
+          </div>
+
+          {tab === 'config' ? (
+            <div className="space-y-3">
+              {spec.ConfigComponent ? (
+                <spec.ConfigComponent
+                  config={node.config as never}
+                  onChange={(c) => upsertNode({ ...node, config: c })}
+                  availableColumns={availableColumns}
+                />
+              ) : (
+                spec.configSchema.map((f) => (
+                  <label key={f.name} className="block">
+                    <span className="text-xs text-neutral-400 mb-1 block">{f.label}</span>
+                    <ConfigFieldRenderer
+                      field={f}
+                      value={(node.config as Record<string, unknown>)[f.name]}
+                      onChange={(v) =>
+                        upsertNode({
+                          ...node,
+                          config: { ...(node.config as Record<string, unknown>), [f.name]: v },
+                        })
+                      }
+                    />
+                    {f.help ? <span className="text-[11px] text-neutral-600 mt-1 block">{f.help}</span> : null}
+                  </label>
+                ))
+              )}
+              {wf && <ConnectionsPanel node={node} wf={wf} onRemoveEdge={removeEdge} />}
+            </div>
+          ) : (
+            <NodeLogsTab nodeId={node.id} />
           )}
-          {wf && <ConnectionsPanel node={node} wf={wf} onRemoveEdge={removeEdge} />}
-          <NodeLogsPanel nodeId={node.id} />
         </div>
       )}
     </aside>

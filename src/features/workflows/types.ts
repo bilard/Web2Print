@@ -50,6 +50,12 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
   configSchema: ConfigField[]
   defaultConfig: C
   runtime: NodeRuntime
+  /**
+   * Connecteurs / services externes utilisés par le node (ids du registre
+   * `registry/connectors.ts`), affichés en pastilles sous le titre de la carte.
+   * Optionnel : si absent, un mapping par type prend le relais (cf. `connectorsForType`).
+   */
+  connectors?: string[]
   run: (ctx: RunContextApi, config: C, inputs: I) => Promise<O>
   ConfigComponent?: ComponentType<{
     config: C

@@ -13,6 +13,34 @@ type Middleware = (
 
 export interface ExecuteOptions {
   middleware?: Middleware[]
+  /**
+   * RUN partiel « depuis une carte » : n'exécute que ce node et tout son aval.
+   * L'amont est supposé déjà exécuté — ses sorties en cache (nodeStates) sont
+   * réinjectées comme entrées ; une entrée amont absente déclenche un warning
+   * sur le node concerné (visible dans l'onglet Logs).
+   */
+  fromNodeId?: string
+}
+
+/** Ensemble { node de départ } ∪ { tous ses descendants } en suivant les edges sortants. */
+function downstreamFrom(startId: string, edges: WorkflowEdge[]): Set<string> {
+  const outgoing = new Map<string, string[]>()
+  for (const e of edges) {
+    if (!outgoing.has(e.source)) outgoing.set(e.source, [])
+    outgoing.get(e.source)!.push(e.target)
+  }
+  const set = new Set<string>([startId])
+  const queue = [startId]
+  while (queue.length) {
+    const cur = queue.shift()!
+    for (const t of outgoing.get(cur) ?? []) {
+      if (!set.has(t)) {
+        set.add(t)
+        queue.push(t)
+      }
+    }
+  }
+  return set
 }
 
 interface LoopPair {
@@ -241,8 +269,11 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     console.warn('[executeWorkflow] Un run est déjà en cours — ignoré.')
     return
   }
-  const ac = ctxStore.startRun()
-  useProgressStore.getState().begin('Exécution du workflow…')
+  // RUN partiel : on ne réinitialise que le sous-graphe aval ; les sorties amont
+  // déjà en cache sont conservées et serviront d'entrées.
+  const runSet = opts.fromNodeId ? downstreamFrom(opts.fromNodeId, wf.edges) : null
+  const ac = ctxStore.startRun(runSet ? { clearIds: [...runSet] } : undefined)
+  useProgressStore.getState().begin(runSet ? 'Exécution depuis le node…' : 'Exécution du workflow…')
   try {
     // Détection des loops avant tout topo
     const loops = detectLoops(wf.nodes, wf.edges)
@@ -255,12 +286,20 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
 
     const ordered = topoSort(mainNodes, mainEdges)
     const outputs = new Map<string, Record<string, unknown>>()
+    // RUN partiel : réinjecte les sorties des nodes amont (hors sous-graphe) depuis le cache.
+    if (runSet) {
+      for (const [id, st] of Object.entries(useRunContext.getState().nodeStates)) {
+        if (!runSet.has(id) && st.outputs) outputs.set(id, st.outputs)
+      }
+    }
     const skipped = new Set<string>()
     const loopByEach = new Map(loops.map((l) => [l.eachId, l]))
     const loopByCollect = new Map(loops.map((l) => [l.collectId, l]))
 
     let processed = 0
     for (const node of ordered) {
+      // RUN partiel : on ne touche pas aux nodes hors sous-graphe (état/logs conservés).
+      if (runSet && !runSet.has(node.id)) continue
       useProgressStore.getState().setProgress(++processed / Math.max(1, ordered.length))
       // Skip if any upstream is skipped or errored
       const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
@@ -288,6 +327,21 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       for (const e of upstream) {
         const src = outputs.get(e.source)
         if (src && e.sourceHandle in src) inputs[e.targetHandle] = src[e.sourceHandle]
+      }
+
+      // RUN partiel : avertir si une entrée vient d'un node amont hors sous-graphe
+      // et non disponible en cache (jamais exécuté).
+      if (runSet) {
+        for (const e of upstream) {
+          if (runSet.has(e.source)) continue
+          if (!outputs.has(e.source)) {
+            useRunContext.getState().appendLog(
+              node.id,
+              'warn',
+              `Entrée « ${e.targetHandle} » manquante : le node amont n'a pas encore été exécuté. Lance d'abord le workflow complet (ou le node amont).`,
+            )
+          }
+        }
       }
 
       const ctxApi: RunContextApi = {

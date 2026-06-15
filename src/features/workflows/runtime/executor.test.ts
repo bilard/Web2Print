@@ -280,6 +280,59 @@ describe('executeWorkflow', () => {
     expect(callCount).toBe(1)
   })
 
+  describe('partial run (fromNodeId)', () => {
+    it('runs the node and its downstream, leaves upstream untouched, reuses cached upstream outputs', async () => {
+      nodeRegistry.register(noopSpec('src', () => 'cached'))
+      nodeRegistry.register(noopSpec('mid', (inputs) => inputs.in + '-mid'))
+      nodeRegistry.register(noopSpec('end', (inputs) => inputs.in + '-end'))
+      const wf = makeWorkflow(
+        [
+          { id: 'n1', type: 'src', position: { x: 0, y: 0 }, config: {} },
+          { id: 'n2', type: 'mid', position: { x: 0, y: 0 }, config: {} },
+          { id: 'n3', type: 'end', position: { x: 0, y: 0 }, config: {} },
+        ],
+        [
+          { id: 'e1', source: 'n1', sourceHandle: 'out', target: 'n2', targetHandle: 'in' },
+          { id: 'e2', source: 'n2', sourceHandle: 'out', target: 'n3', targetHandle: 'in' },
+        ]
+      )
+      // Run complet d'abord → met l'amont (n1) en cache.
+      await executeWorkflow(wf)
+      const n1Before = useRunContext.getState().nodeStates['n1']
+      expect(n1Before.status).toBe('success')
+
+      // Run partiel depuis n2 : n2 + n3 ré-exécutés, n1 conservé tel quel.
+      await executeWorkflow(wf, { fromNodeId: 'n2' })
+      const states = useRunContext.getState().nodeStates
+      // n1 garde exactement son état précédent (même référence d'objet).
+      expect(states['n1']).toBe(n1Before)
+      // n2 a relu la sortie en cache de n1.
+      expect(states['n2'].outputs).toEqual({ out: 'cached-mid' })
+      expect(states['n3'].outputs).toEqual({ out: 'cached-mid-end' })
+    })
+
+    it('warns when an upstream input was never produced', async () => {
+      nodeRegistry.register(noopSpec('src', () => 'x'))
+      nodeRegistry.register(noopSpec('mid', (inputs) => inputs.in))
+      const wf = makeWorkflow(
+        [
+          { id: 'n1', type: 'src', position: { x: 0, y: 0 }, config: {} },
+          { id: 'n2', type: 'mid', position: { x: 0, y: 0 }, config: {} },
+        ],
+        [{ id: 'e1', source: 'n1', sourceHandle: 'out', target: 'n2', targetHandle: 'in' }]
+      )
+      // Pas de run complet préalable : n1 n'a jamais produit de sortie.
+      await executeWorkflow(wf, { fromNodeId: 'n2' })
+      const states = useRunContext.getState().nodeStates
+      // n1 n'a pas été touché (jamais exécuté).
+      expect(states['n1']).toBeUndefined()
+      // n2 a tourné mais a loggé un warning d'entrée manquante.
+      const warns = (states['n2'].logs ?? []).filter((l) => l.level === 'warn')
+      expect(warns.length).toBeGreaterThan(0)
+      expect(warns[0].msg).toContain('manquante')
+    })
+  })
+
   it('loop with empty array produces empty results', async () => {
     nodeRegistry.register({
       type: 'source-empty', category: 'utility', label: 's', description: '', icon: Box,
