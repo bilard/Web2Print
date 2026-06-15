@@ -17,8 +17,19 @@ export function ConfigFieldRenderer({ field, value, onChange }: FieldProps) {
       return <input type="text" className={inputCls} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} placeholder={field.help} />
     case 'textarea':
       return <textarea className={inputCls + ' min-h-[80px]'} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />
-    case 'number':
-      return <input type="number" className={inputCls} value={Number(value ?? 0)} onChange={(e) => onChange(Number(e.target.value))} />
+    case 'number': {
+      // Autorise le champ vide et l'édition : ne PAS forcer Number('')→0 (sinon impossible
+      // de vider/modifier). Vide = '' ; sinon le nombre. Le runtime fait Number(x)||0.
+      const numVal = value === '' || value === null || value === undefined ? '' : (value as number)
+      return (
+        <input
+          type="number"
+          className={inputCls}
+          value={numVal}
+          onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
+        />
+      )
+    }
     case 'checkbox':
       return <input type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
     case 'select':
