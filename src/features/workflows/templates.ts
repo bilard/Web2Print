@@ -115,6 +115,28 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'changes', 'n3', 'data')],
   },
   {
+    id: 'price-compare-sites',
+    name: 'Comparer les prix entre 2 sites → Excel',
+    description:
+      'Lit deux pages liste / catégorie (source + cible), extrait les produits (nom, EAN, prix), ' +
+      'les apparie par EAN et exporte un tableau « prix site A | prix site B | écart ».',
+    emoji: '⚖️',
+    nodes: [
+      node('n1', 'list-products', 80, 140, {
+        urls:
+          'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi\n' +
+          'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+        maxProducts: 40,
+      }),
+      node('n2', 'compare-prices', 460, 140, {
+        keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',
+        priceColumn: 'price', labelColumn: 'name', onlyCommon: true,
+      }),
+      node('n3', 'export-excel', 840, 140, { columns: '' }),
+    ],
+    edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'sheet', 'n3', 'sheet')],
+  },
+  {
     id: 'web-research-excel',
     name: 'Recherche web → Excel',
     description:
