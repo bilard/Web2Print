@@ -1,5 +1,5 @@
 // src/features/workflows/runtime/executor.ts
-import type { Workflow, WorkflowNode, WorkflowEdge, RunContextApi } from '../types'
+import type { Workflow, WorkflowNode, WorkflowEdge, RunContextApi, NodeRunState } from '../types'
 import { nodeRegistry } from '../registry'
 import { topoSort } from './topo'
 import { useRunContext } from './runContext'
@@ -11,6 +11,15 @@ type Middleware = (
   node: WorkflowNode,
   next: () => Promise<void>
 ) => Promise<void>
+
+/** Résumé d'un run, pour afficher un message de fin clair (✅ / ⚠️ / ❌). */
+export interface RunOutcome {
+  aborted: boolean
+  okCount: number
+  errorCount: number
+  firstError?: string
+  firstWarn?: string
+}
 
 export interface ExecuteOptions {
   middleware?: Middleware[]
@@ -270,13 +279,13 @@ async function executeLoopBody(
   return lastOutput?.[collectIncoming.sourceHandle]
 }
 
-export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): Promise<{ aborted: boolean }> {
+export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): Promise<RunOutcome> {
   const ctxStore = useRunContext.getState()
   // Garde anti-double-run : si une exécution est déjà en cours, on ignore
   // les clics suivants pour éviter d'envoyer 2× les mails (par exemple).
   if (ctxStore.isRunning) {
     console.warn('[executeWorkflow] Un run est déjà en cours — ignoré.')
-    return { aborted: false }
+    return { aborted: false, okCount: 0, errorCount: 0 }
   }
   // RUN partiel : on ne réinitialise que le sous-graphe aval ; les sorties amont
   // déjà en cache sont conservées et serviront d'entrées.
@@ -470,5 +479,21 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     useRunContext.getState().endRun()
     useProgressStore.getState().end()
   }
-  return { aborted: ac.signal.aborted }
+  // Résumé calculé sur les SEULS nodes de ce run (sous-graphe si run partiel),
+  // pour un message de fin fiable (≠ états résiduels d'un run précédent).
+  const scopeIds = runSet ? [...runSet] : wf.nodes.map((n) => n.id)
+  const states = useRunContext.getState().nodeStates
+  const ran = scopeIds.map((id) => states[id]).filter(Boolean) as NodeRunState[]
+  const errors = ran.filter((s) => s.status === 'error')
+  const firstWarn = ran
+    .filter((s) => s.status === 'success')
+    .flatMap((s) => s.logs ?? [])
+    .find((l) => l.level === 'warn')
+  return {
+    aborted: ac.signal.aborted,
+    okCount: ran.filter((s) => s.status === 'success').length,
+    errorCount: errors.length,
+    firstError: errors[0]?.error,
+    firstWarn: firstWarn?.msg,
+  }
 }

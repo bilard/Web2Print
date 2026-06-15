@@ -8,6 +8,7 @@ import { connectorsForSpec, connectorsByIds } from '../../registry/connectors'
 import { useConnectionDrag } from '../../runtime/connectionDragStore'
 import { isCompatible } from '../../runtime/ports'
 import { executeWorkflow } from '../../runtime/executor'
+import { notifyRunOutcome } from '../../runtime/notifyRunOutcome'
 import { useWorkflowStore } from '../../persistence/workflow.store'
 import { useCan } from '@/features/access/useAccess'
 import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play, Square } from 'lucide-react'
@@ -321,7 +322,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
               onClick={(e) => {
                 e.stopPropagation()
                 const wf = useWorkflowStore.getState().current
-                if (wf) void executeWorkflow(wf, { fromNodeId: id })
+                if (wf) void executeWorkflow(wf, { fromNodeId: id }).then((o) => notifyRunOutcome(o, spec.label))
               }}
               className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
               title="Exécuter depuis ce node (lui + tout l'aval)"

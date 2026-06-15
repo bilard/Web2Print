@@ -9,6 +9,7 @@ import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
 import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
+import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
 import { nodeRegistry } from '../registry'
 import { initWorkflowsRegistry } from '../registry/builtin'
 import { WorkflowEditor } from './WorkflowEditor'
@@ -80,26 +81,8 @@ export function WorkflowEditorPage() {
   // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
   // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
   const run = async (stepByStep = false) => {
-    const { aborted } = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
-    // Arrêt volontaire (Stop) : message neutre, pas de toast d'erreur.
-    if (aborted) {
-      notify.info(`Workflow « ${wf.name} » arrêté`, 'Exécution interrompue.')
-      return
-    }
-    const states = Object.values(useRunContext.getState().nodeStates)
-    const errors = states.filter((s) => s.status === 'error')
-    const ok = states.filter((s) => s.status === 'success').length
-    const firstWarn = states
-      .filter((s) => s.status === 'success')
-      .flatMap((s) => s.logs ?? [])
-      .find((l) => l.level === 'warn')
-    if (errors.length > 0) {
-      notify.error(`Workflow « ${wf.name} » : ${errors.length} node(s) en erreur`, (errors[0].error ?? 'voir les logs').slice(0, 160))
-    } else if (firstWarn) {
-      notify.warning(`Workflow « ${wf.name} » terminé avec avertissement`, firstWarn.msg.slice(0, 160))
-    } else {
-      notify.success(`Workflow « ${wf.name} » terminé`, `${ok} node(s) exécuté(s).`)
-    }
+    const outcome = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
+    notifyRunOutcome(outcome, wf.name)
   }
   const stop = () => ac?.abort()
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
