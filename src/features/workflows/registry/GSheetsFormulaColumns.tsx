@@ -148,8 +148,13 @@ function FormulaInput({
         placeholder="={price} - {price_concurrent}"
         className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-[12px] font-mono text-white outline-none focus:border-indigo-500"
       />
-      {ac && suggestions.length > 0 && (
+      {ac && (suggestions.length > 0 || ac.mode === 'col') && (
         <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-auto rounded-md bg-surface-2 border border-neutral-700 shadow-xl">
+          {suggestions.length === 0 && ac.mode === 'col' && (
+            <li className="px-2 py-1.5 text-[10px] text-neutral-500 italic leading-snug">
+              Aucune colonne connue. Lance le workflow une fois pour les lister, ou saisis le nom de colonne entre accolades.
+            </li>
+          )}
           {suggestions.map((s, i) => (
             <li key={s.name}>
               <button

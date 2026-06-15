@@ -1,5 +1,5 @@
 // src/features/workflows/editor/NodeConfigPanel.tsx
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '@xyflow/react'
 import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertTriangle } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -328,7 +328,31 @@ export function NodeConfigPanel() {
   const node = wf?.nodes.find((n) => n.id === selectedId)
   const spec = node ? nodeRegistry.get(node.type) : undefined
   const selectedEdge = wf?.edges.find((e) => e.id === selectedEdgeId)
-  const availableColumns = wf && node ? collectUpstreamColumns(wf, node.id) : []
+  // Colonnes produites par les nodes amont au DERNIER run (sheet.columns des outputs) —
+  // complète l'autocomplétion pour les nodes de calcul (compare-prices, list-products…)
+  // dont les colonnes ne sont pas connues statiquement.
+  const runNodeStates = useRunContext((s) => s.nodeStates)
+  const availableColumns = useMemo(() => {
+    if (!wf || !node) return []
+    const cols: string[] = []
+    const seen = new Set<string>()
+    const add = (k: string) => {
+      if (k && !seen.has(k)) {
+        seen.add(k)
+        cols.push(k)
+      }
+    }
+    for (const c of collectUpstreamColumns(wf, node.id)) add(c)
+    for (const e of wf.edges.filter((edge) => edge.target === node.id)) {
+      const outputs = runNodeStates[e.source]?.outputs
+      if (!outputs) continue
+      for (const v of Object.values(outputs)) {
+        const sheetCols = (v as { columns?: Array<{ key?: string; label?: string }> } | null)?.columns
+        if (Array.isArray(sheetCols)) for (const col of sheetCols) add(col?.key || col?.label || '')
+      }
+    }
+    return cols
+  }, [wf, node, runNodeStates])
 
   // Priorité au node sélectionné si les deux le sont (cas peu probable).
   const showEdge = !node && !!selectedEdge
