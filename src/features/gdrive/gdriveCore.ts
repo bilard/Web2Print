@@ -102,8 +102,36 @@ export async function importGoogleSheetById(sheetId: string, token: string): Pro
   return sheets
 }
 
-/** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook). */
-async function sheetToXlsxBlob(sheet: ExcelSheet, sheetName: string): Promise<Blob> {
+/** Colonne-formule Google Sheets : `template` peut référencer une colonne par son
+ *  nom entre accolades, ex. `{price} - {price_concurrent}` → résolu en `=C2-D2`
+ *  par ligne (lettre de colonne + numéro de ligne). Un `=` initial est optionnel. */
+export interface FormulaColumn {
+  header: string
+  template: string
+}
+
+/** Résout un template de formule pour une ligne donnée : retire un `=` initial et
+ *  remplace chaque `{nom}` par la lettre de colonne + le numéro de ligne tableur. */
+export function resolveFormula(
+  template: string,
+  letterByName: (name: string) => string | null,
+  sheetRow: number,
+): string {
+  return template
+    .replace(/^=/, '')
+    .replace(/\{([^}]+)\}/g, (_m, name: string) => {
+      const letter = letterByName(name.trim())
+      return letter ? `${letter}${sheetRow}` : name
+    })
+}
+
+/** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
+ *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
+async function sheetToXlsxBlob(
+  sheet: ExcelSheet,
+  sheetName: string,
+  formulas?: FormulaColumn[],
+): Promise<Blob> {
   const XLSX = await import('xlsx')
   const rows = sheet.rows.map((row) => {
     const out: Record<string, unknown> = {}
@@ -113,6 +141,31 @@ async function sheetToXlsxBlob(sheet: ExcelSheet, sheetName: string): Promise<Bl
     return out
   })
   const ws = XLSX.utils.json_to_sheet(rows)
+
+  if (formulas && formulas.length > 0) {
+    // Résout un nom de colonne en lettre de tableur (selon l'ordre de sheet.columns).
+    const letterOf = (name: string): string | null => {
+      const i = sheet.columns.findIndex((c) => c.key === name || (c.label || c.key) === name)
+      return i >= 0 ? XLSX.utils.encode_col(i) : null
+    }
+    const baseCol = sheet.columns.length // 1re colonne-formule (index 0-based)
+    formulas.forEach((f, fi) => {
+      const colNum = baseCol + fi
+      // En-tête
+      ws[XLSX.utils.encode_cell({ c: colNum, r: 0 })] = { t: 's', v: f.header }
+      // Une formule par ligne de données (ligne tableur = index + 2 : +1 en-tête, base 1)
+      for (let r = 0; r < sheet.rows.length; r++) {
+        const resolved = resolveFormula(f.template, letterOf, r + 2)
+        ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = { t: 'n', f: resolved }
+      }
+    })
+    // Étend la plage du worksheet aux colonnes-formule.
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+    range.e.c = Math.max(range.e.c, baseCol + formulas.length - 1)
+    range.e.r = Math.max(range.e.r, sheet.rows.length)
+    ws['!ref'] = XLSX.utils.encode_range(range)
+  }
+
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31) || 'Sheet1')
   const data = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array
@@ -178,9 +231,9 @@ async function uploadToDrive(
 export async function exportSheetToGoogleSheets(
   token: string,
   sheet: ExcelSheet,
-  options: { name: string; parentFolderId?: string },
+  options: { name: string; parentFolderId?: string; formulas?: FormulaColumn[] },
 ): Promise<DriveFileMeta> {
-  const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1')
+  const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1', options.formulas)
   return uploadToDrive(token, blob, {
     name: options.name,
     parentFolderId: options.parentFolderId,
@@ -218,9 +271,10 @@ export async function updateGoogleSheetById(
   token: string,
   fileId: string,
   sheet: ExcelSheet,
+  formulas?: FormulaColumn[],
 ): Promise<DriveFileMeta> {
   const id = parseSpreadsheetId(fileId)
-  const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1')
+  const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1', formulas)
   const params = new URLSearchParams({ uploadType: 'media', fields: 'id,name,mimeType,webViewLink' })
   const res = await fetch(`${DRIVE_UPLOAD}/files/${id}?${params}`, {
     method: 'PATCH',

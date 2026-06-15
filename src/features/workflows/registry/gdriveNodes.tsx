@@ -24,6 +24,7 @@ import {
   exportSheetToGoogleSheets,
   updateGoogleSheetById,
   getDriveFileStatus,
+  type FormulaColumn,
   importGoogleSheetById,
   uploadFileToDrive,
   type DriveFileMeta,
@@ -318,6 +319,24 @@ interface GSheetsExportConfig {
   mode: 'create' | 'update'
   /** URL ou ID du Google Sheet à mettre à jour (mode 'update'). */
   spreadsheetId: string
+  /** Colonnes-formule Google Sheets vivantes : une par ligne, `En-tête = formule {col}`. */
+  formulaColumns: string
+}
+
+/** Parse les colonnes-formule : `En-tête = template` (template peut référencer {colonne}). */
+function parseFormulaColumns(raw: string): FormulaColumn[] {
+  return String(raw || '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const eq = line.indexOf('=')
+      if (eq < 0) return null
+      const header = line.slice(0, eq).trim()
+      const template = line.slice(eq + 1).trim()
+      return header && template ? { header, template } : null
+    })
+    .filter((f): f is FormulaColumn => f !== null)
 }
 
 interface FolderTargetFields {
@@ -438,6 +457,24 @@ function GSheetsExportConfigUi({
           (videz l'URL ci-dessus). Une mise à jour réécrit le fichier existant sans le déplacer.
         </p>
       )}
+
+      <div className="pt-2 border-t border-neutral-800">
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+          Colonnes formule (Google Sheets)
+        </label>
+        <textarea
+          value={config.formulaColumns ?? ''}
+          onChange={(e) => onChange({ ...config, formulaColumns: e.target.value })}
+          rows={3}
+          className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500 font-mono text-[11px]"
+          placeholder={'Écart = {price} - {price_concurrent}\n% écart = ({price}/{price_concurrent}-1)'}
+        />
+        <p className="text-[10px] text-neutral-600 leading-snug mt-1">
+          Colonnes ajoutées en fin de tableau comme <strong>formules vivantes</strong> (se recalculent
+          dans Google Sheets). Référence une colonne par son nom : <code>{'{price}'}</code> → lettre +
+          n° de ligne (ex. <code>=C2-D2</code>). Une par ligne : <code>En-tête = formule</code>.
+        </p>
+      </div>
     </div>
   )
 }
@@ -455,7 +492,7 @@ const gsheetsExportNode: NodeSpec<
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'export-result' }],
   configSchema: [],
-  defaultConfig: { name: 'Workflow Export', folderName: '', parentFolderId: '', parentFolderName: '', mode: 'create', spreadsheetId: '' },
+  defaultConfig: { name: 'Workflow Export', folderName: '', parentFolderId: '', parentFolderName: '', mode: 'create', spreadsheetId: '', formulaColumns: '' },
   runtime: 'client',
   ConfigComponent: GSheetsExportConfigUi,
   run: async (ctx, config, inputs) => {
@@ -468,12 +505,14 @@ const gsheetsExportNode: NodeSpec<
     if (sheet.rows.length === 0) {
       ctx.log('warn', 'Aucune ligne à exporter — le fichier sera vide. Vérifie le node amont (« Comparer les prix »).')
     }
+    const formulas = parseFormulaColumns(config.formulaColumns)
+    if (formulas.length > 0) ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
     if (config.mode === 'update' && config.spreadsheetId?.trim()) {
       const fileId = config.spreadsheetId.trim()
       const status = await getDriveFileStatus(token, fileId)
       if (status === 'ok') {
         ctx.log('info', `Mise à jour du Google Sheet existant (${sheet.rows.length} lignes)…`)
-        const meta = await updateGoogleSheetById(token, fileId, sheet)
+        const meta = await updateGoogleSheetById(token, fileId, sheet, formulas)
         ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
         return { result: meta }
       }
@@ -494,7 +533,7 @@ const gsheetsExportNode: NodeSpec<
       parentFolderId = await ensureDriveFolder(token, folderName)
     }
     ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
-    const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId })
+    const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId, formulas })
     ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
     // Mode « même fichier » : mémoriser l'ID créé → les prochains runs mettront à jour CE fichier
     // (1 seule création, puis des mises à jour ; recrée seulement s'il est supprimé).

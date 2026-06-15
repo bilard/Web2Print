@@ -44,7 +44,7 @@ const setFieldsNode: NodeSpec<
   category: 'transformation',
   label: 'Définir / réécrire colonnes',
   description:
-    "Ajoute ou modifie des colonnes en évaluant un template {{col}} sur chaque ligne. Une entrée par ligne au format `colonne = template`.",
+    "Ajoute ou modifie des colonnes, une entrée par ligne. `col = template {{x}}` (texte interpolé) OU `col := expression` (calcul JS sur la ligne, ex. row.a - row.b). Les nouvelles colonnes sont ajoutées à l'export.",
   icon: Wand2,
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -53,7 +53,7 @@ const setFieldsNode: NodeSpec<
       name: 'assignments',
       kind: 'textarea',
       label: 'Affectations (une par ligne)',
-      help: "Ex :\nslug = {{name}}\nlabel = {{brand}} — {{model}}\nprice_eur = {{price}} €\nLes accolades {{...}} référencent les colonnes existantes de la ligne courante.",
+      help: "« = » template texte, « := » expression calculée.\nEx :\nlabel = {{brand}} — {{name}}\necart := row.price - row.price_concurrent\npct := Math.round((row.price / row.ref - 1) * 100)\nmoins_cher := row.price < row.price_concurrent ? 'oui' : 'non'\n{{...}} = colonnes (mode texte) ; row.X = colonnes (mode expression).",
     },
   ],
   defaultConfig: { assignments: '' },
@@ -69,25 +69,71 @@ const setFieldsNode: NodeSpec<
       ctx.log('warn', 'Aucune affectation — sheet forwardée telle quelle.')
       return { sheet }
     }
-    const pairs = lines
-      .map((line) => {
-        const eq = line.indexOf('=')
-        if (eq < 0) return null
-        const key = line.slice(0, eq).trim()
-        const tpl = line.slice(eq + 1).trim()
-        return key ? { key, tpl } : null
-      })
-      .filter((p): p is { key: string; tpl: string } => p !== null)
+    // « := » (expression JS) prioritaire sur « = » (template texte).
+    type Assign =
+      | { key: string; mode: 'expr'; fn: (row: Record<string, unknown>) => unknown }
+      | { key: string; mode: 'tpl'; tpl: string }
+    const assigns: Assign[] = []
+    for (const line of lines) {
+      const ce = line.indexOf(':=')
+      if (ce >= 0) {
+        const key = line.slice(0, ce).trim()
+        const expr = line.slice(ce + 2).trim()
+        if (!key) continue
+        try {
+          const fn = new Function('row', `return (${expr})`) as (row: Record<string, unknown>) => unknown
+          assigns.push({ key, mode: 'expr', fn })
+        } catch (err) {
+          throw new Error(
+            `Colonne calculée « ${key} » : expression invalide "${expr}" — ${err instanceof Error ? err.message : err}`,
+            { cause: err },
+          )
+        }
+        continue
+      }
+      const eq = line.indexOf('=')
+      if (eq < 0) continue
+      const key = line.slice(0, eq).trim()
+      const tpl = line.slice(eq + 1).trim()
+      if (key) assigns.push({ key, mode: 'tpl', tpl })
+    }
+    if (assigns.length === 0) {
+      ctx.log('warn', 'Aucune affectation valide — sheet forwardée telle quelle.')
+      return { sheet }
+    }
 
-    ctx.log('info', `Définit ${pairs.length} colonne(s) sur ${rows.length} ligne(s).`)
+    ctx.log('info', `Définit ${assigns.length} colonne(s) sur ${rows.length} ligne(s).`)
     const next = rows.map((row) => {
       const out: Record<string, unknown> = { ...row }
-      for (const { key, tpl } of pairs) {
-        out[key] = interpolate(tpl, row as Record<string, unknown>)
+      for (const a of assigns) {
+        if (a.mode === 'expr') {
+          try {
+            out[a.key] = a.fn(row)
+          } catch (err) {
+            ctx.log('warn', `« ${a.key} » sur une ligne : ${err instanceof Error ? err.message : err}`)
+            out[a.key] = ''
+          }
+        } else {
+          out[a.key] = interpolate(a.tpl, row)
+        }
       }
       return out
     })
-    return { sheet: { ...sheet, rows: next } }
+
+    // Déclare les nouvelles colonnes dans `columns` (sinon l'export les ignore).
+    let columns = sheet.columns
+    const existingCols = Array.isArray(sheet.columns) ? (sheet.columns as Array<{ key?: string }>) : null
+    if (existingCols) {
+      const known = new Set(existingCols.map((c) => c.key))
+      const added = [...new Set(assigns.map((a) => a.key))].filter((k) => !known.has(k))
+      if (added.length > 0) {
+        columns = [
+          ...existingCols,
+          ...added.map((k) => ({ key: k, label: k, fieldType: 'text', detectedType: 'text', isPrimary: false, width: 140 })),
+        ]
+      }
+    }
+    return { sheet: { ...sheet, columns, rows: next } }
   },
 }
 
