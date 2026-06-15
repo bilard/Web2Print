@@ -120,17 +120,22 @@ export const googleOAuthCallback = onRequest(
 )
 
 // Cache par instance : access token Google (~1 h), re-minté à la demande.
-const tokenCache = new Map<string, { token: string; exp: number }>()
+// Indexé par refresh token : une reconnexion (ex. changement de scope) génère un
+// nouveau refresh token → le cache est automatiquement invalidé.
+const tokenCache = new Map<string, { token: string; exp: number; refreshToken: string }>()
 
 /** Access token Google pour cet utilisateur (via son refresh token serveur). */
 export async function getGoogleAccessToken(uid: string): Promise<string> {
-  const cached = tokenCache.get(uid)
-  if (cached && cached.exp > Date.now() + 60_000) return cached.token
-
+  // On relit toujours le refresh token : c'est lui qui détermine la validité du cache
+  // (sinon un ancien access token de scope obsolète serait servi après reconnexion).
   const userSnap = await getFirestore().doc(`users/${uid}`).get()
   const refreshToken = (userSnap.data()?.googleServer as { refreshToken?: string } | undefined)?.refreshToken
   if (!refreshToken) {
     throw new Error('Google non connecté pour l’accès serveur — Réglages → Connecteurs → « Connecter Google (accès serveur) ».')
+  }
+  const cached = tokenCache.get(uid)
+  if (cached && cached.refreshToken === refreshToken && cached.exp > Date.now() + 60_000) {
+    return cached.token
   }
   const { clientId, clientSecret } = await readOAuthClient()
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -150,6 +155,6 @@ export async function getGoogleAccessToken(uid: string): Promise<string> {
     }
     throw new Error(`Google token: ${json.error ?? res.status}`)
   }
-  tokenCache.set(uid, { token: json.access_token, exp: Date.now() + (json.expires_in ?? 3600) * 1000 })
+  tokenCache.set(uid, { token: json.access_token, exp: Date.now() + (json.expires_in ?? 3600) * 1000, refreshToken })
   return json.access_token
 }
