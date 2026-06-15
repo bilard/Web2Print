@@ -414,20 +414,21 @@ function GSheetsExportConfigUi({
           placeholder="Workflow Export"
         />
       </div>
+      <FolderPickerForExport config={config} onChange={onChange} />
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          Dossier Drive (par nom)
+          Ou dossier par nom
         </label>
         <input
           type="text"
           value={config.folderName ?? ''}
           onChange={(e) => onChange({ ...config, folderName: e.target.value })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-          placeholder="Ex : Web2Print (vide = racine)"
+          placeholder="Ex : Web2Print (l'app le crée/réutilise)"
         />
         <p className="text-[10px] text-neutral-600 leading-snug mt-1">
-          L'app crée (ou réutilise) ce dossier dans ton Drive et y range le fichier — garanti même
-          sous le scope minimal. Laisse vide pour la racine de « Mon Drive ».
+          Prioritaire sur le dossier choisi ci-dessus : l'app crée/réutilise un dossier de ce nom.
+          Laisse vide pour utiliser le dossier sélectionné (ou la racine).
         </p>
       </div>
       {mode === 'update' && (

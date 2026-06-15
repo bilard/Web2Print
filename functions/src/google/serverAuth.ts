@@ -19,7 +19,8 @@ if (!getApps().length) initializeApp()
 const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
 
 const GOOGLE_SERVER_SCOPES = [
-  'https://www.googleapis.com/auth/drive.file',
+  // Drive COMPLET : permet d'écrire dans un dossier créé à la main (drive.file ne le permet pas).
+  'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/gmail.send',
 ]
 

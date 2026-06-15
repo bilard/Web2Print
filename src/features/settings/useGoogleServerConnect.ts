@@ -15,7 +15,9 @@ import { clearServerGoogleTokenCache } from '@/features/gdrive/serverGoogleToken
 
 // Doit rester aligné avec OAUTH_REDIRECT_URI de functions/src/google/serverAuth.ts.
 export const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
-const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
+// Drive COMPLET (lecture/écriture sur tout le Drive) pour pouvoir écrire dans un
+// dossier créé à la main par l'utilisateur — drive.file ne le permet pas.
+const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send'
 
 type GoogleServerTestStatus = 'testing' | 'ok' | 'error' | 'empty' | null
 
