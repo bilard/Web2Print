@@ -2071,6 +2071,28 @@
   .vt-foot{display:flex;gap:8px;font-size:10px;color:var(--muted)}
   .vt-foot span{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
   .vt-foot .dot{width:6px;height:6px;border-radius:50%}
+  /* mini-workflow CRON */
+  .vt-flow{border-top:1px dashed var(--line2);padding-top:11px;display:flex;flex-direction:column;gap:8px}
+  .vf-h{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .vf-h .run{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#34d399;font-weight:700}
+  .vf-h .run i{width:6px;height:6px;border-radius:50%;background:#34d399;animation:vtBlink 1.6s infinite}
+  .vf-chain{display:flex;align-items:center}
+  .vf-node{flex:1;min-width:0;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px}
+  .vf-node .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex:none}
+  .vf-node .ic svg{width:14px;height:14px}
+  .vf-node .tx{min-width:0}
+  .vf-node b{display:block;font-size:10px;color:var(--ink);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vf-node em{font-style:normal;font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .vf-node.cron{border-color:rgba(99,102,241,.45);background:rgba(99,102,241,.06);flex:1.35}
+  .vf-node.cron .ic{background:rgba(99,102,241,.18);color:#a5b4fc}
+  .vf-node.src .ic{background:rgba(34,211,238,.16);color:#22d3ee}
+  .vf-node.cmp .ic{background:rgba(168,85,247,.16);color:#c4b5fd}
+  .vf-node.out1 .ic{background:rgba(52,211,153,.16);color:#34d399}
+  .vf-node.out2 .ic{background:rgba(56,189,248,.16);color:#7dd3fc}
+  .vf-link{flex:none;width:24px;height:2px;border-radius:2px;position:relative;background:linear-gradient(90deg,#6366f1 0 45%,transparent 45% 100%);background-size:13px 100%;background-repeat:repeat-x;animation:vfFlow .8s linear infinite}
+  .vf-link::after{content:"";position:absolute;right:-4px;top:50%;transform:translateY(-50%);border:4px solid transparent;border-left-color:#6366f1;opacity:.7}
+  @keyframes vfFlow{to{background-position:13px 0}}
+  @media(prefers-reduced-motion:reduce){.vf-link{animation:none}.vf-h .run i{animation:none}}
   @keyframes vtCell{0%{opacity:0;transform:translateY(4px)}6%{opacity:1;transform:none}94%{opacity:1}100%{opacity:0}}
   @keyframes vtBlink{0%,100%{opacity:1}50%{opacity:.25}}
   @keyframes vtPulse{0%,40%,100%{box-shadow:0 0 0 0 rgba(251,113,133,0)}55%{box-shadow:0 0 0 4px rgba(251,113,133,.14)}}
@@ -2119,6 +2141,20 @@
               <div class="vt-tg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>Telegram envoyé</div>
             </div>
             <div class="vt-foot"><span><i class="dot" style="background:#34d399"></i>→ Google Sheet mis à jour</span><span><i class="dot" style="background:#38bdf8"></i>→ Alerte Telegram</span><span><i class="dot" style="background:#a5b4fc"></i>9 produits · 2 concurrents · relevé quotidien</span></div>
+            <div class="vt-flow">
+              <div class="vf-h">Automatisation — workflow planifié <span class="run"><i></i>en cours</span></div>
+              <div class="vf-chain">
+                <div class="vf-node cron"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="tx"><b>CRON · 08:00</b><em>tous les jours · serveur</em></span></div>
+                <span class="vf-link"></span>
+                <div class="vf-node src"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="tx"><b>Produits liste</b><em>source + concurrents</em></span></div>
+                <span class="vf-link"></span>
+                <div class="vf-node cmp"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 7h14"/><path d="m5 7-2.5 5h5z"/><path d="m19 7-2.5 5h5z"/></svg></span><span class="tx"><b>Comparer</b><em>EAN · code · nom</em></span></div>
+                <span class="vf-link"></span>
+                <div class="vf-node out1"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></span><span class="tx"><b>Google Sheets</b><em>mise à jour</em></span></div>
+                <span class="vf-link"></span>
+                <div class="vf-node out2"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span><span class="tx"><b>Telegram</b><em>alerte</em></span></div>
+              </div>
+            </div>
           </div>
         </div></div>
       </div>
