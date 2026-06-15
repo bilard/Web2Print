@@ -11,6 +11,22 @@ interface Row {
   formula: string
 }
 
+/** Ferme les parenthèses (et accolades) non fermées d'une formule, dans le bon
+ *  ordre imbriqué. Ignore le contenu entre guillemets. Ex. `LEFT({produit}` → `LEFT({produit})`. */
+function autoCloseFormula(s: string): string {
+  const stack: string[] = []
+  let inStr = false
+  for (const c of s) {
+    if (c === '"') inStr = !inStr
+    else if (!inStr) {
+      if (c === '(') stack.push(')')
+      else if (c === '{') stack.push('}')
+      else if ((c === ')' || c === '}') && stack[stack.length - 1] === c) stack.pop()
+    }
+  }
+  return stack.length ? s + stack.reverse().join('') : s
+}
+
 function parseRows(raw: string): Row[] {
   return String(raw || '')
     .split('\n')
@@ -171,12 +187,16 @@ function FormulaInput({
         onKeyUp={(e) => {
           if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) recompute(e.currentTarget)
         }}
-        onBlur={() =>
+        onBlur={(e) => {
+          // À la sortie du champ : ferme automatiquement la/les parenthèse(s) (et accolades) non fermées.
+          const cur = e.currentTarget.value
+          const closed = autoCloseFormula(cur)
+          if (closed !== cur) onChange(closed)
           setTimeout(() => {
             setFocused(false)
             setAc(null)
           }, 120)
-        }
+        }}
         onKeyDown={onKeyDown}
         placeholder="={price} - {price_concurrent}"
         className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-[12px] font-mono text-white outline-none focus:border-indigo-500"
