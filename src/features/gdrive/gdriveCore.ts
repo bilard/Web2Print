@@ -145,10 +145,19 @@ async function sheetToXlsxBlob(
   formulas?: FormulaColumn[],
 ): Promise<Blob> {
   const XLSX = await import('xlsx')
+  // Colonnes déclarées numériques → on écrit de VRAIS nombres (sinon SUM/COUNT/AVERAGE
+  // échouent : Google importe les chaînes en texte). L'EAN (colonne texte) reste du texte.
+  const isNumberCol = (col: { fieldType?: string; detectedType?: string }) =>
+    col.fieldType === 'number' || col.detectedType === 'number'
   const rows = sheet.rows.map((row) => {
     const out: Record<string, unknown> = {}
     for (const col of sheet.columns) {
-      out[col.label || col.key] = row[col.key]
+      const raw = row[col.key]
+      if (isNumberCol(col) && typeof raw === 'string' && raw.trim() !== '' && Number.isFinite(Number(raw))) {
+        out[col.label || col.key] = Number(raw)
+      } else {
+        out[col.label || col.key] = raw
+      }
     }
     return out
   })
