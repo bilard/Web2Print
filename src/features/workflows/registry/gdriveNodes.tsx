@@ -23,6 +23,7 @@ import {
   ensureDriveFolder,
   exportSheetToGoogleSheets,
   updateGoogleSheetById,
+  getDriveFileStatus,
   importGoogleSheetById,
   uploadFileToDrive,
   type DriveFileMeta,
@@ -465,10 +466,21 @@ const gsheetsExportNode: NodeSpec<
     const name = config.name?.trim() || 'Workflow Export'
     const sheet = coerceToExcelSheet(inputs.sheet, name)
     if (config.mode === 'update' && config.spreadsheetId?.trim()) {
-      ctx.log('info', `Mise à jour du Google Sheet existant (${sheet.rows.length} lignes)…`)
-      const meta = await updateGoogleSheetById(token, config.spreadsheetId.trim(), sheet)
-      ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
-      return { result: meta }
+      const fileId = config.spreadsheetId.trim()
+      const status = await getDriveFileStatus(token, fileId)
+      if (status === 'ok') {
+        ctx.log('info', `Mise à jour du Google Sheet existant (${sheet.rows.length} lignes)…`)
+        const meta = await updateGoogleSheetById(token, fileId, sheet)
+        ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
+        return { result: meta }
+      }
+      // Fichier dans la corbeille / supprimé → on ne le réécrit pas, on crée un nouveau fichier.
+      ctx.log(
+        'warn',
+        status === 'trashed'
+          ? 'Le fichier cible est dans la corbeille → création d’un nouveau fichier à la place.'
+          : 'Le fichier cible est introuvable → création d’un nouveau fichier à la place.',
+      )
     }
     // Dossier de destination : par NOM (créé/réutilisé par l'app, garanti sous drive.file),
     // sinon dossier pické legacy, sinon racine.

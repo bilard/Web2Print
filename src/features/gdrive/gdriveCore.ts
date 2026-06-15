@@ -196,6 +196,21 @@ function parseSpreadsheetId(raw: string): string {
   return m ? m[1] : s
 }
 
+/** Statut d'un fichier Drive : exploitable, dans la corbeille, ou introuvable.
+ *  Sert à éviter de « mettre à jour » un fichier supprimé (on crée à la place). */
+export async function getDriveFileStatus(token: string, fileId: string): Promise<'ok' | 'trashed' | 'missing'> {
+  const id = parseSpreadsheetId(fileId)
+  const params = new URLSearchParams({ fields: 'id,trashed', supportsAllDrives: 'true' })
+  const res = await fetch(`${DRIVE_API}/files/${id}?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (res.status === 404) return 'missing'
+  // En cas d'erreur d'auth (401/403) on ne tranche pas ici : on laisse l'update lever le bon message.
+  if (!res.ok) return 'ok'
+  const json = (await res.json()) as { trashed?: boolean }
+  return json.trashed ? 'trashed' : 'ok'
+}
+
 /** Réécrit le contenu d'un Google Sheets EXISTANT (créé par l'app — scope
  *  drive.file) via un upload média Drive (XLSX converti). Évite de créer un
  *  nouveau fichier à chaque exécution. `fileId` accepte une URL ou un ID. */
