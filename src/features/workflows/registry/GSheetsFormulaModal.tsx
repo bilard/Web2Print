@@ -40,15 +40,18 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
   }
 
   const [funcQuery, setFuncQuery] = useState('')
+  const [activeCat, setActiveCat] = useState('')
   const filteredGroups = useMemo(() => {
     const q = funcQuery.trim().toLowerCase()
-    return GSHEETS_FUNCTION_GROUPS.map((g) => ({
-      cat: g.cat,
-      fns: q
-        ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q))
-        : g.fns,
-    })).filter((g) => g.fns.length > 0)
-  }, [funcQuery])
+    return GSHEETS_FUNCTION_GROUPS.filter((g) => !activeCat || g.cat === activeCat)
+      .map((g) => ({
+        cat: g.cat,
+        fns: q
+          ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q))
+          : g.fns,
+      }))
+      .filter((g) => g.fns.length > 0)
+  }, [funcQuery, activeCat])
 
   return createPortal(
     <div
@@ -129,6 +132,19 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
               <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">
                 Fonctions Google Sheets ({GSHEETS_FUNCTIONS.length})
               </h4>
+              <select
+                value={activeCat}
+                onChange={(e) => setActiveCat(e.target.value)}
+                className="w-full mb-1.5 px-1.5 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 outline-none focus:border-indigo-500/60"
+                title="Filtrer par groupe de fonctions"
+              >
+                <option value="">Tous les groupes</option>
+                {GSHEETS_FUNCTION_GROUPS.map((g) => (
+                  <option key={g.cat} value={g.cat}>
+                    {g.cat} ({g.fns.length})
+                  </option>
+                ))}
+              </select>
               <div className="relative mb-1.5">
                 <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
                 <input
