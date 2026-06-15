@@ -399,23 +399,25 @@ function GSheetsExportConfigUi({
         </p>
       </div>
 
-      {/* Nom + dossier : seulement quand on crée un nouveau fichier. */}
-      {mode === 'create' && (
-        <>
-          <div>
-            <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-              Nom du Google Sheets
-            </label>
-            <input
-              type="text"
-              value={config.name}
-              onChange={(e) => onChange({ ...config, name: e.target.value })}
-              className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-              placeholder="Workflow Export"
-            />
-          </div>
-          <FolderPickerForExport config={config} onChange={onChange} />
-        </>
+      {/* Nouveau fichier : nom + dossier de destination Drive (bouton « Choisir un dossier »). */}
+      <div>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+          Nom du Google Sheets
+        </label>
+        <input
+          type="text"
+          value={config.name}
+          onChange={(e) => onChange({ ...config, name: e.target.value })}
+          className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+          placeholder="Workflow Export"
+        />
+      </div>
+      <FolderPickerForExport config={config} onChange={onChange} />
+      {mode === 'update' && (
+        <p className="text-[10px] text-amber-400/70 leading-snug">
+          ↳ Nom et dossier ne servent qu'à la <strong>création</strong> d'un nouveau fichier
+          (videz l'URL ci-dessus). Une mise à jour réécrit le fichier existant sans le déplacer.
+        </p>
       )}
     </div>
   )
