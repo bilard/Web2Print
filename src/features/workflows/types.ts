@@ -129,6 +129,8 @@ export interface NodeRunState {
   outputs?: Record<string, unknown>
   /** Connecteurs réellement utilisés/tentés pendant ce run (ex. ['jina','brightdata']). */
   connectors?: string[]
+  /** Compteur live (ex. nombre de produits scrapés au fil de l'eau), affiché sur l'edge sortant. */
+  count?: number
 }
 
 export interface RunContextApi {
@@ -137,6 +139,8 @@ export interface RunContextApi {
   setProgress?: (pct: number) => void
   /** Signale le connecteur (ex. 'jina', 'brightdata', 'llm') en cours d'usage — affiché en live sur la carte. */
   reportConnector?: (connectorId: string) => void
+  /** Remonte un compteur live (ex. nombre de produits scrapés) — affiché sur l'edge sortant. */
+  reportCount?: (value: number) => void
   /**
    * Persiste une mise à jour PARTIELLE de la config du node (fusionnée + autosave).
    * Ex. : un export qui crée un fichier mémorise son ID pour mettre à jour LE MÊME

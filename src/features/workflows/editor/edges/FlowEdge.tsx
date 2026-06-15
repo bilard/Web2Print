@@ -1,6 +1,7 @@
 // src/features/workflows/editor/edges/FlowEdge.tsx
-import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import { getPortColor } from '../../runtime/ports'
+import { useRunContext } from '../../runtime/runContext'
 
 /**
  * Hash an edge id to a stable signed offset in pixels.
@@ -16,6 +17,7 @@ function spreadOffset(id: string): number {
 export function FlowEdge(props: EdgeProps) {
   const {
     id,
+    source,
     sourceX,
     sourceY,
     targetX,
@@ -30,8 +32,12 @@ export function FlowEdge(props: EdgeProps) {
   const baseColor = getPortColor(portType)
   const stroke = selected ? '#ffffff' : baseColor
 
+  // Compteur live du node source (ex. produits scrapés au fil de l'eau).
+  const count = useRunContext((s) => s.nodeStates[source]?.count)
+  const sourceRunning = useRunContext((s) => s.nodeStates[source]?.status === 'running')
+
   const centerX = (sourceX + targetX) / 2 + spreadOffset(id)
-  const [edgePath] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -60,6 +66,24 @@ export function FlowEdge(props: EdgeProps) {
           <mpath href={`#${id}`} />
         </animateMotion>
       </circle>
+      {/* Compteur live (ex. produits scrapés) au milieu du lien */}
+      {typeof count === 'number' && (
+        <EdgeLabelRenderer>
+          <div
+            className={`nodrag nopan absolute px-2 py-0.5 rounded-full text-[10px] font-semibold tabular-nums shadow-lg border backdrop-blur-sm ${
+              sourceRunning
+                ? 'bg-indigo-500/25 border-indigo-400/60 text-indigo-100 animate-pulse'
+                : 'bg-emerald-500/20 border-emerald-400/50 text-emerald-200'
+            }`}
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: 'none',
+            }}
+          >
+            {count.toLocaleString('fr-FR')} produits
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 }

@@ -200,6 +200,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
           url: (p.url ?? '').trim(),
         } as ExcelRow)
+        ctx.reportCount?.(allRows.length) // compteur live au fil de l'eau (sur l'edge)
       }
       ctx.log('info', `${products.length} produit(s) extrait(s) de ${site}.`)
     }
