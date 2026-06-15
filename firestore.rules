@@ -177,6 +177,14 @@ service cloud.firestore {
       allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
     }
 
+    // Dossiers de regroupement des workflows (organisation de la liste).
+    match /users/{uid}/workflowFolders/{folderId} {
+      allow read:   if isAuthenticated() && request.auth.uid == uid;
+      allow create: if hasPermission('workflows.create') && request.auth.uid == uid;
+      allow update: if hasPermission('workflows.edit') && request.auth.uid == uid;
+      allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
+    }
+
     // État du node « Veille prix » + module « Veille tarifaire » : le doc de suivi
     // {watchId} ET ses sous-collections (products / sites / matches / history).
     // Wildcard récursif car les règles ne cascadent pas aux sous-collections.

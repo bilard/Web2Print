@@ -100,6 +100,15 @@ export interface Workflow {
   updatedAt: number
   nodes: WorkflowNode[]
   edges: WorkflowEdge[]
+  /** Dossier de regroupement (null/absent = « Sans dossier »). */
+  folderId?: string | null
+}
+
+/** Dossier de regroupement des workflows dans l'écran liste. */
+export interface WorkflowFolder {
+  id: string
+  name: string
+  createdAt: number
 }
 
 export type NodeStatus = 'pending' | 'running' | 'success' | 'error' | 'skipped'

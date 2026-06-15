@@ -1,11 +1,12 @@
 // src/features/workflows/persistence/workflowsApi.ts
-import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
+import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import type { Workflow } from '../types'
+import type { Workflow, WorkflowFolder } from '../types'
 import { CURRENT_SCHEMA_VERSION, migrate } from './migrations'
 import { syncWorkflowSchedule } from './scheduleSync'
 
 const col = (uid: string) => collection(db, 'users', uid, 'workflows')
+const folderCol = (uid: string) => collection(db, 'users', uid, 'workflowFolders')
 
 export async function listWorkflows(uid: string): Promise<Workflow[]> {
   const snap = await getDocs(query(col(uid), orderBy('updatedAt', 'desc')))
@@ -26,6 +27,42 @@ export async function saveWorkflow(uid: string, wf: Workflow): Promise<void> {
 
 export async function deleteWorkflow(uid: string, id: string): Promise<void> {
   await deleteDoc(doc(col(uid), id))
+}
+
+/** Déplace un workflow dans un dossier (ou l'en retire si folderId = null). */
+export async function setWorkflowFolder(uid: string, workflowId: string, folderId: string | null): Promise<void> {
+  await updateDoc(doc(col(uid), workflowId), { folderId, updatedAt: Date.now() })
+}
+
+// ---- Dossiers de regroupement ------------------------------------------------
+
+export async function listFolders(uid: string): Promise<WorkflowFolder[]> {
+  const snap = await getDocs(query(folderCol(uid), orderBy('name')))
+  return snap.docs.map((d) => d.data() as WorkflowFolder)
+}
+
+export async function createFolder(uid: string, name: string): Promise<WorkflowFolder> {
+  const folder: WorkflowFolder = {
+    id: `wff_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: name.trim() || 'Dossier',
+    createdAt: Date.now(),
+  }
+  await setDoc(doc(folderCol(uid), folder.id), folder)
+  return folder
+}
+
+export async function renameFolder(uid: string, id: string, name: string): Promise<void> {
+  await updateDoc(doc(folderCol(uid), id), { name: name.trim() || 'Dossier' })
+}
+
+/**
+ * Supprime un dossier SANS supprimer les workflows : leurs `folderId` sont remis
+ * à null (ils repassent en « Sans dossier »).
+ */
+export async function deleteFolder(uid: string, id: string): Promise<void> {
+  const members = await getDocs(query(col(uid), where('folderId', '==', id)))
+  await Promise.all(members.docs.map((d) => updateDoc(d.ref, { folderId: null, updatedAt: Date.now() })))
+  await deleteDoc(doc(folderCol(uid), id))
 }
 
 export function newWorkflow(uid: string): Workflow {
