@@ -51,11 +51,23 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
   }
 
   // Suggestions « graphiques » du champ de recherche (combobox).
+  // Classement par pertinence : nom qui COMMENCE par la requête > nom qui CONTIENT
+  // > hint qui contient (en dernier, pour éviter les faux positifs ex. « mat » dans « format »).
   const flatMatches = useMemo(() => {
     const q = funcQuery.trim().toLowerCase()
     if (!q) return []
     const pool = activeCat ? GSHEETS_FUNCTIONS.filter((f) => f.cat === activeCat) : GSHEETS_FUNCTIONS
-    return pool.filter((f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q)).slice(0, 10)
+    const scored: { f: (typeof pool)[number]; score: number }[] = []
+    for (const f of pool) {
+      const name = f.name.toLowerCase()
+      let score = -1
+      if (name.startsWith(q)) score = 0
+      else if (name.includes(q)) score = 1
+      else if (f.hint.toLowerCase().includes(q)) score = 2
+      if (score >= 0) scored.push({ f, score })
+    }
+    scored.sort((a, b) => a.score - b.score || a.f.name.localeCompare(b.f.name))
+    return scored.slice(0, 10).map((s) => s.f)
   }, [funcQuery, activeCat])
 
   const filteredGroups = useMemo(() => {
@@ -76,7 +88,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
       onClick={onClose}
     >
       <div
-        className="w-[1000px] max-w-[97vw] max-h-[90vh] bg-surface-2 border border-neutral-800 rounded-xl shadow-2xl flex flex-col overflow-hidden"
+        className="w-[1000px] max-w-[97vw] h-[90vh] bg-surface-2 border border-neutral-800 rounded-xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 shrink-0">
@@ -94,9 +106,9 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
           </button>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-auto p-4 space-y-5">
+        <div className="flex-1 min-h-0 overflow-hidden p-4 flex flex-col gap-4">
           {/* Haut : éditeur (gauche) + modèles & colonnes (droite) */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+          <div className="shrink-0 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 max-h-[45%] overflow-auto">
             <div className="min-w-0">
               <h4 className="uppercase tracking-wider text-neutral-500 text-[11px] mb-2">Colonnes</h4>
               <GSheetsFormulaColumns value={value} onChange={onChange} columns={columns} />
@@ -150,9 +162,9 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
             </aside>
           </div>
 
-          {/* Bas : fonctions sur toute la largeur, en colonnes (peu de scroll) */}
-          <div className="border-t border-neutral-800 pt-3">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {/* Bas : fonctions sur toute la largeur, en colonnes (remplit la hauteur) */}
+          <div className="flex-1 min-h-0 flex flex-col border-t border-neutral-800 pt-3">
+            <div className="shrink-0 flex items-center gap-2 mb-2 flex-wrap">
               <h4 className="uppercase tracking-wider text-neutral-500 text-[11px]">
                 Fonctions Google Sheets ({GSHEETS_FUNCTIONS.length})
               </h4>
@@ -222,6 +234,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                 )}
               </div>
             </div>
+            <div className="flex-1 min-h-0 overflow-auto pr-1">
             {filteredGroups.length === 0 ? (
               <p className="text-neutral-600 italic text-[10px]">Aucune fonction</p>
             ) : (
@@ -251,6 +264,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
 
