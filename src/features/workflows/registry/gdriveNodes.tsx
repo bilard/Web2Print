@@ -10,6 +10,7 @@ import {
   Folder,
   FolderSearch,
   X,
+  Maximize2,
 } from 'lucide-react'
 import { httpsCallable } from 'firebase/functions'
 import { nodeRegistry } from './index'
@@ -31,6 +32,7 @@ import {
 } from '@/features/gdrive/gdriveCore'
 import { GDrivePickerModal } from '@/features/gdrive/GDrivePickerModal'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
+import { GSheetsFormulaModal } from './GSheetsFormulaModal'
 import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 
 /**
@@ -384,6 +386,7 @@ function GSheetsExportConfigUi({
   onChange: (next: GSheetsExportConfig) => void
   availableColumns?: string[]
 }) {
+  const [formulaModal, setFormulaModal] = useState(false)
   const hasId = !!config.spreadsheetId?.trim()
   // « Mettre à jour » n'a de sens qu'avec un fichier cible : sans URL/ID, l'option
   // est grisée et l'affichage retombe sur « Créer » (le run crée de toute façon).
@@ -462,15 +465,33 @@ function GSheetsExportConfigUi({
       )}
 
       <div className="pt-2 border-t border-neutral-800">
-        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 block">
-          Colonnes formule (Google Sheets)
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+            Colonnes formule (Google Sheets)
+          </label>
+          <button
+            type="button"
+            onClick={() => setFormulaModal(true)}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+            title="Gérer dans une fenêtre plus confortable"
+          >
+            <Maximize2 className="w-3 h-3" /> Agrandir
+          </button>
+        </div>
         <GSheetsFormulaColumns
           value={config.formulaColumns ?? ''}
           onChange={(v) => onChange({ ...config, formulaColumns: v })}
           columns={availableColumns}
         />
       </div>
+      {formulaModal && (
+        <GSheetsFormulaModal
+          value={config.formulaColumns ?? ''}
+          onChange={(v) => onChange({ ...config, formulaColumns: v })}
+          columns={availableColumns}
+          onClose={() => setFormulaModal(false)}
+        />
+      )}
     </div>
   )
 }
