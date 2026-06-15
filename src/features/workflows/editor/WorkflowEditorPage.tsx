@@ -97,6 +97,16 @@ export function WorkflowEditorPage() {
     }
   }
   const stop = () => ac?.abort()
+  // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
+  const saveNow = async () => {
+    if (!uid) return
+    try {
+      await saveWorkflow(uid, wf)
+      notify.success('Workflow enregistré', `« ${wf.name} » a bien été sauvegardé.`)
+    } catch (e) {
+      notify.error("Échec de l'enregistrement", e instanceof Error ? e.message : String(e))
+    }
+  }
 
   return (
     <ReactFlowProvider>
@@ -174,9 +184,10 @@ export function WorkflowEditorPage() {
           )}
           {canEdit && (
             <button
-              onClick={() => uid && saveWorkflow(uid, wf)}
+              onClick={() => void saveNow()}
               className="p-2 hover:bg-neutral-800 rounded"
               aria-label="Save"
+              title="Enregistrer le workflow"
             >
               <Save className="w-4 h-4" />
             </button>

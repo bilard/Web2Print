@@ -344,7 +344,10 @@ function GSheetsExportConfigUi({
   config: GSheetsExportConfig
   onChange: (next: GSheetsExportConfig) => void
 }) {
-  const mode = config.mode ?? 'create'
+  const hasId = !!config.spreadsheetId?.trim()
+  // « Mettre à jour » n'a de sens qu'avec un fichier cible : sans URL/ID, l'option
+  // est grisée et l'affichage retombe sur « Créer » (le run crée de toute façon).
+  const mode = (config.mode ?? 'create') === 'update' && hasId ? 'update' : 'create'
   return (
     <div className="space-y-3">
       <div>
@@ -357,27 +360,32 @@ function GSheetsExportConfigUi({
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
         >
           <option value="create">Créer un nouveau fichier</option>
-          <option value="update">Mettre à jour le même fichier</option>
+          <option value="update" disabled={!hasId}>
+            Mettre à jour le même fichier{!hasId ? ' — renseignez l’URL ci-dessous' : ''}
+          </option>
         </select>
       </div>
-      {mode === 'update' ? (
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-            URL ou ID du Google Sheet à mettre à jour
-          </label>
-          <input
-            type="text"
-            value={config.spreadsheetId ?? ''}
-            onChange={(e) => onChange({ ...config, spreadsheetId: e.target.value })}
-            className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-            placeholder="https://docs.google.com/spreadsheets/d/…"
-          />
-          <p className="text-[10px] text-neutral-600 leading-snug mt-1">
-            Le fichier doit avoir été créé par l'app (lance une fois en « Créer », puis colle ici son
-            lien). Son contenu est remplacé à chaque exécution.
-          </p>
-        </div>
-      ) : (
+
+      {/* URL/ID toujours visible : c'est lui qui débloque le mode « Mettre à jour ». */}
+      <div>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+          URL ou ID du Google Sheet à réutiliser (optionnel)
+        </label>
+        <input
+          type="text"
+          value={config.spreadsheetId ?? ''}
+          onChange={(e) => onChange({ ...config, spreadsheetId: e.target.value })}
+          className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+          placeholder="https://docs.google.com/spreadsheets/d/…"
+        />
+        <p className="text-[10px] text-neutral-600 leading-snug mt-1">
+          Collez le lien d'un Google Sheets créé par l'app pour réécrire son contenu à chaque
+          exécution. Laissez vide pour créer un nouveau fichier.
+        </p>
+      </div>
+
+      {/* Nom + dossier : seulement quand on crée un nouveau fichier. */}
+      {mode === 'create' && (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
