@@ -150,7 +150,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         urls:
           'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi\n' +
           'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
-        maxProducts: 40,
+        maxProducts: 25,
       }),
       node('n2', 'compare-prices', 460, 200, {
         keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',

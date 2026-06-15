@@ -38,9 +38,17 @@ function slug(s: string): string {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'site'
 }
 
-/** Normalise un nom pour servir de clé de repli (insensible casse/espaces/ponctuation). */
+/** Normalise un nom pour servir de clé de repli (insensible casse/accents/espaces/
+ *  ponctuation). NFD avant de retirer les diacritiques : « électrique » et
+ *  « Electrique » doivent produire la même clé entre deux sites. */
 function normName(s: string): string {
-  return String(s).toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '').trim()
+  return String(s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 interface Group {

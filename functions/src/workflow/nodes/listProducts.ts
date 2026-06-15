@@ -14,6 +14,19 @@ interface ExtractedProduct {
   ean?: unknown
   price?: unknown
   url?: unknown
+  image?: unknown
+}
+
+/** EAN robuste : l'EAN s'il fait 13 chiffres, sinon premier nombre de 13 chiffres
+ *  trouvé dans l'image (Jardiland le cache dans le chemin image), puis l'URL, puis le nom. */
+function resolveEan(ean: unknown, image: unknown, url: unknown, name: unknown): string {
+  const clean = String(ean ?? '').replace(/\D/g, '')
+  if (clean.length === 13) return clean
+  for (const src of [image, url, name]) {
+    const m = String(src ?? '').match(/\d{13}/)
+    if (m) return m[0]
+  }
+  return ''
 }
 
 const COLUMNS = [
@@ -83,7 +96,8 @@ registerServerNode({
         'name (intitulé complet), brand (marque ou ""), ean (code EAN à 13 chiffres s’il apparaît dans l’URL ' +
         'de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image, sinon ""), ' +
         'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends le prix promo), ' +
-        'url (lien absolu de la fiche). Sois concis.\n\n--- CONTENU ---\n' +
+        'url (lien absolu de la fiche), image (URL absolue de l’image — son chemin contient souvent ' +
+        'l’EAN même quand l’URL fiche ne l’a pas). Sois concis.\n\n--- CONTENU ---\n' +
         content.slice(0, 28000)
       let products: ExtractedProduct[] = []
       try {
@@ -104,7 +118,7 @@ registerServerNode({
           site,
           name: String(p.name ?? '').trim(),
           brand: String(p.brand ?? '').trim(),
-          ean: String(p.ean ?? '').replace(/\D/g, '').slice(0, 13),
+          ean: resolveEan(p.ean, p.image, p.url, p.name),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
           url: String(p.url ?? '').trim(),
         })

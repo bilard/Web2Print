@@ -57,4 +57,14 @@ describe('pivotCompare', () => {
     expect(compared).toBe(1)
     expect(out[0]).toMatchObject({ prix_a_com: '100', prix_b_com: '120', moins_cher: 'a.com' })
   })
+
+  it('le repli par nom ignore les accents (« électrique » = « Electrique »)', () => {
+    const accents = [
+      { site: 'a.com', name: 'Tondeuse électrique', ean: '', price: '100' },
+      { site: 'b.com', name: 'Tondeuse Electrique', ean: '', price: '90' },
+    ]
+    const { compared, rows: out } = pivotCompare(accents, FIELDS)
+    expect(compared).toBe(1)
+    expect(out[0].moins_cher).toBe('b.com')
+  })
 })

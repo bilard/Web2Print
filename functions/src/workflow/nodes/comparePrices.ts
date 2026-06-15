@@ -12,7 +12,14 @@ function slug(s: string): string {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'site'
 }
 function normName(s: string): string {
-  return String(s).toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '').trim()
+  // NFD + retrait des diacritiques : « électrique » et « Electrique » → même clé.
+  return String(s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v

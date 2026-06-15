@@ -34,6 +34,7 @@ const ExtractedSchema = z.object({
       ean: z.string(),
       price: z.number(),
       url: z.string(),
+      image: z.string(),
     }),
   ),
 })
@@ -52,13 +53,27 @@ const EXTRACTED_SCHEMA_FOR_LLM = {
           ean: { type: 'string', description: 'Code EAN à 13 chiffres si visible (souvent dans l’URL de la fiche ou le nom de fichier image), sinon "".' },
           price: { type: 'number', description: 'Prix de vente ACTUEL en euros (si prix barré + promo, prendre le prix promo). 0 si illisible.' },
           url: { type: 'string', description: 'URL absolue de la fiche produit.' },
+          image: { type: 'string', description: 'URL absolue de l’image du produit (souvent porteuse de l’EAN dans son chemin).' },
         },
-        required: ['name', 'brand', 'ean', 'price', 'url'],
+        required: ['name', 'brand', 'ean', 'price', 'url', 'image'],
       },
     },
   },
   required: ['products'],
 } as const
+
+/** EAN robuste : l'EAN renvoyé s'il fait 13 chiffres, sinon premier nombre de
+ *  13 chiffres trouvé dans l'image (Jardiland le cache dans le chemin image),
+ *  puis l'URL fiche (Castorama : « 4892210822604_CAFR.prd »), puis le nom. */
+export function resolveEan(ean: string, image: string, url: string, name: string): string {
+  const clean = (ean ?? '').replace(/\D/g, '')
+  if (clean.length === 13) return clean
+  for (const src of [image, url, name]) {
+    const m = String(src ?? '').match(/\d{13}/)
+    if (m) return m[0]
+  }
+  return ''
+}
 
 const COLUMNS: ExcelColumn[] = [
   { key: 'site', label: 'Site', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 160 },
@@ -159,7 +174,8 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
             'Pour chaque produit : name = intitulé complet ; brand = marque ; ean = code EAN à 13 chiffres ' +
             's’il apparaît dans l’URL de la fiche (ex : « 4892210822604_CAFR.prd ») ou le nom de fichier image, sinon "" ; ' +
             'price = prix de vente ACTUEL en euros (s’il y a un prix barré et un prix promo, prends le prix promo, pas le barré) ; ' +
-            'url = lien absolu de la fiche produit.\n\n' +
+            'url = lien absolu de la fiche produit ; image = URL absolue de l’image du produit ' +
+            '(son chemin contient souvent l’EAN même quand l’URL fiche ne l’a pas).\n\n' +
             `## CONTENU\n${context}`,
           schema: ExtractedSchema,
           schemaForLLM: EXTRACTED_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
@@ -178,7 +194,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
           site,
           name: (p.name ?? '').trim(),
           brand: (p.brand ?? '').trim(),
-          ean: (p.ean ?? '').replace(/\D/g, '').slice(0, 13),
+          ean: resolveEan(p.ean ?? '', p.image ?? '', p.url ?? '', p.name ?? ''),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
           url: (p.url ?? '').trim(),
         } as ExcelRow)
