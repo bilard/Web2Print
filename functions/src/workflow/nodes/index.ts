@@ -4,6 +4,8 @@ import './network'
 import './sinks'
 import './priceWatch'
 import './priceWatchTrack'
+import './listProducts'
+import './comparePrices'
 import './google'
 
 /** Types présents côté client mais non exécutables côté serveur (navigateur/OAuth/canvas). */

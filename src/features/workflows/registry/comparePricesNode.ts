@@ -173,7 +173,7 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',
     priceColumn: 'price', labelColumn: 'name', onlyCommon: true,
   },
-  runtime: 'client',
+  runtime: 'any',
   run: async (ctx, config, inputs) => {
     const rows = Array.isArray(inputs.sheet?.rows) ? inputs.sheet!.rows! : []
     if (rows.length === 0) {

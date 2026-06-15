@@ -113,7 +113,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     },
   ],
   defaultConfig: { urls: '', maxProducts: 40 },
-  runtime: 'client',
+  runtime: 'any',
   run: async (ctx, config) => {
     const urls = parseUrls(config.urls)
     if (urls.length === 0) {

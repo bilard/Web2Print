@@ -8,8 +8,22 @@ async function jinaHeaders(uid: string): Promise<Record<string, string>> {
   return h
 }
 
-export async function jinaRead(uid: string, url: string): Promise<{ title: string; content: string }> {
-  const res = await fetch(`https://r.jina.ai/${url}`, { headers: await jinaHeaders(uid) })
+export async function jinaRead(
+  uid: string,
+  url: string,
+  opts: { listing?: boolean } = {},
+): Promise<{ title: string; content: string }> {
+  const headers = await jinaHeaders(uid)
+  // Mode `listing` : page catégorie/recherche en lazy-load → forcer le moteur
+  // navigateur (Puppeteer headless Jina) + attendre la grille produit + timeout
+  // long. Aligné sur le `jinaRead({ listing })` client (useJina.ts).
+  if (opts.listing) {
+    headers['X-Engine'] = 'browser'
+    headers['X-Timeout'] = '30'
+    headers['X-Wait-For-Selector'] =
+      'a[href*="/product" i], a[href*="/produit" i], [class*="product" i], [class*="card" i], main'
+  }
+  const res = await fetch(`https://r.jina.ai/${url}`, { headers })
   if (!res.ok) throw new Error(`Jina read ${res.status}`)
   const json = (await res.json()) as { data?: { title?: string; content?: string } }
   return { title: json.data?.title ?? '', content: json.data?.content ?? '' }

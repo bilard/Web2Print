@@ -137,6 +137,30 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'sheet', 'n3', 'sheet')],
   },
   {
+    id: 'price-compare-daily-gsheets',
+    name: 'Comparaison de prix quotidienne → Google Sheets',
+    description:
+      'Chaque jour (cron serveur), lit deux pages liste (source + cible), extrait les produits, ' +
+      'les apparie par EAN et écrit le tableau comparatif dans un Google Sheet. ' +
+      'Tourne en headless après connexion « Google — accès serveur » (Paramètres → Connecteurs).',
+    emoji: '🗓️',
+    nodes: [
+      node('n0', 'cron', 80, 40, { enabled: false, every: 1, unit: 'day', atTime: '08:00', weekday: 1 }),
+      node('n1', 'list-products', 80, 200, {
+        urls:
+          'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi\n' +
+          'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+        maxProducts: 40,
+      }),
+      node('n2', 'compare-prices', 460, 200, {
+        keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',
+        priceColumn: 'price', labelColumn: 'name', onlyCommon: true,
+      }),
+      node('n3', 'gsheets-export', 840, 200, { name: 'Comparaison prix Ryobi', parentFolderId: '' }),
+    ],
+    edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'sheet', 'n3', 'sheet')],
+  },
+  {
     id: 'web-research-excel',
     name: 'Recherche web → Excel',
     description:
