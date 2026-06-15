@@ -56,6 +56,12 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
    * Optionnel : si absent, un mapping par type prend le relais (cf. `connectorsForType`).
    */
   connectors?: string[]
+  /**
+   * Résumé court dérivé de la config courante, affiché sous le titre de la carte
+   * (ex. planning d'un node cron). Recalculé à chaque édition de la config.
+   * Retourner une chaîne vide pour ne rien afficher.
+   */
+  cardSummary?: (config: C) => string
   run: (ctx: RunContextApi, config: C, inputs: I) => Promise<O>
   ConfigComponent?: ComponentType<{
     config: C

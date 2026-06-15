@@ -10,7 +10,7 @@ import { isCompatible } from '../../runtime/ports'
 import { executeWorkflow } from '../../runtime/executor'
 import { useWorkflowStore } from '../../persistence/workflow.store'
 import { useCan } from '@/features/access/useAccess'
-import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play, Square } from 'lucide-react'
 import type { NodeSpec, Port } from '../../types'
 
 interface ExportPayload {
@@ -178,6 +178,8 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
   const isRunning = useRunContext((s) => s.isRunning)
   const canRun = useCan('workflows.run')
+  // Config live du node (réactive) — alimente `spec.cardSummary` (ex. planning cron).
+  const liveConfig = useWorkflowStore((s) => s.current?.nodes.find((n) => n.id === id)?.config)
   const runOutputs = useRunContext((s) => s.nodeStates[id]?.outputs)
   const exportResult = useMemo(
     () => (status === 'success' ? findExportResult(runOutputs) : null),
@@ -198,6 +200,14 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const Icon = spec.icon
   const cat = CATEGORY_STYLES[spec.category]
   const connectors = connectorsForSpec(spec)
+  let cardSummary: string | null = null
+  if (spec.cardSummary) {
+    try {
+      cardSummary = spec.cardSummary(liveConfig) || null
+    } catch {
+      cardSummary = null
+    }
+  }
   const inputs = spec.inputs ?? []
   const outputs = spec.outputs ?? []
   const portRows = Math.max(inputs.length, outputs.length, 1)
@@ -243,6 +253,16 @@ export function BaseNode({ id, data, selected }: NodeProps) {
             </div>
           ) : null}
 
+          {/* Résumé de config (ex. planning cron) — réactif à l'édition */}
+          {cardSummary ? (
+            <span
+              className="mt-1 text-[9px] text-neutral-400 text-center leading-tight max-w-[112px] truncate"
+              title={cardSummary}
+            >
+              {cardSummary}
+            </span>
+          ) : null}
+
           {/* Download button — appears when an export-result is available */}
           {exportResult ? (
             <button
@@ -263,21 +283,37 @@ export function BaseNode({ id, data, selected }: NodeProps) {
         {/* Status dot */}
         {STATUS_DOT[status]}
 
-        {/* Bouton RUN par carte — exécute ce node + tout son aval (amont supposé en cache) */}
-        {canRun && !isRunning ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              const wf = useWorkflowStore.getState().current
-              if (wf) void executeWorkflow(wf, { fromNodeId: id })
-            }}
-            className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-            title="Exécuter depuis ce node (lui + tout l'aval)"
-            aria-label="Exécuter depuis ce node"
-          >
-            <Play className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
-          </button>
+        {/* Bouton RUN par carte — exécute ce node + tout son aval (amont supposé en cache).
+            Pendant un run, le bouton devient STOP et interrompt le flux. */}
+        {canRun ? (
+          isRunning ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                useRunContext.getState().abortController?.abort()
+              }}
+              className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-500 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+              title="Arrêter le flux en cours"
+              aria-label="Arrêter le flux"
+            >
+              <Square className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                const wf = useWorkflowStore.getState().current
+                if (wf) void executeWorkflow(wf, { fromNodeId: id })
+              }}
+              className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+              title="Exécuter depuis ce node (lui + tout l'aval)"
+              aria-label="Exécuter depuis ce node"
+            >
+              <Play className="w-2.5 h-2.5 text-[#fff] fill-[#fff]" />
+            </button>
+          )
         ) : null}
       </div>
 

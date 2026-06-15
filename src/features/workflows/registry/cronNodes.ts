@@ -51,6 +51,8 @@ const cronNode: NodeSpec<CronConfig, Record<string, never>, { tick: { at: string
     },
   ],
   defaultConfig: { enabled: false, every: 1, unit: 'day', atTime: '09:00', weekday: 1 },
+  // Résumé du planning affiché directement sur la carte (préfixe ⏸ si inactif).
+  cardSummary: (config) => `${config.enabled ? '' : '⏸ '}${describeCron(config)}`,
   runtime: 'server',
   run: async (ctx, config) => {
     const at = new Date().toISOString()
