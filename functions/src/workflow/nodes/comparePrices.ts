@@ -1,25 +1,34 @@
 // functions/src/workflow/nodes/comparePrices.ts
 // Jumeau SERVEUR (headless) du node client « Comparer les prix »
-// (src/features/workflows/registry/comparePricesNode.ts). Logique de pivot PURE
-// dupliquée (le serveur ne peut pas importer src/, comme priceWatchTrack). Mêmes
-// clés de config et même forme de sortie { sheet: { columns, rows } } pour rester
-// wire-compatible avec gsheets-export / send-telegram en aval.
+// (src/features/workflows/registry/comparePricesNode.ts). Logique dupliquée (le
+// serveur ne peut pas importer src/). Deux entrées : source + concurrents. Sortie
+// ANCRÉE SOURCE (tous les produits source conservés). Appariement EAN → code
+// modèle → nom normalisé. Sortie { sheet: { columns, rows } } pour gsheets-export.
 import { registerServerNode } from '../registry'
 
 interface SheetLike { rows?: Record<string, unknown>[]; [k: string]: unknown }
+interface Cfg {
+  nameColumn: string; priceColumn: string; eanColumn: string
+  referenceColumn: string; siteColumn: string; onlyMatched: boolean
+}
 
 function slug(s: string): string {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'site'
 }
 function normName(s: string): string {
-  // NFD + retrait des diacritiques : « électrique » et « Electrique » → même clé.
-  return String(s)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9 ]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+function extractReference(name: string): string {
+  const tokens = String(name).toUpperCase().match(/[A-Z0-9][A-Z0-9-]{4,}/g) ?? []
+  let best = ''
+  for (const raw of tokens) {
+    const t = raw.replace(/-/g, '')
+    const letters = (t.match(/[A-Z]/g) ?? []).length
+    const digits = (t.match(/\d/g) ?? []).length
+    if (t.length >= 6 && t.length <= 24 && letters >= 2 && digits >= 2 && t.length > best.length) best = t
+  }
+  return best
 }
 function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
@@ -27,85 +36,116 @@ function parsePrice(v: unknown): number {
   const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
   return cleaned ? parseFloat(cleaned) : NaN
 }
+function keysOf(row: Record<string, unknown>, c: Cfg) {
+  const nameVal = String(row[c.nameColumn] ?? '')
+  return {
+    ean: String(row[c.eanColumn] ?? '').replace(/\D/g, '').slice(0, 13),
+    ref: (c.referenceColumn && String(row[c.referenceColumn] ?? '')) || extractReference(nameVal),
+    name: normName(nameVal),
+  }
+}
 
-interface Group { key: string; label: string; ean: string; prices: Map<string, number> }
+interface CMatch { site: string; price: number }
 
 registerServerNode({
   type: 'compare-prices',
   run: async (ctx, config, inputs) => {
-    const sheet = (inputs.sheet ?? { rows: [] }) as SheetLike
-    const rows = Array.isArray(sheet.rows) ? sheet.rows : []
-    if (rows.length === 0) {
-      ctx.log('warn', 'Aucune ligne en entrée.')
+    const c = config as unknown as Cfg
+    const cfg: Cfg = {
+      nameColumn: c.nameColumn || 'name', priceColumn: c.priceColumn || 'price',
+      eanColumn: c.eanColumn || 'ean', referenceColumn: c.referenceColumn || '',
+      siteColumn: c.siteColumn || 'site', onlyMatched: c.onlyMatched === true,
+    }
+    const sourceRows = (((inputs.source ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
+    const competitorRows = (((inputs.concurrents ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
+    if (sourceRows.length === 0) {
+      ctx.log('warn', 'Aucun produit source (port « source »).')
       return { sheet: { columns: [], rows: [] } }
     }
-    const keyColumn = String(config.keyColumn ?? 'ean')
-    const fallbackKeyColumn = String(config.fallbackKeyColumn ?? 'name')
-    const siteColumn = String(config.siteColumn ?? 'site')
-    const priceColumn = String(config.priceColumn ?? 'price')
-    const labelColumn = String(config.labelColumn ?? 'name')
-    const onlyCommon = config.onlyCommon !== false
 
-    const sites: string[] = []
-    const groups = new Map<string, Group>()
-    for (const row of rows) {
-      const eanRaw = String(row[keyColumn] ?? '').replace(/\D/g, '')
-      const labelRaw = String(row[labelColumn] ?? row[fallbackKeyColumn] ?? '').trim()
-      const key = eanRaw || normName(String(row[fallbackKeyColumn] ?? labelRaw))
-      if (!key) continue
-      const site = String(row[siteColumn] ?? '').trim() || 'site'
-      const price = parsePrice(row[priceColumn])
-      if (!sites.includes(site)) sites.push(site)
-
-      let g = groups.get(key)
-      if (!g) { g = { key, label: labelRaw || key, ean: eanRaw, prices: new Map() }; groups.set(key, g) }
-      if (labelRaw.length > g.label.length) g.label = labelRaw
-      if (eanRaw && !g.ean) g.ean = eanRaw
-      if (Number.isFinite(price) && price > 0) {
-        const prev = g.prices.get(site)
-        if (prev === undefined || price < prev) g.prices.set(site, price)
-      }
+    const compSites: string[] = []
+    const byEan = new Map<string, CMatch[]>()
+    const byRef = new Map<string, CMatch[]>()
+    const byName = new Map<string, CMatch[]>()
+    const push = (m: Map<string, CMatch[]>, key: string, site: string, price: number) => {
+      if (!key) return
+      const list = m.get(key) ?? []
+      const found = list.find((x) => x.site === site)
+      if (found) { if (price < found.price) found.price = price }
+      else list.push({ site, price })
+      m.set(key, list)
+    }
+    for (const row of competitorRows) {
+      const site = String(row[cfg.siteColumn] ?? '').trim() || 'concurrent'
+      const price = parsePrice(row[cfg.priceColumn])
+      if (!compSites.includes(site)) compSites.push(site)
+      if (!(Number.isFinite(price) && price > 0)) continue
+      const k = keysOf(row, cfg)
+      push(byEan, k.ean, site, price)
+      push(byRef, k.ref, site, price)
+      push(byName, k.name, site, price)
     }
 
-    const priceCols = sites.map((s) => ({ site: s, key: `prix_${slug(s)}` }))
+    const priceCols = compSites.map((s) => ({ site: s, key: `prix_${slug(s)}` }))
     const columns = [
       { key: 'produit', label: 'Produit' },
+      { key: 'reference', label: 'Réf.' },
       { key: 'ean', label: 'EAN' },
-      ...priceCols.map((c) => ({ key: c.key, label: `Prix ${c.site}` })),
+      { key: 'source', label: 'Source' },
+      { key: 'prix_source', label: 'Prix source' },
+      ...priceCols.map((p) => ({ key: p.key, label: `Prix ${p.site}` })),
+      { key: 'meilleur_concurrent', label: 'Concurrent le moins cher' },
+      { key: 'prix_concurrent', label: 'Prix concurrent' },
       { key: 'ecart_eur', label: 'Écart €' },
       { key: 'ecart_pct', label: 'Écart %' },
-      { key: 'moins_cher', label: 'Moins cher' },
+      { key: 'position', label: 'Position' },
     ]
 
     const out: Record<string, unknown>[] = []
     let id = 0
-    let compared = 0
-    for (const g of groups.values()) {
-      if (onlyCommon && g.prices.size < 2) continue
-      const row: Record<string, unknown> = { _id: `cmp_${id++}`, produit: g.label, ean: g.ean }
-      for (const c of priceCols) {
-        const p = g.prices.get(c.site)
-        row[c.key] = p !== undefined ? String(p) : ''
-      }
-      const priced = [...g.prices.entries()]
-      if (priced.length >= 2) {
-        let lo = priced[0], hi = priced[0]
-        for (const e of priced) { if (e[1] < lo[1]) lo = e; if (e[1] > hi[1]) hi = e }
-        const ecart = Math.round((hi[1] - lo[1]) * 100) / 100
-        row.ecart_eur = String(ecart)
-        row.ecart_pct = lo[1] > 0 ? String(Math.round((ecart / lo[1]) * 1000) / 10) : ''
-        row.moins_cher = ecart > 0 ? lo[0] : 'égalité'
-        compared++
-      } else {
-        row.ecart_eur = ''
-        row.ecart_pct = ''
-        row.moins_cher = priced.length === 1 ? `seul ${priced[0][0]}` : ''
-      }
-      out.push(row)
-    }
-    out.sort((a, b) => (Number(b.ecart_pct) || 0) - (Number(a.ecart_pct) || 0))
+    let matched = 0
+    for (const row of sourceRows) {
+      const k = keysOf(row, cfg)
+      const nameVal = String(row[cfg.nameColumn] ?? '').trim()
+      const sourceSite = String(row[cfg.siteColumn] ?? '').trim() || 'source'
+      const srcPrice = parsePrice(row[cfg.priceColumn])
+      const comp = (k.ean && byEan.get(k.ean)) || (k.ref && byRef.get(k.ref)) || (k.name && byName.get(k.name)) || []
 
-    ctx.log('info', `${out.length} produit(s) — ${compared} comparable(s) sur ${sites.length} site(s) : ${sites.join(', ')}.`)
+      const r: Record<string, unknown> = {
+        _id: `cmp_${id++}`, produit: nameVal, reference: k.ref, ean: k.ean,
+        source: sourceSite, prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
+      }
+      const bySite = new Map<string, number>()
+      for (const m of comp) {
+        const prev = bySite.get(m.site)
+        if (prev === undefined || m.price < prev) bySite.set(m.site, m.price)
+      }
+      for (const pc of priceCols) {
+        const p = bySite.get(pc.site)
+        r[pc.key] = p !== undefined ? String(p) : ''
+      }
+      if (bySite.size > 0) {
+        matched++
+        let best: [string, number] | null = null
+        for (const e of bySite.entries()) if (!best || e[1] < best[1]) best = e
+        r.meilleur_concurrent = best![0]
+        r.prix_concurrent = String(best![1])
+        if (Number.isFinite(srcPrice) && srcPrice > 0) {
+          const ecart = Math.round((srcPrice - best![1]) * 100) / 100
+          r.ecart_eur = String(ecart)
+          r.ecart_pct = best![1] > 0 ? String(Math.round((ecart / best![1]) * 1000) / 10) : ''
+          r.position = ecart > 0 ? 'plus cher' : ecart < 0 ? 'moins cher' : 'égalité'
+        } else { r.ecart_eur = ''; r.ecart_pct = ''; r.position = '' }
+      } else {
+        r.meilleur_concurrent = ''; r.prix_concurrent = ''
+        r.ecart_eur = ''; r.ecart_pct = ''; r.position = 'non trouvé'
+      }
+      if (cfg.onlyMatched && bySite.size === 0) continue
+      out.push(r)
+    }
+    out.sort((a, b) => (Number(b.ecart_pct) || -1e9) - (Number(a.ecart_pct) || -1e9))
+
+    ctx.log('info', `${out.length} produit(s) source — ${matched} apparié(s) chez ${compSites.length} concurrent(s) : ${compSites.join(', ') || '—'}.`)
     return { sheet: { columns, rows: out } }
   },
 })

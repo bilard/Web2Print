@@ -1,70 +1,68 @@
 // src/features/workflows/registry/comparePricesNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { pivotCompare, type CompareFields } from './comparePricesNode'
+import { compareSourceToCompetitors, extractReference, normName } from './comparePricesNode'
 
-const FIELDS: CompareFields = {
-  keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',
-  priceColumn: 'price', labelColumn: 'name', onlyCommon: true,
+const CFG = {
+  nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
+  referenceColumn: '', siteColumn: 'site', onlyMatched: false,
 }
 
-describe('pivotCompare', () => {
-  const rows = [
-    { site: 'jardiland.com', name: 'Tondeuse RLM18E40H', ean: '4892210822604', price: '208,99 €' },
-    { site: 'castorama.fr', name: 'Tondeuse RLM18E40H 1800W 40cm', ean: '4892210822604', price: '208,99' },
-    { site: 'jardiland.com', name: 'Tondeuse RLM15E36H', ean: '4892210822567', price: '169,00 €' },
-    { site: 'castorama.fr', name: 'Tondeuse RLM15E36H 1500W', ean: '4892210822567', price: '149,99' },
-    { site: 'jardiland.com', name: 'Produit unique', ean: '0000000000001', price: '50' },
+describe('extractReference', () => {
+  it('déduit le code modèle et ignore les unités', () => {
+    expect(extractReference('Tondeuse Electrique RYOBI RLM18E40H 1800W 40cm de coupe')).toBe('RLM18E40H')
+    expect(extractReference('Tondeuse RYOBI 36V RY36LMXSP53A-160')).toBe('RY36LMXSP53A160')
+    expect(extractReference('Tondeuse électrique 1800 W 40 cm')).toBe('') // pas de vrai code
+  })
+})
+
+describe('normName', () => {
+  it('ignore casse et accents', () => {
+    expect(normName('Tondeuse électrique')).toBe(normName('Tondeuse Electrique'))
+  })
+})
+
+describe('compareSourceToCompetitors', () => {
+  const source = [
+    { site: 'jardiland.com', name: 'Tondeuse électrique RLM18E40H 1800W', ean: '4892210822604', price: '208,99 €' },
+    { site: 'jardiland.com', name: 'Tondeuse RLM15E36H 1500W', ean: '', price: '169,00 €' },
+    { site: 'jardiland.com', name: 'Produit exclusif Jardiland', ean: '', price: '99,00 €' },
+  ]
+  const competitors = [
+    { site: 'castorama.fr', name: 'Tondeuse Electrique RYOBI RLM18E40H 1800W 40cm', ean: '4892210822604', price: '208,99' },
+    { site: 'castorama.fr', name: 'Tondeuse RYOBI RLM15E36H 1500W coupe 36cm', ean: '', price: '149,99' },
   ]
 
-  it('apparie par EAN et calcule l’écart €/% + le moins cher', () => {
-    const { rows: out, sites, compared } = pivotCompare(rows, FIELDS)
-    expect(sites).toEqual(['jardiland.com', 'castorama.fr'])
-    expect(compared).toBe(2)
-    // onlyCommon → le produit présent sur un seul site est exclu
-    expect(out).toHaveLength(2)
-    // Tri par écart % décroissant → RLM15E36H (169 vs 149,99) en tête
-    expect(out[0]).toMatchObject({
-      ean: '4892210822567',
-      prix_jardiland_com: '169',
-      prix_castorama_fr: '149.99',
-      ecart_eur: '19.01',
-      moins_cher: 'castorama.fr',
+  it('garde TOUS les produits source, même non appariés', () => {
+    const { rows, matched } = compareSourceToCompetitors(source, competitors, CFG)
+    expect(rows).toHaveLength(3) // les 3 produits source
+    expect(matched).toBe(2)
+    const exclusif = rows.find((r) => r.produit === 'Produit exclusif Jardiland')
+    expect(exclusif).toMatchObject({ position: 'non trouvé', prix_concurrent: '' })
+  })
+
+  it('apparie par EAN et calcule l’écart + position', () => {
+    const { rows } = compareSourceToCompetitors(source, competitors, CFG)
+    const rlm18 = rows.find((r) => r.ean === '4892210822604')!
+    expect(rlm18).toMatchObject({
+      source: 'jardiland.com', prix_source: '208.99',
+      prix_castorama_fr: '208.99', prix_concurrent: '208.99',
+      ecart_eur: '0', position: 'égalité',
     })
-    expect(Number(out[0].ecart_pct)).toBeCloseTo(12.7, 1)
-    // Prix égaux → écart 0, égalité
-    expect(out[1]).toMatchObject({ ean: '4892210822604', ecart_eur: '0', moins_cher: 'égalité' })
   })
 
-  it('conserve le libellé le plus informatif (le plus long)', () => {
-    const { rows: out } = pivotCompare(rows, FIELDS)
-    const rlm18 = out.find((r) => r.ean === '4892210822604')
-    expect(rlm18?.produit).toBe('Tondeuse RLM18E40H 1800W 40cm')
+  it('apparie par CODE MODÈLE quand l’EAN manque (RLM15E36H)', () => {
+    const { rows } = compareSourceToCompetitors(source, competitors, CFG)
+    const rlm15 = rows.find((r) => r.reference === 'RLM15E36H')!
+    expect(rlm15).toMatchObject({
+      prix_source: '169', prix_castorama_fr: '149.99',
+      ecart_eur: '19.01', position: 'plus cher', meilleur_concurrent: 'castorama.fr',
+    })
+    expect(Number(rlm15.ecart_pct)).toBeCloseTo(12.7, 1)
   })
 
-  it('onlyCommon=false garde aussi les produits mono-site', () => {
-    const { rows: out } = pivotCompare(rows, { ...FIELDS, onlyCommon: false })
-    expect(out).toHaveLength(3)
-    const solo = out.find((r) => r.ean === '0000000000001')
-    expect(solo).toMatchObject({ ecart_eur: '', moins_cher: 'seul jardiland.com' })
-  })
-
-  it('repli sur le nom normalisé quand l’EAN est absent', () => {
-    const noEan = [
-      { site: 'a.com', name: 'Tondeuse X', ean: '', price: '100' },
-      { site: 'b.com', name: 'tondeuse  x', ean: '', price: '120' },
-    ]
-    const { rows: out, compared } = pivotCompare(noEan, FIELDS)
-    expect(compared).toBe(1)
-    expect(out[0]).toMatchObject({ prix_a_com: '100', prix_b_com: '120', moins_cher: 'a.com' })
-  })
-
-  it('le repli par nom ignore les accents (« électrique » = « Electrique »)', () => {
-    const accents = [
-      { site: 'a.com', name: 'Tondeuse électrique', ean: '', price: '100' },
-      { site: 'b.com', name: 'Tondeuse Electrique', ean: '', price: '90' },
-    ]
-    const { compared, rows: out } = pivotCompare(accents, FIELDS)
-    expect(compared).toBe(1)
-    expect(out[0].moins_cher).toBe('b.com')
+  it('onlyMatched exclut les produits sans concurrent', () => {
+    const { rows } = compareSourceToCompetitors(source, competitors, { ...CFG, onlyMatched: true })
+    expect(rows).toHaveLength(2)
+    expect(rows.every((r) => r.position !== 'non trouvé')).toBe(true)
   })
 })

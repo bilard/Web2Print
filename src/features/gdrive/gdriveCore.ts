@@ -189,6 +189,41 @@ export async function exportSheetToGoogleSheets(
   })
 }
 
+/** Extrait l'ID d'un Google Sheet depuis une URL collée ou un ID brut. */
+function parseSpreadsheetId(raw: string): string {
+  const s = String(raw ?? '').trim()
+  const m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/) || s.match(/\/d\/([a-zA-Z0-9_-]+)/)
+  return m ? m[1] : s
+}
+
+/** Réécrit le contenu d'un Google Sheets EXISTANT (créé par l'app — scope
+ *  drive.file) via un upload média Drive (XLSX converti). Évite de créer un
+ *  nouveau fichier à chaque exécution. `fileId` accepte une URL ou un ID. */
+export async function updateGoogleSheetById(
+  token: string,
+  fileId: string,
+  sheet: ExcelSheet,
+): Promise<DriveFileMeta> {
+  const id = parseSpreadsheetId(fileId)
+  const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1')
+  const params = new URLSearchParams({ uploadType: 'media', fields: 'id,name,mimeType,webViewLink' })
+  const res = await fetch(`${DRIVE_UPLOAD}/files/${id}?${params}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': XLSX_MIME },
+    body: blob,
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        `Drive : permission refusée (HTTP ${res.status}) — le fichier doit avoir été créé par l'app (scope drive.file). Reconnectez-vous via le panneau Google Drive.`,
+      )
+    }
+    throw new Error(`Drive : mise à jour échouée (HTTP ${res.status}${detail ? ` — ${detail.slice(0, 200)}` : ''})`)
+  }
+  return (await res.json()) as DriveFileMeta
+}
+
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
 /**

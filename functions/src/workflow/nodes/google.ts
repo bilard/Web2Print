@@ -36,6 +36,13 @@ function sheetToCsv(sheet: SheetLike): string {
 // Config client (gdriveNodes.tsx) : { name, parentFolderId, parentFolderName }.
 // In : sheet*. Out : { result: DriveFileMeta }. Le client convertit un XLSX ;
 // côté serveur on uploade le CSV avec conversion Drive → même Google Sheet.
+/** Extrait l'ID d'un Google Sheet depuis une URL collée ou un ID brut. */
+function parseSpreadsheetId(raw: string): string {
+  const s = String(raw ?? '').trim()
+  const m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/) || s.match(/\/d\/([a-zA-Z0-9_-]+)/)
+  return m ? m[1] : s
+}
+
 registerServerNode({
   type: 'gsheets-export',
   run: async (ctx, config, inputs) => {
@@ -46,6 +53,31 @@ registerServerNode({
     const name = String(config.name ?? '').trim() || 'Workflow Export'
     const token = await getGoogleAccessToken(ctx.uid)
     const csv = sheetToCsv(sheet)
+
+    // Mode « update » : réécrit le contenu d'un Google Sheet EXISTANT (créé par
+    // l'app — contrainte drive.file) via un upload média Drive. Évite d'empiler
+    // un nouveau fichier à chaque exécution (ex : cron quotidien).
+    const mode = String(config.mode ?? 'create')
+    const targetId = parseSpreadsheetId(String(config.spreadsheetId ?? ''))
+    if (mode === 'update' && targetId) {
+      const res = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${targetId}?uploadType=media&fields=id,name,webViewLink`,
+        {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/csv; charset=UTF-8' },
+          body: csv,
+        },
+      )
+      const json = (await res.json().catch(() => null)) as { id?: string; name?: string; webViewLink?: string; error?: { message?: string } } | null
+      if (!res.ok || !json?.id) {
+        throw new Error(
+          `gsheets-export : mise à jour Drive ${res.status} — ${json?.error?.message ?? 'échec'} ` +
+          `(le fichier doit avoir été créé par l’app : scope drive.file).`,
+        )
+      }
+      ctx.log('info', `Google Sheet « ${json.name} » mis à jour (${sheet.rows.length} lignes) — ${json.webViewLink ?? json.id}`)
+      return { result: { id: json.id, name: json.name, webViewLink: json.webViewLink } }
+    }
 
     const metadata: Record<string, unknown> = {
       name,

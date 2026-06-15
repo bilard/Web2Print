@@ -116,25 +116,32 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   },
   {
     id: 'price-compare-sites',
-    name: 'Comparer les prix entre 2 sites → Excel',
+    name: 'Comparer mes prix aux concurrents → Excel',
     description:
-      'Lit deux pages liste / catégorie (source + cible), extrait les produits (nom, EAN, prix), ' +
-      'les apparie par EAN et exporte un tableau « prix site A | prix site B | écart ».',
+      'Lit la page liste SOURCE (mes produits) et une ou plusieurs pages CONCURRENTES, apparie par ' +
+      'EAN / code modèle / nom, et exporte un tableau : une ligne par produit source, prix par ' +
+      'concurrent, écart et position. Source et concurrents acceptent aussi un import Excel/Sheets.',
     emoji: '⚖️',
     nodes: [
-      node('n1', 'list-products', 80, 140, {
-        urls:
-          'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi\n' +
-          'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+      node('n1', 'list-products', 60, 80, {
+        urls: 'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi',
         maxProducts: 40,
       }),
-      node('n2', 'compare-prices', 460, 140, {
-        keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',
-        priceColumn: 'price', labelColumn: 'name', onlyCommon: true,
+      node('n2', 'list-products', 60, 280, {
+        urls: 'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+        maxProducts: 40,
       }),
-      node('n3', 'export-excel', 840, 140, { columns: '' }),
+      node('n3', 'compare-prices', 460, 160, {
+        nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
+        referenceColumn: '', siteColumn: 'site', onlyMatched: false,
+      }),
+      node('n4', 'export-excel', 840, 160, { columns: '' }),
     ],
-    edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'sheet', 'n3', 'sheet')],
+    edges: [
+      edge('n1', 'sheet', 'n3', 'source'),
+      edge('n2', 'sheet', 'n3', 'concurrents'),
+      edge('n3', 'sheet', 'n4', 'sheet'),
+    ],
   },
   {
     id: 'price-compare-daily-gsheets',
@@ -145,20 +152,28 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       'Tourne en headless après connexion « Google — accès serveur » (Paramètres → Connecteurs).',
     emoji: '🗓️',
     nodes: [
-      node('n0', 'cron', 80, 40, { enabled: false, every: 1, unit: 'day', atTime: '08:00', weekday: 1 }),
-      node('n1', 'list-products', 80, 200, {
-        urls:
-          'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi\n' +
-          'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+      node('n0', 'cron', 60, 20, { enabled: false, every: 1, unit: 'day', atTime: '08:00', weekday: 1 }),
+      node('n1', 'list-products', 60, 140, {
+        urls: 'https://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi',
         maxProducts: 25,
       }),
-      node('n2', 'compare-prices', 460, 200, {
-        keyColumn: 'ean', fallbackKeyColumn: 'name', siteColumn: 'site',
-        priceColumn: 'price', labelColumn: 'name', onlyCommon: true,
+      node('n2', 'list-products', 60, 320, {
+        urls: 'https://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+        maxProducts: 25,
       }),
-      node('n3', 'gsheets-export', 840, 200, { name: 'Comparaison prix Ryobi', parentFolderId: '' }),
+      node('n3', 'compare-prices', 460, 220, {
+        nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
+        referenceColumn: '', siteColumn: 'site', onlyMatched: false,
+      }),
+      node('n4', 'gsheets-export', 840, 220, {
+        name: 'Comparaison prix Ryobi', parentFolderId: '', mode: 'create', spreadsheetId: '',
+      }),
     ],
-    edges: [edge('n1', 'sheet', 'n2', 'sheet'), edge('n2', 'sheet', 'n3', 'sheet')],
+    edges: [
+      edge('n1', 'sheet', 'n3', 'source'),
+      edge('n2', 'sheet', 'n3', 'concurrents'),
+      edge('n3', 'sheet', 'n4', 'sheet'),
+    ],
   },
   {
     id: 'web-research-excel',

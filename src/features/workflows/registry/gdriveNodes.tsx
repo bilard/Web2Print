@@ -21,6 +21,7 @@ import {
   downloadDriveFile,
   ensureDriveFolder,
   exportSheetToGoogleSheets,
+  updateGoogleSheetById,
   importGoogleSheetById,
   uploadFileToDrive,
   type DriveFileMeta,
@@ -295,6 +296,10 @@ interface GSheetsExportConfig {
   /** Dossier parent — sélectionnable via picker (sinon racine). */
   parentFolderId: string
   parentFolderName: string
+  /** 'create' = nouveau fichier à chaque run ; 'update' = réécrit un fichier existant. */
+  mode: 'create' | 'update'
+  /** URL ou ID du Google Sheet à mettre à jour (mode 'update'). */
+  spreadsheetId: string
 }
 
 interface FolderTargetFields {
@@ -339,21 +344,56 @@ function GSheetsExportConfigUi({
   config: GSheetsExportConfig
   onChange: (next: GSheetsExportConfig) => void
 }) {
+  const mode = config.mode ?? 'create'
   return (
     <div className="space-y-3">
       <div>
         <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
-          Nom du Google Sheets
+          À chaque exécution
         </label>
-        <input
-          type="text"
-          value={config.name}
-          onChange={(e) => onChange({ ...config, name: e.target.value })}
+        <select
+          value={mode}
+          onChange={(e) => onChange({ ...config, mode: e.target.value as 'create' | 'update' })}
           className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
-          placeholder="Workflow Export"
-        />
+        >
+          <option value="create">Créer un nouveau fichier</option>
+          <option value="update">Mettre à jour le même fichier</option>
+        </select>
       </div>
-      <FolderPickerForExport config={config} onChange={onChange} />
+      {mode === 'update' ? (
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+            URL ou ID du Google Sheet à mettre à jour
+          </label>
+          <input
+            type="text"
+            value={config.spreadsheetId ?? ''}
+            onChange={(e) => onChange({ ...config, spreadsheetId: e.target.value })}
+            className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+            placeholder="https://docs.google.com/spreadsheets/d/…"
+          />
+          <p className="text-[10px] text-neutral-600 leading-snug mt-1">
+            Le fichier doit avoir été créé par l'app (lance une fois en « Créer », puis colle ici son
+            lien). Son contenu est remplacé à chaque exécution.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1 block">
+              Nom du Google Sheets
+            </label>
+            <input
+              type="text"
+              value={config.name}
+              onChange={(e) => onChange({ ...config, name: e.target.value })}
+              className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+              placeholder="Workflow Export"
+            />
+          </div>
+          <FolderPickerForExport config={config} onChange={onChange} />
+        </>
+      )}
     </div>
   )
 }
@@ -371,7 +411,7 @@ const gsheetsExportNode: NodeSpec<
   inputs: [{ name: 'sheet', type: 'sheet', required: true }],
   outputs: [{ name: 'result', type: 'export-result' }],
   configSchema: [],
-  defaultConfig: { name: 'Workflow Export', parentFolderId: '', parentFolderName: '' },
+  defaultConfig: { name: 'Workflow Export', parentFolderId: '', parentFolderName: '', mode: 'create', spreadsheetId: '' },
   runtime: 'client',
   ConfigComponent: GSheetsExportConfigUi,
   run: async (ctx, config, inputs) => {
@@ -381,6 +421,12 @@ const gsheetsExportNode: NodeSpec<
     }
     const name = config.name?.trim() || 'Workflow Export'
     const sheet = coerceToExcelSheet(inputs.sheet, name)
+    if (config.mode === 'update' && config.spreadsheetId?.trim()) {
+      ctx.log('info', `Mise à jour du Google Sheet existant (${sheet.rows.length} lignes)…`)
+      const meta = await updateGoogleSheetById(token, config.spreadsheetId.trim(), sheet)
+      ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
+      return { result: meta }
+    }
     ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
     const meta = await exportSheetToGoogleSheets(token, sheet, {
       name,
