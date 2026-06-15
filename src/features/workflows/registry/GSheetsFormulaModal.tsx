@@ -3,8 +3,8 @@
 // éditeur large (en-tête + formule avec autocomplétion) + panneau de référence
 // (colonnes disponibles, fonctions courantes).
 import { createPortal } from 'react-dom'
-import { useEffect } from 'react'
-import { X, FunctionSquare, Plus } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { X, FunctionSquare, Plus, Search } from 'lucide-react'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import { GSHEETS_FUNCTIONS } from '@/features/gdrive/googleSheetsFunctions'
 
@@ -38,6 +38,15 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
     const line = `${t.header} = ${t.template}`
     onChange(value.trim() ? `${value.trim()}\n${line}` : line)
   }
+
+  const [funcQuery, setFuncQuery] = useState('')
+  const filteredFns = useMemo(() => {
+    const q = funcQuery.trim().toLowerCase()
+    if (!q) return GSHEETS_FUNCTIONS
+    return GSHEETS_FUNCTIONS.filter(
+      (f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q),
+    )
+  }, [funcQuery])
 
   return createPortal(
     <div
@@ -115,14 +124,29 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
             </div>
 
             <div>
-              <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">Fonctions courantes</h4>
-              <ul className="space-y-0.5 max-h-64 overflow-auto pr-1">
-                {GSHEETS_FUNCTIONS.map((f) => (
-                  <li key={f.name} className="flex items-baseline gap-2">
-                    <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
-                    <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
-                  </li>
-                ))}
+              <h4 className="uppercase tracking-wider text-neutral-500 mb-1.5">
+                Fonctions Google Sheets ({GSHEETS_FUNCTIONS.length})
+              </h4>
+              <div className="relative mb-1.5">
+                <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                <input
+                  value={funcQuery}
+                  onChange={(e) => setFuncQuery(e.target.value)}
+                  placeholder="Filtrer une fonction…"
+                  className="w-full pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
+                />
+              </div>
+              <ul className="space-y-0.5 max-h-56 overflow-auto pr-1">
+                {filteredFns.length === 0 ? (
+                  <li className="text-neutral-600 italic text-[10px]">Aucune fonction</li>
+                ) : (
+                  filteredFns.map((f) => (
+                    <li key={f.name} className="flex items-baseline gap-2">
+                      <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
+                      <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
+                    </li>
+                  ))
+                )}
               </ul>
             </div>
           </aside>
