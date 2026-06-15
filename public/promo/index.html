@@ -2045,7 +2045,20 @@
   .vt-r3 .vt-comp,.vt-r3 .vt-gap,.vt-r3 .vt-pos{animation-delay:1.15s}
   .vt-r4 .vt-comp,.vt-r4 .vt-gap,.vt-r4 .vt-pos{animation-delay:1.55s}
   .vt-r5 .vt-comp,.vt-r5 .vt-gap,.vt-r5 .vt-pos{animation-delay:1.95s}
-  .vt-alert{margin-top:auto;display:flex;align-items:center;gap:9px}
+  .vt-r6 .vt-comp,.vt-r6 .vt-gap,.vt-r6 .vt-pos{animation-delay:2.35s}
+  .vt-r7 .vt-comp,.vt-r7 .vt-gap,.vt-r7 .vt-pos{animation-delay:2.75s}
+  .vt-r8 .vt-comp,.vt-r8 .vt-gap,.vt-r8 .vt-pos{animation-delay:3.15s}
+  .vt-r9 .vt-comp,.vt-r9 .vt-gap,.vt-r9 .vt-pos{animation-delay:3.55s}
+  /* couleur des prix par enseigne */
+  .vt-num.c-lux{color:#fbbf24}
+  .vt-num.c-vert{color:#38bdf8}
+  /* statistiques */
+  .vt-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+  .vt-kpi{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;flex-direction:column;gap:1px}
+  .vt-kpi b{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1}
+  .vt-kpi span{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .vt-kpi.win b{color:#34d399}.vt-kpi.lose b{color:#fb7185}.vt-kpi.alert b{color:#fbbf24}
+  .vt-alert{display:flex;align-items:center;gap:9px}
   .vt-drop{flex:1;display:flex;align-items:center;gap:9px;background:linear-gradient(90deg,rgba(251,113,133,.15),rgba(251,113,133,.03));border:1px solid rgba(251,113,133,.32);border-radius:10px;padding:7px 11px;animation:vtPulse var(--vtD) ease-in-out infinite}
   .vt-drop .dico{width:26px;height:26px;border-radius:7px;background:rgba(251,113,133,.18);color:#fb7185;display:grid;place-items:center;flex:none}
   .vt-drop .dico svg{width:15px;height:15px}
@@ -2053,7 +2066,7 @@
   .vt-drop .dx b{color:#fb7185}
   .vt-drop .dx .ref{font-family:var(--mono);font-size:8.5px;color:var(--faint)}
   .vt-drop .dold{color:var(--faint);text-decoration:line-through;font-size:10px}
-  .vt-tg{flex:none;display:flex;align-items:center;gap:7px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.32);border-radius:10px;padding:7px 10px;font-size:11px;color:#7dd3fc;opacity:0;animation:vtCell var(--vtD) linear infinite;animation-delay:2.7s}
+  .vt-tg{flex:none;display:flex;align-items:center;gap:7px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.32);border-radius:10px;padding:7px 10px;font-size:11px;color:#7dd3fc;opacity:0;animation:vtCell var(--vtD) linear infinite;animation-delay:4.2s}
   .vt-tg svg{width:14px;height:14px}
   .vt-foot{display:flex;gap:8px;font-size:10px;color:var(--muted)}
   .vt-foot span{display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
@@ -2078,22 +2091,34 @@
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:80%;--y1:24%;--x2:88%;--y2:46%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="vt-body">
             <div class="vt-top">
-              <span class="vt-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Ryobi · tondeuses <span class="vt-live"><i></i>live</span></span>
+              <span class="vt-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>CoupeTout · tondeuses <span class="vt-live"><i></i>live</span></span>
               <span class="vt-cron"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Prochaine&nbsp;: <b>08:00</b> · serveur</span>
             </div>
             <div class="vt-tbl">
-              <div class="vt-tr h"><span>Produit</span><span class="vt-num">Mon prix</span><span class="vt-num">Jardilux</span><span class="vt-num">ToutVert</span><span class="vt-num">Écart</span><span>Position</span></div>
-              <div class="vt-tr vt-r1"><span class="p">Tondeuse élec. 1800W<span class="ref"> RLM18E40H</span></span><span class="vt-num vt-mine">219,00</span><span class="vt-num vt-comp">208,99</span><span class="vt-num vt-comp">214,90</span><span class="vt-num vt-gap down">+10,01</span><span class="vt-pos lose">plus cher</span></div>
-              <div class="vt-tr vt-r2"><span class="p">Tondeuse 1500W<span class="ref"> RLM15E36H</span></span><span class="vt-num vt-mine">149,00</span><span class="vt-num vt-comp">169,00</span><span class="vt-num vt-comp">159,99</span><span class="vt-num vt-gap up">−10,99</span><span class="vt-pos win">moins cher</span></div>
-              <div class="vt-tr vt-r3"><span class="p">Tondeuse 36V batterie<span class="ref"> RLM36X41H50</span></span><span class="vt-num vt-mine">349,00</span><span class="vt-num vt-comp">360,99</span><span class="vt-num vt-comp">355,00</span><span class="vt-num vt-gap up">−6,00</span><span class="vt-pos win">moins cher</span></div>
-              <div class="vt-tr vt-r4"><span class="p">Pack 18V One+<span class="ref"> RLM18X33B40</span></span><span class="vt-num vt-mine">229,00</span><span class="vt-num vt-comp">229,99</span><span class="vt-num vt-comp">232,49</span><span class="vt-num vt-gap up">−0,99</span><span class="vt-pos win">moins cher</span></div>
-              <div class="vt-tr vt-r5"><span class="p">Tondeuse hybride<span class="ref"> RY18LMH37A</span></span><span class="vt-num vt-mine">399,90</span><span class="vt-num vt-comp">387,65</span><span class="vt-num vt-comp">399,99</span><span class="vt-num vt-gap down">+12,25</span><span class="vt-pos lose">plus cher</span></div>
+              <div class="vt-tr h"><span>Produit</span><span class="vt-num">Mon prix</span><span class="vt-num" style="color:#fbbf24">LuxoJardi</span><span class="vt-num" style="color:#38bdf8">VertVif</span><span class="vt-num">Écart</span><span>Position</span></div>
+              <div class="vt-tr vt-r1"><span class="p">Tondeuse élec. 1800W<span class="ref"> RLM18E40H</span></span><span class="vt-num vt-mine">219,00</span><span class="vt-num vt-comp c-lux">208,99</span><span class="vt-num vt-comp c-vert">214,90</span><span class="vt-num vt-gap down">+10,01</span><span class="vt-pos lose">plus cher</span></div>
+              <div class="vt-tr vt-r2"><span class="p">Tondeuse 1500W<span class="ref"> RLM15E36H</span></span><span class="vt-num vt-mine">149,00</span><span class="vt-num vt-comp c-lux">169,00</span><span class="vt-num vt-comp c-vert">159,99</span><span class="vt-num vt-gap up">−10,99</span><span class="vt-pos win">moins cher</span></div>
+              <div class="vt-tr vt-r3"><span class="p">Tondeuse 36V batterie<span class="ref"> RLM36X41H50</span></span><span class="vt-num vt-mine">349,00</span><span class="vt-num vt-comp c-lux">360,99</span><span class="vt-num vt-comp c-vert">355,00</span><span class="vt-num vt-gap up">−6,00</span><span class="vt-pos win">moins cher</span></div>
+              <div class="vt-tr vt-r4"><span class="p">Pack 18V One+<span class="ref"> RLM18X33B40</span></span><span class="vt-num vt-mine">229,00</span><span class="vt-num vt-comp c-lux">229,99</span><span class="vt-num vt-comp c-vert">232,49</span><span class="vt-num vt-gap up">−0,99</span><span class="vt-pos win">moins cher</span></div>
+              <div class="vt-tr vt-r5"><span class="p">Tondeuse hybride<span class="ref"> RY18LMH37A</span></span><span class="vt-num vt-mine">399,90</span><span class="vt-num vt-comp c-lux">387,65</span><span class="vt-num vt-comp c-vert">399,99</span><span class="vt-num vt-gap down">+12,25</span><span class="vt-pos lose">plus cher</span></div>
+              <div class="vt-tr vt-r6"><span class="p">Tondeuse 40V brushless<span class="ref"> RY40LM48</span></span><span class="vt-num vt-mine">459,00</span><span class="vt-num vt-comp c-lux">449,00</span><span class="vt-num vt-comp c-vert">469,90</span><span class="vt-num vt-gap down">+10,00</span><span class="vt-pos lose">plus cher</span></div>
+              <div class="vt-tr vt-r7"><span class="p">Coupe-bordures 18V<span class="ref"> RLT1825</span></span><span class="vt-num vt-mine">79,90</span><span class="vt-num vt-comp c-lux">84,90</span><span class="vt-num vt-comp c-vert">82,50</span><span class="vt-num vt-gap up">−2,60</span><span class="vt-pos win">moins cher</span></div>
+              <div class="vt-tr vt-r8"><span class="p">Robot tondeuse<span class="ref"> RM18X</span></span><span class="vt-num vt-mine">899,00</span><span class="vt-num vt-comp c-lux">949,00</span><span class="vt-num vt-comp c-vert">879,00</span><span class="vt-num vt-gap down">+20,00</span><span class="vt-pos lose">plus cher</span></div>
+              <div class="vt-tr vt-r9"><span class="p">Tondeuse manuelle<span class="ref"> RLM33</span></span><span class="vt-num vt-mine">99,00</span><span class="vt-num vt-comp c-lux">105,00</span><span class="vt-num vt-comp c-vert">109,00</span><span class="vt-num vt-gap up">−6,00</span><span class="vt-pos win">moins cher</span></div>
+            </div>
+            <div class="vt-stats">
+              <div class="vt-kpi"><b>9</b><span>Produits suivis</span></div>
+              <div class="vt-kpi"><b>2</b><span>Concurrents</span></div>
+              <div class="vt-kpi win"><b>5</b><span>Moins cher</span></div>
+              <div class="vt-kpi lose"><b>4</b><span>Plus cher</span></div>
+              <div class="vt-kpi win"><b>−0,6&nbsp;%</b><span>Écart moyen</span></div>
+              <div class="vt-kpi alert"><b>1</b><span>Alerte 24&nbsp;h</span></div>
             </div>
             <div class="vt-alert">
-              <div class="vt-drop"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 17v-6h-6"/></svg></span><span class="dx">Veille prix — <b>baisse détectée</b> chez ToutVert<br/><span class="ref">RLM15E36H</span> · <span class="dold">169,00 €</span> → <b>149,99 €</b> (−11,2 %)</span></div>
+              <div class="vt-drop"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 17v-6h-6"/></svg></span><span class="dx">Veille prix — <b>baisse détectée</b> chez VertVif<br/><span class="ref">RLM15E36H</span> · <span class="dold">169,00 €</span> → <b>149,99 €</b> (−11,2 %)</span></div>
               <div class="vt-tg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>Telegram envoyé</div>
             </div>
-            <div class="vt-foot"><span><i class="dot" style="background:#34d399"></i>→ Google Sheet mis à jour</span><span><i class="dot" style="background:#38bdf8"></i>→ Alerte Telegram</span><span><i class="dot" style="background:#a5b4fc"></i>5 produits · 2 concurrents</span></div>
+            <div class="vt-foot"><span><i class="dot" style="background:#34d399"></i>→ Google Sheet mis à jour</span><span><i class="dot" style="background:#38bdf8"></i>→ Alerte Telegram</span><span><i class="dot" style="background:#a5b4fc"></i>9 produits · 2 concurrents · relevé quotidien</span></div>
           </div>
         </div></div>
       </div>
