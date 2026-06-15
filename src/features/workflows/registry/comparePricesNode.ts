@@ -209,6 +209,8 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     { name: 'concurrents', type: 'sheet', required: true },
   ],
   outputs: [{ name: 'sheet', type: 'sheet' }],
+  // Colonnes fixes de sortie (les `prix_<concurrent>` dynamiques s'ajoutent après un run).
+  outputColumns: ['produit', 'reference', 'ean', 'source', 'prix_source', 'meilleur_concurrent', 'prix_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
   configSchema: [
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', default: 'name' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Prix', default: 'price' },

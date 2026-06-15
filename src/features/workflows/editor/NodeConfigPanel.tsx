@@ -344,6 +344,11 @@ export function NodeConfigPanel() {
     }
     for (const c of collectUpstreamColumns(wf, node.id)) add(c)
     for (const e of wf.edges.filter((edge) => edge.target === node.id)) {
+      // Colonnes déclarées statiquement par le node amont (dispo AVANT tout run).
+      const src = wf.nodes.find((n) => n.id === e.source)
+      const declared = src ? nodeRegistry.get(src.type)?.outputColumns : undefined
+      if (declared) for (const c of declared) add(c)
+      // Colonnes réelles produites au dernier run (inclut les dynamiques).
       const outputs = runNodeStates[e.source]?.outputs
       if (!outputs) continue
       for (const v of Object.values(outputs)) {

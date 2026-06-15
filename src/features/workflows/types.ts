@@ -62,6 +62,12 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
    * Retourner une chaîne vide pour ne rien afficher.
    */
   cardSummary?: (config: C) => string
+  /**
+   * Colonnes (clés) de la sheet produite par ce node, déclarées statiquement —
+   * alimentent l'autocomplétion en aval AVANT tout run. Les colonnes dynamiques
+   * (dépendant des données) apparaissent en plus après une exécution.
+   */
+  outputColumns?: string[]
   run: (ctx: RunContextApi, config: C, inputs: I) => Promise<O>
   ConfigComponent?: ComponentType<{
     config: C

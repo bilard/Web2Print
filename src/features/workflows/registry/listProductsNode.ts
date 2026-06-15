@@ -111,6 +111,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
   icon: ListChecks,
   inputs: [],
   outputs: [{ name: 'sheet', type: 'sheet' }],
+  outputColumns: ['site', 'name', 'brand', 'ean', 'price', 'url'],
   configSchema: [
     {
       name: 'urls',
