@@ -125,6 +125,18 @@ export function resolveFormula(
     })
 }
 
+/** Cellule-formule XLSX exploitable par Google Sheets : une valeur en cache (`v`)
+ *  est OBLIGATOIRE — sans elle, la cellule est de type « erreur » et s'importe vide.
+ *  Google recalcule à l'ouverture ; `v:0` n'est qu'un placeholder. `z` applique un
+ *  format date pour NOW/TODAY/DATE (sinon affichage du n° de série, pas d'une date). */
+export function buildFormulaCell(resolved: string): { t: 'n'; f: string; v: number; z?: string } {
+  const cell: { t: 'n'; f: string; v: number; z?: string } = { t: 'n', f: resolved, v: 0 }
+  const up = resolved.toUpperCase()
+  if (up.includes('NOW(')) cell.z = 'yyyy-mm-dd hh:mm'
+  else if (up.includes('TODAY(') || up.includes('DATE(')) cell.z = 'yyyy-mm-dd'
+  return cell
+}
+
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
  *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
 async function sheetToXlsxBlob(
@@ -163,7 +175,7 @@ async function sheetToXlsxBlob(
       // Une formule par ligne de données (ligne tableur = index + 2 : +1 en-tête, base 1)
       for (let r = 0; r < rows.length; r++) {
         const resolved = resolveFormula(f.template, letterOf, r + 2)
-        ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = { t: 'n', f: resolved }
+        ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = buildFormulaCell(resolved)
       }
     })
     // Étend la plage du worksheet aux colonnes-formule.
