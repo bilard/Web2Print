@@ -1,9 +1,10 @@
 // src/features/workflows/registry/GSheetsFormulaColumns.tsx
 // Éditeur des colonnes-formule de l'export Google Sheets : liste (en-tête + formule)
 // avec autocomplétion des fonctions Google Sheets ET des noms de colonnes ({col}).
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { GSHEETS_FUNCTIONS } from '@/features/gdrive/googleSheetsFunctions'
+import { formulaInsert } from './formulaInsert'
 
 interface Row {
   header: string
@@ -113,6 +114,28 @@ function FormulaInput({
     })
   }
 
+  // Insertion externe (clic depuis le popup) au curseur — via refs pour éviter
+  // toute closure obsolète (lit la valeur live du DOM, onChange courant).
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  const doInsert = (text: string) => {
+    const input = ref.current
+    if (!input) return
+    const cur = input.value
+    const pos = input.selectionStart ?? cur.length
+    const before = cur.slice(0, pos) + text
+    onChangeRef.current(before + cur.slice(pos))
+    requestAnimationFrame(() => {
+      input.focus()
+      input.setSelectionRange(before.length, before.length)
+      recompute(input)
+    })
+  }
+  const insertRef = useRef(doInsert)
+  insertRef.current = doInsert
+  const stableInsert = useRef((t: string) => insertRef.current(t)).current
+  useEffect(() => () => formulaInsert.clearIf(stableInsert), [stableInsert])
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!ac || suggestions.length === 0) return
     if (e.key === 'ArrowDown') {
@@ -139,6 +162,7 @@ function FormulaInput({
           onChange(e.target.value)
           recompute(e.target)
         }}
+        onFocus={() => formulaInsert.setActive(stableInsert)}
         onClick={(e) => recompute(e.currentTarget)}
         onKeyUp={(e) => {
           if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) recompute(e.currentTarget)

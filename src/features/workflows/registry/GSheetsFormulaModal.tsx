@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { X, FunctionSquare, Plus, Search } from 'lucide-react'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
+import { formulaInsert } from './formulaInsert'
 import { GSHEETS_FUNCTIONS, GSHEETS_FUNCTION_GROUPS } from '@/features/gdrive/googleSheetsFunctions'
 
 interface Props {
@@ -41,6 +42,22 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
 
   const [funcQuery, setFuncQuery] = useState('')
   const [activeCat, setActiveCat] = useState('')
+  const [acOpen, setAcOpen] = useState(false)
+  const [acHi, setAcHi] = useState(0)
+
+  // Insère une fonction dans le champ formule focalisé ; à défaut, crée une colonne.
+  const insertFn = (name: string) => {
+    if (!formulaInsert.insert(`${name}(`)) insertTemplate({ header: name, template: `=${name}(` })
+  }
+
+  // Suggestions « graphiques » du champ de recherche (combobox).
+  const flatMatches = useMemo(() => {
+    const q = funcQuery.trim().toLowerCase()
+    if (!q) return []
+    const pool = activeCat ? GSHEETS_FUNCTIONS.filter((f) => f.cat === activeCat) : GSHEETS_FUNCTIONS
+    return pool.filter((f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q)).slice(0, 10)
+  }, [funcQuery, activeCat])
+
   const filteredGroups = useMemo(() => {
     const q = funcQuery.trim().toLowerCase()
     return GSHEETS_FUNCTION_GROUPS.filter((g) => !activeCat || g.cat === activeCat)
@@ -110,13 +127,18 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                 {columns.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
                     {columns.map((c) => (
-                      <span
+                      <button
                         key={c}
-                        className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px]"
-                        title="Référence dans une formule"
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault()
+                          formulaInsert.insert(`{${c}}`)
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px] hover:bg-emerald-500/20 transition-colors"
+                        title={`Insérer {${c}} dans le champ formule`}
                       >
                         {'{'}{c}{'}'}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -151,10 +173,53 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                 <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
                 <input
                   value={funcQuery}
-                  onChange={(e) => setFuncQuery(e.target.value)}
-                  placeholder="Filtrer une fonction…"
-                  className="w-48 pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
+                  onChange={(e) => {
+                    setFuncQuery(e.target.value)
+                    setAcOpen(true)
+                    setAcHi(0)
+                  }}
+                  onFocus={() => setAcOpen(true)}
+                  onBlur={() => setTimeout(() => setAcOpen(false), 150)}
+                  onKeyDown={(e) => {
+                    if (!acOpen || flatMatches.length === 0) return
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault()
+                      setAcHi((i) => (i + 1) % flatMatches.length)
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault()
+                      setAcHi((i) => (i - 1 + flatMatches.length) % flatMatches.length)
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault()
+                      insertFn(flatMatches[acHi].name)
+                    } else if (e.key === 'Escape') {
+                      setAcOpen(false)
+                    }
+                  }}
+                  placeholder="Filtrer / insérer une fonction…"
+                  className="w-56 pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
                 />
+                {acOpen && flatMatches.length > 0 && (
+                  <ul className="absolute z-[1100] right-0 mt-1 w-72 max-h-64 overflow-auto rounded-md bg-surface-2 border border-neutral-700 shadow-xl">
+                    {flatMatches.map((f, i) => (
+                      <li key={f.name}>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            insertFn(f.name)
+                          }}
+                          className={`w-full text-left px-2 py-1.5 flex items-baseline gap-2 ${
+                            i === acHi ? 'bg-indigo-500/20' : 'hover:bg-white/[0.05]'
+                          }`}
+                        >
+                          <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
+                          <span className="text-neutral-500 text-[10px] truncate">{f.hint}</span>
+                          <span className="ml-auto text-[8px] text-neutral-600 shrink-0">{f.cat}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
             {filteredGroups.length === 0 ? (
@@ -166,9 +231,19 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                     <div className="text-[9px] uppercase tracking-wider text-indigo-300/70 mb-0.5">{g.cat}</div>
                     <ul className="space-y-0.5">
                       {g.fns.map((f) => (
-                        <li key={f.name} className="flex items-baseline gap-1.5">
-                          <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
-                          <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
+                        <li key={f.name}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault()
+                              insertFn(f.name)
+                            }}
+                            title={`Insérer ${f.name}( dans le champ formule`}
+                            className="w-full flex items-baseline gap-1.5 text-left rounded px-1 -mx-1 hover:bg-white/[0.05] transition-colors"
+                          >
+                            <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
+                            <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
+                          </button>
                         </li>
                       ))}
                     </ul>
