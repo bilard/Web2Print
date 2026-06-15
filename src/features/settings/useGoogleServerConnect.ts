@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useIsAdmin } from '@/features/access/useAccess'
+import { clearServerGoogleTokenCache } from '@/features/gdrive/serverGoogleToken'
 
 // Doit rester aligné avec OAUTH_REDIRECT_URI de functions/src/google/serverAuth.ts.
 export const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
@@ -151,6 +152,7 @@ export function useGoogleServerConnect() {
   const disconnect = async () => {
     if (!uid) return
     await updateDoc(doc(db, 'users', uid), { googleServer: deleteField() })
+    clearServerGoogleTokenCache() // invalide le jeton serveur en cache côté éditeur
     refreshTokenRef.current = ''
     setConnectedAt(null)
     setTestStatus('empty')

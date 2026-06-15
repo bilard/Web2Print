@@ -15,6 +15,7 @@ import { httpsCallable } from 'firebase/functions'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
 import { useGDriveStore } from '@/stores/gdrive.store'
+import { getServerGoogleToken } from '@/features/gdrive/serverGoogleToken'
 import { functions } from '@/lib/firebase/config'
 import {
   GoogleAuthMissingError,
@@ -66,6 +67,20 @@ function requireToken(): string {
   const token = useGDriveStore.getState().accessToken
   if (!token) throw new GoogleAuthMissingError()
   return token
+}
+
+/**
+ * Jeton Google pour les nodes : on PRÉFÈRE le connecteur serveur (refresh token,
+ * rafraîchi tout seul → pas de popup ni d'écran « appli non validée »), et on
+ * retombe sur le jeton navigateur si le connecteur serveur n'est pas connecté.
+ * Bonus : l'éditeur partage alors l'identité OAuth du cron → cohérence drive.file.
+ */
+async function getNodeGoogleToken(): Promise<string> {
+  try {
+    return await getServerGoogleToken()
+  } catch {
+    return requireToken()
+  }
 }
 
 const SHEETS_MIME = 'application/vnd.google-apps.spreadsheet'
@@ -275,7 +290,7 @@ const gsheetsImportNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: GSheetsImportConfigUi,
   run: async (ctx, config) => {
-    const token = requireToken()
+    const token = await getNodeGoogleToken()
     if (!config.fileId) {
       throw new Error('Aucun Google Sheets sélectionné — ouvrez la config du node pour en choisir un.')
     }
@@ -423,7 +438,7 @@ const gsheetsExportNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: GSheetsExportConfigUi,
   run: async (ctx, config, inputs) => {
-    const token = requireToken()
+    const token = await getNodeGoogleToken()
     if (inputs.sheet == null) {
       throw new Error('Sheet manquante en entrée — branchez un node qui produit une Sheet (ou une Saisie texte).')
     }
@@ -485,7 +500,7 @@ const gdriveImportNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: GDriveImportConfigUi,
   run: async (ctx, config) => {
-    const token = requireToken()
+    const token = await getNodeGoogleToken()
     if (!config.fileId) {
       throw new Error('Aucun fichier Drive sélectionné — ouvrez la config du node pour en choisir un.')
     }
@@ -549,7 +564,7 @@ const gdriveExportNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: GDriveExportConfigUi,
   run: async (ctx, config, inputs) => {
-    const token = requireToken()
+    const token = await getNodeGoogleToken()
     if (!inputs.file) {
       throw new Error('Fichier manquant en entrée — branchez un node qui produit un fichier.')
     }
@@ -704,7 +719,7 @@ const saveDamNode: NodeSpec<SaveDamConfig, { assets: DamAsset[] }, { assets: Dam
       ctx.log('warn', 'Aucun asset en entrée — rien à uploader.')
       return { assets }
     }
-    const token = requireToken()
+    const token = await getNodeGoogleToken()
     const folderName = config.folderName?.trim() || 'Web2Print DAM'
     ctx.log('info', `Dossier Drive cible : « ${folderName} » (créé si absent)…`)
     const parentFolderId = await ensureDriveFolder(token, folderName)

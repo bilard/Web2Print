@@ -30,6 +30,7 @@ export { telegramResponder } from './telegram/responder'
 
 // --- Google OAuth offline (Drive/Gmail côté serveur) ---
 export { googleOAuthCallback } from './google/serverAuth'
+export { mintGoogleToken } from './google/mintGoogleToken'
 
 // --- Workflow cron serveur ---
 export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
