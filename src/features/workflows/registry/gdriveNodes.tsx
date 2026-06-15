@@ -498,10 +498,14 @@ const gsheetsExportNode: NodeSpec<
     }
     const name = config.name?.trim() || 'Workflow Export'
     const sheet = coerceToExcelSheet(inputs.sheet, name)
-    if (sheet.rows.length === 0) {
-      ctx.log('warn', 'Aucune ligne à exporter — le fichier sera vide. Vérifie le node amont (« Comparer les prix »).')
-    }
     const formulas = parseFormulaColumns(config.formulaColumns)
+    if (sheet.rows.length === 0) {
+      if (formulas.length > 0) {
+        ctx.log('info', "Aucune donnée amont — 1 ligne d'essai ajoutée pour tester les formules (saisis des valeurs dans le Sheet, elles se recalculent).")
+      } else {
+        ctx.log('warn', 'Aucune ligne à exporter — le fichier sera vide. Vérifie le node amont (« Comparer les prix »).')
+      }
+    }
     if (formulas.length > 0) ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
     if (config.mode === 'update' && config.spreadsheetId?.trim()) {
       const fileId = config.spreadsheetId.trim()

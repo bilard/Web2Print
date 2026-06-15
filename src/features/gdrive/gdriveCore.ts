@@ -140,6 +140,13 @@ async function sheetToXlsxBlob(
     }
     return out
   })
+  // Test des formules SANS données amont : on injecte 1 ligne d'essai (colonnes data
+  // vides) pour que les colonnes-formule s'écrivent et soient évaluables/éditables.
+  if (rows.length === 0 && formulas && formulas.length > 0) {
+    const empty: Record<string, unknown> = {}
+    for (const col of sheet.columns) empty[col.label || col.key] = ''
+    rows.push(empty)
+  }
   const ws = XLSX.utils.json_to_sheet(rows)
 
   if (formulas && formulas.length > 0) {
@@ -154,7 +161,7 @@ async function sheetToXlsxBlob(
       // En-tête
       ws[XLSX.utils.encode_cell({ c: colNum, r: 0 })] = { t: 's', v: f.header }
       // Une formule par ligne de données (ligne tableur = index + 2 : +1 en-tête, base 1)
-      for (let r = 0; r < sheet.rows.length; r++) {
+      for (let r = 0; r < rows.length; r++) {
         const resolved = resolveFormula(f.template, letterOf, r + 2)
         ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = { t: 'n', f: resolved }
       }
@@ -162,7 +169,7 @@ async function sheetToXlsxBlob(
     // Étend la plage du worksheet aux colonnes-formule.
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
     range.e.c = Math.max(range.e.c, baseCol + formulas.length - 1)
-    range.e.r = Math.max(range.e.r, sheet.rows.length)
+    range.e.r = Math.max(range.e.r, rows.length)
     ws['!ref'] = XLSX.utils.encode_range(range)
   }
 
