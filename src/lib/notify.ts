@@ -10,21 +10,26 @@ function record(level: NotificationLevel, title: string, message?: string): void
   useNotificationsStore.getState().add(level, title, message)
 }
 
+/** Options de toast. `duration` en ms (Infinity = jusqu'à fermeture manuelle). */
+export interface NotifyOptions {
+  duration?: number
+}
+
 export const notify = {
-  success(title: string, message?: string): void {
-    toast.success(message ? `${title} — ${message}` : title)
+  success(title: string, message?: string, opts?: NotifyOptions): void {
+    toast.success(message ? `${title} — ${message}` : title, { duration: opts?.duration })
     record('success', title, message)
   },
-  error(title: string, message?: string): void {
-    toast.error(message ? `${title} — ${message}` : title)
+  error(title: string, message?: string, opts?: NotifyOptions): void {
+    toast.error(message ? `${title} — ${message}` : title, { duration: opts?.duration })
     record('error', title, message)
   },
-  warning(title: string, message?: string): void {
-    toast.warning(message ? `${title} — ${message}` : title)
+  warning(title: string, message?: string, opts?: NotifyOptions): void {
+    toast.warning(message ? `${title} — ${message}` : title, { duration: opts?.duration })
     record('warning', title, message)
   },
-  info(title: string, message?: string): void {
-    toast.info(message ? `${title} — ${message}` : title)
+  info(title: string, message?: string, opts?: NotifyOptions): void {
+    toast.info(message ? `${title} — ${message}` : title, { duration: opts?.duration })
     record('info', title, message)
   },
 }
