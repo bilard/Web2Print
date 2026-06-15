@@ -958,8 +958,26 @@ export function DataPreviewPanel() {
     () => pickLatestPreview(states, liveIds, labelFor),
     [states, wf],
   )
+  // Aperçu de la carte SÉLECTIONNÉE : on affiche SA sortie de run (maintenue dans
+  // nodeStates), pour pouvoir inspecter la donnée de chaque carte après coup.
+  const selectedRunTarget = useMemo<PreviewTarget | null>(() => {
+    if (!selectedId) return null
+    const st = states[selectedId]
+    if (!st?.outputs) return null
+    const primary = pickPrimaryOutput(st.outputs)
+    if (!primary) return null
+    return {
+      nodeId: selectedId,
+      nodeLabel: labelFor(selectedId),
+      portName: primary.name,
+      value: primary.value,
+      status: st.status,
+      ...(st.error ? { errorReason: st.error } : {}),
+    }
+  }, [states, selectedId, wf])
   const staticTarget = useStaticNodePreview(wf ?? null, effectiveSelectedId, labelFor)
-  const target = staticTarget ?? runTarget
+  // Priorité : Upload (fichier local) > sortie de la carte sélectionnée > dernier run.
+  const target = staticTarget ?? selectedRunTarget ?? runTarget
 
   // Mode « Tout » : JSON consolidé (config + sorties) de tous les composants du workflow.
   const [allMode, setAllMode] = useState(false)
