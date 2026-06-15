@@ -269,13 +269,13 @@ async function executeLoopBody(
   return lastOutput?.[collectIncoming.sourceHandle]
 }
 
-export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): Promise<void> {
+export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): Promise<{ aborted: boolean }> {
   const ctxStore = useRunContext.getState()
   // Garde anti-double-run : si une exécution est déjà en cours, on ignore
   // les clics suivants pour éviter d'envoyer 2× les mails (par exemple).
   if (ctxStore.isRunning) {
     console.warn('[executeWorkflow] Un run est déjà en cours — ignoré.')
-    return
+    return { aborted: false }
   }
   // RUN partiel : on ne réinitialise que le sous-graphe aval ; les sorties amont
   // déjà en cache sont conservées et serviront d'entrées.
@@ -460,4 +460,5 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     useRunContext.getState().endRun()
     useProgressStore.getState().end()
   }
+  return { aborted: ac.signal.aborted }
 }

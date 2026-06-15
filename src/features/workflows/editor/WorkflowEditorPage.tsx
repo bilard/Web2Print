@@ -80,7 +80,12 @@ export function WorkflowEditorPage() {
   // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
   // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
   const run = async (stepByStep = false) => {
-    await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
+    const { aborted } = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
+    // Arrêt volontaire (Stop) : message neutre, pas de toast d'erreur.
+    if (aborted) {
+      notify.info(`Workflow « ${wf.name} » arrêté`, 'Exécution interrompue.')
+      return
+    }
     const states = Object.values(useRunContext.getState().nodeStates)
     const errors = states.filter((s) => s.status === 'error')
     const ok = states.filter((s) => s.status === 'success').length

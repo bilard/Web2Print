@@ -19,7 +19,7 @@ function setStates(nodeStates: Record<string, unknown>) {
 describe('executeWorkflowAndCollect', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(executeWorkflow).mockResolvedValue(undefined)
+    vi.mocked(executeWorkflow).mockResolvedValue({ aborted: false })
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ blob: () => Promise.resolve(new Blob(['x'])) }))
     vi.stubGlobal('URL', { ...URL, revokeObjectURL: vi.fn(), createObjectURL: vi.fn() })
   })
