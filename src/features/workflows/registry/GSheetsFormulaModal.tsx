@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { X, FunctionSquare, Plus, Search } from 'lucide-react'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
-import { GSHEETS_FUNCTIONS } from '@/features/gdrive/googleSheetsFunctions'
+import { GSHEETS_FUNCTIONS, GSHEETS_FUNCTION_GROUPS } from '@/features/gdrive/googleSheetsFunctions'
 
 interface Props {
   value: string
@@ -40,12 +40,14 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
   }
 
   const [funcQuery, setFuncQuery] = useState('')
-  const filteredFns = useMemo(() => {
+  const filteredGroups = useMemo(() => {
     const q = funcQuery.trim().toLowerCase()
-    if (!q) return GSHEETS_FUNCTIONS
-    return GSHEETS_FUNCTIONS.filter(
-      (f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q),
-    )
+    return GSHEETS_FUNCTION_GROUPS.map((g) => ({
+      cat: g.cat,
+      fns: q
+        ? g.fns.filter((f) => f.name.toLowerCase().includes(q) || f.hint.toLowerCase().includes(q))
+        : g.fns,
+    })).filter((g) => g.fns.length > 0)
   }, [funcQuery])
 
   return createPortal(
@@ -136,18 +138,27 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
                   className="w-full pl-6 pr-2 py-1 text-[10px] bg-well border border-neutral-700 rounded text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-indigo-500/60"
                 />
               </div>
-              <ul className="space-y-0.5 max-h-56 overflow-auto pr-1">
-                {filteredFns.length === 0 ? (
-                  <li className="text-neutral-600 italic text-[10px]">Aucune fonction</li>
+              <div className="space-y-2 max-h-56 overflow-auto pr-1">
+                {filteredGroups.length === 0 ? (
+                  <p className="text-neutral-600 italic text-[10px]">Aucune fonction</p>
                 ) : (
-                  filteredFns.map((f) => (
-                    <li key={f.name} className="flex items-baseline gap-2">
-                      <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
-                      <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
-                    </li>
+                  filteredGroups.map((g) => (
+                    <div key={g.cat}>
+                      <div className="text-[9px] uppercase tracking-wider text-indigo-300/70 sticky top-0 bg-surface-2 py-0.5">
+                        {g.cat}
+                      </div>
+                      <ul className="space-y-0.5">
+                        {g.fns.map((f) => (
+                          <li key={f.name} className="flex items-baseline gap-2">
+                            <span className="font-mono text-cyan-300 text-[10px] shrink-0">{f.name}()</span>
+                            <span className="text-neutral-600 text-[10px] truncate">{f.hint}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))
                 )}
-              </ul>
+              </div>
             </div>
           </aside>
         </div>
