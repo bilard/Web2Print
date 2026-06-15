@@ -214,9 +214,16 @@ export async function updateGoogleSheetById(
   })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
+      // Token invalide/expiré : la reconnexion résout. (≠ 403, qui est un problème de scope.)
       throw new Error(
-        `Drive : permission refusée (HTTP ${res.status}) — le fichier doit avoir été créé par l'app (scope drive.file). Reconnectez-vous via le panneau Google Drive.`,
+        'Drive : session expirée (HTTP 401). Le node tourne avec le jeton du NAVIGATEUR : reconnectez-vous via le panneau « Google Drive » (Réglages → Connecteurs).',
+      )
+    }
+    if (res.status === 403) {
+      // Token valide mais scope drive.file : seul un fichier créé par CETTE app est modifiable.
+      throw new Error(
+        "Drive : accès refusé (HTTP 403). Sous le scope drive.file, seul un Google Sheet CRÉÉ PAR L'APP est modifiable. Celui-ci a sans doute été créé ailleurs (manuellement, ou par le connecteur serveur du cron). Créez-le une fois via « Créer un nouveau fichier », puis réutilisez son lien.",
       )
     }
     throw new Error(`Drive : mise à jour échouée (HTTP ${res.status}${detail ? ` — ${detail.slice(0, 200)}` : ''})`)
