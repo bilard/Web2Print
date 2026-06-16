@@ -5,6 +5,26 @@ export interface LlmResult { text: string; model: string; stopReason?: string }
 
 const DEFAULT_MAX_TOKENS = 8192
 
+/** DeepSeek (OpenAI-compatible) avec JSON natif (response_format json_object) :
+ *  garantit une réponse JSON pure (pas de prose ni de bloc markdown) → parse direct
+ *  fiable. deepseek-chat plafonne à 8192 tokens de sortie → clamp. */
+async function callDeepSeek(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
+  const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: Math.min(maxTokens, 8192),
+    }),
+  })
+  if (!res.ok) throw new Error(`DeepSeek ${res.status}: ${await res.text()}`)
+  const json = (await res.json()) as { choices?: { message?: { content?: string }; finish_reason?: string }[] }
+  const c = json.choices?.[0]
+  return { text: c?.message?.content ?? '', stopReason: c?.finish_reason }
+}
+
 async function callAnthropic(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -34,25 +54,32 @@ async function callGemini(key: string, prompt: string, maxTokens: number): Promi
   return { text: cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? '', stopReason: cand?.finishReason }
 }
 
-/** Anthropic d'abord, fallback Gemini. Lève si aucune clé/aucun provider ne répond. */
+/** Cascade : DeepSeek (JSON natif, low cost — défaut user) → Anthropic → Gemini.
+ *  Chaque échec est tracé (non silencieux). Lève si aucune clé ne répond. */
 export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: number } = {}): Promise<LlmResult> {
   const maxTokens = opts.maxTokens ?? DEFAULT_MAX_TOKENS
+  const warn = (p: string, e: unknown) => console.warn(`[llm] ${p} KO → fallback :`, e instanceof Error ? e.message.slice(0, 200) : e)
+
+  const deepseek = await getUserApiKey(uid, 'deepseek')
+  if (deepseek) {
+    try {
+      const r = await callDeepSeek(deepseek, prompt, maxTokens)
+      if (r.text.trim()) return { text: r.text, model: 'deepseek-chat', stopReason: r.stopReason }
+    } catch (e) { warn('DeepSeek', e) }
+  }
   const anthropic = await getUserApiKey(uid, 'anthropic')
   if (anthropic) {
     try {
       const r = await callAnthropic(anthropic, prompt, maxTokens)
       return { text: r.text, model: 'claude-opus-4-7', stopReason: r.stopReason }
-    } catch (e) {
-      // Fallback non silencieux : tracer pourquoi Anthropic a échoué (clé/quota/timeout).
-      console.warn('[llm] Anthropic KO → fallback Gemini :', e instanceof Error ? e.message.slice(0, 200) : e)
-    }
+    } catch (e) { warn('Anthropic', e) }
   }
   const gemini = await getUserApiKey(uid, 'gemini')
   if (gemini) {
     const r = await callGemini(gemini, prompt, maxTokens)
     return { text: r.text, model: 'gemini-3.1-pro-preview', stopReason: r.stopReason }
   }
-  throw new Error('Aucune clé LLM (anthropic/gemini) configurée pour cet utilisateur.')
+  throw new Error('Aucune clé LLM (deepseek/anthropic/gemini) configurée pour cet utilisateur.')
 }
 
 /** Sous-chaîne JSON équilibrée à partir de l'index `from` (un `{` ou `[`), en
