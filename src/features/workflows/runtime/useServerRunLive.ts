@@ -13,6 +13,7 @@ interface RunLiveDoc {
   nodeStates?: Record<string, NodeStatus>
   logs?: { ts: number; level: 'info' | 'warn' | 'error'; node?: string; msg: string }[]
   nodeOutputs?: Record<string, Record<string, unknown>>
+  nodeConnectors?: Record<string, string[]>
 }
 
 export function useServerRunLive(workflowId: string | undefined): void {
@@ -29,12 +30,13 @@ export function useServerRunLive(workflowId: string | undefined): void {
           if (!l.node) continue
           ;(logsByNode[l.node] ??= []).push(l)
         }
-        const states: Record<string, { status: NodeStatus; logs?: { ts: number; level: 'info' | 'warn' | 'error'; msg: string }[]; outputs?: Record<string, unknown> }> = {}
+        const states: Record<string, { status: NodeStatus; logs?: { ts: number; level: 'info' | 'warn' | 'error'; msg: string }[]; outputs?: Record<string, unknown>; connectors?: string[] }> = {}
         for (const [id, status] of Object.entries(d.nodeStates)) {
           states[id] = {
             status,
             logs: logsByNode[id]?.map((l) => ({ ts: l.ts, level: l.level, msg: l.msg })),
             outputs: d.nodeOutputs?.[id],
+            connectors: d.nodeConnectors?.[id],
           }
         }
         useRunContext.getState().hydrateServerRun(states)

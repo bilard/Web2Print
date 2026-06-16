@@ -62,7 +62,12 @@ function parsePrice(v: unknown): number {
   return cleaned ? parseFloat(cleaned) : NaN
 }
 
-type Ctx = { uid: string; signal: AbortSignal; log: (level: 'info' | 'warn' | 'error', msg: string) => void }
+type Ctx = {
+  uid: string
+  signal: AbortSignal
+  log: (level: 'info' | 'warn' | 'error', msg: string) => void
+  reportConnector?: (id: string) => void
+}
 
 /** Exécute fn sur chaque item, au plus `limit` en parallèle (borne le coût/temps + les
  *  limites de débit Bright Data quand on charge plusieurs pages d'un coup). */
@@ -88,10 +93,12 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
   } catch (err) {
     ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
   }
+  if (content.trim()) ctx.reportConnector?.('jina')
   if (!content.trim()) {
     try {
       ctx.log('info', `Jina sans contenu pour ${url} → escalade Bright Data.`)
       content = htmlToText((await brightDataRead(url)).html)
+      if (content.trim()) ctx.reportConnector?.('brightdata')
     } catch (err) {
       ctx.log('warn', `Bright Data échoué ${url} : ${err instanceof Error ? err.message : err}`)
     }
@@ -101,6 +108,7 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
 
 /** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours). */
 async function extractProducts(ctx: Ctx, content: string, label: string): Promise<ExtractedProduct[]> {
+  ctx.reportConnector?.('llm')
   const prompt =
     'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
     'réellement listés (ignore menu, pied de page, bannières, blocs « vous aimerez aussi »). ' +

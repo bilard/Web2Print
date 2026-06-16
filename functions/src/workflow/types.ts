@@ -18,6 +18,9 @@ export interface ServerRunCtx {
   /** Config brut (sans interpolation des {{...}}) — pour les nodes qui ré-interpolent
    *  par ligne (ex : send-telegram en mode « 1 message par ligne »). */
   rawConfig?: unknown
+  /** Signale un connecteur réellement utilisé par le node (ex « jina », « brightdata »,
+   *  « llm ») — remonté au client pour afficher le bon badge sur la carte. */
+  reportConnector?: (connectorId: string) => void
 }
 
 type ServerRun = (

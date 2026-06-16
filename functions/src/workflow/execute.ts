@@ -14,6 +14,8 @@ export interface HeadlessResult {
   nodeOutputs: Record<string, Record<string, unknown>>
   /** Statut final par node (pour l'affichage live côté client). */
   nodeStates: Record<string, LiveNodeStatus>
+  /** Connecteurs réellement utilisés par node (jina/brightdata/llm…), pour les badges. */
+  nodeConnectors: Record<string, string[]>
 }
 
 interface LoopPair { eachId: string; collectId: string; bodyIds: Set<string> }
@@ -72,6 +74,7 @@ export async function executeWorkflowHeadless(
     }
   }
   const nodeOutputs: Record<string, Record<string, unknown>> = {}
+  const nodeConnectors: Record<string, string[]> = {}
   const outputs = new Map<string, Record<string, unknown>>()
   const errored = new Set<string>()
   const skipped = new Set<string>()
@@ -88,7 +91,7 @@ export async function executeWorkflowHeadless(
   try { ordered = topoSort(mainNodes, mainEdges) }
   catch (err) {
     log('error', err instanceof Error ? err.message : String(err))
-    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {} }
+    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors }
   }
 
   const runBody = async (pair: LoopPair, item: unknown, idx: number): Promise<unknown> => {
@@ -179,7 +182,16 @@ export async function executeWorkflowHeadless(
       const ctx = buildInterpolationContext(inputs)
       const cfg = interpolate(node.config, ctx) as Record<string, unknown>
       const result = await spec.run(
-        { uid: opts.uid, signal: opts.signal, log: (lv, m) => log(lv, m, node.id), rawConfig: node.config },
+        {
+          uid: opts.uid,
+          signal: opts.signal,
+          log: (lv, m) => log(lv, m, node.id),
+          rawConfig: node.config,
+          reportConnector: (cid) => {
+            const arr = (nodeConnectors[node.id] ??= [])
+            if (!arr.includes(cid)) arr.push(cid)
+          },
+        },
         cfg, inputs,
       )
       outputs.set(node.id, result ?? {})
@@ -200,5 +212,5 @@ export async function executeWorkflowHeadless(
   // appariements…), y compris sur un run success. Visible via `firebase functions:log`.
   const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
   console.log(`[wf:${wf.name}] trace:\n${trace}`)
-  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates }
+  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors }
 }

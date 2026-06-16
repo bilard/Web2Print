@@ -242,9 +242,9 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
   const hasProblem = status === 'error' || !!state?.error || problemCount > 0
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2 h-full min-h-0">
       {/* Statut d'exécution */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <span className={`w-2 h-2 rounded-full ${meta.dot} ${status === 'running' ? 'animate-pulse' : ''}`} />
         <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
         {typeof state?.durationMs === 'number' && (
@@ -273,9 +273,9 @@ function NodeLogsTab({ nodeId }: { nodeId: string }) {
         </p>
       )}
 
-      {/* Journal complet (tous niveaux) */}
+      {/* Journal complet (tous niveaux) — occupe toute la hauteur restante */}
       {logs.length > 0 ? (
-        <div className="space-y-1 max-h-72 overflow-auto rounded-md bg-well border border-neutral-800 p-2">
+        <div className="space-y-1 flex-1 min-h-0 overflow-auto rounded-md bg-well border border-neutral-800 p-2">
           {logs.map((l, i) => (
             <div
               key={i}
@@ -363,8 +363,8 @@ export function NodeConfigPanel() {
   const showEdge = !node && !!selectedEdge
 
   return (
-    <aside className="w-72 border-l border-neutral-800 bg-surface-2 overflow-y-auto p-4">
-      <h3 className="text-xs uppercase text-neutral-500 font-semibold mb-3">
+    <aside className="w-72 border-l border-neutral-800 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
+      <h3 className="text-xs uppercase text-neutral-500 font-semibold mb-3 shrink-0">
         {showEdge ? 'Connexion' : 'Configuration'}
       </h3>
       {showEdge && wf && selectedEdge ? (
@@ -378,11 +378,11 @@ export function NodeConfigPanel() {
           Sélectionnez un node ou une connexion pour voir ses détails.
         </p>
       ) : (
-        <div className="space-y-3">
-          <div className="text-sm font-medium text-white">{spec.label}</div>
+        <div className="flex flex-col min-h-0 flex-1 space-y-3">
+          <div className="text-sm font-medium text-white shrink-0">{spec.label}</div>
 
           {/* Onglets Config / Logs */}
-          <div className="flex items-center gap-1 border-b border-neutral-800">
+          <div className="flex items-center gap-1 border-b border-neutral-800 shrink-0">
             <button
               type="button"
               onClick={() => setTab('config')}
@@ -415,7 +415,7 @@ export function NodeConfigPanel() {
           </div>
 
           {tab === 'config' ? (
-            <div className="space-y-3">
+            <div className="space-y-3 flex-1 min-h-0 overflow-y-auto">
               {spec.ConfigComponent ? (
                 <spec.ConfigComponent
                   config={node.config as never}
@@ -443,7 +443,9 @@ export function NodeConfigPanel() {
               {wf && <ConnectionsPanel node={node} wf={wf} onRemoveEdge={removeEdge} />}
             </div>
           ) : (
-            <NodeLogsTab nodeId={node.id} />
+            <div className="flex-1 min-h-0">
+              <NodeLogsTab nodeId={node.id} />
+            </div>
           )}
         </div>
       )}

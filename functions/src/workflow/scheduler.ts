@@ -73,6 +73,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       runId, trigger, startedAt, endedAt: Date.now(),
       status: result.status, nodeStates: result.nodeStates, logs: result.logs.slice(-200),
       nodeOutputs: capOutputsForPreview(result.nodeOutputs),
+      nodeConnectors: result.nodeConnectors,
     })
     return result
   } catch (err) {
