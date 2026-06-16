@@ -52,24 +52,49 @@ export function detectColumnFormat(key: string, label: string, values: unknown[]
   return null
 }
 
-/** Applique un numberFormat par colonne au Sheet (ligne d'en-tête exclue). Non bloquant :
- *  le formatage est un bonus, jamais une raison de faire échouer l'export. */
-async function applyColumnFormats(token: string, spreadsheetId: string, sheet: SheetLike): Promise<void> {
-  const keys = sheetKeys(sheet)
-  const rows = sheet.rows ?? []
-  const cols = sheet.columns ?? []
-  const formats = keys.map((k) =>
-    detectColumnFormat(k, cols.find((c) => c.key === k)?.label ?? k, rows.map((r) => r[k])),
-  )
-  if (formats.every((f) => f === null)) return
+/** Convertit une valeur de cellule pour l'écriture RAW : un nombre RESTE un nombre
+ *  (colonnes numériques), tout le reste reste une STRING. ⚠️ Clé du fix : empêche
+ *  Google d'interpréter « 6.5 » comme la date « 6 mai » ou « 4892… » en scientifique. */
+function toCell(v: unknown, fmt: GFormat | null): string | number {
+  const s = String(v ?? '')
+  if (fmt && fmt.type === 'NUMBER' && s.trim() !== '') {
+    const n = Number(s.replace(',', '.').replace(/[^\d.+-]/g, ''))
+    if (Number.isFinite(n)) return n
+  }
+  return s
+}
 
-  const metaRes = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.sheetId`,
+/** Récupère le 1er onglet (titre + gid) d'un spreadsheet. */
+async function getFirstTab(token: string, id: string): Promise<{ title: string; gid: number }> {
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(title,sheetId)`,
     { headers: { Authorization: `Bearer ${token}` } },
   )
-  const meta = (await metaRes.json().catch(() => null)) as { sheets?: { properties?: { sheetId?: number } }[] } | null
-  const gid = meta?.sheets?.[0]?.properties?.sheetId ?? 0
+  if (!res.ok) throw new Error(`Sheets get ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+  const json = (await res.json()) as { sheets?: { properties?: { title?: string; sheetId?: number } }[] }
+  const p = json.sheets?.[0]?.properties
+  return { title: p?.title ?? 'Sheet1', gid: p?.sheetId ?? 0 }
+}
 
+/** Écrit la matrice de valeurs (RAW, types préservés) dans l'onglet, après l'avoir vidé. */
+async function writeValues(token: string, id: string, title: string, matrix: (string | number)[][]): Promise<void> {
+  const enc = encodeURIComponent(title)
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${enc}:clear`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` },
+  })
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${enc}!A1?valueInputOption=RAW`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: matrix }),
+    },
+  )
+  if (!res.ok) throw new Error(`Sheets values ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
+/** Applique un numberFormat par colonne (ligne d'en-tête exclue). Non bloquant. */
+async function applyNumberFormats(token: string, id: string, gid: number, formats: (GFormat | null)[]): Promise<void> {
   const requests = formats.flatMap((f, i) =>
     f
       ? [{
@@ -82,7 +107,7 @@ async function applyColumnFormats(token: string, spreadsheetId: string, sheet: S
       : [],
   )
   if (requests.length === 0) return
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ requests }),
@@ -123,69 +148,59 @@ registerServerNode({
     }
     const name = String(config.name ?? '').trim() || 'Workflow Export'
     const token = await getGoogleAccessToken(ctx.uid)
-    const csv = sheetToCsv(sheet)
 
-    // Mode « update » : réécrit le contenu d'un Google Sheet EXISTANT (créé par
-    // l'app — contrainte drive.file) via un upload média Drive. Évite d'empiler
-    // un nouveau fichier à chaque exécution (ex : cron quotidien).
+    // Matrice de valeurs TYPÉE : nombres en number, reste en string. On écrit via
+    // l'API Sheets values (RAW) au lieu d'un import CSV — l'auto-détection CSV de
+    // Google interprétait « 6.5 » comme une date et « 229.99 » (point décimal) comme
+    // du texte en locale FR. RAW + types explicites = rendu déterministe.
+    const keys = sheetKeys(sheet)
+    const cols = sheet.columns ?? []
+    const formats = keys.map((k) =>
+      detectColumnFormat(k, cols.find((c) => c.key === k)?.label ?? k, sheet.rows!.map((r) => r[k])),
+    )
+    const header = keys.map((k) => String(cols.find((c) => c.key === k)?.label ?? k))
+    const matrix: (string | number)[][] = [
+      header,
+      ...sheet.rows.map((r) => keys.map((k, i) => toCell(r[k], formats[i]))),
+    ]
+
+    // Obtenir le spreadsheet : mode « update » réutilise un fichier créé par l'app
+    // (contrainte drive.file) ; sinon on crée un nouveau Sheet VIDE dans Drive.
     const mode = String(config.mode ?? 'create')
     const targetId = parseSpreadsheetId(String(config.spreadsheetId ?? ''))
+    let id: string
+    let displayName = name
+    let webViewLink: string | undefined
+    let verb: string
+
     if (mode === 'update' && targetId) {
-      const res = await fetch(
-        `https://www.googleapis.com/upload/drive/v3/files/${targetId}?uploadType=media&fields=id,name,webViewLink`,
-        {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/csv; charset=UTF-8' },
-          body: csv,
-        },
-      )
-      const json = (await res.json().catch(() => null)) as { id?: string; name?: string; webViewLink?: string; error?: { message?: string } } | null
-      if (!res.ok || !json?.id) {
-        throw new Error(
-          `gsheets-export : mise à jour Drive ${res.status} — ${json?.error?.message ?? 'échec'} ` +
-          `(le fichier doit avoir été créé par l’app : scope drive.file).`,
-        )
-      }
-      ctx.log('info', `Google Sheet « ${json.name} » mis à jour (${sheet.rows.length} lignes) — ${json.webViewLink ?? json.id}`)
-      await applyColumnFormats(token, json.id, sheet).catch((e) => ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`))
-      return { result: { id: json.id, name: json.name, webViewLink: json.webViewLink } }
-    }
-
-    const metadata: Record<string, unknown> = {
-      name,
-      mimeType: 'application/vnd.google-apps.spreadsheet',
-    }
-    const parent = String(config.parentFolderId ?? '').trim()
-    if (parent) metadata.parents = [parent]
-
-    const boundary = `wf${Date.now()}`
-    const body = [
-      `--${boundary}`,
-      'Content-Type: application/json; charset=UTF-8',
-      '',
-      JSON.stringify(metadata),
-      `--${boundary}`,
-      'Content-Type: text/csv; charset=UTF-8',
-      '',
-      csv,
-      `--${boundary}--`,
-    ].join('\r\n')
-
-    const res = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
-      {
+      id = targetId
+      verb = 'mis à jour'
+    } else {
+      const metadata: Record<string, unknown> = { name, mimeType: 'application/vnd.google-apps.spreadsheet' }
+      const parent = String(config.parentFolderId ?? '').trim()
+      if (parent) metadata.parents = [parent]
+      const res = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
-        body,
-      },
-    )
-    const json = (await res.json().catch(() => null)) as { id?: string; name?: string; webViewLink?: string; error?: { message?: string } } | null
-    if (!res.ok || !json?.id) {
-      throw new Error(`gsheets-export : Drive ${res.status} — ${json?.error?.message ?? 'échec upload'}`)
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(metadata),
+      })
+      const json = (await res.json().catch(() => null)) as { id?: string; name?: string; webViewLink?: string; error?: { message?: string } } | null
+      if (!res.ok || !json?.id) throw new Error(`gsheets-export : création Drive ${res.status} — ${json?.error?.message ?? 'échec'}`)
+      id = json.id
+      displayName = json.name ?? name
+      webViewLink = json.webViewLink
+      verb = 'créé'
     }
-    ctx.log('info', `Google Sheet « ${json.name} » créé (${sheet.rows.length} lignes) — ${json.webViewLink ?? json.id}`)
-    await applyColumnFormats(token, json.id, sheet).catch((e) => ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`))
-    return { result: { id: json.id, name: json.name, webViewLink: json.webViewLink } }
+
+    const { title, gid } = await getFirstTab(token, id)
+    await writeValues(token, id, title, matrix)
+    await applyNumberFormats(token, id, gid, formats).catch((e) =>
+      ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`),
+    )
+
+    ctx.log('info', `Google Sheet « ${displayName} » ${verb} (${sheet.rows.length} lignes) — ${webViewLink ?? id}`)
+    return { result: { id, name: displayName, webViewLink } }
   },
 })
 
