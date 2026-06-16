@@ -51,7 +51,16 @@ export async function executeWorkflowHeadless(
   opts: { uid: string; signal: AbortSignal },
 ): Promise<HeadlessResult> {
   const logs: RunLog[] = []
-  const log = (level: RunLog['level'], msg: string, node?: string) => logs.push({ ts: Date.now(), level, node, msg })
+  const log = (level: RunLog['level'], msg: string, node?: string) => {
+    logs.push({ ts: Date.now(), level, node, msg })
+    // Miroir vers les logs Cloud Functions : sans UI d'historique de runs serveur
+    // côté client, c'est la seule façon de diagnostiquer un run cron/serveur partiel.
+    if (level === 'error' || level === 'warn') {
+      const line = `[wf:${wf.name}]${node ? ` [node:${node}]` : ''} ${msg}`
+      if (level === 'error') console.error(line)
+      else console.warn(line)
+    }
+  }
   const nodeOutputs: Record<string, Record<string, unknown>> = {}
   const outputs = new Map<string, Record<string, unknown>>()
   const errored = new Set<string>()
@@ -150,5 +159,6 @@ export async function executeWorkflowHeadless(
 
   const errorCount = errored.size
   const status: HeadlessResult['status'] = errorCount === 0 ? 'success' : nodeCount > 0 ? 'partial' : 'error'
+  console.log(`[wf:${wf.name}] run ${status} — ${nodeCount} node(s) OK, ${errorCount} en erreur`)
   return { status, nodeCount, errorCount, logs, nodeOutputs }
 }
