@@ -4,6 +4,7 @@ import { topoSort } from './topo'
 import { interpolate, buildInterpolationContext } from './interpolate'
 import { getServerNode } from './registry'
 import { SERVER_UNSUPPORTED } from './nodes/index'
+import { mergeInputValue } from './mergeInputs'
 
 export interface HeadlessResult {
   status: 'success' | 'error' | 'partial'
@@ -128,7 +129,14 @@ export async function executeWorkflowHeadless(
     const inputs: Record<string, unknown> = {}
     for (const e of upstream) {
       const src = outputs.get(e.source)
-      if (src && e.sourceHandle in src) inputs[e.targetHandle] = src[e.sourceHandle]
+      if (src && e.sourceHandle in src) {
+        const incoming = src[e.sourceHandle]
+        // Fan-in : plusieurs edges sur le même port → fusion (sheets concaténées)
+        // au lieu d'écraser. Cf. mergeInputs.ts (parité client).
+        inputs[e.targetHandle] = e.targetHandle in inputs
+          ? mergeInputValue(inputs[e.targetHandle], incoming)
+          : incoming
+      }
     }
     try {
       const loopPair = loopByEach.get(node.id)

@@ -16,17 +16,8 @@
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions/v2'
-import type { Browser } from 'puppeteer-core'
 import { getBrightDataBrowserWs } from './brightDataToken'
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { addExtra } = require('puppeteer-extra')
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const puppeteerCore = require('puppeteer-core')
-const puppeteer = addExtra(puppeteerCore)
-puppeteer.use(StealthPlugin())
+import { scrapeViaScrapingBrowser } from './scrapingBrowserCore'
 
 interface ScrapingBrowserRequest {
   url: string
@@ -61,15 +52,8 @@ export const scrapeWithScrapingBrowser = onCall<ScrapingBrowserRequest, Promise<
     }
 
     const t0 = Date.now()
-    let browser: Browser | null = null
     try {
-      browser = (await puppeteer.connect({ browserWSEndpoint: wsEndpoint })) as Browser
-      const page = await browser.newPage()
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90_000 })
-      // Laisse le challenge JS (DataDome/Cloudflare) se résoudre puis la page s'hydrater.
-      await page.waitForNetworkIdle({ idleTime: 1500, timeout: 30_000 }).catch(() => {})
-      const html = await page.content()
-      await page.close().catch(() => {})
+      const html = await scrapeViaScrapingBrowser(url, wsEndpoint)
       const durationMs = Date.now() - t0
       logger.info('[scraping-browser] OK', { url, length: html.length, durationMs })
       return { html, durationMs }
@@ -77,15 +61,6 @@ export const scrapeWithScrapingBrowser = onCall<ScrapingBrowserRequest, Promise<
       const msg = (e as Error)?.message ?? String(e)
       logger.warn('[scraping-browser] échec', { url, msg: msg.slice(0, 200) })
       throw new HttpsError('internal', `Scraping Browser échoué : ${msg.slice(0, 200)}`)
-    } finally {
-      // disconnect (PAS close) : c'est le navigateur de Bright Data, on ne le ferme pas.
-      if (browser) {
-        try {
-          browser.disconnect()
-        } catch {
-          /* ignore */
-        }
-      }
     }
   },
 )

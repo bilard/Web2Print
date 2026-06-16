@@ -6,6 +6,7 @@ import { useRunContext } from './runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
+import { mergeInputValue } from './mergeInputs'
 
 type Middleware = (
   node: WorkflowNode,
@@ -357,7 +358,14 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       const inputs: Record<string, unknown> = {}
       for (const e of upstream) {
         const src = outputs.get(e.source)
-        if (src && e.sourceHandle in src) inputs[e.targetHandle] = src[e.sourceHandle]
+        if (src && e.sourceHandle in src) {
+          const incoming = src[e.sourceHandle]
+          // Fan-in : plusieurs edges sur le même port → fusion (sheets concaténées)
+          // au lieu d'écraser. Cf. mergeInputs.ts (parité serveur).
+          inputs[e.targetHandle] = e.targetHandle in inputs
+            ? mergeInputValue(inputs[e.targetHandle], incoming)
+            : incoming
+        }
       }
 
       // RUN partiel : avertir si une entrée vient d'un node amont hors sous-graphe

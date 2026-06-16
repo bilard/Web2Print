@@ -5,14 +5,42 @@
 // partagé attaché au scheduler serait lisible par un node `pipe` (cf. mémoire).
 import { getFirestore } from 'firebase-admin/firestore'
 import { callBrightData, detectCountry } from '../scraper/brightDataUnlocker'
+import { scrapeViaScrapingBrowser } from '../scraper/scrapingBrowserCore'
 
-/** Récupère le HTML d'une URL via Bright Data Web Unlocker (gère l'anti-bot). */
+/** En dessous de ce seuil, le HTML du Web Unlocker est probablement une page de
+ *  blocage/challenge (DataDome) plutôt qu'une vraie page liste → on escalade tier-2. */
+const TIER1_MIN_HTML = 15_000
+
+/** Récupère le HTML d'une URL via Bright Data, avec escalade automatique :
+ *  tier 1 = Web Unlocker (HTTP, rapide, moins cher) → tier 2 = Scraping Browser
+ *  (Puppeteer, anti-bot durs) si le tier 1 est vide/trop court ou échoue. */
 export async function brightDataRead(url: string): Promise<{ html: string }> {
-  const snap = await getFirestore().doc('config/brightdata').get()
-  const token = String(snap.data()?.apiToken ?? '').trim()
-  if (!token) throw new Error('Bright Data non configuré (config/brightdata.apiToken).')
-  const zone = String(snap.data()?.zone ?? '').trim() || 'web_unlocker1'
-  const { html } = await callBrightData(url, token, zone, detectCountry(url))
+  const data = (await getFirestore().doc('config/brightdata').get()).data() ?? {}
+  const token = String(data.apiToken ?? '').trim()
+  const zone = String(data.zone ?? '').trim() || 'web_unlocker1'
+  const browserWs = String(data.browserWs ?? '').trim()
+
+  // Tier 1 : Web Unlocker.
+  let html = ''
+  if (token) {
+    try { html = (await callBrightData(url, token, zone, detectCountry(url))).html } catch { /* → tier 2 */ }
+  }
+
+  // Tier 2 : Scraping Browser (dernier recours, plus coûteux) si tier 1 insuffisant.
+  if (html.trim().length < TIER1_MIN_HTML && browserWs) {
+    try {
+      const t2 = await scrapeViaScrapingBrowser(url, browserWs)
+      if (t2.trim().length > html.trim().length) html = t2
+    } catch { /* on garde le tier 1 s'il existe */ }
+  }
+
+  if (!html.trim()) {
+    throw new Error(
+      token || browserWs
+        ? 'Bright Data : aucun contenu (Web Unlocker + Scraping Browser).'
+        : 'Bright Data non configuré (config/brightdata.apiToken / browserWs).',
+    )
+  }
   return { html }
 }
 
