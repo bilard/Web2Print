@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Sparkles, Loader2, AlertTriangle, ChevronDown, Coins, RotateCcw } from 'lucide-react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Sparkles, Loader2, AlertTriangle, ChevronDown, Coins, RotateCcw, X } from 'lucide-react'
 import { useAiActivityStore, type AiActivityRecord } from '@/stores/aiActivity.store'
 import { getModel, type AiProvider } from '@/lib/aiModels'
+
+// Panneau complet (par LLM + connecteurs) chargé en lazy : monté seulement à l'ouverture.
+const LiveLlmUsagePanel = lazy(() =>
+  import('./LiveLlmUsagePanel').then((m) => ({ default: m.LiveLlmUsagePanel })),
+)
 
 const PROVIDER_STYLE: Record<string, { color: string; ring: string; bg: string; label: string }> = {
   claude:         { color: 'text-orange-300',  ring: 'ring-orange-400/40',  bg: 'bg-orange-500/15',  label: 'Claude' },
@@ -120,7 +125,7 @@ function ActivityRow({ record, primary = false }: RowProps) {
   )
 }
 
-function SessionTotalsBadge() {
+function SessionTotalsBadge({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const session = useAiActivityStore((s) => s.session)
   const reset = useAiActivityStore((s) => s.resetSession)
   // Le badge de cumul reste affiché en permanence dès la 1re requête : la pilule
@@ -140,24 +145,33 @@ function SessionTotalsBadge() {
 
   return (
     <div
-      className="flex items-center gap-2 px-2.5 py-1 rounded-full ring-1 ring-emerald-400/30 bg-emerald-500/10 backdrop-blur-md shadow-lg shadow-black/30"
+      className="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full ring-1 ring-emerald-400/30 bg-emerald-500/10 backdrop-blur-md shadow-lg shadow-black/30"
       title={`Session — ${tooltipParts.join(' · ')}`}
     >
-      <Coins className="w-3 h-3 text-emerald-300" />
-      <span className="text-[10px] tabular-nums font-mono text-white/70 whitespace-nowrap">
-        {session.requestCount}
-      </span>
-      <span className="text-[10px] tabular-nums font-mono text-white/55 whitespace-nowrap">
-        {formatTokensShort(totalTokens)}t
-      </span>
-      <span className="text-[10px] tabular-nums font-mono text-emerald-300 whitespace-nowrap font-semibold">
-        {formatCostEur(session.costUsd)}
-      </span>
-      {session.errorCount > 0 && (
-        <span className="text-[10px] tabular-nums font-mono text-red-300 whitespace-nowrap" title={`${session.errorCount} erreur${session.errorCount > 1 ? 's' : ''}`}>
-          !{session.errorCount}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        title="Voir le détail de la consommation (par LLM + connecteurs)"
+        className="flex items-center gap-2 group"
+      >
+        <Coins className="w-3 h-3 text-emerald-300" />
+        <span className="text-[10px] tabular-nums font-mono text-white/70 whitespace-nowrap">
+          {session.requestCount}
         </span>
-      )}
+        <span className="text-[10px] tabular-nums font-mono text-white/55 whitespace-nowrap">
+          {formatTokensShort(totalTokens)}t
+        </span>
+        <span className="text-[10px] tabular-nums font-mono text-emerald-300 whitespace-nowrap font-semibold">
+          {formatCostEur(session.costUsd)}
+        </span>
+        {session.errorCount > 0 && (
+          <span className="text-[10px] tabular-nums font-mono text-red-300 whitespace-nowrap" title={`${session.errorCount} erreur${session.errorCount > 1 ? 's' : ''}`}>
+            !{session.errorCount}
+          </span>
+        )}
+        <ChevronDown className={`w-2.5 h-2.5 text-white/50 group-hover:text-white/80 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
       <button
         type="button"
         onClick={reset}
@@ -177,6 +191,7 @@ export function AiLiveIndicator() {
   const last = useAiActivityStore((s) => s.last)
   const sessionRequestCount = useAiActivityStore((s) => s.session.requestCount)
   const [expanded, setExpanded] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const [lastVisible, setLastVisible] = useState(false)
 
   // Affiche `last` quelques secondes après la fin, puis masque.
@@ -225,7 +240,7 @@ export function AiLiveIndicator() {
             <ChevronDown className={`w-3 h-3 text-white/60 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
         )}
-        <SessionTotalsBadge />
+        <SessionTotalsBadge open={panelOpen} onToggle={() => setPanelOpen((v) => !v)} />
       </div>
       {expanded && extraCount > 0 && (
         <div className="flex flex-col items-center gap-1 mt-1 pointer-events-auto">
@@ -233,6 +248,32 @@ export function AiLiveIndicator() {
             <ActivityRow key={rec.id} record={rec} />
           ))}
         </div>
+      )}
+      {panelOpen && (
+        <>
+          {/* Clic extérieur → ferme */}
+          <div className="fixed inset-0 z-[59] pointer-events-auto" onClick={() => setPanelOpen(false)} />
+          <div className="relative z-[61] mt-2 w-[min(94vw,860px)] pointer-events-auto">
+            <div className="rounded-2xl border border-white/10 bg-[#0b0b0f]/95 backdrop-blur-md shadow-2xl shadow-black/60 flex flex-col max-h-[80vh]">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
+                <span className="text-xs font-semibold text-white/80">Consommation — détail par LLM & connecteurs</span>
+                <button
+                  type="button"
+                  onClick={() => setPanelOpen(false)}
+                  className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/10"
+                  aria-label="Fermer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-auto p-3">
+                <Suspense fallback={<div className="text-xs text-white/40 p-4">Chargement du détail…</div>}>
+                  <LiveLlmUsagePanel />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
