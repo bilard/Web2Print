@@ -32,6 +32,25 @@ async function loadWorkflow(uid: string, workflowId: string): Promise<ServerWork
   }
 }
 
+/** Tronque les rows des sheets de sortie (aperçu client) pour tenir sous le quota
+ *  Firestore (1 Mo/doc). 100 lignes/sheet suffisent pour un aperçu. */
+function capOutputsForPreview(outputs: Record<string, Record<string, unknown>>, maxRows = 100): Record<string, Record<string, unknown>> {
+  const out: Record<string, Record<string, unknown>> = {}
+  for (const [id, ports] of Object.entries(outputs)) {
+    const p2: Record<string, unknown> = {}
+    for (const [port, val] of Object.entries(ports)) {
+      if (val && typeof val === 'object' && Array.isArray((val as { rows?: unknown[] }).rows)) {
+        const sheet = val as { rows: unknown[] }
+        p2[port] = { ...sheet, rows: sheet.rows.slice(0, maxRows) }
+      } else {
+        p2[port] = val
+      }
+    }
+    out[id] = p2
+  }
+  return out
+}
+
 /** Exécute un workflow déjà chargé (boucle d'abort + historique + état live). */
 async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'manual' | 'webhook') {
   const startedAt = Date.now()
@@ -53,6 +72,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     await writeRunLive(uid, wf.id, {
       runId, trigger, startedAt, endedAt: Date.now(),
       status: result.status, nodeStates: result.nodeStates, logs: result.logs.slice(-200),
+      nodeOutputs: capOutputsForPreview(result.nodeOutputs),
     })
     return result
   } catch (err) {

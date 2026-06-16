@@ -15,6 +15,8 @@ export interface RunLiveDoc {
   status: 'running' | 'success' | 'partial' | 'error'
   nodeStates: Record<string, LiveNodeStatus>
   logs: RunLog[]
+  /** Sorties par node (sheets tronquées) pour l'aperçu données côté client. */
+  nodeOutputs?: Record<string, Record<string, unknown>>
 }
 
 /** Upsert (merge) le doc d'état live. Non bloquant : ne fait jamais échouer le run. */
