@@ -115,6 +115,67 @@ async function applyNumberFormats(token: string, id: string, gid: number, format
   if (!res.ok) throw new Error(`batchUpdate ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
+// --- Colonnes formule (parité avec src/features/gdrive/gdriveCore.ts) ---------
+interface FormulaColumn { header: string; template: string }
+
+/** Parse « En-tête = template » (une par ligne ; le template référence {colonne}). */
+export function parseFormulaColumns(raw: string): FormulaColumn[] {
+  return String(raw || '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const eq = line.indexOf('=')
+      if (eq < 0) return null
+      const header = line.slice(0, eq).trim()
+      const template = line.slice(eq + 1).trim()
+      return header && template ? { header, template } : null
+    })
+    .filter((f): f is FormulaColumn => f !== null)
+}
+
+/** Index 0-based → lettre de colonne A1 (0→A, 26→AA). */
+export function colLetter(i: number): string {
+  let n = i + 1
+  let s = ''
+  while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26) }
+  return s
+}
+
+/** Résout un template : retire `=` initial, remplace `{nom}` par lettre+ligne. */
+export function resolveFormula(template: string, letterByName: (n: string) => string | null, sheetRow: number): string {
+  return template.replace(/^=/, '').replace(/\{([^}]+)\}/g, (_m, name: string) => {
+    const l = letterByName(name.trim())
+    return l ? `${l}${sheetRow}` : name
+  })
+}
+
+/** Écrit les colonnes formule (à droite des données) en USER_ENTERED = formules vivantes. */
+async function writeFormulas(
+  token: string, id: string, title: string,
+  dataKeys: string[], formulas: FormulaColumn[], nRows: number,
+): Promise<void> {
+  const letter: Record<string, string> = {}
+  dataKeys.forEach((k, i) => { letter[k] = colLetter(i) })
+  formulas.forEach((f, j) => { letter[f.header] = colLetter(dataKeys.length + j) })
+  const byName = (name: string) => letter[name] ?? null
+  const values: string[][] = []
+  for (let r = 0; r < nRows; r++) {
+    values.push(formulas.map((f) => `=${resolveFormula(f.template, byName, r + 2)}`))
+  }
+  const enc = encodeURIComponent(title)
+  const start = colLetter(dataKeys.length)
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${enc}!${start}2?valueInputOption=USER_ENTERED`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values }),
+    },
+  )
+  if (!res.ok) throw new Error(`Sheets formules ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
 /** CSV RFC4180 minimal depuis une sheet (colonnes déclarées, sinon union des clés). */
 function sheetToCsv(sheet: SheetLike): string {
   const rows = sheet.rows ?? []
@@ -158,10 +219,17 @@ registerServerNode({
     const formats = keys.map((k) =>
       detectColumnFormat(k, cols.find((c) => c.key === k)?.label ?? k, sheet.rows!.map((r) => r[k])),
     )
-    const header = keys.map((k) => String(cols.find((c) => c.key === k)?.label ?? k))
+    // Colonnes formule (config.formulaColumns « En-tête = template {col} ») : ajoutées
+    // à droite, écrites en USER_ENTERED (formules vivantes). Cf. parité client gdriveCore.
+    const formulas = parseFormulaColumns(String(config.formulaColumns ?? ''))
+    const header = [
+      ...keys.map((k) => String(cols.find((c) => c.key === k)?.label ?? k)),
+      ...formulas.map((f) => f.header),
+    ]
     const matrix: (string | number)[][] = [
       header,
-      ...sheet.rows.map((r) => keys.map((k, i) => toCell(r[k], formats[i]))),
+      // colonnes formule = placeholder vide en RAW (écrasées ensuite en USER_ENTERED)
+      ...sheet.rows.map((r) => [...keys.map((k, i) => toCell(r[k], formats[i])), ...formulas.map(() => '')]),
     ]
 
     // Obtenir le spreadsheet : mode « update » réutilise un fichier créé par l'app
@@ -195,6 +263,12 @@ registerServerNode({
 
     const { title, gid } = await getFirstTab(token, id)
     await writeValues(token, id, title, matrix)
+    if (formulas.length > 0 && sheet.rows.length > 0) {
+      await writeFormulas(token, id, title, keys, formulas, sheet.rows.length).catch((e) =>
+        ctx.log('warn', `Colonnes formule ignorées : ${e instanceof Error ? e.message : e}`),
+      )
+      ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
+    }
     await applyNumberFormats(token, id, gid, formats).catch((e) =>
       ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`),
     )
