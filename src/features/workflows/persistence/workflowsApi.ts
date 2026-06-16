@@ -27,6 +27,9 @@ export async function saveWorkflow(uid: string, wf: Workflow): Promise<void> {
 
 export async function deleteWorkflow(uid: string, id: string): Promise<void> {
   await deleteDoc(doc(col(uid), id))
+  // Nettoie le planning cron associé : sans ça, le scanner serveur boucle chaque
+  // minute sur un orphelin (« Workflow introuvable ») sans jamais le purger.
+  await deleteDoc(doc(db, 'workflowSchedules', id)).catch((e) => console.warn('deleteWorkflow/schedule:', e))
 }
 
 /** Déplace un workflow dans un dossier (ou l'en retire si folderId = null). */

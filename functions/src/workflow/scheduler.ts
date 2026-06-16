@@ -29,22 +29,27 @@ async function loadWorkflow(uid: string, workflowId: string): Promise<ServerWork
   }
 }
 
-export async function runOne(uid: string, workflowId: string, trigger: 'cron' | 'manual' | 'webhook') {
-  const wf = await loadWorkflow(uid, workflowId)
-  if (!wf) throw new Error('Workflow introuvable.')
+/** Exécute un workflow déjà chargé (boucle d'abort + écriture de l'historique). */
+async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'manual' | 'webhook') {
   const startedAt = Date.now()
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), RUN_TIMEOUT_MS)
   try {
     const result = await executeWorkflowHeadless(wf, { uid, signal: ac.signal })
-    await writeRunHistory(uid, { workflowId, name: wf.name, trigger, startedAt }, result)
+    await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, result)
     return result
   } finally {
     clearTimeout(timer)
   }
 }
 
-// Scanner : toutes les 10 min, exécute les plannings dûs.
+export async function runOne(uid: string, workflowId: string, trigger: 'cron' | 'manual' | 'webhook') {
+  const wf = await loadWorkflow(uid, workflowId)
+  if (!wf) throw new Error('Workflow introuvable.')
+  return runWorkflow(wf, uid, trigger)
+}
+
+// Scanner : toutes les minutes, exécute les plannings dûs (et purge les orphelins).
 export const workflowCronScheduler = onSchedule(
   { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 540, memory: '512MiB' },
   async () => {
@@ -58,12 +63,21 @@ export const workflowCronScheduler = onSchedule(
         uid: string; workflowId: string; every: number; unit: CronConfig['unit']
         atTime?: string | null; weekday?: number | null
       }
+      // Planning orphelin : le workflow a été supprimé sans nettoyer son cron.
+      // On purge le doc pour arrêter la boucle d'échec (sinon réessai chaque minute
+      // à l'infini, jamais de run réel). Le client purge aussi à la suppression.
+      const wf = await loadWorkflow(s.uid, s.workflowId)
+      if (!wf) {
+        await docSnap.ref.delete().catch(() => {})
+        console.warn('workflowCronScheduler: planning orphelin purgé', s.workflowId)
+        continue
+      }
       const cron: CronConfig = {
         enabled: true, every: s.every, unit: s.unit,
         atTime: s.atTime ?? undefined, weekday: s.weekday ?? undefined,
       }
       try {
-        const result = await runOne(s.uid, s.workflowId, 'cron')
+        const result = await runWorkflow(wf, s.uid, 'cron')
         await docSnap.ref.update({ lastRunAt: now, lastStatus: result.status, nextRunAt: computeNextRun(cron, now) })
       } catch (err) {
         await docSnap.ref.update({ lastRunAt: now, lastStatus: 'error', nextRunAt: computeNextRun(cron, now) })
