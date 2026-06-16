@@ -160,5 +160,11 @@ export async function executeWorkflowHeadless(
   const errorCount = errored.size
   const status: HeadlessResult['status'] = errorCount === 0 ? 'success' : nodeCount > 0 ? 'partial' : 'error'
   console.log(`[wf:${wf.name}] run ${status} — ${nodeCount} node(s) OK, ${errorCount} en erreur`)
+  // Trace complète (info inclus) uniquement quand le run n'aboutit pas : sans UI
+  // d'historique côté client, c'est le seul moyen de diagnostiquer un run cron/serveur.
+  if (status !== 'success') {
+    const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
+    console.log(`[wf:${wf.name}] trace:\n${trace}`)
+  }
   return { status, nodeCount, errorCount, logs, nodeOutputs }
 }
