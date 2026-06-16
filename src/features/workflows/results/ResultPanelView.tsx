@@ -79,7 +79,7 @@ function ChartBox({ spec }: { spec: ChartSpec }) {
           {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
-      <div className="h-64">
+      <div className="h-[460px]">
         <Suspense fallback={<div className="text-xs text-neutral-500">Chargement du graphe…</div>}>
           <ChartPreview spec={shown} />
         </Suspense>
