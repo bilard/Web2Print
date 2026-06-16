@@ -1,20 +1,22 @@
 // functions/src/workflow/llm.ts
 import { getUserApiKey } from './apiKeys'
 
-export interface LlmResult { text: string; model: string }
+export interface LlmResult { text: string; model: string; stopReason?: string }
 
-async function callAnthropic(key: string, prompt: string): Promise<string> {
+const DEFAULT_MAX_TOKENS = 8192
+
+async function callAnthropic(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: 'claude-opus-4-7', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model: 'claude-opus-4-7', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
   })
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`)
-  const json = (await res.json()) as { content?: { text?: string }[] }
-  return json.content?.map((c) => c.text ?? '').join('') ?? ''
+  const json = (await res.json()) as { content?: { text?: string }[]; stop_reason?: string }
+  return { text: json.content?.map((c) => c.text ?? '').join('') ?? '', stopReason: json.stop_reason }
 }
 
-async function callGemini(key: string, prompt: string): Promise<string> {
+async function callGemini(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${key}`,
     {
@@ -22,23 +24,34 @@ async function callGemini(key: string, prompt: string): Promise<string> {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { thinkingConfig: { thinkingLevel: 'LOW' }, maxOutputTokens: 4096 },
+        generationConfig: { thinkingConfig: { thinkingLevel: 'LOW' }, maxOutputTokens: maxTokens },
       }),
     },
   )
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`)
-  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-  return json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[] }
+  const cand = json.candidates?.[0]
+  return { text: cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? '', stopReason: cand?.finishReason }
 }
 
 /** Anthropic d'abord, fallback Gemini. Lève si aucune clé/aucun provider ne répond. */
-export async function callLlm(uid: string, prompt: string): Promise<LlmResult> {
+export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: number } = {}): Promise<LlmResult> {
+  const maxTokens = opts.maxTokens ?? DEFAULT_MAX_TOKENS
   const anthropic = await getUserApiKey(uid, 'anthropic')
   if (anthropic) {
-    try { return { text: await callAnthropic(anthropic, prompt), model: 'claude-opus-4-7' } } catch { /* fallback */ }
+    try {
+      const r = await callAnthropic(anthropic, prompt, maxTokens)
+      return { text: r.text, model: 'claude-opus-4-7', stopReason: r.stopReason }
+    } catch (e) {
+      // Fallback non silencieux : tracer pourquoi Anthropic a échoué (clé/quota/timeout).
+      console.warn('[llm] Anthropic KO → fallback Gemini :', e instanceof Error ? e.message.slice(0, 200) : e)
+    }
   }
   const gemini = await getUserApiKey(uid, 'gemini')
-  if (gemini) return { text: await callGemini(gemini, prompt), model: 'gemini-3.1-pro-preview' }
+  if (gemini) {
+    const r = await callGemini(gemini, prompt, maxTokens)
+    return { text: r.text, model: 'gemini-3.1-pro-preview', stopReason: r.stopReason }
+  }
   throw new Error('Aucune clé LLM (anthropic/gemini) configurée pour cet utilisateur.')
 }
 

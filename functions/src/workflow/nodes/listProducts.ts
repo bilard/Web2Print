@@ -108,22 +108,26 @@ registerServerNode({
         'de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image, sinon ""), ' +
         'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends le prix promo), ' +
         'url (lien absolu de la fiche), image (URL absolue de l’image — son chemin contient souvent ' +
-        'l’EAN même quand l’URL fiche ne l’a pas). Sois concis.\n\n--- CONTENU ---\n' +
+        'l’EAN même quand l’URL fiche ne l’a pas).\n' +
+        'IMPÉRATIF : réponds par l’objet JSON BRUT et lui seul — commence par « { » et finis par « } », ' +
+        'AUCUN texte avant/après, AUCUN bloc de code markdown (pas de ```), JSON compact.\n\n--- CONTENU ---\n' +
         content.slice(0, 28000)
       let products: ExtractedProduct[] = []
       try {
-        const { text } = await callLlm(ctx.uid, prompt)
+        const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 8192 })
         const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
         products = Array.isArray(parsed?.products) ? parsed!.products! : []
-        if (products.length === 0) {
+        if (products.length > 0) {
+          ctx.log('info', `${site} : ${products.length} produit(s), parse direct [${model}, stop=${stopReason ?? '?'}].`)
+        } else {
           // Parse global KO (prose autour du JSON, ou tableau tronqué) : récupérer
           // les objets produit complets un par un plutôt que de tout perdre.
           const recovered = recoverJsonObjects(text) as ExtractedProduct[]
           if (recovered.length > 0) {
             products = recovered
-            ctx.log('info', `${site} : ${recovered.length} produit(s) récupéré(s) d'une réponse LLM non standard.`)
+            ctx.log('warn', `${site} : parse direct KO → ${recovered.length} récupéré(s) [${model}, stop=${stopReason ?? '?'}, ${text.length} chars].`)
           } else {
-            ctx.log('warn', `${site} : 0 produit (réponse ${text.length} chars, markdown ${content.length} ; fin: …${text.slice(-160).replace(/\s+/g, ' ')})`)
+            ctx.log('warn', `${site} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length} ; fin: …${text.slice(-160).replace(/\s+/g, ' ')}]`)
           }
         }
       } catch (err) {
