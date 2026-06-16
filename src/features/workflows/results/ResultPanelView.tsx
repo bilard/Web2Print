@@ -9,8 +9,9 @@ import {
   type SheetLike, type AssetLike, type ExportLike,
 } from '../editor/DataPreviewPanel'
 import { buildDashboard } from './buildDashboard'
-import { regenerateDashboard, type AiDashboard } from './regenerateViz'
-import type { ChartSpec, ChartType } from '../registry/chartSpec'
+import { numericColumnKeys, categoricalKey } from './columnTypes'
+import { regenerateDashboard, type AiDashboard, type ChartAggregation } from './regenerateViz'
+import { aggregateChartData, type ChartSpec, type ChartType } from '../registry/chartSpec'
 import type { ResultKind, ResultPanel } from './types'
 
 const ChartPreview = lazy(() => import('../editor/ChartPreview'))
@@ -103,19 +104,63 @@ function KpiGrid({ kpis }: { kpis: { label: string; value: string; sub?: string 
   )
 }
 
+const AGG_OPTIONS: { value: ChartAggregation; label: string }[] = [
+  { value: 'none', label: 'Aucune' },
+  { value: 'sum', label: 'Somme / catégorie' },
+  { value: 'avg', label: 'Moyenne / catégorie' },
+  { value: 'count', label: 'Nombre / catégorie' },
+]
+
+/** Constructeur de graphe (axe X + agrégation + choix des champs/séries + type) — même
+ *  jeu de réglages que la carte « Graphique » du node, appliqué au résultat. */
 function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
-  const deterministic = useMemo(() => buildDashboard(sheet), [sheet])
+  const cols = useMemo(() => sheet.columns ?? [], [sheet])
+  const rows = useMemo(() => sheet.rows ?? [], [sheet])
+  const numericKeys = useMemo(() => numericColumnKeys(cols, rows), [cols, rows])
+  const defaultKpis = useMemo(() => buildDashboard(sheet).kpis, [sheet])
+
+  const [type, setType] = useState<ChartType>('bar')
+  const [xCol, setXCol] = useState('')
+  const [agg, setAgg] = useState<ChartAggregation>('none')
+  const [series, setSeries] = useState<Set<string>>(new Set())
   const [ai, setAi] = useState<AiDashboard | null>(null)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const dash = ai?.dashboard ?? deterministic
+
+  // (Ré)initialise le constructeur quand la sheet change (nouveau run / régénération).
+  useEffect(() => {
+    setXCol(categoricalKey(cols, numericKeys))
+    setSeries(new Set(numericKeys.slice(0, 5)))
+    setType('bar'); setAgg('none'); setAi(null); setErr(null)
+  }, [cols, numericKeys])
+
+  const toggleSeries = (key: string) => setSeries((prev) => {
+    const n = new Set(prev)
+    if (n.has(key)) n.delete(key); else n.add(key)
+    return n
+  })
+
+  const spec = useMemo(() => aggregateChartData(rows, cols, {
+    chartType: type, xColumn: xCol, valueColumns: [...series].join(','), aggregation: agg, title: '',
+  }), [rows, cols, type, xCol, agg, series])
+
+  const kpis = ai?.kpis ?? defaultKpis
 
   const regen = async () => {
     setLoading(true); setErr(null)
-    try { setAi(await regenerateDashboard(sheet, hint)) }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    try {
+      const r = await regenerateDashboard(sheet, hint)
+      setAi(r)
+      const c = r.charts[0]
+      if (c) {
+        setType(c.type); setXCol(c.xColumn); setAgg(c.aggregation)
+        if (c.valueColumns.length) setSeries(new Set(c.valueColumns))
+      }
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
     finally { setLoading(false) }
   }
+
+  const selectCls = 'text-[11px] bg-well border border-neutral-800 rounded px-1.5 py-1 text-neutral-300 outline-none focus:border-indigo-500'
 
   return (
     <div className="space-y-4">
@@ -128,11 +173,8 @@ function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Régénérer avec l'IA
         </button>
         {ai && (
-          <button
-            onClick={() => setAi(null)}
-            className="px-2.5 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/70 flex items-center gap-2 text-sm"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> Revenir au défaut
+          <button onClick={() => setAi(null)} className="px-2.5 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/70 flex items-center gap-2 text-sm">
+            <RotateCcw className="w-3.5 h-3.5" /> KPI par défaut
           </button>
         )}
         {err && <span className="text-[11px] text-amber-300/90">{err}</span>}
@@ -148,8 +190,55 @@ function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
         </ul>
       ) : null}
 
-      <KpiGrid kpis={dash.kpis} />
-      {dash.charts.map((c, i) => <ChartBox key={i} spec={c} />)}
+      <KpiGrid kpis={kpis} />
+
+      <div className="rounded-lg border border-neutral-800 bg-surface p-3 space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+            Axe X
+            <select value={xCol} onChange={(e) => setXCol(e.target.value)} className={selectCls}>
+              {cols.map((c) => <option key={c.key} value={c.key}>{c.label ?? c.key}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+            Agrégation
+            <select value={agg} onChange={(e) => setAgg(e.target.value as ChartAggregation)} className={selectCls}>
+              {AGG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <select value={type} onChange={(e) => setType(e.target.value as ChartType)} className={`ml-auto ${selectCls}`} title="Type de graphique">
+            {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">Champs (séries)</div>
+          <div className="flex flex-wrap gap-1.5">
+            {cols.map((c) => {
+              const on = series.has(c.key)
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => toggleSeries(c.key)}
+                  className={`px-2 py-0.5 rounded-full text-[11px] border transition-colors ${
+                    on ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-100' : 'border-neutral-800 bg-well text-neutral-500'
+                  }`}
+                  title={on ? 'Retirer cette série' : 'Ajouter cette série'}
+                >
+                  {c.label ?? c.key}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="h-[460px] flex flex-col min-h-0">
+          <Suspense fallback={<div className="text-xs text-neutral-500">Chargement du graphe…</div>}>
+            <ChartPreview spec={spec} />
+          </Suspense>
+        </div>
+      </div>
+
       <div className="rounded-lg border border-neutral-800 bg-surface p-2 max-h-[420px] overflow-hidden flex flex-col">
         <SheetPreview sheet={sheet} />
       </div>

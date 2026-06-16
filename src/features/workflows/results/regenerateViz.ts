@@ -2,19 +2,33 @@
 // Phase 2 — « Régénérer avec l'IA » : à partir d'un échantillon de la sheet + le contexte
 // (nom du node/workflow), un LLM compose un dashboard pertinent (colonnes, types de
 // graphes, KPI) + des insights en français. Coût : uniquement au clic (hybride).
+// Renvoie des CONFIGS de graphe (axe X / séries / type / agrégation) que le constructeur
+// de l'écran adopte — l'utilisateur peut ensuite ajuster les champs comme dans le node.
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { aggregateChartData, type ChartSpec, type ChartType } from '../registry/chartSpec'
+import type { ChartType } from '../registry/chartSpec'
 import { isIdentifierColumn, numericColumnKeys, toNumber, formatNumber } from './columnTypes'
-import type { DashboardSpec, KpiCard } from './types'
+import type { KpiCard } from './types'
 
 interface ColumnLike { key: string; label?: string }
 interface SheetLike { columns?: ColumnLike[]; rows?: Record<string, unknown>[] }
 
+export type ChartAggregation = 'none' | 'sum' | 'avg' | 'count'
+
+/** Config d'un graphe (clés de colonnes résolues) — pilote le constructeur de l'écran. */
+interface DashChartConfig {
+  type: ChartType
+  xColumn: string
+  valueColumns: string[]
+  aggregation: ChartAggregation
+  title: string
+}
+
 export interface AiDashboard {
   title?: string
   insights: string[]
-  dashboard: DashboardSpec
+  kpis: KpiCard[]
+  charts: DashChartConfig[]
 }
 
 const CHART_TYPES = ['bar', 'line', 'area', 'pie', 'doughnut'] as const
@@ -95,8 +109,8 @@ function aggregate(nums: number[], agg: string): number {
   }
 }
 
-/** Résout la spec IA en DashboardSpec calculée sur les données (colonnes inexistantes ignorées). */
-function resolveSpec(spec: AiSpec, sheet: SheetLike): DashboardSpec {
+/** Résout la spec IA : KPI calculés sur les données + configs de graphe (clés valides). */
+function resolveSpec(spec: AiSpec, sheet: SheetLike): { kpis: KpiCard[]; charts: DashChartConfig[] } {
   const cols = sheet.columns ?? []
   const rows = sheet.rows ?? []
   const keys = new Set(cols.map((c) => c.key))
@@ -108,8 +122,7 @@ function resolveSpec(spec: AiSpec, sheet: SheetLike): DashboardSpec {
     const key = resolveKey(k.column)
     if (!keys.has(key)) continue
     if (k.agg === 'count') {
-      const n = rows.filter((r) => String(r[key] ?? '').trim() !== '').length
-      kpis.push({ label: k.label, value: formatNumber(n) })
+      kpis.push({ label: k.label, value: formatNumber(rows.filter((r) => String(r[key] ?? '').trim() !== '').length) })
       continue
     }
     const nums = rows.map((r) => toNumber(r[key])).filter((n): n is number => n !== null)
@@ -117,18 +130,12 @@ function resolveSpec(spec: AiSpec, sheet: SheetLike): DashboardSpec {
     kpis.push({ label: k.label, value: formatNumber(aggregate(nums, k.agg)) })
   }
 
-  const charts: ChartSpec[] = []
+  const charts: DashChartConfig[] = []
   for (const c of spec.charts.slice(0, 4)) {
-    const xKey = resolveKey(c.xColumn)
-    const valueKeys = c.valueColumns.map(resolveKey).filter((k) => keys.has(k))
-    if (!keys.has(xKey)) continue
-    charts.push(aggregateChartData(rows, cols, {
-      chartType: c.type as ChartType,
-      xColumn: xKey,
-      valueColumns: valueKeys.join(','),
-      aggregation: c.aggregation as 'none' | 'sum' | 'avg' | 'count',
-      title: c.title || '',
-    }))
+    const xColumn = resolveKey(c.xColumn)
+    const valueColumns = c.valueColumns.map(resolveKey).filter((k) => keys.has(k))
+    if (!keys.has(xColumn)) continue
+    charts.push({ type: c.type as ChartType, xColumn, valueColumns, aggregation: c.aggregation as ChartAggregation, title: c.title || '' })
   }
   return { kpis, charts }
 }
@@ -160,9 +167,6 @@ export async function regenerateDashboard(sheet: SheetLike, hint: string): Promi
     schema,
     schemaForLLM,
   })
-  return {
-    title: spec.title,
-    insights: spec.insights.slice(0, 3),
-    dashboard: resolveSpec(spec, sheet),
-  }
+  const resolved = resolveSpec(spec, sheet)
+  return { title: spec.title, insights: spec.insights.slice(0, 3), kpis: resolved.kpis, charts: resolved.charts }
 }
