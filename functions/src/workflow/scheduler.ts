@@ -38,12 +38,17 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   const runId = `srv_${startedAt}`
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), RUN_TIMEOUT_MS)
-  // État live « en cours » : toutes les cartes connectées passent en running côté client.
-  const running: Record<string, 'running'> = {}
-  for (const n of wf.nodes) running[n.id] = 'running'
-  await writeRunLive(uid, wf.id, { runId, trigger, startedAt, status: 'running', nodeStates: running, logs: [] })
+  // État live initial : toutes les cartes « en attente » (gris). La progression
+  // node-par-node (onProgress) les fait passer running → success/error au fil du run.
+  const initial: Record<string, 'pending'> = {}
+  for (const n of wf.nodes) initial[n.id] = 'pending'
+  await writeRunLive(uid, wf.id, { runId, trigger, startedAt, status: 'running', nodeStates: initial, logs: [] })
   try {
-    const result = await executeWorkflowHeadless(wf, { uid, signal: ac.signal })
+    const result = await executeWorkflowHeadless(wf, {
+      uid,
+      signal: ac.signal,
+      onProgress: (nodeStates) => writeRunLive(uid, wf.id, { nodeStates }),
+    })
     await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, result)
     await writeRunLive(uid, wf.id, {
       runId, trigger, startedAt, endedAt: Date.now(),

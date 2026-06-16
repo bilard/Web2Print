@@ -13,7 +13,7 @@ export interface HeadlessResult {
   logs: RunLog[]
   nodeOutputs: Record<string, Record<string, unknown>>
   /** Statut final par node (pour l'affichage live côté client). */
-  nodeStates: Record<string, 'success' | 'error' | 'skipped' | 'pending'>
+  nodeStates: Record<string, LiveNodeStatus>
 }
 
 interface LoopPair { eachId: string; collectId: string; bodyIds: Set<string> }
@@ -49,9 +49,16 @@ function detectLoops(nodes: ServerNode[], edges: ServerEdge[]): LoopPair[] {
   return pairs
 }
 
+export type LiveNodeStatus = 'pending' | 'running' | 'success' | 'error' | 'skipped'
+
 export async function executeWorkflowHeadless(
   wf: ServerWorkflow,
-  opts: { uid: string; signal: AbortSignal },
+  opts: {
+    uid: string
+    signal: AbortSignal
+    /** Notifié à chaque node avec l'état COURANT de tous les nodes (progression live). */
+    onProgress?: (states: Record<string, LiveNodeStatus>) => void | Promise<void>
+  },
 ): Promise<HeadlessResult> {
   const logs: RunLog[] = []
   const log = (level: RunLog['level'], msg: string, node?: string) => {
@@ -112,8 +119,24 @@ export async function executeWorkflowHeadless(
     return back ? sub.get(back.source)?.[back.sourceHandle] : item
   }
 
+  // État courant de tous les nodes (pour la progression live). `running` = le node
+  // passé en argument ; les précédents ont déjà leur état final dans les sets.
+  const deriveStates = (running?: string): Record<string, LiveNodeStatus> => {
+    const s: Record<string, LiveNodeStatus> = {}
+    for (const n of wf.nodes) {
+      s[n.id] = n.id === running ? 'running'
+        : errored.has(n.id) ? 'error'
+          : skipped.has(n.id) ? 'skipped'
+            : outputs.has(n.id) || internalIds.has(n.id) ? 'success'
+              : 'pending'
+    }
+    return s
+  }
+
   let nodeCount = 0
   for (const node of ordered) {
+    // Progression : le node courant passe « running », les précédents sont finalisés.
+    await opts.onProgress?.(deriveStates(node.id))
     const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
     if (upstream.some((e) => skipped.has(e.source) || errored.has(e.source))) {
       skipped.add(node.id); continue
@@ -170,16 +193,7 @@ export async function executeWorkflowHeadless(
   const errorCount = errored.size
   const status: HeadlessResult['status'] = errorCount === 0 ? 'success' : nodeCount > 0 ? 'partial' : 'error'
   // Statut final par node, pour l'affichage live côté client (cartes colorées).
-  const nodeStates: HeadlessResult['nodeStates'] = {}
-  for (const n of wf.nodes) {
-    nodeStates[n.id] = errored.has(n.id)
-      ? 'error'
-      : skipped.has(n.id)
-        ? 'skipped'
-        : outputs.has(n.id) || internalIds.has(n.id)
-          ? 'success'
-          : 'pending'
-  }
+  const nodeStates = deriveStates()
   console.log(`[wf:${wf.name}] run ${status} — ${nodeCount} node(s) OK, ${errorCount} en erreur`)
   // Trace complète (info inclus) à CHAQUE run : sans UI d'historique côté client,
   // c'est le seul moyen de voir le détail par node (nb de produits, modèle LLM,
