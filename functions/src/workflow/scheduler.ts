@@ -84,10 +84,13 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
         void writeRunLive(uid, wf.id, { logs: logs.slice(-200) })
       },
     })
-    await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, result)
+    // Run interrompu (STOP/timeout) : statut global « error » (n'a pas abouti), même si
+    // les nodes individuels sont « arrêtés » (skipped) et non en échec.
+    const finalStatus = ac.signal.aborted ? 'error' : result.status
+    await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, { ...result, status: finalStatus })
     await writeRunLive(uid, wf.id, {
       runId, trigger, startedAt, endedAt: Date.now(),
-      status: result.status, nodeStates: result.nodeStates, logs: result.logs.slice(-200),
+      status: finalStatus, nodeStates: result.nodeStates, logs: result.logs.slice(-200),
       nodeOutputs: capOutputsForPreview(result.nodeOutputs),
       nodeConnectors: result.nodeConnectors,
     })

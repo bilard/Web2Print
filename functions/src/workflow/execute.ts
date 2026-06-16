@@ -147,7 +147,8 @@ export async function executeWorkflowHeadless(
     if (upstream.some((e) => skipped.has(e.source) || errored.has(e.source))) {
       skipped.add(node.id); continue
     }
-    if (opts.signal.aborted) { errored.add(node.id); log('error', 'Run aborted', node.id); continue }
+    // Abort (STOP volontaire ou timeout) = pas un échec : node « arrêté » (neutre), pas erreur.
+    if (opts.signal.aborted) { skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id); continue }
     if (node.type === 'cron') { outputs.set(node.id, { tick: { at: new Date().toISOString() } }); continue }
     if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) { nodeCount++; continue }
 
@@ -201,7 +202,13 @@ export async function executeWorkflowHeadless(
       nodeOutputs[node.id] = result ?? {}
       nodeCount++
     } catch (err) {
-      errored.add(node.id); log('error', err instanceof Error ? err.message : String(err), node.id)
+      const msg = err instanceof Error ? err.message : String(err)
+      // Interruption (STOP/timeout) → arrêté (neutre), pas un échec du node.
+      if (opts.signal.aborted || /aborted|arrêté/i.test(msg)) {
+        skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id)
+      } else {
+        errored.add(node.id); log('error', msg, node.id)
+      }
     }
   }
 
