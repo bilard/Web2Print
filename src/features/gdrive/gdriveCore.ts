@@ -108,6 +108,8 @@ export async function importGoogleSheetById(sheetId: string, token: string): Pro
 export interface FormulaColumn {
   header: string
   template: string
+  /** Format de sortie Google Sheets (clé ; '' = auto). Cf. Z_BY_FORMAT / serveur. */
+  format?: string
 }
 
 /** Résout un template de formule pour une ligne donnée : retire un `=` initial et
@@ -125,15 +127,34 @@ export function resolveFormula(
     })
 }
 
+/** Codes de format Excel (z) par format de colonne — alignés sur FORMULA_FORMATS serveur. */
+const Z_BY_FORMAT: Record<string, string> = {
+  text: '@',
+  number: '#,##0.00',
+  percent: '0.00%',
+  scientific: '0.00E+00',
+  currency: '#,##0.00 €',
+  currency_round: '#,##0 €',
+  accounting: '#,##0.00 €;(#,##0.00 €)',
+  date: 'dd/mm/yyyy',
+  time: 'hh:mm:ss',
+  datetime: 'dd/mm/yyyy hh:mm:ss',
+  duration: '[h]:mm:ss',
+}
+
 /** Cellule-formule XLSX exploitable par Google Sheets : une valeur en cache (`v`)
  *  est OBLIGATOIRE — sans elle, la cellule est de type « erreur » et s'importe vide.
- *  Google recalcule à l'ouverture ; `v:0` n'est qu'un placeholder. `z` applique un
- *  format date pour NOW/TODAY/DATE (sinon affichage du n° de série, pas d'une date). */
-export function buildFormulaCell(resolved: string): { t: 'n'; f: string; v: number; z?: string } {
+ *  Google recalcule à l'ouverture ; `v:0` n'est qu'un placeholder. `z` = format choisi
+ *  par l'utilisateur, sinon date auto pour NOW/TODAY/DATE. */
+export function buildFormulaCell(resolved: string, format?: string): { t: 'n'; f: string; v: number; z?: string } {
   const cell: { t: 'n'; f: string; v: number; z?: string } = { t: 'n', f: resolved, v: 0 }
-  const up = resolved.toUpperCase()
-  if (up.includes('NOW(')) cell.z = 'yyyy-mm-dd hh:mm'
-  else if (up.includes('TODAY(') || up.includes('DATE(')) cell.z = 'yyyy-mm-dd'
+  if (format && Z_BY_FORMAT[format]) {
+    cell.z = Z_BY_FORMAT[format]
+  } else {
+    const up = resolved.toUpperCase()
+    if (up.includes('NOW(')) cell.z = 'yyyy-mm-dd hh:mm'
+    else if (up.includes('TODAY(') || up.includes('DATE(')) cell.z = 'yyyy-mm-dd'
+  }
   return cell
 }
 
@@ -184,7 +205,7 @@ async function sheetToXlsxBlob(
       // Une formule par ligne de données (ligne tableur = index + 2 : +1 en-tête, base 1)
       for (let r = 0; r < rows.length; r++) {
         const resolved = resolveFormula(f.template, letterOf, r + 2)
-        ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = buildFormulaCell(resolved)
+        ws[XLSX.utils.encode_cell({ c: colNum, r: r + 1 })] = buildFormulaCell(resolved, f.format)
       }
     })
     // Étend la plage du worksheet aux colonnes-formule.

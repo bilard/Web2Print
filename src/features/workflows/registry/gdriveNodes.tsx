@@ -331,12 +331,15 @@ function parseFormulaColumns(raw: string): FormulaColumn[] {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
-    .map((line) => {
+    .map((line): FormulaColumn | null => {
       const eq = line.indexOf('=')
       if (eq < 0) return null
-      const header = line.slice(0, eq).trim()
       const template = line.slice(eq + 1).trim()
-      return header && template ? { header, template } : null
+      const left = line.slice(0, eq)
+      const fm = left.match(/^(.*?)\s*\[([a-z_]+)\]\s*$/) // En-tête [format]
+      const header = (fm ? fm[1] : left).trim()
+      const format = fm ? fm[2] : undefined
+      return header && template ? { header, template, format } : null
     })
     .filter((f): f is FormulaColumn => f !== null)
 }

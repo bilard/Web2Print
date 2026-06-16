@@ -116,20 +116,39 @@ async function applyNumberFormats(token: string, id: string, gid: number, format
 }
 
 // --- Colonnes formule (parité avec src/features/gdrive/gdriveCore.ts) ---------
-interface FormulaColumn { header: string; template: string }
+interface FormulaColumn { header: string; template: string; format?: string }
 
-/** Parse « En-tête = template » (une par ligne ; le template référence {colonne}). */
+/** Format de sortie d'une colonne formule → numberFormat Google. Clés partagées avec
+ *  l'éditeur client (GSheetsFormulaColumns). '' / 'auto' = aucun format imposé. */
+const FORMULA_FORMATS: Record<string, { type: string; pattern: string }> = {
+  text: { type: 'TEXT', pattern: '@' },
+  number: { type: 'NUMBER', pattern: '#,##0.00' },
+  percent: { type: 'PERCENT', pattern: '0.00%' },
+  scientific: { type: 'SCIENTIFIC', pattern: '0.00E+00' },
+  currency: { type: 'CURRENCY', pattern: '#,##0.00 "€"' },
+  currency_round: { type: 'CURRENCY', pattern: '#,##0 "€"' },
+  accounting: { type: 'NUMBER', pattern: '#,##0.00 "€";(#,##0.00 "€")' },
+  date: { type: 'DATE', pattern: 'dd/mm/yyyy' },
+  time: { type: 'TIME', pattern: 'hh:mm:ss' },
+  datetime: { type: 'DATE_TIME', pattern: 'dd/mm/yyyy hh:mm:ss' },
+  duration: { type: 'NUMBER', pattern: '[h]:mm:ss' },
+}
+
+/** Parse « En-tête [format] = template » (le [format] est optionnel ; template référence {col}). */
 export function parseFormulaColumns(raw: string): FormulaColumn[] {
   return String(raw || '')
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
-    .map((line) => {
+    .map((line): FormulaColumn | null => {
       const eq = line.indexOf('=')
       if (eq < 0) return null
-      const header = line.slice(0, eq).trim()
       const template = line.slice(eq + 1).trim()
-      return header && template ? { header, template } : null
+      const left = line.slice(0, eq)
+      const fm = left.match(/^(.*?)\s*\[([a-z_]+)\]\s*$/)
+      const header = (fm ? fm[1] : left).trim()
+      const format = fm ? fm[2] : undefined
+      return header && template ? { header, template, format } : null
     })
     .filter((f): f is FormulaColumn => f !== null)
 }
@@ -269,7 +288,9 @@ registerServerNode({
       )
       ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
     }
-    await applyNumberFormats(token, id, gid, formats).catch((e) =>
+    // Formats = colonnes données (détectés) + colonnes formule (format choisi par l'utilisateur).
+    const allFormats = [...formats, ...formulas.map((f) => (f.format ? FORMULA_FORMATS[f.format] ?? null : null))]
+    await applyNumberFormats(token, id, gid, allFormats).catch((e) =>
       ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`),
     )
 

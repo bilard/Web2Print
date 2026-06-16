@@ -9,7 +9,25 @@ import { formulaInsert } from './formulaInsert'
 interface Row {
   header: string
   formula: string
+  /** Format de sortie Google Sheets (clé ; '' = auto). Cf. FORMULA_FORMATS serveur. */
+  format?: string
 }
+
+/** Options de format de colonne (alignées sur FORMULA_FORMATS côté serveur). */
+const FORMAT_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Auto' },
+  { value: 'text', label: 'Texte' },
+  { value: 'number', label: 'Nombre' },
+  { value: 'percent', label: 'Pourcentage' },
+  { value: 'currency', label: 'Devise €' },
+  { value: 'currency_round', label: 'Devise arrondi' },
+  { value: 'accounting', label: 'Comptabilité' },
+  { value: 'scientific', label: 'Scientifique' },
+  { value: 'date', label: 'Date' },
+  { value: 'time', label: 'Heure' },
+  { value: 'datetime', label: 'Date+heure' },
+  { value: 'duration', label: 'Durée' },
+]
 
 /** Ferme les parenthèses (et accolades) non fermées d'une formule, dans le bon
  *  ordre imbriqué. Ignore le contenu entre guillemets. Ex. `LEFT({produit}` → `LEFT({produit})`. */
@@ -34,15 +52,17 @@ function parseRows(raw: string): Row[] {
     .filter(Boolean)
     .map((line) => {
       const eq = line.indexOf('=')
-      if (eq < 0) return { header: line, formula: '' }
-      return { header: line.slice(0, eq).trim(), formula: line.slice(eq + 1).trim() }
+      const left = eq < 0 ? line : line.slice(0, eq)
+      const formula = eq < 0 ? '' : line.slice(eq + 1).trim()
+      const fm = left.match(/^(.*?)\s*\[([a-z_]+)\]\s*$/) // En-tête [format]
+      return { header: (fm ? fm[1] : left).trim(), format: fm ? fm[2] : '', formula }
     })
 }
 
 function serialize(rows: Row[]): string {
   return rows
     .filter((r) => r.header.trim() || r.formula.trim())
-    .map((r) => `${r.header.trim()} = ${r.formula.trim()}`)
+    .map((r) => `${r.header.trim()}${r.format ? ` [${r.format}]` : ''} = ${r.formula.trim()}`)
     .join('\n')
 }
 
@@ -244,7 +264,7 @@ export function GSheetsFormulaColumns({
   columns: string[]
 }) {
   const rows = parseRows(value)
-  const editable = [...rows, { header: '', formula: '' }] // ligne fantôme pour en ajouter une
+  const editable = [...rows, { header: '', formula: '', format: '' }] // ligne fantôme pour en ajouter une
 
   const setRow = (i: number, patch: Partial<Row>) => {
     const next = editable.map((r, j) => (j === i ? { ...r, ...patch } : r))
@@ -266,6 +286,16 @@ export function GSheetsFormulaColumns({
             />
             <span className="text-neutral-600 text-xs">=</span>
             <FormulaInput value={row.formula} onChange={(v) => setRow(i, { formula: v })} columns={columns} />
+            <select
+              value={row.format ?? ''}
+              onChange={(e) => setRow(i, { format: e.target.value })}
+              title="Format de sortie de la colonne dans Google Sheets"
+              className="w-24 shrink-0 bg-background border border-neutral-700 rounded px-1 py-1.5 text-[10px] text-white/70 outline-none focus:border-indigo-500"
+            >
+              {FORMAT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
             {!ghost && (
               <button
                 type="button"
