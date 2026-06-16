@@ -32,18 +32,48 @@ const TYPE_OPTIONS: { value: ChartType; label: string }[] = [
   { value: 'doughnut', label: 'Anneau' },
 ]
 
-/** Graphe avec sélecteur de type (override local, réinitialisé si la spec change). */
+/** Graphe avec choix du type + des champs (séries) affichés. Réinit si la spec change. */
 function ChartBox({ spec }: { spec: ChartSpec }) {
   const [type, setType] = useState<ChartType>(spec.chartType)
-  useEffect(() => { setType(spec.chartType) }, [spec])
-  const shown = type === spec.chartType ? spec : { ...spec, chartType: type }
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+  useEffect(() => { setType(spec.chartType); setHidden(new Set()) }, [spec])
+
+  const allLabels = spec.datasets.map((d) => d.label)
+  const toggle = (label: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }
+  const datasets = spec.datasets.filter((d) => !hidden.has(d.label))
+  const shown: ChartSpec = { ...spec, chartType: type, datasets: datasets.length ? datasets : spec.datasets }
+
   return (
     <div className="rounded-lg border border-neutral-800 bg-surface p-3">
-      <div className="flex justify-end mb-1">
+      <div className="flex items-center gap-2 flex-wrap mb-2">
+        {allLabels.length > 1 && allLabels.map((l) => {
+          const on = !hidden.has(l)
+          return (
+            <button
+              key={l}
+              onClick={() => toggle(l)}
+              className={`px-2 py-0.5 rounded-full text-[11px] border transition-colors ${
+                on
+                  ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-100'
+                  : 'border-neutral-800 bg-well text-neutral-500 line-through'
+              }`}
+              title={on ? 'Masquer cette série' : 'Afficher cette série'}
+            >
+              {l}
+            </button>
+          )
+        })}
         <select
           value={type}
           onChange={(e) => setType(e.target.value as ChartType)}
-          className="text-[11px] bg-well border border-neutral-800 rounded px-1.5 py-0.5 text-neutral-300 outline-none focus:border-indigo-500"
+          className="ml-auto text-[11px] bg-well border border-neutral-800 rounded px-1.5 py-0.5 text-neutral-300 outline-none focus:border-indigo-500"
           title="Type de graphique"
         >
           {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}

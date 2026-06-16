@@ -157,6 +157,16 @@ export function toChartJsConfig(
         }),
       }
 
+  // Tronque les libellés d'axe X (noms produits longs → illisibles/superposés). Le
+  // tooltip Chart.js garde le libellé complet. autoSkip évite l'empilement si trop de barres.
+  const xTicks = {
+    autoSkip: true,
+    maxRotation: 0,
+    callback(this: { getLabelForValue: (v: number) => string }, value: number) {
+      const l = String(this.getLabelForValue(value))
+      return l.length > 16 ? `${l.slice(0, 15)}…` : l
+    },
+  }
   const options = {
     responsive: opts.responsive ?? true,
     maintainAspectRatio: false,
@@ -165,7 +175,7 @@ export function toChartJsConfig(
       legend: { display: spec.datasets.length > 1 || isPie, position: isPie ? 'right' : 'bottom' },
       title: { display: !!spec.title, text: spec.title },
     },
-    scales: isPie ? undefined : { y: { beginAtZero: true } },
+    scales: isPie ? undefined : { x: { ticks: xTicks }, y: { beginAtZero: true } },
   }
 
   return { type: cjsType, data, options }
