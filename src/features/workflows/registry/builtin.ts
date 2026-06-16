@@ -18,6 +18,7 @@ import './logicNodes'
 import './priceWatchNode'
 import './priceWatchTrackNode'
 import './listProductsNode'
+import './crawlNode'
 import './webScrapingNode' // node unifié (doit suivre les anciens : il les référence)
 import './comparePricesNode'
 import './communicationNodes'

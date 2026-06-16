@@ -12,6 +12,7 @@ import { ConfigFieldRenderer } from '../editor/configFields'
 const MODE_TO_TYPE: Record<string, string> = {
   scrape: 'scrape-url',
   list: 'list-products',
+  crawl: 'crawl',
   search: 'web-search',
   ask: 'web-ask',
 }
@@ -19,12 +20,13 @@ const MODE_TO_TYPE: Record<string, string> = {
 const MODE_OPTIONS = [
   { value: 'scrape', label: 'Scrape — URL(s) → champs' },
   { value: 'list', label: 'Liste — pages catégorie → produits' },
+  { value: 'crawl', label: 'Crawl — découverte de fiches (client)' },
   { value: 'search', label: 'Recherche web' },
   { value: 'ask', label: 'Question web (IA)' },
 ]
 
 const MODE_LABEL: Record<string, string> = {
-  scrape: 'Scrape', list: 'Liste produits', search: 'Recherche', ask: 'Question',
+  scrape: 'Scrape', list: 'Liste produits', crawl: 'Crawl', search: 'Recherche', ask: 'Question',
 }
 
 type Cfg = Record<string, unknown>
