@@ -130,7 +130,8 @@ async function extractProducts(ctx: Ctx, content: string, label: string): Promis
     const recovered = recoverJsonObjects(text) as ExtractedProduct[]
     if (recovered.length > 0) {
       products = recovered
-      ctx.log('warn', `${label} : parse direct KO → ${recovered.length} récupéré(s) [${model}, stop=${stopReason ?? '?'}, ${text.length} chars].`)
+      // Pas une erreur : réponse LLM tronquée (limite de sortie), produits récupérés intacts.
+      ctx.log('info', `${label} : ${recovered.length} produit(s) extrait(s) [${model}] — réponse tronquée (${text.length} chars), récupération OK.`)
     } else {
       ctx.log('warn', `${label} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length}].`)
     }
