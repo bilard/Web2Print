@@ -13,8 +13,10 @@ if (!getApps().length) initializeApp()
 
 /** Borne de temps par exécution de workflow : déclenche l'AbortSignal que les nodes
  * (réseau, boucles) surveillent, pour éviter qu'un workflow emballé épuise le budget
- * de la Function et affame les autres plannings dûs. < timeoutSeconds du callable (300). */
-const RUN_TIMEOUT_MS = 240_000
+ * de la Function et affame les autres plannings dûs. Doit rester < timeoutSeconds des
+ * deux Functions (540s). Relevé à 500s : l'escalade Bright Data (jusqu'à 160s/URL) sur
+ * un site dur (Leroy Merlin) + plusieurs pages liste dépassait l'ancien budget de 240s. */
+const RUN_TIMEOUT_MS = 500_000
 /** Plafond de plannings traités par tick du scanner (les autres repassent au tick suivant,
  * ordonnés par échéance). Évite qu'un lot massif fasse expirer toute la Function. */
 const MAX_SCHEDULES_PER_TICK = 25
@@ -89,7 +91,7 @@ export const workflowCronScheduler = onSchedule(
 
 // Callable : exécution immédiate (bouton « Lancer maintenant (serveur) »).
 export const runWorkflowNow = onCall(
-  { region: 'europe-west1', timeoutSeconds: 300, memory: '512MiB' },
+  { region: 'europe-west1', timeoutSeconds: 540, memory: '512MiB' },
   async (req) => {
     const uid = req.auth?.uid
     if (!uid) throw new HttpsError('unauthenticated', 'Connexion requise.')
