@@ -55,7 +55,7 @@ export function detectColumnFormat(key: string, label: string, values: unknown[]
 /** Convertit une valeur de cellule pour l'écriture RAW : un nombre RESTE un nombre
  *  (colonnes numériques), tout le reste reste une STRING. ⚠️ Clé du fix : empêche
  *  Google d'interpréter « 6.5 » comme la date « 6 mai » ou « 4892… » en scientifique. */
-function toCell(v: unknown, fmt: GFormat | null): string | number {
+export function toCell(v: unknown, fmt: GFormat | null): string | number {
   const s = String(v ?? '')
   if (fmt && fmt.type === 'NUMBER' && s.trim() !== '') {
     const n = Number(s.replace(',', '.').replace(/[^\d.+-]/g, ''))

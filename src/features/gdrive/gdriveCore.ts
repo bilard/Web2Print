@@ -158,6 +158,35 @@ export function buildFormulaCell(resolved: string, format?: string): { t: 'n'; f
   return cell
 }
 
+/** Format Excel (`z`) déduit d'une colonne — MÊME logique que `detectColumnFormat`
+ *  serveur (functions/src/workflow/nodes/google.ts) mais en codes XLSX. `text:true`
+ *  = forcer en texte (EAN/réf/codes longs : sinon notation scientifique). */
+function detectColumnFormat(key: string, label: string, values: unknown[]): { z: string | null; text: boolean } {
+  const hint = `${key} ${label}`.toLowerCase()
+  const vals = values.map((v) => String(v ?? '').trim()).filter(Boolean)
+  if (/\b(ean|gtin|upc|isbn|sku|ref|reference|référence|code|mpn)\b/.test(hint)) return { z: '@', text: true }
+  if (/(%|pourcent|\bpct\b|ecart_pct)/.test(hint)) return { z: '0.00"%"', text: false }
+  if (/(prix|price|montant|tarif|co[uû]t|cost|devise|€|\beur\b)/.test(hint)) return { z: '#,##0.00 €', text: false }
+  if (vals.length === 0) return { z: null, text: false }
+  const isNum = (s: string) => /^-?\d+(?:[.,]\d+)?$/.test(s)
+  if (vals.every(isNum)) {
+    if (vals.every((v) => /^\d{12,}$/.test(v))) return { z: '@', text: true } // identifiant long
+    return { z: '#,##0.##', text: false }
+  }
+  const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}/.test(s) || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)
+  if (vals.every(isDate)) return { z: 'dd/mm/yyyy', text: false }
+  return { z: null, text: false }
+}
+
+/** Chaîne PUREMENT numérique → nombre, sinon null. Strict (pas de strip de lettres) :
+ *  « 177.49 »/« 177,49 » → 177.49 ; « castorama.fr »/« v2 »/« plus cher » → null. */
+function numericString(s: string): number | null {
+  const t = s.trim()
+  if (!/^-?\d+(?:[.,]\d+)?$/.test(t)) return null
+  const n = Number(t.replace(',', '.'))
+  return Number.isFinite(n) ? n : null
+}
+
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
  *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
 async function sheetToXlsxBlob(
@@ -166,20 +195,21 @@ async function sheetToXlsxBlob(
   formulas?: FormulaColumn[],
 ): Promise<Blob> {
   const XLSX = await import('xlsx')
-  // Colonnes déclarées numériques → on écrit de VRAIS nombres (sinon SUM/COUNT/AVERAGE
-  // échouent : Google importe les chaînes en texte). L'EAN (colonne texte) reste du texte.
-  const isNumberCol = (col: { fieldType?: string; detectedType?: string }) =>
-    col.fieldType === 'number' || col.detectedType === 'number'
+  // Format par colonne (clé/libellé + valeurs) — aligné sur le serveur. On écrit de
+  // VRAIS nombres pour les colonnes numériques (sinon Google importe « 177.49 » en TEXTE
+  // sous locale FR → SUM/formules en #VALUE!) et on applique le `z` aux cellules data.
+  // L'EAN/réf (colonnes texte) restent du texte.
+  const formats = sheet.columns.map((col) =>
+    detectColumnFormat(col.key, col.label || col.key, sheet.rows.map((r) => r[col.key])),
+  )
   const rows = sheet.rows.map((row) => {
     const out: Record<string, unknown> = {}
-    for (const col of sheet.columns) {
+    sheet.columns.forEach((col, ci) => {
       const raw = row[col.key]
-      if (isNumberCol(col) && typeof raw === 'string' && raw.trim() !== '' && Number.isFinite(Number(raw))) {
-        out[col.label || col.key] = Number(raw)
-      } else {
-        out[col.label || col.key] = raw
-      }
-    }
+      const fmt = formats[ci]
+      const num = !fmt.text && typeof raw === 'string' ? numericString(raw) : null
+      out[col.label || col.key] = num !== null ? num : raw
+    })
     return out
   })
   // Test des formules SANS données amont : on injecte 1 ligne d'essai (colonnes data
@@ -190,6 +220,18 @@ async function sheetToXlsxBlob(
     rows.push(empty)
   }
   const ws = XLSX.utils.json_to_sheet(rows)
+
+  // Format (`z`) par colonne de données (hors en-tête). `json_to_sheet` ordonne les
+  // colonnes selon `sheet.columns` (insertion de out[label||key]), donc l'index ci colle.
+  formats.forEach((fmt, ci) => {
+    if (!fmt.z) return
+    for (let r = 0; r < rows.length; r++) {
+      const cell = ws[XLSX.utils.encode_cell({ c: ci, r: r + 1 })] as { t?: string; v?: unknown; z?: string } | undefined
+      if (!cell) continue
+      cell.z = fmt.z
+      if (fmt.text && cell.t !== 's') { cell.t = 's'; cell.v = String(cell.v ?? '') }
+    }
+  })
 
   if (formulas && formulas.length > 0) {
     // Résout un nom de colonne en lettre de tableur (selon l'ordre de sheet.columns).

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectColumnFormat, parseFormulaColumns, colLetter, resolveFormula } from './google'
+import { detectColumnFormat, parseFormulaColumns, colLetter, resolveFormula, toCell } from './google'
 
 describe('detectColumnFormat', () => {
   it('EAN → TEXTE (évite la notation scientifique)', () => {
@@ -38,6 +38,28 @@ describe('detectColumnFormat', () => {
 
   it('colonne vide → null', () => {
     expect(detectColumnFormat('x', 'X', ['', null, undefined])).toBeNull()
+  })
+})
+
+// Non-régression : le node « Comparer les prix » sort des prix EN CHAÎNES (« 409 »,
+// « 177.49 », « 982.2 ») et des cases vides. Le chemin serveur doit les écrire en VRAIS
+// nombres (sinon formules =E2/2 en #VALUE! sous locale FR + aucun format €). Cf. fix client.
+describe('forme réelle du node compare (chemin cron/serveur)', () => {
+  const prixSrc = ['409', '177.49', '982.2', '6999', '', '30.99']
+  it('colonne prix → NUMBER €', () => {
+    const f = detectColumnFormat('prix_source', 'Prix source', prixSrc)
+    expect(f?.type).toBe('NUMBER')
+  })
+  it('toCell coerce les décimaux en nombre (pas de #VALUE! aval)', () => {
+    const f = detectColumnFormat('prix_source', 'Prix source', prixSrc)
+    expect(toCell('409', f)).toBe(409)
+    expect(toCell('177.49', f)).toBe(177.49)
+    expect(toCell('982.2', f)).toBe(982.2)
+    expect(toCell('', f)).toBe('') // case vide → reste vide
+  })
+  it('toCell garde le texte des colonnes non-numériques', () => {
+    expect(toCell('castorama.fr', null)).toBe('castorama.fr')
+    expect(toCell('plus cher', null)).toBe('plus cher')
   })
 })
 
