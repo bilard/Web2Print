@@ -68,7 +68,12 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   // node-par-node (onProgress) les fait passer running → success/error au fil du run.
   const initial: Record<string, 'pending'> = {}
   for (const n of wf.nodes) initial[n.id] = 'pending'
-  await writeRunLive(uid, wf.id, { runId, trigger, startedAt, status: 'running', nodeStates: initial, logs: [] })
+  // Reset complet (nouveau runId + sorties/connecteurs vidés) → l'aperçu ne montre
+  // plus les données du run précédent au démarrage.
+  await writeRunLive(uid, wf.id, {
+    runId, trigger, startedAt, status: 'running', nodeStates: initial, logs: [],
+    nodeOutputs: {}, nodeConnectors: {},
+  })
   try {
     // Streaming des logs : écriture throttlée (≥ 2 s) pour que l'onglet Logs se
     // remplisse PENDANT le run (sinon « En cours… Aucun log » jusqu'à la fin).
