@@ -43,6 +43,7 @@ const ANSWER_SCHEMA_FOR_LLM = {
 
 export const webAskNode: NodeSpec<WebAskConfig, WebAskInputs, WebAskOutputs> = {
   type: 'web-ask',
+  hidden: true,
   // 'import' (pas 'enrichment') : c'est une SOURCE autonome (question → réponse), qui
   // doit pouvoir démarrer un workflow seule. La palette verrouille l'enrichissement
   // tant qu'aucun import n'est posé. Cohérent avec web-search / scrape-url (sources web).

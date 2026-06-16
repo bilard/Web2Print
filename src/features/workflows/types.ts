@@ -45,6 +45,9 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
   label: string
   description: string
   icon: LucideIcon
+  /** Masqué de la palette « + » (toujours enregistré/exécutable pour les workflows
+   *  existants). Ex : anciens nodes de scraping remplacés par le node unifié. */
+  hidden?: boolean
   inputs: Port[]
   outputs: Port[]
   configSchema: ConfigField[]

@@ -145,6 +145,7 @@ export function NodePalette() {
   const rf = useReactFlow()
 
   const grouped = nodeRegistry.list().reduce<Record<string, NodeSpec[]>>((acc, spec) => {
+    if (spec.hidden) return acc // nodes dépréciés (ex : anciens scraping) — hors palette
     ;(acc[spec.category] ??= []).push(spec)
     return acc
   }, {})

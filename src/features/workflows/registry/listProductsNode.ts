@@ -105,6 +105,7 @@ function hostOf(url: string): string {
 
 const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, ListProductsOutputs> = {
   type: 'list-products',
+  hidden: true,
   // Source autonome (URL → produits) : doit pouvoir démarrer un workflow seule.
   category: 'import',
   label: 'Produits d’une page liste',

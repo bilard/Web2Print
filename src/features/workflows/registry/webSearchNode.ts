@@ -32,6 +32,7 @@ interface WebSearchOutputs {
 
 export const webSearchNode: NodeSpec<WebSearchConfig, WebSearchInputs, WebSearchOutputs> = {
   type: 'web-search',
+  hidden: true,
   category: 'import',
   label: 'Recherche web',
   description:

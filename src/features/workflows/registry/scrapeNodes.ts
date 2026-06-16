@@ -90,6 +90,7 @@ function rowsToSheet(
 
 const scrapeUrlNode: NodeSpec<ScrapeUrlConfig, Record<string, never>, ScrapeUrlOutputs> = {
   type: 'scrape-url',
+  hidden: true,
   category: 'import',
   label: 'Scrape URL',
   description:

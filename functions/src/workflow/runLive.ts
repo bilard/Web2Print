@@ -5,7 +5,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import type { RunLog } from './types'
 
-export type LiveNodeStatus = 'running' | 'success' | 'error' | 'skipped' | 'pending'
+type LiveNodeStatus = 'running' | 'success' | 'error' | 'skipped' | 'pending'
 
 export interface RunLiveDoc {
   runId: string
