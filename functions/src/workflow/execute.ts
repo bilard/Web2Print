@@ -58,8 +58,9 @@ export async function executeWorkflowHeadless(
   opts: {
     uid: string
     signal: AbortSignal
-    /** Notifié à chaque node avec l'état COURANT de tous les nodes (progression live). */
-    onProgress?: (states: Record<string, LiveNodeStatus>) => void | Promise<void>
+    /** Notifié à chaque node avec l'état COURANT de tous les nodes + les sorties des
+     *  nodes déjà terminés (progression + aperçu données live). */
+    onProgress?: (states: Record<string, LiveNodeStatus>, outputs: Record<string, Record<string, unknown>>) => void | Promise<void>
     /** Notifié à chaque log (throttlé côté appelant) — streaming des logs en direct. */
     onLog?: (logs: RunLog[]) => void
   },
@@ -141,8 +142,9 @@ export async function executeWorkflowHeadless(
 
   let nodeCount = 0
   for (const node of ordered) {
-    // Progression : le node courant passe « running », les précédents sont finalisés.
-    await opts.onProgress?.(deriveStates(node.id))
+    // Progression : le node courant passe « running », les précédents sont finalisés
+    // (avec leurs sorties → aperçu données live).
+    await opts.onProgress?.(deriveStates(node.id), nodeOutputs)
     const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
     if (upstream.some((e) => skipped.has(e.source) || errored.has(e.source))) {
       skipped.add(node.id); continue

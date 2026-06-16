@@ -76,7 +76,8 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     const result = await executeWorkflowHeadless(wf, {
       uid,
       signal: ac.signal,
-      onProgress: (nodeStates) => writeRunLive(uid, wf.id, { nodeStates }),
+      onProgress: (nodeStates, nodeOutputs) =>
+        writeRunLive(uid, wf.id, { nodeStates, nodeOutputs: capOutputsForPreview(nodeOutputs) }),
       onLog: (logs) => {
         const now = Date.now()
         if (now - lastLogWrite < 2000) return
