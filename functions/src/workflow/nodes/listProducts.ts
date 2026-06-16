@@ -6,7 +6,7 @@
 // JSON par page. Pour le cron quotidien de comparaison de prix multi-sites.
 import { registerServerNode } from '../registry'
 import { jinaRead } from '../jina'
-import { callLlm, parseLlmJson } from '../llm'
+import { callLlm, parseLlmJson, recoverJsonObjects } from '../llm'
 
 interface ExtractedProduct {
   name?: unknown
@@ -103,14 +103,17 @@ registerServerNode({
       try {
         const { text } = await callLlm(ctx.uid, prompt)
         const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
-        // Distinguer les modes d'échec, sinon tout finit en « Aucun produit extrait » :
-        // JSON illisible (souvent tronqué par max_tokens sur une grande liste) ≠ liste vide.
-        if (parsed == null) {
-          ctx.log('warn', `${site} : réponse LLM non-JSON ou tronquée (${text.length} chars, markdown ${content.length}) — extraction abandonnée.`)
-        }
         products = Array.isArray(parsed?.products) ? parsed!.products! : []
-        if (parsed != null && products.length === 0) {
-          ctx.log('warn', `${site} : LLM a renvoyé 0 produit (markdown ${content.length} chars).`)
+        if (products.length === 0) {
+          // Parse global KO (prose autour du JSON, ou tableau tronqué) : récupérer
+          // les objets produit complets un par un plutôt que de tout perdre.
+          const recovered = recoverJsonObjects(text) as ExtractedProduct[]
+          if (recovered.length > 0) {
+            products = recovered
+            ctx.log('info', `${site} : ${recovered.length} produit(s) récupéré(s) d'une réponse LLM non standard.`)
+          } else {
+            ctx.log('warn', `${site} : 0 produit (réponse ${text.length} chars, markdown ${content.length} ; fin: …${text.slice(-160).replace(/\s+/g, ' ')})`)
+          }
         }
       } catch (err) {
         ctx.log('warn', `Extraction LLM échouée pour ${site} : ${err instanceof Error ? err.message : err}`)
