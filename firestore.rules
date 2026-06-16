@@ -198,6 +198,13 @@ service cloud.firestore {
       allow write: if false; // écrit uniquement par les Functions (admin)
     }
 
+    // État LIVE du dernier run serveur par workflow (progression affichée sur les
+    // cartes de l'éditeur). Écrit par les Functions, lu par le propriétaire.
+    match /users/{uid}/workflowRunsLive/{workflowId} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow write: if false; // écrit uniquement par les Functions (admin)
+    }
+
     // ── Excel Data ────────────────────────────────────────────────────────────
     // `excel_data/{docId}` = méta légères (fileName, path, sortIndex, totals…)
     // `excel_data_payload/{docId}` = blob `sheets` JSON sérialisé, séparé pour

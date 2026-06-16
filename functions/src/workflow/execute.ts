@@ -12,6 +12,8 @@ export interface HeadlessResult {
   errorCount: number
   logs: RunLog[]
   nodeOutputs: Record<string, Record<string, unknown>>
+  /** Statut final par node (pour l'affichage live côté client). */
+  nodeStates: Record<string, 'success' | 'error' | 'skipped' | 'pending'>
 }
 
 interface LoopPair { eachId: string; collectId: string; bodyIds: Set<string> }
@@ -79,7 +81,7 @@ export async function executeWorkflowHeadless(
   try { ordered = topoSort(mainNodes, mainEdges) }
   catch (err) {
     log('error', err instanceof Error ? err.message : String(err))
-    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs }
+    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {} }
   }
 
   const runBody = async (pair: LoopPair, item: unknown, idx: number): Promise<unknown> => {
@@ -167,11 +169,22 @@ export async function executeWorkflowHeadless(
 
   const errorCount = errored.size
   const status: HeadlessResult['status'] = errorCount === 0 ? 'success' : nodeCount > 0 ? 'partial' : 'error'
+  // Statut final par node, pour l'affichage live côté client (cartes colorées).
+  const nodeStates: HeadlessResult['nodeStates'] = {}
+  for (const n of wf.nodes) {
+    nodeStates[n.id] = errored.has(n.id)
+      ? 'error'
+      : skipped.has(n.id)
+        ? 'skipped'
+        : outputs.has(n.id) || internalIds.has(n.id)
+          ? 'success'
+          : 'pending'
+  }
   console.log(`[wf:${wf.name}] run ${status} — ${nodeCount} node(s) OK, ${errorCount} en erreur`)
   // Trace complète (info inclus) à CHAQUE run : sans UI d'historique côté client,
   // c'est le seul moyen de voir le détail par node (nb de produits, modèle LLM,
   // appariements…), y compris sur un run success. Visible via `firebase functions:log`.
   const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
   console.log(`[wf:${wf.name}] trace:\n${trace}`)
-  return { status, nodeCount, errorCount, logs, nodeOutputs }
+  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates }
 }

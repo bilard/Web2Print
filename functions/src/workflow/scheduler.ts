@@ -5,6 +5,7 @@ import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { executeWorkflowHeadless } from './execute'
 import { writeRunHistory } from './runHistory'
+import { writeRunLive } from './runLive'
 import { computeNextRun, type CronConfig } from './cronSchedule'
 import type { ServerWorkflow } from './types'
 import './nodes/index' // enregistre les nodes (effet de bord)
@@ -31,15 +32,27 @@ async function loadWorkflow(uid: string, workflowId: string): Promise<ServerWork
   }
 }
 
-/** Exécute un workflow déjà chargé (boucle d'abort + écriture de l'historique). */
+/** Exécute un workflow déjà chargé (boucle d'abort + historique + état live). */
 async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'manual' | 'webhook') {
   const startedAt = Date.now()
+  const runId = `srv_${startedAt}`
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), RUN_TIMEOUT_MS)
+  // État live « en cours » : toutes les cartes connectées passent en running côté client.
+  const running: Record<string, 'running'> = {}
+  for (const n of wf.nodes) running[n.id] = 'running'
+  await writeRunLive(uid, wf.id, { runId, trigger, startedAt, status: 'running', nodeStates: running, logs: [] })
   try {
     const result = await executeWorkflowHeadless(wf, { uid, signal: ac.signal })
     await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, result)
+    await writeRunLive(uid, wf.id, {
+      runId, trigger, startedAt, endedAt: Date.now(),
+      status: result.status, nodeStates: result.nodeStates, logs: result.logs.slice(-200),
+    })
     return result
+  } catch (err) {
+    await writeRunLive(uid, wf.id, { runId, endedAt: Date.now(), status: 'error' })
+    throw err
   } finally {
     clearTimeout(timer)
   }

@@ -12,8 +12,11 @@ interface ScheduleDoc {
   nextRunAt: number; lastRunAt?: number; lastStatus?: string
 }
 
+// timeout aligné sur la Function (540 s) : un run avec escalade Bright Data dépasse
+// largement le défaut httpsCallable de 70 s → « deadline-exceeded » alors que le run
+// serveur aboutissait. L'état des cartes vient en parallèle via useServerRunLive.
 const runNow = httpsCallable<{ workflowId: string }, { status: string; nodeCount: number; errorCount: number }>(
-  functions, 'runWorkflowNow',
+  functions, 'runWorkflowNow', { timeout: 540_000 },
 )
 
 export function CronStatusPanel({ workflowId }: { workflowId: string }) {

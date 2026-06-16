@@ -18,6 +18,7 @@ import { NodeConfigPanel } from './NodeConfigPanel'
 import { RunPanel } from './RunPanel'
 import { DataPreviewPanel } from './DataPreviewPanel'
 import { CronStatusPanel } from './CronStatusPanel'
+import { useServerRunLive } from '../runtime/useServerRunLive'
 import { WebhookPanel } from './WebhookPanel'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 import { useCan } from '@/features/access/useAccess'
@@ -36,6 +37,9 @@ export function WorkflowEditorPage() {
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
+
+  // Affiche sur les cartes l'état des runs SERVEUR (cron / « Lancer serveur »).
+  useServerRunLive(wf?.id)
 
   useEffect(() => {
     initWorkflowsRegistry()
