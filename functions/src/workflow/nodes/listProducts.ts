@@ -103,7 +103,15 @@ registerServerNode({
       try {
         const { text } = await callLlm(ctx.uid, prompt)
         const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
+        // Distinguer les modes d'échec, sinon tout finit en « Aucun produit extrait » :
+        // JSON illisible (souvent tronqué par max_tokens sur une grande liste) ≠ liste vide.
+        if (parsed == null) {
+          ctx.log('warn', `${site} : réponse LLM non-JSON ou tronquée (${text.length} chars, markdown ${content.length}) — extraction abandonnée.`)
+        }
         products = Array.isArray(parsed?.products) ? parsed!.products! : []
+        if (parsed != null && products.length === 0) {
+          ctx.log('warn', `${site} : LLM a renvoyé 0 produit (markdown ${content.length} chars).`)
+        }
       } catch (err) {
         ctx.log('warn', `Extraction LLM échouée pour ${site} : ${err instanceof Error ? err.message : err}`)
         continue
