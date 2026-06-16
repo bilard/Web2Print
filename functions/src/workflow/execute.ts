@@ -60,11 +60,14 @@ export async function executeWorkflowHeadless(
     signal: AbortSignal
     /** Notifié à chaque node avec l'état COURANT de tous les nodes (progression live). */
     onProgress?: (states: Record<string, LiveNodeStatus>) => void | Promise<void>
+    /** Notifié à chaque log (throttlé côté appelant) — streaming des logs en direct. */
+    onLog?: (logs: RunLog[]) => void
   },
 ): Promise<HeadlessResult> {
   const logs: RunLog[] = []
   const log = (level: RunLog['level'], msg: string, node?: string) => {
     logs.push({ ts: Date.now(), level, node, msg })
+    opts.onLog?.(logs)
     // Miroir vers les logs Cloud Functions : sans UI d'historique de runs serveur
     // côté client, c'est la seule façon de diagnostiquer un run cron/serveur partiel.
     if (level === 'error' || level === 'warn') {

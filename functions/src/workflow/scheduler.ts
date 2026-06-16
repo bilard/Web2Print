@@ -70,10 +70,19 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   for (const n of wf.nodes) initial[n.id] = 'pending'
   await writeRunLive(uid, wf.id, { runId, trigger, startedAt, status: 'running', nodeStates: initial, logs: [] })
   try {
+    // Streaming des logs : écriture throttlée (≥ 2 s) pour que l'onglet Logs se
+    // remplisse PENDANT le run (sinon « En cours… Aucun log » jusqu'à la fin).
+    let lastLogWrite = 0
     const result = await executeWorkflowHeadless(wf, {
       uid,
       signal: ac.signal,
       onProgress: (nodeStates) => writeRunLive(uid, wf.id, { nodeStates }),
+      onLog: (logs) => {
+        const now = Date.now()
+        if (now - lastLogWrite < 2000) return
+        lastLogWrite = now
+        void writeRunLive(uid, wf.id, { logs: logs.slice(-200) })
+      },
     })
     await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, result)
     await writeRunLive(uid, wf.id, {
