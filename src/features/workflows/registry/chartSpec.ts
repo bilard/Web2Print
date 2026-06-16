@@ -75,7 +75,7 @@ export function aggregateChartData(
 
   if (agg === 'none') {
     labels = rows.map((r) => String(r[xKey] ?? ''))
-    if (agg === 'none' && valueKeys.length === 0) {
+    if (valueKeys.length === 0) {
       datasets = [{ label: 'Valeur', data: rows.map(() => 0) }]
     } else {
       datasets = valueKeys.map((vk) => ({

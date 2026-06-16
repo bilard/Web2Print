@@ -225,8 +225,35 @@ function chartGridRange(gid: number, colIndex: number, rowCount: number) {
   return { sheetId: gid, startRowIndex: 0, endRowIndex: rowCount + 1, startColumnIndex: colIndex, endColumnIndex: colIndex + 1 }
 }
 
+/** Mappe les noms de colonnes (clé OU libellé) vers les index écrits (données puis
+ *  formules) + total. Retourne null si l'axe X ou toutes les valeurs sont introuvables. */
+export function resolveChartIndices(
+  keys: string[],
+  cols: { key: string; label?: string }[],
+  formulas: { header: string }[],
+  xName: string,
+  valueNames: string,
+): { xColIndex: number; valueColIndices: number[]; totalCols: number } | null {
+  const nameToIndex = new Map<string, number>()
+  keys.forEach((k, i) => {
+    nameToIndex.set(k, i)
+    const label = cols.find((c) => c.key === k)?.label
+    if (label) nameToIndex.set(label, i)
+  })
+  formulas.forEach((f, j) => nameToIndex.set(f.header, keys.length + j))
+  const totalCols = keys.length + formulas.length
+  const xColIndex = nameToIndex.get(xName.trim())
+  if (xColIndex === undefined) return null
+  const valueColIndices = valueNames
+    .split(',').map((s) => s.trim()).filter(Boolean)
+    .map((n) => nameToIndex.get(n))
+    .filter((i): i is number => i !== undefined)
+  if (valueColIndices.length === 0) return null
+  return { xColIndex, valueColIndices, totalCols }
+}
+
 /** Requête addChart : basicChart (bar/line/area) ou pieChart (pie/doughnut). */
-function buildChartRequest(o: {
+export function buildChartRequest(o: {
   gid: number; chartType: string; xColIndex: number; valueColIndices: number[];
   rowCount: number; anchorColIndex: number; title: string
 }): Record<string, unknown> {
@@ -270,21 +297,9 @@ async function addSheetChartServer(
     formulas: FormulaColumn[]; rowCount: number; title: string
   },
 ): Promise<void> {
-  const nameToIndex = new Map<string, number>()
-  o.keys.forEach((k, i) => {
-    nameToIndex.set(k, i)
-    const label = o.cols.find((c) => c.key === k)?.label
-    if (label) nameToIndex.set(label, i)
-  })
-  o.formulas.forEach((f, j) => nameToIndex.set(f.header, o.keys.length + j))
-  const totalCols = o.keys.length + o.formulas.length
-  const xColIndex = nameToIndex.get(o.xName.trim())
-  if (xColIndex === undefined) throw new Error('axe X introuvable')
-  const valueColIndices = o.valueNames
-    .split(',').map((s) => s.trim()).filter(Boolean)
-    .map((n) => nameToIndex.get(n))
-    .filter((i): i is number => i !== undefined)
-  if (valueColIndices.length === 0) throw new Error('colonnes de valeurs introuvables')
+  const resolved = resolveChartIndices(o.keys, o.cols, o.formulas, o.xName, o.valueNames)
+  if (!resolved) throw new Error('axe X ou colonnes de valeurs introuvables')
+  const { xColIndex, valueColIndices, totalCols } = resolved
 
   const requests: Record<string, unknown>[] = []
   const existing = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets(charts(chartId))`, {
