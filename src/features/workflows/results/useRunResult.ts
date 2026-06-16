@@ -3,7 +3,7 @@
 // workflowRuns, écrit par le serveur ET le client) + repli sur le dernier run live
 // (workflowRunsLive serveur / runContext client même session) si aucun snapshot.
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { getWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -63,16 +63,20 @@ export function useRunResult(workflowId: string | undefined): RunResult {
     return () => { cancelled = true }
   }, [workflowId, storeCurrent])
 
-  // Historique durable (20 derniers runs de ce workflow).
+  // Historique durable. Requête where-only (pas d'orderBy → AUCUN index composite requis,
+  // donc dispo immédiatement) : on trie + filtre côté client. On ne garde que les runs
+  // RÉELLEMENT consultables (snapshot avec sorties) — les vieux docs métadonnées seuls
+  // (runs cron d'avant la persistance) sont écartés.
   useEffect(() => {
     const uid = auth.currentUser?.uid
     if (!uid || !workflowId) return
-    const q = query(
-      collection(db, 'users', uid, 'workflowRuns'),
-      where('workflowId', '==', workflowId), orderBy('endedAt', 'desc'), limit(20),
-    )
+    const q = query(collection(db, 'users', uid, 'workflowRuns'), where('workflowId', '==', workflowId))
     return onSnapshot(q, (snap) => {
-      setRuns(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RunHistoryItem, 'id'>) })))
+      const items = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<RunHistoryItem, 'id'>) }))
+        .filter((r) => r.nodeOutputs && Object.keys(r.nodeOutputs).length > 0)
+      items.sort((a, b) => (b.endedAt ?? 0) - (a.endedAt ?? 0))
+      setRuns(items.slice(0, 20))
     }, (e) => console.warn('[results] historique interrompu :', e.message))
   }, [workflowId])
 

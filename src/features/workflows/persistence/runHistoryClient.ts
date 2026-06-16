@@ -3,7 +3,7 @@
 // parité avec le serveur (functions/src/workflow/runHistory.ts) pour l'écran Résultats /
 // l'historique. Non bloquant. Cap sheets ≤100 lignes + JSON-sanitize (les blobs d'images
 // deviennent {} — l'upload Storage durable des assets reste à faire).
-import { collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
 
@@ -48,12 +48,12 @@ export async function persistClientRun(
       startedAt: args.startedAt, endedAt: Date.now(), status: args.status,
       nodeOutputs: sanitize(nodeOutputs), nodeStates: stateMap,
     })
-    // Purge : ne garder que les MAX_RUNS plus récents.
-    const snap = await getDocs(query(
-      collection(db, 'users', uid, 'workflowRuns'),
-      where('workflowId', '==', wf.id), orderBy('endedAt', 'desc'),
-    ))
-    await Promise.all(snap.docs.slice(MAX_RUNS).map((d) => deleteDoc(d.ref).catch(() => {})))
+    // Purge : ne garder que les MAX_RUNS plus récents (tri client → pas d'index requis).
+    const snap = await getDocs(query(collection(db, 'users', uid, 'workflowRuns'), where('workflowId', '==', wf.id)))
+    const docs = snap.docs
+      .map((d) => ({ ref: d.ref, endedAt: (d.data().endedAt as number) ?? 0 }))
+      .sort((a, b) => b.endedAt - a.endedAt)
+    await Promise.all(docs.slice(MAX_RUNS).map((d) => deleteDoc(d.ref).catch(() => {})))
   } catch (e) {
     console.warn('[runHistory] persistance du run client échouée :', e)
   }
