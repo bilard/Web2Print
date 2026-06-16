@@ -976,8 +976,12 @@ export function DataPreviewPanel() {
     }
   }, [states, selectedId, wf])
   const staticTarget = useStaticNodePreview(wf ?? null, effectiveSelectedId, labelFor)
-  // Priorité : Upload (fichier local) > sortie de la carte sélectionnée > dernier run.
-  const target = staticTarget ?? selectedRunTarget ?? runTarget
+  // Une carte SÉLECTIONNÉE prime : on affiche SA donnée (Upload local ou sortie de run),
+  // sans retomber sur un autre node en cours — sinon cliquer une carte montrerait les
+  // données d'une autre. Sans sélection : Upload de repli, sinon le dernier run.
+  const target = selectedId
+    ? (staticTarget ?? selectedRunTarget)
+    : (staticTarget ?? runTarget)
 
   // Mode « Tout » : JSON consolidé (config + sorties) de tous les composants du workflow.
   const [allMode, setAllMode] = useState(false)
@@ -1079,7 +1083,9 @@ export function DataPreviewPanel() {
           ) : (
             <div className="flex items-center gap-2 text-xs text-neutral-500 italic py-3">
               <Table2 className="w-3.5 h-3.5" />
-              Sélectionne un node Upload contenant un fichier, ou lance le workflow pour voir l’aperçu ici.
+              {selectedId
+                ? 'Cette carte n’a pas encore de données — lance le workflow (ou la carte) pour voir sa sortie ici.'
+                : 'Sélectionne une carte, ou lance le workflow pour voir l’aperçu ici.'}
             </div>
           )}
         </div>
