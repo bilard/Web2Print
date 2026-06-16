@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink } from 'lucide-react'
 import { useUsageStats } from '@/features/stats/useUsageStats'
+import { fetchProviderBalances } from '@/features/stats/providerBalances'
 import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
@@ -187,6 +189,13 @@ export function LiveLlmUsagePanel() {
   const brightDataBudget = useAiSettingsStore((s) => s.brightDataBudgetUsd)
   const setBrightDataBudget = useAiSettingsStore((s) => s.setBrightDataBudgetUsd)
   const selectedModel = useAiSettingsStore((s) => s.selectedModel)
+  // Soldes RÉELS via API (DeepSeek + OpenRouter) ; rafraîchis avec le panneau.
+  const { data: balances } = useQuery({
+    queryKey: ['providerBalances'],
+    queryFn: fetchProviderBalances,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  })
 
   // Auto-refresh toutes les 15s pour la "vue live"
   useEffect(() => {
@@ -397,10 +406,11 @@ export function LiveLlmUsagePanel() {
         {/* Tableau par provider */}
         <div className="flex flex-col">
         <div className="grid grid-cols-12 gap-2 px-2 py-1.5 text-[9px] text-white/30 uppercase tracking-wider border-b border-white/5">
-          <div className="col-span-4">Provider</div>
+          <div className="col-span-3">Provider</div>
           <div className="col-span-3 text-right">Tokens (in / out)</div>
           <div className="col-span-2 text-right">Coût</div>
-          <div className="col-span-3 text-right">Statut</div>
+          <div className="col-span-2 text-right">Budget dispo</div>
+          <div className="col-span-2 text-right">Statut</div>
         </div>
 
         {isLoading && (
@@ -422,7 +432,7 @@ export function LiveLlmUsagePanel() {
                 row.kind === 'warning' && !row.isSubRow ? 'bg-amber-500/[0.04]' : ''
               }`}
             >
-              <div className={`col-span-4 flex items-center gap-2 min-w-0 ${row.isSubRow ? 'pl-4' : ''}`}>
+              <div className={`col-span-3 flex items-center gap-2 min-w-0 ${row.isSubRow ? 'pl-4' : ''}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${meta.dot} shrink-0 ${row.isSubRow ? 'opacity-50' : ''}`} />
                 <div className="min-w-0">
                   <a
@@ -454,7 +464,26 @@ export function LiveLlmUsagePanel() {
                 </p>
                 <p className="text-[9px] font-mono text-white/30">${row.costUsd.toFixed(4)}</p>
               </div>
-              <div className="col-span-3 flex flex-col items-end gap-1">
+              {/* Budget disponible : solde RÉEL (API DeepSeek/OpenRouter) sinon restant
+                  = budget mensuel − dépensé ; « — » si ni API ni budget saisi. */}
+              <div className="col-span-2 text-right">
+                {row.isSubRow ? (
+                  <span className="text-[10px] text-white/20">—</span>
+                ) : balances?.[row.provider] != null ? (
+                  <>
+                    <p className="text-[11px] font-mono text-emerald-300/90">${(balances[row.provider] as number).toFixed(2)}</p>
+                    <p className="text-[8px] text-white/30">solde API</p>
+                  </>
+                ) : row.budget != null ? (
+                  <>
+                    <p className="text-[11px] font-mono text-white/70">${Math.max(0, row.budget - row.costUsd).toFixed(2)}</p>
+                    <p className="text-[8px] text-white/30">restant</p>
+                  </>
+                ) : (
+                  <span className="text-[10px] text-white/20" title="Aucune API de solde ; saisis un budget via « Définir alerte »">—</span>
+                )}
+              </div>
+              <div className="col-span-2 flex flex-col items-end gap-1">
                 {row.isSubRow ? (
                   // Sous-ligne : pas de budget/alerte propre (partagé avec le provider).
                   <span className="text-[9px] text-white/30 italic">budget partagé</span>
