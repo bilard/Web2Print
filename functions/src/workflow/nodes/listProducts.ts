@@ -114,7 +114,9 @@ registerServerNode({
         content.slice(0, 28000)
       let products: ExtractedProduct[] = []
       try {
-        const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 8192 })
+        // Budget de sortie large : une page liste = beaucoup de produits, et le
+        // JSON tronqué (stop=MAX_TOKENS) cassait le parse + rendait le nb instable.
+        const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 24576 })
         const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
         products = Array.isArray(parsed?.products) ? parsed!.products! : []
         if (products.length > 0) {
