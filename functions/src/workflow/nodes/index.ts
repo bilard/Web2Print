@@ -15,4 +15,5 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'gsheets-import', 'gdrive-import', 'gdrive-export', 'save-dam',
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
+  'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif
 ])

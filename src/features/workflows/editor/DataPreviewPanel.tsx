@@ -1,6 +1,8 @@
 // src/features/workflows/editor/DataPreviewPanel.tsx
 import {
   Fragment,
+  Suspense,
+  lazy,
   useEffect,
   useId,
   useLayoutEffect,
@@ -34,7 +36,12 @@ import { getFile, getFiles } from '../runtime/fileStore'
 import { parseExcelFile } from '@/features/excel/useExcelImport'
 import { usePreviewFocus } from './previewFocus.store'
 import { PanelResizeHandle, usePanelResize } from './usePanelResize'
+import { isChartSpec } from '../registry/chartSpec'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
+
+// chart.js + react-chartjs-2 chargés en lazy : hors du chunk éditeur tant qu'aucun
+// graphe n'est affiché.
+const ChartPreview = lazy(() => import('./ChartPreview'))
 
 const UPLOAD_TABLE_RE = /\.(csv|xlsx|xls|tsv)$/i
 
@@ -64,7 +71,7 @@ interface ExportLike {
   mime?: string
 }
 
-const PREVIEW_PORT_PRIORITY = ['sheet', 'products', 'result', 'assets', 'file']
+const PREVIEW_PORT_PRIORITY = ['chart', 'sheet', 'products', 'result', 'assets', 'file']
 const MAX_ASSETS = 16
 const PAGE_SIZE_OPTIONS: Array<{ value: number; label: string }> = [
   { value: 10, label: '10' },
@@ -905,6 +912,13 @@ function renderPreview(value: unknown) {
   // Sheet & products délèguent leur layout (gestion interne de la hauteur,
   // toolbar, pagination, sticky header). Les autres rendus sont enveloppés
   // dans un conteneur flex-scroll pour respecter le parent overflow-hidden.
+  if (isChartSpec(value)) {
+    return (
+      <Suspense fallback={<EmptyState label="Chargement du graphe…" />}>
+        <ChartPreview spec={value} />
+      </Suspense>
+    )
+  }
   if (isSheet(value)) return <SheetPreview sheet={value} />
   if (Array.isArray(value)) return <ProductsPreview value={value} />
   if (

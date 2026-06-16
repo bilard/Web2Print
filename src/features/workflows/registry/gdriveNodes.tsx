@@ -11,6 +11,7 @@ import {
   FolderSearch,
   X,
   FunctionSquare,
+  BarChart3,
 } from 'lucide-react'
 import { httpsCallable } from 'firebase/functions'
 import { nodeRegistry } from './index'
@@ -26,6 +27,7 @@ import {
   updateGoogleSheetById,
   getDriveFileStatus,
   type FormulaColumn,
+  type SheetChartOptions,
   importGoogleSheetById,
   uploadFileToDrive,
   type DriveFileMeta,
@@ -323,6 +325,12 @@ interface GSheetsExportConfig {
   spreadsheetId: string
   /** Colonnes-formule Google Sheets vivantes : une par ligne, `En-tête = formule {col}`. */
   formulaColumns: string
+  /** Graphe natif inséré dans le Sheet (optionnel). */
+  chartEnabled?: boolean
+  chartType?: string
+  chartXColumn?: string
+  /** Colonnes de valeurs (clés/libellés séparés par des virgules). */
+  chartValueColumns?: string
 }
 
 /** Parse les colonnes-formule : `En-tête = template` (template peut référencer {colonne}). */
@@ -486,6 +494,72 @@ function GSheetsExportConfigUi({
           Colonnes calculées écrites comme formules <strong>vivantes</strong> dans le Google Sheets.
         </p>
       </div>
+
+      <div className="pt-2 border-t border-neutral-800">
+        <label className="flex items-center gap-2 text-sm text-neutral-200 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!config.chartEnabled}
+            onChange={(e) => onChange({ ...config, chartEnabled: e.target.checked })}
+            className="accent-indigo-500"
+          />
+          <BarChart3 className="w-4 h-4 text-indigo-300" />
+          Insérer un graphique
+        </label>
+        {config.chartEnabled && (
+          <div className="mt-2 space-y-2 pl-1">
+            <select
+              value={config.chartType ?? 'bar'}
+              onChange={(e) => onChange({ ...config, chartType: e.target.value })}
+              className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+            >
+              <option value="bar">Barres</option>
+              <option value="line">Lignes</option>
+              <option value="area">Aire</option>
+              <option value="pie">Camembert</option>
+              <option value="doughnut">Anneau</option>
+            </select>
+            <select
+              value={config.chartXColumn ?? ''}
+              onChange={(e) => onChange({ ...config, chartXColumn: e.target.value })}
+              className="w-full bg-background border border-neutral-700 rounded px-2 py-1.5 text-sm text-white outline-none focus:border-indigo-500"
+            >
+              <option value="">— axe X (catégories) —</option>
+              {availableColumns.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">Colonnes de valeurs</p>
+              {availableColumns.length === 0 ? (
+                <p className="text-[10px] text-neutral-600 italic">Lance le node amont pour voir les colonnes.</p>
+              ) : (
+                <div className="max-h-32 overflow-auto rounded border border-neutral-800 bg-background divide-y divide-neutral-900">
+                  {availableColumns.map((c) => {
+                    const sel = String(config.chartValueColumns ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+                    return (
+                      <label key={c} className="flex items-center gap-2 px-2 py-1 text-sm text-neutral-300 cursor-pointer hover:bg-white/[0.03]">
+                        <input
+                          type="checkbox"
+                          checked={sel.includes(c)}
+                          onChange={() => {
+                            const set = new Set(sel)
+                            if (set.has(c)) set.delete(c)
+                            else set.add(c)
+                            onChange({ ...config, chartValueColumns: Array.from(set).join(', ') })
+                          }}
+                          className="accent-indigo-500"
+                        />
+                        <span className="truncate">{c}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {formulaModal && (
         <GSheetsFormulaModal
           value={config.formulaColumns ?? ''}
@@ -530,12 +604,18 @@ const gsheetsExportNode: NodeSpec<
       }
     }
     if (formulas.length > 0) ctx.log('info', `${formulas.length} colonne(s) formule ajoutée(s).`)
+    // Graphe natif optionnel (inséré via l'API Sheets après écriture).
+    const chart: SheetChartOptions | undefined =
+      config.chartEnabled && config.chartXColumn?.trim() && config.chartValueColumns?.trim()
+        ? { type: config.chartType || 'bar', xColumn: config.chartXColumn, valueColumns: config.chartValueColumns }
+        : undefined
+    if (config.chartEnabled && !chart) ctx.log('warn', 'Graphique ignoré : choisis l’axe X et au moins une colonne de valeurs.')
     if (config.mode === 'update' && config.spreadsheetId?.trim()) {
       const fileId = config.spreadsheetId.trim()
       const status = await getDriveFileStatus(token, fileId)
       if (status === 'ok') {
         ctx.log('info', `Mise à jour du Google Sheet existant (${sheet.rows.length} lignes)…`)
-        const meta = await updateGoogleSheetById(token, fileId, sheet, formulas)
+        const meta = await updateGoogleSheetById(token, fileId, sheet, formulas, chart)
         ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
         return { result: meta }
       }
@@ -556,7 +636,7 @@ const gsheetsExportNode: NodeSpec<
       parentFolderId = await ensureDriveFolder(token, folderName)
     }
     ctx.log('info', `Création GSheet "${name}" (${sheet.rows.length} lignes)…`)
-    const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId, formulas })
+    const meta = await exportSheetToGoogleSheets(token, sheet, { name, parentFolderId, formulas, chart })
     ctx.log('info', `OK — ${meta.webViewLink ?? meta.id}`)
     // Mode « même fichier » : mémoriser l'ID créé → les prochains runs mettront à jour CE fichier
     // (1 seule création, puis des mises à jour ; recrée seulement s'il est supprimé).

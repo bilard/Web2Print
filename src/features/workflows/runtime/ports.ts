@@ -109,6 +109,13 @@ export function registerBuiltinPorts(): void {
       Previewer: NoopPreviewer,
     },
     {
+      type: 'chart',
+      label: 'Chart',
+      color: '#6366f1',
+      validator: (v) => typeof v === 'object' && v !== null,
+      Previewer: NoopPreviewer,
+    },
+    {
       type: 'any',
       label: 'Any',
       color: '#6366f1',

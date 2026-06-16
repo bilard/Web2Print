@@ -187,6 +187,169 @@ function numericString(s: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+// --- Graphe natif Google Sheets (addChart) ---------------------------------
+// Insère un graphe ÉDITABLE dans le Sheet via l'API batchUpdate (≠ image). Parité
+// avec le serveur (functions/src/workflow/nodes/google.ts) : même builder de requête.
+const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets'
+
+export interface SheetChartOptions {
+  /** 'bar' | 'line' | 'area' | 'pie' | 'doughnut'. */
+  type: string
+  /** Colonne d'axe X (clé ou libellé). */
+  xColumn: string
+  /** Colonnes de valeurs (clés/libellés séparés par des virgules). */
+  valueColumns: string
+}
+
+interface ResolvedChart {
+  gid: number
+  chartType: string
+  xColIndex: number
+  valueColIndices: number[]
+  rowCount: number
+  anchorColIndex: number
+  title: string
+}
+
+/** Plage d'une colonne (en-tête incluse, headerCount=1). */
+function gridRange(gid: number, colIndex: number, rowCount: number) {
+  return {
+    sheetId: gid,
+    startRowIndex: 0,
+    endRowIndex: rowCount + 1,
+    startColumnIndex: colIndex,
+    endColumnIndex: colIndex + 1,
+  }
+}
+
+/** Construit la requête `addChart` (basicChart pour bar/line/area, pieChart pour pie/doughnut). */
+function buildChartRequest(o: ResolvedChart): Record<string, unknown> {
+  const isPie = o.chartType === 'pie' || o.chartType === 'doughnut'
+  const position = {
+    overlayPosition: {
+      anchorCell: { sheetId: o.gid, rowIndex: 1, columnIndex: o.anchorColIndex },
+      offsetXPixels: 0, offsetYPixels: 0, widthPixels: 600, heightPixels: 371,
+    },
+  }
+  if (isPie) {
+    return {
+      addChart: {
+        chart: {
+          spec: {
+            title: o.title,
+            pieChart: {
+              legendPosition: 'RIGHT_LEGEND',
+              pieHole: o.chartType === 'doughnut' ? 0.4 : 0,
+              domain: { sourceRange: { sources: [gridRange(o.gid, o.xColIndex, o.rowCount)] } },
+              series: { sourceRange: { sources: [gridRange(o.gid, o.valueColIndices[0], o.rowCount)] } },
+            },
+          },
+          position,
+        },
+      },
+    }
+  }
+  const BASIC: Record<string, string> = { bar: 'COLUMN', line: 'LINE', area: 'AREA' }
+  return {
+    addChart: {
+      chart: {
+        spec: {
+          title: o.title,
+          basicChart: {
+            chartType: BASIC[o.chartType] ?? 'COLUMN',
+            legendPosition: 'BOTTOM_LEGEND',
+            headerCount: 1,
+            axis: [{ position: 'BOTTOM_AXIS' }, { position: 'LEFT_AXIS' }],
+            domains: [{ domain: { sourceRange: { sources: [gridRange(o.gid, o.xColIndex, o.rowCount)] } } }],
+            series: o.valueColIndices.map((ci) => ({
+              series: { sourceRange: { sources: [gridRange(o.gid, ci, o.rowCount)] } },
+              targetAxis: 'LEFT_AXIS',
+            })),
+          },
+        },
+        position,
+      },
+    },
+  }
+}
+
+/** Mappe les noms de colonnes (clé OU libellé) vers les index écrits (données puis formules). */
+function resolveChartColumns(
+  sheet: ExcelSheet,
+  formulas: FormulaColumn[] | undefined,
+  chart: SheetChartOptions,
+): { xColIndex: number; valueColIndices: number[]; totalCols: number } | null {
+  const nameToIndex = new Map<string, number>()
+  sheet.columns.forEach((c, i) => {
+    nameToIndex.set(c.key, i)
+    if (c.label) nameToIndex.set(c.label, i)
+  })
+  const base = sheet.columns.length
+  ;(formulas ?? []).forEach((f, j) => nameToIndex.set(f.header, base + j))
+  const totalCols = base + (formulas?.length ?? 0)
+  const xColIndex = nameToIndex.get(chart.xColumn.trim())
+  if (xColIndex === undefined) return null
+  const valueColIndices = chart.valueColumns
+    .split(',').map((s) => s.trim()).filter(Boolean)
+    .map((n) => nameToIndex.get(n))
+    .filter((i): i is number => i !== undefined)
+  if (valueColIndices.length === 0) return null
+  return { xColIndex, valueColIndices, totalCols }
+}
+
+/** gid du 1er onglet d'un spreadsheet. */
+async function getFirstSheetGid(token: string, spreadsheetId: string): Promise<number> {
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}?fields=sheets.properties(sheetId)`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Sheets get gid ${res.status}`)
+  const json = (await res.json()) as { sheets?: { properties?: { sheetId?: number } }[] }
+  return json.sheets?.[0]?.properties?.sheetId ?? 0
+}
+
+/** Insère (ou ré-insère) un graphe natif dans le Sheet. Supprime d'abord les graphes
+ *  existants (idempotent : le mode mise à jour ne doit pas les accumuler). Non bloquant. */
+async function addSheetChart(
+  token: string,
+  spreadsheetId: string,
+  sheet: ExcelSheet,
+  formulas: FormulaColumn[] | undefined,
+  chart: SheetChartOptions,
+  title: string,
+): Promise<void> {
+  const resolved = resolveChartColumns(sheet, formulas, chart)
+  if (!resolved) throw new Error('Colonnes du graphe introuvables (axe X ou valeurs).')
+  const gid = await getFirstSheetGid(token, spreadsheetId)
+  // Supprime les graphes existants sur ce spreadsheet.
+  const existing = await fetch(`${SHEETS_API}/${spreadsheetId}?fields=sheets(charts(chartId))`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const requests: Record<string, unknown>[] = []
+  if (existing.ok) {
+    const json = (await existing.json()) as { sheets?: { charts?: { chartId?: number }[] }[] }
+    for (const s of json.sheets ?? []) {
+      for (const c of s.charts ?? []) {
+        if (typeof c.chartId === 'number') requests.push({ deleteEmbeddedObject: { objectId: c.chartId } })
+      }
+    }
+  }
+  requests.push(buildChartRequest({
+    gid,
+    chartType: chart.type,
+    xColIndex: resolved.xColIndex,
+    valueColIndices: resolved.valueColIndices,
+    rowCount: sheet.rows.length,
+    anchorColIndex: resolved.totalCols + 1,
+    title,
+  }))
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`addChart ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
  *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
 async function sheetToXlsxBlob(
@@ -322,15 +485,19 @@ async function uploadToDrive(
 export async function exportSheetToGoogleSheets(
   token: string,
   sheet: ExcelSheet,
-  options: { name: string; parentFolderId?: string; formulas?: FormulaColumn[] },
+  options: { name: string; parentFolderId?: string; formulas?: FormulaColumn[]; chart?: SheetChartOptions },
 ): Promise<DriveFileMeta> {
   const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1', options.formulas)
-  return uploadToDrive(token, blob, {
+  const meta = await uploadToDrive(token, blob, {
     name: options.name,
     parentFolderId: options.parentFolderId,
     convertToSheets: true,
     sourceMimeType: XLSX_MIME,
   })
+  if (options.chart && sheet.rows.length > 0) {
+    await addSheetChart(token, meta.id, sheet, options.formulas, options.chart, options.name)
+  }
+  return meta
 }
 
 /** Extrait l'ID d'un Google Sheet depuis une URL collée ou un ID brut. */
@@ -363,6 +530,7 @@ export async function updateGoogleSheetById(
   fileId: string,
   sheet: ExcelSheet,
   formulas?: FormulaColumn[],
+  chart?: SheetChartOptions,
 ): Promise<DriveFileMeta> {
   const id = parseSpreadsheetId(fileId)
   const blob = await sheetToXlsxBlob(sheet, sheet.name || 'Sheet1', formulas)
@@ -388,7 +556,11 @@ export async function updateGoogleSheetById(
     }
     throw new Error(`Drive : mise à jour échouée (HTTP ${res.status}${detail ? ` — ${detail.slice(0, 200)}` : ''})`)
   }
-  return (await res.json()) as DriveFileMeta
+  const meta = (await res.json()) as DriveFileMeta
+  if (chart && sheet.rows.length > 0) {
+    await addSheetChart(token, id, sheet, formulas, chart, sheet.name || '')
+  }
+  return meta
 }
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'

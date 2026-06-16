@@ -219,6 +219,97 @@ function parseSpreadsheetId(raw: string): string {
   return m ? m[1] : s
 }
 
+// --- Graphe natif (addChart) — parité avec src/features/gdrive/gdriveCore.ts ----
+/** Plage d'une colonne (en-tête incluse, headerCount=1). */
+function chartGridRange(gid: number, colIndex: number, rowCount: number) {
+  return { sheetId: gid, startRowIndex: 0, endRowIndex: rowCount + 1, startColumnIndex: colIndex, endColumnIndex: colIndex + 1 }
+}
+
+/** Requête addChart : basicChart (bar/line/area) ou pieChart (pie/doughnut). */
+function buildChartRequest(o: {
+  gid: number; chartType: string; xColIndex: number; valueColIndices: number[];
+  rowCount: number; anchorColIndex: number; title: string
+}): Record<string, unknown> {
+  const isPie = o.chartType === 'pie' || o.chartType === 'doughnut'
+  const position = {
+    overlayPosition: {
+      anchorCell: { sheetId: o.gid, rowIndex: 1, columnIndex: o.anchorColIndex },
+      offsetXPixels: 0, offsetYPixels: 0, widthPixels: 600, heightPixels: 371,
+    },
+  }
+  if (isPie) {
+    return {
+      addChart: { chart: { spec: { title: o.title, pieChart: {
+        legendPosition: 'RIGHT_LEGEND',
+        pieHole: o.chartType === 'doughnut' ? 0.4 : 0,
+        domain: { sourceRange: { sources: [chartGridRange(o.gid, o.xColIndex, o.rowCount)] } },
+        series: { sourceRange: { sources: [chartGridRange(o.gid, o.valueColIndices[0], o.rowCount)] } },
+      } }, position } } }
+  }
+  const BASIC: Record<string, string> = { bar: 'COLUMN', line: 'LINE', area: 'AREA' }
+  return {
+    addChart: { chart: { spec: { title: o.title, basicChart: {
+      chartType: BASIC[o.chartType] ?? 'COLUMN',
+      legendPosition: 'BOTTOM_LEGEND',
+      headerCount: 1,
+      axis: [{ position: 'BOTTOM_AXIS' }, { position: 'LEFT_AXIS' }],
+      domains: [{ domain: { sourceRange: { sources: [chartGridRange(o.gid, o.xColIndex, o.rowCount)] } } }],
+      series: o.valueColIndices.map((ci) => ({
+        series: { sourceRange: { sources: [chartGridRange(o.gid, ci, o.rowCount)] } },
+        targetAxis: 'LEFT_AXIS',
+      })),
+    } }, position } } }
+}
+
+/** Supprime les graphes existants (idempotent en mode update) puis insère le nouveau. */
+async function addSheetChartServer(
+  token: string, id: string, gid: number,
+  o: {
+    chartType: string; xName: string; valueNames: string;
+    keys: string[]; cols: { key: string; label?: string }[];
+    formulas: FormulaColumn[]; rowCount: number; title: string
+  },
+): Promise<void> {
+  const nameToIndex = new Map<string, number>()
+  o.keys.forEach((k, i) => {
+    nameToIndex.set(k, i)
+    const label = o.cols.find((c) => c.key === k)?.label
+    if (label) nameToIndex.set(label, i)
+  })
+  o.formulas.forEach((f, j) => nameToIndex.set(f.header, o.keys.length + j))
+  const totalCols = o.keys.length + o.formulas.length
+  const xColIndex = nameToIndex.get(o.xName.trim())
+  if (xColIndex === undefined) throw new Error('axe X introuvable')
+  const valueColIndices = o.valueNames
+    .split(',').map((s) => s.trim()).filter(Boolean)
+    .map((n) => nameToIndex.get(n))
+    .filter((i): i is number => i !== undefined)
+  if (valueColIndices.length === 0) throw new Error('colonnes de valeurs introuvables')
+
+  const requests: Record<string, unknown>[] = []
+  const existing = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets(charts(chartId))`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (existing.ok) {
+    const json = (await existing.json()) as { sheets?: { charts?: { chartId?: number }[] }[] }
+    for (const s of json.sheets ?? []) {
+      for (const c of s.charts ?? []) {
+        if (typeof c.chartId === 'number') requests.push({ deleteEmbeddedObject: { objectId: c.chartId } })
+      }
+    }
+  }
+  requests.push(buildChartRequest({
+    gid, chartType: o.chartType, xColIndex, valueColIndices,
+    rowCount: o.rowCount, anchorColIndex: totalCols + 1, title: o.title,
+  }))
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`addChart ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
 registerServerNode({
   type: 'gsheets-export',
   run: async (ctx, config, inputs) => {
@@ -293,6 +384,21 @@ registerServerNode({
     await applyNumberFormats(token, id, gid, allFormats).catch((e) =>
       ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`),
     )
+
+    // Graphe natif optionnel (cron compris) : inséré via l'API après écriture des valeurs.
+    const chartX = String(config.chartXColumn ?? '').trim()
+    const chartVals = String(config.chartValueColumns ?? '').trim()
+    if (config.chartEnabled && chartX && chartVals && sheet.rows.length > 0) {
+      await addSheetChartServer(token, id, gid, {
+        chartType: String(config.chartType || 'bar'),
+        xName: chartX, valueNames: chartVals,
+        keys, cols, formulas, rowCount: sheet.rows.length, title: displayName,
+      })
+        .then(() => ctx.log('info', 'Graphique inséré.'))
+        .catch((e) => ctx.log('warn', `Graphique ignoré : ${e instanceof Error ? e.message : e}`))
+    } else if (config.chartEnabled) {
+      ctx.log('warn', 'Graphique ignoré : axe X / colonnes de valeurs manquants (ou aucune donnée).')
+    }
 
     ctx.log('info', `Google Sheet « ${displayName} » ${verb} (${sheet.rows.length} lignes) — ${webViewLink ?? id}`)
     return { result: { id, name: displayName, webViewLink } }
