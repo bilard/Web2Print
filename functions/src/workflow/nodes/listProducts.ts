@@ -6,6 +6,7 @@
 // JSON par page. Pour le cron quotidien de comparaison de prix multi-sites.
 import { registerServerNode } from '../registry'
 import { jinaRead } from '../jina'
+import { brightDataRead, htmlToText } from '../brightData'
 import { callLlm, parseLlmJson, recoverJsonObjects } from '../llm'
 
 interface ExtractedProduct {
@@ -81,8 +82,18 @@ registerServerNode({
       try {
         content = (await jinaRead(ctx.uid, url, { listing: true })).content
       } catch (err) {
-        ctx.log('warn', `Lecture échouée ${url} : ${err instanceof Error ? err.message : err}`)
-        continue
+        ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
+      }
+      // Escalade Bright Data quand Jina ne rend rien (SPA / anti-bot dur). Signal
+      // générique (contenu vide), pas de logique par-vendeur. Si BD échoue aussi,
+      // le contenu reste vide → on saute l'URL (comportement inchangé).
+      if (!content.trim()) {
+        try {
+          ctx.log('info', `Jina sans contenu pour ${site} → escalade Bright Data.`)
+          content = htmlToText((await brightDataRead(url)).html)
+        } catch (err) {
+          ctx.log('warn', `Bright Data échoué ${site} : ${err instanceof Error ? err.message : err}`)
+        }
       }
       if (!content.trim()) {
         ctx.log('warn', `Aucun contenu pour ${url}.`)
@@ -90,7 +101,7 @@ registerServerNode({
       }
 
       const prompt =
-        'Voici le contenu MARKDOWN d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
+        'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
         'réellement listés (ignore menu, pied de page, bannières, blocs « vous aimerez aussi »). ' +
         'Réponds UNIQUEMENT par un objet JSON { "products": [ ... ] } où chaque produit a EXACTEMENT les clés : ' +
         'name (intitulé complet), brand (marque ou ""), ean (code EAN à 13 chiffres s’il apparaît dans l’URL ' +

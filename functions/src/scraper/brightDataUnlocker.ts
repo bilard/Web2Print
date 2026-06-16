@@ -61,7 +61,7 @@ interface ScrapeResponse {
  *   2. ccTLD de l'hostname (ex: .fr → fr)
  *   3. Défaut 'fr' (use case principal du projet)
  *  Liste alignée sur Bright Data : https://docs.brightdata.com/proxy-manager/configuration/proxy-targeting */
-function detectCountry(url: string): string {
+export function detectCountry(url: string): string {
   const supported = new Set([
     'fr', 'de', 'it', 'es', 'pt', 'nl', 'be', 'ch', 'at', 'pl',
     'uk', 'ie', 'se', 'no', 'dk', 'fi',
@@ -91,7 +91,7 @@ function detectCountry(url: string): string {
 }
 
 /** Effectue un appel Bright Data avec timeout. Retourne le HTML ou throw. */
-async function callBrightData(
+export async function callBrightData(
   url: string,
   token: string,
   zone: string,
