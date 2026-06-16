@@ -195,7 +195,9 @@ service cloud.firestore {
     // Historique des runs serveur (écrit par les Functions, lu par le propriétaire).
     match /users/{uid}/workflowRuns/{runId} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
-      allow write: if false; // écrit uniquement par les Functions (admin)
+      // Le serveur (admin) écrit l'historique des runs cron/serveur ; le propriétaire
+      // persiste en plus ses runs client (snapshot de résultat) et purge les anciens.
+      allow create, delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
     // État LIVE du dernier run serveur par workflow (progression affichée sur les

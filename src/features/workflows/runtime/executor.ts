@@ -7,6 +7,8 @@ import { useWorkflowStore } from '../persistence/workflow.store'
 import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
 import { mergeInputValue } from './mergeInputs'
+import { persistClientRun, type RunStatus } from '../persistence/runHistoryClient'
+import { auth } from '@/lib/firebase/config'
 
 type Middleware = (
   node: WorkflowNode,
@@ -291,6 +293,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
   // RUN partiel : on ne réinitialise que le sous-graphe aval ; les sorties amont
   // déjà en cache sont conservées et serviront d'entrées.
   const runSet = opts.fromNodeId ? downstreamFrom(opts.fromNodeId, wf.edges) : null
+  const startedAt = Date.now()
   const ac = ctxStore.startRun(runSet ? { clearIds: [...runSet] } : undefined)
   useProgressStore.getState().begin(runSet ? 'Exécution depuis le node…' : 'Exécution du workflow…')
   try {
@@ -498,9 +501,18 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     .filter((s) => s.status === 'success')
     .flatMap((s) => s.logs ?? [])
     .find((l) => l.level === 'warn')
+  const okCount = ran.filter((s) => s.status === 'success').length
+
+  // Persiste un snapshot durable du run (historique de l'écran Résultats). Non bloquant.
+  const uid = auth.currentUser?.uid
+  if (uid && !ac.signal.aborted) {
+    const status: RunStatus = errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error'
+    void persistClientRun(uid, wf, { startedAt, status, nodeStates: states })
+  }
+
   return {
     aborted: ac.signal.aborted,
-    okCount: ran.filter((s) => s.status === 'success').length,
+    okCount,
     errorCount: errors.length,
     firstError: errors[0]?.error,
     firstWarn: firstWarn?.msg,

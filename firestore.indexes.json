@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "workflowRuns",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workflowId", "order": "ASCENDING" },
+        { "fieldPath": "endedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "dam_assets",
       "queryScope": "COLLECTION",
       "fields": [
