@@ -1,4 +1,5 @@
 // functions/src/workflow/llm.ts
+import { getFirestore } from 'firebase-admin/firestore'
 import { getUserApiKey } from './apiKeys'
 
 export interface LlmResult { text: string; model: string; stopReason?: string }
@@ -36,6 +37,24 @@ async function callAnthropic(key: string, prompt: string, maxTokens: number): Pr
   return { text: json.content?.map((c) => c.text ?? '').join('') ?? '', stopReason: json.stop_reason }
 }
 
+/** OpenAI (gpt-5.1) avec JSON natif. Les modèles gpt-5.x utilisent max_completion_tokens. */
+async function callOpenAI(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'gpt-5.1',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_completion_tokens: maxTokens,
+    }),
+  })
+  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`)
+  const json = (await res.json()) as { choices?: { message?: { content?: string }; finish_reason?: string }[] }
+  const c = json.choices?.[0]
+  return { text: c?.message?.content ?? '', stopReason: c?.finish_reason }
+}
+
 async function callGemini(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${key}`,
@@ -54,32 +73,44 @@ async function callGemini(key: string, prompt: string, maxTokens: number): Promi
   return { text: cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? '', stopReason: cand?.finishReason }
 }
 
-/** Cascade : DeepSeek (JSON natif, low cost — défaut user) → Anthropic → Gemini.
- *  Chaque échec est tracé (non silencieux). Lève si aucune clé ne répond. */
+/** Providers supportés côté serveur : keyId (users/{uid}.apiKeys.overrides), modèle, appel. */
+const PROVIDERS: Record<string, { keyId: string; model: string; call: (key: string, prompt: string, max: number) => Promise<{ text: string; stopReason?: string }> }> = {
+  deepseek: { keyId: 'deepseek', model: 'deepseek-chat', call: callDeepSeek },
+  gemini: { keyId: 'gemini', model: 'gemini-3.1-pro-preview', call: callGemini },
+  openai: { keyId: 'openai', model: 'gpt-5.1', call: callOpenAI },
+  claude: { keyId: 'anthropic', model: 'claude-opus-4-7', call: callAnthropic },
+  anthropic: { keyId: 'anthropic', model: 'claude-opus-4-7', call: callAnthropic },
+}
+
+/** Cascade de raisonnement de l'utilisateur (users/{uid}.aiSettings.reasoningCascade).
+ *  Défaut sans Anthropic (épuisé / hors choix par défaut). */
+async function getCascade(uid: string): Promise<string[]> {
+  try {
+    const snap = await getFirestore().doc(`users/${uid}`).get()
+    const c = (snap.data()?.aiSettings as { reasoningCascade?: unknown })?.reasoningCascade
+    if (Array.isArray(c) && c.length > 0) return c.map(String)
+  } catch { /* défaut */ }
+  return ['deepseek', 'gemini', 'openai']
+}
+
+/** Suit la cascade CONFIGURÉE par l'utilisateur (pas un ordre hardcodé) : pour chaque
+ *  provider, tente avec sa clé, passe au suivant en cas d'absence/échec. */
 export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: number } = {}): Promise<LlmResult> {
   const maxTokens = opts.maxTokens ?? DEFAULT_MAX_TOKENS
-  const warn = (p: string, e: unknown) => console.warn(`[llm] ${p} KO → fallback :`, e instanceof Error ? e.message.slice(0, 200) : e)
-
-  const deepseek = await getUserApiKey(uid, 'deepseek')
-  if (deepseek) {
+  const cascade = await getCascade(uid)
+  for (const provider of cascade) {
+    const p = PROVIDERS[provider]
+    if (!p) { console.warn(`[llm] provider « ${provider} » non supporté côté serveur — ignoré.`); continue }
+    const key = await getUserApiKey(uid, p.keyId)
+    if (!key) continue
     try {
-      const r = await callDeepSeek(deepseek, prompt, maxTokens)
-      if (r.text.trim()) return { text: r.text, model: 'deepseek-chat', stopReason: r.stopReason }
-    } catch (e) { warn('DeepSeek', e) }
+      const r = await p.call(key, prompt, maxTokens)
+      if (r.text.trim()) return { text: r.text, model: p.model, stopReason: r.stopReason }
+    } catch (e) {
+      console.warn(`[llm] ${provider} KO → provider suivant :`, e instanceof Error ? e.message.slice(0, 200) : e)
+    }
   }
-  const anthropic = await getUserApiKey(uid, 'anthropic')
-  if (anthropic) {
-    try {
-      const r = await callAnthropic(anthropic, prompt, maxTokens)
-      return { text: r.text, model: 'claude-opus-4-7', stopReason: r.stopReason }
-    } catch (e) { warn('Anthropic', e) }
-  }
-  const gemini = await getUserApiKey(uid, 'gemini')
-  if (gemini) {
-    const r = await callGemini(gemini, prompt, maxTokens)
-    return { text: r.text, model: 'gemini-3.1-pro-preview', stopReason: r.stopReason }
-  }
-  throw new Error('Aucune clé LLM (deepseek/anthropic/gemini) configurée pour cet utilisateur.')
+  throw new Error(`Aucun provider LLM de la cascade (${cascade.join(', ')}) n'a répondu — vérifie les clés API.`)
 }
 
 /** Sous-chaîne JSON équilibrée à partir de l'index `from` (un `{` ou `[`), en
