@@ -153,41 +153,15 @@ registerServerNode({
     const maxPages = Math.max(1, Math.min(20, Number(config.maxPages) || 1))
     const pageParam = String(config.pageParam ?? '').trim() || 'page'
 
-    const pages: { url: string; site: string }[] = []
-    for (const url of urls) {
-      const site = hostOf(url)
-      pages.push({ url, site })
-      for (let k = 2; k <= maxPages; k++) {
-        const sep = url.includes('?') ? '&' : '?'
-        pages.push({ url: `${url}${sep}${pageParam}=${k}`, site })
-      }
-    }
-    if (maxPages > 1) ctx.log('info', `${urls.length} liste(s) × ${maxPages} page(s) = ${pages.length} page(s) à lire.`)
+    const WAVE = 3 // pages chargées en parallèle par vague
 
-    // Pages chargées + extraites EN PARALLÈLE (concurrence bornée) pour tenir le budget.
-    const perPage = await mapLimit(pages, 3, async ({ url, site }) => {
-      if (ctx.signal.aborted) return [] as ExtractedProduct[]
-      const content = await fetchListingContent(ctx, url)
-      if (!content.trim()) {
-        ctx.log('warn', `Aucun contenu pour ${url}.`)
-        return [] as ExtractedProduct[]
-      }
-      try {
-        return await extractProducts(ctx, content, site)
-      } catch (err) {
-        ctx.log('warn', `Extraction LLM échouée pour ${url} : ${err instanceof Error ? err.message : err}`)
-        return [] as ExtractedProduct[]
-      }
-    })
-
-    // Agrégation + déduplication par (site + URL fiche, sinon nom). Le cap maxProducts
-    // s'applique au TOTAL du node (0 = illimité).
     const seen = new Set<string>()
     const rows: Record<string, unknown>[] = []
     let rowId = 0
-    for (let i = 0; i < pages.length; i++) {
-      const site = pages[i].site
-      for (const p of perPage[i] ?? []) {
+    // Ajoute les produits nouveaux (dédup) et renvoie le nombre RÉELLEMENT ajouté.
+    const pushProducts = (products: ExtractedProduct[], site: string): number => {
+      let added = 0
+      for (const p of products) {
         const url = String(p.url ?? '').trim()
         const name = String(p.name ?? '').trim()
         if (!name) continue
@@ -197,14 +171,44 @@ registerServerNode({
         const priceNum = parsePrice(p.price)
         const price = Number.isFinite(priceNum) && priceNum > 0 ? priceNum : parsePrice(p.name)
         rows.push({
-          _id: `lp_${rowId++}`,
-          site,
-          name,
+          _id: `lp_${rowId++}`, site, name,
           brand: String(p.brand ?? '').trim(),
           ean: resolveEan(p.ean, p.image, p.url, p.name),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
           url,
         })
+        added++
+      }
+      return added
+    }
+    const scrapePage = async (url: string, site: string): Promise<ExtractedProduct[]> => {
+      const content = await fetchListingContent(ctx, url)
+      if (!content.trim()) { ctx.log('warn', `Aucun contenu pour ${url}.`); return [] }
+      try { return await extractProducts(ctx, content, site) }
+      catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${url} : ${err instanceof Error ? err.message : err}`); return [] }
+    }
+
+    for (const root of urls) {
+      if (ctx.signal.aborted) break
+      const site = hostOf(root)
+      pushProducts(await scrapePage(root, site), site) // page 1
+      // Pages 2..maxPages par vagues — ARRÊT ANTICIPÉ dès qu'une vague n'apporte aucun
+      // nouveau produit (site sans pagination / fin du catalogue) : évite de lire 20
+      // pages quand il n'y en a que 1-3.
+      let stop = false
+      for (let k = 2; k <= maxPages && !stop && !ctx.signal.aborted; k += WAVE) {
+        const sep = root.includes('?') ? '&' : '?'
+        const batch: string[] = []
+        for (let j = k; j < k + WAVE && j <= maxPages; j++) batch.push(`${root}${sep}${pageParam}=${j}`)
+        const results = await mapLimit(batch, WAVE, (u) => scrapePage(u, site))
+        let waveNew = 0
+        for (const products of results) waveNew += pushProducts(products, site)
+        if (waveNew === 0) {
+          stop = true
+          if (k === 2) ctx.log('info', `${site} : pas de page suivante exploitable (param « ${pageParam} » ?) — 1 page lue.`)
+          else ctx.log('info', `${site} : fin de pagination à la page ~${k}.`)
+        }
+        if (max > 0 && rows.length >= max) break
       }
     }
     const capped = max > 0 ? rows.slice(0, max) : rows
