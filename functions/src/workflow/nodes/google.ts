@@ -14,8 +14,8 @@ interface SheetLike {
   rows?: Record<string, unknown>[]
 }
 
-/** CSV RFC4180 minimal depuis une sheet (colonnes déclarées, sinon union des clés). */
-function sheetToCsv(sheet: SheetLike): string {
+/** Clés de colonnes dans l'ordre d'export (colonnes déclarées, sinon union des clés). */
+function sheetKeys(sheet: SheetLike): string[] {
   const rows = sheet.rows ?? []
   let keys = (sheet.columns ?? []).map((c) => c.key).filter((k) => k && k !== '_id')
   if (keys.length === 0) {
@@ -23,6 +23,77 @@ function sheetToCsv(sheet: SheetLike): string {
     for (const r of rows) for (const k of Object.keys(r)) if (k !== '_id') all.add(k)
     keys = [...all]
   }
+  return keys
+}
+
+interface GFormat { type: string; pattern: string }
+
+/** Déduit le format Google Sheets d'une colonne depuis sa clé/libellé + ses valeurs.
+ *  Renvoie null = laisser tel quel (texte). Pièges gérés :
+ *   - EAN/réf/code → TEXTE (sinon Google passe les 13 chiffres en notation scientifique) ;
+ *   - pourcentage : nos valeurs sont DÉJÀ en % (12.7 = 12,7 %) → pattern sans ×100 ;
+ *   - devise € pour prix/montant ; entiers longs (≥12 chiffres) = identifiants → texte. */
+export function detectColumnFormat(key: string, label: string, values: unknown[]): GFormat | null {
+  const hint = `${key} ${label}`.toLowerCase()
+  const vals = values.map((v) => String(v ?? '').trim()).filter(Boolean)
+
+  if (/\b(ean|gtin|upc|isbn|sku|ref|reference|référence|code|mpn)\b/.test(hint)) return { type: 'TEXT', pattern: '@' }
+  if (/(%|pourcent|\bpct\b|ecart_pct)/.test(hint)) return { type: 'NUMBER', pattern: '0.00"%"' }
+  if (/(prix|price|montant|tarif|co[uû]t|cost|devise|€|\beur\b)/.test(hint)) return { type: 'NUMBER', pattern: '#,##0.00 "€"' }
+  if (vals.length === 0) return null
+
+  const isNum = (s: string) => /^-?\d+(?:[.,]\d+)?$/.test(s)
+  if (vals.every(isNum)) {
+    if (vals.every((v) => /^\d{12,}$/.test(v))) return { type: 'TEXT', pattern: '@' } // identifiant long
+    return { type: 'NUMBER', pattern: '#,##0.##' }
+  }
+  const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}/.test(s) || /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)
+  if (vals.every(isDate)) return { type: 'DATE', pattern: 'dd/mm/yyyy' }
+  return null
+}
+
+/** Applique un numberFormat par colonne au Sheet (ligne d'en-tête exclue). Non bloquant :
+ *  le formatage est un bonus, jamais une raison de faire échouer l'export. */
+async function applyColumnFormats(token: string, spreadsheetId: string, sheet: SheetLike): Promise<void> {
+  const keys = sheetKeys(sheet)
+  const rows = sheet.rows ?? []
+  const cols = sheet.columns ?? []
+  const formats = keys.map((k) =>
+    detectColumnFormat(k, cols.find((c) => c.key === k)?.label ?? k, rows.map((r) => r[k])),
+  )
+  if (formats.every((f) => f === null)) return
+
+  const metaRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.sheetId`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  const meta = (await metaRes.json().catch(() => null)) as { sheets?: { properties?: { sheetId?: number } }[] } | null
+  const gid = meta?.sheets?.[0]?.properties?.sheetId ?? 0
+
+  const requests = formats.flatMap((f, i) =>
+    f
+      ? [{
+          repeatCell: {
+            range: { sheetId: gid, startRowIndex: 1, startColumnIndex: i, endColumnIndex: i + 1 },
+            cell: { userEnteredFormat: { numberFormat: { type: f.type, pattern: f.pattern } } },
+            fields: 'userEnteredFormat.numberFormat',
+          },
+        }]
+      : [],
+  )
+  if (requests.length === 0) return
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`batchUpdate ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
+/** CSV RFC4180 minimal depuis une sheet (colonnes déclarées, sinon union des clés). */
+function sheetToCsv(sheet: SheetLike): string {
+  const rows = sheet.rows ?? []
+  const keys = sheetKeys(sheet)
   const esc = (v: unknown) => {
     const s = v === null || v === undefined ? '' : String(v)
     return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
@@ -76,6 +147,7 @@ registerServerNode({
         )
       }
       ctx.log('info', `Google Sheet « ${json.name} » mis à jour (${sheet.rows.length} lignes) — ${json.webViewLink ?? json.id}`)
+      await applyColumnFormats(token, json.id, sheet).catch((e) => ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`))
       return { result: { id: json.id, name: json.name, webViewLink: json.webViewLink } }
     }
 
@@ -112,6 +184,7 @@ registerServerNode({
       throw new Error(`gsheets-export : Drive ${res.status} — ${json?.error?.message ?? 'échec upload'}`)
     }
     ctx.log('info', `Google Sheet « ${json.name} » créé (${sheet.rows.length} lignes) — ${json.webViewLink ?? json.id}`)
+    await applyColumnFormats(token, json.id, sheet).catch((e) => ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`))
     return { result: { id: json.id, name: json.name, webViewLink: json.webViewLink } }
   },
 })
