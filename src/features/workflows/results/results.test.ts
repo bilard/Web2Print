@@ -71,4 +71,24 @@ describe('buildDashboard', () => {
     expect(dash.charts).toHaveLength(0)
     expect(dash.kpis).toEqual([{ label: 'Lignes', value: '2' }])
   })
+
+  it('EAN exclu des séries et des KPI (identifiant, pas une valeur)', () => {
+    const withEan = {
+      columns: [
+        { key: 'ean', label: 'EAN' },
+        { key: 'produit', label: 'Produit' },
+        { key: 'prix_source', label: 'Prix source' },
+      ],
+      rows: [
+        { ean: '4892210171948', produit: 'Tondeuse', prix_source: '409' },
+        { ean: '5098017261215', produit: 'Sécateur', prix_source: '30.99' },
+      ],
+    }
+    const dash = buildDashboard(withEan)
+    // KPI : Lignes + Prix source uniquement (PAS d'EAN à 5e12).
+    expect(dash.kpis.map((k) => k.label)).toEqual(['Lignes', 'Prix source (moy.)'])
+    // Graphe : X = produit, série = prix uniquement (pas l'EAN).
+    expect(dash.charts[0].labels).toEqual(['Tondeuse', 'Sécateur'])
+    expect(dash.charts[0].datasets.map((d) => d.label)).toEqual(['Prix source'])
+  })
 })

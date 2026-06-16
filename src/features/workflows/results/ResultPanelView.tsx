@@ -1,14 +1,16 @@
 // src/features/workflows/results/ResultPanelView.tsx
 // Rend UN panneau de résultat selon son kind, en réutilisant les aperçus existants
-// (SheetPreview / AssetGridPreview / ExportPreview / ChartPreview).
-import { lazy, Suspense } from 'react'
-import { BarChart3, Table2, Image as ImageIcon, FileText, Braces } from 'lucide-react'
+// (SheetPreview / AssetGridPreview / ExportPreview / ChartPreview). Le dashboard offre
+// le choix du type de graphe + « Régénérer avec l'IA » (insights + dashboard composé).
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { BarChart3, Table2, Image as ImageIcon, FileText, Braces, Sparkles, Loader2, RotateCcw } from 'lucide-react'
 import {
   SheetPreview, AssetGridPreview, ExportPreview,
   type SheetLike, type AssetLike, type ExportLike,
 } from '../editor/DataPreviewPanel'
 import { buildDashboard } from './buildDashboard'
-import type { ChartSpec } from '../registry/chartSpec'
+import { regenerateDashboard, type AiDashboard } from './regenerateViz'
+import type { ChartSpec, ChartType } from '../registry/chartSpec'
 import type { ResultKind, ResultPanel } from './types'
 
 const ChartPreview = lazy(() => import('../editor/ChartPreview'))
@@ -22,31 +24,101 @@ const KIND_META: Record<ResultKind, { label: string; Icon: typeof BarChart3 }> =
   json: { label: 'Données', Icon: Braces },
 }
 
+const TYPE_OPTIONS: { value: ChartType; label: string }[] = [
+  { value: 'bar', label: 'Barres' },
+  { value: 'line', label: 'Lignes' },
+  { value: 'area', label: 'Aire' },
+  { value: 'pie', label: 'Camembert' },
+  { value: 'doughnut', label: 'Anneau' },
+]
+
+/** Graphe avec sélecteur de type (override local, réinitialisé si la spec change). */
 function ChartBox({ spec }: { spec: ChartSpec }) {
+  const [type, setType] = useState<ChartType>(spec.chartType)
+  useEffect(() => { setType(spec.chartType) }, [spec])
+  const shown = type === spec.chartType ? spec : { ...spec, chartType: type }
   return (
-    <div className="h-72 rounded-lg border border-neutral-800 bg-surface p-3">
-      <Suspense fallback={<div className="text-xs text-neutral-500">Chargement du graphe…</div>}>
-        <ChartPreview spec={spec} />
-      </Suspense>
+    <div className="rounded-lg border border-neutral-800 bg-surface p-3">
+      <div className="flex justify-end mb-1">
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value as ChartType)}
+          className="text-[11px] bg-well border border-neutral-800 rounded px-1.5 py-0.5 text-neutral-300 outline-none focus:border-indigo-500"
+          title="Type de graphique"
+        >
+          {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+      <div className="h-64">
+        <Suspense fallback={<div className="text-xs text-neutral-500">Chargement du graphe…</div>}>
+          <ChartPreview spec={shown} />
+        </Suspense>
+      </div>
     </div>
   )
 }
 
-function DashboardBody({ sheet }: { sheet: SheetLike }) {
-  const dash = buildDashboard(sheet)
+function KpiGrid({ kpis }: { kpis: { label: string; value: string; sub?: string }[] }) {
+  if (kpis.length === 0) return null
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+      {kpis.map((k, i) => (
+        <div key={i} className="rounded-lg border border-neutral-800 bg-surface px-4 py-3">
+          <div className="text-[11px] uppercase tracking-wider text-neutral-500 truncate">{k.label}</div>
+          <div className="text-xl font-semibold text-white tabular-nums mt-0.5">{k.value}</div>
+          {k.sub && <div className="text-[11px] text-neutral-600 mt-0.5 truncate">{k.sub}</div>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function DashboardBody({ sheet, hint }: { sheet: SheetLike; hint: string }) {
+  const deterministic = useMemo(() => buildDashboard(sheet), [sheet])
+  const [ai, setAi] = useState<AiDashboard | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const dash = ai?.dashboard ?? deterministic
+
+  const regen = async () => {
+    setLoading(true); setErr(null)
+    try { setAi(await regenerateDashboard(sheet, hint)) }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setLoading(false) }
+  }
+
   return (
     <div className="space-y-4">
-      {dash.kpis.length > 0 && (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
-          {dash.kpis.map((k, i) => (
-            <div key={i} className="rounded-lg border border-neutral-800 bg-surface px-4 py-3">
-              <div className="text-[11px] uppercase tracking-wider text-neutral-500 truncate">{k.label}</div>
-              <div className="text-xl font-semibold text-white tabular-nums mt-0.5">{k.value}</div>
-              {k.sub && <div className="text-[11px] text-neutral-600 mt-0.5 truncate">{k.sub}</div>}
-            </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => void regen()}
+          disabled={loading}
+          className="px-3 py-1.5 rounded bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/40 text-indigo-200 flex items-center gap-2 text-sm disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Régénérer avec l'IA
+        </button>
+        {ai && (
+          <button
+            onClick={() => setAi(null)}
+            className="px-2.5 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/70 flex items-center gap-2 text-sm"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Revenir au défaut
+          </button>
+        )}
+        {err && <span className="text-[11px] text-amber-300/90">{err}</span>}
+      </div>
+
+      {ai?.insights?.length ? (
+        <ul className="space-y-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-sm text-neutral-200">
+          {ai.insights.map((s, i) => (
+            <li key={i} className="flex gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 mt-0.5 shrink-0" /> <span>{s}</span>
+            </li>
           ))}
-        </div>
-      )}
+        </ul>
+      ) : null}
+
+      <KpiGrid kpis={dash.kpis} />
       {dash.charts.map((c, i) => <ChartBox key={i} spec={c} />)}
       <div className="rounded-lg border border-neutral-800 bg-surface p-2 max-h-[420px] overflow-hidden flex flex-col">
         <SheetPreview sheet={sheet} />
@@ -55,10 +127,10 @@ function DashboardBody({ sheet }: { sheet: SheetLike }) {
   )
 }
 
-function PanelBody({ panel }: { panel: ResultPanel }) {
+function PanelBody({ panel, hint }: { panel: ResultPanel; hint: string }) {
   switch (panel.kind) {
     case 'dashboard':
-      return <DashboardBody sheet={panel.value as SheetLike} />
+      return <DashboardBody sheet={panel.value as SheetLike} hint={hint} />
     case 'table':
       return (
         <div className="rounded-lg border border-neutral-800 bg-surface p-2 max-h-[480px] overflow-hidden flex flex-col">
@@ -84,9 +156,10 @@ function safeJson(v: unknown): string {
   try { return JSON.stringify(v, null, 2).slice(0, 8000) } catch { return String(v) }
 }
 
-export function ResultPanelView({ panel }: { panel: ResultPanel }) {
+export function ResultPanelView({ panel, contextHint }: { panel: ResultPanel; contextHint?: string }) {
   const meta = KIND_META[panel.kind]
   const { Icon } = meta
+  const hint = [contextHint, panel.nodeLabel].filter(Boolean).join(' — ')
   return (
     <section className="rounded-xl border border-neutral-800 bg-background">
       <header className="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-900">
@@ -98,7 +171,7 @@ export function ResultPanelView({ panel }: { panel: ResultPanel }) {
         </span>
       </header>
       <div className="p-4">
-        <PanelBody panel={panel} />
+        <PanelBody panel={panel} hint={hint} />
       </div>
     </section>
   )

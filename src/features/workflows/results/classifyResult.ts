@@ -5,12 +5,12 @@
 // derrière l'export Sheets) et on la place en tête.
 import { isChartSpec } from '../registry/chartSpec'
 import { nodeRegistry } from '../registry'
+import { numericColumnKeys } from './columnTypes'
 import type { Workflow } from '../types'
 import type { ResultKind, ResultPanel } from './types'
 
 const PORT_PRIORITY = ['chart', 'sheet', 'products', 'result', 'assets', 'file']
 const VISUAL: ResultKind[] = ['dashboard', 'table', 'chart', 'gallery']
-const NUM_RE = /^-?\d+(?:[.,]\d+)?$/
 
 // Guards locaux (mêmes formes que l'aperçu éditeur) — gardés ici pour découpler la
 // logique de résultat du gros arbre de composants de DataPreviewPanel.
@@ -37,22 +37,16 @@ function pickPrimaryOutput(outputs: Record<string, unknown>): { name: string; va
   return { name: entries[0][0], value: entries[0][1] }
 }
 
-function hasNumericColumn(sheet: { columns?: { key: string }[]; rows?: Record<string, unknown>[] }): boolean {
-  const cols = sheet.columns ?? []
+function hasNumericColumn(sheet: { columns?: { key: string; label?: string }[]; rows?: Record<string, unknown>[] }): boolean {
   const rows = sheet.rows ?? []
   if (rows.length === 0) return false
-  return cols.some((c) => {
-    const vals = rows.map((r) => String(r[c.key] ?? '').trim()).filter(Boolean)
-    if (vals.length === 0) return false
-    const nums = vals.filter((v) => NUM_RE.test(v.replace(/\s/g, '')))
-    return nums.length / vals.length >= 0.6
-  })
+  return numericColumnKeys(sheet.columns ?? [], rows).length > 0
 }
 
 function classifyValue(value: unknown): ResultKind {
   if (isChartSpec(value)) return 'chart'
   if (isSheet(value)) {
-    return hasNumericColumn(value as { columns?: { key: string }[]; rows?: Record<string, unknown>[] }) ? 'dashboard' : 'table'
+    return hasNumericColumn(value as { columns?: { key: string; label?: string }[]; rows?: Record<string, unknown>[] }) ? 'dashboard' : 'table'
   }
   if (isAssetArray(value)) return 'gallery'
   if (isExportResult(value)) return 'document'

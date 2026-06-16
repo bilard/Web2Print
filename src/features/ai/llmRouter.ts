@@ -58,6 +58,7 @@ type LLMTask =
   | 'design.semanticLayout'
   | 'design.relayoutMultiFormat'
   | 'workflow.generate'
+  | 'workflow.resultViz'
   | 'telegram.chat'
   | 'telegram.chatPlan'
   | 'web.answer'
@@ -111,6 +112,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // (JSON fiable via responseSchema sur v1beta + disponibilité), Claude Opus 4.7 en
   // fallback (meilleur raisonnement de graphe si la clé Gemini manque).
   'workflow.generate': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
+  // Composition d'un dashboard de résultat (écran Résultats → « Régénérer avec l'IA ») :
+  // choisit les colonnes pertinentes, types de graphes, KPI + rédige des insights. JSON
+  // structuré → gemini-3.1-pro-preview (responseSchema fiable), Claude en fallback.
+  'workflow.resultViz': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
   // Chat libre depuis Telegram. `model` n'épingle QUE le leg Gemini sur 3.1-pro-preview
   // (modelForProvider n'applique l'override qu'au provider au préfixe correspondant :
   // DeepSeek/Claude gardent leur modèle sélectionné). Raison : le modèle Gemini par
@@ -148,6 +153,7 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'design.semanticLayout':  0,
   'design.relayoutMultiFormat': 0,
   'workflow.generate':      0.2,
+  'workflow.resultViz':     0.3,
   'telegram.chat':          0.4,
   // Décision structurée (chercher ou non, quelle requête) → plus déterministe.
   'telegram.chatPlan':      0.2,

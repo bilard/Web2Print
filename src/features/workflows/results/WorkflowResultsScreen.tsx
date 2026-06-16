@@ -89,7 +89,7 @@ export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
           </div>
         ) : (
           <div ref={contentRef} className="max-w-5xl mx-auto p-4 space-y-4 bg-background">
-            {panels.map((p) => <ResultPanelView key={`${p.nodeId}:${p.portName}`} panel={p} />)}
+            {panels.map((p) => <ResultPanelView key={`${p.nodeId}:${p.portName}`} panel={p} contextHint={wf?.name} />)}
           </div>
         )}
       </div>
