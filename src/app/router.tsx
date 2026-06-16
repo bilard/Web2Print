@@ -10,6 +10,7 @@ const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
 const ScrapingTemplatesPage = lazy(() => import('@/pages/ScrapingTemplatesPage'))
 const WorkflowsPage = lazy(() => import('@/pages/WorkflowsPage'))
 const WorkflowEditorPage = lazy(() => import('@/pages/WorkflowEditorPage'))
+const WorkflowResultsPage = lazy(() => import('@/pages/WorkflowResultsPage'))
 
 function PageLoader() {
   return (
@@ -98,6 +99,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <WorkflowEditorPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/workflows/:id/result',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <WorkflowResultsPage />
         </Suspense>
       </ProtectedRoute>
     ),

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon } from 'lucide-react'
+import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3 } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
@@ -136,6 +136,13 @@ export function WorkflowEditorPage() {
             title="Générer un workflow depuis un prompt (IA)"
           >
             <Sparkles className="w-4 h-4 text-indigo-400" /> Générer (IA)
+          </button>
+          <button
+            onClick={() => nav(`/workflows/${wf.id}/result`)}
+            className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
+            title="Visualiser le résultat du dernier run"
+          >
+            <BarChart3 className="w-4 h-4 text-indigo-400" /> Résultat
           </button>
           <WebhookPanel workflowId={wf.id} />
           <CronStatusPanel workflowId={wf.id} />

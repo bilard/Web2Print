@@ -51,13 +51,13 @@ interface UploadConfigLike {
   mode?: 'file' | 'folder'
 }
 
-interface SheetLike {
+export interface SheetLike {
   name?: string
   columns?: { key: string; label?: string }[]
   rows?: Record<string, unknown>[]
 }
 
-interface AssetLike {
+export interface AssetLike {
   url?: string
   src?: string
   name?: string
@@ -65,7 +65,7 @@ interface AssetLike {
   mimeType?: string
 }
 
-interface ExportLike {
+export interface ExportLike {
   url: string
   filename: string
   mime?: string
@@ -345,7 +345,7 @@ function formatCell(v: unknown): string {
   }
 }
 
-function SheetPreview({ sheet }: { sheet: SheetLike }) {
+export function SheetPreview({ sheet }: { sheet: SheetLike }) {
   const cols = sheet.columns ?? []
   const allRows = sheet.rows ?? []
   const totalRows = allRows.length
@@ -729,7 +729,7 @@ function SheetPreview({ sheet }: { sheet: SheetLike }) {
   )
 }
 
-function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
+export function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
   const items = assets.slice(0, MAX_ASSETS)
   return (
     <div className="space-y-2">
@@ -765,7 +765,7 @@ function AssetGridPreview({ assets }: { assets: AssetLike[] }) {
   )
 }
 
-function ExportPreview({ payload }: { payload: ExportLike }) {
+export function ExportPreview({ payload }: { payload: ExportLike }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded border border-neutral-800 bg-well">
       <div className="w-10 h-10 rounded bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
