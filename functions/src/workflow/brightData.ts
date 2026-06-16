@@ -25,7 +25,7 @@ export async function brightDataRead(url: string): Promise<{ html: string }> {
   let html = ''
   if (token) {
     try { html = (await callBrightData(url, token, zone, detectCountry(url))).html } catch (e) {
-      console.warn('[bd] tier1 Web Unlocker KO :', e instanceof Error ? e.message.slice(0, 150) : e)
+      console.warn('[bd] tier1 Web Unlocker KO :', e instanceof Error ? e.message.slice(0, 400) : e)
     }
   }
 
@@ -40,7 +40,7 @@ export async function brightDataRead(url: string): Promise<{ html: string }> {
         console.log(`[bd] escalade Scraping Browser : ${t2Text} chars utiles (tier1 : ${tier1Text}).`)
         if (t2Text > tier1Text) html = t2
       } catch (e) {
-        console.warn('[bd] tier2 Scraping Browser KO :', e instanceof Error ? e.message.slice(0, 150) : e)
+        console.warn('[bd] tier2 Scraping Browser KO :', e instanceof Error ? e.message.slice(0, 400) : e)
       }
     } else {
       console.warn(`[bd] tier1 insuffisant (${tier1Text} chars utiles) et Scraping Browser NON configuré (config/brightdata.browserWs) → pas d'escalade.`)
