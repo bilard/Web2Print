@@ -62,6 +62,74 @@ function parsePrice(v: unknown): number {
   return cleaned ? parseFloat(cleaned) : NaN
 }
 
+type Ctx = { uid: string; signal: AbortSignal; log: (level: 'info' | 'warn' | 'error', msg: string) => void }
+
+/** Exécute fn sur chaque item, au plus `limit` en parallèle (borne le coût/temps + les
+ *  limites de débit Bright Data quand on charge plusieurs pages d'un coup). */
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length)
+  let i = 0
+  await Promise.all(
+    Array.from({ length: Math.min(Math.max(1, limit), items.length || 1) }, async () => {
+      while (i < items.length) {
+        const idx = i++
+        out[idx] = await fn(items[idx])
+      }
+    }),
+  )
+  return out
+}
+
+/** Récupère le contenu d'une page liste : Jina (listing) → escalade Bright Data si vide. */
+async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
+  let content = ''
+  try {
+    content = (await jinaRead(ctx.uid, url, { listing: true })).content
+  } catch (err) {
+    ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
+  }
+  if (!content.trim()) {
+    try {
+      ctx.log('info', `Jina sans contenu pour ${url} → escalade Bright Data.`)
+      content = htmlToText((await brightDataRead(url)).html)
+    } catch (err) {
+      ctx.log('warn', `Bright Data échoué ${url} : ${err instanceof Error ? err.message : err}`)
+    }
+  }
+  return content
+}
+
+/** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours). */
+async function extractProducts(ctx: Ctx, content: string, label: string): Promise<ExtractedProduct[]> {
+  const prompt =
+    'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
+    'réellement listés (ignore menu, pied de page, bannières, blocs « vous aimerez aussi »). ' +
+    'Réponds UNIQUEMENT par un objet JSON { "products": [ ... ] } où chaque produit a EXACTEMENT les clés : ' +
+    'name (intitulé complet), brand (marque ou ""), ean (code EAN à 13 chiffres s’il apparaît dans l’URL ' +
+    'de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image, sinon ""), ' +
+    'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends le prix promo), ' +
+    'url (lien absolu de la fiche), image (URL absolue de l’image — son chemin contient souvent ' +
+    'l’EAN même quand l’URL fiche ne l’a pas).\n' +
+    'IMPÉRATIF : réponds par l’objet JSON BRUT et lui seul — commence par « { » et finis par « } », ' +
+    'AUCUN texte avant/après, AUCUN bloc de code markdown (pas de ```), JSON compact.\n\n--- CONTENU ---\n' +
+    content.slice(0, 28000)
+  const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 24576 })
+  const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
+  let products = Array.isArray(parsed?.products) ? parsed!.products! : []
+  if (products.length > 0) {
+    ctx.log('info', `${label} : ${products.length} produit(s), parse direct [${model}, stop=${stopReason ?? '?'}, markdown ${content.length} chars].`)
+  } else {
+    const recovered = recoverJsonObjects(text) as ExtractedProduct[]
+    if (recovered.length > 0) {
+      products = recovered
+      ctx.log('warn', `${label} : parse direct KO → ${recovered.length} récupéré(s) [${model}, stop=${stopReason ?? '?'}, ${text.length} chars].`)
+    } else {
+      ctx.log('warn', `${label} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length}].`)
+    }
+  }
+  return products
+}
+
 registerServerNode({
   type: 'list-products',
   run: async (ctx, config) => {
@@ -71,90 +139,68 @@ registerServerNode({
       return { sheet: { columns: COLUMNS, rows: [] } }
     }
     const max = Math.max(0, Number(config.maxProducts) || 0)
-    const rows: Record<string, unknown>[] = []
-    let rowId = 0
+    // Pagination : `maxPages` pages par URL via le param `pageParam` (ex « page », « p »).
+    // Page 1 = URL telle quelle ; pages 2..N = URL + ?/&{pageParam}=k.
+    const maxPages = Math.max(1, Math.min(20, Number(config.maxPages) || 1))
+    const pageParam = String(config.pageParam ?? '').trim() || 'page'
 
+    const pages: { url: string; site: string }[] = []
     for (const url of urls) {
-      if (ctx.signal.aborted) throw new Error('Run aborted')
       const site = hostOf(url)
-      ctx.log('info', `Lecture page liste ${site}`)
-      let content = ''
-      try {
-        content = (await jinaRead(ctx.uid, url, { listing: true })).content
-      } catch (err) {
-        ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
+      pages.push({ url, site })
+      for (let k = 2; k <= maxPages; k++) {
+        const sep = url.includes('?') ? '&' : '?'
+        pages.push({ url: `${url}${sep}${pageParam}=${k}`, site })
       }
-      // Escalade Bright Data quand Jina ne rend rien (SPA / anti-bot dur). Signal
-      // générique (contenu vide), pas de logique par-vendeur. Si BD échoue aussi,
-      // le contenu reste vide → on saute l'URL (comportement inchangé).
-      if (!content.trim()) {
-        try {
-          ctx.log('info', `Jina sans contenu pour ${site} → escalade Bright Data.`)
-          content = htmlToText((await brightDataRead(url)).html)
-        } catch (err) {
-          ctx.log('warn', `Bright Data échoué ${site} : ${err instanceof Error ? err.message : err}`)
-        }
-      }
+    }
+    if (maxPages > 1) ctx.log('info', `${urls.length} liste(s) × ${maxPages} page(s) = ${pages.length} page(s) à lire.`)
+
+    // Pages chargées + extraites EN PARALLÈLE (concurrence bornée) pour tenir le budget.
+    const perPage = await mapLimit(pages, 3, async ({ url, site }) => {
+      if (ctx.signal.aborted) return [] as ExtractedProduct[]
+      const content = await fetchListingContent(ctx, url)
       if (!content.trim()) {
         ctx.log('warn', `Aucun contenu pour ${url}.`)
-        continue
+        return [] as ExtractedProduct[]
       }
-
-      const prompt =
-        'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
-        'réellement listés (ignore menu, pied de page, bannières, blocs « vous aimerez aussi »). ' +
-        'Réponds UNIQUEMENT par un objet JSON { "products": [ ... ] } où chaque produit a EXACTEMENT les clés : ' +
-        'name (intitulé complet), brand (marque ou ""), ean (code EAN à 13 chiffres s’il apparaît dans l’URL ' +
-        'de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image, sinon ""), ' +
-        'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends le prix promo), ' +
-        'url (lien absolu de la fiche), image (URL absolue de l’image — son chemin contient souvent ' +
-        'l’EAN même quand l’URL fiche ne l’a pas).\n' +
-        'IMPÉRATIF : réponds par l’objet JSON BRUT et lui seul — commence par « { » et finis par « } », ' +
-        'AUCUN texte avant/après, AUCUN bloc de code markdown (pas de ```), JSON compact.\n\n--- CONTENU ---\n' +
-        content.slice(0, 28000)
-      let products: ExtractedProduct[] = []
       try {
-        // Budget de sortie large : une page liste = beaucoup de produits, et le
-        // JSON tronqué (stop=MAX_TOKENS) cassait le parse + rendait le nb instable.
-        const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 24576 })
-        const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
-        products = Array.isArray(parsed?.products) ? parsed!.products! : []
-        if (products.length > 0) {
-          ctx.log('info', `${site} : ${products.length} produit(s), parse direct [${model}, stop=${stopReason ?? '?'}].`)
-        } else {
-          // Parse global KO (prose autour du JSON, ou tableau tronqué) : récupérer
-          // les objets produit complets un par un plutôt que de tout perdre.
-          const recovered = recoverJsonObjects(text) as ExtractedProduct[]
-          if (recovered.length > 0) {
-            products = recovered
-            ctx.log('warn', `${site} : parse direct KO → ${recovered.length} récupéré(s) [${model}, stop=${stopReason ?? '?'}, ${text.length} chars].`)
-          } else {
-            ctx.log('warn', `${site} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length} ; fin: …${text.slice(-160).replace(/\s+/g, ' ')}]`)
-          }
-        }
+        return await extractProducts(ctx, content, site)
       } catch (err) {
-        ctx.log('warn', `Extraction LLM échouée pour ${site} : ${err instanceof Error ? err.message : err}`)
-        continue
+        ctx.log('warn', `Extraction LLM échouée pour ${url} : ${err instanceof Error ? err.message : err}`)
+        return [] as ExtractedProduct[]
       }
+    })
 
-      if (max > 0 && products.length > max) products = products.slice(0, max)
-      for (const p of products) {
+    // Agrégation + déduplication par (site + URL fiche, sinon nom). Le cap maxProducts
+    // s'applique au TOTAL du node (0 = illimité).
+    const seen = new Set<string>()
+    const rows: Record<string, unknown>[] = []
+    let rowId = 0
+    for (let i = 0; i < pages.length; i++) {
+      const site = pages[i].site
+      for (const p of perPage[i] ?? []) {
+        const url = String(p.url ?? '').trim()
+        const name = String(p.name ?? '').trim()
+        if (!name) continue
+        const key = `${site}|${url || name.toLowerCase()}`
+        if (seen.has(key)) continue
+        seen.add(key)
         const priceNum = parsePrice(p.price)
         const price = Number.isFinite(priceNum) && priceNum > 0 ? priceNum : parsePrice(p.name)
         rows.push({
           _id: `lp_${rowId++}`,
           site,
-          name: String(p.name ?? '').trim(),
+          name,
           brand: String(p.brand ?? '').trim(),
           ean: resolveEan(p.ean, p.image, p.url, p.name),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
-          url: String(p.url ?? '').trim(),
+          url,
         })
       }
-      ctx.log('info', `${products.length} produit(s) extrait(s) de ${site}.`)
     }
-
-    if (rows.length === 0) ctx.log('warn', 'Aucun produit extrait.')
-    return { sheet: { columns: COLUMNS, rows } }
+    const capped = max > 0 ? rows.slice(0, max) : rows
+    ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}.`)
+    if (capped.length === 0) ctx.log('warn', 'Aucun produit extrait.')
+    return { sheet: { columns: COLUMNS, rows: capped } }
   },
 })

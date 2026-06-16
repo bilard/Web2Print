@@ -17,8 +17,12 @@ import { parsePrice } from '@/features/priceWatch/core'
 interface ListProductsConfig {
   /** URLs de pages liste (une par ligne ou séparées par virgule). */
   urls: string
-  /** Nombre max de produits retenus par URL (0 = pas de limite). */
+  /** Nombre max de produits retenus au total (0 = pas de limite). */
   maxProducts: number
+  /** Nombre de pages à parcourir par URL (1 = page seule). */
+  maxPages?: number
+  /** Nom du paramètre d'URL de pagination (ex « page », « p »). */
+  pageParam?: string
 }
 
 interface ListProductsOutputs {
@@ -123,12 +127,26 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     {
       name: 'maxProducts',
       kind: 'number',
-      label: 'Max produits par URL',
+      label: 'Max produits (total)',
       default: 40,
-      help: '0 = pas de limite.',
+      help: '0 = pas de limite. Plafond sur le total agrégé (toutes URLs + pages).',
+    },
+    {
+      name: 'maxPages',
+      kind: 'number',
+      label: 'Pages à parcourir par URL',
+      default: 1,
+      help: 'Pagination : 1 = page seule ; N = suit aussi les pages 2..N (catalogues paginés).',
+    },
+    {
+      name: 'pageParam',
+      kind: 'text',
+      label: 'Param de pagination',
+      default: 'page',
+      help: 'Nom du paramètre d’URL de page. Ex : « page » (défaut), « p » (Leroy Merlin).',
     },
   ],
-  defaultConfig: { urls: '', maxProducts: 40 },
+  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page' },
   runtime: 'any',
   run: async (ctx, config) => {
     const urls = parseUrls(config.urls)
@@ -136,17 +154,30 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       throw new Error('Aucune URL fournie — renseignez au moins une page liste dans la config.')
     }
     const max = Math.max(0, Number(config.maxProducts) || 0)
+    const maxPages = Math.max(1, Math.min(20, Number(config.maxPages) || 1))
+    const pageParam = String(config.pageParam ?? '').trim() || 'page'
+
+    // Pagination : page 1 = URL telle quelle ; pages 2..N = URL + ?/&{pageParam}=k.
+    const pages: { url: string; site: string }[] = []
+    for (const url of urls) {
+      const site = hostOf(url)
+      pages.push({ url, site })
+      for (let k = 2; k <= maxPages; k++) {
+        const sep = url.includes('?') ? '&' : '?'
+        pages.push({ url: `${url}${sep}${pageParam}=${k}`, site })
+      }
+    }
 
     const { readPageWithEscalation } = await import('@/features/scraping/readPageWithEscalation')
     const allRows: ExcelRow[] = []
+    const seen = new Set<string>()
     let rowId = 0
 
-    for (let i = 0; i < urls.length; i++) {
+    for (let i = 0; i < pages.length; i++) {
       if (ctx.signal.aborted) break
-      const url = urls[i]
-      const site = hostOf(url)
-      ctx.log('info', `(${i + 1}/${urls.length}) Lecture de la page liste ${site}…`)
-      ctx.setProgress?.(Math.round((i / urls.length) * 100))
+      const { url, site } = pages[i]
+      ctx.log('info', `(${i + 1}/${pages.length}) Lecture de la page liste ${site}…`)
+      ctx.setProgress?.(Math.round((i / pages.length) * 100))
 
       const { markdown, source } = await readPageWithEscalation(url, {
         listing: true,
@@ -187,31 +218,39 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
         continue
       }
 
-      let products = extracted.products ?? []
-      if (max > 0 && products.length > max) products = products.slice(0, max)
+      const products = extracted.products ?? []
+      let added = 0
       for (const p of products) {
+        const name = (p.name ?? '').trim()
+        const url2 = (p.url ?? '').trim()
+        if (!name) continue
+        const key = `${site}|${url2 || name.toLowerCase()}` // dédup multi-pages
+        if (seen.has(key)) continue
+        seen.add(key)
         const price = Number.isFinite(p.price) && p.price > 0 ? p.price : parsePrice(p.name)
         allRows.push({
           _id: `lp_${rowId++}`,
           site,
-          name: (p.name ?? '').trim(),
+          name,
           brand: (p.brand ?? '').trim(),
           ean: resolveEan(p.ean ?? '', p.image ?? '', p.url ?? '', p.name ?? ''),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
-          url: (p.url ?? '').trim(),
+          url: url2,
         } as ExcelRow)
+        added++
         ctx.reportCount?.(allRows.length) // compteur live au fil de l'eau (sur l'edge)
       }
-      ctx.log('info', `${products.length} produit(s) extrait(s) de ${site}.`)
+      ctx.log('info', `${added} produit(s) extrait(s) de ${site}.`)
     }
 
     ctx.setProgress?.(100)
-    if (allRows.length === 0) {
+    const capped = max > 0 ? allRows.slice(0, max) : allRows
+    if (capped.length === 0) {
       ctx.log('warn', '⚠️ Aucun produit extrait — vérifie les URLs (pages liste) et la disponibilité Jina.')
     } else {
-      ctx.log('info', `Total : ${allRows.length} produit(s) sur ${urls.length} page(s).`)
+      ctx.log('info', `Total : ${capped.length} produit(s) sur ${pages.length} page(s).`)
     }
-    return { sheet: { name: 'Produits (liste)', columns: COLUMNS, rows: allRows, taxonomy: [] } }
+    return { sheet: { name: 'Produits (liste)', columns: COLUMNS, rows: capped, taxonomy: [] } }
   },
 }
 
