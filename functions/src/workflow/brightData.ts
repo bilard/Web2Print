@@ -7,13 +7,14 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { callBrightData, detectCountry } from '../scraper/brightDataUnlocker'
 import { scrapeViaScrapingBrowser } from '../scraper/scrapingBrowserCore'
 
-/** En dessous de ce seuil, le HTML du Web Unlocker est probablement une page de
- *  blocage/challenge (DataDome) plutôt qu'une vraie page liste → on escalade tier-2. */
-const TIER1_MIN_HTML = 15_000
+/** En dessous de ce nombre de chars de TEXTE UTILE (après htmlToText), le tier 1 est
+ *  probablement une page de blocage/challenge (DataDome) — gros HTML mais ~aucun texte
+ *  exploitable — plutôt qu'une vraie page liste → on escalade vers le Scraping Browser. */
+const TIER1_MIN_TEXT = 800
 
 /** Récupère le HTML d'une URL via Bright Data, avec escalade automatique :
  *  tier 1 = Web Unlocker (HTTP, rapide, moins cher) → tier 2 = Scraping Browser
- *  (Puppeteer, anti-bot durs) si le tier 1 est vide/trop court ou échoue. */
+ *  (Puppeteer, anti-bot durs) si le tier 1 ne ramène pas de texte exploitable. */
 export async function brightDataRead(url: string): Promise<{ html: string }> {
   const data = (await getFirestore().doc('config/brightdata').get()).data() ?? {}
   const token = String(data.apiToken ?? '').trim()
@@ -23,15 +24,27 @@ export async function brightDataRead(url: string): Promise<{ html: string }> {
   // Tier 1 : Web Unlocker.
   let html = ''
   if (token) {
-    try { html = (await callBrightData(url, token, zone, detectCountry(url))).html } catch { /* → tier 2 */ }
+    try { html = (await callBrightData(url, token, zone, detectCountry(url))).html } catch (e) {
+      console.warn('[bd] tier1 Web Unlocker KO :', e instanceof Error ? e.message.slice(0, 150) : e)
+    }
   }
 
-  // Tier 2 : Scraping Browser (dernier recours, plus coûteux) si tier 1 insuffisant.
-  if (html.trim().length < TIER1_MIN_HTML && browserWs) {
-    try {
-      const t2 = await scrapeViaScrapingBrowser(url, browserWs)
-      if (t2.trim().length > html.trim().length) html = t2
-    } catch { /* on garde le tier 1 s'il existe */ }
+  // Décision d'escalade fondée sur le TEXTE utile, PAS le HTML brut (page de blocage =
+  // gros HTML, peu de texte).
+  const tier1Text = htmlToText(html).length
+  if (tier1Text < TIER1_MIN_TEXT) {
+    if (browserWs) {
+      try {
+        const t2 = await scrapeViaScrapingBrowser(url, browserWs)
+        const t2Text = htmlToText(t2).length
+        console.log(`[bd] escalade Scraping Browser : ${t2Text} chars utiles (tier1 : ${tier1Text}).`)
+        if (t2Text > tier1Text) html = t2
+      } catch (e) {
+        console.warn('[bd] tier2 Scraping Browser KO :', e instanceof Error ? e.message.slice(0, 150) : e)
+      }
+    } else {
+      console.warn(`[bd] tier1 insuffisant (${tier1Text} chars utiles) et Scraping Browser NON configuré (config/brightdata.browserWs) → pas d'escalade.`)
+    }
   }
 
   if (!html.trim()) {
