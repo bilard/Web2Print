@@ -3,7 +3,7 @@
 // parité avec le serveur (functions/src/workflow/runHistory.ts) pour l'écran Résultats /
 // l'historique. Non bloquant. Cap sheets ≤100 lignes + JSON-sanitize (les blobs d'images
 // deviennent {} — l'upload Storage durable des assets reste à faire).
-import { collection, addDoc, getDocs, query, where, orderBy, deleteDoc } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
 
@@ -57,4 +57,18 @@ export async function persistClientRun(
   } catch (e) {
     console.warn('[runHistory] persistance du run client échouée :', e)
   }
+}
+
+/** Supprime un run d'historique (irréversible). */
+export async function deleteRun(uid: string, runId: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid, 'workflowRuns', runId))
+}
+
+/** Supprime TOUT l'historique d'un workflow (irréversible). Retourne le nb supprimé. */
+export async function deleteAllRuns(uid: string, workflowId: string): Promise<number> {
+  const snap = await getDocs(query(
+    collection(db, 'users', uid, 'workflowRuns'), where('workflowId', '==', workflowId),
+  ))
+  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref).catch(() => {})))
+  return snap.size
 }

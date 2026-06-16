@@ -98,8 +98,9 @@ export function useRunResult(workflowId: string | undefined): RunResult {
   }, [ctxStates, storeCurrent, workflowId])
 
   return useMemo(() => {
-    // Run sélectionné = explicite, sinon le plus récent de l'historique.
-    const effectiveId = selectedRunId ?? runs[0]?.id ?? null
+    // Run sélectionné (s'il existe encore après une suppression), sinon le plus récent.
+    const stillExists = selectedRunId && runs.some((r) => r.id === selectedRunId)
+    const effectiveId = (stillExists ? selectedRunId : runs[0]?.id) ?? null
     const histRun = effectiveId ? runs.find((r) => r.id === effectiveId) : undefined
 
     let source: 'history' | 'server' | 'client' | null = null

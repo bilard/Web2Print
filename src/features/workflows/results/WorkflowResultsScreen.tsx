@@ -3,8 +3,10 @@
 // dernier run (dashboard / table / graphe / galerie / document) + export PNG/PDF.
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Download, FileImage, Loader2, Eye, History } from 'lucide-react'
+import { ArrowLeft, Download, FileImage, Loader2, Eye, History, Trash2 } from 'lucide-react'
+import { auth } from '@/lib/firebase/config'
 import { initWorkflowsRegistry } from '../registry/builtin'
+import { deleteRun, deleteAllRuns } from '../persistence/runHistoryClient'
 import { useRunResult, type RunHistoryItem } from './useRunResult'
 import { ResultPanelView } from './ResultPanelView'
 import { exportElementToPng, exportElementToPdf } from '@/lib/domExport'
@@ -19,23 +21,44 @@ const STATUS_DOT: Record<string, string> = {
 }
 
 function HistorySidebar({
-  runs, selectedRunId, onSelect,
-}: { runs: RunHistoryItem[]; selectedRunId: string | null; onSelect: (id: string | null) => void }) {
+  runs, selectedRunId, onSelect, onDelete, onClearAll,
+}: {
+  runs: RunHistoryItem[]
+  selectedRunId: string | null
+  onSelect: (id: string | null) => void
+  onDelete: (id: string) => void
+  onClearAll: () => void
+}) {
+  const [confirmClear, setConfirmClear] = useState(false)
   if (runs.length === 0) return null
   const effective = selectedRunId ?? runs[0]?.id ?? null
   return (
-    <aside className="w-56 shrink-0 border-r border-neutral-800 overflow-auto">
-      <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-500 flex items-center gap-1.5 sticky top-0 bg-background">
+    <aside className="w-56 shrink-0 border-r border-neutral-800 overflow-auto flex flex-col">
+      <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-500 flex items-center gap-1.5 sticky top-0 bg-background z-10">
         <History className="w-3 h-3" /> Historique ({runs.length})
+        {confirmClear ? (
+          <span className="ml-auto flex items-center gap-1">
+            <button onClick={() => { onClearAll(); setConfirmClear(false) }} className="text-[10px] text-red-300 hover:text-red-200">Confirmer</button>
+            <button onClick={() => setConfirmClear(false)} className="text-[10px] text-neutral-500 hover:text-neutral-300">Annuler</button>
+          </span>
+        ) : (
+          <button
+            onClick={() => setConfirmClear(true)}
+            className="ml-auto text-neutral-600 hover:text-red-300"
+            title="Supprimer tout l'historique"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        )}
       </div>
       <ul className="px-1.5 pb-2 space-y-1">
         {runs.map((r) => {
           const on = r.id === effective
           return (
-            <li key={r.id}>
+            <li key={r.id} className="group relative">
               <button
                 onClick={() => onSelect(r.id)}
-                className={`w-full text-left px-2 py-1.5 rounded-md flex items-center gap-2 text-xs ${
+                className={`w-full text-left pl-2 pr-7 py-1.5 rounded-md flex items-center gap-2 text-xs ${
                   on ? 'bg-indigo-500/15 border border-indigo-500/40 text-neutral-100' : 'hover:bg-white/[0.04] text-neutral-300 border border-transparent'
                 }`}
               >
@@ -44,6 +67,14 @@ function HistorySidebar({
                   <span className="block truncate">{fmtDate(r.endedAt)}</span>
                   <span className="block text-[10px] text-neutral-500">{r.trigger ?? 'run'}</span>
                 </span>
+              </button>
+              <button
+                onClick={() => onDelete(r.id)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded text-neutral-600 hover:text-red-300 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Supprimer ce run"
+                aria-label="Supprimer ce run"
+              >
+                <Trash2 className="w-3 h-3" />
               </button>
             </li>
           )
@@ -112,7 +143,13 @@ export function WorkflowResultsScreen({ workflowId }: { workflowId: string }) {
       </header>
 
       <div className="flex-1 flex min-h-0">
-        <HistorySidebar runs={runs} selectedRunId={selectedRunId} onSelect={selectRun} />
+        <HistorySidebar
+          runs={runs}
+          selectedRunId={selectedRunId}
+          onSelect={selectRun}
+          onDelete={(id) => { const uid = auth.currentUser?.uid; if (uid) void deleteRun(uid, id) }}
+          onClearAll={() => { const uid = auth.currentUser?.uid; if (uid) void deleteAllRuns(uid, workflowId) }}
+        />
         <div className="flex-1 overflow-auto">
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-neutral-500 p-8">
