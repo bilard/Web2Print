@@ -205,6 +205,12 @@ service cloud.firestore {
       allow write: if false; // écrit uniquement par les Functions (admin)
     }
 
+    // Flag d'abandon d'un run serveur en cours : le propriétaire l'écrit (bouton STOP),
+    // l'executor headless le poll et déclenche l'AbortController.
+    match /users/{uid}/workflowAbort/{workflowId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // ── Excel Data ────────────────────────────────────────────────────────────
     // `excel_data/{docId}` = méta légères (fileName, path, sortIndex, totals…)
     // `excel_data_payload/{docId}` = blob `sheets` JSON sérialisé, séparé pour

@@ -57,6 +57,13 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   const runId = `srv_${startedAt}`
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), RUN_TIMEOUT_MS)
+  // Bouton STOP : le client pose users/{uid}/workflowAbort/{wf.id} ; on purge un flag
+  // périmé au départ, puis on le poll pour déclencher l'abort en cours de run.
+  const abortRef = getFirestore().doc(`users/${uid}/workflowAbort/${wf.id}`)
+  await abortRef.delete().catch(() => {})
+  const abortPoll = setInterval(() => {
+    abortRef.get().then((s) => { if (s.exists && s.data()?.requested) ac.abort() }).catch(() => {})
+  }, 3000)
   // État live initial : toutes les cartes « en attente » (gris). La progression
   // node-par-node (onProgress) les fait passer running → success/error au fil du run.
   const initial: Record<string, 'pending'> = {}
@@ -81,6 +88,8 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     throw err
   } finally {
     clearTimeout(timer)
+    clearInterval(abortPoll)
+    await abortRef.delete().catch(() => {})
   }
 }
 
