@@ -15,7 +15,7 @@ export const navigationSection: HelpSection = {
       type: 'text',
       md: `### Menu des modules (☰)
 
-Un bouton **☰ flottant en bas à gauche** ouvre un tiroir listant tous les modules : Nouveau document, Importer, Bibliothèque, DAM, PIM, Taxonomies, Templates scraping, Scraping Hub, Workflows, Telegram, Animation, Chat IA et Utilisateurs & rôles.
+Un bouton **☰ flottant en bas à gauche** ouvre un tiroir listant tous les modules : Nouveau document, Importer, Bibliothèque, DAM, PIM, Taxonomies, Templates scraping, Scraping Hub, Workflows, Veille tarifaire, Telegram, Animation, Chat IA et Utilisateurs & rôles.
 
 - Cliquer une entrée ramène au **tableau de bord** sur la section choisie.
 - Le tiroir n'affiche que les modules **autorisés par ton rôle** (voir _Utilisateurs & rôles_).

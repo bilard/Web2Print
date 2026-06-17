@@ -1,4 +1,4 @@
-import { Workflow, FileSpreadsheet, Image as ImageIcon, Send } from 'lucide-react'
+import { Workflow, FileSpreadsheet, Image as ImageIcon, Send, TrendingUpDown } from 'lucide-react'
 import type { HelpSection } from './types'
 
 /**
@@ -75,6 +75,22 @@ _Détails : section **Workflows**._`,
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.workflows' },
       label: 'Ouvrir Workflows',
       icon: Workflow,
+    },
+    {
+      type: 'text',
+      md: `### Veille tarifaire & comparaison de prix
+
+- Nouveau module **Veille tarifaire** : tableau de bord des prix concurrents (écarts par produit, positionnement, alertes), alimenté par le node **« Veille tarifaire »** d'un workflow.
+- Modèles 1-clic **« Comparer mes prix aux concurrents → Excel »** et **« Comparaison de prix quotidienne → Google Sheets »** (cron serveur).
+- **Découverte auto de la page liste** par famille produit : colle un domaine (ou rien), le node trouve la bonne page catégorie de chaque enseigne et compare les EAN.
+
+_Détails : section **Veille tarifaire**._`,
+    },
+    {
+      type: 'menu-link',
+      target: { path: '/dashboard', highlightId: 'dashboard.sidebar.price-watch' },
+      label: 'Ouvrir la Veille tarifaire',
+      icon: TrendingUpDown,
     },
     {
       type: 'text',

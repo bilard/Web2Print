@@ -29,6 +29,7 @@ const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   scraping: ['scrapingHub.view', 'scrapingTemplates.view'],
   'scraping-templates': 'scrapingTemplates.view',
   'scraping-hub': 'scrapingHub.view',
+  'price-watch': 'priceWatch.view',
   workflow: 'workflows.view',
   hyperframes: 'hyperframes.view',
   telegram: 'telegram.view',
