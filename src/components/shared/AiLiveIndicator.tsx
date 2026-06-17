@@ -254,7 +254,9 @@ export function AiLiveIndicator() {
           {/* Clic extérieur → ferme */}
           <div className="fixed inset-0 z-[59] pointer-events-auto" onClick={() => setPanelOpen(false)} />
           <div className="relative z-[61] mt-2 w-[min(94vw,860px)] pointer-events-auto">
-            <div className="rounded-2xl border border-white/10 bg-[#0b0b0f]/95 backdrop-blur-md shadow-2xl shadow-black/60 flex flex-col max-h-[80vh]">
+            <div className="rounded-2xl border border-white/10 bg-[#0b0b0f]/95 backdrop-blur-md shadow-2xl shadow-black/60 flex flex-col max-h-[calc(100vh-5rem)]">
+              {/* hauteur quasi-pleine fenêtre (le panneau démarre à ~4rem du haut) :
+                  évite que la section Scraping/Bright Data soit coupée en bas. */}
               <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
                 <span className="text-xs font-semibold text-white/80">Consommation — détail par LLM & connecteurs</span>
                 <button
