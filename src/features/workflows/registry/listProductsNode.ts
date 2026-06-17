@@ -66,20 +66,30 @@ const EXTRACTED_SCHEMA_FOR_LLM = {
   required: ['products'],
 } as const
 
+/** Valide la clé de contrôle d'un EAN-13 (GS1). Écarte les nombres à 13 chiffres
+ *  qui n'en sont pas — typiquement un id produit marketplace planqué dans un slug
+ *  d'URL (jardiland : « …rbc36x2-6744473726508 », checksum KO). */
+function isValidEan13(code: string): boolean {
+  if (!/^\d{13}$/.test(code)) return false
+  const d = [...code].map(Number)
+  const sum = d.slice(0, 12).reduce((s, n, i) => s + n * (i % 2 === 0 ? 1 : 3), 0)
+  return (10 - (sum % 10)) % 10 === d[12]
+}
+
 /** EAN robuste, anti-hallucination : on ne fait JAMAIS confiance à l'EAN brut du
- *  LLM (il fabrique des codes à 13 chiffres plausibles mais faux). L'EAN du LLM
- *  n'est retenu que s'il est CORROBORÉ — présent tel quel dans l'image, l'URL
- *  fiche ou le nom (il sert alors à désambiguïser quand une source contient
- *  plusieurs nombres de 13 chiffres). Sinon on dérive le premier nombre de 13
- *  chiffres de l'image (Jardiland le cache dans le chemin image), puis l'URL
- *  fiche (Castorama : « 4892210822604_CAFR.prd »), puis le nom. '' si rien. */
+ *  LLM (il fabrique des codes plausibles mais faux), et on n'accepte qu'un EAN-13
+ *  dont la CLÉ DE CONTRÔLE est valide (écarte les id marketplace à 13 chiffres).
+ *  L'EAN du LLM n'est retenu que s'il est valide ET CORROBORÉ dans l'image/URL/nom ;
+ *  sinon on prend le premier code 13 chiffres VALIDE de l'image (Jardiland le cache
+ *  dans le chemin image), puis l'URL, puis le nom. '' si rien. */
 export function resolveEan(ean: string, image: string, url: string, name: string): string {
   const sources = [image, url, name].map((s) => String(s ?? ''))
   const clean = (ean ?? '').replace(/\D/g, '')
-  if (clean.length === 13 && sources.some((s) => s.includes(clean))) return clean
+  if (isValidEan13(clean) && sources.some((s) => s.includes(clean))) return clean
   for (const src of sources) {
-    const m = src.match(/\d{13}/)
-    if (m) return m[0]
+    for (const m of src.matchAll(/\d{13}/g)) {
+      if (isValidEan13(m[0])) return m[0]
+    }
   }
   return ''
 }

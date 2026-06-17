@@ -18,18 +18,26 @@ interface ExtractedProduct {
   image?: unknown
 }
 
-/** EAN robuste, anti-hallucination : on ne fait JAMAIS confiance à l'EAN brut du
- *  LLM (il fabrique des codes à 13 chiffres plausibles mais faux). L'EAN du LLM
- *  n'est retenu que s'il est CORROBORÉ — présent tel quel dans l'image, l'URL ou
- *  le nom. Sinon on dérive le premier nombre de 13 chiffres de l'image (Jardiland
- *  le cache dans le chemin image), puis l'URL, puis le nom. '' si rien. */
+/** Valide la clé de contrôle EAN-13 (GS1) : écarte les id marketplace à 13 chiffres
+ *  planqués dans un slug d'URL (jardiland « …rbc36x2-6744473726508 », checksum KO). */
+function isValidEan13(code: string): boolean {
+  if (!/^\d{13}$/.test(code)) return false
+  const d = [...code].map(Number)
+  const sum = d.slice(0, 12).reduce((s, n, i) => s + n * (i % 2 === 0 ? 1 : 3), 0)
+  return (10 - (sum % 10)) % 10 === d[12]
+}
+
+/** EAN robuste, anti-hallucination : n'accepte qu'un EAN-13 à clé de contrôle valide
+ *  (écarte les id marketplace) ; l'EAN du LLM seulement s'il est valide ET corroboré
+ *  dans l'image/URL/nom ; sinon le 1er code 13 chiffres VALIDE de l'image, puis URL, puis nom. */
 function resolveEan(ean: unknown, image: unknown, url: unknown, name: unknown): string {
   const sources = [image, url, name].map((s) => String(s ?? ''))
   const clean = String(ean ?? '').replace(/\D/g, '')
-  if (clean.length === 13 && sources.some((s) => s.includes(clean))) return clean
+  if (isValidEan13(clean) && sources.some((s) => s.includes(clean))) return clean
   for (const src of sources) {
-    const m = src.match(/\d{13}/)
-    if (m) return m[0]
+    for (const m of src.matchAll(/\d{13}/g)) {
+      if (isValidEan13(m[0])) return m[0]
+    }
   }
   return ''
 }
