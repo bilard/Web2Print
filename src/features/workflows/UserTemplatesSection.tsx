@@ -8,6 +8,7 @@ import { Pencil, Trash2, X } from 'lucide-react'
 import { notify } from '@/lib/notify'
 import type { UserWorkflowTemplate } from './templates'
 import { listUserTemplates, updateUserTemplateMeta, deleteUserTemplate } from './persistence/workflowsApi'
+import { EmojiPicker } from './editor/EmojiPicker'
 
 interface Props {
   uid: string
@@ -115,12 +116,7 @@ function EditMetaDialog({
         <div className="flex gap-2">
           <label className="block text-sm w-16 shrink-0">
             <span className="text-white/60">Émoji</span>
-            <input
-              value={emoji}
-              onChange={(e) => setEmoji(e.target.value)}
-              maxLength={4}
-              className="mt-1 w-full bg-well border border-neutral-700 rounded px-2 py-2 text-center text-lg outline-none focus:border-indigo-500"
-            />
+            <EmojiPicker value={emoji} onChange={setEmoji} />
           </label>
           <label className="block text-sm flex-1">
             <span className="text-white/60">Nom</span>
