@@ -273,10 +273,19 @@ registerServerNode({
         if (!id) return
         if (id.ean) row.ean = id.ean
         if (id.brand && !String(row.brand ?? '').trim()) row.brand = id.brand
-        if (id.price != null && id.price > 0) row.price = String(id.price)
+        // Ne PAS écraser un prix déjà extrait de la liste (prix de vente/promo) : la
+        // fiche JSON-LD porte souvent le prix catalogue → ne remplir que si vide.
+        if (id.price != null && id.price > 0 && !String(row.price ?? '').trim()) row.price = String(id.price)
         if (id.ean || id.brand || id.price != null) enriched++
       })
       ctx.log('info', `Fiches enrichies : ${enriched}/${targets.length}.`)
+    }
+
+    // Garde-fou : prix barré > prix de vente, sinon ce n'est pas une promo → vidé.
+    for (const row of capped) {
+      const pr = parsePrice(String(row.price ?? ''))
+      const ob = parsePrice(String(row.originalPrice ?? ''))
+      if (!(Number.isFinite(ob) && Number.isFinite(pr) && ob > pr)) row.originalPrice = ''
     }
 
     ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}.`)

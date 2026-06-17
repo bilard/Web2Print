@@ -301,8 +301,10 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
               const eanFromFiche = String(sd.gtin ?? '').replace(/\D/g, '')
               if (isValidEan13(eanFromFiche)) row.ean = eanFromFiche
               if (sd.brand && !String(row.brand ?? '').trim()) row.brand = sd.brand
+              // Ne PAS écraser un prix déjà extrait de la liste : c'est le prix de vente
+              // (promo) affiché ; la fiche JSON-LD porte souvent le prix catalogue.
               const p = sd.offers?.price
-              if (typeof p === 'number' && p > 0) row.price = String(p)
+              if (typeof p === 'number' && p > 0 && !String(row.price ?? '').trim()) row.price = String(p)
               if (sd.gtin || sd.brand || sd.offers?.price != null) enriched++
             }
           } catch { /* fiche inaccessible → on garde la donnée de la liste */ }
@@ -312,6 +314,14 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       }
       await Promise.all(Array.from({ length: Math.min(POOL, targets.length) }, () => worker()))
       ctx.log('info', `Fiches enrichies : ${enriched}/${targets.length}.`)
+    }
+
+    // Garde-fou : un prix barré DOIT être strictement supérieur au prix de vente
+    // (sinon ce n'est pas une promo). Vide les prix barrés incohérents.
+    for (const row of capped) {
+      const pr = parsePrice(String(row.price ?? ''))
+      const ob = parsePrice(String(row.originalPrice ?? ''))
+      if (!(Number.isFinite(ob) && Number.isFinite(pr) && ob > pr)) row.originalPrice = ''
     }
 
     if (capped.length === 0) {
