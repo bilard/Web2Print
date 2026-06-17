@@ -8,6 +8,9 @@ const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u
 // Vidéos de démonstration (rendues via HyperFrames). Survit à la régénération de content.js.
 const DEMOS = {
   scraping: { src: 'media/scraping.mp4', caption: "Démonstration : une URL produit → lecture de la page, extraction des champs vers le PIM et des images vers le DAM." },
+  editor: { src: 'media/editor.mp4', caption: "Démonstration : édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite." },
+  pim: { src: 'media/pim.mp4', caption: "Démonstration : une base produits avec colonne calculée (Prix TTC = formule Excel), plusieurs bases et champs structurés." },
+  workflow: { src: 'media/workflow.mp4', caption: "Démonstration : un graphe de nodes (Scraper → Enrichir → Composer → Exporter → Telegram) exécuté de bout en bout." },
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)
