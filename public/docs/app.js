@@ -5,12 +5,16 @@ const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => [...r.querySelectorAll(s)]
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
-// Vidéos de démonstration (rendues via HyperFrames). Survit à la régénération de content.js.
+// Vidéos de démonstration (rendues via HyperFrames). Un module peut en avoir plusieurs.
+// Survit à la régénération de content.js.
 const DEMOS = {
-  scraping: { src: 'media/scraping.mp4', caption: "Démonstration : une URL produit → lecture de la page, extraction des champs vers le PIM et des images vers le DAM." },
-  editor: { src: 'media/editor.mp4', caption: "Démonstration : édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite." },
-  pim: { src: 'media/pim.mp4', caption: "Démonstration : une base produits avec colonne calculée (Prix TTC = formule Excel), plusieurs bases et champs structurés." },
-  workflow: { src: 'media/workflow.mp4', caption: "Démonstration : un graphe de nodes (Scraper → Enrichir → Composer → Exporter → Telegram) exécuté de bout en bout." },
+  scraping: [{ src: 'media/scraping.mp4', caption: "Une URL produit → lecture de la page, extraction des champs vers le PIM et des images vers le DAM." }],
+  editor: [{ src: 'media/editor.mp4', caption: "Édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite." }],
+  pim: [{ src: 'media/pim.mp4', caption: "Une base produits avec colonne calculée (Prix TTC = formule Excel), plusieurs bases et champs structurés." }],
+  workflow: [{ src: 'media/workflow.mp4', caption: "Un graphe de nodes (Scraper → Enrichir → Composer → Exporter → Telegram) exécuté de bout en bout." }],
+  export: [{ src: 'media/export.mp4', caption: "Une source → N canaux : Impression (PDF/X), Réseaux sociaux, PowerPoint, Web et Vidéo, chacun généré." }],
+  telegram: [{ src: 'media/telegram.mp4', caption: "Piloter l'app depuis Telegram : « /flow … » génère et exécute un workflow, le fichier produit est renvoyé." }],
+  'import-idml': [{ src: 'media/import-idml.mp4', caption: "Import d'une maquette InDesign (IDML) décomposée en calques éditables." }],
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)
@@ -18,10 +22,10 @@ const byCat = (label) => MODULES.filter((m) => m.cat === label)
 function keysHTML(keys) { return `<span class="kbd-keys">${(keys || []).map((k) => `<kbd>${k}</kbd>`).join('')}</span>` }
 
 function moduleHTML(m) {
-  const demo = DEMOS[m.id]
-  const demoHTML = demo
-    ? `<figure class="mod-demo"><video src="${demo.src}" autoplay loop muted playsinline preload="metadata"></video><figcaption>${demo.caption}</figcaption></figure>`
-    : ''
+  const demos = DEMOS[m.id] || []
+  const demoHTML = demos
+    .map((d) => `<figure class="mod-demo"><video src="${d.src}" autoplay loop muted playsinline preload="metadata"></video><figcaption>${d.caption}</figcaption></figure>`)
+    .join('')
   const feats = (m.features || []).map((f) => `<div class="feat-item"><dt>${f.title}</dt><dd>${f.desc}</dd></div>`).join('')
   const featHTML = feats ? `<div class="mod-sub">Fonctions</div><dl class="feat-list">${feats}</dl>` : ''
   const sc = (m.shortcuts || [])
