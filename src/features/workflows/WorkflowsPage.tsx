@@ -12,6 +12,7 @@ import {
 import { useCan } from '@/features/access/useAccess'
 import { OptionHelp } from '@/components/shared/OptionHelp'
 import { WORKFLOW_TEMPLATES, workflowFromTemplate, type WorkflowTemplate } from './templates'
+import { UserTemplatesSection } from './UserTemplatesSection'
 import type { Workflow, WorkflowFolder } from './types'
 
 interface WorkflowsPageProps {
@@ -372,6 +373,16 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Modèles créés par l'utilisateur (privés) */}
+      {canCreate && uid && (
+        <UserTemplatesSection
+          uid={uid}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          onUse={(t) => void createFromTemplate(t)}
+        />
       )}
 
       {loading ? (

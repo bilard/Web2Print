@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { notify } from '@/lib/notify'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Save, Play, Square, Sparkles, StepForward, Workflow as WorkflowIcon, BarChart3, BookmarkPlus } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
@@ -21,6 +21,7 @@ import { CronStatusPanel } from './CronStatusPanel'
 import { useServerRunLive } from '../runtime/useServerRunLive'
 import { WebhookPanel } from './WebhookPanel'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
+import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
 import { useCan } from '@/features/access/useAccess'
 
 export function WorkflowEditorPage() {
@@ -37,6 +38,7 @@ export function WorkflowEditorPage() {
   const ac = useRunContext((s) => s.abortController)
   const [loading, setLoading] = useState(true)
   const [showGenerate, setShowGenerate] = useState(false)
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
 
   // Affiche sur les cartes l'état des runs SERVEUR (cron / « Lancer serveur »).
   useServerRunLive(wf?.id)
@@ -144,6 +146,15 @@ export function WorkflowEditorPage() {
           >
             <BarChart3 className="w-4 h-4 text-indigo-400" /> Résultat
           </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowSaveTemplate(true)}
+              className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
+              title="Enregistrer ce montage comme modèle réutilisable"
+            >
+              <BookmarkPlus className="w-4 h-4 text-indigo-400" /> Modèle
+            </button>
+          )}
           <WebhookPanel workflowId={wf.id} />
           <CronStatusPanel workflowId={wf.id} />
           {isRunning ? (
@@ -203,6 +214,9 @@ export function WorkflowEditorPage() {
         <RunPanel />
       </div>
         {showGenerate && <PromptToFlowModal onClose={() => setShowGenerate(false)} />}
+        {showSaveTemplate && uid && (
+          <SaveAsTemplateDialog workflow={wf} uid={uid} onClose={() => setShowSaveTemplate(false)} />
+        )}
     </ReactFlowProvider>
   )
 }

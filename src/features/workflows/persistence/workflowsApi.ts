@@ -2,11 +2,13 @@
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { Workflow, WorkflowFolder } from '../types'
+import type { UserWorkflowTemplate } from '../templates'
 import { CURRENT_SCHEMA_VERSION, migrate } from './migrations'
 import { syncWorkflowSchedule } from './scheduleSync'
 
 const col = (uid: string) => collection(db, 'users', uid, 'workflows')
 const folderCol = (uid: string) => collection(db, 'users', uid, 'workflowFolders')
+const templateCol = (uid: string) => collection(db, 'users', uid, 'workflowTemplates')
 
 export async function listWorkflows(uid: string): Promise<Workflow[]> {
   const snap = await getDocs(query(col(uid), orderBy('updatedAt', 'desc')))
@@ -66,6 +68,37 @@ export async function deleteFolder(uid: string, id: string): Promise<void> {
   const members = await getDocs(query(col(uid), where('folderId', '==', id)))
   await Promise.all(members.docs.map((d) => updateDoc(d.ref, { folderId: null, updatedAt: Date.now() })))
   await deleteDoc(doc(folderCol(uid), id))
+}
+
+// ---- Modèles personnalisés (users/{uid}/workflowTemplates) -------------------
+
+/** Liste les modèles de l'utilisateur, du plus récemment modifié au plus ancien. */
+export async function listUserTemplates(uid: string): Promise<UserWorkflowTemplate[]> {
+  const snap = await getDocs(query(templateCol(uid), orderBy('updatedAt', 'desc')))
+  return snap.docs.map((d) => d.data() as UserWorkflowTemplate)
+}
+
+/** Crée ou remplace un modèle (l'id pilote create vs update du graphe). */
+export async function saveUserTemplate(uid: string, tpl: UserWorkflowTemplate): Promise<void> {
+  await setDoc(doc(templateCol(uid), tpl.id), tpl)
+}
+
+/** Met à jour seulement les infos d'un modèle (nom / description / émoji). */
+export async function updateUserTemplateMeta(
+  uid: string,
+  id: string,
+  meta: { name: string; description: string; emoji: string },
+): Promise<void> {
+  await updateDoc(doc(templateCol(uid), id), {
+    name: meta.name.trim() || 'Mon modèle',
+    description: meta.description.trim(),
+    emoji: meta.emoji.trim() || '⭐',
+    updatedAt: Date.now(),
+  })
+}
+
+export async function deleteUserTemplate(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(templateCol(uid), id))
 }
 
 export function newWorkflow(uid: string): Workflow {

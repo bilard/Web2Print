@@ -16,6 +16,18 @@ export interface WorkflowTemplate {
   edges: WorkflowEdge[]
 }
 
+/**
+ * Modèle créé par l'utilisateur, persisté sous `users/{uid}/workflowTemplates`.
+ * Étend WorkflowTemplate : `workflowFromTemplate()` l'instancie tel quel. La
+ * config des nodes est capturée telle quelle (URLs/tokens compris) — privée au
+ * user, donc pas de fuite : le but est de réutiliser son propre montage.
+ */
+export interface UserWorkflowTemplate extends WorkflowTemplate {
+  ownerId: string
+  createdAt: number
+  updatedAt: number
+}
+
 const node = (id: string, type: string, x: number, y: number, config: unknown): WorkflowNode => ({
   id,
   type,
@@ -203,5 +215,29 @@ export function workflowFromTemplate(template: WorkflowTemplate, uid: string): W
     // structuredClone : chaque instanciation doit avoir ses propres objets config.
     nodes: structuredClone(template.nodes),
     edges: structuredClone(template.edges),
+  }
+}
+
+/**
+ * Construit un modèle utilisateur depuis un workflow existant (capture nodes +
+ * edges tels quels). `meta.id`/`meta.createdAt` fournis ⇒ mise à jour d'un modèle
+ * existant (id/createdAt conservés) ; absents ⇒ nouveau modèle.
+ */
+export function templateFromWorkflow(
+  wf: Workflow,
+  meta: { id?: string; name: string; description: string; emoji: string; createdAt?: number },
+  uid: string,
+): UserWorkflowTemplate {
+  const now = Date.now()
+  return {
+    id: meta.id ?? `wtpl_${now}_${Math.random().toString(36).slice(2, 8)}`,
+    name: meta.name.trim() || wf.name || 'Mon modèle',
+    description: meta.description.trim(),
+    emoji: meta.emoji.trim() || '⭐',
+    nodes: structuredClone(wf.nodes),
+    edges: structuredClone(wf.edges),
+    ownerId: uid,
+    createdAt: meta.createdAt ?? now,
+    updatedAt: now,
   }
 }
