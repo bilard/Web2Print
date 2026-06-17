@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --emerald:#34D399; --pink:#F472B6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="scraping-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 6%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+  .cap{position:absolute;top:60px;left:96px;right:96px;z-index:5}
+  .cap .t{font-size:34px;font-weight:800;letter-spacing:.02em}
+  .cap .t .n{font-family:"JetBrains Mono",monospace;color:var(--indigo);margin-right:16px}
+  .cap small{display:block;font-size:23px;font-weight:400;color:var(--mut);margin-top:9px}
+
+  .win{width:1640px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9);margin-top:60px}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .wbody{padding:30px}
+
+  .sc-url{display:flex;align-items:center;gap:16px;background:var(--elev);border:1px solid var(--line);border-radius:14px;padding:16px 22px;margin-bottom:22px}
+  .sc-url .u{font-family:"JetBrains Mono",monospace;font-size:23px;color:var(--mut)}
+  .sc-url .go{margin-left:auto;font-size:21px;font-weight:700;color:#fff;background:var(--indigo);padding:11px 24px;border-radius:11px}
+  .sc-cols{display:grid;grid-template-columns:1fr 150px 1fr;gap:18px;align-items:start}
+
+  .webpage{position:relative;border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#fff;color:#111}
+  .scanbeam{position:absolute;left:0;right:0;top:0;height:74px;z-index:5;background:linear-gradient(180deg,transparent,rgba(99,102,241,.5),transparent);pointer-events:none;opacity:0}
+  .wp-bar{height:42px;background:#e9eef3;display:flex;align-items:center;gap:10px;padding:0 16px}
+  .wp-bar .d{width:11px;height:11px;border-radius:50%;background:#c3ccd6}
+  .wp-bar .addr{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:15px;color:#5b6470;background:#fff;border-radius:7px;padding:6px 12px;flex:1}
+  .wp-in{padding:22px}
+  .wp-crumb{font-size:13px;color:#94a3b8;font-weight:600;margin-bottom:11px}
+  .wp-crumb b{color:#2563eb}
+  .wp-img{position:relative;height:188px;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:14px}
+  .wp-tag{position:absolute;top:11px;left:11px;background:#dc2626;color:#fff;font-size:13px;font-weight:800;padding:3px 9px;border-radius:6px;box-shadow:0 4px 10px -3px rgba(220,38,38,.6)}
+  .wp-title{font-size:27px;font-weight:800;color:#0f172a;margin-bottom:9px}
+  .wp-rate{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .wp-rate .stars{color:#f59e0b;font-size:18px;letter-spacing:1px}
+  .wp-rate .rev{font-size:14px;color:#64748b}
+  .wp-price{font-size:33px;font-weight:800;color:#dc2626;margin-bottom:15px;display:flex;align-items:baseline}
+  .wp-old{font-size:18px;color:#94a3b8;font-weight:600;text-decoration:line-through;margin-left:10px}
+  .wp-specs{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  .wp-specs span{font-size:18px;color:#475569}
+  .wp-row{display:flex;align-items:center;gap:16px;margin-top:2px}
+  .wp-stock{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;color:#16a34a}
+  .wp-stock i{width:9px;height:9px;border-radius:50%;background:#16a34a}
+  .wp-cart{display:inline-block;font-size:18px;font-weight:700;color:#fff;background:#2563eb;padding:11px 22px;border-radius:9px;margin-left:auto}
+
+  .sc-mid{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:40px;padding-top:120px}
+  .rt{display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--mut)}
+  .rt b{font-family:"JetBrains Mono",monospace;font-size:15px;letter-spacing:.05em}
+  .rt svg{width:40px;height:40px}
+
+  .sc-dest{display:flex;flex-direction:column;gap:16px}
+  .card{border:1px solid var(--line);border-radius:14px;background:var(--elev);overflow:hidden}
+  .card .ch{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:20px;font-weight:600}
+  .card .ch .cdot{width:12px;height:12px;flex:0 0 12px;border-radius:4px}
+  .card .ch .badge{margin-left:auto;font-size:14px;font-weight:700;color:var(--emerald);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.12);border-radius:999px;padding:3px 11px}
+  .kv-row{display:flex;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--line);font-size:21px}
+  .kv-row:last-child{border-bottom:0}
+  .kv-row .k{font-family:"JetBrains Mono",monospace;font-size:16px;color:var(--mut);text-transform:uppercase;align-self:center}
+  .kv-row .val{font-variant-numeric:tabular-nums}
+  .thumbs{display:flex;gap:11px;padding:18px;flex-wrap:wrap}
+  .thumb{width:118px;height:118px;border-radius:9px;flex:0 0 118px;overflow:hidden;border:1px solid var(--line)}
+
+  .shot{position:relative;display:block;width:100%;height:100%;background:radial-gradient(ellipse 78% 64% at 50% 38%,#fff,#eef2f7 66%,#dde5ee);overflow:hidden}
+  .shot::before{content:"";position:absolute;left:26%;right:26%;bottom:12%;height:7%;border-radius:50%;background:radial-gradient(ellipse,rgba(15,23,42,.24),transparent 72%)}
+  .shot .drill{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .shot.v2 .drill{transform:rotate(-8deg) scale(1.05);transform-origin:50% 46%}
+  .shot.v3 .drill{transform:scale(1.85) translate(5%,-2%);transform-origin:64% 42%}
+  .shot.v4{background:radial-gradient(ellipse 78% 64% at 50% 38%,#eaf2ff,#dbeafe 64%,#bcd7fb)}
+  .shot.v4 .drill{transform:rotate(7deg) scale(.95)}
+</style>
+</head>
+<body>
+<div data-composition-id="scraping-demo" data-start="0" data-duration="8.6" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <rect x="74" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <rect x="104" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+      <path d="M206 64 l5 4 M214 64 l5 4 M222 64 l5 4" stroke="#94a3b8" stroke-width="1.4"/>
+    </symbol>
+  </svg>
+
+  <div class="glow"></div>
+  <div class="cap">
+    <div class="t"><span class="n">Scraping</span>Une URL produit → fiche PIM + médias DAM</div>
+    <small>Lecture de la page, extraction des champs, enrichissement automatique.</small>
+  </div>
+
+  <div class="win">
+    <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">Scraping Hub — enrichissement</span></div>
+    <div class="wbody">
+      <div class="sc-url"><span class="u">https://fournisseur.com/produit/perceuse-18v</span><span class="go" id="go">Scraper</span></div>
+      <div class="sc-cols">
+        <div class="webpage">
+          <span class="scanbeam" id="scanbeam"></span>
+          <div class="wp-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="addr">fournisseur.com</span></div>
+          <div class="wp-in">
+            <div class="wp-crumb">Outillage › Perceuses-visseuses › <b>18V Brushless</b></div>
+            <div class="wp-img"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="wp-tag">−15%</span></div>
+            <div class="wp-title">Perceuse 18V Brushless</div>
+            <div class="wp-rate"><span class="stars">★★★★★</span><span class="rev">4,8 · 214 avis</span></div>
+            <div class="wp-price">129,00 €<span class="wp-old">152,00 €</span></div>
+            <div class="wp-specs"><span>Couple : 60 Nm</span><span>Batterie : 2× 2,0 Ah</span><span>Mandrin : 13 mm</span></div>
+            <div class="wp-row"><span class="wp-stock"><i></i>En stock</span><span class="wp-cart">Ajouter au panier</span></div>
+          </div>
+        </div>
+
+        <div class="sc-mid">
+          <div class="rt" id="rt-text"><b>TEXTE →</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          <div class="rt" id="rt-img"><b>IMAGES →</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        </div>
+
+        <div class="sc-dest">
+          <div class="card">
+            <div class="ch"><span class="cdot" style="background:var(--emerald)"></span>PIM — fiche produit<span class="badge" id="pim-badge">✓ enrichie</span></div>
+            <div class="kv-row"><span class="k">Nom</span><span class="val">Perceuse 18V Brushless</span></div>
+            <div class="kv-row"><span class="k">Réf.</span><span class="val">DDA351RTJ</span></div>
+            <div class="kv-row"><span class="k">Prix</span><span class="val">129,00 €</span></div>
+            <div class="kv-row"><span class="k">Couple</span><span class="val">60 Nm</span></div>
+            <div class="kv-row"><span class="k">Mandrin</span><span class="val">13 mm</span></div>
+          </div>
+          <div class="card">
+            <div class="ch"><span class="cdot" style="background:var(--pink)"></span>DAM — médias</div>
+            <div class="thumbs">
+              <span class="thumb"><span class="shot"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span>
+              <span class="thumb"><span class="shot v2" data-layout-allow-overflow><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span>
+              <span class="thumb"><span class="shot v3" data-layout-allow-overflow><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span>
+              <span class="thumb"><span class="shot v4" data-layout-allow-overflow><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // États de départ (avant remplissage)
+    tl.set(".sc-dest .kv-row", { opacity: 0, x: -16 }, 0);
+    tl.set(".sc-dest .thumb", { opacity: 0, scale: 0.4 }, 0);
+    tl.set("#pim-badge", { opacity: 0, scale: 0.5 }, 0);
+
+    // Entrée
+    tl.from(".cap", { y: 24, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.15);
+    tl.from(".win", { y: 40, opacity: 0, scale: 0.985, duration: 0.6, ease: "power3.out" }, 0.25);
+    tl.from(".sc-url", { y: 22, opacity: 0, duration: 0.5, ease: "power2.out" }, 0.7);
+    tl.from(".webpage", { x: -40, opacity: 0, duration: 0.6, ease: "power3.out" }, 0.9);
+    tl.from(".rt", { opacity: 0, x: -12, duration: 0.4, ease: "power2.out", stagger: 0.12 }, 1.2);
+
+    // Clic « Scraper »
+    tl.fromTo("#go", { scale: 1 }, { scale: 1.06, duration: 0.4, yoyo: true, repeat: 1, ease: "sine.inOut" }, 1.5);
+
+    // 1) Balayage de lecture qui descend sur la page
+    tl.to("#scanbeam", { opacity: 1, duration: 0.2, ease: "sine.out" }, 2.0);
+    tl.fromTo("#scanbeam", { top: 0 }, { top: 470, duration: 1.3, ease: "power1.inOut" }, 2.1);
+    tl.to("#scanbeam", { opacity: 0, duration: 0.25, ease: "sine.in" }, 3.2);
+
+    // 2) TEXTE → PIM : flèche verte, les champs se remplissent un à un
+    tl.to("#rt-text", { color: "#34D399", scale: 1.14, duration: 0.4, ease: "power2.out" }, 3.25);
+    tl.to("#rt-text svg", { x: 8, duration: 0.4, yoyo: true, repeat: 3, ease: "sine.inOut" }, 3.35);
+    tl.to(".sc-dest .kv-row", { opacity: 1, x: 0, duration: 0.4, ease: "power2.out", stagger: 0.28 }, 3.5);
+    tl.to("#pim-badge", { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 5.1);
+
+    // 3) IMAGES → DAM : flèche rose, vignettes qui apparaissent
+    tl.to("#rt-img", { color: "#F472B6", scale: 1.14, duration: 0.4, ease: "power2.out" }, 5.4);
+    tl.to("#rt-img svg", { x: 8, duration: 0.4, yoyo: true, repeat: 3, ease: "sine.inOut" }, 5.5);
+    tl.to(".sc-dest .thumb", { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out", stagger: 0.16 }, 5.6);
+
+    // Sortie douce pour une boucle propre
+    tl.to(".win", { opacity: 0, y: -24, duration: 0.45, ease: "power2.in" }, 8.1);
+    tl.to(".cap", { opacity: 0, duration: 0.4, ease: "power2.in" }, 8.15);
+
+    window.__timelines["scraping-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>
