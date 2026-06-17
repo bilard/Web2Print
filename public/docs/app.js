@@ -21,6 +21,10 @@ const DEMOS = {
   chat: [{ src: 'media/chat.mp4', caption: "Assistant conversationnel avec cascade multi-modèles (le suivant prend le relais si le principal échoue)." }],
   taxonomies: [{ src: 'media/taxonomies.mp4', caption: "Arborescence de catalogue (catégories, compteurs) ; un produit scrappé est rangé automatiquement dans la bonne branche." }],
   settings: [{ src: 'media/settings.mp4', caption: "Clés LLM par fournisseur (connexion testée), cascade de modèles et budget mensuel." }],
+  hyperframes: [{ src: 'media/hyperframes.mp4', caption: "Studio d'animation IA : format, durée, brief → génération de la vidéo ; bibliothèque de prompts rejouables." }],
+  dam: [{ src: 'media/dam.mp4', caption: "Banque de médias : recherche (texte/tag/couleur), grille de visuels, génération d'images par IA (badges « IA »)." }],
+  access: [{ src: 'media/access.mp4', caption: "Utilisateurs & rôles : attribution d'un rôle, surcharges de permissions par module." }],
+  'scraping-templates': [{ src: 'media/scraping-templates.mp4', caption: "Création d'un template : on pointe un élément de la page → sélecteur CSS généré → assignation à un champ." }],
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)
