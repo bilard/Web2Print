@@ -115,6 +115,18 @@ async function applyNumberFormats(token: string, id: string, gid: number, format
   if (!res.ok) throw new Error(`batchUpdate ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
+/** Pose le fuseau horaire du document (formules/dates internes au Sheet) sur
+ *  Europe/Paris. N'affecte PAS la colonne « Date de modification » de la liste
+ *  Drive (horodatage système UTC rendu par l'UI). Non bloquant. */
+async function setSpreadsheetTimeZone(token: string, id: string, timeZone = 'Europe/Paris'): Promise<void> {
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [{ updateSpreadsheetProperties: { properties: { timeZone }, fields: 'timeZone' } }] }),
+  })
+  if (!res.ok) throw new Error(`timeZone ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
 // --- Colonnes formule (parité avec src/features/gdrive/gdriveCore.ts) ---------
 interface FormulaColumn { header: string; template: string; format?: string }
 
@@ -387,6 +399,11 @@ registerServerNode({
     }
 
     const { title, gid } = await getFirstTab(token, id)
+    if (verb === 'créé') {
+      await setSpreadsheetTimeZone(token, id).catch((e) =>
+        ctx.log('warn', `Fuseau horaire ignoré : ${e instanceof Error ? e.message : e}`),
+      )
+    }
     await writeValues(token, id, title, matrix)
     if (formulas.length > 0 && sheet.rows.length > 0) {
       await writeFormulas(token, id, title, keys, formulas, sheet.rows.length).catch((e) =>

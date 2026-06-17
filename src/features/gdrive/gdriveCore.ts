@@ -192,6 +192,17 @@ function numericString(s: string): number | null {
 // avec le serveur (functions/src/workflow/nodes/google.ts) : même builder de requête.
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets'
 
+/** Pose le fuseau horaire du document (formules/dates internes au Sheet) sur
+ *  Europe/Paris. N'affecte PAS la colonne « Date de modification » de la liste
+ *  Drive (horodatage système UTC rendu par l'UI). Non bloquant. */
+async function setSpreadsheetTimeZone(token: string, spreadsheetId: string, timeZone = 'Europe/Paris'): Promise<void> {
+  await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: [{ updateSpreadsheetProperties: { properties: { timeZone }, fields: 'timeZone' } }] }),
+  })
+}
+
 export interface SheetChartOptions {
   /** 'bar' | 'line' | 'area' | 'pie' | 'doughnut'. */
   type: string
@@ -494,6 +505,7 @@ export async function exportSheetToGoogleSheets(
     convertToSheets: true,
     sourceMimeType: XLSX_MIME,
   })
+  await setSpreadsheetTimeZone(token, meta.id).catch(() => {})
   if (options.chart && sheet.rows.length > 0) {
     await addSheetChart(token, meta.id, sheet, options.formulas, options.chart, options.name)
   }
