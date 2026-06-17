@@ -1,6 +1,23 @@
 // src/features/workflows/registry/listProductsNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { resolveEan } from './listProductsNode'
+import { resolveEan, pickListingUrl } from './listProductsNode'
+
+describe('pickListingUrl (découverte page liste par famille)', () => {
+  it('préfère la page catégorie, écarte la fiche produit', () => {
+    const r = [
+      { url: 'https://www.castorama.fr/barbecue-weber-xyz_CAFR.prd', title: 'Barbecue Weber' }, // fiche
+      { url: 'https://www.castorama.fr/jardin-et-terrasse/barbecue/cat_id_123.cat', title: 'Barbecue | Castorama' }, // catégorie
+    ]
+    expect(pickListingUrl(r, 'castorama.fr', 'barbecue')).toBe('https://www.castorama.fr/jardin-et-terrasse/barbecue/cat_id_123.cat')
+  })
+  it('repli sur le 1er résultat du domaine si aucune liste évidente', () => {
+    const r = [{ url: 'https://autre.com/x' }, { url: 'https://www.castorama.fr/page-x' }]
+    expect(pickListingUrl(r, 'castorama.fr', 'barbecue')).toBe('https://www.castorama.fr/page-x')
+  })
+  it('null si rien sur le domaine', () => {
+    expect(pickListingUrl([{ url: 'https://autre.com/x' }], 'castorama.fr', 'barbecue')).toBeNull()
+  })
+})
 
 describe('resolveEan', () => {
   it('REJETTE un EAN du LLM non corroboré (anti-hallucination)', () => {

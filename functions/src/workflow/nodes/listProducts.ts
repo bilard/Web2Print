@@ -5,7 +5,7 @@
 // {site, name, brand, ean, price, url}. Jina (mode listing) + UNE extraction LLM
 // JSON par page. Pour le cron quotidien de comparaison de prix multi-sites.
 import { registerServerNode } from '../registry'
-import { jinaRead } from '../jina'
+import { jinaRead, jinaSearch } from '../jina'
 import { brightDataRead, htmlToText } from '../brightData'
 import { callLlm, parseLlmJson, recoverJsonObjects } from '../llm'
 import { fetchHtml } from '../../scraper/fetchHtml'
@@ -60,6 +60,34 @@ function parseUrls(raw: unknown): string[] {
     .split(/[\n,;]+/)
     .map((s) => s.trim())
     .filter((s) => /^https?:\/\//.test(s))
+}
+
+/** Mode « famille » : chaque ligne = un DOMAINE. */
+function parseDomains(raw: unknown): string[] {
+  return String(raw ?? '')
+    .split(/[\n,;]+/)
+    .map((s) => s.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, ''))
+    .filter(Boolean)
+}
+
+/** Meilleure URL de page liste pour une famille sur un domaine (pas une fiche). */
+function pickListingUrl(results: { url: string; title?: string }[], domain: string, family: string): string | null {
+  const d = domain.replace(/^www\./, '')
+  const onDomain = results.filter((r) => {
+    try { return new URL(r.url).hostname.replace(/^www\./, '').endsWith(d) } catch { return false }
+  })
+  if (onDomain.length === 0) return null
+  const fam = family.toLowerCase()
+  const isProduct = (u: string) => /\/p\/|\.prd(\?|$)|-p\.html|\/produit\/|\/product\//i.test(u)
+  const isListing = (u: string) =>
+    /\/c\/|\/s\/|cat[_.-]|categor|\/produits\/|\/rayon|\/recherche|\/search|dyn\.cat/i.test(u) || u.toLowerCase().includes(fam)
+  const notProduct = onDomain.filter((r) => !isProduct(r.url))
+  return (
+    notProduct.find((r) => isListing(r.url) && `${r.url} ${r.title ?? ''}`.toLowerCase().includes(fam)) ||
+    notProduct.find((r) => isListing(r.url)) ||
+    notProduct[0] ||
+    onDomain[0]
+  )?.url ?? null
 }
 
 function hostOf(url: string): string {
@@ -177,10 +205,30 @@ async function extractProducts(ctx: Ctx, content: string, label: string): Promis
 registerServerNode({
   type: 'list-products',
   run: async (ctx, config) => {
-    const urls = parseUrls(config.urls)
-    if (urls.length === 0) {
-      ctx.log('warn', 'Aucune URL de page liste valide.')
-      return { sheet: { columns: COLUMNS, rows: [] } }
+    const family = String(config.family ?? '').trim()
+    let urls: string[]
+    if (family) {
+      // Découverte auto : chaque ligne = domaine, on cherche la page liste de la famille.
+      const domains = parseDomains(config.urls)
+      urls = []
+      for (const domain of domains) {
+        if (ctx.signal.aborted) break
+        try {
+          const results = await jinaSearch(ctx.uid, `${family} site:${domain}`)
+          const found = pickListingUrl(results, domain, family)
+          if (found) { urls.push(found); ctx.log('info', `${domain} → ${found}`) }
+          else ctx.log('warn', `Aucune page liste « ${family} » sur ${domain}.`)
+        } catch (e) {
+          ctx.log('warn', `Recherche échouée sur ${domain} : ${e instanceof Error ? e.message : e}`)
+        }
+      }
+      if (urls.length === 0) { ctx.log('warn', `Découverte « ${family} » : aucune page liste trouvée.`); return { sheet: { columns: COLUMNS, rows: [] } } }
+    } else {
+      urls = parseUrls(config.urls)
+      if (urls.length === 0) {
+        ctx.log('warn', 'Aucune URL de page liste valide.')
+        return { sheet: { columns: COLUMNS, rows: [] } }
+      }
     }
     const max = Math.max(0, Number(config.maxProducts) || 0)
     // Pagination : `maxPages` pages par URL via le param `pageParam` (ex « page », « p »).

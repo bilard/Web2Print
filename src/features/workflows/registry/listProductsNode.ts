@@ -25,6 +25,9 @@ interface ListProductsConfig {
   pageParam?: string
   /** Enrichir chaque fiche produit (EAN/marque/prix via JSON-LD canonique). */
   enrichFiches?: boolean
+  /** Famille produit à découvrir (ex « barbecue »). Si renseigné, les lignes
+   *  d'`urls` sont des DOMAINES et le node trouve la page liste par recherche. */
+  family?: string
 }
 
 interface ListProductsOutputs {
@@ -115,12 +118,44 @@ function parseUrls(raw: string): string[] {
     .filter(Boolean)
 }
 
+/** En mode « famille » : chaque ligne est un DOMAINE (on retire protocole/chemin). */
+function parseDomains(raw: string): string[] {
+  return parseUrls(raw).map((s) => s.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '')).filter(Boolean)
+}
+
 function hostOf(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, '')
   } catch {
     return url
   }
+}
+
+/** Choisit, parmi des résultats de recherche, la meilleure URL de PAGE LISTE
+ *  (catégorie/résultats) pour une famille sur un domaine : sur le domaine, qui
+ *  N'EST PAS une fiche produit, et qui ressemble à une liste (marqueurs de
+ *  catégorie ou contient le mot-clé). Repli : 1er résultat du domaine. */
+export function pickListingUrl(
+  results: { url: string; title?: string }[],
+  domain: string,
+  family: string,
+): string | null {
+  const d = domain.replace(/^www\./, '')
+  const onDomain = results.filter((r) => {
+    try { return new URL(r.url).hostname.replace(/^www\./, '').endsWith(d) } catch { return false }
+  })
+  if (onDomain.length === 0) return null
+  const fam = family.toLowerCase()
+  const isProduct = (u: string) => /\/p\/|\.prd(\?|$)|-p\.html|\/produit\/|\/product\//i.test(u)
+  const isListing = (u: string) =>
+    /\/c\/|\/s\/|cat[_.-]|categor|\/produits\/|\/rayon|\/recherche|\/search|dyn\.cat/i.test(u) || u.toLowerCase().includes(fam)
+  const notProduct = onDomain.filter((r) => !isProduct(r.url))
+  const hit =
+    notProduct.find((r) => isListing(r.url) && `${r.url} ${r.title ?? ''}`.toLowerCase().includes(fam)) ||
+    notProduct.find((r) => isListing(r.url)) ||
+    notProduct[0] ||
+    onDomain[0]
+  return hit?.url ?? null
 }
 
 const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, ListProductsOutputs> = {
@@ -141,9 +176,16 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     {
       name: 'urls',
       kind: 'textarea',
-      label: 'URLs de pages liste (une par ligne)',
+      label: 'URLs de pages liste (ou DOMAINES si « Famille » est renseigné)',
       required: true,
-      help: 'Pages catégorie / recherche filtrées. Ex :\nhttps://www.jardiland.com/c/tondeuse-a-gazon-electrique?f=brand_in_Ryobi\nhttps://www.castorama.fr/search?Marque=Ryobi&term=tondeuse+electrique+batterie',
+      help: 'Une par ligne. Soit des URLs de page liste, soit — si tu remplis « Famille produit » — juste des domaines (ex : castorama.fr, leroymerlin.fr).',
+    },
+    {
+      name: 'family',
+      kind: 'text',
+      label: 'Famille produit (découverte auto)',
+      default: '',
+      help: 'Ex : « barbecue ». Si renseigné, les lignes ci-dessus sont des DOMAINES et le node TROUVE la page liste de cette famille sur chaque site par recherche (tu n\'as pas à coller d\'URL).',
     },
     {
       name: 'maxProducts',
@@ -174,12 +216,32 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       help: 'Va chercher sur CHAQUE fiche produit l’EAN/marque/prix canoniques (JSON-LD, cascade Jina→Firecrawl→Bright Data). Plus complet mais 1 requête par produit (plus lent).',
     },
   ],
-  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page', enrichFiches: true },
+  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page', enrichFiches: true, family: '' },
   runtime: 'any',
   run: async (ctx, config) => {
-    const urls = parseUrls(config.urls)
-    if (urls.length === 0) {
-      throw new Error('Aucune URL fournie — renseignez au moins une page liste dans la config.')
+    const family = String(config.family ?? '').trim()
+    let urls: string[]
+    if (family) {
+      // Découverte auto : chaque ligne = un domaine, on cherche la page liste de la famille.
+      const domains = parseDomains(config.urls)
+      if (domains.length === 0) throw new Error('Aucun domaine fourni — renseignez au moins un domaine (ex : castorama.fr).')
+      const { gatherWebContext } = await import('@/features/scraping/webContext')
+      urls = []
+      for (const domain of domains) {
+        if (ctx.signal.aborted) break
+        ctx.log('info', `Recherche « ${family} » sur ${domain}…`)
+        const found = await gatherWebContext({ searchQuery: `${family} site:${domain}`, maxResults: 8, readPages: 0 })
+          .then((c) => pickListingUrl(c.results, domain, family))
+          .catch(() => null)
+        if (found) { urls.push(found); ctx.log('info', `${domain} → ${found}`) }
+        else ctx.log('warn', `Aucune page liste trouvée pour « ${family} » sur ${domain}.`)
+      }
+      if (urls.length === 0) throw new Error(`Découverte échouée : aucune page liste « ${family} » trouvée sur les domaines fournis.`)
+    } else {
+      urls = parseUrls(config.urls)
+      if (urls.length === 0) {
+        throw new Error('Aucune URL fournie — renseignez au moins une page liste (ou une « Famille produit » + des domaines).')
+      }
     }
     const max = Math.max(0, Number(config.maxProducts) || 0)
     const maxPages = Math.max(1, Math.min(20, Number(config.maxPages) || 1))
