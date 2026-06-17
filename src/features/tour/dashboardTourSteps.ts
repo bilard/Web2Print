@@ -164,11 +164,23 @@ export const dashboardTourSteps: TourStep[] = [
   optStep('workflows', 'opt-wf-title', 'À quoi ça sert', 'Enchaînez scraping → décomposition → export → Drive/Gmail/Telegram. Un workflow peut être généré par IA depuis un prompt.'),
   optStep('workflows', 'opt-wf-new', 'Nouveau workflow', 'Crée un workflow vierge et ouvre l’éditeur de graphe (nodes + liens).'),
   {
+    element: '[data-tour="section-price-watch"]',
+    prepare: openSection('price-watch'),
+    requireSelector: '[data-tour="section-price-watch"]',
+    popover: {
+      title: '10 · Veille tarifaire',
+      description:
+        'Tableau de bord de vos suivis de prix concurrents : écarts par produit, positionnement et alertes. La collecte (produits en entrée, sites concurrents, champs) se configure dans un workflow, via le node « Veille tarifaire ».',
+      side: 'right',
+      align: 'center',
+    },
+  },
+  {
     element: '[data-tour="section-telegram"]',
     prepare: openSection('telegram'),
     requireSelector: '[data-tour="section-telegram"]',
     popover: {
-      title: '10 · Telegram',
+      title: '11 · Telegram',
       description:
         'Pilotez l’app depuis un bot Telegram : envoyez une demande, un workflow est généré puis exécuté, et le fichier vous est renvoyé.',
       side: 'right',
@@ -180,7 +192,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('hyperframes'),
     requireSelector: '[data-tour="section-hyperframes"]',
     popover: {
-      title: '11 · Animation',
+      title: '12 · Animation',
       description:
         'Créez des vidéos et animations (HyperFrames) : compositions animées, transitions, sous-titres synchronisés.',
       side: 'right',
@@ -192,7 +204,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('chat'),
     requireSelector: '[data-tour="section-chat"]',
     popover: {
-      title: '12 · Chat IA',
+      title: '13 · Chat IA',
       description:
         'Un assistant conversationnel pour interroger vos données, générer du contenu et déclencher des actions dans l’app.',
       side: 'right',
@@ -204,7 +216,7 @@ export const dashboardTourSteps: TourStep[] = [
     prepare: openSection('access'),
     requireSelector: '[data-tour="section-access"]',
     popover: {
-      title: '13 · Utilisateurs & rôles',
+      title: '14 · Utilisateurs & rôles',
       description:
         'Administration des accès : approuvez les comptes en attente et attribuez des rôles/permissions par module (réservé aux administrateurs).',
       side: 'right',
