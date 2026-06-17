@@ -14,6 +14,7 @@ interface ExtractedProduct {
   brand?: unknown
   ean?: unknown
   price?: unknown
+  originalPrice?: unknown
   url?: unknown
   image?: unknown
 }
@@ -48,6 +49,7 @@ const COLUMNS = [
   { key: 'brand', label: 'Marque' },
   { key: 'ean', label: 'EAN' },
   { key: 'price', label: 'Prix' },
+  { key: 'originalPrice', label: 'Prix barré' },
   { key: 'url', label: 'URL' },
 ]
 
@@ -146,6 +148,7 @@ async function extractProducts(ctx: Ctx, content: string, label: string): Promis
     'LITTÉRALEMENT dans l’URL de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image ; ' +
     'ne le devine JAMAIS, ne le reconstitue pas : sinon ""), ' +
     'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends TOUJOURS le plus bas, le prix promo), ' +
+    'originalPrice (prix D’ORIGINE barré avant réduction, nombre ; 0 si pas de prix barré affiché), ' +
     'url (lien absolu de la fiche), image (URL absolue de l’image — son chemin contient souvent ' +
     'l’EAN même quand l’URL fiche ne l’a pas).\n' +
     'IMPÉRATIF : réponds par l’objet JSON BRUT et lui seul — commence par « { » et finis par « } », ' +
@@ -200,11 +203,14 @@ registerServerNode({
         seen.add(key)
         const priceNum = parsePrice(p.price)
         const price = Number.isFinite(priceNum) && priceNum > 0 ? priceNum : parsePrice(p.name)
+        const origNum = parsePrice(p.originalPrice)
+        const orig = Number.isFinite(origNum) && origNum > price ? origNum : NaN
         rows.push({
           _id: `lp_${rowId++}`, site, name,
           brand: String(p.brand ?? '').trim(),
           ean: resolveEan(p.ean, p.image, p.url, p.name),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
+          originalPrice: Number.isFinite(orig) ? String(orig) : '',
           url,
         })
         added++

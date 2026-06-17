@@ -4,7 +4,8 @@ import { compareSourceToCompetitors, referenceTokens, normName } from './compare
 
 const CFG = {
   nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
-  referenceColumn: '', urlColumn: 'url', siteColumn: 'site', onlyMatched: false,
+  referenceColumn: '', urlColumn: 'url', siteColumn: 'site',
+  brandColumn: 'brand', originalColumn: 'originalPrice', onlyMatched: false,
 }
 
 describe('referenceTokens', () => {
@@ -86,5 +87,28 @@ describe('compareSourceToCompetitors', () => {
     const comp = [{ site: 'c', name: 'RYOBI RY36LMXP46A', ean: '', url: '', price: '599' }]
     const { rows } = compareSourceToCompetitors(src, comp, CFG)
     expect(rows[0]).toMatchObject({ position: 'non trouvé' })
+  })
+
+  it('colonne Marque (du produit source) + colorRules position', () => {
+    const src = [{ site: 'jardiland.com', name: 'RYOBI RLM18E40H', brand: 'Ryobi', ean: '', url: '', price: '219' }]
+    const comp = [{ site: 'castorama.fr', name: 'RYOBI RLM18E40H', brand: 'Ryobi', ean: '', url: '', price: '200' }]
+    const { rows, colorRules } = compareSourceToCompetitors(src, comp, CFG)
+    expect(rows[0]).toMatchObject({ marque: 'Ryobi', position: 'plus cher' })
+    expect(colorRules.some((r) => r.column === 'position' && r.equals === 'plus cher' && r.tone === 'negative')).toBe(true)
+  })
+
+  it('prix barré + réduction % par concurrent', () => {
+    const src = [{ site: 'jardiland.com', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '219' }]
+    const comp = [{ site: 'castorama.fr', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '200', originalPrice: '250' }]
+    const { rows } = compareSourceToCompetitors(src, comp, CFG)
+    // réduc = (250-200)/250*100 = 20
+    expect(rows[0]).toMatchObject({ prix_castorama_fr: '200', prix_barre_castorama_fr: '250', reduc_castorama_fr: '20' })
+  })
+
+  it('pas de prix barré si originalPrice ≤ prix (pas de promo)', () => {
+    const src = [{ site: 'jardiland.com', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '219' }]
+    const comp = [{ site: 'castorama.fr', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '200', originalPrice: '180' }]
+    const { rows } = compareSourceToCompetitors(src, comp, CFG)
+    expect(rows[0]).toMatchObject({ prix_barre_castorama_fr: '', reduc_castorama_fr: '' })
   })
 })

@@ -361,6 +361,64 @@ async function addSheetChart(
   if (!res.ok) throw new Error(`addChart ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
+// --- Couleurs conditionnelles (parité serveur google.ts) -------------------
+type ColorTone = 'positive' | 'negative' | 'neutral' | 'muted'
+/** Ton sémantique → couleurs Google Sheets (fond PASTEL CLAIR sur fond blanc). */
+const TONE_RGB: Record<ColorTone, { bg: { red: number; green: number; blue: number }; fg?: { red: number; green: number; blue: number } }> = {
+  positive: { bg: { red: 0.85, green: 0.94, blue: 0.83 }, fg: { red: 0.11, green: 0.37, blue: 0.13 } },
+  negative: { bg: { red: 0.96, green: 0.80, blue: 0.80 }, fg: { red: 0.6, green: 0.11, blue: 0.11 } },
+  neutral: { bg: { red: 0.90, green: 0.90, blue: 0.90 } },
+  muted: { bg: { red: 0.96, green: 0.96, blue: 0.96 }, fg: { red: 0.5, green: 0.5, blue: 0.5 } },
+}
+
+/** Applique les règles de couleur conditionnelle de la feuille (ex: colonne
+ *  « position » → vert/rouge). Purge d'abord les règles existantes (anti-accumulation
+ *  en mode update). Non bloquant côté appelant. */
+async function applySheetColorRules(token: string, spreadsheetId: string, sheet: ExcelSheet): Promise<void> {
+  const rules = sheet.colorRules ?? []
+  if (rules.length === 0) return
+  const gid = await getFirstSheetGid(token, spreadsheetId)
+  const rowCount = sheet.rows.length
+  let existing = 0
+  try {
+    const getRes = await fetch(`${SHEETS_API}/${spreadsheetId}?fields=sheets(properties(sheetId),conditionalFormats)`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (getRes.ok) {
+      const j = (await getRes.json()) as { sheets?: Array<{ properties?: { sheetId?: number }; conditionalFormats?: unknown[] }> }
+      existing = j.sheets?.find((s) => s.properties?.sheetId === gid)?.conditionalFormats?.length ?? 0
+    }
+  } catch { /* best effort */ }
+  const deletes = Array.from({ length: existing }, () => ({ deleteConditionalFormatRule: { sheetId: gid, index: 0 } }))
+  const adds = rules
+    .map((rule) => {
+      const colIdx = sheet.columns.findIndex((c) => c.key === rule.column)
+      if (colIdx < 0) return null
+      const tone = TONE_RGB[rule.tone]
+      return {
+        addConditionalFormatRule: {
+          index: 0,
+          rule: {
+            ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
+            booleanRule: {
+              condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: rule.equals }] },
+              format: { backgroundColor: tone.bg, ...(tone.fg ? { textFormat: { foregroundColor: tone.fg } } : {}) },
+            },
+          },
+        },
+      }
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+  const requests = [...deletes, ...adds]
+  if (requests.length === 0) return
+  const res = await fetch(`${SHEETS_API}/${spreadsheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`format conditionnel ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+}
+
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
  *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
 async function sheetToXlsxBlob(
@@ -509,6 +567,7 @@ export async function exportSheetToGoogleSheets(
   if (options.chart && sheet.rows.length > 0) {
     await addSheetChart(token, meta.id, sheet, options.formulas, options.chart, options.name)
   }
+  await applySheetColorRules(token, meta.id, sheet).catch(() => {})
   return meta
 }
 
@@ -572,6 +631,7 @@ export async function updateGoogleSheetById(
   if (chart && sheet.rows.length > 0) {
     await addSheetChart(token, id, sheet, formulas, chart, sheet.name || '')
   }
+  await applySheetColorRules(token, id, sheet).catch(() => {})
   return meta
 }
 

@@ -10,7 +10,8 @@ import { registerServerNode } from '../registry'
 interface SheetLike { rows?: Record<string, unknown>[]; [k: string]: unknown }
 interface Cfg {
   nameColumn: string; priceColumn: string; eanColumn: string
-  referenceColumn: string; urlColumn: string; siteColumn: string; onlyMatched: boolean
+  referenceColumn: string; urlColumn: string; siteColumn: string
+  brandColumn: string; originalColumn: string; onlyMatched: boolean
 }
 
 function slug(s: string): string {
@@ -65,7 +66,15 @@ function keysOf(row: Record<string, unknown>, c: Cfg) {
   }
 }
 
-interface CMatch { site: string; price: number }
+interface CMatch { site: string; price: number; original?: number }
+
+// Coloration de la colonne « position » (tons sémantiques mappés par chaque rendu/export).
+const POSITION_COLOR_RULES = [
+  { column: 'position', equals: 'moins cher', tone: 'positive' as const },
+  { column: 'position', equals: 'plus cher', tone: 'negative' as const },
+  { column: 'position', equals: 'égalité', tone: 'neutral' as const },
+  { column: 'position', equals: 'non trouvé', tone: 'muted' as const },
+]
 
 // Préfixe de référence minimal pour apparier deux codes modèle (anti faux positifs).
 const MIN_REF_PREFIX = 6
@@ -95,7 +104,9 @@ registerServerNode({
     const cfg: Cfg = {
       nameColumn: c.nameColumn || 'name', priceColumn: c.priceColumn || 'price',
       eanColumn: c.eanColumn || 'ean', referenceColumn: c.referenceColumn || '',
-      urlColumn: c.urlColumn || 'url', siteColumn: c.siteColumn || 'site', onlyMatched: c.onlyMatched === true,
+      urlColumn: c.urlColumn || 'url', siteColumn: c.siteColumn || 'site',
+      brandColumn: c.brandColumn || 'brand', originalColumn: c.originalColumn || 'originalPrice',
+      onlyMatched: c.onlyMatched === true,
     }
     const sourceRows = (((inputs.source ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
     const competitorRows = (((inputs.concurrents ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
@@ -108,12 +119,12 @@ registerServerNode({
     const byEan = new Map<string, CMatch[]>()
     const byRef = new Map<string, CMatch[]>()
     const byName = new Map<string, CMatch[]>()
-    const push = (m: Map<string, CMatch[]>, key: string, site: string, price: number) => {
+    const push = (m: Map<string, CMatch[]>, key: string, site: string, price: number, original?: number) => {
       if (!key) return
       const list = m.get(key) ?? []
       const found = list.find((x) => x.site === site)
-      if (found) { if (price < found.price) found.price = price }
-      else list.push({ site, price })
+      if (found) { if (price < found.price) { found.price = price; found.original = original } }
+      else list.push({ site, price, original })
       m.set(key, list)
     }
     for (const row of competitorRows) {
@@ -121,20 +132,30 @@ registerServerNode({
       const price = parsePrice(row[cfg.priceColumn])
       if (!compSites.includes(site)) compSites.push(site)
       if (!(Number.isFinite(price) && price > 0)) continue
+      const origRaw = parsePrice(row[cfg.originalColumn])
+      const original = Number.isFinite(origRaw) && origRaw > price ? origRaw : undefined
       const k = keysOf(row, cfg)
-      push(byEan, k.ean, site, price)
-      for (const ref of k.refs) push(byRef, ref, site, price)
-      push(byName, k.name, site, price)
+      push(byEan, k.ean, site, price, original)
+      for (const ref of k.refs) push(byRef, ref, site, price, original)
+      push(byName, k.name, site, price, original)
     }
 
-    const priceCols = compSites.map((s) => ({ site: s, key: `prix_${slug(s)}` }))
+    // 3 colonnes par concurrent : prix actuel, prix barré, % de réduction.
+    const priceCols = compSites.map((s) => ({
+      site: s, key: `prix_${slug(s)}`, barreKey: `prix_barre_${slug(s)}`, reducKey: `reduc_${slug(s)}`,
+    }))
     const columns = [
       { key: 'produit', label: 'Produit' },
+      { key: 'marque', label: 'Marque' },
       { key: 'reference', label: 'Réf.' },
       { key: 'ean', label: 'EAN' },
       { key: 'source', label: 'Source' },
       { key: 'prix_source', label: 'Prix source' },
-      ...priceCols.map((p) => ({ key: p.key, label: `Prix ${p.site}` })),
+      ...priceCols.flatMap((p) => [
+        { key: p.key, label: `Prix ${p.site}` },
+        { key: p.barreKey, label: `Prix barré ${p.site}` },
+        { key: p.reducKey, label: `Réduc % ${p.site}` },
+      ]),
       { key: 'meilleur_concurrent', label: 'Concurrent le moins cher' },
       { key: 'prix_concurrent', label: 'Prix concurrent' },
       { key: 'ecart_eur', label: 'Écart €' },
@@ -163,22 +184,27 @@ registerServerNode({
       if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
       const r: Record<string, unknown> = {
-        _id: `cmp_${id++}`, produit: nameVal, reference: k.refs[0] ?? '', ean: k.ean,
+        _id: `cmp_${id++}`, produit: nameVal, marque: String(row[cfg.brandColumn] ?? '').trim(),
+        reference: k.refs[0] ?? '', ean: k.ean,
         source: sourceSite, prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
       }
-      const bySite = new Map<string, number>()
+      const bySite = new Map<string, { price: number; original?: number }>()
       for (const m of comp) {
         const prev = bySite.get(m.site)
-        if (prev === undefined || m.price < prev) bySite.set(m.site, m.price)
+        if (prev === undefined || m.price < prev.price) bySite.set(m.site, { price: m.price, original: m.original })
       }
       for (const pc of priceCols) {
-        const p = bySite.get(pc.site)
-        r[pc.key] = p !== undefined ? String(p) : ''
+        const e = bySite.get(pc.site)
+        r[pc.key] = e ? String(e.price) : ''
+        r[pc.barreKey] = e?.original != null ? String(e.original) : ''
+        r[pc.reducKey] = e?.original != null && e.original > 0
+          ? String(Math.round(((e.original - e.price) / e.original) * 1000) / 10)
+          : ''
       }
       if (bySite.size > 0) {
         matched++
         let best: [string, number] | null = null
-        for (const e of bySite.entries()) if (!best || e[1] < best[1]) best = e
+        for (const [s, e] of bySite.entries()) if (!best || e.price < best[1]) best = [s, e.price]
         r.meilleur_concurrent = best![0]
         r.prix_concurrent = String(best![1])
         if (Number.isFinite(srcPrice) && srcPrice > 0) {
@@ -197,6 +223,6 @@ registerServerNode({
     out.sort((a, b) => (Number(b.ecart_pct) || -1e9) - (Number(a.ecart_pct) || -1e9))
 
     ctx.log('info', `${out.length} produit(s) source — ${matched} apparié(s) chez ${compSites.length} concurrent(s) : ${compSites.join(', ') || '—'}.`)
-    return { sheet: { columns, rows: out } }
+    return { sheet: { columns, rows: out, colorRules: POSITION_COLOR_RULES } }
   },
 })

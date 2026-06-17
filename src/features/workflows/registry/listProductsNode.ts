@@ -37,6 +37,7 @@ const ExtractedSchema = z.object({
       brand: z.string(),
       ean: z.string(),
       price: z.number(),
+      originalPrice: z.number(),
       url: z.string(),
       image: z.string(),
     }),
@@ -55,11 +56,12 @@ const EXTRACTED_SCHEMA_FOR_LLM = {
           name: { type: 'string', description: 'Intitulé complet du produit tel qu’affiché.' },
           brand: { type: 'string', description: 'Marque du produit (vide si inconnue).' },
           ean: { type: 'string', description: 'Code EAN à 13 chiffres UNIQUEMENT s’il est littéralement présent dans l’URL de la fiche ou le chemin du fichier image (ex « 3700812025181_CAFR.prd »). NE JAMAIS le deviner ni le reconstituer : sinon "".' },
-          price: { type: 'number', description: 'Prix de vente ACTUEL en euros (si prix barré + promo, prendre le prix promo). 0 si illisible.' },
+          price: { type: 'number', description: 'Prix de vente ACTUEL en euros (si prix barré + promo, prendre le prix promo, le plus bas). 0 si illisible.' },
+          originalPrice: { type: 'number', description: 'Prix D’ORIGINE barré (avant réduction) en euros, UNIQUEMENT s’il est affiché barré au-dessus du prix actuel. 0 si pas de promo / pas de prix barré.' },
           url: { type: 'string', description: 'URL absolue de la fiche produit.' },
           image: { type: 'string', description: 'URL absolue de l’image du produit (souvent porteuse de l’EAN dans son chemin).' },
         },
-        required: ['name', 'brand', 'ean', 'price', 'url', 'image'],
+        required: ['name', 'brand', 'ean', 'price', 'originalPrice', 'url', 'image'],
       },
     },
   },
@@ -100,6 +102,7 @@ const COLUMNS: ExcelColumn[] = [
   { key: 'brand', label: 'Marque', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
   { key: 'ean', label: 'EAN', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 140 },
   { key: 'price', label: 'Prix', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
+  { key: 'originalPrice', label: 'Prix barré', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
   { key: 'url', label: 'URL', fieldType: 'url', detectedType: 'url', isPrimary: false, width: 280 },
 ]
 
@@ -224,6 +227,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
             'UNIQUEMENT s’il apparaît LITTÉRALEMENT dans l’URL de la fiche (ex : « 4892210822604_CAFR.prd ») ou le nom de fichier image — ' +
             'ne le devine JAMAIS, ne le reconstitue pas : sinon "" ; ' +
             'price = prix de vente ACTUEL en euros (s’il y a un prix barré et un prix promo, prends TOUJOURS le plus bas, le prix promo) ; ' +
+            'originalPrice = le prix D’ORIGINE barré (avant réduction) s’il est affiché barré au-dessus du prix actuel, sinon 0 ; ' +
             'url = lien absolu de la fiche produit ; image = URL absolue de l’image du produit ' +
             '(son chemin contient souvent l’EAN même quand l’URL fiche ne l’a pas).\n\n' +
             `## CONTENU\n${context}`,
@@ -245,6 +249,8 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
         if (seen.has(key)) continue
         seen.add(key)
         const price = Number.isFinite(p.price) && p.price > 0 ? p.price : parsePrice(p.name)
+        // Prix barré = prix d'origine SI affiché barré et strictement > prix actuel.
+        const orig = Number.isFinite(p.originalPrice) && p.originalPrice > price ? p.originalPrice : NaN
         allRows.push({
           _id: `lp_${rowId++}`,
           site,
@@ -252,6 +258,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
           brand: (p.brand ?? '').trim(),
           ean: resolveEan(p.ean ?? '', p.image ?? '', p.url ?? '', p.name ?? ''),
           price: Number.isFinite(price) && price > 0 ? String(price) : '',
+          originalPrice: Number.isFinite(orig) ? String(orig) : '',
           url: url2,
         } as ExcelRow)
         added++

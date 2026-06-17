@@ -104,6 +104,18 @@ export interface TaxonomyLevelMap {
   [colKey: string]: number
 }
 
+/**
+ * Règle de couleur conditionnelle : colore la cellule d'une colonne dont la valeur
+ * vaut `equals`, par TON sémantique. Chaque rendu mappe le ton à SA palette (pastel
+ * clair pour Google Sheets sur fond blanc, translucide foncé pour l'aperçu sombre).
+ * Générique : un node émet les règles, les rendus/export les appliquent sans logique métier.
+ */
+export interface SheetColorRule {
+  column: string
+  equals: string
+  tone: 'positive' | 'negative' | 'neutral' | 'muted'
+}
+
 export interface ExcelSheet {
   name: string
   columns: ExcelColumn[]
@@ -111,4 +123,6 @@ export interface ExcelSheet {
   taxonomy: TaxonomyCategory[]
   hiddenColumns?: string[]
   taxonomyLevels?: TaxonomyLevelMap
+  /** Règles de coloration conditionnelle (ex: colonne « position » → vert/rouge). */
+  colorRules?: SheetColorRule[]
 }

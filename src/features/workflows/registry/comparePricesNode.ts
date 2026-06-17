@@ -11,7 +11,7 @@
 import { Scale } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
+import type { ExcelColumn, ExcelRow, ExcelSheet, SheetColorRule } from '@/features/excel/types'
 import { parsePrice } from '@/features/priceWatch/core'
 
 interface ComparePricesConfig {
@@ -21,6 +21,8 @@ interface ComparePricesConfig {
   referenceColumn: string
   urlColumn: string
   siteColumn: string
+  brandColumn: string
+  originalColumn: string
   onlyMatched: boolean
 }
 
@@ -76,7 +78,7 @@ function keysOf(row: Record<string, unknown>, c: ComparePricesConfig): Keys {
   }
 }
 
-interface CompetitorMatch { site: string; price: number }
+interface CompetitorMatch { site: string; price: number; original?: number }
 
 /** Longueur minimale d'un préfixe de référence commun pour apparier deux codes
  *  modèle (en deçà, trop de faux positifs). */
@@ -109,7 +111,18 @@ export interface CompareResult {
   rows: ExcelRow[]
   sites: string[]
   matched: number
+  colorRules: SheetColorRule[]
 }
+
+/** Coloration de la colonne « position » : moins cher = bien (vert), plus cher =
+ *  cher (rouge), égalité = neutre, non trouvé = estompé. Tons sémantiques mappés
+ *  par chaque rendu (aperçu sombre / Google Sheets clair). */
+const POSITION_COLOR_RULES: SheetColorRule[] = [
+  { column: 'position', equals: 'moins cher', tone: 'positive' },
+  { column: 'position', equals: 'plus cher', tone: 'negative' },
+  { column: 'position', equals: 'égalité', tone: 'neutral' },
+  { column: 'position', equals: 'non trouvé', tone: 'muted' },
+]
 
 /** Cœur PUR : compare chaque produit source aux concurrents. */
 export function compareSourceToCompetitors(
@@ -123,12 +136,13 @@ export function compareSourceToCompetitors(
   const byEan = new Map<string, CompetitorMatch[]>()
   const byRef = new Map<string, CompetitorMatch[]>()
   const byName = new Map<string, CompetitorMatch[]>()
-  const push = (m: Map<string, CompetitorMatch[]>, key: string, site: string, price: number) => {
+  const push = (m: Map<string, CompetitorMatch[]>, key: string, site: string, price: number, original?: number) => {
     if (!key) return
     const list = m.get(key) ?? []
     const found = list.find((x) => x.site === site)
-    if (found) { if (price < found.price) found.price = price }
-    else list.push({ site, price })
+    // On conserve l'entrée au prix le plus bas pour ce (clé, site) — et SON prix barré.
+    if (found) { if (price < found.price) { found.price = price; found.original = original } }
+    else list.push({ site, price, original })
     m.set(key, list)
   }
   for (const row of competitorRows) {
@@ -136,23 +150,31 @@ export function compareSourceToCompetitors(
     const price = parsePrice(row[c.priceColumn])
     if (!compSites.includes(site)) compSites.push(site)
     if (!(Number.isFinite(price) && price > 0)) continue
+    // Prix barré = prix d'origine SI présent et strictement supérieur au prix actuel.
+    const origRaw = parsePrice(row[c.originalColumn])
+    const original = Number.isFinite(origRaw) && origRaw > price ? origRaw : undefined
     const k = keysOf(row, c)
-    push(byEan, k.ean, site, price)
-    for (const ref of k.refs) push(byRef, ref, site, price)
-    push(byName, k.name, site, price)
+    push(byEan, k.ean, site, price, original)
+    for (const ref of k.refs) push(byRef, ref, site, price, original)
+    push(byName, k.name, site, price, original)
   }
 
-  const priceCols = compSites.map((s) => ({ site: s, key: `prix_${slug(s)}` }))
+  // 3 colonnes par concurrent : prix actuel, prix barré, % de réduction.
+  const priceCols = compSites.map((s) => ({
+    site: s, key: `prix_${slug(s)}`, barreKey: `prix_barre_${slug(s)}`, reducKey: `reduc_${slug(s)}`,
+  }))
   const columns: ExcelColumn[] = [
     { key: 'produit', label: 'Produit', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 320 },
+    { key: 'marque', label: 'Marque', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
     { key: 'reference', label: 'Réf.', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
     { key: 'ean', label: 'EAN', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 130 },
     { key: 'source', label: 'Source', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 140 },
     { key: 'prix_source', label: 'Prix source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 110 },
-    ...priceCols.map((c2) => ({
-      key: c2.key, label: `Prix ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const,
-      isPrimary: false, width: 120,
-    })),
+    ...priceCols.flatMap((c2) => [
+      { key: c2.key, label: `Prix ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 120 },
+      { key: c2.barreKey, label: `Prix barré ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 110 },
+      { key: c2.reducKey, label: `Réduc % ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 90 },
+    ]),
     { key: 'meilleur_concurrent', label: 'Concurrent le moins cher', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 180 },
     { key: 'prix_concurrent', label: 'Prix concurrent', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120 },
     { key: 'ecart_eur', label: 'Écart €', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
@@ -184,24 +206,30 @@ export function compareSourceToCompetitors(
     const r: ExcelRow = {
       _id: `cmp_${id++}`,
       produit: nameVal,
+      marque: String(row[c.brandColumn] ?? '').trim(),
       reference: k.refs[0] ?? '',
       ean: k.ean,
       source: sourceSite,
       prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
     }
-    const bySite = new Map<string, number>()
+    // Par site : prix le plus bas + son prix barré (le cas échéant).
+    const bySite = new Map<string, { price: number; original?: number }>()
     for (const m of comp) {
       const prev = bySite.get(m.site)
-      if (prev === undefined || m.price < prev) bySite.set(m.site, m.price)
+      if (prev === undefined || m.price < prev.price) bySite.set(m.site, { price: m.price, original: m.original })
     }
     for (const pc of priceCols) {
-      const p = bySite.get(pc.site)
-      r[pc.key] = p !== undefined ? String(p) : ''
+      const e = bySite.get(pc.site)
+      r[pc.key] = e ? String(e.price) : ''
+      r[pc.barreKey] = e?.original != null ? String(e.original) : ''
+      r[pc.reducKey] = e?.original != null && e.original > 0
+        ? String(Math.round(((e.original - e.price) / e.original) * 1000) / 10)
+        : ''
     }
     if (bySite.size > 0) {
       matched++
       let best: [string, number] | null = null
-      for (const e of bySite.entries()) if (!best || e[1] < best[1]) best = e
+      for (const [s, e] of bySite.entries()) if (!best || e.price < best[1]) best = [s, e.price]
       r.meilleur_concurrent = best![0]
       r.prix_concurrent = String(best![1])
       if (Number.isFinite(srcPrice) && srcPrice > 0) {
@@ -222,7 +250,7 @@ export function compareSourceToCompetitors(
   // Tri : les produits où je suis le plus cher d'abord (écart % décroissant), non trouvés à la fin.
   out.sort((a, b) => (Number(b.ecart_pct) || -1e9) - (Number(a.ecart_pct) || -1e9))
 
-  return { columns, rows: out, sites: compSites, matched }
+  return { columns, rows: out, sites: compSites, matched, colorRules: POSITION_COLOR_RULES }
 }
 
 const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, ComparePricesOutputs> = {
@@ -241,7 +269,7 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
   ],
   outputs: [{ name: 'sheet', type: 'sheet' }],
   // Colonnes fixes de sortie (les `prix_<concurrent>` dynamiques s'ajoutent après un run).
-  outputColumns: ['produit', 'reference', 'ean', 'source', 'prix_source', 'meilleur_concurrent', 'prix_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
+  outputColumns: ['produit', 'marque', 'reference', 'ean', 'source', 'prix_source', 'meilleur_concurrent', 'prix_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
   configSchema: [
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', default: 'name' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Prix', default: 'price' },
@@ -249,11 +277,14 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     { name: 'referenceColumn', kind: 'columnRef', label: 'Colonne Référence', default: '', help: 'Vide = code modèle déduit du nom + URL.' },
     { name: 'urlColumn', kind: 'columnRef', label: 'Colonne URL', default: 'url', help: 'Le slug d’URL porte souvent le code modèle (appariement).' },
     { name: 'siteColumn', kind: 'columnRef', label: 'Colonne Site', default: 'site', help: 'Identifie source et concurrents.' },
+    { name: 'brandColumn', kind: 'columnRef', label: 'Colonne Marque', default: 'brand', help: 'Marque affichée dans la colonne « Marque ».' },
+    { name: 'originalColumn', kind: 'columnRef', label: 'Colonne Prix barré', default: 'originalPrice', help: 'Prix d’origine/barré — sert au calcul du % de réduction par concurrent.' },
     { name: 'onlyMatched', kind: 'checkbox', label: 'Seulement les produits trouvés chez un concurrent', default: false },
   ],
   defaultConfig: {
     nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
-    referenceColumn: '', urlColumn: 'url', siteColumn: 'site', onlyMatched: false,
+    referenceColumn: '', urlColumn: 'url', siteColumn: 'site',
+    brandColumn: 'brand', originalColumn: 'originalPrice', onlyMatched: false,
   },
   runtime: 'any',
   run: async (ctx, config, inputs) => {
@@ -266,9 +297,9 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     if (competitorRows.length === 0) {
       ctx.log('warn', 'Aucun produit concurrent en entrée (port « concurrents »).')
     }
-    const { columns, rows, sites, matched } = compareSourceToCompetitors(sourceRows, competitorRows, config)
+    const { columns, rows, sites, matched, colorRules } = compareSourceToCompetitors(sourceRows, competitorRows, config)
     ctx.log('info', `${rows.length} produit(s) source — ${matched} apparié(s) chez ${sites.length} concurrent(s) : ${sites.join(', ') || '—'}.`)
-    return { sheet: { name: 'Comparaison de prix', columns, rows, taxonomy: [] } }
+    return { sheet: { name: 'Comparaison de prix', columns, rows, taxonomy: [], colorRules } }
   },
 }
 

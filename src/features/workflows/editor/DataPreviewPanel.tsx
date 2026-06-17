@@ -51,10 +51,25 @@ interface UploadConfigLike {
   mode?: 'file' | 'folder'
 }
 
+export interface SheetColorRuleLike {
+  column: string
+  equals: string
+  tone: 'positive' | 'negative' | 'neutral' | 'muted'
+}
+
 export interface SheetLike {
   name?: string
   columns?: { key: string; label?: string }[]
   rows?: Record<string, unknown>[]
+  colorRules?: SheetColorRuleLike[]
+}
+
+/** Ton sémantique → classes Tailwind pour l'aperçu (thème SOMBRE). */
+const TONE_CLASS: Record<SheetColorRuleLike['tone'], string> = {
+  positive: 'bg-emerald-500/15 text-emerald-200',
+  negative: 'bg-red-500/15 text-red-300',
+  neutral: 'bg-neutral-500/15 text-neutral-200',
+  muted: 'text-neutral-500 italic',
 }
 
 export interface AssetLike {
@@ -348,6 +363,17 @@ function formatCell(v: unknown): string {
 export function SheetPreview({ sheet }: { sheet: SheetLike }) {
   const cols = sheet.columns ?? []
   const allRows = sheet.rows ?? []
+
+  // Index des règles de couleur : colonne → (valeur exacte → ton).
+  const colorLookup = useMemo(() => {
+    const m = new Map<string, Map<string, SheetColorRuleLike['tone']>>()
+    for (const r of sheet.colorRules ?? []) {
+      let col = m.get(r.column)
+      if (!col) { col = new Map(); m.set(r.column, col) }
+      col.set(r.equals, r.tone)
+    }
+    return m
+  }, [sheet.colorRules])
   const totalRows = allRows.length
   const totalCols = cols.length
 
@@ -671,17 +697,21 @@ export function SheetPreview({ sheet }: { sheet: SheetLike }) {
                 <tr key={start + i} className="odd:bg-background even:bg-surface-2">
                   {cols.map((c) => {
                     const isFocused = c.key === focusedKey
+                    const cellText = formatCell(row[c.key])
+                    const tone = !isFocused ? colorLookup.get(c.key)?.get(cellText) : undefined
                     return (
                       <td
                         key={c.key}
                         className={`px-2 py-1 border-b max-w-[200px] truncate ${
                           isFocused
                             ? 'text-emerald-100 bg-emerald-500/10 border-b-emerald-500/20'
-                            : 'text-neutral-300 border-b-neutral-900'
+                            : tone
+                              ? `${TONE_CLASS[tone]} border-b-neutral-900`
+                              : 'text-neutral-300 border-b-neutral-900'
                         }`}
-                        title={formatCell(row[c.key])}
+                        title={cellText}
                       >
-                        {formatCell(row[c.key])}
+                        {cellText}
                       </td>
                     )
                   })}

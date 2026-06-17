@@ -8,10 +8,71 @@ import { registerServerNode } from '../registry'
 import { interpolate, extractRows } from '../interpolate'
 import { getGoogleAccessToken } from '../../google/serverAuth'
 
+type ColorTone = 'positive' | 'negative' | 'neutral' | 'muted'
+interface SheetColorRule { column: string; equals: string; tone: ColorTone }
 interface SheetLike {
   name?: string
   columns?: { key: string; label?: string }[]
   rows?: Record<string, unknown>[]
+  colorRules?: SheetColorRule[]
+}
+
+/** Ton sémantique → couleurs Google Sheets (fond PASTEL CLAIR sur fond blanc). */
+const TONE_RGB: Record<ColorTone, { bg: { red: number; green: number; blue: number }; fg?: { red: number; green: number; blue: number } }> = {
+  positive: { bg: { red: 0.85, green: 0.94, blue: 0.83 }, fg: { red: 0.11, green: 0.37, blue: 0.13 } },
+  negative: { bg: { red: 0.96, green: 0.80, blue: 0.80 }, fg: { red: 0.6, green: 0.11, blue: 0.11 } },
+  neutral: { bg: { red: 0.90, green: 0.90, blue: 0.90 } },
+  muted: { bg: { red: 0.96, green: 0.96, blue: 0.96 }, fg: { red: 0.5, green: 0.5, blue: 0.5 } },
+}
+
+/** Applique des règles de format conditionnel (couleur de fond par valeur d'une
+ *  colonne, ex « position » = moins cher/plus cher). Non bloquant. */
+async function applyColorRules(
+  token: string, id: string, gid: number, keys: string[],
+  colorRules: SheetColorRule[], rowCount: number,
+): Promise<void> {
+  // Purge les règles existantes sur cet onglet (sinon elles s'accumulent à chaque
+  // run en mode update / cron). deleteConditionalFormatRule index 0 répété N fois.
+  let existing = 0
+  try {
+    const getRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets(properties(sheetId),conditionalFormats)`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+    if (getRes.ok) {
+      const j = (await getRes.json()) as { sheets?: Array<{ properties?: { sheetId?: number }; conditionalFormats?: unknown[] }> }
+      const tab = j.sheets?.find((s) => s.properties?.sheetId === gid)
+      existing = tab?.conditionalFormats?.length ?? 0
+    }
+  } catch { /* best effort */ }
+  const deletes = Array.from({ length: existing }, () => ({ deleteConditionalFormatRule: { sheetId: gid, index: 0 } }))
+  const adds = colorRules
+    .map((rule) => {
+      const colIdx = keys.indexOf(rule.column)
+      if (colIdx < 0) return null
+      const tone = TONE_RGB[rule.tone]
+      return {
+        addConditionalFormatRule: {
+          index: 0,
+          rule: {
+            ranges: [{ sheetId: gid, startRowIndex: 1, endRowIndex: rowCount + 1, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
+            booleanRule: {
+              condition: { type: 'TEXT_EQ', values: [{ userEnteredValue: rule.equals }] },
+              format: { backgroundColor: tone.bg, ...(tone.fg ? { textFormat: { foregroundColor: tone.fg } } : {}) },
+            },
+          },
+        },
+      }
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+  const requests = [...deletes, ...adds]
+  if (requests.length === 0) return
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`format conditionnel ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
 }
 
 /** Clés de colonnes dans l'ordre d'export (colonnes déclarées, sinon union des clés). */
@@ -416,6 +477,13 @@ registerServerNode({
     await applyNumberFormats(token, id, gid, allFormats).catch((e) =>
       ctx.log('warn', `Formatage colonnes ignoré : ${e instanceof Error ? e.message : e}`),
     )
+    // Couleurs conditionnelles (ex: colonne « position » → vert/rouge), si la feuille en porte.
+    const colorRules = Array.isArray(sheet.colorRules) ? sheet.colorRules : []
+    if (colorRules.length > 0) {
+      await applyColorRules(token, id, gid, keys, colorRules, sheet.rows.length).catch((e) =>
+        ctx.log('warn', `Couleurs conditionnelles ignorées : ${e instanceof Error ? e.message : e}`),
+      )
+    }
 
     // Graphe natif optionnel (cron compris) : inséré via l'API après écriture des valeurs.
     const chartX = String(config.chartXColumn ?? '').trim()
