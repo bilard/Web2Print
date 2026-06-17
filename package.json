@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node dev.mjs",
+    "docs:content": "node scripts/build-docs-content.mjs",
+    "prebuild": "node scripts/build-docs-content.mjs",
     "build": "tsc -b && vite build",
     "postbuild": "node scripts/promo-as-root.mjs",
     "build:ext": "cd extension && vite build",

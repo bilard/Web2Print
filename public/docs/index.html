@@ -79,13 +79,15 @@
               <stop offset="100%" stop-color="var(--accent-2)"/>
             </linearGradient>
           </defs>
+          <filter id="dotGlow" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="4"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           <path class="flow-line" d="M70 75 H850" />
-          <g class="flow-node" style="--i:0"><circle cx="70"  cy="75" r="20"/><text x="70"  y="120">Scraper</text></g>
-          <g class="flow-node" style="--i:1"><circle cx="265" cy="75" r="20"/><text x="265" y="120">PIM</text></g>
-          <g class="flow-node" style="--i:2"><circle cx="460" cy="75" r="20"/><text x="460" y="120">Éditer</text></g>
-          <g class="flow-node" style="--i:3"><circle cx="655" cy="75" r="20"/><text x="655" y="120">Exporter</text></g>
-          <g class="flow-node" style="--i:4"><circle cx="850" cy="75" r="20"/><text x="850" y="120">Automatiser</text></g>
-          <circle class="flow-dot" r="6"><animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear" path="M70 75 H850"/></circle>
+          <g class="flow-node" style="--i:0"><circle cx="70"  cy="75" r="22"/><text class="flow-emoji" x="70"  y="75">🕸️</text><text x="70"  y="124">Scraper</text></g>
+          <g class="flow-node" style="--i:1"><circle cx="265" cy="75" r="22"/><text class="flow-emoji" x="265" y="75">📦</text><text x="265" y="124">PIM</text></g>
+          <g class="flow-node" style="--i:2"><circle cx="460" cy="75" r="22"/><text class="flow-emoji" x="460" y="75">✏️</text><text x="460" y="124">Éditer</text></g>
+          <g class="flow-node" style="--i:3"><circle cx="655" cy="75" r="22"/><text class="flow-emoji" x="655" y="75">📤</text><text x="655" y="124">Exporter</text></g>
+          <g class="flow-node" style="--i:4"><circle cx="850" cy="75" r="22"/><text class="flow-emoji" x="850" y="75">⚡</text><text x="850" y="124">Automatiser</text></g>
+          <circle class="flow-dot" r="7" filter="url(#dotGlow)"><animateMotion dur="4.5s" repeatCount="indefinite" calcMode="linear" path="M70 75 H850"/></circle>
+          <circle class="flow-dot" r="5" filter="url(#dotGlow)" opacity="0.6"><animateMotion dur="4.5s" begin="2.25s" repeatCount="indefinite" calcMode="linear" path="M70 75 H850"/></circle>
         </svg>
       </div>
     </section>

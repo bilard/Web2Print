@@ -170,6 +170,7 @@ kbd {
 .flow-line { stroke: var(--border-strong); stroke-width: 2.5; fill: none; stroke-dasharray: 7 9; animation: dashFlow 1.4s linear infinite; }
 .flow-node circle { fill: var(--surface-2); stroke: var(--accent); stroke-width: 2.5; animation: nodePulse 3s ease-in-out infinite; animation-delay: calc(var(--i) * 0.5s); }
 .flow-node text { fill: var(--text-dim); font-size: 17px; font-weight: 600; text-anchor: middle; }
+.flow-emoji { font-size: 19px; dominant-baseline: central; }
 .flow-dot { fill: url(#flowGrad); filter: drop-shadow(0 0 6px var(--glow)); }
 
 /* ---------- Catégories & modules ---------- */
@@ -242,25 +243,53 @@ kbd {
 .shortcut-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13.5px; color: var(--text-dim); }
 .shortcut-keys { display: flex; gap: 4px; }
 
-/* ---------- Mini-animations « signature » ---------- */
+/* ---------- Scène d'animation « signature » ---------- */
 .anim-stage {
-  height: 150px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+  height: 168px; border-radius: 14px; overflow: hidden; position: relative;
+  background:
+    radial-gradient(120% 90% at 50% -10%, var(--accent-soft), transparent 60%),
+    linear-gradient(160deg, var(--surface-2), var(--well));
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.anim-stage svg { width: 100%; height: 100%; }
-.sg-pulse { animation: nodePulse 2.6s ease-in-out infinite; }
-.sg-stroke { stroke: var(--accent); fill: none; stroke-width: 2.4; }
-.sg-stroke-2 { stroke: var(--accent-2); fill: none; stroke-width: 2.4; }
-.sg-fill { fill: var(--accent); }
+/* fine grille de fond animée */
+.anim-stage::before {
+  content: ""; position: absolute; inset: 0; opacity: 0.5; pointer-events: none;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 22px 22px; mask-image: radial-gradient(120% 100% at 50% 0%, #000, transparent 75%);
+  animation: gridDrift 9s linear infinite;
+}
+.anim-stage svg { position: relative; width: 100%; height: 100%; display: block; }
+
+/* primitives de tracé */
+.sg-stroke   { stroke: var(--accent);   fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.sg-stroke-2 { stroke: var(--accent-2); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.sg-stroke-d { stroke: var(--text-faint); fill: none; stroke-width: 2; stroke-linecap: round; }
+.sg-fill      { fill: var(--accent); }
+.sg-fill-2    { fill: var(--accent-2); }
 .sg-fill-soft { fill: var(--accent-soft); }
-.sg-dash { stroke-dasharray: 6 8; animation: dashFlow 1.3s linear infinite; }
-.sg-morph rect { animation: morph 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
-.sg-row { transform-origin: left; animation: rowFill 2.6s ease-in-out infinite; }
-.sg-row:nth-child(2) { animation-delay: 0.3s; } .sg-row:nth-child(3) { animation-delay: 0.6s; } .sg-row:nth-child(4) { animation-delay: 0.9s; }
-.sg-chip { animation: fan 4s ease-in-out infinite; transform-origin: 50% 130%; }
-.sg-send { animation: send 3s ease-in-out infinite; }
-.sg-float { animation: floaty 4s ease-in-out infinite; }
-.sg-spark { animation: spark 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.sg-fill-card { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5; }
+.sg-txt { fill: var(--text-dim); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: inherit; }
+
+/* utilitaires d'animation (staggerables via --d) */
+.a-draw   { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 3.4s ease-in-out infinite alternate; animation-delay: var(--d, 0s); }
+.a-pulse  { animation: nodePulse 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); transform-box: fill-box; transform-origin: center; }
+.a-glow   { animation: softGlow 2.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.a-pop    { opacity: 0; transform: scale(0.4); transform-box: fill-box; transform-origin: center; animation: popLoop 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.a-rise   { animation: rise 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.a-fillx  { transform: scaleX(0.15); transform-box: fill-box; transform-origin: left center; animation: fillx 3.2s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.a-spin   { animation: spin 6s linear infinite; transform-box: fill-box; transform-origin: center; }
+.a-spin-r { animation: spin 5s linear infinite reverse; transform-box: fill-box; transform-origin: center; }
+.a-twinkle{ animation: twinkle 2.2s ease-in-out infinite; animation-delay: var(--d, 0s); transform-box: fill-box; transform-origin: center; }
+.a-bounce { animation: bounce 1.2s ease-in-out infinite; animation-delay: var(--d, 0s); transform-box: fill-box; }
+.a-sweep  { animation: sweep 3.4s ease-in-out infinite; }
+.a-fan    { animation: fan 4.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 135%; animation-delay: var(--d, 0s); }
+.a-dash   { stroke-dasharray: 6 8; animation: dashFlow 1.3s linear infinite; }
+.a-morph  { animation: morph 5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.a-fly    { offset-path: path("M34 96 Q120 40 176 22"); animation: fly 3.4s ease-in-out infinite; }
+.a-tick   { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tick 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.a-float  { animation: floaty 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.a-ringfill { stroke-dasharray: 1; stroke-dashoffset: 0.55; animation: ringfill 3.4s ease-in-out infinite alternate; transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; }
 
 /* ---------- Recherche ---------- */
 .search-overlay {
@@ -302,16 +331,28 @@ kbd {
 .reveal.in { opacity: 1; transform: none; }
 
 /* ---------- Keyframes ---------- */
-@keyframes glowPulse { 0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); } 50% { opacity: 0.95; transform: translateX(-50%) scale(1.08); } }
+@keyframes glowPulse { 0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); } 50% { opacity: 0.95; transform: translateX(-50%) scale(1.08); } }
 @keyframes dashFlow { to { stroke-dashoffset: -32; } }
 @keyframes nodePulse { 0%, 100% { stroke-width: 2.5; filter: none; } 50% { stroke-width: 4; filter: drop-shadow(0 0 8px var(--glow)); } }
 @keyframes popIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
-@keyframes morph { 0%, 100% { rx: 4px; transform: rotate(0deg) scale(1); } 50% { rx: 22px; transform: rotate(45deg) scale(0.86); } }
-@keyframes rowFill { 0%, 100% { transform: scaleX(0.25); opacity: 0.4; } 50% { transform: scaleX(1); opacity: 1; } }
-@keyframes fan { 0%, 100% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(var(--rot, 0deg)) translateY(-6px); } }
-@keyframes send { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(120px, -54px); opacity: 0; } }
-@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@keyframes spark { 0%, 100% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.15); opacity: 1; } }
+@keyframes gridDrift { from { background-position: 0 0, 0 0; } to { background-position: 22px 22px, 22px 22px; } }
+/* tracé progressif puis effacement (boucle douce) */
+@keyframes draw { 0% { stroke-dashoffset: 1; } 45%, 70% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
+@keyframes tick { 0%, 20% { stroke-dashoffset: 1; } 45%, 88% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
+@keyframes softGlow { 0%, 100% { filter: none; opacity: 0.85; } 50% { filter: drop-shadow(0 0 10px var(--glow)); opacity: 1; } }
+@keyframes popLoop { 0%, 8% { opacity: 0; transform: scale(0.3); } 22%, 80% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes rise { 0%, 100% { transform: translateY(7px); opacity: 0.55; } 50% { transform: translateY(-7px); opacity: 1; } }
+@keyframes fillx { 0% { transform: scaleX(0.15); opacity: 0.4; } 45%, 80% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes twinkle { 0%, 100% { transform: scale(0.5); opacity: 0.2; } 50% { transform: scale(1.2); opacity: 1; } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes sweep { 0% { transform: translateY(-6px); opacity: 0; } 12%, 88% { opacity: 1; } 100% { transform: translateY(118px); opacity: 0; } }
+@keyframes fan { 0%, 12% { transform: rotate(0deg) translateY(0); } 50%, 70% { transform: rotate(var(--rot, 0deg)) translateY(-10px); } 100% { transform: rotate(0deg) translateY(0); } }
+@keyframes morph { 0%, 100% { rx: 4px; transform: rotate(0deg) scale(1); } 50% { rx: 24px; transform: rotate(45deg) scale(0.82); } }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes fly { 0% { offset-distance: 0%; opacity: 0; } 12% { opacity: 1; } 86% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes ringfill { from { stroke-dashoffset: 0.6; } to { stroke-dashoffset: 0.04; } }
+@keyframes tokenGlow { 0%, 100% { r: 5; opacity: 0.8; } 50% { r: 7; opacity: 1; } }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 920px) {

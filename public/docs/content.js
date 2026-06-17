@@ -1,6 +1,6 @@
-// ⚠️ Fichier de DONNÉES de la documentation publique (/docs/).
+// ⚠️ Fichier AUTO-GÉNÉRÉ par scripts/build-docs-content.mjs (prebuild).
 // Source de vérité : l'aide intégrée à l'app (src/features/help/content/*.tsx).
-// À mettre à jour quand un module / une fonction évolue dans l'app.
+// NE PAS éditer à la main — relancer `npm run build` (ou le script) régénère ce fichier.
 
 export const CATEGORIES = [
   {
@@ -64,15 +64,15 @@ export const MODULES = [
     "features": [
       {
         "title": "Sections du dashboard",
-        "desc": "Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'application ; cliquer un lien met l'élément en évidence et la liste reflète les modules disponibles pour le compte."
+        "desc": "Chaque entrée de la barre latérale est un raccourci vers une grande zone de l'app. Cliquer un lien ci-dessous met l'élément en évidence sur l'écran (ouvre d'abord le tableau de bord si nécessaire)."
       },
       {
         "title": "Créer un projet vierge",
-        "desc": "Le panneau Nouveau document propose des formats (A4, A3, écran, réseaux sociaux ou dimensions personnalisées) et le projet s'ouvre dans l'éditeur, format et fond de page restant modifiables."
+        "desc": "Ouvre le panneau « Nouveau document » et choisis un format (A4, A3, formats écran/réseaux sociaux, ou dimensions personnalisées)."
       },
       {
         "title": "Retrouver un projet existant",
-        "desc": "La bibliothèque liste les projets avec ouverture, duplication, suppression, affichage vignettes ou liste, filtrage par taxonomie et sélection multiple pour des actions groupées."
+        "desc": "La Bibliothèque liste tous tes projets : • Ouvrir : clic simple sur la carte. Dupliquer / supprimer : boutons de la carte (ou clic droit). • Vignettes ou Liste : deux boutons en haut à droite basculent l'affichage."
       }
     ],
     "shortcuts": [
@@ -110,41 +110,41 @@ export const MODULES = [
     "id": "nouveautes",
     "cat": "Démarrage",
     "icon": "✨",
-    "anim": "default",
+    "anim": "spark",
     "title": "Nouveautés",
     "intro": "Ce qui vient d'arriver dans l'application — juin 2026.",
     "features": [
       {
         "title": "Navigation & confort",
-        "desc": "Nouvelle palette de commandes (⌘K), centre de notifications avec historique des runs et exports, et écrans vides désormais actionnables proposant le prochain pas."
+        "desc": "• Palette de commandes ⌘K / Ctrl+K : projets récents, modules, actions rapides — depuis n'importe quelle page. • Centre de notifications (🔔 en bas à gauche) : historique des runs de workflows et des exports, badge de non-lus."
       },
       {
         "title": "Éditeur",
-        "desc": "Barre contextuelle flottante avec badge temps réel, preflight d'impression, éléments maîtres répétables, kit de marque et styles d'objets globaux, et versions restaurables."
+        "desc": "• Barre contextuelle flottante sous la sélection (dupliquer, plans, grouper, verrouiller, supprimer) + badge temps réel pendant les manipulations (X/Y, L×H, angle)."
       },
       {
         "title": "Re-skin de promo (éditeur × PIM × IA)",
-        "desc": "Source Produits PIM transformant chaque produit en ligne, liaison automatique prix/titre/description, fond régénéré par IA Nano Banana et texte réduit pour tenir dans une zone cible."
+        "desc": "• Source « Produits PIM (re-skin) » dans le panneau Données : chaque produit devient une ligne — naviguer entre les produits re-skinne le visuel instantanément."
       },
       {
         "title": "PIM & données",
-        "desc": "Pastille de complétude sur chaque ligne avec champs manquants au survol et moyenne en barre d'état, plus une vue galerie présentant les produits en cartes."
+        "desc": "• Pastille de complétude sur chaque ligne (champs manquants au survol) + moyenne en barre d'état. • Vue galerie : produits en cartes (visuel, titre, prix, complétude). Détails : section PIM."
       },
       {
         "title": "Workflows & automatisation",
-        "desc": "Galerie de modèles un clic, nodes Approbation Telegram, Veille prix et Cron serveur, webhook entrant pour déclenchement externe et mode pas à pas avec inspection des sorties."
+        "desc": "• Galerie de modèles 1-clic (Scraper → PIM, veille, recherche web…). • Node « Approbation Telegram » : le run se met en pause jusqu'au clic ✅/❌. • Node « Veille prix » : alerte seulement quand un prix bouge (fonctionne en cron serveur)."
       },
       {
         "title": "Veille tarifaire & comparaison de prix",
-        "desc": "Module de veille tarifaire avec tableau de bord des écarts et alertes, modèles un clic vers Excel ou Google Sheets, et découverte automatique de la page liste par famille produit."
+        "desc": "• Nouveau module Veille tarifaire : tableau de bord des prix concurrents (écarts par produit, positionnement, alertes), alimenté par le node « Veille tarifaire » d'un workflow."
       },
       {
         "title": "Telegram sans navigateur (répondeur serveur)",
-        "desc": "Le bot répond application fermée pour les questions avec recherche web, la génération de workflows et leur exécution serveur, y compris la création de Google Sheets et l'envoi de Gmail."
+        "desc": "• Le bot répond app fermée : questions avec recherche web automatique (sources citées), /flow généré et exécuté côté serveur, /run d'un workflow sauvegardé."
       },
       {
         "title": "DAM, Telegram & export",
-        "desc": "Tagging IA automatique et filtre en langage naturel, digest Telegram quotidien à 08:00, pack social à l'export et pages déclinées éditables par format."
+        "desc": "• Tagging IA automatique des images sauvegardées + filtre en langage naturel dans « Mes images ». • Digest Telegram quotidien (opt-in, 08:00) : résumé des dernières 24 h."
       }
     ],
     "shortcuts": []
@@ -153,37 +153,37 @@ export const MODULES = [
     "id": "onboarding",
     "cat": "Démarrage",
     "icon": "🧰",
-    "anim": "default",
+    "anim": "checklist",
     "title": "Assistant de configuration",
     "intro": "Mettre en place son espace pas à pas : clés IA, modèles, connecteurs et visite guidée.",
     "features": [
       {
         "title": "1 · Bienvenue",
-        "desc": "Présente les étapes à venir (clés IA, modèles et cascade, connecteurs, visite guidée) sans rien demander à saisir."
+        "desc": "Présentation des étapes à venir (clés IA, modèles & cascade, connecteurs, visite guidée). Rien à saisir."
       },
       {
         "title": "2 · Clés IA — obligatoire",
-        "desc": "Renseigner au moins une clé API parmi les fournisseurs disponibles puis la tester ; c'est la seule étape réellement bloquante de l'assistant."
+        "desc": "Renseigne au moins une clé API parmi Gemini, Claude (Anthropic), OpenAI, DeepSeek, Qwen, Kimi ou OpenRouter, puis teste-la. Tant qu'aucune clé valide n'est saisie, le bouton Suivant reste désactivé (« Renseignez au moins une clé LLM »)."
       },
       {
         "title": "3 · Modèles & cascade",
-        "desc": "Choisir le modèle de chaque fournisseur et l'ordre de la cascade de raisonnement, avec un bouton réalignant toute la sélection sur les modèles phares du catalogue."
+        "desc": "Choisis le modèle de chaque fournisseur et l'ordre de la cascade de raisonnement (le premier qui répond gagne, les suivants servent de secours)."
       },
       {
         "title": "4 · Connecteurs — optionnel",
-        "desc": "Brancher Google Drive, Bright Data et Telegram si besoin ; cette étape peut être passée et complétée plus tard dans Réglages."
+        "desc": "Branche Google Drive, Bright Data (scraping) et Telegram si tu en as besoin. Cette étape peut être passée et complétée plus tard dans Réglages → Connecteurs."
       },
       {
         "title": "5 · Terminé",
-        "desc": "Affiche un récapitulatif du profil puis propose de lancer la visite guidée du tableau de bord ou de terminer directement."
+        "desc": "Récapitulatif de ton profil, puis le choix de lancer la visite guidée du tableau de bord ou de terminer directement."
       },
       {
         "title": "Reprendre la configuration plus tard",
-        "desc": "L'assistant reste accessible via le bandeau en haut des Réglages ou l'entrée Configurer l'application en bas du menu des modules, les deux le rouvrant à la première étape."
+        "desc": "L'assistant reste accessible à tout moment, par deux entrées : • Bandeau « Assistant de configuration » en haut des Réglages — sous-titre « Reprendre la mise en place guidée (clés, modèles, connecteurs) »."
       },
       {
         "title": "Bouton « Mettre à jour tous les LLM »",
-        "desc": "Présent dans l'assistant et dans l'onglet IA des Réglages, il sélectionne le dernier modèle phare de chaque fournisseur pour rester à jour sans choisir chaque modèle manuellement."
+        "desc": "Présent dans l'assistant et dans l'onglet IA des Réglages, il sélectionne le dernier modèle phare de chaque fournisseur (Claude, Gemini, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter)."
       }
     ],
     "shortcuts": []
@@ -198,23 +198,23 @@ export const MODULES = [
     "features": [
       {
         "title": "Menu des modules (☰)",
-        "desc": "Un bouton flottant en bas à gauche ouvre un tiroir listant tous les modules autorisés par le rôle, chaque entrée ramenant au tableau de bord sur la section choisie."
+        "desc": "Un bouton ☰ flottant en bas à gauche ouvre un tiroir listant tous les modules : Nouveau document, Importer, Bibliothèque, DAM, PIM, Taxonomies, Templates scraping, Scraping Hub, Workflows, Veille tarifaire, Telegram, Animation, Chat IA et U…"
       },
       {
         "title": "Palette de commandes (⌘K)",
-        "desc": "Ouvre depuis n'importe quelle page une recherche de projets récents, de modules et d'actions rapides, ignorant les accents et comprenant des synonymes."
+        "desc": "⌘K (Mac) ou Ctrl+K (PC) ouvre la palette de commandes depuis n'importe quelle page : tape quelques lettres pour ouvrir un de tes projets récents, sauter vers un module (« pim », « workflows », « bibliothèque »…) ou lancer une action rapide…"
       },
       {
         "title": "Notifications (🔔)",
-        "desc": "La cloche en bas à gauche garde l'historique des fins de runs et des exports réussis ou échoués, avec badge de non-lus et possibilité de tout marquer lu."
+        "desc": "La cloche en bas à gauche (au-dessus du menu ☰) garde l'historique des évènements importants : fins de runs de workflow, exports réussis ou échoués."
       },
       {
         "title": "Visites guidées (🧭)",
-        "desc": "Un bouton en bas à droite lance une visite interactive de l'écran courant (tableau de bord ou éditeur), ouverte automatiquement une fois puis relançable à volonté."
+        "desc": "Un bouton 🧭 « Visite guidée » en bas à droite (à gauche du bouton d'aide) lance une visite interactive de l'écran courant : • Tableau de bord : parcourt chaque espace de travail un par un."
       },
       {
         "title": "Ce manuel s'adapte à ton rôle",
-        "desc": "Le sommaire et la recherche de l'aide ne montrent que les sections des modules accessibles, les sections transverses restant toujours visibles."
+        "desc": "Le sommaire et la recherche de l'aide ne montrent que les sections des modules auxquels tu as accès (le propriétaire voit tout)."
       }
     ],
     "shortcuts": [
@@ -243,76 +243,28 @@ export const MODULES = [
     "intro": "Canvas, outils, calques et sauvegarde du projet.",
     "features": [
       {
-        "title": "Header",
-        "desc": "Affiche le titre du projet et son état de sauvegarde, ainsi que les boutons Annuler/Rétablir, Sauvegarder en commit manuel et Exporter."
-      },
-      {
-        "title": "Barre d'outils",
-        "desc": "Les outils Texte, Rectangle, Ellipse et Ligne ajoutent une forme puis reviennent à la sélection, et l'outil Image ouvre un menu Stock, Mes images, Uploader ou Générer par IA."
-      },
-      {
-        "title": "Propriétés des objets",
-        "desc": "Panneau adaptatif gérant position, taille, rotation, remplissage uni/dégradé/image, contour, opacité, ombre, modes de fusion, miroir, verrou, cadrage, texte et alignement multi-objets."
-      },
-      {
-        "title": "Calques",
-        "desc": "Liste tous les objets du canvas avec masquage, suppression et réorganisation par glisser-déposer, les textes se dépliant pour éditer chaque segment séparément."
-      },
-      {
-        "title": "Naviguer dans le canvas",
-        "desc": "La barre inférieure pilote le zoom de 1 à 400 %, le pan à l'espace, la taille de page, la grille et l'aimantation aux objets et à la grille."
-      },
-      {
         "title": "Images",
-        "desc": "Insère des images sans quitter l'éditeur via les onglets Galerie, Upload, IA, Stock, Mes images, Favoris, Collections et Récents, les mêmes sources que le DAM."
+        "desc": "Insertion d'images sans quitter l'éditeur : onglets Galerie, Upload, IA (génération depuis un prompt, 5 ratios, image-to-image si un objet est sélectionné), Stock, Mes images, Favoris, Collections, Récents — les mêmes sources que le DAM."
       },
       {
         "title": "Assets",
-        "desc": "Regroupe les images et polices du projet avec compteurs, pour glisser une image sur le canvas ou utiliser les polices importées dans les textes."
+        "desc": "Les images et polices du projet (onglets avec compteurs). Glisse une image sur le canvas, ou utilise les polices importées (IDML) dans tes textes."
       },
       {
         "title": "Page",
-        "desc": "Définit le format par presets ou dimensions personnalisées en millimètres, le fond de page (couleur, dégradé ou image) et la gestion des pages multiples."
+        "desc": "Format de page : presets (A4/A3/A5, Full HD, 4K, 16:9, post & story Instagram, couverture Facebook) ou dimensions personnalisées en mm. Fond de page : couleur unie, dégradé ou image (upload ou glisser-déposer)."
       },
       {
         "title": "Impression",
-        "desc": "Gère tout le pré-presse : DPI, fond perdu, traits de coupe, hirondelles de repérage, zone de sécurité et la section Preflight."
+        "desc": "Tout le pré-presse : DPI, fond perdu (bleed), traits de coupe (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), hirondelles de repérage (registration marks), zone de sécurité (marge, pointillés paramétrables) et la section Preflight…"
       },
       {
         "title": "Animation 3D",
-        "desc": "Applique des animations 3D à un objet via des presets (flip, relief, particules) avec lecture, arrêt et enregistrement vidéo du rendu animé."
+        "desc": "Applique des animations 3D à un objet (flip 3D, relief, particules…) via des presets, avec lecture/arrêt et enregistrement vidéo (export MP4/WebM) du rendu animé."
       },
       {
         "title": "Palette · Données · Versions",
-        "desc": "Regroupe le kit de marque et les styles d'objets, le re-skin PIM ou publipostage et les snapshots, détaillés dans leurs sections dédiées."
-      },
-      {
-        "title": "Menu contextuel (clic droit)",
-        "desc": "Ouvre un menu rapide pour dupliquer, ordonner, grouper, mettre en miroir, verrouiller, supprimer et, sur un document multi-pages, répéter ou retirer un élément des autres pages."
-      },
-      {
-        "title": "Barre contextuelle & repères de manipulation",
-        "desc": "Une barre flottante sous la sélection offre les actions fréquentes, et un badge temps réel affiche position, dimensions ou angle pendant la manipulation."
-      },
-      {
-        "title": "Preflight d'impression",
-        "desc": "Le bouton Analyser contrôle le document avant export en détectant les images basse résolution, les objets hors page et les textes trop petits ou trop près du bord."
-      },
-      {
-        "title": "Re-skin par les données PIM",
-        "desc": "Le panneau Données accepte une source Produits PIM, permet de poser des champs et de régénérer le fond par IA, avec liaison automatique du prix, titre et description."
-      },
-      {
-        "title": "Éléments maîtres & kit de marque",
-        "desc": "Répète un élément sur toutes les pages, partage les couleurs de marque entre tous les projets et capture des styles d'objets réutilisables d'un clic."
-      },
-      {
-        "title": "Versions du document",
-        "desc": "Garde jusqu'à vingt snapshots horodatés du document avec miniature, restaurables en un clic après réécriture du contenu et rechargement de l'éditeur."
-      },
-      {
-        "title": "Sauvegarder & exporter",
-        "desc": "La sauvegarde est automatique mais peut être déclenchée manuellement, et le bouton Exporter ouvre le choix de format (PDF, IDML, PPTX, SVG, PNG, HTML)."
+        "desc": "Détaillés dans leurs sections dédiées plus bas (kit de marque & styles d'objets, re-skin PIM / publipostage, snapshots)."
       }
     ],
     "shortcuts": [
@@ -432,6 +384,22 @@ export const MODULES = [
       },
       {
         "keys": [
+          "⌘",
+          "⇧",
+          "]"
+        ],
+        "label": "Premier plan"
+      },
+      {
+        "keys": [
+          "⌘",
+          "⇧",
+          "["
+        ],
+        "label": "Arrière-plan"
+      },
+      {
+        "keys": [
           "←↑→↓"
         ],
         "label": "Déplacer de 1 px (⇧ : 10 px)"
@@ -447,6 +415,13 @@ export const MODULES = [
           "Échap"
         ],
         "label": "Désélectionner"
+      },
+      {
+        "keys": [
+          "⌘",
+          "↵"
+        ],
+        "label": "Ajouter une page"
       }
     ]
   },
@@ -454,33 +429,37 @@ export const MODULES = [
     "id": "hyperframes",
     "cat": "Édition",
     "icon": "🎬",
-    "anim": "editor",
+    "anim": "reveal",
     "title": "Animation",
     "intro": "Générer des animations HTML autonomes (vidéo) à partir d'un brief ou d'un design du canvas.",
     "features": [
       {
         "title": "À partir d'un brief (vidéo multi-scènes)",
-        "desc": "Décrire un sujet et un contexte optionnel laisse l'IA composer une séquence de deux à cinq scènes avec titres, chiffres, icônes et transitions, puis choisir thème et palette."
+        "desc": "Décris ton sujet, et optionnellement l'audience, l'objectif, le ton, la marque et un caption."
       },
       {
         "title": "À partir d'un design du canvas (design-reveal)",
-        "desc": "Depuis l'éditeur, le SVG du projet est capturé puis animé par l'IA selon une consigne de style, idéal pour transformer une création print en teaser animé."
+        "desc": "Depuis l'éditeur, on capture le SVG du projet courant et l'IA l'anime (apparitions, rythme, easing) selon une consigne de style. Idéal pour transformer une création print en teaser animé."
       },
       {
         "title": "Fichiers de référence",
-        "desc": "Glisser des images, PDF ou SVG enrichit le brief : l'IA les lit en texte et visuel et s'en sert comme contexte."
+        "desc": "Glisse des images, PDF ou SVG pour enrichir le brief : l'IA les lit (texte + visuel) et s'en sert comme contexte."
       },
       {
         "title": "Format et durée",
-        "desc": "Choix du ratio (auto, portrait, carré, paysage ou personnalisé), de la durée de 3 à 60 secondes, d'instructions de style libres, avec boutons Effacer et Stop."
+        "desc": "• Ratio : Auto, portrait (9:16), carré (1:1), paysage (16:9) ou dimensions personnalisées (largeur × hauteur, 240 à 4096 px, ratio affiché en direct)."
       },
       {
         "title": "Enrichir et finaliser",
-        "desc": "Génère un visuel IA par scène, propose un aperçu live avec le style appliqué, et permet de télécharger le ZIP autonome ou de sauvegarder l'animation dans le DAM."
+        "desc": "• Enrichir avec des images IA : l'IA génère un visuel par scène (affiché en fond, effet Ken Burns). • Aperçu live : le lecteur joue la composition avec le style appliqué (rythme, intensité, easing, palette)."
       },
       {
         "title": "Bibliothèque de prompts",
-        "desc": "Chaque génération mémorise son brief, rejouable, chargeable pour ajustement, renommable ou supprimable, afin de produire des variantes sans tout ressaisir."
+        "desc": "Chaque génération mémorise son brief : tu peux le rejouer, le charger pour l'ajuster, le renommer ou le supprimer — pour produire des variantes sans tout ressaisir."
+      },
+      {
+        "title": "Voir aussi",
+        "desc": "La génération s'appuie sur les modèles IA configurés dans les Paramètres → IA. Les visuels de scène utilisent le moteur de génération d'image (Image IA), le même que dans le DAM et le Chat IA."
       }
     ],
     "shortcuts": []
@@ -489,25 +468,25 @@ export const MODULES = [
     "id": "import-idml",
     "cat": "Import",
     "icon": "📐",
-    "anim": "default",
+    "anim": "import",
     "title": "Import IDML",
     "intro": "Récupérer une maquette InDesign et la transformer en template IBS-Studio.",
     "features": [
       {
         "title": "Comment exporter un IDML depuis InDesign",
-        "desc": "Ouvrir le document dans InDesign CC ou plus récent puis Fichier, Exporter et choisir le format InDesign Markup, qui est en réalité un ZIP contenant XML et ressources."
+        "desc": "1. Ouvre ton document dans InDesign CC ou plus récent 2. Fichier → Exporter… 3. Choisis le format InDesign Markup (IDML) 4. Enregistre Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, images)."
       },
       {
         "title": "Importer dans IBS-Studio",
-        "desc": "Le parser extrait formes, textes, images, fonts, ombres et transparence sur toutes les pages, et reconnaît gabarits, cadres non rectangulaires, cascade de styles et liens graphiques."
+        "desc": "1. Tableau de bord → Importer 2. Sélectionne le .idml 3. Patiente : le parser extrait formes, textes, images, fonts, ombres et transparence — toutes les pages du document (chaque planche devient une page IBS-Studio) 4."
       },
       {
         "title": "Limites connues",
-        "desc": "Les fonts non installées retombent sur Arial, les dégradés ne sont pas importés et reviennent en couleur unie, et certains effets avancés ne sont qu'approximés."
+        "desc": "• Fonts custom : si non installées sur la machine → fallback Arial. Pour une fidélité parfaite, charge tes fonts dans public/fonts/ • Dégradés : non importés — les objets dégradés reviennent en couleur unie (à recréer dans l'éditeur si beso…"
       },
       {
         "title": "Aller-retour InDesign ↔ IBS-Studio",
-        "desc": "Le graphiste crée la maquette dans InDesign, l'imprimeur l'importe, ajoute des placeholders et branche le data-merge, puis exporte en IDML ou PDF sans lock-in."
+        "desc": "Le cycle classique : 1. Graphiste crée la maquette dans InDesign 2. Exporte un IDML 3. Imprimeur importe dans IBS-Studio, ajoute placeholders, branche le data-merge 4. Batch export IDML (un par produit) ou PDF direct 5."
       }
     ],
     "shortcuts": []
@@ -516,37 +495,37 @@ export const MODULES = [
     "id": "easycatalog",
     "cat": "Import",
     "icon": "🔗",
-    "anim": "default",
+    "anim": "import",
     "title": "EasyCatalog (InDesign)",
     "intro": "Aller-retour avec le plug-in EasyCatalog : importer un gabarit, fusionner ses champs, puis réexporter un IDML reconnu nativement.",
     "features": [
       {
         "title": "1. Importer un gabarit EasyCatalog",
-        "desc": "Exporter l'IDML depuis InDesign puis l'importer : les champs EasyCatalog deviennent automatiquement des placeholders texte éditables et des cadres image liés."
+        "desc": "1. Depuis InDesign (avec ton document EasyCatalog ouvert) : Fichier → Exporter… → InDesign Markup (IDML) 2. Dans IBS-Studio : Tableau de bord → Importer → sélectionne le .idml 3. Le gabarit s'ouvre dans l'éditeur."
       },
       {
         "title": "2. Brancher tes données et fusionner",
-        "desc": "Dans le panneau Publipostage, connecter une source remplace les champs par les valeurs de la ligne courante et permet l'export par lot, à condition que les noms de colonnes correspondent."
+        "desc": "Dans l'éditeur, panneau Publipostage : connecte une source (Excel, Google Sheets, PIM…). IBS-Studio remplace les {{champs}} par les valeurs de la ligne courante, et charge les images dans les cadres liés."
       },
       {
         "title": "3. Exporter une source de données POUR EasyCatalog",
-        "desc": "Depuis l'espace Données, le bouton EasyCatalog génère un zip prêt à brancher comme source flat-file, contenant données, champ-clé, types de champs, table d'images et mode d'emploi."
+        "desc": "Depuis l'espace Données, bouton EasyCatalog : génère un zip prêt à brancher comme flat-file data source dans EasyCatalog."
       },
       {
         "title": "4. Réexporter un IDML (aller-retour complet)",
-        "desc": "L'export IDML multi-pages conserve les marqueurs EasyCatalog et résout les valeurs par ligne, le document retrouvant ses champs à la réouverture dans InDesign sans lock-in."
+        "desc": "Depuis l'éditeur, Exporter → IDML (multi-pages) : IBS-Studio produit un IDML qui conserve les marqueurs EasyCatalog et résout les valeurs par ligne."
       },
       {
         "title": "Les champs ne sont pas reconnus à l'import ?",
-        "desc": "Vérifier que l'IDML provient bien d'un document piloté par EasyCatalog, repérable aux crochets verts, un texte tapé à la main n'étant pas un champ."
+        "desc": "Vérifie que l'IDML provient bien d'un document piloté par EasyCatalog (les champs y sont insérés via le panneau EasyCatalog, repérables aux crochets verts). Un texte tapé à la main n'est pas un champ."
       },
       {
         "title": "Quelles données mettre dans les colonnes image ?",
-        "desc": "Une URL d'image se charge directement et un simple nom de fichier est résolu via le stockage, le binding se branchant seul sur le cadre EasyCatalog importé."
+        "desc": "Une URL d'image (ex. lien Firebase/DAM) se charge directement. Un simple nom de fichier est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé."
       },
       {
         "title": "Limites connues",
-        "desc": "Les champs sous forme qualifiée restent en texte, un champ vide d'origine peut ne pas générer de placeholder, et les images ne sont pas réincorporées à l'export."
+        "desc": "• Les champs sous forme qualifiée (référence data source complète) ne sont pas encore convertis en placeholders et restent en texte. • Un champ sans valeur dans le gabarit d'origine peut ne pas générer de placeholder."
       }
     ],
     "shortcuts": []
@@ -555,21 +534,21 @@ export const MODULES = [
     "id": "import-pptx",
     "cat": "Import",
     "icon": "📊",
-    "anim": "default",
+    "anim": "import",
     "title": "Importer PPTX",
     "intro": "Importer un .pptx pour le réutiliser comme template ou point de départ.",
     "features": [
       {
         "title": "Importer un PPTX",
-        "desc": "Le parser extrait textes, images, formes, thème et transparences et transforme la slide en page éditable, mais seule la première slide est importée."
+        "desc": "1. Tableau de bord → Importer 2. Sélectionne le .pptx 3. Le parser extrait textes, images et formes — y compris le thème (les couleurs de thème sont résolues) et les transparences de remplissage 4."
       },
       {
         "title": "Cas d'usage type",
-        "desc": "Servir de présentation commerciale dynamique mappée sur une base produits, ou faire du reverse engineering d'un PPTX client à reproduire puis exporter en IDML."
+        "desc": "Présentation commerciale dynamique : ton équipe vente part d'un PPTX modèle. Tu l'importes une fois, tu mappes les placeholders sur ta BDD produits, et chaque commercial génère sa version personnalisée (logo client, prix négocié, références…"
       },
       {
         "title": "Limites",
-        "desc": "Seule la slide 1 est lue, les animations PowerPoint ne sont pas supportées, les SmartArt sont ignorés et le round-trip n'est fiable que sur des slides simples."
+        "desc": "• Multi-slides : seule la slide 1 est lue — les suivantes sont ignorées • Animations PowerPoint : non supportées (IBS-Studio exporte du print/statique) • SmartArt : ignorés à l'import (non convertis en formes) • Round-trip PPTX → Fabric → P…"
       }
     ],
     "shortcuts": []
@@ -584,15 +563,15 @@ export const MODULES = [
     "features": [
       {
         "title": "Formats supportés",
-        "desc": "Accepte les fichiers Excel multi-feuilles, les exports CSV ou TSV d'ERP et les Google Sheets via OAuth, avec détection automatique des types de colonnes."
+        "desc": "L'import détecte automatiquement les types de colonnes : texte, nombre, booléen, date, formule (stockée puis évaluée au moment de la fusion) et dictionnaire (colonne à valeurs répétitives → liste de choix)."
       },
       {
         "title": "Importer un fichier",
-        "desc": "Ouvrir le PIM, choisir Importer un fichier ou Créer vide, sélectionner le fichier, vérifier les colonnes détectées puis valider pour créer et synchroniser la base sur Firebase."
+        "desc": "1. Ouvre PIM depuis le menu. 2. Clique Importer un fichier (ou Créer vide pour partir d'une base vierge). 3. Sélectionne ton fichier. 4. Vérifie les colonnes détectées. 5. Valide → la base est créée et synchronisée sur Firebase."
       },
       {
         "title": "Et ensuite ?",
-        "desc": "Une fois la base importée, tout se passe dans le PIM : enrichir les fiches par IA, gérer les champs structurés et exporter en série."
+        "desc": "Une fois la base importée, tout se passe dans le PIM : enrichir les fiches par IA, gérer les champs structurés (spécifications, variants, documents, images) et exporter en série. Voir la section PIM."
       }
     ],
     "shortcuts": []
@@ -601,27 +580,10 @@ export const MODULES = [
     "id": "import-image",
     "cat": "Import",
     "icon": "🌄",
-    "anim": "default",
+    "anim": "import",
     "title": "Importer une image",
     "intro": "Placer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet.",
-    "features": [
-      {
-        "title": "Placer une image sur le canvas",
-        "desc": "L'image posée reste une image, sans décomposition, sur le canvas d'un nouveau projet."
-      },
-      {
-        "title": "Formats acceptés",
-        "desc": "L'import accepte les fichiers PNG, JPG, WebP, GIF et SVG."
-      },
-      {
-        "title": "Manipuler et superposer",
-        "desc": "Une fois posée, l'image peut être déplacée, redimensionnée et complétée par d'autres éléments par-dessus."
-      },
-      {
-        "title": "Texte éditable",
-        "desc": "Pour rendre le texte d'une image existante éditable plutôt que de simplement la poser, il faut utiliser Image vers SVG éditable."
-      }
-    ],
+    "features": [],
     "shortcuts": []
   },
   {
@@ -633,12 +595,8 @@ export const MODULES = [
     "intro": "Charger un .svg comme calques vectoriels éditables.",
     "features": [
       {
-        "title": "Charger un SVG vectoriel",
-        "desc": "Un fichier SVG est chargé en calques vectoriels éditables, ses formes, textes et chemins devenant des objets manipulables dans l'éditeur."
-      },
-      {
         "title": "Quand l'utiliser",
-        "desc": "Pour retoucher ou recolorer un logo vectoriel, ou intégrer dans une maquette un visuel déjà vectorisé depuis Illustrator ou Figma."
+        "desc": "• Un logo vectoriel à retoucher ou recolorer. • Un visuel déjà vectorisé (export Illustrator/Figma) à intégrer dans une maquette."
       }
     ],
     "shortcuts": []
@@ -652,12 +610,8 @@ export const MODULES = [
     "intro": "Rendre une image raster éditable : fond verrouillé + textes décomposés par IA.",
     "features": [
       {
-        "title": "Transformer un raster en projet éditable",
-        "desc": "Convertit un fichier PNG, JPG, WebP ou GIF en projet éditable dont le canvas épouse les pixels natifs de la source."
-      },
-      {
         "title": "Comment ça marche",
-        "desc": "L'image est verrouillée en fond pour préserver la fidélité, l'IA Google Vision détecte les textes et les recrée en calques éditables par-dessus, modifiables sans toucher au visuel."
+        "desc": "1. L'image est verrouillée en fond (fidélité visuelle préservée). 2. L'IA (Google Vision) détecte les textes et les recrée en calques éditables par-dessus (overlays). 3."
       }
     ],
     "shortcuts": []
@@ -671,12 +625,8 @@ export const MODULES = [
     "intro": "Repartir d'un PDF : page 1 rasterisée en fond + textes éditables.",
     "features": [
       {
-        "title": "Convertir un PDF en projet éditable",
-        "desc": "Convertit un fichier PDF en projet éditable, mais seule la page 1 est traitée, les pages suivantes étant ignorées."
-      },
-      {
         "title": "Comment ça marche",
-        "desc": "Si le PDF a un calque texte natif, la conversion vectorielle exacte est tentée d'abord ; sinon la page 1 est rasterisée puis décomposée comme une image, les CMYK étant ré-encodés en RGB."
+        "desc": "1. Si le PDF contient un calque texte natif exploitable, la conversion vectorielle est tentée d'abord : les textes arrivent exacts (pas d'OCR). 2."
       }
     ],
     "shortcuts": []
@@ -690,108 +640,132 @@ export const MODULES = [
     "intro": "Banque d'images, génération IA, édition, variantes et organisation des visuels.",
     "features": [
       {
+        "title": "Les onglets",
+        "desc": "Clique un onglet pour l'ouvrir directement dans le DAM."
+      },
+      {
         "title": "Banque d'images",
-        "desc": "Recherche dans Pexels et Unsplash, des millions de photos libres de droits, avec filtres par source, orientation et couleur."
+        "desc": "Recherche dans Pexels & Unsplash (millions de photos libres de droits) avec filtres source / orientation / couleur."
       },
       {
         "title": "Mes images",
-        "desc": "Regroupe les images sauvegardées, qu'elles viennent de la banque ou de la génération par IA."
+        "desc": "Tes images sauvegardées — depuis la banque ou issues de la génération IA."
       },
       {
         "title": "Favoris",
-        "desc": "Rassemble les images marquées d'un cœur pour un accès rapide."
+        "desc": "Les images que tu as marquées d'un ♥ pour un accès rapide."
       },
       {
         "title": "Collections",
-        "desc": "Des dossiers d'organisation que l'utilisateur crée et remplit lui-même."
+        "desc": "Des dossiers d'organisation que tu crées et remplis toi-même."
       },
       {
         "title": "Récents",
-        "desc": "Affiche les derniers ajouts, triés par date."
+        "desc": "Les derniers ajouts, triés par date."
       },
       {
         "title": "Projets",
-        "desc": "Regroupe les images et les polices du projet courant, prêtes à glisser sur le canvas."
+        "desc": "Les images et les polices du projet courant, prêtes à glisser sur le canvas."
       },
       {
         "title": "Création d'image",
-        "desc": "Génère des images par IA via Gemini ou Image IA, avec un détail de paramètres présenté plus bas."
+        "desc": "Génération d'images par IA (Gemini / Image IA) — voir le détail des paramètres plus bas."
       },
       {
         "title": "Animations HTML",
-        "desc": "Rassemble les compositions vidéo produites avec HyperFrames."
+        "desc": "Tes compositions vidéo (HyperFrames)."
       },
       {
         "title": "Google Drive",
-        "desc": "Donne accès aux fichiers Google Drive une fois le compte connecté."
+        "desc": "Accès à tes fichiers Google Drive une fois ton compte connecté."
       },
       {
         "title": "Rechercher des images",
-        "desc": "Recherche par texte avec autocomplétion et historique, recherche inversée par image, et filtres combinables sur la source, l'orientation et la couleur dominante."
+        "desc": "• Par texte : barre de recherche avec autocomplétion et historique des recherches récentes. • Par image (recherche inversée) : bouton caméra → choisis une image locale → le DAM trouve des visuels similaires dans la banque."
       },
       {
         "title": "Créer une image par IA",
-        "desc": "L'onglet Création d'image utilise le moteur Image IA basé sur Gemini pour générer des visuels à partir d'un prompt et de paramètres dépliables."
+        "desc": "Onglet Création d'image — moteur Image IA (Gemini 3.1 image, texte → image). Déplie chaque paramètre :"
       },
       {
-        "title": "Prompt (Améliorer / Avec questions)",
-        "desc": "Décrire l'image à générer, coller des références, et utiliser Améliorer pour réécrire le prompt en une passe ou Avec questions pour que l'IA pose trois à six questions ciblées."
+        "title": "Prompt (+ Améliorer / Avec questions)",
+        "desc": "Décris l'image à générer. Tu peux coller une image dans le champ : elle rejoint les fichiers de référence."
       },
       {
         "title": "Fichiers de référence",
-        "desc": "Ajouter tous formats d'images, logos, PDF ou SVG transmis tels quels à Image IA qui les voit, préserve leur structure et n'applique que les changements demandés."
+        "desc": "Bouton « Ajouter des fichiers » (ou colle une image). Tous formats : images, logos, PDF, SVG (rastérisé en PNG, plafonné à 2048 px)."
       },
       {
         "title": "Format de sortie",
-        "desc": "Choisir Images et texte par défaut où le modèle peut commenter, ou Images seul pour forcer la sortie visuelle et empêcher une réponse conversationnelle."
+        "desc": "• Images & texte (défaut) : image + texte — le modèle peut commenter brièvement. • Images seul."
       },
       {
-        "title": "Température (0 à 2, défaut 1,0)",
-        "desc": "Régler la créativité de la génération, vers 0 pour un rendu déterministe et fidèle aux références, vers 2 pour plus de liberté et de variation."
+        "title": "Température (0 → 2, défaut 1,0)",
+        "desc": "Curseur, pas de 0,1. Règle la créativité : • 0 — Précis : déterministe, fidèle au prompt/références. • 2 — Créatif : plus de liberté et de variation. Reproduire une référence → baisse vers 0 ; explorer → monte vers 2."
       },
       {
         "title": "Ratio (format)",
-        "desc": "Laisser Auto pour que le modèle choisisse le cadrage, ou imposer un rapport carré, paysage ou portrait parmi les valeurs proposées."
+        "desc": "Auto · 1:1 · 16:9 · 9:16 · 4:3 · 3:4. • Auto (défaut) : le modèle choisit le cadrage adapté au prompt/références (aucune contrainte envoyée). • Les autres imposent le rapport : 1:1 carré (réseaux), 16:9 / 4:3 paysage, 9:16 / 3:4 portrait."
       },
       {
         "title": "Résolution (1K / 2K / 4K)",
-        "desc": "Définir la résolution du visuel, le 1K étant rapide pour itérer et les 2K et 4K étant deux à trois fois plus lents, réservés au rendu final."
+        "desc": "1K (défaut) · 2K · 4K. Définition du visuel. ⚠️ 2K et 4K sont 2 à 3× plus lents — réserve-les au rendu final, reste en 1K pour itérer."
       },
       {
         "title": "Nombre d'images (1 / 2 / 4)",
-        "desc": "Générer une, deux ou quatre variations en parallèle du même prompt pour comparer plusieurs propositions d'un coup."
+        "desc": "1 (défaut) · 2 · 4. Génère N variations en parallèle du même prompt — pour comparer plusieurs propositions d'un coup."
       },
       {
         "title": "Générer & actions sur les résultats",
-        "desc": "Pour chaque image générée, télécharger en PNG, sauvegarder dans Mes images avec ses métadonnées de prompt, ou insérer dans l'éditeur, avec réinitialisation possible."
+        "desc": "Bouton « Générer ». Pour chaque image : • Télécharger — PNG en local. • Sauvegarder — vers « Mes images » (prompt d'origine, prompt amélioré et Q/R conservés en métadonnées). • Insérer dans l'éditeur — place l'image dans le projet ouvert."
       },
       {
         "title": "Visualiser & éditer une image",
-        "desc": "Un clic ouvre la visionneuse lightbox proposant des outils d'édition non destructive : zoom, rotation, recadrage, colorimétrie et export."
+        "desc": "Un clic ouvre la visionneuse (lightbox). Outils d'édition non destructive :"
+      },
+      {
+        "title": "Zoom · Rotation · Miroir",
+        "desc": "Zoom avant/arrière + ajustement, Rotation par 90°, Miroir horizontal et vertical."
       },
       {
         "title": "Recadrage (crop)",
-        "desc": "Offre un masque interactif à huit poignées, une grille des tiers et des contraintes de ratio prédéfinies (libre, 1:1, 16:9, 9:16…)."
+        "desc": "Masque interactif à 8 poignées, grille des tiers, contraintes de ratio (libre, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3)."
       },
       {
         "title": "Colorimétrie",
-        "desc": "Ajuste luminosité, contraste, saturation et teinte via un filtre CSS non destructif."
+        "desc": "Sliders Luminosité, Contraste, Saturation, Teinte (rendu via filtre CSS, non destructif)."
+      },
+      {
+        "title": "Export",
+        "desc": "Formats PNG / JPEG / WebP, avec réglage de qualité (JPEG/WebP) et d'échelle (% de la résolution native)."
+      },
+      {
+        "title": "Réinitialiser",
+        "desc": "Annule toutes les retouches et revient à l'image d'origine."
       },
       {
         "title": "Variantes",
-        "desc": "Sauvegarde une retouche comme variante nommée sans toucher l'originale, chargeable, modifiable, renommable ou supprimable depuis le panneau Versions."
+        "desc": "Sauvegarde une retouche (crop + colorimétrie + miroir + rotation) comme variante nommée d'une image, sans toucher l'originale : • Enregistrer variante → donne-lui un nom."
       },
       {
         "title": "Analyse IA d'une image",
-        "desc": "Dans la visionneuse, l'IA renvoie sujet, description, marques, texte OCR, ambiance, objets, tags de recherche et palette de couleurs pour retrouver et classer un visuel."
+        "desc": "Dans la visionneuse, onglet Analyse IA → bouton « Analyser avec IA ». L'IA renvoie : sujet, description, marques identifiées, texte détecté (OCR), ambiance / style / composition / éclairage, objets, tags de recherche et palette de couleurs.…"
       },
       {
         "title": "Tagging automatique & recherche par tags",
-        "desc": "Chaque image sauvegardée dans Mes images est taguée automatiquement en arrière-plan, et un champ permet une recherche en langage naturel sur tags, description et sujet."
+        "desc": "Chaque image sauvegardée dans Mes images (génération IA, images du Chat) est taguée automatiquement en arrière-plan : tags, couleur dominante et sujet sont posés sur la fiche quelques secondes après la sauvegarde."
+      },
+      {
+        "title": "Organiser",
+        "desc": "• Favoris (♥) : accès rapide. • Collections : crée des dossiers, ajoute/retire des images, vue vignettes ou liste."
       },
       {
         "title": "Utiliser une image dans l'éditeur",
-        "desc": "Insérer une image par clic ou glisser-déposer, remplacer un bloc par double-clic en conservant l'original, ou l'utiliser comme remplissage d'une forme."
+        "desc": "• Clic : insère l'image au centre du canvas (mise à l'échelle automatique). • Glisser-déposer : depuis la grille vers le canvas (équivaut à l'insertion)."
+      },
+      {
+        "title": "Sources externes",
+        "desc": "• Pexels & Unsplash : banque intégrée (recherche + filtres). • Google Drive : connecte ton compte (onglet Google Drive) pour piocher dans tes fichiers."
       }
     ],
     "shortcuts": []
@@ -806,27 +780,27 @@ export const MODULES = [
     "features": [
       {
         "title": "Bases de données",
-        "desc": "Gérer plusieurs bases en parallèle, créées par import de fichier Excel ou CSV, par scraping web ou à la main en partant d'une base vierge."
-      },
-      {
-        "title": "Enrichir une fiche par IA",
-        "desc": "Le mode AUTO trouve l'URL et extrait les infos par recherche web et LLM avec un risque d'hallucination, tandis que le mode TEMPLATE offre une extraction déterministe par sélecteurs CSS."
+        "desc": "Tu peux gérer plusieurs bases en parallèle. Trois façons d'en créer une : • Importer un fichier — depuis Excel ou CSV/TSV (voir Importer Excel). • Scraper le web — partir d'URLs produits et laisser l'IA remplir les fiches."
       },
       {
         "title": "Champs structurés",
-        "desc": "Une fiche stocke des champs riches exploitables dans le data-merge : formules Excel évaluées à la volée, spécifications, variants, documents et images."
+        "desc": "Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables dans le data-merge : • Formules Excel : évaluées à la volée. • Spécifications : [{ group, name, value }] (dimensions, matériaux…)."
       },
       {
         "title": "Classer & exporter",
-        "desc": "Relier une base à une taxonomie pour naviguer par catégories, puis utiliser le data-merge pour générer un document par produit à partir d'un template."
+        "desc": "• Relie une base à une taxonomie pour naviguer le catalogue par catégories. • Une fois les fiches prêtes, le data-merge génère un document par produit à partir d'un template (PDF, PNG…)."
       },
       {
         "title": "Vue galerie",
-        "desc": "Un basculeur tableau/galerie affiche les produits en cartes avec visuel, titre, prix ou marque et pastille de complétude, le mode choisi étant mémorisé."
+        "desc": "Le basculeur tableau / galerie (en haut à droite de la table) affiche les produits en cartes : visuel (colonne image détectée automatiquement), titre, prix ou marque, et pastille de complétude. Cliquer une carte ouvre la fiche."
       },
       {
         "title": "Complétude des fiches",
-        "desc": "Chaque ligne porte une pastille verte, ambre ou rouge selon le taux de remplissage, avec champs manquants au survol et complétude moyenne en barre d'état."
+        "desc": "Chaque ligne de la table porte une pastille de complétude : verte (≥ 90 % des colonnes remplies), ambre (≥ 60 %) ou rouge. Survole-la pour voir les champs manquants."
+      },
+      {
+        "title": "Voir aussi",
+        "desc": "L'export en série (data-merge) est détaillé dans la section Export multi-format. Le re-skin d'un visuel par les produits PIM est décrit dans la section L'éditeur."
       }
     ],
     "shortcuts": []
@@ -841,23 +815,27 @@ export const MODULES = [
     "features": [
       {
         "title": "Créer une taxonomie",
-        "desc": "Créer une taxonomie, la nommer puis ajouter des niveaux en cliquant un nœud pour créer un enfant, glisser pour réorganiser, renommer par double-clic et supprimer par clic-droit."
+        "desc": "1. Va dans Taxonomies depuis le menu 2. Clique Nouvelle taxonomie 3. Donne-lui un nom (ex: Catégories produits) 4. Ajoute des niveaux : clique sur un nœud pour créer un enfant, glisse pour réorganiser 5."
       },
       {
         "title": "Navigation intelligente",
-        "desc": "Dès qu'une base source est active, le navigateur auto-déplie la branche correspondante et colorise les ancêtres jusqu'à la racine, pratique pour les arbres profonds."
+        "desc": "Dès qu'une BDD source est active, le navigateur de gauche auto-déplie la branche correspondante et colorise tous les ancêtres du nœud sélectionné jusqu'à la racine. Désélectionner referme la branche."
       },
       {
         "title": "Lier une taxonomie à une BDD",
-        "desc": "Dans le PIM, chaque ligne peut être assignée à un nœud de la taxonomie, ce qui permet ensuite de filtrer les lignes par catégorie depuis le navigateur."
+        "desc": "Dans le PIM, chaque ligne peut être assignée à un nœud de la taxonomie : 1. Ouvre une BDD 2. Sélectionne une ligne 3. Clique Non classé dans une taxonomie globale — cliquer pour classer au-dessus du panneau 4."
       },
       {
         "title": "Auto-construction depuis le scraping",
-        "desc": "Lors du scraping d'un site avec breadcrumb, une taxonomie peut être auto-construite à partir des chemins de catégorie rencontrés, utile pour démarrer un PIM en miroir d'un fournisseur."
+        "desc": "Quand tu scrapes un site avec un breadcrumb (fil d'Ariane), IBS-Studio peut auto-construire une taxonomie à partir des chemins de catégorie rencontrés. Utile pour démarrer un PIM en miroir d'un site fournisseur."
       },
       {
         "title": "Onglet Briefs",
-        "desc": "La page Taxonomies héberge l'onglet Briefs où décrire un besoin en langage naturel laisse l'IA poser des questions, composer un panier de produits et structurer un deck."
+        "desc": "La page Taxonomies héberge aussi l'onglet Briefs : décris un besoin en langage naturel, l'IA pose des questions, compose un panier de produits du catalogue et structure un deck. Détail dans la section Briefs & génération IA."
+      },
+      {
+        "title": "Cas d'usage",
+        "desc": "• Catalogue multi-marques : taxonomie principale par typologie produit (Outillage / Jardin / Électroménager) • Multi-langues : une taxonomie par langue, ou bien une taxonomie unique avec des labels multilingues sur les nœuds • Reporting : f…"
       }
     ],
     "shortcuts": []
@@ -872,19 +850,19 @@ export const MODULES = [
     "features": [
       {
         "title": "Modèles IA utilisés",
-        "desc": "S'appuie par défaut sur Claude Opus pour les questions et la structure, Gemini pour les prompts d'images et mots-clés, et Gemini avec Claude en secours pour l'enrichissement produit."
+        "desc": "IBS-Studio s'appuie par défaut sur : • Claude Opus (Anthropic) — questions dynamiques, composition du panier et structure du deck • Gemini (Google) — prompts d'images, mots-clés catalogue, génération d'images (Claude en secours) • Enrichiss…"
       },
       {
         "title": "Où utiliser les briefs ?",
-        "desc": "Les briefs s'utilisent dans l'onglet Briefs des Taxonomies, dans le PIM pour réécrire un champ, dans le scraping via un prompt global et dans les templates via un prompt fournisseur."
+        "desc": "Dans les Taxonomies : l'onglet Briefs de la page Taxonomies est le panneau dédié — décris ton besoin, l'IA pose des questions dynamiques, compose un panier de produits depuis le catalogue et structure un deck (avec prompts d'images)."
       },
       {
         "title": "Génération d'images",
-        "desc": "Le DAM intègre la génération d'images via Gemini : décrire une image produit un visuel utilisable dans les templates, idéal pour ambiances, mockups et illustrations."
+        "desc": "Le DAM intègre la génération d'images via Gemini (modèle image dit « Image IA »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates."
       },
       {
         "title": "Limites des briefs",
-        "desc": "L'IA peut halluciner et doit être vérifiée, les briefs sont sans mémoire entre deux appels, et le coût en tokens incite à privilégier les templates de scraping pour les flux récurrents."
+        "desc": "• L'IA peut halluciner des références ou caractéristiques. Toujours vérifier le résultat avant publication, surtout sur les chiffres et les normes. • Les briefs sont stateless : aucune mémoire conversationnelle."
       }
     ],
     "shortcuts": []
@@ -899,23 +877,23 @@ export const MODULES = [
     "features": [
       {
         "title": "Quel mode utiliser ?",
-        "desc": "Map + Extract pour une page catégorie, Scrape simple pour une URL produit, Crawl pour un site entier, et un Template scraping pour un fournisseur récurrent sans hallucination ni tokens."
+        "desc": "Pour un fournisseur que tu vas scraper plus de 2 fois, crée un template. C'est la voie royale : 0 hallucination IA, 0 token consommé, réutilisable sur des centaines d'URLs."
       },
       {
         "title": "Créer un template de scraping",
-        "desc": "Créer un template avec nom, domaine et pattern d'URL, charger une URL produit, double-cliquer sur les champs pour générer les sélecteurs CSS, tester puis enregistrer."
+        "desc": "1. Ouvre la page Templates scraping depuis le menu latéral 2. Clique Nouveau → entre un nom (ex: Nicoll), le domaine (nicoll.fr) et un pattern d'URL (. pour tout matcher) 3."
       },
       {
         "title": "Scraper depuis la BDD (Map + Extract)",
-        "desc": "Ouvrir une base, mapper le site depuis une URL catégorie, cocher les URLs à extraire, définir un schéma de champs, extraire par IA puis importer les lignes."
+        "desc": "Quand tu n'as pas encore de template, ou pour explorer un nouveau site : 1. PIM → ouvre une BDD (ou crée-la vide) 2. Bouton Scraper le web → onglet Map + Extract 3. Colle une URL catégorie → Mapper le site → liste des liens internes 4."
       },
       {
         "title": "Limites à connaître",
-        "desc": "Les sites e-commerce hostiles peuvent bloquer mais l'app escalade automatiquement, les sites B2B nécessitent des cookies de session, et le mode TEMPLATE est à privilégier dès qu'il matche."
+        "desc": "• Sites e-commerce hostiles (Mr-Bricolage, Darty, Boulanger…) : DataDome/Akamai peut bloquer."
       },
       {
-        "title": "Astuce : enrichissement par URL seule",
-        "desc": "Importer un Excel avec une seule colonne URL suffit : le pipeline détecte la colonne, retrouve le template par domaine et lance l'enrichissement déterministe en lot."
+        "title": "Tip pro : URL-only enrichissement",
+        "desc": "Tu peux importer un Excel avec uniquement une colonne URL (sans titre/marque/réf). Le pipeline détecte la colonne URL, retrouve le template par domaine, et lance l'enrichissement TEMPLATE en un clic."
       }
     ],
     "shortcuts": []
@@ -930,15 +908,19 @@ export const MODULES = [
     "features": [
       {
         "title": "L'éditeur de template",
-        "desc": "Créer un template avec domaine et pattern, pointer les champs pour auto-générer les sélecteurs CSS, éditer en JSON brut, tester avec un score et exporter ou importer en JSON."
+        "desc": "• Nouveau crée un template : nom, domaine (nicoll.fr), pattern d'URL (. pour tout matcher)."
       },
       {
         "title": "Trois niveaux de prompts IA",
-        "desc": "Trois prompts optionnels guident le post-traitement LLM : le prompt global du template, le prompt fournisseur partagé par tout le domaine et le prompt par champ ciblé."
+        "desc": "En complément des sélecteurs, trois prompts optionnels guident le post-traitement LLM : • Prompt global (du template) : instructions de reformatage pour tous les produits de ce template — ex."
       },
       {
         "title": "Statistiques d'usage",
-        "desc": "Chaque template trace son nombre d'applications et de succès, un taux de succès en chute signalant un site qui a changé de structure et des sélecteurs à re-pointer."
+        "desc": "Chaque template trace son nombre d'applications et de succès — un template au taux de succès en chute signale un site qui a changé de structure (sélecteurs à re-pointer)."
+      },
+      {
+        "title": "Voir aussi",
+        "desc": "La vue d'ensemble par fournisseur (templates groupés par domaine) est dans le Scraping Hub. Le mode d'emploi général du scraping (quel mode choisir, Map + Extract, limites anti-bot) est dans la section Scraping produits."
       }
     ],
     "shortcuts": []
@@ -953,15 +935,19 @@ export const MODULES = [
     "features": [
       {
         "title": "Règles",
-        "desc": "Rassemble les règles rédactionnelles de l'équipe en markdown, partagées par tous comme référence commune aux enrichissements, leur édition requérant une permission dédiée."
+        "desc": "Les règles rédactionnelles de l'équipe (markdown) : conventions de nommage, formats de prix, langue des descriptions… Stockées dans Firestore et partagées par toute l'équipe, elles servent de référence commune aux enrichissements."
       },
       {
         "title": "Fournisseurs & Templates",
-        "desc": "Offre une vue d'ensemble de tous les templates groupés par domaine fournisseur, dépliables pour voir leur état et ouvrir directement l'éditeur d'un clic."
+        "desc": "Vue d'ensemble de tous les templates groupés par domaine fournisseur : déplie un fournisseur pour voir ses templates et leur état, et ouvre directement l'éditeur de template d'un clic."
       },
       {
         "title": "Debug Jina/LLM",
-        "desc": "Tient le journal des trente dernières requêtes de scraping avec le contenu Jina et la réponse LLM, indispensable pour comprendre pourquoi un champ revient vide."
+        "desc": "Le journal des dernières requêtes de scraping (30 max, rafraîchi toutes les 2 s) : pour chaque appel, le contenu renvoyé par Jina et la réponse du LLM."
+      },
+      {
+        "title": "Voir aussi",
+        "desc": "La création des templates se fait dans Templates scraping ; le mode d'emploi général (Scrape, Map + Extract, Crawl, limites anti-bot) est dans Scraping produits."
       }
     ],
     "shortcuts": []
@@ -970,29 +956,33 @@ export const MODULES = [
     "id": "price-watch",
     "cat": "Données",
     "icon": "💰",
-    "anim": "default",
+    "anim": "pricewatch",
     "title": "Veille tarifaire",
     "intro": "Suis les prix de tes concurrents : tableau de bord des écarts, positionnement et alertes.",
     "features": [
       {
         "title": "Comment ça se met en place",
-        "desc": "Tout part d'un workflow avec le node Veille tarifaire : une feuille de produits et des sites concurrents en entrée, qui retrouve chaque produit, scrape le prix et émet des alertes."
+        "desc": "Tout part d'un workflow contenant le node « Veille tarifaire » : 1. Une feuille de produits en entrée (ton catalogue : SKU/EAN, Nom, Marque, et ton prix). 2. Les sites concurrents à surveiller (un domaine par ligne, ex : amazon.fr). 3."
       },
       {
         "title": "Identifiant du suivi",
-        "desc": "Le champ Identifiant du suivi mémorise entre deux runs les URLs concurrentes épinglées et l'historique des prix, à garder identique pour suivre un catalogue dans le temps."
+        "desc": "Le champ « Identifiant du suivi » du node mémorise, entre deux runs, les URLs concurrentes épinglées et l'historique des prix. Garde le même identifiant pour suivre un catalogue dans le temps ; change-le pour démarrer un suivi distinct."
       },
       {
         "title": "Alertes positionnement & variation",
-        "desc": "Deux familles d'alertes : le positionnement compare ton prix à celui des concurrents, et la variation détecte un prix concurrent ayant bougé au-delà du seuil configuré."
+        "desc": "Deux familles d'alertes : le positionnement (comparaison de ton prix — colonne « Mon prix » — à celui des concurrents) et la variation (un prix concurrent a changé depuis le dernier run, au-delà du seuil % configuré)."
       },
       {
         "title": "Comparer des prix entre sites",
-        "desc": "Pour un comparatif ponctuel prix A, prix B et écart sans alertes, utiliser plutôt les nodes Produits d'une page liste et Comparer les prix, avec des modèles prêts à l'emploi."
+        "desc": "Pour un comparatif ponctuel prix A | prix B | écart entre plusieurs enseignes (sans alertes), utilise plutôt les nodes « Produits d'une page liste » + « Comparer les prix » dans un workflow."
       },
       {
         "title": "Recevoir les alertes",
-        "desc": "Brancher le port changes du node sur Envoyer via Telegram permet d'être prévenu à chaque mouvement de prix, y compris quand le workflow tourne en cron serveur."
+        "desc": "Branche le port changes du node sur « Envoyer via Telegram » (« 1 message par ligne ») pour être prévenu à chaque mouvement de prix — y compris quand le workflow tourne en cron serveur, navigateur fermé."
+      },
+      {
+        "title": "Voir aussi",
+        "desc": "Le détail des nodes (« Veille tarifaire », « Veille prix », « Comparer les prix ») et de la planification cron serveur est dans la section Workflows ; l'envoi d'alertes est couvert par Telegram."
       }
     ],
     "shortcuts": []
@@ -1007,23 +997,23 @@ export const MODULES = [
     "features": [
       {
         "title": "Formats disponibles",
-        "desc": "Exporte vers sept formats visant chacun un usage précis : PDF imprimeur, IDML, PPTX, SVG, PNG, dossier web HTML et pack social de déclinaisons prêtes à poster."
+        "desc": "Tous les exports sont fidèles à la maquette en cours dans l'éditeur. Le data-merge actif influence le contenu mais pas le format."
       },
       {
         "title": "Export PDF avec options imprimeur",
-        "desc": "Régler le fond perdu et les repères dans le panneau Impression, choisir PDF et cocher l'export print pour étendre le canvas et ajouter des traits de coupe en taille physique."
+        "desc": "1. Règle d'abord le fond perdu et les repères dans le panneau Impression de l'éditeur (c'est lui qui fait foi — la modale d'export n'a pas de champ bleed) 2. Bouton Exporter → choisis PDF 3."
       },
       {
         "title": "Export batch (plusieurs fichiers)",
-        "desc": "Quand le data-merge est actif, l'export génère une variante par ligne en PDF multi-pages ou ZIP individuel, avec nom de fichier personnalisable et streaming d'avancement."
+        "desc": "Quand le data-merge est actif, l'export génère une variante par ligne de la BDD : 1. Ouvre le panneau Data Merge → vérifie le mapping placeholders ↔ colonnes 2."
       },
       {
         "title": "Export IDML (retour InDesign)",
-        "desc": "Reconstruit un IDML standard avec les valeurs mergées, livré en ZIP avec dossier Links si images, produisant en batch une planche par ligne et conservant les marqueurs EasyCatalog."
+        "desc": "Quand tu veux que ta graphiste finisse à la main dans InDesign : 1. Configure ta maquette + data-merge dans IBS-Studio 2. Export IDML → IBS-Studio reconstruit un fichier IDML standard avec les valeurs déjà mergées."
       },
       {
         "title": "Bonnes pratiques",
-        "desc": "Toujours tester l'export sur une ligne avant un gros batch, vérifier les fonts pour éviter le fallback Arial, confirmer le bleed avec l'imprimeur et éviter le PPTX en cas complexe."
+        "desc": "• Toujours faire un export test sur 1 ligne avant de lancer un batch de 200 — tu détectes les problèmes de fonts ou d'images manquantes plus vite • Vérifier les fonts : si un fallback Arial s'est appliqué, ton imprimeur le verra."
       }
     ],
     "shortcuts": []
@@ -1038,63 +1028,71 @@ export const MODULES = [
     "features": [
       {
         "title": "Deux façons de construire",
-        "desc": "Construire manuellement en glissant et reliant les nodes, ou via Prompt-to-Flow où un LLM construit le graphe complet depuis une description, disponible aussi via /flow sur Telegram."
+        "desc": "• Manuel : glisse les nodes depuis la palette (à gauche), relie-les, configure chacun (panneau de droite), puis Run."
+      },
+      {
+        "title": "Catalogue des nodes",
+        "desc": "Déplie une catégorie pour voir ses nodes."
       },
       {
         "title": "Import (sources)",
-        "desc": "Regroupe les sources : upload de fichier, saisie texte, parser CSV/XLSX, imports IDML/SVG/PPTX/image, conversions vers SVG, imports Google, scrape d'URL, recherche et question web, et cron."
+        "desc": ""
       },
       {
         "title": "Enrichissement",
-        "desc": "Regroupe l'enrichissement qui scrape les URLs et complète les champs par IA, la génération d'images depuis un prompt et la décomposition d'un SVG en calques éditables."
+        "desc": ""
       },
       {
         "title": "Transformation",
-        "desc": "Permet de définir ou réécrire des colonnes, filtrer et trier les lignes, renommer des colonnes et appliquer des opérations texte comme casse, trim, remplacement ou extraction regex."
+        "desc": ""
       },
       {
         "title": "Sauvegarde",
-        "desc": "Permet de persister les lignes comme produits dans le PIM, de construire une taxonomie hiérarchique et d'uploader les assets vers Google Drive."
+        "desc": ""
       },
       {
         "title": "Export",
-        "desc": "Génère des fichiers Excel, PPTX ou HTML vers PDF, rend un design en PNG/PDF/PPTX/HTML/SVG, et crée un Google Sheet ou dépose un fichier dans Drive."
+        "desc": ""
       },
       {
         "title": "Logique",
-        "desc": "Offre des branchements If/Else, le chaînage d'expressions Pipe, et des boucles Loop each qui itèrent sur un tableau et Loop collect qui agrègent les résultats."
+        "desc": ""
       },
       {
         "title": "Communication & contrôle",
-        "desc": "Permet d'envoyer un email Gmail ou un message Telegram, de demander une approbation Telegram qui met en pause, et de comparer aux prix du run précédent avec Veille prix."
+        "desc": ""
+      },
+      {
+        "title": "Exemples de pipelines",
+        "desc": "• Veille : Recherche web → Export Excel → Envoyer via Gmail. • Réponse sourcée : Question web (IA) → Envoyer via Telegram. • Fiches produit : Scrape URL → Enrichissement → Save PIM → Export PPTX."
       },
       {
         "title": "Piloter depuis Telegram",
-        "desc": "Les workflows se déclenchent à distance : /flow génère et exécute un workflow, /run rejoue un workflow sauvegardé, et le fichier produit revient sur Telegram."
+        "desc": "Les workflows se déclenchent aussi à distance : /flow <demande> génère et exécute un workflow, /run <nom> rejoue un workflow sauvegardé — et le fichier produit revient sur Telegram."
       },
       {
         "title": "Modèles prêts à l'emploi",
-        "desc": "La galerie Démarrer depuis un modèle propose des workflows complets comme Scraper un site vers PIM ou Veille quotidienne vers Telegram, créés en un clic."
+        "desc": "La page Workflows propose une galerie « Démarrer depuis un modèle » : Scraper un site → PIM, Veille quotidienne → Telegram (cron), Scrape → approbation ✅ → PIM, Recherche web → Excel."
       },
       {
         "title": "Approbation humaine (Telegram)",
-        "desc": "Le node Approbation Telegram met le run en pause et envoie une question avec boutons Approuver ou Refuser, le workflow reprenant selon le clic, avec délai maximal configurable."
+        "desc": "Le node « Approbation Telegram » met le run en pause et envoie la question sur Telegram avec des boutons ✅ Approuver / ❌ Refuser."
       },
       {
         "title": "Veille prix",
-        "desc": "Le node Veille prix mémorise les prix du run précédent et n'émet le port changes que si un prix a varié au-delà du seuil, fonctionnant aussi en cron serveur."
+        "desc": "Le node « Veille prix » mémorise les prix du run précédent (par identifiant de suivi) et n'émet le port changes que si un prix a varié au-delà du seuil — les lignes émises portent ancienprix, nouveauprix et variationpct, prêtes pour un mess…"
       },
       {
         "title": "Planifier (cron serveur)",
-        "desc": "Le node Cron exécute le workflow côté serveur navigateur fermé, à la cadence minute jusqu'à mois en fuseau Europe/Paris, certains nodes seulement étant compatibles serveur."
+        "desc": "Le node « Cron » exécute le workflow côté serveur, navigateur fermé : cadence à la minute, heure, jour, semaine ou mois, heure précise HH:MM, jour de semaine ciblé ou « Tous les jours » — fuseau Europe/Paris, granularité minimale 1 minute."
       },
       {
         "title": "Webhook entrant (déclenchement externe)",
-        "desc": "Le bouton Webhook génère une URL secrète déclenchant le workflow depuis l'extérieur via curl ou Zapier, l'exécution se faisant côté serveur avec un secret régénérable."
+        "desc": "Le bouton Webhook dans l'en-tête de l'éditeur génère une URL secrète pour déclencher ce workflow depuis l'extérieur (Zapier, Make, un ERP, un simple curl) : L'exécution se fait côté serveur (mêmes nodes que le cron) et apparaît dans l'histo…"
       },
       {
         "title": "Débugger pas à pas",
-        "desc": "Le bouton Pas à pas exécute le workflow node par node en se mettant en pause avant chaque étape, permettant d'inspecter les sorties entre deux étapes."
+        "desc": "Le bouton « Pas à pas » (à côté de Run) exécute le workflow node par node : le run se met en pause avant chaque étape — le bouton ambre « Étape : <node> » dans l'en-tête exécute la suivante."
       }
     ],
     "shortcuts": []
@@ -1109,35 +1107,43 @@ export const MODULES = [
     "features": [
       {
         "title": "Mise en route",
-        "desc": "Coller le bot token et le chat ID dans Connecteurs, ouvrir l'onglet Telegram qui fait tourner le worker, le répondeur serveur traitant les messages même app fermée, avec une clé LLM configurée."
+        "desc": "1. Paramètres → Connecteurs : colle le bot token (obtenu via BotFather) et ton chat ID. 2. Ouvre l'onglet Telegram dans le menu latéral : c'est lui qui fait tourner le « worker » qui traite les messages. 3."
       },
       {
-        "title": "Texte libre — Chat IA avec accès web",
-        "desc": "Le bot répond via le LLM et, si l'info est récente ou si une URL est collée, cherche sur le web et lit les pages avant de répondre en citant ses sources."
+        "title": "(texte libre) — Chat IA avec accès web",
+        "desc": "Le bot répond via le LLM. Si l'info demandée est récente (score, actu, prix) ou si tu colles une URL, il cherche sur le web et lit les pages avant de répondre. La réponse cite ses sources et le modèle utilisé."
       },
       {
-        "title": "/flow — Générer puis exécuter un workflow",
-        "desc": "Génère un workflow par IA depuis la demande, l'exécute et renvoie le fichier produit."
+        "title": "/flow <demande> — Générer + exécuter un workflow",
+        "desc": "Génère un workflow par IA depuis ta demande, l'exécute, et te renvoie le fichier produit. Ex : /flow scrape https://exemple.com/categorie et exporte un Excel."
       },
       {
-        "title": "/run — Exécuter un workflow sauvegardé",
-        "desc": "Exécute un workflow déjà sauvegardé par son nom, le texte servant d'entrée, /run seul listant les workflows disponibles."
+        "title": "/run <nom> [texte] — Exécuter un workflow sauvegardé",
+        "desc": "Exécute un workflow déjà sauvegardé (par son nom) ; le texte éventuel sert d'entrée. /run seul liste les workflows disponibles."
       },
       {
         "title": "/clear — Vider la boîte",
-        "desc": "Vide la boîte de réception côté app et côté Telegram pour les messages de moins de 48 heures, avec les alias /purge et /vider."
+        "desc": "Vide la boîte de réception — côté app ET côté Telegram (messages de moins de 48 h). Alias : /purge, /vider."
+      },
+      {
+        "title": "/start — (ignorée)",
+        "desc": "Commande de service Telegram — ignorée, elle n'encombre pas la boîte."
       },
       {
         "title": "Bon à savoir",
-        "desc": "Conversation bidirectionnelle journalisée, fichiers renvoyés en pièce jointe ou résumé, workflows à fichier manuel non exécutables en auto, et nettoyage local après sept jours."
+        "desc": "• Conversation bidirectionnelle : messages entrants ET sortants sont journalisés dans l'onglet Telegram. • Fichiers : un workflow qui produit un export (Excel, PDF, PPTX…) renvoie le fichier en pièce jointe ; sinon un résumé."
       },
       {
         "title": "Réponses sans navigateur (répondeur serveur)",
-        "desc": "Un répondeur serveur traite les messages dès l'arrivée : réponses LLM avec recherche web, /flow généré et exécuté côté serveur, /run, et outils Google une fois l'accès serveur connecté."
+        "desc": "Plus besoin d'avoir l'app ouverte : un répondeur serveur traite vos messages dès leur arrivée — • Questions : réponse LLM immédiate, avec recherche web automatique (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sour…"
       },
       {
         "title": "Digest quotidien",
-        "desc": "Activable dans les Connecteurs, le digest envoie chaque matin à 08:00 un résumé des dernières 24 heures, rien n'étant envoyé s'il ne s'est rien passé."
+        "desc": "Dans Réglages → Connecteurs → Telegram, activez le digest quotidien : chaque matin à 08:00 (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement."
+      },
+      {
+        "title": "Voir aussi",
+        "desc": "/flow et /run s'appuient sur le module Workflows : la génération par IA et l'exécution sont les mêmes que dans l'éditeur de workflow."
       }
     ],
     "shortcuts": []
@@ -1152,31 +1158,31 @@ export const MODULES = [
     "features": [
       {
         "title": "Conversation multitour",
-        "desc": "Le chat garde le fil de la session en transmettant les trente derniers messages, mais l'historique n'est pas conservé entre les rafraîchissements, le bouton Nouvelle conversation remettant à zéro."
+        "desc": "Le chat garde le fil de la conversation pendant la session (les 30 derniers messages sont transmis au modèle — au-delà, le début du fil sort du contexte)."
       },
       {
         "title": "Pièces jointes",
-        "desc": "Joindre des images analysables par les modèles multimodaux, des fichiers texte dont le contenu est lu, ou capturer l'écran en choisissant la fenêtre ou l'onglet."
+        "desc": "Joins des images (PNG, JPEG, WebP, GIF) pour les faire analyser — analyse possible avec les modèles multimodaux (Claude, Gemini, OpenAI) ; les autres fournisseurs ignorent les images."
       },
       {
         "title": "Génération d'images",
-        "desc": "La catégorie Image fait passer la saisie en mode génération via Image IA, avec références éditables et boutons Télécharger ou Sauvegarder dans le DAM sous chaque image."
+        "desc": "Choisis la catégorie Image : le champ de saisie passe en mode génération (moteur Image IA). Joins des images de référence pour les éditer. Sous chaque image générée : Télécharger ou Sauvegarder dans le DAM (elle rejoint « Mes images »)."
       },
       {
         "title": "Saisie vocale",
-        "desc": "Dicter sa demande au micro, la parole étant transcrite en texte dans la zone de saisie."
+        "desc": "Dicte ta demande au micro : la parole est transcrite en texte dans la zone de saisie."
       },
       {
         "title": "Bibliothèque de prompts",
-        "desc": "Des catégories proposent des prompts prêts à l'emploi, créables, modifiables et marquables en favori, les favoris et les plus utilisés remontant en tête de liste."
+        "desc": "Des catégories (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l'emploi."
       },
       {
         "title": "Choix du modèle",
-        "desc": "Le Chat utilise une cascade de modèles où le suivant prend le relais si le principal échoue, chaque réponse affichant le modèle utilisé et le détail des tentatives échouées."
+        "desc": "Le Chat utilise une cascade de modèles : si le modèle principal échoue, le suivant prend le relais automatiquement."
       },
       {
         "title": "À ne pas confondre",
-        "desc": "Le Chat IA est conversationnel, n'accède pas au web et n'agit pas sur l'app, le bot Telegram étant à utiliser pour un assistant avec accès web et exécution de workflows."
+        "desc": "• Le Chat IA est conversationnel : il n'accède pas au web et n'agit pas sur l'app (il ne crée pas de projets, ne scrape pas, ne lance pas de workflows)."
       }
     ],
     "shortcuts": []
@@ -1185,33 +1191,37 @@ export const MODULES = [
     "id": "access",
     "cat": "Administration",
     "icon": "🛡️",
-    "anim": "default",
+    "anim": "access",
     "title": "Utilisateurs & rôles",
     "intro": "Approuver les comptes, attribuer des rôles et régler finement les permissions. Réservé au propriétaire.",
     "features": [
       {
         "title": "Onboarding d'un nouvel utilisateur",
-        "desc": "La personne se connecte via Google avec un compte d'abord en attente sans accès, le propriétaire lui attribue un rôle, et l'app n'affiche alors que les modules autorisés."
+        "desc": "1. La personne se connecte via Google : son compte est d'abord « en attente » (aucun accès). 2. Dans l'onglet Utilisateurs, tu lui attribues un rôle. 3. À sa prochaine ouverture, l'app n'affiche que les modules autorisés par son rôle."
       },
       {
         "title": "Attribuer un rôle",
-        "desc": "Choisir le rôle de chaque utilisateur dans une liste déroulante, le rôle définissant l'ensemble de base de ses permissions."
+        "desc": "Choisis le rôle de chaque utilisateur dans une liste déroulante. Le rôle définit l'ensemble de base de ses permissions."
       },
       {
         "title": "Surcharges granulaires",
-        "desc": "Accorder ou retirer des permissions individuelles au-delà du rôle, par exemple ouvrir l'export sans changer le rôle, Réinitialiser les surcharges effaçant ces ajustements."
+        "desc": "Au-delà du rôle, tu peux accorder ou retirer des permissions individuelles à un utilisateur précis (ex. lui ouvrir l'export sans changer son rôle). Réinitialiser les surcharges efface ces ajustements."
       },
       {
         "title": "Bloquer / réactiver",
-        "desc": "Bloquer suspend totalement un compte sans le supprimer en lui retirant tout accès même avec un rôle, et Réactiver lui rend ses droits."
+        "desc": "Bloquer suspend totalement un compte sans le supprimer : plus aucun accès, même avec un rôle. Réactiver lui rend ses droits."
       },
       {
-        "title": "Onglet Rôles",
-        "desc": "Créer et éditer les rôles via une matrice de permissions par module avec trois vues, les permissions étant hiérarchiques où la visibilité commande les actions."
+        "title": "Onglet « Rôles »",
+        "desc": "Crée et édite les rôles de l'équipe via une matrice de permissions par module. Trois vues : Cartes (par module), Arbre (hiérarchie) et Carte mentale (graphe)."
+      },
+      {
+        "title": "Modules couverts par les permissions",
+        "desc": "Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…)."
       },
       {
         "title": "Règles de sécurité",
-        "desc": "Les permissions effectives combinent rôle plus accordées moins retirées, le propriétaire a un accès total non modifiable, et un utilisateur ne peut pas modifier ses propres droits."
+        "desc": "• Les permissions effectives = rôle + permissions accordées − permissions retirées. • Le propriétaire a un accès total non modifiable."
       }
     ],
     "shortcuts": []
@@ -1220,41 +1230,45 @@ export const MODULES = [
     "id": "settings",
     "cat": "Administration",
     "icon": "⚙️",
-    "anim": "default",
+    "anim": "settings",
     "title": "Paramètres",
     "intro": "Clés API et modèles IA, connecteurs (Drive, Telegram, scraping), cookies, statistiques d'usage.",
     "features": [
       {
-        "title": "Profil — identité et apparence",
-        "desc": "Affiche le profil nom et e-mail Google, et bascule le thème Clair, Sombre ou Système, le choix étant mémorisé sur le compte et basculable depuis la palette ⌘K."
+        "title": "Onglet Profil — identité et apparence",
+        "desc": "• Ton profil (nom, e-mail du compte Google). • La section Apparence bascule le thème : Clair, Sombre (défaut) ou Système. Le choix est mémorisé sur ton compte et te suit d'un poste à l'autre. Le thème se bascule aussi depuis la palette ⌘K."
       },
       {
-        "title": "IA — clés et modèles",
-        "desc": "Renseigner et tester les clés API de chaque fournisseur, choisir le modèle, définir la cascade de raisonnement, et réaligner toute la sélection sur les dernières versions du catalogue."
+        "title": "Onglet IA — clés et modèles",
+        "desc": "• Renseigne les clés API de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) et teste-les d'un clic. • Choisis le modèle de chaque fournisseur."
       },
       {
         "title": "Telegram",
-        "desc": "Coller le bot token via BotFather et le chat ID pour piloter l'app depuis Telegram, le bot du module y puisant sa configuration."
+        "desc": "Colle le bot token (via BotFather) et ton chat ID pour piloter l'app depuis Telegram. C'est ici que le bot du module Telegram puise sa configuration."
       },
       {
         "title": "Google Drive",
-        "desc": "Connecter son Google Drive par OAuth pour que les workflows et le node save-dam y déposent des fichiers."
+        "desc": "Connecte ton Google Drive (OAuth) pour que les workflows et le node save-dam y déposent des fichiers."
       },
       {
         "title": "Google — accès serveur (Drive + Gmail)",
-        "desc": "Autoriser une seule fois le serveur à agir pour soi app fermée, permettant aux workflows planifiés, au webhook et à /flow de créer des Google Sheets et envoyer des Gmail."
+        "desc": "Autorise une seule fois (bouton « Connecter ») le serveur à agir pour toi quand l'app est fermée : les workflows planifiés (cron), le webhook et /flow sur Telegram peuvent alors créer des Google Sheets dans ton Drive et envoyer des Gmail."
       },
       {
-        "title": "Scraping (Bright Data, Jina, Firecrawl)",
-        "desc": "Renseigner les tokens des services de scraping et de traitement d'image, Bright Data proposant le Web Unlocker et, en escalade, le Scraping Browser pour les sites les plus protégés."
+        "title": "Scraping (Bright Data, Jina, Firecrawl, Remove.bg)",
+        "desc": "Tokens des services de scraping et de traitement d'image. Bright Data propose le Web Unlocker et, en escalade, le Scraping Browser (tier 2) pour les sites les plus protégés."
       },
       {
-        "title": "Cookies de session",
-        "desc": "Gérer les cookies pour scraper des sites B2B derrière login, collés depuis le navigateur et injectés dans les requêtes, leur validité étant limitée dans le temps."
+        "title": "Onglet Cookies",
+        "desc": "Gère les cookies de session pour scraper des sites B2B derrière login. Colle les cookies copiés depuis ton navigateur ; ils sont injectés dans les requêtes de scraping. Leur validité est limitée dans le temps (à re-coller régulièrement)."
       },
       {
-        "title": "Statistiques & Firebase",
-        "desc": "Statistiques affiche projets, exports, stockage, coût IA estimé en euros et requêtes Bright Data, tandis que Firebase configure le backend partagé, réservé au propriétaire."
+        "title": "Onglets Statistiques & Firebase",
+        "desc": "• Statistiques : nombre de projets, exports du mois, stockage Firestore (barre de progression), coût IA estimé en EUR par fournisseur avec les tokens entrants/sortants consommés, et le suivi des requêtes Bright Data (quota scraping)."
+      },
+      {
+        "title": "Qui voit quoi",
+        "desc": "L'onglet Firebase est réservé au propriétaire. Les onglets Connecteurs et Cookies dépendent des permissions accordées dans Utilisateurs & rôles. Profil, IA et Statistiques restent accessibles à tous."
       }
     ],
     "shortcuts": []

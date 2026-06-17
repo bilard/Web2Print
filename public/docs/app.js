@@ -5,48 +5,153 @@ const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => [...r.querySelectorAll(s)]
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
-/* ---------------- Animations « signature » ---------------- */
+/* ---------------- Animations « signature » (scènes SVG riches) ---------------- */
+const VB = 'viewBox="0 0 240 168"'
+
 function animSVG(key) {
   const A = {
-    pipeline: `<svg viewBox="0 0 200 120"><path class="sg-stroke sg-dash" d="M20 60H180"/>
-      <circle class="sg-pulse sg-fill" cx="20" cy="60" r="9"/><circle class="sg-pulse sg-fill" cx="100" cy="60" r="9" style="animation-delay:.4s"/><circle class="sg-pulse sg-fill" cx="180" cy="60" r="9" style="animation-delay:.8s"/></svg>`,
-    editor: `<svg viewBox="0 0 200 120" class="sg-morph"><rect x="58" y="32" width="56" height="56" rx="4" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2.4"/>
-      <rect x="92" y="50" width="46" height="46" rx="4" class="sg-stroke-2" style="animation-delay:1s"/></svg>`,
-    pim: `<svg viewBox="0 0 200 120"><g>
-      <rect class="sg-row sg-fill-soft" x="30" y="28" width="140" height="14" rx="3"/>
-      <rect class="sg-row sg-fill-soft" x="30" y="50" width="140" height="14" rx="3"/>
-      <rect class="sg-row sg-fill-soft" x="30" y="72" width="140" height="14" rx="3"/>
-      <rect class="sg-row sg-fill-soft" x="30" y="94" width="140" height="14" rx="3"/></g>
-      <rect x="30" y="28" width="34" height="80" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>`,
-    workflow: `<svg viewBox="0 0 200 120"><path class="sg-stroke sg-dash" d="M44 40H110a14 14 0 0 1 14 14v6a14 14 0 0 0 14 14h18"/>
-      <rect x="20" y="28" width="34" height="24" rx="6" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
-      <rect x="108" y="48" width="34" height="24" rx="6" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
-      <circle class="sg-pulse sg-fill" cx="176" cy="74" r="9"/></svg>`,
-    export: `<svg viewBox="0 0 200 120"><g transform="translate(100 88)">
-      <rect class="sg-chip sg-fill-soft" x="-22" y="-52" width="44" height="30" rx="5" stroke="var(--accent)" stroke-width="2" style="--rot:-34deg"/>
-      <rect class="sg-chip sg-fill-soft" x="-22" y="-52" width="44" height="30" rx="5" stroke="var(--accent)" stroke-width="2" style="--rot:-12deg;animation-delay:.2s"/>
-      <rect class="sg-chip sg-fill-soft" x="-22" y="-52" width="44" height="30" rx="5" stroke="var(--accent)" stroke-width="2" style="--rot:12deg;animation-delay:.4s"/>
-      <rect class="sg-chip sg-fill-soft" x="-22" y="-52" width="44" height="30" rx="5" stroke="var(--accent)" stroke-width="2" style="--rot:34deg;animation-delay:.6s"/></g></svg>`,
-    img2svg: `<svg viewBox="0 0 200 120"><rect x="26" y="30" width="62" height="62" rx="6" class="sg-fill-soft"/>
-      <path class="sg-stroke sg-dash" d="M112 36c30 0 30 24 0 24s-30 24 0 24 30 22 0 22"/>
-      <circle class="sg-pulse sg-fill" cx="112" cy="36" r="5"/><circle class="sg-pulse sg-fill" cx="112" cy="60" r="5" style="animation-delay:.5s"/><circle class="sg-pulse sg-fill" cx="112" cy="84" r="5" style="animation-delay:1s"/></svg>`,
-    telegram: `<svg viewBox="0 0 200 120"><circle cx="40" cy="90" r="14" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
-      <path class="sg-send sg-fill" d="M30 84l22 8-22 8 4-8z"/></svg>`,
-    dam: `<svg viewBox="0 0 200 120"><g class="sg-float"><rect x="44" y="34" width="52" height="40" rx="5" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
-      <rect x="76" y="52" width="52" height="40" rx="5" class="sg-stroke-2" style="animation-delay:.6s"/>
-      <circle cx="62" cy="50" r="6" class="sg-fill"/></g></svg>`,
-    chat: `<svg viewBox="0 0 200 120"><rect x="40" y="34" width="90" height="34" rx="10" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
-      <rect x="74" y="74" width="86" height="30" rx="10" class="sg-stroke-2"/>
-      <circle class="sg-spark sg-fill" cx="60" cy="51" r="3.5"/><circle class="sg-spark sg-fill" cx="74" cy="51" r="3.5" style="animation-delay:.3s"/><circle class="sg-spark sg-fill" cx="88" cy="51" r="3.5" style="animation-delay:.6s"/></svg>`,
-    scrape: `<svg viewBox="0 0 200 120"><rect x="40" y="28" width="120" height="64" rx="6" fill="none" stroke="var(--border-strong)" stroke-width="2"/>
-      <line class="sg-stroke sg-dash" x1="52" y1="46" x2="148" y2="46"/><line class="sg-stroke sg-dash" x1="52" y1="60" x2="120" y2="60" style="animation-delay:.3s"/><line class="sg-stroke sg-dash" x1="52" y1="74" x2="136" y2="74" style="animation-delay:.6s"/>
-      <circle class="sg-pulse sg-fill" cx="160" cy="92" r="8"/></svg>`,
-    taxonomy: `<svg viewBox="0 0 200 120"><path class="sg-stroke" d="M100 26V44M100 44H60V62M100 44H140V62"/>
-      <circle class="sg-pulse sg-fill" cx="100" cy="26" r="7"/><circle class="sg-pulse sg-fill" cx="60" cy="70" r="6" style="animation-delay:.4s"/><circle class="sg-pulse sg-fill" cx="140" cy="70" r="6" style="animation-delay:.8s"/></svg>`,
-    default: `<svg viewBox="0 0 200 120"><circle class="sg-pulse" cx="100" cy="60" r="30" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.4"/>
-      <circle class="sg-spark sg-fill" cx="100" cy="60" r="8"/></svg>`,
+    // Flux de bout en bout : 4 nœuds qui s'allument au passage d'un jeton lumineux.
+    pipeline: `<svg ${VB}>
+      <path class="sg-stroke-d a-dash" d="M30 84 H210"/>
+      ${[30, 90, 150, 210].map((x, i) => `<g class="a-pulse" style="--d:${i * 0.35}s"><circle class="sg-fill-soft" cx="${x}" cy="84" r="14" stroke="var(--accent)" stroke-width="2.4"/><circle class="sg-fill" cx="${x}" cy="84" r="4"/></g>`).join('')}
+      <circle class="sg-fill" r="5" filter="url(#glowF)"><animate attributeName="r" values="4;7;4" dur="1.6s" repeatCount="indefinite"/><animateMotion dur="3.2s" repeatCount="indefinite" path="M30 84 H210"/></circle>
+      <defs><filter id="glowF" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>`,
+
+    // Éditeur : un rectangle puis un cercle se dessinent, puis des poignées de sélection apparaissent.
+    editor: `<svg ${VB}>
+      <rect class="sg-fill-card" x="22" y="20" width="196" height="128" rx="10"/>
+      <rect class="a-draw sg-stroke" x="58" y="50" width="74" height="64" rx="7" pathLength="1"/>
+      <circle class="a-draw sg-stroke-2" cx="158" cy="92" r="30" pathLength="1" style="--d:.7s"/>
+      <g class="a-pop" style="--d:1.6s">
+        <rect x="55" y="47" width="80" height="70" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="4 4"/>
+        ${[[55, 47], [135, 47], [55, 117], [135, 117]].map(([x, y]) => `<rect x="${x - 4}" y="${y - 4}" width="8" height="8" rx="2" class="sg-fill" stroke="var(--bg)" stroke-width="1.5"/>`).join('')}
+      </g></svg>`,
+
+    // PIM : les lignes du tableau se remplissent une à une, l'anneau de complétude monte.
+    pim: `<svg ${VB}>
+      <rect class="sg-fill-card" x="20" y="24" width="138" height="120" rx="9"/>
+      <rect x="30" y="34" width="118" height="13" rx="3" class="sg-fill-2" opacity=".5"/>
+      ${[60, 80, 100, 120].map((y, i) => `<rect class="a-fillx sg-fill-soft" x="30" y="${y}" width="118" height="11" rx="3" style="--d:${0.2 + i * 0.3}s"/>`).join('')}
+      <g transform="translate(196 84)">
+        <circle r="26" fill="none" stroke="var(--border-strong)" stroke-width="7"/>
+        <circle class="a-ringfill" r="26" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" pathLength="1"/>
+        <circle r="13" class="sg-fill-soft a-pulse"/></g></svg>`,
+
+    // Taxonomie : l'arbre se déploie, les branches se tracent, les enfants apparaissent.
+    taxonomy: `<svg ${VB}>
+      <path class="a-draw sg-stroke" d="M120 38 V70 M52 96 V70 H188 V96 M120 70 V96" pathLength="1"/>
+      <circle class="a-pulse sg-fill" cx="120" cy="34" r="11"/>
+      ${[52, 120, 188].map((x, i) => `<g class="a-pop" style="--d:${0.8 + i * 0.3}s"><circle cx="${x}" cy="104" r="13" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2.2"/><circle cx="${x}" cy="104" r="3.5" class="sg-fill"/></g>`).join('')}</svg>`,
+
+    // Workflow : 3 nœuds s'enchaînent, le lien se trace, un jeton circule, coche finale.
+    workflow: `<svg ${VB}>
+      <path class="a-draw sg-stroke" d="M70 56 H104 a16 16 0 0 1 16 16 v8 a16 16 0 0 0 16 16 h22" pathLength="1" style="--d:.5s"/>
+      <g class="a-pop" style="--d:0s"><rect x="26" y="42" width="44" height="28" rx="8" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2.2"/></g>
+      <g class="a-pop" style="--d:.6s"><rect x="98" y="78" width="44" height="28" rx="8" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2.2"/></g>
+      <g class="a-pop" style="--d:1.2s"><circle cx="186" cy="96" r="17" class="sg-fill-soft" stroke="var(--accent-2)" stroke-width="2.4"/><path class="a-tick sg-stroke-2" d="M178 96 l6 6 10 -12" pathLength="1" style="--d:1.6s"/></g>
+      <circle class="sg-fill" r="4.5"><animateMotion dur="3s" begin="1s" repeatCount="indefinite" path="M48 56 H104 a16 16 0 0 1 16 16 v8 a16 16 0 0 0 16 16 h22"/></circle></svg>`,
+
+    // Export : un document se décline en pastilles de formats disposées en arc.
+    export: `<svg ${VB}>
+      ${[['PDF', 42, 104], ['IDML', 81, 70], ['PPTX', 120, 56], ['SVG', 159, 70], ['PNG', 198, 104]].map(([t, x, y], i) => `<path class="sg-stroke-d" d="M120 132 L${x} ${y + 11}" stroke-dasharray="3 5" opacity=".4"/><g class="a-pop" style="--d:${0.3 + i * 0.18}s"><rect x="${x - 23}" y="${y}" width="46" height="24" rx="6" class="sg-fill-soft" stroke="var(--accent)" stroke-width="1.8"/><text class="sg-txt" x="${x}" y="${y + 16}" font-size="11">${t}</text></g>`).join('')}
+      <g class="a-pulse"><rect x="104" y="120" width="32" height="34" rx="5" class="sg-fill-card"/><rect x="110" y="128" width="20" height="3" rx="1.5" class="sg-fill" opacity=".6"/><rect x="110" y="135" width="20" height="3" rx="1.5" class="sg-fill" opacity=".6"/><rect x="110" y="142" width="13" height="3" rx="1.5" class="sg-fill" opacity=".6"/></g></svg>`,
+
+    // Image → SVG : la grille raster se dissout pendant que les ancres vectorielles se tracent.
+    img2svg: `<svg ${VB}>
+      <g>${[0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => `<rect class="a-twinkle" style="--d:${(r + c) * 0.18}s" x="${30 + c * 17}" y="${52 + r * 17}" width="14" height="14" rx="2" fill="var(--accent-2)" opacity=".5"/>`)).join('')}</g>
+      <path class="a-draw sg-stroke" d="M140 56 C176 56 176 92 150 92 C176 92 176 128 140 128" pathLength="1" style="--d:.4s"/>
+      ${[[140, 56], [150, 92], [140, 128]].map(([x, y], i) => `<rect class="a-pop" style="--d:${1 + i * 0.25}s" x="${x - 4}" y="${y - 4}" width="8" height="8" class="sg-fill" transform="rotate(45 ${x} ${y})"/>`).join('')}</svg>`,
+
+    // Scrape : un balayage parcourt la page, les données extraites s'empilent à droite.
+    scrape: `<svg ${VB}>
+      <rect class="sg-fill-card" x="22" y="26" width="118" height="116" rx="8"/>
+      <rect x="22" y="26" width="118" height="20" rx="8" class="sg-fill-2" opacity=".4"/>
+      ${[58, 76, 94, 112].map((y, i) => `<rect x="34" y="${y}" width="${94 - i * 12}" height="8" rx="3" fill="var(--text-faint)" opacity=".55"/>`).join('')}
+      <rect class="a-sweep" x="22" y="48" width="118" height="14" rx="3" fill="var(--accent)" opacity=".35"/>
+      ${[60, 84, 108].map((y, i) => `<rect class="a-pop sg-fill-soft" style="--d:${0.6 + i * 0.5}s" x="166" y="${y}" width="46" height="16" rx="4" stroke="var(--accent)" stroke-width="1.6"/>`).join('')}</svg>`,
+
+    // Telegram : bulle avec points de saisie, puis l'avion s'envole le long d'une courbe.
+    telegram: `<svg ${VB}>
+      <path class="sg-stroke-d" d="M34 96 Q120 40 176 22" stroke-dasharray="3 7" opacity=".6"/>
+      <rect x="26" y="78" width="74" height="38" rx="14" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
+      ${[44, 60, 76].map((x, i) => `<circle class="a-bounce sg-fill" style="--d:${i * 0.18}s" cx="${x}" cy="97" r="4.5"/>`).join('')}
+      <path class="a-fly sg-fill" d="M-11 -7 L11 0 L-11 7 L-5 0 Z"/>
+      <circle cx="176" cy="22" r="16" class="sg-fill-soft a-pulse" style="--d:.4s"/></svg>`,
+
+    // DAM : pile de visuels qui flottent, étincelle de génération IA + tag.
+    dam: `<svg ${VB}>
+      <rect class="a-float sg-fill-card" style="--d:.5s" x="44" y="58" width="70" height="56" rx="8" transform="rotate(-7 79 86)"/>
+      <rect class="a-float sg-fill-card" style="--d:.2s" x="74" y="48" width="70" height="56" rx="8"/>
+      <circle cx="92" cy="68" r="8" class="sg-fill-2"/>
+      <path d="M82 92 L100 74 L118 92 Z" class="sg-fill" opacity=".7"/>
+      <g class="a-twinkle" style="--d:0s"><path d="M150 56 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 z" class="sg-fill"/></g>
+      <rect class="a-pop sg-fill-soft" style="--d:1s" x="150" y="96" width="48" height="16" rx="8" stroke="var(--accent)" stroke-width="1.5"/></svg>`,
+
+    // Chat : message reçu, points de saisie, réponse qui glisse, étincelle IA.
+    chat: `<svg ${VB}>
+      <rect x="34" y="40" width="96" height="32" rx="12" class="sg-fill-card"/>
+      ${[54, 70, 86].map((x, i) => `<circle class="a-bounce sg-fill" style="--d:${i * 0.18}s" cx="${x}" cy="56" r="4"/>`).join('')}
+      <g class="a-pop" style="--d:1.1s"><rect x="100" y="92" width="106" height="34" rx="12" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/>
+      ${[118, 134, 150].map((x) => `<rect x="${x}" y="103" width="${x === 150 ? 30 : 12}" height="6" rx="3" class="sg-fill" opacity=".7"/>`).join('')}</g>
+      <g class="a-twinkle" style="--d:.5s"><path d="M196 40 l2.5 7 7 2.5 -7 2.5 -2.5 7 -2.5 -7 -7 -2.5 7 -2.5 z" class="sg-fill-2"/></g></svg>`,
+
+    // Nouveautés : gerbe d'étincelles + badge.
+    spark: `<svg ${VB}>
+      ${[[70, 60, 0], [170, 54, .3], [150, 116, .6], [60, 112, .9], [120, 40, .45]].map(([x, y, d]) => `<path class="a-twinkle" style="--d:${d}s" d="M${x} ${y - 11} l3.5 8.5 8.5 3.5 -8.5 3.5 -3.5 8.5 -3.5 -8.5 -8.5 -3.5 8.5 -3.5 z" class="sg-fill"/>`).join('')}
+      <g class="a-pop" style="--d:.2s"><rect x="92" y="74" width="56" height="26" rx="13" class="sg-fill" /><text class="sg-txt" x="120" y="91" fill="var(--bg)" font-size="12">NEW</text></g></svg>`,
+
+    // Onboarding : cases cochées une à une.
+    checklist: `<svg ${VB}>
+      ${[44, 76, 108].map((y, i) => `<g><rect x="44" y="${y}" width="22" height="22" rx="6" class="sg-fill-soft" stroke="var(--accent)" stroke-width="2"/><path class="a-tick sg-stroke" d="M49 ${y + 11} l4 5 9 -11" pathLength="1" style="--d:${0.4 + i * 0.7}s"/><rect class="a-fillx sg-fill-soft" x="78" y="${y + 6}" width="118" height="10" rx="3" style="--d:${0.5 + i * 0.7}s"/></g>`).join('')}</svg>`,
+
+    // Import : un fichier glisse et se déplie en page.
+    import: `<svg ${VB}>
+      <g class="a-rise"><path d="M70 40 h54 l24 24 v64 a6 6 0 0 1 -6 6 h-72 a6 6 0 0 1 -6 -6 v-82 a6 6 0 0 1 6 -6 z" class="sg-fill-card"/><path d="M124 40 v24 h24" fill="none" stroke="var(--border-strong)" stroke-width="1.6"/></g>
+      ${[64, 82, 100, 118].map((y, i) => `<rect class="a-fillx sg-fill-soft" x="78" y="${y}" width="${82 - i * 8}" height="8" rx="3" style="--d:${0.6 + i * 0.25}s"/>`).join('')}</svg>`,
+
+    // Animation/HyperFrames : bouton play, pellicule, barre de progression.
+    reveal: `<svg ${VB}>
+      <rect class="sg-fill-card" x="40" y="40" width="160" height="74" rx="10"/>
+      ${[48, 192].map((x) => [50, 64, 78, 92].map((y) => `<rect x="${x}" y="${y}" width="8" height="8" rx="2" class="sg-fill-2" opacity=".5"/>`).join('')).join('')}
+      <circle cx="120" cy="77" r="22" class="sg-fill-soft a-pulse" stroke="var(--accent)" stroke-width="2"/>
+      <path d="M114 67 l16 10 -16 10 z" class="sg-fill"/>
+      <rect x="40" y="128" width="160" height="7" rx="3.5" fill="var(--border-strong)"/>
+      <rect class="a-fillx sg-fill" x="40" y="128" width="160" height="7" rx="3.5"/></svg>`,
+
+    // Veille tarifaire : deux étiquettes prix, courbe qui se trace, ping d'alerte.
+    pricewatch: `<svg ${VB}>
+      <path class="a-draw sg-stroke" d="M34 120 L78 96 L116 108 L154 64 L200 44" pathLength="1"/>
+      ${[[34, 120, 0], [78, 96, .3], [116, 108, .5], [154, 64, .7], [200, 44, .9]].map(([x, y, d]) => `<circle class="a-pop sg-fill" style="--d:${d}s" cx="${x}" cy="${y}" r="4"/>`).join('')}
+      <g class="a-pulse" style="--d:.6s"><circle cx="200" cy="44" r="12" fill="none" stroke="var(--accent-2)" stroke-width="2.5"/></g>
+      <rect x="30" y="30" width="40" height="20" rx="5" class="sg-fill-soft"/><text class="sg-txt" x="50" y="44" font-size="11">€</text></svg>`,
+
+    // Accès & rôles : bouclier qui se trace, coche de validation.
+    access: `<svg ${VB}>
+      <path class="a-draw sg-stroke" d="M120 36 L172 56 V92 C172 124 148 140 120 150 C92 140 68 124 68 92 V56 Z" pathLength="1"/>
+      <path class="a-tick sg-stroke-2" d="M100 94 l14 15 26 -32" pathLength="1" style="--d:1.4s" stroke-width="3"/>
+      <circle class="a-pulse sg-fill-soft" cx="120" cy="92" r="34" style="--d:.3s"/></svg>`,
+
+    // Paramètres : engrenages qui tournent.
+    settings: `<svg ${VB}>
+      ${gear(96, 84, 30, 'a-spin', 'var(--accent)')}
+      ${gear(158, 110, 22, 'a-spin-r', 'var(--accent-2)')}</svg>`,
+
+    default: `<svg ${VB}>
+      <circle class="a-pulse" cx="120" cy="84" r="34" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.4"/>
+      <circle class="sg-fill" r="6"><animateMotion dur="4s" repeatCount="indefinite" path="M120 84 m-50 0 a50 50 0 1 0 100 0 a50 50 0 1 0 -100 0"/></circle>
+      <circle class="a-twinkle sg-fill" cx="120" cy="84" r="8"/></svg>`,
   }
   return `<div class="anim-stage" aria-hidden="true">${A[key] || A.default}</div>`
+}
+
+/** Roue dentée (8 dents) centrée en (cx,cy). */
+function gear(cx, cy, r, cls, color) {
+  const teeth = Array.from({ length: 8 }, (_, i) => {
+    const a = (i * Math.PI) / 4
+    const x = cx + Math.cos(a) * (r + 7), y = cy + Math.sin(a) * (r + 7)
+    return `<rect x="${(x - 5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="10" height="10" rx="2" fill="${color}" transform="rotate(${i * 45} ${x.toFixed(1)} ${y.toFixed(1)})"/>`
+  }).join('')
+  return `<g class="${cls}">${teeth}<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--surface)" stroke="${color}" stroke-width="3.5"/><circle cx="${cx}" cy="${cy}" r="${r * 0.32}" fill="${color}"/></g>`
 }
 
 /* ---------------- Rendu des modules ---------------- */
@@ -142,6 +247,11 @@ function openModule(id, scroll = true) {
   tile.classList.add('open')
   tile.setAttribute('aria-expanded', 'true')
   tile.insertAdjacentHTML('afterend', panelHTML(m))
+  // prefers-reduced-motion : SMIL n'est pas couvert par la media query CSS → on fige.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const panel = tile.nextElementSibling
+    panel?.querySelectorAll('svg').forEach((svg) => svg.pauseAnimations && svg.pauseAnimations())
+  }
   openId = id
   if (scroll) tile.scrollIntoView({ behavior: matchMotion(), block: 'center' })
 }
