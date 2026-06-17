@@ -84,7 +84,11 @@ async function callGemini(
           responseMimeType: 'application/json',
           responseSchema: sanitized,
           temperature: 0.4,
-          maxOutputTokens: 8192,
+          // Budget de sortie large : les pages LISTE e-commerce rendent jusqu'à ~50
+          // produits par page → un JSON de sortie volumineux (URLs image/fiche longues).
+          // 8192 tronquait le JSON (→ parse KO → toute la cascade échoue). Gemini 3.x Pro
+          // supporte un budget bien plus haut ; c'est un PLAFOND (pas de surcoût si inutilisé).
+          maxOutputTokens: 32768,
           // Gemini 3.x : thinking dynamique consomme maxOutputTokens et peut tronquer
           // le JSON en sortie. Les modèles antérieurs ignorent ou rejettent ce champ.
           ...(/^gemini-3/i.test(model)
