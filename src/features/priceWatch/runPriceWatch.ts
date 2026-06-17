@@ -48,25 +48,33 @@ async function validateMatch(product: TrackedProduct, pageContent: string): Prom
   }
 }
 
-/** Découvre l'URL d'un produit sur un site : pattern → recherche web. */
+/** Découvre l'URL d'un produit sur un site : pattern → recherche web (en préférant
+ *  un résultat dont l'URL/titre porte le SKU ou l'EAN). */
 async function discover(product: TrackedProduct, site: CompetitorSite): Promise<string | null> {
   const patternUrl = buildPatternUrl(site.urlPattern, product)
   if (patternUrl) return patternUrl
   const { gatherWebContext } = await import('@/features/scraping/webContext')
   for (const query of discoveryQueries(site.domain, product)) {
     const ctx = await gatherWebContext({ searchQuery: query, maxResults: 5, readPages: 0 })
-    const url = pickCandidate(ctx.results, site.domain)
+    const url = pickCandidate(ctx.results, site.domain, { sku: product.sku, ean: product.ean })
     if (url) return url
   }
   return null
 }
 
-/** Scrape les champs demandés (+ prix/nom/marque) d'une URL via le moteur PIM. */
-async function scrape(url: string, fields: string[], signal?: AbortSignal): Promise<{ price: number; content: string }> {
+/** Scrape les champs (prix/EAN/nom) d'une URL via le moteur PIM (JSON-LD d'abord). */
+async function scrape(
+  url: string, fields: string[], signal?: AbortSignal,
+): Promise<{ price: number; ean: string; name: string; content: string }> {
   const { enrichRow } = await import('@/features/excel/ai-enrichment/enrichRow')
-  const targetFields = [...new Set([...fields, 'price', 'name', 'brand'])]
+  const targetFields = [...new Set([...fields, 'price', 'name', 'brand', 'ean'])]
   const result = await enrichRow({ url, targetFields, signal })
-  return { price: parsePrice(result.fields.price), content: JSON.stringify(result.fields) }
+  return {
+    price: parsePrice(result.fields.price),
+    ean: String(result.fields.ean ?? '').replace(/\D/g, ''),
+    name: String(result.fields.name ?? ''),
+    content: JSON.stringify(result.fields),
+  }
 }
 
 export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
@@ -96,19 +104,22 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
       const display = { productName: product.name, domain: site.domain, myPrice: product.myPrice ?? null }
 
       // 2. Scrape
-      let priceContent: { price: number; content: string }
-      try { priceContent = await scrape(url, site.fields ?? ['price'], deps.signal) }
+      let scraped: { price: number; ean: string; name: string; content: string }
+      try { scraped = await scrape(url, site.fields ?? ['price'], deps.signal) }
       catch (e) { log(`Scrape échoué ${url} : ${String(e)}`); continue }
-      if (Number.isNaN(priceContent.price)) { log(`Prix illisible : ${url}`); continue }
+      if (Number.isNaN(scraped.price)) { log(`Prix illisible : ${url}`); continue }
+      const competitor = { competitorEan: scraped.ean || null, competitorName: scraped.name || null }
 
-      // 3. Validation LLM si pas encore épinglé/confirmé
+      // 3. Validation si pas encore épinglé/confirmé. EAN identique = appariement
+      // autoritaire (confiance 1, pas d'appel LLM) ; sinon score LLM.
       if (!prev?.url || (prev.status !== 'auto' && prev.status !== 'confirmed')) {
-        const verdict = await validateMatch(product, priceContent.content)
+        const eanMatch = !!product.ean && scraped.ean === product.ean.replace(/\D/g, '')
+        const verdict = eanMatch ? 1 : await validateMatch(product, scraped.content)
         confidence = verdict
         const status: PriceMatch['status'] = verdict >= MATCH_THRESHOLD ? 'auto' : 'pending'
         await setDoc(matchRef, {
           productId: product.id, siteId: site.id, url, confidence: verdict, status,
-          lastPrice: priceContent.price, lastDiscoveredAt: Date.now(), updatedAt: Date.now(), ...display,
+          lastPrice: scraped.price, lastDiscoveredAt: Date.now(), updatedAt: Date.now(), ...display, ...competitor,
         } satisfies PriceMatch, { merge: true })
         if (status === 'pending') { log(`À confirmer (${verdict}) : ${product.name} @ ${site.domain}`); continue }
       }
@@ -117,10 +128,10 @@ export async function runPriceWatch(deps: RunDeps): Promise<PriceWatchAlert[]> {
       const histRef = doc(db, historyCol(uid, watchId), key)
       const history = ((await getDoc(histRef)).data()?.values ?? []) as HistoryPoint[]
       const previousPrice = history.length ? history[history.length - 1].price : undefined
-      const point: HistoryPoint = { price: priceContent.price, at: Date.now() }
+      const point: HistoryPoint = { price: scraped.price, at: Date.now() }
       await setDoc(histRef, { values: pushHistory(history, point, HISTORY_MAX) })
-      await setDoc(matchRef, { lastPrice: priceContent.price, confidence, updatedAt: Date.now(), ...display }, { merge: true })
-      alerts.push(...evaluate(product, site, priceContent.price, previousPrice, thresholdPct))
+      await setDoc(matchRef, { lastPrice: scraped.price, confidence, updatedAt: Date.now(), ...display, ...competitor }, { merge: true })
+      alerts.push(...evaluate(product, site, scraped.price, previousPrice, thresholdPct))
     }
   }
   return alerts

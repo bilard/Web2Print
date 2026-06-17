@@ -3,9 +3,14 @@ import { describe, it, expect } from 'vitest'
 import { resolveEan } from './listProductsNode'
 
 describe('resolveEan', () => {
-  it('garde l’EAN du LLM s’il fait 13 chiffres', () => {
-    expect(resolveEan('4892210822604', '', '', '')).toBe('4892210822604')
-    expect(resolveEan('  4892210822604 ', '', '', '')).toBe('4892210822604')
+  it('REJETTE un EAN du LLM non corroboré (anti-hallucination)', () => {
+    // 13 chiffres plausibles mais absents de l'URL/image/nom → inventé → ''
+    expect(resolveEan('4892210822604', '', '', '')).toBe('')
+    expect(resolveEan('  4892210822604 ', 'img-noean.jpg', 'https://x.fr/p/abc', 'Tondeuse')).toBe('')
+  })
+
+  it('garde l’EAN du LLM s’il est corroboré par l’URL/image/nom', () => {
+    expect(resolveEan('4892210822604', '', 'https://x.fr/p/4892210822604_CAFR.prd', '')).toBe('4892210822604')
   })
 
   it('repêche l’EAN dans le chemin image (cas Jardiland)', () => {

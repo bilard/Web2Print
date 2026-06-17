@@ -43,25 +43,61 @@ export function discoveryQueries(domain: string, p: TrackedProduct): string[] {
   return queries
 }
 
-/** Premier résultat dont l'URL appartient au domaine cible. */
+/** Choisit le meilleur résultat sur le domaine cible. Si on connaît le SKU ou
+ *  l'EAN du produit, on PRÉFÈRE le candidat dont l'URL ou le titre les contient
+ *  (le 1ᵉʳ résultat du domaine est souvent une page catégorie/accessoire → mauvaise
+ *  fiche). Repli sur le 1ᵉʳ résultat du domaine si aucun ne matche. */
 export function pickCandidate(
-  results: { url: string }[],
+  results: { url: string; title?: string }[],
   domain: string,
+  hints?: { sku?: string; ean?: string },
 ): string | null {
   const d = domain.replace(/^www\./, '')
-  const hit = results.find((r) => {
+  const onDomain = results.filter((r) => {
     try { return new URL(r.url).hostname.replace(/^www\./, '').endsWith(d) }
     catch { return false }
   })
-  return hit?.url ?? null
+  if (onDomain.length === 0) return null
+  const sku = (hints?.sku ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const ean = (hints?.ean ?? '').replace(/\D/g, '')
+  if (sku.length >= 4 || ean.length === 13) {
+    const hit = onDomain.find((r) => {
+      const hay = `${r.url} ${r.title ?? ''}`.toUpperCase().replace(/[^A-Z0-9]/g, '')
+      return (sku.length >= 4 && hay.includes(sku)) || (ean.length === 13 && hay.includes(ean))
+    })
+    if (hit) return hit.url
+  }
+  return onDomain[0].url
 }
 
-/** Parse un prix : « 1 299,90 € » → 1299.9. NaN si illisible. (Identique au node price-watch.) */
+/** Normalise UN jeton numérique, gérant séparateurs FR (« 1 299,90 ») et EN
+ *  (« 1,299.90 ») : « 1.299 » = milliers, « 284.41 » = décimal. */
+function normalizePriceToken(tok: string): number {
+  let s = tok
+  if (s.includes('.') && s.includes(',')) {
+    const dec = s.lastIndexOf('.') > s.lastIndexOf(',') ? '.' : ','
+    s = s.split(dec === '.' ? ',' : '.').join('').replace(dec, '.')
+  } else if (s.includes(',')) {
+    const parts = s.split(',')
+    s = parts.length === 2 && parts[parts.length - 1].length <= 2 ? parts.join('.') : parts.join('')
+  } else if (s.includes('.')) {
+    const parts = s.split('.')
+    if (parts.length > 2 || parts[parts.length - 1].length === 3) s = parts.join('')
+  }
+  return parseFloat(s)
+}
+
+/** Parse un prix : « 1 299,90 € » → 1299.9. NaN si illisible. Sur une chaîne à
+ *  prix MULTIPLES (paire promo « 304,38€284,41€ »), renvoie le PLUS BAS : le prix
+ *  facturé est toujours le plus bas d'une paire barré/promo, quel que soit l'ordre.
+ *  (Identique au node serveur.) */
 export function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
   if (typeof v !== 'string') return NaN
-  const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
-  return cleaned ? parseFloat(cleaned) : NaN
+  const tokens = [...v.replace(/\s/g, '').matchAll(/-?\d[\d.,]*\d|-?\d/g)]
+    .map((m) => normalizePriceToken(m[0]))
+    .filter((n) => Number.isFinite(n))
+  return tokens.length ? Math.min(...tokens) : NaN
 }
 
 /** Ring buffer borné : ajoute un point et garde les `maxLen` plus récents. */

@@ -7,6 +7,9 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { jinaRead, jinaSearch } from '../jina'
 import { callLlm, parseLlmJson } from '../llm'
+import { brightDataRead, htmlToText } from '../brightData'
+import { fetchHtml } from '../../scraper/fetchHtml'
+import { extractProductIdentity } from '../../scraper/extractProducts'
 
 interface Product { id: string; sku?: string; ean?: string; name: string; brand?: string; myPrice?: number }
 interface Site { id: string; domain: string; urlPattern?: string; fields?: string[] }
@@ -42,19 +45,104 @@ export function discoveryQueries(domain: string, p: Product): string[] {
   return queries
 }
 
-export function pickCandidate(results: { url: string }[], domain: string): string | null {
+export function pickCandidate(
+  results: { url: string; title?: string }[],
+  domain: string,
+  hints?: { sku?: string; ean?: string },
+): string | null {
   const d = domain.replace(/^www\./, '')
-  const hit = results.find((r) => {
+  const onDomain = results.filter((r) => {
     try { return new URL(r.url).hostname.replace(/^www\./, '').endsWith(d) } catch { return false }
   })
-  return hit?.url ?? null
+  if (onDomain.length === 0) return null
+  const sku = (hints?.sku ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const ean = (hints?.ean ?? '').replace(/\D/g, '')
+  if (sku.length >= 4 || ean.length === 13) {
+    const hit = onDomain.find((r) => {
+      const hay = `${r.url} ${r.title ?? ''}`.toUpperCase().replace(/[^A-Z0-9]/g, '')
+      return (sku.length >= 4 && hay.includes(sku)) || (ean.length === 13 && hay.includes(ean))
+    })
+    if (hit) return hit.url
+  }
+  return onDomain[0].url
 }
 
-function parsePrice(v: unknown): number {
+function normalizePriceToken(tok: string): number {
+  let s = tok
+  if (s.includes('.') && s.includes(',')) {
+    const dec = s.lastIndexOf('.') > s.lastIndexOf(',') ? '.' : ','
+    s = s.split(dec === '.' ? ',' : '.').join('').replace(dec, '.')
+  } else if (s.includes(',')) {
+    const parts = s.split(',')
+    s = parts.length === 2 && parts[parts.length - 1].length <= 2 ? parts.join('.') : parts.join('')
+  } else if (s.includes('.')) {
+    const parts = s.split('.')
+    if (parts.length > 2 || parts[parts.length - 1].length === 3) s = parts.join('')
+  }
+  return parseFloat(s)
+}
+
+/** Sur une chaîne à prix multiples (paire promo « 304,38€284,41€ »), renvoie le
+ *  PLUS BAS : le prix facturé est toujours le plus bas, quel que soit l'ordre. */
+export function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
   if (typeof v !== 'string') return NaN
-  const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
-  return cleaned ? parseFloat(cleaned) : NaN
+  const tokens = [...v.replace(/\s/g, '').matchAll(/-?\d[\d.,]*\d|-?\d/g)]
+    .map((m) => normalizePriceToken(m[0]))
+    .filter((n) => Number.isFinite(n))
+  return tokens.length ? Math.min(...tokens) : NaN
+}
+
+/** Page coquille / challenge anti-bot : trop courte ou marqueurs de blocage. */
+function looksBlocked(text: string): boolean {
+  if (text.replace(/\s/g, '').length < 500) return true
+  return /captcha|datadome|access denied|verify you are human|just a moment|cf-browser-verification|px-captcha/i.test(text)
+}
+
+interface CompetitorReading { price: number | null; ean: string; name: string; content: string; blocked: boolean }
+
+/**
+ * Lit une fiche concurrent en PRIORITÉ via données structurées (JSON-LD :
+ * offers.price + gtin13 + name), déterministe et sans LLM. Cascade :
+ *   HTML brut (fetchHtml, cheap) → Bright Data si bloqué/sans JSON-LD → markdown Jina.
+ * Jamais d'invention : si tout est bloqué, renvoie blocked=true (le caller SKIP).
+ * `content` = texte pour la validation d'appariement (repli LLM).
+ */
+async function readCompetitorPage(uid: string, url: string): Promise<CompetitorReading> {
+  const none: CompetitorReading = { price: null, ean: '', name: '', content: '', blocked: true }
+
+  const fromHtml = (html: string): CompetitorReading | null => {
+    if (!html.trim()) return null
+    const text = htmlToText(html)
+    if (looksBlocked(text)) return null
+    const id = extractProductIdentity(html)
+    return {
+      price: id?.price ?? null, ean: id?.ean ?? '', name: id?.name ?? '',
+      content: text.slice(0, 8000), blocked: false,
+    }
+  }
+
+  // 1. HTML brut serveur (sans CORS, cheap) → JSON-LD.
+  try {
+    const r = fromHtml(await fetchHtml(url, 20000))
+    if (r && (r.price != null || r.ean)) return r
+  } catch { /* escalade */ }
+
+  // 2. Bright Data (anti-bot) → JSON-LD.
+  try {
+    const r = fromHtml((await brightDataRead(url)).html)
+    if (r) return r // contenu débloqué exploitable (même si JSON-LD partiel)
+  } catch { /* repli Jina */ }
+
+  // 3. Markdown Jina (dernier recours ; pas de JSON-LD → prix par repli LLM).
+  try {
+    const page = await jinaRead(uid, url)
+    if (page.content.trim() && !looksBlocked(page.content)) {
+      return { price: null, ean: '', name: page.title, content: page.content.slice(0, 8000), blocked: false }
+    }
+  } catch { /* rien d'exploitable */ }
+
+  return none
 }
 
 export function stableId(value: string): string {
@@ -172,32 +260,43 @@ registerServerNode({
         if (!url) {
           for (const q of discoveryQueries(site.domain, product)) {
             const results = await jinaSearch(ctx.uid, q)
-            const found = pickCandidate(results, site.domain)
+            const found = pickCandidate(results, site.domain, { sku: product.sku, ean: product.ean })
             if (found) { url = found; break }
           }
         }
         if (!url) { ctx.log('info', `Aucune page : ${product.name} @ ${site.domain}`); continue }
 
-        let page: { title: string; content: string }
-        try { page = await jinaRead(ctx.uid, url) } catch (e) { ctx.log('error', `Read échoué ${url}: ${String(e)}`); continue }
-        const extractPrompt =
-          `Extrait le prix de cette page. Réponds UNIQUEMENT {"price": "..."}.\n\n${page.content.slice(0, 8000)}`
-        const extracted = parseLlmJson<{ price?: unknown }>((await callLlm(ctx.uid, extractPrompt)).text)
-        const price = parsePrice(extracted?.price)
+        // Lecture STRUCTURÉE d'abord (JSON-LD : prix canonique + EAN, jamais inventés).
+        const read = await readCompetitorPage(ctx.uid, url)
+        if (read.blocked) { ctx.log('warn', `Page bloquée/vide (anti-bot), aucun relevé : ${url}`); continue }
+        let price = read.price ?? NaN
+        // Repli LLM UNIQUEMENT si pas de prix structuré (page sans JSON-LD).
+        if (Number.isNaN(price) && read.content) {
+          const extractPrompt =
+            `Extrait le prix de vente ACTUEL de cette page (si prix barré + promo, prends le plus bas). ` +
+            `Réponds UNIQUEMENT {"price": "..."}.\n\n${read.content}`
+          price = parsePrice(parseLlmJson<{ price?: unknown }>((await callLlm(ctx.uid, extractPrompt)).text)?.price)
+        }
         if (Number.isNaN(price)) { ctx.log('info', `Prix illisible : ${url}`); continue }
 
         const display = { productName: product.name, domain: site.domain, myPrice: product.myPrice ?? null }
+        const competitor = { competitorEan: read.ean || null, competitorName: read.name || null }
 
         if (!prev?.url || (prev.status !== 'auto' && prev.status !== 'confirmed')) {
-          const matchPrompt =
-            `Cette page décrit-elle EXACTEMENT : nom="${product.name}", marque="${product.brand ?? ''}", ` +
-            `sku="${product.sku ?? ''}", ean="${product.ean ?? ''}" ? Réponds UNIQUEMENT {"confidence": 0..1}.\n\n` +
-            `${page.content.slice(0, 6000)}`
-          const verdict = Math.max(0, Math.min(1,
-            Number(parseLlmJson<{ confidence?: unknown }>((await callLlm(ctx.uid, matchPrompt)).text)?.confidence) || 0))
+          // EAN identique = appariement autoritaire (confiance 1, pas d'appel LLM).
+          const eanMatch = !!product.ean && read.ean === product.ean.replace(/\D/g, '')
+          let verdict = eanMatch ? 1 : 0
+          if (!eanMatch) {
+            const matchPrompt =
+              `Cette page décrit-elle EXACTEMENT : nom="${product.name}", marque="${product.brand ?? ''}", ` +
+              `sku="${product.sku ?? ''}", ean="${product.ean ?? ''}" ? Réponds UNIQUEMENT {"confidence": 0..1}.\n\n` +
+              `${read.content.slice(0, 6000)}`
+            verdict = Math.max(0, Math.min(1,
+              Number(parseLlmJson<{ confidence?: unknown }>((await callLlm(ctx.uid, matchPrompt)).text)?.confidence) || 0))
+          }
           const status = verdict >= MATCH_THRESHOLD ? 'auto' : 'pending'
           await matchRef.set({ productId: product.id, siteId: site.id, url, confidence: verdict, status,
-            lastPrice: price, lastDiscoveredAt: Date.now(), updatedAt: FieldValue.serverTimestamp(), ...display }, { merge: true })
+            lastPrice: price, lastDiscoveredAt: Date.now(), updatedAt: FieldValue.serverTimestamp(), ...display, ...competitor }, { merge: true })
           if (status === 'pending') { ctx.log('info', `À confirmer (${verdict}) : ${product.name} @ ${site.domain}`); continue }
         }
 
@@ -206,7 +305,7 @@ registerServerNode({
         const previousPrice = history.length ? history[history.length - 1].price : undefined
         const nextHistory = [...history, { price, at: Date.now() }].slice(-HISTORY_MAX)
         await histRef.set({ values: nextHistory })
-        await matchRef.set({ lastPrice: price, updatedAt: FieldValue.serverTimestamp(), ...display }, { merge: true })
+        await matchRef.set({ lastPrice: price, updatedAt: FieldValue.serverTimestamp(), ...display, ...competitor }, { merge: true })
         alerts.push(...evaluate(product, site, price, previousPrice, thresholdPct))
       }
     }

@@ -39,6 +39,11 @@ export interface PriceMatch {
   productName?: string
   domain?: string
   myPrice?: number | null
+  // Identité RÉELLEMENT relevée chez le concurrent (issue des données structurées
+  // JSON-LD : gtin13 + name). Permet de repérer un mauvais appariement dans le
+  // comparatif. null (pas undefined) quand absent : Firestore refuse undefined.
+  competitorEan?: string | null
+  competitorName?: string | null
 }
 
 export interface HistoryPoint {

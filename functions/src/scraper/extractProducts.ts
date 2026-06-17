@@ -89,6 +89,67 @@ export function extractProducts(html: string, baseUrl: string): ScrapedProduct[]
   return products
 }
 
+export interface ProductIdentity {
+  /** Nom canonique (porte la référence, ex « …RBC36X26B… »). */
+  name: string
+  /** EAN-13 (gtin13/gtin) ou '' — JAMAIS deviné, lu tel quel du JSON-LD. */
+  ean: string
+  /** Prix `offers.price` canonique (unique, sans ambiguïté barré/promo) ou null. */
+  price: number | null
+}
+
+/**
+ * Identité canonique d'une FICHE produit depuis le JSON-LD schema.org/Product
+ * (name, gtin13/gtin, offers.price). Déterministe, sans LLM — à préférer au
+ * markdown (qui colle prix barré + promo) et à l'extraction LLM (qui hallucine
+ * les EAN). Renvoie le premier Product trouvé, ou null si aucun.
+ */
+export function extractProductIdentity(html: string): ProductIdentity | null {
+  const $ = load(html)
+  let best: ProductIdentity | null = null
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (best) return
+    const raw = $(el).contents().text()
+    if (!raw) return
+    try {
+      const data = JSON.parse(raw)
+      const items = Array.isArray(data) ? data : [data]
+      for (const item of items) {
+        const graph = item?.['@graph']
+        const candidates = Array.isArray(graph) ? graph : [item]
+        for (const c of candidates) {
+          const type = c?.['@type']
+          const isProduct =
+            type === 'Product' || (Array.isArray(type) && type.includes('Product'))
+          if (!isProduct) continue
+          const id = identityFromJsonLd(c)
+          if (id) { best = id; return }
+        }
+      }
+    } catch {
+      /* ignore JSON-LD parse errors */
+    }
+  })
+  return best
+}
+
+function identityFromJsonLd(c: any): ProductIdentity | null {
+  const name: string = typeof c.name === 'string' ? c.name : ''
+  const rawEan = String(c.gtin13 ?? c.gtin ?? c.gtin14 ?? c.gtin12 ?? c.ean ?? '').replace(/\D/g, '')
+  const ean = rawEan.length === 13 ? rawEan : ''
+  let price: number | null = null
+  const offers = Array.isArray(c.offers) ? c.offers[0] : c.offers
+  if (offers) {
+    const p = offers.price ?? offers.lowPrice ?? offers.highPrice
+    if (p != null) {
+      const n = parseFloat(String(p))
+      if (Number.isFinite(n) && n > 0) price = n
+    }
+  }
+  if (!name && !ean && price == null) return null
+  return { name, ean, price }
+}
+
 function productFromJsonLd(c: any, baseUrl: string): ScrapedProduct | null {
   const name: string = typeof c.name === 'string' ? c.name : ''
   if (!name) return null

@@ -28,11 +28,29 @@ function referenceTokens(text: string): string[] {
   }
   return [...out]
 }
+function normalizePriceToken(tok: string): number {
+  let s = tok
+  if (s.includes('.') && s.includes(',')) {
+    const dec = s.lastIndexOf('.') > s.lastIndexOf(',') ? '.' : ','
+    s = s.split(dec === '.' ? ',' : '.').join('').replace(dec, '.')
+  } else if (s.includes(',')) {
+    const parts = s.split(',')
+    s = parts.length === 2 && parts[parts.length - 1].length <= 2 ? parts.join('.') : parts.join('')
+  } else if (s.includes('.')) {
+    const parts = s.split('.')
+    if (parts.length > 2 || parts[parts.length - 1].length === 3) s = parts.join('')
+  }
+  return parseFloat(s)
+}
+// Séparateurs FR/EN ; sur une paire promo (« 304,38€284,41€ ») renvoie le PLUS BAS
+// (prix facturé). (Aligné sur priceWatch/core.parsePrice.)
 function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
   if (typeof v !== 'string') return NaN
-  const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
-  return cleaned ? parseFloat(cleaned) : NaN
+  const tokens = [...v.replace(/\s/g, '').matchAll(/-?\d[\d.,]*\d|-?\d/g)]
+    .map((m) => normalizePriceToken(m[0]))
+    .filter((n) => Number.isFinite(n))
+  return tokens.length ? Math.min(...tokens) : NaN
 }
 function keysOf(row: Record<string, unknown>, c: Cfg) {
   const nameVal = String(row[c.nameColumn] ?? '')

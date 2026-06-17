@@ -66,11 +66,37 @@ describe('pickCandidate', () => {
   it('rend null si aucun résultat sur le domaine', () => {
     expect(pickCandidate([results[0]], 'exemple.com')).toBeNull()
   })
+  it('préfère le candidat dont l\'URL porte le SKU', () => {
+    const r = [
+      { title: 'Catégorie débroussailleuses', url: 'https://exemple.com/c/debroussailleuses' },
+      { title: 'Pack Ryobi', url: 'https://exemple.com/p/rbc36x26b-rac114' },
+    ]
+    expect(pickCandidate(r, 'exemple.com', { sku: 'RBC36X26B' })).toBe('https://exemple.com/p/rbc36x26b-rac114')
+  })
+  it('préfère le candidat dont l\'URL porte l\'EAN', () => {
+    const r = [
+      { title: 'Accessoire', url: 'https://exemple.com/p/rac114' },
+      { title: 'Pack', url: 'https://exemple.com/p/3700812025181_CAFR.prd' },
+    ]
+    expect(pickCandidate(r, 'exemple.com', { ean: '3700812025181' })).toBe('https://exemple.com/p/3700812025181_CAFR.prd')
+  })
+  it('repli premier-du-domaine si aucun hint ne matche', () => {
+    expect(pickCandidate(results, 'exemple.com', { sku: 'ZZZZ9' })).toBe('https://exemple.com/p/sk1')
+  })
 })
 
 describe('parsePrice', () => {
   it('parse « 1 299,90 € »', () => expect(parsePrice('1 299,90 €')).toBe(1299.9))
   it('NaN si illisible', () => expect(Number.isNaN(parsePrice('n/a'))).toBe(true))
+  it('prix simple promo', () => expect(parsePrice('284,41 €')).toBe(284.41))
+  it('paire promo (barré+facturé) : renvoie le PLUS BAS (prix facturé)', () => {
+    expect(parsePrice('304,38€284,41€')).toBe(284.41)
+    expect(parsePrice('284,41€304,38€')).toBe(284.41) // robuste à l'ordre
+  })
+  it('format EN « 1,299.90 »', () => expect(parsePrice('1,299.90')).toBe(1299.9))
+  it('milliers FR avec point « 1.299 »', () => expect(parsePrice('1.299')).toBe(1299))
+  it('décimal point « 284.41 »', () => expect(parsePrice('284.41')).toBe(284.41))
+  it('nombre brut', () => expect(parsePrice(284.41)).toBe(284.41))
 })
 
 describe('pushHistory (ring buffer)', () => {

@@ -54,7 +54,7 @@ const EXTRACTED_SCHEMA_FOR_LLM = {
         properties: {
           name: { type: 'string', description: 'Intitulé complet du produit tel qu’affiché.' },
           brand: { type: 'string', description: 'Marque du produit (vide si inconnue).' },
-          ean: { type: 'string', description: 'Code EAN à 13 chiffres si visible (souvent dans l’URL de la fiche ou le nom de fichier image), sinon "".' },
+          ean: { type: 'string', description: 'Code EAN à 13 chiffres UNIQUEMENT s’il est littéralement présent dans l’URL de la fiche ou le chemin du fichier image (ex « 3700812025181_CAFR.prd »). NE JAMAIS le deviner ni le reconstituer : sinon "".' },
           price: { type: 'number', description: 'Prix de vente ACTUEL en euros (si prix barré + promo, prendre le prix promo). 0 si illisible.' },
           url: { type: 'string', description: 'URL absolue de la fiche produit.' },
           image: { type: 'string', description: 'URL absolue de l’image du produit (souvent porteuse de l’EAN dans son chemin).' },
@@ -66,14 +66,19 @@ const EXTRACTED_SCHEMA_FOR_LLM = {
   required: ['products'],
 } as const
 
-/** EAN robuste : l'EAN renvoyé s'il fait 13 chiffres, sinon premier nombre de
- *  13 chiffres trouvé dans l'image (Jardiland le cache dans le chemin image),
- *  puis l'URL fiche (Castorama : « 4892210822604_CAFR.prd »), puis le nom. */
+/** EAN robuste, anti-hallucination : on ne fait JAMAIS confiance à l'EAN brut du
+ *  LLM (il fabrique des codes à 13 chiffres plausibles mais faux). L'EAN du LLM
+ *  n'est retenu que s'il est CORROBORÉ — présent tel quel dans l'image, l'URL
+ *  fiche ou le nom (il sert alors à désambiguïser quand une source contient
+ *  plusieurs nombres de 13 chiffres). Sinon on dérive le premier nombre de 13
+ *  chiffres de l'image (Jardiland le cache dans le chemin image), puis l'URL
+ *  fiche (Castorama : « 4892210822604_CAFR.prd »), puis le nom. '' si rien. */
 export function resolveEan(ean: string, image: string, url: string, name: string): string {
+  const sources = [image, url, name].map((s) => String(s ?? ''))
   const clean = (ean ?? '').replace(/\D/g, '')
-  if (clean.length === 13) return clean
-  for (const src of [image, url, name]) {
-    const m = String(src ?? '').match(/\d{13}/)
+  if (clean.length === 13 && sources.some((s) => s.includes(clean))) return clean
+  for (const src of sources) {
+    const m = src.match(/\d{13}/)
     if (m) return m[0]
   }
   return ''
@@ -206,8 +211,9 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
             'Extrais TOUS les produits réellement listés sur cette page (ignore le menu de navigation, ' +
             'le pied de page, les bannières promo génériques et les blocs « vous aimerez aussi »). ' +
             'Pour chaque produit : name = intitulé complet ; brand = marque ; ean = code EAN à 13 chiffres ' +
-            's’il apparaît dans l’URL de la fiche (ex : « 4892210822604_CAFR.prd ») ou le nom de fichier image, sinon "" ; ' +
-            'price = prix de vente ACTUEL en euros (s’il y a un prix barré et un prix promo, prends le prix promo, pas le barré) ; ' +
+            'UNIQUEMENT s’il apparaît LITTÉRALEMENT dans l’URL de la fiche (ex : « 4892210822604_CAFR.prd ») ou le nom de fichier image — ' +
+            'ne le devine JAMAIS, ne le reconstitue pas : sinon "" ; ' +
+            'price = prix de vente ACTUEL en euros (s’il y a un prix barré et un prix promo, prends TOUJOURS le plus bas, le prix promo) ; ' +
             'url = lien absolu de la fiche produit ; image = URL absolue de l’image du produit ' +
             '(son chemin contient souvent l’EAN même quand l’URL fiche ne l’a pas).\n\n' +
             `## CONTENU\n${context}`,

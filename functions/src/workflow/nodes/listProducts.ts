@@ -18,13 +18,17 @@ interface ExtractedProduct {
   image?: unknown
 }
 
-/** EAN robuste : l'EAN s'il fait 13 chiffres, sinon premier nombre de 13 chiffres
- *  trouvé dans l'image (Jardiland le cache dans le chemin image), puis l'URL, puis le nom. */
+/** EAN robuste, anti-hallucination : on ne fait JAMAIS confiance à l'EAN brut du
+ *  LLM (il fabrique des codes à 13 chiffres plausibles mais faux). L'EAN du LLM
+ *  n'est retenu que s'il est CORROBORÉ — présent tel quel dans l'image, l'URL ou
+ *  le nom. Sinon on dérive le premier nombre de 13 chiffres de l'image (Jardiland
+ *  le cache dans le chemin image), puis l'URL, puis le nom. '' si rien. */
 function resolveEan(ean: unknown, image: unknown, url: unknown, name: unknown): string {
+  const sources = [image, url, name].map((s) => String(s ?? ''))
   const clean = String(ean ?? '').replace(/\D/g, '')
-  if (clean.length === 13) return clean
-  for (const src of [image, url, name]) {
-    const m = String(src ?? '').match(/\d{13}/)
+  if (clean.length === 13 && sources.some((s) => s.includes(clean))) return clean
+  for (const src of sources) {
+    const m = src.match(/\d{13}/)
     if (m) return m[0]
   }
   return ''
@@ -54,12 +58,29 @@ function hostOf(url: string): string {
   }
 }
 
-/** Parse « 1 299,90 € » → 1299.9 ; NaN si illisible. */
+function normalizePriceToken(tok: string): number {
+  let s = tok
+  if (s.includes('.') && s.includes(',')) {
+    const dec = s.lastIndexOf('.') > s.lastIndexOf(',') ? '.' : ','
+    s = s.split(dec === '.' ? ',' : '.').join('').replace(dec, '.')
+  } else if (s.includes(',')) {
+    const parts = s.split(',')
+    s = parts.length === 2 && parts[parts.length - 1].length <= 2 ? parts.join('.') : parts.join('')
+  } else if (s.includes('.')) {
+    const parts = s.split('.')
+    if (parts.length > 2 || parts[parts.length - 1].length === 3) s = parts.join('')
+  }
+  return parseFloat(s)
+}
+/** Parse « 1 299,90 € » → 1299.9 ; NaN si illisible. Séparateurs FR/EN ; sur une
+ *  paire promo (« 304,38€284,41€ ») renvoie le PLUS BAS. (Aligné sur priceWatch/core.) */
 function parsePrice(v: unknown): number {
   if (typeof v === 'number') return v
   if (typeof v !== 'string') return NaN
-  const cleaned = v.replace(/[\s€$£]/g, '').replace(',', '.').replace(/[^0-9.+-]/g, '')
-  return cleaned ? parseFloat(cleaned) : NaN
+  const tokens = [...v.replace(/\s/g, '').matchAll(/-?\d[\d.,]*\d|-?\d/g)]
+    .map((m) => normalizePriceToken(m[0]))
+    .filter((n) => Number.isFinite(n))
+  return tokens.length ? Math.min(...tokens) : NaN
 }
 
 type Ctx = {
@@ -113,9 +134,10 @@ async function extractProducts(ctx: Ctx, content: string, label: string): Promis
     'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
     'réellement listés (ignore menu, pied de page, bannières, blocs « vous aimerez aussi »). ' +
     'Réponds UNIQUEMENT par un objet JSON { "products": [ ... ] } où chaque produit a EXACTEMENT les clés : ' +
-    'name (intitulé complet), brand (marque ou ""), ean (code EAN à 13 chiffres s’il apparaît dans l’URL ' +
-    'de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image, sinon ""), ' +
-    'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends le prix promo), ' +
+    'name (intitulé complet), brand (marque ou ""), ean (code EAN à 13 chiffres UNIQUEMENT s’il apparaît ' +
+    'LITTÉRALEMENT dans l’URL de la fiche — ex « 4892210822604_CAFR.prd » — ou le nom de fichier image ; ' +
+    'ne le devine JAMAIS, ne le reconstitue pas : sinon ""), ' +
+    'price (prix de vente ACTUEL en euros, nombre ; si prix barré + promo, prends TOUJOURS le plus bas, le prix promo), ' +
     'url (lien absolu de la fiche), image (URL absolue de l’image — son chemin contient souvent ' +
     'l’EAN même quand l’URL fiche ne l’a pas).\n' +
     'IMPÉRATIF : réponds par l’objet JSON BRUT et lui seul — commence par « { » et finis par « } », ' +

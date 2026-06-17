@@ -77,9 +77,18 @@ export function ComparisonTab() {
                   {sites.map((s) => {
                     const m = byKey.get(`${p.id}__${s.id}`)
                     const cheaper = m?.lastPrice != null && p.myPrice != null && m.lastPrice < p.myPrice
+                    // Identité relevée chez le concurrent : visible au survol pour
+                    // repérer un mauvais appariement (mauvaise fiche, EAN différent).
+                    const relevé = m && (m.competitorName || m.competitorEan)
+                      ? `Relevé : ${m.competitorName ?? '?'}${m.competitorEan ? ` — EAN ${m.competitorEan}` : ''}`
+                      : undefined
                     return (
-                      <td key={s.id} className={`pr-4 ${cheaper ? 'text-red-400' : 'text-white/70'}`}>
-                        {m?.lastPrice != null ? `${m.lastPrice} €` : '—'}
+                      <td key={s.id} className={`pr-4 ${cheaper ? 'text-red-400' : 'text-white/70'}`} title={relevé}>
+                        {m?.lastPrice != null ? (
+                          <a href={m.url} target="_blank" rel="noreferrer" className="underline decoration-dotted underline-offset-2 hover:text-white">
+                            {m.lastPrice} €
+                          </a>
+                        ) : '—'}
                       </td>
                     )
                   })}
