@@ -9,13 +9,18 @@ const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u
 // Survit à la régénération de content.js.
 const DEMOS = {
   scraping: [{ src: 'media/scraping.mp4', caption: "Une URL produit → lecture de la page, extraction des champs vers le PIM et des images vers le DAM." }],
-  editor: [{ src: 'media/editor.mp4', caption: "Édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite." }],
+  editor: [
+    { src: 'media/editor.mp4', caption: "Édition réelle d'une affiche — modification du prix puis de la couleur du badge ; calques et paramètres d'impression à droite." },
+    { src: 'media/data-merge.mp4', caption: "Lier un projet à une base de données (publipostage) : les champs {{ nom }} {{ prix }} {{ image }} sont alimentés par chaque ligne → génération en série." },
+  ],
   pim: [{ src: 'media/pim.mp4', caption: "Une base produits avec colonne calculée (Prix TTC = formule Excel), plusieurs bases et champs structurés." }],
   workflow: [{ src: 'media/workflow.mp4', caption: "Un graphe de nodes (Scraper → Enrichir → Composer → Exporter → Telegram) exécuté de bout en bout." }],
   export: [{ src: 'media/export.mp4', caption: "Une source → N canaux : Impression (PDF/X), Réseaux sociaux, PowerPoint, Web et Vidéo, chacun généré." }],
   telegram: [{ src: 'media/telegram.mp4', caption: "Piloter l'app depuis Telegram : « /flow … » génère et exécute un workflow, le fichier produit est renvoyé." }],
   'import-idml': [{ src: 'media/import-idml.mp4', caption: "Import d'une maquette InDesign (IDML) décomposée en calques éditables." }],
   chat: [{ src: 'media/chat.mp4', caption: "Assistant conversationnel avec cascade multi-modèles (le suivant prend le relais si le principal échoue)." }],
+  taxonomies: [{ src: 'media/taxonomies.mp4', caption: "Arborescence de catalogue (catégories, compteurs) ; un produit scrappé est rangé automatiquement dans la bonne branche." }],
+  settings: [{ src: 'media/settings.mp4', caption: "Clés LLM par fournisseur (connexion testée), cascade de modèles et budget mensuel." }],
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)
