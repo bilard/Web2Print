@@ -105,6 +105,18 @@ describe('compareSourceToCompetitors', () => {
     expect(rows[0]).toMatchObject({ prix_castorama_fr: '200', prix_barre_castorama_fr: '250', reduc_castorama_fr: '20' })
   })
 
+  it('défaut brandColumn/originalColumn (nodes créés avant ces champs)', () => {
+    // Config « legacy » sans brandColumn/originalColumn → repli interne attendu.
+    const legacy = {
+      nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
+      referenceColumn: '', urlColumn: 'url', siteColumn: 'site', onlyMatched: false,
+    } as unknown as Parameters<typeof compareSourceToCompetitors>[2]
+    const src = [{ site: 'jardiland.com', name: 'RYOBI RLM18E40H', brand: 'Ryobi', ean: '', url: '', price: '219' }]
+    const comp = [{ site: 'castorama.fr', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '200', originalPrice: '250' }]
+    const { rows } = compareSourceToCompetitors(src, comp, legacy)
+    expect(rows[0]).toMatchObject({ marque: 'Ryobi', prix_barre_castorama_fr: '250', reduc_castorama_fr: '20' })
+  })
+
   it('pas de prix barré si originalPrice ≤ prix (pas de promo)', () => {
     const src = [{ site: 'jardiland.com', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '219' }]
     const comp = [{ site: 'castorama.fr', name: 'RYOBI RLM18E40H', ean: '', url: '', price: '200', originalPrice: '180' }]

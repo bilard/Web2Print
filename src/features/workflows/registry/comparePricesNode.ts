@@ -128,8 +128,16 @@ const POSITION_COLOR_RULES: SheetColorRule[] = [
 export function compareSourceToCompetitors(
   sourceRows: Array<Record<string, unknown>>,
   competitorRows: Array<Record<string, unknown>>,
-  c: ComparePricesConfig,
+  rawConfig: ComparePricesConfig,
 ): CompareResult {
+  // Défauts pour les clés AJOUTÉES après coup (brandColumn/originalColumn) : les nodes
+  // créés avant leur introduction n'ont pas ces clés en config → sans ce repli, Marque
+  // et Prix barré sortiraient vides (le serveur applique déjà le même défaut).
+  const c: ComparePricesConfig = {
+    ...rawConfig,
+    brandColumn: rawConfig.brandColumn || 'brand',
+    originalColumn: rawConfig.originalColumn || 'originalPrice',
+  }
   // Index concurrents par EAN, par référence, par nom — chaque entrée porte le
   // site + le prix le plus bas observé pour ce (clé, site).
   const compSites: string[] = []
