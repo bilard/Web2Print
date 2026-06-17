@@ -15,6 +15,7 @@ const DEMOS = {
   export: [{ src: 'media/export.mp4', caption: "Une source → N canaux : Impression (PDF/X), Réseaux sociaux, PowerPoint, Web et Vidéo, chacun généré." }],
   telegram: [{ src: 'media/telegram.mp4', caption: "Piloter l'app depuis Telegram : « /flow … » génère et exécute un workflow, le fichier produit est renvoyé." }],
   'import-idml': [{ src: 'media/import-idml.mp4', caption: "Import d'une maquette InDesign (IDML) décomposée en calques éditables." }],
+  chat: [{ src: 'media/chat.mp4', caption: "Assistant conversationnel avec cascade multi-modèles (le suivant prend le relais si le principal échoue)." }],
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)
