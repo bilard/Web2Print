@@ -46,6 +46,18 @@ describe('compare-prices (serveur)', () => {
     expect(out.rows[0]).toMatchObject({ prix_castorama_fr: '284.41', meilleur_concurrent: 'castorama.fr' })
   })
 
+  it('mode pairs (noSource) : regroupe N enseignes, 1 ligne/produit + meilleur prix', async () => {
+    const concurrents = { rows: [
+      { site: 'castorama.fr', name: 'Barbecue RYOBI RBQ123X', ean: '', url: '', price: '200', originalPrice: '250' },
+      { site: 'leroymerlin.fr', name: 'RBQ123X Barbecue', ean: '', url: '', price: '180' },
+      { site: 'jardiland.com', name: 'Barbecue exclusif RBQ999Z', ean: '', url: '', price: '90' },
+    ] }
+    const out = (await run({ ...CFG, noSource: true }, { source: { rows: [] }, concurrents })).sheet as any
+    const grouped = out.rows.find((r: any) => r.reference === 'RBQ123X')
+    expect(grouped).toMatchObject({ prix_castorama_fr: '200', prix_leroymerlin_fr: '180', meilleur_prix: '180', enseigne_moins_chere: 'leroymerlin.fr' })
+    expect(out.columns.map((c: any) => c.key)).toContain('meilleur_prix')
+  })
+
   it('ne crée PAS de faux appariement entre variantes distinctes', async () => {
     const src = { rows: [{ site: 's', name: 'RYOBI RY36LMXSP53A', ean: '', url: '', price: '982' }] }
     const comp = { rows: [{ site: 'c', name: 'RYOBI RY36LMXP46A', ean: '', url: '', price: '599' }] }

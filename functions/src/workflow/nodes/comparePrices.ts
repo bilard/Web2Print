@@ -97,10 +97,84 @@ function matchByRefPrefix(refs: string[], byRef: Map<string, CMatch[]>): CMatch[
   return out
 }
 
+interface PeerGroup { name: string; brand: string; ref: string; ean: string; sites: Map<string, { price: number; original?: number }> }
+
+/** Mode PAIRS (sans source) : regroupe les produits de TOUTES les enseignes (EAN →
+ *  code modèle → nom), 1 ligne/produit, 1 colonne prix par enseigne + meilleur prix + écart. */
+function comparePeers(rows: Record<string, unknown>[], cfg: Cfg) {
+  const groups: PeerGroup[] = []
+  const eanIdx = new Map<string, PeerGroup>()
+  const refIdx = new Map<string, PeerGroup>()
+  const nameIdx = new Map<string, PeerGroup>()
+  const allSites: string[] = []
+  for (const row of rows) {
+    const site = String(row[cfg.siteColumn] ?? '').trim() || 'site'
+    if (!allSites.includes(site)) allSites.push(site)
+    const k = keysOf(row, cfg)
+    const price = parsePrice(row[cfg.priceColumn])
+    const origRaw = parsePrice(row[cfg.originalColumn])
+    const original = Number.isFinite(origRaw) && origRaw > price ? origRaw : undefined
+    const nameVal = String(row[cfg.nameColumn] ?? '').trim()
+    const brand = String(row[cfg.brandColumn] ?? '').trim()
+    let g: PeerGroup | undefined = (k.ean && eanIdx.get(k.ean)) || undefined
+    if (!g) for (const r of k.refs) { const hit = refIdx.get(r); if (hit) { g = hit; break } }
+    if (!g && k.name) g = nameIdx.get(k.name)
+    if (!g) { g = { name: nameVal, brand, ref: k.refs[0] ?? '', ean: k.ean, sites: new Map() }; groups.push(g) }
+    if (k.ean) eanIdx.set(k.ean, g)
+    for (const r of k.refs) refIdx.set(r, g)
+    if (k.name) nameIdx.set(k.name, g)
+    if (!g.name) g.name = nameVal
+    if (!g.brand) g.brand = brand
+    if (!g.ref) g.ref = k.refs[0] ?? ''
+    if (!g.ean) g.ean = k.ean
+    if (Number.isFinite(price) && price > 0) {
+      const prev = g.sites.get(site)
+      if (prev === undefined || price < prev.price) g.sites.set(site, { price, original })
+    }
+  }
+  const priceCols = allSites.map((s) => ({ site: s, key: `prix_${slug(s)}`, barreKey: `prix_barre_${slug(s)}`, reducKey: `reduc_${slug(s)}` }))
+  const columns = [
+    { key: 'produit', label: 'Produit' }, { key: 'marque', label: 'Marque' },
+    { key: 'reference', label: 'Réf.' }, { key: 'ean', label: 'EAN' },
+    ...priceCols.flatMap((pc) => [
+      { key: pc.key, label: `Prix ${pc.site}` },
+      { key: pc.barreKey, label: `Prix barré ${pc.site}` },
+      { key: pc.reducKey, label: `Réduc % ${pc.site}` },
+    ]),
+    { key: 'meilleur_prix', label: 'Meilleur prix' },
+    { key: 'enseigne_moins_chere', label: 'Enseigne la moins chère' },
+    { key: 'ecart_eur', label: 'Écart max €' }, { key: 'ecart_pct', label: 'Écart max %' },
+  ]
+  const out: Record<string, unknown>[] = []
+  let id = 0
+  let matched = 0
+  for (const g of groups) {
+    const r: Record<string, unknown> = { _id: `peer_${id++}`, produit: g.name, marque: g.brand, reference: g.ref, ean: g.ean }
+    for (const pc of priceCols) {
+      const e = g.sites.get(pc.site)
+      r[pc.key] = e ? String(e.price) : ''
+      r[pc.barreKey] = e?.original != null ? String(e.original) : ''
+      r[pc.reducKey] = e?.original != null && e.original > 0 ? String(Math.round(((e.original - e.price) / e.original) * 1000) / 10) : ''
+    }
+    const prices = [...g.sites.values()].map((e) => e.price)
+    if (prices.length > 0) {
+      const min = Math.min(...prices); const max = Math.max(...prices)
+      let cheapest = ''; for (const [s, e] of g.sites) if (e.price === min) { cheapest = s; break }
+      r.meilleur_prix = String(min); r.enseigne_moins_chere = cheapest
+      r.ecart_eur = String(Math.round((max - min) * 100) / 100)
+      r.ecart_pct = min > 0 ? String(Math.round(((max - min) / min) * 1000) / 10) : ''
+      if (g.sites.size >= 2) matched++
+    } else { r.meilleur_prix = ''; r.enseigne_moins_chere = ''; r.ecart_eur = ''; r.ecart_pct = '' }
+    out.push(r)
+  }
+  out.sort((a, b) => (Number(b.ecart_pct) || -1e9) - (Number(a.ecart_pct) || -1e9))
+  return { columns, rows: out, sites: allSites, matched }
+}
+
 registerServerNode({
   type: 'compare-prices',
   run: async (ctx, config, inputs) => {
-    const c = config as unknown as Cfg
+    const c = config as unknown as Cfg & { noSource?: boolean }
     const cfg: Cfg = {
       nameColumn: c.nameColumn || 'name', priceColumn: c.priceColumn || 'price',
       eanColumn: c.eanColumn || 'ean', referenceColumn: c.referenceColumn || '',
@@ -110,6 +184,16 @@ registerServerNode({
     }
     const sourceRows = (((inputs.source ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
     const competitorRows = (((inputs.concurrents ?? {}) as SheetLike).rows ?? []) as Record<string, unknown>[]
+
+    // Mode « entre pairs » (sans source).
+    if (c.noSource === true) {
+      const all = [...sourceRows, ...competitorRows]
+      if (all.length === 0) { ctx.log('warn', 'Aucun produit en entrée.'); return { sheet: { columns: [], rows: [] } } }
+      const { columns, rows, sites, matched } = comparePeers(all, cfg)
+      ctx.log('info', `${rows.length} produit(s) distinct(s) sur ${sites.length} enseigne(s) (${matched} chez ≥2).`)
+      return { sheet: { columns, rows } }
+    }
+
     if (sourceRows.length === 0) {
       ctx.log('warn', 'Aucun produit source (port « source »).')
       return { sheet: { columns: [], rows: [] } }

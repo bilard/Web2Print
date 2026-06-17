@@ -24,6 +24,9 @@ interface ComparePricesConfig {
   brandColumn: string
   originalColumn: string
   onlyMatched: boolean
+  /** Mode « entre pairs » : pas de source, on regroupe les produits de TOUTES les
+   *  enseignes et on sort 1 ligne/produit avec 1 colonne prix par enseigne. */
+  noSource: boolean
 }
 
 interface ComparePricesInputs {
@@ -261,6 +264,113 @@ export function compareSourceToCompetitors(
   return { columns, rows: out, sites: compSites, matched, colorRules: POSITION_COLOR_RULES }
 }
 
+/** Colonne prix/barré/réduc pour une enseigne. */
+function siteCols(sites: string[]) {
+  return sites.map((s) => ({ site: s, key: `prix_${slug(s)}`, barreKey: `prix_barre_${slug(s)}`, reducKey: `reduc_${slug(s)}` }))
+}
+
+interface PeerGroup { name: string; brand: string; ref: string; ean: string; sites: Map<string, { price: number; original?: number }> }
+
+/**
+ * Mode PAIRS : pas de source. Regroupe les produits de TOUTES les enseignes
+ * (par EAN → code modèle partagé → nom), 1 ligne par produit distinct, 1 colonne
+ * prix par enseigne + meilleur prix + écart (max−min). Un produit apparaît dès
+ * qu'une seule enseigne le propose.
+ */
+export function comparePeers(
+  rows: Array<Record<string, unknown>>,
+  rawConfig: ComparePricesConfig,
+): CompareResult {
+  const c: ComparePricesConfig = {
+    ...rawConfig,
+    brandColumn: rawConfig.brandColumn || 'brand',
+    originalColumn: rawConfig.originalColumn || 'originalPrice',
+  }
+  const groups: PeerGroup[] = []
+  const eanIdx = new Map<string, PeerGroup>()
+  const refIdx = new Map<string, PeerGroup>()
+  const nameIdx = new Map<string, PeerGroup>()
+  const allSites: string[] = []
+
+  for (const row of rows) {
+    const site = String(row[c.siteColumn] ?? '').trim() || 'site'
+    if (!allSites.includes(site)) allSites.push(site)
+    const k = keysOf(row, c)
+    const price = parsePrice(row[c.priceColumn])
+    const origRaw = parsePrice(row[c.originalColumn])
+    const original = Number.isFinite(origRaw) && origRaw > price ? origRaw : undefined
+    const nameVal = String(row[c.nameColumn] ?? '').trim()
+    const brand = String(row[c.brandColumn] ?? '').trim()
+
+    // Rattacher à un groupe existant partageant EAN, un code modèle, ou le nom.
+    let g: PeerGroup | undefined = (k.ean && eanIdx.get(k.ean)) || undefined
+    if (!g) for (const r of k.refs) { const hit = refIdx.get(r); if (hit) { g = hit; break } }
+    if (!g && k.name) g = nameIdx.get(k.name)
+    if (!g) { g = { name: nameVal, brand, ref: k.refs[0] ?? '', ean: k.ean, sites: new Map() }; groups.push(g) }
+    if (k.ean) eanIdx.set(k.ean, g)
+    for (const r of k.refs) refIdx.set(r, g)
+    if (k.name) nameIdx.set(k.name, g)
+    if (!g.name) g.name = nameVal
+    if (!g.brand) g.brand = brand
+    if (!g.ref) g.ref = k.refs[0] ?? ''
+    if (!g.ean) g.ean = k.ean
+    if (Number.isFinite(price) && price > 0) {
+      const prev = g.sites.get(site)
+      if (prev === undefined || price < prev.price) g.sites.set(site, { price, original })
+    }
+  }
+
+  const priceCols = siteCols(allSites)
+  const columns: ExcelColumn[] = [
+    { key: 'produit', label: 'Produit', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 320 },
+    { key: 'marque', label: 'Marque', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
+    { key: 'reference', label: 'Réf.', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 120 },
+    { key: 'ean', label: 'EAN', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 130 },
+    ...priceCols.flatMap((pc) => [
+      { key: pc.key, label: `Prix ${pc.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 120 },
+      { key: pc.barreKey, label: `Prix barré ${pc.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 110 },
+      { key: pc.reducKey, label: `Réduc % ${pc.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 90 },
+    ]),
+    { key: 'meilleur_prix', label: 'Meilleur prix', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 110 },
+    { key: 'enseigne_moins_chere', label: 'Enseigne la moins chère', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 180 },
+    { key: 'ecart_eur', label: 'Écart max €', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
+    { key: 'ecart_pct', label: 'Écart max %', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
+  ]
+
+  const out: ExcelRow[] = []
+  let id = 0
+  let matched = 0
+  for (const g of groups) {
+    const r: ExcelRow = { _id: `peer_${id++}`, produit: g.name, marque: g.brand, reference: g.ref, ean: g.ean }
+    for (const pc of priceCols) {
+      const e = g.sites.get(pc.site)
+      r[pc.key] = e ? String(e.price) : ''
+      r[pc.barreKey] = e?.original != null ? String(e.original) : ''
+      r[pc.reducKey] = e?.original != null && e.original > 0
+        ? String(Math.round(((e.original - e.price) / e.original) * 1000) / 10)
+        : ''
+    }
+    const prices = [...g.sites.values()].map((e) => e.price)
+    if (prices.length > 0) {
+      const min = Math.min(...prices)
+      const max = Math.max(...prices)
+      let cheapest = ''
+      for (const [s, e] of g.sites) if (e.price === min) { cheapest = s; break }
+      r.meilleur_prix = String(min)
+      r.enseigne_moins_chere = cheapest
+      r.ecart_eur = String(Math.round((max - min) * 100) / 100)
+      r.ecart_pct = min > 0 ? String(Math.round(((max - min) / min) * 1000) / 10) : ''
+      if (g.sites.size >= 2) matched++
+    } else {
+      r.meilleur_prix = ''; r.enseigne_moins_chere = ''; r.ecart_eur = ''; r.ecart_pct = ''
+    }
+    out.push(r)
+  }
+  // Plus gros écarts d'abord (là où le choix d'enseigne fait économiser le plus).
+  out.sort((a, b) => (Number(b.ecart_pct) || -1e9) - (Number(a.ecart_pct) || -1e9))
+  return { columns, rows: out, sites: allSites, matched, colorRules: [] }
+}
+
 const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, ComparePricesOutputs> = {
   type: 'compare-prices',
   category: 'logic',
@@ -272,7 +382,9 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     'Les deux entrées acceptent une page liste (URL) ou un import Excel/Sheets.',
   icon: Scale,
   inputs: [
-    { name: 'source', type: 'sheet', required: true },
+    // source optionnel : en mode « entre pairs » (noSource) on n'a pas de source,
+    // toutes les enseignes sont branchées sur « concurrents ».
+    { name: 'source', type: 'sheet', required: false },
     { name: 'concurrents', type: 'sheet', required: true },
   ],
   outputs: [{ name: 'sheet', type: 'sheet' }],
@@ -287,17 +399,31 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
     { name: 'siteColumn', kind: 'columnRef', label: 'Colonne Site', default: 'site', help: 'Identifie source et concurrents.' },
     { name: 'brandColumn', kind: 'columnRef', label: 'Colonne Marque', default: 'brand', help: 'Marque affichée dans la colonne « Marque ».' },
     { name: 'originalColumn', kind: 'columnRef', label: 'Colonne Prix barré', default: 'originalPrice', help: 'Prix d’origine/barré — sert au calcul du % de réduction par concurrent.' },
+    { name: 'noSource', kind: 'checkbox', label: 'Pas de source — comparer les enseignes entre elles', default: false, help: 'Mode « famille » : branche toutes les enseignes sur « concurrents ». 1 ligne par produit, 1 colonne prix par enseigne, meilleur prix + écart.' },
     { name: 'onlyMatched', kind: 'checkbox', label: 'Seulement les produits trouvés chez un concurrent', default: false },
   ],
   defaultConfig: {
     nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
     referenceColumn: '', urlColumn: 'url', siteColumn: 'site',
-    brandColumn: 'brand', originalColumn: 'originalPrice', onlyMatched: false,
+    brandColumn: 'brand', originalColumn: 'originalPrice', onlyMatched: false, noSource: false,
   },
   runtime: 'any',
   run: async (ctx, config, inputs) => {
     const sourceRows = Array.isArray(inputs.source?.rows) ? inputs.source!.rows! : []
     const competitorRows = Array.isArray(inputs.concurrents?.rows) ? inputs.concurrents!.rows! : []
+
+    // Mode « entre pairs » : pas de source, on regroupe toutes les enseignes.
+    if (config.noSource) {
+      const all = [...sourceRows, ...competitorRows]
+      if (all.length === 0) {
+        ctx.log('warn', 'Aucun produit en entrée (branche les enseignes sur « concurrents »).')
+        return { sheet: { name: 'Comparaison entre enseignes', columns: [], rows: [], taxonomy: [] } }
+      }
+      const { columns, rows, sites, matched } = comparePeers(all, config)
+      ctx.log('info', `${rows.length} produit(s) distinct(s) sur ${sites.length} enseigne(s) (${matched} présent(s) chez ≥2) : ${sites.join(', ') || '—'}.`)
+      return { sheet: { name: 'Comparaison entre enseignes', columns, rows, taxonomy: [] } }
+    }
+
     if (sourceRows.length === 0) {
       ctx.log('warn', 'Aucun produit source en entrée (port « source »).')
       return { sheet: { name: 'Comparaison de prix', columns: [], rows: [], taxonomy: [] } }

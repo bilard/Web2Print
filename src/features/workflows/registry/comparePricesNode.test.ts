@@ -1,11 +1,11 @@
 // src/features/workflows/registry/comparePricesNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { compareSourceToCompetitors, referenceTokens, normName } from './comparePricesNode'
+import { compareSourceToCompetitors, comparePeers, referenceTokens, normName } from './comparePricesNode'
 
 const CFG = {
   nameColumn: 'name', priceColumn: 'price', eanColumn: 'ean',
   referenceColumn: '', urlColumn: 'url', siteColumn: 'site',
-  brandColumn: 'brand', originalColumn: 'originalPrice', onlyMatched: false,
+  brandColumn: 'brand', originalColumn: 'originalPrice', onlyMatched: false, noSource: false,
 }
 
 describe('referenceTokens', () => {
@@ -22,6 +22,28 @@ describe('referenceTokens', () => {
 describe('normName', () => {
   it('ignore casse et accents', () => {
     expect(normName('Tondeuse électrique')).toBe(normName('Tondeuse Electrique'))
+  })
+})
+
+describe('comparePeers (sans source, N enseignes)', () => {
+  it('regroupe par code modèle, 1 colonne prix/enseigne + meilleur prix + écart', () => {
+    const rows = [
+      { site: 'castorama.fr', name: 'Barbecue RYOBI RBQ123X', ean: '', url: '', price: '200', originalPrice: '250' },
+      { site: 'leroymerlin.fr', name: 'RBQ123X Barbecue', ean: '', url: '', price: '180' },
+      { site: 'jardiland.com', name: 'Barbecue exclusif RBQ999Z', ean: '', url: '', price: '90' },
+    ]
+    const { rows: out, sites, matched } = comparePeers(rows, CFG)
+    expect(sites.sort()).toEqual(['castorama.fr', 'jardiland.com', 'leroymerlin.fr'])
+    // RBQ123X présent chez 2 enseignes → regroupé sur 1 ligne
+    const grouped = out.find((r) => r.reference === 'RBQ123X')!
+    expect(grouped).toMatchObject({
+      prix_castorama_fr: '200', prix_leroymerlin_fr: '180',
+      prix_barre_castorama_fr: '250', meilleur_prix: '180', enseigne_moins_chere: 'leroymerlin.fr',
+      ecart_eur: '20', ecart_pct: '11.1',
+    })
+    // produit exclusif jardiland → ligne séparée
+    expect(out.find((r) => r.reference === 'RBQ999Z')).toBeTruthy()
+    expect(matched).toBe(1) // 1 produit présent chez ≥2 enseignes
   })
 })
 
