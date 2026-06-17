@@ -2,8 +2,9 @@
 // Jumeau SERVEUR (headless) du node client « Comparer les prix »
 // (src/features/workflows/registry/comparePricesNode.ts). Logique dupliquée (le
 // serveur ne peut pas importer src/). Deux entrées : source + concurrents. Sortie
-// ANCRÉE SOURCE (tous les produits source conservés). Appariement EAN → code
-// modèle → nom normalisé. Sortie { sheet: { columns, rows } } pour gsheets-export.
+// ANCRÉE SOURCE (tous les produits source conservés). Appariement ANCRÉ RÉFÉRENCE :
+// réf exacte → réf tolérante (préfixe, RBC36X2↔RBC36X26B) → EAN identique (secours)
+// → nom normalisé. Sortie { sheet: { columns, rows } } pour gsheets-export.
 import { registerServerNode } from '../registry'
 
 interface SheetLike { rows?: Record<string, unknown>[]; [k: string]: unknown }
@@ -65,6 +66,27 @@ function keysOf(row: Record<string, unknown>, c: Cfg) {
 }
 
 interface CMatch { site: string; price: number }
+
+// Préfixe de référence minimal pour apparier deux codes modèle (anti faux positifs).
+const MIN_REF_PREFIX = 6
+/** Appariement TOLÉRANT par préfixe de référence (RBC36X2 ↔ RBC36X26B) : la plus
+ *  courte doit être un préfixe de la plus longue et faire ≥ MIN_REF_PREFIX chars. */
+function matchByRefPrefix(refs: string[], byRef: Map<string, CMatch[]>): CMatch[] {
+  const out: CMatch[] = []
+  const seen = new Set<string>()
+  for (const sref of refs) {
+    for (const [cref, matches] of byRef) {
+      if (cref === sref) continue
+      const [short, long] = sref.length <= cref.length ? [sref, cref] : [cref, sref]
+      if (short.length < MIN_REF_PREFIX || !long.startsWith(short)) continue
+      for (const m of matches) {
+        const sig = `${m.site}|${m.price}`
+        if (!seen.has(sig)) { seen.add(sig); out.push(m) }
+      }
+    }
+  }
+  return out
+}
 
 registerServerNode({
   type: 'compare-prices',
@@ -128,14 +150,16 @@ registerServerNode({
       const nameVal = String(row[cfg.nameColumn] ?? '').trim()
       const sourceSite = String(row[cfg.siteColumn] ?? '').trim() || 'source'
       const srcPrice = parsePrice(row[cfg.priceColumn])
-      let comp: CMatch[] = (k.ean && byEan.get(k.ean)) || []
-      if (comp.length === 0) {
-        const seen = new Set<string>()
-        for (const ref of k.refs) for (const m of byRef.get(ref) ?? []) {
-          const sig = `${m.site}|${m.price}`
-          if (!seen.has(sig)) { seen.add(sig); comp.push(m) }
-        }
+      // Réf modèle = clé cross-enseigne fiable (EAN diffère fabricant/distributeur) :
+      // réf exacte → réf tolérante (préfixe) → EAN (secours) → nom.
+      let comp: CMatch[] = []
+      const seen = new Set<string>()
+      for (const ref of k.refs) for (const m of byRef.get(ref) ?? []) {
+        const sig = `${m.site}|${m.price}`
+        if (!seen.has(sig)) { seen.add(sig); comp.push(m) }
       }
+      if (comp.length === 0) comp = matchByRefPrefix(k.refs, byRef)
+      if (comp.length === 0) comp = (k.ean && byEan.get(k.ean)) || []
       if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
       const r: Record<string, unknown> = {

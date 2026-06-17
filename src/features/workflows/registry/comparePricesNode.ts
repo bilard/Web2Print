@@ -5,7 +5,9 @@
 // prix source, une colonne de prix par site concurrent, le meilleur prix
 // concurrent, l'écart (€/%) et la position. Les deux entrées acceptent n'importe
 // quelle feuille : « Produits d'une page liste » (URL) ou un import Excel/Google
-// Sheets. Appariement robuste : EAN → code modèle (ex RLM18E40H) → nom normalisé.
+// Sheets. Appariement robuste, ANCRÉ RÉFÉRENCE (clé fiable cross-enseigne, l'EAN
+// diffère fabricant/distributeur) : réf exacte → réf tolérante (préfixe/troncature,
+// RBC36X2↔RBC36X26B) → EAN identique (secours) → nom normalisé.
 import { Scale } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
@@ -76,6 +78,32 @@ function keysOf(row: Record<string, unknown>, c: ComparePricesConfig): Keys {
 
 interface CompetitorMatch { site: string; price: number }
 
+/** Longueur minimale d'un préfixe de référence commun pour apparier deux codes
+ *  modèle (en deçà, trop de faux positifs). */
+const MIN_REF_PREFIX = 6
+
+/** Appariement TOLÉRANT par préfixe de référence : relie une réf tronquée à la
+ *  source (« RBC36X2 » chez jardiland) à sa réf complète chez le concurrent
+ *  (« RBC36X26B »). Exige que la plus courte soit un préfixe de la plus longue et
+ *  fasse ≥ MIN_REF_PREFIX caractères. Ne matche PAS deux variantes qui divergent
+ *  (RY36LMXSP53A ≠ RY36LMXP46A). */
+function matchByRefPrefix(refs: string[], byRef: Map<string, CompetitorMatch[]>): CompetitorMatch[] {
+  const out: CompetitorMatch[] = []
+  const seen = new Set<string>()
+  for (const sref of refs) {
+    for (const [cref, matches] of byRef) {
+      if (cref === sref) continue // l'exact est traité avant
+      const [short, long] = sref.length <= cref.length ? [sref, cref] : [cref, sref]
+      if (short.length < MIN_REF_PREFIX || !long.startsWith(short)) continue
+      for (const m of matches) {
+        const sig = `${m.site}|${m.price}`
+        if (!seen.has(sig)) { seen.add(sig); out.push(m) }
+      }
+    }
+  }
+  return out
+}
+
 export interface CompareResult {
   columns: ExcelColumn[]
   rows: ExcelRow[]
@@ -140,15 +168,17 @@ export function compareSourceToCompetitors(
     const nameVal = String(row[c.nameColumn] ?? '').trim()
     const sourceSite = String(row[c.siteColumn] ?? '').trim() || 'source'
     const srcPrice = parsePrice(row[c.priceColumn])
-    // Concurrents appariés : EAN, sinon n'importe quel code modèle partagé, sinon nom.
-    let comp: CompetitorMatch[] = (k.ean && byEan.get(k.ean)) || []
-    if (comp.length === 0) {
-      const seen = new Set<string>()
-      for (const ref of k.refs) for (const m of byRef.get(ref) ?? []) {
-        const sig = `${m.site}|${m.price}`
-        if (!seen.has(sig)) { seen.add(sig); comp.push(m) }
-      }
+    // Appariement cross-enseigne : la RÉFÉRENCE MODÈLE est la clé fiable (l'EAN
+    // diffère entre enseignes : fabricant vs distributeur). Ordre : réf exacte →
+    // réf tolérante (préfixe/troncature) → EAN identique (secours) → nom normalisé.
+    let comp: CompetitorMatch[] = []
+    const seen = new Set<string>()
+    for (const ref of k.refs) for (const m of byRef.get(ref) ?? []) {
+      const sig = `${m.site}|${m.price}`
+      if (!seen.has(sig)) { seen.add(sig); comp.push(m) }
     }
+    if (comp.length === 0) comp = matchByRefPrefix(k.refs, byRef)
+    if (comp.length === 0) comp = (k.ean && byEan.get(k.ean)) || []
     if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
     const r: ExcelRow = {
@@ -202,7 +232,8 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
   description:
     'Compare les produits d’une SOURCE aux mêmes produits chez des CONCURRENTS (deux entrées). ' +
     'Sortie : une ligne par produit source (tous conservés), prix par concurrent, écart et position. ' +
-    'Appariement EAN → code modèle → nom. Les deux entrées acceptent une page liste (URL) ou un import Excel/Sheets.',
+    'Appariement par référence modèle (tolérant aux troncatures, ex RBC36X2↔RBC36X26B), EAN en secours. ' +
+    'Les deux entrées acceptent une page liste (URL) ou un import Excel/Sheets.',
   icon: Scale,
   inputs: [
     { name: 'source', type: 'sheet', required: true },

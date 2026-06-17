@@ -38,4 +38,18 @@ describe('compare-prices (serveur)', () => {
     const out = (await run(CFG, { source: { rows: [] }, concurrents })).sheet as any
     expect(out.rows).toEqual([])
   })
+
+  it('apparie une réf tronquée via préfixe (RBC36X2 ↔ RBC36X26B), EAN différents', async () => {
+    const src = { rows: [{ site: 'jardiland.com', name: 'RYOBI Débroussailleuse 36V RBC36X2', ean: '6744473726508', url: '', price: '199,00' }] }
+    const comp = { rows: [{ site: 'castorama.fr', name: 'Pack RYOBI débroussailleuse RBC36X26B RAC114', ean: '3700812025181', url: '', price: '284,41' }] }
+    const out = (await run(CFG, { source: src, concurrents: comp })).sheet as any
+    expect(out.rows[0]).toMatchObject({ prix_castorama_fr: '284.41', meilleur_concurrent: 'castorama.fr' })
+  })
+
+  it('ne crée PAS de faux appariement entre variantes distinctes', async () => {
+    const src = { rows: [{ site: 's', name: 'RYOBI RY36LMXSP53A', ean: '', url: '', price: '982' }] }
+    const comp = { rows: [{ site: 'c', name: 'RYOBI RY36LMXP46A', ean: '', url: '', price: '599' }] }
+    const out = (await run(CFG, { source: src, concurrents: comp })).sheet as any
+    expect(out.rows[0].position).toBe('non trouvé')
+  })
 })
