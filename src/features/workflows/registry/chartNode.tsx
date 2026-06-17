@@ -42,7 +42,6 @@ async function renderChartPng(spec: ChartSpec): Promise<Blob> {
       c.ctx.restore()
     },
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chart = new Chart(ctx, { type, data, options, plugins: [bgPlugin] } as any)
   chart.draw()
   const dataUrl = canvas.toDataURL('image/png')

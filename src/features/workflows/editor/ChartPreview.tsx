@@ -12,7 +12,6 @@ export default function ChartPreview({ spec }: { spec: ChartSpec }) {
   }
   return (
     <div className="flex-1 min-h-0 p-2">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <Chart type={type as any} data={data as any} options={options as any} />
     </div>
   )
