@@ -75,19 +75,22 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
           </button>
         </div>
 
-        <label className="block text-sm">
-          <span className="text-white/60">Cible</span>
-          <select
-            value={targetId}
-            onChange={(e) => pickTarget(e.target.value)}
-            className="mt-1 w-full bg-well border border-neutral-700 rounded px-2.5 py-2 text-sm text-white outline-none focus:border-indigo-500"
-          >
-            <option value="">➕ Nouveau modèle</option>
-            {existing.map((t) => (
-              <option key={t.id} value={t.id}>Mettre à jour : {t.emoji} {t.name}</option>
-            ))}
-          </select>
-        </label>
+        {/* « Cible » : visible seulement s'il existe déjà des modèles à écraser. */}
+        {existing.length > 0 && (
+          <label className="block text-sm">
+            <span className="text-white/60">Cible</span>
+            <select
+              value={targetId}
+              onChange={(e) => pickTarget(e.target.value)}
+              className="mt-1 w-full bg-well border border-neutral-700 rounded px-2.5 py-2 text-sm text-white outline-none focus:border-indigo-500"
+            >
+              <option value="">➕ Nouveau modèle</option>
+              {existing.map((t) => (
+                <option key={t.id} value={t.id}>Mettre à jour : {t.emoji} {t.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <div className="flex gap-2">
           <label className="block text-sm w-16 shrink-0">
