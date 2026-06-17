@@ -71,7 +71,7 @@ describe('extractProductIdentity (JSON-LD fiche, déterministe)', () => {
       gtin13: '3700812025181',
       offers: { '@type': 'Offer', price: 284.41, priceCurrency: 'EUR' },
     }))
-    expect(id).toEqual({ name: 'Pack RYOBI débroussailleuse RBC36X26B RAC114', ean: '3700812025181', price: 284.41 })
+    expect(id).toEqual({ name: 'Pack RYOBI débroussailleuse RBC36X26B RAC114', ean: '3700812025181', price: 284.41, brand: '' })
   })
 
   it('ignore un gtin non-13 et renvoie le Product dans @graph', () => {
@@ -79,7 +79,7 @@ describe('extractProductIdentity (JSON-LD fiche, déterministe)', () => {
       { '@type': 'BreadcrumbList' },
       { '@type': 'Product', name: 'X', gtin: '123', offers: { price: '99.9' } },
     ] }))
-    expect(id).toEqual({ name: 'X', ean: '', price: 99.9 })
+    expect(id).toEqual({ name: 'X', ean: '', price: 99.9, brand: '' })
   })
 
   it('null si aucun Product', () => {

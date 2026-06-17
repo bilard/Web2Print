@@ -23,6 +23,8 @@ interface ListProductsConfig {
   maxPages?: number
   /** Nom du paramètre d'URL de pagination (ex « page », « p »). */
   pageParam?: string
+  /** Enrichir chaque fiche produit (EAN/marque/prix via JSON-LD canonique). */
+  enrichFiches?: boolean
 }
 
 interface ListProductsOutputs {
@@ -164,8 +166,15 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       default: 'page',
       help: 'Nom du paramètre d’URL de page. Ex : « page » (défaut), « p » (Leroy Merlin).',
     },
+    {
+      name: 'enrichFiches',
+      kind: 'checkbox',
+      label: 'Enrichir chaque fiche (EAN, marque, prix)',
+      default: true,
+      help: 'Va chercher sur CHAQUE fiche produit l’EAN/marque/prix canoniques (JSON-LD, cascade Jina→Firecrawl→Bright Data). Plus complet mais 1 requête par produit (plus lent).',
+    },
   ],
-  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page' },
+  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page', enrichFiches: true },
   runtime: 'any',
   run: async (ctx, config) => {
     const urls = parseUrls(config.urls)
@@ -269,6 +278,42 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
 
     ctx.setProgress?.(100)
     const capped = max > 0 ? allRows.slice(0, max) : allRows
+
+    // Enrichissement par FICHE : l'EAN (et souvent la marque/prix canoniques) ne sont
+    // pas sur la page liste mais sur la fiche produit. Pour chaque produit, on lit la
+    // fiche via la cascade structurée (CF → proxies → Jina → Firecrawl → Bright Data,
+    // SANS LLM) et on récupère le JSON-LD `gtin`/`brand`/`offers.price`.
+    if (config.enrichFiches !== false && capped.length > 0) {
+      const { extractStructuredDataFromUrl } = await import('@/features/scraping/core/structuredDataFetcher')
+      const targets = capped.filter((r) => String(r.url ?? '').startsWith('http'))
+      let done = 0
+      let enriched = 0
+      ctx.log('info', `Enrichissement de ${targets.length} fiche(s) (EAN/marque/prix)…`)
+      // Pool de concurrence borné (coût/temps + rate-limit) ; respecte l'abort.
+      const POOL = 5
+      let cursor = 0
+      const worker = async (): Promise<void> => {
+        while (cursor < targets.length && !ctx.signal.aborted) {
+          const row = targets[cursor++]
+          try {
+            const sd = await extractStructuredDataFromUrl(String(row.url))
+            if (sd) {
+              const eanFromFiche = String(sd.gtin ?? '').replace(/\D/g, '')
+              if (isValidEan13(eanFromFiche)) row.ean = eanFromFiche
+              if (sd.brand && !String(row.brand ?? '').trim()) row.brand = sd.brand
+              const p = sd.offers?.price
+              if (typeof p === 'number' && p > 0) row.price = String(p)
+              if (sd.gtin || sd.brand || sd.offers?.price != null) enriched++
+            }
+          } catch { /* fiche inaccessible → on garde la donnée de la liste */ }
+          done++
+          ctx.setProgress?.(Math.round((done / targets.length) * 100))
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(POOL, targets.length) }, () => worker()))
+      ctx.log('info', `Fiches enrichies : ${enriched}/${targets.length}.`)
+    }
+
     if (capped.length === 0) {
       ctx.log('warn', '⚠️ Aucun produit extrait — vérifie les URLs (pages liste) et la disponibilité Jina.')
     } else {

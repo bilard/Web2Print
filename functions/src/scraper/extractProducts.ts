@@ -96,6 +96,8 @@ export interface ProductIdentity {
   ean: string
   /** Prix `offers.price` canonique (unique, sans ambiguïté barré/promo) ou null. */
   price: number | null
+  /** Marque (`brand.name` ou `brand`) ou '' si absente. */
+  brand: string
 }
 
 /**
@@ -137,6 +139,7 @@ function identityFromJsonLd(c: any): ProductIdentity | null {
   const name: string = typeof c.name === 'string' ? c.name : ''
   const rawEan = String(c.gtin13 ?? c.gtin ?? c.gtin14 ?? c.gtin12 ?? c.ean ?? '').replace(/\D/g, '')
   const ean = rawEan.length === 13 ? rawEan : ''
+  const brand = typeof c.brand === 'object' ? String(c.brand?.name ?? '') : String(c.brand ?? '')
   let price: number | null = null
   const offers = Array.isArray(c.offers) ? c.offers[0] : c.offers
   if (offers) {
@@ -147,7 +150,7 @@ function identityFromJsonLd(c: any): ProductIdentity | null {
     }
   }
   if (!name && !ean && price == null) return null
-  return { name, ean, price }
+  return { name, ean, price, brand }
 }
 
 function productFromJsonLd(c: any, baseUrl: string): ScrapedProduct | null {

@@ -8,6 +8,8 @@ import { registerServerNode } from '../registry'
 import { jinaRead } from '../jina'
 import { brightDataRead, htmlToText } from '../brightData'
 import { callLlm, parseLlmJson, recoverJsonObjects } from '../llm'
+import { fetchHtml } from '../../scraper/fetchHtml'
+import { extractProductIdentity } from '../../scraper/extractProducts'
 
 interface ExtractedProduct {
   name?: unknown
@@ -248,6 +250,35 @@ registerServerNode({
       }
     }
     const capped = max > 0 ? rows.slice(0, max) : rows
+
+    // Enrichissement par FICHE (EAN/marque/prix canoniques du JSON-LD) : l'EAN n'est
+    // quasi jamais sur la page liste. Pour chaque produit, on lit la fiche via
+    // fetchHtml (cheap) → Bright Data (anti-bot) et on parse le JSON-LD.
+    if (config.enrichFiches !== false && capped.length > 0) {
+      const fetchFiche = async (url: string): Promise<string> => {
+        try {
+          const html = await fetchHtml(url, 20000)
+          if (htmlToText(html).length > 500) return html
+        } catch { /* escalade */ }
+        try { return (await brightDataRead(url)).html } catch { return '' }
+      }
+      const targets = capped.filter((r) => /^https?:\/\//.test(String(r.url ?? '')))
+      ctx.log('info', `Enrichissement de ${targets.length} fiche(s) (EAN/marque/prix)…`)
+      let enriched = 0
+      await mapLimit(targets, 5, async (row) => {
+        if (ctx.signal.aborted) return
+        const html = await fetchFiche(String(row.url))
+        if (!html) return
+        const id = extractProductIdentity(html)
+        if (!id) return
+        if (id.ean) row.ean = id.ean
+        if (id.brand && !String(row.brand ?? '').trim()) row.brand = id.brand
+        if (id.price != null && id.price > 0) row.price = String(id.price)
+        if (id.ean || id.brand || id.price != null) enriched++
+      })
+      ctx.log('info', `Fiches enrichies : ${enriched}/${targets.length}.`)
+    }
+
     ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}.`)
     if (capped.length === 0) ctx.log('warn', 'Aucun produit extrait.')
     return { sheet: { columns: COLUMNS, rows: capped } }
