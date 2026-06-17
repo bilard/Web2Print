@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Rocket, Pencil, FileUp, Database, Download, Workflow, Bot, ShieldCheck, type LucideIcon } from 'lucide-react'
+import { Rocket, Pencil, FileUp, Database, Download, Workflow, Bot, ShieldCheck, BookOpen, ExternalLink, type LucideIcon } from 'lucide-react'
 import { HELP_CATEGORIES, type HelpCategory, type HelpSection } from './content/types'
 import { useHelpStore } from './help.store'
 import { useVisibleHelpSections } from './useVisibleHelpSections'
@@ -149,6 +149,17 @@ export function HelpTableOfContents() {
           </div>
         )
       })}
+
+      <a
+        href="/docs/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 mt-1 px-2.5 py-2 rounded-md border border-indigo-500/30 bg-indigo-500/[0.08] text-xs text-indigo-200 hover:bg-indigo-500/15 transition-colors"
+      >
+        <BookOpen className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+        <span className="flex-1 font-medium">Documentation complète</span>
+        <ExternalLink className="w-3 h-3 text-indigo-400/70 shrink-0" />
+      </a>
     </nav>
   )
 }
