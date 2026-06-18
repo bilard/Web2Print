@@ -1,7 +1,7 @@
 // src/features/data-graph/firestoreSchema.ts
 import {
   User, Shield, LayoutTemplate, Boxes, Package, Database, Tags,
-  FileText, Workflow as WorkflowIcon, Play, Images, Activity, FileCode,
+  FileText, Workflow as WorkflowIcon, Play, Images, Activity, FileCode, Rows3,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -144,14 +144,25 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'excel_data', label: 'excel_data', icon: Database, domain: 'data', x: 120, y: 600,
-    description: 'Bases de données (feuilles BDD).',
+    description: 'Bases de données (métadonnées des feuilles BDD).',
     query: { path: 'excel_data', ownerField: 'userId' },
     fields: [
       { name: 'docId', type: 'string', pk: true },
       { name: 'userId', type: 'string', fk: 'users' },
       { name: 'fileName', type: 'string' },
-      { name: 'sheets', type: 'array' },
+      { name: 'sheetCount', type: 'number' },
+      { name: 'totalRows', type: 'number' },
       { name: 'updatedAt', type: 'number' },
+    ],
+  },
+  {
+    id: 'excel_data_payload', label: 'excel_data_payload', icon: Rows3, domain: 'data', x: -200, y: 620,
+    description: 'Contenu des feuilles BDD (lignes/colonnes) — double-clic « sheets » pour les produits.',
+    query: { path: 'excel_data_payload', ownerField: 'userId' },
+    fields: [
+      { name: 'docId', type: 'string', pk: true },
+      { name: 'userId', type: 'string', fk: 'users' },
+      { name: 'sheets', type: 'object' },
     ],
   },
   {
@@ -236,6 +247,7 @@ export const RELATIONS: RelationSpec[] = [
   { from: 'briefs',       to: 'taxonomies',   card: '1:1', fromSide: 'top',   toSide: 'bottom' },
   { from: 'pim_projects', to: 'products',     card: '1:N', fromSide: 'bottom', toSide: 'top' },
   { from: 'workflows',    to: 'workflowRuns', card: '1:N', fromSide: 'bottom', toSide: 'top' },
+  { from: 'excel_data',   to: 'excel_data_payload', card: '1:1', fromSide: 'left', toSide: 'right' },
   { from: 'users',        to: 'roles',        card: 'N:1', fromSide: 'right', toSide: 'left' },
   // ── Propriété (atténué) : users = hub ──
   { from: 'users', to: 'projects',     card: '1:N', fromSide: 'left',   toSide: 'top',   ownership: true },
