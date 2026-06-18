@@ -27,6 +27,7 @@ import { hyperframesSection } from './hyperframes'
 import { chatSection } from './chat'
 import { accessSection } from './access'
 import { settingsSection } from './settings'
+import { explorerSection } from './explorer'
 
 export const helpSections: HelpSection[] = [
   gettingStarted,
@@ -57,6 +58,7 @@ export const helpSections: HelpSection[] = [
   chatSection,
   accessSection,
   settingsSection,
+  explorerSection,
 ]
 
 export const helpSectionsById: Map<string, HelpSection> = new Map(

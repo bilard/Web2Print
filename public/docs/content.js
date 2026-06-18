@@ -1272,5 +1272,40 @@ export const MODULES = [
       }
     ],
     "shortcuts": []
+  },
+  {
+    "id": "explorer",
+    "cat": "Données",
+    "icon": "🗺️",
+    "anim": "taxonomy",
+    "title": "Explorateur de données",
+    "intro": "Cartographie Firestore : schéma relationnel (ERD) des collections, clés et cardinalités, et inspection des enregistrements en direct. Réservé au propriétaire.",
+    "features": [
+      {
+        "title": "Le problème",
+        "desc": "Une base qui grandit devient opaque : on ne sait plus quelles collections existent, comment elles se relient, ni ce qu'elles contiennent réellement — sans ouvrir la console Firebase."
+      },
+      {
+        "title": "Modèle de données (ERD)",
+        "desc": "Chaque collection est une table avec ses champs, sa clé primaire (PK) et ses clés étrangères (FK) ; les relations métier sont tracées avec leur cardinalité (1:1, 1:N)."
+      },
+      {
+        "title": "Données live",
+        "desc": "Un double-clic sur une table ouvre le contenu réel de la collection, mis à jour en temps réel (onSnapshot). Pour les bases Excel, un sélecteur liste chaque base et n'affiche que ses colonnes utiles."
+      },
+      {
+        "title": "Disposition persistée",
+        "desc": "Déplacez les tables par glisser : leur position est enregistrée sur votre profil (Firestore) et restaurée à la prochaine ouverture. Composez la cartographie qui correspond à votre lecture de la donnée."
+      },
+      {
+        "title": "Étendre le schéma (collections / relations)",
+        "desc": "Le diagramme se construit à partir de TABLES et RELATIONS dans features/data-graph/firestoreSchema.ts. Ajouter une collection ou un lien = compléter ces deux listes ; le rendu et les cardinalités suivent automatiquement."
+      },
+      {
+        "title": "Pourquoi propriétaire uniquement",
+        "desc": "L'explorateur expose la structure et les données brutes de tout l'espace de travail (tous comptes confondus). L'onglet Données des Paramètres — comme Firebase — est donc réservé au propriétaire."
+      }
+    ],
+    "shortcuts": []
   }
 ]

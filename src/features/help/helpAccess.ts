@@ -37,6 +37,7 @@ const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   settings: 'settings.view',
   // Administration
   access: ADMIN_PERMISSION,
+  explorer: ADMIN_PERMISSION,
 }
 
 /** Contexte d'accès du user courant (extrait d'`access.store`). */

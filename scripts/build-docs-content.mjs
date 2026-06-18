@@ -20,6 +20,7 @@ const ICON = {
   dam: '🖼️', pim: '📦', taxonomies: '🌳', briefs: '📝',
   scraping: '🕸️', 'scraping-templates': '🧩', 'scraping-hub': '🛰️', 'price-watch': '💰',
   export: '📤', workflow: '⚡', telegram: '✈️', chat: '💬', access: '🛡️', settings: '⚙️',
+  explorer: '🗺️',
 }
 const ANIM = {
   'getting-started': 'pipeline', nouveautes: 'spark', onboarding: 'checklist', navigation: 'taxonomy',
@@ -29,6 +30,7 @@ const ANIM = {
   dam: 'dam', pim: 'pim', taxonomies: 'taxonomy', briefs: 'chat',
   scraping: 'scrape', 'scraping-templates': 'scrape', 'scraping-hub': 'scrape', 'price-watch': 'pricewatch',
   export: 'export', workflow: 'workflow', telegram: 'telegram', chat: 'chat', access: 'access', settings: 'settings',
+  explorer: 'taxonomy',
 }
 
 // Métadonnées d'affichage des 8 catégories (ordre = ordre des sections).
