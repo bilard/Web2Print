@@ -1,11 +1,11 @@
 // src/features/data-graph/DataModelDiagram.tsx
 import { useCallback, useMemo, useState } from 'react'
 import {
-  ReactFlow, Background, Controls, applyNodeChanges,
+  ReactFlow, Background, Panel, applyNodeChanges, useReactFlow,
   type Node, type NodeChange, type NodeMouseHandler,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Database, Zap } from 'lucide-react'
+import { Database, Zap, Plus, Minus, Maximize } from 'lucide-react'
 import { useThemeStore } from '@/stores/theme.store'
 import { buildDiagram, type TableNodeData } from './buildDiagram'
 import { TABLES } from './firestoreSchema'
@@ -13,6 +13,19 @@ import { TableNode } from './TableNode'
 import { TableDataPanel } from './TableDataPanel'
 
 const nodeTypes = { table: TableNode }
+
+/** Contrôles de zoom thémés (les <Controls> par défaut de ReactFlow rendent en blanc). */
+function DiagramControls() {
+  const { zoomIn, zoomOut, fitView } = useReactFlow()
+  const btn = 'flex h-7 w-7 items-center justify-center text-white/55 transition-colors hover:text-white'
+  return (
+    <Panel position="bottom-left" className="!m-3 flex flex-col overflow-hidden rounded-lg border border-white/10 bg-well/95 backdrop-blur">
+      <button onClick={() => zoomIn({ duration: 150 })} title="Zoom avant" className={`${btn} border-b border-white/10`}><Plus className="h-3.5 w-3.5" /></button>
+      <button onClick={() => zoomOut({ duration: 150 })} title="Zoom arrière" className={`${btn} border-b border-white/10`}><Minus className="h-3.5 w-3.5" /></button>
+      <button onClick={() => fitView({ padding: 0.15, duration: 250 })} title="Recadrer" className={btn}><Maximize className="h-3.5 w-3.5" /></button>
+    </Panel>
+  )
+}
 
 /** Vue « Données » : diagramme ERD des collections Firestore (tous les champs, PK/FK,
  *  relations + cardinalités). Double-clic sur une table interrogeable → panneau de
@@ -70,7 +83,7 @@ export function DataModelDiagram() {
           proOptions={{ hideAttribution: true }}
         >
           <Background color={isLight ? '#d4d4d8' : '#1f1f1f'} gap={22} size={1} />
-          <Controls className="!bg-surface !border-white/15" showInteractive={false} />
+          <DiagramControls />
         </ReactFlow>
 
         {selectedTable && (
