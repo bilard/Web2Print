@@ -14,6 +14,7 @@ function useColumns(table: TableSchema, rows: TableRow[]): string[] {
     const seen = new Set<string>()
     const push = (k: string) => { if (!seen.has(k) && k !== '_docId') { seen.add(k); cols.push(k) } }
     if (table.query?.flattenSheets) {
+      push('bdd')
       push('feuille')
       rows.forEach((r) => Object.keys(r).forEach(push))
       return cols

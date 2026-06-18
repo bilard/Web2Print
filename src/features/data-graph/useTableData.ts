@@ -51,31 +51,47 @@ export function useTableData(spec: QuerySpec | null) {
     }
 
     // Feuilles aplaties → LIVE sur la collection, puis on explose chaque doc en lignes.
+    // On joint excel_data (docId → fileName) pour étiqueter chaque ligne par sa BDD.
     if (spec.flattenSheets) {
       setLive(true)
-      const base = collection(db, spec.path.replace('{uid}', uid))
-      const q = spec.ownerField ? query(base, where(spec.ownerField, '==', uid)) : query(base)
       const field = spec.flattenSheets
-      const unsub = onSnapshot(
-        q,
-        (snap) => {
-          const out: TableRow[] = []
-          for (const d of snap.docs) {
-            const sheets = asSheets(parseMaybeJson((d.data() as Record<string, unknown>)[field]))
-            if (!sheets) continue
-            for (const s of sheets) {
-              for (const r of s.rows) {
-                if (out.length >= FLAT_MAX) break
-                out.push({ _docId: `${d.id}:${out.length}`, feuille: s.name ?? d.id, ...r })
+      let alive = true
+      let unsub = () => {}
+      ;(async () => {
+        const nameById = new Map<string, string>()
+        try {
+          const meta = await getDocs(query(collection(db, 'excel_data'), where('userId', '==', uid)))
+          meta.forEach((d) => {
+            const fn = (d.data() as { fileName?: string }).fileName
+            if (fn) nameById.set(d.id, fn)
+          })
+        } catch { /* best-effort : repli sur l'id du doc */ }
+        if (!alive) return
+
+        const base = collection(db, spec.path.replace('{uid}', uid))
+        const q = spec.ownerField ? query(base, where(spec.ownerField, '==', uid)) : query(base)
+        unsub = onSnapshot(
+          q,
+          (snap) => {
+            const out: TableRow[] = []
+            for (const d of snap.docs) {
+              const sheets = asSheets(parseMaybeJson((d.data() as Record<string, unknown>)[field]))
+              if (!sheets) continue
+              const bdd = nameById.get(d.id) ?? d.id
+              for (const s of sheets) {
+                for (const r of s.rows) {
+                  if (out.length >= FLAT_MAX) break
+                  out.push({ _docId: `${d.id}:${out.length}`, bdd, feuille: s.name ?? '', ...r })
+                }
               }
             }
-          }
-          setRows(out)
-          setLoading(false)
-        },
-        onErr,
-      )
-      return unsub
+            setRows(out)
+            setLoading(false)
+          },
+          onErr,
+        )
+      })()
+      return () => { alive = false; unsub() }
     }
 
     // Sous-collection agrégée → chargement one-shot.
