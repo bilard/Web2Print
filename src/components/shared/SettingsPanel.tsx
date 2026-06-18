@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network } from 'lucide-react'
+import { DataRelationsGraph } from '@/features/data-graph/DataRelationsGraph'
 import {
   FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo,
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
@@ -57,7 +58,7 @@ function formatTokens(n: number): string {
   return n.toLocaleString('fr-FR')
 }
 
-type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats'
+type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'data'
 
 interface TabConfig {
   id: SettingsTab
@@ -72,6 +73,7 @@ const TABS: TabConfig[] = [
   { id: 'firebase',   label: 'Firebase',      icon: Flame,     accent: 'text-amber-400' },
   { id: 'connectors', label: 'Connecteurs',   icon: Plug,      accent: 'text-emerald-400' },
   { id: 'cookies',    label: 'Cookies',       icon: Cookie,    accent: 'text-amber-300' },
+  { id: 'data',       label: 'Données',       icon: Network,   accent: 'text-cyan-400' },
   { id: 'stats',      label: 'Statistiques',  icon: BarChart2, accent: 'text-sky-400' },
 ]
 
@@ -606,11 +608,21 @@ export function SettingsPanel({
       {activeTab === 'connectors' && canTab('connectors') && <ConnectorsTab />}
       {activeTab === 'cookies' && canTab('cookies') && <CookiesTab />}
       {activeTab === 'stats' && <StatsTab />}
+      {activeTab === 'data' && <DataRelationsGraph />}
     </>
   )
 
   // ── Mode page : header fixe + 2 colonnes scrollables indépendamment ──
   if (fillHeight) {
+    // L'onglet Données (graphe de relations) occupe toute la largeur dispo.
+    if (activeTab === 'data') {
+      return (
+        <div className="h-full min-h-0 flex flex-col gap-5">
+          {headerBlock}
+          <div className="flex-1 min-h-0"><DataRelationsGraph /></div>
+        </div>
+      )
+    }
     return (
       <div className="h-full min-h-0 flex flex-col gap-5">
         {headerBlock}
