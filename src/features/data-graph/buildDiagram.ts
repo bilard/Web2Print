@@ -33,12 +33,12 @@ export function buildDiagram(): { nodes: Node[]; edges: Edge[] } {
       labelBgPadding: [6, 2] as [number, number],
       labelBgBorderRadius: 4,
       labelBgStyle: { fill: 'rgb(var(--surface))', fillOpacity: 0.95 },
-      labelStyle: { fill: 'rgb(var(--base) / 0.85)', fontSize: 11, fontWeight: 700 },
+      labelStyle: { fill: 'rgb(var(--base) / 0.9)', fontSize: 11, fontWeight: 700 },
       style: {
         stroke: hex,
-        strokeWidth: r.ownership ? 1.2 : 2,
-        opacity: r.ownership ? 0.35 : 0.85,
-        strokeDasharray: '6 4',
+        strokeWidth: r.ownership ? 2 : 2.6,
+        opacity: r.ownership ? 0.75 : 1,
+        strokeDasharray: r.ownership ? '6 4' : undefined,
       },
     }
   })

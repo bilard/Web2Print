@@ -1,7 +1,7 @@
 // src/features/data-graph/DataModelDiagram.tsx
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ReactFlow, Background, Panel, applyNodeChanges, useReactFlow,
+  ReactFlow, ReactFlowProvider, Background, Panel, applyNodeChanges, useReactFlow,
   type Node, type NodeChange, type NodeMouseHandler,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -11,6 +11,7 @@ import { buildDiagram, type TableNodeData } from './buildDiagram'
 import { TABLES } from './firestoreSchema'
 import { TableNode } from './TableNode'
 import { TableDataPanel } from './TableDataPanel'
+import { useDiagramLayout } from './useDiagramLayout'
 
 const nodeTypes = { table: TableNode }
 
@@ -29,17 +30,39 @@ function DiagramControls() {
 
 /** Vue « Données » : diagramme ERD des collections Firestore (tous les champs, PK/FK,
  *  relations + cardinalités). Double-clic sur une table interrogeable → panneau de
- *  données live ancré en bas. Nœuds déplaçables (session), zoom/pan. */
+ *  données live. Positions des tables persistées par utilisateur (Firestore). */
 export function DataModelDiagram() {
+  return (
+    <ReactFlowProvider>
+      <DataModelDiagramInner />
+    </ReactFlowProvider>
+  )
+}
+
+function DataModelDiagramInner() {
   const isLight = useThemeStore((s) => s.resolvedTheme === 'light')
   const initial = useMemo(() => buildDiagram(), [])
   const [nodes, setNodes] = useState<Node[]>(initial.nodes)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { layout, saveLayout } = useDiagramLayout()
+  const { fitView } = useReactFlow()
+
+  // Applique les positions sauvegardées (Firestore) une fois chargées.
+  useEffect(() => {
+    if (!layout) return
+    setNodes((prev) => prev.map((n) => (layout[n.id] ? { ...n, position: layout[n.id] } : n)))
+    setTimeout(() => fitView({ padding: 0.15, duration: 300 }), 50)
+  }, [layout, fitView])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((prev) => applyNodeChanges(changes, prev)),
     [],
   )
+
+  // Persiste les positions après un déplacement de table.
+  const onNodeDragStop = useCallback(() => {
+    setNodes((prev) => { saveLayout(prev); return prev })
+  }, [saveLayout])
 
   const onNodeDoubleClick: NodeMouseHandler = useCallback((_, node) => {
     const { table } = node.data as TableNodeData
@@ -73,6 +96,7 @@ export function DataModelDiagram() {
           edges={initial.edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
+          onNodeDragStop={onNodeDragStop}
           onNodeDoubleClick={onNodeDoubleClick}
           nodesConnectable={false}
           elementsSelectable
