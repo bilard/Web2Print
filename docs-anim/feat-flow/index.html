@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A; --surface2:#16161c;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --sky:#38BDF8; --emerald:#34D399; --amber:#FBBF24; --pink:#F472B6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="feat-flow"]{width:1600px;height:384px;position:relative;background:var(--bg);font-family:Inter,sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 50% 32%,rgba(99,102,241,.16),transparent 62%);pointer-events:none}
+
+  /* Canvas du graphe (réutilise les patterns workflow de dam) */
+  .wf-canvas{position:relative;width:100%;height:100%;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:radial-gradient(circle at 50% 30%,rgba(99,102,241,.08),transparent 58%),#0b0b0e;box-shadow:0 40px 90px -40px #000}
+  .wf-canvas::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.09) 1.4px,transparent 1.4px);background-size:28px 28px;opacity:.5}
+
+  /* Fils + jeton */
+  .wf-wires{position:absolute;top:0;left:0;width:1600px;height:384px;pointer-events:none;z-index:1;overflow:visible}
+  .wf-wires .wire{fill:none;stroke:#4b4b66;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:130;stroke-dashoffset:130;filter:drop-shadow(0 0 5px rgba(99,102,241,.35))}
+  .token{position:absolute;top:192px;left:0;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;z-index:4;background:radial-gradient(circle at 38% 34%,#fff,var(--sky) 60%,#1e6fb0);box-shadow:0 0 18px 4px rgba(56,189,248,.75),0 0 5px 1px #fff;opacity:0}
+
+  /* Nodes */
+  .wf-node{position:absolute;width:200px;height:96px;top:144px;border:1px solid var(--line2);border-radius:16px;background:linear-gradient(180deg,#1d1d25,#141418);padding:0 18px;display:flex;align-items:center;gap:13px;z-index:2;box-shadow:0 20px 44px -24px #000}
+  .wf-node .ni{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;flex-shrink:0;background:var(--accent);box-shadow:0 6px 16px -5px var(--accent)}
+  .wf-node .ni svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .wf-node b{font-size:21px;font-weight:700;letter-spacing:-.01em}
+  .wf-node .tag{position:absolute;top:-11px;left:15px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--tag-ink,#cdd2ff);background:#0b0b0e;border:1px solid var(--accent);border-radius:6px;padding:2px 9px;z-index:3}
+  /* pastilles d'entrée/sortie (décoratives) */
+  .wf-node .pin{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#0b0b0e;border:3px solid var(--accent);transform:translateY(-50%);box-shadow:0 0 11px -1px var(--accent);z-index:3}
+  .wf-node .pin.in{left:-7px}
+  .wf-node .pin.out{right:-7px}
+  /* coche « envoyé » sur le dernier node */
+  .wf-node .sent{position:absolute;top:-13px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--emerald);color:#06281b;display:grid;place-items:center;opacity:0;box-shadow:0 6px 18px -4px var(--emerald)}
+  .wf-node .sent svg{width:18px;height:18px;stroke:currentColor;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  .n0{left:42px;--accent:#38BDF8;--tag-ink:#7dd3fc}
+  .n1{left:354px;--accent:#A78BFA;--tag-ink:#c4b5fd}
+  .n2{left:666px;--accent:#6366F1;--tag-ink:#a5b4fc}
+  .n3{left:978px;--accent:#FBBF24;--tag-ink:#fcd34d}
+  .n4{left:1290px;--accent:#34D399;--tag-ink:#6ee7b7}
+
+  /* Eyebrow */
+  .eyebrow{position:absolute;left:34px;top:18px;z-index:5;display:flex;align-items:center;gap:11px;font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase}
+  .eyebrow .dot{width:9px;height:9px;border-radius:50%;background:var(--indigo);box-shadow:0 0 12px 1px var(--indigo)}
+</style>
+</head>
+<body>
+<div data-composition-id="feat-flow" data-start="0" data-duration="7" data-width="1600" data-height="384">
+
+  <div class="scene" id="s1">
+    <div class="glow"></div>
+    <div class="wf-canvas" data-layout-allow-overflow data-layout-allow-occlusion>
+      <span class="eyebrow" id="eyebrow"><span class="dot"></span>Workflow · Automatisation</span>
+
+      <!-- Fils entre les nodes (bord droit du node N → bord gauche du node N+1) -->
+      <svg class="wf-wires" viewBox="0 0 1600 384" data-layout-allow-overflow>
+        <path class="wire" id="w0" d="M242 192 H354"/>
+        <path class="wire" id="w1" d="M554 192 H666"/>
+        <path class="wire" id="w2" d="M866 192 H978"/>
+        <path class="wire" id="w3" d="M1178 192 H1290"/>
+      </svg>
+
+      <!-- Jeton lumineux qui traverse le graphe -->
+      <span class="token" id="token" data-layout-ignore></span>
+
+      <!-- 5 nodes : Scraper → Enrichir → Composer → Exporter → Telegram -->
+      <div class="wf-node n0" id="nd0" data-layout-allow-overlap>
+        <span class="tag">01</span>
+        <span class="pin in" data-layout-ignore></span><span class="pin out" data-layout-ignore></span>
+        <span class="ni"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></span>
+        <b>Scraper</b>
+      </div>
+
+      <div class="wf-node n1" id="nd1" data-layout-allow-overlap>
+        <span class="tag">02</span>
+        <span class="pin in" data-layout-ignore></span><span class="pin out" data-layout-ignore></span>
+        <span class="ni"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 14.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/></svg></span>
+        <b>Enrichir</b>
+      </div>
+
+      <div class="wf-node n2" id="nd2" data-layout-allow-overlap>
+        <span class="tag">03</span>
+        <span class="pin in" data-layout-ignore></span><span class="pin out" data-layout-ignore></span>
+        <span class="ni"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
+        <b>Composer</b>
+      </div>
+
+      <div class="wf-node n3" id="nd3" data-layout-allow-overlap>
+        <span class="tag">04</span>
+        <span class="pin in" data-layout-ignore></span><span class="pin out" data-layout-ignore></span>
+        <span class="ni"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
+        <b>Exporter</b>
+      </div>
+
+      <div class="wf-node n4" id="nd4" data-layout-allow-overlap>
+        <span class="tag">05</span>
+        <span class="pin in" data-layout-ignore></span><span class="pin out" data-layout-ignore></span>
+        <span class="sent" id="sent"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span class="ni"><svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span>
+        <b>Telegram</b>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    const nodes = ["#nd0", "#nd1", "#nd2", "#nd3", "#nd4"];
+    const accents = ["#38BDF8", "#A78BFA", "#6366F1", "#FBBF24", "#34D399"];
+    // x d'arrivée du jeton = sur le picto (entrée) de chaque node, jamais sur le label
+    const cx = [74, 386, 698, 1010, 1322];
+
+    // Entrée du canvas + eyebrow
+    tl.from("#s1 .wf-canvas", { y: 22, opacity: 0, scale: 0.99, duration: 0.55, ease: "power3.out", transformOrigin: "50% 50%" }, 0.1);
+    tl.from("#eyebrow", { x: -14, opacity: 0, duration: 0.45, ease: "power2.out" }, 0.35);
+
+    // Apparition des nodes (stagger), bordure neutre au départ
+    tl.set(nodes, { borderColor: "rgba(255,255,255,0.14)" }, 0);
+    tl.from(nodes, { y: 16, opacity: 0, scale: 0.92, duration: 0.45, ease: "back.out(1.5)", stagger: 0.12, transformOrigin: "50% 50%" }, 0.55);
+
+    // Les fils se tracent l'un après l'autre
+    const wires = ["#w0", "#w1", "#w2", "#w3"];
+    wires.forEach((w, i) => {
+      tl.to(w, { strokeDashoffset: 0, duration: 0.45, ease: "power2.inOut" }, 1.5 + i * 0.28);
+    });
+
+    // Le jeton apparaît sur le picto du premier node puis traverse le graphe
+    tl.set("#token", { x: cx[0] }, 0);
+    tl.to("#token", { opacity: 1, duration: 0.25, ease: "power2.out" }, 2.75);
+
+    // Chaque node s'allume (glow de bordure) à l'arrivée du jeton sur son picto
+    const litTimes = [2.95, 3.75, 4.55, 5.35, 6.05];
+    // Le jeton voyage de picto en picto, synchro avec les illuminations
+    tl.to("#token", { x: cx[1], duration: 0.7, ease: "power1.inOut" }, 3.05);
+    tl.to("#token", { x: cx[2], duration: 0.7, ease: "power1.inOut" }, 3.85);
+    tl.to("#token", { x: cx[3], duration: 0.7, ease: "power1.inOut" }, 4.65);
+    tl.to("#token", { x: cx[4], duration: 0.7, ease: "power1.inOut" }, 5.45);
+
+    nodes.forEach((n, i) => {
+      const t = litTimes[i];
+      // glow d'arrivée : la bordure prend l'accent du node
+      tl.to(n, { borderColor: accents[i], duration: 0.3, ease: "power2.out" }, t);
+      tl.to(n, { keyframes: { scale: [1, 1.045, 1] }, duration: 0.6, ease: "power2.inOut", transformOrigin: "50% 50%" }, t);
+      // les bordures restent allumées (le flux a été établi) — pas de reset
+    });
+
+    // Le jeton se fond dans le dernier node, la coche « envoyé » apparaît
+    tl.to("#token", { opacity: 0, scale: 0.4, duration: 0.3, ease: "power2.in", transformOrigin: "50% 50%" }, 6.1);
+    tl.fromTo("#sent", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)", transformOrigin: "50% 50%" }, 6.15);
+
+    // Sortie douce (fade) pour une boucle propre
+    tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 6.5);
+
+    window.__timelines["feat-flow"] = tl;
+  </script>
+</div>
+</body>
+</html>

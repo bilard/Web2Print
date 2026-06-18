@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A; --surface2:#16161c;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.66);
+    --indigo:#6366F1; --violet:#A78BFA; --sky:#38BDF8; --emerald:#34D399; --amber:#FBBF24;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="feat-telegram"]{width:1600px;height:384px;position:relative;background:var(--bg);font-family:Inter,sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;gap:60px;padding:34px 56px}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 64% 90% at 78% 40%,rgba(99,102,241,.18),transparent 60%);pointer-events:none}
+
+  /* Colonne gauche : pitch */
+  .pitch{flex:0 0 480px;display:flex;flex-direction:column;gap:18px}
+  .eyebrow{display:inline-flex;align-items:center;gap:11px;align-self:flex-start;font-family:"JetBrains Mono",monospace;font-size:15px;font-weight:700;letter-spacing:.04em;color:#cdc7ff;background:rgba(124,108,255,.16);border:1px solid rgba(124,108,255,.5);border-radius:100px;padding:8px 16px}
+  .eyebrow svg{width:17px;height:17px}
+  .ptitle{font-size:46px;font-weight:800;letter-spacing:-.015em;line-height:1.05}
+  .ptitle .hl{color:var(--violet)}
+  .psub{font-size:21px;line-height:1.45;color:var(--mut);max-width:440px}
+  .flow{display:flex;align-items:center;gap:14px;margin-top:6px;font-size:17px;color:var(--ink)}
+  .flow .step{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line2);border-radius:100px;padding:8px 16px;background:var(--surface)}
+  .flow .step svg{width:17px;height:17px;color:var(--violet)}
+  .flow .arr{color:var(--mut)}.flow .arr svg{width:18px;height:18px;display:block}
+
+  /* Colonne droite : fil de chat */
+  .tg{flex:1;display:flex;flex-direction:column;justify-content:center;gap:13px;max-width:600px}
+  .tg-msg{max-width:88%;padding:13px 18px;border-radius:18px;font-size:18px;line-height:1.4}
+  .tg-msg.me{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:6px;box-shadow:0 14px 32px -16px rgba(99,102,241,.8)}
+  .tg-msg.me code{font-family:"JetBrains Mono",monospace;font-size:.9em;background:rgba(255,255,255,.20);padding:2px 7px;border-radius:5px}
+  .tg-msg.bot{align-self:flex-start;background:var(--elev);border:1px solid var(--line2);border-bottom-left-radius:6px}
+  .tg-typing{display:flex;align-items:center;gap:11px}
+  .tg-typing .lbl{color:var(--ink)}
+  .tg-dots{display:inline-flex;gap:6px}
+  .tg-dots i{width:9px;height:9px;border-radius:50%;background:var(--violet);display:inline-block}
+  .tg-file{align-self:flex-start;display:flex;align-items:center;gap:15px;background:var(--elev);border:1px solid var(--line2);border-radius:15px;padding:14px 18px;min-width:380px;box-shadow:0 20px 44px -22px #000}
+  .tg-file .fi{width:48px;height:48px;border-radius:12px;background:rgba(52,211,153,.18);color:var(--emerald);display:grid;place-items:center;flex-shrink:0}
+  .tg-file .fi svg{width:25px;height:25px}
+  .tg-file b{font-size:19px;display:block;line-height:1.2}
+  .tg-file .meta{font-size:15px;color:var(--mut);margin-top:3px}
+  .tg-file .dl{margin-left:auto;color:var(--violet);flex-shrink:0}
+  .tg-file .dl svg{width:25px;height:25px;display:block}
+</style>
+</head>
+<body>
+<div data-composition-id="feat-telegram" data-start="0" data-duration="7" data-width="1600" data-height="384">
+
+  <div class="scene" id="s1">
+    <div class="glow"></div>
+
+    <div class="pitch">
+      <span class="eyebrow" id="eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
+        PILOTER DEPUIS TELEGRAM
+      </span>
+      <div class="ptitle" id="ptitle">Une commande, <span class="hl">l'app s'exécute</span></div>
+      <div class="psub" id="psub">Lancez un workflow depuis un simple message. Le bot exécute le scraping et vous renvoie le fichier, directement dans la conversation.</div>
+      <div class="flow" id="flow">
+        <span class="step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/></svg>Commande</span>
+        <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        <span class="step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>Exécution</span>
+        <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        <span class="step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Fichier</span>
+      </div>
+    </div>
+
+    <div class="tg">
+      <div class="tg-msg me" id="m-user"><code>/flow scraper nicoll &rarr; Google Sheet</code></div>
+      <div class="tg-msg bot tg-typing" id="m-typing">
+        <span class="lbl">Je g&eacute;n&egrave;re&hellip;</span>
+        <span class="tg-dots"><i id="d1"></i><i id="d2"></i><i id="d3"></i></span>
+      </div>
+      <div class="tg-file" id="m-file" data-layout-allow-overflow>
+        <span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg></span>
+        <span><b>nicoll-catalogue.xlsx</b><span class="meta">Google Sheet &middot; 248 produits &middot; 64 Ko</span></span>
+        <span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Colonne gauche : pitch entre en cascade
+    tl.from("#eyebrow", { y: 16, opacity: 0, duration: 0.5, ease: "back.out(1.6)" }, 0.15);
+    tl.from("#ptitle", { y: 22, opacity: 0, duration: 0.6, ease: "power3.out" }, 0.3);
+    tl.from("#psub", { y: 16, opacity: 0, duration: 0.55, ease: "power2.out" }, 0.5);
+    tl.from("#flow .step, #flow .arr", { y: 12, opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.08 }, 0.7);
+
+    // Fil de chat : bulles en cascade (y + opacity)
+    tl.from("#m-user", { y: 24, opacity: 0, scale: 0.94, duration: 0.5, ease: "back.out(1.5)", transformOrigin: "100% 50%" }, 1.2);
+
+    // Bulle « génère… » apparaît
+    tl.from("#m-typing", { y: 20, opacity: 0, scale: 0.95, duration: 0.45, ease: "power3.out", transformOrigin: "0% 50%" }, 1.9);
+
+    // Les 3 points pulsent (repeat fini, borné par la durée)
+    ["#d1", "#d2", "#d3"].forEach((sel, i) => {
+      tl.to(sel, { scale: 1.45, opacity: 0.55, backgroundColor: "#A78BFA", duration: 0.3, yoyo: true, repeat: 3, ease: "sine.inOut", transformOrigin: "50% 50%" }, 2.3 + i * 0.16);
+    });
+
+    // Le typing s'efface, la carte fichier arrive (choré intra-scène)
+    tl.to("#m-typing", { opacity: 0, y: -10, duration: 0.35, ease: "power2.in" }, 4.5);
+    tl.from("#m-file", { y: 26, opacity: 0, scale: 0.93, duration: 0.55, ease: "back.out(1.5)", transformOrigin: "0% 50%" }, 4.7);
+    // Pastille de téléchargement attire l'oeil
+    tl.fromTo("#m-file .dl", { scale: 1 }, { scale: 1.25, duration: 0.4, yoyo: true, repeat: 1, ease: "sine.inOut", transformOrigin: "50% 50%" }, 5.4);
+
+    // Maintien puis fondu unique de la scène pour une boucle propre
+    tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 6.5);
+
+    window.__timelines["feat-telegram"] = tl;
+  </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A; --surface2:#16161c;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --sky:#38BDF8; --emerald:#34D399; --amber:#FBBF24;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="feat-import"]{width:1600px;height:384px;position:relative;background:var(--bg);font-family:Inter,sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:26px 44px}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 28% 30%,rgba(99,102,241,.16),transparent 62%);pointer-events:none}
+
+  .stage{position:relative;width:100%;height:100%;display:grid;grid-template-columns:330px 120px 1fr;align-items:center;gap:0}
+
+  /* ===== GAUCHE : carte fichier IDML (figée) ===== */
+  .fcard{position:relative;width:300px;border:1px solid var(--line2);border-radius:18px;background:linear-gradient(180deg,#16161c,#121217);box-shadow:0 30px 70px -34px #000;padding:26px 24px;display:flex;flex-direction:column;gap:16px}
+  .fcard .fi{width:62px;height:62px;border-radius:16px;display:grid;place-items:center;background:rgba(99,102,241,.16);color:var(--indigo);box-shadow:0 0 26px -8px var(--indigo)}
+  .fcard .fi svg{width:34px;height:34px}
+  .fcard .fn{font-family:"JetBrains Mono",monospace;font-size:24px;font-weight:700;letter-spacing:-.01em}
+  .fcard .fm{font-size:16px;color:var(--mut);display:flex;align-items:center;gap:8px}
+  .fcard .fm .ext{font-family:"JetBrains Mono",monospace;color:var(--sky);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.12);border-radius:6px;padding:2px 9px;font-size:13px;font-weight:700}
+  .fcard .lock{position:absolute;top:18px;right:18px;display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--mut);border:1px solid var(--line2);border-radius:100px;padding:5px 12px}
+  .fcard .lock svg{width:14px;height:14px}
+  /* aperçu maquette miniature figée dans la carte */
+  .fprev{position:relative;height:96px;border-radius:11px;background:#fff;overflow:hidden;border:1px solid var(--line)}
+  .fprev .pp-img{position:absolute;inset:12% 56% 30% 10%;border-radius:6px;overflow:hidden;background:radial-gradient(ellipse 78% 64% at 50% 40%,#fff,#eef2f7 66%,#dde5ee)}
+  .fprev .pp-img .drill{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .fprev .pp-t{position:absolute;top:16%;left:48%;right:8%;height:8px;border-radius:3px;background:#cbd5e1}
+  .fprev .pp-t2{position:absolute;top:32%;left:48%;width:30%;height:7px;border-radius:3px;background:#e2e8f0}
+  .fprev .pp-price{position:absolute;bottom:14%;left:48%;background:#facc15;border-radius:4px;width:34%;height:18px}
+  .fprev .pp-logo{position:absolute;bottom:14%;right:9%;width:22px;height:22px;border-radius:50%;background:#3730a3}
+
+  /* ===== MILIEU : flèche / décomposition ===== */
+  .mid{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--mut);height:100%}
+  .mid .lbl{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.06em;text-align:center}
+  .mid .arrow{position:relative;width:108px;height:34px}
+  .mid .arrow svg{width:42px;height:42px;position:absolute;left:33px;top:-4px;color:var(--indigo)}
+  .mid .spark{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--violet);box-shadow:0 0 12px 2px var(--violet);left:0;top:14px;opacity:0}
+
+  /* ===== DROITE : maquette dont les calques se séparent ===== */
+  .deck{position:relative;width:100%;height:100%}
+  /* maquette assemblée (référence) à gauche du deck */
+  .mock{position:absolute;left:0;top:50%;transform:translateY(-50%);width:158px;height:214px;background:#fff;border-radius:13px;overflow:hidden;outline:2px solid var(--indigo);outline-offset:4px;box-shadow:0 24px 50px -22px rgba(0,0,0,.75)}
+  .mock .m-img{position:absolute;inset:9% 11% 50%;border-radius:8px;overflow:hidden;background:radial-gradient(ellipse 78% 64% at 50% 40%,#fff,#eef2f7 66%,#dde5ee)}
+  .mock .m-img .drill{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .mock .m-title{position:absolute;bottom:34%;left:11%;right:11%;height:9px;border-radius:3px;background:#475569}
+  .mock .m-title::after{content:"";position:absolute;left:0;top:15px;width:62%;height:8px;border-radius:3px;background:#94a3b8}
+  .mock .m-price{position:absolute;bottom:9%;left:11%;background:#dc2626;color:#fff;font-weight:800;font-size:14px;padding:3px 7px;border-radius:5px}
+  .mock .m-logo{position:absolute;top:8%;right:10%;width:30px;height:30px;border-radius:50%;background:#3730a3;color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
+
+  /* liste des calques éditables qui s'empilent à droite */
+  .layers{position:absolute;left:210px;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:11px}
+  .lr{position:relative;display:flex;align-items:center;gap:14px;background:var(--elev);border:1px solid var(--line2);border-radius:12px;padding:11px 15px;box-shadow:0 14px 30px -18px #000;opacity:0}
+  .lr .li{width:38px;height:38px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;overflow:hidden}
+  .lr .li svg{width:21px;height:21px}
+  .lr .lt{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .lr .lt b{font-size:19px;font-weight:700}
+  .lr .lt span{font-size:14px;color:var(--mut)}
+  .lr .ed{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:14px;font-family:"JetBrains Mono",monospace;color:#bbf7d0;background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.45);border-radius:100px;padding:5px 12px;opacity:0;flex:0 0 auto}
+  .lr .ed svg{width:14px;height:14px}
+  /* miniature image dans le calque image */
+  .lr .li.imgcal{background:radial-gradient(ellipse 78% 64% at 50% 40%,#fff,#eef2f7 66%,#dde5ee)}
+  .lr .li.imgcal .drill{width:100%;height:100%}
+  .lr .li.titlecal{background:rgba(99,102,241,.16);color:var(--indigo)}
+  .lr .li.pricecal{background:rgba(251,191,36,.18);color:var(--amber)}
+  .lr .li.logocal{background:#3730a3;color:#fff;font-size:13px;font-weight:800}
+</style>
+</head>
+<body>
+<div data-composition-id="feat-import" data-start="0" data-duration="7" data-width="1600" data-height="384">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+    </symbol>
+  </svg>
+
+  <div class="scene" id="s1">
+    <div class="glow"></div>
+    <div class="stage">
+
+      <!-- GAUCHE : fichier IDML figé -->
+      <div class="fcard" id="fcard">
+        <span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>figé</span>
+        <span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
+        <div>
+          <div class="fn">flyer-promo.idml</div>
+          <div class="fm">InDesign <span class="ext">IDML</span> · 1 page</div>
+        </div>
+        <div class="fprev">
+          <span class="pp-img"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span>
+          <span class="pp-t"></span><span class="pp-t2"></span>
+          <span class="pp-price"></span><span class="pp-logo"></span>
+        </div>
+      </div>
+
+      <!-- MILIEU : décomposition -->
+      <div class="mid">
+        <span class="lbl" id="midlbl">décomposition</span>
+        <div class="arrow">
+          <span class="spark" id="sp1"></span><span class="spark" id="sp2" style="top:6px"></span><span class="spark" id="sp3" style="top:22px"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </div>
+        <span class="lbl">→ calques</span>
+      </div>
+
+      <!-- DROITE : maquette + calques éditables -->
+      <div class="deck">
+        <div class="mock" id="mock">
+          <span class="m-logo">N</span>
+          <span class="m-img"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span>
+          <span class="m-title" aria-hidden="true"></span>
+          <span class="m-price" aria-hidden="true">149€</span>
+        </div>
+
+        <div class="layers">
+          <div class="lr" data-i="0">
+            <span class="li imgcal"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span>
+            <span class="lt"><b>Image produit</b><span>packshot · PNG</span></span>
+            <span class="ed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>éditable</span>
+          </div>
+          <div class="lr" data-i="1">
+            <span class="li titlecal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></span>
+            <span class="lt"><b>Titre</b><span>Perceuse 18V Brushless</span></span>
+            <span class="ed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>éditable</span>
+          </div>
+          <div class="lr" data-i="2">
+            <span class="li pricecal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            <span class="lt"><b>Prix</b><span>149 € · TTC</span></span>
+            <span class="ed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>éditable</span>
+          </div>
+          <div class="lr" data-i="3">
+            <span class="li logocal">N</span>
+            <span class="lt"><b>Logo</b><span>marque · vectoriel</span></span>
+            <span class="ed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>éditable</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Apparition de la carte fichier IDML (figée, à gauche)
+    tl.from("#fcard", { x: -30, opacity: 0, scale: 0.97, duration: 0.55, ease: "power3.out", transformOrigin: "50% 50%" }, 0.1);
+
+    // La flèche / décomposition se révèle
+    tl.from("#s1 .mid", { opacity: 0, duration: 0.4 }, 0.7);
+
+    // Étincelles de décomposition qui filent de la carte vers les calques
+    [["#sp1",14],["#sp2",6],["#sp3",22]].forEach(([sel,top],i)=>{
+      tl.fromTo(sel, { x: 0, opacity: 0 }, { opacity: 1, duration: 0.18 }, 0.95 + i*0.12);
+      tl.to(sel, { x: 100, duration: 0.5, ease: "power1.in" }, 0.95 + i*0.12);
+      tl.to(sel, { opacity: 0, duration: 0.2 }, 1.3 + i*0.12);
+    });
+
+    // La maquette assemblée apparaît (issue du fichier)
+    tl.fromTo("#mock", { x: 14, opacity: 0, scale: 0.94 }, { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.4)", transformOrigin: "50% 50%" }, 1.2);
+
+    // Les calques se séparent / s'empilent en cascade
+    const rows = ["[data-i='0']", "[data-i='1']", "[data-i='2']", "[data-i='3']"];
+    rows.forEach((sel, i) => {
+      const t = 1.7 + i * 0.45;
+      // le calque émerge depuis la maquette (glisse depuis la gauche, monte en place)
+      tl.fromTo(`#s1 .lr${sel}`, { opacity: 0, x: -34, y: 10, scale: 0.96 }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.5, ease: "power3.out" }, t);
+      // pulse de surbrillance à l'arrivée
+      tl.fromTo(`#s1 .lr${sel}`, { boxShadow: "0 0 0 0 rgba(99,102,241,0)" }, { boxShadow: "0 0 24px -6px rgba(99,102,241,.85)", duration: 0.3, yoyo: true, repeat: 1, ease: "sine.inOut" }, t + 0.1);
+      // le badge « éditable » apparaît juste après
+      tl.fromTo(`#s1 .lr${sel} .ed`, { opacity: 0, scale: 0.7, x: 8 }, { opacity: 1, scale: 1, x: 0, duration: 0.4, ease: "back.out(1.7)" }, t + 0.35);
+    });
+
+    // Léger recul de la maquette pour souligner que tout est désormais en calques
+    tl.to("#mock", { scale: 0.97, opacity: 0.92, duration: 0.6, ease: "power2.inOut", transformOrigin: "50% 50%" }, 3.6);
+
+    // Maintien puis fondu doux pour une boucle propre
+    tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 6.5);
+
+    window.__timelines["feat-import"] = tl;
+  </script>
+</div>
+</body>
+</html>

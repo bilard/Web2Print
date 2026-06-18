@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A; --surface2:#16161c;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --sky:#38BDF8; --emerald:#34D399; --amber:#FBBF24;
+    --red:#F87171; --green:#34D399;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="feat-price"]{width:1600px;height:384px;position:relative;background:var(--bg);font-family:Inter,sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:26px 38px}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 32% 32%,rgba(99,102,241,.16),transparent 62%);pointer-events:none}
+
+  .fiche{position:relative;width:100%;height:100%;border:1px solid var(--line2);border-radius:22px;background:linear-gradient(180deg,#16161c,#121217);box-shadow:0 40px 90px -40px #000;display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+
+  /* Colonne gauche : mon produit + mon prix */
+  .lead{padding:28px 26px;display:flex;flex-direction:column;justify-content:center;gap:14px;border-right:1px solid var(--line)}
+  .lead .ptitle{display:flex;align-items:center;gap:13px;font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .lead .ptitle .ti{width:42px;height:42px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;background:rgba(99,102,241,.16);color:var(--violet)}
+  .lead .ptitle .ti svg{width:23px;height:23px}
+  .myk{font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:.05em;color:var(--mut);text-transform:uppercase}
+  .myprice{font-size:54px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+  .myprice small{font-size:26px;font-weight:700;vertical-align:super;margin-left:2px}
+  .live{display:inline-flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:var(--emerald);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.12);border-radius:100px;padding:6px 14px;width:max-content}
+  .live i{width:8px;height:8px;border-radius:50%;background:var(--emerald)}
+
+  /* Colonne droite : barres de comparaison + alerte */
+  .right{position:relative;padding:24px 34px 24px 30px;display:flex;align-items:flex-end;gap:46px}
+
+  /* Barres de comparaison */
+  .bars{display:flex;align-items:flex-end;gap:38px;height:248px;flex:0 0 auto}
+  .bar{display:flex;flex-direction:column;align-items:center;gap:10px;width:96px;height:100%;justify-content:flex-end}
+  .bar .val{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .bar .val small{font-size:15px;font-weight:700;vertical-align:super;margin-left:1px}
+  .bar .col{width:100%;border-radius:11px 11px 4px 4px;transform-origin:50% 100%;box-shadow:0 14px 34px -16px rgba(0,0,0,.8)}
+  .bar .lbl{font-size:14px;color:var(--mut);font-weight:600;text-align:center;white-space:nowrap}
+  .bar.me .col{background:linear-gradient(180deg,#818cf8,var(--indigo));box-shadow:0 0 34px -10px var(--indigo)}
+  .bar.me .val{color:#c7c4ff}
+  .bar.me .lbl{color:#c7c4ff}
+  .bar.a .col{background:linear-gradient(180deg,#3a3a44,#26262e)}
+  .bar.b .col{background:linear-gradient(180deg,#3a3a44,#26262e)}
+  /* hauteurs end-state (149 le + grand, 129 moyen, 119 le + petit) */
+  .bar.a .col{height:208px}
+  .bar.me .col{height:180px}
+  .bar.b .col{height:166px}
+
+  /* Badge écart (près de la barre B) */
+  .gapbadge{position:absolute;left:34px;top:22px;display:inline-flex;align-items:center;gap:8px;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:#fecaca;background:rgba(248,113,113,.18);border:1px solid rgba(248,113,113,.55);border-radius:100px;padding:8px 16px;box-shadow:0 0 30px -8px var(--red);opacity:0;z-index:5}
+  .gapbadge svg{width:16px;height:16px}
+
+  /* Chip alerte Telegram */
+  .tgchip{flex:1;align-self:center;display:flex;align-items:center;gap:14px;background:var(--elev);border:1px solid var(--line2);border-radius:15px;padding:14px 18px;opacity:0;box-shadow:0 18px 44px -22px #000}
+  .tgchip .ti{width:46px;height:46px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;background:rgba(56,189,248,.18);color:var(--sky)}
+  .tgchip .ti svg{width:24px;height:24px}
+  .tgchip .tx b{font-size:18px;display:block;font-weight:700}
+  .tgchip .tx span{font-size:14px;color:var(--mut)}
+  .tgchip .ok{margin-left:auto;width:32px;height:32px;border-radius:50%;flex:0 0 auto;background:var(--emerald);color:#06281b;display:grid;place-items:center}
+  .tgchip .ok svg{width:19px;height:19px}
+</style>
+</head>
+<body>
+<div data-composition-id="feat-price" data-start="0" data-duration="7" data-width="1600" data-height="384">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="ic-tool" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="ic-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  </svg>
+
+  <div class="scene" id="s1">
+    <div class="glow"></div>
+    <div class="fiche">
+
+      <div class="lead">
+        <div class="ptitle"><span class="ti"><svg><use href="#ic-tool"/></svg></span>Perceuse 18V Brushless</div>
+        <div class="myk">Mon prix</div>
+        <div class="myprice" id="myprice">129<small>&nbsp;€</small></div>
+        <span class="live" id="live"><i></i> Veille tarifaire · 2 concurrents</span>
+      </div>
+
+      <div class="right">
+        <div class="bars">
+          <div class="bar a">
+            <span class="val" id="vA">149<small>&nbsp;€</small></span>
+            <span class="col" id="cA"></span>
+            <span class="lbl">Concurrent&nbsp;A</span>
+          </div>
+          <div class="bar me">
+            <span class="val" id="vM">129<small>&nbsp;€</small></span>
+            <span class="col" id="cM"></span>
+            <span class="lbl">Mon&nbsp;prix</span>
+          </div>
+          <div class="bar b">
+            <span class="val" id="vB">119<small>&nbsp;€</small></span>
+            <span class="col" id="cB"></span>
+            <span class="lbl">Concurrent&nbsp;B</span>
+          </div>
+        </div>
+
+        <span class="gapbadge" id="gap"><svg><use href="#ic-down"/></svg>−10&nbsp;€ vs Concurrent&nbsp;B</span>
+
+        <div class="tgchip" id="tg">
+          <span class="ti"><svg><use href="#ic-send"/></svg></span>
+          <span class="tx"><b>Alerte prix envoyée</b><span>@ibs_veille_bot · à l'instant</span></span>
+          <span class="ok"><svg><use href="#ic-check"/></svg></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Apparition de la fiche */
+    tl.from("#s1 .fiche", { y: 26, opacity: 0, scale: 0.985, duration: 0.55, ease: "power3.out", transformOrigin: "50% 50%" }, 0.1);
+
+    /* Colonne gauche : titre, prix, badge live */
+    tl.from("#s1 .lead .ptitle", { x: -16, opacity: 0, duration: 0.45, ease: "power2.out" }, 0.5);
+    tl.from("#s1 .lead .myk", { opacity: 0, duration: 0.3 }, 0.7);
+    tl.from("#myprice", { y: 18, opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.6)", transformOrigin: "0% 100%" }, 0.75);
+    tl.from("#live", { y: 12, opacity: 0, duration: 0.4, ease: "power2.out" }, 1.05);
+
+    /* Les barres montent (scaleY depuis le bas), décalées */
+    tl.set(["#cA", "#cM", "#cB"], { scaleY: 0, transformOrigin: "50% 100%" }, 0);
+    tl.set(["#vA", "#vM", "#vB"], { opacity: 0, y: 8 }, 0);
+    tl.set("#s1 .bar .lbl", { opacity: 0 }, 0);
+
+    const bars = [
+      { col: "#cA", val: "#vA" },
+      { col: "#cM", val: "#vM" },
+      { col: "#cB", val: "#vB" }
+    ];
+    bars.forEach((b, i) => {
+      const t = 1.4 + i * 0.32;
+      tl.to(b.col, { scaleY: 1, duration: 0.72, ease: "power3.out" }, t);
+      tl.to(b.val, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, t + 0.42);
+    });
+    tl.to("#s1 .bar .lbl", { opacity: 1, duration: 0.4, ease: "power2.out", stagger: 0.1 }, 2.5);
+
+    /* Badge « écart » près de la barre B (ambre/rouge) */
+    tl.fromTo("#gap", { opacity: 0, y: -10, scale: 0.7 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.8)" }, 3.7);
+    tl.fromTo("#gap", { boxShadow: "0 0 0 0 rgba(248,113,113,0)" }, { boxShadow: "0 0 30px -8px rgba(248,113,113,.7)", duration: 0.6, yoyo: true, repeat: 1, ease: "sine.inOut" }, 4.0);
+
+    /* Chip alerte Telegram qui « ping » */
+    tl.fromTo("#tg", { opacity: 0, x: 24, scale: 0.94 }, { opacity: 1, x: 0, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, 4.5);
+    tl.fromTo("#tg", { boxShadow: "0 0 0 0 rgba(56,189,248,0)" }, { boxShadow: "0 0 34px -8px rgba(56,189,248,.7)", duration: 0.55, yoyo: true, repeat: 1, ease: "sine.inOut" }, 4.9);
+    tl.fromTo("#tg .ok", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2.4)" }, 5.0);
+
+    /* Pulse déterministe borné sur le live indicator */
+    tl.to("#live i", { boxShadow: "0 0 0 7px rgba(52,211,153,0)", duration: 0.9, ease: "power1.out", repeat: 1 }, 5.4);
+
+    /* Sortie douce unique (fade) pour une boucle propre */
+    tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 6.5);
+
+    window.__timelines["feat-price"] = tl;
+  </script>
+</div>
+</body>
+</html>

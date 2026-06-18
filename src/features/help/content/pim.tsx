@@ -34,14 +34,12 @@ Tu peux gérer **plusieurs bases** en parallèle. Trois façons d'en créer une 
 - **Scraper le web** — partir d'URLs produits et laisser l'IA remplir les fiches.
 - **Créer vide** — démarrer une base à la main.`,
     },
-    {
-      type: 'text',
-      md: `### Enrichir une fiche par IA`,
-    },
     { type: 'mockup', Component: EnrichmentPanelMock },
     {
       type: 'text',
-      md: `Clique sur une ligne → panneau **Enrichi par IA** à droite.
+      md: `### Enrichir une fiche par IA
+
+Clique sur une ligne → panneau **Enrichi par IA** à droite.
 
 **Mode AUTO** (violet) : si la ligne a un \`title\`, \`brand\` ou \`reference\`, une **recherche web (Jina) + LLM** trouve l'URL et extrait les infos (modèle principal : Gemini, secours : Claude). Risque d'hallucination — à privilégier quand tu n'as pas d'URL.
 
@@ -66,6 +64,17 @@ Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables 
 - **Variants** : références produit (ref, label, propriétés).
 - **Documents** : liens PDF, fiches techniques, vidéos.
 - **Images** : URLs ou fichiers Firebase Storage.`,
+    },
+    {
+      type: 'text',
+      md: `### Champs calculés (colonnes formules)
+
+Une colonne peut être une **formule** plutôt qu'une valeur saisie — comme dans Excel. Tu écris une expression qui référence d'autres colonnes, et la valeur se **recalcule à la volée** quand les données changent.
+
+- Exemple : une colonne **\`Prix TTC\`** = \`Prix HT * 1.2\`, ou une **remise** = \`(Prix barré - Prix) / Prix barré\`.
+- Les formules supportent les opérateurs arithmétiques, les références de colonnes et les fonctions courantes ; elles sont **réévaluées automatiquement** à chaque modification d'une cellule source ou d'une ligne enrichie par IA.
+- Le résultat est un champ **comme un autre** : exploitable dans le *data-merge* (placeholder \`{{ prix_ttc }}\`), filtrable et exportable.
+- Types de colonnes reconnus à l'import et à l'édition : **texte, nombre, formule, dictionnaire (liste de valeurs), date** — détectés automatiquement depuis un Excel (voir *Importer Excel*).`,
     },
     {
       type: 'text',

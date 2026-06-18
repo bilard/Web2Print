@@ -783,8 +783,16 @@ export const MODULES = [
         "desc": "Tu peux gérer plusieurs bases en parallèle. Trois façons d'en créer une : • Importer un fichier — depuis Excel ou CSV/TSV (voir Importer Excel). • Scraper le web — partir d'URLs produits et laisser l'IA remplir les fiches."
       },
       {
+        "title": "Enrichir une fiche par IA",
+        "desc": "Clique sur une ligne → panneau Enrichi par IA à droite. Mode AUTO (violet) : si la ligne a un title, brand ou reference, une recherche web (Jina) + LLM trouve l'URL et extrait les infos (modèle principal : Gemini, secours : Claude)."
+      },
+      {
         "title": "Champs structurés",
         "desc": "Au-delà du texte simple, une fiche stocke des champs riches, tous exploitables dans le data-merge : • Formules Excel : évaluées à la volée. • Spécifications : [{ group, name, value }] (dimensions, matériaux…)."
+      },
+      {
+        "title": "Champs calculés (colonnes formules)",
+        "desc": "Une colonne peut être une formule plutôt qu'une valeur saisie — comme dans Excel. Tu écris une expression qui référence d'autres colonnes, et la valeur se recalcule à la volée quand les données changent."
       },
       {
         "title": "Classer & exporter",
@@ -822,8 +830,8 @@ export const MODULES = [
         "desc": "Dès qu'une BDD source est active, le navigateur de gauche auto-déplie la branche correspondante et colorise tous les ancêtres du nœud sélectionné jusqu'à la racine. Désélectionner referme la branche."
       },
       {
-        "title": "Lier une taxonomie à une BDD",
-        "desc": "Dans le PIM, chaque ligne peut être assignée à un nœud de la taxonomie : 1. Ouvre une BDD 2. Sélectionne une ligne 3. Clique Non classé dans une taxonomie globale — cliquer pour classer au-dessus du panneau 4."
+        "title": "Associer des produits à une catégorie",
+        "desc": "Dans le PIM, chaque produit (ligne) est rattaché à un nœud de la taxonomie. Deux voies : • Manuel — sélectionne une ligne → clique « Non classé — cliquer pour classer » au-dessus du panneau → choisis le nœud cible."
       },
       {
         "title": "Auto-construction depuis le scraping",

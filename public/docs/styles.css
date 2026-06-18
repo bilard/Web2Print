@@ -79,7 +79,11 @@ kbd {
   padding: 0 28px; background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: saturate(160%) blur(12px); border-bottom: 1px solid var(--border);
 }
-.topbar-title { font-size: 13.5px; color: var(--text-faint); font-weight: 500; }
+.topbar-back { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: var(--text-dim); background: var(--surface); border: 1px solid var(--border); padding: 7px 13px; border-radius: 9px; }
+.topbar-back:hover { color: var(--text); border-color: var(--border-strong); text-decoration: none; }
+.topbar-back svg { flex: none; }
+.topbar-title { font-size: 13.5px; color: var(--text-faint); font-weight: 500; padding-left: 4px; border-left: 1px solid var(--border); margin-left: 4px; padding-left: 14px; }
+@media (max-width: 720px) { .topbar-title { display: none; } }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .theme-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 36px; height: 34px; border-radius: 9px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .theme-toggle:hover { border-color: var(--border-strong); }
@@ -137,6 +141,8 @@ main { flex: 1; }
 .feat-item.rich { display: block; padding: 0; overflow: hidden; }
 .feat-banner { display: block; width: 100%; height: 150px; background: var(--well); border-bottom: 1px solid var(--border); color: var(--accent); }
 .feat-banner svg { width: 100%; height: 100%; display: block; padding: 16px 22px; }
+.feat-banner.vid { height: auto; line-height: 0; }
+.feat-banner.vid video { width: 100%; height: auto; display: block; }
 .feat-item.rich .feat-body { padding: 13px 17px 15px; }
 
 /* Scènes RICH — animations de transformation (jouées si .playing) */

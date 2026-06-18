@@ -47,16 +47,14 @@ Quand plusieurs sources matchent, l'arbre se déplie sur l'union des branches ac
     },
     {
       type: 'text',
-      md: `### Lier une taxonomie à une BDD
+      md: `### Associer des produits à une catégorie
 
-Dans le PIM, chaque ligne peut être assignée à un nœud de la taxonomie :
+Dans le PIM, **chaque produit (ligne) est rattaché à un nœud** de la taxonomie. Deux voies :
 
-1. Ouvre une BDD
-2. Sélectionne une ligne
-3. Clique **Non classé dans une taxonomie globale — cliquer pour classer** au-dessus du panneau
-4. Choisis le nœud cible
+- **Manuel** — sélectionne une ligne → clique **« Non classé — cliquer pour classer »** au-dessus du panneau → choisis le nœud cible. Tu peux reclasser à tout moment.
+- **Automatique au scraping** — si la fiche scrapée porte un fil d'Ariane, le produit est **rangé tout seul** dans la bonne branche (voir *Auto-construction depuis le scraping* ci-dessous).
 
-Une fois classées, tes lignes peuvent être filtrées par catégorie depuis le navigateur de taxonomie à gauche.`,
+Une fois associés, les produits se **filtrent par catégorie** depuis le navigateur de gauche, et un export PDF/PPTX peut être **scopé à une branche** pour générer des sous-catalogues. Le nœud d'un produit est une donnée comme une autre : exploitable dans le *data-merge* et la complétude.`,
     },
     {
       type: 'text',

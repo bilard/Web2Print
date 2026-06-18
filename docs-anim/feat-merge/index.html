@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A; --surface2:#16161c;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --sky:#38BDF8; --emerald:#34D399; --amber:#FBBF24;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="feat-merge"]{width:1600px;height:384px;position:relative;background:var(--bg);font-family:Inter,sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px 36px;gap:30px}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 24% 30%,rgba(99,102,241,.16),transparent 62%);pointer-events:none}
+
+  /* ===== COLONNE GAUCHE — template d'affiche avec placeholders ===== */
+  .tpl{position:relative;flex:0 0 232px;height:316px;background:#fff;border-radius:14px;overflow:hidden;outline:3px solid var(--indigo);outline-offset:5px;box-shadow:0 30px 60px -22px rgba(0,0,0,.75)}
+  .tpl .tpl-img{position:absolute;inset:8% 11% 50% 11%;border-radius:9px;border:2px dashed rgba(99,102,241,.55);display:grid;place-items:center;color:#94a3b8;background:#f1f5f9;overflow:hidden}
+  .tpl .tpl-img .ph-ic{width:38px;height:38px;opacity:.7}
+  .tpl .tpl-img .shot{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+  .tpl .ph-field{position:absolute;font-family:"JetBrains Mono",monospace;font-weight:700;color:#fff;background:#4338ca;border:1px solid rgba(99,102,241,.55);border-radius:7px;padding:5px 9px;white-space:nowrap;box-shadow:0 4px 12px -5px rgba(67,56,202,.7)}
+  .tpl .ph-nom{top:53%;left:11%;font-size:15px}
+  .tpl .ph-prix{top:69%;left:11%;font-size:18px}
+  .tpl .ph-img-lbl{top:8.5%;left:12%;font-size:12px;padding:3px 7px;z-index:3}
+  .tpl-tag{position:absolute;top:-12px;left:14px;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:700;letter-spacing:.1em;color:#c7c4ff;background:var(--bg);border:1px solid var(--indigo);border-radius:6px;padding:3px 10px;z-index:5}
+
+  /* ===== COLONNE CENTRE — table de données + flux ===== */
+  .mid{flex:0 0 392px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .mid-h{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  .dtable{width:100%;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--elev);font-size:16px}
+  .dtable .tr{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line)}
+  .dtable .tr:last-child{border-bottom:0}
+  .dtable .tr.th{background:#101010;color:var(--mut);font-family:"JetBrains Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .dtable .tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .dtable .tr.hl{background:rgba(99,102,241,.16)}
+  .flow{position:relative;width:100%;height:40px;display:grid;place-items:center;color:var(--indigo)}
+  .flow .arr{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--mut);font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.06em}
+  .flow .arr svg{width:26px;height:26px;color:var(--indigo)}
+  .merge-pulse{position:absolute;left:64%;top:50%;width:13px;height:13px;border-radius:50%;background:var(--violet);box-shadow:0 0 16px 3px var(--violet);margin:-6px 0 0 -6px;opacity:0;z-index:4}
+
+  /* ===== COLONNE DROITE — grille de variantes + compteur ===== */
+  .right{flex:1 1 auto;display:flex;flex-direction:column;gap:14px;height:316px;min-width:0}
+  .right-top{display:flex;align-items:center;justify-content:space-between}
+  .right-h{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  .vcount{font-size:18px;color:var(--mut);display:flex;align-items:baseline;gap:8px}
+  .vcount b{font-size:38px;color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .vcount .x{font-size:28px;color:var(--indigo);font-weight:800}
+  .variants{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(2,1fr);gap:11px;width:100%;flex:1 1 auto}
+  .variants i{border-radius:8px;background:#fbfcfe;outline:1px solid rgba(99,102,241,.3);position:relative;overflow:hidden;box-shadow:0 6px 15px -8px rgba(0,0,0,.6);opacity:0}
+  /* visuel produit dans chaque poster (déterministe par nth-child) */
+  .variants i::before{content:"";position:absolute;left:11%;right:11%;top:9%;height:46%;border-radius:4px;background:radial-gradient(ellipse 82% 72% at 50% 36%,#eff6ff,#93c5fd 68%,#2563eb)}
+  /* barre prix */
+  .variants i::after{content:"";position:absolute;left:11%;bottom:13%;width:46%;height:14%;border-radius:3px;background:#facc15}
+  .variants i:nth-child(3n)::before{background:radial-gradient(ellipse 82% 72% at 50% 36%,#f0fdfa,#5eead4 68%,#0d9488)}
+  .variants i:nth-child(3n)::after{background:#fb7185}
+  .variants i:nth-child(5n)::before{background:radial-gradient(ellipse 82% 72% at 50% 36%,#faf5ff,#c4b5fd 68%,#7c3aed)}
+  .variants i:nth-child(4n)::after{background:#34d399}
+  .variants i:nth-child(2n)::before{background:radial-gradient(ellipse 82% 72% at 50% 36%,#fff7ed,#fdba74 66%,#ea580c)}
+</style>
+</head>
+<body>
+<div data-composition-id="feat-merge" data-start="0" data-duration="7" data-width="1600" data-height="384">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+    </symbol>
+  </svg>
+
+  <div class="scene" id="s1">
+    <div class="glow"></div>
+
+    <!-- GAUCHE : template avec placeholders -->
+    <div class="tpl" id="tpl">
+      <span class="tpl-tag" data-layout-allow-overflow>Modèle</span>
+      <div class="tpl-img">
+        <svg class="ph-ic" id="tpl-ph-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 21"/></svg>
+        <span class="shot" id="tpl-shot"><svg class="drill" viewBox="0 0 240 160" style="width:100%;height:100%;display:block"><use href="#ic-drill" width="240" height="160"/></svg></span>
+        <span class="ph-field ph-img-lbl" id="ph-img">{{ image }}</span>
+      </div>
+      <span class="ph-field ph-nom" id="ph-nom">{{ nom }}</span>
+      <span class="ph-field ph-prix" id="ph-prix">{{ prix }}</span>
+    </div>
+
+    <!-- CENTRE : table de données + flux -->
+    <div class="mid">
+      <div class="mid-h">Données source</div>
+      <div class="dtable" id="dtable">
+        <div class="tr th"><span>Nom</span><span class="num">Prix</span></div>
+        <div class="tr" data-r="0"><span>Perceuse 18V</span><span class="num">89,90 €</span></div>
+        <div class="tr" data-r="1"><span>Visseuse Pro</span><span class="num">129,00 €</span></div>
+        <div class="tr" data-r="2"><span>Meuleuse 750W</span><span class="num">74,50 €</span></div>
+        <div class="tr" data-r="3"><span>Scie sauteuse</span><span class="num">112,00 €</span></div>
+      </div>
+      <div class="flow">
+        <div class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>fusion</div>
+        <span class="merge-pulse" id="pulse" data-layout-ignore></span>
+      </div>
+    </div>
+
+    <!-- DROITE : grille de variantes générées + compteur -->
+    <div class="right">
+      <div class="right-top">
+        <div class="right-h">Documents générés</div>
+        <div class="vcount"><span class="x">×</span><b id="counter">0</b></div>
+      </div>
+      <div class="variants" id="variants">
+        <i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Entrée de la scène
+    tl.from("#s1 .tpl", { y: 22, opacity: 0, scale: 0.985, duration: 0.5, ease: "power3.out", transformOrigin: "50% 50%" }, 0.1);
+    tl.from("#s1 .mid", { y: 18, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.25);
+    tl.from("#s1 .right-top", { y: 14, opacity: 0, duration: 0.45, ease: "power2.out" }, 0.4);
+
+    // Le template montre ses placeholders, puis l'image se révèle (le modèle accueille les données)
+    tl.to("#tpl-ph-ic", { opacity: 0, duration: 0.3 }, 1.0);
+    tl.fromTo("#tpl-shot", { opacity: 0, scale: 0.82 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)", transformOrigin: "50% 46%" }, 1.05);
+
+    // Les lignes de données s'allument une par une et « alimentent » le template (pulse → droite)
+    const rows = ["[data-r='0']", "[data-r='1']", "[data-r='2']", "[data-r='3']"];
+    rows.forEach((sel, i) => {
+      const t = 1.4 + i * 0.34;
+      tl.to(`#s1 .dtable .tr${sel}`, { backgroundColor: "rgba(99,102,241,0.18)", duration: 0.22 }, t);
+      tl.to(`#s1 .dtable .tr${sel}`, { backgroundColor: "rgba(99,102,241,0)", duration: 0.5 }, t + 0.5);
+      // impulsion de fusion qui part vers la grille
+      tl.fromTo("#pulse", { opacity: 0, x: 0, y: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power2.out" }, t + 0.05);
+      tl.to("#pulse", { x: 150, opacity: 0, duration: 0.32, ease: "power1.in" }, t + 0.2);
+    });
+
+    // Les variantes apparaissent une par une (stagger), chacune un produit/prix différent (CSS nth-child)
+    tl.set("#s1 .variants i", { opacity: 0, scale: 0.8, y: 8, transformOrigin: "50% 50%" }, 0);
+    tl.to("#s1 .variants i", { opacity: 1, scale: 1, y: 0, duration: 0.34, ease: "back.out(1.6)", stagger: 0.18 }, 1.5);
+
+    // Compteur « ×120 » qui s'incrémente (proxy déterministe, seek-safe)
+    const counterObj = { v: 0 };
+    const counterEl = document.getElementById("counter");
+    tl.to(counterObj, {
+      v: 120,
+      duration: 3.4,
+      ease: "power2.out",
+      onUpdate: () => { counterEl.textContent = Math.round(counterObj.v); }
+    }, 1.5);
+
+    // Maintien puis fondu doux (boucle propre)
+    tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 6.5);
+
+    window.__timelines["feat-merge"] = tl;
+  </script>
+</div>
+</body>
+</html>

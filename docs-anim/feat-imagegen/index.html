@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A; --surface2:#16161c;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --sky:#38BDF8; --emerald:#34D399; --amber:#FBBF24;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="feat-imagegen"]{width:1600px;height:384px;position:relative;background:var(--bg);font-family:Inter,sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:26px 38px}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 30% 30%,rgba(99,102,241,.16),transparent 62%);pointer-events:none}
+
+  .panel{position:relative;width:100%;height:100%;border:1px solid var(--line2);border-radius:22px;background:linear-gradient(180deg,#16161c,#121217);box-shadow:0 40px 90px -40px #000;display:grid;grid-template-columns:560px 1fr;gap:34px;padding:30px 34px;overflow:hidden}
+
+  /* Colonne gauche : prompt + bouton Générer */
+  .ig-left{display:flex;flex-direction:column;min-width:0}
+  .ig-label{font-family:"JetBrains Mono",monospace;font-size:15px;letter-spacing:.07em;color:var(--mut);margin:0 0 11px;text-transform:uppercase}
+  .ig-prompt{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--surface2);padding:18px 20px;font-size:24px;line-height:1.45;color:var(--ink);overflow:hidden;flex:1;display:flex;align-items:flex-start}
+  .ig-prompt .typed{display:inline-block;white-space:normal;clip-path:inset(0 100% 0 0)}
+  .ig-prompt .caret{display:inline-block;width:3px;height:27px;background:var(--violet);margin-left:3px;vertical-align:-4px;border-radius:2px;box-shadow:0 0 10px var(--violet);opacity:0}
+  .ig-gen{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:21px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6366f1,#a78bfa);padding:17px;border-radius:14px;box-shadow:0 0 36px -8px #a78bfa;opacity:0}
+  .ig-gen svg{width:21px;height:21px}
+
+  /* Colonne droite : 4 vignettes générées (rangée) */
+  .ig-results{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:stretch;height:100%}
+  .ig-tile{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 16px 38px -20px #000;opacity:0}
+  .ig-tile .shot{position:relative;display:block;width:100%;height:100%;background:radial-gradient(ellipse 80% 68% at 50% 38%,#fff,#eef2f7 66%,#dde5ee);overflow:hidden}
+  .ig-tile .shot::before{content:"";position:absolute;left:24%;right:24%;bottom:12%;height:8%;border-radius:50%;background:radial-gradient(ellipse,rgba(15,23,42,.24),transparent 72%)}
+  .ig-tile .drill{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* La perceuse pivote/zoome dans chaque vignette : débordement volontaire, clippé par .shot (overflow:hidden) */
+  .ig-tile.t1 .drill{transform:rotate(-7deg) scale(1.02)}
+  .ig-tile.t2 .shot{background:radial-gradient(ellipse 80% 68% at 50% 36%,#eaf2ff,#bfdbfe 64%,#7cb0f5)}
+  .ig-tile.t2 .drill{transform:rotate(6deg)}
+  .ig-tile.t3 .shot{background:radial-gradient(ellipse 80% 70% at 50% 36%,#243043,#0b1120 70%,#020617)}
+  .ig-tile.t3 .shot::before{opacity:.45}
+  .ig-tile.t3 .drill{transform:rotate(-4deg) scale(1.04)}
+  .ig-tile.t4 .shot{background:radial-gradient(ellipse 80% 70% at 50% 36%,#fff7ed,#fed7aa 64%,#fb923c)}
+  .ig-tile.t4 .drill{transform:rotate(8deg) scale(.97)}
+  .ig-badge{position:absolute;top:11px;right:11px;font-size:13px;font-weight:700;color:#fff;background:rgba(124,108,255,.9);border-radius:8px;padding:5px 10px;display:flex;gap:6px;align-items:center;box-shadow:0 6px 16px -6px #7c6cff}
+  .ig-badge svg{width:14px;height:14px}
+
+  /* étincelles de génération */
+  .spark{position:absolute;width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 12px 3px var(--violet);opacity:0;pointer-events:none;z-index:8}
+</style>
+</head>
+<body>
+<div data-composition-id="feat-imagegen" data-start="0" data-duration="7" data-width="1600" data-height="384">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+    </symbol>
+  </svg>
+
+  <div class="scene" id="s1">
+    <div class="glow"></div>
+    <div class="panel">
+
+      <div class="ig-left">
+        <p class="ig-label">Brief créatif</p>
+        <div class="ig-prompt">
+          <span data-layout-allow-overlap><span class="typed" id="prompt">Perceuse 18V sur fond studio, lumière douce, packshot premium</span><span class="caret" id="caret"></span></span>
+        </div>
+        <div class="ig-gen" id="gen">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>
+          Générer (IA)
+        </div>
+      </div>
+
+      <div class="ig-results">
+        <div class="ig-tile t1" data-i="0"><span class="shot"><svg class="drill" data-layout-allow-overflow viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+        <div class="ig-tile t2" data-i="1"><span class="shot"><svg class="drill" data-layout-allow-overflow viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+        <div class="ig-tile t3" data-i="2"><span class="shot"><svg class="drill" data-layout-allow-overflow viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+        <div class="ig-tile t4" data-i="3"><span class="shot"><svg class="drill" data-layout-allow-overflow viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span><span class="ig-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 11l-6.6 2.5L12 20l-2.4-6.5L3 11l6.6-2.5z"/></svg>IA</span></div>
+      </div>
+
+      <div class="spark" id="sp1" data-layout-allow-overflow></div>
+      <div class="spark" id="sp2" data-layout-allow-overflow></div>
+      <div class="spark" id="sp3" data-layout-allow-overflow></div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Apparition du panneau
+    tl.from("#s1 .panel", { y: 26, opacity: 0, scale: 0.985, duration: 0.55, ease: "power3.out", transformOrigin: "50% 50%" }, 0.1);
+
+    // Le brief se tape (clip-path reveal) + curseur clignotant
+    tl.set("#prompt", { clipPath: "inset(0 100% 0 0)" }, 0);
+    tl.set("#caret", { opacity: 1 }, 0);
+    tl.to("#prompt", { clipPath: "inset(0 0% 0 0)", duration: 1.1, ease: "none" }, 0.45);
+    tl.to("#caret", { opacity: 0, duration: 0.25, yoyo: true, repeat: 3, ease: "steps(1)" }, 1.6);
+
+    // Le bouton « Générer (IA) » apparaît puis pulse (fini, via scale/boxShadow)
+    tl.fromTo("#gen", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 1.85);
+    tl.fromTo("#gen",
+      { scale: 1, boxShadow: "0 0 24px -10px #a78bfa" },
+      { scale: 1.04, boxShadow: "0 0 52px -4px #a78bfa", duration: 0.5, yoyo: true, repeat: 1, ease: "sine.inOut", transformOrigin: "50% 50%" },
+      2.35);
+
+    // Étincelles de génération autour du bouton
+    [["#sp1", 290, 250], ["#sp2", 360, 215], ["#sp3", 230, 220]].forEach(([sel, x, y], i) => {
+      tl.set(sel, { left: x, top: y }, 0);
+      tl.fromTo(sel, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1.2, duration: 0.25, ease: "power2.out" }, 2.5 + i * 0.12);
+      tl.to(sel, { opacity: 0, y: "-=22", duration: 0.5, ease: "power1.in" }, 2.75 + i * 0.12);
+    });
+
+    // Les 4 vignettes se révèlent (fade + scale, staggered)
+    tl.set("#s1 .ig-tile", { opacity: 0, scale: 0.82, transformOrigin: "50% 50%" }, 0);
+    tl.to("#s1 .ig-tile", { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)", stagger: 0.16 }, 3.1);
+
+    // Pastille « IA » qui s'illumine après l'apparition
+    tl.fromTo("#s1 .ig-badge",
+      { boxShadow: "0 0 0 0 rgba(124,108,255,0)" },
+      { boxShadow: "0 0 22px -4px #7c6cff", duration: 0.45, yoyo: true, repeat: 1, ease: "sine.inOut", stagger: 0.16 },
+      3.55);
+
+    // Maintien puis fondu doux (sortie unique)
+    tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 6.5);
+
+    window.__timelines["feat-imagegen"] = tl;
+  </script>
+</div>
+</body>
+</html>

@@ -100,11 +100,12 @@ const MOTIF_RULES = [
   [/telegram|\bbot\b|botfather|\/flow/, 'telegram'],
   [/publipostage|fusion|data.?merge|\{\{|serie|champs lies|mailing/, 'merge'],
   [/scrap|jina|firecrawl|bright ?data|unlocker|\bcrawl|extraction|selecteur css/, 'scrape'],
-  [/taxonomie|arborescence|categori|branche|catalogue|rangement/, 'tree'],
+  [/taxonomie|arborescence|categori|branche|catalogue|rangement|auto-construction/, 'taxonomy'],
+  [/creer une image|creation d.?image|generation d.?image|image par ia|nano banana|visuel ia|generer/, 'imagegen'],
   [/workflow|\bnode|graphe|\bflux|automat|orchestrat|executor/, 'flow'],
   [/idml|indesign|easycatalog/, 'doc'],
   [/powerpoint|pptx|\bslide|presentation|deck/, 'slides'],
-  [/\bsvg\b|vecteur|vectoriel|bezier|imagetracer/, 'vector'],
+  [/\bsvg\b|vecteur|vectoriel|bezier|imagetracer|raster|image to svg|pdf to svg/, 'transform'],
   [/transform|conversion|raster|reconstit|->/, 'transform'],
   [/\bpdf/, 'doc'],
   [/prix|tarif|veille|concurrent|\becart|positionnement|marge/, 'price'],
@@ -144,6 +145,28 @@ const CATEGORY_FALLBACK = {
   'Administration': ['shield', 'key', 'grid', 'search', 'clock', 'steps'],
 }
 const DEFAULT_POOL = ['grid', 'ai', 'export', 'search', 'layers', 'image', 'clock', 'tree']
+// Bandeaux RENDUS via HyperFrames (MP4) — animations pro contextuelles par sujet,
+// DISTINCTES (zéro répétition). Priment sur les scènes SVG synthétiques.
+const RICH_VIDEO = {
+  ai: 'media/feat-enrich.mp4',
+  scrape: 'media/feat-scrape.mp4',
+  export: 'media/feat-export.mp4',
+  flow: 'media/feat-flow.mp4',
+  merge: 'media/feat-merge.mp4',
+  transform: 'media/feat-transform.mp4',
+  taxonomy: 'media/feat-taxonomy.mp4',
+  price: 'media/feat-price.mp4',
+  import: 'media/feat-import.mp4',
+  imagegen: 'media/feat-imagegen.mp4',
+  telegram: 'media/feat-telegram.mp4',
+}
+const isRichKey = (k) => !!(RICH_VIDEO[k] || RICH[k])
+// Bandeau imposé par module quand les titres de fonctions (prose) ne matchent aucune clé.
+const MODULE_BANNER = {
+  'import-image-to-svg': 'transform',
+  'import-pdf-to-svg': 'transform',
+  'import-svg': 'transform',
+}
 
 function keysHTML(keys) { return `<span class="kbd-keys">${(keys || []).map((k) => `<kbd>${k}</kbd>`).join('')}</span>` }
 
@@ -154,21 +177,27 @@ function moduleHTML(m) {
     .join('')
   const used = new Set()
   const pool = CATEGORY_FALLBACK[m.cat] || DEFAULT_POOL
-  const feats = (m.features || []).map((f) => {
+  let bannerUsed = false // 1 grand bandeau MAX par module ; le reste = petits pictos
+  const forced = MODULE_BANNER[m.id] // bandeau imposé (titres en prose qui ne matchent rien)
+  const feats = (m.features || []).map((f, i) => {
     let key = motifFor(f.title)
-    let rich = false
-    if (key && !used.has(key)) {
-      rich = !!RICH[key] // correspondance confiante sur le titre → grand bandeau démonstratif
-    } else {
-      // sinon : petit motif thématique du module, distinct des déjà posés (jamais de carte vide).
-      // On évite les clés RICH : les bandeaux sont réservés aux correspondances confiantes par titre.
-      key = pool.find((k) => !used.has(k) && !RICH[k]) || pool.find((k) => !used.has(k)) || pool[0]
+    let banner = false
+    if (forced && i === 0 && !bannerUsed) {
+      key = forced; banner = true; bannerUsed = true // 1re fonction du module → bandeau imposé
+    } else if (key && !used.has(key) && isRichKey(key) && !bannerUsed) {
+      banner = true; bannerUsed = true // correspondance confiante + slot libre → bandeau contextuel
+    } else if (!key || used.has(key) || isRichKey(key)) {
+      // pas de bandeau ici → petit motif thématique distinct (jamais une clé rich, jamais vide)
+      key = pool.find((k) => !used.has(k) && !isRichKey(k)) || pool.find((k) => !used.has(k)) || pool[0]
     }
     used.add(key)
-    const ico = rich
+    const vid = banner && RICH_VIDEO[key]
+    const ico = vid
+      ? `<span class="feat-banner vid"><video src="${vid}" autoplay loop muted playsinline preload="metadata"></video></span>`
+      : banner && RICH[key]
       ? `<span class="feat-banner">${RICH[key]}</span>`
-      : `<span class="feat-ico">${MOTIFS[key]}</span>`
-    return `<div class="feat-item${rich ? ' rich' : ''}">${ico}<div class="feat-body"><dt>${f.title}</dt><dd>${f.desc}</dd></div></div>`
+      : `<span class="feat-ico">${MOTIFS[key] || MOTIFS.grid}</span>`
+    return `<div class="feat-item${vid || (banner && RICH[key]) ? ' rich' : ''}">${ico}<div class="feat-body"><dt>${f.title}</dt><dd>${f.desc}</dd></div></div>`
   }).join('')
   const featHTML = feats ? `<div class="mod-sub">Fonctions</div><dl class="feat-list">${feats}</dl>` : ''
   const sc = (m.shortcuts || [])
