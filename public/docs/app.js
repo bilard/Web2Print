@@ -78,6 +78,22 @@ const MOTIFS = {
   transform: SVG(`<rect class="m-cross c1" x="3" y="6.5" width="7" height="7" rx="1"/><path class="m-cross c2" d="M6.5 6.5l3.5 3.5-3.5 3.5L3 10z"/><path d="M12 10h4.5M14.5 7.5l2.5 2.5-2.5 2.5"/><path d="M19.5 6.5l1.5 3.5-1.5 3.5"/>`),
   clock: SVG(`<circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 1.8"/><circle class="m-pulse" cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>`),
 }
+
+/* RICH : scènes paysage DÉMONSTRATIVES (montrent une transformation, pas un loop
+   décoratif). Affichées dans une grande tuile ; priment sur le petit glyphe MOTIFS
+   pour les capacités « phares ». Animations préfixées s-* (jouées si .playing). */
+const SVGR = (inner) => `<svg viewBox="0 0 160 44" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" preserveAspectRatio="xMidYMid meet">${inner}</svg>`
+const RICH = {
+  // Une page web → champs extraits qui filent dans une table, dont les lignes s'allument (web → PIM)
+  scrape: SVGR(`<rect x="4" y="7" width="52" height="30" rx="3"/><path d="M4 13h52"/><circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="11.5" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M16 10h32" opacity="0.4"/><rect class="s-scan" x="7" y="16.5" width="46" height="2.4" rx="1.2" fill="currentColor" stroke="none" opacity="0.3"/><path d="M9 21h28M9 25h34M9 29h22M9 33h30" opacity="0.4"/><rect x="103" y="6" width="53" height="32" rx="2.5"/><path d="M103 13h53" opacity="0.7"/><path d="M124 6v32" opacity="0.4"/><rect class="s-row r1" x="103.5" y="13.3" width="52" height="8" fill="currentColor" stroke="none" opacity="0"/><rect class="s-row r2" x="103.5" y="21.5" width="52" height="8" fill="currentColor" stroke="none" opacity="0"/><rect class="s-row r3" x="103.5" y="29.7" width="52" height="7.5" fill="currentColor" stroke="none" opacity="0"/><rect class="s-fly c1" x="60" y="13.5" width="11" height="4.5" rx="2.25" fill="currentColor" stroke="none"/><rect class="s-fly c2" x="60" y="20.5" width="11" height="4.5" rx="2.25" fill="currentColor" stroke="none"/><rect class="s-fly c3" x="60" y="27.5" width="11" height="4.5" rx="2.25" fill="currentColor" stroke="none"/>`),
+  // 1 création → 4 formats de sortie qui se déploient en cascade (impression, PPTX, PNG, social)
+  export: SVGR(`<rect class="s-pulse" x="8" y="11" width="34" height="22" rx="2.5"/><path d="M14 17h22M14 22h22M14 27h14" opacity="0.45"/><path class="s-line l1" d="M42 18L80 12.5"/><path class="s-line l2" d="M42 21L120 12.5"/><path class="s-line l3" d="M42 25L80 31.5"/><path class="s-line l4" d="M42 28L120 31.5"/><g class="s-out o1"><rect x="80" y="6" width="30" height="13" rx="2"/><path d="M84 12.5h10" opacity="0.55"/></g><g class="s-out o2"><rect x="120" y="6" width="33" height="13" rx="2"/><path d="M124 12.5h13" opacity="0.55"/></g><g class="s-out o3"><rect x="80" y="25" width="30" height="13" rx="2"/><path d="M84 31.5h10" opacity="0.55"/></g><g class="s-out o4"><rect x="120" y="25" width="33" height="13" rx="2"/><path d="M124 31.5h13" opacity="0.55"/></g>`),
+  // Une fiche pauvre → la baguette IA balaie → le contenu se remplit ligne par ligne
+  ai: SVGR(`<rect class="s-glow" x="6" y="7" width="148" height="30" rx="4"/><path class="s-fill q1" d="M14 14h44"/><path class="s-fill q2" d="M14 20h92"/><path class="s-fill q3" d="M14 26h64"/><path class="s-fill q4" d="M14 32h80"/><path class="s-wand" d="M122 11l2.2 5.2 5.2 2.2-5.2 2.2-2.2 5.2-2.2-5.2-5.2-2.2 5.2-2.2z" fill="currentColor" stroke="none"/><path class="s-spark2" d="M140 24l1.4 3.2 3.2 1.4-3.2 1.4-1.4 3.2-1.4-3.2-3.2-1.4 3.2-1.4z" fill="currentColor" stroke="none"/>`),
+  // Un graphe de 5 nodes ; un jeton traverse, chaque node s'allume à son passage
+  flow: SVGR(`<rect class="s-node n1" x="6" y="15" width="22" height="14" rx="2.5"/><rect class="s-node n2" x="40" y="15" width="22" height="14" rx="2.5"/><rect class="s-node n3" x="74" y="15" width="22" height="14" rx="2.5"/><rect class="s-node n4" x="108" y="15" width="22" height="14" rx="2.5"/><rect class="s-node n5" x="142" y="15" width="12" height="14" rx="2.5"/><path d="M28 22h12M62 22h12M96 22h12M130 22h12" opacity="0.5"/><circle class="s-token" cx="17" cy="22" r="2.6" fill="currentColor" stroke="none"/>`),
+}
+
 // Règles titre → motif (normalisé : minuscules, sans accents). Ordre = priorité
 // (spécifique d'abord). Aucune correspondance → pas d'icône (texte net).
 const MOTIF_RULES = [
@@ -115,6 +131,19 @@ function motifFor(title) {
   for (const [re, key] of MOTIF_RULES) if (re.test(t)) return key
   return null
 }
+// Repli par catégorie : garantit qu'AUCUNE carte ne reste sans vignette animée.
+// Pioché dans l'ordre, en évitant les motifs déjà posés dans le module (variété).
+const CATEGORY_FALLBACK = {
+  'Démarrage': ['cursor', 'search', 'layers', 'grid', 'steps', 'bell'],
+  'Édition': ['layers', 'vector', 'image', 'video', 'export', 'grid'],
+  'Import': ['import', 'layers', 'doc', 'vector', 'transform', 'grid'],
+  'Données': ['grid', 'tree', 'image', 'search', 'erd', 'clock', 'diff'],
+  'Export': ['export', 'doc', 'slides', 'image', 'clock', 'grid'],
+  'Automatisation': ['flow', 'clock', 'telegram', 'export', 'ai', 'grid'],
+  'Assistant IA': ['ai', 'chat', 'search', 'clock', 'image'],
+  'Administration': ['shield', 'key', 'grid', 'search', 'clock', 'steps'],
+}
+const DEFAULT_POOL = ['grid', 'ai', 'export', 'search', 'layers', 'image', 'clock', 'tree']
 
 function keysHTML(keys) { return `<span class="kbd-keys">${(keys || []).map((k) => `<kbd>${k}</kbd>`).join('')}</span>` }
 
@@ -124,12 +153,22 @@ function moduleHTML(m) {
     .map((d) => `<figure class="mod-demo"><video src="${d.src}" autoplay loop muted playsinline preload="metadata"></video><figcaption>${d.caption}</figcaption></figure>`)
     .join('')
   const used = new Set()
+  const pool = CATEGORY_FALLBACK[m.cat] || DEFAULT_POOL
   const feats = (m.features || []).map((f) => {
     let key = motifFor(f.title)
-    if (key && used.has(key)) key = null // jamais le même motif deux fois dans un module
-    if (key) used.add(key)
-    const ico = key ? `<span class="feat-ico">${MOTIFS[key]}</span>` : ''
-    return `<div class="feat-item${ico ? '' : ' no-ico'}">${ico}<div class="feat-body"><dt>${f.title}</dt><dd>${f.desc}</dd></div></div>`
+    let rich = false
+    if (key && !used.has(key)) {
+      rich = !!RICH[key] // correspondance confiante sur le titre → grand bandeau démonstratif
+    } else {
+      // sinon : petit motif thématique du module, distinct des déjà posés (jamais de carte vide).
+      // On évite les clés RICH : les bandeaux sont réservés aux correspondances confiantes par titre.
+      key = pool.find((k) => !used.has(k) && !RICH[k]) || pool.find((k) => !used.has(k)) || pool[0]
+    }
+    used.add(key)
+    const ico = rich
+      ? `<span class="feat-banner">${RICH[key]}</span>`
+      : `<span class="feat-ico">${MOTIFS[key]}</span>`
+    return `<div class="feat-item${rich ? ' rich' : ''}">${ico}<div class="feat-body"><dt>${f.title}</dt><dd>${f.desc}</dd></div></div>`
   }).join('')
   const featHTML = feats ? `<div class="mod-sub">Fonctions</div><dl class="feat-list">${feats}</dl>` : ''
   const sc = (m.shortcuts || [])
@@ -172,7 +211,7 @@ function observeMotifs() {
   const io = new IntersectionObserver((entries) => {
     for (const en of entries) en.target.classList.toggle('playing', en.isIntersecting)
   }, { rootMargin: '0px 0px -8% 0px' })
-  $$('.feat-ico').forEach((el) => io.observe(el))
+  $$('.feat-ico, .feat-banner').forEach((el) => io.observe(el))
 }
 
 /* ---------------- Navigation ---------------- */

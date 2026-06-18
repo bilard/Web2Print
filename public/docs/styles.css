@@ -133,6 +133,44 @@ main { flex: 1; }
 .feat-ico { width: 44px; height: 44px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
 .feat-ico svg { width: 24px; height: 24px; display: block; }
 
+/* Bandeau RICHE — grande scène démonstrative (capacités phares) */
+.feat-item.rich { display: block; padding: 0; overflow: hidden; }
+.feat-banner { display: block; width: 100%; height: 150px; background: var(--well); border-bottom: 1px solid var(--border); color: var(--accent); }
+.feat-banner svg { width: 100%; height: 100%; display: block; padding: 16px 22px; }
+.feat-item.rich .feat-body { padding: 13px 17px 15px; }
+
+/* Scènes RICH — animations de transformation (jouées si .playing) */
+.feat-banner svg [class*="s-"] { transform-box: fill-box; transform-origin: center; }
+.feat-banner .s-line { stroke-dasharray: 92; }
+.feat-banner .s-fill { stroke-dasharray: 100; }
+.feat-banner.playing .s-scan { animation: sScan 3.4s ease-in-out infinite; }
+.feat-banner.playing .s-fly { animation: sFly 3.4s ease-in-out infinite; }
+.feat-banner.playing .s-row { animation: sRow 3.4s ease-in-out infinite; }
+.feat-banner.playing .s-pulse { animation: sPulse 3s ease-in-out infinite; }
+.feat-banner.playing .s-glow { animation: sGlow 3s ease-in-out infinite; }
+.feat-banner.playing .s-line { animation: sLine 3.6s ease-in-out infinite; }
+.feat-banner.playing .s-out { animation: sOut 3.6s ease-in-out infinite; }
+.feat-banner.playing .s-fill { animation: sLine 3.8s ease-in-out infinite; }
+.feat-banner.playing .s-wand { animation: sWand 3.2s ease-in-out infinite; }
+.feat-banner.playing .s-spark2 { animation: sSpark 2.6s ease-in-out infinite 0.5s; }
+.feat-banner.playing .s-node { animation: sNode 3.4s ease-in-out infinite; }
+.feat-banner.playing .s-token { animation: sToken 3.4s ease-in-out infinite; }
+.feat-banner .s-fly.c2, .feat-banner .s-row.r2, .feat-banner .s-line.l2, .feat-banner .s-out.o2, .feat-banner .s-fill.q2, .feat-banner .s-node.n2 { animation-delay: 0.3s; }
+.feat-banner .s-fly.c3, .feat-banner .s-row.r3, .feat-banner .s-line.l3, .feat-banner .s-out.o3, .feat-banner .s-fill.q3, .feat-banner .s-node.n3 { animation-delay: 0.6s; }
+.feat-banner .s-line.l4, .feat-banner .s-out.o4, .feat-banner .s-fill.q4, .feat-banner .s-node.n4 { animation-delay: 0.9s; }
+.feat-banner .s-node.n5 { animation-delay: 1.2s; }
+@keyframes sScan { 0% { transform: translateY(0); opacity: 0.12; } 40% { opacity: 0.5; } 80%,100% { transform: translateY(16px); opacity: 0.12; } }
+@keyframes sFly { 0%,15% { transform: translateX(0); opacity: 0; } 30% { opacity: 1; } 68% { transform: translateX(40px); opacity: 1; } 82%,100% { transform: translateX(44px); opacity: 0; } }
+@keyframes sRow { 0%,35% { opacity: 0; } 52% { opacity: 0.16; } 80%,100% { opacity: 0; } }
+@keyframes sPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+@keyframes sGlow { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+@keyframes sLine { 0%,12% { stroke-dashoffset: 100; } 52%,75% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
+@keyframes sOut { 0%,18% { transform: scale(0.3); opacity: 0; } 42% { transform: scale(1.1); opacity: 1; } 58%,90% { transform: scale(1); opacity: 1; } 100% { opacity: 0.82; } }
+@keyframes sWand { 0%,100% { transform: translateX(-14px) scale(0.7); opacity: 0.3; } 50% { transform: translateX(2px) scale(1); opacity: 1; } }
+@keyframes sSpark { 0%,100% { transform: scale(0.4); opacity: 0.2; } 50% { transform: scale(1); opacity: 1; } }
+@keyframes sNode { 0%,100% { opacity: 0.4; } 45%,70% { opacity: 1; } }
+@keyframes sToken { 0% { transform: translateX(0); } 92%,100% { transform: translateX(131px); } }
+
 /* Motifs animés (joués seulement quand .playing — cf. IntersectionObserver) */
 .feat-ico svg [class*="m-"] { transform-box: fill-box; transform-origin: center; }
 .feat-ico .m-bar { transform-origin: bottom; }
@@ -219,4 +257,4 @@ main { flex: 1; }
   .doc-main { margin-left: 0; }
   .menu-toggle { display: inline-flex; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } .feat-ico [class*="m-"] { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } .feat-ico [class*="m-"], .feat-banner [class*="s-"] { animation: none !important; } }
