@@ -3,39 +3,8 @@ import { useMemo, useState } from 'react'
 import { Search, X, Loader2, Braces, Copy, Check } from 'lucide-react'
 import type { TableSchema } from './firestoreSchema'
 import { useTableData, type TableRow } from './useTableData'
-
-const DATE_KEYS = /^(createdAt|updatedAt|startedAt|endedAt|lastSeenAt|lastSyncAt|expiresAt|receivedAt|at)$/
-
-/** Valeur complète mise en forme : objets/arrays → JSON indenté ; chaîne ressemblant
- *  à du JSON → reparsée & indentée ; sinon brute. */
-function prettyValue(v: unknown): string {
-  if (v == null) return '—'
-  if (typeof v === 'object') return JSON.stringify(v, null, 2)
-  if (typeof v === 'string') {
-    const t = v.trim()
-    if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
-      try { return JSON.stringify(JSON.parse(t), null, 2) } catch { /* pas du JSON → brut */ }
-    }
-    return v
-  }
-  return String(v)
-}
-
-function formatCell(key: string, v: unknown): string {
-  if (v == null) return '—'
-  // Firestore Timestamp (duck-typing) ou champ date numérique → date FR.
-  if (typeof v === 'object' && typeof (v as { toDate?: unknown }).toDate === 'function') {
-    return (v as { toDate(): Date }).toDate().toLocaleString('fr-FR')
-  }
-  if (typeof v === 'number' && DATE_KEYS.test(key) && v > 1e11) {
-    return new Date(v).toLocaleString('fr-FR')
-  }
-  if (typeof v === 'object') {
-    const json = JSON.stringify(v)
-    return json.length > 60 ? `${json.slice(0, 57)}…` : json
-  }
-  return String(v)
-}
+import { formatCell, prettyValue } from './formatValue'
+import { ValueViewer } from './ValueViewer'
 
 /** Colonnes = champs du schéma (ordre) + clé doc `id` + clés extra présentes. */
 function useColumns(table: TableSchema, rows: TableRow[]): string[] {
@@ -149,7 +118,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
               Fermer <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <pre className="flex-1 overflow-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-[12px] leading-relaxed text-white/80">{prettyValue(detail.value)}</pre>
+          <div className="min-h-0 flex-1"><ValueViewer value={detail.value} /></div>
         </div>
       )}
     </div>
