@@ -4,13 +4,15 @@ import { collection, query, where, limit, onSnapshot, getDocs } from 'firebase/f
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import type { QuerySpec } from './firestoreSchema'
+import { parseMaybeJson, asSheets } from './formatValue'
 
 export interface TableRow {
   _docId: string
   [k: string]: unknown
 }
 
-const MAX_ROWS = 100
+const MAX_ROWS = 500
+const FLAT_MAX = 5000
 
 /** Agrège les sous-docs d'une sous-collection : liste les parents possédés par le user,
  *  puis charge leurs sous-docs (one-shot — les règles interdisent un collectionGroup). */
@@ -46,6 +48,34 @@ export function useTableData(spec: QuerySpec | null) {
     const onErr = (err: { code?: string; message: string }) => {
       setError(err.code === 'permission-denied' ? 'Accès restreint à cette collection.' : err.message)
       setRows([]); setLoading(false)
+    }
+
+    // Feuilles aplaties → LIVE sur la collection, puis on explose chaque doc en lignes.
+    if (spec.flattenSheets) {
+      setLive(true)
+      const base = collection(db, spec.path.replace('{uid}', uid))
+      const q = spec.ownerField ? query(base, where(spec.ownerField, '==', uid)) : query(base)
+      const field = spec.flattenSheets
+      const unsub = onSnapshot(
+        q,
+        (snap) => {
+          const out: TableRow[] = []
+          for (const d of snap.docs) {
+            const sheets = asSheets(parseMaybeJson((d.data() as Record<string, unknown>)[field]))
+            if (!sheets) continue
+            for (const s of sheets) {
+              for (const r of s.rows) {
+                if (out.length >= FLAT_MAX) break
+                out.push({ _docId: `${d.id}:${out.length}`, feuille: s.name ?? d.id, ...r })
+              }
+            }
+          }
+          setRows(out)
+          setLoading(false)
+        },
+        onErr,
+      )
+      return unsub
     }
 
     // Sous-collection agrégée → chargement one-shot.

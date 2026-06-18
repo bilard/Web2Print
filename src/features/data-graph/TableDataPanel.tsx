@@ -6,12 +6,18 @@ import { useTableData, type TableRow } from './useTableData'
 import { formatCell, prettyValue } from './formatValue'
 import { ValueViewer } from './ValueViewer'
 
-/** Colonnes = champs du schéma (ordre) + clé doc `id` + clés extra présentes. */
+/** Colonnes = champs du schéma (ordre) + clé doc `id` + clés extra présentes.
+ *  En mode aplati (flattenSheets) : colonnes dérivées UNIQUEMENT des lignes produit. */
 function useColumns(table: TableSchema, rows: TableRow[]): string[] {
   return useMemo(() => {
     const cols: string[] = []
     const seen = new Set<string>()
     const push = (k: string) => { if (!seen.has(k) && k !== '_docId') { seen.add(k); cols.push(k) } }
+    if (table.query?.flattenSheets) {
+      push('feuille')
+      rows.forEach((r) => Object.keys(r).forEach(push))
+      return cols
+    }
     table.fields.forEach((f) => push(f.name))
     if (!seen.has('id')) push('id')
     rows.forEach((r) => Object.keys(r).forEach(push))

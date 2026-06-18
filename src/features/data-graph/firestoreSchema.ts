@@ -36,6 +36,9 @@ export interface QuerySpec {
   /** Sous-collection : agrège les sous-docs `path` de chaque parent possédé par le user
    *  (les règles interdisent un collectionGroup direct). Chargement one-shot (pas live). */
   subOf?: { parentPath: string; parentOwnerField: string }
+  /** Champ contenant des feuilles `{columns, rows}` à APLATIR : le panneau affiche
+   *  directement TOUTES les lignes produit (pas les docs conteneurs). Ex. `json`. */
+  flattenSheets?: string
 }
 
 export interface TableSchema {
@@ -157,8 +160,8 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'excel_data_payload', label: 'excel_data_payload', icon: Rows3, domain: 'data', x: -200, y: 620,
-    description: 'Contenu des feuilles BDD (lignes/colonnes) — double-clic « json » pour les produits.',
-    query: { path: 'excel_data_payload', ownerField: 'userId' },
+    description: 'Contenu des feuilles BDD — toutes les lignes produit (aplaties).',
+    query: { path: 'excel_data_payload', ownerField: 'userId', flattenSheets: 'json' },
     fields: [
       { name: 'docId', type: 'string', pk: true },
       { name: 'userId', type: 'string', fk: 'users' },
