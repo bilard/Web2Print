@@ -157,12 +157,12 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'excel_data_payload', label: 'excel_data_payload', icon: Rows3, domain: 'data', x: -200, y: 620,
-    description: 'Contenu des feuilles BDD (lignes/colonnes) — double-clic « sheets » pour les produits.',
+    description: 'Contenu des feuilles BDD (lignes/colonnes) — double-clic « json » pour les produits.',
     query: { path: 'excel_data_payload', ownerField: 'userId' },
     fields: [
       { name: 'docId', type: 'string', pk: true },
       { name: 'userId', type: 'string', fk: 'users' },
-      { name: 'sheets', type: 'object' },
+      { name: 'json', type: 'array' },
     ],
   },
   {
