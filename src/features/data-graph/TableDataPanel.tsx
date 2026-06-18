@@ -1,6 +1,6 @@
 // src/features/data-graph/TableDataPanel.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { Search, X, Loader2, Braces, Copy, Check } from 'lucide-react'
+import { Search, X, Loader2, Braces, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { TableSchema } from './firestoreSchema'
 import { useTableData, type TableRow } from './useTableData'
 import { formatCell, prettyValue } from './formatValue'
@@ -51,6 +51,16 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
     if (!q) return dataRows
     return dataRows.filter((r) => columns.some((c) => formatCell(c, cellValue(r, c)).toLowerCase().includes(q)))
   }, [dataRows, columns, filter])
+
+  // Pagination (le scroll infini est ingérable sur les grosses bases).
+  const PAGE_SIZE = 50
+  const [page, setPage] = useState(0)
+  useEffect(() => { setPage(0) }, [filter, sheetIdx, table.id])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, pageCount - 1)
+  const pageRows = useMemo(() => filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE), [filtered, safePage])
+  const firstRow = filtered.length === 0 ? 0 : safePage * PAGE_SIZE + 1
+  const lastRow = Math.min(filtered.length, (safePage + 1) * PAGE_SIZE)
 
   const copyDetail = async () => {
     if (!detail) return
@@ -110,7 +120,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
               <tr>{columns.map((c) => <th key={c} className="whitespace-nowrap border-b border-white/10 px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-white/40">{labelByCol[c] || c}</th>)}</tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {pageRows.map((r) => (
                 <tr key={r._docId} className="hover:bg-white/[0.03]">
                   {columns.map((c) => (
                     <td
@@ -128,6 +138,30 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      {!loading && !error && filtered.length > PAGE_SIZE && (
+        <div className="flex shrink-0 items-center justify-between border-t border-white/10 px-4 py-2 text-[12px] text-white/50">
+          <span><span className="tabular-nums text-white/70">{firstRow}–{lastRow}</span> sur <span className="tabular-nums text-white/70">{filtered.length}</span></span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 transition-colors enabled:hover:text-white disabled:opacity-30"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Précédent
+            </button>
+            <span className="tabular-nums text-white/40">Page {safePage + 1} / {pageCount}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              disabled={safePage >= pageCount - 1}
+              className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 transition-colors enabled:hover:text-white disabled:opacity-30"
+            >
+              Suivant <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Visionneuse de valeur (double-clic sur une cellule) */}
       {detail && (
