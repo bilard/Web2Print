@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+    --rose:#FB7185; --red:#F87171; --green:#34D399;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="price-watch-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+  .cap{position:absolute;top:64px;left:96px;right:96px}
+  .cap .t{font-size:32px;font-weight:800;letter-spacing:.02em}
+  .cap .t .n{font-family:"JetBrains Mono",monospace;color:var(--indigo);margin-right:16px}
+  .cap small{display:block;font-size:23px;font-weight:400;color:var(--mut);margin-top:9px}
+
+  /* Fenêtre app */
+  .win{width:1500px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .wact{margin-left:auto;display:flex;gap:10px}
+  .wpill{font-size:17px;font-weight:600;padding:8px 16px;border-radius:9px}
+  .wbody{padding:30px;min-height:600px}
+
+  /* Carte générique (réutilisée du modèle) */
+  .card{border:1px solid var(--line);border-radius:14px;background:var(--elev);overflow:hidden}
+  .card .ch{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:20px;font-weight:600}
+  .card .ch .cdot{width:12px;height:12px;flex:0 0 12px;border-radius:4px}
+  .kv-row{display:flex;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--line);font-size:21px}
+  .kv-row:last-child{border-bottom:0}
+
+  /* ===== SCÈNE : Veille tarifaire ===== */
+  .pw-bases{display:flex;gap:10px;margin-bottom:22px;align-items:center}
+  .pw-base{font-size:18px;color:var(--mut);padding:9px 18px;border-radius:9px;border:1px solid var(--line)}
+  .pw-base.on{background:var(--elev);color:var(--ink);border-color:var(--line2)}
+  .pw-live{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:16px;font-weight:700;color:var(--emerald);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.12);border-radius:100px;padding:7px 16px}
+  .pw-live i{width:9px;height:9px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(52,211,153,.6)}
+
+  .pw-wrap{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+
+  .pw-table{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--elev)}
+  .pw-tr{display:grid;grid-template-columns:1.7fr .85fr 1fr 1fr .8fr .85fr;gap:14px;padding:17px 22px;border-top:1px solid var(--line);font-size:21px;align-items:center}
+  .pw-tr:first-child{border-top:0}
+  .pw-tr.th{background:#0e0e0e;font-family:"JetBrains Mono",monospace;font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  .pw-tr .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pw-tr .name{font-weight:600;display:flex;align-items:center;gap:12px}
+  .pw-tr .name .ti{width:34px;height:34px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;background:rgba(99,102,241,.16);color:var(--violet)}
+  .pw-tr .name .ti svg{width:19px;height:19px}
+  .pw-tr .mine{font-weight:700}
+  .pw-comp{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+  .pw-comp.lead{color:var(--ink)}
+  .pw-gap{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .pw-gap.up{color:var(--red)}
+  .pw-gap.down{color:var(--green)}
+  .pw-pos{justify-self:end}
+  .pw-pill{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:800;padding:5px 12px;border-radius:100px;font-variant-numeric:tabular-nums}
+  .pw-pill.up{color:#fecaca;background:rgba(248,113,113,.18);border:1px solid rgba(248,113,113,.5)}
+  .pw-pill.down{color:#bbf7d0;background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.5)}
+  .pw-pill svg{width:13px;height:13px}
+
+  /* Carte alerte */
+  .pw-alert{border:1px solid rgba(248,113,113,.5);border-radius:16px;background:linear-gradient(180deg,rgba(248,113,113,.10),rgba(26,26,26,.6));overflow:hidden;box-shadow:0 0 44px -14px rgba(248,113,113,.55)}
+  .pw-alert .ah{display:flex;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--line);font-size:20px;font-weight:700}
+  .pw-alert .ah .ai{width:42px;height:42px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;background:rgba(248,113,113,.2);color:#fecaca}
+  .pw-alert .ah .ai svg{width:23px;height:23px}
+  .pw-alert .ab{padding:18px 20px;font-size:18px;line-height:1.5;color:var(--ink)}
+  .pw-alert .ab b{color:#fca5a5}
+  .pw-tg{display:flex;align-items:center;gap:12px;margin:6px 20px 20px;background:var(--elev);border:1px solid var(--line2);border-radius:13px;padding:13px 16px}
+  .pw-tg .ti{width:40px;height:40px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;background:rgba(56,189,248,.18);color:var(--sky)}
+  .pw-tg .ti svg{width:22px;height:22px}
+  .pw-tg b{font-size:17px;display:block}
+  .pw-tg span{font-size:14px;color:var(--mut)}
+  .pw-tg .ok{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--emerald);color:#06281b;display:grid;place-items:center}
+  .pw-tg .ok svg{width:18px;height:18px}
+
+  .pw-sum{margin-top:18px;display:flex;gap:14px}
+  .pw-sumcard{flex:1;border:1px solid var(--line);border-radius:14px;background:var(--elev);padding:16px 18px}
+  .pw-sumcard .l{font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;font-family:"JetBrains Mono",monospace}
+  .pw-sumcard .v{font-size:34px;font-weight:800;margin-top:7px;font-variant-numeric:tabular-nums}
+  .pw-sumcard .v.up{color:var(--red)}
+  .pw-sumcard .v.down{color:var(--green)}
+</style>
+</head>
+<body>
+<div data-composition-id="price-watch-demo" data-start="0" data-duration="9" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs></defs>
+    <symbol id="ic-tool" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="ic-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+    <symbol id="ic-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+    <symbol id="ic-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  </svg>
+
+  <div id="s1" class="scene">
+    <div class="glow"></div>
+    <div class="win">
+      <div class="winbar">
+        <span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+        <span class="wt">Veille tarifaire — suivi concurrentiel</span>
+      </div>
+      <div class="wbody">
+        <div class="pw-bases">
+          <span class="pw-base on">Outillage électroportatif</span>
+          <span class="pw-base">Jardin</span>
+          <span class="pw-live"><i></i> Suivi en direct · 2 enseignes</span>
+        </div>
+
+        <div class="pw-wrap">
+          <div class="pw-table">
+            <div class="pw-tr th">
+              <span>Produit</span>
+              <span class="num">Mon prix</span>
+              <span class="num">Concurrent A</span>
+              <span class="num">Concurrent B</span>
+              <span class="num">Écart</span>
+              <span class="pw-pos">Position</span>
+            </div>
+
+            <div class="pw-tr" id="r1">
+              <span class="name"><span class="ti"><svg><use href="#ic-tool"/></svg></span>Perceuse 18V Brushless</span>
+              <span class="num mine">129,00 €</span>
+              <span class="pw-comp" data-comp>119,90 €</span>
+              <span class="pw-comp" data-comp>135,00 €</span>
+              <span class="pw-gap up" data-gap>+7,6 %</span>
+              <span class="pw-pos"><span class="pw-pill up" data-pill><svg><use href="#ic-up"/></svg>+7,6 %</span></span>
+            </div>
+
+            <div class="pw-tr" id="r2">
+              <span class="name"><span class="ti"><svg><use href="#ic-tool"/></svg></span>Meuleuse 750W</span>
+              <span class="num mine">79,90 €</span>
+              <span class="pw-comp" data-comp>83,50 €</span>
+              <span class="pw-comp" data-comp>81,00 €</span>
+              <span class="pw-gap down" data-gap>−4,4 %</span>
+              <span class="pw-pos"><span class="pw-pill down" data-pill><svg><use href="#ic-down"/></svg>−4,4 %</span></span>
+            </div>
+
+            <div class="pw-tr" id="r3">
+              <span class="name"><span class="ti"><svg><use href="#ic-tool"/></svg></span>Scie circulaire 1400W</span>
+              <span class="num mine">149,00 €</span>
+              <span class="pw-comp" data-comp>139,00 €</span>
+              <span class="pw-comp" data-comp>144,90 €</span>
+              <span class="pw-gap up" data-gap>+5,7 %</span>
+              <span class="pw-pos"><span class="pw-pill up" data-pill><svg><use href="#ic-up"/></svg>+5,7 %</span></span>
+            </div>
+
+            <div class="pw-tr" id="r4">
+              <span class="name"><span class="ti"><svg><use href="#ic-tool"/></svg></span>Visseuse 12V</span>
+              <span class="num mine">59,00 €</span>
+              <span class="pw-comp" data-comp>64,90 €</span>
+              <span class="pw-comp" data-comp>62,50 €</span>
+              <span class="pw-gap down" data-gap>−5,6 %</span>
+              <span class="pw-pos"><span class="pw-pill down" data-pill><svg><use href="#ic-down"/></svg>−5,6 %</span></span>
+            </div>
+          </div>
+
+          <div class="pw-side">
+            <div class="pw-alert" id="alert">
+              <div class="ah"><span class="ai"><svg><use href="#ic-alert"/></svg></span>Alerte positionnement</div>
+              <div class="ab"><b>2 produits</b> sont plus chers que la concurrence (Perceuse 18V, Scie 1400W). Repositionnement recommandé.</div>
+              <div class="pw-tg">
+                <span class="ti"><svg><use href="#ic-send"/></svg></span>
+                <span><b>Alerte Telegram envoyée</b><span>@ibs_veille_bot · à l'instant</span></span>
+                <span class="ok"><svg><use href="#ic-check"/></svg></span>
+              </div>
+            </div>
+
+            <div class="pw-sum">
+              <div class="pw-sumcard">
+                <div class="l">Trop chers</div>
+                <div class="v up">2</div>
+              </div>
+              <div class="pw-sumcard">
+                <div class="l">Compétitifs</div>
+                <div class="v down">2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Entrée fenêtre */
+    tl.from("#s1", { opacity: 0, duration: 0.5 }, 0);
+    tl.from("#s1 .pw-base", { y: 16, opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.08 }, 0.5);
+    tl.from("#s1 .pw-live", { x: 20, opacity: 0, duration: 0.4, ease: "power2.out" }, 0.7);
+    tl.from("#s1 .pw-tr.th", { opacity: 0, duration: 0.4 }, 0.7);
+
+    /* Les lignes apparaissent en stagger */
+    tl.from("#s1 .pw-tr:not(.th)", { opacity: 0, duration: 0.42, ease: "power2.out", stagger: 0.13 }, 0.95);
+
+    /* Les prix « Concurrent A/B » arrivent */
+    tl.set("#s1 [data-comp]", { opacity: 0, y: -8 }, 0);
+    tl.to("#s1 [data-comp]", { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.6)", stagger: 0.06 }, 2.0);
+
+    /* Les écarts se colorent (fade-in depuis transparent) */
+    tl.set("#s1 [data-gap]", { opacity: 0, scale: 0.8 }, 0);
+    tl.to("#s1 [data-gap]", { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)", stagger: 0.1 }, 3.1);
+
+    /* Les pastilles de position apparaissent */
+    tl.set("#s1 [data-pill]", { opacity: 0, scale: 0.6 }, 0);
+    tl.to("#s1 [data-pill]", { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2.4)", stagger: 0.1 }, 3.7);
+
+    /* La carte d'alerte apparaît */
+    tl.set("#s1 #alert", { opacity: 0, y: 30, scale: 0.94 }, 0);
+    tl.to("#s1 #alert", { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "back.out(1.7)" }, 4.7);
+    tl.from("#s1 .pw-sum", { opacity: 0, y: 20, duration: 0.45, ease: "power2.out" }, 5.3);
+
+    /* Pulse léger sur le live indicator (déterministe, borné) */
+    tl.to("#s1 .pw-live i", { boxShadow: "0 0 0 7px rgba(52,211,153,0)", duration: 0.9, ease: "power1.out", repeat: 2, yoyo: false }, 5.8);
+
+    /* Sortie douce pour une boucle propre */
+    tl.to("#s1", { opacity: 0, duration: 0.45, ease: "power2.in" }, 8.4);
+
+    window.__timelines["price-watch-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>

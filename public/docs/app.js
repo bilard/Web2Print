@@ -25,6 +25,9 @@ const DEMOS = {
   dam: [{ src: 'media/dam.mp4', caption: "Banque de médias : recherche (texte/tag/couleur), grille de visuels, génération d'images par IA (badges « IA »)." }],
   access: [{ src: 'media/access.mp4', caption: "Utilisateurs & rôles : attribution d'un rôle, surcharges de permissions par module." }],
   'scraping-templates': [{ src: 'media/scraping-templates.mp4', caption: "Création d'un template : on pointe un élément de la page → sélecteur CSS généré → assignation à un champ." }],
+  'import-image-to-svg': [{ src: 'media/import-image-to-svg.mp4', caption: "Une image raster : le fond reste fidèle au pixel, l'IA (Google Vision) détecte les textes et les recrée en calques éditables par-dessus." }],
+  'scraping-hub': [{ src: 'media/scraping-hub.mp4', caption: "Le centre de contrôle : règles rédactionnelles de l'équipe, templates groupés par fournisseur, et journal de debug Jina/LLM en direct." }],
+  'price-watch': [{ src: 'media/price-watch.mp4', caption: "Veille concurrentielle : tableau des écarts (mon prix vs concurrents), positionnement par produit et alerte Telegram envoyée." }],
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)

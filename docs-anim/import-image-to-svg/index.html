@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="img2svg-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+
+  /* Fenêtre app */
+  .win{width:1500px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .wbody{padding:30px;min-height:600px}
+
+  .iv-grid{display:grid;grid-template-columns:1fr 400px;gap:30px;align-items:start}
+
+  /* Scène de gauche : la maquette raster + scan + boîtes détectées */
+  .iv-stage{position:relative;border:1px solid var(--line);border-radius:16px;background:radial-gradient(circle at 50% 36%,rgba(99,102,241,.07),transparent 62%),#0c0c0c;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:30px 30px;min-height:548px;display:grid;place-items:center;overflow:hidden}
+  .poster{width:330px;aspect-ratio:50/72;background:#fff;border-radius:14px;position:relative;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+  .poster .pimg{position:absolute;inset:9% 12% 47%;border-radius:9px;overflow:hidden;background:radial-gradient(ellipse 80% 66% at 50% 38%,#fff,#eef2f7 66%,#dde5ee)}
+  .poster .pimg .drill{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .poster .pbadge{position:absolute;top:7%;right:9%;width:74px;height:74px;border-radius:50%;background:#ef4444;color:#fff;font-weight:800;font-size:22px;display:grid;place-items:center;line-height:1;text-align:center}
+  .poster .ptitle{position:absolute;top:55%;left:11%;right:11%;font-size:30px;font-weight:800;color:#3730a3;line-height:1.05}
+  .poster .pprice{position:absolute;bottom:9%;left:11%;background:#facc15;color:#dc2626;font-weight:800;font-size:38px;padding:5px 12px;border-radius:9px;display:inline-grid;line-height:1}
+  .poster .pprice .pv{grid-area:1/1}
+  .poster .pprice .pv2{opacity:0}
+  .poster .pprice small{font-size:19px;vertical-align:super;margin-left:2px}
+
+  /* faisceau de scan Vision */
+  .scanbeam{position:absolute;left:0;right:0;top:0;height:96px;z-index:6;background:linear-gradient(180deg,transparent,rgba(99,102,241,.55),transparent);pointer-events:none;opacity:0;box-shadow:0 0 40px 6px rgba(99,102,241,.4)}
+
+  /* boîtes de détection (positionnées sur le poster) */
+  .det{position:absolute;border:2px dashed var(--emerald);border-radius:7px;background:rgba(52,211,153,.12);z-index:8;opacity:0;box-shadow:0 0 26px -6px rgba(52,211,153,.7)}
+  .det .tag{position:absolute;top:-26px;left:-1px;font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:700;color:#06281b;background:var(--emerald);padding:2px 9px;border-radius:6px;white-space:nowrap}
+  /* poignées d'édition sur une boîte */
+  .det.edit{border-style:solid;border-color:var(--indigo);background:rgba(99,102,241,.14);box-shadow:0 0 26px -6px rgba(99,102,241,.8)}
+  .det.edit .tag{color:#fff;background:var(--indigo)}
+  .det .h{position:absolute;width:13px;height:13px;border:2px solid var(--indigo);border-radius:3px;background:#fff;opacity:0}
+  .det .h1{top:-7px;left:-7px}.det .h2{top:-7px;right:-7px}.det .h3{bottom:-7px;left:-7px}.det .h4{bottom:-7px;right:-7px}
+
+  /* Panneau Calques (droite) */
+  .iv-panel{border:1px solid var(--line);border-radius:16px;background:var(--elev);overflow:hidden}
+  .iv-ph{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line);font-size:21px;font-weight:700}
+  .iv-ph .pi{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;background:rgba(99,102,241,.18);color:var(--violet)}
+  .iv-ph .pi svg{width:21px;height:21px}
+  .iv-vision{display:flex;align-items:center;gap:10px;margin:16px 22px 6px;font-family:"JetBrains Mono",monospace;font-size:15px;color:var(--mut)}
+  .iv-vision i{width:9px;height:9px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(52,211,153,.6)}
+  .iv-row{display:flex;align-items:center;gap:14px;padding:15px 22px;border-top:1px solid var(--line);font-size:21px}
+  .iv-row .li{width:36px;height:36px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line2);color:var(--mut)}
+  .iv-row .li svg{width:19px;height:19px}
+  .iv-row .nm{font-weight:600}
+  .iv-row .nm small{display:block;font-size:14px;color:var(--mut);font-weight:400;font-family:"JetBrains Mono",monospace;margin-top:2px}
+  .iv-row .st{margin-left:auto;font-size:14px;font-family:"JetBrains Mono",monospace;border-radius:7px;padding:5px 11px}
+  .iv-row .st.lock{color:var(--mut);border:1px solid var(--line2)}
+  .iv-row .st.edit{color:#bbf7d0;background:rgba(52,211,153,.16);border:1px solid rgba(52,211,153,.5)}
+  .iv-row.bg .li{color:var(--sky)}
+  .iv-foot{margin:6px 22px 20px;font-size:16px;color:var(--mut);line-height:1.5}
+  .iv-foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div data-composition-id="img2svg-demo" data-start="0" data-duration="9" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <rect x="74" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <rect x="104" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+      <path d="M206 64 l5 4 M214 64 l5 4 M222 64 l5 4" stroke="#94a3b8" stroke-width="1.4"/>
+    </symbol>
+    <symbol id="ic-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="ic-type" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></symbol>
+    <symbol id="ic-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="ic-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M3 12h18"/></symbol>
+  </svg>
+
+  <div id="s1" class="scene">
+    <div class="glow"></div>
+    <div class="win">
+      <div class="winbar">
+        <span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+        <span class="wt">Image → SVG éditable</span>
+      </div>
+      <div class="wbody">
+        <div class="iv-grid">
+
+          <div class="iv-stage">
+            <div class="poster" id="poster">
+              <div class="pimg"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></div>
+              <div class="pbadge">-30%</div>
+              <div class="ptitle">Perceuse 18V Brushless</div>
+              <div class="pprice"><span class="pv pv1">129<small>€</small></span><span class="pv pv2">99<small>€</small></span></div>
+
+              <!-- boîtes de détection alignées sur les textes -->
+              <div class="det" id="d-badge" style="top:5%;right:6%;width:88px;height:88px;border-radius:50%">
+                <span class="tag">badge · -30%</span>
+              </div>
+              <div class="det" id="d-title" style="top:53%;left:8%;right:8%;height:78px">
+                <span class="tag">titre · texte</span>
+              </div>
+              <div class="det edit" id="d-price" style="bottom:7%;left:8%;width:128px;height:62px">
+                <span class="tag">prix · 129 €</span>
+                <span class="h h1"></span><span class="h h2"></span><span class="h h3"></span><span class="h h4"></span>
+              </div>
+            </div>
+            <div class="scanbeam" id="beam" data-layout-allow-overflow></div>
+          </div>
+
+          <div class="iv-panel">
+            <div class="iv-ph"><span class="pi"><svg><use href="#ic-scan"/></svg></span>Calques détectés</div>
+            <div class="iv-vision" id="vis"><i></i> Google Vision · 3 textes détectés</div>
+
+            <div class="iv-row bg" id="l-bg">
+              <span class="li"><svg><use href="#ic-image"/></svg></span>
+              <span class="nm">Fond image<small>maquette raster</small></span>
+              <span class="st lock"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>verrouillé</span>
+            </div>
+            <div class="iv-row" id="l-badge">
+              <span class="li"><svg><use href="#ic-type"/></svg></span>
+              <span class="nm">-30%<small>badge</small></span>
+              <span class="st edit">éditable</span>
+            </div>
+            <div class="iv-row" id="l-title">
+              <span class="li"><svg><use href="#ic-type"/></svg></span>
+              <span class="nm">Perceuse 18V Brushless<small>titre</small></span>
+              <span class="st edit">éditable</span>
+            </div>
+            <div class="iv-row" id="l-price">
+              <span class="li"><svg><use href="#ic-type"/></svg></span>
+              <span class="nm" style="display:inline-grid"><span class="pv pv1" style="grid-area:1/1">129 €<small>prix</small></span><span class="pv pv2" style="grid-area:1/1;opacity:0">99 €<small>prix · modifié</small></span></span>
+              <span class="st edit">éditable</span>
+            </div>
+
+            <div class="iv-foot">Le <b>fond reste fidèle au pixel</b> ; les textes repérés par l'IA sont recréés en calques que tu peux <b>modifier directement</b>.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Entrée */
+    tl.from("#s1", { opacity: 0, duration: 0.5 }, 0);
+    tl.from("#s1 .poster", { y: 26, opacity: 0, scale: 0.96, duration: 0.55, ease: "power3.out" }, 0.5);
+    tl.from("#s1 .iv-panel", { y: 24, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.65);
+
+    /* Le faisceau Vision balaie le poster (lecture) */
+    tl.set("#beam", { opacity: 0, y: 0 }, 0);
+    tl.to("#beam", { opacity: 1, duration: 0.25 }, 1.3);
+    tl.to("#beam", { y: 452, duration: 1.15, ease: "none" }, 1.4);
+    tl.to("#beam", { opacity: 0, duration: 0.25 }, 2.5);
+
+    /* La ligne « Vision » apparaît */
+    tl.from("#vis", { opacity: 0, y: -12, duration: 0.4, ease: "power2.out" }, 2.5);
+    tl.fromTo("#vis i", { boxShadow: "0 0 0 0 rgba(52,211,153,.6)" }, { boxShadow: "0 0 0 7px rgba(52,211,153,0)", duration: 0.9, ease: "power1.out", repeat: 2 }, 2.6);
+
+    /* Les boîtes de détection apparaissent sur chaque texte (stagger) */
+    tl.set("#s1 .det", { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" }, 0);
+    tl.to("#d-badge", { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 2.7);
+    tl.to("#d-title", { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 2.95);
+    tl.to("#d-price", { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 3.2);
+
+    /* Les calques se peuplent dans le panneau (stagger) */
+    tl.from("#l-bg", { opacity: 0, y: 16, duration: 0.4, ease: "power2.out" }, 3.4);
+    tl.from("#l-badge", { opacity: 0, y: 16, duration: 0.4, ease: "power2.out" }, 3.7);
+    tl.from("#l-title", { opacity: 0, y: 16, duration: 0.4, ease: "power2.out" }, 3.95);
+    tl.from("#l-price", { opacity: 0, y: 16, duration: 0.4, ease: "power2.out" }, 4.2);
+    tl.from("#s1 .iv-foot", { opacity: 0, y: 14, duration: 0.45, ease: "power2.out" }, 4.6);
+
+    /* On sélectionne le prix → poignées d'édition + surbrillance du calque */
+    tl.to("#d-price .h", { opacity: 1, duration: 0.3, ease: "power2.out", stagger: 0.04 }, 5.2);
+    tl.fromTo("#l-price", { backgroundColor: "rgba(99,102,241,0)" }, { backgroundColor: "rgba(99,102,241,.14)", duration: 0.4, ease: "sine.inOut" }, 5.3);
+
+    /* Démonstration d'édition : le prix se réécrit (129 → 99), crossfade seek-safe */
+    tl.to("#s1 .pprice", { scale: 1.06, duration: 0.22, ease: "power2.out", transformOrigin: "0% 100%" }, 6.2);
+    tl.to("#s1 .pprice .pv1", { opacity: 0, duration: 0.3, ease: "power1.inOut" }, 6.4);
+    tl.to("#s1 .pprice .pv2", { opacity: 1, duration: 0.3, ease: "power1.inOut" }, 6.4);
+    tl.to("#l-price .pv1", { opacity: 0, duration: 0.3, ease: "power1.inOut" }, 6.4);
+    tl.to("#l-price .pv2", { opacity: 1, duration: 0.3, ease: "power1.inOut" }, 6.4);
+    tl.to("#s1 .pprice", { scale: 1, duration: 0.3, ease: "back.out(2)", transformOrigin: "0% 100%" }, 6.55);
+    tl.fromTo("#d-price", { boxShadow: "0 0 26px -6px rgba(99,102,241,.8)" }, { boxShadow: "0 0 40px 0px rgba(99,102,241,.95)", duration: 0.4, yoyo: true, repeat: 1, ease: "sine.inOut" }, 6.4);
+
+    /* Sortie douce pour une boucle propre */
+    tl.to("#s1", { opacity: 0, duration: 0.45, ease: "power2.in" }, 8.4);
+
+    window.__timelines["img2svg-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>
