@@ -1,10 +1,25 @@
 // src/features/data-graph/TableDataPanel.tsx
 import { useMemo, useState } from 'react'
-import { Search, X, Loader2 } from 'lucide-react'
+import { Search, X, Loader2, Braces, Copy, Check } from 'lucide-react'
 import type { TableSchema } from './firestoreSchema'
 import { useTableData, type TableRow } from './useTableData'
 
 const DATE_KEYS = /^(createdAt|updatedAt|startedAt|endedAt|lastSeenAt|lastSyncAt|expiresAt|receivedAt|at)$/
+
+/** Valeur complète mise en forme : objets/arrays → JSON indenté ; chaîne ressemblant
+ *  à du JSON → reparsée & indentée ; sinon brute. */
+function prettyValue(v: unknown): string {
+  if (v == null) return '—'
+  if (typeof v === 'object') return JSON.stringify(v, null, 2)
+  if (typeof v === 'string') {
+    const t = v.trim()
+    if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
+      try { return JSON.stringify(JSON.parse(t), null, 2) } catch { /* pas du JSON → brut */ }
+    }
+    return v
+  }
+  return String(v)
+}
 
 function formatCell(key: string, v: unknown): string {
   if (v == null) return '—'
@@ -40,8 +55,15 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
   const { rows, loading, error } = useTableData(table.query ?? null)
   const columns = useColumns(table, rows)
   const [filter, setFilter] = useState('')
+  const [detail, setDetail] = useState<{ col: string; value: unknown } | null>(null)
+  const [copied, setCopied] = useState(false)
   // Champ PK : souvent l'id du document (non stocké comme champ, ex. users.uid) → repli sur _docId.
   const pkField = table.fields.find((f) => f.pk)?.name
+
+  const copyDetail = async () => {
+    if (!detail) return
+    try { await navigator.clipboard.writeText(prettyValue(detail.value)); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* clipboard indispo */ }
+  }
 
   const cellValue = (r: TableRow, c: string): unknown => {
     if (c === 'id') return r._docId
@@ -56,7 +78,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
   }, [rows, columns, filter])
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[46%] min-h-[220px] flex-col border-t-2 border-indigo-500/60 bg-well/98 backdrop-blur">
+    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[46%] min-h-[220px] flex-col border-t-2 border-indigo-500/60 bg-well shadow-[0_-12px_30px_rgba(0,0,0,0.4)]">
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-2.5">
         <span className="rounded-md bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#fff]">TABLE</span>
         <span className="font-mono text-[13px] font-semibold text-white">{table.label}</span>
@@ -96,7 +118,12 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
               {filtered.map((r) => (
                 <tr key={r._docId} className="hover:bg-white/[0.03]">
                   {columns.map((c) => (
-                    <td key={c} className="max-w-[260px] truncate border-b border-white/5 px-4 py-2 font-mono text-white/70">
+                    <td
+                      key={c}
+                      onDoubleClick={() => setDetail({ col: c, value: cellValue(r, c) })}
+                      title="Double-clic pour voir la valeur complète"
+                      className="max-w-[260px] cursor-zoom-in truncate border-b border-white/5 px-4 py-2 font-mono text-white/70 hover:text-white"
+                    >
                       {formatCell(c, cellValue(r, c))}
                     </td>
                   ))}
@@ -106,6 +133,23 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
           </table>
         )}
       </div>
+
+      {/* Visionneuse de valeur (double-clic sur une cellule) */}
+      {detail && (
+        <div className="absolute inset-0 z-20 flex flex-col bg-well">
+          <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-2.5">
+            <Braces className="h-4 w-4 text-indigo-400" />
+            <span className="font-mono text-[13px] font-semibold text-white">{detail.col}</span>
+            <button onClick={copyDetail} className="ml-auto flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[12px] text-white/60 transition-colors hover:text-white">
+              {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" /> Copié</> : <><Copy className="h-3.5 w-3.5" /> Copier</>}
+            </button>
+            <button onClick={() => setDetail(null)} className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[12px] text-white/60 transition-colors hover:text-white">
+              Fermer <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <pre className="flex-1 overflow-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-[12px] leading-relaxed text-white/80">{prettyValue(detail.value)}</pre>
+        </div>
+      )}
     </div>
   )
 }
