@@ -40,11 +40,19 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
   const { rows, loading, error } = useTableData(table.query ?? null)
   const columns = useColumns(table, rows)
   const [filter, setFilter] = useState('')
+  // Champ PK : souvent l'id du document (non stocké comme champ, ex. users.uid) → repli sur _docId.
+  const pkField = table.fields.find((f) => f.pk)?.name
+
+  const cellValue = (r: TableRow, c: string): unknown => {
+    if (c === 'id') return r._docId
+    if (c === pkField && r[c] == null) return r._docId
+    return r[c]
+  }
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
     if (!q) return rows
-    return rows.filter((r) => columns.some((c) => formatCell(c, c === 'id' ? r._docId : r[c]).toLowerCase().includes(q)))
+    return rows.filter((r) => columns.some((c) => formatCell(c, cellValue(r, c)).toLowerCase().includes(q)))
   }, [rows, columns, filter])
 
   return (
@@ -89,7 +97,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
                 <tr key={r._docId} className="hover:bg-white/[0.03]">
                   {columns.map((c) => (
                     <td key={c} className="max-w-[260px] truncate border-b border-white/5 px-4 py-2 font-mono text-white/70">
-                      {formatCell(c, c === 'id' ? r._docId : r[c])}
+                      {formatCell(c, cellValue(r, c))}
                     </td>
                   ))}
                 </tr>
