@@ -160,7 +160,7 @@ export const TABLES: TableSchema[] = [
   },
   {
     id: 'excel_data_payload', label: 'excel_data_payload', icon: Rows3, domain: 'data', x: -200, y: 620,
-    description: 'Contenu des feuilles BDD — toutes les lignes produit (aplaties).',
+    description: 'Contenu des BDD — choisissez une base pour voir ses produits.',
     query: { path: 'excel_data_payload', ownerField: 'userId', flattenSheets: 'json' },
     fields: [
       { name: 'docId', type: 'string', pk: true },

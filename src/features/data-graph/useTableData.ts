@@ -4,15 +4,18 @@ import { collection, query, where, limit, onSnapshot, getDocs } from 'firebase/f
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import type { QuerySpec } from './firestoreSchema'
-import { parseMaybeJson, asSheets } from './formatValue'
+import { parseMaybeJson, asSheets, type SheetLike } from './formatValue'
 
 export interface TableRow {
   _docId: string
   [k: string]: unknown
 }
 
+/** Feuille étiquetée par sa BDD (pour le sélecteur du panneau). */
+interface NamedSheet extends SheetLike { name: string }
+
 const MAX_ROWS = 500
-const FLAT_MAX = 5000
+const FLAT_MAX = 20000
 
 /** Agrège les sous-docs d'une sous-collection : liste les parents possédés par le user,
  *  puis charge leurs sous-docs (one-shot — les règles interdisent un collectionGroup). */
@@ -37,21 +40,23 @@ export function useTableData(spec: QuerySpec | null) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [live, setLive] = useState(true)
+  const [sheets, setSheets] = useState<NamedSheet[]>([])
 
   useEffect(() => {
     if (!spec || !uid) {
-      setRows([]); setError(null); setLoading(false)
+      setRows([]); setSheets([]); setError(null); setLoading(false)
       return
     }
     setLoading(true)
     setError(null)
+    setSheets([])
     const onErr = (err: { code?: string; message: string }) => {
       setError(err.code === 'permission-denied' ? 'Accès restreint à cette collection.' : err.message)
-      setRows([]); setLoading(false)
+      setRows([]); setSheets([]); setLoading(false)
     }
 
-    // Feuilles aplaties → LIVE sur la collection, puis on explose chaque doc en lignes.
-    // On joint excel_data (docId → fileName) pour étiqueter chaque ligne par sa BDD.
+    // Feuilles → une "feuille" par BDD (nom = fileName de excel_data), chacune avec SES
+    // colonnes et SES lignes. Le panneau propose un sélecteur de BDD.
     if (spec.flattenSheets) {
       setLive(true)
       const field = spec.flattenSheets
@@ -73,19 +78,20 @@ export function useTableData(spec: QuerySpec | null) {
         unsub = onSnapshot(
           q,
           (snap) => {
-            const out: TableRow[] = []
+            const out: NamedSheet[] = []
             for (const d of snap.docs) {
-              const sheets = asSheets(parseMaybeJson((d.data() as Record<string, unknown>)[field]))
-              if (!sheets) continue
+              const parsed = asSheets(parseMaybeJson((d.data() as Record<string, unknown>)[field]))
+              if (!parsed) continue
               const bdd = nameById.get(d.id) ?? d.id
-              for (const s of sheets) {
-                for (const r of s.rows) {
-                  if (out.length >= FLAT_MAX) break
-                  out.push({ _docId: `${d.id}:${out.length}`, bdd, feuille: s.name ?? '', ...r })
-                }
+              for (const s of parsed) {
+                const name = parsed.length > 1 && s.name ? `${bdd} · ${s.name}` : bdd
+                out.push({ name, columns: s.columns, rows: s.rows.slice(0, FLAT_MAX) })
               }
             }
-            setRows(out)
+            // Plus grosse BDD d'abord (Monoprix en tête).
+            out.sort((a, b) => b.rows.length - a.rows.length)
+            setSheets(out)
+            setRows([])
             setLoading(false)
           },
           onErr,
@@ -122,5 +128,5 @@ export function useTableData(spec: QuerySpec | null) {
     return unsub
   }, [spec, uid])
 
-  return { rows, loading, error, live }
+  return { rows, loading, error, live, sheets }
 }

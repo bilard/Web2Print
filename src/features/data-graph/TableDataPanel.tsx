@@ -1,47 +1,46 @@
 // src/features/data-graph/TableDataPanel.tsx
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, X, Loader2, Braces, Copy, Check } from 'lucide-react'
 import type { TableSchema } from './firestoreSchema'
 import { useTableData, type TableRow } from './useTableData'
 import { formatCell, prettyValue } from './formatValue'
 import { ValueViewer } from './ValueViewer'
 
-/** Colonnes = champs du schéma (ordre) + clé doc `id` + clés extra présentes.
- *  En mode aplati (flattenSheets) : colonnes dérivées UNIQUEMENT des lignes produit. */
-function useColumns(table: TableSchema, rows: TableRow[]): string[] {
-  return useMemo(() => {
-    const cols: string[] = []
-    const seen = new Set<string>()
-    const push = (k: string) => { if (!seen.has(k) && k !== '_docId') { seen.add(k); cols.push(k) } }
-    if (table.query?.flattenSheets) {
-      push('bdd')
-      push('feuille')
-      rows.forEach((r) => Object.keys(r).forEach(push))
-      return cols
-    }
-    table.fields.forEach((f) => push(f.name))
-    if (!seen.has('id')) push('id')
-    rows.forEach((r) => Object.keys(r).forEach(push))
-    return cols
-  }, [table, rows])
-}
-
-/** Panneau bas : données LIVE de la table sélectionnée (filtre, compteur, fermer). */
+/** Panneau bas : données LIVE de la table. Pour les BDD (flattenSheets), un sélecteur
+ *  permet de choisir la base ; ses colonnes & lignes propres s'affichent. */
 export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose: () => void }) {
-  const { rows, loading, error, live } = useTableData(table.query ?? null)
-  const columns = useColumns(table, rows)
+  const { rows, loading, error, live, sheets } = useTableData(table.query ?? null)
+  const isFlat = Boolean(table.query?.flattenSheets)
+  const [sheetIdx, setSheetIdx] = useState(0)
   const [filter, setFilter] = useState('')
   const [detail, setDetail] = useState<{ col: string; value: unknown } | null>(null)
   const [copied, setCopied] = useState(false)
-  // Champ PK : souvent l'id du document (non stocké comme champ, ex. users.uid) → repli sur _docId.
   const pkField = table.fields.find((f) => f.pk)?.name
 
-  const copyDetail = async () => {
-    if (!detail) return
-    try { await navigator.clipboard.writeText(prettyValue(detail.value)); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* clipboard indispo */ }
-  }
+  useEffect(() => { setSheetIdx(0); setFilter('') }, [table.id])
+
+  const activeSheet = isFlat && sheets.length ? sheets[Math.min(sheetIdx, sheets.length - 1)] : null
+
+  // Lignes affichées + en-têtes de colonnes (clé interne + libellé lisible).
+  const { dataRows, columns, labelByCol } = useMemo(() => {
+    if (isFlat) {
+      const cols = activeSheet?.columns.map((c) => c.key) ?? []
+      const labels: Record<string, string> = {}
+      activeSheet?.columns.forEach((c) => { labels[c.key] = c.label || c.key })
+      const rowsOut: TableRow[] = (activeSheet?.rows ?? []).map((r, i) => ({ _docId: `${activeSheet?.name}:${i}`, ...r }))
+      return { dataRows: rowsOut, columns: cols, labelByCol: labels }
+    }
+    const cols: string[] = []
+    const seen = new Set<string>()
+    const push = (k: string) => { if (!seen.has(k) && k !== '_docId') { seen.add(k); cols.push(k) } }
+    table.fields.forEach((f) => push(f.name))
+    if (!seen.has('id')) push('id')
+    rows.forEach((r) => Object.keys(r).forEach(push))
+    return { dataRows: rows, columns: cols, labelByCol: {} as Record<string, string> }
+  }, [isFlat, activeSheet, table, rows])
 
   const cellValue = (r: TableRow, c: string): unknown => {
+    if (isFlat) return r[c]
     if (c === 'id') return r._docId
     if (c === pkField && r[c] == null) return r._docId
     return r[c]
@@ -49,12 +48,17 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter((r) => columns.some((c) => formatCell(c, cellValue(r, c)).toLowerCase().includes(q)))
-  }, [rows, columns, filter])
+    if (!q) return dataRows
+    return dataRows.filter((r) => columns.some((c) => formatCell(c, cellValue(r, c)).toLowerCase().includes(q)))
+  }, [dataRows, columns, filter])
+
+  const copyDetail = async () => {
+    if (!detail) return
+    try { await navigator.clipboard.writeText(prettyValue(detail.value)); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* clipboard indispo */ }
+  }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[46%] min-h-[220px] flex-col border-t-2 border-indigo-500/60 bg-well shadow-[0_-12px_30px_rgba(0,0,0,0.4)]">
+    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[50%] min-h-[240px] flex-col border-t-2 border-indigo-500/60 bg-well shadow-[0_-12px_30px_rgba(0,0,0,0.4)]">
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-2.5">
         <span className="rounded-md bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#fff]">TABLE</span>
         <span className="font-mono text-[13px] font-semibold text-white">{table.label}</span>
@@ -80,6 +84,19 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
         </button>
       </div>
 
+      {/* Sélecteur de BDD (mode feuilles) */}
+      {isFlat && sheets.length > 0 && (
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-white/10 px-4 py-2">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-white/30">Base</span>
+          {sheets.map((s, i) => (
+            <button key={s.name + i} onClick={() => { setSheetIdx(i); setFilter('') }}
+              className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${i === Math.min(sheetIdx, sheets.length - 1) ? 'bg-indigo-500/25 text-indigo-200' : 'text-white/45 hover:bg-white/[0.04] hover:text-white/80'}`}>
+              {s.name} <span className="text-white/35">({s.rows.length})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex h-full items-center justify-center gap-2 text-[12px] text-white/40"><Loader2 className="h-4 w-4 animate-spin" /> Chargement…</div>
@@ -90,7 +107,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
         ) : (
           <table className="w-full border-collapse text-[12px]">
             <thead className="sticky top-0 bg-well">
-              <tr>{columns.map((c) => <th key={c} className="border-b border-white/10 px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-white/40">{c}</th>)}</tr>
+              <tr>{columns.map((c) => <th key={c} className="whitespace-nowrap border-b border-white/10 px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-white/40">{labelByCol[c] || c}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map((r) => (
@@ -98,7 +115,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
                   {columns.map((c) => (
                     <td
                       key={c}
-                      onDoubleClick={() => setDetail({ col: c, value: cellValue(r, c) })}
+                      onDoubleClick={() => setDetail({ col: labelByCol[c] || c, value: cellValue(r, c) })}
                       title="Double-clic pour voir la valeur complète"
                       className="max-w-[260px] cursor-zoom-in truncate border-b border-white/5 px-4 py-2 font-mono text-white/70 hover:text-white"
                     >
