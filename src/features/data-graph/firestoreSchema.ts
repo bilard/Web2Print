@@ -33,6 +33,9 @@ export interface FieldSchema {
 export interface QuerySpec {
   path: string
   ownerField?: string
+  /** Sous-collection : agrège les sous-docs `path` de chaque parent possédé par le user
+   *  (les règles interdisent un collectionGroup direct). Chargement one-shot (pas live). */
+  subOf?: { parentPath: string; parentOwnerField: string }
 }
 
 export interface TableSchema {
@@ -104,7 +107,7 @@ export const TABLES: TableSchema[] = [
   {
     id: 'products', label: 'products', icon: Package, domain: 'pim', x: 540, y: 640,
     description: 'Fiches produit (sous-collection de pim_projects).',
-    serverNote: 'sous-collection',
+    query: { path: 'products', subOf: { parentPath: 'pim_projects', parentOwnerField: 'userId' } },
     fields: [
       { name: '_id', type: 'string', pk: true },
       { name: 'masterSku', type: 'string' },

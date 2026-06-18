@@ -52,7 +52,7 @@ function useColumns(table: TableSchema, rows: TableRow[]): string[] {
 
 /** Panneau bas : données LIVE de la table sélectionnée (filtre, compteur, fermer). */
 export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose: () => void }) {
-  const { rows, loading, error } = useTableData(table.query ?? null)
+  const { rows, loading, error, live } = useTableData(table.query ?? null)
   const columns = useColumns(table, rows)
   const [filter, setFilter] = useState('')
   const [detail, setDetail] = useState<{ col: string; value: unknown } | null>(null)
@@ -83,11 +83,13 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
         <span className="rounded-md bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#fff]">TABLE</span>
         <span className="font-mono text-[13px] font-semibold text-white">{table.label}</span>
         <span className="text-[11px] text-white/40">({filtered.length} enregistrement{filtered.length > 1 ? 's' : ''})</span>
-        {!error && (
+        {!error && (live ? (
           <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> LIVE
           </span>
-        )}
+        ) : (
+          <span className="text-[10px] font-semibold text-white/35">INSTANTANÉ</span>
+        ))}
         <div className="relative ml-auto w-72 max-w-[40%]">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
           <input
