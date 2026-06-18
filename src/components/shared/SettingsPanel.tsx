@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network } from 'lucide-react'
-import { DataRelationsGraph } from '@/features/data-graph/DataRelationsGraph'
+import { DataModelDiagram } from '@/features/data-graph/DataModelDiagram'
 import {
   FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo,
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
@@ -563,7 +563,7 @@ export function SettingsPanel({
   const isOwner = useIsOwner()
   const permissions = useAccessStore((s) => s.permissions)
   const canTab = (id: SettingsTab) => {
-    if (id === 'firebase') return isOwner
+    if (id === 'firebase' || id === 'data') return isOwner
     const perm = TAB_PERMISSION[id]
     return isOwner || !perm || permissions.has(perm)
   }
@@ -608,18 +608,18 @@ export function SettingsPanel({
       {activeTab === 'connectors' && canTab('connectors') && <ConnectorsTab />}
       {activeTab === 'cookies' && canTab('cookies') && <CookiesTab />}
       {activeTab === 'stats' && <StatsTab />}
-      {activeTab === 'data' && <DataRelationsGraph />}
+      {activeTab === 'data' && isOwner && <DataModelDiagram />}
     </>
   )
 
   // ── Mode page : header fixe + 2 colonnes scrollables indépendamment ──
   if (fillHeight) {
-    // L'onglet Données (graphe de relations) occupe toute la largeur dispo.
-    if (activeTab === 'data') {
+    // L'onglet Données (diagramme ERD) occupe toute la largeur dispo.
+    if (activeTab === 'data' && isOwner) {
       return (
         <div className="h-full min-h-0 flex flex-col gap-5">
           {headerBlock}
-          <div className="flex-1 min-h-0"><DataRelationsGraph /></div>
+          <div className="flex-1 min-h-0"><DataModelDiagram /></div>
         </div>
       )
     }
