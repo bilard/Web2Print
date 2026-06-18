@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="navigation-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+
+  /* Fenêtre app (fond) */
+  .win{position:relative;width:1560px;height:760px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .dash{display:grid;grid-template-columns:230px 1fr;height:calc(100% - 58px)}
+  .dnav{background:#101010;border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:7px}
+  .dnav .di{display:flex;align-items:center;gap:12px;font-size:17px;color:var(--mut);padding:10px 12px;border-radius:9px}
+  .dnav .di .dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+  .dmain{padding:28px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-auto-rows:140px;gap:18px;align-content:start}
+  .dcard{border:1px solid var(--line);border-radius:14px;background:var(--elev)}
+
+  /* Scrim sombre */
+  .scrim{position:absolute;inset:0;background:rgba(8,8,12,.7);z-index:5}
+
+  /* Palette de commandes */
+  .palwrap{position:absolute;z-index:30;display:grid;place-items:center;inset:0}
+  .pal{position:relative;width:780px;background:#16161f;border:1px solid var(--line2);border-radius:18px;box-shadow:0 70px 150px -30px #000;overflow:hidden}
+  .pal-search{display:flex;align-items:center;gap:15px;padding:22px 24px;border-bottom:1px solid var(--line)}
+  .pal-search .si{width:26px;height:26px;color:var(--mut);flex:0 0 auto}
+  .pal-q{flex:1;font-size:25px;color:var(--ink);white-space:nowrap;overflow:hidden;position:relative}
+  .pal-q .car{display:inline-block;width:2px;height:27px;background:var(--indigo);vertical-align:-5px;margin-left:3px}
+  .pal-kbd{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--mut);border:1px solid var(--line2);border-radius:8px;padding:6px 11px;flex:0 0 auto}
+  .pal-list{padding:10px 10px 14px}
+  .pal-grp{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:13px 14px 7px}
+  .pal-row{display:flex;align-items:center;gap:15px;padding:13px 14px;border-radius:11px;font-size:20px}
+  .pal-row .pi{width:36px;height:36px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;background:var(--elev);border:1px solid var(--line2);color:var(--violet)}
+  .pal-row .pi svg{width:19px;height:19px}
+  .pal-row .nm{font-weight:500}
+  .pal-row .nm small{display:block;font-size:13px;color:var(--mut);font-weight:400;margin-top:2px}
+  .pal-row .meta{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--mut)}
+  .pal-row.hl{background:rgba(99,102,241,.18);box-shadow:inset 3px 0 0 var(--indigo)}
+  .pal-row.hl2{background:rgba(99,102,241,0)}
+  .pal-foot{display:flex;align-items:center;gap:22px;padding:12px 18px;border-top:1px solid var(--line);font-size:14px;color:var(--mut);font-family:"JetBrains Mono",monospace}
+  .pal-foot .k{border:1px solid var(--line2);border-radius:6px;padding:2px 8px;margin-right:7px}
+
+  /* Boutons flottants */
+  .fabs{position:absolute;left:34px;bottom:34px;z-index:11;display:flex;flex-direction:column;gap:14px}
+  .fab{width:60px;height:60px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);display:grid;place-items:center;color:var(--ink);box-shadow:0 18px 40px -16px #000;position:relative}
+  .fab svg{width:26px;height:26px}
+  .fab .bdg{position:absolute;top:-3px;right:-3px;min-width:22px;height:22px;border-radius:11px;background:var(--pink);color:#3b0a23;font-size:12px;font-weight:800;display:grid;place-items:center;padding:0 6px}
+</style>
+</head>
+<body>
+<div data-composition-id="navigation-demo" data-start="0" data-duration="9" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="ic-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="ic-flow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M9 6h6a3 3 0 0 1 3 3v6"/></symbol>
+    <symbol id="ic-lib" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="ic-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2 0 0 0-2.5-1.5c-1.7 0-2.6.8-2.6 1.9 0 2.6 5.2 1.4 5.2 3.9 0 1.1-.9 2-2.6 2A2.7 2 0 0 1 9.4 15"/><path d="M12 6.5v11"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="ic-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.9 6.4-6.4 2.9 2.9-6.4z"/></symbol>
+    <symbol id="ic-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="ic-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  </svg>
+
+  <div id="s1" class="scene">
+    <div class="glow"></div>
+    <div class="win" id="win">
+      <div class="winbar"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="wt">IBS-Studio — tableau de bord</span></div>
+      <div class="dash">
+        <div class="dnav">
+          <div class="di"><span class="dot" style="background:var(--indigo)"></span>Nouveau document</div>
+          <div class="di"><span class="dot" style="background:var(--sky)"></span>Bibliothèque</div>
+          <div class="di"><span class="dot" style="background:var(--pink)"></span>DAM</div>
+          <div class="di"><span class="dot" style="background:var(--emerald)"></span>PIM</div>
+          <div class="di"><span class="dot" style="background:var(--amber)"></span>Workflows</div>
+          <div class="di"><span class="dot" style="background:var(--violet)"></span>Veille tarifaire</div>
+        </div>
+        <div class="dmain">
+          <div class="dcard"></div><div class="dcard"></div><div class="dcard"></div>
+          <div class="dcard"></div><div class="dcard"></div><div class="dcard"></div>
+        </div>
+      </div>
+
+      <div class="scrim" id="scrim"></div>
+
+      <div class="fabs" id="fabs">
+        <div class="fab"><span class="bdg">3</span><svg><use href="#ic-bell"/></svg></div>
+        <div class="fab"><svg><use href="#ic-menu"/></svg></div>
+      </div>
+    </div>
+
+    <div class="palwrap">
+      <div class="pal" id="pal">
+        <div class="pal-search">
+          <svg class="si"><use href="#ic-search"/></svg>
+          <span class="pal-q"><span id="q">pim</span><span class="car"></span></span>
+          <span class="pal-kbd">⌘ K</span>
+        </div>
+        <div class="pal-list">
+          <div class="pal-grp gp">Projets récents</div>
+          <div class="pal-row rw"><span class="pi" style="color:var(--sky)"><svg><use href="#ic-file"/></svg></span><span class="nm">Flyer Promo Mars<small>modifié il y a 2 h</small></span><span class="meta">↵</span></div>
+          <div class="pal-row rw"><span class="pi" style="color:var(--sky)"><svg><use href="#ic-file"/></svg></span><span class="nm">Catalogue Été<small>modifié hier</small></span><span class="meta">↵</span></div>
+          <div class="pal-grp gp">Modules</div>
+          <div class="pal-row rw hl" id="r-pim"><span class="pi"><svg><use href="#ic-db"/></svg></span><span class="nm">PIM<small>base produits</small></span><span class="meta">aller à</span></div>
+          <div class="pal-row rw hl2" id="r-flow"><span class="pi"><svg><use href="#ic-flow"/></svg></span><span class="nm">Workflows<small>automatisation</small></span><span class="meta">aller à</span></div>
+          <div class="pal-row rw"><span class="pi"><svg><use href="#ic-lib"/></svg></span><span class="nm">Bibliothèque</span><span class="meta">aller à</span></div>
+          <div class="pal-row rw"><span class="pi"><svg><use href="#ic-coin"/></svg></span><span class="nm">Veille tarifaire</span><span class="meta">aller à</span></div>
+          <div class="pal-grp gp">Actions rapides</div>
+          <div class="pal-row rw"><span class="pi" style="color:var(--emerald)"><svg><use href="#ic-plus"/></svg></span><span class="nm">Nouveau document</span><span class="meta">créer</span></div>
+          <div class="pal-row rw"><span class="pi" style="color:var(--amber)"><svg><use href="#ic-compass"/></svg></span><span class="nm">Lancer la visite guidée</span><span class="meta">🧭</span></div>
+        </div>
+        <div class="pal-foot"><span><span class="k">↑</span><span class="k">↓</span>naviguer</span><span><span class="k">↵</span>ouvrir</span><span><span class="k">esc</span>fermer</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Entrée : la fenêtre, puis le scrim + la palette */
+    tl.from("#s1", { opacity: 0, duration: 0.5 }, 0);
+    tl.from("#win", { opacity: 0, y: 24, duration: 0.5, ease: "power3.out" }, 0.3);
+    tl.from("#fabs .fab", { opacity: 0, scale: 0.6, duration: 0.4, ease: "back.out(2)", stagger: 0.1, transformOrigin: "50% 50%" }, 0.6);
+    tl.from("#scrim", { opacity: 0, duration: 0.45, ease: "power2.out" }, 0.85);
+    tl.from("#pal", { opacity: 0, scale: 0.96, duration: 0.5, ease: "back.out(1.5)", transformOrigin: "50% 45%" }, 0.95);
+
+    /* Curseur clignote, puis on tape « pim » */
+    tl.fromTo("#s1 .car", { opacity: 1 }, { opacity: 0.15, duration: 0.5, yoyo: true, repeat: 3, ease: "power1.inOut" }, 1.2);
+    tl.set("#q", { clipPath: "inset(0 100% 0 0)" }, 0);
+    tl.to("#q", { clipPath: "inset(0 0% 0 0)", duration: 0.7, ease: "none" }, 1.55);
+
+    /* Les résultats se peuplent : groupes + lignes en stagger */
+    tl.from("#s1 .pal-grp", { opacity: 0, duration: 0.35, ease: "power2.out", stagger: 0.18 }, 2.5);
+    tl.from("#s1 .pal-row", { opacity: 0, y: 10, duration: 0.35, ease: "power2.out", stagger: 0.07 }, 2.6);
+    tl.from("#s1 .pal-foot", { opacity: 0, duration: 0.4, ease: "power2.out" }, 3.6);
+
+    /* La sélection clavier descend d'une ligne (PIM → Workflows), crossfade bg */
+    tl.to("#r-pim", { backgroundColor: "rgba(99,102,241,0)", boxShadow: "inset 0px 0 0 #6366F1", duration: 0.3, ease: "power1.inOut" }, 4.6);
+    tl.to("#r-flow", { backgroundColor: "rgba(99,102,241,0.18)", boxShadow: "inset 3px 0 0 #6366F1", duration: 0.3, ease: "power1.inOut" }, 4.6);
+    /* puis remonte sur PIM (la cible) et pulse pour « ouvrir » */
+    tl.to("#r-flow", { backgroundColor: "rgba(99,102,241,0)", boxShadow: "inset 0px 0 0 #6366F1", duration: 0.3, ease: "power1.inOut" }, 5.7);
+    tl.to("#r-pim", { backgroundColor: "rgba(99,102,241,0.18)", boxShadow: "inset 3px 0 0 #6366F1", duration: 0.3, ease: "power1.inOut" }, 5.7);
+    tl.fromTo("#r-pim", { boxShadow: "inset 3px 0 0 #6366F1" }, { boxShadow: "inset 3px 0 0 #6366F1, 0 0 28px -6px #6366F1", duration: 0.4, yoyo: true, repeat: 1, ease: "sine.inOut" }, 6.2);
+
+    /* Sortie douce pour une boucle propre */
+    tl.to("#s1", { opacity: 0, duration: 0.45, ease: "power2.in" }, 8.4);
+
+    window.__timelines["navigation-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>

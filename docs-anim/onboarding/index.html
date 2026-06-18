@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="onboarding-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+
+  /* Fenêtre app */
+  .win{width:1500px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .wbody{padding:34px 40px;min-height:600px}
+
+  /* Stepper */
+  .stepper{display:flex;align-items:center;gap:0;margin-bottom:30px}
+  .step{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+  .step .num{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:20px;font-weight:800;flex:0 0 auto;background:var(--elev);border:1px solid var(--line2);color:var(--mut)}
+  .step .lab{font-size:18px;color:var(--mut);font-weight:600;white-space:nowrap}
+  .step.done .num{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.5);color:var(--emerald)}
+  .step.done .lab{color:var(--ink)}
+  .step.on .num{background:var(--indigo);border-color:var(--indigo);color:#fff;box-shadow:0 0 26px -4px var(--indigo)}
+  .step.on .lab{color:#fff}
+  .step .num svg{width:23px;height:23px}
+  .seg{height:2px;width:60px;background:var(--line2);margin:0 18px;flex:0 0 60px;position:relative;overflow:hidden}
+  .seg i{position:absolute;inset:0;background:var(--emerald);transform-origin:left center}
+
+  .progress{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+  .progress .pl{font-family:"JetBrains Mono",monospace;font-size:15px;color:var(--mut)}
+  .pbar{flex:1;height:9px;border-radius:6px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+  .pbar i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--indigo),var(--violet));border-radius:6px;transform-origin:left center}
+
+  .panel-h{font-size:25px;font-weight:800;margin-bottom:6px}
+  .panel-sub{font-size:17px;color:var(--mut);margin-bottom:22px}
+
+  /* Lignes fournisseurs */
+  .prov{display:flex;align-items:center;gap:16px;border:1px solid var(--line);border-radius:14px;background:var(--elev);padding:16px 20px;margin-bottom:13px}
+  .prov .ava{width:44px;height:44px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff}
+  .prov .nm{font-size:21px;font-weight:600;min-width:150px}
+  .prov .key{flex:1;font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut);letter-spacing:3px;background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:11px 16px;overflow:hidden;white-space:nowrap}
+  .prov .act{position:relative;width:138px;height:46px;flex:0 0 auto}
+  .prov .act .btn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:9px;font-size:16px;font-weight:700;border-radius:10px}
+  .prov .act .test{color:var(--ink);background:var(--surface);border:1px solid var(--line2)}
+  .prov .act .ok{color:#bbf7d0;background:rgba(52,211,153,.16);border:1px solid rgba(52,211,153,.5);opacity:0}
+  .prov .act .ok svg{width:18px;height:18px}
+  .prov .act .test .spin{width:18px;height:18px;opacity:0}
+  .prov .act .test .spin svg{width:18px;height:18px;display:block}
+
+  .foot{display:flex;align-items:center;margin-top:26px}
+  .foot .hint{font-size:15px;color:var(--mut)}
+  .nextwrap{margin-left:auto;position:relative;width:184px;height:54px}
+  .nextwrap .nb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:700;border-radius:13px}
+  .nextwrap .nb svg{width:19px;height:19px}
+  .nextwrap .off{color:var(--mut);background:var(--surface);border:1px solid var(--line2)}
+  .nextwrap .on{color:#fff;background:var(--indigo);box-shadow:0 0 34px -8px rgba(99,102,241,.7);opacity:0}
+</style>
+</head>
+<body>
+<div data-composition-id="onboarding-demo" data-start="0" data-duration="9" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15.5 7.5 3 3L22 7l-3-3"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></symbol>
+    <symbol id="ic-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" opacity=".95"/></symbol>
+    <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <div id="s1" class="scene">
+    <div class="glow"></div>
+    <div class="win">
+      <div class="winbar">
+        <span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+        <span class="wt">Assistant de configuration</span>
+      </div>
+      <div class="wbody">
+
+        <div class="stepper">
+          <div class="step done" id="st1"><span class="num"><svg><use href="#ic-check"/></svg></span><span class="lab">Bienvenue</span></div>
+          <span class="seg"><i id="seg1"></i></span>
+          <div class="step on" id="st2"><span class="num">2</span><span class="lab">Clés IA</span></div>
+          <span class="seg"><i id="seg2"></i></span>
+          <div class="step" id="st3"><span class="num">3</span><span class="lab">Modèles &amp; cascade</span></div>
+          <span class="seg"><i id="seg3"></i></span>
+          <div class="step" id="st4"><span class="num">4</span><span class="lab">Connecteurs</span></div>
+          <span class="seg"><i id="seg4"></i></span>
+          <div class="step" id="st5"><span class="num">5</span><span class="lab">Terminé</span></div>
+        </div>
+
+        <div class="progress">
+          <span class="pl">Étape 2 / 5</span>
+          <span class="pbar"><i id="pfill"></i></span>
+        </div>
+
+        <div class="panel-h"><span style="vertical-align:-3px;margin-right:10px;color:var(--indigo)"><svg width="24" height="24" style="display:inline-block"><use href="#ic-key"/></svg></span>Clés IA</div>
+        <div class="panel-sub">Renseigne au moins une clé API et teste-la pour continuer.</div>
+
+        <div class="prov" id="p1"><span class="ava" style="background:#4285F4">G</span><span class="nm">Gemini</span><span class="key">••••••••••••••••••••</span><span class="act"><span class="btn test"><span class="spin"><svg><use href="#ic-spin"/></svg></span>Tester</span></span></div>
+        <div class="prov" id="p2"><span class="ava" style="background:#D97757">C</span><span class="nm">Claude</span><span class="key">sk-ant-••••••••••••••</span><span class="act"><span class="btn test" id="c-test"><span class="spin" id="c-spin"><svg><use href="#ic-spin"/></svg></span>Tester</span><span class="btn ok" id="c-ok"><svg><use href="#ic-check"/></svg>Connecté</span></span></div>
+        <div class="prov" id="p3"><span class="ava" style="background:#10A37F">O</span><span class="nm">OpenAI</span><span class="key">••••••••••••••••••••</span><span class="act"><span class="btn test">Tester</span></span></div>
+        <div class="prov" id="p4"><span class="ava" style="background:#7C3AED">D</span><span class="nm">DeepSeek</span><span class="key">••••••••••••••••••••</span><span class="act"><span class="btn test">Tester</span></span></div>
+
+        <div class="foot">
+          <span class="hint">Tu pourras compléter modèles &amp; connecteurs ensuite.</span>
+          <span class="nextwrap"><span class="nb off">Suivant<svg><use href="#ic-arrow"/></svg></span><span class="nb on" id="next-on">Suivant<svg><use href="#ic-arrow"/></svg></span></span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Entrée */
+    tl.from("#s1", { opacity: 0, duration: 0.5 }, 0);
+    tl.from("#s1 .step", { y: 16, opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.08 }, 0.5);
+
+    /* Le segment 1 (Bienvenue → Clés IA) se remplit, l'étape 2 pulse */
+    tl.set("#seg1", { scaleX: 0 }, 0);
+    tl.to("#seg1", { scaleX: 1, duration: 0.5, ease: "power2.inOut" }, 1.0);
+    tl.fromTo("#st2 .num", { boxShadow: "0 0 0 0 rgba(99,102,241,.6)" }, { boxShadow: "0 0 26px 4px rgba(99,102,241,0)", duration: 0.9, ease: "power1.out", repeat: 1 }, 1.2);
+
+    /* Barre de progression */
+    tl.set("#pfill", { scaleX: 0 }, 0);
+    tl.from("#s1 .progress", { opacity: 0, y: 12, duration: 0.4, ease: "power2.out" }, 1.0);
+    tl.to("#pfill", { scaleX: 1, duration: 0.7, ease: "power2.out" }, 1.3);
+
+    /* Titre + sous-titre */
+    tl.from("#s1 .panel-h", { opacity: 0, y: 12, duration: 0.4, ease: "power2.out" }, 1.5);
+    tl.from("#s1 .panel-sub", { opacity: 0, y: 10, duration: 0.4, ease: "power2.out" }, 1.65);
+
+    /* Lignes fournisseurs en stagger */
+    tl.from("#s1 .prov", { opacity: 0, y: 18, duration: 0.42, ease: "power2.out", stagger: 0.13 }, 1.9);
+
+    /* On teste la clé Claude : le bouton met en avant, spinner tourne, puis ✓ Connecté */
+    tl.to("#p2", { boxShadow: "0 0 0 1px rgba(99,102,241,.4)", duration: 0.3 }, 4.4);
+    tl.to("#c-spin", { opacity: 1, duration: 0.2 }, 4.5);
+    tl.to("#c-spin", { rotation: 360, duration: 0.6, ease: "none", repeat: 1, transformOrigin: "50% 50%" }, 4.5);
+    tl.to("#c-test", { opacity: 0, duration: 0.3, ease: "power1.inOut" }, 5.7);
+    tl.to("#c-ok", { opacity: 1, duration: 0.35, ease: "back.out(1.7)" }, 5.7);
+    tl.to("#p2", { boxShadow: "0 0 0 1px rgba(52,211,153,.5)", duration: 0.3 }, 5.8);
+
+    /* Le bouton Suivant s'active : grisé → indigo (crossfade) */
+    tl.from("#s1 .foot", { opacity: 0, y: 12, duration: 0.4, ease: "power2.out" }, 4.0);
+    tl.to(".nextwrap .off", { opacity: 0, duration: 0.35, ease: "power1.inOut" }, 6.2);
+    tl.to("#next-on", { opacity: 1, duration: 0.4, ease: "back.out(1.6)" }, 6.2);
+    tl.fromTo("#next-on", { scale: 1 }, { scale: 1.05, duration: 0.3, yoyo: true, repeat: 1, ease: "sine.inOut", transformOrigin: "50% 50%" }, 6.7);
+
+    /* Sortie douce */
+    tl.to("#s1", { opacity: 0, duration: 0.45, ease: "power2.in" }, 8.4);
+
+    window.__timelines["onboarding-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>

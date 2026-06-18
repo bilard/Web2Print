@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="import-pptx-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+
+  .win{width:1560px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .wbody{padding:30px;min-height:600px}
+
+  .pp-grid{display:grid;grid-template-columns:1fr 92px 1fr;gap:18px;align-items:center}
+
+  /* Slide PowerPoint (source) */
+  .slide{position:relative;background:#fff;border-radius:13px;aspect-ratio:16/9;overflow:hidden;box-shadow:0 30px 60px -22px rgba(0,0,0,.7);color:#0f172a}
+  .slide .bar{height:15px;background:linear-gradient(90deg,#c2410c,#f97316)}
+  .slide .in{position:relative;height:calc(100% - 15px);padding:30px 34px}
+  .slide .st{font-size:31px;font-weight:800;color:#0f172a;margin-bottom:22px;max-width:56%;line-height:1.08}
+  .slide .bul{display:flex;flex-direction:column;gap:15px;max-width:54%}
+  .slide .bul .b{display:flex;align-items:center;gap:13px;font-size:19px;color:#334155}
+  .slide .bul .b i{width:10px;height:10px;border-radius:50%;background:#ea580c;flex:0 0 auto}
+  .slide .pic{position:absolute;top:78px;right:34px;width:212px;height:158px;border-radius:11px;overflow:hidden;border:1px solid #e2e8f0;background:radial-gradient(ellipse 78% 64% at 50% 38%,#fff,#eef2f7 66%,#dde5ee)}
+  .slide .pic .drill{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .slide .shape{position:absolute;bottom:30px;right:34px;width:160px;height:48px;border-radius:11px;background:#0ea5e9;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;box-shadow:0 10px 22px -10px rgba(14,165,233,.7)}
+  .slide .tag{position:absolute;top:13px;left:16px;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:800;letter-spacing:.06em;color:#c2410c;background:rgba(249,115,22,.14);border:1px solid rgba(249,115,22,.4);border-radius:6px;padding:3px 9px}
+  .slide-meta{position:absolute;bottom:14px;left:18px;font-family:"JetBrains Mono",monospace;font-size:13px;color:#94a3b8}
+
+  /* flèche centre */
+  .pp-arrow{display:grid;place-items:center;color:var(--indigo)}
+  .pp-arrow svg{width:48px;height:48px;filter:drop-shadow(0 0 16px rgba(99,102,241,.6))}
+
+  /* sortie décomposée (droite) */
+  .pp-out{border:1px solid var(--line);border-radius:16px;background:var(--elev);overflow:hidden}
+  .pp-oh{display:flex;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid var(--line);font-size:19px;font-weight:700}
+  .pp-oh .pi{width:36px;height:36px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;background:rgba(99,102,241,.18);color:var(--violet)}
+  .pp-oh .pi svg{width:20px;height:20px}
+  .pp-oh .badge{margin-left:auto;font-size:13px;color:var(--amber);font-family:"JetBrains Mono",monospace;border:1px solid rgba(251,191,36,.4);background:rgba(251,191,36,.12);border-radius:100px;padding:5px 12px}
+
+  /* mini-slide décomposée avec cadres d'édition */
+  .mini{position:relative;margin:16px 18px;background:#fff;border-radius:10px;aspect-ratio:16/9;overflow:hidden;outline:2px solid var(--indigo);outline-offset:3px}
+  .mini .mbar{height:9px;background:linear-gradient(90deg,#c2410c,#f97316)}
+  .mini .min{position:relative;height:calc(100% - 9px);padding:16px 18px}
+  .mini .mt{font-size:17px;font-weight:800;color:#0f172a;max-width:56%;line-height:1.1}
+  .mini .mb{margin-top:11px;display:flex;flex-direction:column;gap:7px;max-width:54%}
+  .mini .mb span{height:7px;border-radius:4px;background:#cbd5e1}
+  .mini .mpic{position:absolute;top:42px;right:18px;width:118px;height:88px;border-radius:7px;background:radial-gradient(ellipse 78% 64% at 50% 38%,#fff,#eef2f7 66%,#dde5ee);border:1px solid #e2e8f0}
+  .mini .msh{position:absolute;bottom:16px;right:18px;width:96px;height:26px;border-radius:7px;background:#0ea5e9}
+  .edl{position:absolute;border:1.5px dashed var(--indigo);border-radius:6px;background:rgba(99,102,241,.08);box-shadow:0 0 16px -4px rgba(99,102,241,.6)}
+
+  /* liste des calques */
+  .layers{padding:4px 18px 18px}
+  .lr{display:flex;align-items:center;gap:14px;padding:13px 4px;border-top:1px solid var(--line);font-size:20px}
+  .lr .sw{width:15px;height:15px;border-radius:5px;flex:0 0 auto}
+  .lr .nm{font-weight:600}
+  .lr .ed{margin-left:auto;font-size:14px;font-family:"JetBrains Mono",monospace;color:var(--emerald);border:1px solid rgba(52,211,153,.4);border-radius:7px;padding:5px 11px}
+</style>
+</head>
+<body>
+<div data-composition-id="import-pptx-demo" data-start="0" data-duration="9" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <rect x="74" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <rect x="104" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+      <path d="M206 64 l5 4 M214 64 l5 4 M222 64 l5 4" stroke="#94a3b8" stroke-width="1.4"/>
+    </symbol>
+    <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+    <symbol id="ic-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></symbol>
+  </svg>
+
+  <div id="s1" class="scene">
+    <div class="glow"></div>
+    <div class="win">
+      <div class="winbar">
+        <span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+        <span class="wt">Importer PPTX — présentation → calques éditables</span>
+      </div>
+      <div class="wbody">
+        <div class="pp-grid">
+
+          <!-- Slide source -->
+          <div class="slide" id="slide">
+            <div class="bar"></div>
+            <div class="in">
+              <div class="tag">.PPTX</div>
+              <div class="st">Gamme Outillage — Printemps 2026</div>
+              <div class="bul">
+                <div class="b"><i></i>Perceuse 18V Brushless</div>
+                <div class="b"><i></i>Garantie 3 ans incluse</div>
+                <div class="b"><i></i>Disponible en stock</div>
+              </div>
+              <div class="pic"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></div>
+              <div class="shape">-30%</div>
+              <div class="slide-meta">slide 1 / 4</div>
+            </div>
+          </div>
+
+          <!-- Flèche -->
+          <div class="pp-arrow" id="arrow"><svg><use href="#ic-arrow"/></svg></div>
+
+          <!-- Sortie décomposée -->
+          <div class="pp-out" id="out">
+            <div class="pp-oh"><span class="pi"><svg><use href="#ic-layers"/></svg></span>Calques éditables<span class="badge">slide 1 lue</span></div>
+
+            <div class="mini" id="mini">
+              <div class="mbar"></div>
+              <div class="min">
+                <div class="mt">Gamme Outillage — Printemps 2026</div>
+                <div class="mb"><span style="width:78%"></span><span style="width:64%"></span><span style="width:70%"></span></div>
+                <div class="mpic"></div>
+                <div class="msh"></div>
+                <div class="edl ed-t" style="top:13px;left:14px;width:54%;height:26px"></div>
+                <div class="edl ed-b" style="top:52px;left:14px;width:52%;height:42px"></div>
+                <div class="edl ed-i" style="top:40px;right:16px;width:122px;height:92px"></div>
+                <div class="edl ed-s" style="bottom:14px;right:16px;width:100px;height:30px"></div>
+              </div>
+            </div>
+
+            <div class="layers">
+              <div class="lr l1"><span class="sw" style="background:var(--indigo)"></span><span class="nm">Titre</span><span class="ed">éditable</span></div>
+              <div class="lr l2"><span class="sw" style="background:var(--sky)"></span><span class="nm">Texte · 3 puces</span><span class="ed">éditable</span></div>
+              <div class="lr l3"><span class="sw" style="background:var(--violet)"></span><span class="nm">Image</span><span class="ed">éditable</span></div>
+              <div class="lr l4"><span class="sw" style="background:var(--teal)"></span><span class="nm">Forme · badge</span><span class="ed">éditable</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Entrée */
+    tl.from("#s1", { opacity: 0, duration: 0.5 }, 0);
+    tl.from("#slide", { opacity: 0, scale: 0.95, duration: 0.55, ease: "power3.out" }, 0.5);
+    tl.from("#slide .st", { opacity: 0, y: 12, duration: 0.4, ease: "power2.out" }, 0.85);
+    tl.from("#slide .bul .b", { opacity: 0, y: 10, duration: 0.35, ease: "power2.out", stagger: 0.1 }, 1.0);
+    tl.from("#slide .pic", { opacity: 0, scale: 0.9, duration: 0.4, ease: "back.out(1.6)" }, 1.2);
+    tl.from("#slide .shape", { opacity: 0, scale: 0.8, duration: 0.4, ease: "back.out(2)" }, 1.4);
+
+    /* Flèche pulse */
+    tl.from("#arrow", { opacity: 0, scale: 0.6, duration: 0.4, ease: "back.out(2)" }, 1.9);
+    tl.to("#arrow", { scale: 1.18, duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 3 }, 2.3);
+
+    /* Sortie : panneau + mini-slide */
+    tl.from("#out", { opacity: 0, y: 22, duration: 0.5, ease: "power3.out" }, 2.2);
+    tl.from("#mini", { opacity: 0, scale: 0.96, duration: 0.45, ease: "power2.out" }, 2.7);
+
+    /* Les cadres d'édition apparaissent sur chaque élément */
+    tl.set("#mini .edl", { opacity: 0, scale: 0.85, transformOrigin: "50% 50%" }, 0);
+    tl.to("#mini .ed-t", { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 3.1);
+    tl.to("#mini .ed-b", { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 3.3);
+    tl.to("#mini .ed-i", { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 3.5);
+    tl.to("#mini .ed-s", { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 3.7);
+
+    /* Le panneau de calques se remplit */
+    tl.from("#out .lr", { opacity: 0, y: 14, duration: 0.4, ease: "power2.out", stagger: 0.13 }, 3.9);
+
+    /* Petit accent final sur le titre éditable */
+    tl.fromTo("#mini .ed-t", { boxShadow: "0 0 16px -4px rgba(99,102,241,.6)" }, { boxShadow: "0 0 26px 0px rgba(99,102,241,.95)", duration: 0.5, yoyo: true, repeat: 1, ease: "sine.inOut" }, 5.0);
+
+    /* Sortie douce pour une boucle propre */
+    tl.to("#s1", { opacity: 0, duration: 0.45, ease: "power2.in" }, 8.4);
+
+    window.__timelines["import-pptx-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>

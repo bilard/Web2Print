@@ -28,6 +28,17 @@ const DEMOS = {
   'import-image-to-svg': [{ src: 'media/import-image-to-svg.mp4', caption: "Une image raster : le fond reste fidèle au pixel, l'IA (Google Vision) détecte les textes et les recrée en calques éditables par-dessus." }],
   'scraping-hub': [{ src: 'media/scraping-hub.mp4', caption: "Le centre de contrôle : règles rédactionnelles de l'équipe, templates groupés par fournisseur, et journal de debug Jina/LLM en direct." }],
   'price-watch': [{ src: 'media/price-watch.mp4', caption: "Veille concurrentielle : tableau des écarts (mon prix vs concurrents), positionnement par produit et alerte Telegram envoyée." }],
+  'getting-started': [{ src: 'media/getting-started.mp4', caption: "Tableau de bord : la barre latérale des modules, puis le panneau « Nouveau document » dont la grille de formats (A4, A3, Story, Post…) se peuple et A4 se sélectionne." }],
+  'nouveautes': [{ src: 'media/nouveautes.mp4', caption: "Le tableau des nouveautés de juin 2026 : palette ⌘K, notifications, re-skin promo PIM×IA, veille tarifaire, approbation et serveur Telegram, tagging IA du DAM." }],
+  'onboarding': [{ src: 'media/onboarding.mp4', caption: "Assistant en 5 étapes : stepper (Bienvenue → Clés IA → Modèles → Connecteurs → Terminé), test d'une clé LLM (✓ connecté) qui active le bouton Suivant." }],
+  'navigation': [{ src: 'media/navigation.mp4', caption: "La palette de commandes ⌘K : depuis n'importe quelle page, taper quelques lettres pour ouvrir un projet récent, sauter vers un module ou lancer une action." }],
+  'easycatalog': [{ src: 'media/easycatalog.mp4', caption: "Aller-retour InDesign : les champs EasyCatalog (crochets verts) d'un gabarit IDML sont résolus depuis le PIM par publipostage, puis réexportés en IDML avec leurs marqueurs conservés." }],
+  'import-pptx': [{ src: 'media/import-pptx.mp4', caption: "Une slide PowerPoint (titre, puces, image, forme, couleurs de thème) décomposée en calques Fabric éditables ; seule la slide 1 est lue." }],
+  'import-excel': [{ src: 'media/import-excel.mp4', caption: "Un classeur Excel importé : les types de colonnes (texte, nombre, formule, dictionnaire, date) sont détectés automatiquement et la base PIM se construit, synchronisée sur Firebase." }],
+  'import-image': [{ src: 'media/import-image.mp4', caption: "Déposer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet : la vignette glisse au centre de la page et devient un objet sélectionnable." }],
+  'import-svg': [{ src: 'media/import-svg.mp4', caption: "Un logo SVG se charge en calques vectoriels (cercle, polygone, trait, texte) ; chaque forme reste éditable — une est recolorée d'indigo à teal directement." }],
+  'import-pdf-to-svg': [{ src: 'media/import-pdf-to-svg.mp4', caption: "Un PDF avec calque texte natif : la page 1 reste en fond fidèle, les textes sont extraits exacts (sans OCR) et deviennent des calques éditables." }],
+  'briefs': [{ src: 'media/briefs.mp4', caption: "Décris un besoin en français : l'IA pose des questions, compose un panier de produits depuis le catalogue et esquisse un deck (Claude Opus + Gemini)." }],
 }
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)

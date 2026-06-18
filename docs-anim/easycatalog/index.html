@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<style>
+  :root{
+    --bg:#0F0F0F; --surface:#141414; --elev:#1A1A1A;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+    --ink:#F2F2F2; --mut:rgba(255,255,255,.46);
+    --indigo:#6366F1; --violet:#A78BFA; --amber:#FBBF24; --sky:#38BDF8;
+    --pink:#F472B6; --emerald:#34D399; --teal:#2DD4BF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [data-composition-id="easycatalog-demo"]{width:1920px;height:1080px;position:relative;background:var(--bg);font-family:Inter, sans-serif;color:var(--ink);overflow:hidden}
+  .scene{position:absolute;inset:0;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%,rgba(99,102,241,.16),transparent 60%);pointer-events:none}
+
+  .win{width:1560px;border:1px solid var(--line2);border-radius:20px;background:var(--surface);overflow:hidden;box-shadow:0 60px 130px -50px rgba(0,0,0,.9)}
+  .winbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 22px;background:#101010;border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:9px}.dots i{width:14px;height:14px;border-radius:50%}
+  .wt{font-family:"JetBrains Mono",monospace;font-size:19px;color:var(--mut)}
+  .wbody{padding:22px 30px;min-height:590px}
+
+  .ec-grid{display:grid;grid-template-columns:1fr 150px 1fr;gap:18px;align-items:start}
+
+  /* colonne titre */
+  .ec-coltitle{display:flex;align-items:center;gap:11px;font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:.05em;color:var(--mut);text-transform:uppercase;margin-bottom:14px}
+  .ec-coltitle svg{width:18px;height:18px}
+
+  /* GAUCHE : gabarit IDML (page InDesign) */
+  .idml{border:1px solid var(--line2);border-radius:14px;background:#101216;overflow:hidden;box-shadow:0 24px 50px -28px #000}
+  .idml-bar{height:36px;display:flex;align-items:center;gap:9px;padding:0 16px;background:#0b0d10;border-bottom:1px solid var(--line);font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--mut)}
+  .idml-bar .ext{margin-left:auto;color:var(--violet)}
+  .page{margin:14px;background:#fff;border-radius:8px;position:relative;aspect-ratio:50/58;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);overflow:hidden}
+  .frame{position:absolute;border:1.5px solid #94a3b8;border-radius:5px}
+  .frame.ec{border-color:#16a34a;border-style:dashed;background:rgba(22,163,74,.06)}
+  .frame .ftag{position:absolute;top:-11px;left:8px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;background:#16a34a;color:#fff;padding:1px 7px;border-radius:5px;letter-spacing:.02em}
+  .frame .fcontent{position:absolute;inset:0;display:grid;place-items:center;padding:6px}
+  /* champ texte : crossfade placeholder→valeur */
+  .fld{position:relative;display:inline-grid;text-align:center;line-height:1.08}
+  .fld .v{grid-area:1/1}
+  .fld .ph{font-family:"JetBrains Mono",monospace;color:#15803d;font-weight:700}
+  .fld .val{opacity:0;color:#0f172a;font-weight:800}
+  /* frames positionnées sur la page */
+  .f-img{top:6%;left:8%;right:8%;height:38%}
+  .f-img .shot{position:absolute;inset:6%;border-radius:6px;background:radial-gradient(ellipse 80% 66% at 50% 38%,#fff,#eef2f7 66%,#dde5ee);overflow:hidden;opacity:0}
+  .f-img .shot .drill{position:absolute;inset:0;width:100%;height:100%}
+  .f-img .ph-img{position:absolute;inset:6%;display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-size:14px;font-weight:700;color:#15803d}
+  .f-title{top:48%;left:8%;right:8%;height:15%}
+  .f-title .ph{font-size:18px}.f-title .val{font-size:19px}
+  .f-price{top:67%;left:8%;width:46%;height:13%}
+  .f-price .ph{font-size:17px}.f-price .val{font-size:30px;color:#dc2626}
+  .f-ref{top:85%;left:8%;right:8%;height:9%}
+  .f-ref .ph{font-size:14px}.f-ref .val{font-size:15px;color:#475569;font-weight:600}
+
+  /* MILIEU : flux */
+  .ec-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding-top:120px}
+  .rt{display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--mut)}
+  .rt b{font-family:"JetBrains Mono",monospace;font-size:13px;letter-spacing:.04em;text-align:center}
+  .rt svg{width:34px;height:34px}
+
+  /* DROITE : panneau Publipostage (résolution depuis le PIM) */
+  .pub{border:1px solid var(--line);border-radius:14px;background:var(--elev);overflow:hidden}
+  .pub-h{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line);font-size:19px;font-weight:700}
+  .pub-h .hi{width:36px;height:36px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;background:rgba(56,189,248,.18);color:var(--sky)}
+  .pub-h .hi svg{width:20px;height:20px}
+  .pub-src{display:flex;align-items:center;gap:10px;margin:14px 18px;background:var(--surface);border:1px solid var(--line2);border-radius:11px;padding:12px 15px;font-size:16px}
+  .pub-src .dot{width:9px;height:9px;border-radius:50%;background:var(--emerald)}
+  .pub-src b{font-weight:600}.pub-src .pin{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--mut)}
+  .kv{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line);font-size:19px}
+  .kv .k{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--mut);text-transform:uppercase}
+  .kv .val{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+  .kv .val.thumb{display:flex;align-items:center;gap:10px}
+  .kv .val .tb{width:40px;height:40px;border-radius:8px;overflow:hidden;background:radial-gradient(ellipse 80% 66% at 50% 38%,#fff,#dde5ee);position:relative}
+  .kv .val .tb .drill{position:absolute;inset:0;width:100%;height:100%}
+
+  /* badge export bas */
+  .ec-foot{margin-top:12px;display:flex;justify-content:center}
+  .ec-export{display:inline-flex;align-items:center;gap:14px;border:1px solid rgba(99,102,241,.5);background:linear-gradient(180deg,rgba(99,102,241,.14),rgba(26,26,26,.6));border-radius:14px;padding:14px 24px;box-shadow:0 0 40px -10px rgba(99,102,241,.6)}
+  .ec-export .ei{width:42px;height:42px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;background:rgba(99,102,241,.22);color:#c7c4ff}
+  .ec-export .ei svg{width:23px;height:23px}
+  .ec-export b{font-size:20px;display:block}
+  .ec-export span{font-size:14px;color:var(--mut)}
+  .ec-export .ok{width:30px;height:30px;border-radius:50%;background:var(--emerald);color:#06281b;display:grid;place-items:center;margin-left:6px}
+  .ec-export .ok svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+<div data-composition-id="easycatalog-demo" data-start="0" data-duration="9" data-width="1920" data-height="1080">
+
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="dBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc6fb"/><stop offset=".55" stop-color="#1d4ed8"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="dGrip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#475569"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+      <linearGradient id="dMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    </defs>
+    <symbol id="ic-drill" viewBox="0 0 240 160">
+      <path d="M84 90 L122 90 L114 150 L78 150 Z" fill="url(#dGrip)"/>
+      <rect x="66" y="141" width="60" height="19" rx="6" fill="url(#dMetal)"/>
+      <rect x="74" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <rect x="104" y="156" width="12" height="5" rx="2" fill="#64748b"/>
+      <path d="M122 95 q13 3 10 18 l-10 -3 Z" fill="#0f172a"/>
+      <rect x="58" y="40" width="104" height="56" rx="16" fill="url(#dBody)"/>
+      <rect x="72" y="49" width="48" height="6" rx="3" fill="rgba(255,255,255,.42)"/>
+      <circle cx="140" cy="68" r="8" fill="rgba(255,255,255,.32)"/>
+      <circle cx="92" cy="66" r="5" fill="#fbbf24"/>
+      <rect x="154" y="52" width="16" height="28" rx="4" fill="url(#dMetal)"/>
+      <path d="M168 54 L196 60 L196 72 L168 78 Z" fill="url(#dMetal)"/>
+      <rect x="192" y="60" width="9" height="12" rx="2" fill="#e2e8f0"/>
+      <rect x="200" y="63" width="34" height="5" rx="2.5" fill="#cbd5e1"/>
+      <path d="M206 64 l5 4 M214 64 l5 4 M222 64 l5 4" stroke="#94a3b8" stroke-width="1.4"/>
+    </symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-idml" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="ic-merge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3a3 3 0 0 0-3 3c0 5-9 2-9 9a3 3 0 1 0 6 0c0-7 9-4 9-9a3 3 0 0 0-3-3z"/></symbol>
+    <symbol id="ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+    <symbol id="ic-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="ic-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  </svg>
+
+  <div id="s1" class="scene">
+    <div class="glow"></div>
+    <div class="win">
+      <div class="winbar">
+        <span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+        <span class="wt">EasyCatalog — aller-retour InDesign (IDML)</span>
+      </div>
+      <div class="wbody">
+        <div class="ec-grid">
+
+          <!-- GAUCHE : gabarit IDML -->
+          <div>
+            <div class="ec-coltitle"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-idml"/></svg>Gabarit EasyCatalog</div>
+            <div class="idml" id="idml">
+              <div class="idml-bar"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-idml"/></svg>flyer-promo<span class="ext">.idml</span></div>
+              <div class="page">
+                <div class="frame ec f-img" data-fld><span class="ftag">{{image}}</span>
+                  <span class="ph-img" data-ph>⟦ image ⟧</span>
+                  <span class="shot" data-val data-layout-allow-overlap><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span>
+                </div>
+                <div class="frame ec f-title" data-fld><span class="ftag">{{nom}}</span>
+                  <div class="fcontent"><span class="fld" data-layout-allow-overlap><span class="v ph" data-ph>{{nom}}</span><span class="v val" data-val>Perceuse 18V Brushless</span></span></div>
+                </div>
+                <div class="frame ec f-price" data-fld><span class="ftag">{{prix}}</span>
+                  <div class="fcontent"><span class="fld" data-layout-allow-overlap><span class="v ph" data-ph>{{prix}}</span><span class="v val" data-val>129&nbsp;€</span></span></div>
+                </div>
+                <div class="frame ec f-ref" data-fld><span class="ftag">{{ref}}</span>
+                  <div class="fcontent"><span class="fld" data-layout-allow-overlap><span class="v ph" data-ph>{{ref}}</span><span class="v val" data-val>Réf. DDF484Z</span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MILIEU : flux -->
+          <div class="ec-mid">
+            <div class="rt"><svg fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-merge"/></svg><b style="color:var(--emerald)">FUSION</b></div>
+            <div class="rt" id="midarrow" style="color:var(--indigo)"><svg fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-arrow"/></svg></div>
+          </div>
+
+          <!-- DROITE : Publipostage -->
+          <div>
+            <div class="ec-coltitle"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-link"/></svg>Publipostage</div>
+            <div class="pub" id="pub">
+              <div class="pub-h"><span class="hi"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-db"/></svg></span>Source de données</div>
+              <div class="pub-src"><span class="dot"></span><b>Base PIM — Outillage</b><span class="pin">ligne 1 / 248</span></div>
+              <div class="kv pr"><span class="k">nom</span><span class="val">Perceuse 18V Brushless</span></div>
+              <div class="kv pr"><span class="k">prix</span><span class="val">129,00&nbsp;€</span></div>
+              <div class="kv pr"><span class="k">ref</span><span class="val">DDF484Z</span></div>
+              <div class="kv pr"><span class="k">image</span><span class="val thumb"><span class="tb"><svg class="drill" viewBox="0 0 240 160"><use href="#ic-drill" width="240" height="160"/></svg></span>visuel.png</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="ec-foot">
+          <div class="ec-export" id="export">
+            <span class="ei"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-export"/></svg></span>
+            <span><b>Export IDML</b><span>marqueurs EasyCatalog conservés · résolution par ligne</span></span>
+            <span class="ok"><svg fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#ic-check"/></svg></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    /* Entrée */
+    tl.from("#s1", { opacity: 0, duration: 0.5 }, 0);
+    tl.from("#s1 .ec-coltitle", { opacity: 0, y: -10, duration: 0.4, ease: "power2.out", stagger: 0.1 }, 0.5);
+    tl.from("#idml", { opacity: 0, y: 24, duration: 0.5, ease: "power3.out" }, 0.65);
+    tl.from("#pub", { opacity: 0, y: 24, duration: 0.5, ease: "power3.out" }, 0.8);
+
+    /* Les cadres EC se révèlent (halo vert) */
+    tl.from("#s1 .frame", { opacity: 0, scale: 0.94, duration: 0.4, ease: "back.out(1.5)", stagger: 0.1, transformOrigin: "50% 50%" }, 1.2);
+    tl.fromTo("#s1 .frame.ec", { boxShadow: "0 0 0 0 rgba(22,163,74,0)" }, { boxShadow: "0 0 20px -3px rgba(22,163,74,.7)", duration: 0.5, yoyo: true, repeat: 1, ease: "sine.inOut", stagger: 0.08 }, 1.7);
+
+    /* Le panneau Publipostage se peuple (valeurs de la ligne PIM) */
+    tl.from("#pub .pub-src", { opacity: 0, y: 12, duration: 0.4, ease: "power2.out" }, 1.9);
+    tl.from("#pub .kv", { opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.12 }, 2.2);
+
+    /* Flèche de fusion pulse */
+    tl.fromTo("#midarrow", { opacity: 0.4 }, { opacity: 1, duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" }, 2.8);
+
+    /* SUBSTITUTION : {{champ}} → valeur (crossfade), image chargée */
+    tl.to("#s1 .fld .ph", { opacity: 0, duration: 0.4, ease: "power1.inOut", stagger: 0.14 }, 3.4);
+    tl.to("#s1 .fld .val", { opacity: 1, duration: 0.4, ease: "power1.inOut", stagger: 0.14 }, 3.4);
+    tl.to("#s1 .f-img .ph-img", { opacity: 0, duration: 0.4, ease: "power1.inOut" }, 3.4);
+    tl.to("#s1 .f-img .shot", { opacity: 1, duration: 0.45, ease: "power2.out" }, 3.5);
+    /* les cadres passent du vert pointillé au cadre résolu (indigo) */
+    tl.to("#s1 .frame.ec", { borderColor: "rgba(99,102,241,.55)", duration: 0.5, ease: "power2.out", stagger: 0.1 }, 3.6);
+
+    /* Badge export */
+    tl.set("#export", { opacity: 0, y: 22, scale: 0.96 }, 0);
+    tl.to("#export", { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "back.out(1.7)" }, 5.0);
+    tl.fromTo("#export", { boxShadow: "0 0 40px -10px rgba(99,102,241,.6)" }, { boxShadow: "0 0 56px -6px rgba(99,102,241,.85)", duration: 0.5, yoyo: true, repeat: 1, ease: "sine.inOut" }, 5.6);
+
+    /* Sortie douce pour une boucle propre */
+    tl.to("#s1", { opacity: 0, duration: 0.45, ease: "power2.in" }, 8.4);
+
+    window.__timelines["easycatalog-demo"] = tl;
+  </script>
+</div>
+</body>
+</html>
