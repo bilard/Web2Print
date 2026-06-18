@@ -43,6 +43,79 @@ const DEMOS = {
 
 const byCat = (label) => MODULES.filter((m) => m.cat === label)
 
+/* ---------------- Motifs animés (illustration des fonctions) ----------------
+   Petits pictogrammes SVG line-art animés en CSS, attribués à une fonction par
+   correspondance sur son TITRE (confiant : on n'illustre que les libellés clairs,
+   les sous-sections de prose restent en texte net). Dé-dupliqués par module pour
+   garantir la variété (jamais le même glyphe deux fois dans un module). */
+const SVG = (inner) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`
+const MOTIFS = {
+  ai: SVG(`<path class="m-pulse" d="M12 4l1.7 4.6L18 10l-4.3 1.4L12 16l-1.7-4.6L6 10l4.3-1.4z"/><path class="m-twinkle" d="M18.5 4v3M17 5.5h3"/>`),
+  scrape: SVG(`<rect x="5" y="3.5" width="14" height="17" rx="2"/><path class="m-scan" d="M8 9.5h8"/><circle class="m-dot" cx="9.5" cy="13.5" r="1" fill="currentColor" stroke="none"/><path d="M12.5 13.5H16"/>`),
+  merge: SVG(`<rect x="3" y="5" width="5" height="14" rx="1"/><rect x="16" y="7" width="5" height="10" rx="1"/><path d="M8.3 12h7.4"/><circle class="m-travel" cx="8.6" cy="12" r="1.3" fill="currentColor" stroke="none"/><path class="m-draw" d="M17.5 10.5h2M17.5 13.5h2"/>`),
+  grid: SVG(`<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/><rect class="m-cell" x="9.3" y="9.3" width="5.4" height="5.4" fill="currentColor" stroke="none"/>`),
+  tree: SVG(`<circle cx="12" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/><path class="m-draw" d="M12 7.5v3.5H6v5M12 11h6v5.5"/>`),
+  layers: SVG(`<path class="m-float" d="M12 3.5l8 4-8 4-8-4z"/><path d="M4 11.5l8 4 8-4M4 15.5l8 4 8-4"/>`),
+  export: SVG(`<circle cx="6" cy="12" r="2.2"/><path class="m-fan f1" d="M8.2 11l7.5-3.6"/><path class="m-fan f2" d="M8.5 12H17"/><path class="m-fan f3" d="M8.2 13l7.5 3.6"/><circle cx="18" cy="6.5" r="1.6"/><circle cx="19" cy="12" r="1.6"/><circle cx="18" cy="17.5" r="1.6"/>`),
+  import: SVG(`<path d="M5 14.5v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/><path class="m-drop" d="M12 3.5v9M8 8.5l4 4 4-4"/>`),
+  image: SVG(`<rect x="4" y="5" width="16" height="14" rx="2"/><circle class="m-rise" cx="9" cy="10" r="1.8"/><path d="M5 18l4.5-4.5 3 3 3-3 3.5 3.5"/>`),
+  chat: SVG(`<rect x="4" y="5" width="15" height="9" rx="2.5"/><path d="M9 14l-2 3.2 4.5-3.2"/><circle class="m-pop d1" cx="8.5" cy="9.5" r="1" fill="currentColor" stroke="none"/><circle class="m-pop d2" cx="11.7" cy="9.5" r="1" fill="currentColor" stroke="none"/><circle class="m-pop d3" cx="14.9" cy="9.5" r="1" fill="currentColor" stroke="none"/>`),
+  flow: SVG(`<rect x="2.5" y="9" width="5.5" height="6" rx="1.5"/><rect x="16" y="9" width="5.5" height="6" rx="1.5"/><path d="M8 12h8"/><circle class="m-travel" cx="8" cy="12" r="1.3" fill="currentColor" stroke="none"/>`),
+  key: SVG(`<g class="m-jiggle"><circle cx="8" cy="14" r="3.6"/><path d="M10.6 11.4L19 3M16 6l2 2M14.2 7.8l1.6 1.6"/></g>`),
+  search: SVG(`<g class="m-orbit"><circle cx="11" cy="11" r="6"/><path d="M19.5 19.5l-4.2-4.2"/></g>`),
+  steps: SVG(`<path d="M9 6.5h11M9 12h11M9 17.5h9"/><path class="m-tick" d="M3 6.5l1.5 1.5 2.5-3M3 12l1.5 1.5 2.5-3M3 17.5l1.5 1.5 2.5-3"/>`),
+  vector: SVG(`<path class="m-draw" d="M3.5 18C7 8 17 8 20.5 18"/><circle cx="3.5" cy="18" r="1.4" fill="currentColor" stroke="none"/><circle cx="20.5" cy="18" r="1.4" fill="currentColor" stroke="none"/><path d="M9.5 6l2.5 4-2.5 1.5-2.5-1.5z"/>`),
+  price: SVG(`<path d="M12.6 3.5H19a1.5 1.5 0 0 1 1.5 1.5v6.4a2 2 0 0 1-.6 1.4l-6.6 6.6a2 2 0 0 1-2.8 0L5.1 14a2 2 0 0 1 0-2.8l6.6-6.6a2 2 0 0 1 .9-.6z"/><circle class="m-pulse" cx="16" cy="8" r="1.3"/>`),
+  telegram: SVG(`<path class="m-fly" d="M21 4.5L3 11l5.5 2L11 19l3-4 4 3z"/>`),
+  shield: SVG(`<path d="M12 3l7 3v5.5c0 4.3-3 7.2-7 8.5-4-1.3-7-4.2-7-8.5V6z"/><path class="m-draw" d="M9 11.8l2.2 2.2 4-4.4"/>`),
+  diff: SVG(`<rect class="m-bar b1" x="4" y="11" width="3.4" height="9" rx="1"/><rect class="m-bar b2" x="10.3" y="6" width="3.4" height="14" rx="1"/><rect class="m-bar b3" x="16.6" y="13" width="3.4" height="7" rx="1"/>`),
+  slides: SVG(`<rect x="3" y="5" width="18" height="11.5" rx="2"/><path d="M12 16.5v3M9 19.5h6"/><path class="m-draw" d="M6.5 9h7M6.5 12h9"/>`),
+  doc: SVG(`<path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.3 3.5V8H18"/><path class="m-draw" d="M9.5 12h5M9.5 15h5M9.5 18h3"/>`),
+  erd: SVG(`<rect x="3" y="4" width="7.5" height="7" rx="1"/><path d="M3 7h7.5"/><rect x="13.5" y="13" width="7.5" height="7" rx="1"/><path d="M13.5 16h7.5"/><path class="m-draw" d="M10.5 7.5h1.5a2 2 0 0 1 2 2v3"/>`),
+  cursor: SVG(`<circle class="m-ripple" cx="7" cy="6" r="3"/><path d="M6 4l13 6.5-5.5 1.8L11.8 18z"/>`),
+  bell: SVG(`<g class="m-ring"><path d="M7 16.5V11a5 5 0 0 1 10 0v5.5"/><path d="M5 16.5h14"/></g><path d="M10 19.5a2 2 0 0 0 4 0"/>`),
+  video: SVG(`<rect x="3" y="5" width="18" height="13" rx="2"/><path class="m-pulse" d="M10.5 9l4.5 2.5-4.5 2.5z" fill="currentColor" stroke="none"/>`),
+  transform: SVG(`<rect class="m-cross c1" x="3" y="6.5" width="7" height="7" rx="1"/><path class="m-cross c2" d="M6.5 6.5l3.5 3.5-3.5 3.5L3 10z"/><path d="M12 10h4.5M14.5 7.5l2.5 2.5-2.5 2.5"/><path d="M19.5 6.5l1.5 3.5-1.5 3.5"/>`),
+  clock: SVG(`<circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 1.8"/><circle class="m-pulse" cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>`),
+}
+// Règles titre → motif (normalisé : minuscules, sans accents). Ordre = priorité
+// (spécifique d'abord). Aucune correspondance → pas d'icône (texte net).
+const MOTIF_RULES = [
+  [/telegram|\bbot\b|botfather|\/flow/, 'telegram'],
+  [/publipostage|fusion|data.?merge|\{\{|serie|champs lies|mailing/, 'merge'],
+  [/scrap|jina|firecrawl|bright ?data|unlocker|\bcrawl|extraction|selecteur css/, 'scrape'],
+  [/taxonomie|arborescence|categori|branche|catalogue|rangement/, 'tree'],
+  [/workflow|\bnode|graphe|\bflux|automat|orchestrat|executor/, 'flow'],
+  [/idml|indesign|easycatalog/, 'doc'],
+  [/powerpoint|pptx|\bslide|presentation|deck/, 'slides'],
+  [/\bsvg\b|vecteur|vectoriel|bezier|imagetracer/, 'vector'],
+  [/transform|conversion|raster|reconstit|->/, 'transform'],
+  [/\bpdf/, 'doc'],
+  [/prix|tarif|veille|concurrent|\becart|positionnement|marge/, 'price'],
+  [/relation|\berd\b|schema|firestore|cardinalite|cle etrangere|cle primaire|modele de donnees/, 'erd'],
+  [/export|sortie|canal|canaux|impression|\bprint|telecharg|decline/, 'export'],
+  [/import|importer|deposer|glisser|televers|charger|drag/, 'import'],
+  [/role|permission|\bacces\b|proprietaire|utilisateur|rbac|securit|approbation|cookie|bloquer|isolation/, 'shield'],
+  [/\bcle|clef|token|\bapi\b|connecteur|oauth|secret|fournisseur/, 'key'],
+  [/recherche|\bsearch|palette|cmd|raccourci|filtre|rechercher|retrouver|existant|\brecent/, 'search'],
+  [/etape|onboarding|stepper|checklist|bienvenue|terminer|wizard|assistant de config/, 'steps'],
+  [/image|photo|visuel|\bmedia|\bdam\b|banque|vignette|remove.?bg|miniature|logo/, 'image'],
+  [/chat|conversation|\bassistant\b|message|bulle|dialogue/, 'chat'],
+  [/calque|fabric|canvas|editeur|\bobjet|forme|texte editable|reflow|maquette|projet|vierge|\bcreer|gabarit/, 'layers'],
+  [/table|grille|colonne|cellule|excel|classeur|champ|\bpim\b|\bbase|fiche|enregistrement|dashboard|tableau de bord/, 'grid'],
+  [/comparaison|comparer|avant.?apres|difference|variation/, 'diff'],
+  [/notification|nouveaute|alerte|\bcloche|rappel/, 'bell'],
+  [/video|animation|hyperframes|montage|\bgif\b|motion|voix off/, 'video'],
+  [/navigation|souris|\bclic|\bguide|driver|\btour\b|menu/, 'cursor'],
+  [/\bia\b|\bllm\b|intelligence|gener|enrichi|claude|gemini|openai|nano banana|cascade|prompt|modele/, 'ai'],
+  [/serveur|\bcron|planifi|temps reel|onsnapshot|\blive|synchro|backend|\bcloud/, 'clock'],
+]
+function motifFor(title) {
+  const t = norm(title)
+  for (const [re, key] of MOTIF_RULES) if (re.test(t)) return key
+  return null
+}
+
 function keysHTML(keys) { return `<span class="kbd-keys">${(keys || []).map((k) => `<kbd>${k}</kbd>`).join('')}</span>` }
 
 function moduleHTML(m) {
@@ -50,7 +123,14 @@ function moduleHTML(m) {
   const demoHTML = demos
     .map((d) => `<figure class="mod-demo"><video src="${d.src}" autoplay loop muted playsinline preload="metadata"></video><figcaption>${d.caption}</figcaption></figure>`)
     .join('')
-  const feats = (m.features || []).map((f) => `<div class="feat-item"><dt>${f.title}</dt><dd>${f.desc}</dd></div>`).join('')
+  const used = new Set()
+  const feats = (m.features || []).map((f) => {
+    let key = motifFor(f.title)
+    if (key && used.has(key)) key = null // jamais le même motif deux fois dans un module
+    if (key) used.add(key)
+    const ico = key ? `<span class="feat-ico">${MOTIFS[key]}</span>` : ''
+    return `<div class="feat-item${ico ? '' : ' no-ico'}">${ico}<div class="feat-body"><dt>${f.title}</dt><dd>${f.desc}</dd></div></div>`
+  }).join('')
   const featHTML = feats ? `<div class="mod-sub">Fonctions</div><dl class="feat-list">${feats}</dl>` : ''
   const sc = (m.shortcuts || [])
   const scHTML = sc.length
@@ -84,6 +164,15 @@ function render() {
   nav.innerHTML = navHtml
   bindNav()
   observeActive()
+  observeMotifs()
+}
+
+// Les motifs n'animent que lorsqu'ils sont à l'écran (perf : ~150 SVG sur la page).
+function observeMotifs() {
+  const io = new IntersectionObserver((entries) => {
+    for (const en of entries) en.target.classList.toggle('playing', en.isIntersecting)
+  }, { rootMargin: '0px 0px -8% 0px' })
+  $$('.feat-ico').forEach((el) => io.observe(el))
 }
 
 /* ---------------- Navigation ---------------- */

@@ -122,13 +122,65 @@ main { flex: 1; }
 .mod-demo video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--well); }
 .mod-demo figcaption { font-size: 13.5px; color: var(--text-faint); padding: 11px 18px; border-top: 1px solid var(--border); background: var(--surface); }
 
-/* Fonctions (liste de définitions) */
+/* Fonctions — cartes illustrées d'un motif animé */
 .mod-sub { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); margin: 22px 0 12px; }
-.feat-list { display: flex; flex-direction: column; gap: 2px; margin: 0; }
-.feat-item { padding: 12px 0 12px 18px; border-left: 2px solid var(--border); position: relative; }
-.feat-item::before { content: ""; position: absolute; left: -1px; top: 18px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); transform: translateX(-50%); }
-.feat-item dt { font-weight: 650; font-size: 1rem; margin-bottom: 3px; }
-.feat-item dd { margin: 0; color: var(--text-dim); font-size: 0.95rem; }
+.feat-list { display: flex; flex-direction: column; gap: 9px; margin: 0; }
+.feat-item { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; padding: 13px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.15s; }
+.feat-item:hover { border-color: var(--border-strong); }
+.feat-item.no-ico { grid-template-columns: 1fr; }
+.feat-body dt { font-weight: 650; font-size: 1rem; margin-bottom: 3px; }
+.feat-body dd { margin: 0; color: var(--text-dim); font-size: 0.95rem; }
+.feat-ico { width: 44px; height: 44px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.feat-ico svg { width: 24px; height: 24px; display: block; }
+
+/* Motifs animés (joués seulement quand .playing — cf. IntersectionObserver) */
+.feat-ico svg [class*="m-"] { transform-box: fill-box; transform-origin: center; }
+.feat-ico .m-bar { transform-origin: bottom; }
+.feat-ico .m-draw, .feat-ico .m-fan, .feat-ico .m-tick { stroke-dasharray: 64; }
+.feat-ico.playing .m-pulse { animation: mPulse 2.4s ease-in-out infinite; }
+.feat-ico.playing .m-twinkle { animation: mTwinkle 2s ease-in-out infinite; }
+.feat-ico.playing .m-scan { animation: mScan 2.4s ease-in-out infinite; }
+.feat-ico.playing .m-dot { animation: mBlink 1.6s ease-in-out infinite; }
+.feat-ico.playing .m-cell { animation: mBlink 2.2s ease-in-out infinite; }
+.feat-ico.playing .m-draw { animation: mDraw 3.2s ease-in-out infinite; }
+.feat-ico.playing .m-float { animation: mFloat 2.8s ease-in-out infinite; }
+.feat-ico.playing .m-drop { animation: mDrop 1.9s ease-in-out infinite; }
+.feat-ico.playing .m-rise { animation: mRise 3s ease-in-out infinite; }
+.feat-ico.playing .m-pop { animation: mPop 1.4s ease-in-out infinite; }
+.feat-ico.playing .m-travel { animation: mTravel 2s ease-in-out infinite; }
+.feat-ico.playing .m-jiggle { animation: mJiggle 2.6s ease-in-out infinite; }
+.feat-ico.playing .m-orbit { animation: mOrbit 3s ease-in-out infinite; }
+.feat-ico.playing .m-bar { animation: mBar 2s ease-in-out infinite; }
+.feat-ico.playing .m-ring { animation: mRing 2.4s ease-in-out infinite; }
+.feat-ico.playing .m-ripple { animation: mRipple 2s ease-out infinite; }
+.feat-ico.playing .m-fly { animation: mFly 2.4s ease-in-out infinite; }
+.feat-ico.playing .m-cross { animation: mCross 3s ease-in-out infinite; }
+.feat-ico.playing .m-fan { animation: mDraw 3s ease-in-out infinite; }
+.feat-ico.playing .m-tick { animation: mDraw 3s ease-in-out infinite; }
+.feat-ico .m-pop.d2 { animation-delay: 0.18s; }
+.feat-ico .m-pop.d3 { animation-delay: 0.36s; }
+.feat-ico .m-fan.f2 { animation-delay: 0.25s; }
+.feat-ico .m-fan.f3 { animation-delay: 0.5s; }
+.feat-ico .m-bar.b2 { animation-delay: 0.2s; }
+.feat-ico .m-bar.b3 { animation-delay: 0.4s; }
+.feat-ico .m-cross.c2 { animation-delay: 1.5s; }
+@keyframes mPulse { 0%,100% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.12); opacity: 1; } }
+@keyframes mTwinkle { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes mScan { 0% { transform: translateY(-2.5px); opacity: 0.25; } 50% { opacity: 1; } 100% { transform: translateY(5px); opacity: 0.25; } }
+@keyframes mBlink { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes mDraw { 0% { stroke-dashoffset: 64; } 45%,60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -64; } }
+@keyframes mFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+@keyframes mDrop { 0%,100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(3px); opacity: 1; } }
+@keyframes mRise { 0%,100% { transform: translateY(2px); } 50% { transform: translateY(-1px); } }
+@keyframes mPop { 0%,100% { transform: scale(0.5); opacity: 0.3; } 50% { transform: scale(1); opacity: 1; } }
+@keyframes mTravel { 0% { transform: translateX(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(8px); opacity: 0; } }
+@keyframes mJiggle { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes mOrbit { 0%,100% { transform: translate(0,0); } 25% { transform: translate(1.5px,1px); } 75% { transform: translate(-1.5px,-1px); } }
+@keyframes mBar { 0%,100% { transform: scaleY(0.6); } 50% { transform: scaleY(1); } }
+@keyframes mRing { 0%,100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
+@keyframes mRipple { 0% { transform: scale(0.4); opacity: 0.7; } 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes mFly { 0%,100% { transform: translate(0,0); } 50% { transform: translate(2px,-1.5px); } }
+@keyframes mCross { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
 /* Raccourcis (table) */
 .kbd-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.92rem; }
@@ -167,4 +219,4 @@ main { flex: 1; }
   .doc-main { margin-left: 0; }
   .menu-toggle { display: inline-flex; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } .feat-ico [class*="m-"] { animation: none !important; } }
