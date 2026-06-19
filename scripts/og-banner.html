@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Jura:wght@300..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    background: #060609;
+    font-family: "Jura", system-ui, sans-serif;
+    color: #f4f3f0;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Aurores dégradées (reprise de la promo) */
+  .aurora { position: absolute; inset: 0; overflow: hidden; }
+  .aurora b { position: absolute; border-radius: 50%; filter: blur(90px); mix-blend-mode: screen; }
+  .a1 { width: 700px; height: 700px; left: -160px; top: -260px; background: radial-gradient(circle, #6366f1, transparent 65%); opacity: .55; }
+  .a2 { width: 620px; height: 620px; right: -160px; top: -120px; background: radial-gradient(circle, #a855f7, transparent 65%); opacity: .5; }
+  .a3 { width: 560px; height: 560px; left: 380px; top: 320px; background: radial-gradient(circle, #22d3ee, transparent 65%); opacity: .32; }
+  .grain { position: absolute; inset: 0; opacity: .045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .frame { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column;
+    justify-content: center; padding: 0 88px; }
+
+  .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 34px; }
+  .brand .mark { width: 44px; height: 44px; border-radius: 11px;
+    background: linear-gradient(135deg, #818cf8, #a855f7 55%, #22d3ee);
+    box-shadow: 0 8px 30px rgba(99,102,241,.45); }
+  .brand .name { font-size: 28px; font-weight: 700; letter-spacing: .04em; }
+
+  .eyebrow { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 15px;
+    letter-spacing: .24em; text-transform: uppercase; color: rgba(244,243,240,.5); margin-bottom: 22px; }
+
+  h1 { font-size: 70px; line-height: 1.05; font-weight: 700; letter-spacing: -.01em; max-width: 1000px; }
+  .grad { background: linear-gradient(108deg, #818cf8 0%, #a855f7 38%, #22d3ee 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .sub { margin-top: 30px; font-size: 26px; line-height: 1.45; color: rgba(244,243,240,.72); max-width: 940px; }
+
+  .url { position: absolute; bottom: 54px; left: 88px; z-index: 2;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 18px;
+    letter-spacing: .1em; color: rgba(244,243,240,.55); }
+  .chips { position: absolute; bottom: 50px; right: 88px; z-index: 2; display: flex; gap: 12px; }
+  .chip { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 14px; letter-spacing: .08em;
+    padding: 9px 16px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; color: rgba(244,243,240,.7); }
+</style>
+</head>
+<body>
+  <div class="aurora"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
+  <div class="grain"></div>
+  <div class="frame">
+    <div class="brand"><span class="mark"></span><span class="name">IBS&nbsp;Studio</span></div>
+    <div class="eyebrow">Web · Print · Data · IA</div>
+    <h1>Votre donnée produit <span class="grad">prend vie,</span><br/>propulsée par l'IA.</h1>
+    <div class="sub">Scrapez, éditez vos fichiers InDesign &amp; Illustrator en ligne, publiez partout — 20 modules connectés.</div>
+  </div>
+  <div class="url">ibs-studio.com</div>
+  <div class="chips"><span class="chip">IDML</span><span class="chip">SVG</span><span class="chip">PDF print</span></div>
+</body>
+</html>
