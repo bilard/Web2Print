@@ -3,6 +3,7 @@ import { BookOpen, FolderTree, Bug } from 'lucide-react'
 import { RulesTab } from './RulesTab'
 import { VendorsTab } from './VendorsTab'
 import { DebugTab } from './DebugTab'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 type Tab = 'rules' | 'vendors' | 'debug'
 
@@ -14,6 +15,9 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
 
 export function ScrapingHubPage() {
   const [tab, setTab] = useState<Tab>('rules')
+  useModuleIntent('scraping-hub', (action) => {
+    if (action.startsWith('tab:')) setTab(action.slice('tab:'.length) as Tab)
+  })
   return (
     <div className="h-full flex flex-col bg-background">
       <header className="flex items-center gap-1 px-4 py-2 border-b border-white/10 bg-surface">
