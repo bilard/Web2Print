@@ -44,55 +44,47 @@
 **Interfaces:**
 - Produces : `useModuleIntentStore` (Zustand) avec `{ intent: string | null, seq: number, set(intent: string | null): void }` ; `useModuleIntent(prefix: string, apply: (action: string) => void): void`.
 
-- [ ] **Step 1 : Écrire le test (échoue)**
+> **Convention de test (décision 2026-06-19)** : le projet teste uniquement la
+> logique pure (aucun `@testing-library`/test de rendu). On NE l'introduit PAS.
+> Le store `moduleIntent` est testé en logique pure via `getState()`. Le hook
+> `useModuleIntent` (React) n'a pas de test unitaire : son comportement est
+> couvert par `npx tsc -b` + le smoke manuel des tâches consommatrices. Ne PAS
+> ajouter de dépendance de test.
+
+- [ ] **Step 1 : Écrire le test du store (échoue)**
 
 ```ts
 // src/features/navigation/useModuleIntent.test.ts
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { renderHook } from '@testing-library/react'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { useModuleIntentStore } from '@/stores/moduleIntent.store'
-import { useModuleIntent } from './useModuleIntent'
 
 describe('moduleIntent store', () => {
   beforeEach(() => useModuleIntentStore.setState({ intent: null, seq: 0 }))
 
-  it('incrémente seq à chaque set, même valeur identique', () => {
+  it("set met a jour l'intent et incremente seq", () => {
+    useModuleIntentStore.getState().set('dam:tab:favorites')
+    expect(useModuleIntentStore.getState().intent).toBe('dam:tab:favorites')
+    expect(useModuleIntentStore.getState().seq).toBe(1)
+  })
+
+  it('incremente seq meme sur une valeur identique consecutive', () => {
     const { set } = useModuleIntentStore.getState()
     set('dam:tab:favorites')
     const s1 = useModuleIntentStore.getState().seq
     set('dam:tab:favorites')
     expect(useModuleIntentStore.getState().seq).toBe(s1 + 1)
   })
-})
 
-describe('useModuleIntent', () => {
-  beforeEach(() => useModuleIntentStore.setState({ intent: null, seq: 0 }))
-
-  it('applique l’action quand le préfixe correspond, puis consomme', () => {
-    const apply = vi.fn()
-    renderHook(() => useModuleIntent('dam', apply))
-    useModuleIntentStore.getState().set('dam:tab:favorites')
-    expect(apply).toHaveBeenCalledWith('tab:favorites')
-    expect(useModuleIntentStore.getState().intent).toBeNull()
-  })
-
-  it('ignore un intent d’un autre préfixe', () => {
-    const apply = vi.fn()
-    renderHook(() => useModuleIntent('dam', apply))
+  it('set(null) efface la valeur', () => {
     useModuleIntentStore.getState().set('settings:tab:ai')
-    expect(apply).not.toHaveBeenCalled()
-    expect(useModuleIntentStore.getState().intent).toBe('settings:tab:ai')
-  })
-
-  it('re-déclenche apply sur un intent identique consécutif', () => {
-    const apply = vi.fn()
-    renderHook(() => useModuleIntent('dam', apply))
-    useModuleIntentStore.getState().set('dam:tab:favorites')
-    useModuleIntentStore.getState().set('dam:tab:favorites')
-    expect(apply).toHaveBeenCalledTimes(2)
+    useModuleIntentStore.getState().set(null)
+    expect(useModuleIntentStore.getState().intent).toBeNull()
   })
 })
 ```
+
+> ⚠️ Apostrophes : ne jamais mettre d'apostrophe typographique/`'` à l'intérieur
+> d'une chaîne délimitée par `'` (casse le parse) — utiliser `"…"` ou reformuler.
 
 - [ ] **Step 2 : Lancer le test (doit échouer)**
 
@@ -158,7 +150,12 @@ export function useModuleIntent(prefix: string, apply: (action: string) => void)
 - [ ] **Step 5 : Lancer le test (doit passer)**
 
 Run: `npm run test:run -- src/features/navigation/useModuleIntent.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (3 tests).
+
+> Note knip : `useModuleIntent` est un export partagé dont le 1er consommateur
+> arrive en Task 6. Entre Task 1 et Task 6, `npx knip` peut le signaler comme
+> export inutilisé — c'est attendu. La vérif `knip` exit 0 est reportée à la
+> Task 16 (quand tous les consommateurs existent).
 
 - [ ] **Step 6 : Commit**
 
@@ -317,58 +314,15 @@ git commit -m "feat(nav): données d'arbre (children) + module Réglages dans mo
 
 **Files:**
 - Create: `src/features/navigation/ModuleTree.tsx`
-- Test: `src/features/navigation/ModuleTree.test.tsx`
 
 **Interfaces:**
 - Consumes : `ModuleItem`, `ModuleChild` (Task 2) ; `useAccessStore`/`useIsAdmin` pour gater les enfants par `permission`.
 - Produces : `ModuleTree` props `{ modules: ModuleItem[]; activeSection?: Section; onOpen: (section: Section) => void; onOpenChild: (section: Section, intent: string, routeTo?: string) => void; variant: 'sidebar' | 'drawer' }`.
 
-- [ ] **Step 1 : Écrire le test (échoue)**
-
-```tsx
-// src/features/navigation/ModuleTree.test.tsx
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
-import { ModuleTree } from './ModuleTree'
-import type { ModuleItem } from './modules'
-import { Library, Image as ImageIcon } from 'lucide-react'
-
-const MODULES: ModuleItem[] = [
-  { id: 'library', icon: Library, label: 'Bibliothèque', accent: '', activeBg: '', activeText: '' },
-  { id: 'images', icon: ImageIcon, label: 'DAM', accent: '', activeBg: '', activeText: '',
-    children: [{ id: 'tab:favorites', label: 'Favoris', intent: 'images:tab:favorites' }] },
-]
-
-describe('ModuleTree', () => {
-  beforeEach(() => window.localStorage.clear())
-
-  it('rend un chevron uniquement pour les modules avec enfants', () => {
-    render(<ModuleTree modules={MODULES} onOpen={vi.fn()} onOpenChild={vi.fn()} variant="drawer" />)
-    expect(screen.getByRole('button', { name: /Déplier DAM/i })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Déplier Bibliothèque/i })).toBeNull()
-  })
-
-  it('clic label appelle onOpen', () => {
-    const onOpen = vi.fn()
-    render(<ModuleTree modules={MODULES} onOpen={onOpen} onOpenChild={vi.fn()} variant="drawer" />)
-    fireEvent.click(screen.getByText('Bibliothèque'))
-    expect(onOpen).toHaveBeenCalledWith('library')
-  })
-
-  it('déplier puis clic enfant appelle onOpenChild avec l’intent', () => {
-    const onOpenChild = vi.fn()
-    render(<ModuleTree modules={MODULES} onOpen={vi.fn()} onOpenChild={onOpenChild} variant="drawer" />)
-    fireEvent.click(screen.getByRole('button', { name: /Déplier DAM/i }))
-    fireEvent.click(screen.getByText('Favoris'))
-    expect(onOpenChild).toHaveBeenCalledWith('images', 'images:tab:favorites', undefined)
-  })
-})
-```
-
-- [ ] **Step 2 : Lancer le test (doit échouer)**
-
-Run: `npm run test:run -- src/features/navigation/ModuleTree.test.tsx`
-Expected: FAIL (`ModuleTree` introuvable).
+> **Convention de test (décision 2026-06-19)** : pas de test de rendu pour
+> `ModuleTree` (le projet n'a aucun test de composant). Vérification par
+> `npx tsc -b` + smoke manuel (Task 5 Step 4 / Task 16 Step 3). Ne pas ajouter
+> `@testing-library` ni de fichier `ModuleTree.test.tsx`.
 
 - [ ] **Step 3 : Implémenter `ModuleTree`**
 
@@ -475,20 +429,15 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, varian
 
 Note `variant` est accepté pour usage de style ultérieur (sidebar collapsée) ; ne pas l'exporter ailleurs. Si `variant` n'est pas lu, retirer la prop pour rester knip-propre **ou** l'utiliser réellement à l'étape sidebar (Task 5). Choix : la conserver et l'exploiter en Task 5.
 
-- [ ] **Step 4 : Lancer le test (doit passer)**
-
-Run: `npm run test:run -- src/features/navigation/ModuleTree.test.tsx`
-Expected: PASS (3 tests).
-
-- [ ] **Step 5 : Vérifier types**
+- [ ] **Step 4 : Vérifier types**
 
 Run: `npx tsc -b`
 Expected: aucune erreur.
 
-- [ ] **Step 6 : Commit**
+- [ ] **Step 5 : Commit**
 
 ```bash
-git add src/features/navigation/ModuleTree.tsx src/features/navigation/ModuleTree.test.tsx
+git add src/features/navigation/ModuleTree.tsx
 git commit -m "feat(nav): composant ModuleTree partagé (arbre dépliant + persistance)"
 ```
 
@@ -526,12 +475,11 @@ Ajouter l'import : `import { ModuleTree } from './ModuleTree'`. Supprimer l'anci
 Run: `npx tsc -b && npm run lint`
 Expected: aucune erreur (warnings tolérés).
 
-- [ ] **Step 3 : Vérifier le code mort**
+> Vérif `knip` reportée à la Task 16 : tant que les consommateurs de
+> `useModuleIntent` (Tasks 6+) ne sont pas câblés, knip peut signaler des
+> symboles de navigation comme inutilisés — attendu.
 
-Run: `npx knip`
-Expected: exit 0 (pas de nouvel export/symbole mort).
-
-- [ ] **Step 4 : Commit**
+- [ ] **Step 3 : Commit**
 
 ```bash
 git add src/features/navigation/ModuleNavDrawer.tsx
@@ -592,10 +540,10 @@ Localiser le rendu de la sidebar (autour de l.317, `const isActive = activeSecti
 
 Ajouter `import { ModuleTree } from '@/features/navigation/ModuleTree'`. `menuItems` est la liste déjà filtrée par droits utilisée par la sidebar (vérifier son nom exact dans le fichier ; c'est la source des items de la sidebar). Si la sidebar peut être repliée (`sidebarOpen === false`), conserver le rendu icônes-seules existant pour ce cas et n'utiliser `ModuleTree` que lorsque `sidebarOpen`.
 
-- [ ] **Step 3 : Vérifier types + lint + knip**
+- [ ] **Step 3 : Vérifier types + lint**
 
-Run: `npx tsc -b && npm run lint && npx knip`
-Expected: aucune erreur ; knip exit 0.
+Run: `npx tsc -b && npm run lint`
+Expected: aucune erreur (warnings tolérés). (knip reporté à la Task 16.)
 
 - [ ] **Step 4 : Test manuel**
 
