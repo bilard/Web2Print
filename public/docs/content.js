@@ -330,13 +330,6 @@ export const MODULES = [
       {
         "keys": [
           "⌘",
-          "0"
-        ],
-        "label": "Zoom 100 %"
-      },
-      {
-        "keys": [
-          "⌘",
           "S"
         ],
         "label": "Sauvegarder (commit manuel)"
@@ -431,13 +424,6 @@ export const MODULES = [
           "Échap"
         ],
         "label": "Désélectionner"
-      },
-      {
-        "keys": [
-          "⌘",
-          "↵"
-        ],
-        "label": "Ajouter une page"
       }
     ]
   },

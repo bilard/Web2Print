@@ -106,7 +106,7 @@ export const editorSection: HelpSection = {
 - **Position / taille / rotation** : valeurs X, Y, L, H et angle éditables au chiffre près.
 - **Remplissage** : couleur unie, **dégradé** ou **image** (choisie depuis le DAM : Stock, Mes images, Favoris, Collections, Récents ou génération IA).
 - **Contour, opacité, ombre portée** et **coins arrondis** (rectangles).
-- **Modes de fusion** : 14 modes (Multiplier, Écran, Superposition, Lumière douce/crue, Différence, Teinte, Saturation, Couleur, Luminosité…).
+- **Modes de fusion** : 16 modes (Multiplier, Écran, Superposition, Lumière douce/crue, Différence, Teinte, Saturation, Couleur, Luminosité…).
 - **Miroir** horizontal / vertical et **verrou** (cadenas — l'objet ne peut plus être sélectionné ni déplacé).
 - **Cadrage image** : pour une image (ou une forme remplie d'image), recadre la zone visible et zoome dans le cadre sans déformer.
 - **Texte** : police (les polices du projet sont chargées), taille, gras/italique/souligné, alignement, **interligne**, **espacement des caractères**, couleur — et des **styles par caractère** en édition (sélectionne une portion du texte avant d'appliquer). Le bouton **Ajuster au contenu** recale la largeur du bloc sur le texte.
@@ -281,7 +281,6 @@ Bon à savoir, côté publipostage : les liaisons acceptent des **formules** (sy
     { type: 'shortcut', keys: ['L'], label: 'Outil Ligne' },
     { type: 'shortcut', keys: ['I'], label: 'Outil Image / DAM' },
     { type: 'shortcut', keys: ['Espace', '⇧ Glisser'], label: 'Pan du canvas' },
-    { type: 'shortcut', keys: ['⌘', '0'], label: 'Zoom 100 %' },
     { type: 'shortcut', keys: ['⌘', 'S'], label: 'Sauvegarder (commit manuel)' },
     { type: 'shortcut', keys: ['⌘', 'Z'], label: 'Annuler' },
     { type: 'shortcut', keys: ['⌘', 'Y'], label: 'Rétablir' },
@@ -296,6 +295,5 @@ Bon à savoir, côté publipostage : les liaisons acceptent des **formules** (sy
     { type: 'shortcut', keys: ['←↑→↓'], label: 'Déplacer de 1 px (⇧ : 10 px)' },
     { type: 'shortcut', keys: ['Suppr'], label: 'Supprimer la sélection' },
     { type: 'shortcut', keys: ['Échap'], label: 'Désélectionner' },
-    { type: 'shortcut', keys: ['⌘', '↵'], label: 'Ajouter une page' },
   ],
 }
