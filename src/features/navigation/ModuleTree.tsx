@@ -84,7 +84,10 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
               <button
                 type="button"
                 ref={rowRef}
-                onClick={() => onOpen(m.id)}
+                onClick={() => {
+                  onOpen(m.id)
+                  if (kids.length > 0) toggle(m.id)
+                }}
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex-1 flex items-center gap-2.5 pr-3 py-[7px] rounded-md text-[13px] text-left transition-colors
                   ${isActive ? m.activeText : 'text-white/55 hover:text-white/85'} ${rowExtraClass ?? ''}`}
