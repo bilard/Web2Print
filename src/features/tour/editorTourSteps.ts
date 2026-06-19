@@ -332,6 +332,18 @@ export const editorTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="panel-images"]',
+    prepare: openPanel('images'),
+    requireSelector: '[data-tour="panel-images"]',
+    popover: {
+      title: 'Panneau Images',
+      description:
+        'Surface persistante pour parcourir, générer et insérer des images : banque libre de droits, vos uploads, génération IA, favoris, collections et récents. (L’outil Image de la barre n’est qu’un menu rapide ; ce panneau est l’atelier complet.)',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="panel-palette"]',
     prepare: openPanel('palette'),
     requireSelector: '[data-tour="panel-palette"]',
@@ -409,6 +421,18 @@ export const editorTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="panel-versions"]',
+    prepare: openPanel('versions'),
+    requireSelector: '[data-tour="panel-versions"]',
+    popover: {
+      title: 'Panneau Versions',
+      description:
+        'Historique du document : créez une version avant un gros changement et restaurez-la en un clic (l’éditeur se recharge). 20 versions manuelles + 10 snapshots automatiques (badge « auto », pris à la sauvegarde, au plus toutes les 10 min).',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="footer"]',
     popover: {
       title: 'Zoom, pages & repères',
@@ -421,7 +445,7 @@ export const editorTourSteps: TourStep[] = [
     popover: {
       title: 'C’est tout 🎉',
       description:
-        'Vous maîtrisez l’éditeur. Relancez cette visite via le bouton 🧭, ou ouvrez l’aide « ? » en bas à droite à tout moment.',
+        'Vous maîtrisez l’éditeur. Astuce : ⌘K (Ctrl+K) ouvre partout la palette pour sauter vers un module ou lancer une action. Relancez cette visite via le bouton 🧭, ou ouvrez l’aide « ? » en bas à droite à tout moment.',
     },
   },
 ]

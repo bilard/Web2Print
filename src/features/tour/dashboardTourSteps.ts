@@ -161,7 +161,7 @@ export const dashboardTourSteps: TourStep[] = [
       align: 'center',
     },
   },
-  optStep('workflows', 'opt-wf-title', 'À quoi ça sert', 'Enchaînez scraping → décomposition → export → Drive/Gmail/Telegram. Un workflow peut être généré par IA depuis un prompt.'),
+  optStep('workflows', 'opt-wf-title', 'À quoi ça sert', 'Enchaînez scraping → décomposition → export → Drive/Gmail/Telegram. Un workflow peut être généré par IA depuis un prompt, réutilisé via vos modèles enregistrés, et son dernier résultat se consulte sur un écran dédié (tableau, galerie, graphique).'),
   optStep('workflows', 'opt-wf-new', 'Nouveau workflow', 'Crée un workflow vierge et ouvre l’éditeur de graphe (nodes + liens).'),
   {
     element: '[data-tour="section-price-watch"]',
@@ -239,7 +239,7 @@ export const dashboardTourSteps: TourStep[] = [
     popover: {
       title: 'À vous de jouer 🎉',
       description:
-        'Ouvrez un projet pour découvrir l’éditeur, qui a sa propre visite guidée détaillée. Besoin d’aide ? Bouton « ? » en bas à droite, ou la touche « ? ».',
+        'Ouvrez un projet pour découvrir l’éditeur, qui a sa propre visite guidée détaillée. Astuce : ⌘K (Ctrl+K) ouvre partout la palette pour sauter vers un module ou lancer une action. Besoin d’aide ? Bouton « ? » en bas à droite, ou la touche « ? ».',
     },
   },
 ]
