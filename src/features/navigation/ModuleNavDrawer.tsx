@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useAccessLoading, useIsPending, useIsBlocked } from '@/features/access/useAccess'
-import { useVisibleModules, type Section } from './modules'
+import { useVisibleModules } from './modules'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
+import { ModuleTree } from './ModuleTree'
 
 /**
  * Menu de navigation global des modules, sous forme de drawer.
@@ -45,11 +46,6 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
   if (location.pathname === '/dashboard') return null
   if (accessLoading || pending || blocked) return null
   if (modules.length === 0) return null
-
-  const go = (section: Section) => {
-    setOpen(false)
-    navigate('/dashboard', { state: { section } })
-  }
 
   return (
     <>
@@ -99,20 +95,16 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
             </div>
 
             <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-              {modules.map(({ id, icon: Icon, label, accent }) => (
-                <button
-                  key={id}
-                  role="menuitem"
-                  onClick={() => go(id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-md text-[13px]
-                    text-white/45 hover:text-white/80 hover:bg-white/[0.04]
-                    transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
-                    focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2"
-                >
-                  <Icon className={`w-4 h-4 shrink-0 opacity-60 ${accent}`} />
-                  <span className="flex-1 text-left">{label}</span>
-                </button>
-              ))}
+              <ModuleTree
+                modules={modules}
+                onOpen={(section) => { setOpen(false); navigate('/dashboard', { state: { section } }) }}
+                onOpenChild={(section, intent, routeTo) => {
+                  setOpen(false)
+                  if (routeTo) navigate(routeTo)
+                  else navigate('/dashboard', { state: { section, intent } })
+                }}
+                variant="drawer"
+              />
               <div className="mt-2 pt-2 border-t border-white/[0.06]">
                 <ResumeSetupButton variant="item" />
               </div>
