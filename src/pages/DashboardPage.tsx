@@ -33,6 +33,7 @@ import { registerTourSectionNavigator } from '@/features/tour/tour.store'
 import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, type Section } from '@/features/navigation/modules'
 import { ModuleTree } from '@/features/navigation/ModuleTree'
 import { useModuleIntentStore } from '@/stores/moduleIntent.store'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -108,6 +109,12 @@ export default function DashboardPage() {
       /* noop */
     }
   }, [])
+
+  // Deep-link des fonctions Bibliothèque (rendue inline ici) : bascule de vue.
+  useModuleIntent('library', (action) => {
+    if (action === 'view:grid') handleViewModeChange('grid')
+    else if (action === 'view:list') handleViewModeChange('list')
+  })
 
   const handleFilterSelect = useCallback((nodeId: string | null, projectIds: string[]) => {
     setFilterNodeId(nodeId)

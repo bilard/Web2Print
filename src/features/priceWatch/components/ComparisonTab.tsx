@@ -35,7 +35,7 @@ export function ComparisonTab() {
   return (
     <div className="space-y-6">
       {pending.length > 0 && (
-        <section>
+        <section data-pw-section="pending">
           <h3 className="mb-2 text-sm font-semibold text-white">À confirmer ({pending.length})</h3>
           <ul className="divide-y divide-white/10 rounded-md bg-surface">
             {pending.map((m) => (
@@ -56,7 +56,7 @@ export function ComparisonTab() {
           </ul>
         </section>
       )}
-      <section>
+      <section data-pw-section="comparison">
         <h3 className="mb-2 text-sm font-semibold text-white">Comparatif</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

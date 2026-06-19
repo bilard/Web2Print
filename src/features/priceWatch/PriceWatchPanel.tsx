@@ -2,8 +2,17 @@
 // Tableau de bord lecture-seule de la veille tarifaire. La configuration (produits
 // en entrée + sites + champs) se fait dans le FLUX via le node « Veille tarifaire ».
 import { ComparisonTab } from './components/ComparisonTab'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 export function PriceWatchPanel() {
+  useModuleIntent('price-watch', (action) => {
+    if (!action.startsWith('section:')) return
+    const key = action.slice('section:'.length)
+    document
+      .querySelector<HTMLElement>(`[data-pw-section="${key}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+
   return (
     <div className="space-y-6">
       <div>

@@ -15,6 +15,7 @@ import { useTelegramStore } from '@/stores/telegram.store'
 import { useTelegramInboxWorker } from './useTelegramInboxWorker'
 import { sendTelegramMessage } from '@/lib/telegramApi'
 import { InboxItem } from './InboxItem'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 export function TelegramInboxView() {
   // Le worker tourne tant que cette page est ouverte (onglet dédié) — store de run isolé.
@@ -28,6 +29,10 @@ export function TelegramInboxView() {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+
+  useModuleIntent('telegram', (action) => {
+    if (action === 'action:new') setComposing(true)
+  })
 
   // Chat cible : le Chat ID configuré, sinon l'expéditeur du dernier message reçu (tu as
   // forcément parlé au bot pour qu'il y ait des messages). Évite d'imposer une config manuelle.

@@ -7,6 +7,7 @@ import { PromptLibraryPanel } from './prompts/PromptLibraryPanel'
 import { usePrompts } from './prompts/usePrompts'
 import { CATEGORY_META, PROMPT_CATEGORIES, type Prompt, type PromptCategory } from './prompts/types'
 import type { ComposerSubmitPayload } from './ChatComposer'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 export function ChatPage() {
   const { messages, isLoading, send, reset, stop } = useChat()
@@ -42,6 +43,19 @@ export function ChatPage() {
       })[0]
     if (top) handlePickPrompt(top)
   }
+
+  useModuleIntent('chat', (action) => {
+    if (action === 'action:new') {
+      reset()
+      return
+    }
+    if (action.startsWith('category:')) {
+      const cat = action.slice('category:'.length)
+      if ((PROMPT_CATEGORIES as readonly string[]).includes(cat) && activeCategory !== cat) {
+        handlePickCategory(cat as PromptCategory)
+      }
+    }
+  })
 
   const handleSubmit = (payload: ComposerSubmitPayload) => {
     void send({
