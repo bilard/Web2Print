@@ -11,6 +11,7 @@ import { buildDiagram, type TableNodeData } from './buildDiagram'
 import { TABLES } from './firestoreSchema'
 import { TableNode } from './TableNode'
 import { TableDataPanel } from './TableDataPanel'
+import { FieldInspectorProvider } from './FieldInspector'
 import { useDiagramLayout } from './useDiagramLayout'
 
 const nodeTypes = { table: TableNode }
@@ -69,6 +70,12 @@ function DataModelDiagramInner() {
     if (table.query) setSelectedId(table.id)
   }, [])
 
+  // Recadre le diagramme sur une table (suivi d'une clé étrangère depuis la fiche de champ).
+  const focusTable = useCallback(
+    (id: string) => fitView({ nodes: [{ id }], padding: 0.6, duration: 350, maxZoom: 1.2 }),
+    [fitView],
+  )
+
   const selectedTable = selectedId ? TABLES.find((t) => t.id === selectedId) ?? null : null
   const styledNodes = useMemo(
     () => nodes.map((n) => (n.id === selectedId ? { ...n, selected: true } : { ...n, selected: false })),
@@ -76,6 +83,7 @@ function DataModelDiagramInner() {
   )
 
   return (
+    <FieldInspectorProvider onFocusTable={focusTable}>
     <div className="relative flex h-full min-h-[540px] flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-well">
       {/* En-tête */}
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3">
@@ -115,5 +123,6 @@ function DataModelDiagramInner() {
         )}
       </div>
     </div>
+    </FieldInspectorProvider>
   )
 }

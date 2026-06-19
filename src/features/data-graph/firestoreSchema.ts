@@ -25,6 +25,8 @@ export interface FieldSchema {
   pk?: boolean
   /** Clé étrangère → id d'une autre table (badge FK). */
   fk?: string
+  /** Note humaine optionnelle, affichée dans la fiche d'inspection du champ. */
+  note?: string
 }
 
 /** Décrit comment charger les données live d'une table (scope owner courant).
@@ -61,12 +63,12 @@ export const TABLES: TableSchema[] = [
     description: "Profils utilisateurs, secrets & réglages.",
     query: { path: 'users' },
     fields: [
-      { name: 'uid', type: 'string', pk: true },
+      { name: 'uid', type: 'string', pk: true, note: 'Identifiant Firebase Auth (doc id).' },
       { name: 'email', type: 'string' },
       { name: 'displayName', type: 'string' },
-      { name: 'accessRoleId', type: 'string', fk: 'roles' },
-      { name: 'uiSettings', type: 'object' },
-      { name: 'aiSettings', type: 'object' },
+      { name: 'accessRoleId', type: 'string', fk: 'roles', note: 'Rôle RBAC appliqué à l’utilisateur.' },
+      { name: 'uiSettings', type: 'object', note: 'Préférences UI (thème, etc.).' },
+      { name: 'aiSettings', type: 'object', note: 'Clés LLM, cascade et budgets.' },
     ],
   },
   {

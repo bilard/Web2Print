@@ -1,7 +1,8 @@
 // src/features/data-graph/TableNode.tsx
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useThemeStore } from '@/stores/theme.store'
-import { DOMAIN_HEX, type FieldSchema } from './firestoreSchema'
+import { DOMAIN_HEX, type FieldSchema, type TableSchema } from './firestoreSchema'
+import { useFieldInspector } from './FieldInspector'
 import type { TableNodeData } from './buildDiagram'
 
 const SIDES = [
@@ -12,16 +13,26 @@ const SIDES = [
 ] as const
 const HANDLE_CLASS = '!w-1.5 !h-1.5 !border-0 !opacity-0'
 
-function FieldRow({ f }: { f: FieldSchema }) {
+function FieldRow({ f, table }: { f: FieldSchema; table: TableSchema }) {
+  const inspector = useFieldInspector()
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-t border-white/[0.06]">
+    <button
+      type="button"
+      // `nodrag` : empêche ReactFlow de démarrer un déplacement de table au clic sur le champ.
+      className="nodrag flex w-full items-center gap-2 border-t border-white/[0.06] px-3 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
+      onClick={(e) => {
+        e.stopPropagation()
+        const r = e.currentTarget.getBoundingClientRect()
+        inspector.open(f, table, { left: r.left, right: r.right, top: r.top })
+      }}
+    >
       {f.pk && <span className="rounded bg-amber-500/90 px-1 py-0.5 text-[8px] font-bold text-[#1a1206] tracking-wide">PK</span>}
       {f.fk && <span className="rounded bg-indigo-500/90 px-1 py-0.5 text-[8px] font-bold text-[#fff] tracking-wide">FK</span>}
       <span className={`flex-1 truncate font-mono text-[12px] ${f.pk ? 'text-white underline decoration-dotted underline-offset-2' : 'text-white/75'}`}>
         {f.name}
       </span>
       <span className="shrink-0 font-mono text-[11px] italic text-white/35">{f.type}</span>
-    </div>
+    </button>
   )
 }
 
@@ -59,7 +70,7 @@ export function TableNode({ data, selected }: NodeProps) {
 
       {/* Champs */}
       <div>
-        {table.fields.map((f) => <FieldRow key={f.name} f={f} />)}
+        {table.fields.map((f) => <FieldRow key={f.name} f={f} table={table} />)}
       </div>
 
       {/* Description */}
