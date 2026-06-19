@@ -20,6 +20,12 @@ export const editorSection: HelpSection = {
       type: 'text',
       md: `L'éditeur se compose d'un **header** (titre, sauvegarde, export), d'une **barre d'outils** à gauche, du **canvas** au centre, des **panneaux** à droite (Propriétés, Calques, Palette, Images, Assets, Données, Page, Impression, Versions, Animation 3D) et d'une **barre inférieure** (zoom, taille page, grille, snap).`,
     },
+    {
+      type: 'text',
+      md: `### Palette de commandes (⌘K)
+
+\`⌘K\` (ou \`Ctrl+K\`) ouvre la **palette de commandes** — disponible partout dans l'application, y compris l'éditeur. Tape pour filtrer (la recherche ignore les accents et exige que tous les mots correspondent), navigue aux flèches **↑ ↓** et valide avec **↵**. Les résultats sont regroupés en **Projets récents** (rouvre un document récent), **Modules** (saute vers une autre section : Bibliothèque, PIM, Workflows, Images/DAM…) et **Actions** (ouvrir les Réglages, basculer le thème clair/sombre). C'est le moyen le plus rapide de changer de projet ou de module sans lâcher le clavier.`,
+    },
     { type: 'text', md: '### Header' },
     { type: 'mockup', Component: EditorHeaderMock },
     {
@@ -108,11 +114,17 @@ export const editorSection: HelpSection = {
 
 Pendant les déplacements, des **guides magnétiques** (smart guides) apparaissent : aimantation aux bords/centres de la page et aux autres objets.`,
     },
+    {
+      type: 'text',
+      md: `### Casse du texte (sans réécrire)
+
+La section **Transformation** des propriétés d'un texte applique une **casse** au rendu sans toucher au contenu saisi : **majuscules**, **minuscules** ou **Capitales** (première lettre de chaque mot). Pratique pour un titre tout en capitales ou un sous-titre en bas de casse : tu modifies l'apparence, le texte source (et tes liaisons \`{{champ}}\`) restent intacts.`,
+    },
     { type: 'text', md: '### Calques' },
     { type: 'mockup', Component: LayersPanelMock },
     {
       type: 'text',
-      md: `Le panneau **Calques** liste tous les objets du canvas. Tu peux masquer (œil), supprimer (poubelle) ou réordonner un calque par drag-and-drop. Les textes se déplient pour éditer chaque segment séparément.`,
+      md: `Le panneau **Calques** liste tous les objets du canvas. Tu peux masquer (œil), supprimer (poubelle) ou réordonner un calque par drag-and-drop. Les textes se déplient pour éditer chaque segment séparément — chaque segment offre un bouton **« Lier à un champ de données »** (et **« Délier »**) pour brancher cette portion de texte sur une colonne de la source, sans toucher au reste du bloc.`,
     },
     {
       type: 'menu-link',
@@ -131,6 +143,12 @@ Pendant les déplacements, des **guides magnétiques** (smart guides) apparaisse
 - **Taille de la page** affichée à côté du zoom — clic ouvre les paramètres de page.
 - **Grille** : repère visuel pour aligner.
 - **Snap** : aimantation aux objets et à la grille pendant le déplacement.`,
+    },
+    {
+      type: 'text',
+      md: `### Vignettes des pages
+
+Sur un document à plusieurs pages, la **barre inférieure** affiche une rangée de **vignettes** (une par page, avec son numéro). **Clic** sur une vignette pour y naviguer (la page courante est sauvegardée avant le saut), **survol → croix rouge** pour la supprimer, et le bouton **« + »** en bout de rangée ajoute une page. La vignette active est encadrée en bleu.`,
     },
     {
       type: 'menu-link',
@@ -167,6 +185,12 @@ Pendant les déplacements, des **guides magnétiques** (smart guides) apparaisse
       label: 'Snap',
       icon: Magnet,
     },
+    {
+      type: 'text',
+      md: `### Organiser les panneaux de droite
+
+La colonne de droite est **modulaire** : le panneau **Propriétés** reste épinglé en haut, et chaque autre panneau (Calques, Images, Palette, Assets, Page, Impression, Données, Animation 3D, Versions) se **replie/déplie** d'un clic sur son en-tête. Tu peux aussi **réordonner les panneaux** en glissant leur en-tête : remonte ceux que tu utilises le plus pour les avoir sous la main.`,
+    },
     { type: 'text', md: '### Les autres panneaux de droite' },
     {
       type: 'accordion',
@@ -185,7 +209,7 @@ Pendant les déplacements, des **guides magnétiques** (smart guides) apparaisse
         },
         {
           title: 'Impression',
-          md: 'Tout le pré-presse : **DPI**, **fond perdu** (bleed), **traits de coupe** (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), **hirondelles de repérage** (registration marks), **zone de sécurité** (marge, pointillés paramétrables) et la section **Preflight** (voir plus bas).',
+          md: 'Tout le pré-presse : **DPI**, **fond perdu** (bleed), **traits de coupe** (longueur 2–10 mm, décalage 0–3 mm, épaisseur, couleur), **hirondelles de repérage** (registration marks), **zone de sécurité** (marge, pointillés paramétrables) et la section **Preflight** (voir plus bas). Tu peux enregistrer tous ces réglages comme une **famille de paramètres** (preset d\'impression) réutilisable d\'un projet à l\'autre : un sélecteur en haut du panneau permet de **créer**, **mettre à jour** ou **supprimer** un preset et de l\'appliquer en un clic.',
         },
         {
           title: 'Animation 3D',

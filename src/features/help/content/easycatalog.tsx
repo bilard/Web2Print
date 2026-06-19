@@ -16,6 +16,16 @@ Bonne nouvelle : EasyCatalog inscrit ses champs directement dans l'IDML (marqueu
     },
     {
       type: 'text',
+      md: `### Sous le capot : comment les champs survivent à l'IDML
+
+EasyCatalog ne stocke pas ses champs sous forme de texte : il pose des **marqueurs invisibles** sur le balisage InDesign que IBS-Studio sait relire.
+
+- **Champ texte** : deux marqueurs encadrent la valeur sur le run de caractères — \`$ID/4 <nom>\` **ouvre** le champ, \`$ID/5 <nom>\` le **ferme** (attribut \`ECTagData\`). Le contenu du marqueur lui-même n'est qu'un caractère invisible (U+FEFF). IBS-Studio détecte cette paire et remplace tout ce qui est entre les deux par un seul \`{{nom}}\`, même si la valeur s'étalait sur plusieurs runs.
+- **Champ image** : le cadre est un rectangle portant \`ECPageItemData="2 2 <nom>"\`. IBS-Studio le convertit en cadre image transparent **lié au champ** — le publipostage y chargera le visuel de la ligne.
+- Les **noms de champs** sont URL-encodés dans l'IDML ; ils sont décodés à la lecture, ce qui explique pourquoi des libellés avec accents ou espaces (ex. \`{{Prix Malin}}\`) ressortent proprement.`,
+    },
+    {
+      type: 'text',
       md: `### 1. Importer un gabarit EasyCatalog
 
 1. Depuis InDesign (avec ton document EasyCatalog ouvert) : **Fichier → Exporter… → InDesign Markup (IDML)**
@@ -65,7 +75,9 @@ Le zip contient :
 
 Depuis l'éditeur, **Exporter → IDML (multi-pages)** : IBS-Studio produit un IDML qui **conserve les marqueurs EasyCatalog** et résout les valeurs par ligne.
 
-À la réouverture dans InDesign + EasyCatalog, le document **retrouve ses champs** : tu peux re-synchroniser, re-paginer ou finaliser côté print. Pas de lock-in.`,
+À la réouverture dans InDesign + EasyCatalog, le document **retrouve ses champs** : tu peux re-synchroniser, re-paginer ou finaliser côté print. Pas de lock-in.
+
+> **Comment l'aller-retour reste « propre » (preserve-and-patch)** : à l'export, IBS-Studio ne touche **jamais** aux marqueurs \`$ID/4\`/\`$ID/5\` — ils sont laissés tels quels. Seule la **valeur** entre les marqueurs est remplacée par \`{{champ}}\` puis résolue ligne par ligne. C'est pour ça qu'EasyCatalog reconnaît encore ses champs nativement après le passage par le web. Côté EasyCatalog, relie le document à ta data source via **Adopt Fields**.`,
     },
     {
       type: 'menu-link',
@@ -82,12 +94,20 @@ Depuis l'éditeur, **Exporter → IDML (multi-pages)** : IBS-Studio produit un I
         },
         {
           title: 'Quelles données mettre dans les colonnes image ?',
-          md: `Une **URL** d'image (ex. lien Firebase/DAM) se charge directement. Un simple **nom de fichier** est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé.`,
+          md: `Une **URL** d'image (ex. lien Firebase/DAM) se charge directement. Un simple **nom de fichier** est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé.
+
+À l'export EasyCatalog, les colonnes image sont aussi inscrites dans le zip sous forme de **noms de fichiers** dans la donnée, et un manifeste \`images.csv\` (colonnes \`ecFieldName, row_key, url, filename\`) te donne la table URL → fichier pour rapatrier les visuels dans le dossier image du data source.`,
+        },
+        {
+          title: 'Comment le champ-clé est-il choisi à l\'export ?',
+          md: `IBS-Studio prend ta **colonne primaire** comme clé EasyCatalog **si** toutes ses valeurs sont uniques et non vides. Sinon, il **synthétise** une clé \`_ec_key\` (\`row_1\`, \`row_2\`, …) pour garantir une re-synchronisation fiable. Le \`README.txt\` du zip rappelle quel champ sert de clé et s'il a été généré.
+
+Les **noms de champs** exportés sont assainis pour rester stables : lettres et chiffres (accents inclus) conservés, le reste collapsé en \`_\`, et dédoublonnage insensible à la casse (suffixe \`_2\`, \`_3\`…). C'est la même règle qui permet aux noms de matcher au publipostage.`,
         },
         {
           title: 'Limites connues',
-          md: `- Les champs sous **forme qualifiée** (référence data source complète) ne sont pas encore convertis en placeholders et restent en texte.
-- Un champ **sans valeur** dans le gabarit d'origine peut ne pas générer de placeholder.
+          md: `- Les champs sous **forme qualifiée** (référence data source complète, marqueurs \`$ID/2\`/\`$ID/3\`) ne sont pas encore convertis en placeholders et restent en texte ; seule la forme simple \`$ID/4\`/\`$ID/5\` est reconnue.
+- Un champ **vide** dans le gabarit d'origine génère quand même son placeholder à l'import (la paire de marqueurs suffit).
 - À l'export IDML, les **images** ne sont pas ré-incorporées dans le fichier : EasyCatalog les re-tire depuis sa propre source à la réouverture (le cadre et son champ sont conservés).`,
         },
       ],

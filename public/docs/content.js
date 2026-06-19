@@ -243,6 +243,22 @@ export const MODULES = [
     "intro": "Canvas, outils, calques et sauvegarde du projet.",
     "features": [
       {
+        "title": "Palette de commandes (⌘K)",
+        "desc": "⌘K (ou Ctrl+K) ouvre la palette de commandes — disponible partout dans l'application, y compris l'éditeur."
+      },
+      {
+        "title": "Casse du texte (sans réécrire)",
+        "desc": "La section Transformation des propriétés d'un texte applique une casse au rendu sans toucher au contenu saisi : majuscules, minuscules ou Capitales (première lettre de chaque mot)."
+      },
+      {
+        "title": "Vignettes des pages",
+        "desc": "Sur un document à plusieurs pages, la barre inférieure affiche une rangée de vignettes (une par page, avec son numéro)."
+      },
+      {
+        "title": "Organiser les panneaux de droite",
+        "desc": "La colonne de droite est modulaire : le panneau Propriétés reste épinglé en haut, et chaque autre panneau (Calques, Images, Palette, Assets, Page, Impression, Données, Animation 3D, Versions) se replie/déplie d'un clic sur son en-tête."
+      },
+      {
         "title": "Images",
         "desc": "Insertion d'images sans quitter l'éditeur : onglets Galerie, Upload, IA (génération depuis un prompt, 5 ratios, image-to-image si un objet est sélectionné), Stock, Mes images, Favoris, Collections, Récents — les mêmes sources que le DAM."
       },
@@ -485,8 +501,24 @@ export const MODULES = [
         "desc": "1. Ouvre ton document dans InDesign CC ou plus récent 2. Fichier → Exporter… 3. Choisis le format InDesign Markup (IDML) 4. Enregistre Le fichier IDML est en réalité un ZIP contenant XML + ressources (fonts, images)."
       },
       {
+        "title": "Importe le « package », pas seulement le .idml",
+        "desc": "L'import attend un assemblage InDesign (Fichier → Empaqueter…), pas un .idml isolé : • un fichier .idml et un .pdf de référence sont obligatoires — sans le PDF, l'import s'arrête avec « Composants manquants » • les polices du dossier Docume…"
+      },
+      {
         "title": "Importer dans IBS-Studio",
         "desc": "1. Tableau de bord → Importer 2. Sélectionne le .idml 3. Patiente : le parser extrait formes, textes, images, fonts, ombres et transparence — toutes les pages du document (chaque planche devient une page IBS-Studio) 4."
+      },
+      {
+        "title": "Décomposition en calques éditables",
+        "desc": "Rien n'est aplati en image : chaque objet redevient un calque manipulable dans l'éditeur."
+      },
+      {
+        "title": "Couleurs CMJN converties fidèlement",
+        "desc": "Les nuances CMJN sont ramenées en RVB pour l'écran. Quand InDesign a déjà stocké la valeur sRGB de la couleur (issue de sa propre conversion ICC), elle est utilisée telle quelle."
+      },
+      {
+        "title": "Ce qui est préservé vs approximé à l'export",
+        "desc": "L'export IDML n'est pas une régénération : il repatche le ZIP IDML d'origine. Sont réinjectées tes modifications de texte, image, couleur de fond, position et taille ; tout le reste du document (styles, calques, réglages non touchés) est co…"
       },
       {
         "title": "Limites connues",
@@ -507,6 +539,10 @@ export const MODULES = [
     "title": "EasyCatalog (InDesign)",
     "intro": "Aller-retour avec le plug-in EasyCatalog : importer un gabarit, fusionner ses champs, puis réexporter un IDML reconnu nativement.",
     "features": [
+      {
+        "title": "Sous le capot : comment les champs survivent à l'IDML",
+        "desc": "EasyCatalog ne stocke pas ses champs sous forme de texte : il pose des marqueurs invisibles sur le balisage InDesign que IBS-Studio sait relire."
+      },
       {
         "title": "1. Importer un gabarit EasyCatalog",
         "desc": "1. Depuis InDesign (avec ton document EasyCatalog ouvert) : Fichier → Exporter… → InDesign Markup (IDML) 2. Dans IBS-Studio : Tableau de bord → Importer → sélectionne le .idml 3. Le gabarit s'ouvre dans l'éditeur."
@@ -532,8 +568,12 @@ export const MODULES = [
         "desc": "Une URL d'image (ex. lien Firebase/DAM) se charge directement. Un simple nom de fichier est résolu via ton stockage si le fichier y existe. Le binding image se branche tout seul sur le cadre EasyCatalog importé."
       },
       {
+        "title": "Comment le champ-clé est-il choisi à l'export ?",
+        "desc": "IBS-Studio prend ta colonne primaire comme clé EasyCatalog si toutes ses valeurs sont uniques et non vides. Sinon, il synthétise une clé eckey (row1, row2, …) pour garantir une re-synchronisation fiable."
+      },
+      {
         "title": "Limites connues",
-        "desc": "• Les champs sous forme qualifiée (référence data source complète) ne sont pas encore convertis en placeholders et restent en texte. • Un champ sans valeur dans le gabarit d'origine peut ne pas générer de placeholder."
+        "desc": "• Les champs sous forme qualifiée (référence data source complète, marqueurs $ID/2/$ID/3) ne sont pas encore convertis en placeholders et restent en texte ; seule la forme simple $ID/4/$ID/5 est reconnue."
       }
     ],
     "shortcuts": []
@@ -619,7 +659,23 @@ export const MODULES = [
     "features": [
       {
         "title": "Comment ça marche",
-        "desc": "1. L'image est verrouillée en fond (fidélité visuelle préservée). 2. L'IA (Google Vision) détecte les textes et les recrée en calques éditables par-dessus (overlays). 3."
+        "desc": "1. L'image est verrouillée en fond (fidélité visuelle préservée). Le calque source devient non sélectionnable : les clics passent aux textes posés par-dessus. 2."
+      },
+      {
+        "title": "Ce qui devient éditable",
+        "desc": "La décomposition ne se limite pas à du texte brut : elle reconstruit la mise en forme de chaque bloc."
+      },
+      {
+        "title": "Clé Google Vision requise",
+        "desc": "La détection des textes appelle l'API Google Cloud Vision : il faut renseigner ta clé une seule fois dans Paramètres → Connecteurs (champ Google Vision), synchronisée ensuite via ton compte."
+      },
+      {
+        "title": "Filtres intelligents",
+        "desc": "Pour ne garder que le contenu éditorial et éviter le bruit, plusieurs filtres s'appliquent automatiquement."
+      },
+      {
+        "title": "Quand l'utiliser & limites",
+        "desc": "À utiliser quand tu as un visuel raster fini (affiche, flyer, publicité retail) sans le fichier source et que tu veux réécrire les textes ou décliner sans tout refaire."
       }
     ],
     "shortcuts": []
@@ -635,6 +691,26 @@ export const MODULES = [
       {
         "title": "Comment ça marche",
         "desc": "1. Si le PDF contient un calque texte natif exploitable, la conversion vectorielle est tentée d'abord : les textes arrivent exacts (pas d'OCR). 2."
+      },
+      {
+        "title": "Texte natif vs OCR — trois niveaux",
+        "desc": "L'import suit une cascade : il garde toujours le niveau le plus fidèle disponible. 1. Conversion vectorielle (MuPDF) — tentée d'abord."
+      },
+      {
+        "title": "Ce qui devient éditable (conversion vectorielle)",
+        "desc": "Quand le PDF passe par la conversion vectorielle, l'import ne se contente pas de séparer texte et fond — il reconstruit des objets vraiment manipulables : • Blocs de texte regroupés : un prix composé (« 22 DT ,99 »), une bulle (« 30 % d'éco…"
+      },
+      {
+        "title": "Polices fidèles (embarquées + repli Google Fonts)",
+        "desc": "Pour que le rendu ne retombe pas sur une police par défaut : • Les polices embarquées dans le PDF (sous-ensembles TrueType) sont extraites et chargées sous leur vraie famille (« WRZTFA+ArialNarrow-Bold » → Arial Narrow, gras)."
+      },
+      {
+        "title": "Champs de fusion {{…}} préservés",
+        "desc": "Si le PDF d'origine contient déjà des champs de fusion {{…}} (publipostage), l'import les reconnaît et leur attache leur cadre de composition : largeur du bloc + alignement détecté sur la géométrie réelle (bords droits communs → aligné à dr…"
+      },
+      {
+        "title": "Limites & quand l'utiliser",
+        "desc": "• Page 1 uniquement : les pages suivantes sont ignorées. Pour un multi-pages fidèle, préférez Import InDesign (IDML). • Idéal pour repartir d'un PDF existant (BAT, ancien document) quand le fichier source InDesign n'est plus disponible."
       }
     ],
     "shortcuts": []
