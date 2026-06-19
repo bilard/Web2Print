@@ -15,14 +15,28 @@ function readExpanded(): Record<string, boolean> {
   }
 }
 
+interface ModuleRowExtras {
+  id?: string
+  ref?: React.Ref<HTMLButtonElement>
+  className?: string
+  tabIndex?: number
+  title?: string
+  role?: string
+  'data-help-id'?: string
+  'aria-label'?: string
+  onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>
+  'aria-current'?: 'page' | 'step' | 'location' | 'date' | 'time' | boolean
+}
+
 interface ModuleTreeProps {
   modules: ModuleItem[]
   activeSection?: Section
   onOpen: (section: Section) => void
   onOpenChild: (section: Section, intent: string, routeTo?: string) => void
+  moduleRowExtras?: (m: ModuleItem) => ModuleRowExtras | undefined
 }
 
-export function ModuleTree({ modules, activeSection, onOpen, onOpenChild }: ModuleTreeProps) {
+export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, moduleRowExtras }: ModuleTreeProps) {
   const isAdmin = useIsAdmin()
   const permissions = useAccessStore((s) => s.permissions)
   const [expanded, setExpanded] = useState<Record<string, boolean>>(readExpanded)
@@ -42,20 +56,23 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild }: Modu
   const canChild = (c: ModuleChild) => isAdmin || !c.permission || permissions.has(c.permission)
 
   return (
-    <div role="tree" aria-label="Modules" className="space-y-0.5">
+    <div className="space-y-0.5">
       {modules.map((m) => {
         const Icon = m.icon
         const kids = (m.children ?? []).filter(canChild)
         const isOpen = !!expanded[m.id]
         const isActive = activeSection === m.id
+        const extras = moduleRowExtras?.(m)
+        const { ref: rowRef, className: rowExtraClass, ...rowRest } = extras ?? {}
         return (
-          <div key={m.id} role="treeitem" aria-expanded={kids.length ? isOpen : undefined}>
+          <div key={m.id}>
             <div className={`group flex items-center rounded-md ${isActive ? m.activeBg : 'hover:bg-white/[0.04]'}`}>
               {kids.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => toggle(m.id)}
                   aria-label={`${isOpen ? 'Replier' : 'Déplier'} ${m.label}`}
+                  aria-expanded={isOpen}
                   className="p-1.5 text-white/30 hover:text-white/70 transition-transform"
                 >
                   <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
@@ -65,21 +82,23 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild }: Modu
               )}
               <button
                 type="button"
+                ref={rowRef}
                 onClick={() => onOpen(m.id)}
+                aria-current={isActive ? 'page' : undefined}
                 className={`flex-1 flex items-center gap-2.5 pr-3 py-[7px] rounded-md text-[13px] text-left transition-colors
-                  ${isActive ? m.activeText : 'text-white/55 hover:text-white/85'}`}
+                  ${isActive ? m.activeText : 'text-white/55 hover:text-white/85'} ${rowExtraClass ?? ''}`}
+                {...rowRest}
               >
                 <Icon className={`w-4 h-4 shrink-0 opacity-70 ${m.accent}`} />
                 <span className="flex-1">{m.label}</span>
               </button>
             </div>
             {isOpen && kids.length > 0 && (
-              <div role="group" className="ml-[26px] pl-2 border-l border-white/[0.06]">
+              <div className="ml-[26px] pl-2 border-l border-white/[0.06]">
                 {kids.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    role="treeitem"
                     onClick={() => onOpenChild(m.id, c.intent, c.routeTo)}
                     className="w-full flex items-center gap-2 px-2.5 py-[5px] rounded-md text-[12.5px] text-left
                       text-white/40 hover:text-white/75 hover:bg-white/[0.04] transition-colors"

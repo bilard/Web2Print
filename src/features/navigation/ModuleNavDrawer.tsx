@@ -75,7 +75,6 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
           />
           {/* Drawer */}
           <nav
-            role="menu"
             aria-label="Modules"
             className="fixed inset-y-0 left-0 z-50 w-64 bg-surface-2 border-r border-white/[0.06]
               flex flex-col shadow-2xl

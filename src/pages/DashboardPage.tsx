@@ -314,8 +314,7 @@ export default function DashboardPage() {
         <nav
           data-tour="sidebar"
           className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5`}
-          role="menubar"
-          aria-orientation="vertical"
+          aria-label="Navigation des modules"
         >
           {sidebarOpen ? (
             <ModuleTree
@@ -326,6 +325,16 @@ export default function DashboardPage() {
                 if (routeTo) { navigate(routeTo); return }
                 navigate('/dashboard', { state: { section, intent } })
               }}
+              moduleRowExtras={(m) => ({
+                id: `menu-${m.id}`,
+                ref: m.id === 'blank' ? newProjectHighlight.ref : undefined,
+                className: m.id === 'blank' ? newProjectHighlight.className : undefined,
+                tabIndex: activeSection === m.id ? 0 : -1,
+                title: m.label,
+                'data-help-id': `dashboard.sidebar.${m.id}`,
+                'aria-label': m.label,
+                onKeyDown: (e) => handleKeyDown(e, m.id),
+              })}
             />
           ) : (
             visibleMenuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
