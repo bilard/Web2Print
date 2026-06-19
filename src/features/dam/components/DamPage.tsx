@@ -1,5 +1,6 @@
 import { useDamStore } from '../../../stores/dam.store'
 import { useGDriveStore } from '../../../stores/gdrive.store'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { DamNavSidebar } from './DamNavSidebar'
 import { DamSidebar } from './DamSidebar'
 import { DamImageGrid } from './DamImageGrid'
@@ -28,7 +29,12 @@ const TAB_TITLES: Record<string, string> = {
 
 export function DamPage() {
   const { activeTab, totalResults, selectedProjectId } = useDamStore()
+  const setActiveTab = useDamStore((s) => s.setActiveTab)
   const gdriveConnected = useGDriveStore((s) => s.connected)
+
+  useModuleIntent('images', (action) => {
+    if (action.startsWith('tab:')) setActiveTab(action.slice('tab:'.length) as Parameters<typeof setActiveTab>[0])
+  })
   // Gardes défensives : sans la permission, l'onglet (même resté actif) ne rend rien.
   const canGenerate = useCan('dam.generate')
   const canAnimations = useCan('dam.animations')
