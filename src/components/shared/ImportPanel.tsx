@@ -9,6 +9,7 @@ import { OptionHelp } from '@/components/shared/OptionHelp'
 import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
 import { convertPdfToEditableSvg, type PdfFontAsset } from '@/features/svg/pdfToSvg'
 import { withProgress } from '@/stores/progress.store'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 export interface ImportSelection {
   type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx' | 'image-to-svg' | 'pdf-to-svg'
@@ -49,6 +50,16 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   const canExcel = useCan('import.excel')
   const canImageToSvg = useCan('import.imageToSvg')
   const canPdfToSvg = useCan('import.pdfToSvg')
+
+  useModuleIntent('import', (action) => {
+    if (!action.startsWith('format:')) return
+    const key = action.slice('format:'.length)
+    const el = document.querySelector<HTMLElement>(`[data-import-format="${key}"]`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    el.classList.add('ring-2', 'ring-indigo-500')
+    window.setTimeout(() => el.classList.remove('ring-2', 'ring-indigo-500'), 1500)
+  })
 
   const showIdmlModal = idmlProcessing || idmlState.step === 'ready' || !!idmlError
 
@@ -181,6 +192,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* IDML Assembly Import */}
         {canIdml && (
         <div
+          data-import-format="idml"
           onDragOver={(e) => { e.preventDefault(); setDragOver('idml') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('idml')}
@@ -214,6 +226,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* PPTX Import */}
         {canPptx && (
         <div
+          data-import-format="pptx"
           onDragOver={(e) => { e.preventDefault(); setDragOver('pptx') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('pptx')}
@@ -247,6 +260,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* Image Import */}
         {canImage && (
         <div
+          data-import-format="image"
           onDragOver={(e) => { e.preventDefault(); setDragOver('image') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('image')}
@@ -280,6 +294,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* SVG Import — éditable */}
         {canSvg && (
         <div
+          data-import-format="svg"
           onDragOver={(e) => { e.preventDefault(); setDragOver('svg') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('svg')}
@@ -313,6 +328,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* Excel / CSV Import */}
         {canExcel && (
         <div
+          data-import-format="excel"
           onDragOver={(e) => { e.preventDefault(); setDragOver('xlsx') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('xlsx')}
@@ -346,6 +362,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* Image → SVG éditable (raster verrouillé + overlays vectoriels) */}
         {canImageToSvg && (
         <div
+          data-import-format="image-to-svg"
           onDragOver={(e) => { e.preventDefault(); setDragOver('image-to-svg') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('image-to-svg')}
@@ -379,6 +396,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         {/* PDF → SVG éditable (page 1 rasterisée + overlays vectoriels) */}
         {canPdfToSvg && (
         <div
+          data-import-format="pdf-to-svg"
           onDragOver={(e) => { e.preventDefault(); setDragOver('pdf-to-svg') }}
           onDragLeave={() => setDragOver(null)}
           onDrop={onDrop('pdf-to-svg')}
