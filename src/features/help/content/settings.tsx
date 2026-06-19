@@ -31,6 +31,17 @@ export const settingsSection: HelpSection = {
     },
     {
       type: 'text',
+      md: `### Budgets IA et proxy serveur
+
+Les appels LLM passent par un **proxy serveur** : la requête part **sans ta clé API**, le serveur ajoute la clé (lue sur ton profil) et **applique ton budget mensuel**.
+
+- **Budget mensuel bloquant** : une fois le plafond du fournisseur atteint, l'appel est **refusé** côté serveur — il n'y a *pas* de repli en direct. C'est la garde-fou contre les dérives de coût.
+- Un **seuil d'alerte mensuel** se règle par fournisseur dans le **panneau « Conso LLM en direct »** (colonne de droite sur la page Paramètres). Ce seuil est local et sert d'alerte (pastilles de couleur selon le pourcentage atteint) — il ne recharge jamais ton compte fournisseur.
+- Le même panneau suit aussi un **budget Bright Data** (scraping).
+- Les requêtes multimodales trop lourdes (> ~9 Mo) basculent automatiquement en appel direct depuis le navigateur.`,
+    },
+    {
+      type: 'text',
       md: `### Onglet Connecteurs`,
     },
     {
@@ -62,9 +73,17 @@ Gère les **cookies de session** pour scraper des sites **B2B derrière login**.
     },
     {
       type: 'text',
+      md: `### Onglet Données — schéma Firestore (réservé au propriétaire)
+
+Un **diagramme entité-relation (ERD)** de la base : chaque **collection** Firestore est une table affichant tous ses **champs**, ses clés **PK/FK** et ses **relations** (avec cardinalités). Le diagramme est interactif — zoom, recadrage, et **glisser les tables** : leur position est **mémorisée sur ton compte**.
+
+**Double-clic** sur une table interrogeable ouvre un panneau de **données live** (lecture en temps réel via \`onSnapshot\`). Pratique pour inspecter l'état réel de la base sans ouvrir la console Firebase.`,
+    },
+    {
+      type: 'text',
       md: `### Onglets Statistiques & Firebase
 
-- **Statistiques** : nombre de projets, exports du mois, **stockage Firestore** (barre de progression), **coût IA estimé en EUR par fournisseur** avec les tokens entrants/sortants consommés, et le suivi des requêtes **Bright Data** (quota scraping). Bouton **Rafraîchir** pour recalculer.
+- **Statistiques** : nombre de projets, exports du mois, **stockage Firestore** (barre de progression), **coût IA estimé en EUR par fournisseur** avec les tokens entrants/sortants consommés, et le suivi des requêtes **Bright Data** (quota scraping). Bouton **Rafraîchir** pour recalculer. En bas, le **journal des runs de pipelines** (enrichissement PIM, décomposition Image/PDF → SVG) liste chaque exécution avec son statut, sa durée et le détail des étapes ou de l'erreur — l'« étage logs prod » sans ouvrir la console Firestore.
 - **Firebase** : configuration du backend partagé (clés du projet Firebase) — **réservé au propriétaire**.`,
     },
     {

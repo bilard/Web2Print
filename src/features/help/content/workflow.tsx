@@ -103,6 +103,46 @@ Déplie une catégorie pour voir ses nodes.` },
     },
     {
       type: 'text',
+      md: `### Node « Web Scraping » unifié
+
+Un **seul node** \`Web Scraping\` couvre toutes les façons de ramener des données du web, via un **sélecteur de Mode** :
+
+- **Scrape** — une ou plusieurs URLs → champs produit (Jina + IA).
+- **Liste** — pages catégorie → liste de produits.
+- **Crawl** — découverte de fiches sur un site (côté client).
+- **Recherche web** — requête → pages lues + tableau de résultats.
+- **Question web (IA)** — question → réponse synthétisée + sources.
+
+Le formulaire s'adapte au mode choisi ; tu n'as donc pas à hésiter entre quatre nodes différents.`,
+    },
+    {
+      type: 'text',
+      md: `### Node « Graphique »
+
+Le node **« Graphique »** transforme un tableau en **image de graphe** (PNG, via chart.js). Choisis le **type** — **Barres, Lignes, Aire, Camembert, Anneau** — la **colonne d'axe X**, la ou les **colonnes de valeurs** et une **agrégation** facultative. Il sort à la fois le graphe, l'**asset image** (réutilisable par un Export design ou un envoi Telegram/Gmail) et le **fichier PNG**.
+
+Pour un Google Sheets, pas besoin de ce node : le node **Export Google Sheets** propose une case **« Insérer un graphique »** qui ajoute un graphe **natif** dans la feuille (type, colonne X, colonnes de valeurs).`,
+    },
+    {
+      type: 'text',
+      md: `### Écran « Résultat »
+
+Le bouton **« Résultat »** dans l'en-tête de l'éditeur ouvre une page dédiée (\`/workflows/:id/result\`) qui **visualise le dernier run** sous la forme la plus pertinente : **Tableau de bord**, **Tableau**, **Graphique**, **Galerie** (images), **Document** ou **Données** (JSON). Le sélecteur en haut permet de basculer de vue, **« Régénérer avec l'IA »** recompose un tableau de bord avec insights, et tout l'écran s'**exporte en PNG ou PDF**.`,
+    },
+    {
+      type: 'text',
+      md: `### Mes modèles (modèles personnalisés)
+
+Au-delà de la galerie prête à l'emploi, tu peux **enregistrer ton propre montage** : le bouton **« Modèle »** dans l'éditeur sauvegarde le graphe courant comme modèle réutilisable (création ou mise à jour). Tous tes modèles apparaissent dans la section **« Mes modèles »** de la page Workflows, où tu peux **les réutiliser** (un clic crée un workflow), **éditer leurs infos** ou **les supprimer**. Stockés par compte (\`users/{uid}/workflowTemplates\`).`,
+    },
+    {
+      type: 'text',
+      md: `### Arrêter un run serveur (STOP)
+
+Un workflow lancé par le **cron** ou un **webhook** tourne sans navigateur. Le panneau d'état du Cron affiche alors un bouton rouge **STOP** : il pose un **drapeau d'abandon** que l'exécuteur serveur **interroge en continu** et le run s'arrête sous quelques secondes — sans avoir à attendre la fin du node en cours.`,
+    },
+    {
+      type: 'text',
       md: `### Exemples de pipelines
 
 - **Veille** : Recherche web → Export Excel → Envoyer via Gmail.

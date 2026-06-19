@@ -58,6 +58,14 @@ Les permissions sont **hiérarchiques** : la visibilité d'un module (*« voir �
     },
     {
       type: 'text',
+      md: `### Les rôles sont entièrement personnalisés
+
+Aucun rôle n'est livré par défaut : tu **crées toi-même** les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les **renommes** et les **supprimes** librement.
+
+> ⚠️ Si tu **supprimes un rôle** encore attribué à quelqu'un, cette personne **repasse automatiquement « en attente »** (plus aucun accès) jusqu'à ce que tu lui en donnes un nouveau. Pense à réaffecter avant de supprimer.`,
+    },
+    {
+      type: 'text',
       md: `### Modules couverts par les permissions
 
 Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…).`,

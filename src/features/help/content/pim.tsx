@@ -78,6 +78,54 @@ Une colonne peut être une **formule** plutôt qu'une valeur saisie — comme da
     },
     {
       type: 'text',
+      md: `### Éditer la table comme un tableur
+
+La table produits se manipule directement, sans quitter la page :
+
+- **Éditer une cellule** : un clic sélectionne, un second clic (ou Entrée) passe en édition ; \`Entrée\` valide, \`Échap\` annule. La saisie est adaptée au **type de colonne** (texte, nombre, date, case à cocher…).
+- **Rechercher** : la barre de recherche filtre les lignes dont **n'importe quelle valeur** contient le terme.
+- **Trier** : clique l'en-tête (ou le menu de colonne) pour basculer **A→Z / Z→A**, puis annuler le tri. Les colonnes numériques proposent aussi un **tri par couleur** (zones bleu → jaune → vert selon la valeur).
+- **Ajouter / supprimer une ligne** : bouton « + » en bas de table ; suppression depuis la ligne.
+- **Réorganiser les colonnes** : glisse un en-tête, ou via le **menu de colonne** (← / →, première / dernière position), redimensionne par la poignée, **renomme** ou **masque** une colonne.`,
+    },
+    {
+      type: 'text',
+      md: `### Types de colonnes (façon Airtable)
+
+Le bouton **« + »** d'en-tête ouvre un sélecteur de **type de champ**, regroupés par catégorie (Texte, Nombre, Choix, Date, Lien, Autre) avec recherche. Au-delà de texte/nombre/formule, tu disposes notamment de :
+
+- **Texte long / Texte riche**, **Téléphone**, **E-mail**, **URL**.
+- **Sélection unique / multiple**, **Case à cocher**, **Évaluation** (étoiles), **Pourcentage**, **Devise**.
+- **Date**, **Durée**, **Numéro automatique**, **Code-barres**, **Image / pièce jointe**, **Lien vers une autre entrée**.
+
+Le type pilote l'affichage et l'édition de la cellule ; il est aussi **détecté automatiquement** à l'import Excel.`,
+    },
+    {
+      type: 'text',
+      md: `### Statistiques de colonne
+
+Sous l'en-tête d'une colonne numérique, des **badges Min / Moyenne / Max** résument les valeurs visibles. Cliquer **Min** trie en croissant, **Max** en décroissant — un coup d'œil suffit pour repérer prix aberrants ou champs vides.`,
+    },
+    {
+      type: 'text',
+      md: `### Fraîcheur par champ
+
+Chaque valeur enrichie porte la **date de son dernier changement** (\`updatedAt\` au niveau du champ). En table, une cellule devient **ambre au-delà de 30 jours** et **rouge au-delà de 90 jours** : tu vois d'un coup d'œil quelles données sont périmées et méritent un ré-enrichissement. Re-merger une valeur identique ne rafraîchit PAS l'âge (sinon il ne voudrait rien dire).`,
+    },
+    {
+      type: 'text',
+      md: `### Plusieurs sources dans une base
+
+La **colonne latérale gauche** liste les **sources** d'une base (chaque import / scrape / saisie manuelle = une source). Clique une source pour **afficher/masquer ses produits** dans la table ; coche-en plusieurs pour les **fusionner à l'écran**. Chaque source se **renomme** ou se **supprime** d'un clic. Quand des fiches de sources différentes décrivent le même produit (même SKU/EAN), elles sont **fusionnées** en un produit master, et l'aperçu de fusion te montre **champ par champ** ce qui sera appliqué.`,
+    },
+    {
+      type: 'text',
+      md: `### Galerie d'images d'une fiche
+
+Dans le panneau de fiche, les images se **réorganisent par glisser-déposer** (la première sert de visuel principal) et se **suppriment** à l'unité. Tu peux **basculer une image entre « Photos » et « Pictos & logos »** d'un clic — utile pour ne garder que les bons visuels avant un data-merge.`,
+    },
+    {
+      type: 'text',
       md: `### Classer & exporter
 
 - Relie une base à une **taxonomie** pour naviguer le catalogue par catégories.

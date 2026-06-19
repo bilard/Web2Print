@@ -42,7 +42,11 @@ export const chatSection: HelpSection = {
         },
         {
           title: 'Bibliothèque de prompts',
-          md: 'Des **catégories** (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l\'emploi. Crée, modifie et mets en **favori** (★) tes propres prompts — les favoris et les plus utilisés remontent en tête de liste.',
+          md: 'Des **catégories** (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l\'emploi. Crée, modifie et mets en **favori** (★) tes propres prompts — les favoris et les plus utilisés remontent en tête de liste. Clique un prompt pour le **pré-remplir** dans la zone de saisie (libre à toi de l\'ajuster avant d\'envoyer).',
+        },
+        {
+          title: 'Réutiliser et dupliquer un prompt',
+          md: 'Le menu **⋯** de chaque prompt permet de le **renommer / éditer**, le **dupliquer** (crée une copie « *titre* (copie) » à adapter) ou le **supprimer**. Chaque usage est **comptabilisé** : les prompts les plus sollicités et les favoris sont mis en avant. Tes prompts sont **enregistrés sur ton compte** (synchronisés via Firestore) : on les retrouve d\'une session à l\'autre, contrairement à l\'historique de conversation.',
         },
       ],
     },
@@ -51,6 +55,12 @@ export const chatSection: HelpSection = {
       md: `### Choix du modèle
 
 Le Chat utilise une **cascade de modèles** : si le modèle principal échoue, le suivant prend le relais automatiquement. Chaque réponse affiche **par quel modèle** elle a été produite — et si des fournisseurs ont échoué avant, un badge ambre **« Échec du provider »** se déplie pour voir le détail des tentatives. L'ordre de la cascade et le modèle de chaque fournisseur se règlent dans les **Paramètres → IA**.`,
+    },
+    {
+      type: 'text',
+      md: `### Changer de modèle à la volée
+
+Le **badge du modèle**, à côté du bouton d'envoi, est **cliquable** : il déplie la liste de tous les modèles de la cascade (regroupés par fournisseur, avec leur tarif indicatif *entrée / sortie*). Choisir un modèle le sélectionne **et le place en tête de cascade** pour les messages suivants — pas besoin de passer par les Réglages. Le fournisseur en tête porte l'étiquette **« primaire »**, et un lien **« Cascade & clés API → Réglages »** mène au réglage complet.`,
     },
     {
       type: 'menu-link',

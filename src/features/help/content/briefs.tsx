@@ -48,6 +48,50 @@ Le modèle exact de chaque fournisseur se choisit dans _Réglages → IA_ ; le b
     },
     {
       type: 'text',
+      md: `### L'assistant brief en 5 étapes
+
+Dans les Taxonomies, ouvrir un brief lance un **assistant guidé** qui transforme un besoin client en proposition commerciale livrable :
+
+1. **Formulaire client** — coordonnées et identité de marque (nom, logo, couleurs primaire/secondaire, brand kit).
+2. **Questions dynamiques** — l'IA lit le formulaire + la nomenclature et **génère des questions sur mesure** ; elle pré-sélectionne aussi les familles de produits pertinentes (les identifiants inventés sont automatiquement écartés).
+3. **Panier produits** — l'IA compose un panier depuis le catalogue à partir des réponses.
+4. **Deck** — l'IA esquisse la structure de la présentation et génère les visuels.
+5. **Export** — téléchargement du PPTX et clôture du brief.
+
+Chaque brief mémorise son **étape courante** et son **statut** (_brouillon → formulaire → panier → deck → terminé_) : on peut fermer et reprendre exactement où on s'était arrêté, sans rien relancer. Tout est persisté dans Firestore (collection \`briefs\`).`,
+    },
+    {
+      type: 'text',
+      md: `### Comment l'IA compose le panier
+
+À la première arrivée sur l'étape Panier, la génération **démarre automatiquement** (panier vide + aucun journal antérieur). Le pipeline est traçable en direct via un **journal de génération** :
+
+- Si la nomenclature porte une **URL source**, l'IA extrait des mots-clés du brief puis **scrape le site** pour bâtir le catalogue candidat. Sans URL source — ou si le scraping échoue / ne renvoie rien — bascule automatique sur un catalogue de démonstration.
+- L'IA sélectionne des produits et **justifie** chaque choix.
+- **Garde-fous anti-hallucination** : les SKU absents du catalogue sont rejetés, avec une 2e tentative si l'écart est trop grand ; les produits hors des familles jugées pertinentes sont écartés (sauf catalogue scrapé non structuré). Un avertissement indique combien de SKU ont été ignorés.
+
+Le **journal est conservé** sur le brief : revenir sur l'étape l'affiche tel quel sans relancer la génération. Pour reprendre la main, le bouton **Régénérer** relance le pipeline.`,
+    },
+    {
+      type: 'text',
+      md: `### Éditer et exporter le panier
+
+Le panier généré reste **entièrement modifiable, ligne par ligne** : quantités, ajout/retrait de produits, et surtout un **prix appliqué** qui peut surcharger le prix catalogue d'origine (les deux sont conservés). Une **remise globale** en pourcentage ou en montant fixe se règle dans le récapitulatif ; le sous-total et le total estimé se recalculent en direct.
+
+Le bouton **CSV** exporte le panier (SKU, nom, quantité, prix unitaire, prix appliqué, total ligne) — pratique pour un devis ou un ré-import. La validation de l'étape enregistre le panier, la remise et le total estimé sur le brief.`,
+    },
+    {
+      type: 'text',
+      md: `### Deck et export PPTX
+
+L'IA esquisse un **deck** composé de slides typées : couverture, contexte, **grille de produits** (layout 2×2 / 3×2 / 1×3), focus produit, **budget** (total + détail) et appel à l'action. Les SKU cités qui ne sont plus au panier sont automatiquement retirés.
+
+Pour les **visuels**, le bouton « Générer toutes les images » produit en lot : une image **héros**, une **scène de mise en situation** (staging) et une image par produit du panier (via Image IA / Gemini, stockées dans Firebase Storage). Les images orphelines sont purgées quand le panier change.
+
+L'export construit un **PPTX réellement habillé à la marque du client** (logo, couleurs primaire/secondaire, bandeau, images en letterbox). Le fichier est téléchargé **et** archivé dans Storage ; le brief passe au statut _terminé_ avec un lien vers le PPTX.`,
+    },
+    {
+      type: 'text',
       md: `### Génération d'images
 
 Le DAM intègre la génération d'images via Gemini (modèle image dit « Image IA »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates.

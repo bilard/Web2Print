@@ -80,6 +80,41 @@ Ce flow combine **automatisation** (IBS-Studio fait le merge en série) et **con
     },
     {
       type: 'text',
+      md: `### Pages déclinées vs Pack social — quelle différence ?
+
+Les deux partent des mêmes quatre ratios (post carré 1080×1080, story/reel 1080×1920, paysage 1920×1080, bannière 1500×500), mais ne produisent **pas** la même chose :
+
+| | **Pack social** | **Pages déclinées** |
+|---|---|---|
+| Sortie | ZIP de **PNG** prêts à poster | **Pages éditables** ajoutées au document (rien n'est téléchargé) |
+| Méthode | Le design est rendu **figé** puis posé en « contain » centré, fond = couleur de page | Re-layout **piloté par IA** (directeur artistique) : chaque élément est replacé selon le ratio cible |
+| Quand l'utiliser | Tu veux juste les visuels, sans retouche | Tu veux **retoucher** chaque format avant export |
+
+« Pages déclinées » envoie à l'IA un aperçu de la page **plus** la liste de ses éléments (boîtes en %), et reçoit un placement par format : le fond pleine page **couvre** (cover), le reste (titre, prix, photo, logo) est **placé en respectant son ratio** (contain). Si l'IA est indisponible (ou le rendu CORS échoue), un **repli géométrique** garanti s'applique (mise à l'échelle « contain » + centrage) — un toast t'avertit du mode utilisé.`,
+    },
+    {
+      type: 'text',
+      md: `### Ce que contient vraiment chaque fichier
+
+- **PDF** : une image **haute résolution** du canvas (rendu ×2, qualité maximale) **plus** une couche de **texte invisible sélectionnable/cherchable** posée sur chaque bloc de texte. Le PDF reste donc « plat » visuellement mais le texte est copiable.
+- **PPTX** : une **slide unique** aux dimensions exactes du canvas (converties px→pouces), image en fond + textes éditables dans PowerPoint. Pas de multi-masters — pour des cas complexes, préfère PDF.
+- **HTML** : le visuel vient d'un **PNG** ; par-dessus, chaque texte devient un \`<div>\` positionné, **transparent mais sélectionnable** (\`user-select:text\`, \`aria-label\`) — bon pour l'accessibilité et le SEO.
+- **SVG** : vectoriel **réimportable** dans Illustrator, Figma ou l'éditeur. Les images liées sont **embarquées en data-URL** (sinon Illustrator affiche « fichier lié introuvable »), et les \`clipPath\` / dégradés sont **normalisés** pour les lecteurs SVG stricts.`,
+    },
+    {
+      type: 'text',
+      md: `### SVG : compatibilité Illustrator / Figma
+
+L'export SVG ne se contente pas du \`toSVG()\` brut de Fabric, il le **réécrit** pour les éditeurs vectoriels exigeants :
+
+- les **images** (DAM, Unsplash, IDML lié) sont converties en \`data:\` URL le temps de l'export — Illustrator n'essaie plus de résoudre un lien disque ;
+- les blocs \`<clipPath>\` sont regroupés dans un \`<defs>\` unique (sinon couleurs/dégradés « disparaissent ») ;
+- les \`<stop>\` de dégradé sont **triés par offset** et l'alpha \`rgba()\` est séparé en \`stop-opacity\` (sinon rect noir dans Illustrator).
+
+Limite : une image chargée **sans CORS** ne peut pas être embarquée (canvas « tainté ») — son URL d'origine est laissée telle quelle. Charge tes images depuis une source CORS-friendly avant l'export SVG final.`,
+    },
+    {
+      type: 'text',
       md: `### Bonnes pratiques
 
 - **Toujours faire un export test** sur 1 ligne avant de lancer un batch de 200 — tu détectes les problèmes de fonts ou d'images manquantes plus vite

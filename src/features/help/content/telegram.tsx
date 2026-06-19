@@ -78,6 +78,36 @@ Si l'app est ouverte en même temps, un seul des deux répond (jamais de doublon
     },
     {
       type: 'text',
+      md: `### Approbation humaine dans un workflow
+
+Le node **« Approbation Telegram »** (catégorie *Communication* dans l'éditeur de workflow) met le run **en pause** et demande une validation à un humain, directement dans la messagerie :
+
+- Le bot envoie ta **question** avec deux boutons inline **✅ Approuver / ❌ Refuser**. Le workflow reprend ensuite sur le port **« approved »** ou **« rejected »** selon le clic.
+- Si le port **attachment** est connecté (ex : un PDF généré), le **fichier est joint** au message et la question sert de **légende**.
+- **Délai max** réglable (minutes) ; à l'expiration, au choix : **échouer** (stoppe le run) ou **refuser** (part par le port « rejected »).
+- Le **premier clic gagne** (transaction serveur) ; les clics tardifs sont ignorés et les boutons retirés après décision.
+
+⚠️ Le chat ciblé doit figurer dans l'**allowlist du webhook** (Réglages → Telegram), sinon les clics sont ignorés. Bot token et Chat ID se laissent vides pour réutiliser ceux des Connecteurs.`,
+    },
+    {
+      type: 'text',
+      md: `### Sécurité : secret + allowlist
+
+Le webhook entrant n'accepte un message que si **deux conditions** sont réunies :
+
+- Le **secret token** envoyé par Telegram correspond au \`webhookSecret\` enregistré côté serveur (toute requête sans le bon en-tête \`X-Telegram-Bot-Api-Secret-Token\` est rejetée en *401*).
+- Le **chat ID** émetteur figure dans l'**allowlist** (\`allowedChatIds\`). Les messages — et les clics d'approbation — venant d'un chat non listé sont **silencieusement ignorés**.
+
+Deux réglages distincts cohabitent donc : la **config webhook** (secret + allowlist, partagée) et ta **config personnelle** (bot token + chat ID, par utilisateur, dans Connecteurs). C'est cette dernière que lisent le répondeur serveur et le digest.`,
+    },
+    {
+      type: 'text',
+      md: `### Pourquoi jamais de double réponse
+
+À l'arrivée d'un message, le répondeur serveur tente un **claim transactionnel** : il fait passer la fiche de \`pending\` à \`processing\` (et s'attribue \`workerId: 'server'\`) en une seule transaction. Si l'app était déjà en train de la traiter, le claim échoue et le serveur s'efface — **un seul des deux répond**. À l'inverse, quand le message nécessite l'app (rendu graphique ou fichier manuel), le serveur **rend la main** : il repasse la fiche en \`pending\` avec un drapeau \`serverDeferred\`, et le worker du navigateur la reprend à la prochaine ouverture.`,
+    },
+    {
+      type: 'text',
       md: `### Digest quotidien
 
 Dans **Réglages → Connecteurs → Telegram**, activez le **digest quotidien** : chaque matin à **08:00** (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement. **Rien n'est envoyé s'il ne s'est rien passé.**`,

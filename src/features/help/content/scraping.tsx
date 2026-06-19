@@ -57,6 +57,64 @@ Le template vit dans Firestore et matchera automatiquement les futures URLs du d
     },
     {
       type: 'text',
+      md: `### Onglet Recherche : « trouve-moi ça, là »
+
+Pas d'URL sous la main ? Décris ce que tu cherches **et où** en langage naturel — _« tondeuses Honda chez LeroyMerlin et Castorama »_. Un LLM interprète ta phrase (sujet produit + enseignes ciblées + prix max éventuel) et lance une requête \`site:\` par enseigne, puis fusionne les résultats.
+
+- Règle le **nombre de résultats** (1 à 30).
+- Les fiches produit affichées sont **sondées en prix réel** (JSON-LD) ; si tu as donné un prix max, l'app **pré-coche** automatiquement celles qui rentrent dans le budget, au plus N par enseigne.
+- Coche ce que tu veux, puis **Scraper N pages (Produit complet)** — chaque page passe par le même moteur que les autres onglets.
+- Un tableau récapitule les champs que tu as demandés dans ton prompt (prix, EAN, marque…) au fur et à mesure.`,
+    },
+    {
+      type: 'text',
+      md: `### Plusieurs sites/URLs d'un coup (Liste · Fichier · Google Sheet)
+
+Les onglets **Crawl** et **Map + Extract** ne se limitent pas à une seule URL. Le sélecteur de source propose 4 modes :
+
+- **1 URL** : le cas simple.
+- **Liste** : colle plusieurs URLs racines, une par ligne.
+- **Fichier** : importe un **CSV / Excel / TSV** — la colonne URL est auto-détectée.
+- **Google Sheet** : importe depuis un Sheet via OAuth Drive (connecte Drive dans Réglages → Connecteurs).
+
+En multi-URL, les racines sont traitées **en séquence** et les résultats sont **agrégés et dédoublonnés** par URL absolue. Idéal pour mapper 10 catégories ou crawler 5 sous-sites en une passe.`,
+    },
+    {
+      type: 'text',
+      md: `### Affiner un Crawl : limite, inclure/exclure (regex)
+
+Avant d'extraire les liens, tu peux cadrer la découverte :
+
+- **Limite de pages** (1 à 500, défaut 30) — par URL racine en mode multi.
+- **Inclure (regex)** : ne garder que les chemins qui matchent, ex. \`/produits/.*\`.
+- **Exclure (regex)** : écarter le bruit, ex. \`/tag/.*, /auteur/.*\`.
+
+Le crawl extrait les liens (Jina) puis l'IA identifie les **noms de produits depuis les cartes visibles** ; tu coches les vrais produits, chacun part en **Produit complet**. Si la grille est en lazy-load et que rien ne sort, resserre le filtre **Inclure** ou bascule en mode **Plusieurs URLs**.`,
+    },
+    {
+      type: 'text',
+      md: `### Suivre le coût et arrêter un run
+
+- **Chip de coût (en haut du modal)** : il additionne en direct le **dernier traitement** et le **cumul de la session**, ventilé par source — **LLM**, **Jina**, **Firecrawl**, **Bright Data**. Le LLM est facturé au tarif réel par modèle ; Jina/Firecrawl/Bright Data sont estimés aux tarifs publics. Survole le chip pour le détail.
+- **Annuler** : pendant un batch d'enrichissement, le bouton **Annuler** stoppe les requêtes Jina/scrape qui acceptent un signal et n'enchaîne pas sur les URLs suivantes. La fiche déjà en cours peut terminer son traitement, mais son résultat est ignoré.`,
+    },
+    {
+      type: 'text',
+      md: `### Que récupère « Produit complet » exactement ?
+
+Tous les onglets (Scrape / Crawl / Map+Extract / Recherche) finissent par le **même moteur PIM** (\`enrichProductCore\`), pour un résultat homogène quel que soit le chemin :
+
+- **Specs** au format KEY/VALUE (caractéristiques techniques structurées).
+- **EAN / référence** repêchés du contenu et des données structurées (JSON-LD).
+- **Fil d'Ariane → taxonomie** (breadcrumb concaténé), utile pour catégoriser.
+- **Avantages** (les pictos/bénéfices produit transformés en lignes de texte).
+- **Images filtrées** : le même classifieur que l'onglet Photos du PIM écarte les visuels parasites (logos, pictos, bannières) et garde les vraies photos produit.
+- **Documents PDF** (notices, fiches techniques) détectés sur la page.
+
+Si une page revient quasi vide, l'app conserve quand même le **résultat partiel exploitable** (marque/SKU/description/image issus du JSON-LD) plutôt que de tout jeter.`,
+    },
+    {
+      type: 'text',
       md: `### Scraper depuis la BDD (Map + Extract)
 
 Quand tu n'as pas encore de template, ou pour explorer un nouveau site :

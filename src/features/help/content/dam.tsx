@@ -123,6 +123,20 @@ Un clic ouvre la **visionneuse** (lightbox). Outils d'édition non destructive :
     },
     {
       type: 'text',
+      md: `### Panneau d'informations & crédit photo
+
+À droite de la visionneuse, l'onglet **Infos** récapitule la fiche technique du visuel : **dimensions** (px), **résolution** (mégapixels) et **ratio**, **poids du fichier**, **orientation**, **couleur dominante** (pastille + code hex) et espace **sRGB**, plus les **tags**.
+
+Pour les photos de banque, le panneau affiche aussi la **source** (lien Pexels / Unsplash), le **photographe** (lien vers son profil) et l'**ID source** — l'attribution requise par ces banques est ainsi toujours accessible. Pour une image de projet, il montre à la place le **nom du fichier**.`,
+    },
+    {
+      type: 'text',
+      md: `### Onglet Prompts (images IA)
+
+Quand une image a été **générée par IA**, un onglet **Prompts** s'ajoute dans la visionneuse. Il restitue le **prompt d'origine** (ton texte brut), le **prompt amélioré** réellement envoyé à Image IA, et les **précisions Q&R** du mode « Avec questions ». Chaque prompt a un bouton **Copier** pour réutiliser le brief tel quel sur une nouvelle génération.`,
+    },
+    {
+      type: 'text',
       md: `### Variantes
 
 Sauvegarde une retouche (crop + colorimétrie + miroir + rotation) comme **variante nommée** d'une image, sans toucher l'originale :

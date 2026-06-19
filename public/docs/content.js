@@ -454,6 +454,14 @@ export const MODULES = [
         "desc": "• Enrichir avec des images IA : l'IA génère un visuel par scène (affiché en fond, effet Ken Burns). • Aperçu live : le lecteur joue la composition avec le style appliqué (rythme, intensité, easing, palette)."
       },
       {
+        "title": "Le ZIP est une animation autonome et jouable",
+        "desc": "Le index.html est self-contained (CSS, JS, données et auto-play tout inline) : double-clique-le, il s'ouvre même en file://, sans serveur."
+      },
+      {
+        "title": "Gérer ses animations dans le DAM",
+        "desc": "Dans l'onglet Animations HTML du DAM, chaque carte affiche le ratio, le poids et la date : • Ouvrir joue l'animation dans un nouvel onglet (le ZIP est extrait à la volée, l'index.html est servi tel quel)."
+      },
+      {
         "title": "Bibliothèque de prompts",
         "desc": "Chaque génération mémorise son brief : tu peux le rejouer, le charger pour l'ajuster, le renommer ou le supprimer — pour produire des variantes sans tout ressaisir."
       },
@@ -744,6 +752,14 @@ export const MODULES = [
         "desc": "Annule toutes les retouches et revient à l'image d'origine."
       },
       {
+        "title": "Panneau d'informations & crédit photo",
+        "desc": "À droite de la visionneuse, l'onglet Infos récapitule la fiche technique du visuel : dimensions (px), résolution (mégapixels) et ratio, poids du fichier, orientation, couleur dominante (pastille + code hex) et espace sRGB, plus les tags."
+      },
+      {
+        "title": "Onglet Prompts (images IA)",
+        "desc": "Quand une image a été générée par IA, un onglet Prompts s'ajoute dans la visionneuse. Il restitue le prompt d'origine (ton texte brut), le prompt amélioré réellement envoyé à Image IA, et les précisions Q&R du mode « Avec questions »."
+      },
+      {
         "title": "Variantes",
         "desc": "Sauvegarde une retouche (crop + colorimétrie + miroir + rotation) comme variante nommée d'une image, sans toucher l'originale : • Enregistrer variante → donne-lui un nom."
       },
@@ -795,6 +811,30 @@ export const MODULES = [
         "desc": "Une colonne peut être une formule plutôt qu'une valeur saisie — comme dans Excel. Tu écris une expression qui référence d'autres colonnes, et la valeur se recalcule à la volée quand les données changent."
       },
       {
+        "title": "Éditer la table comme un tableur",
+        "desc": "La table produits se manipule directement, sans quitter la page : • Éditer une cellule : un clic sélectionne, un second clic (ou Entrée) passe en édition ; Entrée valide, Échap annule."
+      },
+      {
+        "title": "Types de colonnes (façon Airtable)",
+        "desc": "Le bouton « + » d'en-tête ouvre un sélecteur de type de champ, regroupés par catégorie (Texte, Nombre, Choix, Date, Lien, Autre) avec recherche."
+      },
+      {
+        "title": "Statistiques de colonne",
+        "desc": "Sous l'en-tête d'une colonne numérique, des badges Min / Moyenne / Max résument les valeurs visibles. Cliquer Min trie en croissant, Max en décroissant — un coup d'œil suffit pour repérer prix aberrants ou champs vides."
+      },
+      {
+        "title": "Fraîcheur par champ",
+        "desc": "Chaque valeur enrichie porte la date de son dernier changement (updatedAt au niveau du champ)."
+      },
+      {
+        "title": "Plusieurs sources dans une base",
+        "desc": "La colonne latérale gauche liste les sources d'une base (chaque import / scrape / saisie manuelle = une source). Clique une source pour afficher/masquer ses produits dans la table ; coche-en plusieurs pour les fusionner à l'écran."
+      },
+      {
+        "title": "Galerie d'images d'une fiche",
+        "desc": "Dans le panneau de fiche, les images se réorganisent par glisser-déposer (la première sert de visuel principal) et se suppriment à l'unité."
+      },
+      {
         "title": "Classer & exporter",
         "desc": "• Relie une base à une taxonomie pour naviguer le catalogue par catégories. • Une fois les fiches prêtes, le data-merge génère un document par produit à partir d'un template (PDF, PNG…)."
       },
@@ -834,6 +874,38 @@ export const MODULES = [
         "desc": "Dans le PIM, chaque produit (ligne) est rattaché à un nœud de la taxonomie. Deux voies : • Manuel — sélectionne une ligne → clique « Non classé — cliquer pour classer » au-dessus du panneau → choisis le nœud cible."
       },
       {
+        "title": "Éditer l'arbre (nœuds)",
+        "desc": "Survole une ligne de l'arbre pour faire apparaître ses actions : • + — ajoute un nœud enfant sous le nœud survolé • ✏ (crayon) — renomme le nœud sur place • 🔗 (chaîne) — lie des projets au nœud (visible sur les nœuds feuilles uniquement) •…"
+      },
+      {
+        "title": "Rechercher un nœud dans l'arbre",
+        "desc": "Une barre « Rechercher un nœud… » filtre l'arbre dès 2 caractères. Chaque résultat affiche son libellé + son chemin complet (fil d'Ariane)."
+      },
+      {
+        "title": "Compteurs de produits par nœud",
+        "desc": "Chaque nœud affiche combien de produits y sont rattachés, sur deux niveaux : • le compte direct (produits posés exactement sur ce nœud) ; • le compte cumulé, qui agrège le nœud et tous ses descendants — un nœud parent totalise donc tout ce…"
+      },
+      {
+        "title": "Classer les produits en lot (IA)",
+        "desc": "Au lieu de ranger les lignes une par une, tu peux lancer une classification IA en lot : l'assistant lit le contenu de chaque ligne de la feuille active et propose le nœud le plus probable de la taxonomie cible."
+      },
+      {
+        "title": "Importer une taxonomie depuis un fichier",
+        "desc": "Plutôt que de saisir l'arbre à la main, importe une nomenclature existante au format .md / .txt (indentation = hiérarchie), .csv ou .xlsx."
+      },
+      {
+        "title": "Construire une taxonomie depuis les colonnes du PIM",
+        "desc": "Si ta feuille contient déjà des colonnes de catégorisation (ex. Famille, Sous-famille, Type), affecte à chacune un niveau (1, 2, 3…)."
+      },
+      {
+        "title": "Plusieurs taxonomies & gestion globale",
+        "desc": "Tu peux maintenir plusieurs taxonomies en parallèle (ex. une par axe d'analyse) et basculer de l'une à l'autre depuis la liste."
+      },
+      {
+        "title": "Lier des projets (designs) à un nœud",
+        "desc": "Au-delà des produits, un nœud feuille peut référencer des projets (designs de l'éditeur)."
+      },
+      {
         "title": "Auto-construction depuis le scraping",
         "desc": "Quand tu scrapes un site avec un breadcrumb (fil d'Ariane), IBS-Studio peut auto-construire une taxonomie à partir des chemins de catégorie rencontrés. Utile pour démarrer un PIM en miroir d'un site fournisseur."
       },
@@ -865,6 +937,22 @@ export const MODULES = [
         "desc": "Dans les Taxonomies : l'onglet Briefs de la page Taxonomies est le panneau dédié — décris ton besoin, l'IA pose des questions dynamiques, compose un panier de produits depuis le catalogue et structure un deck (avec prompts d'images)."
       },
       {
+        "title": "L'assistant brief en 5 étapes",
+        "desc": "Dans les Taxonomies, ouvrir un brief lance un assistant guidé qui transforme un besoin client en proposition commerciale livrable : 1."
+      },
+      {
+        "title": "Comment l'IA compose le panier",
+        "desc": "À la première arrivée sur l'étape Panier, la génération démarre automatiquement (panier vide + aucun journal antérieur)."
+      },
+      {
+        "title": "Éditer et exporter le panier",
+        "desc": "Le panier généré reste entièrement modifiable, ligne par ligne : quantités, ajout/retrait de produits, et surtout un prix appliqué qui peut surcharger le prix catalogue d'origine (les deux sont conservés)."
+      },
+      {
+        "title": "Deck et export PPTX",
+        "desc": "L'IA esquisse un deck composé de slides typées : couverture, contexte, grille de produits (layout 2×2 / 3×2 / 1×3), focus produit, budget (total + détail) et appel à l'action."
+      },
+      {
         "title": "Génération d'images",
         "desc": "Le DAM intègre la génération d'images via Gemini (modèle image dit « Image IA »). Tu décris une image en français ou en anglais, l'IA produit un visuel utilisable directement dans tes templates."
       },
@@ -890,6 +978,26 @@ export const MODULES = [
       {
         "title": "Créer un template de scraping",
         "desc": "1. Ouvre la page Templates scraping depuis le menu latéral 2. Clique Nouveau → entre un nom (ex: Nicoll), le domaine (nicoll.fr) et un pattern d'URL (. pour tout matcher) 3."
+      },
+      {
+        "title": "Onglet Recherche : « trouve-moi ça, là »",
+        "desc": "Pas d'URL sous la main ? Décris ce que tu cherches et où en langage naturel — « tondeuses Honda chez LeroyMerlin et Castorama »."
+      },
+      {
+        "title": "Plusieurs sites/URLs d'un coup (Liste · Fichier · Google Sheet)",
+        "desc": "Les onglets Crawl et Map + Extract ne se limitent pas à une seule URL. Le sélecteur de source propose 4 modes : • 1 URL : le cas simple. • Liste : colle plusieurs URLs racines, une par ligne."
+      },
+      {
+        "title": "Affiner un Crawl : limite, inclure/exclure (regex)",
+        "desc": "Avant d'extraire les liens, tu peux cadrer la découverte : • Limite de pages (1 à 500, défaut 30) — par URL racine en mode multi. • Inclure (regex) : ne garder que les chemins qui matchent, ex. /produits/.."
+      },
+      {
+        "title": "Suivre le coût et arrêter un run",
+        "desc": "• Chip de coût (en haut du modal) : il additionne en direct le dernier traitement et le cumul de la session, ventilé par source — LLM, Jina, Firecrawl, Bright Data."
+      },
+      {
+        "title": "Que récupère « Produit complet » exactement ?",
+        "desc": "Tous les onglets (Scrape / Crawl / Map+Extract / Recherche) finissent par le même moteur PIM (enrichProductCore), pour un résultat homogène quel que soit le chemin : • Specs au format KEY/VALUE (caractéristiques techniques structurées)."
       },
       {
         "title": "Scraper depuis la BDD (Map + Extract)",
@@ -923,6 +1031,22 @@ export const MODULES = [
         "desc": "En complément des sélecteurs, trois prompts optionnels guident le post-traitement LLM : • Prompt global (du template) : instructions de reformatage pour tous les produits de ce template — ex."
       },
       {
+        "title": "Cinq types de sélecteurs",
+        "desc": "Au-delà du CSS classique, chaque champ accepte plusieurs stratégies testées dans l'ordre — on garde la première valeur non vide, ce qui rend le template robuste quand le fournisseur change son CSS : • CSS : sélecteur standard, lit le texte…"
+      },
+      {
+        "title": "Transformations & specs KEY/VALUE",
+        "desc": "• Transformations par champ : trim, normalize-whitespace, uppercase/lowercase, parse-number, parse-price (isole le nombre d'un prix), absolutize-url (chemin relatif → URL absolue, posé automatiquement quand on capture un src/href), decode-h…"
+      },
+      {
+        "title": "Pré-actions & capture via extension Chrome",
+        "desc": "• Pré-actions (onglet Avancé) : avant la capture du DOM, on peut enchaîner click (déplier un accordéon/onglet), scroll, wait, waitForSelector et acceptCookies (auto-détection du bandeau) — indispensable pour les fiches dont les specs sont d…"
+      },
+      {
+        "title": "Ordre des champs & alias de marque (niveau fournisseur)",
+        "desc": "• Ordre des champs : réorganiser les champs par glisser-déposer fixe leur ordre d'affichage dans l'enrichissement — partagé entre tous les templates du même domaine."
+      },
+      {
         "title": "Statistiques d'usage",
         "desc": "Chaque template trace son nombre d'applications et de succès — un template au taux de succès en chute signale un site qui a changé de structure (sélecteurs à re-pointer)."
       },
@@ -954,6 +1078,18 @@ export const MODULES = [
         "desc": "Le journal des dernières requêtes de scraping (30 max, rafraîchi toutes les 2 s) : pour chaque appel, le contenu renvoyé par Jina et la réponse du LLM."
       },
       {
+        "title": "Règles : éditeur markdown avec aperçu live",
+        "desc": "L'onglet Règles est un éditeur côte à côte : tu écris du markdown à gauche, le rendu s'affiche en direct à droite (titres, listes, tableaux GFM)."
+      },
+      {
+        "title": "Fournisseurs : prompt par domaine, champs et taux de réussite",
+        "desc": "Sous chaque domaine fournisseur, tu retrouves le prompt fournisseur s'il en existe un (encadré bleu, badge « prompt fournisseur défini ») : ces consignes propres au site s'appliquent à tous ses templates."
+      },
+      {
+        "title": "Debug : un journal LOCAL à ce navigateur",
+        "desc": "Le journal de debug est stocké en local sur ce poste (localStorage), pas dans Firestore : il n'est donc pas partagé avec l'équipe et ne reflète que tes propres enrichissements récents."
+      },
+      {
         "title": "Voir aussi",
         "desc": "La création des templates se fait dans Templates scraping ; le mode d'emploi général (Scrape, Map + Extract, Crawl, limites anti-bot) est dans Scraping produits."
       }
@@ -973,8 +1109,28 @@ export const MODULES = [
         "desc": "Tout part d'un workflow contenant le node « Veille tarifaire » : 1. Une feuille de produits en entrée (ton catalogue : SKU/EAN, Nom, Marque, et ton prix). 2. Les sites concurrents à surveiller (un domaine par ligne, ex : amazon.fr). 3."
       },
       {
+        "title": "Comment chaque produit est retrouvé chez un concurrent",
+        "desc": "Tu ne fournis que le domaine d'un concurrent — pas l'URL de chaque fiche. Pour chaque produit, le node lance une recherche web cantonnée à ce domaine (site:domaine) : d'abord par SKU (ou EAN à défaut), puis par Marque + Nom."
+      },
+      {
+        "title": "Appariement automatique vs « à confirmer »",
+        "desc": "Avant de relever un prix, le node vérifie que la page décrit exactement ton produit. Si l'EAN relevé sur la page est identique à celui du produit, l'appariement est autoritaire (confiance 100 %, sans appel au modèle IA)."
+      },
+      {
+        "title": "Valider les correspondances (Confirmer / Rejeter)",
+        "desc": "Le tableau de bord est en lecture seule pour les prix, mais propose une action : une file « À confirmer » liste les appariements incertains (avec le % de confiance et un lien vers la page)."
+      },
+      {
+        "title": "Champs à scraper par site",
+        "desc": "Dans « Sites concurrents », chaque ligne accepte une liste de champs après une barre verticale : amazon.fr | price, availability. Sans champs précisés, seul le prix (price) est relevé."
+      },
+      {
+        "title": "Repérer un mauvais appariement",
+        "desc": "Dans le comparatif, survole un prix : une infobulle « Relevé : … » affiche le nom et l'EAN réellement lus sur la page concurrente."
+      },
+      {
         "title": "Identifiant du suivi",
-        "desc": "Le champ « Identifiant du suivi » du node mémorise, entre deux runs, les URLs concurrentes épinglées et l'historique des prix. Garde le même identifiant pour suivre un catalogue dans le temps ; change-le pour démarrer un suivi distinct."
+        "desc": "Le champ « Identifiant du suivi » du node mémorise, entre deux runs, les URLs concurrentes épinglées et l'historique des prix (30 derniers relevés par couple produit × site)."
       },
       {
         "title": "Alertes positionnement & variation",
@@ -1018,6 +1174,18 @@ export const MODULES = [
       {
         "title": "Export IDML (retour InDesign)",
         "desc": "Quand tu veux que ta graphiste finisse à la main dans InDesign : 1. Configure ta maquette + data-merge dans IBS-Studio 2. Export IDML → IBS-Studio reconstruit un fichier IDML standard avec les valeurs déjà mergées."
+      },
+      {
+        "title": "Pages déclinées vs Pack social — quelle différence ?",
+        "desc": "Les deux partent des mêmes quatre ratios (post carré 1080×1080, story/reel 1080×1920, paysage 1920×1080, bannière 1500×500), mais ne produisent pas la même chose : « Pages déclinées » envoie à l'IA un aperçu de la page plus la liste de ses…"
+      },
+      {
+        "title": "Ce que contient vraiment chaque fichier",
+        "desc": "• PDF : une image haute résolution du canvas (rendu ×2, qualité maximale) plus une couche de texte invisible sélectionnable/cherchable posée sur chaque bloc de texte. Le PDF reste donc « plat » visuellement mais le texte est copiable."
+      },
+      {
+        "title": "SVG : compatibilité Illustrator / Figma",
+        "desc": "L'export SVG ne se contente pas du toSVG() brut de Fabric, il le réécrit pour les éditeurs vectoriels exigeants : • les images (DAM, Unsplash, IDML lié) sont converties en data: URL le temps de l'export — Illustrator n'essaie plus de résoud…"
       },
       {
         "title": "Bonnes pratiques",
@@ -1069,6 +1237,26 @@ export const MODULES = [
       {
         "title": "Communication & contrôle",
         "desc": ""
+      },
+      {
+        "title": "Node « Web Scraping » unifié",
+        "desc": "Un seul node Web Scraping couvre toutes les façons de ramener des données du web, via un sélecteur de Mode : • Scrape — une ou plusieurs URLs → champs produit (Jina + IA). • Liste — pages catégorie → liste de produits."
+      },
+      {
+        "title": "Node « Graphique »",
+        "desc": "Le node « Graphique » transforme un tableau en image de graphe (PNG, via chart.js). Choisis le type — Barres, Lignes, Aire, Camembert, Anneau — la colonne d'axe X, la ou les colonnes de valeurs et une agrégation facultative."
+      },
+      {
+        "title": "Écran « Résultat »",
+        "desc": "Le bouton « Résultat » dans l'en-tête de l'éditeur ouvre une page dédiée (/workflows/:id/result) qui visualise le dernier run sous la forme la plus pertinente : Tableau de bord, Tableau, Graphique, Galerie (images), Document ou Données (JSO…"
+      },
+      {
+        "title": "Mes modèles (modèles personnalisés)",
+        "desc": "Au-delà de la galerie prête à l'emploi, tu peux enregistrer ton propre montage : le bouton « Modèle » dans l'éditeur sauvegarde le graphe courant comme modèle réutilisable (création ou mise à jour)."
+      },
+      {
+        "title": "Arrêter un run serveur (STOP)",
+        "desc": "Un workflow lancé par le cron ou un webhook tourne sans navigateur. Le panneau d'état du Cron affiche alors un bouton rouge STOP : il pose un drapeau d'abandon que l'exécuteur serveur interroge en continu et le run s'arrête sous quelques se…"
       },
       {
         "title": "Exemples de pipelines",
@@ -1146,6 +1334,18 @@ export const MODULES = [
         "desc": "Plus besoin d'avoir l'app ouverte : un répondeur serveur traite vos messages dès leur arrivée — • Questions : réponse LLM immédiate, avec recherche web automatique (Jina) quand la question l'exige (prix, actualité, contenu d'une URL) — sour…"
       },
       {
+        "title": "Approbation humaine dans un workflow",
+        "desc": "Le node « Approbation Telegram » (catégorie Communication dans l'éditeur de workflow) met le run en pause et demande une validation à un humain, directement dans la messagerie : • Le bot envoie ta question avec deux boutons inline ✅ Approuv…"
+      },
+      {
+        "title": "Sécurité : secret + allowlist",
+        "desc": "Le webhook entrant n'accepte un message que si deux conditions sont réunies : • Le secret token envoyé par Telegram correspond au webhookSecret enregistré côté serveur (toute requête sans le bon en-tête X-Telegram-Bot-Api-Secret-Token est r…"
+      },
+      {
+        "title": "Pourquoi jamais de double réponse",
+        "desc": "À l'arrivée d'un message, le répondeur serveur tente un claim transactionnel : il fait passer la fiche de pending à processing (et s'attribue workerId: 'server') en une seule transaction."
+      },
+      {
         "title": "Digest quotidien",
         "desc": "Dans Réglages → Connecteurs → Telegram, activez le digest quotidien : chaque matin à 08:00 (heure de Paris), le bot envoie un résumé des dernières 24 h — workflows réussis/en échec (avec les noms) et messages en attente de traitement."
       },
@@ -1185,8 +1385,16 @@ export const MODULES = [
         "desc": "Des catégories (Écrire, Apprendre, Code, Vie quotidienne, Idées, Image, Mes prompts) proposent des prompts prêts à l'emploi."
       },
       {
+        "title": "Réutiliser et dupliquer un prompt",
+        "desc": "Le menu ⋯ de chaque prompt permet de le renommer / éditer, le dupliquer (crée une copie « titre (copie) » à adapter) ou le supprimer. Chaque usage est comptabilisé : les prompts les plus sollicités et les favoris sont mis en avant."
+      },
+      {
         "title": "Choix du modèle",
         "desc": "Le Chat utilise une cascade de modèles : si le modèle principal échoue, le suivant prend le relais automatiquement."
+      },
+      {
+        "title": "Changer de modèle à la volée",
+        "desc": "Le badge du modèle, à côté du bouton d'envoi, est cliquable : il déplie la liste de tous les modèles de la cascade (regroupés par fournisseur, avec leur tarif indicatif entrée / sortie)."
       },
       {
         "title": "À ne pas confondre",
@@ -1224,6 +1432,10 @@ export const MODULES = [
         "desc": "Crée et édite les rôles de l'équipe via une matrice de permissions par module. Trois vues : Cartes (par module), Arbre (hiérarchie) et Carte mentale (graphe)."
       },
       {
+        "title": "Les rôles sont entièrement personnalisés",
+        "desc": "Aucun rôle n'est livré par défaut : tu crées toi-même les rôles dont l'équipe a besoin (un nom + une sélection de permissions), tu les renommes et les supprimes librement."
+      },
+      {
         "title": "Modules couverts par les permissions",
         "desc": "Bibliothèque, Import (par format), DAM, PIM, Taxonomies, Scraping (templates & hub), Workflows, Animation, Chat IA, Telegram et Paramètres — chacun avec ses actions (créer, éditer, supprimer, exporter, exécuter…)."
       },
@@ -1251,6 +1463,10 @@ export const MODULES = [
         "desc": "• Renseigne les clés API de chaque fournisseur (Gemini, Claude, OpenAI, DeepSeek, Qwen, Kimi, OpenRouter) et teste-les d'un clic. • Choisis le modèle de chaque fournisseur."
       },
       {
+        "title": "Budgets IA et proxy serveur",
+        "desc": "Les appels LLM passent par un proxy serveur : la requête part sans ta clé API, le serveur ajoute la clé (lue sur ton profil) et applique ton budget mensuel."
+      },
+      {
         "title": "Telegram",
         "desc": "Colle le bot token (via BotFather) et ton chat ID pour piloter l'app depuis Telegram. C'est ici que le bot du module Telegram puise sa configuration."
       },
@@ -1269,6 +1485,10 @@ export const MODULES = [
       {
         "title": "Onglet Cookies",
         "desc": "Gère les cookies de session pour scraper des sites B2B derrière login. Colle les cookies copiés depuis ton navigateur ; ils sont injectés dans les requêtes de scraping. Leur validité est limitée dans le temps (à re-coller régulièrement)."
+      },
+      {
+        "title": "Onglet Données — schéma Firestore (réservé au propriétaire)",
+        "desc": "Un diagramme entité-relation (ERD) de la base : chaque collection Firestore est une table affichant tous ses champs, ses clés PK/FK et ses relations (avec cardinalités)."
       },
       {
         "title": "Onglets Statistiques & Firebase",

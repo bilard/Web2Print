@@ -54,10 +54,34 @@ export const hyperframesSection: HelpSection = {
 - **Sauvegarder dans le DAM** : l'animation rejoint la bibliothèque (onglet *Animations HTML*), réouvrable et re-téléchargeable.`,
     },
     {
+      type: 'text',
+      md: `### Le ZIP est une animation autonome et jouable
+
+Le \`index.html\` est **self-contained** (CSS, JS, données et auto-play tout inline) : double-clique-le, il s'ouvre même en \`file://\`, sans serveur. Le ZIP contient aussi un \`README.md\` (mode d'emploi) et un \`vars.json\` (les variables — composition, marque, caption, style — à titre informatif).
+
+À l'ouverture, l'animation **boucle automatiquement** et une **barre de contrôle flottante** apparaît en bas :
+
+- **Fit** (touche \`0\`) adapte à la fenêtre · **100 %** (touche \`1\`) affiche en taille réelle pixel-perfect.
+- **+ / −** (ou \`Ctrl/Cmd + molette\`) zooment ; **Espace + glisser** (ou clic du milieu) fait un panoramique.
+- **P** met en pause / reprend ; **double-clic** redémarre l'animation.
+
+> GSAP est chargé depuis un CDN public : une **connexion internet** est nécessaire à la première lecture.`,
+    },
+    {
       type: 'menu-link',
       target: { path: '/dashboard', highlightId: 'dashboard.sidebar.images', damTab: 'videos' },
       label: 'Voir les animations dans le DAM',
       icon: Sparkles,
+    },
+    {
+      type: 'text',
+      md: `### Gérer ses animations dans le DAM
+
+Dans l'onglet *Animations HTML* du DAM, chaque carte affiche le **ratio**, le **poids** et la **date** :
+
+- **Ouvrir** joue l'animation dans un nouvel onglet (le ZIP est extrait à la volée, l'\`index.html\` est servi tel quel).
+- **Télécharger ZIP** récupère le fichier (nommé d'après le titre, sinon marque/caption).
+- **Renommer** en cliquant le titre (crayon), **Supprimer** via la corbeille.`,
     },
     {
       type: 'text',
