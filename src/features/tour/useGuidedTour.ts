@@ -6,11 +6,13 @@ import { useTourStore, type TourId } from './tour.store'
 import type { TourStep } from './types'
 import { editorTourSteps } from './editorTourSteps'
 import { dashboardTourSteps } from './dashboardTourSteps'
+import { workflowTourSteps } from './workflowTourSteps'
 import { waitForElement } from './waitForElement'
 
 const TOUR_STEPS: Record<TourId, TourStep[]> = {
   editor: editorTourSteps,
   dashboard: dashboardTourSteps,
+  workflow: workflowTourSteps,
 }
 
 /** Exécute l'effet de bord d'une étape puis attend son élément cible. */

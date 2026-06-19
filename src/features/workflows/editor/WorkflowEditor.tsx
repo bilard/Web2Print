@@ -315,7 +315,7 @@ export function WorkflowEditor() {
   )
 
   return (
-    <div className="flex-1 bg-background" onDragOver={onDragOver} onDrop={onDrop}>
+    <div data-tour="wf-canvas" className="flex-1 bg-background" onDragOver={onDragOver} onDrop={onDrop}>
       <FlowEdgeDefs />
       <ReactFlow
         nodes={nodes}

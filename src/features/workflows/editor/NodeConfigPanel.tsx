@@ -363,7 +363,7 @@ export function NodeConfigPanel() {
   const showEdge = !node && !!selectedEdge
 
   return (
-    <aside className="w-72 border-l border-neutral-800 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
+    <aside data-tour="wf-inspector" className="w-72 border-l border-neutral-800 bg-surface-2 flex flex-col overflow-hidden p-4 h-full">
       <h3 className="text-xs uppercase text-neutral-500 font-semibold mb-3 shrink-0">
         {showEdge ? 'Connexion' : 'Configuration'}
       </h3>

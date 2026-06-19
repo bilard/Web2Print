@@ -23,6 +23,7 @@ import { WebhookPanel } from './WebhookPanel'
 import { PromptToFlowModal } from '../promptToFlow/PromptToFlowModal'
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
 import { useCan } from '@/features/access/useAccess'
+import { TourLauncher } from '@/features/tour/TourLauncher'
 
 export function WorkflowEditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -125,6 +126,7 @@ export function WorkflowEditorPage() {
             </button>
             <span className="text-white/20" aria-hidden="true">/</span>
             <input
+              data-tour="wf-name"
               value={wf.name}
               onChange={(e) => useWorkflowStore.getState().patch({ name: e.target.value })}
               className="bg-transparent border-none outline-none text-sm flex-1 min-w-0 px-2 py-1 rounded-md hover:bg-white/[0.04] focus:bg-white/[0.04] transition-colors"
@@ -133,6 +135,7 @@ export function WorkflowEditorPage() {
           </nav>
           <span className="text-xs text-neutral-500 shrink-0">{dirty ? 'Modifications…' : 'Enregistré'}</span>
           <button
+            data-tour="wf-generate-ai"
             onClick={() => setShowGenerate(true)}
             className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
             title="Générer un workflow depuis un prompt (IA)"
@@ -140,6 +143,7 @@ export function WorkflowEditorPage() {
             <Sparkles className="w-4 h-4 text-indigo-400" /> Générer (IA)
           </button>
           <button
+            data-tour="wf-results"
             onClick={() => nav(`/workflows/${wf.id}/result`)}
             className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
             title="Visualiser le résultat du dernier run"
@@ -148,6 +152,7 @@ export function WorkflowEditorPage() {
           </button>
           {canEdit && (
             <button
+              data-tour="wf-save-template"
               onClick={() => setShowSaveTemplate(true)}
               className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-white/80 flex items-center gap-2 text-sm"
               title="Enregistrer ce montage comme modèle réutilisable"
@@ -186,7 +191,7 @@ export function WorkflowEditorPage() {
                 >
                   <StepForward className="w-4 h-4 text-amber-400" /> Pas à pas
                 </button>
-                <button onClick={() => void run()} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
+                <button data-tour="wf-run" onClick={() => void run()} className="px-3 py-1.5 rounded bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2 text-sm">
                   <Play className="w-4 h-4" /> Run
                 </button>
               </>
@@ -213,6 +218,7 @@ export function WorkflowEditorPage() {
         </div>
         <RunPanel />
       </div>
+        <TourLauncher tourId="workflow" />
         {showGenerate && <PromptToFlowModal onClose={() => setShowGenerate(false)} />}
         {showSaveTemplate && uid && (
           <SaveAsTemplateDialog workflow={wf} uid={uid} onClose={() => setShowSaveTemplate(false)} />

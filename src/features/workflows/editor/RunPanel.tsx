@@ -28,6 +28,7 @@ export function RunPanel() {
 
   return (
     <div
+      data-tour="wf-run-logs"
       className="border-t border-neutral-800 bg-background text-sm shrink-0 relative flex flex-col"
       style={{ height: collapsed ? 30 : height }}
     >

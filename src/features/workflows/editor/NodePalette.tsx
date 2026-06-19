@@ -189,7 +189,7 @@ export function NodePalette() {
   }
 
   return (
-    <aside className="w-60 border-r border-neutral-800 bg-surface-2 overflow-y-auto p-3">
+    <aside data-tour="wf-palette" className="w-60 border-r border-neutral-800 bg-surface-2 overflow-y-auto p-3">
       <h3 className="text-[10px] uppercase text-neutral-500 font-semibold mb-1 tracking-wider">
         Blocs
       </h3>
@@ -206,7 +206,7 @@ export function NodePalette() {
           // pas exister si on est sur Utilitaires/Export sans antérieur visible.
           const prevLabel = idx > 0 ? visibleSteps[idx - 1].label : null
           return (
-            <li key={step.category} className="relative pl-7 pb-4">
+            <li key={step.category} data-tour={`wf-step-${step.category}`} className="relative pl-7 pb-4">
               {/* Connecteur vertical entre étapes */}
               {!isLast ? (
                 <span
