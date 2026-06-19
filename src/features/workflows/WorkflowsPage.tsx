@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import {
   ArrowLeft, LayoutGrid, List, Plus, Trash2, Workflow as WorkflowIcon,
   Folder, FolderPlus, Pencil, Check, X, ChevronDown, ChevronRight,
@@ -80,6 +81,17 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
     await saveWorkflow(uid, wf)
     nav(`/workflows/${wf.id}`)
   }
+
+  useModuleIntent('workflows', (action) => {
+    if (action === 'action:new') { void create(); return }
+    const sel = action === 'action:my-templates'
+      ? '[data-wf-section="my-templates"]'
+      : action === 'action:builtin-templates'
+      ? '[data-wf-section="builtin-templates"]'
+      : null
+    if (sel) document.querySelector<HTMLElement>(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+
   const createFromTemplate = async (template: WorkflowTemplate) => {
     if (!uid) return
     const wf = workflowFromTemplate(template, uid)
@@ -359,7 +371,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
           <h2 className="text-[11px] uppercase tracking-wider text-white/30 mb-3">
             Démarrer depuis un modèle
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div data-wf-section="builtin-templates" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {WORKFLOW_TEMPLATES.map((t) => (
               <button
                 key={t.id}
@@ -377,12 +389,14 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
       {/* Modèles créés par l'utilisateur (privés) */}
       {canCreate && uid && (
-        <UserTemplatesSection
-          uid={uid}
-          canEdit={canEdit}
-          canDelete={canDelete}
-          onUse={(t) => void createFromTemplate(t)}
-        />
+        <div data-wf-section="my-templates">
+          <UserTemplatesSection
+            uid={uid}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            onUse={(t) => void createFromTemplate(t)}
+          />
+        </div>
       )}
 
       {loading ? (
