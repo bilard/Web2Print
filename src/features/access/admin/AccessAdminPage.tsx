@@ -3,9 +3,14 @@ import { useState } from 'react'
 import { Users, Shield } from 'lucide-react'
 import { UsersTab } from './UsersTab'
 import { RolesTab } from './RolesTab'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 export function AccessAdminPage() {
   const [tab, setTab] = useState<'users' | 'roles'>('users')
+  useModuleIntent('access', (action) => {
+    if (action === 'tab:users') setTab('users')
+    else if (action === 'tab:roles') setTab('roles')
+  })
   return (
     <div className="h-full overflow-hidden bg-background p-6 flex flex-col">
       <div className="max-w-[1800px] w-full mx-auto flex flex-col gap-4 flex-1 min-h-0">
