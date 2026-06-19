@@ -31,6 +31,8 @@ import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { registerTourSectionNavigator } from '@/features/tour/tour.store'
 import { MODULE_ITEMS as menuItems, SECTION_PERMISSION, type Section } from '@/features/navigation/modules'
+import { ModuleTree } from '@/features/navigation/ModuleTree'
+import { useModuleIntentStore } from '@/stores/moduleIntent.store'
 
 const DataPage = lazy(() => import('@/pages/DataPage'))
 const TaxonomiesPage = lazy(() => import('@/pages/TaxonomiesPage'))
@@ -51,15 +53,17 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const setHelpContext = useHelpStore((s) => s.setActiveContext)
+  const setModuleIntent = useModuleIntentStore((s) => s.set)
   const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
   const [activeSection, setActiveSection] = useState<Section>(initialSection)
   // Ouvre la section demandée par la navigation (ex: lien d'aide « Importer un fichier »
   // → state { section: 'import' }). location.key change à chaque navigation, y compris
   // vers la même route → l'écran s'ouvre même si on est déjà sur le dashboard.
   useEffect(() => {
-    const requested = (location.state as { section?: Section } | null)?.section
-    if (requested) setActiveSection(requested)
-  }, [location.key, location.state])
+    const state = location.state as { section?: Section; intent?: string } | null
+    if (state?.section) setActiveSection(state.section)
+    setModuleIntent(state?.intent ?? null)
+  }, [location.key, location.state, setModuleIntent])
   // Permet aux étapes du tour guidé d'ouvrir une section (navigation injectée).
   useEffect(() => {
     registerTourSectionNavigator((section) => setActiveSection(section as Section))
@@ -313,43 +317,44 @@ export default function DashboardPage() {
           role="menubar"
           aria-orientation="vertical"
         >
-          {visibleMenuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
-            const isActive = activeSection === id
-            return (
-              <button
-                id={`menu-${id}`}
-                data-help-id={`dashboard.sidebar.${id}`}
-                ref={id === 'blank' ? newProjectHighlight.ref : undefined}
-                key={id}
-                role="menuitem"
-                tabIndex={isActive ? 0 : -1}
-                aria-current={isActive ? 'page' : undefined}
-                aria-label={!sidebarOpen ? label : undefined}
-                title={!sidebarOpen ? label : undefined}
-                onClick={() => setActiveSection(id)}
-                onKeyDown={(e) => handleKeyDown(e, id)}
-                className={`w-full flex items-center ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'} py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2 ${
-                  isActive
-                    ? `${activeBg} ${activeText} font-medium`
-                    : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04]'
-                } ${id === 'blank' ? newProjectHighlight.className : ''}`}
-              >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? accent : 'opacity-50'}`} aria-hidden="true" />
-                {sidebarOpen && (
-                  <>
-                    <span className="flex-1 text-left">{label}</span>
-                    {id === 'library' && projects && projects.length > 0 && (
-                      <span className={`text-[11px] tabular-nums px-1.5 py-px rounded ${
-                        isActive ? 'bg-sky-500/[0.15] text-sky-300' : 'text-white/25'
-                      }`} aria-label={`${projects.length} projets`}>
-                        {projects.length}
-                      </span>
-                    )}
-                  </>
-                )}
-              </button>
-            )
-          })}
+          {sidebarOpen ? (
+            <ModuleTree
+              modules={visibleMenuItems}
+              activeSection={activeSection}
+              onOpen={(section) => setActiveSection(section)}
+              onOpenChild={(section, intent, routeTo) => {
+                if (routeTo) { navigate(routeTo); return }
+                navigate('/dashboard', { state: { section, intent } })
+              }}
+              variant="sidebar"
+            />
+          ) : (
+            visibleMenuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {
+              const isActive = activeSection === id
+              return (
+                <button
+                  id={`menu-${id}`}
+                  data-help-id={`dashboard.sidebar.${id}`}
+                  ref={id === 'blank' ? newProjectHighlight.ref : undefined}
+                  key={id}
+                  role="menuitem"
+                  tabIndex={isActive ? 0 : -1}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => setActiveSection(id)}
+                  onKeyDown={(e) => handleKeyDown(e, id)}
+                  className={`w-full flex items-center justify-center px-0 py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2 ${
+                    isActive
+                      ? `${activeBg} ${activeText} font-medium`
+                      : 'text-white/45 hover:text-white/70 hover:bg-white/[0.04]'
+                  } ${id === 'blank' ? newProjectHighlight.className : ''}`}
+                >
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? accent : 'opacity-50'}`} aria-hidden="true" />
+                </button>
+              )
+            })
+          )}
         </nav>
 
         {/* Data toolbar portal target */}
