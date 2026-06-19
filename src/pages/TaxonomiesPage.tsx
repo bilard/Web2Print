@@ -15,6 +15,7 @@ import { TaxonomyEmptyState } from '@/components/taxonomy/TaxonomyEmptyState'
 import { TaxonomyMainTabs } from '@/components/taxonomy/TaxonomyMainTabs'
 import { BriefsPanel } from '@/components/briefs/BriefsPanel'
 import { useBriefUIStore } from '@/stores/brief.store'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 interface TaxonomiesPageProps {
   embedded?: boolean
@@ -37,8 +38,16 @@ export default function TaxonomiesPage({ embedded = false }: TaxonomiesPageProps
   const addNode = useAddNode()
   const currentTab = useBriefUIStore((s) => s.currentTab)
 
+  const setCurrentTab = useBriefUIStore((s) => s.setCurrentTab)
+
   const [importOpen, setImportOpen] = useState(false)
   const [linkNodeId, setLinkNodeId] = useState<string | null>(null)
+
+  useModuleIntent('taxonomies', (action) => {
+    if (action === 'tab:tree') setCurrentTab('tree')
+    else if (action === 'tab:briefs') setCurrentTab('briefs')
+    else if (action === 'action:import') setImportOpen(true)
+  })
 
   const selectedTaxonomy =
     taxonomies?.find((t) => t.id === selectedTaxonomyId) ?? null
