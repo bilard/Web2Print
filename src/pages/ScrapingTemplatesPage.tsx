@@ -5,6 +5,7 @@ import { TemplateEditor } from '@/features/scraping-templates/TemplateEditor'
 import { emptyTemplate, listTemplates, deleteTemplate } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
 import { useCan } from '@/features/access/useAccess'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { toast } from 'sonner'
 
 export default function ScrapingTemplatesPage() {
@@ -35,6 +36,10 @@ export default function ScrapingTemplatesPage() {
     const t = emptyTemplate('exemple.com')
     setSelected(t)
   }
+
+  useModuleIntent('scraping-templates', (action) => {
+    if (action === 'action:new') createNew()
+  })
 
   const clone = (source: ScrapingTemplate) => {
     const t: ScrapingTemplate = {
