@@ -442,6 +442,17 @@ export const editorTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="editor-nav"]',
+    requireSelector: '[data-tour="editor-nav"]',
+    popover: {
+      title: 'Modules & notifications',
+      description:
+        'À gauche du pied de page : le menu « Modules » saute vers n’importe quel espace de l’app sans quitter l’éditeur, et la cloche regroupe vos notifications (badge de non-lus, historique, tout marquer comme lu).',
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
     popover: {
       title: 'C’est tout 🎉',
       description:

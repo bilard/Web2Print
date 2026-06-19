@@ -25,7 +25,7 @@ export function EditorFooter() {
     <footer data-tour="footer" className="shrink-0 bg-surface border-t border-white/10 z-20">
       <div className="h-11 flex items-center gap-2.5 px-3">
         {/* Menus (intégrés ici sur l'éditeur ; FAB flottants ailleurs) */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div data-tour="editor-nav" className="flex items-center gap-0.5 shrink-0">
           <ModuleNavDrawer variant="inline" />
           <NotificationBell variant="inline" />
         </div>
