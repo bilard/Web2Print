@@ -19,6 +19,5 @@ export function useModuleIntent(prefix: string, apply: (action: string) => void)
     if (!intent.startsWith(p)) return
     applyRef.current(intent.slice(p.length))
     setIntent(null) // one-shot
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seq])
 }

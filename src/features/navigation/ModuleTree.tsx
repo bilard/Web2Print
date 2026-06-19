@@ -20,10 +20,9 @@ interface ModuleTreeProps {
   activeSection?: Section
   onOpen: (section: Section) => void
   onOpenChild: (section: Section, intent: string, routeTo?: string) => void
-  variant: 'sidebar' | 'drawer'
 }
 
-export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, variant }: ModuleTreeProps) {
+export function ModuleTree({ modules, activeSection, onOpen, onOpenChild }: ModuleTreeProps) {
   const isAdmin = useIsAdmin()
   const permissions = useAccessStore((s) => s.permissions)
   const [expanded, setExpanded] = useState<Record<string, boolean>>(readExpanded)

@@ -326,7 +326,6 @@ export default function DashboardPage() {
                 if (routeTo) { navigate(routeTo); return }
                 navigate('/dashboard', { state: { section, intent } })
               }}
-              variant="sidebar"
             />
           ) : (
             visibleMenuItems.map(({ id, icon: Icon, label, accent, activeBg, activeText }) => {

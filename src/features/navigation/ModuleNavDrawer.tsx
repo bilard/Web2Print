@@ -103,7 +103,6 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
                   if (routeTo) navigate(routeTo)
                   else navigate('/dashboard', { state: { section, intent } })
                 }}
-                variant="drawer"
               />
               <div className="mt-2 pt-2 border-t border-white/[0.06]">
                 <ResumeSetupButton variant="item" />
