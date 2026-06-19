@@ -24,6 +24,7 @@ const CONNECTORS: Record<string, ConnectorMeta> = {
   sheets:   { label: 'Sheets',   color: 'text-green-300',   dot: 'bg-green-400/70' },
   gmail:    { label: 'Gmail',    color: 'text-red-300',     dot: 'bg-red-400/70' },
   telegram: { label: 'Telegram', color: 'text-cyan-300',    dot: 'bg-cyan-400/70' },
+  make:     { label: 'Make',     color: 'text-fuchsia-300', dot: 'bg-fuchsia-400/70' },
 }
 
 /**
@@ -58,6 +59,8 @@ const CONNECTORS_BY_TYPE: Record<string, string[]> = {
   'send-gmail': ['gmail'],
   'send-telegram': ['telegram'],
   'telegram-approval': ['telegram'],
+  // Passerelle webhook sortant (Make et son catalogue d'apps)
+  'webhook-post': ['make'],
 }
 
 /** Retourne les métadonnées des connecteurs d'un node (déclarés ou inférés par type). */

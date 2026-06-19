@@ -8,6 +8,7 @@ import './listProducts'
 import './comparePrices'
 import './google'
 import './webScraping'
+import './webhookPost'
 
 /** Types présents côté client mais non exécutables côté serveur (navigateur/OAuth/canvas). */
 export const SERVER_UNSUPPORTED = new Set<string>([
