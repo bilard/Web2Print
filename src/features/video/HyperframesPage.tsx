@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileCode2, Sparkles } from 'lucide-react'
 import { VideoModal } from './VideoModal'
 import { UserAnimationsList } from './UserAnimationsList'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 interface Props {
   embedded?: boolean
@@ -9,6 +10,12 @@ interface Props {
 
 export function HyperframesPage({ embedded = false }: Props) {
   const [open, setOpen] = useState(false)
+
+  useModuleIntent('hyperframes', (action) => {
+    if (action === 'action:generate') setOpen(true)
+    else if (action === 'action:list')
+      document.querySelector<HTMLElement>('[data-hf-section="list"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 
   return (
     <div className={`flex flex-col h-full ${embedded ? '' : 'min-h-screen bg-background'}`}>
@@ -33,7 +40,9 @@ export function HyperframesPage({ embedded = false }: Props) {
         </button>
       </header>
 
-      <UserAnimationsList />
+      <div data-hf-section="list">
+        <UserAnimationsList />
+      </div>
 
       {open && <VideoModal source="standalone" onClose={() => setOpen(false)} />}
     </div>
