@@ -42,6 +42,7 @@ import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/featur
 import { useCan } from '@/features/access/useAccess'
 import { EasyCatalogExportModal } from '@/features/easycatalog/EasyCatalogExportModal'
 import { OptionHelp } from '@/components/shared/OptionHelp'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 type RightTab = 'fields' | 'taxonomy'
 
@@ -73,6 +74,19 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [ecExportOpen, setEcExportOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
+
+  useModuleIntent('data', (action) => {
+    switch (action) {
+      case 'action:import': setImportModalOpen(true); break
+      case 'action:scrape': setScrapingOpen(true); break
+      case 'action:create-empty': createEmpty(); break
+      case 'action:update': setUpdateModalOpen(true); break
+      case 'action:export-xlsx':
+        exportToXlsx(sheets, `${currentFileName ?? sheets[activeSheetIndex]?.name ?? 'export'}.xlsx`)
+        break
+      case 'action:export-ec': setEcExportOpen(true); break
+    }
+  })
 
   // DataPage = flux legacy BDD uniquement. Reset toute sélection PIM laissée
   // dans le store par une session précédente — sinon ScrapingModal route le
