@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, Panel, applyNodeChanges, useReactFlow,
-  type Node, type NodeChange, type NodeMouseHandler,
+  type Node, type NodeChange, type NodeMouseHandler, type FitViewOptions,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { Database, Zap, Plus, Minus, Maximize } from 'lucide-react'
@@ -11,7 +11,7 @@ import { buildDiagram, type TableNodeData } from './buildDiagram'
 import { TABLES } from './firestoreSchema'
 import { TableNode } from './TableNode'
 import { TableDataPanel } from './TableDataPanel'
-import { FieldInspectorProvider } from './FieldInspector'
+import { SchemaPanelProvider, TableSchemaPanel } from './TableSchemaPanel'
 import { useDiagramLayout } from './useDiagramLayout'
 
 const nodeTypes = { table: TableNode }
@@ -45,6 +45,7 @@ function DataModelDiagramInner() {
   const initial = useMemo(() => buildDiagram(), [])
   const [nodes, setNodes] = useState<Node[]>(initial.nodes)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [schema, setSchema] = useState<{ tableId: string; field?: string } | null>(null)
   const { layout, saveLayout } = useDiagramLayout()
   const { fitView } = useReactFlow()
 
@@ -65,25 +66,35 @@ function DataModelDiagramInner() {
     setNodes((prev) => { saveLayout(prev); return prev })
   }, [saveLayout])
 
+  // Clic simple sur une table → panneau schéma (droite). Double-clic → données (bas).
+  const openSchema = useCallback((tableId: string, field?: string) => setSchema({ tableId, field }), [])
+  const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
+    setSchema({ tableId: (node.data as TableNodeData).table.id })
+  }, [])
   const onNodeDoubleClick: NodeMouseHandler = useCallback((_, node) => {
     const { table } = node.data as TableNodeData
     if (table.query) setSelectedId(table.id)
   }, [])
 
-  // Recadre le diagramme sur une table (suivi d'une clé étrangère depuis la fiche de champ).
+  // Recadre le diagramme sur une table (suivi d'une clé étrangère depuis le panneau schéma).
   const focusTable = useCallback(
-    (id: string) => fitView({ nodes: [{ id }], padding: 0.6, duration: 350, maxZoom: 1.2 }),
+    (id: string) => {
+      setSchema({ tableId: id })
+      fitView({ nodes: [{ id }], padding: 0.6, duration: 350, maxZoom: 1.2 } as FitViewOptions)
+    },
     [fitView],
   )
 
   const selectedTable = selectedId ? TABLES.find((t) => t.id === selectedId) ?? null : null
+  const schemaTable = schema ? TABLES.find((t) => t.id === schema.tableId) ?? null : null
+  const highlightId = schema?.tableId ?? selectedId
   const styledNodes = useMemo(
-    () => nodes.map((n) => (n.id === selectedId ? { ...n, selected: true } : { ...n, selected: false })),
-    [nodes, selectedId],
+    () => nodes.map((n) => (n.id === highlightId ? { ...n, selected: true } : { ...n, selected: false })),
+    [nodes, highlightId],
   )
 
   return (
-    <FieldInspectorProvider onFocusTable={focusTable}>
+    <SchemaPanelProvider value={openSchema}>
     <div className="relative flex h-full min-h-[540px] flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-well">
       {/* En-tête */}
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3">
@@ -105,6 +116,7 @@ function DataModelDiagramInner() {
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onNodeDragStop={onNodeDragStop}
+          onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
           nodesConnectable={false}
           elementsSelectable
@@ -118,11 +130,21 @@ function DataModelDiagramInner() {
           <DiagramControls />
         </ReactFlow>
 
+        {schemaTable && (
+          <TableSchemaPanel
+            table={schemaTable}
+            highlightField={schema?.field}
+            onClose={() => setSchema(null)}
+            onFocusTable={focusTable}
+            onShowData={(id) => setSelectedId(id)}
+          />
+        )}
+
         {selectedTable && (
-          <TableDataPanel table={selectedTable} onClose={() => setSelectedId(null)} />
+          <TableDataPanel table={selectedTable} onClose={() => setSelectedId(null)} rightInset={schemaTable ? 330 : 0} />
         )}
       </div>
     </div>
-    </FieldInspectorProvider>
+    </SchemaPanelProvider>
   )
 }

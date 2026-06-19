@@ -2,7 +2,7 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { useThemeStore } from '@/stores/theme.store'
 import { DOMAIN_HEX, type FieldSchema, type TableSchema } from './firestoreSchema'
-import { useFieldInspector } from './FieldInspector'
+import { useOpenSchema } from './TableSchemaPanel'
 import type { TableNodeData } from './buildDiagram'
 
 const SIDES = [
@@ -14,7 +14,7 @@ const SIDES = [
 const HANDLE_CLASS = '!w-1.5 !h-1.5 !border-0 !opacity-0'
 
 function FieldRow({ f, table }: { f: FieldSchema; table: TableSchema }) {
-  const inspector = useFieldInspector()
+  const openSchema = useOpenSchema()
   return (
     <button
       type="button"
@@ -22,8 +22,7 @@ function FieldRow({ f, table }: { f: FieldSchema; table: TableSchema }) {
       className="nodrag flex w-full items-center gap-2 border-t border-white/[0.06] px-3 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
       onClick={(e) => {
         e.stopPropagation()
-        const r = e.currentTarget.getBoundingClientRect()
-        inspector.open(f, table, { left: r.left, right: r.right, top: r.top })
+        openSchema(table.id, f.name)
       }}
     >
       {f.pk && <span className="rounded bg-amber-500/90 px-1 py-0.5 text-[8px] font-bold text-[#1a1206] tracking-wide">PK</span>}

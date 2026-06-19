@@ -8,7 +8,7 @@ import { ValueViewer } from './ValueViewer'
 
 /** Panneau bas : données LIVE de la table. Pour les BDD (flattenSheets), un sélecteur
  *  permet de choisir la base ; ses colonnes & lignes propres s'affichent. */
-export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose: () => void }) {
+export function TableDataPanel({ table, onClose, rightInset = 0 }: { table: TableSchema; onClose: () => void; rightInset?: number }) {
   const { rows, loading, error, live, sheets } = useTableData(table.query ?? null)
   const isFlat = Boolean(table.query?.flattenSheets)
   const [sheetIdx, setSheetIdx] = useState(0)
@@ -68,7 +68,7 @@ export function TableDataPanel({ table, onClose }: { table: TableSchema; onClose
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-10 flex h-[50%] min-h-[240px] flex-col border-t-2 border-indigo-500/60 bg-well shadow-[0_-12px_30px_rgba(0,0,0,0.4)]">
+    <div style={{ right: rightInset }} className="absolute bottom-0 left-0 z-10 flex h-[50%] min-h-[240px] flex-col border-t-2 border-indigo-500/60 bg-well shadow-[0_-12px_30px_rgba(0,0,0,0.4)]">
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-2.5">
         <span className="rounded-md bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#fff]">TABLE</span>
         <span className="font-mono text-[13px] font-semibold text-white">{table.label}</span>
