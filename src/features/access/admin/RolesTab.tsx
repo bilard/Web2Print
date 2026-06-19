@@ -67,6 +67,8 @@ export function RolesTab() {
   if (editing) {
     return (
       <div className="flex flex-col gap-3">
+        {/* Bandeau épinglé : reste visible pendant le défilement de la liste. */}
+        <div className="sticky top-0 z-10 -mx-1 px-1 pt-0.5 pb-2.5 bg-background flex flex-col gap-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
           <input
             autoFocus value={editing.name}
@@ -96,6 +98,7 @@ export function RolesTab() {
             <button onClick={expandAll} title="Tout déplier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsUpDown className="w-3.5 h-3.5" /></button>
             <button onClick={collapseAll} title="Tout replier" className="p-1.5 rounded-md text-white/40 hover:text-white/75 border border-white/10 transition-colors"><ChevronsDownUp className="w-3.5 h-3.5" /></button>
           </>)}
+        </div>
         </div>
 
         {viewMode === 'mindmap' ? (

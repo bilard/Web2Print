@@ -7,8 +7,8 @@ import { RolesTab } from './RolesTab'
 export function AccessAdminPage() {
   const [tab, setTab] = useState<'users' | 'roles'>('users')
   return (
-    <div className="h-full overflow-y-auto bg-background p-6">
-      <div className="max-w-[1800px] mx-auto flex flex-col gap-4">
+    <div className="h-full overflow-hidden bg-background p-6 flex flex-col">
+      <div className="max-w-[1800px] w-full mx-auto flex flex-col gap-4 flex-1 min-h-0">
         <h1 className="text-xl font-bold text-white">Utilisateurs & rôles</h1>
         <nav className="flex gap-1 bg-white/[0.02] border border-white/5 rounded-xl p-1 self-start">
           {([['users', 'Utilisateurs', Users], ['roles', 'Rôles', Shield]] as const).map(([id, label, Icon]) => (
@@ -18,7 +18,11 @@ export function AccessAdminPage() {
             </button>
           ))}
         </nav>
-        {tab === 'users' ? <UsersTab /> : <RolesTab />}
+        {/* Zone défilante : titre + onglets restent fixes au-dessus. Le bandeau
+            d'édition d'un rôle s'épingle en haut de cette zone (cf. RolesTab). */}
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+          {tab === 'users' ? <UsersTab /> : <RolesTab />}
+        </div>
       </div>
     </div>
   )
