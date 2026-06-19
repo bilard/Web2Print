@@ -2,8 +2,62 @@
 // Réimplémentation SERVEUR (headless) du node client `webhook-post` (Webhook / Make).
 // WIRE-COMPATIBLE : mêmes clés de config, même port d'entrée `data`, mêmes ports de
 // sortie `result` / `response`. Permet l'exécution en cron (sans navigateur).
+import { lookup } from 'node:dns/promises'
 import { registerServerNode } from '../registry'
 import { interpolate, extractRows } from '../interpolate'
+
+/**
+ * Garde-fou SSRF : le node tourne côté serveur (Cloud Functions, contexte admin) et
+ * fetch une URL ARBITRAIRE fournie par l'utilisateur. On refuse les schémas non-HTTP
+ * et les cibles internes (loopback, IP privées, link-local/métadonnées cloud). On
+ * résout le nom via DNS pour bloquer un domaine public pointant vers une IP privée.
+ * (Résidu TOCTOU assumé : le fetch peut re-résoudre — risque mineur vs. attaque triviale.)
+ */
+function isPrivateIp(ip: string): boolean {
+  const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])]
+    if (a === 10 || a === 127 || a === 0) return true
+    if (a === 169 && b === 254) return true // link-local + métadonnées cloud (169.254.169.254)
+    if (a === 192 && b === 168) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 100 && b >= 64 && b <= 127) return true // CGNAT
+    return false
+  }
+  const v6 = ip.toLowerCase()
+  return (
+    v6 === '::1' ||
+    v6 === '::' ||
+    v6.startsWith('fe80') || // link-local
+    v6.startsWith('fc') ||
+    v6.startsWith('fd') || // ULA
+    v6.startsWith('::ffff:') // IPv4-mapped (laisse passer la vérif au resolver, déjà couvert v4)
+  )
+}
+
+async function assertSafeUrl(raw: string): Promise<void> {
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    throw new Error(`webhook-post : URL invalide « ${raw} ».`)
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`webhook-post : schéma non autorisé (${parsed.protocol}).`)
+  }
+  const host = parsed.hostname.replace(/^\[|\]$/g, '')
+  if (host === 'localhost' || host.endsWith('.localhost') || host === 'metadata.google.internal') {
+    throw new Error('webhook-post : cible interne refusée.')
+  }
+  // Si l'hôte est déjà une IP littérale, on la teste directement ; sinon on résout.
+  const literal = /^[\d.]+$/.test(host) || host.includes(':')
+  const addrs = literal ? [{ address: host }] : await lookup(host, { all: true }).catch(() => [])
+  for (const { address } of addrs) {
+    if (isPrivateIp(address)) {
+      throw new Error('webhook-post : cible interne refusée (IP privée/link-local).')
+    }
+  }
+}
 
 /** Découpe un bloc « Clé: Valeur » (une par ligne) en map d'en-têtes. */
 function parseHeaders(raw: string): Record<string, string> {
@@ -41,6 +95,7 @@ async function sendWebhook(
   readBody: boolean,
   signal: AbortSignal,
 ): Promise<WebhookCall> {
+  await assertSafeUrl(url)
   const headers: Record<string, string> = { ...userHeaders }
   if (!Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
     headers['Content-Type'] = 'application/json'
