@@ -1,0 +1,16 @@
+# robots.txt — https://ibs-studio.com
+# Le site public (promo à la racine + documentation) est indexable.
+# L'application authentifiée (shell SPA) ne contient aucun contenu pour les crawlers.
+
+User-agent: *
+Allow: /
+Allow: /docs/
+
+# Routes applicatives : coquille SPA sans contenu indexable.
+Disallow: /dashboard
+Disallow: /editor
+Disallow: /login
+Disallow: /onboarding
+Disallow: /_app.html
+
+Sitemap: https://ibs-studio.com/sitemap.xml
