@@ -43,7 +43,8 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
 
   const toggle = useCallback((id: string) => {
     setExpanded((prev) => {
-      const next = { ...prev, [id]: !prev[id] }
+      // Accordéon : un seul module déplié à la fois — ouvrir un module referme les autres.
+      const next = prev[id] ? {} : { [id]: true }
       try {
         window.localStorage.setItem(STORE_KEY, JSON.stringify(next))
       } catch {
