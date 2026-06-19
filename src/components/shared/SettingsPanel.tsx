@@ -23,6 +23,7 @@ import type { AiProvider } from '@/lib/aiModels'
 import { AiCascadeEditor } from '@/features/ai/AiCascadeEditor'
 import { ResetLlmModelsButton } from '@/features/ai/ResetLlmModelsButton'
 import { useAccessStore } from '@/stores/access.store'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   claude: 'Claude',
@@ -568,6 +569,13 @@ export function SettingsPanel({
     return isOwner || !perm || permissions.has(perm)
   }
   const visibleTabs = TABS.filter((t) => canTab(t.id))
+
+  useModuleIntent('settings', (action) => {
+    if (action.startsWith('tab:')) {
+      const tab = action.slice('tab:'.length) as SettingsTab
+      if (canTab(tab)) setActiveTab(tab)
+    }
+  })
 
   const headerBlock = (
     <div className="flex flex-col gap-4 shrink-0">
