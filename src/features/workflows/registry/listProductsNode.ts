@@ -113,6 +113,93 @@ export function resolveEan(ean: string, image: string, url: string, name: string
   return ''
 }
 
+type LdProduct = Extracted['products'][number]
+const asObj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? v as Record<string, unknown> : {})
+
+/** Collecte récursivement les nœuds `ItemList` d'un JSON-LD (direct, `@graph`, `mainEntity`). */
+function collectItemLists(node: unknown, acc: Record<string, unknown>[]): void {
+  const n = asObj(node)
+  const t = n['@type']
+  if ((t === 'ItemList' || (Array.isArray(t) && t.includes('ItemList'))) && Array.isArray(n.itemListElement)) acc.push(n)
+  if (Array.isArray(n['@graph'])) for (const g of n['@graph']) collectItemLists(g, acc)
+  if (n.mainEntity) collectItemLists(n.mainEntity, acc)
+}
+
+/** Extraction DÉTERMINISTE des produits d'une page liste depuis le JSON-LD `ItemList`
+ *  (schema.org). Jumeau navigateur (DOMParser) du parseur serveur `listProducts.ts`. */
+export function parseListingItemList(html: string): LdProduct[] {
+  const out: LdProduct[] = []
+  if (!html || !html.includes('ItemList') || typeof DOMParser === 'undefined') return out
+  let doc: Document
+  try { doc = new DOMParser().parseFromString(html, 'text/html') } catch { return out }
+  doc.querySelectorAll('script[type="application/ld+json"]').forEach((el) => {
+    let data: unknown
+    try { data = JSON.parse(el.textContent ?? '') } catch { return }
+    for (const block of Array.isArray(data) ? data : [data]) {
+      const lists: Record<string, unknown>[] = []
+      collectItemLists(block, lists)
+      for (const list of lists) {
+        const els = list.itemListElement
+        if (!Array.isArray(els)) continue
+        for (const e of els) {
+          const eo = asObj(e)
+          const it = asObj('item' in eo ? eo.item : e)
+          const name = String(it.name ?? '').trim()
+          if (!name) continue
+          const offer = asObj(Array.isArray(it.offers) ? (it.offers as unknown[])[0] : it.offers)
+          const priceNum = Number(offer.price ?? offer.lowPrice)
+          const sku = String(it.gtin13 ?? it.gtin ?? it.sku ?? '').replace(/\D/g, '')
+          const brandRaw = it.brand
+          const imageRaw = it.image
+          out.push({
+            name,
+            brand: typeof brandRaw === 'object' ? String(asObj(brandRaw).name ?? '') : String(brandRaw ?? ''),
+            ean: isValidEan13(sku) ? sku : '',
+            price: Number.isFinite(priceNum) && priceNum > 0 ? priceNum : 0,
+            originalPrice: 0,
+            url: String(it.url ?? '').trim(),
+            image: typeof imageRaw === 'string' ? imageRaw : Array.isArray(imageRaw) ? String(imageRaw[0] ?? '') : '',
+          })
+        }
+      }
+    }
+  })
+  return out
+}
+
+/** Fusionne l'ItemList déterministe (nom/EAN/prix canoniques) avec l'extraction LLM
+ *  (prix barré + produits hors liste). Union par URL ; ItemList vide → LLM seul. */
+export function mergeListing(ld: LdProduct[], llm: LdProduct[]): LdProduct[] {
+  if (ld.length === 0) return llm
+  const normUrl = (u: string): string => String(u ?? '').trim().toLowerCase().replace(/[#?].*$/, '')
+  const llmByUrl = new Map<string, LdProduct>()
+  for (const p of llm) { const u = normUrl(p.url); if (u) llmByUrl.set(u, p) }
+  const used = new Set<string>()
+  const out: LdProduct[] = []
+  for (const p of ld) {
+    const u = normUrl(p.url)
+    const m = u ? llmByUrl.get(u) : undefined
+    if (m && u) used.add(u)
+    out.push({
+      name: p.name,
+      brand: p.brand || (m?.brand ?? ''),
+      ean: p.ean || (m?.ean ?? ''),
+      price: p.price > 0 ? p.price : (m?.price ?? 0),
+      originalPrice: m?.originalPrice ?? 0,
+      url: p.url,
+      image: p.image || (m?.image ?? ''),
+    })
+  }
+  for (const p of llm) { const u = normUrl(p.url); if (!u || !used.has(u)) out.push(p) }
+  return out
+}
+
+/** Marqueurs de prix (€) — signal de grille produit rendue (mirroir serveur). */
+function priceMarkerCount(text: string): number {
+  return (String(text).match(/\d[\d  .,]{0,12}€|€\s?\d/g) ?? []).length
+}
+const THIN_LISTING_MARKERS = 30
+
 const COLUMNS: ExcelColumn[] = [
   { key: 'site', label: 'Site', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 160 },
   { key: 'name', label: 'Produit', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 320 },
@@ -280,6 +367,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     }
 
     const { readPageWithEscalation } = await import('@/features/scraping/readPageWithEscalation')
+    const { brightDataScrapeHtml } = await import('@/features/scraping/core/brightDataFallback')
     const allRows: ExcelRow[] = []
     const seen = new Set<string>()
     let rowId = 0
@@ -301,6 +389,17 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       }
       if (source === 'brightdata') {
         ctx.log('info', `Contenu récupéré via Bright Data pour ${site}.`)
+      }
+
+      // Extraction DÉTERMINISTE via JSON-LD ItemList si la grille est maigre (rendue JS) :
+      // on récupère le HTML brut Bright Data et on lit le schema.org ItemList (EAN propres).
+      let ld: LdProduct[] = []
+      if (priceMarkerCount(markdown) < THIN_LISTING_MARKERS) {
+        try {
+          const html = await brightDataScrapeHtml(url)
+          ld = html ? parseListingItemList(html) : []
+          if (ld.length) ctx.log('info', `${site} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
+        } catch { /* pas d'ItemList → repli LLM */ }
       }
 
       // Bornage du contexte LLM (les pages liste peuvent être volumineuses).
@@ -327,11 +426,13 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
           schemaForLLM: EXTRACTED_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
         })
       } catch (e) {
-        ctx.log('error', `Extraction LLM échouée pour ${site} : ${e instanceof Error ? e.message : String(e)}`)
-        continue
+        // L'ItemList déterministe sauve la page même si le LLM échoue.
+        if (ld.length === 0) { ctx.log('error', `Extraction LLM échouée pour ${site} : ${e instanceof Error ? e.message : String(e)}`); continue }
+        ctx.log('warn', `Extraction LLM échouée pour ${site} (${e instanceof Error ? e.message : String(e)}) — repli sur l'ItemList JSON-LD.`)
+        extracted = { products: [] }
       }
 
-      const products = extracted.products ?? []
+      const products = mergeListing(ld, extracted.products ?? [])
       let added = 0
       for (const p of products) {
         const name = (p.name ?? '').trim()

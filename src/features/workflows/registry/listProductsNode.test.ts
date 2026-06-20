@@ -1,6 +1,6 @@
 // src/features/workflows/registry/listProductsNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { resolveEan, pickListingUrl } from './listProductsNode'
+import { resolveEan, pickListingUrl, parseListingItemList, mergeListing } from './listProductsNode'
 
 describe('pickListingUrl (découverte page liste par famille)', () => {
   it('préfère la page catégorie, écarte la fiche produit', () => {
@@ -60,5 +60,42 @@ describe('resolveEan', () => {
     // url avec id marketplace invalide PUIS un vrai EAN valide
     const url = 'https://x.fr/p/rbc36x2-6744473726508-x-4892210254887'
     expect(resolveEan('', '', url, '')).toBe('4892210254887')
+  })
+})
+
+describe('parseListingItemList (client/DOMParser) — JSON-LD ItemList', () => {
+  const html = `<html><head>
+    <script type="application/ld+json">{"@type":"Product","name":"Tondeuse Ryobi"}</script>
+    <script type="application/ld+json">{"@type":"ItemList","itemListElement":[
+      {"item":{"name":"RYOBI RLM18X33B40","url":"https://www.castorama.fr/x/4892210172709_CAFR.prd","sku":"4892210172709","offers":{"price":288.6}}},
+      {"item":{"name":"Coupe-bordures Ryobi","url":"https://www.castorama.fr/y.prd","sku":"4892210185754","offers":{"price":399}}}
+    ]}</script></head><body></body></html>`
+
+  it('extrait nom + EAN (sku validé) + prix', () => {
+    const p = parseListingItemList(html)
+    expect(p.length).toBe(2)
+    expect(p[0]).toMatchObject({ name: 'RYOBI RLM18X33B40', ean: '4892210172709', price: 288.6 })
+  })
+  it('sku non-EAN (checksum KO) → ean vide ; pas d’ItemList → vide', () => {
+    const bad = `<script type="application/ld+json">{"@type":"ItemList","itemListElement":[{"item":{"name":"X","sku":"1234567890123","offers":{"price":10}}}]}</script>`
+    expect(parseListingItemList(bad)[0].ean).toBe('')
+    expect(parseListingItemList('<body>rien</body>')).toEqual([])
+  })
+})
+
+describe('mergeListing (client)', () => {
+  const base = { brand: '', ean: '', price: 0, originalPrice: 0, url: '', image: '' }
+  it('ItemList prime nom/EAN/prix, LLM apporte le barré', () => {
+    const m = mergeListing(
+      [{ ...base, name: 'A', ean: '4892210172709', price: 288.6, url: 'https://s/x.prd' }],
+      [{ ...base, name: 'a promo', price: 290, originalPrice: 350, url: 'https://s/x.prd' }],
+    )
+    expect(m.length).toBe(1)
+    expect(m[0]).toMatchObject({ ean: '4892210172709', price: 288.6, originalPrice: 350 })
+  })
+  it('union des produits LLM hors ItemList ; ItemList vide → LLM seul', () => {
+    expect(mergeListing([{ ...base, name: 'A', url: 'https://s/a' }], [{ ...base, name: 'B', url: 'https://s/b' }]).length).toBe(2)
+    const llm = [{ ...base, name: 'B', url: 'https://s/b' }]
+    expect(mergeListing([], llm)).toBe(llm)
   })
 })
