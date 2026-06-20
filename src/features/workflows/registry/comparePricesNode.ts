@@ -181,6 +181,8 @@ export function compareSourceToCompetitors(
     { key: 'ean', label: 'EAN', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 130 },
     { key: 'source', label: 'Source', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 140 },
     { key: 'prix_source', label: 'Prix source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 110 },
+    { key: 'prix_barre_source', label: 'Prix barré source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 110 },
+    { key: 'reduc_source', label: 'Réduc % source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 90 },
     ...priceCols.flatMap((c2) => [
       { key: c2.key, label: `Prix ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 120 },
       { key: c2.barreKey, label: `Prix barré ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 110 },
@@ -214,6 +216,9 @@ export function compareSourceToCompetitors(
     if (comp.length === 0) comp = (k.ean && byEan.get(k.ean)) || []
     if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
+    // Prix barré source (promo) : prix d'origine SI affiché barré et > prix actuel.
+    const srcOrig = parsePrice(row[c.originalColumn])
+    const srcBarre = Number.isFinite(srcOrig) && srcOrig > srcPrice ? srcOrig : NaN
     const r: ExcelRow = {
       _id: `cmp_${id++}`,
       produit: nameVal,
@@ -222,6 +227,9 @@ export function compareSourceToCompetitors(
       ean: k.ean,
       source: sourceSite,
       prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
+      prix_barre_source: Number.isFinite(srcBarre) ? String(srcBarre) : '',
+      reduc_source: Number.isFinite(srcBarre) && srcBarre > 0
+        ? String(Math.round(((srcBarre - srcPrice) / srcBarre) * 1000) / 10) : '',
     }
     // Par site : prix le plus bas + son prix barré (le cas échéant).
     const bySite = new Map<string, { price: number; original?: number }>()
@@ -389,7 +397,7 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
   ],
   outputs: [{ name: 'sheet', type: 'sheet' }],
   // Colonnes fixes de sortie (les `prix_<concurrent>` dynamiques s'ajoutent après un run).
-  outputColumns: ['produit', 'marque', 'reference', 'ean', 'source', 'prix_source', 'meilleur_concurrent', 'prix_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
+  outputColumns: ['produit', 'marque', 'reference', 'ean', 'source', 'prix_source', 'prix_barre_source', 'reduc_source', 'meilleur_concurrent', 'prix_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
   configSchema: [
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', default: 'name' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Prix', default: 'price' },

@@ -235,6 +235,8 @@ registerServerNode({
       { key: 'ean', label: 'EAN' },
       { key: 'source', label: 'Source' },
       { key: 'prix_source', label: 'Prix source' },
+      { key: 'prix_barre_source', label: 'Prix barré source' },
+      { key: 'reduc_source', label: 'Réduc % source' },
       ...priceCols.flatMap((p) => [
         { key: p.key, label: `Prix ${p.site}` },
         { key: p.barreKey, label: `Prix barré ${p.site}` },
@@ -267,10 +269,16 @@ registerServerNode({
       if (comp.length === 0) comp = (k.ean && byEan.get(k.ean)) || []
       if (comp.length === 0) comp = (k.name && byName.get(k.name)) || []
 
+      // Prix barré source (promo) : prix d'origine SI affiché barré et > prix actuel.
+      const srcOrig = parsePrice(row[cfg.originalColumn])
+      const srcBarre = Number.isFinite(srcOrig) && srcOrig > srcPrice ? srcOrig : NaN
       const r: Record<string, unknown> = {
         _id: `cmp_${id++}`, produit: nameVal, marque: String(row[cfg.brandColumn] ?? '').trim(),
         reference: k.refs[0] ?? '', ean: k.ean,
         source: sourceSite, prix_source: Number.isFinite(srcPrice) && srcPrice > 0 ? String(srcPrice) : '',
+        prix_barre_source: Number.isFinite(srcBarre) ? String(srcBarre) : '',
+        reduc_source: Number.isFinite(srcBarre) && srcBarre > 0
+          ? String(Math.round(((srcBarre - srcPrice) / srcBarre) * 1000) / 10) : '',
       }
       const bySite = new Map<string, { price: number; original?: number }>()
       for (const m of comp) {
