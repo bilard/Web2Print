@@ -48,9 +48,10 @@ function CostReportConfigUi({
         />
       </div>
       <p className="text-[10px] text-neutral-500 leading-relaxed">
-        Branche la sortie <strong className="text-neutral-300">file</strong> vers « Export Google Drive » pour archiver,
-        ou vers le port <strong className="text-neutral-300">attachment</strong> de « Envoyer via Gmail » pour l’envoyer.
-        La pièce jointe <code className="text-neutral-400">.html</code> s’ouvre fidèlement dans un navigateur.
+        Relie la sortie <strong className="text-neutral-300">file</strong> (en tête) vers « Export Google Drive »
+        (port <strong className="text-neutral-300">file</strong>, Drive connecté requis) pour archiver,
+        ou vers « Envoyer via Gmail » (port <strong className="text-neutral-300">attachment</strong>, mode
+        « Fichier source ») pour l’envoyer en pièce jointe <code className="text-neutral-400">.html</code>.
       </p>
     </div>
   )
@@ -64,9 +65,11 @@ const costReportNode: NodeSpec<CostReportConfig, Record<string, never>, CostRepo
     'Génère un rapport HTML/CSS de la consommation IA & scraping du mois (tokens, coûts €/$, soldes, Bright Data) — à stocker sur Drive ou envoyer par mail.',
   icon: ReceiptText,
   inputs: [],
+  // `file` en tête : c'est la sortie à relier vers « Export Google Drive » (port file)
+  // ou « Envoyer via Gmail » (port attachment, ou data — tolérance de câblage).
   outputs: [
-    { name: 'html', type: 'any' },
     { name: 'file', type: 'file' },
+    { name: 'html', type: 'any' },
     { name: 'summary', type: 'sheet' },
   ],
   configSchema: [],

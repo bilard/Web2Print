@@ -564,17 +564,22 @@ const sendGmailNode: NodeSpec<
     // Préparer la pièce jointe selon le mode sélectionné.
     let attachments: SendGmailAttachment[] | undefined
     if (config.attachmentMode === 'source') {
-      if (inputs.attachment instanceof Blob) {
-        const file = inputs.attachment
-        const filename = (file as File).name || 'attachment.bin'
-        const mimeType = file.type || 'application/octet-stream'
-        const base64 = await fileToBase64(file)
+      // Tolérance de câblage : on accepte le fichier sur le port dédié `attachment`,
+      // ou — à défaut — un fichier branché sur le port `data` (cas fréquent quand on
+      // relie une sortie « file » au port principal, ex. node « Rapport de coûts IA »).
+      const srcFile = inputs.attachment instanceof Blob ? inputs.attachment
+        : inputs.data instanceof Blob ? inputs.data
+        : null
+      if (srcFile) {
+        const filename = (srcFile as File).name || 'attachment.bin'
+        const mimeType = srcFile.type || 'application/octet-stream'
+        const base64 = await fileToBase64(srcFile)
         attachments = [{ filename, mimeType, base64 }]
-        ctx.log('info', `Pièce jointe (source) : ${filename} (${(file.size / 1024).toFixed(1)} KB).`)
+        ctx.log('info', `Pièce jointe (source) : ${filename} (${(srcFile.size / 1024).toFixed(1)} KB).`)
       } else {
         ctx.log(
           'warn',
-          "Mode 'Fichier source' actif mais le port 'attachment' n'est pas connecté. Le mail partira sans pièce jointe.",
+          "Mode 'Fichier source' actif mais aucun fichier en entrée (relie une sortie « file » au port 'attachment' ou 'data'). Le mail partira sans pièce jointe.",
         )
       }
     } else if (config.attachmentMode === 'filtered') {
