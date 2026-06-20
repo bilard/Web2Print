@@ -426,4 +426,52 @@ describe('executeWorkflow', () => {
     await executeWorkflow(wf)
     expect(useRunContext.getState().nodeStates['col'].outputs).toEqual({ results: [] })
   })
+
+  it('exécute les nodes frères EN PARALLÈLE et fusionne leurs sorties dans le join', async () => {
+    let inFlight = 0
+    let maxInFlight = 0
+    // 3 sources sœurs (indépendantes) avec un délai artificiel : si elles sont
+    // séquentielles, maxInFlight reste à 1 ; en parallèle il dépasse 1.
+    for (const t of ['s1', 's2', 's3']) {
+      nodeRegistry.register({
+        type: t, category: 'utility', label: t, description: '', icon: Box,
+        inputs: [], outputs: [{ name: 'out', type: 'sheet' }],
+        configSchema: [], defaultConfig: {}, runtime: 'client',
+        run: async () => {
+          inFlight++
+          maxInFlight = Math.max(maxInFlight, inFlight)
+          await new Promise((r) => setTimeout(r, 30))
+          inFlight--
+          return { out: { rows: [{ id: t }] } }
+        },
+      })
+    }
+    // Join : fan-in des 3 sources sur le même port → fusion des rows.
+    nodeRegistry.register({
+      type: 'join', category: 'utility', label: 'join', description: '', icon: Box,
+      inputs: [{ name: 'in', type: 'sheet' }], outputs: [{ name: 'out', type: 'sheet' }],
+      configSchema: [], defaultConfig: {}, runtime: 'client',
+      run: async (_c, _cfg, inputs: any) => ({ out: inputs.in }),
+    })
+    const wf = makeWorkflow(
+      [
+        { id: 'a', type: 's1', position: { x: 0, y: 0 }, config: {} },
+        { id: 'b', type: 's2', position: { x: 0, y: 0 }, config: {} },
+        { id: 'c', type: 's3', position: { x: 0, y: 0 }, config: {} },
+        { id: 'j', type: 'join', position: { x: 0, y: 0 }, config: {} },
+      ],
+      [
+        { id: 'e1', source: 'a', sourceHandle: 'out', target: 'j', targetHandle: 'in' },
+        { id: 'e2', source: 'b', sourceHandle: 'out', target: 'j', targetHandle: 'in' },
+        { id: 'e3', source: 'c', sourceHandle: 'out', target: 'j', targetHandle: 'in' },
+      ]
+    )
+    await executeWorkflow(wf)
+    // (a) chevauchement réel des sœurs
+    expect(maxInFlight).toBeGreaterThan(1)
+    // (b) le join reçoit les rows fusionnées des 3 sources (fan-in)
+    const out = useRunContext.getState().nodeStates['j'].outputs?.out as { rows: { id: string }[] }
+    expect(out.rows.map((r) => r.id).sort()).toEqual(['s1', 's2', 's3'])
+    expect(useRunContext.getState().nodeStates['j'].status).toBe('success')
+  })
 })

@@ -43,6 +43,20 @@ function whenAborted(signal: AbortSignal): Promise<void> {
   })
 }
 
+/** Cap de concurrence par niveau topo : les branches sœurs (ex. 3 scrapes indépendants)
+ *  tournent EN PARALLÈLE, mais on borne pour ne pas saturer les quotas LLM/proxy. Aligné
+ *  sur le jumeau serveur `executeWorkflowHeadless` (functions/src/workflow/execute.ts). */
+const MAX_NODE_CONCURRENCY = 4
+
+/** Exécute `fn` sur chaque item avec au plus `limit` tâches en vol simultanément. */
+async function runConcurrent<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
+  let cursor = 0
+  const worker = async (): Promise<void> => {
+    while (cursor < items.length) await fn(items[cursor++])
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+}
+
 /** Ensemble { node de départ } ∪ { tous ses descendants } en suivant les edges sortants. */
 function downstreamFrom(startId: string, edges: WorkflowEdge[]): Set<string> {
   const outgoing = new Map<string, string[]>()
@@ -306,7 +320,13 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     const mainNodes = wf.nodes.filter((n) => !internalIds.has(n.id))
     const mainEdges = wf.edges.filter((e) => !internalIds.has(e.source) && !internalIds.has(e.target))
 
-    const ordered = topoSort(mainNodes, mainEdges)
+    // Arête synthétique each→collect : garantit que le loop-collect reste APRÈS son
+    // loop-each dans le topo ET dans le calcul des niveaux (le body est hors graphe
+    // principal, sinon le collect remonterait au niveau 0). Cf. jumeau serveur execute.ts.
+    const synthEdges: WorkflowEdge[] = loops.map((l) => ({
+      id: `__loop_${l.eachId}`, source: l.eachId, sourceHandle: 'item', target: l.collectId, targetHandle: 'item',
+    }))
+    const ordered = topoSort(mainNodes, [...mainEdges, ...synthEdges])
     // « Pas de lien → ne pas faire tourner la carte » : ensemble des nodes ayant au
     // moins une connexion (entrante ou sortante). Les orphelins sont ignorés.
     const connectedIds = new Set<string>()
@@ -327,15 +347,24 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
 
     // Un seul listener d'abort pour tout le run (réutilisé à chaque node).
     const abortedPromise = whenAborted(ac.signal)
-
+    const total = Math.max(1, ordered.length)
     let processed = 0
-    for (const node of ordered) {
+
+    // Exécute UN node (skips, inputs, run, état). Mutations partagées (outputs/skipped/
+    // processed + setters Zustand) sûres malgré la concurrence : JS est mono-thread
+    // coopératif et chaque node écrit des clés distinctes (nodes d'un même niveau =
+    // indépendants). Cf. jumeau serveur executeWorkflowHeadless (execute.ts).
+    const runNode = async (node: WorkflowNode): Promise<void> => {
       // RUN partiel : on ne touche pas aux nodes hors sous-graphe (état/logs conservés).
-      if (runSet && !runSet.has(node.id)) continue
+      if (runSet && !runSet.has(node.id)) return
       // Node orphelin (aucune connexion) : on ne le fait pas tourner — sauf si le
       // workflow n'a AUCUN lien (cas mono-node légitime, qu'on exécute normalement).
-      if (wf.edges.length > 0 && !connectedIds.has(node.id)) continue
-      useProgressStore.getState().setProgress(++processed / Math.max(1, ordered.length))
+      if (wf.edges.length > 0 && !connectedIds.has(node.id)) return
+      // Le loop-collect est finalisé par son loop-each à un niveau ANTÉRIEUR (synthEdge).
+      // On le saute AVANT startNode — sinon il resterait coincé en « running ».
+      if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) return
+
+      useProgressStore.getState().setProgress(++processed / total)
       // Skip if any upstream is skipped or errored
       const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
       const upstreamFailed = upstream.some(
@@ -344,18 +373,18 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       if (upstreamFailed) {
         skipped.add(node.id)
         useRunContext.getState().setNodeStatus(node.id, 'skipped')
-        continue
+        return
       }
 
       if (ac.signal.aborted) {
-        useRunContext.getState().endNode(node.id, 'error', 'Run aborted')
-        continue
+        useRunContext.getState().endNode(node.id, 'error', 'Run arrêté')
+        return
       }
 
       const spec = nodeRegistry.get(node.type)
       if (!spec) {
         useRunContext.getState().endNode(node.id, 'error', `Unknown node type: ${node.type}`)
-        continue
+        return
       }
 
       const inputs: Record<string, unknown> = {}
@@ -418,7 +447,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
             // par le main flow (ses successeurs sont dans le body).
             outputs.set(node.id, { item: items[0] })
 
-            // Exécution du body pour chaque item
+            // Exécution du body pour chaque item (les itérations restent séquentielles).
             const results: unknown[] = []
             for (let i = 0; i < items.length; i++) {
               const collected = await executeLoopBody(
@@ -444,13 +473,6 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
             return
           }
 
-          // Le loop-collect ne doit pas être exécuté indépendamment ; ses outputs
-          // sont déjà publiés par le branchement loop-each. On skip.
-          if (loopByCollect.has(node.id)) {
-            // déjà traité par le loop-each ; rien à faire ici
-            return
-          }
-
           // Interpolation des configs avec les inputs comme contexte
           // (permet {{Nom produit}} dans Send Gmail même hors loop).
           const ctx = buildInterpolationContext(inputs)
@@ -469,7 +491,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         }
       }
 
-      // Compose middleware chain
+      // Compose middleware chain (step mode pas-à-pas)
       const chain = (opts.middleware ?? []).reduceRight<() => Promise<void>>(
         (next, mw) => () => mw(node, next),
         exec
@@ -484,8 +506,35 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         if (!st || st.status === 'running' || st.status === 'pending') {
           useRunContext.getState().endNode(node.id, 'error', 'Run arrêté')
         }
-        break
       }
+    }
+
+    // Niveaux topo (cf. execute.ts) : un node ne démarre qu'une fois TOUS ses amonts
+    // terminés ; les nodes d'un même niveau sont indépendants → lancés EN PARALLÈLE
+    // (cap concurrence). C'est ce qui parallélise plusieurs scrapings frères, comme le
+    // RUN SERVER. En step mode (un seul slot de pause), on force la séquentialité.
+    const upByTarget = new Map<string, string[]>()
+    for (const e of [...mainEdges, ...synthEdges]) {
+      const arr = upByTarget.get(e.target) ?? upByTarget.set(e.target, []).get(e.target)!
+      arr.push(e.source)
+    }
+    const levelOf = new Map<string, number>()
+    for (const node of ordered) {
+      const ups = upByTarget.get(node.id) ?? []
+      levelOf.set(node.id, ups.reduce((m, u) => Math.max(m, (levelOf.get(u) ?? 0) + 1), 0))
+    }
+    const byLevel = new Map<number, WorkflowNode[]>()
+    for (const node of ordered) {
+      const lvl = levelOf.get(node.id) ?? 0
+      const arr = byLevel.get(lvl) ?? byLevel.set(lvl, []).get(lvl)!
+      arr.push(node)
+    }
+    const concurrency = (opts.middleware?.length ?? 0) > 0 ? 1 : MAX_NODE_CONCURRENCY
+    for (const lvl of [...byLevel.keys()].sort((a, b) => a - b)) {
+      await runConcurrent(byLevel.get(lvl)!, concurrency, runNode)
+      // Stop : on arrête de lancer de nouveaux niveaux (les nodes en vol ont déjà été
+      // marqués « arrêté » par la course ci-dessus ; l'aval reste « pending »).
+      if (ac.signal.aborted) break
     }
   } finally {
     useRunContext.getState().endRun()
