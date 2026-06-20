@@ -6,6 +6,7 @@ import { CalendarClock, Play, Loader2, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { auth, db, functions } from '@/lib/firebase/config'
 import { formatCountdown } from '../runtime/cronSchedule'
+import { useRunContext } from '../runtime/runContext'
 
 interface ScheduleDoc {
   enabled: boolean; every: number; unit: string
@@ -38,6 +39,10 @@ export function CronStatusPanel({ workflowId }: { workflowId: string }) {
 
   const onRun = async () => {
     setRunning(true)
+    // Un run CLIENT resté « en cours » (isRunning) masque l'écho serveur sur les cartes
+    // (garde dans hydrateServerRun). On le réinitialise : le run lancé ici est serveur,
+    // sa progression doit s'afficher en direct via useServerRunLive.
+    useRunContext.getState().resetRun()
     try {
       const { data } = await runNow({ workflowId })
       if (data.errorCount > 0) toast.warning(`Run serveur : ${data.nodeCount} node(s), ${data.errorCount} erreur(s).`)
