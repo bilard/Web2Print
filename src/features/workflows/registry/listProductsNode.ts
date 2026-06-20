@@ -396,7 +396,12 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       let ld: LdProduct[] = []
       if (priceMarkerCount(markdown) < THIN_LISTING_MARKERS) {
         try {
-          const html = await brightDataScrapeHtml(url)
+          // Borne DURE : le fetch BD est best-effort et ne doit JAMAIS bloquer le run
+          // client (sinon isRunning reste coincé → cartes figées). 20 s max, sinon repli LLM.
+          const html = await Promise.race([
+            brightDataScrapeHtml(url),
+            new Promise<null>((res) => setTimeout(() => res(null), 20000)),
+          ])
           ld = html ? parseListingItemList(html) : []
           if (ld.length) ctx.log('info', `${site} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
         } catch { /* pas d'ItemList → repli LLM */ }
