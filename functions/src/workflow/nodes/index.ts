@@ -18,3 +18,11 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif
 ])
+
+/** Sous-ensemble de SERVER_UNSUPPORTED purement VISUEL/aperçu (sortie sans valeur de
+ *  donnée côté serveur, p.ex. `chart` = image PNG navigateur). Côté serveur on les IGNORE
+ *  proprement (no-op + warning) au lieu de les marquer en erreur : leur absence ne doit pas
+ *  faire passer tout le run en « partial » alors que les sorties utiles (Sheet, mail) sont OK. */
+export const SERVER_SKIP_VISUAL = new Set<string>([
+  'chart',
+])

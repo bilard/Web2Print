@@ -3,7 +3,7 @@ import type { ServerWorkflow, ServerNode, ServerEdge, RunLog } from './types'
 import { topoSort } from './topo'
 import { interpolate, buildInterpolationContext } from './interpolate'
 import { getServerNode } from './registry'
-import { SERVER_UNSUPPORTED } from './nodes/index'
+import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL } from './nodes/index'
 import { mergeInputValue } from './mergeInputs'
 
 export interface HeadlessResult {
@@ -195,6 +195,13 @@ export async function executeWorkflowHeadless(
     if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) { nodeCount++; return }
 
     if (SERVER_UNSUPPORTED.has(node.type)) {
+      // Node purement visuel (chart…) : no-op gracieux (sortie vide + warning) → ne fait
+      // PAS échouer le run, et l'aval continue avec une entrée vide (pas de cascade skip).
+      if (SERVER_SKIP_VISUAL.has(node.type)) {
+        outputs.set(node.id, {}); nodeOutputs[node.id] = {}; nodeCount++
+        log('warn', `Node « ${node.type} » ignoré côté serveur (rendu navigateur uniquement).`, node.id)
+        return
+      }
       errored.add(node.id); log('error', `Node « ${node.type} » non exécutable côté serveur.`, node.id); return
     }
     const spec = getServerNode(node.type)

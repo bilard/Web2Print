@@ -58,6 +58,22 @@ describe('executeWorkflowHeadless', () => {
     expect(peak).toBeGreaterThanOrEqual(2) // a et b ont tourné simultanément
   })
 
+  it('ignore proprement un node visuel client-only (chart) sans faire échouer le run', async () => {
+    const wf2: ServerWorkflow = {
+      id: 'w5', name: 'Chart', ownerId: 'u',
+      nodes: [
+        { id: 'a', type: 'text-input', config: { text: 'x' } },
+        { id: 'c', type: 'chart', config: {} },
+      ],
+      edges: [{ id: 'e', source: 'a', sourceHandle: 'text', target: 'c', targetHandle: 'sheet' }],
+    }
+    const res = await executeWorkflowHeadless(wf2, { uid: 'u', signal: new AbortController().signal })
+    expect(res.status).toBe('success') // ni 'error' ni 'partial'
+    expect(res.errorCount).toBe(0)
+    expect(res.nodeStates.c).toBe('success') // no-op gracieux, pas une erreur
+    expect(res.logs.some((l) => l.level === 'warn' && l.node === 'c')).toBe(true)
+  })
+
   it('reprise : saute les nodes déjà terminés et câble leurs sorties', async () => {
     const ran: string[] = []
     const doneCb: string[] = []
