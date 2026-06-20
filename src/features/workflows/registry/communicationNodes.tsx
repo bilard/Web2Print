@@ -695,23 +695,29 @@ const sendGmailNode: NodeSpec<
     // port `data` (ex : sortie « html » du node « Rapport de coûts IA »). En mode HTML,
     // on adapte un document autonome pour un mail (extraction <body> + <style>).
     const rawString = typeof inputs.data === 'string' ? inputs.data : null
-    if (rawString !== null) {
-      if (/\{\{\s*html\s*\}\}/.test(finalBody)) {
-        if (!config.isHtml) {
-          ctx.log(
-            'warn',
-            "{{html}} détecté mais la case « HTML » est décochée : le balisage partira en texte brut. Coche « HTML » pour un rendu visuel.",
-          )
-        }
-        const injected = config.isHtml ? prepareHtmlForEmail(rawString) : rawString
-        finalBody = finalBody.replace(HTML_TOKEN_RE, () => injected)
-        ctx.log('info', `Contenu {{html}} injecté dans le corps (${injected.length} car.).`)
-      } else {
+    const hasHtmlToken = /\{\{\s*html\s*\}\}/.test(finalBody)
+    if (rawString !== null && hasHtmlToken) {
+      if (!config.isHtml) {
         ctx.log(
           'warn',
-          "Contenu HTML/texte reçu sur le port « data » mais non inséré : ajoute {{html}} dans le corps pour l'afficher.",
+          "{{html}} détecté mais la case « HTML » est décochée : le balisage partira en texte brut. Coche « HTML » pour un rendu visuel.",
         )
       }
+      const injected = config.isHtml ? prepareHtmlForEmail(rawString) : rawString
+      finalBody = finalBody.replace(HTML_TOKEN_RE, () => injected)
+      ctx.log('info', `Contenu {{html}} injecté dans le corps (${injected.length} car.).`)
+    } else if (hasHtmlToken && rawString === null) {
+      // {{html}} demandé mais le port `data` ne porte pas de chaîne. Cause fréquente :
+      // plusieurs edges sur `data` (le fan-in écrase la string), ou c'est une sheet/rows.
+      ctx.log(
+        'warn',
+        "{{html}} présent dans le corps mais le port « data » ne contient pas de HTML (chaîne). Relie UNIQUEMENT la sortie « html » du node source au port « data » (une seule arête).",
+      )
+    } else if (rawString !== null && !hasHtmlToken) {
+      ctx.log(
+        'warn',
+        "Contenu HTML/texte reçu sur le port « data » mais non inséré : ajoute {{html}} dans le corps pour l'afficher.",
+      )
     }
 
     // Si HTML coché + input contient un tableau de rows : transformer les
