@@ -7,6 +7,8 @@
 import { registerServerNode } from '../registry'
 import { interpolate, extractRows } from '../interpolate'
 import { getGoogleAccessToken } from '../../google/serverAuth'
+import { asServerFile } from './serverFile'
+import { injectTable, hasTableToken } from './emailTable'
 
 type ColorTone = 'positive' | 'negative' | 'neutral' | 'muted'
 interface SheetColorRule { column: string; equals: string; tone: ColorTone }
@@ -604,9 +606,21 @@ registerServerNode({
     const isHtml = Boolean(config.isHtml)
     const rows = extractRows(inputs.data)
 
-    // Pièce jointe : 'filtered' = CSV des lignes reçues ; 'source' nécessite un
-    // fichier produit en amont (rendu navigateur) → indisponible côté serveur.
+    // Fichier source pour la pièce jointe « source » : port dédié `attachment`, ou
+    // tolérance de câblage sur `data` si c'est un ServerFile (ex : sortie `file` du
+    // node « Rapport de coûts IA »).
+    const srcFile = asServerFile(inputs.attachment) ?? asServerFile(inputs.data)
+
+    // Pièce jointe : 'source' = fichier reçu en amont (ServerFile) ; 'filtered' = CSV
+    // des lignes reçues.
     const buildAttachment = (forRows: Record<string, unknown>[] | null): GmailAttachment | undefined => {
+      if (config.attachmentMode === 'source') {
+        if (!srcFile) {
+          ctx.log('warn', "Mode « Fichier source » actif mais aucun fichier en entrée (relie une sortie « file » au port « attachment » ou « data »). Envoi sans pièce jointe.")
+          return undefined
+        }
+        return { filename: srcFile.name, mimeType: srcFile.mimeType, base64: srcFile.base64 }
+      }
       if (config.attachmentMode !== 'filtered' || !forRows || forRows.length === 0) return undefined
       const csv = sheetToCsv({ rows: forRows })
       return {
@@ -614,9 +628,6 @@ registerServerNode({
         mimeType: 'text/csv',
         base64: Buffer.from(csv, 'utf8').toString('base64'),
       }
-    }
-    if (config.attachmentMode === 'source') {
-      ctx.log('warn', 'Pièce jointe « source » indisponible côté serveur (fichier produit par le navigateur) — envoi sans pièce jointe.')
     }
 
     // Mode « 1 email par ligne » : ré-interpolation par row, aucune ligne = aucun envoi.
@@ -642,7 +653,8 @@ registerServerNode({
 
     const to = String(config.to ?? '').trim()
     if (!to) throw new Error('send-gmail : destinataire (« to ») manquant.')
-    const body = injectHtmlToken(String(config.body ?? ''), inputs.data, isHtml)
+    let body = injectHtmlToken(String(config.body ?? ''), inputs.data, isHtml)
+    if (rows && hasTableToken(body)) body = injectTable(body, rows, isHtml)
     const mime = buildMime(to, String(config.subject ?? ''), body, isHtml, buildAttachment(rows))
     const id = await gmailSend(token, mime)
     ctx.log('info', `Email envoyé à ${to} (id ${id}).`)

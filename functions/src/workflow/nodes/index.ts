@@ -9,15 +9,16 @@ import './comparePrices'
 import './google'
 import './webScraping'
 import './webhookPost'
+import './costReport'   // jumeau serveur cost-report (headless, lit Firestore)
+import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton serveur)
 
 /** Types présents côté client mais non exécutables côté serveur (navigateur/OAuth/canvas). */
 export const SERVER_UNSUPPORTED = new Set<string>([
   'export-pdf', 'image-to-svg', 'pdf-to-svg', 'decompose',
-  'gsheets-import', 'gdrive-import', 'gdrive-export', 'save-dam',
+  'gsheets-import', 'gdrive-import', 'save-dam',
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif
-  'cost-report', // lit les stores du navigateur + soldes API CORS (client uniquement)
 ])
 
 /** Sous-ensemble de SERVER_UNSUPPORTED purement VISUEL/aperçu (sortie sans valeur de
