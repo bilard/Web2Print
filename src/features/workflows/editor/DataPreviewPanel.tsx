@@ -86,7 +86,9 @@ export interface ExportLike {
   mime?: string
 }
 
-const PREVIEW_PORT_PRIORITY = ['chart', 'sheet', 'products', 'result', 'assets', 'file']
+// `summary` (sheet) avant `file` : un node qui sort à la fois un fichier binaire et une
+// sheet (ex. « Rapport de coûts IA ») doit prévisualiser la sheet, pas le File (→ `{}`).
+const PREVIEW_PORT_PRIORITY = ['chart', 'sheet', 'summary', 'products', 'result', 'assets', 'file']
 const MAX_ASSETS = 16
 const PAGE_SIZE_OPTIONS: Array<{ value: number; label: string }> = [
   { value: 10, label: '10' },
@@ -817,6 +819,24 @@ export function ExportPreview({ payload }: { payload: ExportLike }) {
   )
 }
 
+/** Aperçu d'un fichier binaire (File/Blob) : nom + type + taille au lieu d'un `{}` inutile. */
+function FilePreview({ file }: { file: File | Blob }) {
+  const name = (file as File).name || 'fichier'
+  return (
+    <div className="flex items-center gap-3 p-3 rounded border border-neutral-800 bg-well">
+      <div className="w-10 h-10 rounded bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300">
+        <FileText className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm text-white truncate">{name}</div>
+        <div className="text-[11px] text-neutral-500">
+          {file.type || '—'} · {formatBytes(file.size)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProductsPreview({ value }: { value: unknown }) {
   const arr = Array.isArray(value)
     ? (value as Record<string, unknown>[])
@@ -950,6 +970,9 @@ function renderPreview(value: unknown) {
     )
   }
   if (isSheet(value)) return <SheetPreview sheet={value} />
+  if (value instanceof Blob) {
+    return <div className="flex-1 min-h-0 overflow-auto"><FilePreview file={value} /></div>
+  }
   if (Array.isArray(value)) return <ProductsPreview value={value} />
   if (
     typeof value === 'object' &&
