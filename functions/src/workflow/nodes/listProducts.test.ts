@@ -1,6 +1,6 @@
 // functions/src/workflow/nodes/listProducts.test.ts
 import { describe, it, expect } from 'vitest'
-import { priceMarkerCount, THIN_LISTING_MARKERS } from './listProducts'
+import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand } from './listProducts'
 
 describe('priceMarkerCount — détection de grille produit maigre', () => {
   // Échantillon « maigre » : ce que Jina ramène d'une grille rendue en JS (peu de prix
@@ -31,5 +31,21 @@ describe('priceMarkerCount — détection de grille produit maigre', () => {
 
   it('garde anti-régression : le contenu vide compte 0 (escalade comme avant)', () => {
     expect(priceMarkerCount('')).toBe(0)
+  })
+})
+
+describe('matchesBrand — filtre marque', () => {
+  it('garde un produit de la marque (via marque OU nom)', () => {
+    expect(matchesBrand('Tondeuse RY18LMH37A-250', 'Ryobi', 'ryobi')).toBe(true) // via la colonne marque
+    expect(matchesBrand('Tondeuse poussée Ryobi RY18LMX40B', '', 'Ryobi')).toBe(true) // via le nom (marque vide)
+  })
+  it('écarte un produit hors-marque (Sunseeker dans une recherche Ryobi)', () => {
+    expect(matchesBrand('Robot Tondeuse Sunseeker S3', 'Sunseeker', 'ryobi')).toBe(false)
+  })
+  it('accent/casse-insensible', () => {
+    expect(matchesBrand('Désherbeur GÄRDENA', 'Gardena', 'gärdena')).toBe(true)
+  })
+  it('garde anti-régression : terme vide → garde tout', () => {
+    expect(matchesBrand('Robot Sunseeker', 'Sunseeker', '')).toBe(true)
   })
 })

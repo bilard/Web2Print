@@ -90,6 +90,18 @@ function pickListingUrl(results: { url: string; title?: string }[], domain: stri
   )?.url ?? null
 }
 
+/** Normalise pour comparaison marque : minuscules, sans accents. */
+function normBrand(s: string): string {
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+}
+/** Un produit « est de la marque » si le terme apparaît dans sa marque OU son nom.
+ *  Terme vide → toujours vrai (aucun filtrage = comportement inchangé). */
+export function matchesBrand(name: unknown, brand: unknown, term: string): boolean {
+  if (!term) return true
+  const t = normBrand(term)
+  return normBrand(`${brand ?? ''} ${name ?? ''}`).includes(t)
+}
+
 function hostOf(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, '')
@@ -245,6 +257,10 @@ registerServerNode({
         return { sheet: { columns: COLUMNS, rows: [] } }
       }
     }
+    // Filtre marque optionnel : écarte les produits hors-marque (ex. une recherche
+    // « tondeuse ryobi » qui remonte des robots Sunseeker). Vide → aucun filtrage.
+    const brandTerm = String(config.marque ?? '').trim()
+    let brandFiltered = 0
     const max = Math.max(0, Number(config.maxProducts) || 0)
     // Pagination : `maxPages` pages par URL via le param `pageParam` (ex « page », « p »).
     // Page 1 = URL telle quelle ; pages 2..N = URL + ?/&{pageParam}=k.
@@ -263,6 +279,7 @@ registerServerNode({
         const url = String(p.url ?? '').trim()
         const name = String(p.name ?? '').trim()
         if (!name) continue
+        if (!matchesBrand(name, p.brand, brandTerm)) { brandFiltered++; continue }
         const key = `${site}|${url || name.toLowerCase()}`
         if (seen.has(key)) continue
         seen.add(key)
@@ -351,6 +368,7 @@ registerServerNode({
       if (!(Number.isFinite(ob) && Number.isFinite(pr) && ob > pr)) row.originalPrice = ''
     }
 
+    if (brandTerm && brandFiltered > 0) ctx.log('info', `Filtre marque « ${brandTerm} » : ${brandFiltered} produit(s) hors-marque écarté(s).`)
     ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}.`)
     if (capped.length === 0) ctx.log('warn', 'Aucun produit extrait.')
     return { sheet: { columns: COLUMNS, rows: capped } }

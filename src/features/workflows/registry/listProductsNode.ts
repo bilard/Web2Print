@@ -28,6 +28,18 @@ interface ListProductsConfig {
   /** Famille produit à découvrir (ex « barbecue »). Si renseigné, les lignes
    *  d'`urls` sont des DOMAINES et le node trouve la page liste par recherche. */
   family?: string
+  /** Marque à conserver (ex « Ryobi ») : écarte les produits hors-marque. Vide = tout garder. */
+  marque?: string
+}
+
+/** Normalise pour comparaison marque : minuscules, sans accents. */
+function normBrand(s: string): string {
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+}
+/** Vrai si le terme marque apparaît dans la marque OU le nom. Terme vide → toujours vrai. */
+function matchesBrand(name: unknown, brand: unknown, term: string): boolean {
+  if (!term) return true
+  return normBrand(`${brand ?? ''} ${name ?? ''}`).includes(normBrand(term))
 }
 
 interface ListProductsOutputs {
@@ -215,8 +227,15 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       default: true,
       help: 'Va chercher sur CHAQUE fiche produit l’EAN/marque/prix canoniques (JSON-LD, cascade Jina→Firecrawl→Bright Data). Plus complet mais 1 requête par produit (plus lent).',
     },
+    {
+      name: 'marque',
+      kind: 'text',
+      label: 'Marque (filtre)',
+      default: '',
+      help: 'Si renseigné (ex « Ryobi »), ne garde que les produits dont la marque ou le nom contient ce terme — écarte le bruit (ex robots Sunseeker dans une recherche « tondeuse ryobi »). Vide = aucun filtrage.',
+    },
   ],
-  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page', enrichFiches: true, family: '' },
+  defaultConfig: { urls: '', maxProducts: 40, maxPages: 1, pageParam: 'page', enrichFiches: true, family: '', marque: '' },
   runtime: 'any',
   run: async (ctx, config) => {
     const family = String(config.family ?? '').trim()
@@ -246,6 +265,8 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     const max = Math.max(0, Number(config.maxProducts) || 0)
     const maxPages = Math.max(1, Math.min(20, Number(config.maxPages) || 1))
     const pageParam = String(config.pageParam ?? '').trim() || 'page'
+    const brandTerm = String(config.marque ?? '').trim() // filtre marque optionnel
+    let brandFiltered = 0
 
     // Pagination : page 1 = URL telle quelle ; pages 2..N = URL + ?/&{pageParam}=k.
     const pages: { url: string; site: string }[] = []
@@ -316,6 +337,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
         const name = (p.name ?? '').trim()
         const url2 = (p.url ?? '').trim()
         if (!name) continue
+        if (!matchesBrand(name, p.brand, brandTerm)) { brandFiltered++; continue }
         const key = `${site}|${url2 || name.toLowerCase()}` // dédup multi-pages
         if (seen.has(key)) continue
         seen.add(key)
@@ -386,6 +408,7 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       if (!(Number.isFinite(ob) && Number.isFinite(pr) && ob > pr)) row.originalPrice = ''
     }
 
+    if (brandTerm && brandFiltered > 0) ctx.log('info', `Filtre marque « ${brandTerm} » : ${brandFiltered} produit(s) hors-marque écarté(s).`)
     if (capped.length === 0) {
       ctx.log('warn', '⚠️ Aucun produit extrait — vérifie les URLs (pages liste) et la disponibilité Jina.')
     } else {
