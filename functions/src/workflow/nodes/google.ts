@@ -515,6 +515,48 @@ interface GmailAttachment {
   base64: string
 }
 
+function readDecl(ruleBody: string, prop: string): string | null {
+  const m = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'i').exec(ruleBody)
+  return m ? m[1].trim() : null
+}
+
+// Adapte un document HTML autonome (ex : sortie « html » d'un node amont) pour un CORPS
+// de mail : strip <html>/<head>, extraction <body>, <style> remonté devant, ET
+// background/color/padding du `body {}` réécrits INLINE sur un wrapper (sinon Gmail
+// droppe le fond → texte clair invisible sur blanc). (Jumeau de prepareHtmlForEmail
+// dans communicationNodes.tsx.)
+function prepareHtmlForEmail(html: string): string {
+  const isFullDoc = /<html[\s>]/i.test(html) || /<body[\s>]/i.test(html)
+  if (!isFullDoc) return html
+  const styles = Array.from(html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi))
+    .map((m) => m[1])
+    .join('\n')
+    .trim()
+  const bodyMatch = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html)
+  const inner = bodyMatch ? bodyMatch[1] : html
+
+  const bodyRule = /(?:^|[^-\w])body\s*\{([^}]*)\}/i.exec(styles)?.[1] ?? ''
+  const wrapStyle = [
+    (readDecl(bodyRule, 'background') ?? readDecl(bodyRule, 'background-color')) &&
+      `background:${readDecl(bodyRule, 'background') ?? readDecl(bodyRule, 'background-color')}`,
+    readDecl(bodyRule, 'color') && `color:${readDecl(bodyRule, 'color')}`,
+    readDecl(bodyRule, 'padding') && `padding:${readDecl(bodyRule, 'padding')}`,
+  ]
+    .filter(Boolean)
+    .join(';')
+
+  const styleBlock = styles ? `<style>\n${styles}\n</style>\n` : ''
+  return wrapStyle ? `${styleBlock}<div style="${wrapStyle}">${inner}</div>` : `${styleBlock}${inner}`
+}
+
+// Injecte le contenu HTML/texte brut reçu sur le port `data` à la place de {{html}}.
+function injectHtmlToken(body: string, data: unknown, isHtml: boolean): string {
+  if (typeof data !== 'string') return body
+  if (!/\{\{\s*html\s*\}\}/.test(body)) return body
+  const injected = isHtml ? prepareHtmlForEmail(data) : data
+  return body.replace(/\{\{\s*html\s*\}\}/g, () => injected)
+}
+
 function buildMime(to: string, subject: string, body: string, isHtml: boolean, attachment?: GmailAttachment): string {
   const subj = `=?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`
   const bodyType = isHtml ? 'text/html' : 'text/plain'
@@ -600,7 +642,8 @@ registerServerNode({
 
     const to = String(config.to ?? '').trim()
     if (!to) throw new Error('send-gmail : destinataire (« to ») manquant.')
-    const mime = buildMime(to, String(config.subject ?? ''), String(config.body ?? ''), isHtml, buildAttachment(rows))
+    const body = injectHtmlToken(String(config.body ?? ''), inputs.data, isHtml)
+    const mime = buildMime(to, String(config.subject ?? ''), body, isHtml, buildAttachment(rows))
     const id = await gmailSend(token, mime)
     ctx.log('info', `Email envoyé à ${to} (id ${id}).`)
     return { result: { sent: true, count: 1 } }

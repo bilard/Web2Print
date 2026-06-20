@@ -15,6 +15,7 @@ import { interpolate } from '../runtime/interpolate'
 import { extractRows, buildInterpolationContext } from '../runtime/executor'
 
 const TABLE_TOKEN_RE = /\{\{\s*table(?:\s*:\s*([^}]+?))?\s*\}\}/g
+const HTML_TOKEN_RE = /\{\{\s*html\s*\}\}/g
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -84,6 +85,46 @@ function htmlSingleColumnTable(col: string, values: string[]): string {
     .map((v) => `<tr><td style="${tdStyle}">${escapeHtml(v)}</td></tr>`)
     .join('')
   return `<table style="border-collapse:collapse;font-family:-apple-system,sans-serif;font-size:14px;"><thead><tr><th style="${thStyle}">${escapeHtml(col)}</th></tr></thead><tbody>${trs}</tbody></table>`
+}
+
+/** Lit une déclaration CSS (`prop: valeur`) dans un bloc de règle. */
+function readDecl(ruleBody: string, prop: string): string | null {
+  const m = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'i').exec(ruleBody)
+  return m ? m[1].trim() : null
+}
+
+/**
+ * Adapte un document HTML autonome (ex : sortie « html » du node « Rapport de coûts IA »)
+ * pour un CORPS de mail. Les clients mail strippent `<html>`/`<head>` : on extrait donc
+ * le contenu de `<body>`, on remonte les blocs `<style>` devant (Apple Mail / Outlook les
+ * honorent), ET surtout on réécrit `background`/`color`/`padding` de la règle `body {}` en
+ * style INLINE sur un wrapper `<div>`. Sans ça, Gmail garde les couleurs de classe
+ * (texte clair) mais droppe le fond du `body` → texte clair sur fond blanc = invisible.
+ * Le wrapper utilise les couleurs DU document source (donc neutre clair/sombre).
+ * Si l'entrée n'est PAS un document complet (déjà un fragment), elle est renvoyée telle quelle.
+ */
+function prepareHtmlForEmail(html: string): string {
+  const isFullDoc = /<html[\s>]/i.test(html) || /<body[\s>]/i.test(html)
+  if (!isFullDoc) return html
+  const styles = Array.from(html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi))
+    .map((m) => m[1])
+    .join('\n')
+    .trim()
+  const bodyMatch = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html)
+  const inner = bodyMatch ? bodyMatch[1] : html
+
+  const bodyRule = /(?:^|[^-\w])body\s*\{([^}]*)\}/i.exec(styles)?.[1] ?? ''
+  const wrapStyle = [
+    (readDecl(bodyRule, 'background') ?? readDecl(bodyRule, 'background-color')) &&
+      `background:${readDecl(bodyRule, 'background') ?? readDecl(bodyRule, 'background-color')}`,
+    readDecl(bodyRule, 'color') && `color:${readDecl(bodyRule, 'color')}`,
+    readDecl(bodyRule, 'padding') && `padding:${readDecl(bodyRule, 'padding')}`,
+  ]
+    .filter(Boolean)
+    .join(';')
+
+  const styleBlock = styles ? `<style>\n${styles}\n</style>\n` : ''
+  return wrapStyle ? `${styleBlock}<div style="${wrapStyle}">${inner}</div>` : `${styleBlock}${inner}`
 }
 
 function generateTable(
@@ -237,8 +278,8 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
     })
   }
 
-  // Suggestions filtrées : colonnes du CSV upstream + variable spéciale "table"
-  const allSuggestions = [...availableColumns, 'table']
+  // Suggestions filtrées : colonnes du CSV upstream + variables spéciales "table"/"html"
+  const allSuggestions = [...availableColumns, 'table', 'html']
   const suggestions = autocomplete
     ? allSuggestions.filter((c) =>
         autocomplete.query === ''
@@ -423,7 +464,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             onClick={(e) => updateAutocomplete(e.currentTarget)}
             onBlur={() => setTimeout(() => setAutocomplete(null), 150)}
             rows={6}
-            placeholder={`Tape {{ pour voir les variables disponibles.\n\n  {{Nom colonne}}      → valeurs de cette colonne\n  {{table}}             → tableau de toutes les lignes\n  {{table: col1, col2}} → tableau avec colonnes ciblées`}
+            placeholder={`Tape {{ pour voir les variables disponibles.\n\n  {{Nom colonne}}      → valeurs de cette colonne\n  {{table}}             → tableau de toutes les lignes\n  {{table: col1, col2}} → tableau avec colonnes ciblées\n  {{html}}              → contenu HTML reçu sur le port data (coche « HTML »)`}
             className={`${inputCls} resize-y font-mono`}
           />
           {autocomplete?.open && suggestions.length > 0 && (
@@ -452,6 +493,8 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
                 >
                   {col === 'table' ? (
                     <span className="text-emerald-300">{`{{table}}`} <span className="text-neutral-500 text-[10px]">— tableau de toutes les lignes</span></span>
+                  ) : col === 'html' ? (
+                    <span className="text-emerald-300">{`{{html}}`} <span className="text-neutral-500 text-[10px]">— contenu HTML reçu (port data)</span></span>
                   ) : (
                     <span>{`{{${col}}}`}</span>
                   )}
@@ -647,6 +690,29 @@ const sendGmailNode: NodeSpec<
     if (!config.to) throw new Error('Destinataire manquant.')
 
     let finalBody = config.body
+
+    // Injection {{html}} : insère dans le CORPS le contenu HTML/texte brut reçu sur le
+    // port `data` (ex : sortie « html » du node « Rapport de coûts IA »). En mode HTML,
+    // on adapte un document autonome pour un mail (extraction <body> + <style>).
+    const rawString = typeof inputs.data === 'string' ? inputs.data : null
+    if (rawString !== null) {
+      if (/\{\{\s*html\s*\}\}/.test(finalBody)) {
+        if (!config.isHtml) {
+          ctx.log(
+            'warn',
+            "{{html}} détecté mais la case « HTML » est décochée : le balisage partira en texte brut. Coche « HTML » pour un rendu visuel.",
+          )
+        }
+        const injected = config.isHtml ? prepareHtmlForEmail(rawString) : rawString
+        finalBody = finalBody.replace(HTML_TOKEN_RE, () => injected)
+        ctx.log('info', `Contenu {{html}} injecté dans le corps (${injected.length} car.).`)
+      } else {
+        ctx.log(
+          'warn',
+          "Contenu HTML/texte reçu sur le port « data » mais non inséré : ajoute {{html}} dans le corps pour l'afficher.",
+        )
+      }
+    }
 
     // Si HTML coché + input contient un tableau de rows : transformer les
     // {{Colonne}} en tableau HTML.
