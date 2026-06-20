@@ -4,6 +4,7 @@
 // clés de config (urls, maxProducts), même port de sortie `sheet`, mêmes colonnes
 // {site, name, brand, ean, price, url}. Jina (mode listing) + UNE extraction LLM
 // JSON par page. Pour le cron quotidien de comparaison de prix multi-sites.
+import { load } from 'cheerio'
 import { registerServerNode } from '../registry'
 import { jinaRead, jinaSearch } from '../jina'
 import { brightDataRead, htmlToText } from '../brightData'
@@ -43,6 +44,90 @@ function resolveEan(ean: unknown, image: unknown, url: unknown, name: unknown): 
     }
   }
   return ''
+}
+
+const asObj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' ? v as Record<string, unknown> : {})
+
+/** Collecte récursivement les nœuds `ItemList` d'un JSON-LD (direct, `@graph`, `mainEntity`). */
+function collectItemLists(node: unknown, acc: Record<string, unknown>[]): void {
+  const n = asObj(node)
+  const t = n['@type']
+  if ((t === 'ItemList' || (Array.isArray(t) && t.includes('ItemList'))) && Array.isArray(n.itemListElement)) acc.push(n)
+  if (Array.isArray(n['@graph'])) for (const g of n['@graph']) collectItemLists(g, acc)
+  if (n.mainEntity) collectItemLists(n.mainEntity, acc)
+}
+
+/** Extraction DÉTERMINISTE des produits d'une page liste depuis le JSON-LD `ItemList`
+ *  (schema.org, générique) : nom, EAN (champ `sku`/`gtin13` validé), prix, URL. Pas de
+ *  prix barré (absent de l'ItemList) → complété par le LLM dans `mergeListing`. */
+export function parseListingItemList(html: string): ExtractedProduct[] {
+  const out: ExtractedProduct[] = []
+  if (!html || !html.includes('ItemList')) return out
+  try {
+    const $ = load(html)
+    $('script[type="application/ld+json"]').each((_i, el) => {
+      let data: unknown
+      try { data = JSON.parse($(el).contents().text()) } catch { return }
+      for (const block of Array.isArray(data) ? data : [data]) {
+        const lists: Record<string, unknown>[] = []
+        collectItemLists(block, lists)
+        for (const list of lists) {
+          const els = list.itemListElement
+          if (!Array.isArray(els)) continue
+          for (const e of els) {
+            const eo = asObj(e)
+            const it = asObj('item' in eo ? eo.item : e)
+            const name = String(it.name ?? '').trim()
+            if (!name) continue
+            const offersRaw = it.offers
+            const offer = asObj(Array.isArray(offersRaw) ? offersRaw[0] : offersRaw)
+            const priceNum = Number(offer.price ?? offer.lowPrice)
+            const sku = String(it.gtin13 ?? it.gtin ?? it.sku ?? '').replace(/\D/g, '')
+            const brandRaw = it.brand
+            const imageRaw = it.image
+            out.push({
+              name,
+              brand: typeof brandRaw === 'object' ? String(asObj(brandRaw).name ?? '') : String(brandRaw ?? ''),
+              ean: isValidEan13(sku) ? sku : '',
+              price: Number.isFinite(priceNum) && priceNum > 0 ? priceNum : undefined,
+              url: String(it.url ?? '').trim() || undefined,
+              image: typeof imageRaw === 'string' ? imageRaw : Array.isArray(imageRaw) ? String(imageRaw[0] ?? '') : undefined,
+            })
+          }
+        }
+      }
+    })
+  } catch { /* JSON-LD illisible → liste vide, repli LLM */ }
+  return out
+}
+
+/** Fusionne l'ItemList déterministe (base canonique : nom/EAN/prix) avec l'extraction LLM
+ *  (apporte le prix barré + produits hors ItemList). Union par URL ; l'ItemList prime sur
+ *  nom/EAN/prix, le LLM complète le barré/marque/image. ItemList vide → LLM seul (non-régression). */
+export function mergeListing(ld: ExtractedProduct[], llm: ExtractedProduct[]): ExtractedProduct[] {
+  if (ld.length === 0) return llm
+  const normUrl = (u: unknown): string => String(u ?? '').trim().toLowerCase().replace(/[#?].*$/, '')
+  const llmByUrl = new Map<string, ExtractedProduct>()
+  for (const p of llm) { const u = normUrl(p.url); if (u) llmByUrl.set(u, p) }
+  const used = new Set<string>()
+  const out: ExtractedProduct[] = []
+  for (const p of ld) {
+    const u = normUrl(p.url)
+    const m = u ? llmByUrl.get(u) : undefined
+    if (m && u) used.add(u)
+    const ldPrice = Number(p.price)
+    out.push({
+      name: p.name,
+      brand: String(p.brand ?? '').trim() ? p.brand : m?.brand,
+      ean: String(p.ean ?? '').trim() ? p.ean : m?.ean,
+      price: Number.isFinite(ldPrice) && ldPrice > 0 ? p.price : m?.price,
+      originalPrice: m?.originalPrice,
+      url: p.url,
+      image: String(p.image ?? '').trim() ? p.image : m?.image,
+    })
+  }
+  for (const p of llm) { const u = normUrl(p.url); if (!u || !used.has(u)) out.push(p) }
+  return out
 }
 
 const COLUMNS = [
@@ -175,7 +260,7 @@ export const THIN_LISTING_MARKERS = 30
 /** Récupère le contenu d'une page liste : Jina (listing) → escalade Bright Data si VIDE
  *  ou ANORMALEMENT MAIGRE (grille rendue en JS). Garde anti-régression : on ne remplace
  *  Jina que si Bright Data ramène STRICTEMENT plus de produits (marqueurs de prix). */
-async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
+async function fetchListingContent(ctx: Ctx, url: string): Promise<{ text: string; html: string }> {
   let content = ''
   try {
     content = (await jinaRead(ctx.uid, url, { listing: true })).content
@@ -183,19 +268,21 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
     ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
   }
   if (content.trim()) ctx.reportConnector?.('jina')
+  let html = '' // HTML brut Bright Data (porte le JSON-LD ItemList déterministe)
   const jinaMarkers = priceMarkerCount(content)
   if (!content.trim() || jinaMarkers < THIN_LISTING_MARKERS) {
     try {
       if (!content.trim()) ctx.log('info', `Jina sans contenu pour ${url} → escalade Bright Data.`)
       else ctx.log('info', `Jina maigre (${jinaMarkers} prix) pour ${url} → escalade Bright Data.`)
-      const bd = htmlToText((await brightDataRead(url)).html)
+      html = (await brightDataRead(url)).html
+      const bd = htmlToText(html)
       const bdMarkers = priceMarkerCount(bd)
       if (bd.trim() && bdMarkers > jinaMarkers) { content = bd; ctx.reportConnector?.('brightdata') }
     } catch (err) {
       ctx.log('warn', `Bright Data échoué ${url} : ${err instanceof Error ? err.message : err}`)
     }
   }
-  return content
+  return { text: content, html }
 }
 
 /** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours). */
@@ -304,10 +391,18 @@ registerServerNode({
       return added
     }
     const scrapePage = async (url: string, site: string): Promise<ExtractedProduct[]> => {
-      const content = await fetchListingContent(ctx, url)
-      if (!content.trim()) { ctx.log('warn', `Aucun contenu pour ${url}.`); return [] }
-      try { return await extractProducts(ctx, content, site) }
-      catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${url} : ${err instanceof Error ? err.message : err}`); return [] }
+      const { text, html } = await fetchListingContent(ctx, url)
+      // 1) JSON-LD ItemList (déterministe, EAN propres) depuis le HTML brut Bright Data.
+      const ld = parseListingItemList(html)
+      if (ld.length) ctx.log('info', `${site} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
+      // 2) LLM sur le texte (apporte le prix barré + sites sans ItemList).
+      let llm: ExtractedProduct[] = []
+      if (text.trim()) {
+        try { llm = await extractProducts(ctx, text, site) }
+        catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${url} : ${err instanceof Error ? err.message : err}`) }
+      }
+      if (ld.length === 0 && !text.trim()) { ctx.log('warn', `Aucun contenu pour ${url}.`); return [] }
+      return mergeListing(ld, llm)
     }
 
     for (const root of urls) {
