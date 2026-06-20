@@ -146,7 +146,19 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
   return out
 }
 
-/** Récupère le contenu d'une page liste : Jina (listing) → escalade Bright Data si vide. */
+/** Compte les marqueurs de prix (€) — signal robuste, cross-site, d'une grille produit
+ *  réellement rendue. Une page liste dont la grille est peinte en JS ressort quasi sans
+ *  prix dans le markdown Jina (ex. Castorama → 6 k chars, 3 produits au lieu de ~45). */
+export function priceMarkerCount(text: string): number {
+  return (String(text).match(/\d[\d  .,]{0,12}€|€\s?\d/g) ?? []).length
+}
+/** Sous ce nombre de marqueurs de prix, un listing est jugé « maigre » → on tente Bright
+ *  Data (rendu JS) en plus de Jina. Calibré : Castorama maigre ≈ 3-11, LM/Jardiland ≈ 25-45. */
+export const THIN_LISTING_MARKERS = 15
+
+/** Récupère le contenu d'une page liste : Jina (listing) → escalade Bright Data si VIDE
+ *  ou ANORMALEMENT MAIGRE (grille rendue en JS). Garde anti-régression : on ne remplace
+ *  Jina que si Bright Data ramène STRICTEMENT plus de produits (marqueurs de prix). */
 async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
   let content = ''
   try {
@@ -155,11 +167,14 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<string> {
     ctx.log('warn', `Lecture Jina échouée ${url} : ${err instanceof Error ? err.message : err}`)
   }
   if (content.trim()) ctx.reportConnector?.('jina')
-  if (!content.trim()) {
+  const jinaMarkers = priceMarkerCount(content)
+  if (!content.trim() || jinaMarkers < THIN_LISTING_MARKERS) {
     try {
-      ctx.log('info', `Jina sans contenu pour ${url} → escalade Bright Data.`)
-      content = htmlToText((await brightDataRead(url)).html)
-      if (content.trim()) ctx.reportConnector?.('brightdata')
+      if (!content.trim()) ctx.log('info', `Jina sans contenu pour ${url} → escalade Bright Data.`)
+      else ctx.log('info', `Jina maigre (${jinaMarkers} prix) pour ${url} → escalade Bright Data.`)
+      const bd = htmlToText((await brightDataRead(url)).html)
+      const bdMarkers = priceMarkerCount(bd)
+      if (bd.trim() && bdMarkers > jinaMarkers) { content = bd; ctx.reportConnector?.('brightdata') }
     } catch (err) {
       ctx.log('warn', `Bright Data échoué ${url} : ${err instanceof Error ? err.message : err}`)
     }
