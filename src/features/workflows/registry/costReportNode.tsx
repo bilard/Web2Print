@@ -106,7 +106,8 @@ const costReportNode: NodeSpec<CostReportConfig, Record<string, never>, CostRepo
       'info',
       `Rapport généré : total ${report.totalEur.toFixed(2)} € · ${report.tokensIn} in / ${report.tokensOut} out · ${(file.size / 1024).toFixed(1)} KB.`,
     )
-    return { html: report.html, file, summary: { columns, rows: report.summaryRows } }
+    // `file` = dashboard riche (archive Drive) ; `html` = variante email-safe (corps de mail).
+    return { html: report.emailHtml, file, summary: { columns, rows: report.summaryRows } }
   },
 }
 

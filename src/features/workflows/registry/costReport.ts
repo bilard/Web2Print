@@ -135,7 +135,10 @@ export function buildCostRows(
 }
 
 export interface CostReportData {
+  /** Document autonome riche (grilles CSS, cartes) — pour archive Drive / navigateur. */
   html: string
+  /** Variante email-safe (tables + styles inline) — pour un corps de mail (Gmail strippe grid/flex/<style>). */
+  emailHtml: string
   /** Lignes plates (1 par provider + TOTAL) pour brancher vers Sheets/autres. */
   summaryRows: Record<string, unknown>[]
   totalUsd: number
@@ -190,7 +193,7 @@ export async function collectCostReport(opts: {
   const updatedLabel = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateLabel = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 
-  const html = buildHtml({
+  const htmlInput = {
     title: opts.title?.trim() || 'Consommation IA & Scraping',
     month, dateLabel, updatedLabel,
     totalUsd, tokensIn, tokensOut, overCount, warnCount,
@@ -206,7 +209,9 @@ export async function collectCostReport(opts: {
       kind: bdKind,
       show: bdAccount !== null || brightData.requests > 0 || brightData.costUsd > 0,
     },
-  })
+  }
+  const html = buildHtml(htmlInput)
+  const emailHtml = buildEmailHtml(htmlInput)
 
   const summaryRows: Record<string, unknown>[] = rows.map((r) => ({
     Provider: r.title,
@@ -225,7 +230,7 @@ export async function collectCostReport(opts: {
     'Coût (USD)': Number(totalUsd.toFixed(4)), 'Coût (EUR)': Number((totalUsd * USD_TO_EUR).toFixed(4)),
   })
 
-  return { html, summaryRows, totalUsd, totalEur: totalUsd * USD_TO_EUR, tokensIn, tokensOut }
+  return { html, emailHtml, summaryRows, totalUsd, totalEur: totalUsd * USD_TO_EUR, tokensIn, tokensOut }
 }
 
 export interface BrightDataView {
@@ -459,4 +464,145 @@ export function buildHtml(d: {
   </div>
 </body>
 </html>`
+}
+
+// Palette email (mêmes teintes que le dashboard, en hex opaques email-safe).
+const EMAIL_C = {
+  bg: '#0b0b0f', panel: '#15151b', border: '#26262e', line: '#1c1c22',
+  text: '#e8e8ea', dim: '#9a9aa2', faint: '#6a6a72', mute: '#4a4a52', white: '#ffffff',
+  green: '#34d399', red: '#f87171', amber: '#fbbf24', orange: '#fb923c',
+} as const
+
+function emailBadge(kind: BadgeKind): string {
+  const map: Record<BadgeKind, [string, string, string]> = {
+    over:    ['Limite atteinte', '#fca5a5', 'rgba(239,68,68,.15)'],
+    warning: ['Proche', '#fcd34d', 'rgba(245,158,11,.15)'],
+    ok:      ['OK', '#6ee7b7', 'rgba(16,185,129,.12)'],
+    unset:   ['sans budget', '#9a9aa2', 'rgba(255,255,255,.06)'],
+  }
+  const [label, fg, bgc] = map[kind]
+  return `<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;color:${fg};background:${bgc};white-space:nowrap;">${label}</span>`
+}
+
+/**
+ * Variante EMAIL du rapport : layout en `<table>` + styles 100 % inline (thème sombre),
+ * pour un CORPS de mail. Les clients (Gmail) strippent `display:grid/flex` et les blocs
+ * `<style>` ; ici tout est inline et tabulaire → le rendu survit. Renvoie un FRAGMENT
+ * autonome (un `<div>` racine), pas un document complet.
+ */
+export function buildEmailHtml(d: {
+  title: string
+  month: string
+  dateLabel: string
+  updatedLabel: string
+  totalUsd: number
+  tokensIn: number
+  tokensOut: number
+  overCount: number
+  warnCount: number
+  rows: CostRow[]
+  balances: Record<string, number | null>
+  brightData: BrightDataView
+}): string {
+  const C = EMAIL_C
+  const mono = 'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;'
+  const th = `font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};font-weight:600;padding:8px;border-bottom:1px solid ${C.border};`
+  const td = `padding:10px 8px;border-bottom:1px solid ${C.line};font-size:13px;vertical-align:top;color:${C.text};`
+
+  const kpi = (head: string, value: string, foot: string): string =>
+    `<td width="33%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px 14px;">
+      <div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:${C.dim};">${head}</div>
+      <div style="font-size:21px;font-weight:600;color:${C.white};margin-top:5px;${mono}">${value}</div>
+      <div style="font-size:10px;color:${C.faint};margin-top:4px;">${foot}</div>
+    </td>`
+
+  const alertsVal = d.overCount === 0 && d.warnCount === 0
+    ? `<span style="color:${C.green};">OK</span>`
+    : `${d.overCount > 0 ? `<span style="color:${C.red};">${d.overCount} dépassé${d.overCount > 1 ? 's' : ''}</span>` : ''}${d.overCount > 0 && d.warnCount > 0 ? ' · ' : ''}${d.warnCount > 0 ? `<span style="color:${C.amber};">${d.warnCount} proche${d.warnCount > 1 ? 's' : ''}</span>` : ''}`
+
+  const rowsHtml = d.rows.map((r) => {
+    const meta = PROVIDER_META[r.provider]
+    const hasUsage = r.tokensIn > 0 || r.tokensOut > 0
+    const apiBalance = r.isSubRow ? null : (d.balances[r.provider] ?? null)
+    let budgetCell = `<span style="color:${C.mute};">—</span>`
+    if (!r.isSubRow && apiBalance != null) {
+      budgetCell = `<div style="color:${C.green};font-weight:600;">$${apiBalance.toFixed(2)}</div><div style="font-size:9.5px;color:${C.faint};">solde API</div>`
+    } else if (!r.isSubRow && r.budget != null) {
+      budgetCell = `<div style="font-weight:600;color:${C.text};">$${Math.max(0, r.budget - r.costUsd).toFixed(2)}</div><div style="font-size:9.5px;color:${C.faint};">restant</div>`
+    }
+    const status = r.isSubRow
+      ? `<span style="font-size:9.5px;color:${C.faint};font-style:italic;">budget partagé</span>`
+      : emailBadge(r.kind)
+    const indent = r.isSubRow ? 'padding-left:18px;' : ''
+    return `<tr>
+      <td style="${td}${indent}">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${meta.dot};margin-right:7px;"></span>
+        <a href="${meta.topup}" style="color:${C.text};text-decoration:none;font-weight:500;">${esc(r.title)}</a>
+        <div style="font-size:9.5px;color:${C.faint};margin-top:2px;">${esc(r.subtitle)}</div>
+      </td>
+      <td align="right" style="${td}">
+        <div style="${hasUsage ? `color:${C.text};` : `color:${C.mute};`}${mono}">${formatTokens(r.tokensIn)} / ${formatTokens(r.tokensOut)}</div>
+        ${r.pricing ? `<div style="font-size:9.5px;color:${C.faint};">$${r.pricing.input}/${r.pricing.output} par M tokens</div>` : ''}
+      </td>
+      <td align="right" style="${td}">
+        <div style="${hasUsage ? `color:${C.text};font-weight:600;` : `color:${C.mute};`}${mono}">${formatEur(r.costUsd)}</div>
+        <div style="font-size:9.5px;color:${C.faint};">$${r.costUsd.toFixed(4)}</div>
+      </td>
+      <td align="right" style="${td}${mono}">${budgetCell}</td>
+      <td align="right" style="${td}">${status}</td>
+    </tr>`
+  }).join('')
+
+  const bd = d.brightData
+  const mini = (h: string, v: string, foot: string): string =>
+    `<td width="25%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:8px;padding:9px 10px;">
+      <div style="font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:${C.faint};">${h}</div>
+      <div style="font-size:15px;color:${C.text};margin-top:3px;${mono}">${v}</div>
+      <div style="font-size:9.5px;color:${C.faint};margin-top:2px;">${foot}</div>
+    </td>`
+  const bdHtml = bd.show ? `
+    <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin:20px 0 10px;padding-top:14px;border-top:1px solid ${C.border};">Scraping (server-side)</div>
+    <div style="margin-bottom:10px;">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.orange};margin-right:7px;"></span>
+      <a href="https://brightdata.com/cp/setting/billing" style="color:${C.text};text-decoration:none;font-weight:500;">Bright Data</a>
+      <span style="font-size:9.5px;color:${C.faint};"> · Web Unlocker</span>&nbsp; ${emailBadge(bd.kind)}
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;">
+      <tr>
+        ${mini('Solde', bd.balanceUsd != null ? '$' + bd.balanceUsd.toFixed(2) : '—', bd.balanceUsd != null ? (bd.pendingBalanceUsd && bd.pendingBalanceUsd > 0 ? '+$' + bd.pendingBalanceUsd.toFixed(2) + ' pending' : `<span style="color:${C.green};">live</span>`) : '')}
+        ${mini('Consommé', '$' + bd.consumedUsd.toFixed(2), formatEur(bd.consumedUsd) + (bd.isLive ? ` · <span style="color:${C.green};">live</span>` : bd.localRequests > 0 ? ' · ' + bd.localRequests + ' req local' : ''))}
+        ${mini('Prochaine facture', formatBillingDate(bd.nextBillingDate), bd.nextBillingDate ? 'estimé (1er du mois)' : '—')}
+        ${mini('Statut compte', bd.accountStatus ? esc(bd.accountStatus) : '—', bd.accountStatus ? `<span style="color:${C.green};">live</span>` : 'token sans scope Account')}
+      </tr>
+    </table>` : ''
+
+  return `<div style="background:${C.bg};color:${C.text};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:24px;border-radius:14px;max-width:720px;margin:0 auto;">
+    <div style="font-size:20px;font-weight:600;color:${C.white};margin-bottom:3px;">${esc(d.title)} — rapport</div>
+    <div style="font-size:11px;color:${C.dim};margin-bottom:16px;">Vue globale des coûts du mois (${d.month}) · généré le ${d.dateLabel} à ${d.updatedLabel}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;">
+      <tr>
+        ${kpi('Total ce mois', formatEur(d.totalUsd), '≈ $' + d.totalUsd.toFixed(4) + ' USD')}
+        ${kpi('Tokens in / out', `${formatTokens(d.tokensIn)} / ${formatTokens(d.tokensOut)}`, 'tous providers cumulés')}
+        <td width="33%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:${C.dim};">Alertes</div>
+          <div style="font-size:21px;font-weight:600;color:${C.white};margin-top:5px;">${alertsVal}</div>
+          <div style="font-size:10px;color:${C.faint};margin-top:4px;">≥ 80% = warning · ≥ 100% = over</div>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:16px;">
+      <thead><tr>
+        <th align="left" style="${th}">Provider</th>
+        <th align="right" style="${th}">Tokens (in / out)</th>
+        <th align="right" style="${th}">Coût</th>
+        <th align="right" style="${th}">Budget dispo</th>
+        <th align="right" style="${th}">Statut</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    ${bdHtml}
+    <div style="font-size:9.5px;color:${C.faint};margin-top:18px;line-height:1.6;">
+      Données agrégées depuis Firestore. Les alertes sont des seuils mensuels locaux (warning ≥ 80 %, limite atteinte ≥ 100 %) ; elles ne rechargent pas les comptes chez les providers.
+    </div>
+  </div>`
 }
