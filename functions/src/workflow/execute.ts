@@ -16,6 +16,10 @@ export interface HeadlessResult {
   nodeStates: Record<string, LiveNodeStatus>
   /** Connecteurs réellement utilisés par node (jina/brightdata/llm…), pour les badges. */
   nodeConnectors: Record<string, string[]>
+  /** Nodes qui ont RÉELLEMENT démarré leur exécution (entrés dans spec.run). Sert au garde
+   *  d'idempotence de la reprise : un node à effet de bord démarré mais non terminé ne doit
+   *  pas être ré-exécuté (doublons). */
+  startedNodes: string[]
 }
 
 interface LoopPair { eachId: string; collectId: string; bodyIds: Set<string> }
@@ -53,6 +57,19 @@ function detectLoops(nodes: ServerNode[], edges: ServerEdge[]): LoopPair[] {
 
 export type LiveNodeStatus = 'pending' | 'running' | 'success' | 'error' | 'skipped'
 
+/** Cap de concurrence par niveau topo : les branches sœurs tournent en parallèle, mais
+ *  on borne pour ne pas saturer la mémoire de la Function (512 MiB) ni les quotas LLM. */
+const MAX_NODE_CONCURRENCY = 4
+
+/** Exécute `fn` sur chaque item avec au plus `limit` tâches en vol simultanément. */
+async function runConcurrent<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
+  let cursor = 0
+  const worker = async (): Promise<void> => {
+    while (cursor < items.length) await fn(items[cursor++])
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+}
+
 export async function executeWorkflowHeadless(
   wf: ServerWorkflow,
   opts: {
@@ -63,6 +80,12 @@ export async function executeWorkflowHeadless(
     onProgress?: (states: Record<string, LiveNodeStatus>, outputs: Record<string, Record<string, unknown>>) => void | Promise<void>
     /** Notifié à chaque log (throttlé côté appelant) — streaming des logs en direct. */
     onLog?: (logs: RunLog[]) => void
+    /** Reprise : sorties des nodes déjà terminés lors d'un run précédent interrompu
+     *  (timeout). Ces nodes ne sont pas ré-exécutés ; leurs sorties câblent l'aval. */
+    resume?: { outputs: Record<string, Record<string, unknown>> }
+    /** Notifié à CHAQUE node terminé avec succès (sortie COMPLÈTE, non tronquée) pour
+     *  que l'appelant la persiste durablement (checkpoint de reprise). */
+    onNodeDone?: (nodeId: string, output: Record<string, unknown>) => void | Promise<void>
   },
 ): Promise<HeadlessResult> {
   const logs: RunLog[] = []
@@ -82,6 +105,7 @@ export async function executeWorkflowHeadless(
   const outputs = new Map<string, Record<string, unknown>>()
   const errored = new Set<string>()
   const skipped = new Set<string>()
+  const started = new Set<string>() // nodes entrés dans spec.run (garde reprise)
 
   const loops = detectLoops(wf.nodes, wf.edges)
   const internalIds = new Set<string>()
@@ -91,11 +115,16 @@ export async function executeWorkflowHeadless(
 
   const mainNodes = wf.nodes.filter((n) => !internalIds.has(n.id))
   const mainEdges = wf.edges.filter((e) => !internalIds.has(e.source) && !internalIds.has(e.target))
+  // Arête synthétique each→collect : le collect (sans amont « main », ses entrées venant
+  // du body interne) doit rester APRÈS son each — pour le topo ET le calcul des niveaux.
+  const synthEdges: ServerEdge[] = loops.map((l) => ({
+    id: `__loop_${l.eachId}`, source: l.eachId, sourceHandle: 'item', target: l.collectId, targetHandle: 'item',
+  }))
   let ordered: ServerNode[]
-  try { ordered = topoSort(mainNodes, mainEdges) }
+  try { ordered = topoSort(mainNodes, [...mainEdges, ...synthEdges]) }
   catch (err) {
     log('error', err instanceof Error ? err.message : String(err))
-    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors }
+    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors, startedNodes: [] }
   }
 
   const runBody = async (pair: LoopPair, item: unknown, idx: number): Promise<unknown> => {
@@ -128,10 +157,10 @@ export async function executeWorkflowHeadless(
 
   // État courant de tous les nodes (pour la progression live). `running` = le node
   // passé en argument ; les précédents ont déjà leur état final dans les sets.
-  const deriveStates = (running?: string): Record<string, LiveNodeStatus> => {
+  const deriveStates = (running?: ReadonlySet<string>): Record<string, LiveNodeStatus> => {
     const s: Record<string, LiveNodeStatus> = {}
     for (const n of wf.nodes) {
-      s[n.id] = n.id === running ? 'running'
+      s[n.id] = running?.has(n.id) ? 'running'
         : errored.has(n.id) ? 'error'
           : skipped.has(n.id) ? 'skipped'
             : outputs.has(n.id) || internalIds.has(n.id) ? 'success'
@@ -141,24 +170,35 @@ export async function executeWorkflowHeadless(
   }
 
   let nodeCount = 0
-  for (const node of ordered) {
-    // Progression : le node courant passe « running », les précédents sont finalisés
-    // (avec leurs sorties → aperçu données live).
-    await opts.onProgress?.(deriveStates(node.id), nodeOutputs)
+
+  // Reprise : réinjecte les sorties des nodes déjà terminés (run précédent interrompu).
+  // Ils sont marqués « done » → non ré-exécutés, mais disponibles pour câbler l'aval.
+  const done = new Set<string>()
+  if (opts.resume) {
+    for (const [id, out] of Object.entries(opts.resume.outputs)) {
+      outputs.set(id, out); nodeOutputs[id] = out; done.add(id)
+    }
+  }
+
+  // Exécution d'UN node. Mutations partagées (outputs/errored/skipped/nodeOutputs/nodeCount)
+  // sûres malgré la concurrence : JS est mono-thread coopératif et chaque mutation porte
+  // sur une clé distincte (nodes d'un même niveau = indépendants).
+  const runNode = async (node: ServerNode): Promise<void> => {
+    if (done.has(node.id)) { nodeCount++; return } // déjà calculé (reprise)
     const upstream = wf.edges.filter((e) => e.target === node.id && !internalIds.has(e.source))
     if (upstream.some((e) => skipped.has(e.source) || errored.has(e.source))) {
-      skipped.add(node.id); continue
+      skipped.add(node.id); return
     }
     // Abort (STOP volontaire ou timeout) = pas un échec : node « arrêté » (neutre), pas erreur.
-    if (opts.signal.aborted) { skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id); continue }
-    if (node.type === 'cron') { outputs.set(node.id, { tick: { at: new Date().toISOString() } }); continue }
-    if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) { nodeCount++; continue }
+    if (opts.signal.aborted) { skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id); return }
+    if (node.type === 'cron') { outputs.set(node.id, { tick: { at: new Date().toISOString() } }); return }
+    if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) { nodeCount++; return }
 
     if (SERVER_UNSUPPORTED.has(node.type)) {
-      errored.add(node.id); log('error', `Node « ${node.type} » non exécutable côté serveur.`, node.id); continue
+      errored.add(node.id); log('error', `Node « ${node.type} » non exécutable côté serveur.`, node.id); return
     }
     const spec = getServerNode(node.type)
-    if (!spec) { errored.add(node.id); log('error', `Type inconnu : ${node.type}`, node.id); continue }
+    if (!spec) { errored.add(node.id); log('error', `Type inconnu : ${node.type}`, node.id); return }
 
     const inputs: Record<string, unknown> = {}
     for (const e of upstream) {
@@ -172,6 +212,7 @@ export async function executeWorkflowHeadless(
           : incoming
       }
     }
+    started.add(node.id) // à partir d'ici, du travail (potentiellement à effet de bord) a pu démarrer
     try {
       const loopPair = loopByEach.get(node.id)
       if (loopPair) {
@@ -183,7 +224,7 @@ export async function executeWorkflowHeadless(
         outputs.set(loopPair.collectId, { results })
         nodeOutputs[loopPair.collectId] = { results }
         outputs.set(node.id, { item: items[0] }); nodeCount++
-        continue
+        return
       }
       const ctx = buildInterpolationContext(inputs)
       const cfg = interpolate(node.config, ctx) as Record<string, unknown>
@@ -203,6 +244,7 @@ export async function executeWorkflowHeadless(
       outputs.set(node.id, result ?? {})
       nodeOutputs[node.id] = result ?? {}
       nodeCount++
+      await opts.onNodeDone?.(node.id, result ?? {})
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       // Interruption (STOP/timeout) → arrêté (neutre), pas un échec du node.
@@ -212,6 +254,35 @@ export async function executeWorkflowHeadless(
         errored.add(node.id); log('error', msg, node.id)
       }
     }
+  }
+
+  // Niveaux topo : un node ne démarre qu'une fois TOUS ses amonts terminés. Les nodes d'un
+  // même niveau sont indépendants → lancés EN PARALLÈLE (cap concurrence). Les branches
+  // sœurs (ex. 3 scrapes → 1 comparateur) ne s'additionnent plus dans le temps, ce qui
+  // évite que le budget serveur (RUN_TIMEOUT_MS) expire avant le bout du graphe.
+  const upByTarget = new Map<string, string[]>()
+  for (const e of [...mainEdges, ...synthEdges]) {
+    const arr = upByTarget.get(e.target) ?? upByTarget.set(e.target, []).get(e.target)!
+    arr.push(e.source)
+  }
+  const levelOf = new Map<string, number>()
+  for (const node of ordered) {
+    const ups = upByTarget.get(node.id) ?? []
+    levelOf.set(node.id, ups.reduce((m, u) => Math.max(m, (levelOf.get(u) ?? 0) + 1), 0))
+  }
+  const byLevel = new Map<number, ServerNode[]>()
+  for (const node of ordered) {
+    const lvl = levelOf.get(node.id) ?? 0
+    const arr = byLevel.get(lvl) ?? byLevel.set(lvl, []).get(lvl)!
+    arr.push(node)
+  }
+  // Pas de `break` sur abort : on traverse les niveaux restants pour que chaque node aval
+  // soit marqué « arrêté » (skipped + log) comme avant — runNode le fait sans rien exécuter.
+  for (const lvl of [...byLevel.keys()].sort((a, b) => a - b)) {
+    const group = byLevel.get(lvl)!
+    await opts.onProgress?.(deriveStates(new Set(group.map((n) => n.id))), nodeOutputs)
+    await runConcurrent(group, MAX_NODE_CONCURRENCY, runNode)
+    await opts.onProgress?.(deriveStates(), nodeOutputs)
   }
 
   const errorCount = errored.size
@@ -224,5 +295,5 @@ export async function executeWorkflowHeadless(
   // appariements…), y compris sur un run success. Visible via `firebase functions:log`.
   const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
   console.log(`[wf:${wf.name}] trace:\n${trace}`)
-  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors }
+  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors, startedNodes: [...started] }
 }
