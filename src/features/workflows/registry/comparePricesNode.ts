@@ -81,7 +81,7 @@ function keysOf(row: Record<string, unknown>, c: ComparePricesConfig): Keys {
   }
 }
 
-interface CompetitorMatch { site: string; price: number; original?: number }
+interface CompetitorMatch { site: string; price: number; original?: number; url?: string }
 
 /** Longueur minimale d'un préfixe de référence commun pour apparier deux codes
  *  modèle (en deçà, trop de faux positifs). */
@@ -147,13 +147,13 @@ export function compareSourceToCompetitors(
   const byEan = new Map<string, CompetitorMatch[]>()
   const byRef = new Map<string, CompetitorMatch[]>()
   const byName = new Map<string, CompetitorMatch[]>()
-  const push = (m: Map<string, CompetitorMatch[]>, key: string, site: string, price: number, original?: number) => {
+  const push = (m: Map<string, CompetitorMatch[]>, key: string, site: string, price: number, original?: number, url?: string) => {
     if (!key) return
     const list = m.get(key) ?? []
     const found = list.find((x) => x.site === site)
-    // On conserve l'entrée au prix le plus bas pour ce (clé, site) — et SON prix barré.
-    if (found) { if (price < found.price) { found.price = price; found.original = original } }
-    else list.push({ site, price, original })
+    // On conserve l'entrée au prix le plus bas pour ce (clé, site) — et SON prix barré + lien.
+    if (found) { if (price < found.price) { found.price = price; found.original = original; found.url = url } }
+    else list.push({ site, price, original, url })
     m.set(key, list)
   }
   for (const row of competitorRows) {
@@ -164,10 +164,11 @@ export function compareSourceToCompetitors(
     // Prix barré = prix d'origine SI présent et strictement supérieur au prix actuel.
     const origRaw = parsePrice(row[c.originalColumn])
     const original = Number.isFinite(origRaw) && origRaw > price ? origRaw : undefined
+    const url = String(row[c.urlColumn] ?? '').trim()
     const k = keysOf(row, c)
-    push(byEan, k.ean, site, price, original)
-    for (const ref of k.refs) push(byRef, ref, site, price, original)
-    push(byName, k.name, site, price, original)
+    push(byEan, k.ean, site, price, original, url)
+    for (const ref of k.refs) push(byRef, ref, site, price, original, url)
+    push(byName, k.name, site, price, original, url)
   }
 
   // 3 colonnes par concurrent : prix actuel, prix barré, % de réduction.
@@ -183,6 +184,7 @@ export function compareSourceToCompetitors(
     { key: 'prix_source', label: 'Prix source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 110 },
     { key: 'prix_barre_source', label: 'Prix barré source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 110 },
     { key: 'reduc_source', label: 'Réduc % source', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 90 },
+    { key: 'lien_source', label: 'Lien source', fieldType: 'url', detectedType: 'url', isPrimary: false, width: 220 },
     ...priceCols.flatMap((c2) => [
       { key: c2.key, label: `Prix ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 120 },
       { key: c2.barreKey, label: `Prix barré ${c2.site}`, fieldType: 'number' as const, detectedType: 'number' as const, isPrimary: false, width: 110 },
@@ -190,6 +192,7 @@ export function compareSourceToCompetitors(
     ]),
     { key: 'meilleur_concurrent', label: 'Concurrent le moins cher', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 180 },
     { key: 'prix_concurrent', label: 'Prix concurrent', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 120 },
+    { key: 'lien_concurrent', label: 'Lien concurrent', fieldType: 'url', detectedType: 'url', isPrimary: false, width: 220 },
     { key: 'ecart_eur', label: 'Écart €', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 100 },
     { key: 'ecart_pct', label: 'Écart %', fieldType: 'number', detectedType: 'number', isPrimary: false, width: 90 },
     { key: 'position', label: 'Position', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 130 },
@@ -230,12 +233,13 @@ export function compareSourceToCompetitors(
       prix_barre_source: Number.isFinite(srcBarre) ? String(srcBarre) : '',
       reduc_source: Number.isFinite(srcBarre) && srcBarre > 0
         ? String(Math.round(((srcBarre - srcPrice) / srcBarre) * 1000) / 10) : '',
+      lien_source: String(row[c.urlColumn] ?? '').trim(),
     }
-    // Par site : prix le plus bas + son prix barré (le cas échéant).
-    const bySite = new Map<string, { price: number; original?: number }>()
+    // Par site : prix le plus bas + son prix barré + lien (le cas échéant).
+    const bySite = new Map<string, { price: number; original?: number; url?: string }>()
     for (const m of comp) {
       const prev = bySite.get(m.site)
-      if (prev === undefined || m.price < prev.price) bySite.set(m.site, { price: m.price, original: m.original })
+      if (prev === undefined || m.price < prev.price) bySite.set(m.site, { price: m.price, original: m.original, url: m.url })
     }
     for (const pc of priceCols) {
       const e = bySite.get(pc.site)
@@ -251,6 +255,7 @@ export function compareSourceToCompetitors(
       for (const [s, e] of bySite.entries()) if (!best || e.price < best[1]) best = [s, e.price]
       r.meilleur_concurrent = best![0]
       r.prix_concurrent = String(best![1])
+      r.lien_concurrent = bySite.get(best![0])?.url ?? ''
       if (Number.isFinite(srcPrice) && srcPrice > 0) {
         const ecart = Math.round((srcPrice - best![1]) * 100) / 100
         r.ecart_eur = String(ecart)
@@ -260,7 +265,7 @@ export function compareSourceToCompetitors(
         r.ecart_eur = ''; r.ecart_pct = ''; r.position = ''
       }
     } else {
-      r.meilleur_concurrent = ''; r.prix_concurrent = ''
+      r.meilleur_concurrent = ''; r.prix_concurrent = ''; r.lien_concurrent = ''
       r.ecart_eur = ''; r.ecart_pct = ''; r.position = 'non trouvé'
     }
     if (c.onlyMatched && bySite.size === 0) continue
@@ -397,7 +402,7 @@ const comparePricesNode: NodeSpec<ComparePricesConfig, ComparePricesInputs, Comp
   ],
   outputs: [{ name: 'sheet', type: 'sheet' }],
   // Colonnes fixes de sortie (les `prix_<concurrent>` dynamiques s'ajoutent après un run).
-  outputColumns: ['produit', 'marque', 'reference', 'ean', 'source', 'prix_source', 'prix_barre_source', 'reduc_source', 'meilleur_concurrent', 'prix_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
+  outputColumns: ['produit', 'marque', 'reference', 'ean', 'source', 'prix_source', 'prix_barre_source', 'reduc_source', 'lien_source', 'meilleur_concurrent', 'prix_concurrent', 'lien_concurrent', 'ecart_eur', 'ecart_pct', 'position'],
   configSchema: [
     { name: 'nameColumn', kind: 'columnRef', label: 'Colonne Nom', default: 'name' },
     { name: 'priceColumn', kind: 'columnRef', label: 'Colonne Prix', default: 'price' },

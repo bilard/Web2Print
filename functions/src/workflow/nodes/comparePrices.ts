@@ -66,7 +66,7 @@ function keysOf(row: Record<string, unknown>, c: Cfg) {
   }
 }
 
-interface CMatch { site: string; price: number; original?: number }
+interface CMatch { site: string; price: number; original?: number; url?: string }
 
 // Coloration de la colonne « position » (tons sémantiques mappés par chaque rendu/export).
 const POSITION_COLOR_RULES = [
@@ -203,12 +203,12 @@ registerServerNode({
     const byEan = new Map<string, CMatch[]>()
     const byRef = new Map<string, CMatch[]>()
     const byName = new Map<string, CMatch[]>()
-    const push = (m: Map<string, CMatch[]>, key: string, site: string, price: number, original?: number) => {
+    const push = (m: Map<string, CMatch[]>, key: string, site: string, price: number, original?: number, url?: string) => {
       if (!key) return
       const list = m.get(key) ?? []
       const found = list.find((x) => x.site === site)
-      if (found) { if (price < found.price) { found.price = price; found.original = original } }
-      else list.push({ site, price, original })
+      if (found) { if (price < found.price) { found.price = price; found.original = original; found.url = url } }
+      else list.push({ site, price, original, url })
       m.set(key, list)
     }
     for (const row of competitorRows) {
@@ -218,10 +218,11 @@ registerServerNode({
       if (!(Number.isFinite(price) && price > 0)) continue
       const origRaw = parsePrice(row[cfg.originalColumn])
       const original = Number.isFinite(origRaw) && origRaw > price ? origRaw : undefined
+      const url = String(row[cfg.urlColumn] ?? '').trim()
       const k = keysOf(row, cfg)
-      push(byEan, k.ean, site, price, original)
-      for (const ref of k.refs) push(byRef, ref, site, price, original)
-      push(byName, k.name, site, price, original)
+      push(byEan, k.ean, site, price, original, url)
+      for (const ref of k.refs) push(byRef, ref, site, price, original, url)
+      push(byName, k.name, site, price, original, url)
     }
 
     // 3 colonnes par concurrent : prix actuel, prix barré, % de réduction.
@@ -237,6 +238,7 @@ registerServerNode({
       { key: 'prix_source', label: 'Prix source' },
       { key: 'prix_barre_source', label: 'Prix barré source' },
       { key: 'reduc_source', label: 'Réduc % source' },
+      { key: 'lien_source', label: 'Lien source' },
       ...priceCols.flatMap((p) => [
         { key: p.key, label: `Prix ${p.site}` },
         { key: p.barreKey, label: `Prix barré ${p.site}` },
@@ -244,6 +246,7 @@ registerServerNode({
       ]),
       { key: 'meilleur_concurrent', label: 'Concurrent le moins cher' },
       { key: 'prix_concurrent', label: 'Prix concurrent' },
+      { key: 'lien_concurrent', label: 'Lien concurrent' },
       { key: 'ecart_eur', label: 'Écart €' },
       { key: 'ecart_pct', label: 'Écart %' },
       { key: 'position', label: 'Position' },
@@ -279,11 +282,12 @@ registerServerNode({
         prix_barre_source: Number.isFinite(srcBarre) ? String(srcBarre) : '',
         reduc_source: Number.isFinite(srcBarre) && srcBarre > 0
           ? String(Math.round(((srcBarre - srcPrice) / srcBarre) * 1000) / 10) : '',
+        lien_source: String(row[cfg.urlColumn] ?? '').trim(),
       }
-      const bySite = new Map<string, { price: number; original?: number }>()
+      const bySite = new Map<string, { price: number; original?: number; url?: string }>()
       for (const m of comp) {
         const prev = bySite.get(m.site)
-        if (prev === undefined || m.price < prev.price) bySite.set(m.site, { price: m.price, original: m.original })
+        if (prev === undefined || m.price < prev.price) bySite.set(m.site, { price: m.price, original: m.original, url: m.url })
       }
       for (const pc of priceCols) {
         const e = bySite.get(pc.site)
@@ -299,6 +303,7 @@ registerServerNode({
         for (const [s, e] of bySite.entries()) if (!best || e.price < best[1]) best = [s, e.price]
         r.meilleur_concurrent = best![0]
         r.prix_concurrent = String(best![1])
+        r.lien_concurrent = bySite.get(best![0])?.url ?? ''
         if (Number.isFinite(srcPrice) && srcPrice > 0) {
           const ecart = Math.round((srcPrice - best![1]) * 100) / 100
           r.ecart_eur = String(ecart)
@@ -306,7 +311,7 @@ registerServerNode({
           r.position = ecart > 0 ? 'plus cher' : ecart < 0 ? 'moins cher' : 'égalité'
         } else { r.ecart_eur = ''; r.ecart_pct = ''; r.position = '' }
       } else {
-        r.meilleur_concurrent = ''; r.prix_concurrent = ''
+        r.meilleur_concurrent = ''; r.prix_concurrent = ''; r.lien_concurrent = ''
         r.ecart_eur = ''; r.ecart_pct = ''; r.position = 'non trouvé'
       }
       if (cfg.onlyMatched && bySite.size === 0) continue

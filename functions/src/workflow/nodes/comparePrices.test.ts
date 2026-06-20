@@ -34,6 +34,19 @@ describe('compare-prices (serveur)', () => {
     expect(out.columns.map((c: any) => c.key)).toContain('prix_castorama_fr')
   })
 
+  it('expose le lien source ET le lien du concurrent apparié (contrôle)', async () => {
+    const src = { rows: [{ site: 'jardiland.com', name: 'Tondeuse RYOBI RLM18E40H', ean: '', url: 'https://jardiland.com/p/rlm18e40h', price: '219' }] }
+    const comp = { rows: [{ site: 'castorama.fr', name: 'RYOBI RLM18E40H 1800W', ean: '', url: 'https://castorama.fr/x/rlm18e40h.prd', price: '208,99' }] }
+    const out = (await run(CFG, { source: src, concurrents: comp })).sheet as any
+    expect(out.rows[0]).toMatchObject({
+      lien_source: 'https://jardiland.com/p/rlm18e40h',
+      lien_concurrent: 'https://castorama.fr/x/rlm18e40h.prd',
+    })
+    const keys = out.columns.map((c: any) => c.key)
+    expect(keys).toContain('lien_source')
+    expect(keys).toContain('lien_concurrent')
+  })
+
   it('source vide → sortie vide', async () => {
     const out = (await run(CFG, { source: { rows: [] }, concurrents })).sheet as any
     expect(out.rows).toEqual([])
