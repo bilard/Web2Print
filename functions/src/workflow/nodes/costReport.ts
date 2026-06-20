@@ -15,6 +15,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import { registerServerNode } from '../registry'
 import { makeServerFile } from './serverFile'
+import { fetchBrightDataAccountStats } from '../../scraper/brightDataAccount'
 
 // ───────────────────────────── Catalogue modèles (copie de src/lib/aiModels.ts) ──
 type AiProvider = 'claude' | 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'kimi' | 'openrouter'
@@ -642,9 +643,24 @@ async function collectCostReportServer(uid: string, title?: string): Promise<{
   }
   const brightDataBudgetUsd = ai.brightDataBudgetUsd ?? null
 
-  // Best-effort omis côté serveur (cf. en-tête fichier) : soldes API + compte BD live.
+  // Soldes providers (DeepSeek/OpenRouter) : omis côté serveur (clés API non lues ici).
   const balances: Record<string, number | null> = {}
-  const consumedBdUsd = brightData.costUsd
+
+  // Compte Bright Data LIVE : on lit le token+zone GLOBAUX dans Firestore config/brightdata
+  // (le scheduler ne bind PAS les secrets BD, cf. functions/src/workflow/brightData.ts) et on
+  // interroge la même API que le panneau live — pour que le mail affiche les vraies valeurs
+  // (solde / consommé / statut / facture) au lieu de —/compteur Firestore périmé. Best-effort :
+  // repli sur le compteur Firestore brightDataUsage si le call échoue (token sans scope, réseau…).
+  let bdAccount: Awaited<ReturnType<typeof fetchBrightDataAccountStats>> | null = null
+  try {
+    const cfg = (await db.doc('config/brightdata').get()).data() ?? {}
+    const bdToken = String(cfg.apiToken ?? '').trim()
+    const bdZone = String(cfg.zone ?? '').trim() || 'web_unlocker1'
+    if (bdToken) bdAccount = await fetchBrightDataAccountStats(bdToken, bdZone)
+  } catch (e) {
+    console.warn('[cost-report] Bright Data live indisponible, repli compteur Firestore :', e instanceof Error ? e.message : e)
+  }
+  const consumedBdUsd = bdAccount?.consumedThisMonthUsd ?? brightData.costUsd
 
   const rows = buildCostRows(aiCost, selectedModel, monthlyBudget)
   const totalUsd = rows.reduce((s, r) => s + r.costUsd, 0) + consumedBdUsd
@@ -667,14 +683,14 @@ async function collectCostReportServer(uid: string, title?: string): Promise<{
     rows, balances,
     brightData: {
       consumedUsd: consumedBdUsd,
-      balanceUsd: null,
-      pendingBalanceUsd: null,
-      accountStatus: null,
-      nextBillingDate: null,
-      isLive: false,
+      balanceUsd: bdAccount?.balanceUsd ?? null,
+      pendingBalanceUsd: bdAccount?.pendingBalanceUsd ?? null,
+      accountStatus: bdAccount?.accountStatus ?? null,
+      nextBillingDate: bdAccount?.nextBillingDate ?? null,
+      isLive: bdAccount?.consumedThisMonthUsd != null,
       localRequests: brightData.requests,
       kind: bdKind,
-      show: brightData.requests > 0 || brightData.costUsd > 0,
+      show: bdAccount !== null || brightData.requests > 0 || brightData.costUsd > 0,
     } as BrightDataView,
   }
   const html = buildHtml(htmlInput)

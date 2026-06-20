@@ -25,7 +25,7 @@ import { getBrightDataToken } from './brightDataToken'
 const BRIGHTDATA_API_TOKEN = defineSecret('BRIGHTDATA_API_TOKEN')
 const BRIGHTDATA_ZONE = defineSecret('BRIGHTDATA_ZONE')
 
-interface BrightDataAccountStats {
+export interface BrightDataAccountStats {
   /** Solde actuel en USD (null si /customer/balance refuse l'accès — token sans scope Account read). */
   balanceUsd: number | null
   /** Montant pending pour le prochain cycle de facturation. */
@@ -103,23 +103,13 @@ function nextMonthFirstDay(): string {
   return next.toISOString().slice(0, 10)
 }
 
-export const getBrightDataAccount = onCall<undefined, Promise<BrightDataAccountStats>>(
-  {
-    secrets: [BRIGHTDATA_API_TOKEN, BRIGHTDATA_ZONE],
-    timeoutSeconds: 30,
-    memory: '256MiB',
-    region: 'europe-west1',
-  },
-  async (req) => {
-    if (!req.auth) {
-      throw new HttpsError('unauthenticated', 'Authentification Firebase requise')
-    }
-    const token = await getBrightDataToken(BRIGHTDATA_API_TOKEN.value())
-    const zone = BRIGHTDATA_ZONE.value() || 'web_unlocker1'
-    if (!token) {
-      throw new HttpsError('failed-precondition', 'BRIGHTDATA_API_TOKEN non configuré (ni dans Firestore config/brightdata.apiToken, ni dans Secret Manager)')
-    }
-
+/**
+ * Cœur réutilisable : interroge l'API Bright Data (balance + zone/cost) à partir d'un
+ * token + zone déjà résolus, SANS auth ni secret. Permet d'appeler la même logique
+ * depuis un contexte headless (cron cost-report) que depuis l'onCall — sans dupliquer
+ * le parsing ni dériver des valeurs différentes de celles du panneau live.
+ */
+export async function fetchBrightDataAccountStats(token: string, zone: string): Promise<BrightDataAccountStats> {
     const { from, to, month } = isoMonthBounds()
     const fetchedAt = new Date().toISOString()
     const errors: BrightDataAccountStats['errors'] = {}
@@ -209,5 +199,24 @@ export const getBrightDataAccount = onCall<undefined, Promise<BrightDataAccountS
       errors,
       ...(rawBalanceResponse !== undefined ? { rawBalanceResponse } : {}),
     }
+}
+
+export const getBrightDataAccount = onCall<undefined, Promise<BrightDataAccountStats>>(
+  {
+    secrets: [BRIGHTDATA_API_TOKEN, BRIGHTDATA_ZONE],
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    region: 'europe-west1',
+  },
+  async (req) => {
+    if (!req.auth) {
+      throw new HttpsError('unauthenticated', 'Authentification Firebase requise')
+    }
+    const token = await getBrightDataToken(BRIGHTDATA_API_TOKEN.value())
+    const zone = BRIGHTDATA_ZONE.value() || 'web_unlocker1'
+    if (!token) {
+      throw new HttpsError('failed-precondition', 'BRIGHTDATA_API_TOKEN non configuré (ni dans Firestore config/brightdata.apiToken, ni dans Secret Manager)')
+    }
+    return fetchBrightDataAccountStats(token, zone)
   },
 )
