@@ -17,6 +17,7 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif
+  'cost-report', // lit les stores du navigateur + soldes API CORS (client uniquement)
 ])
 
 /** Sous-ensemble de SERVER_UNSUPPORTED purement VISUEL/aperçu (sortie sans valeur de

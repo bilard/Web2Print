@@ -16,10 +16,13 @@ interface AiProviderUsage extends AiUsageLeaf {
   byModel: Record<string, AiUsageLeaf>
 }
 
-interface BrightDataUsage {
+export interface BrightDataUsage {
   requests: number
   costUsd: number
 }
+
+/** Coûts IA agrégés du mois (un total + le détail par provider). */
+export type AiCostStats = UsageStats['aiCost']
 
 interface UsageStats {
   projectCount: number
@@ -36,7 +39,7 @@ interface UsageStats {
 const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} })
 const emptyBrightData = (): BrightDataUsage => ({ requests: 0, costUsd: 0 })
 
-async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
+export async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   const month = new Date().toISOString().slice(0, 7)
   const snap = await getDoc(doc(db, 'aiUsage', `${userId}_${month}`))
   if (!snap.exists()) {
@@ -74,7 +77,7 @@ async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   }
 }
 
-async function fetchBrightData(userId: string): Promise<BrightDataUsage> {
+export async function fetchBrightData(userId: string): Promise<BrightDataUsage> {
   const month = new Date().toISOString().slice(0, 7)
   const snap = await getDoc(doc(db, 'brightDataUsage', `${userId}_${month}`))
   if (!snap.exists()) return emptyBrightData()

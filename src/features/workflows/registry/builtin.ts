@@ -22,6 +22,7 @@ import './crawlNode'
 import './webScrapingNode' // node unifié (doit suivre les anciens : il les référence)
 import './comparePricesNode'
 import './chartNode'
+import './costReportNode'
 import './communicationNodes'
 import './telegramNodes'
 import './webhookNode'
