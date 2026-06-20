@@ -82,14 +82,12 @@ const costReportNode: NodeSpec<CostReportConfig, Record<string, never>, CostRepo
   configSchema: [],
   defaultConfig: { title: '', fileName: '' },
   runtime: 'client',
-  connectors: ['brightdata'],
   ConfigComponent: CostReportConfigUi,
   cardSummary: (c) => c.title?.trim() || 'Coûts du mois',
   run: async (ctx, config) => {
     const user = useAuthStore.getState().user
     if (!user?.uid) throw new Error('Utilisateur non authentifié — impossible de lire les coûts.')
 
-    ctx.reportConnector?.('brightdata')
     ctx.log('info', 'Agrégation des coûts IA & scraping du mois…')
     const report = await collectCostReport({ uid: user.uid, email: user.email, title: config.title })
 
