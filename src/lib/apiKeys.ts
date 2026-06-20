@@ -123,7 +123,7 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Clé API Remove.bg pour la suppression de fond',
     links: {
       manage: 'https://www.remove.bg/dashboard',
-      billing: 'https://www.remove.bg/dashboard/credits',
+      billing: 'https://www.remove.bg/pricing',
     },
   },
   {
