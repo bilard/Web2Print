@@ -1,16 +1,11 @@
 // src/features/workflows/registry/communicationNodes.tsx
-import { useState, useEffect, useRef } from 'react'
-import { Mail, CheckCircle2, AlertCircle, LogOut, Loader2, Copy, Check } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Mail, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import {
-  getStoredGmailToken,
-  requestGmailToken,
-  clearGmailToken,
-  sendGmail,
-  fileToBase64,
-  type SendGmailAttachment,
-} from '@/lib/gmailAuth'
+import { sendGmail, fileToBase64, type SendGmailAttachment } from '@/lib/gmailAuth'
+import { getServerGoogleToken } from '@/features/gdrive/serverGoogleToken'
+import { useGoogleServerConnect } from '@/features/settings/useGoogleServerConnect'
 import { interpolate } from '../runtime/interpolate'
 import { extractRows, buildInterpolationContext } from '../runtime/executor'
 
@@ -218,7 +213,6 @@ function injectTable(body: string, rows: Record<string, unknown>[], isHtml: bool
 type AttachmentMode = 'none' | 'source' | 'filtered'
 
 interface SendGmailConfig {
-  clientId: string
   to: string
   subject: string
   body: string
@@ -248,28 +242,10 @@ interface AutoCompleteState {
 }
 
 function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmailConfigUiProps) {
-  const [token, setToken] = useState(() => getStoredGmailToken())
-  const [connecting, setConnecting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-
-  // Re-check token au mount au cas où une autre instance l'a refresh
-  useEffect(() => {
-    setToken(getStoredGmailToken())
-  }, [])
-
-  const connected = !!token && token.expiresAt > Date.now()
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
-
-  const onCopyOrigin = async () => {
-    try {
-      await navigator.clipboard.writeText(currentOrigin)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // ignore
-    }
-  }
+  // Statut de la connexion Google GLOBALE (connecteur serveur, refresh token persistant).
+  // C'est la même connexion qu'utilisent le cron et les nodes Drive/Sheets : aucune
+  // connexion par-node à refaire. `connectedAt` : number = connecté, null = non, undefined = chargement.
+  const { connectedAt } = useGoogleServerConnect()
 
   const bodyRef = useRef<HTMLTextAreaElement>(null)
   const [autocomplete, setAutocomplete] = useState<AutoCompleteState | null>(null)
@@ -345,110 +321,38 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
     }
   }
 
-  const onConnect = async () => {
-    if (!config.clientId.trim()) {
-      setError("Renseigne d'abord le Client ID OAuth Google.")
-      return
-    }
-    setConnecting(true)
-    setError(null)
-    try {
-      const t = await requestGmailToken(config.clientId.trim())
-      setToken(t)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setConnecting(false)
-    }
-  }
-
-  const onDisconnect = () => {
-    clearGmailToken()
-    setToken(null)
-  }
-
   const inputCls =
     'w-full bg-background border border-neutral-700 rounded-md px-2 py-1.5 text-[12px] text-white placeholder:text-neutral-600 focus:border-cyan-500 outline-none'
 
   return (
     <div className="space-y-3">
-      <div>
-        <label className="text-xs text-neutral-400 mb-1 block">Client ID OAuth Google</label>
-        <input
-          type="text"
-          value={config.clientId}
-          onChange={(e) => onChange({ ...config, clientId: e.target.value })}
-          placeholder="xxxxxx.apps.googleusercontent.com"
-          className={inputCls}
-        />
-        <div className="text-[10px] text-neutral-600 mt-1.5 leading-snug space-y-1.5">
-          <p>
-            Crée un Client OAuth dans{' '}
-            <a
-              href="https://console.cloud.google.com/apis/credentials"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
-            >
-              Google Cloud Console → Identifiants
-            </a>
-            . Type : <strong className="text-neutral-400">Application Web</strong>.
-          </p>
-          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-amber-500/5 border border-amber-500/20">
-            <span className="shrink-0 text-amber-300/80">Origine JS à autoriser :</span>
-            <code className="flex-1 truncate text-amber-200 font-mono text-[10px]" title={currentOrigin}>
-              {currentOrigin}
-            </code>
-            <button
-              type="button"
-              onClick={onCopyOrigin}
-              className="shrink-0 p-1 rounded hover:bg-white/5 text-amber-300/80 hover:text-amber-200"
-              title="Copier l'origine"
-              aria-label="Copier l'origine"
-            >
-              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-            </button>
-          </div>
-          <p className="text-neutral-600">
-            Erreur <code className="text-amber-300/80">origin_mismatch</code> = cette URL exacte
-            n'est pas listée dans <strong className="text-neutral-400">Origines JavaScript autorisées</strong>{' '}
-            du Client OAuth. Ajoute-la, attends ~30 s, puis réessaie.
-          </p>
+      {/* Statut de la connexion Google GLOBALE — plus de Client ID ni de bouton par-node.
+          Le node réutilise le connecteur serveur (cron + Drive/Sheets) : une seule connexion,
+          jamais à refaire. */}
+      {connectedAt === undefined ? (
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-neutral-500/10 border border-neutral-500/30">
+          <Loader2 className="w-3 h-3 text-neutral-400 shrink-0 animate-spin" />
+          <span className="text-[11px] text-neutral-400">Vérification de la connexion Google…</span>
         </div>
-      </div>
-
-      <div className="space-y-1.5">
-        {connected ? (
-          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-            <span className="text-[11px] text-emerald-300 flex-1">Connecté à Gmail</span>
-            <button
-              type="button"
-              onClick={onDisconnect}
-              className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-red-400"
-              title="Déconnecter"
-            >
-              <LogOut className="w-3 h-3" /> Déconnecter
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnect}
-            disabled={connecting || !config.clientId.trim()}
-            className="w-full flex items-center justify-center gap-2 bg-cyan-500/15 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-[12px] py-2 rounded-md transition-colors"
-          >
-            {connecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-            {connecting ? 'Connexion…' : 'Se connecter à Gmail'}
-          </button>
-        )}
-        {error && (
-          <div className="flex items-start gap-1.5 text-[11px] text-red-400 px-1">
-            <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-      </div>
+      ) : connectedAt !== null ? (
+        <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+          <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
+          <span className="text-[11px] text-emerald-300 leading-snug">
+            Connecté via ton compte Google global. Le cron <strong>et</strong> les envois manuels
+            réutilisent cette connexion — rien à reconnecter ici.
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-start gap-1.5 px-2 py-2 rounded-md bg-amber-500/10 border border-amber-500/30">
+          <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+          <span className="text-[11px] text-amber-200 leading-snug">
+            Compte Google non connecté. Ouvre les <strong>Paramètres</strong> (roue dentée) →{' '}
+            <strong>Connecteurs → Google (accès serveur)</strong> et connecte ton compte{' '}
+            <strong>une seule fois</strong> : l'envoi Gmail (manuel et cron) l'utilisera ensuite
+            automatiquement.
+          </span>
+        </div>
+      )}
 
       <div>
         <label className="text-xs text-neutral-400 mb-1 block">Destinataire</label>
@@ -606,7 +510,7 @@ const sendGmailNode: NodeSpec<
   category: 'communication',
   label: 'Envoyer via Gmail',
   description:
-    "Envoie un email via Gmail API (OAuth Google côté client). Connexion à faire une fois par session.",
+    "Envoie un email via Gmail API en réutilisant la connexion Google globale (Paramètres → Connecteurs). Une seule connexion, partagée avec le cron — rien à reconnecter.",
   icon: Mail,
   inputs: [
     { name: 'data', type: 'any' },
@@ -615,7 +519,6 @@ const sendGmailNode: NodeSpec<
   outputs: [{ name: 'result', type: 'any' }],
   configSchema: [],
   defaultConfig: {
-    clientId: '',
     to: '',
     subject: '',
     body: '',
@@ -627,10 +530,18 @@ const sendGmailNode: NodeSpec<
   runtime: 'client',
   ConfigComponent: SendGmailConfigUi,
   run: async (ctx, config, inputs) => {
-    const token = getStoredGmailToken()
-    if (!token) {
+    // Jeton du connecteur Google SERVEUR (refresh token persistant, rafraîchi tout seul) :
+    // même identité OAuth que le cron et les nodes Drive/Sheets. Plus de popup ~1 h par-node.
+    let accessToken: string
+    try {
+      accessToken = await getServerGoogleToken()
+    } catch (err) {
+      // Remonter la cause réelle (réseau, invalid_grant…) sans la masquer derrière un
+      // message générique : distingue « jamais connecté » d'« autorisation révoquée/réseau ».
+      const detail = err instanceof Error ? err.message : String(err)
       throw new Error(
-        "Pas de token Gmail valide. Ouvre la config du node et clique 'Se connecter à Gmail'.",
+        `Compte Google indisponible (${detail}). Connecte ton compte une seule fois dans Paramètres → Connecteurs → Google (accès serveur) — l’envoi Gmail (manuel et cron) l’utilisera ensuite automatiquement.`,
+        { cause: err },
       )
     }
 
@@ -707,7 +618,7 @@ const sendGmailNode: NodeSpec<
           ctx.log('warn', `Ligne ${i + 1} ignorée : destinataire vide après interpolation.`)
           continue
         }
-        const result = await sendGmail(token.accessToken, {
+        const result = await sendGmail(accessToken, {
           to: interpolatedRow.to,
           subject: interpolatedRow.subject,
           body: interpolatedRow.body,
@@ -814,7 +725,7 @@ const sendGmailNode: NodeSpec<
     }
 
     ctx.log('info', `Envoi Gmail → ${config.to}`)
-    const result = await sendGmail(token.accessToken, {
+    const result = await sendGmail(accessToken, {
       to: config.to,
       subject: config.subject,
       body: finalBody,

@@ -5,7 +5,7 @@
 // alignement numérique. Styles 100 % inline → survivent dans Gmail.
 // ⚠️ SYNCHRO avec le renderer client (TBL, generateTable, injectTable).
 
-export const TABLE_TOKEN_RE = /\{\{\s*table(?:\s*:\s*([^}]+?))?\s*\}\}/g
+const TABLE_TOKEN_RE = /\{\{\s*table(?:\s*:\s*([^}]+?))?\s*\}\}/g
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
