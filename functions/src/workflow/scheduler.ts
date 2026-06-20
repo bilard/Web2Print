@@ -47,7 +47,10 @@ async function loadWorkflow(uid: string, workflowId: string): Promise<ServerWork
 }
 
 /** Tronque les rows des sheets de sortie (aperçu client) pour tenir sous le quota
- *  Firestore (1 Mo/doc). 100 lignes/sheet suffisent pour un aperçu. */
+ *  Firestore (1 Mo/doc). 100 lignes/sheet suffisent pour un aperçu.
+ *  ⚠️ Ne cape QUE les `.rows`. Un port `file` (ServerFile base64, ex : cost-report)
+ *  passe tel quel — OK tant que les fichiers restent petits (rapport HTML ~dizaines de
+ *  Ko) ; à tronquer/omettre ici si un node émet un gros binaire (PDF, image). */
 function capOutputsForPreview(outputs: Record<string, Record<string, unknown>>, maxRows = 100): Record<string, Record<string, unknown>> {
   const out: Record<string, Record<string, unknown>> = {}
   for (const [id, ports] of Object.entries(outputs)) {
