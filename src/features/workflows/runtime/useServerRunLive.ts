@@ -31,11 +31,11 @@ export function useServerRunLive(workflowId: string | undefined): void {
         // Nouveau run (runId changé) → on vide l'état précédent (aperçu/cartes périmés).
         const reset = !!d.runId && d.runId !== lastRunId.current
         lastRunId.current = d.runId
-        // Un run SERVEUR qui démarre prime sur un run client resté « en cours » (isRunning
-        // coincé) qui, sinon, masquerait sa progression (garde dans hydrateServerRun).
-        // Le doc workflowRunsLive n'est écrit QUE par le serveur → pas d'auto-déclenchement
-        // par un run client (qui, lui, n'écrit pas ce doc).
-        if (reset && d.status === 'running' && useRunContext.getState().isRunning) {
+        // Tout nouveau run SERVEUR (runId changé, quel que soit son statut) reprend la main
+        // sur un run client resté « en cours » (isRunning coincé) qui, sinon, masquerait son
+        // état (garde dans hydrateServerRun). Sûr : workflowRunsLive n'est écrit QUE par le
+        // serveur → un run client (qui n'écrit pas ce doc) ne peut pas auto-déclencher ceci.
+        if (reset && useRunContext.getState().isRunning) {
           useRunContext.getState().resetRun()
         }
         const logsByNode: Record<string, RunLiveDoc['logs']> = {}
