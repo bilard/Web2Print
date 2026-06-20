@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { getApiKey } from '@/lib/apiKeys'
+import { recordRemoveBgUsage } from '@/features/stats/removeBgUsageTracking'
 
 export function useRemoveBg() {
   const [loading, setLoading] = useState(false)
@@ -46,6 +47,12 @@ export function useRemoveBg() {
         setError(msg)
         return null
       }
+
+      // Enregistre la consommation (panneau « Consommation IA & Scraping — live »).
+      // L'API renvoie le débit réel dans `X-Credits-Charged` (1 en pleine résolution,
+      // ~0.25 en preview) ; repli sur 1 crédit si l'en-tête est absent.
+      const creditsCharged = Number(response.headers.get('X-Credits-Charged'))
+      void recordRemoveBgUsage(Number.isFinite(creditsCharged) && creditsCharged > 0 ? creditsCharged : 1)
 
       const blob = await response.blob()
       return URL.createObjectURL(blob)

@@ -21,6 +21,12 @@ export interface BrightDataUsage {
   costUsd: number
 }
 
+interface RemoveBgUsage {
+  images: number
+  credits: number
+  costUsd: number
+}
+
 /** Coûts IA agrégés du mois (un total + le détail par provider). */
 export type AiCostStats = UsageStats['aiCost']
 
@@ -34,10 +40,12 @@ interface UsageStats {
     byProvider: Record<AiProvider, AiProviderUsage>
   }
   brightData: BrightDataUsage
+  removebg: RemoveBgUsage
 }
 
 const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} })
 const emptyBrightData = (): BrightDataUsage => ({ requests: 0, costUsd: 0 })
+const emptyRemoveBg = (): RemoveBgUsage => ({ images: 0, credits: 0, costUsd: 0 })
 
 export async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   const month = new Date().toISOString().slice(0, 7)
@@ -88,6 +96,18 @@ export async function fetchBrightData(userId: string): Promise<BrightDataUsage> 
   }
 }
 
+async function fetchRemoveBg(userId: string): Promise<RemoveBgUsage> {
+  const month = new Date().toISOString().slice(0, 7)
+  const snap = await getDoc(doc(db, 'removebgUsage', `${userId}_${month}`))
+  if (!snap.exists()) return emptyRemoveBg()
+  const data = snap.data() as Partial<RemoveBgUsage>
+  return {
+    images: data.images ?? 0,
+    credits: data.credits ?? 0,
+    costUsd: data.costUsd ?? 0,
+  }
+}
+
 async function fetchStats(userId: string): Promise<UsageStats> {
   const q = query(collection(db, 'projects'), where('ownerId', '==', userId))
   const safeAiCost = (): Promise<UsageStats['aiCost']> =>
@@ -103,7 +123,12 @@ async function fetchStats(userId: string): Promise<UsageStats> {
       console.warn('[useUsageStats] fetchBrightData failed:', e)
       return emptyBrightData()
     })
-  const [snap, aiCost, brightData] = await Promise.all([getDocs(q), safeAiCost(), safeBrightData()])
+  const safeRemoveBg = (): Promise<RemoveBgUsage> =>
+    fetchRemoveBg(userId).catch((e) => {
+      console.warn('[useUsageStats] fetchRemoveBg failed:', e)
+      return emptyRemoveBg()
+    })
+  const [snap, aiCost, brightData, removebg] = await Promise.all([getDocs(q), safeAiCost(), safeBrightData(), safeRemoveBg()])
 
   let totalBytes = 0
   snap.docs.forEach((d) => {
@@ -119,6 +144,7 @@ async function fetchStats(userId: string): Promise<UsageStats> {
     storageQuotaMb: 500,
     aiCost,
     brightData,
+    removebg,
   }
 }
 

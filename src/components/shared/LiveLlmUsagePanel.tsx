@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink, Eraser } from 'lucide-react'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { fetchProviderBalances } from '@/features/stats/providerBalances'
 import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
@@ -320,14 +320,23 @@ export function LiveLlmUsagePanel() {
     }
   }, [stats, brightDataBudget, bdAccount])
 
+  // Remove.bg : conso PER-USER (clé propre à chaque utilisateur) → compteur Firestore
+  // removebgUsage, pas un compte partagé. Pas d'API solde live (l'API ne l'expose pas).
+  const removeBgRow = useMemo(() => {
+    const images = stats?.removebg.images ?? 0
+    const credits = stats?.removebg.credits ?? 0
+    const consumedUsd = stats?.removebg.costUsd ?? 0
+    return { images, credits, consumedUsd }
+  }, [stats])
+
   const hasBdApiErrors = useMemo(() => {
     const e = brightDataRow.apiErrors as Record<string, string | undefined>
     return !!(e.balance ?? e.zoneCost)
   }, [brightDataRow.apiErrors])
 
   const grandTotalUsd = useMemo(
-    () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd,
-    [rows, brightDataRow.consumedUsd],
+    () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd + removeBgRow.consumedUsd,
+    [rows, brightDataRow.consumedUsd, removeBgRow.consumedUsd],
   )
   const grandTokensIn = useMemo(() => rows.reduce((s, r) => s + r.tokensIn, 0), [rows])
   const grandTokensOut = useMemo(() => rows.reduce((s, r) => s + r.tokensOut, 0), [rows])
@@ -700,12 +709,75 @@ export function LiveLlmUsagePanel() {
           </div>
         )}
         </>)}
+
+        {/* Section Traitement d'images — Remove.bg : conso PER-USER (clé propre à
+            chaque utilisateur) → visible par tous, pas owner-gated comme Bright Data. */}
+        <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
+          <div className="col-span-9">Traitement d'images</div>
+        </div>
+
+        {!isLoading && (
+          <div className="flex flex-col gap-2 px-2 py-3 border-b border-white/5 last:border-0">
+            {/* Ligne 1 : Identité + lien recharge */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 min-w-0">
+                <Eraser className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <div className="min-w-0">
+                  <a
+                    href="https://www.remove.bg/pricing"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Ouvrir la facturation Remove.bg — recharger les crédits"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-sky-300 transition-colors truncate"
+                  >
+                    <span className="truncate">Remove.bg</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-sky-300 shrink-0" />
+                  </a>
+                  <p className="text-[9.5px] text-white/30 font-mono truncate">Suppression de fond d'images</p>
+                </div>
+              </div>
+              <a
+                href="https://www.remove.bg/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Recharger les crédits Remove.bg"
+                className="text-[9px] text-white/30 hover:text-sky-300 inline-flex items-center gap-0.5 transition-colors"
+              >
+                recharger <ExternalLink className="w-2 h-2" />
+              </a>
+            </div>
+
+            {/* Ligne 2 : 2 mini-cards Consommé / Images */}
+            <div className="grid grid-cols-2 gap-1.5">
+              {/* Consommé */}
+              <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">Consommé (estimé)</p>
+                <p className={`text-sm font-mono leading-tight ${removeBgRow.consumedUsd > 0 ? 'text-white/90' : 'text-white/30'}`}>
+                  ${removeBgRow.consumedUsd.toFixed(2)}
+                </p>
+                <p className="text-[9px] font-mono text-white/30">{formatEur(removeBgRow.consumedUsd)}</p>
+              </div>
+
+              {/* Images / crédits */}
+              <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">Images traitées</p>
+                <p className={`text-sm font-mono leading-tight ${removeBgRow.images > 0 ? 'text-white/90' : 'text-white/30'}`}>
+                  {removeBgRow.images}
+                </p>
+                <p className="text-[9px] font-mono text-white/30">
+                  {removeBgRow.credits > 0 ? `${removeBgRow.credits.toFixed(2).replace(/\.00$/, '')} crédit${removeBgRow.credits >= 2 ? 's' : ''}` : 'ce mois'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <p className="text-[9px] text-white/25 leading-relaxed">
         Données agrégées depuis Firestore — collections{' '}
-        <code className="text-white/40">aiUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code> et{' '}
-        <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
+        <code className="text-white/40">aiUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
+        <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code> et{' '}
+        <code className="text-white/40">removebgUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
         Auto-refresh toutes les 15 s. Les <strong className="text-white/60">alertes</strong> sont des seuils mensuels{' '}
         <em>locaux</em> : elles déclenchent un warning à ≥ 80 % et un état "limite atteinte" à ≥ 100 %, mais ne rechargent pas le compte chez le provider.
         Pour recharger réellement les crédits, cliquer sur le nom du provider <ExternalLink className="inline w-2 h-2 -translate-y-px" />.
