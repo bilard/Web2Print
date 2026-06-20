@@ -165,8 +165,12 @@ export function priceMarkerCount(text: string): number {
   return (String(text).match(/\d[\d  .,]{0,12}€|€\s?\d/g) ?? []).length
 }
 /** Sous ce nombre de marqueurs de prix, un listing est jugé « maigre » → on tente Bright
- *  Data (rendu JS) en plus de Jina. Calibré : Castorama maigre ≈ 3-11, LM/Jardiland ≈ 25-45. */
-export const THIN_LISTING_MARKERS = 15
+ *  Data (rendu JS) en plus de Jina. Calibré sur run réel : Castorama tronqué = 11 produits
+ *  (~15-25 marqueurs) alors que la page en a ~45 → seuil à 30 pour le rattraper ; Jardiland
+ *  (~42 produits) et Leroy Merlin (~24, déjà sur BD) restent au-dessus. La garde
+ *  anti-régression (ne remplacer que si BD est plus riche) évite tout dégât sur un vrai
+ *  petit listing qui aurait < 30 marqueurs. */
+export const THIN_LISTING_MARKERS = 30
 
 /** Récupère le contenu d'une page liste : Jina (listing) → escalade Bright Data si VIDE
  *  ou ANORMALEMENT MAIGRE (grille rendue en JS). Garde anti-régression : on ne remplace

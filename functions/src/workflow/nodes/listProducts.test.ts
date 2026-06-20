@@ -13,8 +13,8 @@ describe('priceMarkerCount — détection de grille produit maigre', () => {
     Tondeuse Ryobi RY18LMX40B 429,90 €
     Voir tous les résultats
   `
-  // Échantillon « riche » : grille complète rendue (un prix par produit).
-  const rich = Array.from({ length: 30 }, (_, i) => `Tondeuse Ryobi modèle ${i} ${300 + i},90 €`).join('\n')
+  // Échantillon « riche » : grille complète rendue (un prix par produit), au-delà du seuil.
+  const rich = Array.from({ length: 45 }, (_, i) => `Tondeuse Ryobi modèle ${i} ${300 + i},90 €`).join('\n')
 
   it('compte les marqueurs de prix € (FR/EN)', () => {
     expect(priceMarkerCount('1 299,90 €')).toBeGreaterThanOrEqual(1)
