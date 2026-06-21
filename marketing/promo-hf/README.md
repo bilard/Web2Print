@@ -5,7 +5,8 @@ Beaucoup plus puissant que les carrousels HTML statiques de `../social-ads/` : m
 
 ## Le fichier
 
-- **`index.html`** — la composition (source de vérité). Une seule timeline GSAP, 10 scènes en fondu enchaîné.
+- **`standalone.html`** ⭐ — **la version HTML autonome qui se lit dans n'importe quel navigateur** (ouvrir, héberger, envoyer). Même composition, avec un lecteur intégré (lecture auto + boucle + pause + barre de progression). C'est le fichier à partager comme « version HTML ».
+- **`index.html`** — la composition source pour HyperFrames (timeline en pause, pilotée par le moteur au rendu). ⚠️ ne s'anime pas si on l'ouvre directement — utiliser `standalone.html` pour la lecture navigateur, ou `npm run dev` pour le Studio. Une seule timeline GSAP, 10 scènes en fondu enchaîné.
 - **`design.md`** — charte (palette par module, typo, ton).
 - **`assets/`** — logo + visuels produit.
 - **`video/promo-ibs-studio.mp4`** — le rendu final, prêt à publier.
@@ -29,8 +30,12 @@ Chaque scène module : barre méta mono, gros titre, **paragraphe descriptif**, 
 ## Commandes
 
 ```bash
+# Lecture autonome : ouvrir standalone.html dans un navigateur (rien à installer).
+# Si besoin de le servir : npx serve marketing/promo-hf  → /standalone.html
+# (?clean dans l'URL masque la barre de contrôle, pour un screen-record propre)
+
 cd marketing/promo-hf
-npm run dev        # prévisualiser dans le navigateur (Studio HyperFrames)
+npm run dev        # prévisualiser la SOURCE dans le Studio HyperFrames
 npx hyperframes lint && npx hyperframes validate && npx hyperframes inspect   # contrôles
 npm run render -- --output video/promo-ibs-studio.mp4                          # re-rendre la vidéo
 ```
@@ -41,6 +46,7 @@ npm run render -- --output video/promo-ibs-studio.mp4                          #
 - **Timing / animations** : le script GSAP en bas d'`index.html` (temps absolus par scène, helpers `reveal/leave/ambGlow/nodeRun`).
 - **Couleurs** : variables CSS `:root` (alignées sur `design.md`) ; chaque scène fixe son accent via `--c`.
 - Après toute modif : relancer `lint` + `inspect`, puis `render`.
+- `standalone.html` = `index.html` + un lecteur autonome (scaler + autoplay + boucle). Après une modif de `index.html`, reporter le changement dans `standalone.html` (mêmes scènes) — seules diffèrent la balise `<style id="sa-style">`, la barre `#sa-bar`, le `#root{width/height}` et le script de lecture en fin de fichier.
 
 ## Où publier
 
