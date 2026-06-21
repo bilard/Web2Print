@@ -56,7 +56,7 @@ for (const deck of DECKS) {
 }
 
 for (const deck of PLAYER_DECKS) {
-  await page.goto(`http://localhost:${port}/${deck}?clean`, { waitUntil: 'networkidle' });
+  await page.goto(`http://localhost:${port}/${deck}?clean&still`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__player);
   const slides = await page.evaluate(() => window.__player.count());
   const outDir = join(here, 'png', deck.replace('.html', ''));

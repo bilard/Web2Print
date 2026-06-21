@@ -7,8 +7,8 @@ Même idée partout : *tous les modules s'emboîtent*.
 
 | Fichier | Type | Format | Pour quoi |
 |---|---|---|---|
-| **`merge-anime.html`** ⭐ | **Vidéo animée** (fusion Avant/Après + tour des modules) | 1080×1350, 11 plans, ~49 s | La pièce principale. Lecteur intégré (lecture auto + contrôles). Met en avant **IA générative**, **Workflows**, **Export digital**, chacun avec une description ultra-courte. |
-| `video/promo-merge.mp4` | Vidéo exportée | 1080×1350 H.264 | Le rendu MP4 de `merge-anime.html`, prêt à uploader. |
+| **`merge-anime.html`** ⭐ | **Support HTML animé** (fusion Avant/Après + tour des modules) | 1080×1350, 11 plans, ~56 s | La pièce principale, **interactive**. Lecteur intégré (lecture auto + contrôles). Chaque module a une **mini-démo animée en boucle** qui montre ce qu'il fait : scan du scraping, génération d'images flou→net, pipeline de workflow qui s'exécute, compteur de data-merge, cases d'export qui se cochent… Met en avant **IA générative**, **Workflows**, **Export digital**. |
+| `video/promo-merge.mp4` | Vidéo exportée | 1080×1350 H.264, ~56 s | Le rendu MP4 de `merge-anime.html`, prêt à uploader. |
 | `angle-b-avant-apres.html` | Carrousel statique | 1080×1350, 6 slides | Angle **Avant/Après** (la douleur / le ROI). |
 | `angle-c-une-journee.html` | Carrousel statique | 1080×1350, 8 slides | Angle **Une journée** (storytelling). |
 
@@ -23,6 +23,7 @@ La vidéo est dans `video/promo-merge.mp4`.
 
 - **Voir la pièce animée** : ouvrir `merge-anime.html` dans un navigateur.
   Espace = lecture/pause · ← → = naviguer · clic = avancer.
+  Paramètres d'URL : `?clean` (plein cadre sans interface, pour l'enregistrement) · `?still` (fige les démos sur leur état final, pour l'export PNG).
 - **Modifier un texte** : éditer le `.html` concerné (chaque `<section class="slide">` = une slide). Style commun dans `carousel.css`.
 - **Ré-exporter les PNG** : `node export-png.mjs` → régénère tout `png/`.
 - **Ré-enregistrer la vidéo** : `node record-video.mjs` → régénère `video/promo-merge.mp4` (Playwright + ffmpeg, déjà installés).
