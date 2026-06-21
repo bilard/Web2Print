@@ -1489,8 +1489,8 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
 /* LE MOCK-UP ANIMÉ = la star : agrandi par scale() pour remplir le cadre */
 .rl-stage .scene{display:block!important;grid-template-columns:none!important;padding:0!important;gap:0!important}
 .rl-stage{flex:1 1 auto;min-height:0;display:flex;align-items:flex-start;justify-content:center;margin-top:28px;overflow:visible}
-.rl-stage .scene-visual{position:relative;width:600px;transform-origin:top center}
-.rl-stage .screen{width:600px}
+.rl-stage .scene-visual{position:relative;width:520px;transform-origin:top center}
+.rl-stage .screen{width:520px}
 .rl-card.rl-cover{align-items:center;justify-content:center;text-align:center}
 .rl-coverwrap{display:flex;flex-direction:column;align-items:center;gap:30px}
 .rl-logo{width:96px;height:96px;border-radius:24px;background:#6366F1;display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(99,102,241,.6)}
@@ -1992,10 +1992,14 @@ body.rl-clean #rl-bar{display:none}
     var sv=c.querySelector(".rl-stage .scene-visual"); if(!sv) return;
     var st=c.querySelector(".rl-stage"); if(!st) return;
     sv.style.transform="none";
-    var w=sv.offsetWidth||600, h=sv.offsetHeight||400;
+    var w=sv.offsetWidth||520, h=sv.offsetHeight||400;
     var availW=st.clientWidth, availH=st.clientHeight;
-    var s=Math.min(availW/w, availH/h);
-    s=Math.max(1, Math.min(s, 2.6));               // agrandit le mock-up jusqu'à remplir le cadre
+    var sW=availW/w, sH=availH/h;
+    var s=Math.min(sW, sH);
+    // bridé par la largeur mais de la hauteur dispo → on remplit la hauteur,
+    // en tolérant un léger débordement horizontal (rogne la bordure, pas le contenu)
+    if(sH>s) s=Math.min(sH, sW*1.08);
+    s=Math.max(1, Math.min(s, 2.9));
     sv.style.transform="scale("+s.toFixed(3)+")";
   }
   function show(n){
