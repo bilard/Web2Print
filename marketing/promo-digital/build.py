@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Génère digital.html : un reel vertical 1080x1920 qui RÉUTILISE les sections animées
+"""Génère digital.html : une promo digitale verticale 1080x1920 qui RÉUTILISE les sections animées
 du site public/promo (même CSS, mêmes mock-ups animés, mêmes messages)."""
 import re, pathlib, base64, shutil
 
@@ -45,125 +45,125 @@ for sid, body in scene_re.findall(html):
 
 print("Scènes trouvées :", ", ".join(scenes.keys()))
 
-# 3) Ordre narratif du reel (on garde celles qui existent)
+# 3) Ordre narratif de la promo (on garde celles qui existent)
 order = ["import", "editer", "pim", "scraper", "imgen", "dam",
          "workflows", "export", "veille", "telegram"]
 order = [s for s in order if s in scenes] or list(scenes.keys())
 order = order[:10]
-print("Reel :", ", ".join(order))
+print("Promo :", ", ".join(order))
 
 # 4) Cartes
 cards = []
 for i, sid in enumerate(order):
     s = scenes[sid]
     cards.append(f'''
-    <div class="rl-card" data-i="{i}">
-      <div class="rl-head">
-        <span class="rl-num grad-text">{s['num']}</span>
-        <h2 class="rl-title">{s['h2']}</h2>
-        <ul class="rl-list">{s['list']}</ul>
+    <div class="dg-card" data-i="{i}">
+      <div class="dg-head">
+        <span class="dg-num grad-text">{s['num']}</span>
+        <h2 class="dg-title">{s['h2']}</h2>
+        <ul class="dg-list">{s['list']}</ul>
       </div>
-      <div class="rl-stage"><div class="scene" id="{sid}">{s['visual']}</div></div>
+      <div class="dg-stage"><div class="scene" id="{sid}">{s['visual']}</div></div>
     </div>''')
 
 intro = '''
-    <div class="rl-card rl-cover" data-i="-1">
-      <div class="rl-coverwrap">
-        <div class="rl-logo"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-        <span class="rl-num grad-text">IBS·STUDIO</span>
-        <h1 class="rl-hero">Du data au print.<br><span class="grad-text">Et au digital.</span></h1>
-        <p class="rl-sub">20 modules. Un seul flux. Scrapez, créez, déclinez, exportez — sans changer d'outil.</p>
+    <div class="dg-card dg-cover" data-i="-1">
+      <div class="dg-coverwrap">
+        <div class="dg-logo"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <span class="dg-num grad-text">IBS·STUDIO</span>
+        <h1 class="dg-hero">Du data au print.<br><span class="grad-text">Et au digital.</span></h1>
+        <p class="dg-sub">20 modules. Un seul flux. Scrapez, créez, déclinez, exportez — sans changer d'outil.</p>
       </div>
     </div>'''
 
 outro = '''
-    <div class="rl-card rl-cover" data-i="99">
-      <div class="rl-coverwrap">
-        <div class="rl-logo"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-        <h1 class="rl-hero">Centralisez<br><span class="grad-text">tout.</span></h1>
-        <a class="rl-cta">Découvrir ibs-studio.com →</a>
+    <div class="dg-card dg-cover" data-i="99">
+      <div class="dg-coverwrap">
+        <div class="dg-logo"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <h1 class="dg-hero">Centralisez<br><span class="grad-text">tout.</span></h1>
+        <a class="dg-cta">Découvrir ibs-studio.com →</a>
       </div>
     </div>'''
 
-reel_css = '''
-/* ---- overrides reel vertical ---- */
+digital_css = '''
+/* ---- overrides promo verticale ---- */
 html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
-#rl-stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-#rl-frame{position:relative;width:1080px;height:1920px;overflow:hidden;
+#dg-stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#dg-frame{position:relative;width:1080px;height:1920px;overflow:hidden;
   background:radial-gradient(900px 600px at 80% -8%,rgba(124,108,255,.16),transparent 60%),var(--bg,#0b0b11);
   transform-origin:center center}
-.rl-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;
+.dg-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;
   gap:0;padding:64px 40px;opacity:0;visibility:hidden;transition:opacity .6s ease}
-.rl-card.on{opacity:1;visibility:visible}
+.dg-card.on{opacity:1;visibility:visible}
 /* header COMPACT : on laisse la place au mock-up animé */
-.rl-head{display:flex;flex-direction:column;gap:14px;flex:0 0 auto;padding:0 8px}
-.rl-num{font-size:26px;font-weight:800;letter-spacing:.14em}
-.rl-title{font-size:58px;line-height:1.0;font-weight:800;letter-spacing:-.03em;margin:0;color:var(--ink,#fff)}
-.rl-list{display:flex;flex-flow:row wrap;gap:10px 14px;margin:6px 0 0;padding:0;list-style:none}
-.rl-list li{font-size:25px;line-height:1.2;color:var(--mut,rgba(255,255,255,.62));padding:8px 16px;
+.dg-head{display:flex;flex-direction:column;gap:14px;flex:0 0 auto;padding:0 8px}
+.dg-num{font-size:26px;font-weight:800;letter-spacing:.14em}
+.dg-title{font-size:58px;line-height:1.0;font-weight:800;letter-spacing:-.03em;margin:0;color:var(--ink,#fff)}
+.dg-list{display:flex;flex-flow:row wrap;gap:10px 14px;margin:6px 0 0;padding:0;list-style:none}
+.dg-list li{font-size:25px;line-height:1.2;color:var(--mut,rgba(255,255,255,.62));padding:8px 16px;
   border:1px solid var(--line2,rgba(255,255,255,.1));border-radius:10px}
 /* LE MOCK-UP ANIMÉ = la star : agrandi par scale() pour remplir le cadre */
-.rl-stage .scene{display:block!important;grid-template-columns:none!important;padding:0!important;gap:0!important}
-.rl-stage{flex:1 1 auto;min-height:0;display:flex;align-items:flex-start;justify-content:center;margin-top:28px;overflow:visible}
-.rl-stage .scene-visual{position:relative;width:520px;transform-origin:top center}
-.rl-stage .screen{width:520px}
-.rl-card.rl-cover{align-items:center;justify-content:center;text-align:center}
-.rl-coverwrap{display:flex;flex-direction:column;align-items:center;gap:30px}
-.rl-logo{width:96px;height:96px;border-radius:24px;background:#6366F1;display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(99,102,241,.6)}
-.rl-logo svg{width:52px;height:52px}
-.rl-hero{font-size:128px;line-height:.98;font-weight:800;letter-spacing:-.04em;margin:0;color:#fff}
-.rl-sub{font-size:40px;line-height:1.4;color:var(--mut,rgba(255,255,255,.62));max-width:820px;margin:0}
-.rl-cta{display:inline-flex;background:var(--grad,#7c6cff);color:#0b0b12;font-size:42px;font-weight:800;padding:34px 56px;border-radius:22px;box-shadow:0 24px 70px rgba(124,108,255,.5);margin-top:14px}
+.dg-stage .scene{display:block!important;grid-template-columns:none!important;padding:0!important;gap:0!important}
+.dg-stage{flex:1 1 auto;min-height:0;display:flex;align-items:flex-start;justify-content:center;margin-top:28px;overflow:visible}
+.dg-stage .scene-visual{position:relative;width:520px;transform-origin:top center}
+.dg-stage .screen{width:520px}
+.dg-card.dg-cover{align-items:center;justify-content:center;text-align:center}
+.dg-coverwrap{display:flex;flex-direction:column;align-items:center;gap:30px}
+.dg-logo{width:96px;height:96px;border-radius:24px;background:#6366F1;display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(99,102,241,.6)}
+.dg-logo svg{width:52px;height:52px}
+.dg-hero{font-size:128px;line-height:.98;font-weight:800;letter-spacing:-.04em;margin:0;color:#fff}
+.dg-sub{font-size:40px;line-height:1.4;color:var(--mut,rgba(255,255,255,.62));max-width:820px;margin:0}
+.dg-cta{display:inline-flex;background:var(--grad,#7c6cff);color:#0b0b12;font-size:42px;font-weight:800;padding:34px 56px;border-radius:22px;box-shadow:0 24px 70px rgba(124,108,255,.5);margin-top:14px}
 /* contrôles */
-#rl-bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;align-items:center;padding:16px 22px;z-index:99;font-family:system-ui,sans-serif;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.62))}
-#rl-bar>button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22);width:44px;height:44px;border-radius:12px;font-size:16px;cursor:pointer;flex:none}
-#rl-bar>button:hover{background:rgba(255,255,255,.24)}
-#rl-count{flex:none;opacity:.7;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;font-size:14px}
-#rl-nav{flex:1;display:flex;gap:6px;align-items:center;min-width:0}
-#rl-nav .rl-seg{flex:1 1 0;min-width:0;width:auto;height:9px;padding:0;border:none;border-radius:5px;background:rgba(255,255,255,.16);overflow:hidden;cursor:pointer;position:relative;transition:background .2s,transform .2s}
-#rl-nav .rl-seg:hover{background:rgba(255,255,255,.36);transform:scaleY(1.35)}
-#rl-nav .rl-seg>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c6cff,#a855f7)}
-#rl-nav .rl-seg.done>i{width:100%}
-#rl-nav .rl-seg.cur{box-shadow:0 0 0 2px rgba(124,108,255,.65)}
-body.rl-clean #rl-bar{display:none}
-/* police Jura demandée — titres & messages du reel */
+#dg-bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;align-items:center;padding:16px 22px;z-index:99;font-family:system-ui,sans-serif;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.62))}
+#dg-bar>button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22);width:44px;height:44px;border-radius:12px;font-size:16px;cursor:pointer;flex:none}
+#dg-bar>button:hover{background:rgba(255,255,255,.24)}
+#dg-count{flex:none;opacity:.7;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;font-size:14px}
+#dg-nav{flex:1;display:flex;gap:6px;align-items:center;min-width:0}
+#dg-nav .dg-seg{flex:1 1 0;min-width:0;width:auto;height:9px;padding:0;border:none;border-radius:5px;background:rgba(255,255,255,.16);overflow:hidden;cursor:pointer;position:relative;transition:background .2s,transform .2s}
+#dg-nav .dg-seg:hover{background:rgba(255,255,255,.36);transform:scaleY(1.35)}
+#dg-nav .dg-seg>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c6cff,#a855f7)}
+#dg-nav .dg-seg.done>i{width:100%}
+#dg-nav .dg-seg.cur{box-shadow:0 0 0 2px rgba(124,108,255,.65)}
+body.dg-clean #dg-bar{display:none}
+/* police Jura demandée — titres & messages de la promo */
 :root{--display:'Jura',ui-sans-serif,sans-serif}
-.rl-num,.rl-title,.rl-hero,.rl-sub,.rl-cta,.rl-list,.rl-list li{font-family:'Jura',ui-sans-serif,sans-serif}
+.dg-num,.dg-title,.dg-hero,.dg-sub,.dg-cta,.dg-list,.dg-list li{font-family:'Jura',ui-sans-serif,sans-serif}
 '''
 
 player = '''
-<div id="rl-bar">
-  <button id="rl-prev" title="Précédent">&#9664;</button>
-  <button id="rl-play" title="Lecture / Pause">&#9208;</button>
-  <button id="rl-next" title="Suivant">&#9654;</button>
-  <div id="rl-nav"></div>
-  <span id="rl-count"></span>
+<div id="dg-bar">
+  <button id="dg-prev" title="Précédent">&#9664;</button>
+  <button id="dg-play" title="Lecture / Pause">&#9208;</button>
+  <button id="dg-next" title="Suivant">&#9654;</button>
+  <div id="dg-nav"></div>
+  <span id="dg-count"></span>
 </div>
 <script>
 (function(){
-  if(location.search.indexOf("clean")>-1) document.body.classList.add("rl-clean");
-  var frame=document.getElementById("rl-frame");
+  if(location.search.indexOf("clean")>-1) document.body.classList.add("dg-clean");
+  var frame=document.getElementById("dg-frame");
   function fit(){var s=Math.min(window.innerWidth/1080,window.innerHeight/1920);frame.style.transform="scale("+s+")";}
-  window.addEventListener("resize",function(){fit();var on=document.querySelector(".rl-card.on");if(on)fitMock(on);});fit();
-  var cards=[].slice.call(document.querySelectorAll(".rl-card"));
-  var DUR=[].map.call(cards,function(c){return c.classList.contains("rl-cover")?3800:5200;});
-  var i=0,playing=true,timer=null,cnt=document.getElementById("rl-count");
-  var pb=document.getElementById("rl-play");
+  window.addEventListener("resize",function(){fit();var on=document.querySelector(".dg-card.on");if(on)fitMock(on);});fit();
+  var cards=[].slice.call(document.querySelectorAll(".dg-card"));
+  var DUR=[].map.call(cards,function(c){return c.classList.contains("dg-cover")?3800:5200;});
+  var i=0,playing=true,timer=null,cnt=document.getElementById("dg-count");
+  var pb=document.getElementById("dg-play");
   // navigation carrousel : un segment cliquable par slide (infobulle = module)
-  var nav=document.getElementById("rl-nav");
+  var nav=document.getElementById("dg-nav");
   var segs=cards.map(function(c,k){
-    var num=c.querySelector(".rl-num");
+    var num=c.querySelector(".dg-num");
     var label=num?num.textContent.trim():(k===0?"Intro":"Fin");
     var seg=document.createElement("button");
-    seg.className="rl-seg"; seg.title=label; seg.setAttribute("aria-label",label);
+    seg.className="dg-seg"; seg.title=label; seg.setAttribute("aria-label",label);
     seg.innerHTML="<i></i>";
     seg.addEventListener("click",function(){goManual(k);});
     nav.appendChild(seg); return seg;
   });
   function retrigger(c){var v=c.querySelector(".scene-visual");if(v){v.classList.remove("is-in");void v.offsetWidth;v.classList.add("is-in");}}
   function fitMock(c){
-    var sv=c.querySelector(".rl-stage .scene-visual"); if(!sv) return;
-    var st=c.querySelector(".rl-stage"); if(!st) return;
+    var sv=c.querySelector(".dg-stage .scene-visual"); if(!sv) return;
+    var st=c.querySelector(".dg-stage"); if(!st) return;
     sv.style.transform="none";
     var w=sv.offsetWidth||520, h=sv.offsetHeight||400;
     var availW=st.clientWidth, availH=st.clientHeight;
@@ -194,8 +194,8 @@ player = '''
   function setPlaying(p){ playing=p; pb.innerHTML=p?"&#9208;":"&#9654;"; }
   function goManual(n){ setPlaying(false); if(timer)clearTimeout(timer); show((n+cards.length)%cards.length); }
   pb.addEventListener("click",function(){ setPlaying(!playing); if(playing)show(i); else if(timer)clearTimeout(timer); });
-  document.getElementById("rl-prev").addEventListener("click",function(){goManual(i-1);});
-  document.getElementById("rl-next").addEventListener("click",function(){goManual(i+1);});
+  document.getElementById("dg-prev").addEventListener("click",function(){goManual(i-1);});
+  document.getElementById("dg-next").addEventListener("click",function(){goManual(i+1);});
   document.addEventListener("keydown",function(e){if(e.code==="Space"){e.preventDefault();pb.click();}else if(e.code==="ArrowRight"){goManual(i+1);}else if(e.code==="ArrowLeft"){goManual(i-1);}});
   show(0);
 })();
@@ -209,11 +209,11 @@ doc = f'''<!DOCTYPE html>
 <title>IBS-Studio — Promo digitale (sections du site)</title>
 <style>{css}</style>
 <style>{jura_face}</style>
-<style>{reel_css}</style>
+<style>{digital_css}</style>
 </head>
 <body>
 {svg_defs}
-<div id="rl-stage"><div id="rl-frame">
+<div id="dg-stage"><div id="dg-frame">
 {intro}{''.join(cards)}{outro}
 </div></div>
 {player}

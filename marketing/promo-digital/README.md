@@ -2,7 +2,7 @@
 
 Support promo **construit à partir des vraies sections animées de `public/promo`** (le site `/promo`)
 — mêmes animations CSS sur-mesure, mêmes mock-ups, mêmes messages scénarisés. Qualité = identique au site.
-Remonté en **format vertical 1080×1920** (Reel / Short / TikTok), titres en police **Jura**.
+Remonté en **format vertical 1080×1920** (Instagram / TikTok / YouTube Shorts), titres en police **Jura**.
 Servi en ligne sur la route **`/digital`**.
 
 ## Pourquoi cette approche
@@ -38,7 +38,7 @@ ou le générateur (`build.py`), puis relancer `python3 build.py`. Quand un modu
 se met à jour automatiquement à la prochaine génération.
 
 ## Où publier
-Vertical 9:16 → Reels Instagram, TikTok, YouTube Shorts, LinkedIn (vidéo native). En ligne : `/digital`.
+Vertical 9:16 → Instagram, TikTok, YouTube Shorts, LinkedIn (vidéo native). En ligne : `/digital`.
 
 ## Note
 Cette promo digitale **remplace** les essais précédents (`promo-hf` HyperFrames, `social-ads` carrousels) comme support
