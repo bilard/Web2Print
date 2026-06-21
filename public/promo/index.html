@@ -2376,7 +2376,7 @@
           <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:36%;--y1:24%;--x2:50%;--y2:92%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
           <div class="wfl-body mk-body">
             <div class="wfl-canvas">
-              <span class="wfl-tool"><i></i>workflow.flow · 5 nœuds</span>
+              <span class="wfl-tool"><i></i>workflow.flow · 8 nœuds</span>
               <svg class="wfl-wires" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
                 <path class="wfl-wire w1" pathLength="100" d="M295 156 C355 156 345 120 405 120"  style="color:#22d3ee"/>
                 <path class="wfl-wire w2" pathLength="100" d="M635 120 C705 120 615 264 685 264"  style="color:#34d399"/>
@@ -2394,14 +2394,26 @@
                 <circle class="wfl-port" cx="575" cy="372" r="5.5" fill="#a855f7"/>
                 <circle class="wfl-port" cx="345" cy="372" r="5.5" fill="#a855f7"/>
                 <circle class="wfl-port" cx="315" cy="444" r="5.5" fill="#60a5fa"/>
+                <path class="wfl-wire w5" pathLength="100" d="M388 76 C360 112 285 120 250 150" style="color:#f472b6"/>
+                <path class="wfl-wire w6" pathLength="100" d="M800 307 C800 400 720 432 640 454" style="color:#34d399"/>
+                <path class="wfl-wire w7" pathLength="100" d="M345 372 C290 364 250 358 215 356" style="color:#fb923c"/>
+                <path class="wfl-flow2 f5" d="M388 76 C360 112 285 120 250 150"/>
+                <path class="wfl-flow2 f6" d="M800 307 C800 400 720 432 640 454"/>
+                <path class="wfl-flow2 f7" d="M345 372 C290 364 250 358 215 356"/>
+                <circle class="wfl-port" cx="388" cy="76" r="5.5" fill="#f472b6"/>
+                <circle class="wfl-port" cx="640" cy="454" r="5.5" fill="#34d399"/>
+                <circle class="wfl-port" cx="215" cy="356" r="5.5" fill="#fb923c"/>
               </svg>
               <div class="wfl-node" style="left:18%;top:26%;--accent:#22d3ee"><span class="ntype">scrape</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><div><b>Scraper</b><span>URL produit</span></div></div>
               <div class="wfl-node" style="left:52%;top:20%;--accent:#34d399"><span class="ntype">enrich</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2 5 5 .5-4 3.5 1.5 5L12 19l-4.5 3 1.5-5-4-3.5 5-.5z"/></svg></span><div><b>Enrichir</b><span>PIM + DAM</span></div></div>
               <div class="wfl-node" style="left:80%;top:44%;--accent:#6366f1"><span class="ntype">compose</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><div><b>Composer</b><span>gabarit</span></div></div>
               <div class="wfl-node" style="left:46%;top:62%;--accent:#a855f7"><span class="ntype">export</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></span><div><b>Exporter</b><span>PDF</span></div></div>
               <div class="wfl-node" style="left:20%;top:75%;--accent:#60a5fa"><span class="ntype">send</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3 2 11l6 2 2 6 4-5 5 4z"/></svg></span><div><b>Telegram</b><span>envoi auto</span></div></div>
+              <div class="wfl-node" style="left:33%;top:2%;--accent:#f472b6"><span class="ntype">watch</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M16 4h5v5"/></svg></span><div><b>Veille prix</b><span>concurrents</span></div></div>
+              <div class="wfl-node" style="left:62%;top:70%;--accent:#34d399"><span class="ntype">save</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/></svg></span><div><b>Drive · Sheets</b><span>sauvegarde</span></div></div>
+              <div class="wfl-node" style="left:10%;top:54%;--accent:#fb923c"><span class="ntype">mail</span><span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg></span><div><b>Gmail</b><span>e-mail auto</span></div></div>
               <span class="wfl-zoom"><span>−</span><span>100 %</span><span>+</span></span>
-              <span class="wfl-mini"><b style="left:9px;top:9px;--c:#22d3ee"></b><b style="left:30px;top:7px;--c:#34d399"></b><b style="left:48px;top:17px;--c:#6366f1"></b><b style="left:27px;top:24px;--c:#a855f7"></b><b style="left:10px;top:30px;--c:#60a5fa"></b></span>
+              <span class="wfl-mini"><b style="left:9px;top:9px;--c:#22d3ee"></b><b style="left:30px;top:7px;--c:#34d399"></b><b style="left:48px;top:17px;--c:#6366f1"></b><b style="left:27px;top:24px;--c:#a855f7"></b><b style="left:10px;top:30px;--c:#60a5fa"></b><b style="left:2px;top:3px;--c:#f472b6"></b><b style="left:37px;top:28px;--c:#34d399"></b><b style="left:3px;top:21px;--c:#fb923c"></b></span>
             </div>
             <span class="wfl-run"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Lancer le workflow</span>
           </div>

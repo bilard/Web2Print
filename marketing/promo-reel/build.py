@@ -20,6 +20,10 @@ jura_face = ("@font-face{font-family:'Jura';font-style:normal;font-weight:400 70
 # 1) Récupère tout le CSS du site (tous les blocs <style>)
 css = "\n".join(re.findall(r"<style>(.*?)</style>", html, re.S))
 
+# 1b) Bloc de définitions <symbol> SVG (vraies photos produit) — sinon les <use href="#ic-*"> sont vides
+defs_m = re.search(r'<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">.*?</svg>', html, re.S)
+svg_defs = defs_m.group(0) if defs_m else ""
+
 # 2) Extrait chaque scène module : id, numéro, titre, liste, visuel animé
 scene_re = re.compile(r'<div class="scene" id="([^"]+)">(.*?)\n      </div>\n', re.S)
 scenes = {}
@@ -172,6 +176,7 @@ doc = f'''<!DOCTYPE html>
 <style>{reel_css}</style>
 </head>
 <body>
+{svg_defs}
 <div id="rl-stage"><div id="rl-frame">
 {intro}{''.join(cards)}{outro}
 </div></div>
