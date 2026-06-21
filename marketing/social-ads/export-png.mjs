@@ -13,11 +13,14 @@ import { readFile, stat } from 'node:fs/promises';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+// Carrousels statiques : on screenshot chaque <section.slide>
 const DECKS = [
-  'angle-a-parcours-produit.html',
   'angle-b-avant-apres.html',
   'angle-c-une-journee.html',
 ];
+// Deck animé : les slides sont masquées tant qu'elles ne sont pas actives
+// → on pilote le lecteur (window.__player.go) pour révéler chaque slide.
+const PLAYER_DECKS = ['merge-anime.html'];
 
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
 
@@ -48,6 +51,21 @@ for (const deck of DECKS) {
   for (let i = 0; i < slides; i++) {
     const n = String(i + 1).padStart(2, '0');
     await page.locator('section.slide').nth(i).screenshot({ path: join(outDir, `slide-${n}.png`) });
+    process.stdout.write(`  ✓ ${deck} → slide-${n}.png\n`);
+  }
+}
+
+for (const deck of PLAYER_DECKS) {
+  await page.goto(`http://localhost:${port}/${deck}?clean`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.__player);
+  const slides = await page.evaluate(() => window.__player.count());
+  const outDir = join(here, 'png', deck.replace('.html', ''));
+  await mkdir(outDir, { recursive: true });
+  for (let i = 0; i < slides; i++) {
+    await page.evaluate((k) => { window.__player.pause(); window.__player.go(k); }, i);
+    await page.waitForTimeout(1300); // laisse les animations d'entrée se terminer
+    const n = String(i + 1).padStart(2, '0');
+    await page.locator(`#scaler section.slide`).nth(i).screenshot({ path: join(outDir, `slide-${n}.png`) });
     process.stdout.write(`  ✓ ${deck} → slide-${n}.png\n`);
   }
 }
