@@ -708,6 +708,18 @@
   .imp-lay .ed.ph{color:#c7c9ff;border-color:rgba(99,102,241,.45);background:rgba(99,102,241,.14);font-family:var(--mono)}
   .imp-note{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;padding-top:8px;border-top:1px solid var(--line)}
   .imp-note i{width:6px;height:6px;border-radius:50%;background:#f472b6;flex:none;box-shadow:0 0 7px #f472b6}
+  /* animation : les blocs du flyer se détachent et filent vers les calques */
+  .imp-res{position:relative}
+  .imp-fly{position:absolute;inset:0;pointer-events:none;z-index:6;overflow:hidden;border-radius:12px}
+  .imp-fly .ifc{position:absolute;left:16%;top:var(--t,30%);font-family:var(--mono);font-size:10px;font-weight:700;color:#0b0b12;background:var(--c,#fbbf24);border-radius:7px;padding:3px 8px;opacity:0;white-space:nowrap;box-shadow:0 10px 22px -6px var(--c,#fbbf24)}
+  #import .scene-visual.is-in .imp-fly .ifc{animation:impFly 3.8s cubic-bezier(.5,0,.3,1) infinite;animation-delay:var(--d,0s)}
+  @keyframes impFly{
+    0%,4%{opacity:0;transform:translate(0,0) scale(.65)}
+    14%{opacity:1;transform:translate(6px,0) scale(1)}
+    66%{opacity:1;transform:translate(195px,0) scale(.96)}
+    85%{opacity:0;transform:translate(228px,0) scale(.8)}
+    100%{opacity:0}
+  }
   /* Création d'image IA */
   .ig-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   .ig-lbl{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.07em;margin-bottom:8px}
@@ -1863,6 +1875,12 @@
                 <div class="imp-lay"><span class="sw" style="background:#fb923c"></span>Badge −20 %<span class="ed">forme</span></div>
                 <div class="imp-lay"><span class="sw" style="background:#a855f7"></span>Polices &amp; gradients<span class="ed">préservés</span></div>
                 <div class="imp-note"><i></i>Image / PDF → décomposition IA (Vision)</div>
+              </div>
+              <div class="imp-fly" aria-hidden="true">
+                <span class="ifc" style="--c:#facc15;--t:18%;--d:0s">Titre</span>
+                <span class="ifc" style="--c:#38bdf8;--t:37%;--d:.9s">Image</span>
+                <span class="ifc" style="--c:#6366f1;--t:56%;--d:1.8s">{{price}}</span>
+                <span class="ifc" style="--c:#fb923c;--t:13%;--d:2.7s">Badge</span>
               </div>
             </div>
           </div>
