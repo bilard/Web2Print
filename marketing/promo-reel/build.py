@@ -87,19 +87,19 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
 #rl-frame{position:relative;width:1080px;height:1920px;overflow:hidden;
   background:radial-gradient(900px 600px at 80% -8%,rgba(124,108,255,.16),transparent 60%),var(--bg,#0b0b11);
   transform-origin:center center}
-.rl-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
-  gap:48px;padding:130px 84px;opacity:0;visibility:hidden;transition:opacity .6s ease}
+.rl-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;
+  gap:0;padding:96px 72px;opacity:0;visibility:hidden;transition:opacity .6s ease}
 .rl-card.on{opacity:1;visibility:visible}
-.rl-head{display:flex;flex-direction:column;gap:22px}
-.rl-num{font-size:30px;font-weight:800;letter-spacing:.14em}
-.rl-title{font-size:78px;line-height:1.02;font-weight:800;letter-spacing:-.03em;margin:0;color:var(--ink,#fff)}
-.rl-list{display:flex;flex-direction:column;gap:14px;margin:6px 0 0;padding:0;list-style:none}
-.rl-list li{font-size:34px;line-height:1.3;color:var(--mut,rgba(255,255,255,.6));padding-left:40px;position:relative}
-.rl-list li::before{content:"";position:absolute;left:0;top:.55em;width:20px;height:3px;border-radius:2px;background:var(--grad,#7c6cff)}
-/* le mock-up animé du site, agrandi pour le format vertical */
+.rl-head{display:flex;flex-direction:column;gap:24px;flex:0 0 auto}
+.rl-num{font-size:32px;font-weight:800;letter-spacing:.14em}
+.rl-title{font-size:88px;line-height:1.02;font-weight:800;letter-spacing:-.03em;margin:0;color:var(--ink,#fff)}
+.rl-list{display:flex;flex-direction:column;gap:18px;margin:8px 0 0;padding:0;list-style:none}
+.rl-list li{font-size:37px;line-height:1.3;color:var(--mut,rgba(255,255,255,.6));padding-left:42px;position:relative}
+.rl-list li::before{content:"";position:absolute;left:0;top:.55em;width:22px;height:3px;border-radius:2px;background:var(--grad,#7c6cff)}
+/* le mock-up animé du site occupe tout l'espace vertical restant */
 .rl-stage .scene{display:block!important;grid-template-columns:none!important;padding:0!important;gap:0!important}
-.rl-stage{margin-top:24px}
-.rl-stage .scene-visual{position:relative}
+.rl-stage{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-top:40px}
+.rl-stage .scene-visual{position:relative;width:100%;transform:scale(1.06);transform-origin:center}
 .rl-stage .screen{width:100%}
 .rl-card.rl-cover{align-items:center;justify-content:center;text-align:center}
 .rl-coverwrap{display:flex;flex-direction:column;align-items:center;gap:30px}
