@@ -701,7 +701,13 @@
   .imp-src .imp-st{display:block;font-style:normal;font-size:8.5px;color:#64748b;margin-top:3px;line-height:1.2}
   .imp-src .imp-price{display:inline-block;text-decoration:none;background:#facc15;color:#dc2626;font-weight:800;font-size:14px;padding:2px 8px;border-radius:6px;margin-top:6px}
   .imp-src .imp-ref{display:block;font-style:normal;font-family:var(--mono);font-size:7px;color:#94a3b8;margin-top:5px;letter-spacing:.04em}
-  .imp-src .imp-doctag{position:absolute;top:7px;right:7px;font-family:var(--mono);font-size:8px;font-weight:700;color:#fff;background:rgba(15,23,42,.72);border-radius:6px;padding:3px 7px}
+  .imp-src .imp-doctag{position:absolute;top:7px;right:7px;font-family:var(--mono);font-size:8px;font-weight:700;color:#fff;background:rgba(15,23,42,.72);border-radius:6px;padding:3px 7px;z-index:2}
+  .imp-src .imp-shot{outline:1.5px dashed rgba(99,102,241,.55);outline-offset:-4px}
+  .imp-src .imp-ph{display:inline-block;text-decoration:none;font-family:var(--mono);font-weight:700;font-size:13px;color:#4f46e5;background:rgba(99,102,241,.12);border:1px dashed rgba(99,102,241,.6);border-radius:6px;padding:1px 7px;margin-top:6px}
+  .imp-head{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin-bottom:2px}
+  .imp-lay .ed.ph{color:#c7c9ff;border-color:rgba(99,102,241,.45);background:rgba(99,102,241,.14);font-family:var(--mono)}
+  .imp-note{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;padding-top:8px;border-top:1px solid var(--line)}
+  .imp-note i{width:6px;height:6px;border-radius:50%;background:#f472b6;flex:none;box-shadow:0 0 7px #f472b6}
   /* Création d'image IA */
   .ig-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   .ig-lbl{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.07em;margin-bottom:8px}
@@ -1832,7 +1838,7 @@
           <span class="scene-num grad-text">02 — IMPORTER</span>
           <h2>Vos fichiers,<br/>fidèles et éditables.</h2>
           <p>Vos fichiers existants s'ouvrent tels quels, sans les recréer. IBS-Studio importe <b>InDesign (IDML &amp; EasyCatalog), Illustrator (SVG), PowerPoint, PDF et Excel</b> en conservant mise en page, styles et typographie — pas une capture aplatie, mais des <b>calques réellement éditables</b>. Images et PDF sont même <b>décomposés par IA</b> (textes, formes et visuels séparés), prêts à reprendre bloc par bloc.</p>
-          <ul class="scene-list"><li>IDML · EasyCatalog · SVG · PDF · PPTX · Excel · image</li><li>Mise en page, styles &amp; polices préservés</li><li>Décomposition IA en calques éditables</li></ul>
+          <ul class="scene-list"><li>IDML · EasyCatalog · SVG · PDF · PPTX · Excel · image</li><li>IDML/SVG : reconstruction fidèle (calques, styles, polices)</li><li>Image &amp; PDF : décomposition IA en calques</li></ul>
           <button class="scene-more" aria-expanded="false" aria-controls="d-import"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
           <div class="scene-detail" id="d-import"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Vos fichiers existants (InDesign, PowerPoint, PDF) sont prisonniers de leur logiciel. Les rouvrir ailleurs les aplatit en image ou casse la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Déposez un <b>IDML, PPTX, SVG, PDF, image ou Excel</b>.</li><li>Le parseur reconstruit <b>calques, styles, polices et mise en page à l'identique</b> — pas une capture figée.</li><li>Pour les images et PDF, la <b>décomposition IA (Google Vision)</b> sépare textes, formes et visuels en calques éditables.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>IDML — InDesign</span><span>PPTX — PowerPoint</span><span>SVG — Illustrator</span><span>PDF → SVG</span><span>Image PNG/JPG/WebP</span><span>Excel / CSV</span><span>Décomposition IA en calques</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vos documents redeviennent éditables bloc par bloc, sans avoir à les recréer.</p></div><div class="sd-block"><span class="sd-k help">Aide intégrée</span><p class="sd-note">Extrait du manuel intégré (bouton « ? » dans l'app) — sections « Import » par format.</p><div class="sd-help"><div class="sdh"><b>Import IDML (InDesign)</b> — parse l'IDML (ZIP XML + ressources) et reconstruit la maquette à l'identique (formes, textes, images, fonts, gradients, ombres) ; ajoute ensuite des placeholders {{title}}, {{price}} pour le data-merge. Fonts non installées → fallback Arial.</div><div class="sdh"><b>Importer PPTX</b> — chaque diapositive d'un .pptx devient une page éditable ; idéal pour transformer une présentation en template. Animations PowerPoint non supportées.</div><div class="sdh"><b>Importer Excel</b> — crée ou complète une base produits du PIM depuis .xlsx, .csv, .json ou Google Sheets ; les types de colonnes sont détectés automatiquement.</div><div class="sdh"><b>Importer une image</b> — pose une image (PNG, JPG, WebP, GIF, SVG) sur le canvas ; elle reste une image (pas de décomposition).</div><div class="sdh"><b>Importer SVG</b> — charge un .svg en calques vectoriels éditables (formes, textes, chemins).</div><div class="sdh"><b>Image → SVG éditable</b> — le raster est verrouillé en fond et l'IA (Google Vision) détecte les textes, recréés en calques éditables par-dessus.</div><div class="sdh"><b>PDF → SVG éditable</b> — la page 1 du PDF est rasterisée en fond, avec les mêmes overlays texte éditables.</div></div></div></div></div>
         </div>
@@ -1843,20 +1849,20 @@
             <div class="imp-formats"><span class="imp-fmt on"><span class="d" style="background:#fbbf24"></span>InDesign<i>.idml</i></span><span class="imp-fmt"><span class="d" style="background:#38bdf8"></span>Illustrator<i>.svg</i></span><span class="imp-fmt"><span class="d" style="background:#f472b6"></span>PDF<i>.pdf</i></span><span class="imp-fmt"><span class="d" style="background:#fb923c"></span>PPTX<i>.pptx</i></span><span class="imp-fmt"><span class="d" style="background:#34d399"></span>Excel<i>.xlsx</i></span><span class="imp-fmt"><span class="d" style="background:#a78bfa"></span>Image<i>.png</i></span></div>
             <div class="imp-res">
               <div class="imp-src">
-                <span class="imp-shot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><b class="imp-badge">−20 %</b></span>
-                <span class="imp-meta"><b class="imp-tt">SOLDES</b><i class="imp-st">Perceuse 18V Brushless</i><s class="imp-price">24,90 €</s><em class="imp-ref">Réf. 4892-18V</em></span>
                 <span class="imp-doctag">catalogue.idml</span>
+                <span class="imp-shot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><b class="imp-badge">−20 %</b></span>
+                <span class="imp-meta"><b class="imp-tt">SOLDES</b><i class="imp-st">Perceuse 18V Brushless</i><s class="imp-ph">{{price}}</s><em class="imp-ref">Réf. {{ref}}</em></span>
               </div>
               <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
               <div class="imp-layers">
-                <div class="imp-lay"><span class="sw" style="background:#facc15"></span>Titre « Soldes »<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#ef4444"></span>Bandeau prix<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#a855f7"></span>Logo marque<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#fb923c"></span>Badge « -20 % »<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#34d399"></span>Mentions légales<span class="ed">éditable</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#f472b6"></span>Référence produit<span class="ed">éditable</span></div>
+                <div class="imp-head">Reconstruction fidèle · .idml</div>
+                <div class="imp-lay"><span class="sw" style="background:#facc15"></span>Titre « Soldes »<span class="ed">¶ style</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">cadre</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#ef4444"></span>Prix<span class="ed ph">{{price}}</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">¶ style</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#fb923c"></span>Badge −20 %<span class="ed">forme</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#a855f7"></span>Polices &amp; gradients<span class="ed">préservés</span></div>
+                <div class="imp-note"><i></i>Image / PDF → décomposition IA (Vision)</div>
               </div>
             </div>
           </div>
