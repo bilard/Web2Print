@@ -219,11 +219,6 @@ function layerTypeFor(obj: FabricObject): LayerType {
   return 'path'
 }
 
-/** Noms d'import — restent vides pour qu'on affiche l'auto-nom `<Type>` dans la panel Calques. */
-function humanName(_type: LayerType, _i: number): string {
-  return ''
-}
-
 /* -------------------------------------------------------------------------
  * Préservation de la hiérarchie des groupes SVG (Illustrator)
  * ----------------------------------------------------------------------- */
@@ -422,7 +417,8 @@ function decorateAll(objects: FabricObject[]): void {
       ...existing,
       id: (existing.id as string | undefined) ?? svgId(),
       type: kind,
-      name: (existing.name as string | undefined) ?? humanName(kind, 0),
+      // Nom vide à l'import : la panel Calques affiche alors l'auto-nom `<Type>`.
+      name: (existing.name as string | undefined) ?? '',
       role,
     }
     // Sélection AU PIXEL DESSINÉ pour les formes/groupes : un path au cadre

@@ -745,7 +745,7 @@ async function callClaude<T>(opts: GenerateJsonOptions<T>, model: string): Promi
     // messageContent est un array avec images + text
     const retryContent = [...messageContent] as Array<{ type: string; [key: string]: unknown }>
     const lastTextIndex = retryContent.findIndex((c, i) => c.type === 'text' && i === retryContent.length - 1)
-    if (lastTextIndex !== -1 && retryContent[lastTextIndex].type === 'text') {
+    if (lastTextIndex !== -1) {
       retryContent[lastTextIndex] = {
         type: 'text',
         text: (retryContent[lastTextIndex].text as string) + retryErrorText,

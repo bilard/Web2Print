@@ -576,8 +576,7 @@ export function PropertiesPanel() {
 
                   {(obj.fillType ?? 'solid') === 'solid' && (
                     <ColorPicker label="Couleur" value={obj.fill}
-                      onChange={(v) => obj.type === 'text' ? applyStyle({ fill: v }) : applyToFabric({ fill: v })}
-                      allowNoFill />
+                      onChange={(v) => obj.type === 'text' ? applyStyle({ fill: v }) : applyToFabric({ fill: v })} />
                   )}
 
                   {obj.fillType === 'gradient' && (
@@ -599,7 +598,7 @@ export function PropertiesPanel() {
                 <Section title="Contour" tourId="prop-stroke" help="Bordure de l'objet : couleur, épaisseur, style de trait (continu, tirets, points), et forme des extrémités/angles.">
 
                   <ColorPicker label="Couleur" value={obj.stroke}
-                    onChange={(v) => applyToFabric({ stroke: v })} allowNoFill />
+                    onChange={(v) => applyToFabric({ stroke: v })} />
                   <Row>
                     <NumInput label="Épaisseur" value={obj.strokeWidth} onChange={(v) => applyToFabric({ strokeWidth: v })} />
                     <SelectInput label="Type de tiret" value={JSON.stringify(obj.strokeDashArray ?? [])}

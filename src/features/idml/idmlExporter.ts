@@ -1144,19 +1144,6 @@ function patchStory(
   }
 
   if (hasAnyLineStyle) {
-    const lines = fabricText.split('\n')
-    const lineStartPos = buildLineStartPositions(lines)
-    void lineStartPos
-    for (let i = 0; i < lineStyles.length; i++) {
-      const lineStyle = lineStyles[i]
-      if (!lineStyle) continue
-
-      const segmentInfo = lineStyle.segments?.length
-        ? `, segments=${lineStyle.segments.length}`
-        : ''
-      void segmentInfo
-    }
-
     const updatedStoryEl = doc.getElementsByTagName('Story')[0]
     if (updatedStoryEl) {
       applyStylesToStory(doc, updatedStoryEl, fabricText, lineStyles)
@@ -1740,7 +1727,6 @@ export async function exportIdmlModified(
     const imgName = originalName
       ? originalName.replace(/\.[^.]+$/, '.jpg')  // keep original name, force .jpg extension
       : `fill_${id.replace(/[^a-zA-Z0-9_]/g, '_')}.jpg`
-    const ext = 'jpg'
 
     // Find the actual Links folder path in the zip (case may vary)
     const linksFolder = Object.keys(zip.files).find(
@@ -1828,7 +1814,6 @@ export async function exportIdmlModified(
     const linkUri = `file:Links/${imgName}`
 
     // We always re-encode to JPEG above, so format is fixed.
-    void ext
     const imgTypeStr = '$ID/JPEG'
     const imgFmtStr = '$ID/JPEG'
 

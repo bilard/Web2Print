@@ -391,6 +391,15 @@ export function useDeleteNode() {
 
 // ─── moveNode (D&D) ───────────────────────────────────────────────────────────
 
+/** Met à jour récursivement le `level` de tous les descendants de `parentId`. */
+function cascadeLevels(parentId: string, parentLevel: number, nodesMap: Record<string, TaxonomyNode>) {
+  const children = Object.values(nodesMap).filter((n) => n.parentId === parentId)
+  for (const child of children) {
+    nodesMap[child.id] = { ...nodesMap[child.id], level: parentLevel + 1 }
+    cascadeLevels(child.id, parentLevel + 1, nodesMap)
+  }
+}
+
 export function useMoveNode() {
   const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
@@ -432,13 +441,6 @@ export function useMoveNode() {
       }
 
       // Recursively update levels of all descendants
-      const cascadeLevels = (parentId: string, parentLevel: number, nodesMap: Record<string, TaxonomyNode>) => {
-        const children = Object.values(nodesMap).filter(n => n.parentId === parentId)
-        for (const child of children) {
-          nodesMap[child.id] = { ...nodesMap[child.id], level: parentLevel + 1 }
-          cascadeLevels(child.id, parentLevel + 1, nodesMap)
-        }
-      }
       cascadeLevels(nodeId, updatedNodes[nodeId].level, updatedNodes)
 
       await updateDoc(doc(db, 'taxonomies', taxonomyId), {
@@ -468,13 +470,6 @@ export function useMoveNode() {
         }
 
         // Recursively update levels of all descendants
-        const cascadeLevels = (parentId: string, parentLevel: number, nodesMap: Record<string, TaxonomyNode>) => {
-          const children = Object.values(nodesMap).filter(n => n.parentId === parentId)
-          for (const child of children) {
-            nodesMap[child.id] = { ...nodesMap[child.id], level: parentLevel + 1 }
-            cascadeLevels(child.id, parentLevel + 1, nodesMap)
-          }
-        }
         cascadeLevels(nodeId, updated[nodeId].level, updated)
 
         return updated

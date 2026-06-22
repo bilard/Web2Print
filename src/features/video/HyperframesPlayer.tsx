@@ -138,7 +138,7 @@ export function HyperframesPlayer({
       svgUrl: '',
       durationScale,
     }
-  }, [isMultiScene, composition, svg, brand, caption, prompt, styleConfig])
+  }, [isMultiScene, composition, svg, brand, caption, prompt, styleConfig, durationSec])
 
   useEffect(() => {
     let cancelled = false

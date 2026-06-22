@@ -16,15 +16,11 @@
  */
 
 import { useEffect } from 'react'
-import { FabricImage, Group } from 'fabric'
+import { Group } from 'fabric'
 import type { FabricObject } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
-
-const isBgLockedMarker = (obj: FabricObject): boolean => {
-  const data = (obj as FabricObject & { data?: Record<string, unknown> }).data
-  return data?.role === 'image-bg-locked' || data?.name === 'image-bg-locked'
-}
+import { isBgLockedMarker } from './bgLockMarker'
 
 function lockBgRoot(root: FabricObject): void {
   root.set({
@@ -42,10 +38,6 @@ function lockBgRoot(root: FabricObject): void {
     for (const child of (root as unknown as { _objects?: FabricObject[] })._objects ?? []) {
       child.set({ selectable: false, evented: false, hasControls: false, hoverCursor: 'default' })
       if (child instanceof Group) lockBgRoot(child)
-      else if (child instanceof FabricImage) {
-        // explicit, redundant — sécurité pour Fabric findControl avec enfants Image
-        child.set({ hasControls: false })
-      }
     }
   }
 }

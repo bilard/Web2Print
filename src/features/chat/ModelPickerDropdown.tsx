@@ -24,7 +24,7 @@ interface ModelPickerDropdownProps {
   onPick: (provider: ReasoningProvider, modelId: string) => void
 }
 
-/** Formate "in/out $X/$Y per M" pour l'item — si gratuit, ne rien afficher. */
+/** Formate "in/out $X/$Y per M" pour l'item — retourne 'free' si gratuit. */
 function priceTag(m: AiModelInfo): string {
   const { input, output } = m.pricing
   if (input === 0 && output === 0) return 'free'

@@ -16,6 +16,7 @@
 
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage, auth } from '@/lib/firebase/config'
+import { escapeXml, slugifyFileName } from './xmlUtils'
 
 export interface ImageToSvgResult {
   /** Blob SVG prêt à être passé à parseSvg / loadSVGFromString */
@@ -45,17 +46,6 @@ const loadImageDimensions = (dataUrl: string): Promise<{ width: number; height: 
     img.src = dataUrl
   })
 
-const escapeXml = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-
-const slugifyFileName = (name: string): string =>
-  name
-    .toLowerCase()
-    .replace(/\.[^.]+$/, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40) || 'image'
-
 /**
  * Construit un SVG Option B à partir d'un fichier image.
  * Upload l'image vers Firebase Storage et utilise l'URL dans le `<image>` du SVG.
@@ -77,7 +67,7 @@ export async function convertImageToEditableSvg(imageFile: File): Promise<ImageT
 
   // Upload vers Storage avec un chemin déterministe (timestamp + slug nom).
   const ext = imageFile.name.match(/\.([a-zA-Z0-9]+)$/)?.[1].toLowerCase() ?? 'bin'
-  const slug = slugifyFileName(imageFile.name)
+  const slug = slugifyFileName(imageFile.name, 'image')
   const fileName = `${Date.now()}-${slug}.${ext}`
   // Chemin sous `users/{uid}/...` : couvert par la règle générique d'accès utilisateur
   // dans storage.rules — pas besoin d'ajouter une règle dédiée.

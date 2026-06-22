@@ -3,7 +3,6 @@ import { writeFileSync } from 'node:fs'
 import { buildCostRows, buildHtml, buildEmailHtml, type BrightDataView } from './costReport'
 import type { AiCostStats } from '@/features/stats/useUsageStats'
 import { initialSelected, initialBudgets } from '@/stores/aiSettings.store'
-import type { AiProvider } from '@/lib/aiModels'
 
 const leaf = (i: number, o: number, c: number) => ({ tokensIn: i, tokensOut: o, costUsd: c })
 const emptyP = () => ({ tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} })

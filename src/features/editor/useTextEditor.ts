@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
 import { Canvas, IText } from 'fabric'
-import { useEditorStore } from '@/stores/editor.store'
 import { loadFont, AVAILABLE_FONTS } from '@/features/assets/useFonts'
 import { syncToStore } from './useAddObject'
 
@@ -112,8 +111,6 @@ function applyStyleToIText(itext: IText, style: Partial<TextStyle>) {
 }
 
 export function useTextEditor(fabricRef: React.RefObject<Canvas | null>) {
-  const { selectedObjectId, updateObject } = useEditorStore()
-
   const applyStyle = useCallback((style: Partial<TextStyle>) => {
     const canvas = fabricRef.current
     if (!canvas) return
@@ -146,7 +143,7 @@ export function useTextEditor(fabricRef: React.RefObject<Canvas | null>) {
     }
 
     doApply()
-  }, [fabricRef, selectedObjectId, updateObject])
+  }, [fabricRef])
 
   return { applyStyle }
 }

@@ -75,7 +75,7 @@ function patchStories(
 
       // Handle hideLineIfEmpty: remove entire ParagraphStyleRange if all content is empty
       if (options.hideLineIfEmpty) {
-        result = removeEmptyParagraphs(result, options)
+        result = removeEmptyParagraphs(result)
       }
     }
 
@@ -89,7 +89,7 @@ function patchStories(
  * Supprime les ParagraphStyleRange dont le contenu résolu est vide
  * et dont les variables ont hideLineIfEmpty activé.
  */
-function removeEmptyParagraphs(xml: string, _options: PatchOptions): string {
+function removeEmptyParagraphs(xml: string): string {
   // Parse and check each ParagraphStyleRange
   // A PSR with only empty/whitespace Content after resolution should be removed
   // This is a simplified approach — works for single-paragraph lines

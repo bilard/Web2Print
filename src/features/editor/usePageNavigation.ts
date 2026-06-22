@@ -41,7 +41,7 @@ export function usePageNavigation() {
       syncToStore(canvas)
       setCurrentPage(newIndex)
     },
-    [pages, currentPageIndex, saveCurrentPage, updatePage, setCurrentPage],
+    [pages, currentPageIndex, saveCurrentPage, setCurrentPage],
   )
 
   return { navigateToPage, saveCurrentPage }

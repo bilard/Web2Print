@@ -107,7 +107,7 @@ export function extractMarkdownHierarchy(el: Element): string {
 
   const cellText = (e: Element): string => (e.textContent ?? '').replace(/\s+/g, ' ').trim()
 
-  const walk = (node: Node, listDepth: number, ordered: boolean): void => {
+  const walk = (node: Node): void => {
     if (node.nodeType === 3 /* TEXT */) {
       const t = (node.nodeValue ?? '').replace(/\s+/g, ' ').trim()
       if (t) lines.push(t)
@@ -140,9 +140,8 @@ export function extractMarkdownHierarchy(el: Element): string {
         itemIndex += 1
         const text = cellText(liEl)
         if (!text) continue
-        const indent = '  '.repeat(Math.max(listDepth, 0))
         const prefix = isOrdered ? `${itemIndex}.` : '-'
-        lines.push(indent + prefix + ' ' + text)
+        lines.push(prefix + ' ' + text)
       }
       lines.push('')
       return
@@ -178,10 +177,10 @@ export function extractMarkdownHierarchy(el: Element): string {
       return
     }
     // Conteneur générique : descendre dans les enfants
-    for (const child of Array.from(e.childNodes)) walk(child, listDepth, ordered)
+    for (const child of Array.from(e.childNodes)) walk(child)
   }
 
-  walk(el, 0, false)
+  walk(el)
 
   return lines
     .join('\n')
@@ -284,7 +283,6 @@ function expandContainerToItems(
   const container = nodes[0]
   // Stratégie : chercher les enfants répétés les plus probables (li, p, div,
   // img, a). On prend la 1re liste non-triviale (≥ 2 items).
-  const candidates: Array<string> = []
   const childSelectors = ['li', ':scope > p', ':scope > div', ':scope > a', ':scope > span', 'img']
   for (const sel of childSelectors) {
     try {
@@ -300,7 +298,6 @@ function expandContainerToItems(
         return values
       }
     } catch { /* invalid selector */ }
-    if (candidates.length > 0) break
   }
   return null
 }
@@ -360,12 +357,10 @@ function applyGroup(
   doc: Document,
   group: GroupSelector,
 ): { group: string; pairs: Array<{ name: string; value: string }> } | null {
-  const containers = resolveStrategy(doc, group.container)
-  // resolveStrategy retourne strings, mais on a besoin des noeuds : refaire une requête
   const containerNodes = group.container.kind === 'css'
     ? Array.from(doc.querySelectorAll(group.container.expression))
     : []
-  if (containerNodes.length === 0 || containers.length === 0) return null
+  if (containerNodes.length === 0) return null
   const out: { group: string; pairs: Array<{ name: string; value: string }> }[] = []
   for (const container of containerNodes) {
     const titleVals = resolveStrategy(container, group.titleSelector)

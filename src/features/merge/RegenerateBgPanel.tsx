@@ -11,11 +11,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
 import { generateImage } from '@/features/briefs/ai/geminiImageClient'
 import { notify } from '@/lib/notify'
-
-const isBgLockedMarker = (obj: FabricObject): boolean => {
-  const data = (obj as FabricObject & { data?: Record<string, unknown> }).data
-  return data?.role === 'image-bg-locked' || data?.name === 'image-bg-locked'
-}
+import { isBgLockedMarker } from '@/features/svg/bgLockMarker'
 
 /** Première FabricImage du sous-arbre (le calque bg est une image, parfois groupée). */
 function findImage(root: FabricObject): FabricImage | null {

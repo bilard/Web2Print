@@ -77,7 +77,6 @@ export function useProjectAssets(projectId: string | null, options: UseProjectAs
 
   useEffect(() => {
     load()
-     
   }, [projectId, version])
 
   return { images, fonts, loading, reload: load }

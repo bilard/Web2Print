@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { pimProductsToSheet } from './productToSheet'
-import type { Product, Source } from './types'
+import type { Product } from './types'
 
 const baseProduct = (over: Partial<Product> = {}): Product => ({
   _id: 'p1',
@@ -132,7 +132,3 @@ describe('pimProductsToSheet', () => {
     expect(sheet.name).toBe('Catalog 2026')
   })
 })
-
-// Type bypass pour Source (non utilisé dans les tests mais signature exige)
-const _unused: Source[] = []
-void _unused

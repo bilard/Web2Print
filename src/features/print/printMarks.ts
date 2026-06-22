@@ -408,7 +408,3 @@ export function buildPrintMarks(opts: PrintMarksOptions & { dpi?: number }): Fab
 
   return objs
 }
-
-if (import.meta.hot) {
-  import.meta.hot.accept()
-}

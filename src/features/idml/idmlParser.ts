@@ -809,24 +809,6 @@ function buildStyleMaps(resources: Record<string, string>): {
         const el = paraEls[i]
         const id = attr(el, 'Self')
         if (!id) continue
-        // DEBUG: dump all attributes of each ParagraphStyle
-        const allAttrs: Record<string, string> = {}
-        for (let a = 0; a < el.attributes.length; a++) {
-          const at = el.attributes[a]
-          if (at.name === 'Self' || at.name === 'Name') continue
-          allAttrs[at.name] = at.value
-        }
-        // Also check Properties children for Leading/AutoLeading
-        const dbgProps = directChildren(el, 'Properties')
-        if (dbgProps.length > 0) {
-          for (const child of Array.from(dbgProps[0].childNodes)) {
-            if (child.nodeType === 1) {
-              const ce = child as Element
-              const t = ce.getAttribute('type') || ''
-              allAttrs[`Props/${ce.tagName}(${t})`] = ce.textContent?.trim() || ''
-            }
-          }
-        }
         const def = parseStyleDef(el)
         // Parse AllGREPStyles from <Properties><AllGREPStyles>
         const propsArr = directChildren(el, 'Properties')

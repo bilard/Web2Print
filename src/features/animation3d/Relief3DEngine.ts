@@ -34,7 +34,6 @@ export class Relief3DEngine {
   private config: ReliefConfig
   private sideMaterial: THREE.MeshStandardMaterial
   private frontMaterial: THREE.MeshStandardMaterial
-  private backMaterial: THREE.MeshStandardMaterial
 
   constructor(opts: Relief3DEngineOptions) {
     const { canvas, width, height, texture: img, config } = opts
@@ -88,7 +87,6 @@ export class Relief3DEngine {
       depthTest: false,
       depthWrite: false,
     })
-    this.backMaterial = this.frontMaterial
 
     this.applyConfig()
   }

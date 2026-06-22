@@ -18,6 +18,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { storage, auth } from '@/lib/firebase/config'
 import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
+import { escapeXml, slugifyFileName } from './xmlUtils'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -51,17 +52,6 @@ export interface PdfToSvgResult {
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
-
-const escapeXml = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-
-const slugifyFileName = (name: string): string =>
-  name
-    .toLowerCase()
-    .replace(/\.[^.]+$/, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40) || 'pdf'
 
 /** Uint8Array → base64 (chunké : btoa ne digère pas les gros buffers d'un coup). */
 function uint8ToBase64(bytes: Uint8Array): string {
@@ -933,7 +923,7 @@ export async function convertPdfToEditableSvg(pdfFile: File): Promise<PdfToSvgRe
 
   const { blob, width, height, textRuns } = await rasterizeFirstPage(pdfFile)
 
-  const slug = slugifyFileName(pdfFile.name)
+  const slug = slugifyFileName(pdfFile.name, 'pdf')
   const fileName = `${Date.now()}-${slug}.png`
   // Chemin sous `users/{uid}/...` : couvert par la règle générique d'accès utilisateur
   // dans storage.rules — pas besoin d'ajouter une règle dédiée.

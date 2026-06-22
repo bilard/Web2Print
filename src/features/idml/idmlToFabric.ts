@@ -18,8 +18,6 @@ const EC_TRANSPARENT_1PX =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 
 /**
- * Extract per-character charSpacing from Fabric styles into a serializable map.
-/**
  * Restore per-character charSpacing from a serialized map back into Fabric styles.
  */
 function restoreCharSpacingToStyles(textbox: any, map: Record<string, number>): void {

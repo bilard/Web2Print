@@ -202,7 +202,6 @@ function ProjectColorSwatches({ onSelect, currentColor }: { onSelect: (c: string
 interface ColorPickerProps {
   value: string
   onChange: (color: string) => void
-  allowNoFill?: boolean
   label?: string
 }
 

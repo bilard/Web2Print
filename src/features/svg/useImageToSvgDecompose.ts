@@ -31,6 +31,7 @@ import { recordPipelineRun } from '@/lib/pipelineLog'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore as _syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
+import { isBgLockedMarker } from './bgLockMarker'
 import { decomposeWithGoogleVision } from './googleVisionDecompose'
 import type { VisionParagraph, VisionWord, VisionDecomposeResult } from './googleVisionDecompose'
 import { detectPriceClusters, cropToDataUri, readPriceFromImage, parsePriceParts, classifyLogoTexts } from './refinePrices'
@@ -57,11 +58,6 @@ interface DecomposeState {
 // ─────────────────────────────────────────────────────────────────────────────
 // Détection / lock du calque bg
 // ─────────────────────────────────────────────────────────────────────────────
-
-const isBgLockedMarker = (obj: FabricObject): boolean => {
-  const data = (obj as FabricObject & { data?: Record<string, unknown> }).data
-  return data?.role === 'image-bg-locked' || data?.name === 'image-bg-locked'
-}
 
 const firstImageIn = (g: Group): FabricImage | null => {
   for (const child of (g as unknown as { _objects?: unknown[] })._objects ?? []) {
