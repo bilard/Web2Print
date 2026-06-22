@@ -1,24 +1,9 @@
 # robots.txt — https://ibs-studio.com
-# Le site public (promo à la racine, promo digitale, documentation) est indexable.
-# L'application authentifiée (shell SPA) ne contient aucun contenu pour les crawlers.
+# Tout est ouvert au crawl. Les pages publiques (promo racine, /digital/, /docs/)
+# sont indexables ; le shell de l'app authentifiée porte un <meta robots="noindex">
+# dans son HTML, il n'a donc pas besoin d'être bloqué ici.
 
 User-agent: *
 Allow: /
-Allow: /docs/
-Allow: /digital/
-
-# Routes applicatives : coquille SPA sans contenu indexable.
-Disallow: /dashboard
-Disallow: /editor
-Disallow: /login
-Disallow: /onboarding
-Disallow: /workflows
-Disallow: /data
-Disallow: /scraping-templates
-Disallow: /taxonomies
-Disallow: /_app.html
-
-# Templates vidéo HyperFrames : pages techniques sans valeur de référencement.
-Disallow: /hf-templates/
 
 Sitemap: https://ibs-studio.com/sitemap.xml

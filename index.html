@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Shell de l'app authentifiée (sert toutes les routes SPA via _app.html) :
+         aucune valeur de référencement, on demande aux moteurs de ne pas l'indexer.
+         Les pages publiques (promo racine, /digital/, /docs/) sont des fichiers
+         séparés et NE contiennent PAS ce noindex. -->
+    <meta name="robots" content="noindex, follow" />
     <title>IBS Studio</title>
     <script>
       // Anti-flash : pose la classe de thème avant le premier paint.
