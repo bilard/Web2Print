@@ -3,15 +3,11 @@ import { Search, Loader2, FileSpreadsheet, LogOut } from 'lucide-react'
 import { useGoogleSheetsImport } from './useGoogleSheetsImport'
 import type { SheetsFile } from './useGoogleSheetsImport'
 
-interface Props {
-  onClose: () => void
-}
-
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function SheetsFilePicker({ onClose: _onClose }: Props) {
+export function SheetsFilePicker() {
   const { connected, connecting, importing, error, connect, disconnect, listSheetsFiles, importFile } =
     useGoogleSheetsImport()
 

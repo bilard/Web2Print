@@ -32,7 +32,6 @@ export type AiCostStats = UsageStats['aiCost']
 
 interface UsageStats {
   projectCount: number
-  exportCount: number
   storageUsedMb: number
   storageQuotaMb: number
   aiCost: {
@@ -139,7 +138,6 @@ async function fetchStats(userId: string): Promise<UsageStats> {
 
   return {
     projectCount: snap.size,
-    exportCount: 0,
     storageUsedMb: Math.round(totalBytes / (1024 * 1024) * 100) / 100,
     storageQuotaMb: 500,
     aiCost,

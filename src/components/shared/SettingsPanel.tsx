@@ -496,7 +496,6 @@ function StatsTab() {
 
       <div className="bg-white/[0.03] rounded-xl p-4">
         <StatRow label="Projets" value={String(stats.projectCount)} />
-        <StatRow label="Exports ce mois" value={stats.exportCount === 0 ? '—' : String(stats.exportCount)} />
       </div>
 
       <div className="bg-white/[0.03] rounded-xl p-4 flex flex-col gap-2">

@@ -1897,8 +1897,7 @@ export async function exportIdmlModified(
     zip.file(graphicPath, graphicXml)
   }
 
-  void colorPatchCount
-  void posPatchCount
+  console.log('[idml-export] patches appliqués →', { color: colorPatchCount, pos: posPatchCount })
 
   const idmlBlob = await zip.generateAsync({
     type: 'blob',
