@@ -9,6 +9,7 @@ import type { AspectFormat } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
 import type { Composition } from './promptToComposition'
 import type { CapturedObjectAnim } from './utils/captureSvg'
+import type { MotionPlan } from './promptToMotionPlan'
 
 interface Props {
   animationId: string
@@ -26,6 +27,8 @@ interface Props {
   prompt?: string
   /** Mode canvas : animations par-objet rejouées dans la vidéo (B-fidèle). */
   objectAnimations?: CapturedObjectAnim[]
+  /** Mode canvas : plan de motion généré par IA depuis le prompt utilisateur. */
+  motionPlan?: MotionPlan
   initialSaved?: boolean
   onRegenerate: () => void
 }
@@ -63,6 +66,7 @@ function buildVariables(props: Props): { isMultiScene: boolean; variables: Recor
       prompt: props.prompt,
       styleConfig: props.styleConfig,
       objectAnimations: props.objectAnimations,
+      motionPlan: props.motionPlan,
       svgUrl: '',
     },
   }
@@ -82,6 +86,7 @@ export function VideoResult(props: Props) {
     brand,
     prompt,
     objectAnimations,
+    motionPlan,
     initialSaved = false,
     onRegenerate,
   } = props
@@ -155,6 +160,7 @@ export function VideoResult(props: Props) {
         prompt={prompt}
         styleConfig={styleConfig}
         objectAnimations={objectAnimations}
+        motionPlan={motionPlan}
         width={width}
         height={height}
         durationSec={durationSec}
