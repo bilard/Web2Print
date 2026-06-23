@@ -151,6 +151,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   const [brand, setBrand] = useState('')
   const [caption, setCaption] = useState('')
   const [freeform, setFreeform] = useState('')
+  const [fromScratch, setFromScratch] = useState(false)
   const [files, setFiles] = useState<File[]>([])
   const [aspect, setAspect] = useState<AspectChoice>('auto')
   const [custom, setCustom] = useState<CustomDims>({ width: 1080, height: 1080 })
@@ -276,6 +277,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         customHeight: aspect === 'custom' ? custom.height : undefined,
         targetDurationSec: durationSec,
         objectPresets: objectPresets.length ? objectPresets : undefined,
+        animationPrompt: freeform.trim() || undefined,
+        fromScratch: fromScratch || undefined,
         source,
         signal: abortRef.current.signal,
       },
@@ -328,6 +331,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     setBrand('')
     setCaption('')
     setFreeform('')
+    setFromScratch(false)
     setFiles([])
     setAspect('auto')
     setCustom({ width: 1080, height: 1080 })
@@ -443,6 +447,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           targetDurationSec:
             typeof p.targetDurationSec === 'number' ? p.targetDurationSec : undefined,
           objectPresets: objectPresets.length ? objectPresets : undefined,
+          animationPrompt: (p.freeform ?? '').trim() || undefined,
+          fromScratch: fromScratch || undefined,
           source,
         },
         {
@@ -768,19 +774,29 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   <FieldLabel
                     htmlFor="freeform"
                     optional
-                    hint="Interprétées par Gemini en personnalité de mouvement, palette, rythme et intensité."
+                    hint="L'IA traduit ces instructions en animations par élément (cible par nom : « le bloc prix », « le logo », « tous les éléments »)."
                   >
-                    Instructions libres
+                    Instructions d'animation
                   </FieldLabel>
                   <textarea
                     id="freeform"
                     value={freeform}
                     onChange={(e) => setFreeform(e.target.value)}
                     disabled={generating}
-                    rows={2}
-                    placeholder="ex. Rythme énergique, transitions punchy, palette néon"
+                    rows={3}
+                    placeholder="ex. effet de carte qui se retourne sur le prix ; le logo balance doucement ; entrée des éléments depuis la gauche en cascade, sortie à droite"
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
                   />
+                  <label className="mt-2 flex items-center gap-2 text-xs text-white/60 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fromScratch}
+                      onChange={(e) => setFromScratch(e.target.checked)}
+                      disabled={generating}
+                      className="accent-indigo-500"
+                    />
+                    Partir de zéro (ne jouer que mes instructions)
+                  </label>
                 </div>
 
                 <FileDropzone files={files} onChange={setFiles} disabled={generating} />
