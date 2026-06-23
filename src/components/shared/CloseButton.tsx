@@ -33,9 +33,9 @@ export function CloseButton({
       aria-label={title}
       title={title}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-md border border-white/10',
-        'bg-surface-2 text-white/70 transition-colors',
-        'hover:bg-surface hover:text-white hover:border-white/20',
+        'inline-flex shrink-0 items-center justify-center rounded-md border border-accent/30',
+        'bg-accent/10 text-indigo-300 transition-colors',
+        'hover:bg-accent hover:text-[#fff] hover:border-accent',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
         'disabled:opacity-40 disabled:pointer-events-none',
         box,
