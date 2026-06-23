@@ -46,6 +46,7 @@ function buildVariables(props: Props): { isMultiScene: boolean; variables: Recor
       variables: {
         composition: props.composition,
         brand: props.brand,
+        caption: props.caption,
         prompt: props.prompt,
       },
     }

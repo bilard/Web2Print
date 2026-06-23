@@ -125,6 +125,7 @@ export function HyperframesPlayer({
       return {
         composition,
         brand: brand || undefined,
+        caption: caption || undefined,
         prompt: prompt || undefined,
         durationScale,
       }

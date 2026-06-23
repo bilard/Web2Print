@@ -136,6 +136,19 @@
         border-radius: 3px;
         transform-origin: left center;
       }
+      /* Caption persistante (bandeau bas) — affichée par-dessus toutes les
+         scènes quand vars.caption est fournie. Couleur = accent, texte blanc. */
+      .caption-band {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        z-index: 20;
+        padding: 40px 64px;
+        color: #fff;
+        font-size: 72px; font-weight: 900;
+        letter-spacing: -0.02em; line-height: 1.0;
+        text-align: center;
+        text-shadow: 0 6px 18px rgba(0,0,0,0.45);
+        will-change: transform, opacity;
+      }
     </style>
   </head>
   <body>
@@ -148,7 +161,8 @@
       data-height="1080"
       data-composition-variables='[
         {"id":"composition","type":"object","label":"Composition multi-scènes (scenes[],palette,pace)","default":null},
-        {"id":"brand","type":"string","label":"Marque (optionnel)","default":""}
+        {"id":"brand","type":"string","label":"Marque (optionnel)","default":""},
+        {"id":"caption","type":"string","label":"Caption persistante (bandeau bas)","default":""}
       ]'
     >
     </div>
@@ -559,6 +573,21 @@
 
           cursor += sceneDur;
         });
+
+        // ===== CAPTION PERSISTANTE (bandeau bas) =====
+        // Affichée par-dessus toutes les scènes pendant toute la vidéo si
+        // vars.caption est fournie. Animation séquentielle (slide-in puis
+        // slide-out à la fin) — déterministe au seek (pas de yoyo).
+        const capText = (vars.caption || '').toString().trim();
+        if (capText) {
+          const band = el('div', 'caption-band', capText);
+          band.style.background = ACCENT;
+          root.appendChild(band);
+          master.set(band, { yPercent: 120, opacity: 0 }, 0);
+          master.to(band, { yPercent: 0, opacity: 1, duration: dur(0.6), ease: 'power3.out' }, dur(0.4));
+          const outAt = Math.max(dur(0.6), cursor - dur(0.5));
+          master.to(band, { yPercent: 120, opacity: 0, duration: dur(0.45), ease: 'power2.in' }, outAt);
+        }
 
         window.__timelines = window.__timelines || {};
         window.__timelines['multi-scene-square'] = master;
