@@ -72,40 +72,80 @@ Adapte pace/intensity/ease pour qu'ils soient cohérents avec motion (ex: energe
 BRIEF :
 `
 
-/** Filet déterministe keyword → motion, miroir d'`enforceAnimationIntent`
- *  (mode standalone). Le mode Canvas n'a AUCUN garde-fou : si le LLM rate son
- *  choix de `motion` (ou échoue → DEFAULT = cinematic, la personnalité la plus
- *  calme), le brief de l'utilisateur retombe sur le mouvement le moins visible
- *  — exactement le « rien ne change » qu'on corrige. Quand un mot-clé fort
- *  matche, on FORCE la personnalité ; sinon on laisse le choix du LLM.
- *
- *  Exporté pour pouvoir l'appliquer aussi au fallback DEFAULT_STYLE_CONFIG. */
-export function applyMotionHeuristic(config: StyleConfig, prompt: string): StyleConfig {
+type Motion = StyleConfig['motion']
+
+/** Mot-clé fort du brief → personnalité de mouvement. null si rien ne matche. */
+export function motionFromBrief(prompt: string): Motion | null {
   const p = (prompt || '').toLowerCase()
-  const forced =
-    /\b(signage|point\s+de\s+vente|pos|magasin|en\s+rayon|in[\s-]store|retail|promo|soldes?|d[ée]stockage|black\s+friday|auchan|carrefour|leclerc|intermarch|monoprix|lidl|aldi)\b/.test(p)
-      ? 'energetic'
-    : /\b(fun|ludique|jeune|playful|d[ée]contract|tiktok|insta|r[ée]seaux\s+sociaux|cartoon|pop)\b/.test(p)
-      ? 'playful'
-    : /\b(premium|luxe|luxury|haut\s+de\s+gamme|prestige|[ée]l[ée]gan|cin[ée]ma|cinematic|storytelling|raffin)\b/.test(p)
-      ? 'cinematic'
-    : /\b(corporate|b2b|institutionnel|sobre|professionnel|entreprise|s[ée]rieux|formation|interne)\b/.test(p)
-      ? 'minimal'
-      : null
-  if (!forced) return config
-  // Aligne aussi pace/intensity quand on force energetic/minimal, pour rester
-  // cohérent avec la personnalité imposée.
+  if (/\b(signage|point\s+de\s+vente|pos|magasin|en\s+rayon|in[\s-]store|retail|promo|soldes?|d[ée]stockage|black\s+friday|auchan|carrefour|leclerc|intermarch|monoprix|lidl|aldi)\b/.test(p)) return 'energetic'
+  if (/\b(fun|ludique|jeune|playful|d[ée]contract|tiktok|insta|r[ée]seaux\s+sociaux|cartoon|pop)\b/.test(p)) return 'playful'
+  if (/\b(premium|luxe|luxury|haut\s+de\s+gamme|prestige|[ée]l[ée]gan|cin[ée]ma|cinematic|storytelling|raffin)\b/.test(p)) return 'cinematic'
+  if (/\b(corporate|b2b|institutionnel|sobre|professionnel|entreprise|s[ée]rieux|formation|interne)\b/.test(p)) return 'minimal'
+  return null
+}
+
+/** Presets du panneau « Animer l'objet » → personnalité de mouvement.
+ *  Permet à la Vidéo IA de NE PLUS contredire les animations posées par objet :
+ *  elle s'inspire de leur intention plutôt que de les ignorer (Couche B-robuste). */
+const PRESET_TO_MOTION: Record<string, Motion> = {
+  bounce: 'energetic', vibrate: 'energetic', slideEntrance: 'energetic',
+  slideVertical: 'energetic', motionPath: 'energetic', glowAccent: 'energetic',
+  pulseScale: 'cinematic', wave: 'cinematic', rotate3D: 'cinematic',
+  flip3D: 'cinematic', relief3D: 'cinematic',
+  hueCycle: 'playful', particles: 'playful',
+}
+
+/** Agrège une liste de presets d'objets en une personnalité dominante.
+ *  Égalité → priorité energetic (retail) puis playful, cinematic, minimal. */
+export function motionFromPresets(presets: string[]): Motion | null {
+  if (!presets || !presets.length) return null
+  const counts: Partial<Record<Motion, number>> = {}
+  for (const p of presets) {
+    const m = PRESET_TO_MOTION[p]
+    if (m) counts[m] = (counts[m] ?? 0) + 1
+  }
+  const order: Motion[] = ['energetic', 'playful', 'cinematic', 'minimal']
+  let best: Motion | null = null
+  let bestN = 0
+  for (const m of order) {
+    const n = counts[m] ?? 0
+    if (n > bestN) { bestN = n; best = m }
+  }
+  return best
+}
+
+/** Aligne pace/intensity/ease/motion sur une personnalité imposée. */
+function applyMotion(config: StyleConfig, forced: Motion): StyleConfig {
   if (forced === 'energetic') return { ...config, motion: forced, pace: 'fast', intensity: 'punchy' }
   if (forced === 'minimal') return { ...config, motion: forced, intensity: 'subtle', ease: 'soft' }
   return { ...config, motion: forced }
 }
 
-export async function interpretPromptToStyleConfig(prompt: string): Promise<StyleConfig> {
+/** Filet déterministe brief keyword → motion (miroir d'`enforceAnimationIntent`,
+ *  mode standalone). Le mode Canvas n'a AUCUN garde-fou LLM : sans ça le brief
+ *  retombe sur DEFAULT = cinematic (le mouvement le moins visible). Optionnellement,
+ *  `objectPresets` (animations posées par objet via « Animer l'objet ») sert de
+ *  signal de repli quand le brief ne dit rien (Couche B-robuste).
+ *
+ *  Précédence : mot-clé du brief > presets par-objet > choix du LLM. */
+export function applyMotionHeuristic(
+  config: StyleConfig,
+  prompt: string,
+  objectPresets: string[] = [],
+): StyleConfig {
+  const forced = motionFromBrief(prompt) ?? motionFromPresets(objectPresets)
+  return forced ? applyMotion(config, forced) : config
+}
+
+export async function interpretPromptToStyleConfig(
+  prompt: string,
+  objectPresets: string[] = [],
+): Promise<StyleConfig> {
   const raw = await generateJson<StyleConfig>({
     prompt: SYSTEM_PROMPT + prompt,
     schema: StyleConfigSchema,
     schemaForGemini: SCHEMA_FOR_GEMINI,
     version: 'video-style-config-v2',
   })
-  return applyMotionHeuristic(raw, prompt)
+  return applyMotionHeuristic(raw, prompt, objectPresets)
 }

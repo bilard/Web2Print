@@ -56,6 +56,10 @@ export interface GenerateVideoInput {
   goal?: string
   tone?: string
   files?: File[]
+  /** Presets d'animation posés par objet via le panneau « Animer l'objet ».
+   *  Mode canvas (B-robuste) : la Vidéo IA s'en inspire pour sa personnalité de
+   *  mouvement plutôt que de les ignorer. */
+  objectPresets?: string[]
   customWidth?: number
   customHeight?: number
   /** Durée totale souhaitée pour l'animation en secondes (3-60).
@@ -193,13 +197,18 @@ export function useGenerateVideo(opts?: {
             source,
           })
           try {
-            styleConfig = await interpretPromptToStyleConfig(enrichedPrompt.trim())
+            styleConfig = await interpretPromptToStyleConfig(enrichedPrompt.trim(), input.objectPresets ?? [])
           } catch (err) {
             console.warn('Interprétation Gemini échouée, fallback styleConfig par défaut:', err)
-            // Même en fallback, on applique le filet keyword → motion pour que le
-            // brief ne retombe pas silencieusement sur la personnalité la plus calme.
-            styleConfig = applyMotionHeuristic(DEFAULT_STYLE_CONFIG, enrichedPrompt.trim())
+            // Même en fallback, on applique le filet keyword → motion (+ presets
+            // par-objet) pour que le brief ne retombe pas silencieusement sur la
+            // personnalité la plus calme.
+            styleConfig = applyMotionHeuristic(DEFAULT_STYLE_CONFIG, enrichedPrompt.trim(), input.objectPresets ?? [])
           }
+        } else if (input.objectPresets && input.objectPresets.length > 0) {
+          // Aucun brief texte mais des objets animés : la personnalité dérive
+          // quand même des presets posés par objet (B-robuste).
+          styleConfig = applyMotionHeuristic(DEFAULT_STYLE_CONFIG, '', input.objectPresets)
         }
 
         opts?.onStep?.({

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Film, X, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Eraser } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGenerateVideo, type GenerateVideoSource } from './useGenerateVideo'
@@ -15,7 +15,30 @@ import { useEnrichComposition } from './useEnrichComposition'
 import type { AspectFormat } from './types'
 import { detectAspect } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
+import { motionFromPresets } from './promptToStyleConfig'
 import type { Composition } from './promptToComposition'
+import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
+
+/** Collecte récursivement les presets d'animation posés par objet (panneau
+ *  « Animer l'objet ») pour que la Vidéo IA s'en inspire (Couche B-robuste). */
+function collectAnimationPresets(objs: CanvasObjectProps[]): string[] {
+  const out: string[] = []
+  const visit = (list: CanvasObjectProps[]) => {
+    for (const o of list) {
+      if (o.animation3D?.preset) out.push(o.animation3D.preset)
+      if (o.children) visit(o.children)
+    }
+  }
+  visit(objs)
+  return out
+}
+
+const MOTION_LABEL: Record<string, string> = {
+  energetic: 'dynamique',
+  cinematic: 'posé',
+  minimal: 'sobre',
+  playful: 'ludique',
+}
 
 interface VideoModalProps {
   onClose: () => void
@@ -135,6 +158,15 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
    *  que de réécrire un nouveau doc à chaque rejeu. */
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null)
 
+  // Presets d'animation posés par objet (« Animer l'objet ») — seulement
+  // pertinents en mode canvas, où la Vidéo IA s'en inspire (B-robuste).
+  const canvasObjects = useEditorStore((s) => s.canvasObjects)
+  const objectPresets = useMemo(
+    () => (isStandalone ? [] : collectAnimationPresets(canvasObjects)),
+    [isStandalone, canvasObjects],
+  )
+  const derivedMotion = useMemo(() => motionFromPresets(objectPresets), [objectPresets])
+
   const progress = useRenderProgress()
   const promptLib = useVideoPromptLibrary()
   const enrich = useEnrichComposition()
@@ -235,6 +267,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         customWidth: aspect === 'custom' ? custom.width : undefined,
         customHeight: aspect === 'custom' ? custom.height : undefined,
         targetDurationSec: durationSec,
+        objectPresets: objectPresets.length ? objectPresets : undefined,
         source,
         signal: abortRef.current.signal,
       },
@@ -399,6 +432,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           aspect: resolved,
           targetDurationSec:
             typeof p.targetDurationSec === 'number' ? p.targetDurationSec : undefined,
+          objectPresets: objectPresets.length ? objectPresets : undefined,
           source,
         },
         {
@@ -573,6 +607,18 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     )}
                   </p>
                 </div>
+
+                {!isStandalone && objectPresets.length > 0 && (
+                  <div className="bg-indigo-500/10 border border-indigo-400/30 rounded-xl p-3">
+                    <p className="text-xs text-indigo-200/90 leading-relaxed">
+                      <span className="font-semibold">{objectPresets.length} objet{objectPresets.length > 1 ? 's' : ''} animé{objectPresets.length > 1 ? 's' : ''}</span>{' '}
+                      (panneau « Animer l'objet ») détecté{objectPresets.length > 1 ? 's' : ''} :
+                      la vidéo s'en inspire — personnalité{' '}
+                      <span className="font-semibold text-white/90">{derivedMotion ? MOTION_LABEL[derivedMotion] ?? derivedMotion : '—'}</span>
+                      {' '}(sauf si ton brief impose un autre ton).
+                    </p>
+                  </div>
+                )}
 
                 {/* Pickers groupés en grille pour réduire l'espace vertical
                     et garder des chips à taille lisible (avant : chips étirés
