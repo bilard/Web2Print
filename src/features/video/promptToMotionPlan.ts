@@ -146,6 +146,22 @@ const SCHEMA_FOR_GEMINI = {
   },
 }
 
+const CASCADE_RE = /\b(cascade|d[ée]cal|un\s+(à|a|par)\s+un|tour\s+à\s+tour|stagger|l'un apr[èe]s l'autre)\b/
+const ENTRY_VERB_RE = /\b(entr|arriv|rentr|appara|surg|d[ée]boul)/
+const EXIT_VERB_RE = /\b(sort|quitt|dispar|repart|s'en vont|s'en va)/
+const EXIT_CUT_RE = /\b(sort|quitt|dispar|repart)/
+const DEFAULT_STAGGER = 0.15
+
+/** Découpe l'instruction au 1er verbe de sortie pour raisonner par phase
+ *  (entrée vs sortie) sur direction ET cascade. `exitSeg` est '' si pas de coupe. */
+function splitPhaseSegments(p: string): { entrySeg: string; exitSeg: string } {
+  const cut = p.search(EXIT_CUT_RE)
+  return {
+    entrySeg: cut > 0 ? p.slice(0, cut) : p,
+    exitSeg: cut > 0 ? p.slice(cut) : '',
+  }
+}
+
 /** Filet DÉTERMINISTE pour les instructions d'animation les plus courantes
  *  (entrée/sortie directionnelles, cascade). Garantit un résultat même quand le
  *  LLM renvoie un plan vide par intermittence. Cible toujours `all`. Retourne []
@@ -159,23 +175,40 @@ function keywordFallback(prompt: string): Directive[] {
     for (const [re, d] of DIRS) if (re.test(seg)) return d
     return null
   }
-  const entryVerb = /\b(entr|arriv|rentr|appara|surg|d[ée]boul)/.test(p)
-  const exitVerb = /\b(sort|quitt|dispar|repart|s'en vont|s'en va)/.test(p)
-  const cascade = /\b(cascade|d[ée]cal|un\s+(à|a|par)\s+un|tour\s+à\s+tour|stagger|l'un apr[èe]s l'autre)\b/.test(p)
-  // On coupe au 1er verbe de sortie pour associer la bonne direction à chaque phase.
-  const cut = p.search(/\b(sort|quitt|dispar|repart)/)
-  const entrySeg = cut > 0 ? p.slice(0, cut) : p
-  const exitSeg = cut > 0 ? p.slice(cut) : ''
+  const { entrySeg, exitSeg } = splitPhaseSegments(p)
   const out: Directive[] = []
-  if (entryVerb) {
+  if (ENTRY_VERB_RE.test(p)) {
     const d: Directive = { target: 'all', phase: 'entry', effect: 'slide-in', direction: findDir(entrySeg) ?? 'left' }
-    if (cascade) d.stagger = 0.15
+    if (CASCADE_RE.test(entrySeg)) d.stagger = DEFAULT_STAGGER
     out.push(d)
   }
-  if (exitVerb) {
-    out.push({ target: 'all', phase: 'exit', effect: 'slide-out', direction: findDir(exitSeg) ?? 'right' })
+  if (EXIT_VERB_RE.test(p)) {
+    const d: Directive = { target: 'all', phase: 'exit', effect: 'slide-out', direction: findDir(exitSeg || p) ?? 'right' }
+    // La cascade s'applique aussi à la SORTIE : on lit le segment de sortie.
+    if (CASCADE_RE.test(exitSeg || p)) d.stagger = DEFAULT_STAGGER
+    out.push(d)
   }
   return out
+}
+
+/** Normalisation DÉTERMINISTE du plan FINAL (LLM compris) : si l'instruction
+ *  demande une cascade et qu'une directive entry/exit n'a pas de `stagger`, on
+ *  l'injecte. Indispensable car le LLM oublie souvent le stagger en SORTIE → la
+ *  sortie « part en bloc » au lieu de cascader. Raisonne par segment pour honorer
+ *  « entrée en cascade, sortie en bloc ». Idempotent (préserve un stagger fixé). */
+export function normalizeCascadeStagger(plan: MotionPlan, prompt: string): MotionPlan {
+  const p = (prompt || '').toLowerCase()
+  if (!CASCADE_RE.test(p)) return plan
+  const { entrySeg, exitSeg } = splitPhaseSegments(p)
+  const entryCascade = CASCADE_RE.test(entrySeg)
+  const exitCascade = CASCADE_RE.test(exitSeg || p)
+  const directives = plan.directives.map((d) => {
+    if (typeof d.stagger === 'number') return d
+    if (d.phase === 'entry' && entryCascade) return { ...d, stagger: DEFAULT_STAGGER }
+    if (d.phase === 'exit' && exitCascade) return { ...d, stagger: DEFAULT_STAGGER }
+    return d
+  })
+  return { ...plan, directives }
 }
 
 const SYSTEM_PROMPT = `Tu es un motion designer. Tu transformes une instruction d'animation en plan structuré
@@ -194,6 +227,9 @@ RÈGLES :
   produis PLUSIEURS directives ciblées (une par id) avec des \`direction\`/\`startSec\`/\`durationSec\` VARIÉS et
   CONCRETS, ou une directive target="all" avec un \`stagger\`. Tout doit être déterministe.
 - Respecte les directions demandées (entrée gauche → direction:"left" ; sortie droite → direction:"right").
+- CASCADE / DÉCALAGE : le \`stagger\` s'applique aussi bien à l'ENTRÉE qu'à la SORTIE. Si l'utilisateur veut
+  une sortie « en cascade / décalée / un par un », mets un \`stagger\` (ex. 0.15) sur la directive exit, comme
+  pour l'entrée. Ne laisse JAMAIS une sortie en cascade sans \`stagger\`.
 - N'invente pas d'objets : n'utilise que des ids présents dans l'inventaire (ou "all").
 - Dès que l'INSTRUCTION contient une intention d'animation (entrer, sortir, glisser, cascade, rebond, pulser,
   tourner, 3D, couleur, etc.), tu DOIS produire au moins une directive. Ne renvoie un tableau vide QUE si
@@ -213,10 +249,10 @@ EFFETS AUTORISÉS (n'utilise QUE ceux-ci) :
 - loop  : pulse, bounce, wave, float, wiggle, color-cycle, glow, vibrate, tilt3d, swing3d, spin3d, flip3d, wobble3d, depth-pop, coin3d
 - exit  : slide-out, fade-out, scale-out, flip-out
 
-EXEMPLE — pour « tous les éléments entrent depuis la gauche en cascade, sortent à droite » :
+EXEMPLE — pour « tous les éléments entrent depuis la gauche en cascade, sortent à droite en cascade » :
 { "fromScratch": false, "directives": [
   { "target": "all", "phase": "entry", "effect": "slide-in", "direction": "left", "stagger": 0.15 },
-  { "target": "all", "phase": "exit", "effect": "slide-out", "direction": "right" }
+  { "target": "all", "phase": "exit", "effect": "slide-out", "direction": "right", "stagger": 0.15 }
 ] }
 
 INVENTAIRE + INSTRUCTION :
@@ -265,5 +301,8 @@ export async function interpretPromptToMotionPlan(args: {
     const fb = keywordFallback(prompt)
     if (fb.length > 0) plan = { fromScratch: args.fromScratch, directives: fb }
   }
+  // Normalisation déterministe : garantit la cascade en sortie même quand le LLM
+  // a produit une directive exit sans `stagger` (cas le plus fréquent).
+  plan = normalizeCascadeStagger(plan, prompt)
   return { ...plan, fromScratch: args.fromScratch }
 }

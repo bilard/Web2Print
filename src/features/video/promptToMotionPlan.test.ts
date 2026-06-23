@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSceneInventory, repairMotionPlan } from './promptToMotionPlan'
+import { buildSceneInventory, repairMotionPlan, normalizeCascadeStagger, type MotionPlan } from './promptToMotionPlan'
 import type { CanvasObjectProps } from '@/stores/editor.store'
 
 const obj = (p: Partial<Omit<CanvasObjectProps, 'type'>> & { type?: string }): CanvasObjectProps => ({
@@ -61,5 +61,48 @@ describe('repairMotionPlan', () => {
 
   it('retourne un plan vide sur entrée non-objet', () => {
     expect(repairMotionPlan(null, ['a'])).toEqual({ fromScratch: false, directives: [] })
+  })
+})
+
+describe('normalizeCascadeStagger', () => {
+  const plan = (...d: MotionPlan['directives']): MotionPlan => ({ fromScratch: false, directives: d })
+
+  it('injecte un stagger sur la SORTIE quand la cascade est demandée en entrée ET en sortie', () => {
+    const prompt =
+      "tous les éléments entrent depuis la gauche en cascade, et en fin de l'animation tous les éléments sortent vers la droite en cascade"
+    const out = normalizeCascadeStagger(
+      plan(
+        { target: 'all', phase: 'entry', effect: 'slide-in', direction: 'left' },
+        { target: 'all', phase: 'exit', effect: 'slide-out', direction: 'right' },
+      ),
+      prompt,
+    )
+    expect(out.directives[0].stagger).toBeGreaterThan(0)
+    expect(out.directives[1].stagger).toBeGreaterThan(0) // la régression : la sortie cascade aussi
+  })
+
+  it('ne touche pas la sortie si seule l’entrée est en cascade', () => {
+    const out = normalizeCascadeStagger(
+      plan(
+        { target: 'all', phase: 'entry', effect: 'slide-in' },
+        { target: 'all', phase: 'exit', effect: 'slide-out' },
+      ),
+      'les éléments entrent en cascade puis sortent à droite',
+    )
+    expect(out.directives[0].stagger).toBeGreaterThan(0)
+    expect(out.directives[1].stagger).toBeUndefined()
+  })
+
+  it('préserve un stagger déjà fixé et ne fait rien sans cascade demandée', () => {
+    const kept = normalizeCascadeStagger(
+      plan({ target: 'all', phase: 'exit', effect: 'slide-out', stagger: 0.4 }),
+      'sortent en cascade',
+    )
+    expect(kept.directives[0].stagger).toBe(0.4)
+    const noop = normalizeCascadeStagger(
+      plan({ target: 'all', phase: 'exit', effect: 'slide-out' }),
+      'les éléments sortent vers la droite',
+    )
+    expect(noop.directives[0].stagger).toBeUndefined()
   })
 })

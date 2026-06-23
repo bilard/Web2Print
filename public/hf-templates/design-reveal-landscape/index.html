@@ -413,15 +413,15 @@
             // ── exit ──
             case 'slide-out': {
               const vert = (dir === 'top' || dir === 'bottom');
-              const at = start || Math.max(0, total - dur(1.0));
+              const at = ((typeof d.startSec === 'number') ? start : Math.max(0, total - dur(1.0)));
               tl.to(node, vert
                 ? { y: outY * 200, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }
                 : { x: outX * 200, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, at);
               break;
             }
-            case 'flip-out': tl.to(node, { scaleX: 0, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
-            case 'fade-out': tl.to(node, { opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
-            case 'scale-out':tl.to(node, { scale: 0.9, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
+            case 'flip-out': tl.to(node, { scaleX: 0, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, ((typeof d.startSec === 'number') ? start : Math.max(0, total - dur(1.0)))); break;
+            case 'fade-out': tl.to(node, { opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, ((typeof d.startSec === 'number') ? start : Math.max(0, total - dur(1.0)))); break;
+            case 'scale-out':tl.to(node, { scale: 0.9, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, ((typeof d.startSec === 'number') ? start : Math.max(0, total - dur(1.0)))); break;
             default: break;
           }
         }
@@ -436,10 +436,19 @@
               try { n = svgEl && svgEl.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape('w2panim-' + d.target) : 'w2panim-' + d.target)); } catch (e) { n = null; }
               if (n) nodes = [n];
             }
-            const stag = (typeof d.stagger === 'number') ? d.stagger * DUR_SCALE : 0;
+            const stag = (typeof d.stagger === 'number' && d.stagger > 0) ? d.stagger : 0; // secondes (non scalées)
+            const isExit = d.phase === 'exit';
+            const totalSec = w2pTotalSec() / DUR_SCALE; // ~10 s
             nodes.forEach((node, i) => {
               const wrapped = w2pWrap(node);
-              const dd = stag ? Object.assign({}, d, { startSec: Math.min((d.startSec || 0) + i * (stag / DUR_SCALE), 9) }) : d;
+              let dd = d;
+              if (stag) {
+                // Entrée : ancre 0 + i·stag. Sortie : cascade calée sur la FIN
+                // (dernier élément ~1.2 s avant la fin) → cascade visible, pas de clip.
+                const baseSec = (typeof d.startSec === 'number') ? d.startSec
+                  : (isExit ? Math.max(0, totalSec - 1.2 - (nodes.length - 1) * stag) : 0);
+                dd = Object.assign({}, d, { startSec: Math.min(baseSec + i * stag, totalSec - 0.4) });
+              }
               w2pApplyDirective(wrapped, dd);
             });
           });
