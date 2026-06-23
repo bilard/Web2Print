@@ -44,19 +44,22 @@ seek-safety / sécurité ingérables.
 type Phase = 'entry' | 'loop' | 'exit'
 type Dir   = 'left' | 'right' | 'top' | 'bottom'
 type Effect =
-  // entry
+  // entry (2D)
   | 'slide-in' | 'fade-in' | 'scale-in' | 'blur-in' | 'drop-in' | 'fly-in'
-  // loop
-  | 'pulse' | 'bounce' | 'wave' | 'float' | 'spin3d' | 'tilt3d' | 'wiggle'
-  | 'color-cycle' | 'glow' | 'vibrate'
+  // entry (3D nommés, rendus en 2.5D sur SVG)
+  | 'flip-in' | 'door-in' | 'fold-in' | 'depth-in'
+  // loop (2D)
+  | 'pulse' | 'bounce' | 'wave' | 'float' | 'wiggle' | 'color-cycle' | 'glow' | 'vibrate'
+  // loop (3D nommés, rendus en 2.5D sur SVG)
+  | 'tilt3d' | 'swing3d' | 'spin3d' | 'flip3d' | 'wobble3d' | 'depth-pop' | 'coin3d'
   // exit
-  | 'slide-out' | 'fade-out' | 'scale-out'
+  | 'slide-out' | 'fade-out' | 'scale-out' | 'flip-out'
 
 interface Directive {
   target: string          // id d'objet (résolu par l'IA depuis l'inventaire) | "all"
   phase: Phase
   effect: Effect
-  intensity?: number      // 0..1 (léger≈0.3, moyen≈0.6, franc≈1.0)
+  intensity?: number      // 0..1 CONTINU (l'IA mappe tout adjectif : léger≈0.3, moyen≈0.6, franc≈1.0, à fond≈1.0)
   direction?: Dir
   color?: string          // #RRGGBB (glow / color-cycle accent)
   startSec?: number       // 0..15
@@ -99,23 +102,40 @@ explicitement (« n'utilise jamais "random" comme valeur ; choisis des valeurs v
 
 | effect | GSAP (sur le wrapper identité) |
 |---|---|
-| slide-in | `from {x/y = ±offset·intensity, opacity:0}` selon direction, à `startSec` |
+| slide-in | `from {x/y = ±offset·I, opacity:0}` selon direction, à `startSec` |
 | fade-in / scale-in / blur-in / drop-in / fly-in | `from` opacity / scale 0.85 / `filter:blur` / y+opacity / x+scale |
+| **flip-in** (2.5D) | `from {scaleX:0}` (carte qui se déplie horizontalement) + opacity |
+| **door-in** (2.5D) | `from {scaleX:0}` `transformOrigin` = bord gauche/droit (porte qui s'ouvre) |
+| **fold-in** (2.5D) | `from {scaleY:0}` `transformOrigin` = haut/bas (dépliage vertical) |
+| **depth-in** (2.5D) | `from {scale:0.35·(1-0.5I), opacity:0}` (arrive de la profondeur) |
 | pulse | `to {scale:1+0.12·I}` half, repeat fini, yoyo |
 | bounce | `to {y:-36·I}` ease power1, repeat, yoyo |
 | wave | `to {skewX:8·I}` sine, repeat, yoyo |
 | float | `to {y:±10·I}` sine lent, repeat, yoyo |
-| spin3d | `to {rotationY: 360}` repeat fini (pas yoyo — rotation continue, déterministe par cycle) |
-| tilt3d | `to {rotationY: 35·I}` sine, repeat, yoyo |
 | wiggle | `to {rotation: ±3·I}` sine, repeat, yoyo |
+| **tilt3d** (2.5D) | balancement Y : `to {scaleX:1-0.18·I, skewY:6·I}` sine, repeat, yoyo |
+| **swing3d** (2.5D) | pendule : `to {skewX:±10·I, rotation:±3·I}` sine, repeat, yoyo |
+| **spin3d** (2.5D) | tour horizontal : `to {scaleX:-1}` puis `{scaleX:1}` en boucle (retournement), repeat fini |
+| **flip3d** (2.5D) | bascule carte : `to {scaleX:0}`→`{scaleX:-1}`→`{scaleX:0}`→`{scaleX:1}` séquentiel, repeat fini |
+| **wobble3d** (2.5D) | `to {skewX:8·I, skewY:6·I}` sine déphasés, repeat, yoyo |
+| **depth-pop** (2.5D) | `to {scale:1+0.18·I}` + ombre portée croissante, sine, repeat, yoyo |
+| **coin3d** (2.5D) | pièce qui tourne : `to {scaleX:-1}` rapide en boucle, repeat fini |
 | color-cycle | `set {filter:'hue-rotate(0deg)'}` → `to hue-rotate(180/360deg)` repeat, yoyo (ou couleur accent si `color`) |
 | glow | `set drop-shadow 0` → `to drop-shadow(0 0 18·I px color\|ACCENT)` repeat, yoyo |
 | vibrate | `fromTo {x:-3·I}→{x:3·I}` dur 0.06, repeat fini élevé, yoyo |
 | slide-out | `to {x/y = ±offset, opacity:0}` à `startSec` (par défaut fin de timeline) |
+| flip-out (2.5D) | `to {scaleX:0, opacity:0}` |
 | fade-out / scale-out | `to {opacity:0}` / `to {scale:0.9, opacity:0}` |
 
+**Note 2.5D** : les vrais `rotateX/rotateY` (perspective) ne sont pas fiables sur les `<g>` SVG (transforms 2D
+uniquement). Les effets « 3D » par élément sont donc des approximations **2.5D** convaincantes via
+`scaleX`/`skew`/`scale`+ombre (technique de retournement-carte standard). Le vrai flip 3D en perspective reste
+réservé au design entier (conteneur HTML `#svg-host`, déjà en place). `scaleX` négatif = retournement
+horizontal ; `transformOrigin` au bord = effet porte/charnière. Tout reste seek-safe (repeat fini, valeurs
+fixes), enveloppé dans le groupe identité.
+
 `stagger` : appliqué quand une directive vise plusieurs nœuds (`all`) — décalage croissant (+ variation si l'IA
-a demandé de l'aléatoire, déjà figé dans le plan via plusieurs directives par id, ou via le champ stagger).
+a demandé de l'aléatoire, déjà figé dans le plan).
 
 ## 7. UI (Phase 1)
 
