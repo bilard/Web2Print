@@ -75,7 +75,7 @@ BRIEF :
 type Motion = StyleConfig['motion']
 
 /** Mot-clé fort du brief → personnalité de mouvement. null si rien ne matche. */
-export function motionFromBrief(prompt: string): Motion | null {
+function motionFromBrief(prompt: string): Motion | null {
   const p = (prompt || '').toLowerCase()
   if (/\b(signage|point\s+de\s+vente|pos|magasin|en\s+rayon|in[\s-]store|retail|promo|soldes?|d[ée]stockage|black\s+friday|auchan|carrefour|leclerc|intermarch|monoprix|lidl|aldi)\b/.test(p)) return 'energetic'
   if (/\b(fun|ludique|jeune|playful|d[ée]contract|tiktok|insta|r[ée]seaux\s+sociaux|cartoon|pop)\b/.test(p)) return 'playful'

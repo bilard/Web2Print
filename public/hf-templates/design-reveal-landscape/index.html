@@ -378,7 +378,13 @@
           const REP = Math.min(40, Math.max(1, Math.ceil(total / (D || (loopHalf * 2)))));
           switch (d.effect) {
             // ── entry ──
-            case 'slide-in': tl.from(node, { x: offX * 140 * (0.5 + I), y: 0, opacity: 0, duration: D || dur(0.8), ease: 'power3.out' }, start); break;
+            case 'slide-in': {
+              const vert = (dir === 'top' || dir === 'bottom');
+              tl.from(node, vert
+                ? { y: offY * 140 * (0.5 + I), opacity: 0, duration: D || dur(0.8), ease: 'power3.out' }
+                : { x: offX * 140 * (0.5 + I), opacity: 0, duration: D || dur(0.8), ease: 'power3.out' }, start);
+              break;
+            }
             case 'fade-in':  tl.from(node, { opacity: 0, duration: D || dur(0.8), ease: 'power2.out' }, start); break;
             case 'scale-in': tl.from(node, { scale: 0.7, opacity: 0, duration: D || dur(0.7), ease: 'back.out(1.4)' }, start); break;
             case 'blur-in':  tl.from(node, { filter: 'blur(18px)', opacity: 0, duration: D || dur(0.8), ease: 'power2.out' }, start); break;
@@ -405,7 +411,14 @@
             case 'glow':     gsap.set(node, { filter: 'drop-shadow(0 0 0px ' + col + ')' }); tl.to(node, { filter: 'drop-shadow(0 0 ' + (18 * I) + 'px ' + col + ')', duration: loopHalf, ease: 'sine.inOut', repeat: REP, yoyo: true }, start); break;
             case 'vibrate':  tl.fromTo(node, { x: -3 * I }, { x: 3 * I, duration: 0.06, ease: 'none', repeat: Math.min(140, REP * 8), yoyo: true }, start); break;
             // ── exit ──
-            case 'slide-out':tl.to(node, { x: outX * 200, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
+            case 'slide-out': {
+              const vert = (dir === 'top' || dir === 'bottom');
+              const at = start || Math.max(0, total - dur(1.0));
+              tl.to(node, vert
+                ? { y: outY * 200, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }
+                : { x: outX * 200, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, at);
+              break;
+            }
             case 'flip-out': tl.to(node, { scaleX: 0, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
             case 'fade-out': tl.to(node, { opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
             case 'scale-out':tl.to(node, { scale: 0.9, opacity: 0, duration: D || dur(0.7), ease: 'power2.in' }, start || Math.max(0, total - dur(1.0))); break;
@@ -426,7 +439,7 @@
             const stag = (typeof d.stagger === 'number') ? d.stagger * DUR_SCALE : 0;
             nodes.forEach((node, i) => {
               const wrapped = w2pWrap(node);
-              const dd = stag ? Object.assign({}, d, { startSec: ((d.startSec || 0) + i * (stag / DUR_SCALE)) }) : d;
+              const dd = stag ? Object.assign({}, d, { startSec: Math.min((d.startSec || 0) + i * (stag / DUR_SCALE), 9) }) : d;
               w2pApplyDirective(wrapped, dd);
             });
           });

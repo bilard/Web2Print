@@ -17,9 +17,9 @@ const EFFECTS = [
   'slide-out', 'fade-out', 'scale-out', 'flip-out',
 ] as const
 
-export type MotionEffect = (typeof EFFECTS)[number]
-export type MotionPhase = (typeof PHASES)[number]
-export type MotionDirection = (typeof DIRECTIONS)[number]
+type MotionEffect = (typeof EFFECTS)[number]
+type MotionPhase = (typeof PHASES)[number]
+type MotionDirection = (typeof DIRECTIONS)[number]
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -34,7 +34,7 @@ const DirectiveSchema = z.object({
   durationSec: z.number().min(0.1).max(15).optional(),
   stagger: z.number().min(0).max(2).optional(),
 })
-export type Directive = z.infer<typeof DirectiveSchema>
+type Directive = z.infer<typeof DirectiveSchema>
 
 const MotionPlanSchema = z.object({
   fromScratch: z.boolean(),
@@ -42,7 +42,15 @@ const MotionPlanSchema = z.object({
 })
 export type MotionPlan = z.infer<typeof MotionPlanSchema>
 
-export const EMPTY_MOTION_PLAN: MotionPlan = { fromScratch: false, directives: [] }
+// Schéma LÂCHE passé à generateJson : structure seulement (pas de bornes/regex/enum).
+// repairMotionPlan est la SEULE autorité de validation (il clamp/drop) — sinon une
+// valeur hors-borne légale côté Vertex ferait throw generateJson → plan vide.
+const LooseMotionPlanSchema = z.object({
+  fromScratch: z.boolean().optional(),
+  directives: z
+    .array(z.object({ target: z.string(), phase: z.string(), effect: z.string() }).passthrough())
+    .optional(),
+})
 
 export interface SceneObject {
   id: string
@@ -174,9 +182,9 @@ export async function interpretPromptToMotionPlan(args: {
     SYSTEM_PROMPT +
     `\n[fromScratch=${args.fromScratch}]\n\n[INVENTAIRE]\n${inventoryText}\n\n[INSTRUCTION]\n${prompt}\n`
   try {
-    const raw = await generateJson<MotionPlan>({
+    const raw = await generateJson<z.infer<typeof LooseMotionPlanSchema>>({
       prompt: full,
-      schema: MotionPlanSchema,
+      schema: LooseMotionPlanSchema,
       schemaForGemini: SCHEMA_FOR_GEMINI,
       version: 'video-motion-plan-v1',
     })

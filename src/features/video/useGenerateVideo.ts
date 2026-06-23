@@ -175,7 +175,8 @@ export function useGenerateVideo(opts?: {
         let tagIds: string[] = []
         const animPrompt = (input.animationPrompt ?? '').trim()
         if (animPrompt) {
-          const inventory = buildSceneInventory(useEditorStore.getState().canvasObjects)
+          const topLevel = useEditorStore.getState().canvasObjects
+          const inventory = buildSceneInventory(topLevel)
           motionPlan = await interpretPromptToMotionPlan({
             prompt: animPrompt,
             inventory,
@@ -183,7 +184,12 @@ export function useGenerateVideo(opts?: {
           })
           const cited = motionPlan.directives.map((d) => d.target)
           const wantsAll = cited.includes('all')
-          tagIds = wantsAll ? inventory.map((o) => o.id) : cited.filter((t) => t !== 'all')
+          const citedIds = cited.filter((t) => t !== 'all')
+          // `all` ne tague QUE les objets top-level (pas les enfants récursés) pour
+          // éviter d'animer parent ET enfants ; + les ids cités spécifiquement.
+          tagIds = wantsAll
+            ? Array.from(new Set([...topLevel.map((o) => o.id), ...citedIds]))
+            : citedIds
         }
 
         const capture = await captureCurrentPageSvg({ tagIds })
