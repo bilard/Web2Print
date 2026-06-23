@@ -1,5 +1,6 @@
-import { RefreshCw, ImageIcon, Loader2, X } from 'lucide-react'
+import { RefreshCw, ImageIcon, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 interface Props {
   label: string
@@ -55,13 +56,11 @@ export function BriefImageCard({ label, imageUrl, loading, onRegenerate }: Props
               alt={label}
               className="max-w-full max-h-full object-contain"
             />
-            <button
+            <CloseButton
               onClick={() => setIsFullscreen(false)}
-              className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 rounded-full p-2 text-[#fff] transition-colors"
-              aria-label="Fermer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              title="Fermer"
+              className="absolute top-4 right-4"
+            />
             <div className="absolute bottom-4 left-4 bg-black/50 rounded px-3 py-2">
               <p className="text-[#fff] text-sm">{label}</p>
             </div>

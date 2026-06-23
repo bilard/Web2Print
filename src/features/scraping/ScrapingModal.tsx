@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { X, Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag, Search, Folder, Coins } from 'lucide-react'
+import { Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag, Search, Folder, Coins } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
@@ -718,9 +719,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
               return null
             })()}
           </div>
-          <button onClick={handleClose} className="p-1 text-white/30 hover:text-white/60 transition-colors shrink-0">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={handleClose} className="shrink-0" />
         </div>
 
         {/* URL input */}

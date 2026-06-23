@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, HelpCircle } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useHelpStore } from './help.store'
 import { helpSectionsById, helpSections } from './content/index'
 import { HelpTableOfContents } from './HelpTableOfContents'
@@ -45,14 +46,7 @@ export function HelpDrawer() {
           <span className="text-sm font-medium text-white">Aide</span>
         </div>
         <HelpSearch />
-        <button
-          type="button"
-          onClick={closeDrawer}
-          className="shrink-0 p-1.5 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-          title="Fermer (Echap)"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <CloseButton onClick={closeDrawer} className="shrink-0" title="Fermer (Echap)" />
       </header>
       <div className="flex-1 min-h-0 grid grid-cols-[180px_1fr]">
         <div className="border-r border-white/10 overflow-y-auto p-3">

@@ -2,7 +2,7 @@
 // Capture le workflow courant comme modèle réutilisable (création ou mise à jour
 // du graphe d'un modèle existant). La config des nodes est embarquée telle quelle.
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { notify } from '@/lib/notify'
 import type { Workflow } from '../types'
 import {
@@ -71,9 +71,7 @@ export function SaveAsTemplateDialog({ workflow, uid, onClose, onSaved }: Props)
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Enregistrer comme modèle</h2>
-          <button onClick={onClose} className="p-1 text-neutral-500 hover:text-white" aria-label="Fermer">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" />
         </div>
 
         {/* « Cible » : visible seulement s'il existe déjà des modèles à écraser. */}

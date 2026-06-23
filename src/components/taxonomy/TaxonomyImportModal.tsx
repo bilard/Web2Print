@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Upload, FileText, X, Check } from 'lucide-react'
+import { Upload, FileText, Check } from 'lucide-react'
 import { DndContext } from '@dnd-kit/core'
 import { useCreateTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
 import { parseMarkdown } from '@/features/taxonomy/parsers/parseMarkdown'
@@ -8,6 +8,7 @@ import { parseXlsx } from '@/features/taxonomy/parsers/parseXlsx'
 import { buildTree } from '@/features/taxonomy/taxonomyUtils'
 import { TaxonomyNode as TaxonomyNodeComponent } from './TaxonomyNode'
 import { useTaxonomyStore } from '@/stores/taxonomy.store'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { TaxonomyNode } from '@/features/taxonomy/types'
 
 interface TaxonomyImportModalProps {
@@ -106,9 +107,7 @@ export function TaxonomyImportModal({ open, onClose }: TaxonomyImportModalProps)
           <h2 className="text-[14px] font-semibold text-white/90">
             {step === 'upload' ? 'Importer une taxonomie' : `Prévisualisation — ${parsedNodes.length} nœuds`}
           </h2>
-          <button onClick={handleClose} className="text-white/30 hover:text-white/70 transition-colors" aria-label="Fermer">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={handleClose} title="Fermer" />
         </div>
         <div className="flex-1 overflow-y-auto p-5">
           {step === 'upload' ? (

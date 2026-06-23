@@ -1,7 +1,8 @@
-import { X, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useNavigate } from 'react-router-dom'
+import { CloseButton } from './CloseButton'
 import { SettingsPanel } from './SettingsPanel'
 
 export function SettingsSheet() {
@@ -28,9 +29,7 @@ export function SettingsSheet() {
             <h2 className="font-semibold text-white text-sm">Paramètres</h2>
             <span className="text-[10px] font-mono text-white/30">v0.1.0</span>
           </div>
-          <button onClick={() => setSettingsOpen(false)} className="text-white/30 hover:text-white transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={() => setSettingsOpen(false)} />
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">

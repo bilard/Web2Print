@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 interface Props {
   open: boolean
@@ -150,13 +151,7 @@ export function ImageZoomOverlay({ open, src, alt, onClose }: Props) {
         >
           <RotateCcw className="w-4 h-4" />
         </button>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition"
-          title="Fermer (Esc)"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <CloseButton onClick={onClose} title="Fermer (Esc)" />
       </div>
 
       {/* Bottom hint */}

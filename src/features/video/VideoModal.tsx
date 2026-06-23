@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { Film, X, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Eraser } from 'lucide-react'
+import { Film, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Eraser } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { toast } from 'sonner'
 import { useGenerateVideo, type GenerateVideoSource } from './useGenerateVideo'
 import { useRenderProgress } from './useRenderProgress'
@@ -587,13 +588,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             {inResultMode ? 'Animation prête' : 'Générer une animation'}
           </h2>
         </div>
-        <button
-          onClick={onClose}
-          className="text-white/30 hover:text-white transition-colors p-1.5 rounded hover:bg-white/5"
-          aria-label="Fermer"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <CloseButton onClick={onClose} title="Fermer" />
       </div>
 
       {/* Body grid : formulaire | (preview pendant génération OU bibliothèque sinon).

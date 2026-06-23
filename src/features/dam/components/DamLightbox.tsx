@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  X, Heart, Bookmark, Plus, Download, ExternalLink,
+  Heart, Bookmark, Plus, Download, ExternalLink,
   Ruler, Palette, MonitorSmartphone, MapPin, Tag, Sparkles, Loader2, Info, Camera,
   Type, Award, Smile, Brush, Crop, Sun,
   MessageSquareText, Wand2, Copy, Check,
@@ -14,6 +14,7 @@ import { useDamSaveImage } from '../hooks/useDamSaveImage'
 import { useDamCanvasInsert } from '../hooks/useDamCanvasInsert'
 import { useDamVariants } from '../hooks/useDamVariants'
 import { useCan } from '@/features/access/useAccess'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { renderEditedImage, buildCssFilter, buildMaskClipPath, DEFAULT_MASK } from '../utils/renderEditedImage'
 import {
   DamImageToolbar, DEFAULT_FILTERS,
@@ -330,9 +331,7 @@ export function DamLightbox() {
               Télécharger
             </a>
           </div>
-          <button onClick={closeLightbox} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10">
-            <X className="w-5 h-5" />
-          </button>
+          <CloseButton onClick={closeLightbox} title="Fermer" />
         </div>
 
         {/* Edit toolbar */}

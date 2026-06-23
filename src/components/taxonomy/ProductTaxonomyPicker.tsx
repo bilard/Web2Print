@@ -14,6 +14,7 @@ import {
   useAllTaxonomyProductCounts,
   type TaxonomyProductCounts,
 } from '@/features/taxonomy/useTaxonomyProductCounts'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { ProductTaxonomyPickerTree } from './ProductTaxonomyPickerTree'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
@@ -352,9 +353,7 @@ export function ProductTaxonomyPicker({
               )}
               <span>{aiLoading ? 'Analyse…' : 'Classer auto'}</span>
             </button>
-            <button onClick={onClose} className="text-white/30 hover:text-white/70 transition-colors" aria-label="Fermer">
-              <X className="w-4 h-4" />
-            </button>
+            <CloseButton onClick={onClose} title="Fermer" />
           </div>
         </div>
 

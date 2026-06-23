@@ -1,4 +1,5 @@
-import { Loader2, Plus, Link2, AlertTriangle, X } from 'lucide-react'
+import { Loader2, Plus, Link2, AlertTriangle } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { MergePreview } from '@/features/pim/types'
 
 interface Props {
@@ -29,9 +30,7 @@ export function MatchPreviewModal({ open, preview, loading, sourceName, onConfir
           <h2 className="text-sm font-medium text-white/85">
             Aperçu de l'import · {sourceName} <span className="text-white/40">· {stats.total} ligne{stats.total > 1 ? 's' : ''}</span>
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded text-white/40 hover:text-white/70">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} />
         </header>
 
         <div className="px-4 py-4 overflow-y-auto flex-1 space-y-3">

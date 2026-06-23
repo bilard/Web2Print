@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X, Save } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ClientFormField, Taxonomy } from '@/features/taxonomy/types'
 import { createDefaultFormTemplate } from '@/features/briefs/defaults'
@@ -7,6 +7,7 @@ import { useSaveFormTemplate } from '@/features/briefs/useFormTemplate'
 import { FieldList } from './FieldList'
 import { FieldEditor } from './FieldEditor'
 import { DynamicFormRenderer } from '../form-renderer/DynamicFormRenderer'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 interface Props {
   open: boolean
@@ -91,13 +92,7 @@ export function FormBuilderModal({ open, taxonomy, onClose }: Props) {
             <Save className="w-3.5 h-3.5" />
             Enregistrer
           </button>
-          <button
-            onClick={onClose}
-            aria-label="Fermer"
-            className="text-white/40 hover:text-white/80 p-1.5 rounded-md hover:bg-white/[0.06]"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" />
         </div>
 
         {/* Body 3 colonnes */}

@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
-  X, ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
+  ChevronLeft, ChevronRight, Copy, Check, ExternalLink,
   Tag, Barcode, FileText, Play, Link2, Download, Zap, Database, Layers, Globe,
 } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useExcelStore } from '@/stores/excel.store'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import {
@@ -378,7 +379,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
             <ChevronRight className="w-3.5 h-3.5" />
           </NavBtn>
         </div>
-        <NavBtn onClick={onClose}><X className="w-3.5 h-3.5" /></NavBtn>
+        <CloseButton onClick={onClose} size="sm" />
       </div>
 
       {/* Image gallery */}

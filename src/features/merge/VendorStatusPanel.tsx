@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronRight, CheckCircle2, Link2, AlertTriangle, Plus, ExternalLink, Store, X, Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CheckCircle2, Link2, AlertTriangle, Plus, ExternalLink, Store, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useSourceVendors, type VendorSummary } from './useSourceVendors'
 import { saveTemplate, emptyTemplate, listTemplates } from '@/features/scraping-templates/templatesStore'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
@@ -263,9 +264,7 @@ function LinkVendorModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white/80 shrink-0">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} className="shrink-0" />
         </div>
 
         <div className="px-4 py-2 border-b border-white/[0.06] shrink-0">

@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  X,
   Home,
   Users,
   Clock,
@@ -17,6 +16,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useGDriveStore } from '@/stores/gdrive.store'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useGoogleDrive } from './useGoogleDrive'
 import type { DriveSection, GDriveFile } from './types'
 
@@ -236,13 +236,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                   {currentFolder ? `Choisir "${currentFolder.name}"` : 'Choisir ce dossier'}
                 </button>
               ) : null}
-              <button
-                onClick={onClose}
-                className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white"
-                aria-label="Fermer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <CloseButton onClick={onClose} title="Fermer" />
             </div>
           </header>
 

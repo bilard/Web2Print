@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useEditorStore } from '@/stores/editor.store'
-import { ImageIcon, Type, Loader2, RefreshCw, X } from 'lucide-react'
+import { ImageIcon, Type, Loader2, RefreshCw } from 'lucide-react'
 import { useProjectAssets, parseFontName, type AssetItem } from '@/features/assets/useProjectAssets'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 export function AssetsPanel() {
   const projectId = useEditorStore((s) => s.projectId)
@@ -139,12 +140,7 @@ export function AssetsPanel() {
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8"
           onClick={() => setLightbox(null)}
         >
-          <button
-            onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 p-2 text-[#fff]/50 hover:text-[#fff] bg-black/40 hover:bg-black/60 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <CloseButton onClick={() => setLightbox(null)} className="absolute top-4 right-4" />
           <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
             <img
               src={lightbox.url}

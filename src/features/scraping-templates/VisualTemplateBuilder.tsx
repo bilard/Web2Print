@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { MousePointer, Loader2, Eye, X, Plus, GripVertical, MessageSquare, Chrome } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useChromeExtension } from './useChromeExtension'
 import {
   DndContext, closestCenter, PointerSensor,
@@ -515,7 +516,7 @@ function AssignmentModal({
       <div onClick={(e) => e.stopPropagation()} className="bg-surface border border-white/10 rounded-lg p-4 max-w-xl w-full">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-white/90">Élément capturé</h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white/80"><X className="w-4 h-4" /></button>
+          <CloseButton onClick={onClose} />
         </div>
         <div className="mb-3 p-2 bg-black/40 rounded text-[11px]">
           <div className="text-white/50">Tag : <span className="text-white/90 font-mono">{capture.tag}</span></div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import {
   CATEGORY_META,
   PROMPT_CATEGORIES,
@@ -62,13 +62,7 @@ export function PromptEditDialog({ open, initial, onClose, onSave }: PromptEditD
             <h2 className="text-[14px] font-semibold text-white">
               {initial ? 'Modifier le prompt' : 'Nouveau prompt'}
             </h2>
-            <button
-              type="button"
-              onClick={() => !saving && onClose()}
-              className="text-white/40 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <CloseButton onClick={() => !saving && onClose()} title="Fermer" />
           </div>
 
           <div className="px-5 py-4 space-y-4 flex-1 overflow-y-auto min-h-0">

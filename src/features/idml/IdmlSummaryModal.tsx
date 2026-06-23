@@ -1,4 +1,5 @@
-import { FolderOpen, Loader2, AlertCircle, CheckCircle, X } from 'lucide-react'
+import { FolderOpen, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { IdmlUploadState } from './useIdmlUpload'
 
 interface Props {
@@ -19,9 +20,7 @@ export function IdmlSummaryModal({ processing, state, error, onConfirm, onClose 
             <FolderOpen className="w-4 h-4 text-amber-400" />
             <h2 className="font-semibold text-white text-sm">Import IDML</h2>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} />
         </div>
 
         <div className="p-5">

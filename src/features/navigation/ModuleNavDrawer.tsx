@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useAccessLoading, useIsPending, useIsBlocked } from '@/features/access/useAccess'
 import { useVisibleModules } from './modules'
 import { ResumeSetupButton } from '@/features/onboarding/ResumeSetupButton'
@@ -82,15 +83,7 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <span className="text-[13px] font-medium text-white/70">Modules</span>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                title="Fermer"
-                aria-label="Fermer le menu"
-                className="p-1 rounded text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <CloseButton onClick={() => setOpen(false)} title="Fermer le menu" />
             </div>
 
             <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">

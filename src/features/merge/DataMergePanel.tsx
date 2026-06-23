@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useReducer } from 'react'
 import { IText, Textbox, FabricImage } from 'fabric'
-import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, X, Hash, ToggleLeft, Wand2, Shrink } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Unlink, Rocket, RefreshCw, Link2, Type, Image, Palette, Eye, FunctionSquare, Hash, ToggleLeft, Wand2, Shrink } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type FormulaResultType, type FormulaConfig } from '@/stores/merge.store'
@@ -354,9 +355,7 @@ function ActiveBindings({ columns }: { columns: { key: string; label: string; fi
               <FunctionSquare className="w-3.5 h-3.5 text-indigo-400" />
               <span className="text-[10px] text-white/40 uppercase tracking-wider">Formule</span>
             </div>
-            <button onClick={() => setEditingVar(null)} className="text-white/30 hover:text-white/60">
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <CloseButton onClick={() => setEditingVar(null)} size="sm" />
           </div>
 
           {/* Nom du champ + Type résultat + Décimales */}

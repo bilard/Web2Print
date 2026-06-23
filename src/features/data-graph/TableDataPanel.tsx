@@ -1,6 +1,7 @@
 // src/features/data-graph/TableDataPanel.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { Search, X, Loader2, Braces, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Loader2, Braces, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { TableSchema } from './firestoreSchema'
 import { useTableData, type TableRow } from './useTableData'
 import { formatCell, prettyValue } from './formatValue'
@@ -89,9 +90,7 @@ export function TableDataPanel({ table, onClose, rightInset = 0 }: { table: Tabl
             className="w-full rounded-lg border border-white/10 bg-surface py-1.5 pl-8 pr-3 text-[12px] text-white placeholder:text-white/30 focus:border-indigo-400/50 focus:outline-none"
           />
         </div>
-        <button onClick={onClose} className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[12px] text-white/60 transition-colors hover:text-white">
-          Fermer <X className="h-3.5 w-3.5" />
-        </button>
+        <CloseButton onClick={onClose} size="sm" className="shrink-0" />
       </div>
 
       {/* Sélecteur de BDD (mode feuilles) */}
@@ -172,9 +171,7 @@ export function TableDataPanel({ table, onClose, rightInset = 0 }: { table: Tabl
             <button onClick={copyDetail} className="ml-auto flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[12px] text-white/60 transition-colors hover:text-white">
               {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" /> Copié</> : <><Copy className="h-3.5 w-3.5" /> Copier</>}
             </button>
-            <button onClick={() => setDetail(null)} className="flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[12px] text-white/60 transition-colors hover:text-white">
-              Fermer <X className="h-3.5 w-3.5" />
-            </button>
+            <CloseButton onClick={() => setDetail(null)} size="sm" />
           </div>
           <div className="min-h-0 flex-1"><ValueViewer value={detail.value} /></div>
         </div>

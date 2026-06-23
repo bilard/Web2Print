@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { X, Save, FunctionSquare } from 'lucide-react'
+import { Save, FunctionSquare } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { ExcelColumn, ExcelRow } from './types'
 import { FIELD_TYPES } from './types'
 import { FieldTypeIcon } from './FieldTypeIcon'
@@ -60,9 +61,7 @@ export function FormulaEditor({
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.06]">
           <FunctionSquare className="w-5 h-5 text-indigo-400" />
           <h2 className="text-sm font-semibold text-white/90 flex-1">Champ calculé</h2>
-          <button onClick={onClose} className="p-1 text-white/30 hover:text-white/60 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} />
         </div>
 
         {/* Body */}

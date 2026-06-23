@@ -1,5 +1,5 @@
-import { X } from 'lucide-react'
 import { useBriefUIStore } from '@/stores/brief.store'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useBrief } from '@/features/briefs/useBrief'
 import { useUpdateBrief, useDeleteBrief } from '@/features/briefs/useBriefMutations'
 import type { Brief, BriefStep } from '@/features/briefs/types'
@@ -67,13 +67,7 @@ export function BriefEditorModal({ taxonomy }: Props) {
           <div className="flex-1 flex justify-center">
             {brief && <BriefStepper current={brief.currentStep} onNavigate={goToStep} />}
           </div>
-          <button
-            onClick={handleClose}
-            aria-label="Fermer"
-            className="text-white/40 hover:text-white/80 p-1.5 rounded-md hover:bg-white/[0.06]"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={handleClose} title="Fermer" />
         </div>
 
         <div className="flex-1 overflow-hidden">

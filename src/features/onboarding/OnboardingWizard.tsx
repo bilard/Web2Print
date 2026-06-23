@@ -1,6 +1,7 @@
 // src/features/onboarding/OnboardingWizard.tsx
 import { useEffect } from 'react'
-import { X, ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAccessStore } from '@/stores/access.store'
 import { areApiKeysHydrated, API_KEYS_HYDRATED_EVENT, API_KEYS_UPDATED_EVENT } from '@/features/settings/useApiKeysSync'
@@ -91,9 +92,7 @@ export function OnboardingWizard() {
               </div>
             ))}
           </div>
-          <button onClick={dismiss} title="Plus tard" className="text-white/30 hover:text-white/70 transition-colors p-1 rounded hover:bg-white/5 shrink-0">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={dismiss} title="Plus tard" className="shrink-0" />
         </div>
 
         {/* Contenu de l'étape */}

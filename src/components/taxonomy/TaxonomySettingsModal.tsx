@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { X, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { useUpdateTaxonomySettings } from '@/features/taxonomy/useTaxonomyMutations'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { Taxonomy } from '@/features/taxonomy/types'
 
 interface TaxonomySettingsModalProps {
@@ -32,13 +33,7 @@ export function TaxonomySettingsModal({ taxonomy, onClose }: TaxonomySettingsMod
           <h3 className="text-[13px] font-semibold text-white/80">
             Paramètres — {taxonomy.name}
           </h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-white/40 hover:text-white/80 hover:bg-white/[0.06] transition-colors"
-            aria-label="Fermer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" />
         </div>
 
         <div className="p-4 space-y-4">

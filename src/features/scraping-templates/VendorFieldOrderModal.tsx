@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { GripVertical, X, Loader2, ListOrdered } from 'lucide-react'
+import { GripVertical, Loader2, ListOrdered } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import {
   DndContext, closestCenter, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -114,9 +115,7 @@ export function VendorFieldOrderModal({ matchedTemplate, enriched, onClose, onSa
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white/80 shrink-0">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} className="shrink-0" />
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3">

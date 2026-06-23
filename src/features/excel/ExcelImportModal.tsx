@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import {
-  X, Upload, FileSpreadsheet, Loader2, MonitorUp, Plus,
+  Upload, FileSpreadsheet, Loader2, MonitorUp, Plus,
   Check, ChevronDown, ChevronRight, Layers,
 } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from './useExcelImport'
 import { parseExcelFile } from './useExcelImport'
@@ -239,9 +240,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
                 {sheet.columns.length} champs · {sheet.rows.length} lignes
               </span>
             </div>
-            <button onClick={() => { resetConfig(); onClose() }} className="text-white/30 hover:text-white transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+            <CloseButton onClick={() => { resetConfig(); onClose() }} />
           </div>
 
           {/* Content */}
@@ -420,9 +419,7 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <h2 className="font-semibold text-white text-sm">Import Excel / CSV</h2>
             </div>
-            <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+            <CloseButton onClick={onClose} />
           </div>
 
           {/* Content area */}

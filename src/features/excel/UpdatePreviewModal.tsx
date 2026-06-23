@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import {
-  X, Loader2, Plus, Minus,
+  Loader2, Plus, Minus,
   RefreshCw, Check, MonitorUp,
 } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { SheetDiff, RowDiff, ColumnDiff } from './diffEngine'
 import type { ExcelSheet } from './types'
 import { diffSheets } from './diffEngine'
@@ -99,9 +100,7 @@ export function UpdatePreviewModal({ open, onClose, onApply }: Props) {
             <RefreshCw className="w-4 h-4 text-amber-400" />
             <h2 className="font-semibold text-white text-sm">Mettre a jour les donnees</h2>
           </div>
-          <button onClick={() => { handleReset(); onClose() }} className="text-white/30 hover:text-white transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={() => { handleReset(); onClose() }} />
         </div>
 
         {!diffs ? (

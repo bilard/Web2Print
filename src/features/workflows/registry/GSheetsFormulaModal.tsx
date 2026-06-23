@@ -4,7 +4,8 @@
 // (colonnes disponibles, fonctions courantes).
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { X, FunctionSquare, Plus, Search } from 'lucide-react'
+import { FunctionSquare, Plus, Search } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { GSheetsFormulaColumns } from './GSheetsFormulaColumns'
 import { formulaInsert } from './formulaInsert'
 import { GSHEETS_FUNCTIONS, GSHEETS_FUNCTION_GROUPS } from '@/features/gdrive/googleSheetsFunctions'
@@ -102,14 +103,7 @@ export function GSheetsFormulaModal({ value, onChange, columns, onClose }: Props
             <FunctionSquare className="w-4 h-4 text-indigo-400" />
             Colonnes formule — Google Sheets
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded hover:bg-white/5 text-neutral-400 hover:text-white"
-            aria-label="Fermer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" />
         </header>
 
         <div className="flex-1 min-h-0 overflow-hidden p-4 flex flex-col gap-4">

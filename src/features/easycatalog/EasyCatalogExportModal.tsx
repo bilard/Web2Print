@@ -1,7 +1,8 @@
 // src/features/easycatalog/EasyCatalogExportModal.tsx
 import { useMemo, useState } from 'react'
-import { Download, X } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { toast } from 'sonner'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { ExcelSheet } from '@/features/excel/types'
 import { buildEcFieldNames } from './ecFieldName'
 import { buildFieldDescriptors, resolveKeyInfo } from './ecExport'
@@ -54,9 +55,7 @@ export function EasyCatalogExportModal({ open, onClose, sheet, sourceName }: Pro
       <div className="bg-surface border border-white/10 rounded-xl w-[420px] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <h2 className="text-sm font-medium text-white/90">Exporter pour EasyCatalog</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white/70">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} />
         </div>
 
         <div className="p-5 space-y-4">

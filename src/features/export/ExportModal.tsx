@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes, Share2, LayoutGrid } from 'lucide-react'
+import { Download, Image as ImageIcon, FileText, Presentation, Code2, Loader2, CheckCircle, Package, Shapes, Share2, LayoutGrid } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useExportPng } from './useExportPng'
 import { useExportPdf } from './useExportPdf'
 import { useExportPptx } from './useExportPptx'
@@ -118,9 +119,7 @@ export function ExportModal({ onClose }: ExportModalProps) {
             <Download className="w-4 h-4 text-indigo-400" />
             <h2 className="font-semibold text-white text-sm">Exporter</h2>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} />
         </div>
 
         <div className="p-5 flex flex-col gap-5">

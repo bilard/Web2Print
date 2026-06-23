@@ -8,6 +8,7 @@ import {
 } from '@/features/taxonomy/useTaxonomyMutations'
 import type { Taxonomy } from '@/features/taxonomy/types'
 import type { ProjectData } from '@/types/project'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 interface LinkProjectsModalProps {
   open: boolean
@@ -167,13 +168,7 @@ export function LinkProjectsModal({
               {node.label}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white/30 hover:text-white/70 transition-colors shrink-0"
-            aria-label="Fermer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" className="shrink-0" />
         </div>
 
         {/* Search */}

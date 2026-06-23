@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Sparkles, Loader2, AlertTriangle, ChevronDown, Coins, RotateCcw, X } from 'lucide-react'
+import { Sparkles, Loader2, AlertTriangle, ChevronDown, Coins, RotateCcw } from 'lucide-react'
 import { useAiActivityStore, type AiActivityRecord } from '@/stores/aiActivity.store'
 import { getModel, type AiProvider } from '@/lib/aiModels'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 // Panneau complet (par LLM + connecteurs) chargé en lazy : monté seulement à l'ouverture.
 const LiveLlmUsagePanel = lazy(() =>
@@ -259,14 +260,7 @@ export function AiLiveIndicator() {
                   évite que la section Scraping/Bright Data soit coupée en bas. */}
               <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
                 <span className="text-xs font-semibold text-white/80">Consommation — détail par LLM & connecteurs</span>
-                <button
-                  type="button"
-                  onClick={() => setPanelOpen(false)}
-                  className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/10"
-                  aria-label="Fermer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <CloseButton onClick={() => setPanelOpen(false)} title="Fermer" />
               </div>
               <div className="flex-1 min-h-0 overflow-auto p-3">
                 <Suspense fallback={<div className="text-xs text-white/40 p-4">Chargement du détail…</div>}>

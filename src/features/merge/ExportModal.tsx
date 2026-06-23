@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, FileText, Image, Presentation, FileType } from 'lucide-react'
+import { FileText, Image, Presentation, FileType } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useMergeStore } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { useBatchExport, type ExportFormat, type ExportMode, type BatchExportConfig } from './useBatchExport'
@@ -73,9 +74,7 @@ export function ExportModal({ open, onClose }: ExportModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <h3 className="text-sm font-semibold text-white">Export en masse</h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white/70">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} />
         </div>
 
         <div className="p-4 space-y-4">

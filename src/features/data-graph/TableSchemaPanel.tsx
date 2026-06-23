@@ -1,6 +1,7 @@
 // src/features/data-graph/TableSchemaPanel.tsx
 import { createContext, useContext, type ReactNode } from 'react'
-import { KeyRound, Link2, ArrowRight, X, Table2, Eye } from 'lucide-react'
+import { KeyRound, Link2, ArrowRight, Table2, Eye } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { DOMAIN_HEX, TABLES, type FieldSchema, type TableSchema } from './firestoreSchema'
 
 /** Ouvre le panneau de schéma (droite) pour une table ; `field` met un champ en surbrillance. */
@@ -80,9 +81,7 @@ export function TableSchemaPanel({ table, highlightField, onClose, onFocusTable,
       <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-3" style={{ background: `${hex}14` }}>
         <Icon className="h-4 w-4 shrink-0" style={{ color: hex }} />
         <span className="flex-1 truncate font-mono text-[14px] font-bold text-white">{table.label}</span>
-        <button onClick={onClose} title="Fermer" className="shrink-0 text-white/45 transition-colors hover:text-white">
-          <X className="h-4 w-4" />
-        </button>
+        <CloseButton onClick={onClose} className="shrink-0" />
       </div>
 
       {/* Description + compteur */}

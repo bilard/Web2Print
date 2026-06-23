@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Trash2, Plus, Loader2, ImageIcon, RotateCcw, Sparkles, Eraser, X, ZoomIn } from 'lucide-react'
+import { Trash2, Plus, Loader2, ImageIcon, RotateCcw, Sparkles, Eraser, ZoomIn } from 'lucide-react'
 import { FabricImage, Rect } from 'fabric'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { syncToStore } from '@/features/editor/useAddObject'
 import { useEditorStore } from '@/stores/editor.store'
@@ -488,14 +489,11 @@ export function GalleryGrid({ onAddToCanvas, onDelete }: Props) {
           className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-8"
           onClick={() => setLightboxSrc(null)}
         >
-          <button
-            type="button"
+          <CloseButton
             onClick={() => setLightboxSrc(null)}
-            className="absolute top-4 right-4 p-2 text-[#fff]/70 hover:text-[#fff] bg-black/50 hover:bg-black/80 rounded-lg transition-colors"
+            className="absolute top-4 right-4"
             title="Fermer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          />
           <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
             <img
               src={lightboxSrc.src}

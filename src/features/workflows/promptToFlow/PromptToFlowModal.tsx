@@ -1,6 +1,7 @@
 // src/features/workflows/promptToFlow/PromptToFlowModal.tsx
 import { useState } from 'react'
-import { Sparkles, Loader2, X } from 'lucide-react'
+import { Sparkles, Loader2 } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { LLMProviderId } from '@/features/ai/llmRouter'
 import { usePromptToFlow } from './usePromptToFlow'
 import { PromptToFlowPreview } from './PromptToFlowPreview'
@@ -37,9 +38,7 @@ export function PromptToFlowModal({ onClose }: { onClose: () => void }) {
           <h2 className="flex items-center gap-2 text-sm font-medium text-white">
             <Sparkles className="w-4 h-4 text-indigo-400" /> Générer un workflow (IA)
           </h2>
-          <button onClick={onClose} className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5" aria-label="Fermer">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" />
         </div>
 
         {phase !== 'preview' ? (

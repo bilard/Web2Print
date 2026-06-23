@@ -4,7 +4,8 @@
 // = supprimer. L'édition du graphe se fait en instanciant puis « Modèle » dans
 // l'éditeur (option « Mettre à jour »).
 import { useEffect, useState } from 'react'
-import { Pencil, Trash2, X } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { notify } from '@/lib/notify'
 import type { UserWorkflowTemplate } from './templates'
 import { listUserTemplates, updateUserTemplateMeta, deleteUserTemplate } from './persistence/workflowsApi'
@@ -109,9 +110,7 @@ function EditMetaDialog({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Modifier le modèle</h2>
-          <button onClick={onClose} className="p-1 text-neutral-500 hover:text-white" aria-label="Fermer">
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} title="Fermer" />
         </div>
         <div className="flex gap-2">
           <label className="block text-sm w-16 shrink-0">

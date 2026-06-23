@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Sparkles, Wand2, X } from 'lucide-react'
+import { Loader2, Sparkles, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   generateImprovementQuestions,
@@ -8,6 +8,7 @@ import {
   type ImprovementAnswer,
   type ImprovementQuestion,
 } from '@/features/briefs/ai/improveImagePrompt'
+import { CloseButton } from '@/components/shared/CloseButton'
 
 interface Props {
   open: boolean
@@ -112,14 +113,11 @@ export function ImprovePromptDialog({ open, onClose, brief, refs, onImproved }: 
             <Sparkles className="w-4 h-4 text-indigo-400" />
             <div className="text-sm font-medium text-white/90">Améliorer avec questions</div>
           </div>
-          <button
+          <CloseButton
             onClick={onClose}
             disabled={stage === 'generating'}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
             title="Fermer (Esc)"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          />
         </div>
 
         {/* Body */}

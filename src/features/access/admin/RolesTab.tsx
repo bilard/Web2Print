@@ -1,6 +1,7 @@
 // src/features/access/admin/RolesTab.tsx
 import { useEffect, useState, lazy, Suspense } from 'react'
-import { Plus, Trash2, Save, X, Lock, Check, Eye, LayoutGrid, ListTree, Network, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { Plus, Trash2, Save, Lock, Check, Eye, LayoutGrid, ListTree, Network, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
@@ -79,7 +80,7 @@ export function RolesTab() {
           <button onClick={save} disabled={!editing.name.trim()} className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-[#fff] text-sm px-3 py-2 rounded-lg">
             <Save className="w-4 h-4" /> Enregistrer
           </button>
-          <button onClick={() => setEditing(null)} className="p-2 text-white/40 hover:text-white/80"><X className="w-4 h-4" /></button>
+          <CloseButton onClick={() => setEditing(null)} />
         </div>
         {/* Barre d'outils : compteur + mode d'affichage + tout déplier/replier */}
         <div className="flex items-center gap-2 flex-wrap">

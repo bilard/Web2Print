@@ -6,6 +6,7 @@ import {
   useUnlinkProject,
 } from '@/features/taxonomy/useTaxonomyMutations'
 import { findPath } from '@/features/taxonomy/taxonomyUtils'
+import { CloseButton } from '@/components/shared/CloseButton'
 import type { Taxonomy, TaxonomyNode } from '@/features/taxonomy/types'
 
 interface EditorTaxonomyPickerProps {
@@ -164,13 +165,7 @@ export function EditorTaxonomyPicker({
               Sélectionnez le nœud où classer ce projet
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white/30 hover:text-white/70 transition-colors shrink-0"
-            aria-label="Fermer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseButton onClick={onClose} className="shrink-0" />
         </div>
 
         {/* Search */}

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { X } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { DamPage } from './DamPage'
 
 /**
@@ -28,13 +28,7 @@ export function DamPickerModal() {
       {/* Header with close button */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 shrink-0">
         <div className="text-xs font-medium text-white/70">Bibliothèque d'images</div>
-        <button
-          onClick={() => setDamPickerOpen(false)}
-          className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition"
-          title="Fermer (Esc)"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <CloseButton onClick={() => setDamPickerOpen(false)} title="Fermer (Esc)" />
       </div>
 
       {/* DamPage — uses the same UI as the dashboard images section */}

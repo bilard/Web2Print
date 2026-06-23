@@ -6,7 +6,8 @@ import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
 import { SheetsFilePicker } from './SheetsFilePicker'
 import { useDataMerge } from './useDataMerge'
-import { Database, Upload, Loader2, FileSpreadsheet, Table2, X, Package } from 'lucide-react'
+import { Database, Upload, Loader2, FileSpreadsheet, Table2, Package } from 'lucide-react'
+import { CloseButton } from '@/components/shared/CloseButton'
 import { useMergeStore } from '@/stores/merge.store'
 import type { DataSourceRef } from '@/stores/merge.store'
 import { listPimProjects, makePimSourceRef, type PimProjectSummary } from './pimSource'
@@ -138,9 +139,7 @@ export function DataSourcePicker() {
       <div>
         <div className="flex items-center justify-between px-3 pt-3 pb-1">
           <span className="text-xs text-white/60 font-medium">Google Sheets</span>
-          <button onClick={() => setMode('choose')} className="text-white/40 hover:text-white/70">
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <CloseButton onClick={() => setMode('choose')} size="sm" />
         </div>
         <SheetsFilePicker />
       </div>
