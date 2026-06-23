@@ -28,7 +28,7 @@ const panelConfig: Record<string, { title: string; icon: ComponentType<{ classNa
   images:      { title: 'Images',       icon: ImagePlus,  content: <NanoBanaPanel /> },
   palette:     { title: 'Palette',      icon: Palette,    content: <PalettePanel /> },
   assets:      { title: 'Assets',       icon: FolderOpen, content: <AssetsPanel /> },
-  animation3d: { title: 'Animation 3D', icon: Aperture,   content: <Animation3DPanel /> },
+  animation3d: { title: "Animer l'objet", icon: Aperture,   content: <Animation3DPanel /> },
   versions:    { title: 'Versions',     icon: History,    content: <VersionsPanel /> },
 }
 

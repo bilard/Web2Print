@@ -139,7 +139,13 @@ export function Animation3DPanel() {
   if (!selectedId && config.preset !== 'particles') {
     return (
       <div className="px-3 py-4 text-xs text-white/45 space-y-3">
-        <p>Sélectionnez un objet du canvas pour appliquer une animation 3D retail.</p>
+        <p>
+          Anime <b className="text-white/70">un seul objet</b> sélectionné, en direct sur le canvas
+          (effets de mouvement, persistés sur l'objet). Pour une vidéo de la
+          <b className="text-white/70"> page entière</b> pilotée par IA, utilise le bouton
+          <b className="text-white/70"> « Vidéo IA »</b> en haut.
+        </p>
+        <p>Sélectionne un objet du canvas pour appliquer un effet.</p>
         <button
           onClick={() => setConfig({ ...config, preset: 'particles' })}
           className="text-[11px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
