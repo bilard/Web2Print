@@ -287,6 +287,15 @@
           let node = null;
           try { node = svgEl && svgEl.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(oa.id) : oa.id)); } catch (e) { node = null; }
           if (!node) return;
+          // Le <g> réel porte la matrix de positionnement Fabric. On l'enveloppe
+          // dans un groupe IDENTITÉ et on anime le wrapper → évite le saut d'origine
+          // (piège GSAP-sur-SVG quand l'élément a déjà un transform matriciel).
+          try {
+            const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            node.parentNode.insertBefore(wrap, node);
+            wrap.appendChild(node);
+            node = wrap;
+          } catch (e) { /* repli : on anime le node tel quel */ }
           const cfg = oa.config || {};
           const D = Math.max(0.5, Math.min(8, +cfg.duration || 3)) * DUR_SCALE;
           const I = Math.max(0.3, Math.min(2.5, +cfg.intensity || 1));
