@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { captureCurrentPageSvg } from './utils/captureSvg'
+import { captureCurrentPageSvg, type CapturedObjectAnim } from './utils/captureSvg'
 import { extractBriefContextFromFiles, type FileExtractionSkip } from './utils/extractBriefContextFromFiles'
 import { detectAspect } from './types'
 import {
@@ -94,6 +94,8 @@ export interface GenerateVideoStep {
    *  preview pour que l'iframe utilise le ratio source plutôt que le bucket. */
   width?: number
   height?: number
+  /** Animations par-objet rejouées dans la vidéo (B-fidèle). */
+  objectAnimations?: CapturedObjectAnim[]
 }
 
 export interface GenerateVideoResult {
@@ -118,6 +120,8 @@ export interface GenerateVideoResult {
   prompt?: string
   fileContext?: string
   skippedFiles?: FileExtractionSkip[]
+  /** Mode canvas : animations par-objet rejouées dans la vidéo (B-fidèle). */
+  objectAnimations?: CapturedObjectAnim[]
 }
 
 function appendFileContext(prompt: string | undefined, context: string): string | undefined {
@@ -211,6 +215,8 @@ export function useGenerateVideo(opts?: {
           styleConfig = applyMotionHeuristic(DEFAULT_STYLE_CONFIG, '', input.objectPresets)
         }
 
+        const objectAnimations = capture.objectAnimations.length ? capture.objectAnimations : undefined
+
         opts?.onStep?.({
           step: 'done',
           aspect,
@@ -222,6 +228,7 @@ export function useGenerateVideo(opts?: {
           source,
           width: canvasDims.width,
           height: canvasDims.height,
+          objectAnimations,
         })
 
         return {
@@ -235,6 +242,7 @@ export function useGenerateVideo(opts?: {
           prompt: enrichedPrompt,
           fileContext: fileContext || undefined,
           skippedFiles: skippedFiles.length ? skippedFiles : undefined,
+          objectAnimations,
         }
       }
 

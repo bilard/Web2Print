@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import type { AspectFormat } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
 import type { Composition } from './promptToComposition'
+import type { CapturedObjectAnim } from './utils/captureSvg'
 
 interface Props {
   animationId: string
@@ -23,6 +24,8 @@ interface Props {
   caption?: string
   brand?: string
   prompt?: string
+  /** Mode canvas : animations par-objet rejouées dans la vidéo (B-fidèle). */
+  objectAnimations?: CapturedObjectAnim[]
   initialSaved?: boolean
   onRegenerate: () => void
 }
@@ -59,6 +62,7 @@ function buildVariables(props: Props): { isMultiScene: boolean; variables: Recor
       caption: props.caption,
       prompt: props.prompt,
       styleConfig: props.styleConfig,
+      objectAnimations: props.objectAnimations,
       svgUrl: '',
     },
   }
@@ -77,6 +81,7 @@ export function VideoResult(props: Props) {
     caption,
     brand,
     prompt,
+    objectAnimations,
     initialSaved = false,
     onRegenerate,
   } = props
@@ -149,6 +154,7 @@ export function VideoResult(props: Props) {
         caption={caption}
         prompt={prompt}
         styleConfig={styleConfig}
+        objectAnimations={objectAnimations}
         width={width}
         height={height}
         durationSec={durationSec}

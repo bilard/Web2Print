@@ -289,6 +289,63 @@
           tl.to('#svg-host', { rotation: 0,  duration: dur(0.6), ease: 'power2.out' }, dur(3.8));
         }
 
+        // ===== ANIMATIONS PAR-OBJET (B-fidèle) =====
+        // Rejoue le preset posé sur chaque objet via « Animer l'objet », sur son
+        // <g id="w2panim-..."> tagué à la capture. ADDITIF (par-dessus la
+        // chorégraphie globale). Seek-safe : repeat FINI + yoyo, jamais -1.
+        // Les presets 3D (flip/relief/particules) sont exclus côté capture →
+        // ils retombent sur la personnalité globale (B-robuste).
+        const objAnims = Array.isArray(vars.objectAnimations) ? vars.objectAnimations : [];
+        objAnims.forEach((oa) => {
+          if (!oa || !oa.id) return;
+          let node = null;
+          try { node = svgEl && svgEl.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(oa.id) : oa.id)); } catch (e) { node = null; }
+          if (!node) return;
+          const cfg = oa.config || {};
+          const D = Math.max(0.5, Math.min(8, +cfg.duration || 3)) * DUR_SCALE;
+          const I = Math.max(0.3, Math.min(2.5, +cfg.intensity || 1));
+          const dir = cfg.direction;
+          const loop = cfg.loop !== false;
+          const REP = loop ? Math.min(30, Math.max(1, Math.ceil((10 * DUR_SCALE) / (D || 1)))) : 0;
+          const half = Math.max(0.15, D / 2);
+          gsap.set(node, { transformOrigin: '50% 50%' });
+          switch (cfg.preset) {
+            case 'slideEntrance':
+              tl.from(node, { x: (dir === 'right' ? -1 : 1) * 140 * I, opacity: 0, duration: dur(0.8), ease: 'power3.out' }, 0);
+              break;
+            case 'slideVertical':
+              tl.from(node, { y: (dir === 'bottom' ? -1 : 1) * 140 * I, opacity: 0, duration: dur(0.8), ease: 'power3.out' }, 0);
+              break;
+            case 'pulseScale':
+              tl.to(node, { scale: 1 + 0.12 * I, duration: half, ease: 'sine.inOut', repeat: REP, yoyo: true }, 0);
+              break;
+            case 'bounce':
+              tl.to(node, { y: -36 * I, duration: half, ease: 'power1.out', repeat: REP, yoyo: true }, 0);
+              break;
+            case 'wave':
+              tl.to(node, { skewX: 8 * I, duration: half, ease: 'sine.inOut', repeat: REP, yoyo: true }, 0);
+              break;
+            case 'vibrate':
+              tl.fromTo(node, { x: -3 * I }, { x: 3 * I, duration: 0.06, ease: 'none', repeat: Math.min(140, REP * 8), yoyo: true }, 0);
+              break;
+            case 'motionPath':
+              tl.to(node, { x: 28 * I, y: -20 * I, duration: half, ease: 'sine.inOut', repeat: REP, yoyo: true }, 0);
+              break;
+            case 'rotate3D':
+              tl.to(node, { rotation: 8 * I, skewX: 4 * I, duration: half, ease: 'sine.inOut', repeat: REP, yoyo: true }, 0);
+              break;
+            case 'hueCycle':
+              gsap.set(node, { filter: 'hue-rotate(0deg)' });
+              tl.to(node, { filter: 'hue-rotate(180deg)', duration: D, ease: 'sine.inOut', repeat: REP, yoyo: true }, 0);
+              break;
+            case 'glowAccent':
+              gsap.set(node, { filter: 'drop-shadow(0 0 0px ' + ACCENT + ')' });
+              tl.to(node, { filter: 'drop-shadow(0 0 ' + (18 * I) + 'px ' + ACCENT + ')', duration: half, ease: 'sine.inOut', repeat: REP, yoyo: true }, 0);
+              break;
+            default: break;
+          }
+        });
+
         window.__timelines = window.__timelines || {};
         window.__timelines['design-reveal-square'] = tl;
       })();

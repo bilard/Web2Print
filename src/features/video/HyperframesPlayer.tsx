@@ -3,6 +3,7 @@ import { Play, Pause, RotateCw, Loader2, AlertTriangle, ZoomIn, ZoomOut, Maximiz
 import type { AspectFormat } from './types'
 import type { Composition } from './promptToComposition'
 import type { StyleConfig } from './promptToStyleConfig'
+import type { CapturedObjectAnim } from './utils/captureSvg'
 
 interface Props {
   aspect: AspectFormat
@@ -14,6 +15,8 @@ interface Props {
   caption?: string
   prompt?: string
   styleConfig?: StyleConfig
+  /** Mode canvas : animations par-objet rejouées dans la vidéo (B-fidèle). */
+  objectAnimations?: CapturedObjectAnim[]
   autoPlay?: boolean
   className?: string
   /** Dimensions exactes (canvas source) — si fournies, override la taille du bucket */
@@ -66,6 +69,7 @@ export function HyperframesPlayer({
   caption,
   prompt,
   styleConfig,
+  objectAnimations,
   autoPlay = true,
   className,
   width,
@@ -136,10 +140,11 @@ export function HyperframesPlayer({
       caption: caption || undefined,
       prompt: prompt || undefined,
       styleConfig: styleConfig || undefined,
+      objectAnimations: objectAnimations && objectAnimations.length ? objectAnimations : undefined,
       svgUrl: '',
       durationScale,
     }
-  }, [isMultiScene, composition, svg, brand, caption, prompt, styleConfig, durationSec])
+  }, [isMultiScene, composition, svg, brand, caption, prompt, styleConfig, objectAnimations, durationSec])
 
   useEffect(() => {
     let cancelled = false

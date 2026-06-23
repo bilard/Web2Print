@@ -17,6 +17,7 @@ import { detectAspect } from './types'
 import type { StyleConfig } from './promptToStyleConfig'
 import { motionFromPresets } from './promptToStyleConfig'
 import type { Composition } from './promptToComposition'
+import type { CapturedObjectAnim } from './utils/captureSvg'
 import { useEditorStore, type CanvasObjectProps } from '@/stores/editor.store'
 
 /** Collecte récursivement les presets d'animation posés par objet (panneau
@@ -61,6 +62,7 @@ interface ResultState {
   caption?: string
   brand?: string
   prompt?: string
+  objectAnimations?: CapturedObjectAnim[]
 }
 
 interface LivePreviewState {
@@ -78,6 +80,7 @@ interface LivePreviewState {
   /** Durée choisie par l'utilisateur — propagée au HyperframesPlayer pour
    *  que la preview live respecte aussi la durée (et pas juste le ZIP). */
   durationSec?: number
+  objectAnimations?: CapturedObjectAnim[]
 }
 
 function FieldLabel({
@@ -201,6 +204,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           width: s.width ?? prev?.width,
           height: s.height ?? prev?.height,
           durationSec: currentDurationSec,
+          objectAnimations: s.objectAnimations ?? prev?.objectAnimations,
         }))
       } else if (s.styleConfig) {
         setPreview((prev) => (prev ? { ...prev, styleConfig: s.styleConfig } : prev))
@@ -285,6 +289,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             caption: caption.trim() || undefined,
             brand: brand.trim() || undefined,
             prompt: combinedPrompt || undefined,
+            objectAnimations: res.objectAnimations,
           })
           toast.success('Animation prête — preview + ZIP HTML disponibles')
         },
@@ -448,6 +453,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
               durationSec: res.durationSec,
               caption: p.caption ?? undefined,
               brand: p.brand ?? undefined,
+              objectAnimations: res.objectAnimations,
               prompt:
                 buildCombinedPrompt({
                   topic: p.topic ?? '',
@@ -526,6 +532,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             caption={preview.caption}
             prompt={preview.prompt}
             styleConfig={preview.styleConfig}
+            objectAnimations={preview.objectAnimations}
             width={preview.width}
             height={preview.height}
             durationSec={preview.durationSec}
@@ -579,6 +586,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                 caption={result.caption}
                 brand={result.brand}
                 prompt={result.prompt}
+                objectAnimations={result.objectAnimations}
                 onRegenerate={handleRegenerate}
               />
             ) : (
