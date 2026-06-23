@@ -13,6 +13,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@higgsfield/client": "^0.2.1",
     "@sparticuz/chromium": "^147.0.0",
     "cheerio": "^1.0.0",
     "firebase-admin": "^13.8.0",

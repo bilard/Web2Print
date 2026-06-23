@@ -25,6 +25,7 @@ const CONNECTORS: Record<string, ConnectorMeta> = {
   gmail:    { label: 'Gmail',    color: 'text-red-300',     dot: 'bg-red-400/70' },
   telegram: { label: 'Telegram', color: 'text-cyan-300',    dot: 'bg-cyan-400/70' },
   make:     { label: 'Make',     color: 'text-fuchsia-300', dot: 'bg-fuchsia-400/70' },
+  higgsfield: { label: 'Higgsfield', color: 'text-indigo-300', dot: 'bg-indigo-400/70' },
 }
 
 /**

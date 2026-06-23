@@ -156,6 +156,16 @@ export const API_KEYS: ApiKeyConfig[] = [
       billing: 'https://scrapfly.io/dashboard/billing',
     },
   },
+  {
+    id: 'higgsfield',
+    label: 'Higgsfield',
+    envVar: 'VITE_HIGGSFIELD_API_KEY',
+    description: 'Génération image/vidéo IA (Soul, Kling, Veo, DoP…). Format de clé « KEY_ID:KEY_SECRET ».',
+    links: {
+      manage: 'https://cloud.higgsfield.ai/api-keys',
+      billing: 'https://cloud.higgsfield.ai/',
+    },
+  },
 ]
 
 /** Get an API key value: localStorage override, then env fallback */
@@ -439,6 +449,15 @@ export async function testApiKey(id: string): Promise<{ status: ApiTestResult; m
         return { status: 'ok', message: 'Format valide (en attente câblage Cloud Function)' }
       }
       return { status: 'error', message: 'Format attendu : scp-live-... ou scp-test-...' }
+    }
+
+    if (id === 'higgsfield') {
+      // Higgsfield : SDK server-side only (clé refusée côté navigateur). Pas de test
+      // live possible ici → validation de format « KEY_ID:KEY_SECRET ».
+      if (/^[^\s:]+:[^\s:]+$/.test(key.trim())) {
+        return { status: 'ok', message: 'Format valide (utilisée par le node Higgsfield, côté serveur)' }
+      }
+      return { status: 'error', message: 'Format attendu : KEY_ID:KEY_SECRET' }
     }
 
     return { status: 'ok', message: 'OK' }

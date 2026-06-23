@@ -4,6 +4,7 @@ import { DataModelDiagram } from '@/features/data-graph/DataModelDiagram'
 import {
   FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo,
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
+  HiggsfieldLogo,
 } from '@/features/ai/providerLogos'
 import { TelegramSettings } from '@/features/telegram/TelegramSettings'
 import { PipelineRunsPanel } from './PipelineRunsPanel'
@@ -416,6 +417,7 @@ function ConnectorsTab() {
       <ApiKeyRow id="firecrawl" label="Firecrawl" description="Scraping anti-bot fallback (Akamai, Cloudflare)" logo={<FirecrawlLogo />} placeholder="fc-..." />
       <BrightDataConnectorRow />
       <ApiKeyRow id="scrapfly" label="ScrapFly" description="Réservée — pas de CORS browser-side, en attente d'une Cloud Function proxy" logo={<ScrapflyLogo />} placeholder="scp-live-..." />
+      <ApiKeyRow id="higgsfield" label="Higgsfield" description="Génération image/vidéo IA (node workflow). Clé au format KEY_ID:KEY_SECRET" logo={<HiggsfieldLogo />} placeholder="KEY_ID:KEY_SECRET" />
       <GDriveConnectorRow />
 
       {/* ── Google accès serveur (OAuth offline : Drive + Gmail pour cron/webhook/Telegram) ── */}

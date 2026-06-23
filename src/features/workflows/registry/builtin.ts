@@ -28,6 +28,7 @@ import './telegramNodes'
 import './webhookNode'
 import './approvalNode'
 import './decomposeNode'
+import './higgsfield'
 import './cronNodes'
 
 let initialized = false

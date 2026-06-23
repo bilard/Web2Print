@@ -11,6 +11,7 @@ import './webScraping'
 import './webhookPost'
 import './costReport'   // jumeau serveur cost-report (headless, lit Firestore)
 import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton serveur)
+import './higgsfield'   // jumeau serveur higgsfield (génération image/vidéo via SDK)
 
 /** Types présents côté client mais non exécutables côté serveur (navigateur/OAuth/canvas). */
 export const SERVER_UNSUPPORTED = new Set<string>([

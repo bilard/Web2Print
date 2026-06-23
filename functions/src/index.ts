@@ -40,3 +40,6 @@ export { workflowWebhook } from './workflow/webhookTrigger'
 
 // --- Proxy LLM authentifié (clé Firestore + budget mensuel bloquant) ---
 export { llmProxy } from './llm/llmProxy'
+
+// --- Higgsfield (génération image/vidéo IA, clé per-user, SDK officiel) ---
+export { higgsfieldGenerate } from './higgsfield/higgsfieldGenerate'

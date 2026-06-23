@@ -108,6 +108,12 @@ export const RemoveBgLogo = () => (
   </svg>
 )
 
+export const HiggsfieldLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-indigo-400" fill="currentColor" aria-hidden="true">
+    <path d="M12 2l2.4 5.6L20 8l-4 4 1 6-5-2.8L7 18l1-6-4-4 5.6-.4L12 2z" />
+  </svg>
+)
+
 export const FirecrawlLogo = () => (
   <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 text-orange-400" fill="currentColor" aria-hidden="true">
     <path d="M13.5 2c-.3 0-.5.2-.6.4-1 2.7-2.5 4.4-4.3 6-1.6 1.4-3.6 3.2-3.6 6.6 0 3.5 2.6 7 7 7s7-3.5 7-7.7c0-2-.7-3.7-1.4-5-.9-1.6-1.8-3-1.6-5.1 0-.5-.4-.9-.9-.9-1.4 0-1.6 1-1.6 1.8-.7-1.5-1-2.5-1-3.1z M11 12c1 1 2 1.5 2 3 0 1-.8 2-2 2s-2-1-2-2c0-1.5 1-2 2-3z"/>
