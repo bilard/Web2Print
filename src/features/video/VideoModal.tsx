@@ -173,6 +173,10 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     [isStandalone, canvasObjects],
   )
   const derivedMotion = useMemo(() => motionFromPresets(objectPresets), [objectPresets])
+  // Quand l'utilisateur a écrit des instructions d'animation, on ne joue QUE
+  // les siennes → « Partir de zéro » est forcé ON et grisé (cf. demande UX).
+  const hasInstructions = freeform.trim().length > 0
+  const effectiveFromScratch = hasInstructions ? true : fromScratch
 
   const progress = useRenderProgress()
   const promptLib = useVideoPromptLibrary()
@@ -227,13 +231,15 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   /** Persiste le prompt dans la bibliothèque (fire-and-forget). Si on rejoue
    *  un prompt existant, on bump juste son `lastUsedAt`. */
   const persistPromptInLibrary = (resolvedAspect: AspectFormat | undefined, durationSec: number) => {
-    if (!topic.trim()) return
+    if (!topic.trim() && !freeform.trim()) return
     if (editingPromptId) {
       void promptLib.touchPrompt(editingPromptId)
       return
     }
     void promptLib.savePrompt({
-      topic,
+      // Titre du template : le sujet, sinon les instructions d'animation (le
+      // champ « Que doit présenter » est optionnel quand on donne des instructions).
+      topic: topic.trim() || freeform.trim().slice(0, 80),
       audience,
       goal,
       tone,
@@ -242,13 +248,13 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
       caption,
       aspect: resolvedAspect,
       targetDurationSec: durationSec,
-      fromScratch,
+      fromScratch: effectiveFromScratch,
     })
   }
 
   const handleGenerate = () => {
-    if (!topic.trim()) {
-      toast.error('Décris d\'abord ce que cette vidéo doit expliquer')
+    if (!topic.trim() && !freeform.trim()) {
+      toast.error('Écris au moins des instructions d\'animation (ou un sujet)')
       return
     }
     setResult(null)
@@ -282,7 +288,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         // dilué), sinon tout le brief en repli (robuste si l'utilisateur a écrit ses
         // instructions dans « Que doit présenter » plutôt que « Instructions d'animation »).
         animationPrompt: freeform.trim() || combinedPrompt || undefined,
-        fromScratch: fromScratch || undefined,
+        fromScratch: effectiveFromScratch || undefined,
         source,
         signal: abortRef.current.signal,
       },
@@ -676,6 +682,65 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   />
                 </div>
 
+                {/* ── Champ PRINCIPAL : Instructions d'animation ── */}
+                <div>
+                  <FieldLabel
+                    htmlFor="freeform"
+                    hint="L'IA traduit ces instructions en animations par élément (cible par nom : « le bloc prix », « le logo », « tous les éléments »)."
+                  >
+                    {isStandalone ? 'Instructions libres' : 'Instructions d\'animation'}
+                  </FieldLabel>
+                  <textarea
+                    id="freeform"
+                    value={freeform}
+                    onChange={(e) => setFreeform(e.target.value)}
+                    disabled={generating}
+                    rows={4}
+                    placeholder="ex. tous les éléments entrent depuis la gauche en cascade, sortent à droite ; effet de carte qui se retourne sur le prix ; le logo balance doucement"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
+                  />
+                  {!isStandalone && (
+                    <label className={`mt-2 flex items-center gap-2 text-xs ${hasInstructions ? 'text-white/40 cursor-default' : 'text-white/60 cursor-pointer'}`}>
+                      <input
+                        type="checkbox"
+                        checked={effectiveFromScratch}
+                        onChange={(e) => setFromScratch(e.target.checked)}
+                        disabled={generating || hasInstructions}
+                        className="accent-indigo-500"
+                      />
+                      Partir de zéro (ne jouer que mes instructions){hasInstructions ? ' — activé automatiquement' : ''}
+                    </label>
+                  )}
+                </div>
+
+                {/* Caption — bandeau d'accroche bas de cadre */}
+                <div>
+                  <FieldLabel
+                    htmlFor="caption"
+                    optional
+                    hint="Texte d'accroche affiché en gros bas de cadre, mot par mot."
+                  >
+                    Caption
+                  </FieldLabel>
+                  <input
+                    id="caption"
+                    type="text"
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    disabled={generating}
+                    placeholder="ex. Soldes -30%"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Brief de style — replié en mode canvas (ne sert qu'à teinter
+                    l'accent et la personnalité quand tu ne donnes pas d'instructions). */}
+                <details open={isStandalone} className="rounded-xl border border-white/10 bg-white/3">
+                  <summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-semibold text-white/55 uppercase tracking-wider select-none hover:text-white/75">
+                    {isStandalone ? 'Brief de la vidéo' : '▸ Brief de style (optionnel)'}
+                  </summary>
+                  <div className="flex flex-col gap-4 p-3 pt-1">
+
                 <div>
                   <FieldLabel
                     htmlFor="topic"
@@ -766,53 +831,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   />
                 </div>
 
-                <div>
-                  <FieldLabel
-                    htmlFor="caption"
-                    optional
-                    hint="Texte d'accroche affiché en gros bas de cadre, mot par mot."
-                  >
-                    Caption
-                  </FieldLabel>
-                  <input
-                    id="caption"
-                    type="text"
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    disabled={generating}
-                    placeholder="ex. Soldes -30%"
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50"
-                  />
-                </div>
-
-                <div>
-                  <FieldLabel
-                    htmlFor="freeform"
-                    optional
-                    hint="L'IA traduit ces instructions en animations par élément (cible par nom : « le bloc prix », « le logo », « tous les éléments »)."
-                  >
-                    Instructions d'animation
-                  </FieldLabel>
-                  <textarea
-                    id="freeform"
-                    value={freeform}
-                    onChange={(e) => setFreeform(e.target.value)}
-                    disabled={generating}
-                    rows={3}
-                    placeholder="ex. effet de carte qui se retourne sur le prix ; le logo balance doucement ; entrée des éléments depuis la gauche en cascade, sortie à droite"
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50 resize-y"
-                  />
-                  <label className="mt-2 flex items-center gap-2 text-xs text-white/60 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={fromScratch}
-                      onChange={(e) => setFromScratch(e.target.checked)}
-                      disabled={generating}
-                      className="accent-indigo-500"
-                    />
-                    Partir de zéro (ne jouer que mes instructions)
-                  </label>
-                </div>
+                  </div>
+                </details>
 
                 <FileDropzone files={files} onChange={setFiles} disabled={generating} />
 
