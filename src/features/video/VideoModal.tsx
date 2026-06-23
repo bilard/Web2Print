@@ -278,11 +278,10 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         customHeight: aspect === 'custom' ? custom.height : undefined,
         targetDurationSec: durationSec,
         objectPresets: objectPresets.length ? objectPresets : undefined,
-        // Robuste au champ : le plan de motion lit TOUT le brief (l'utilisateur
-        // écrit souvent ses instructions d'animation dans « Que doit présenter »,
-        // pas seulement dans « Instructions d'animation »). L'IA extrait l'intention
-        // d'animation où qu'elle soit, et renvoie [] si le brief n'en contient pas.
-        animationPrompt: combinedPrompt || undefined,
+        // Instruction d'animation : le champ dédié EN PRIORITÉ (signal clair, non
+        // dilué), sinon tout le brief en repli (robuste si l'utilisateur a écrit ses
+        // instructions dans « Que doit présenter » plutôt que « Instructions d'animation »).
+        animationPrompt: freeform.trim() || combinedPrompt || undefined,
         fromScratch: fromScratch || undefined,
         source,
         signal: abortRef.current.signal,
@@ -453,15 +452,17 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           targetDurationSec:
             typeof p.targetDurationSec === 'number' ? p.targetDurationSec : undefined,
           objectPresets: objectPresets.length ? objectPresets : undefined,
-          // Robuste au champ : le plan de motion lit tout le brief rejoué.
+          // Champ dédié en priorité, brief rejoué en repli.
           animationPrompt:
+            (p.freeform ?? '').trim() ||
             buildCombinedPrompt({
               topic: p.topic ?? '',
               audience: p.audience ?? undefined,
               goal: p.goal ?? undefined,
               tone: p.tone ?? undefined,
               freeform: p.freeform ?? undefined,
-            }) || undefined,
+            }) ||
+            undefined,
           fromScratch: (p.fromScratch ?? false) || undefined,
           source,
         },

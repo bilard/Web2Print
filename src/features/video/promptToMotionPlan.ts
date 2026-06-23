@@ -163,7 +163,9 @@ RÈGLES :
   CONCRETS, ou une directive target="all" avec un \`stagger\`. Tout doit être déterministe.
 - Respecte les directions demandées (entrée gauche → direction:"left" ; sortie droite → direction:"right").
 - N'invente pas d'objets : n'utilise que des ids présents dans l'inventaire (ou "all").
-- Si l'instruction est vide ou non pertinente (ex. un simple sujet sans intention d'animation), renvoie directives: [].
+- Dès que l'INSTRUCTION contient une intention d'animation (entrer, sortir, glisser, cascade, rebond, pulser,
+  tourner, 3D, couleur, etc.), tu DOIS produire au moins une directive. Ne renvoie un tableau vide QUE si
+  l'instruction ne décrit STRICTEMENT aucune animation. En cas de doute, produis des directives.
 - Recopie \`fromScratch\` depuis le contexte fourni.
 
 FORMAT DE SORTIE — réponds UNIQUEMENT par cet objet JSON, rien d'autre :
@@ -198,17 +200,29 @@ export async function interpretPromptToMotionPlan(args: {
   const inventoryText = args.inventory
     .map((o) => `- id=${o.id} · "${o.label}" · ${o.type}`)
     .join('\n')
-  const full =
+  const base =
     SYSTEM_PROMPT +
     `\n[fromScratch=${args.fromScratch}]\n\n[INVENTAIRE]\n${inventoryText}\n\n[INSTRUCTION]\n${prompt}\n`
-  try {
+  const validIds = args.inventory.map((o) => o.id)
+  const callOnce = async (extra: string): Promise<MotionPlan> => {
     const raw = await generateJson<z.infer<typeof LooseMotionPlanSchema>>({
-      prompt: full,
+      prompt: base + extra,
       schema: LooseMotionPlanSchema,
       schemaForGemini: SCHEMA_FOR_GEMINI,
       version: 'video-motion-plan-v1',
     })
-    const plan = repairMotionPlan(raw, args.inventory.map((o) => o.id))
+    return repairMotionPlan(raw, validIds)
+  }
+  try {
+    let plan = await callOnce('')
+    // Le modèle renvoie PARFOIS un tableau vide pour une instruction pourtant
+    // claire (il considère à tort que c'est « juste un sujet »). Une relance
+    // forcée corrige l'intermittence.
+    if (plan.directives.length === 0) {
+      plan = await callOnce(
+        `\n\nIMPORTANT : l'INSTRUCTION ci-dessus DÉCRIT bien une animation. Tu DOIS produire au moins une directive concrète (pour « tous les éléments » utilise target:"all"). Ne renvoie JAMAIS un tableau "directives" vide ici.`,
+      )
+    }
     return { ...plan, fromScratch: args.fromScratch }
   } catch (err) {
     console.warn('Interprétation motion plan échouée, plan vide :', err)
