@@ -1,14 +1,18 @@
 import { useState } from 'react'
-import { Play, Pencil, Trash2, Library, Loader2, Check, X } from 'lucide-react'
+import { Play, Pencil, Trash2, Library, Loader2, Check, X, Save } from 'lucide-react'
 import type { VideoPrompt } from './useVideoPromptLibrary'
 
 interface Props {
   prompts: VideoPrompt[]
   loading: boolean
+  /** ID du prompt actuellement chargé dans le formulaire (carte « active »). */
+  editingId: string | null
   onReplay: (prompt: VideoPrompt) => void
   onEdit: (prompt: VideoPrompt) => void
   onDelete: (id: string) => Promise<void>
   onRename: (id: string, title: string) => Promise<void>
+  /** Réécrit cette entrée depuis le formulaire courant (uniquement la carte chargée). */
+  onUpdate: (id: string) => void | Promise<void>
 }
 
 function previewLine(prompt: VideoPrompt): string {
@@ -36,24 +40,36 @@ function formatRelative(prompt: VideoPrompt): string {
 export function VideoPromptLibrary({
   prompts,
   loading,
+  editingId,
   onReplay,
   onEdit,
   onDelete,
   onRename,
+  onUpdate,
 }: Props) {
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [pendingId, setPendingId] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const startRename = (p: VideoPrompt) => {
-    setEditingId(p.id)
+    setRenamingId(p.id)
     setEditingTitle(p.title ?? p.topic.slice(0, 60))
   }
 
   const submitRename = async () => {
-    if (!editingId) return
-    await onRename(editingId, editingTitle)
-    setEditingId(null)
+    if (!renamingId) return
+    await onRename(renamingId, editingTitle)
+    setRenamingId(null)
+  }
+
+  const handleUpdate = async (id: string) => {
+    setUpdatingId(id)
+    try {
+      await onUpdate(id)
+    } finally {
+      setUpdatingId(null)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -90,14 +106,20 @@ export function VideoPromptLibrary({
       ) : (
         <ul className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
           {prompts.map((p) => {
-            const isEditing = editingId === p.id
+            const isRenaming = renamingId === p.id
             const isPending = pendingId === p.id
+            const isLoaded = editingId === p.id
             return (
               <li
                 key={p.id}
-                className="group rounded-lg border border-white/5 bg-white/3 hover:bg-white/5 hover:border-white/10 transition-colors p-2.5"
+                className={
+                  'group rounded-lg border transition-colors p-2.5 ' +
+                  (isLoaded
+                    ? 'border-indigo-500/50 bg-indigo-500/10'
+                    : 'border-white/5 bg-white/3 hover:bg-white/5 hover:border-white/10')
+                }
               >
-                {isEditing ? (
+                {isRenaming ? (
                   <div className="flex items-center gap-1">
                     <input
                       autoFocus
@@ -105,7 +127,7 @@ export function VideoPromptLibrary({
                       onChange={(e) => setEditingTitle(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') void submitRename()
-                        if (e.key === 'Escape') setEditingId(null)
+                        if (e.key === 'Escape') setRenamingId(null)
                       }}
                       className="flex-1 bg-white/5 border border-indigo-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none"
                     />
@@ -117,7 +139,7 @@ export function VideoPromptLibrary({
                       <Check className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={() => setEditingId(null)}
+                      onClick={() => setRenamingId(null)}
                       className="p-1.5 rounded hover:bg-white/10 text-white/50"
                       aria-label="Annuler"
                     >
@@ -165,10 +187,20 @@ export function VideoPromptLibrary({
                       <button
                         onClick={() => onEdit(p)}
                         className="flex items-center justify-center text-[11px] bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 rounded px-2 py-1"
-                        title="Modifier le prompt"
+                        title="Charger dans le formulaire"
                       >
                         <Pencil className="w-3 h-3" />
                       </button>
+                      {isLoaded && (
+                        <button
+                          onClick={() => void handleUpdate(p.id)}
+                          disabled={updatingId === p.id}
+                          className="flex items-center justify-center text-[11px] bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded px-2 py-1 disabled:opacity-40"
+                          title="Mettre à jour ce modèle avec le formulaire actuel"
+                        >
+                          {updatingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                        </button>
+                      )}
                       <button
                         onClick={() => void handleDelete(p.id)}
                         disabled={isPending}

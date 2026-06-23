@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { Film, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Eraser } from 'lucide-react'
+import { Film, Loader2, Sparkles, AlertTriangle, HelpCircle, Square, Image as ImageIcon, Eraser, Save, Tag } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { toast } from 'sonner'
 import { useGenerateVideo, type GenerateVideoSource } from './useGenerateVideo'
@@ -11,7 +11,7 @@ import { DurationPicker, type DurationChoice, resolveDurationSec } from './Durat
 import { HyperframesPlayer } from './HyperframesPlayer'
 import { FileDropzone } from './FileDropzone'
 import { VideoPromptLibrary } from './VideoPromptLibrary'
-import { useVideoPromptLibrary, type VideoPrompt } from './useVideoPromptLibrary'
+import { useVideoPromptLibrary, type VideoPrompt, type VideoPromptInput } from './useVideoPromptLibrary'
 import { useEnrichComposition } from './useEnrichComposition'
 import type { AspectFormat } from './types'
 import { detectAspect } from './types'
@@ -158,6 +158,8 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   const [custom, setCustom] = useState<CustomDims>({ width: 1080, height: 1080 })
   const [duration, setDuration] = useState<DurationChoice>(10)
   const [customDurationSec, setCustomDurationSec] = useState<number>(10)
+  /** Nom du modèle pour la bibliothèque (saisi par l'utilisateur). */
+  const [promptName, setPromptName] = useState('')
 
   const [result, setResult] = useState<ResultState | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -229,28 +231,64 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     return aspect
   }
 
-  /** Persiste le prompt dans la bibliothèque (fire-and-forget). Si on rejoue
-   *  un prompt existant, on bump juste son `lastUsedAt`. */
-  const persistPromptInLibrary = (resolvedAspect: AspectFormat | undefined, durationSec: number) => {
+  /** Rassemble l'état du formulaire en entrée de bibliothèque. `topic` est
+   *  toujours non vide (dérivé des instructions si le sujet est laissé vide). */
+  const buildPromptInput = (
+    resolvedAspect: AspectFormat | undefined,
+    durationSec: number,
+  ): VideoPromptInput => ({
+    topic: topic.trim() || freeform.trim().slice(0, 80),
+    audience,
+    goal,
+    tone,
+    freeform,
+    brand,
+    caption,
+    aspect: resolvedAspect,
+    targetDurationSec: durationSec,
+    fromScratch: effectiveFromScratch,
+    title: promptName,
+  })
+
+  /** Persiste le prompt dans la bibliothèque à la génération (fire-and-forget).
+   *  Si on rejoue/édite un prompt existant, on bump juste son `lastUsedAt` ;
+   *  sinon on crée une entrée ET on la « charge » (editingPromptId) pour ne pas
+   *  empiler de doublons aux générations suivantes. */
+  const persistPromptInLibrary = async (resolvedAspect: AspectFormat | undefined, durationSec: number) => {
     if (!topic.trim() && !freeform.trim()) return
     if (editingPromptId) {
       void promptLib.touchPrompt(editingPromptId)
       return
     }
-    void promptLib.savePrompt({
-      // Titre du template : le sujet, sinon les instructions d'animation (le
-      // champ « Que doit présenter » est optionnel quand on donne des instructions).
-      topic: topic.trim() || freeform.trim().slice(0, 80),
-      audience,
-      goal,
-      tone,
-      freeform,
-      brand,
-      caption,
-      aspect: resolvedAspect,
-      targetDurationSec: durationSec,
-      fromScratch: effectiveFromScratch,
-    })
+    try {
+      const id = await promptLib.savePrompt(buildPromptInput(resolvedAspect, durationSec))
+      setEditingPromptId(id)
+    } catch {
+      // best-effort
+    }
+  }
+
+  /** Enregistre (nouveau) ou met à jour (existant) le modèle courant, déclenché
+   *  par le bouton dédié du formulaire ou de la carte bibliothèque. */
+  const handleSaveOrUpdate = async (targetId?: string) => {
+    if (!topic.trim() && !freeform.trim()) {
+      toast.error('Renseigne au moins un sujet ou des instructions avant d\'enregistrer')
+      return
+    }
+    const input = buildPromptInput(resolveAspect(), resolveDurationSec(duration, customDurationSec))
+    const id = targetId ?? editingPromptId
+    try {
+      if (id) {
+        await promptLib.updatePrompt(id, input)
+        toast.success('Modèle mis à jour')
+      } else {
+        const newId = await promptLib.savePrompt(input)
+        setEditingPromptId(newId)
+        toast.success('Modèle enregistré dans la bibliothèque')
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Échec de l\'enregistrement')
+    }
   }
 
   const handleGenerate = () => {
@@ -266,7 +304,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     const combinedPrompt = buildCombinedPrompt({ topic, audience, goal, tone, freeform })
     const resolved = resolveAspect()
     const durationSec = resolveDurationSec(duration, customDurationSec)
-    persistPromptInLibrary(resolved, durationSec)
+    void persistPromptInLibrary(resolved, durationSec)
 
     abortRef.current = new AbortController()
 
@@ -330,11 +368,13 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
 
   const hasContentToClear =
     !!topic || !!audience || !!goal || !!tone || !!brand || !!caption || !!freeform ||
+    !!promptName ||
     files.length > 0 ||
     aspect !== 'auto' || duration !== 10 ||
     !!editingPromptId
 
   const handleClear = () => {
+    setPromptName('')
     setTopic('')
     setAudience('')
     setGoal('')
@@ -408,6 +448,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
   /** Préremplit le formulaire depuis un prompt sauvé. Si `autoRun` est vrai,
    *  déclenche aussi la génération immédiatement (action "Rejouer"). */
   const applyPrompt = (p: VideoPrompt, autoRun: boolean) => {
+    setPromptName(p.title ?? '')
     setTopic(p.topic ?? '')
     setAudience(p.audience ?? '')
     setGoal(p.goal ?? '')
@@ -838,7 +879,30 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   </div>
                 )}
 
-                <div className="flex items-stretch gap-2 sticky bottom-0 bg-surface pt-2 -mx-5 px-5 pb-1">
+                <div className="sticky bottom-0 bg-surface pt-2 -mx-5 px-5 pb-1 space-y-2">
+                  {!generating && (
+                    <div className="flex items-stretch gap-2">
+                      <div className="relative flex-1">
+                        <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+                        <input
+                          value={promptName}
+                          onChange={(e) => setPromptName(e.target.value)}
+                          placeholder={editingPromptId ? 'Nom du modèle chargé' : 'Nom du modèle (optionnel)'}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/60 focus:outline-none"
+                        />
+                      </div>
+                      <button
+                        onClick={() => void handleSaveOrUpdate()}
+                        disabled={!topic.trim() && !freeform.trim()}
+                        className="flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed border border-white/10 text-white/80 hover:text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                        title={editingPromptId ? 'Mettre à jour le modèle chargé dans la bibliothèque' : 'Enregistrer comme nouveau modèle'}
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        {editingPromptId ? 'Mettre à jour' : 'Enregistrer'}
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-stretch gap-2">
                   <button
                     onClick={handleGenerate}
                     disabled={generating}
@@ -872,6 +936,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                       Stop
                     </button>
                   )}
+                  </div>
                 </div>
               </>
             )}
@@ -888,10 +953,12 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
             <VideoPromptLibrary
               prompts={promptLib.prompts}
               loading={promptLib.loading}
+              editingId={editingPromptId}
               onReplay={(p) => applyPrompt(p, true)}
               onEdit={(p) => applyPrompt(p, false)}
               onDelete={promptLib.deletePrompt}
               onRename={promptLib.renamePrompt}
+              onUpdate={(id) => handleSaveOrUpdate(id)}
             />
           </div>
         )}

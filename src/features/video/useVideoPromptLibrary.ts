@@ -65,6 +65,25 @@ function nullify<T extends string | undefined>(v: T): string | null {
   return t.length > 0 ? t : null
 }
 
+/** Mapping commun create/update : chaque champ vidé est écrit à `null` (pas
+ *  omis) pour qu'une mise à jour efface réellement une valeur précédente.
+ *  N'inclut PAS createdAt/lastUsedAt (gérés par l'appelant). */
+function buildPromptDoc(input: VideoPromptInput) {
+  return {
+    topic: input.topic.trim(),
+    audience: nullify(input.audience),
+    goal: nullify(input.goal),
+    tone: nullify(input.tone),
+    freeform: nullify(input.freeform),
+    brand: nullify(input.brand),
+    caption: nullify(input.caption),
+    aspect: input.aspect ?? null,
+    targetDurationSec: typeof input.targetDurationSec === 'number' ? input.targetDurationSec : null,
+    fromScratch: input.fromScratch === true,
+    title: nullify(input.title),
+  }
+}
+
 export function useVideoPromptLibrary() {
   const user = useAuthStore((s) => s.user)
   const [prompts, setPrompts] = useState<VideoPrompt[]>([])
@@ -111,21 +130,23 @@ export function useVideoPromptLibrary() {
     const id = makeId()
     const ref = doc(db, collectionPath, id)
     await setDoc(ref, {
-      topic: trimmedTopic,
-      audience: nullify(input.audience),
-      goal: nullify(input.goal),
-      tone: nullify(input.tone),
-      freeform: nullify(input.freeform),
-      brand: nullify(input.brand),
-      caption: nullify(input.caption),
-      aspect: input.aspect ?? null,
-      targetDurationSec: typeof input.targetDurationSec === 'number' ? input.targetDurationSec : null,
-      fromScratch: input.fromScratch === true,
-      title: nullify(input.title),
+      ...buildPromptDoc({ ...input, topic: trimmedTopic }),
       createdAt: serverTimestamp(),
       lastUsedAt: serverTimestamp(),
     })
     return id
+  }
+
+  /** Réécrit une entrée existante depuis le formulaire courant (préserve
+   *  `createdAt`, bump `lastUsedAt`). « Modifier l'existant » de la biblio. */
+  const updatePrompt = async (id: string, input: VideoPromptInput): Promise<void> => {
+    if (!collectionPath) throw new Error('Utilisateur non connecté')
+    const trimmedTopic = input.topic.trim()
+    if (!trimmedTopic) throw new Error('Le sujet est requis')
+    await updateDoc(doc(db, collectionPath, id), {
+      ...buildPromptDoc({ ...input, topic: trimmedTopic }),
+      lastUsedAt: serverTimestamp(),
+    })
   }
 
   const touchPrompt = async (id: string): Promise<void> => {
@@ -147,5 +168,5 @@ export function useVideoPromptLibrary() {
     await updateDoc(doc(db, collectionPath, id), { title: nullify(title) })
   }
 
-  return { prompts, loading, savePrompt, touchPrompt, deletePrompt, renamePrompt }
+  return { prompts, loading, savePrompt, updatePrompt, touchPrompt, deletePrompt, renamePrompt }
 }
