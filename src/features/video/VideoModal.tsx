@@ -242,6 +242,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
       caption,
       aspect: resolvedAspect,
       targetDurationSec: durationSec,
+      fromScratch,
     })
   }
 
@@ -406,6 +407,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
     setGoal(p.goal ?? '')
     setTone(p.tone ?? '')
     setFreeform(p.freeform ?? '')
+    setFromScratch(p.fromScratch ?? false)
     setBrand(p.brand ?? '')
     setCaption(p.caption ?? '')
     setAspect(aspectChoiceFromFormat(p.aspect))
@@ -460,7 +462,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
               tone: p.tone ?? undefined,
               freeform: p.freeform ?? undefined,
             }) || undefined,
-          fromScratch: fromScratch || undefined,
+          fromScratch: (p.fromScratch ?? false) || undefined,
           source,
         },
         {

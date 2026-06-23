@@ -31,6 +31,9 @@ export interface VideoPrompt {
   aspect?: AspectFormat | null
   /** Durée totale cible en secondes (3-60). */
   targetDurationSec?: number | null
+  /** Mode « Partir de zéro » (ne joue que les directives) — persisté pour
+   *  que le rejeu du template reproduise exactement l'animation. */
+  fromScratch?: boolean | null
   /** Nom personnalisé (sinon dérivé du topic). */
   title?: string | null
   createdAt: Timestamp | null
@@ -47,6 +50,7 @@ export interface VideoPromptInput {
   caption?: string
   aspect?: AspectFormat
   targetDurationSec?: number
+  fromScratch?: boolean
   title?: string
 }
 
@@ -116,6 +120,7 @@ export function useVideoPromptLibrary() {
       caption: nullify(input.caption),
       aspect: input.aspect ?? null,
       targetDurationSec: typeof input.targetDurationSec === 'number' ? input.targetDurationSec : null,
+      fromScratch: input.fromScratch === true,
       title: nullify(input.title),
       createdAt: serverTimestamp(),
       lastUsedAt: serverTimestamp(),
