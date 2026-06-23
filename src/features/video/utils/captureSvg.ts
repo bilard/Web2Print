@@ -95,40 +95,40 @@ async function uploadSvgToStorage(
   }
 }
 
-export async function captureCurrentPageSvg(): Promise<SvgCaptureResult> {
-  // ── Couche B-fidèle : avant la sérialisation, on injecte un `id` stable sur
-  //    chaque objet Fabric qui porte une animation par-objet « cuisable », pour
-  //    que le template design-reveal puisse cibler son `<g>` et rejouer le preset.
-  //    (Fabric v7 émet `id="..."` via getSvgCommons dès que l'objet a un `id`.)
+export async function captureCurrentPageSvg(
+  opts?: { tagIds?: string[] },
+): Promise<SvgCaptureResult> {
   const storeAnims = collectStoreAnims(useEditorStore.getState().canvasObjects)
   const objectAnimations: CapturedObjectAnim[] = []
   const restores: { obj: FabricLike; prev: unknown }[] = []
   const canvas = globalFabricCanvas as unknown as { getObjects(): FabricLike[] } | null
 
-  if (canvas && storeAnims.length > 0) {
+  // Ids à taguer : objets à preset (pour objectAnimations) + ids cités par le plan de motion.
+  const presetIds = new Set(storeAnims.map((a) => a.id))
+  const extraIds = (opts?.tagIds ?? []).filter((id) => !presetIds.has(id))
+  const allToTag: { id: string; config?: Animation3DConfig }[] = [
+    ...storeAnims.map((a) => ({ id: a.id, config: a.config })),
+    ...extraIds.map((id) => ({ id })),
+  ]
+
+  if (canvas && allToTag.length > 0) {
     const roots = canvas.getObjects()
-    for (const a of storeAnims) {
+    for (const a of allToTag) {
       const fobj = findFabricById(roots, a.id)
       if (!fobj) continue
       const svgId = ANIM_ID_PREFIX + a.id
       restores.push({ obj: fobj, prev: fobj.id })
       fobj.id = svgId
-      objectAnimations.push({ id: svgId, config: a.config })
+      if (a.config) objectAnimations.push({ id: svgId, config: a.config })
     }
   }
 
   try {
-    // cropToContent=false : on garde le viewBox = canvas Fabric ENTIER, ce qui
-    // préserve la marge blanche naturelle autour du contenu du projet. C'est
-    // ce que l'utilisateur attend (l'animation montre le projet tel quel,
-    // marge incluse, comme dans l'éditeur — pas cadré au contenu).
-    // `embedFonts` : embed les fonts custom en `@font-face` base64.
     const result = await generateCurrentPageSvg({ cropToContent: false, embedFonts: true })
     if (!result) throw new Error('Canvas non disponible')
     const uploaded = await uploadSvgToStorage(result.svg, result.width, result.height)
     return { ...uploaded, objectAnimations }
   } finally {
-    // Restaure les ids d'origine (ne pas polluer le canvas live).
     for (const r of restores) r.obj.id = r.prev
   }
 }
