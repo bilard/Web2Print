@@ -277,7 +277,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
         customHeight: aspect === 'custom' ? custom.height : undefined,
         targetDurationSec: durationSec,
         objectPresets: objectPresets.length ? objectPresets : undefined,
-        animationPrompt: freeform.trim() || undefined,
+        // Robuste au champ : le plan de motion lit TOUT le brief (l'utilisateur
+        // écrit souvent ses instructions d'animation dans « Que doit présenter »,
+        // pas seulement dans « Instructions d'animation »). L'IA extrait l'intention
+        // d'animation où qu'elle soit, et renvoie [] si le brief n'en contient pas.
+        animationPrompt: combinedPrompt || undefined,
         fromScratch: fromScratch || undefined,
         source,
         signal: abortRef.current.signal,
@@ -447,7 +451,15 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
           targetDurationSec:
             typeof p.targetDurationSec === 'number' ? p.targetDurationSec : undefined,
           objectPresets: objectPresets.length ? objectPresets : undefined,
-          animationPrompt: (p.freeform ?? '').trim() || undefined,
+          // Robuste au champ : le plan de motion lit tout le brief rejoué.
+          animationPrompt:
+            buildCombinedPrompt({
+              topic: p.topic ?? '',
+              audience: p.audience ?? undefined,
+              goal: p.goal ?? undefined,
+              tone: p.tone ?? undefined,
+              freeform: p.freeform ?? undefined,
+            }) || undefined,
           fromScratch: fromScratch || undefined,
           source,
         },
