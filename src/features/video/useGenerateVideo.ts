@@ -13,6 +13,8 @@ import {
   DEFAULT_COMPOSITION,
   type Composition,
 } from './promptToComposition'
+import { interpretPromptToMotionPlan, buildSceneInventory, type MotionPlan } from './promptToMotionPlan'
+import { useEditorStore } from '@/stores/editor.store'
 import type { AspectFormat } from './types'
 
 export type GenerateVideoSource = 'canvas' | 'standalone'
@@ -60,6 +62,10 @@ export interface GenerateVideoInput {
    *  Mode canvas (B-robuste) : la Vidéo IA s'en inspire pour sa personnalité de
    *  mouvement plutôt que de les ignorer. */
   objectPresets?: string[]
+  /** Prompt de motion designer (mode canvas) → directives par élément. */
+  animationPrompt?: string
+  /** Contrôle total : ne joue QUE les directives, saute la chorégraphie globale. */
+  fromScratch?: boolean
   customWidth?: number
   customHeight?: number
   /** Durée totale souhaitée pour l'animation en secondes (3-60).
@@ -96,6 +102,7 @@ export interface GenerateVideoStep {
   height?: number
   /** Animations par-objet rejouées dans la vidéo (B-fidèle). */
   objectAnimations?: CapturedObjectAnim[]
+  motionPlan?: MotionPlan
 }
 
 export interface GenerateVideoResult {
@@ -122,6 +129,8 @@ export interface GenerateVideoResult {
   skippedFiles?: FileExtractionSkip[]
   /** Mode canvas : animations par-objet rejouées dans la vidéo (B-fidèle). */
   objectAnimations?: CapturedObjectAnim[]
+  /** Mode canvas : plan de motion designer rejoué dans la vidéo. */
+  motionPlan?: MotionPlan
 }
 
 function appendFileContext(prompt: string | undefined, context: string): string | undefined {
@@ -160,7 +169,24 @@ export function useGenerateVideo(opts?: {
 
       if (source === 'canvas') {
         opts?.onStep?.({ step: 'capturing', source })
-        const capture = await captureCurrentPageSvg()
+
+        // ── Plan de motion designer (avant capture, pour savoir quels objets taguer) ──
+        let motionPlan: MotionPlan | undefined
+        let tagIds: string[] = []
+        const animPrompt = (input.animationPrompt ?? '').trim()
+        if (animPrompt) {
+          const inventory = buildSceneInventory(useEditorStore.getState().canvasObjects)
+          motionPlan = await interpretPromptToMotionPlan({
+            prompt: animPrompt,
+            inventory,
+            fromScratch: input.fromScratch === true,
+          })
+          const cited = motionPlan.directives.map((d) => d.target)
+          const wantsAll = cited.includes('all')
+          tagIds = wantsAll ? inventory.map((o) => o.id) : cited.filter((t) => t !== 'all')
+        }
+
+        const capture = await captureCurrentPageSvg({ tagIds })
         const aspect = input.aspect ?? detectAspect(capture.width, capture.height)
 
         const canvasDims =
@@ -229,6 +255,7 @@ export function useGenerateVideo(opts?: {
           width: canvasDims.width,
           height: canvasDims.height,
           objectAnimations,
+          motionPlan,
         })
 
         return {
@@ -243,6 +270,7 @@ export function useGenerateVideo(opts?: {
           fileContext: fileContext || undefined,
           skippedFiles: skippedFiles.length ? skippedFiles : undefined,
           objectAnimations,
+          motionPlan,
         }
       }
 
