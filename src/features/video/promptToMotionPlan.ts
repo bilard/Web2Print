@@ -146,6 +146,38 @@ const SCHEMA_FOR_GEMINI = {
   },
 }
 
+/** Filet DÉTERMINISTE pour les instructions d'animation les plus courantes
+ *  (entrée/sortie directionnelles, cascade). Garantit un résultat même quand le
+ *  LLM renvoie un plan vide par intermittence. Cible toujours `all`. Retourne []
+ *  si l'instruction ne matche aucun motif connu. */
+function keywordFallback(prompt: string): Directive[] {
+  const p = (prompt || '').toLowerCase()
+  const DIRS: Array<[RegExp, MotionDirection]> = [
+    [/\bgauche\b/, 'left'], [/\bdroite\b/, 'right'], [/\bhaut\b/, 'top'], [/\bbas\b/, 'bottom'],
+  ]
+  const findDir = (seg: string): MotionDirection | null => {
+    for (const [re, d] of DIRS) if (re.test(seg)) return d
+    return null
+  }
+  const entryVerb = /\b(entr|arriv|rentr|appara|surg|d[ée]boul)/.test(p)
+  const exitVerb = /\b(sort|quitt|dispar|repart|s'en vont|s'en va)/.test(p)
+  const cascade = /\b(cascade|d[ée]cal|un\s+(à|a|par)\s+un|tour\s+à\s+tour|stagger|l'un apr[èe]s l'autre)\b/.test(p)
+  // On coupe au 1er verbe de sortie pour associer la bonne direction à chaque phase.
+  const cut = p.search(/\b(sort|quitt|dispar|repart)/)
+  const entrySeg = cut > 0 ? p.slice(0, cut) : p
+  const exitSeg = cut > 0 ? p.slice(cut) : ''
+  const out: Directive[] = []
+  if (entryVerb) {
+    const d: Directive = { target: 'all', phase: 'entry', effect: 'slide-in', direction: findDir(entrySeg) ?? 'left' }
+    if (cascade) d.stagger = 0.15
+    out.push(d)
+  }
+  if (exitVerb) {
+    out.push({ target: 'all', phase: 'exit', effect: 'slide-out', direction: findDir(exitSeg) ?? 'right' })
+  }
+  return out
+}
+
 const SYSTEM_PROMPT = `Tu es un motion designer. Tu transformes une instruction d'animation en plan structuré
 de directives, appliquées à un design existant (capture SVG). Tu reçois l'INVENTAIRE des objets du design
 (id + libellé + type). Tu DOIS cibler chaque directive par un \`target\` = un id de l'inventaire, ou "all".
@@ -213,19 +245,25 @@ export async function interpretPromptToMotionPlan(args: {
     })
     return repairMotionPlan(raw, validIds)
   }
+  const force =
+    `\n\nIMPORTANT : l'INSTRUCTION ci-dessus DÉCRIT bien une animation. Tu DOIS produire au moins une directive concrète (pour « tous les éléments » utilise target:"all"). Ne renvoie JAMAIS un tableau "directives" vide ici.`
+  let plan: MotionPlan = { fromScratch: args.fromScratch, directives: [] }
   try {
-    let plan = await callOnce('')
     // Le modèle renvoie PARFOIS un tableau vide pour une instruction pourtant
-    // claire (il considère à tort que c'est « juste un sujet »). Une relance
-    // forcée corrige l'intermittence.
-    if (plan.directives.length === 0) {
-      plan = await callOnce(
-        `\n\nIMPORTANT : l'INSTRUCTION ci-dessus DÉCRIT bien une animation. Tu DOIS produire au moins une directive concrète (pour « tous les éléments » utilise target:"all"). Ne renvoie JAMAIS un tableau "directives" vide ici.`,
-      )
+    // claire (intermittence). On tente jusqu'à 2 relances forcées.
+    plan = await callOnce('')
+    for (let i = 0; i < 2 && plan.directives.length === 0; i++) {
+      plan = await callOnce(force)
     }
-    return { ...plan, fromScratch: args.fromScratch }
   } catch (err) {
-    console.warn('Interprétation motion plan échouée, plan vide :', err)
-    return { fromScratch: args.fromScratch, directives: [] }
+    console.warn('Interprétation motion plan échouée :', err)
   }
+  // Filet DÉTERMINISTE : si le LLM n'a rien produit (vide ou erreur), on dérive
+  // les directives des mots-clés courants — garantit que « entrent gauche /
+  // sortent droite / cascade » marche À TOUS LES COUPS, sans dépendre du LLM.
+  if (plan.directives.length === 0) {
+    const fb = keywordFallback(prompt)
+    if (fb.length > 0) plan = { fromScratch: args.fromScratch, directives: fb }
+  }
+  return { ...plan, fromScratch: args.fromScratch }
 }
