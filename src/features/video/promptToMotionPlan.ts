@@ -116,27 +116,30 @@ export function repairMotionPlan(raw: unknown, validIds: string[]): MotionPlan {
   return { fromScratch: r.fromScratch === true, directives }
 }
 
+// responseSchema STRUCTURÉ mais prudent : on garde la forme (object → directives
+// array → items) pour guider le modèle, MAIS `effect` est un `string` LIBRE (pas
+// d'enum) car un enum de 29 valeurs déclenche un 400 INVALID_ARGUMENT côté Vertex
+// (le reste du code n'utilise que des enums ≤8). Les valeurs d'effet sont dictées
+// dans le SYSTEM_PROMPT ; `repairMotionPlan` reste l'unique autorité (clamp/drop
+// des effets/cibles invalides).
 const SCHEMA_FOR_GEMINI = {
   type: 'object',
-  required: ['fromScratch', 'directives'],
   properties: {
     fromScratch: { type: 'boolean' },
     directives: {
       type: 'array',
-      maxItems: 24,
       items: {
         type: 'object',
-        required: ['target', 'phase', 'effect'],
         properties: {
-          target: { type: 'string', description: "id d'objet de l'inventaire, ou \"all\" pour tous les éléments" },
+          target: { type: 'string', description: "id d'objet de l'inventaire, ou \"all\"" },
           phase: { type: 'string', enum: [...PHASES] },
-          effect: { type: 'string', enum: [...EFFECTS] },
-          intensity: { type: 'number', description: '0..1 (léger≈0.3, moyen≈0.6, franc≈1)' },
+          effect: { type: 'string', description: 'un des effets autorisés listés dans les instructions' },
+          intensity: { type: 'number' },
           direction: { type: 'string', enum: [...DIRECTIONS] },
-          color: { type: 'string', description: 'hex #RRGGBB (glow / color-cycle)' },
-          startSec: { type: 'number', description: 'décalage de départ en secondes' },
-          durationSec: { type: 'number', description: "durée d'un cycle / de l'entrée en secondes" },
-          stagger: { type: 'number', description: 'cascade entre éléments quand target=all (secondes)' },
+          color: { type: 'string' },
+          startSec: { type: 'number' },
+          durationSec: { type: 'number' },
+          stagger: { type: 'number' },
         },
       },
     },
@@ -160,10 +163,27 @@ RÈGLES :
   CONCRETS, ou une directive target="all" avec un \`stagger\`. Tout doit être déterministe.
 - Respecte les directions demandées (entrée gauche → direction:"left" ; sortie droite → direction:"right").
 - N'invente pas d'objets : n'utilise que des ids présents dans l'inventaire (ou "all").
-- Si l'instruction est vide ou non pertinente, renvoie directives: [].
+- Si l'instruction est vide ou non pertinente (ex. un simple sujet sans intention d'animation), renvoie directives: [].
 - Recopie \`fromScratch\` depuis le contexte fourni.
 
-Réponds UNIQUEMENT par le JSON.
+FORMAT DE SORTIE — réponds UNIQUEMENT par cet objet JSON, rien d'autre :
+{ "fromScratch": false, "directives": [
+  { "target": "<id ou 'all'>", "phase": "entry|loop|exit", "effect": "<effet>",
+    "intensity": 0.6, "direction": "left|right|top|bottom", "color": "#RRGGBB",
+    "startSec": 0, "durationSec": 0.8, "stagger": 0.15 }
+] }
+(target, phase, effect sont OBLIGATOIRES ; les autres champs sont optionnels — omets-les si inutiles.)
+
+EFFETS AUTORISÉS (n'utilise QUE ceux-ci) :
+- entry : slide-in, fade-in, scale-in, blur-in, drop-in, fly-in, flip-in, door-in, fold-in, depth-in
+- loop  : pulse, bounce, wave, float, wiggle, color-cycle, glow, vibrate, tilt3d, swing3d, spin3d, flip3d, wobble3d, depth-pop, coin3d
+- exit  : slide-out, fade-out, scale-out, flip-out
+
+EXEMPLE — pour « tous les éléments entrent depuis la gauche en cascade, sortent à droite » :
+{ "fromScratch": false, "directives": [
+  { "target": "all", "phase": "entry", "effect": "slide-in", "direction": "left", "stagger": 0.15 },
+  { "target": "all", "phase": "exit", "effect": "slide-out", "direction": "right" }
+] }
 
 INVENTAIRE + INSTRUCTION :
 `
