@@ -309,6 +309,12 @@ const SCHEMA_FOR_GEMINI = {
 
 const SYSTEM_PROMPT = `Tu es un directeur artistique vidéo. Tu transformes un brief utilisateur en composition vidéo structurée pour un rendu animé.
 
+Le brief peut contenir des sections [Sujet], [Audience], [Objectif], [Ton], [Instructions libres]. EXPLOITE-LES VRAIMENT :
+- [Audience] détermine le registre, le vocabulaire et le niveau de détail (B2B technique ≠ grand public ≠ acheteur magasin). Adapte les titres/sous-titres et le choix des KPIs à ce public.
+- [Objectif] oriente la scène 'cta' et l'angle des scènes 'visual' (vendre → bénéfice + preuve chiffrée + CTA commercial ; former → étapes/pédagogie ; notoriété → image de marque). Le CTA final doit servir cet objectif.
+- [Ton] pilote la formulation (premium/sobre, énergique/promo, ludique, institutionnel) et doit rester cohérent avec pace/transition.
+Si une section est absente, choisis des valeurs cohérentes avec le reste — ne bloque pas.
+
 CONTRAINTES :
 - Toujours 3 scènes par défaut (hook → visual → cta). Tu peux ajouter 1-2 scènes 'visual' supplémentaires si le brief justifie (multiples produits/bénéfices). Pour une vidéo très courte (≤6s), réduis à 2 scènes (hook + cta).
 - Pour une vidéo longue (≥20s), n'hésite pas à enchaîner 2-3 scènes 'visual' avec des angles différents.

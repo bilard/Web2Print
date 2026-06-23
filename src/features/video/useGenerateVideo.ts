@@ -2,7 +2,12 @@ import { useMutation } from '@tanstack/react-query'
 import { captureCurrentPageSvg } from './utils/captureSvg'
 import { extractBriefContextFromFiles, type FileExtractionSkip } from './utils/extractBriefContextFromFiles'
 import { detectAspect } from './types'
-import { interpretPromptToStyleConfig, DEFAULT_STYLE_CONFIG, type StyleConfig } from './promptToStyleConfig'
+import {
+  interpretPromptToStyleConfig,
+  applyMotionHeuristic,
+  DEFAULT_STYLE_CONFIG,
+  type StyleConfig,
+} from './promptToStyleConfig'
 import {
   interpretPromptToComposition,
   DEFAULT_COMPOSITION,
@@ -191,6 +196,9 @@ export function useGenerateVideo(opts?: {
             styleConfig = await interpretPromptToStyleConfig(enrichedPrompt.trim())
           } catch (err) {
             console.warn('Interprétation Gemini échouée, fallback styleConfig par défaut:', err)
+            // Même en fallback, on applique le filet keyword → motion pour que le
+            // brief ne retombe pas silencieusement sur la personnalité la plus calme.
+            styleConfig = applyMotionHeuristic(DEFAULT_STYLE_CONFIG, enrichedPrompt.trim())
           }
         }
 

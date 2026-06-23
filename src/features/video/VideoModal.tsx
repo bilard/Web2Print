@@ -563,7 +563,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                     ) : (
                       <>
                         Export <span className="text-white/80">SVG éditable</span> de la page courante,
-                        puis animation GSAP par élément. Livraison ≈ 5 s :
+                        puis animation GSAP par élément. Le visuel reste TON design ;
+                        l'IA en règle la <span className="text-white/80">personnalité de mouvement</span>{' '}
+                        (posé, dynamique, sobre, ludique), le <span className="text-white/80">rythme</span> et
+                        la <span className="text-white/80">couleur d'accent</span> (cadre + barre) selon
+                        l'audience, l'objectif et le ton. Livraison ≈ 5 s :
                         <span className="text-white/80"> HTML/CSS/JS</span> + aperçu live.
                       </>
                     )}
@@ -592,7 +596,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                 <div>
                   <FieldLabel
                     htmlFor="topic"
-                    hint="Plus c'est précis, plus le rythme et la palette s'aligneront sur le sujet."
+                    hint={
+                      isStandalone
+                        ? "Pilote le contenu des scènes (titres, KPIs, CTA) générées par l'IA."
+                        : "Oriente la personnalité du mouvement, le rythme et la palette appliqués à ton design."
+                    }
                   >
                     Que doit présenter cette vidéo ?
                   </FieldLabel>
@@ -614,7 +622,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   <FieldLabel
                     htmlFor="audience"
                     optional
-                    hint="Décris le rôle, le niveau d'expertise et ce qui compte pour eux."
+                    hint={
+                      isStandalone
+                        ? "Adapte le registre, le vocabulaire et le choix des KPIs des scènes."
+                        : "Influe sur la personnalité du mouvement (ex. public magasin → dynamique, B2B → sobre)."
+                    }
                   >
                     À qui s'adresse cette vidéo ?
                   </FieldLabel>
@@ -633,7 +645,11 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   <FieldLabel
                     htmlFor="goal"
                     optional
-                    hint="Vendre, former, sensibiliser, lancer un produit, etc."
+                    hint={
+                      isStandalone
+                        ? "Oriente l'angle des scènes et le CTA final (vendre, former, notoriété…)."
+                        : "Pèse sur la personnalité du mouvement et l'intensité (promo → punchy, premium → posé)."
+                    }
                   >
                     Quel est l'objectif ?
                   </FieldLabel>
@@ -690,7 +706,7 @@ export function VideoModal({ onClose, source = 'canvas' }: VideoModalProps) {
                   <FieldLabel
                     htmlFor="freeform"
                     optional
-                    hint="Interprétées par Gemini en palette, rythme et intensité."
+                    hint="Interprétées par Gemini en personnalité de mouvement, palette, rythme et intensité."
                   >
                     Instructions libres
                   </FieldLabel>

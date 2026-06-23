@@ -38,6 +38,23 @@
         filter: drop-shadow(0 24px 50px rgba(0,0,0,0.5));
       }
 
+      /* Cadre lumineux d'accent : TOUJOURS rendu (même sans caption) pour que
+         la palette.accent choisie par l'IA soit visible. box-shadow figé,
+         seule l'opacité est animée (seek-safe, compositor-friendly). */
+      .accent-frame {
+        position: absolute; inset: 0;
+        pointer-events: none; z-index: 6; opacity: 0;
+        box-shadow: inset 0 0 0 8px var(--accent), inset 0 0 90px -20px var(--accent);
+      }
+      /* Barre d'accent bas de cadre — wipe horizontal, reflète l'accent. */
+      .accent-bar {
+        position: absolute; left: 0; bottom: 0;
+        height: 12px; width: 100%;
+        background: var(--accent);
+        transform-origin: 0% 50%; transform: scaleX(0);
+        z-index: 7; opacity: 0.95;
+      }
+
       .caption {
         position: absolute;
         left: 64px; right: 64px; bottom: 70px;
@@ -63,13 +80,15 @@
         {"id":"svg","type":"string","label":"SVG inline","default":""},
         {"id":"caption","type":"string","label":"Caption","default":""},
         {"id":"prompt","type":"string","label":"Prompt de formatage","default":""},
-        {"id":"styleConfig","type":"object","label":"Style config (pace/intensity/ease/palette)","default":null}
+        {"id":"styleConfig","type":"object","label":"Style config (pace/intensity/ease/motion/palette)","default":null}
       ]'
     >
       <div class="stage" id="stage">
         <div class="svg-host" id="svg-host"></div>
       </div>
 
+      <div class="accent-frame" id="accent-frame"></div>
+      <div class="accent-bar" id="accent-bar"></div>
       <div class="caption" id="caption" hidden></div>
     </div>
 
@@ -91,6 +110,19 @@
         const dur = (d) => d * PACE_MULT * DUR_SCALE;
         const amp = (v) => v * INT_SCALE;
 
+        // ── PERSONNALITÉ DU MOUVEMENT ────────────────────────────────────────
+        // C'est le levier qui rend audience/objectif/ton visiblement différents.
+        // Chaque preset active/désactive des blocs de la chorégraphie. Tout reste
+        // séquentiel (pas de yoyo) → déterministe au seek HyperFrames.
+        const MOTION = {
+          cinematic: { hue:false, oscillate:false, flip:true,  flipAmp:0.55, breathAmp:0.03,  entryEase:'power2.out',     entrySlide:0.6, frame:'soft',   bar:false, wiggle:false },
+          energetic: { hue:true,  oscillate:true,  flip:true,  flipAmp:1.0,  breathAmp:0.08,  entryEase:'power3.out',     entrySlide:1.0, frame:'strong', bar:true,  wiggle:false },
+          minimal:   { hue:false, oscillate:false, flip:false, flipAmp:0,    breathAmp:0.012, entryEase:'power2.out',     entrySlide:0.2, frame:'thin',   bar:false, wiggle:false },
+          playful:   { hue:true,  oscillate:true,  flip:false, flipAmp:0,    breathAmp:0.09,  entryEase:'back.out(1.6)',  entrySlide:1.1, frame:'strong', bar:true,  wiggle:true  },
+        };
+        const M = MOTION[sc.motion] || MOTION.cinematic;
+        console.log('[design-reveal-square] motion=', sc.motion, '· pace=', sc.pace, '· DUR_SCALE=', DUR_SCALE);
+
         document.body.style.background = BG;
         const compEl = document.querySelector('[data-composition-id="design-reveal-square"]');
         if (compEl) compEl.style.background = '#ffffff';
@@ -98,6 +130,16 @@
 
         const host = document.getElementById('svg-host');
         if (vars.svg) host.innerHTML = String(vars.svg);
+
+        // Cadre d'accent : intensité du box-shadow selon la personnalité.
+        const frameEl = document.getElementById('accent-frame');
+        const FRAME_SHADOW = {
+          thin:   'inset 0 0 0 5px var(--accent)',
+          soft:   'inset 0 0 0 8px var(--accent), inset 0 0 90px -20px var(--accent)',
+          strong: 'inset 0 0 0 12px var(--accent), inset 0 0 140px -10px var(--accent)',
+        };
+        if (frameEl) frameEl.style.boxShadow = FRAME_SHADOW[M.frame] || FRAME_SHADOW.soft;
+        const FRAME_OPACITY = M.frame === 'thin' ? 0.5 : M.frame === 'strong' ? 0.95 : 0.7;
 
         const capEl = document.getElementById('caption');
         if (vars.caption) {
@@ -114,34 +156,59 @@
 
         // Détecte un SVG "raster-only" : aucune forme, aucun texte, juste 1 ou 2 images
         // (cas typique d'une page importée depuis un PDF/DAM en bitmap unique).
-        // Sans ce fallback, l'animation se réduit à un fade-in d'un seul élément +
-        // micro-zoom imperceptible → l'utilisateur voit "image fixe".
         const RASTER_ONLY = shapes.length === 0 && texts.length === 0 && images.length >= 1 && images.length <= 2;
 
         const tl = gsap.timeline({ paused: true });
 
-        // ===== ENTRÉE DU STAGE : slide horizontal depuis la gauche =====
-        const slideAmp = amp(100);
-        tl.from('#stage', { x: -slideAmp, opacity: 0, duration: dur(0.9), ease: 'expo.out' }, 0);
+        // ===== ENTRÉE DU STAGE : amplitude pilotée par la personnalité =====
+        const slideAmp = amp(100) * M.entrySlide;
+        tl.from('#stage', { x: -slideAmp, opacity: 0, duration: dur(0.9), ease: M.entryEase }, 0);
 
-        // ===== OSCILLATION SÉQUENTIELLE (pas de yoyo — seek-safe) =====
-        // Le #stage glisse droite/gauche en plusieurs étapes sur les 10s totales
-        tl.to('#stage', { x: slideAmp * 0.4, duration: dur(2.2), ease: 'sine.inOut' }, dur(1.5));
-        tl.to('#stage', { x: -slideAmp * 0.4, duration: dur(2.2), ease: 'sine.inOut' }, dur(3.7));
-        tl.to('#stage', { x: slideAmp * 0.3, duration: dur(2.0), ease: 'sine.inOut' }, dur(5.9));
-        tl.to('#stage', { x: 0, duration: dur(1.5), ease: 'sine.inOut' }, dur(7.9));
+        // ===== ACCENT : cadre lumineux + barre (toujours, reflète palette.accent) =====
+        tl.fromTo(frameEl, { opacity: 0 }, { opacity: FRAME_OPACITY, duration: dur(0.8), ease: 'power2.out' }, dur(0.3));
+        if (M.bar) {
+          // Barre qui balaye puis 2 pulses d'opacité (signage/promo).
+          tl.fromTo('#accent-bar', { scaleX: 0, opacity: 0.95 }, { scaleX: 1, duration: dur(1.1), ease: M.entryEase }, dur(0.4));
+          tl.to('#accent-bar', { opacity: 0.5, duration: dur(0.6), ease: 'sine.inOut' }, dur(4.5));
+          tl.to('#accent-bar', { opacity: 0.95, duration: dur(0.6), ease: 'sine.inOut' }, dur(5.3));
+          tl.to('#accent-bar', { opacity: 0.5, duration: dur(0.6), ease: 'sine.inOut' }, dur(6.5));
+          tl.to('#accent-bar', { opacity: 0.95, duration: dur(0.6), ease: 'sine.inOut' }, dur(7.3));
+        } else {
+          // Sobre : la barre se révèle lentement et reste stable.
+          tl.fromTo('#accent-bar', { scaleX: 0, opacity: 0.8 }, { scaleX: 1, duration: dur(1.6), ease: 'power2.out' }, dur(0.5));
+        }
 
-        // ===== HUE-ROTATE séquentiel (pas yoyo) =====
-        tl.to('#stage', { filter: 'hue-rotate(60deg)',  duration: dur(2.0), ease: 'sine.inOut' }, dur(1.0));
-        tl.to('#stage', { filter: 'hue-rotate(-30deg)', duration: dur(2.0), ease: 'sine.inOut' }, dur(3.5));
-        tl.to('#stage', { filter: 'hue-rotate(45deg)',  duration: dur(2.0), ease: 'sine.inOut' }, dur(5.8));
-        tl.to('#stage', { filter: 'hue-rotate(0deg)',   duration: dur(1.5), ease: 'sine.inOut' }, dur(8.0));
+        // ===== OSCILLATION HORIZONTALE (energetic / playful) =====
+        if (M.oscillate) {
+          const oa = slideAmp;
+          tl.to('#stage', { x: oa * 0.4, duration: dur(2.2), ease: 'sine.inOut' }, dur(1.5));
+          tl.to('#stage', { x: -oa * 0.4, duration: dur(2.2), ease: 'sine.inOut' }, dur(3.7));
+          tl.to('#stage', { x: oa * 0.3, duration: dur(2.0), ease: 'sine.inOut' }, dur(5.9));
+          tl.to('#stage', { x: 0, duration: dur(1.5), ease: 'sine.inOut' }, dur(7.9));
+        }
 
-        // ===== SCALE pulse séquentiel =====
-        tl.to('#stage', { scale: 1.08, duration: dur(1.5), ease: 'sine.inOut' }, dur(1.5));
-        tl.to('#stage', { scale: 0.98, duration: dur(1.5), ease: 'sine.inOut' }, dur(3.5));
-        tl.to('#stage', { scale: 1.05, duration: dur(1.5), ease: 'sine.inOut' }, dur(5.5));
-        tl.to('#stage', { scale: 1.0,  duration: dur(1.5), ease: 'sine.inOut' }, dur(7.5));
+        // ===== HUE-ROTATE (energetic / playful uniquement — couleurs vives) =====
+        // cinematic & minimal gardent les couleurs FIDÈLES à la marque.
+        if (M.hue) {
+          tl.to('#stage', { filter: 'hue-rotate(60deg)',  duration: dur(2.0), ease: 'sine.inOut' }, dur(1.0));
+          tl.to('#stage', { filter: 'hue-rotate(-30deg)', duration: dur(2.0), ease: 'sine.inOut' }, dur(3.5));
+          tl.to('#stage', { filter: 'hue-rotate(45deg)',  duration: dur(2.0), ease: 'sine.inOut' }, dur(5.8));
+          tl.to('#stage', { filter: 'hue-rotate(0deg)',   duration: dur(1.5), ease: 'sine.inOut' }, dur(8.0));
+        }
+
+        // ===== RESPIRATION / PULSE SCALE — amplitude pilotée par la personnalité =====
+        const b = M.breathAmp;
+        if (M.oscillate) {
+          // Pulse marqué en 4 temps (energetic / playful).
+          tl.to('#stage', { scale: 1 + b, duration: dur(1.5), ease: 'sine.inOut' }, dur(1.5));
+          tl.to('#stage', { scale: 1 - b * 0.4, duration: dur(1.5), ease: 'sine.inOut' }, dur(3.5));
+          tl.to('#stage', { scale: 1 + b * 0.6, duration: dur(1.5), ease: 'sine.inOut' }, dur(5.5));
+          tl.to('#stage', { scale: 1.0, duration: dur(1.5), ease: 'sine.inOut' }, dur(7.5));
+        } else {
+          // Respiration douce en 2 temps (cinematic / minimal).
+          tl.to('#stage', { scale: 1 + b, duration: dur(3.5), ease: 'sine.inOut' }, dur(1.2));
+          tl.to('#stage', { scale: 1.0, duration: dur(3.5), ease: 'sine.inOut' }, dur(5.2));
+        }
 
         if (RASTER_ONLY) {
           tl.set(images, { opacity: 0, transformOrigin: '50% 50%' }, 0);
@@ -156,56 +223,71 @@
           const allSvgEls = [...shapes, ...images, ...texts];
           if (allSvgEls.length > 0) tl.set(allSvgEls, { opacity: 0 }, 0);
 
+          // Amplitude d'entrée des éléments pilotée par la personnalité :
+          // minimal ≈ pur fade, energetic/playful = slide marqué alterné.
+          const es = M.entrySlide;
           if (shapes.length > 0) {
             shapes.forEach((shape, i) => {
-              const fromX = i % 2 === 0 ? -amp(180) : amp(180);
+              const fromX = (i % 2 === 0 ? -amp(180) : amp(180)) * es;
               tl.fromTo(shape, { x: fromX, opacity: 0 }, {
-                x: 0, opacity: 1, duration: dur(0.7), ease: 'power3.out',
+                x: 0, opacity: 1, duration: dur(0.7), ease: M.entryEase,
               }, dur(0.4 + i * Math.min(0.03, 1.2 / shapes.length) * PACE_MULT));
             });
           }
           if (images.length > 0) {
             images.forEach((img, i) => {
-              const fromX = i % 2 === 0 ? amp(140) : -amp(140);
+              const fromX = (i % 2 === 0 ? amp(140) : -amp(140)) * es;
               tl.fromTo(img, { x: fromX, opacity: 0 }, {
-                x: 0, opacity: 1, duration: dur(0.8), ease: 'power3.out',
+                x: 0, opacity: 1, duration: dur(0.8), ease: M.entryEase,
               }, dur(1.4 + i * Math.min(0.10, 1.5 / images.length) * PACE_MULT));
             });
           }
           if (texts.length > 0) {
             texts.forEach((txt, i) => {
-              const fromX = i % 2 === 0 ? -amp(120) : amp(120);
+              const fromX = (i % 2 === 0 ? -amp(120) : amp(120)) * es;
               tl.fromTo(txt, { x: fromX, opacity: 0 }, {
-                x: 0, opacity: 1, duration: dur(0.7), ease: 'expo.out',
+                x: 0, opacity: 1, duration: dur(0.7), ease: M.entryEase,
               }, dur(2.6 + i * Math.min(0.08, 1.5 / texts.length) * PACE_MULT));
             });
           }
         }
 
-        // ===== CAPTION : mots arrivent alternés + color cycle =====
+        // ===== CAPTION : mots arrivent alternés + color cycle (si hue) =====
         const wordEls = capEl.querySelectorAll('.word');
         if (wordEls.length > 0) {
           tl.set(wordEls, { opacity: 0 }, 0);
           Array.from(wordEls).forEach((w, i) => {
-            const fromX = i % 2 === 0 ? -amp(140) : amp(140);
+            const fromX = (i % 2 === 0 ? -amp(140) : amp(140)) * M.entrySlide;
             tl.fromTo(w, { x: fromX, opacity: 0 }, {
-              x: 0, opacity: 1, duration: dur(0.65), ease: 'expo.out',
+              x: 0, opacity: 1, duration: dur(0.65), ease: M.entryEase,
             }, dur(4.0 + i * 0.12 * PACE_MULT));
           });
-          // Color cycle séquentiel (pas yoyo — seek-safe)
-          tl.to(wordEls, { color: ACCENT, duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(5.2));
-          tl.to(wordEls, { color: '#ffffff', duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(6.3));
-          tl.to(wordEls, { color: ACCENT, duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(7.4));
-          tl.to(wordEls, { color: '#ffffff', duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(8.5));
+          if (M.hue) {
+            // Color cycle séquentiel (pas yoyo — seek-safe)
+            tl.to(wordEls, { color: ACCENT,    duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(5.2));
+            tl.to(wordEls, { color: '#ffffff', duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(6.3));
+            tl.to(wordEls, { color: ACCENT,    duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(7.4));
+            tl.to(wordEls, { color: '#ffffff', duration: dur(0.8), ease: 'sine.inOut', stagger: 0.08 * PACE_MULT }, dur(8.5));
+          }
           tl.to(wordEls, { y: -amp(7), opacity: 0.9, duration: dur(0.6), ease: EASE_OUT }, dur(9.3));
         }
 
-        // ── 3D FLIP rotateY sur le svg-host (élément HTML — supporte
-        //    transform 3D contrairement aux <g> SVG). 4 keyframes sur ~3s.
-        tl.to('#svg-host', { rotationY: -15, duration: dur(0.9), ease: 'sine.inOut' }, dur(2.0));
-        tl.to('#svg-host', { rotationY: 12,  duration: dur(0.9), ease: 'sine.inOut' }, dur(3.0));
-        tl.to('#svg-host', { rotationY: -6,  duration: dur(0.6), ease: 'sine.inOut' }, dur(4.0));
-        tl.to('#svg-host', { rotationY: 0,   duration: dur(0.6), ease: 'power2.out' }, dur(4.7));
+        // ── 3D FLIP rotateY sur le svg-host (cinematic / energetic) ──
+        if (M.flip) {
+          const f = M.flipAmp;
+          tl.to('#svg-host', { rotationY: -15 * f, duration: dur(0.9), ease: 'sine.inOut' }, dur(2.0));
+          tl.to('#svg-host', { rotationY: 12 * f,  duration: dur(0.9), ease: 'sine.inOut' }, dur(3.0));
+          tl.to('#svg-host', { rotationY: -6 * f,  duration: dur(0.6), ease: 'sine.inOut' }, dur(4.0));
+          tl.to('#svg-host', { rotationY: 0,       duration: dur(0.6), ease: 'power2.out' }, dur(4.7));
+        }
+
+        // ── WIGGLE rotation Z (playful) — petit balancement ludique ──
+        if (M.wiggle) {
+          tl.to('#svg-host', { rotation: -3, duration: dur(0.7), ease: 'sine.inOut' }, dur(1.8));
+          tl.to('#svg-host', { rotation: 3,  duration: dur(0.7), ease: 'sine.inOut' }, dur(2.5));
+          tl.to('#svg-host', { rotation: -2, duration: dur(0.6), ease: 'sine.inOut' }, dur(3.2));
+          tl.to('#svg-host', { rotation: 0,  duration: dur(0.6), ease: 'power2.out' }, dur(3.8));
+        }
 
         window.__timelines = window.__timelines || {};
         window.__timelines['design-reveal-square'] = tl;
