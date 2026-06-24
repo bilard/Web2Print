@@ -306,12 +306,15 @@ est déjà la **valeur** (Task 2). Étendre `data` :
           ...(obj.mergeTemplate ? {
             templateText: obj.mergeTemplate,
             originText: fullText,
+            originStyles: fabricCharStyles ?? {}, // styles par-caractère de la VALEUR (persistance)
             mergeFields: obj.mergeFields ?? [],
           } : {}),
         },
 ```
 
-> `fullText` = valeur affichée ; `obj.mergeTemplate` = template `{{}}`. Pour un bloc image, le
+> `fullText` = valeur affichée ; `obj.mergeTemplate` = template `{{}}` ; `fabricCharStyles` = les
+> styles par-caractère de la valeur (déjà calculés pour le Textbox). `originStyles` est requis pour
+> que le **formatage survive au reload** (cf. Task 4). Pour un bloc image, le
 > champ reste `data.ecImageField` (Phase 1) ; ajouter `mergeFields: [ecImageField]` au bloc image
 > pour cohérence d'affichage (Phase B). Ne pas poser `templateText` si le bloc n'est pas balisé.
 
@@ -387,13 +390,32 @@ export function serializedTextFor(obj: { text?: string; data?: { templateText?: 
 }
 ```
 
-Dans le Step 2 de `useAutoSave` (la boucle ~134-150), remplacer la cible du swap
-`obj.set('text', tmpl)` par `obj.set('text', serializedTextFor(obj))`, et le gate
-`if (obj.data?.templateText)` par `if (obj.data?.templateText || obj.data?.originText)`.
-Le Step 4 (restauration de `resolved`) reste inchangé (il restaure `obj.text` capturé avant swap).
+Dans le Step 2 de `useAutoSave` (la boucle ~134-150), le swap concerne **text ET styles** (et
+width, déjà géré via `originalWidth`). Remplacer :
+- le gate `if (obj.data?.templateText)` par `if (obj.data?.templateText || obj.data?.originText)` ;
+- la cible texte `obj.set('text', tmpl)` par `obj.set('text', serializedTextFor(obj))` ;
+- la cible **styles** : pour un bloc IDML (`data.originStyles` présent), swapper vers
+  `originStyles` ; sinon garder le legacy `templateStyles`. Concrètement, remplacer la ligne
+  styles existante par :
 
-> Effet : le JSON sauvé porte la valeur stable pour les blocs IDML, le `{{}}` pour le legacy
-> manuel. `data.templateText` reste dans `data` (sérialisé) → le merge fonctionne après reload.
+```typescript
+        const idmlStyles = obj.data.originStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
+        if (idmlStyles) {
+          // bloc IDML : sérialiser les styles de la VALEUR
+          ;(obj as any).styles = JSON.parse(JSON.stringify(idmlStyles))
+        } else {
+          // legacy {{}} manuel : styles du template (comportement actuel)
+          const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
+          ;(obj as any).styles = tStyles && Object.keys(tStyles).length > 0 ? JSON.parse(JSON.stringify(tStyles)) : {}
+        }
+```
+
+Le Step 4 (restauration de `resolved` + styles capturés) reste inchangé (il restaure
+`obj.text`/`obj.styles` capturés avant swap, donc l'écran n'est pas affecté).
+
+> Effet : le JSON sauvé porte la **valeur stable + son formatage** pour les blocs IDML, le `{{}}`
+> pour le legacy manuel. `data.templateText`/`originStyles` restent dans `data` (sérialisé) → le
+> merge fonctionne et le formatage survit au reload.
 
 - [ ] **Step 4: Vérifier**
 
@@ -445,12 +467,17 @@ git commit -m "feat(editor): sauvegarder la valeur stable des blocs IDML balisé
 
 - [ ] **Step 3: Sync originText sur édition d'un bloc IDML**
 
-À la sortie d'édition (là où le code re-capture/résout, ~lignes 582-618), pour un bloc IDML
-balisé non connecté, mettre à jour `originText` avec le texte édité :
+Dans **`handleEditingExited`** (ligne 577 — handler de **SORTIE** d'édition, PAS `handleEditingEntered`),
+là où le code re-capture/résout (~lignes 582-618), pour un bloc IDML balisé non connecté, mettre à
+jour `originText` (et `originStyles`) avec le texte/styles édités :
 
 ```typescript
   if (target.data?.originText && !hasPlaceholders(currentText)) {
     target.data.originText = currentText // la valeur stable suit l'édition
+    const styles = (target as any).styles
+    if (styles && Object.keys(styles).length > 0) {
+      target.data.originStyles = JSON.parse(JSON.stringify(styles))
+    }
   }
 ```
 
@@ -523,6 +550,8 @@ Après Phase A, **valider dans l'app** (build + deploy ou dev) :
 - [ ] Réimporter le V6 → la maquette affiche les **valeurs** (« 22€,99 », « +55g GRATUIT »…),
       **plus aucun `{{}}`**.
 - [ ] Sauvegarder, recharger le projet → toujours les valeurs (pas `{{}}`).
+- [ ] **Le formatage est préservé après reload** (couleurs/tailles par-caractère, ex. le « € »
+      du prix dans son style) — pas seulement le texte (vérifie `originStyles`).
 - [ ] Connecter une source de données → les valeurs se mettent à jour (merge OK).
 - [ ] Déconnecter → revient aux valeurs d'origine (pas `{{}}`).
 
