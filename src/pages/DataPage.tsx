@@ -8,6 +8,7 @@ import {
   MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
+  Wand2,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -35,6 +36,9 @@ const UpdatePreviewModal = lazy(() =>
 )
 const ScrapingModal = lazy(() =>
   import('@/features/scraping/ScrapingModal').then((m) => ({ default: m.ScrapingModal })),
+)
+const ColumnCompletionModal = lazy(() =>
+  import('@/features/excel/ai-completion/ColumnCompletionModal').then((m) => ({ default: m.ColumnCompletionModal })),
 )
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { useRenameTaxonomy } from '@/features/taxonomy/useTaxonomyMutations'
@@ -74,6 +78,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [ecExportOpen, setEcExportOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
+  const [aiCompletionOpen, setAiCompletionOpen] = useState(false)
 
   useModuleIntent('data', (action) => {
     switch (action) {
@@ -605,6 +610,17 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               <OptionHelp text="Enrichit vos produits depuis une ou plusieurs URL : extraction des specs, images et descriptions (via Jina + IA)." />
             </button>
             )}
+            {canScrape && (
+            <button
+              onClick={() => setAiCompletionOpen(true)}
+              disabled={!hasSelectedDb}
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 disabled:text-white/25 disabled:hover:bg-white/5 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
+              title={hasSelectedDb ? 'Compléter une colonne par IA' : 'Sélectionnez une base de données'}
+            >
+              <Wand2 className="w-4 h-4" />
+              IA complétion
+            </button>
+            )}
             {canCreate && (
             <button
               onClick={createEmpty}
@@ -746,6 +762,14 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             open={scrapingOpen}
             onClose={() => { setScrapingOpen(false); setPendingTargetPath(null) }}
             targetPath={pendingTargetPath ?? undefined}
+          />
+        )}
+
+        {aiCompletionOpen && (
+          <ColumnCompletionModal
+            open={aiCompletionOpen}
+            onClose={() => setAiCompletionOpen(false)}
+            visibleRowIds={filteredRowIds}
           />
         )}
 
