@@ -124,7 +124,8 @@ Transforme les `<XMLElement MarkupTag>` d'une story en runs `{{Champ}}`. Deux mo
 **Interfaces:**
 - Consumes: `xmlTagName`, `elementDepth` (Task 1) ; `IdmlZipContents` (existant, `@/features/idml/assemblyLoader`).
 - Produces:
-  - `processXmlElementStory(xml: string, opts: { unwrap: boolean }): string`
+  - `processXmlElementStory(xml, opts)` — **interne, NON exporté** (utilisé seulement par les
+    deux wrappers ci-dessous dans le même fichier ; l'exporter ferait échouer knip).
   - `flattenXmlElementStory(xml: string): string` — = `processXmlElementStory(xml, { unwrap: true })`
   - `templatizeXmlElementStory(xml: string): string` — = `processXmlElementStory(xml, { unwrap: false })`
   - `templatizeXmlElementContents(contents: IdmlZipContents): IdmlZipContents` — applique `templatizeXmlElementStory` à toutes les stories.
@@ -213,8 +214,9 @@ import { xmlTagName, elementDepth } from './xmlElementTags'
  *  - unwrap=true  (IMPORT) : remplace chaque XMLElement par son run → story plate.
  *  - unwrap=false (EXPORT) : conserve les <XMLElement>, n'injecte que le run {{Champ}}.
  * Une « feuille » = XMLElement sans XMLElement descendant ; un « conteneur » en a.
+ * NON exporté : seuls les deux wrappers ci-dessous l'utilisent (règle knip).
  */
-export function processXmlElementStory(xml: string, opts: { unwrap: boolean }): string {
+function processXmlElementStory(xml: string, opts: { unwrap: boolean }): string {
   if (!xml.includes('MarkupTag')) return xml
   const doc = new DOMParser().parseFromString(xml, 'application/xml')
   if (doc.getElementsByTagName('parsererror').length > 0) return xml
@@ -773,10 +775,27 @@ git commit -m "feat(idml): câblage import des images balisées + arbre des bali
 
 ### Task 6 : Export round-trip multi-page
 
-L'export multi-page part du buffer source brut (les `<XMLElement>` et `XML/Tags.xml` sont
-préservés tels quels par `buildMultiPageIdml`). Il suffit de templatiser la valeur des
-feuilles en `{{champ}}` **en conservant** les `<XMLElement>` ; `patchStories` (déjà existant)
-remplace ensuite `{{champ}}` par la valeur de chaque ligne → un IDML balisé valide par ligne.
+Vérifié dans `buildMultiPageIdml` (idmlPatcher.ts:338-355) : la fonction recopie les fichiers
+du zip brut sauf `Spreads/`, `Stories/`, `MasterSpreads/`, `Resources/`, `designmap.xml`.
+Donc `XML/Tags.xml` et `XML/BackingStory.xml` sont **copiés tels quels**. Les stories/spreads,
+eux, sont **suffixés** par `_row{i}` (`suffixIds`).
+
+**Ce que ce Task garantit (le besoin réel) :**
+- Les valeurs de chaque ligne sont fusionnées (`templatizeXmlElementStory` met `{{champ}}` en
+  conservant les `<XMLElement>`, puis `patchStories` remplace `{{champ}}` par la valeur).
+- Les `<XMLElement MarkupTag>` **inline du texte** survivent dans chaque story suffixée, et
+  restent cohérents : `suffixIds` suffixe ensemble le `Self` de la story et ses `XMLContent`.
+- Les **images** mergées sont correctes : à l'export elles passent par `options.bindings.src`
+  (patchSpreads), **pas** par la BackingStory.
+
+**Limite connue (documentée, hors périmètre) :** la `XML/BackingStory.xml` copiée garde ses
+`XMLContent` non suffixés alors que les objets multi-pages sont suffixés. La structure XML de
+haut niveau est donc désynchronisée en multi-page. Conséquence unique : un **ré-import dans
+l'app** du fichier exporté ne reconnaîtrait plus les champs image (lus depuis la BackingStory
+à l'import). Le merge et le balisage texte ne sont pas affectés. Re-synchroniser/fusionner la
+BackingStory pour le multi-page est un chantier séparé (1 seule BackingStory par IDML → il
+faudrait fusionner N structures suffixées) — à traiter si un round-trip InDesign complet est
+requis.
 
 **Files:**
 - Modify: `src/features/merge/useIdmlBatchExport.ts` (~ligne 60)
@@ -867,6 +886,16 @@ git commit -m "feat(merge): export multi-page round-trip des IDML balisés XML n
 ```
 
 ---
+
+## Note à l'exécutant — fixtures d'intégration T3/T5
+
+Les fixtures XML de T3 et T5 (Spread + TextFrame/Rectangle) n'ont jamais été exécutées contre
+le vrai `parseBounds`. Si `parseBounds` renvoie `null` sur la fixture (exigence non satisfaite
+sur `GeometricBounds`/`PathGeometry`/`ItemTransform`), l'objet n'est pas créé et le test
+échoue **par forme de fixture, pas par bug de logique**. Dans ce cas, ajuster la fixture
+(copier la géométrie d'un objet du sample réel `Snipet_PROMO_converted.idml`, décompressé sous
+le scratchpad) plutôt que chercher un bug dans le code de balisage. L'assertion à préserver
+est : le texte contient `{{Prix}}` (T3) / `ecImageField === 'Image'` (T5).
 
 ## Records répétables (Phase 1) — portée livrée
 
