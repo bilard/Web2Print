@@ -405,7 +405,12 @@ Dans `src/features/ai/llmRouter.ts` :
 - au type `LLMTask` (union, vers la ligne 65), ajouter `| 'data.columnCompletion'` ;
 - dans `TASK_ROUTING` (Record exhaustif), ajouter :
 ```typescript
-  'data.columnCompletion': { primary: 'claude', fallback: 'gemini', model: 'claude-opus-4-8' },
+  // claude en primary (JSON fiable via tool-use, prend son défaut), gemini en fallback ÉPINGLÉ
+  // sur 3.1-pro-preview : `modelForProvider` n'applique l'override qu'au provider dont le préfixe
+  // correspond → ici il épingle le FALLBACK gemini (pas le primary claude). Même pattern que
+  // 'telegram.chat'. NE PAS mettre 'claude-opus-4-8' ici, sinon le fallback gemini retombe sur
+  // son défaut (souvent gemini-3.5-flash, JSON ~50 % d'échec, cf. mémoire projet).
+  'data.columnCompletion': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
 ```
 - dans `TASK_TEMPERATURE` (Record exhaustif), ajouter :
 ```typescript
@@ -578,6 +583,9 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
   const [scopeAll, setScopeAll] = useState(true)
   const [previewed, setPreviewed] = useState(false)
   const [costUsd, setCostUsd] = useState(0)
+  // Garde-fou anti-doublon : clé de la colonne créée pendant CETTE session « nouvelle colonne ».
+  // Un 2e clic « Appliquer » réécrit la même colonne au lieu d'en créer une autre (resultat_ia_2…).
+  const [appliedNewColKey, setAppliedNewColKey] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -603,11 +611,15 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
     setPreviewed(true)
   }
   const handleApply = async () => {
-    const targetColKey = ensureTargetColumn(
-      destMode === 'new'
-        ? { mode: 'new', label: newLabel.trim() }
-        : { mode: 'existing', label: '', existingKey },
-    )
+    let targetColKey: string
+    if (destMode === 'existing') {
+      targetColKey = existingKey
+    } else if (appliedNewColKey) {
+      targetColKey = appliedNewColKey // ré-application : réécrit la colonne déjà créée
+    } else {
+      targetColKey = ensureTargetColumn({ mode: 'new', label: newLabel.trim() })
+      setAppliedNewColKey(targetColKey)
+    }
     await runAll({ prompt, rows: scopedRows, columns: sheet.columns, targetColKey, write: true })
   }
 
@@ -645,10 +657,10 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
           <div className="space-y-2">
             <div className="text-white/60">Destination</div>
             <label className="flex items-center gap-2">
-              <input type="radio" checked={destMode === 'new'} onChange={() => setDestMode('new')} />
+              <input type="radio" checked={destMode === 'new'} onChange={() => { setDestMode('new'); setAppliedNewColKey(null) }} />
               Nouvelle colonne
               {destMode === 'new' && (
-                <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)}
+                <input value={newLabel} onChange={(e) => { setNewLabel(e.target.value); setAppliedNewColKey(null) }}
                   className="ml-2 bg-well border border-white/10 rounded px-2 py-0.5 text-white/90" />
               )}
             </label>
@@ -856,3 +868,8 @@ git commit -m "feat(data): bouton et montage du modal IA complétion dans DataPa
 - **Classe `bg-accent`** : si absente, utiliser `bg-[#6366f1]` (accent projet).
 - **`filteredRowIds`** : confirmer le nom exact de la variable du useMemo dans DataPage au moment
   du câblage (T5).
+- **Troncature de lot** : `generateJson` fixe `max_tokens = 8192`. Confortable pour des valeurs
+  courtes (noms, libellés). Pour des sorties **longues** (paragraphes générés × 20), un lot peut
+  tronquer → JSON invalide → tout le lot part en `failed` (dégradation gracieuse, pas de crash, via
+  le `catch` de `runCompletionBatches`). Si l'usage réel génère du texte long, réduire `chunkSize`
+  (paramètre déjà exposé) à 8-10 lors de l'appel `runCompletionBatches`. Ne pas bloquer le démarrage.

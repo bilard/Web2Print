@@ -93,7 +93,10 @@ Ouvrir modal
   cellule cible laissée inchangée, item marqué « ignorée ».
 - **Lot incomplet** (LLM renvoie < n résultats) : `generateJson` valide/réessaie via le
   schéma ; en dernier recours, `mapResults` ne remplit que les index reçus ; les lignes
-  manquantes sont marquées « échec » et réessayables (relancer ne retraite que les échecs).
+  manquantes sont marquées « échec ». **Réessai (v1)** : relancer « Appliquer » retraite toute la
+  portée et **réécrit la même colonne cible** (garde-fou anti-doublon : la colonne créée en mode
+  « nouvelle colonne » est mémorisée pour la session, pas recréée à chaque clic). Le retry ciblé
+  des *seules* lignes en échec est **hors périmètre v1** (voir Hors périmètre).
 - **Annulation** : `abortRef` testé entre les lots ; le lot en cours se termine (pas
   d'interruption au milieu d'un appel) ; les lots restants passent « annulé ».
 - **Budget LLM dépassé** : `generateJson` lève `LlmBudgetError` → run stoppé, message clair,
@@ -119,3 +122,5 @@ Ouvrir modal
   la demande comme `formulaEngine`).
 - **Multi-colonnes cibles** en un run (un prompt → plusieurs colonnes).
 - **Reprise/historique** des runs IA complétion.
+- **Retry ciblé des seules lignes en échec** (recalcul du scope = lignes `failed` uniquement) :
+  v1 retraite toute la portée sur la même colonne.
