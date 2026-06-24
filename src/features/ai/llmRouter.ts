@@ -63,6 +63,7 @@ type LLMTask =
   | 'telegram.chatPlan'
   | 'web.answer'
   | 'web.searchPlan'
+  | 'data.columnCompletion'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -134,6 +135,12 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // enseignes ciblées, champs attendus) → requêtes `site:` ciblées. Même profil que
   // telegram.chatPlan : JSON court, épinglage Gemini 3.1 Pro (responseSchema fiable).
   'web.searchPlan': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // claude en primary (JSON fiable via tool-use, prend son défaut), gemini en fallback ÉPINGLÉ
+  // sur 3.1-pro-preview : `modelForProvider` n'applique l'override qu'au provider dont le préfixe
+  // correspond → ici il épingle le FALLBACK gemini (pas le primary claude). Même pattern que
+  // 'telegram.chat'. NE PAS mettre 'claude-opus-4-8' ici, sinon le fallback gemini retombe sur
+  // son défaut (souvent gemini-3.5-flash, JSON ~50 % d'échec, cf. mémoire projet).
+  'data.columnCompletion': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -160,6 +167,9 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   'web.answer':             0.3,
   // Interprétation déterministe du prompt de recherche (sites + sujet exacts).
   'web.searchPlan':         0.1,
+  // Complétion de colonne : résultats textuels basés sur le contexte de la ligne,
+  // légèrement créatif (résumé, traduction, reformulation) → 0.4.
+  'data.columnCompletion':  0.4,
 }
 
 interface GenerateJsonOptions<T> {
