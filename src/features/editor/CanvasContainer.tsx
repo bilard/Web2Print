@@ -21,6 +21,7 @@ import { ContextMenu } from '@/components/canvas/ContextMenu'
 import { ImageCropToolbars } from '@/components/canvas/ImageCropToolbars'
 import { SelectionToolbar } from '@/components/canvas/SelectionToolbar'
 import { TransformBadge } from '@/components/canvas/TransformBadge'
+import { MergeConnectorOverlay } from '@/components/canvas/MergeConnectorOverlay'
 import { Animation3DOverlay } from '@/features/animation3d/Animation3DOverlay'
 import { Flip3DOverlay } from '@/features/animation3d/Flip3DOverlay'
 import { Relief3DOverlay } from '@/features/animation3d/Relief3DOverlay'
@@ -390,6 +391,9 @@ export function CanvasContainer() {
 
       {/* Badge X/Y, L×H ou angle pendant les manipulations */}
       <TransformBadge canvas={canvasReady} />
+
+      {/* Badges + tooltip des connecteurs IDML (champs merge / image EC) */}
+      <MergeConnectorOverlay canvas={canvasReady} />
 
       {/* Three.js particles overlay (retail digital signage 3D) */}
       <Animation3DOverlay
