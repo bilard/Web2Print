@@ -52,7 +52,7 @@ export function MergeConnectorOverlay({ canvas }: { canvas: Canvas | null }) {
         const f = fieldsOf(o)
         return (
           <div
-            key={(o as any).data?.id as string}
+            key={((o as any).data?.id as string | undefined) ?? `mc-${tagged.indexOf(o)}`}
             className="absolute z-20 -translate-x-1/2 pointer-events-none"
             style={{ left: p.x, top: p.top - 8 }}
           >
@@ -62,7 +62,7 @@ export function MergeConnectorOverlay({ canvas }: { canvas: Canvas | null }) {
           </div>
         )
       })}
-      {hovered && (() => {
+      {hovered && canvas.getObjects().includes(hovered) && (() => {
         const p = screenPos(canvas, hovered)
         return (
           <div
