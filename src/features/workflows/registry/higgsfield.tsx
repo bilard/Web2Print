@@ -74,6 +74,33 @@ const higgsfieldFn = httpsCallable<HiggsfieldPayload, { assets: HiggsfieldAsset[
 
 const catalogFn = httpsCallable<Record<string, never>, HiggsfieldCatalog>(functions, 'higgsfieldCatalog')
 
+// Télécharge un asset (URL CDN Higgsfield) en File réel pour brancher « Export
+// Google Drive » (port `file`). Passe par imageProxy (fetch serveur, contourne
+// CORS ; cap 4 Mo) avec repli fetch direct. Best-effort → null si échec.
+const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
+function base64ToBlob(b64: string, mime: string): Blob {
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new Blob([bytes], { type: mime })
+}
+async function fetchAssetFile(a: HiggsfieldAsset): Promise<File | null> {
+  try {
+    const { data } = await imageProxyFn({ url: a.url })
+    const mime = data.mimeType || a.mimeType
+    return new File([base64ToBlob(data.data, mime)], a.name, { type: mime })
+  } catch {
+    try {
+      const res = await fetch(a.url)
+      if (!res.ok) return null
+      const blob = await res.blob()
+      return blob.size > 0 ? new File([blob], a.name, { type: a.mimeType }) : null
+    } catch {
+      return null
+    }
+  }
+}
+
 // Cache module : le catalogue (styles/motions) est global par user → 1 seul fetch.
 let catalogCache: Promise<HiggsfieldCatalog> | null = null
 function loadCatalog(): Promise<HiggsfieldCatalog> {
@@ -367,7 +394,7 @@ function HiggsfieldConfigUi({
   )
 }
 
-const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: HiggsfieldAsset[] }> = {
+const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: HiggsfieldAsset[]; file: File | null }> = {
   type: 'higgsfield',
   category: 'enrichment',
   label: 'Higgsfield (image/vidéo IA)',
@@ -379,7 +406,10 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
     { name: 'prompt', type: 'any', required: false },
     { name: 'image', type: 'asset[]', required: false },
   ],
-  outputs: [{ name: 'assets', type: 'asset[]' }],
+  outputs: [
+    { name: 'assets', type: 'asset[]' },
+    { name: 'file', type: 'file' },
+  ],
   configSchema: [],
   defaultConfig: {
     mode: 'image',
@@ -446,7 +476,12 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
     const assets = data?.assets ?? []
     if (assets.length === 0) throw new Error('Higgsfield : aucun asset généré (voir logs serveur).')
     ctx.log('info', `${assets.length} asset(s) généré(s).`)
-    return { assets }
+    // `file` = 1er asset téléchargé en fichier réel → pour « Export Google Drive »
+    // (port `file`). Best-effort ; les gros fichiers (>4 Mo, ex. vidéo) → null,
+    // utiliser « Save DAM » (port `assets`) dans ce cas.
+    const file = await fetchAssetFile(assets[0])
+    if (!file) ctx.log('warn', 'Fichier non téléchargeable (trop lourd ?) — utilise « Save DAM » via le port assets.')
+    return { assets, file }
   },
 }
 

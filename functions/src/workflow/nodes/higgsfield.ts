@@ -6,6 +6,7 @@
 import { registerServerNode } from '../registry'
 import { getUserApiKey } from '../apiKeys'
 import { runHiggsfield, type HiggsfieldParams } from '../../higgsfield/higgsfieldCore'
+import { makeServerFile, type ServerFile } from './serverFile'
 
 function pickImageUrl(config: Record<string, unknown>, inputs: Record<string, unknown>): string {
   const fromConfig = String(config.imageUrl ?? '').trim()
@@ -55,6 +56,16 @@ registerServerNode({
     ctx.log('info', `Higgsfield ${mode} — génération en cours…`)
     const assets = await runHiggsfield(credentials, params)
     ctx.log('info', `Higgsfield : ${assets.length} asset(s) généré(s).`)
-    return { assets }
+    // `file` = 1er asset téléchargé en ServerFile → pour « Export Google Drive »
+    // (port `file`) en cron headless. Best-effort.
+    let file: ServerFile | undefined
+    try {
+      const a = assets[0]
+      const res = await fetch(a.url)
+      if (res.ok) file = makeServerFile(a.name, a.mimeType, Buffer.from(await res.arrayBuffer()))
+    } catch {
+      ctx.log('warn', 'Fichier non téléchargeable côté serveur — utilise « Save DAM » via le port assets.')
+    }
+    return { assets, file }
   },
 })
