@@ -11,6 +11,7 @@
  */
 
 import { parseEcTag, parseEcImageField } from '@/features/easycatalog/ecIdmlImport'
+import { flattenXmlElementStory } from './xmlElementStory'
 
 export interface IdmlColor {
   r: number; g: number; b: number; a: number
@@ -920,7 +921,9 @@ function parseStory(
   paraStyles: Map<string, StyleDef>,
   charStyles: Map<string, StyleDef>,
 ): IdmlParagraph[] {
-  const doc = parseXml(storyXml)
+  // Balises XML natives InDesign : aplatir <XMLElement MarkupTag> en {{champ}} avant parsing.
+  // (no-op si la story ne contient aucun MarkupTag.)
+  const doc = parseXml(flattenXmlElementStory(storyXml))
   const paragraphs: IdmlParagraph[] = []
 
   const storyEls = doc.getElementsByTagName('Story')
