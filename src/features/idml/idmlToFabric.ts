@@ -524,6 +524,12 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
               originText: fullText,
               originStyles: fabricCharStyles ?? {},
               mergeFields: obj.mergeFields ?? [],
+              fitToZone: true,
+              fitZone: {
+                width: adjustedWidth,
+                height: Math.max(displayH - insT - insB, 4),
+              },
+              baseFontSize: fontSize,
             } : {}),
           },
           // Pass styles in constructor to prevent Fabric.js from auto-expanding width.
