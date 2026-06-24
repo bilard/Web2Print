@@ -26,6 +26,10 @@ registerServerNode({
   run: async (ctx, config, inputs) => {
     ctx.reportConnector?.('higgsfield')
     const mode = config.mode === 'video' ? 'video' : 'image'
+    const num = (v: unknown): number | undefined => {
+      const n = Number(v)
+      return Number.isFinite(n) ? n : undefined
+    }
     const params: HiggsfieldParams = {
       mode,
       prompt: String(config.prompt ?? ''),
@@ -37,6 +41,13 @@ registerServerNode({
         ? (config.videoModel as 'dop-lite' | 'dop-turbo' | 'dop-standard')
         : 'dop-turbo',
       imageUrl: mode === 'video' ? pickImageUrl(config, inputs) : undefined,
+      styleId: config.styleId ? String(config.styleId) : undefined,
+      styleStrength: num(config.styleStrength),
+      motionId: config.motionId ? String(config.motionId) : undefined,
+      motionStrength: num(config.motionStrength),
+      seed: num(config.seed),
+      enhancePrompt: config.enhancePrompt === true,
+      batchSize: config.batchSize === 4 ? 4 : 1,
     }
     const credentials = await getUserApiKey(ctx.uid, 'higgsfield')
     if (!credentials) throw new Error('Clé Higgsfield absente du profil (Paramètres → Connecteurs).')
