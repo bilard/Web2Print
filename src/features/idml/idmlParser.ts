@@ -12,6 +12,7 @@
 
 import { parseEcTag, parseEcImageField } from '@/features/easycatalog/ecIdmlImport'
 import { flattenXmlElementStory } from './xmlElementStory'
+import { parseBackingStoryImageFields, parseBackingStoryTagTree, type TagTreeNode } from './xmlBackingStory'
 
 export interface IdmlColor {
   r: number; g: number; b: number; a: number
@@ -111,6 +112,7 @@ export interface IdmlDocument {
   pageHeight: number
   objects: IdmlObject[]
   spreadCount: number
+  tagTree?: TagTreeNode | null // hiérarchie des balises XML natives (groupes répétables)
 }
 
 // ─── Style definitions ──────────────────────────────────────────────────────
@@ -1484,6 +1486,7 @@ function walkElementsInOrder(
   results: IdmlObject[],
   objStyleMap: Map<string, ObjectStyleDef>,
   anchoredFrameMap: Map<string, AnchoredFrameRef[]>,
+  imageFieldMap: Map<string, string> = new Map(),
 ) {
   for (let i = 0; i < parent.childNodes.length; i++) {
     const child = parent.childNodes[i]
@@ -1492,9 +1495,9 @@ function walkElementsInOrder(
     const tag = el.tagName
 
     if (tag === 'Group') {
-      walkElementsInOrder(el, pageOffsetX, pageOffsetY, colorMap, storiesMap, results, objStyleMap, anchoredFrameMap)
+      walkElementsInOrder(el, pageOffsetX, pageOffsetY, colorMap, storiesMap, results, objStyleMap, anchoredFrameMap, imageFieldMap)
     } else if (ITEM_TAGS.has(tag)) {
-      const obj = parseElement(el, tag as IdmlObject['type'], pageOffsetX, pageOffsetY, colorMap, storiesMap, objStyleMap)
+      const obj = parseElement(el, tag as IdmlObject['type'], pageOffsetX, pageOffsetY, colorMap, storiesMap, objStyleMap, imageFieldMap)
       if (obj) {
         results.push(obj)
       }
@@ -1527,6 +1530,7 @@ export function parseIdml(
   resources: Record<string, string>,
   _designMap: string,
   masterSpreads: Record<string, string> = {},
+  backingStory: string = '',
 ): IdmlDocument {
   // Page size from Preferences
   let pageWidth = 283
@@ -1547,6 +1551,9 @@ export function parseIdml(
   const colorMap = buildColorMap(resources)
   const { paraStyles, charStyles } = buildStyleMaps(resources)
   const objStyleMap = buildObjectStyleMap(resources)
+
+  const imageFieldMap = parseBackingStoryImageFields(backingStory)
+  const tagTree = parseBackingStoryTagTree(backingStory)
 
   // Build anchored frame map: storyId → anchored TextFrames within that story
   const anchoredFrameMap = new Map<string, AnchoredFrameRef[]>()
@@ -1594,7 +1601,7 @@ export function parseIdml(
     // Walk elements in document order (= InDesign z-order, back to front)
     const spreadEl = doc.getElementsByTagName('Spread')[0]
     if (spreadEl) {
-      walkElementsInOrder(spreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap)
+      walkElementsInOrder(spreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap, imageFieldMap)
     }
   }
 
@@ -1609,12 +1616,12 @@ export function parseIdml(
 
       const masterSpreadEl = doc.getElementsByTagName('MasterSpread')[0]
       if (masterSpreadEl) {
-        walkElementsInOrder(masterSpreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap)
+        walkElementsInOrder(masterSpreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap, imageFieldMap)
       }
     }
   }
 
-  return { pageWidth, pageHeight, objects: allObjects, spreadCount }
+  return { pageWidth, pageHeight, objects: allObjects, spreadCount, tagTree }
 }
 
 function parseElement(
@@ -1625,6 +1632,7 @@ function parseElement(
   colorMap: Map<string, IdmlColor>,
   storiesMap: Map<string, IdmlParagraph[]>,
   objStyleMap: Map<string, ObjectStyleDef> = new Map(),
+  imageFieldMap: Map<string, string> = new Map(),
 ): IdmlObject | null {
   const parsed = parseBounds(el)
   if (!parsed) {
@@ -1685,8 +1693,16 @@ function parseElement(
 
   const id = attr(el, 'Self') || `item_${Math.random().toString(36).slice(2)}`
 
-  // EasyCatalog : cadre image (Rectangle vide avec ECPageItemData="2 2 <champ>")
-  const ecImageField = parseEcImageField(el.getAttribute('ECPageItemData')) ?? undefined
+  // EasyCatalog (ECPageItemData) ou balise XML native (BackingStory → Self du cadre OU de son Image enfant)
+  let ecImageField = parseEcImageField(el.getAttribute('ECPageItemData')) ?? undefined
+  if (!ecImageField && imageFieldMap.size > 0) {
+    const selfId = el.getAttribute('Self')
+    const imgChildId = directChildren(el, 'Image')[0]?.getAttribute('Self')
+    ecImageField =
+      (selfId ? imageFieldMap.get(selfId) : undefined) ??
+      (imgChildId ? imageFieldMap.get(imgChildId) : undefined) ??
+      undefined
+  }
 
   // Image/graphic child — InDesign uses different elements depending on file type:
   // <Image> for raster (JPG, PNG, TIF, PSD...), <EPS>, <PDF>, <WMF>, <ImportedPage>

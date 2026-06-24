@@ -26,6 +26,7 @@ export interface IdmlZipContents {
   resources: Record<string, string>  // filename → XML string
   masterSpreads: Record<string, string>
   designMap: string
+  backingStory?: string // XML/BackingStory.xml — balises XML natives (images + arbre)
 }
 
 const FONT_EXTENSIONS = ['.otf', '.ttf', '.woff', '.woff2']
@@ -381,6 +382,8 @@ export async function unzipIdml(idmlFile: File): Promise<IdmlZipContents> {
       contents.resources[path] = text
     } else if (path.startsWith('MasterSpreads/')) {
       contents.masterSpreads[path] = text
+    } else if (path === 'XML/BackingStory.xml') {
+      contents.backingStory = text
     } else if (path.toLowerCase() === 'designmap.xml') {
       contents.designMap = text
     }

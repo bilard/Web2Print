@@ -86,6 +86,7 @@ export function useIdmlParse() {
         idmlContents.resources,
         idmlContents.designMap,
         idmlContents.masterSpreads,
+        idmlContents.backingStory ?? '',
       )
 
       setState((s) => ({ ...s, step: 'converting', idmlDoc }))
