@@ -11,7 +11,7 @@
  */
 
 import { parseEcTag, parseEcImageField } from '@/features/easycatalog/ecIdmlImport'
-import { flattenXmlElementStory } from './xmlElementStory'
+import { flattenXmlElementStory, valueXmlElementStory, extractStoryFields } from './xmlElementStory'
 import { parseBackingStoryImageFields, parseBackingStoryTagTree, type TagTreeNode } from './xmlBackingStory'
 
 export interface IdmlColor {
@@ -75,6 +75,10 @@ export interface IdmlObject {
   isAnchored?: boolean
   // EasyCatalog : nom du champ image lié (cadre Rectangle portant ECPageItemData="2 2 <champ>")
   ecImageField?: string
+  // Merge XML natif : template avec {{champ}} (même concaténation que le texte affiché)
+  mergeTemplate?: string
+  // Merge XML natif : liste ordonnée des champs liés à ce TextFrame
+  mergeFields?: string[]
 }
 
 interface CharStyleOverride {
@@ -923,9 +927,9 @@ function parseStory(
   paraStyles: Map<string, StyleDef>,
   charStyles: Map<string, StyleDef>,
 ): IdmlParagraph[] {
-  // Balises XML natives InDesign : aplatir <XMLElement MarkupTag> en {{champ}} avant parsing.
-  // (no-op si la story ne contient aucun MarkupTag.)
-  const doc = parseXml(flattenXmlElementStory(storyXml))
+  // Balises XML natives InDesign : unwrapper <XMLElement MarkupTag> en conservant le contenu d'origine.
+  // valueXmlElementStory est idempotent : early-return si aucun <XMLElement> présent.
+  const doc = parseXml(valueXmlElementStory(storyXml))
   const paragraphs: IdmlParagraph[] = []
 
   const storyEls = doc.getElementsByTagName('Story')
@@ -1487,6 +1491,7 @@ function walkElementsInOrder(
   objStyleMap: Map<string, ObjectStyleDef>,
   anchoredFrameMap: Map<string, AnchoredFrameRef[]>,
   imageFieldMap: Map<string, string> = new Map(),
+  storyMergeMap: Map<string, { template: string; fields: string[] }> = new Map(),
 ) {
   for (let i = 0; i < parent.childNodes.length; i++) {
     const child = parent.childNodes[i]
@@ -1495,9 +1500,9 @@ function walkElementsInOrder(
     const tag = el.tagName
 
     if (tag === 'Group') {
-      walkElementsInOrder(el, pageOffsetX, pageOffsetY, colorMap, storiesMap, results, objStyleMap, anchoredFrameMap, imageFieldMap)
+      walkElementsInOrder(el, pageOffsetX, pageOffsetY, colorMap, storiesMap, results, objStyleMap, anchoredFrameMap, imageFieldMap, storyMergeMap)
     } else if (ITEM_TAGS.has(tag)) {
-      const obj = parseElement(el, tag as IdmlObject['type'], pageOffsetX, pageOffsetY, colorMap, storiesMap, objStyleMap, imageFieldMap)
+      const obj = parseElement(el, tag as IdmlObject['type'], pageOffsetX, pageOffsetY, colorMap, storiesMap, objStyleMap, imageFieldMap, storyMergeMap)
       if (obj) {
         results.push(obj)
       }
@@ -1571,6 +1576,26 @@ export function parseIdml(
     } catch { /* skip */ }
   }
 
+  // Construire la map merge : storyId → { template avec {{}}, fields }
+  // Pour les stories balisées XML natif (XMLElement avec MarkupTag).
+  const storyMergeMap = new Map<string, { template: string; fields: string[] }>()
+  for (const [, xml] of Object.entries(stories)) {
+    try {
+      const doc = parseXml(xml)
+      const storyEls = doc.getElementsByTagName('Story')
+      if (storyEls.length === 0) continue
+      const storyId = storyEls[0].getAttribute('Self') ?? ''
+      if (!storyId) continue
+      const fields = extractStoryFields(xml)
+      if (fields.length === 0) continue // story non balisée → pas de template
+      // template = texte version {{}}, concaténé comme le Textbox affiché.
+      // flattenXmlElementStory supprime les <XMLElement> → valueXmlElementStory early-return = pas de double-substitution.
+      const tplParas = parseStory(flattenXmlElementStory(xml), colorMap, paraStyles, charStyles)
+      const template = tplParas.map((p) => p.text.replace(/\n$/, '')).join('\n')
+      storyMergeMap.set(storyId, { template, fields })
+    } catch { /* skip */ }
+  }
+
   // Parse stories
   const storiesMap = new Map<string, IdmlParagraph[]>()
   for (const [path, xml] of Object.entries(stories)) {
@@ -1601,7 +1626,7 @@ export function parseIdml(
     // Walk elements in document order (= InDesign z-order, back to front)
     const spreadEl = doc.getElementsByTagName('Spread')[0]
     if (spreadEl) {
-      walkElementsInOrder(spreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap, imageFieldMap)
+      walkElementsInOrder(spreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap, imageFieldMap, storyMergeMap)
     }
   }
 
@@ -1616,7 +1641,7 @@ export function parseIdml(
 
       const masterSpreadEl = doc.getElementsByTagName('MasterSpread')[0]
       if (masterSpreadEl) {
-        walkElementsInOrder(masterSpreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap, imageFieldMap)
+        walkElementsInOrder(masterSpreadEl, pageOffsetX, pageOffsetY, colorMap, storiesMap, allObjects, objStyleMap, anchoredFrameMap, imageFieldMap, storyMergeMap)
       }
     }
   }
@@ -1633,6 +1658,7 @@ function parseElement(
   storiesMap: Map<string, IdmlParagraph[]>,
   objStyleMap: Map<string, ObjectStyleDef> = new Map(),
   imageFieldMap: Map<string, string> = new Map(),
+  storyMergeMap: Map<string, { template: string; fields: string[] }> = new Map(),
 ): IdmlObject | null {
   const parsed = parseBounds(el)
   if (!parsed) {
@@ -1962,6 +1988,7 @@ function parseElement(
       return null
     }
 
+    const merge = storyMergeMap.get(storyId)
     return {
       ...base, storyId, paragraphs, isOvalFrame, frameSvgPath,
       insetTop: insetTop || undefined,
@@ -1970,6 +1997,7 @@ function parseElement(
       insetRight: insetRight || undefined,
       verticalJustification: verticalJustification !== 'top' ? verticalJustification : undefined,
       noLineBreaks: noLineBreaks || undefined,
+      ...(merge ? { mergeTemplate: merge.template, mergeFields: merge.fields } : {}),
     }
   }
 

@@ -19,13 +19,18 @@ const STORY = `<?xml version="1.0"?><idPkg:Story xmlns:idPkg="x">
 <XMLElement MarkupTag="XMLTag/Prix"><Content>22</Content></XMLElement>
 </CharacterStyleRange></ParagraphStyleRange></XMLElement></Story></idPkg:Story>`
 
-describe('parseIdml — stories balisées XML natif', () => {
-  it('convertit un champ balisé en placeholder {{Prix}} dans le texte du paragraphe', () => {
+describe("parseIdml — stories balisées XML natif", () => {
+  it("affiche la valeur d'origine dans le texte et pose mergeTemplate/mergeFields sur le TextFrame", () => {
     const doc = parseIdml({ 'Spreads/s.xml': SPREAD }, { 'Stories/u156.xml': STORY }, {}, '')
     const tf = doc.objects.find((o) => o.type === 'TextFrame')
     expect(tf).toBeTruthy()
     const text = (tf?.paragraphs ?? []).map((p) => p.text).join('')
-    expect(text).toContain('{{Prix}}')
-    expect(text).not.toContain('22')
+    // Le texte affiché = valeur d'origine (pas de substitution {{}})
+    expect(text).toContain('22')
+    expect(text).not.toContain('{{')
+    // mergeTemplate contient la version template {{champ}}
+    expect(tf?.mergeTemplate).toContain('{{Prix}}')
+    // mergeFields liste les champs balisés
+    expect(tf?.mergeFields).toEqual(['Prix'])
   })
 })
