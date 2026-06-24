@@ -295,8 +295,9 @@ export function useDataMerge() {
           const restore = (obj.data.originText ?? obj.data.templateText) as string
           obj.set('text', restore)
           // Restaurer les styles originaux du template
-          if (obj.data.templateStyles) {
-            ;(obj as any).styles = JSON.parse(JSON.stringify(obj.data.templateStyles))
+          const restoreStyles = (obj.data.originStyles ?? obj.data.templateStyles) as Record<number, Record<number, Record<string, unknown>>> | undefined
+          if (restoreStyles && Object.keys(restoreStyles).length > 0) {
+            ;(obj as any).styles = JSON.parse(JSON.stringify(restoreStyles))
             ;(obj as any).dirty = true
           }
           obj.setCoords()
