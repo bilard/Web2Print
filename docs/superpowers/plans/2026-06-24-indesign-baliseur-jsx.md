@@ -8,6 +8,25 @@
 
 **Tech Stack:** TypeScript strict + Vitest (app) ; ExtendScript ES3 + ScriptUI + InDesign DOM (script).
 
+## ⚠️ Risque principal — gate de validation round-trip (manuel, prioritaire)
+
+Le design suppose que `selection.markup(tag)` produit **exactement** ce que lit la Phase 1 :
+texte → `<XMLElement MarkupTag>` **inline dans la Story** ; image → entrée dans
+`XML/BackingStory.xml` (`XMLContent`→Self de l'`<Image>`). Ceci est spécifié **de mémoire de
+l'API**, non vérifié sur un fichier réel. **T1/T2 (export app) sont sûrs et indépendants ; tout
+le risque est dans T3.**
+
+**Avant de polir T3**, faire (utilisateur, InDesign requis) un **spike round-trip** :
+1. lancer un script minimal (ou le `.jsx` de T3) qui tague un **texte** sélectionné, puis un
+   **cadre image** sélectionné, avec un tag en dur ;
+2. **Fichier > Exporter > IDML** ;
+3. importer l'IDML dans l'app **OU** passer les fichiers dans `parseIdml` et confirmer que le
+   champ texte ressort ET que l'image porte `ecImageField`.
+
+Si `markup()` ne place pas les balises là où la Phase 1 regarde (surtout le chemin **image**,
+lu uniquement via `BackingStory`), **le design du `.jsx` change** (il faudra écrire la structure
+XML explicitement plutôt que via `markup`). Lancer ce gate tôt.
+
 ## Global Constraints
 
 - TypeScript strict, pas d'`any` ; `npx tsc -b` clean (project references — `tsc --noEmit` ne vérifie rien). Tests : `npm run test:run -- <chemin>`. Knip exit 0.
@@ -206,6 +225,10 @@ gardes (doc ouvert / sélection / item choisi), parsing tolérant (lignes vides/
 // (XMLTag) sur la sélection (texte ou cadre) à partir d'une liste de champs
 // exportée par l'app Web2Print. ES3 : var + function uniquement.
 #target indesign
+// #targetengine "session" est OBLIGATOIRE : sans lui, une Window('palette') lancée
+// depuis le panneau Scripts voit son contexte détruit à la fin du script → les
+// onClick/onDoubleClick deviennent inertes (palette affichée mais boutons morts).
+#targetengine "session"
 
 (function () {
   var loadedFields = []; // [{ name: 'Prix_TTC', label: 'Prix TTC' }, ...]
@@ -333,13 +356,28 @@ Le script ne peut pas être exécuté hors InDesign. Vérifier à la relecture :
 Run (sanity, le fichier existe et n'est pas vide) : `wc -l indesign-scripts/web2print-baliseur.jsx`
 Expected: > 40 lignes.
 
-- [ ] **Step 4: Knip (le `.jsx` ne doit pas être analysé comme source TS)**
+- [ ] **Step 4: Isoler `indesign-scripts/**` de l'outillage JS/TS**
+
+Le `.jsx` contient `#target`/`#targetengine` — **pas du JS valide**. S'il tombe dans un glob
+`tsconfig`/`vite`/eslint/knip, `tsc -b` et `npm run build` casseront. Avant de valider :
+- vérifier que `indesign-scripts/` est HORS des `include` de tout `tsconfig*.json` (il l'est par
+  défaut si les tsconfig ciblent `src/`) ; si un glob large l'attrape, l'ajouter en `exclude` ;
+- ajouter `indesign-scripts/` à `.eslintignore` (créer le fichier s'il n'existe pas) ;
+- confirmer qu'il est hors du `root` Vite (il l'est, hors `src/`).
+
+- [ ] **Step 5: Vérifier que le build du projet n'est PAS cassé par le `.jsx`**
+
+Run: `npx tsc -b`
+Expected: aucune erreur (le `.jsx` n'est pas compilé).
+
+Run: `npm run build`
+Expected: build OK (le `.jsx` n'est pas bundlé).
 
 Run: `npx knip`
-Expected: exit 0 (les fichiers `indesign-scripts/**` ne sont pas du TS du projet ; si knip les
-ramasse, les exclure via `knip.json` comme les autres faux positifs déjà déclarés).
+Expected: exit 0 (si knip ramasse `indesign-scripts/**`, l'exclure via `knip.json` comme les
+faux positifs déjà déclarés).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add indesign-scripts/web2print-baliseur.jsx indesign-scripts/README.md
