@@ -84,6 +84,8 @@ interface UIState {
   rightPanels: { id: string; collapsed: boolean }[]
   setRightPanels: (panels: { id: string; collapsed: boolean }[]) => void
   toggleRightPanel: (id: string) => void
+  showMergeBadges: boolean
+  setShowMergeBadges: (v: boolean) => void
   damPickerOpen: boolean
   setDamPickerOpen: (open: boolean) => void
   damPickerMode: 'insert' | 'replace' | 'fill'
@@ -208,6 +210,9 @@ export const useUIStore = create<UIState>((set) => ({
         p.id === id ? { ...p, collapsed: !p.collapsed } : p
       ),
     })),
+
+  showMergeBadges: true,
+  setShowMergeBadges: (showMergeBadges) => set({ showMergeBadges }),
 
   damPickerOpen: false,
   setDamPickerOpen: (damPickerOpen) =>

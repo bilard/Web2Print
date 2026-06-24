@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Grid3X3, Magnet, Settings2 } from 'lucide-react'
+import { ZoomIn, ZoomOut, Grid3X3, Magnet, Settings2, Link2 } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { canvasPxToMm } from '@/features/print/dimensions'
 import { PagesBar } from './PagesBar'
@@ -10,6 +10,7 @@ export function EditorFooter() {
     zoom, setZoom, gridVisible, setGridVisible, snapEnabled, setSnapEnabled,
     canvasWidth, canvasHeight,
     rightPanels, setRightPanels, setRightPanelOpen,
+    showMergeBadges, setShowMergeBadges,
   } = useUIStore()
 
   const openPagePanel = () => {
@@ -85,6 +86,15 @@ export function EditorFooter() {
             aria-pressed={snapEnabled}
             className={`p-1 rounded transition-colors ${snapEnabled ? 'text-indigo-400 bg-indigo-500/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}>
             <Magnet className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setShowMergeBadges(!showMergeBadges)}
+            title="Afficher les connecteurs de champs IDML"
+            aria-pressed={showMergeBadges}
+            className={`p-1 rounded transition-colors ${showMergeBadges ? 'text-indigo-400 bg-indigo-500/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}
+          >
+            <Link2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
