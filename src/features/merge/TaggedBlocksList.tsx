@@ -1,10 +1,27 @@
+import { useEffect, useState } from 'react'
 import { Link2 } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
-import { useEditorStore } from '@/stores/editor.store'
+import { useLayers } from '@/features/editor/useLayers'
 
 export function TaggedBlocksList() {
-  const setSelectedObjectId = useEditorStore((s) => s.setSelectedObjectId)
+  const { selectLayer } = useLayers()
+  const [, setTick] = useState(0)
+
+  useEffect(() => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+    const redraw = () => setTick((n) => n + 1)
+    canvas.on('object:added', redraw)
+    canvas.on('object:removed', redraw)
+    canvas.on('after:render', redraw)
+    return () => {
+      canvas.off('object:added', redraw)
+      canvas.off('object:removed', redraw)
+      canvas.off('after:render', redraw)
+    }
+  }, [])
+
   const canvas = globalFabricCanvas
   if (!canvas) return null
 
@@ -13,24 +30,11 @@ export function TaggedBlocksList() {
       const fields = ((o as any).data?.mergeFields as string[] | undefined) ?? []
       const img = (o as any).data?.ecImageField as string | undefined
       const all = img ? [...fields, `${img} (image)`] : fields
-      return { id: (o as any).data?.id as string | undefined, obj: o, fields: all }
+      return { id: (o as any).data?.id as string | undefined, fields: all }
     })
     .filter((b) => b.id && b.fields.length > 0)
 
   if (blocks.length === 0) return null
-
-  const handleSelect = (id: string) => {
-    // setSelectedObjectId seul ne déclenche PAS canvas.setActiveObject → on le fait manuellement
-    // (même logique que useLayers.selectLayer)
-    const fObj = collectObjectsDeep(canvas.getObjects()).find(
-      (o) => (o as any).data?.id === id,
-    )
-    if (fObj) {
-      canvas.setActiveObject(fObj)
-      canvas.requestRenderAll()
-    }
-    setSelectedObjectId(id)
-  }
 
   return (
     <div className="px-3 py-2 border-b border-white/5">
@@ -42,7 +46,7 @@ export function TaggedBlocksList() {
         {blocks.map((b) => (
           <button
             key={b.id}
-            onClick={() => handleSelect(b.id!)}
+            onClick={() => selectLayer(b.id!)}
             className="w-full flex items-center gap-2 text-left text-[12px] text-white/80 hover:bg-white/5 rounded px-2 py-1 transition-colors"
           >
             <span className="text-indigo-400 shrink-0">▸</span>

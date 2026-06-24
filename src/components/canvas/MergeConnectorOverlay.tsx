@@ -42,7 +42,7 @@ export function MergeConnectorOverlay({ canvas }: { canvas: Canvas | null }) {
   if (!canvas) return null
 
   const tagged = showMergeBadges
-    ? collectObjectsDeep(canvas.getObjects()).filter((o) => fieldsOf(o).length > 0)
+    ? collectObjectsDeep(canvas.getObjects()).filter((o) => fieldsOf(o).length > 0 && o.visible !== false)
     : []
 
   return (
@@ -62,7 +62,7 @@ export function MergeConnectorOverlay({ canvas }: { canvas: Canvas | null }) {
           </div>
         )
       })}
-      {hovered && canvas.getObjects().includes(hovered) && (() => {
+      {hovered && canvas.getObjects().includes(hovered) && hovered.visible !== false && (() => {
         const p = screenPos(canvas, hovered)
         return (
           <div
