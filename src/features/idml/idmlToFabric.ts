@@ -516,7 +516,16 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
           stroke: '', strokeWidth: 0,
           opacity: obj.opacity,
           backgroundColor: (!needsSeparateBg && bgFill !== 'transparent') ? bgFill : undefined,
-          data: { ...makeData(obj, fullText.slice(0, 30) || 'Texte'), idmlPtScale: sY },
+          data: {
+            ...makeData(obj, fullText.slice(0, 30) || 'Texte'),
+            idmlPtScale: sY,
+            ...(obj.mergeTemplate ? {
+              templateText: obj.mergeTemplate,
+              originText: fullText,
+              originStyles: fabricCharStyles ?? {},
+              mergeFields: obj.mergeFields ?? [],
+            } : {}),
+          },
           // Pass styles in constructor to prevent Fabric.js from auto-expanding width.
           // Setting styles AFTER construction triggers a min-width enforcement that
           // overrides our carefully computed wrap width (adjustedWidth).
