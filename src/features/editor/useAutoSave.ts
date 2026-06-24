@@ -17,13 +17,21 @@ export let globalSave: (() => Promise<void>) | null = null
 
 /**
  * Renvoie le texte à sérialiser dans le JSON sauvegardé pour un objet Textbox.
- * - Bloc IDML balisé (originText présent) → valeur stable (la vraie donnée)
+ * - Bloc IDML balisé (originText présent) :
+ *   · connecté   → originText (valeur stable ; obj.text = preview de ligne)
+ *   · déconnecté → obj.text (l'utilisateur a peut-être édité directement)
  * - {{}} manuel (templateText sans originText) → le template (comportement legacy)
  * - Bloc sans template → texte inchangé
  */
-export function serializedTextFor(obj: { text?: string; data?: Record<string, unknown> }): string {
+export function serializedTextFor(
+  obj: { text?: string; data?: Record<string, unknown> },
+  isConnected: boolean,
+): string {
   const d = obj.data ?? {}
-  if (typeof d.originText === 'string') return d.originText // bloc IDML balisé : valeur stable
+  if (typeof d.originText === 'string') {
+    // Bloc IDML balisé : en connecté, la valeur stable ; en déconnecté, le texte édité
+    return isConnected ? d.originText : (obj.text ?? d.originText)
+  }
   if (typeof d.templateText === 'string') return d.templateText // {{}} manuel : legacy
   return obj.text ?? ''
 }
@@ -40,7 +48,7 @@ function _loadingInProgressRef(): boolean {
  * Upload them to Storage and replace src on the live FabricImage.
  * Then serialize to JSON — the permanent URLs will be baked in.
  */
-async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Promise<string> {
+async function persistImagesAndSerialize(canvas: Canvas, projectId: string, isConnected: boolean): Promise<string> {
   // Step 1: Find live FabricImage objects with blob: or data: src
   const liveImages: FabricImage[] = []
   for (const obj of canvas.getObjects()) {
@@ -156,7 +164,7 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
   const resolvedTexts: ResolvedEntry[] = []
   for (const obj of canvas.getObjects()) {
     if (obj instanceof Textbox && (obj.data?.templateText || obj.data?.originText)) {
-      const target = serializedTextFor(obj)
+      const target = serializedTextFor(obj, isConnected)
       if (obj.text !== target) {
         const resolvedStyles = JSON.parse(JSON.stringify((obj as any).styles || {})) as Record<number, Record<number, Record<string, unknown>>>
         const resolvedWidth = obj.width
@@ -215,7 +223,9 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
     setSaveStatus('saving')
     try {
       // Upload non-permanent images to Storage, then serialize
-      const json = await persistImagesAndSerialize(canvas, projectId)
+      // Lire isConnected au moment du save (closure async stale → getState())
+      const { isConnected } = useMergeStore.getState()
+      const json = await persistImagesAndSerialize(canvas, projectId, isConnected)
       const { canvasWidth, canvasHeight, canvasBg, canvasBgType, canvasBgGradient, canvasBgImage, dpi, bleedMm, showPrintMarks, showSafeArea } = useUIStore.getState()
       const { colors: paletteColors, gradients: paletteGradients } = usePaletteStore.getState()
 

@@ -15,6 +15,36 @@ import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formul
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import type { ExcelSheet, CellValue } from '@/features/excel/types'
 
+/**
+ * Fonction pure : met à jour `data.originText` et `data.originStyles` d'un bloc
+ * Textbox IDML après édition directe, UNIQUEMENT en état déconnecté.
+ *
+ * Appelée depuis un handler `text:editing:exited` toujours attaché (indépendant
+ * de l'état de connexion) pour que l'édition hors connexion soit préservée au save.
+ *
+ * Conditions pour agir :
+ *  - Le bloc a `data.originText` (bloc IDML balisé)
+ *  - La source n'est PAS connectée (sinon obj.text = preview de ligne, pas la valeur stable)
+ *  - Le texte édité ne contient pas de `{{}}` (pas de template retapé)
+ *
+ * Exporté pour les tests unitaires.
+ */
+export function syncOriginTextOnEdit(
+  target: { text?: string; data?: Record<string, unknown>; styles?: unknown },
+  isConnected: boolean,
+): void {
+  if (!target.data) return
+  if (typeof target.data.originText !== 'string') return
+  if (isConnected) return
+  const currentText = target.text ?? ''
+  if (hasPlaceholders(currentText)) return
+  target.data.originText = currentText
+  const styles = (target as any).styles as Record<number, Record<number, Record<string, unknown>>> | undefined
+  if (styles && Object.keys(styles).length > 0) {
+    target.data.originStyles = JSON.parse(JSON.stringify(styles))
+  }
+}
+
 /** Cache des URLs d'assets du projet */
 const assetUrlCache = new Map<string, string>()
 
@@ -582,14 +612,8 @@ export function useDataMerge() {
       if (!(target instanceof IText)) return
       const currentText = target.text ?? ''
 
-      // Bloc IDML balisé non connecté : sync originText (avant les styles remappés)
-      if (target.data?.originText && !hasPlaceholders(currentText)) {
-        target.data.originText = currentText // la valeur stable suit l'édition
-        const styles = (target as any).styles as Record<number, Record<number, Record<string, unknown>>> | undefined
-        if (styles && Object.keys(styles).length > 0) {
-          target.data.originStyles = JSON.parse(JSON.stringify(styles))
-        }
-      }
+      // Note : la sync originText en déconnecté est gérée par un effet séparé
+      // (syncOriginTextOnEdit) pour ne pas polluer la valeur stable en connecté.
 
       if (hasPlaceholders(currentText)) {
         // Le texte a des {{}} → mettre à jour le template et capturer les styles actuels
@@ -639,6 +663,32 @@ export function useDataMerge() {
       canvas.off('text:editing:exited', handleEditingExited)
     }
   }, [isConnected, rows, currentRowIndex])
+
+  // Sync originText/originStyles en déconnecté — handler TOUJOURS attaché,
+  // indépendant de l'état de connexion. Lit isConnected via getState() au
+  // moment de l'event pour éviter une closure stale. globalFabricCanvas est
+  // lue dans le handler (pas à l'effet mount) : si le canvas n'est pas encore
+  // prêt au mount, les events canvas seront attachés dès que le canvas sera
+  // disponible lors du prochain render déclenché par projectId.
+  useEffect(() => {
+    const canvas = globalFabricCanvas
+    if (!canvas) return
+
+    const handleSyncOrigin = (e: { target?: unknown }) => {
+      const target = e.target
+      if (!(target instanceof IText)) return
+      const { isConnected: connected } = useMergeStore.getState()
+      syncOriginTextOnEdit(
+        target as { text?: string; data?: Record<string, unknown>; styles?: unknown },
+        connected,
+      )
+    }
+
+    canvas.on('text:editing:exited', handleSyncOrigin)
+    return () => {
+      canvas.off('text:editing:exited', handleSyncOrigin)
+    }
+  }, [projectId])
 
   return {
     isConnected,
