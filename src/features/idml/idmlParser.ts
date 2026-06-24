@@ -81,6 +81,9 @@ export interface IdmlObject {
   mergeTemplate?: string
   // Merge XML natif : liste ordonnée des champs liés à ce TextFrame
   mergeFields?: string[]
+  // Merge XML natif : paragraphes du MODÈLE ({{champ}}) avec leurs styles — sert à poser
+  // data.templateStyles pour que remapStyles préserve la couleur/taille de chaque champ à la fusion.
+  mergeTemplateParas?: IdmlParagraph[]
 }
 
 interface CharStyleOverride {
@@ -1493,7 +1496,7 @@ function walkElementsInOrder(
   objStyleMap: Map<string, ObjectStyleDef>,
   anchoredFrameMap: Map<string, AnchoredFrameRef[]>,
   imageFieldMap: Map<string, string> = new Map(),
-  storyMergeMap: Map<string, { template: string; fields: string[] }> = new Map(),
+  storyMergeMap: Map<string, { template: string; fields: string[]; templateParas: IdmlParagraph[] }> = new Map(),
 ) {
   for (let i = 0; i < parent.childNodes.length; i++) {
     const child = parent.childNodes[i]
@@ -1580,7 +1583,7 @@ export function parseIdml(
 
   // Construire la map merge : storyId → { template avec {{}}, fields }
   // Pour les stories balisées XML natif (XMLElement avec MarkupTag).
-  const storyMergeMap = new Map<string, { template: string; fields: string[] }>()
+  const storyMergeMap = new Map<string, { template: string; fields: string[]; templateParas: IdmlParagraph[] }>()
   for (const [, xml] of Object.entries(stories)) {
     try {
       const doc = parseXml(xml)
@@ -1594,7 +1597,7 @@ export function parseIdml(
       // flattenXmlElementStory supprime les <XMLElement> → valueXmlElementStory early-return = pas de double-substitution.
       const tplParas = parseStory(flattenXmlElementStory(xml), colorMap, paraStyles, charStyles)
       const template = tplParas.map((p) => p.text.replace(/\n$/, '')).join('\n')
-      storyMergeMap.set(storyId, { template, fields })
+      storyMergeMap.set(storyId, { template, fields, templateParas: tplParas })
     } catch { /* skip */ }
   }
 
@@ -1660,7 +1663,7 @@ function parseElement(
   storiesMap: Map<string, IdmlParagraph[]>,
   objStyleMap: Map<string, ObjectStyleDef> = new Map(),
   imageFieldMap: Map<string, string> = new Map(),
-  storyMergeMap: Map<string, { template: string; fields: string[] }> = new Map(),
+  storyMergeMap: Map<string, { template: string; fields: string[]; templateParas: IdmlParagraph[] }> = new Map(),
 ): IdmlObject | null {
   const parsed = parseBounds(el)
   if (!parsed) {
@@ -2004,7 +2007,7 @@ function parseElement(
       verticalJustification: verticalJustification !== 'top' ? verticalJustification : undefined,
       noLineBreaks: noLineBreaks || undefined,
       autoSizingType,
-      ...(merge ? { mergeTemplate: merge.template, mergeFields: merge.fields } : {}),
+      ...(merge ? { mergeTemplate: merge.template, mergeFields: merge.fields, mergeTemplateParas: merge.templateParas } : {}),
     }
   }
 

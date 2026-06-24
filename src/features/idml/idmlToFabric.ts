@@ -399,6 +399,13 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
       // Per-character styles need sY applied to font sizes for correct proportions
       const fabricCharStyles = buildFabricCharStyles(paras, sY, firstPara)
 
+      // Styles du MODÈLE ({{champ}}) : permettent à remapStyles d'étendre la couleur/taille de
+      // chaque champ à sa valeur fusionnée (sinon les styles de la valeur d'origine, courte, se
+      // décalent sur la valeur fusionnée plus longue → couleurs mélangées).
+      const fabricTemplateStyles = obj.mergeTemplateParas && obj.mergeTemplateParas.length > 0
+        ? buildFabricCharStyles(obj.mergeTemplateParas, sY, obj.mergeTemplateParas[0])
+        : undefined
+
       // Always use a separate background shape when TextFrame has a fill
       // (Fabric.js backgroundColor only covers text height, not full InDesign frame)
       const tfCr = obj.cornerRadius ? obj.cornerRadius * Math.min(Math.abs(obj.scaleX), Math.abs(obj.scaleY)) : 0
@@ -521,6 +528,7 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
             idmlPtScale: sY,
             ...(obj.mergeTemplate ? {
               templateText: obj.mergeTemplate,
+              templateStyles: fabricTemplateStyles ?? fabricCharStyles ?? {},
               originText: fullText,
               originStyles: fabricCharStyles ?? {},
               mergeFields: obj.mergeFields ?? [],
