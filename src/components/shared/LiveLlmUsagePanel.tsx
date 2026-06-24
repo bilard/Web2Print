@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink, Eraser } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink, Eraser, Clapperboard } from 'lucide-react'
 import { useUsageStats } from '@/features/stats/useUsageStats'
 import { fetchProviderBalances } from '@/features/stats/providerBalances'
 import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
@@ -329,14 +329,25 @@ export function LiveLlmUsagePanel() {
     return { images, credits, consumedUsd }
   }, [stats])
 
+  // Higgsfield : conso PER-USER (clé propre à chaque user) → compteur Firestore
+  // higgsfieldUsage. L'API ne renvoie pas le coût en crédits ni de solde → compte
+  // RÉEL de générations + coût ESTIMÉ.
+  const higgsfieldRow = useMemo(() => {
+    const images = stats?.higgsfield.images ?? 0
+    const videos = stats?.higgsfield.videos ?? 0
+    const generations = stats?.higgsfield.generations ?? 0
+    const consumedUsd = stats?.higgsfield.costUsd ?? 0
+    return { images, videos, generations, consumedUsd }
+  }, [stats])
+
   const hasBdApiErrors = useMemo(() => {
     const e = brightDataRow.apiErrors as Record<string, string | undefined>
     return !!(e.balance ?? e.zoneCost)
   }, [brightDataRow.apiErrors])
 
   const grandTotalUsd = useMemo(
-    () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd + removeBgRow.consumedUsd,
-    [rows, brightDataRow.consumedUsd, removeBgRow.consumedUsd],
+    () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd + removeBgRow.consumedUsd + higgsfieldRow.consumedUsd,
+    [rows, brightDataRow.consumedUsd, removeBgRow.consumedUsd, higgsfieldRow.consumedUsd],
   )
   const grandTokensIn = useMemo(() => rows.reduce((s, r) => s + r.tokensIn, 0), [rows])
   const grandTokensOut = useMemo(() => rows.reduce((s, r) => s + r.tokensOut, 0), [rows])
@@ -771,13 +782,73 @@ export function LiveLlmUsagePanel() {
             </div>
           </div>
         )}
+
+        {/* Section Génération IA — Higgsfield : conso PER-USER (clé propre). */}
+        <div className="grid grid-cols-12 gap-2 px-2 pt-3 pb-1.5 text-[9px] text-white/30 uppercase tracking-wider border-t border-white/10 mt-2">
+          <div className="col-span-9">Génération IA</div>
+        </div>
+
+        {!isLoading && (
+          <div className="flex flex-col gap-2 px-2 py-3 border-b border-white/5 last:border-0">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 min-w-0">
+                <Clapperboard className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <div className="min-w-0">
+                  <a
+                    href="https://cloud.higgsfield.ai/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Ouvrir la console Higgsfield — recharger les crédits"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-white/80 hover:text-indigo-300 transition-colors truncate"
+                  >
+                    <span className="truncate">Higgsfield</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-white/40 hover:text-indigo-300 shrink-0" />
+                  </a>
+                  <p className="text-[9.5px] text-white/30 font-mono truncate">Image (Soul) / vidéo (DoP)</p>
+                </div>
+              </div>
+              <a
+                href="https://cloud.higgsfield.ai/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Recharger les crédits Higgsfield"
+                className="text-[9px] text-white/30 hover:text-indigo-300 inline-flex items-center gap-0.5 transition-colors"
+              >
+                recharger <ExternalLink className="w-2 h-2" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">Consommé (estimé)</p>
+                <p className={`text-sm font-mono leading-tight ${higgsfieldRow.consumedUsd > 0 ? 'text-white/90' : 'text-white/30'}`}>
+                  ${higgsfieldRow.consumedUsd.toFixed(2)}
+                </p>
+                <p className="text-[9px] font-mono text-white/30">{formatEur(higgsfieldRow.consumedUsd)}</p>
+              </div>
+
+              <div className="bg-white/[0.03] rounded-md px-2 py-1.5 border border-white/5">
+                <p className="text-[9px] text-white/30 uppercase tracking-wider">Générations</p>
+                <p className={`text-sm font-mono leading-tight ${higgsfieldRow.generations > 0 ? 'text-white/90' : 'text-white/30'}`}>
+                  {higgsfieldRow.generations}
+                </p>
+                <p className="text-[9px] font-mono text-white/30">
+                  {higgsfieldRow.images + higgsfieldRow.videos > 0
+                    ? `${higgsfieldRow.images} img · ${higgsfieldRow.videos} vid`
+                    : 'ce mois'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <p className="text-[9px] text-white/25 leading-relaxed">
         Données agrégées depuis Firestore — collections{' '}
         <code className="text-white/40">aiUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
-        <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code> et{' '}
-        <code className="text-white/40">removebgUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
+        <code className="text-white/40">brightDataUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>,{' '}
+        <code className="text-white/40">removebgUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code> et{' '}
+        <code className="text-white/40">higgsfieldUsage/{`{user}_${new Date().toISOString().slice(0, 7)}`}</code>.
         Auto-refresh toutes les 15 s. Les <strong className="text-white/60">alertes</strong> sont des seuils mensuels{' '}
         <em>locaux</em> : elles déclenchent un warning à ≥ 80 % et un état "limite atteinte" à ≥ 100 %, mais ne rechargent pas le compte chez le provider.
         Pour recharger réellement les crédits, cliquer sur le nom du provider <ExternalLink className="inline w-2 h-2 -translate-y-px" />.

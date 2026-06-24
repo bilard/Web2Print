@@ -389,6 +389,17 @@ service cloud.firestore {
                                             && request.resource.data.ownerId == request.auth.uid;
     }
 
+    // ── Higgsfield Usage tracking — générations image/vidéo mensuelles ──────
+    // Document `higgsfieldUsage/{uid}_{YYYY-MM}` incrémenté par recordHiggsfieldUsage()
+    // après chaque génération réussie. Clé Higgsfield propre à chaque user → conso
+    // per-user. Même schéma de protection que aiUsage/brightDataUsage/removebgUsage.
+    match /higgsfieldUsage/{docId} {
+      allow read:   if request.auth != null && docId.matches('^' + request.auth.uid + '_\\d{4}-\\d{2}$');
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
+                                            && request.resource.data.ownerId == request.auth.uid;
+    }
+
     // ── Animations HTML ────────────────────────────────────────────────────
     // Métadonnées des animations HTML/CSS/JS sauvegardées dans le DAM (le ZIP
     // lui-même est dans Storage `dam/html-animations/{uid}/`). Le doc contient
