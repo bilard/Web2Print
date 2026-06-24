@@ -292,7 +292,8 @@ export function useDataMerge() {
           // Restaure l'état du bloc (champ masqué/compacté par « Supprimer la ligne si vide »)
           if (obj.data.mergeHidden) { obj.set({ visible: true }); delete obj.data.mergeHidden }
           if (obj.data.mergeBaseTop !== undefined) obj.set({ top: obj.data.mergeBaseTop as number })
-          obj.set('text', obj.data.templateText as string)
+          const restore = (obj.data.originText ?? obj.data.templateText) as string
+          obj.set('text', restore)
           // Restaurer les styles originaux du template
           if (obj.data.templateStyles) {
             ;(obj as any).styles = JSON.parse(JSON.stringify(obj.data.templateStyles))
@@ -563,7 +564,7 @@ export function useDataMerge() {
     const handleEditingEntered = (e: { target?: unknown }) => {
       const target = e.target
       if (!(target instanceof IText)) return
-      if (target.data?.templateText) {
+      if (target.data?.templateText && !target.data?.originText) {
         target.set('text', target.data.templateText)
         // Restaurer les styles du template pour que handleEditingExited capture les bons indices
         const tStyles = target.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
@@ -572,12 +573,22 @@ export function useDataMerge() {
         }
         canvas.requestRenderAll()
       }
+      // bloc IDML balisé (originText présent) : on laisse la valeur affichée (édition de la valeur)
     }
 
     const handleEditingExited = (e: { target?: unknown }) => {
       const target = e.target
       if (!(target instanceof IText)) return
       const currentText = target.text ?? ''
+
+      // Bloc IDML balisé non connecté : sync originText (avant les styles remappés)
+      if (target.data?.originText && !hasPlaceholders(currentText)) {
+        target.data.originText = currentText // la valeur stable suit l'édition
+        const styles = (target as any).styles as Record<number, Record<number, Record<string, unknown>>> | undefined
+        if (styles && Object.keys(styles).length > 0) {
+          target.data.originStyles = JSON.parse(JSON.stringify(styles))
+        }
+      }
 
       if (hasPlaceholders(currentText)) {
         // Le texte a des {{}} → mettre à jour le template et capturer les styles actuels
