@@ -51,6 +51,9 @@ export interface HiggsfieldAsset {
 interface CatalogItem {
   id: string
   name: string
+  /** Vignette d'aperçu (image/vidéo) — rend la liste compréhensible visuellement. */
+  preview?: string
+  description?: string
 }
 export interface HiggsfieldCatalog {
   soulStyles: CatalogItem[]
@@ -152,8 +155,10 @@ function normCatalog(raw: unknown): CatalogItem[] {
   if (!Array.isArray(list)) return []
   return list
     .map((x) => {
-      const o = x as { id?: unknown; name?: unknown }
-      return { id: String(o?.id ?? ''), name: String(o?.name ?? o?.id ?? '') }
+      const o = x as { id?: unknown; name?: unknown; preview_url?: unknown; description?: unknown }
+      const preview = typeof o?.preview_url === 'string' ? o.preview_url : undefined
+      const description = typeof o?.description === 'string' && o.description ? o.description : undefined
+      return { id: String(o?.id ?? ''), name: String(o?.name ?? o?.id ?? ''), preview, description }
     })
     .filter((x) => x.id)
 }

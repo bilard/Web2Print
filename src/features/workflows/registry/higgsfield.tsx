@@ -44,6 +44,8 @@ interface HiggsfieldInputs {
 interface CatalogItem {
   id: string
   name: string
+  preview?: string
+  description?: string
 }
 interface HiggsfieldCatalog {
   soulStyles: CatalogItem[]
@@ -169,17 +171,81 @@ function CatalogSelect({
               className={inputCls + ' pl-7 py-1 text-xs'}
             />
           </div>
-          <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-            <option value="">Aucun (prompt seul)</option>
+          {/* Grille de vignettes : l'aperçu visuel rend les noms cryptiques lisibles. */}
+          <div className="grid grid-cols-3 gap-1 max-h-56 overflow-y-auto p-0.5 rounded bg-background border border-neutral-800">
+            <CatalogTile
+              selected={value === ''}
+              onClick={() => onChange('')}
+              name="Aucun"
+              hint="Prompt seul (sans preset)"
+            />
             {filtered.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
+              <CatalogTile
+                key={i.id}
+                selected={value === i.id}
+                onClick={() => onChange(i.id)}
+                name={i.name}
+                preview={i.preview}
+                hint={i.description || i.name}
+              />
             ))}
-          </select>
+          </div>
+          {value && (
+            <p className="text-[10px] text-indigo-300/80 mt-1 truncate">
+              Sélection : {items.find((i) => i.id === value)?.name ?? value}
+            </p>
+          )}
         </>
       )}
     </div>
+  )
+}
+
+/** Vignette d'un preset (aperçu image/vidéo + nom). Surbrillance si sélectionné. */
+function CatalogTile({
+  selected,
+  onClick,
+  name,
+  preview,
+  hint,
+}: {
+  selected: boolean
+  onClick: () => void
+  name: string
+  preview?: string
+  hint?: string
+}) {
+  const isVideo = !!preview && /\.(mp4|webm|mov)(\?|$)/i.test(preview)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={hint}
+      className={
+        'group flex flex-col rounded overflow-hidden border transition-colors text-left ' +
+        (selected ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-neutral-800 hover:border-neutral-600')
+      }
+    >
+      <div className="aspect-square w-full bg-neutral-800 overflow-hidden flex items-center justify-center">
+        {preview ? (
+          isVideo ? (
+            <video src={preview} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+          ) : (
+            <img src={preview} alt={name} loading="lazy" className="w-full h-full object-cover" />
+          )
+        ) : (
+          <span className="text-[9px] text-neutral-600 px-1 text-center leading-tight">{name}</span>
+        )}
+      </div>
+      <span
+        className={
+          'block text-[9px] leading-tight px-1 py-0.5 truncate ' +
+          (selected ? 'text-indigo-200 bg-indigo-500/15' : 'text-neutral-300 bg-neutral-900/60')
+        }
+      >
+        {name}
+      </span>
+    </button>
   )
 }
 
