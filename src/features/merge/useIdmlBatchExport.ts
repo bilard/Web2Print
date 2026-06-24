@@ -11,6 +11,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { getIdmlBuffer } from '@/features/idml/idmlSource'
 import { extractIdmlContents, buildMultiPageIdml, type PatchOptions } from './idmlPatcher'
 import { templatizeEcContents } from './ecTemplatizer'
+import { templatizeXmlElementContents } from '@/features/idml/xmlElementStory'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { resolveFileName } from './mergeEngine'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
@@ -57,7 +58,10 @@ export function useIdmlBatchExport() {
       }
 
       // Extract XML contents, puis templatiser les champs EasyCatalog ({{champ}} entre marqueurs)
-      const contents = templatizeEcContents(await extractIdmlContents(buffer))
+      // puis les balises XML natif InDesign (<XMLElement MarkupTag>) pour le round-trip.
+      const contents = templatizeXmlElementContents(
+        templatizeEcContents(await extractIdmlContents(buffer)),
+      )
 
       // Collect bindings from canvas objects
       const canvas = globalFabricCanvas
