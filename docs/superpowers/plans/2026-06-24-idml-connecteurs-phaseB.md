@@ -165,6 +165,11 @@ git commit -m "feat(panels): section Connecteur IDML (champ lié au bloc sélect
 
 Un seul composant : si `showMergeBadges` → un badge discret sur **chaque** bloc balisé ; et au survol d'un bloc balisé → un tooltip détaillé (toujours, indépendamment du toggle).
 
+> **Pré-vérifié : les blocs IDML sont TOP-LEVEL** (`idmlToFabric` ne crée aucun `Group` ;
+> `useIdmlParse` fait `canvas.add(obj)` par objet). Donc `getBoundingRect()` est canvas-absolu et
+> `mouse:over` donne directement le bloc (`e.target`) — pas d'enfant de groupe. Le positionnement
+> et le hover ci-dessous fonctionnent sans résolution de groupe.
+
 **Files:**
 - Create: `src/components/canvas/MergeConnectorOverlay.tsx`
 - Modify: `src/features/editor/CanvasContainer.tsx` (montage, près de `<TransformBadge … />`)
@@ -221,7 +226,7 @@ export function MergeConnectorOverlay({ canvas }: { canvas: Canvas | null }) {
         const p = screenPos(canvas, o)
         const f = fieldsOf(o)
         return (
-          <div key={(o as any).data?.id ?? Math.random()} className="absolute z-20 -translate-x-1/2 pointer-events-none"
+          <div key={(o as any).data?.id as string} className="absolute z-20 -translate-x-1/2 pointer-events-none"
             style={{ left: p.x, top: p.top - 8 }}>
             <span className="px-1.5 py-0.5 rounded bg-indigo-600/80 text-[#fff] text-[9px] whitespace-nowrap shadow">
               {f.length > 1 ? `${f.length} champs` : f[0]}
@@ -345,6 +350,21 @@ git commit -m "feat(merge): liste globale des blocs balisés IDML (sélection au
 ```
 
 ---
+
+## Gate de validation manuelle (OBLIGATOIRE — feature 100 % visuelle)
+
+`tsc -b`/`build` ne valident **rien de ce que l'utilisateur voit**. Après les 4 tâches (build +
+deploy), valider dans l'app sur l'IDML balisé (V6) :
+- [ ] Sélectionner le bloc « prix » → le panneau de droite affiche une section **Connecteur IDML**
+      avec le nom du champ (`Prix_normal`).
+- [ ] Sélectionner un bloc **image** balisé → la section affiche `… (image)`.
+- [ ] Toggle « connecteurs » ON (footer) → un **badge se pose SUR chaque bloc balisé** (vérifier
+      l'alignement du badge sur le bloc, pas décalé) ; OFF → badges masqués.
+- [ ] **Survoler** un bloc balisé → tooltip avec le(s) champ(s).
+- [ ] Dans la **liste globale** (panneau Données), **cliquer une entrée** → le bloc correspondant
+      est **réellement sélectionné sur le canvas** (cadre de sélection visible). ⚠️ Si la sélection
+      ne suit pas, c'est que `setSelectedObjectId` ne pilote pas `canvas.setActiveObject` — voir
+      « Points à vérifier ».
 
 ## Self-review
 
