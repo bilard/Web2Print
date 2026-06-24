@@ -15,6 +15,7 @@ import { registerDynamicFontVariant } from '@/features/assets/useFonts'
 import { registerFontBuffer } from '@/features/assets/fontBufferRegistry'
 import { downloadIdmlFromStorage, globalIdmlSource } from '@/features/idml/idmlSource'
 import { applyPrintDefaults } from '@/features/print/printDefaults'
+import { autoFitPlaceholderWidth } from '@/features/merge/useDataMerge'
 
 /**
  * Drop any legacy `clipPath` left on a FabricImage by older saves.
@@ -523,15 +524,14 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
                   ;(obj as any).dirty = true
                   ;(obj as any).initDimensions()
                 }
-                // Restaurer la largeur auto-fit des blocs merge à placeholder unique
-                if (obj instanceof Textbox && obj.data?.autoFitWidth) {
-                  const fitW = obj.data.autoFitWidth as number
-                  if (Math.abs((obj.width ?? 0) - fitW) > 1) {
-                    obj.set({ width: fitW, scaleX: 1, scaleY: 1 })
-                    ;(obj as any).initDimensions?.()
-                    obj.setCoords()
-                    autoFitApplied = true
-                  }
+                // Recalculer (≠ ré-appliquer aveuglément) la largeur auto-fit des
+                // blocs merge à placeholder unique : une description multi-ligne
+                // récupère son cadre fixe au lieu de gagner une ligne à chaque
+                // rechargement.
+                if (obj instanceof Textbox && obj.data?.autoFitWidth !== undefined) {
+                  const before = obj.width ?? 0
+                  autoFitPlaceholderWidth(obj)
+                  if (Math.abs((obj.width ?? 0) - before) > 1) autoFitApplied = true
                 }
               }
               canvas.requestRenderAll()

@@ -22,6 +22,40 @@ const assetUrlCache = new Map<string, string>()
 const imageCache = new Map<string, string>()
 
 /**
+ * Auto-fit la largeur d'un Textbox à placeholder unique sur son contenu — MAIS
+ * seulement si la valeur résolue tient sur UNE ligne dans le cadre d'origine.
+ *
+ * Piège : une description longue se replie sur plusieurs lignes. `calcTextWidth()`
+ * renvoie alors la ligne wrappée la PLUS LONGUE (< largeur du cadre). Régler
+ * `width` sur cette valeur replie le texte sur ENCORE plus de lignes — et comme
+ * `autoFitWidth` est persisté puis ré-appliqué au chargement, la description
+ * gagnait une ligne à CHAQUE sauvegarde/rechargement. On garde donc le cadre
+ * fixe dès que le contenu déborde sur 2 lignes ou plus.
+ */
+export function autoFitPlaceholderWidth(tb: Textbox): void {
+  const data = ((tb as any).data ??= {}) as Record<string, unknown>
+  // Largeur du cadre de référence (capturée AVANT tout auto-fit).
+  const frameW = (data.originalWidth as number | undefined) ?? tb.width ?? 0
+  if (data.originalWidth === undefined) data.originalWidth = frameW
+  // Mesurer le wrapping AU CADRE D'ORIGINE.
+  tb.set({ width: frameW, scaleX: 1, scaleY: 1 })
+  ;(tb as any).initDimensions?.()
+  const lineCount = ((tb as any)._textLines as unknown[] | undefined)?.length ?? 1
+  if (lineCount > 1) {
+    // Contenu multi-ligne → cadre fixe, pas d'auto-fit (et purge de l'ancienne valeur).
+    delete data.autoFitWidth
+    tb.setCoords()
+    return
+  }
+  // Contenu sur une seule ligne → ajuster la largeur au contenu.
+  const minW = Math.max((tb as any).calcTextWidth(), 10)
+  data.autoFitWidth = minW
+  tb.set({ width: minW })
+  ;(tb as any).initDimensions?.()
+  tb.setCoords()
+}
+
+/**
  * « Supprimer la ligne si vide » pour les champs SÉPARÉS d'un bloc (imports
  * PDF) : resolveText vide bien le texte, mais le Textbox occupait toujours sa
  * place — le trou ne se refermait pas. Cette passe masque les champs vidés
@@ -239,17 +273,8 @@ export function useDataMerge() {
         if (obj.data.mergeFrame) continue // cadre fixe (champ PDF) : pas d'auto-fit
         if (obj.data.fitToZone) continue // « tenir dans la zone » : géré par applyRow
         const isSinglePlaceholder = /^\{\{[^}]+\}\}$/.test(tmpl.trim())
-        if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {
-          // Mémoriser la largeur originale (avant auto-fit) pour restauration à la sauvegarde
-          if (obj.data.originalWidth === undefined) {
-            obj.data.originalWidth = obj.width
-          }
-          const minW = (obj as any).calcTextWidth()
-          const fitW = Math.max(minW, 10)
-          obj.data.autoFitWidth = fitW  // Persister pour restauration au chargement
-          obj.set({ width: fitW, scaleX: 1, scaleY: 1 })
-          ;(obj as any).initDimensions?.()
-          obj.setCoords()
+        if (isSinglePlaceholder) {
+          autoFitPlaceholderWidth(obj)
           refreshAncestorGroups(obj)
         }
       }
@@ -382,13 +407,11 @@ export function useDataMerge() {
             // « Réduire pour tenir dans la zone » : abaisse la police (styles inclus).
             const base = (obj.data!.baseFontSize as number | undefined) ?? obj.fontSize ?? 16
             fitTextToZone(obj, obj.data!.fitZone as FitZone, base)
-          } else if (isSinglePlaceholder && typeof (obj as any).calcTextWidth === 'function') {
-            // Auto-fit largeur pour blocs à placeholder unique (taille adaptée à chaque valeur)
-            ;(obj as any).initDimensions?.()
-            const minW = (obj as any).calcTextWidth()
-            const fitW = Math.max(minW, 10)
-            obj.data.autoFitWidth = fitW
-            obj.set({ width: fitW, scaleX: 1, scaleY: 1 })
+          } else if (obj instanceof Textbox && isSinglePlaceholder) {
+            // Auto-fit largeur pour blocs à placeholder unique (taille adaptée à
+            // chaque valeur), SAUF si la valeur se replie sur plusieurs lignes
+            // (alors cadre fixe — sinon la description gagne une ligne par save).
+            autoFitPlaceholderWidth(obj)
             // Re-appliquer les styles après initDimensions (par précaution)
             if (tStyles && Object.keys(tStyles).length > 0) {
               const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
