@@ -102,6 +102,46 @@ additif, ne touche pas le parsing.
 - **Persistance** : sérialiser→désérialiser un objet balisé conserve `data.templateText`.
 - **Phase B (UI)** : pas de test de composant (convention projet) ; validation par build + revue.
 
+## Révisions post-exploration (décisions arrêtées)
+
+L'exploration du code et le fichier réel (V6) ont précisé/corrigé le design :
+
+1. **Chemin confirmé = XML natif.** Le document de l'utilisateur (V6) utilise des `MarkupTag`
+   (`Prix_normal`, `Promotion`, `Free_complement`, `Libelle_Article`, `Marques`, `Description`)
+   et **aucun `ECTagData`**. Phase A (chemin `flattenXmlElementStory`) corrige bien son cas.
+   EasyCatalog reste hors périmètre (l'utilisateur ne l'emploie pas ici).
+
+2. **Persistance — fixer la représentation persistée, pas seulement le reload.** `useAutoSave`
+   échange aujourd'hui `obj.text` → `data.templateText` **avant** de sérialiser, donc le JSON
+   sauvé contient `{{}}` ; tous les consommateurs (snapshots de version, miniatures,
+   duplication, exports lisant le design) reverraient `{{}}`. **Correctif** : changer la **cible
+   de l'échange** vers la **valeur stable** `data.originText` (et le disconnect, `useDataMerge`
+   ~ligne 295), pour que le JSON sauvé contienne la valeur et que `data.templateText` reste dans
+   `data` (déjà sérialisé) pour le merge. Deux subtilités à traiter explicitement :
+   - **(a) save en merge connecté** : échanger la **valeur stable** (`originText`), pas la
+     preview de la ligne N affichée ;
+   - **(b) édition hors merge** : `data.originText` doit **suivre les éditions** de l'utilisateur
+     (sinon un save écrase l'édition par un `originText` périmé) ;
+   - **(c) rétro-compatibilité** : un bloc `{{}}` tapé **manuellement** (sans `originText`) garde
+     le comportement actuel (échange vers `templateText`).
+
+3. **Parse en une passe (pas de double arbre stylé).** `obj.text` = parse **normal** avec la
+   substitution `{{}}` retirée (mode « valeur ») → styles par-caractère naturels, une seule
+   passe. Le **template** est une simple **string + liste de champs** (métadonnée), calculée à
+   part : `data.templateText` (string) + `data.mergeFields` (string[]). **Pas** de
+   `data.templateStyles` à l'import : la fidélité des styles sur la **sortie mergée** dégrade
+   vers le style de base du bloc — **limite v1 assumée et documentée** (le `remapStyles` existant
+   reste pour les `{{}}` manuels).
+
+4. **Double-clic pour éditer** un bloc balisé montre la **valeur** (`data.originText`), pas le
+   template — cohérent avec « voir le document d'origine ». L'édition met à jour `data.originText`
+   (cf. 2b). Le mapping (`{{champ}}`) se gère via le panneau « Connecteur IDML » (Phase B), pas
+   en éditant le texte.
+
+5. **Gate de validation réel** : Phase A doit être confirmée **dans l'app** (réimport → valeurs
+   visibles ; reload/snapshot → toujours valeurs) **avant** de construire les 4 UIs de Phase B
+   (purement additives sur `data.mergeFields`).
+
 ## Hors périmètre (ultérieur)
 
 - Aligner le chemin **EasyCatalog** sur l'affichage des valeurs (même mécanique).
