@@ -15,6 +15,19 @@ import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 /** Global save function — set by useAutoSave, callable from anywhere */
 export let globalSave: (() => Promise<void>) | null = null
 
+/**
+ * Renvoie le texte à sérialiser dans le JSON sauvegardé pour un objet Textbox.
+ * - Bloc IDML balisé (originText présent) → valeur stable (la vraie donnée)
+ * - {{}} manuel (templateText sans originText) → le template (comportement legacy)
+ * - Bloc sans template → texte inchangé
+ */
+export function serializedTextFor(obj: { text?: string; data?: Record<string, unknown> }): string {
+  const d = obj.data ?? {}
+  if (typeof d.originText === 'string') return d.originText // bloc IDML balisé : valeur stable
+  if (typeof d.templateText === 'string') return d.templateText // {{}} manuel : legacy
+  return obj.text ?? ''
+}
+
 /** Block auto-save during initial canvas load to prevent overwriting good data */
 let _loadingInProgress = false
 export function setLoadingInProgress(v: boolean) { _loadingInProgress = v }
@@ -131,7 +144,9 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
     }
   }
 
-  // Step 2: Restore template text/styles/size before serializing (so saved JSON has {{}} placeholders)
+  // Step 2: Swap text/styles/size before serializing.
+  // - Blocs IDML balisés (originText présent) → sauvegarder la VALEUR stable + ses styles
+  // - {{}} manuels (templateText sans originText) → sauvegarder le template (comportement legacy)
   type ResolvedEntry = {
     obj: Textbox
     resolved: string
@@ -140,22 +155,28 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string): Pro
   }
   const resolvedTexts: ResolvedEntry[] = []
   for (const obj of canvas.getObjects()) {
-    if (obj instanceof Textbox && obj.data?.templateText) {
-      const tmpl = obj.data.templateText as string
-      if (obj.text !== tmpl) {
+    if (obj instanceof Textbox && (obj.data?.templateText || obj.data?.originText)) {
+      const target = serializedTextFor(obj)
+      if (obj.text !== target) {
         const resolvedStyles = JSON.parse(JSON.stringify((obj as any).styles || {})) as Record<number, Record<number, Record<string, unknown>>>
         const resolvedWidth = obj.width
         resolvedTexts.push({ obj, resolved: obj.text ?? '', resolvedStyles, resolvedWidth })
 
-        obj.set('text', tmpl)
+        obj.set('text', target)
 
-        // Restaurer les styles du template (indices corrects pour le texte template)
-        const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
-        ;(obj as any).styles = tStyles && Object.keys(tStyles).length > 0
-          ? JSON.parse(JSON.stringify(tStyles))
-          : {}
+        // Styles : pour un bloc IDML (originStyles présent), sauvegarder les styles de la valeur
+        // Pour {{}} manuel, sauvegarder les styles du template (comportement legacy)
+        const idmlStyles = obj.data.originStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
+        if (idmlStyles) {
+          // bloc IDML : sérialiser les styles de la VALEUR
+          ;(obj as any).styles = JSON.parse(JSON.stringify(idmlStyles))
+        } else {
+          // legacy {{}} manuel : styles du template (comportement actuel)
+          const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
+          ;(obj as any).styles = tStyles && Object.keys(tStyles).length > 0 ? JSON.parse(JSON.stringify(tStyles)) : {}
+        }
 
-        // Restaurer la largeur originale (avant auto-fit) pour que le template soit lisible
+        // Restaurer la largeur originale (avant auto-fit) pour que le texte sérialisé soit lisible
         const origW = obj.data.originalWidth as number | undefined
         if (origW && origW !== obj.width) {
           obj.set('width', origW)
