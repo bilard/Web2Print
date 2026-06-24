@@ -16,6 +16,20 @@ const PRIX = `<ParagraphStyleRange>` +
   `<CharacterStyleRange><Content>99</Content></CharacterStyleRange>` +
   `</XMLElement></ParagraphStyleRange>`
 
+// Prix avec override de police dans <Properties><AppliedFont> (enfant du CSR, pas attribut)
+const PRIX_FONT = `<ParagraphStyleRange>` +
+  `<XMLElement Self="x2" MarkupTag="XMLTag/Prix">` +
+  `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/n">` +
+  `<Properties><AppliedFont type="object">SomeFont</AppliedFont></Properties>` +
+  `<Content>22</Content>` +
+  `</CharacterStyleRange>` +
+  `</XMLElement></ParagraphStyleRange>`
+
+// Story sans XMLElement mais contenant la chaîne littérale "MarkupTag" dans du texte
+const NO_XML_ELEMENT = `<ParagraphStyleRange>` +
+  `<CharacterStyleRange><Content>le mot MarkupTag ici</Content></CharacterStyleRange>` +
+  `</ParagraphStyleRange>`
+
 // 3 feuilles dans un conteneur Article, sur 2 paragraphes
 const MULTI = `<XMLElement Self="a1" MarkupTag="XMLTag/Article" XMLContent="s1">` +
   `<ParagraphStyleRange>` +
@@ -46,6 +60,20 @@ describe('flattenXmlElementStory (import)', () => {
     expect(flattenXmlElementStory(plain)).toBe(plain)
   })
 
+  it('préserve <Properties><AppliedFont> (deep clone CSR) — fixing #1', () => {
+    // Ce test DOIT échouer avec cloneNode(false) (shallow) et passer après le fix deep clone.
+    const out = flattenXmlElementStory(STORY(PRIX_FONT))
+    expect(out).toContain('{{Prix}}')
+    expect(out).toContain('AppliedFont')
+    expect(out).toContain('SomeFont')
+    expect(out).not.toContain('>22<')
+  })
+
+  it('garde-XMLElement : story avec "MarkupTag" en texte mais sans <XMLElement> reste strictement inchangée — fixing #2', () => {
+    const xml = STORY(NO_XML_ELEMENT)
+    expect(flattenXmlElementStory(xml)).toBe(xml)
+  })
+
   it('conserve le prologue <?xml ?>', () => {
     expect(flattenXmlElementStory(STORY(PRIX)).startsWith('<?xml')).toBe(true)
   })
@@ -57,6 +85,15 @@ describe('templatizeXmlElementStory (export, round-trip)', () => {
     expect(out).toContain('{{Prix}}')
     expect(out).toContain('MarkupTag="XMLTag/Prix"')
     expect(out).not.toContain('22')
+  })
+
+  it('préserve <Properties><AppliedFont> en mode export (unwrap=false) — fixing #1', () => {
+    const out = templatizeXmlElementStory(STORY(PRIX_FONT))
+    expect(out).toContain('{{Prix}}')
+    expect(out).toContain('MarkupTag="XMLTag/Prix"')
+    expect(out).toContain('AppliedFont')
+    expect(out).toContain('SomeFont')
+    expect(out).not.toContain('>22<')
   })
 })
 

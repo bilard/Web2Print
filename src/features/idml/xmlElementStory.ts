@@ -13,6 +13,10 @@ function processXmlElementStory(xml: string, opts: { unwrap: boolean }): string 
   if (!xml.includes('MarkupTag')) return xml
   const doc = new DOMParser().parseFromString(xml, 'application/xml')
   if (doc.getElementsByTagName('parsererror').length > 0) return xml
+  // Garde stricte : la chaîne "MarkupTag" peut apparaître dans du texte ordinaire sans aucun
+  // <XMLElement>. Dans ce cas, parser puis re-sérialiser (XMLSerializer normalise quotes/entités)
+  // produirait une divergence parasite. On retourne l'original intact.
+  if (doc.getElementsByTagName('XMLElement').length === 0) return xml
 
   // ── Étape 1 : feuilles-champs → un run {{Champ}} unique ──
   // getElementsByTagName renvoie en ordre document (ancêtre avant descendant) ; comme les
@@ -26,7 +30,16 @@ function processXmlElementStory(xml: string, opts: { unwrap: boolean }): string 
     const firstCsr = el.getElementsByTagName('CharacterStyleRange')[0]
     let runNode: Element
     if (firstCsr) {
-      runNode = firstCsr.cloneNode(false) as Element // shallow : conserve les attributs de style
+      // Deep clone pour préserver <Properties><AppliedFont> (et tout autre enfant de style).
+      // AppliedFont est un ENFANT du CSR (dans <Properties>), pas un attribut — un shallow clone
+      // le perdrait, effaçant l'override de police à l'import ET à l'export.
+      runNode = firstCsr.cloneNode(true) as Element
+      // Retirer les enfants <Content> et <Br> existants (texte source) avant d'injecter le placeholder.
+      for (const child of Array.from(runNode.children)) {
+        if (child.tagName === 'Content' || child.tagName === 'Br') {
+          runNode.removeChild(child)
+        }
+      }
       const content = doc.createElement('Content')
       content.textContent = `{{${field}}}`
       runNode.appendChild(content)
