@@ -59,11 +59,15 @@ export async function runHiggsfield(
           'Une URL blob:/locale n\'est pas accessible par Higgsfield.',
       )
     }
+    // L'API live exige un wrapper `params` (le SDK 0.2.1 envoie `input` à plat —
+    // vérifié en live : sans `params`, 422 « body.params: Field required »).
     const res = await client.subscribe('/v1/image2video/dop', {
       input: {
-        model: p.videoModel ?? 'dop-turbo',
-        prompt,
-        input_images: [{ type: 'image_url', image_url: imageUrl }],
+        params: {
+          model: p.videoModel ?? 'dop-turbo',
+          prompt,
+          input_images: [{ type: 'image_url', image_url: imageUrl }],
+        },
       },
       withPolling: true,
     })
@@ -75,13 +79,15 @@ export async function runHiggsfield(
     return [{ url, type: 'video', mimeType: 'video/mp4', name: `higgsfield_${res.request_id}.mp4` }]
   }
 
-  // mode image (Soul text-to-image)
+  // mode image (Soul text-to-image) — wrapper `params` requis (cf. ci-dessus).
   const res = await client.subscribe('/v1/text2image/soul', {
     input: {
-      prompt,
-      width_and_height: SOUL_SIZE[p.aspectRatio ?? '1:1'] ?? SOUL_SIZE['1:1'],
-      quality: p.quality ?? '1080p',
-      batch_size: 1,
+      params: {
+        prompt,
+        width_and_height: SOUL_SIZE[p.aspectRatio ?? '1:1'] ?? SOUL_SIZE['1:1'],
+        quality: p.quality ?? '1080p',
+        batch_size: 1,
+      },
     },
     withPolling: true,
   })
