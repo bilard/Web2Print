@@ -27,13 +27,6 @@ interface RemoveBgUsage {
   costUsd: number
 }
 
-interface HiggsfieldUsage {
-  images: number
-  videos: number
-  generations: number
-  costUsd: number
-}
-
 /** Coûts IA agrégés du mois (un total + le détail par provider). */
 export type AiCostStats = UsageStats['aiCost']
 
@@ -47,13 +40,11 @@ interface UsageStats {
   }
   brightData: BrightDataUsage
   removebg: RemoveBgUsage
-  higgsfield: HiggsfieldUsage
 }
 
 const emptyProvider = (): AiProviderUsage => ({ tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} })
 const emptyBrightData = (): BrightDataUsage => ({ requests: 0, costUsd: 0 })
 const emptyRemoveBg = (): RemoveBgUsage => ({ images: 0, credits: 0, costUsd: 0 })
-const emptyHiggsfield = (): HiggsfieldUsage => ({ images: 0, videos: 0, generations: 0, costUsd: 0 })
 
 export async function fetchAiCost(userId: string): Promise<UsageStats['aiCost']> {
   const month = new Date().toISOString().slice(0, 7)
@@ -116,19 +107,6 @@ async function fetchRemoveBg(userId: string): Promise<RemoveBgUsage> {
   }
 }
 
-async function fetchHiggsfield(userId: string): Promise<HiggsfieldUsage> {
-  const month = new Date().toISOString().slice(0, 7)
-  const snap = await getDoc(doc(db, 'higgsfieldUsage', `${userId}_${month}`))
-  if (!snap.exists()) return emptyHiggsfield()
-  const data = snap.data() as Partial<HiggsfieldUsage>
-  return {
-    images: data.images ?? 0,
-    videos: data.videos ?? 0,
-    generations: data.generations ?? 0,
-    costUsd: data.costUsd ?? 0,
-  }
-}
-
 async function fetchStats(userId: string): Promise<UsageStats> {
   const q = query(collection(db, 'projects'), where('ownerId', '==', userId))
   const safeAiCost = (): Promise<UsageStats['aiCost']> =>
@@ -149,13 +127,8 @@ async function fetchStats(userId: string): Promise<UsageStats> {
       console.warn('[useUsageStats] fetchRemoveBg failed:', e)
       return emptyRemoveBg()
     })
-  const safeHiggsfield = (): Promise<HiggsfieldUsage> =>
-    fetchHiggsfield(userId).catch((e) => {
-      console.warn('[useUsageStats] fetchHiggsfield failed:', e)
-      return emptyHiggsfield()
-    })
-  const [snap, aiCost, brightData, removebg, higgsfield] = await Promise.all([
-    getDocs(q), safeAiCost(), safeBrightData(), safeRemoveBg(), safeHiggsfield(),
+  const [snap, aiCost, brightData, removebg] = await Promise.all([
+    getDocs(q), safeAiCost(), safeBrightData(), safeRemoveBg(),
   ])
 
   let totalBytes = 0
@@ -172,7 +145,6 @@ async function fetchStats(userId: string): Promise<UsageStats> {
     aiCost,
     brightData,
     removebg,
-    higgsfield,
   }
 }
 

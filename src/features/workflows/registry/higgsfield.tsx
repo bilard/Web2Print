@@ -10,7 +10,6 @@ import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { nodeRegistry } from './index'
 import type { NodeSpec } from '../types'
-import { recordHiggsfieldUsage } from '@/features/stats/higgsfieldUsageTracking'
 
 interface HiggsfieldConfig {
   mode: 'image' | 'video'
@@ -434,7 +433,6 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
     ctx.setProgress?.(100)
     const assets = data?.assets ?? []
     if (assets.length === 0) throw new Error('Higgsfield : aucun asset généré (voir logs serveur).')
-    void recordHiggsfieldUsage(mode, assets.length)
     ctx.log('info', `${assets.length} asset(s) généré(s).`)
     return { assets }
   },
