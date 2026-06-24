@@ -4,9 +4,11 @@
 // callable `higgsfieldGenerate`/`higgsfieldCatalog` (node client) et par le jumeau
 // serveur (cron). Credentials per-user `KEY_ID:KEY_SECRET` → multi-tenant.
 //
-// ⚠️ L'API live exige `input: { params: {...} }` (le SDK 0.2.1 envoie `input` à
-// plat — vérifié en live : sinon 422 « body.params: Field required »).
-import { createHiggsfieldClient } from '@higgsfield/client/v2'
+// ⚠️ On utilise le client v1 `HiggsfieldClient.generate()` (PAS le v2 `subscribe`).
+// Vérifié en live : v1 `generate(endpoint, params, {withPolling})` wrappe les params
+// dans `{ params }` (requis par l'API) ET poll jusqu'à complétion (résultats dans
+// `jobs[].results.raw.url`). Le v2 `subscribe` est cassé ici : il n'enveloppe pas
+// `params` et rend un JobSet « queued » sans attendre la fin.
 import { HiggsfieldClient } from '@higgsfield/client'
 
 type HiggsfieldMode = 'image' | 'video'
@@ -84,9 +86,13 @@ export async function runHiggsfield(
   const prompt = (p.prompt || '').trim()
   if (!prompt) throw new Error('Prompt manquant.')
 
+  const [apiKey, apiSecret] = credentials.split(':')
   // maxPollTime < timeout de la fonction (540 s). Vidéo = quelques minutes.
-  const client = createHiggsfieldClient({ credentials, maxPollTime: 500_000 })
+  const client = new HiggsfieldClient({ apiKey, apiSecret, maxPollTime: 500_000 })
 
+  // Construit l'endpoint + les params (PLATS : `generate` les wrappe dans `{params}`).
+  let endpoint: string
+  const params: Record<string, unknown> = { prompt }
   if (p.mode === 'video') {
     const imageUrl = (p.imageUrl || '').trim()
     if (!/^https?:\/\//.test(imageUrl)) {
@@ -95,46 +101,48 @@ export async function runHiggsfield(
           'Une URL blob:/locale n\'est pas accessible par Higgsfield.',
       )
     }
-    const params: Record<string, unknown> = {
-      model: p.videoModel ?? 'dop-turbo',
-      prompt,
-      input_images: [{ type: 'image_url', image_url: imageUrl }],
-    }
+    endpoint = '/v1/image2video/dop'
+    params.model = p.videoModel ?? 'dop-turbo'
+    params.input_images = [{ type: 'image_url', image_url: imageUrl }]
     if (p.motionId) params.motions = [{ id: p.motionId, strength: clamp01(p.motionStrength, 1) }]
-    if (typeof p.seed === 'number' && Number.isFinite(p.seed)) params.seed = Math.floor(p.seed)
-    if (p.enhancePrompt) params.enhance_prompt = true
-
-    const res = await client.subscribe('/v1/image2video/dop', { input: { params }, withPolling: true })
-    if (res.status !== 'completed') throw new Error(`Higgsfield (vidéo) : statut « ${res.status} ».`)
-    const url = res.video?.url
-    if (!url) throw new Error('Higgsfield : aucune vidéo retournée.')
-    return [{ url, type: 'video', mimeType: 'video/mp4', name: `higgsfield_${res.request_id}.mp4` }]
-  }
-
-  // mode image (Soul text-to-image)
-  const params: Record<string, unknown> = {
-    prompt,
-    width_and_height: SOUL_SIZE[p.aspectRatio ?? '1:1'] ?? SOUL_SIZE['1:1'],
-    quality: p.quality ?? '1080p',
-    batch_size: p.batchSize === 4 ? 4 : 1,
-  }
-  if (p.styleId) {
-    params.style_id = p.styleId
-    params.style_strength = clamp01(p.styleStrength, 1)
+  } else {
+    endpoint = '/v1/text2image/soul'
+    params.width_and_height = SOUL_SIZE[p.aspectRatio ?? '1:1'] ?? SOUL_SIZE['1:1']
+    params.quality = p.quality ?? '1080p'
+    params.batch_size = p.batchSize === 4 ? 4 : 1
+    if (p.styleId) {
+      params.style_id = p.styleId
+      params.style_strength = clamp01(p.styleStrength, 1)
+    }
   }
   if (typeof p.seed === 'number' && Number.isFinite(p.seed)) params.seed = Math.floor(p.seed)
   if (p.enhancePrompt) params.enhance_prompt = true
 
-  const res = await client.subscribe('/v1/text2image/soul', { input: { params }, withPolling: true })
-  if (res.status !== 'completed') throw new Error(`Higgsfield (image) : statut « ${res.status} ».`)
-  const images = res.images ?? []
-  if (images.length === 0) throw new Error('Higgsfield : aucune image retournée.')
-  return images.map((im, i) => ({
-    url: im.url,
-    type: 'image' as const,
-    mimeType: 'image/jpeg',
-    name: `higgsfield_${res.request_id}_${i + 1}.jpg`,
-  }))
+  const jobSet = await client.generate(endpoint, params, { withPolling: true })
+  if (jobSet.isNsfw) throw new Error('Higgsfield : contenu refusé (NSFW).')
+  if (jobSet.isFailed || !jobSet.isCompleted) {
+    throw new Error(`Higgsfield : génération non aboutie (failed=${jobSet.isFailed}, completed=${jobSet.isCompleted}).`)
+  }
+
+  const type: HiggsfieldMode = p.mode === 'video' ? 'video' : 'image'
+  const assets: HiggsfieldAsset[] = []
+  for (const job of jobSet.jobs ?? []) {
+    const url = job.results?.raw?.url || job.results?.min?.url
+    if (!url) continue
+    const mimeType = url.endsWith('.mp4')
+      ? 'video/mp4'
+      : url.endsWith('.webp')
+        ? 'image/webp'
+        : url.endsWith('.png')
+          ? 'image/png'
+          : type === 'video'
+            ? 'video/mp4'
+            : 'image/jpeg'
+    const ext = mimeType.split('/')[1]
+    assets.push({ url, type, mimeType, name: `higgsfield_${job.id}.${ext}` })
+  }
+  if (assets.length === 0) throw new Error('Higgsfield : aucun résultat exploitable.')
+  return assets
 }
 
 /** Normalise une réponse catalogue (array, {styles}, {motions} ou {data}) en {id,name}. */
