@@ -16,6 +16,7 @@ import { applyAutoMatch } from './autoMatch'
 import { SourceSwitcher } from './SourceSwitcher'
 import { VendorStatusPanel } from './VendorStatusPanel'
 import { ExportModal } from './ExportModal'
+import { TaggedBlocksList } from './TaggedBlocksList'
 
 /** Convertit les clés [col_key] → [col_label] pour l'affichage */
 function normalizeForDisplay(formula: string, columns: { key: string; label: string }[]): string {
@@ -139,6 +140,9 @@ export function DataMergePanel() {
           <Wand2 className="w-3.5 h-3.5" /> Lier automatiquement (prix · titre · description)
         </button>
       </div>
+
+      {/* Blocs balisés IDML */}
+      <TaggedBlocksList />
 
       {/* Bindings actifs */}
       <ActiveBindings columns={columns} />
