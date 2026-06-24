@@ -197,11 +197,14 @@ function HiggsfieldConfigUi({
     let alive = true
     loadCatalog()
       .then((c) => alive && (setCatalog(c), setLoading(false)))
-      .catch((e) => {
+      .catch((e: { code?: string; message?: string }) => {
         if (!alive) return
+        const msg = String(e?.message ?? '')
+        const keyIssue =
+          e?.code === 'functions/failed-precondition' || /cl[ée]|key|KEY_ID/i.test(msg)
         setError(
-          e?.message?.includes('failed-precondition')
-            ? 'Ajoute ta clé Higgsfield (Paramètres → Connecteurs) pour charger styles & mouvements.'
+          keyIssue
+            ? 'Clé Higgsfield absente ou invalide. Dans Paramètres → Connecteurs, colle l\'ID ET le secret ENSEMBLE au format KEY_ID:KEY_SECRET.'
             : 'Catalogue indisponible — tu peux générer avec le prompt seul.',
         )
         setLoading(false)

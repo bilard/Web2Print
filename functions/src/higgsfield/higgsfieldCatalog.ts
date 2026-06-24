@@ -14,6 +14,12 @@ export const higgsfieldCatalog = onCall<Record<string, never>, Promise<Higgsfiel
     if (!credentials) {
       throw new HttpsError('failed-precondition', 'Clé Higgsfield absente — Paramètres → Connecteurs.')
     }
+    if (!credentials.includes(':')) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Clé Higgsfield invalide : saisis l\'ID ET le secret COLLÉS au format KEY_ID:KEY_SECRET.',
+      )
+    }
     try {
       return await fetchHiggsfieldCatalog(credentials)
     } catch (e: unknown) {
