@@ -524,6 +524,13 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
               originText: fullText,
               originStyles: fabricCharStyles ?? {},
               mergeFields: obj.mergeFields ?? [],
+            } : {}),
+            // Auto-fit (réduction de police pour tenir dans le cadre) UNIQUEMENT pour les
+            // cadres FIXES. Les cadres « auto-size » InDesign (AutoSizingType HeightOnly /
+            // HeightAndWidth) doivent GRANDIR pour contenir le texte fusionné → on NE pose PAS
+            // fitToZone (le Textbox Fabric s'agrandit naturellement). Sinon, un texte long ne
+            // peut pas se réduire assez (plancher MIN_FIT_FONT) et déborde du cadre d'origine.
+            ...(obj.mergeTemplate && (!obj.autoSizingType || obj.autoSizingType === 'Off') ? {
               fitToZone: true,
               fitZone: {
                 width: adjustedWidth,

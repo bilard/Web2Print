@@ -71,6 +71,8 @@ export interface IdmlObject {
   verticalJustification?: 'top' | 'center' | 'bottom'
   // TextFrame auto-sizing: no line breaks (text stays on one line)
   noLineBreaks?: boolean
+  // TextFrame AutoSizingType: 'HeightOnly'/'HeightAndWidth' = cadre auto-grandissant ; 'Off'/absent = fixe
+  autoSizingType?: string
   // True for anchored frames (position relative to parent text flow, not absolute)
   isAnchored?: boolean
   // EasyCatalog : nom du champ image lié (cadre Rectangle portant ECPageItemData="2 2 <champ>")
@@ -1919,6 +1921,10 @@ function parseElement(
       const nlb = tfpEls[0].getAttribute('UseNoLineBreaksForAutoSizing')
       if (nlb === 'true') noLineBreaks = true
     }
+    // AutoSizingType : 'HeightOnly'/'HeightAndWidth' = cadre qui grandit ; 'Off'/absent = fixe.
+    const autoSizingType = tfpEls.length > 0
+      ? (tfpEls[0].getAttribute('AutoSizingType') || undefined)
+      : undefined
 
     // Detect non-rectangular TextFrame (Oval, custom shape) by checking PathGeometry curves
     const framePts = parsePathPoints(el)
@@ -1997,6 +2003,7 @@ function parseElement(
       insetRight: insetRight || undefined,
       verticalJustification: verticalJustification !== 'top' ? verticalJustification : undefined,
       noLineBreaks: noLineBreaks || undefined,
+      autoSizingType,
       ...(merge ? { mergeTemplate: merge.template, mergeFields: merge.fields } : {}),
     }
   }
