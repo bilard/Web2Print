@@ -81,6 +81,42 @@ export const flattenXmlElementStory = (xml: string): string =>
 export const templatizeXmlElementStory = (xml: string): string =>
   processXmlElementStory(xml, { unwrap: false })
 
+/** Unwrap les <XMLElement> en conservant le contenu d'origine (aucune substitution {{}}). */
+export function valueXmlElementStory(xml: string): string {
+  if (!xml.includes('MarkupTag')) return xml
+  const doc = new DOMParser().parseFromString(xml, 'application/xml')
+  if (doc.getElementsByTagName('parsererror').length > 0) return xml
+  if (doc.getElementsByTagName('XMLElement').length === 0) return xml
+  // remonter les enfants de chaque XMLElement, du plus profond au moins profond
+  const els = Array.from(doc.getElementsByTagName('XMLElement')).sort(
+    (a, b) => elementDepth(b) - elementDepth(a),
+  )
+  for (const el of els) {
+    const parent = el.parentNode
+    if (!parent) continue
+    while (el.firstChild) parent.insertBefore(el.firstChild, el)
+    parent.removeChild(el)
+  }
+  const serialized = new XMLSerializer().serializeToString(doc)
+  const prolog = /^\s*<\?xml[^>]*\?>/.exec(xml)
+  return prolog && !serialized.startsWith('<?xml') ? `${prolog[0]}\n${serialized}` : serialized
+}
+
+/** Liste ordonnée et dédupliquée des champs (MarkupTag des feuilles) d'une story. */
+export function extractStoryFields(xml: string): string[] {
+  if (!xml.includes('MarkupTag')) return []
+  const doc = new DOMParser().parseFromString(xml, 'application/xml')
+  if (doc.getElementsByTagName('parsererror').length > 0) return []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const el of Array.from(doc.getElementsByTagName('XMLElement'))) {
+    if (el.getElementsByTagName('XMLElement').length > 0) continue // conteneur
+    const field = xmlTagName(el.getAttribute('MarkupTag'))
+    if (field && !seen.has(field)) { seen.add(field); out.push(field) }
+  }
+  return out
+}
+
 /** Applique la templatisation (conserve les XMLElement) à toutes les stories — pour l'export. */
 export function templatizeXmlElementContents(contents: IdmlZipContents): IdmlZipContents {
   const stories: Record<string, string> = {}
