@@ -1,8 +1,7 @@
 // src/features/excel/ai-completion/ColumnCompletionModal.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Wand2, X } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
-import { pushAiUsageListener } from '@/features/stats/aiUsageTracking'
 import { useColumnCompletion } from './useColumnCompletion'
 import type { ExcelRow } from '@/features/excel/types'
 
@@ -21,17 +20,9 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
   const [confirmOverwrite, setConfirmOverwrite] = useState(false)
   const [scopeAll, setScopeAll] = useState(true)
   const [previewed, setPreviewed] = useState(false)
-  const [costUsd, setCostUsd] = useState(0)
   // Garde-fou anti-doublon : clé de la colonne créée pendant CETTE session « nouvelle colonne ».
   // Un 2e clic « Appliquer » réécrit la même colonne au lieu d'en créer une autre (resultat_ia_2…).
   const [appliedNewColKey, setAppliedNewColKey] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    setCostUsd(0)
-    const unsub = pushAiUsageListener(({ costUsd: c }) => setCostUsd((x) => x + c))
-    return unsub
-  }, [open])
 
   const scopedRows: ExcelRow[] = useMemo(() => {
     if (!sheet) return []
@@ -153,7 +144,7 @@ export function ColumnCompletionModal({ open, onClose, visibleRowIds }: Props) {
 
         <div className="flex items-center justify-between px-4 py-3 border-t border-white/10">
           <div className="text-[12px] text-white/50">
-            {running ? `En cours… ${doneCount}/${scopedRows.length}` : `Coût : ${costUsd.toFixed(4)} $`}
+            {running ? `En cours… ${doneCount}/${scopedRows.length}` : ''}
           </div>
           <div className="flex items-center gap-2">
             {running ? (

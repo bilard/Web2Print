@@ -99,8 +99,9 @@ Ouvrir modal
   des *seules* lignes en échec est **hors périmètre v1** (voir Hors périmètre).
 - **Annulation** : `abortRef` testé entre les lots ; le lot en cours se termine (pas
   d'interruption au milieu d'un appel) ; les lots restants passent « annulé ».
-- **Budget LLM dépassé** : `generateJson` lève `LlmBudgetError` → run stoppé, message clair,
-  lignes déjà écrites conservées.
+- **Erreurs répétées (provider indisponible)** : un circuit-breaker arrête le run après 3 lots
+  consécutifs en échec (`callBatch` lève) ; les lignes des lots non tentés sont marquées
+  `'aborted'` ; les lignes déjà écrites sont conservées.
 - **Aperçu obligatoire** avant le premier « Appliquer » d'une session pour border le coût.
 
 ## Tests
@@ -111,7 +112,7 @@ Ouvrir modal
     inconnue → vide ; match par label ET par clé.
   - `buildBatchPrompt` : numérotation 0..n-1, une entrée par ligne du lot.
   - `mapResults` : array indexé → `{rowId→valeur}` ; index manquant absent du résultat ;
-    index hors plage ignoré.
+    index hors plage → lot rejeté (erreur levée, lot entier `failed`).
 - Hook : test léger de la boucle (mock `generateJson`) — abort entre lots, agrégation du coût,
   appel `updateCell` aux bons (rowId, colKey). (Si trop couplé au store, couvrir par l'engine
   + un test d'intégration ciblé.)

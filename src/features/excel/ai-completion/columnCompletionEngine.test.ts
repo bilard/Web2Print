@@ -58,10 +58,21 @@ describe('mapResults', () => {
     const m = mapResults(parsed, chunk)
     expect(m).toEqual({ a: 'X', c: 'Z' })
   })
-  it('ignore un index hors plage', () => {
+  it('index hors plage → lève une erreur (lot incohérent)', () => {
     const chunk: ExcelRow[] = [{ _id: 'a' }]
     const parsed = CompletionBatchSchema.parse({ results: [{ i: 5, v: 'X' }] })
-    expect(mapResults(parsed, chunk)).toEqual({})
+    expect(() => mapResults(parsed, chunk)).toThrow('Indices de lot incohérents')
+  })
+  it('index décalé 1-based → lève une erreur', () => {
+    const chunk: ExcelRow[] = [{ _id: 'a' }, { _id: 'b' }]
+    const parsed = CompletionBatchSchema.parse({ results: [{ i: 1, v: 'A' }, { i: 2, v: 'B' }] })
+    expect(() => mapResults(parsed, chunk)).toThrow('Indices de lot incohérents')
+  })
+  it('index partiellement manquant (dans la plage) → toléré, pas de throw', () => {
+    const chunk: ExcelRow[] = [{ _id: 'a' }, { _id: 'b' }, { _id: 'c' }]
+    const parsed = CompletionBatchSchema.parse({ results: [{ i: 0, v: 'X' }, { i: 2, v: 'Z' }] })
+    expect(() => mapResults(parsed, chunk)).not.toThrow()
+    expect(mapResults(parsed, chunk)).toEqual({ a: 'X', c: 'Z' })
   })
 })
 

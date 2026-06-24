@@ -48,4 +48,18 @@ describe('runCompletionBatches', () => {
     expect(callBatch).toHaveBeenCalledTimes(1) // 2e lot non lancé
     expect(onItem).toHaveBeenCalledWith('r20', 'aborted')
   })
+
+  it('circuit-breaker : arrête après 3 erreurs consécutives et marque le reste aborted', async () => {
+    const rows: ExcelRow[] = Array.from({ length: 100 }, (_, i) => ({ _id: `r${i}`, desc: 'x' }))
+    const onItem = vi.fn()
+    const callBatch = vi.fn().mockRejectedValue(new Error('provider down'))
+    await runCompletionBatches(rows, '[Description]', COLS, { callBatch, onItem, abortRef: { current: false }, sleep: noSleep }, 20)
+    // 5 lots de 20 → callBatch appelé 3 fois max (pas 5)
+    expect(callBatch).toHaveBeenCalledTimes(3)
+    // Lots 3-4 (index 60..99) → aborted (lots 0-2 ont throw → failed)
+    expect(onItem).toHaveBeenCalledWith('r60', 'aborted')
+    expect(onItem).toHaveBeenCalledWith('r99', 'aborted')
+    // Les lignes des 3 premiers lots sont failed
+    expect(onItem).toHaveBeenCalledWith('r0', 'failed', undefined, 'provider down')
+  })
 })

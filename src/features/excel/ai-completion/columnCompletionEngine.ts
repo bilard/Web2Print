@@ -61,12 +61,19 @@ export const COMPLETION_SCHEMA_FOR_LLM: Record<string, unknown> = {
   required: ['results'],
 }
 
-/** Mappe les résultats indexés du lot vers `{ rowId → valeur }`. */
+/** Mappe les résultats indexés du lot vers `{ rowId → valeur }`.
+ * Lève une Error si un index est hors de la plage [0, chunk.length-1] — signale une
+ * réponse LLM incohérente (ex. numérotation 1-based) qui pourrait écrire sur la mauvaise
+ * ligne. Les index partiellement manquants (dans la plage mais absents) restent tolérés. */
 export function mapResults(parsed: CompletionBatch, chunk: ExcelRow[]): Record<string, string> {
   const out: Record<string, string> = {}
   for (const { i, v } of parsed.results) {
+    if (i < 0 || i >= chunk.length) {
+      throw new Error('Indices de lot incohérents (réponse LLM hors plage)')
+    }
     const row = chunk[i]
-    if (row) out[row._id] = v
+    if (!row) continue
+    out[row._id] = v
   }
   return out
 }
@@ -97,6 +104,7 @@ export async function runCompletionBatches(
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const rateLimitMs = deps.rateLimitMs ?? 300
   const chunks = buildChunks(rows, chunkSize)
+  let consecutiveFailures = 0
 
   for (let c = 0; c < chunks.length; c++) {
     if (deps.abortRef.current) {
@@ -113,16 +121,24 @@ export async function runCompletionBatches(
     if (toSend.length > 0) {
       try {
         const results = await deps.callBatch(toSend)
+        let anyDone = false
         for (const row of toSend) {
           if (Object.prototype.hasOwnProperty.call(results, row._id)) {
             deps.onItem(row._id, 'done', results[row._id])
+            anyDone = true
           } else {
             deps.onItem(row._id, 'failed', undefined, 'Aucun résultat renvoyé pour cette ligne')
           }
         }
+        if (anyDone) consecutiveFailures = 0
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Erreur'
         for (const row of toSend) deps.onItem(row._id, 'failed', undefined, msg)
+        consecutiveFailures++
+        if (consecutiveFailures >= 3) {
+          for (let k = c + 1; k < chunks.length; k++) for (const row of chunks[k]) deps.onItem(row._id, 'aborted')
+          return
+        }
       }
     }
 
