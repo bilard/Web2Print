@@ -406,6 +406,29 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
         ? buildFabricCharStyles(obj.mergeTemplateParas, sY, obj.mergeTemplateParas[0])
         : undefined
 
+      // Gabarit « prix » : si la valeur d'origine est « entier<devise>,décimales » (ex. « 22€,99 »),
+      // capturer le style de chaque partie (entier gros / devise exposant / centimes petit) pour le
+      // réappliquer à la valeur fusionnée (cf. priceFormat.ts + useDataMerge).
+      let priceFormat:
+        | { integerStyle?: object; currencyStyle?: object; decimalsStyle?: object; currency: string }
+        | undefined
+      if (obj.mergeTemplate) {
+        const pm = /^(\d[\d\s]*?)\s*([€$£])\s*[.,]\s*\d+\s*$/.exec(fullText)
+        if (pm) {
+          const line0 = (fabricCharStyles as Record<number, Record<number, object>> | undefined)?.[0] ?? {}
+          const curIdx = fullText.indexOf(pm[2])
+          const cComma = fullText.indexOf(',', curIdx)
+          const cDot = fullText.indexOf('.', curIdx)
+          const sepIdx = cComma >= 0 ? cComma : cDot
+          priceFormat = {
+            integerStyle: line0[0],
+            currencyStyle: line0[curIdx],
+            decimalsStyle: sepIdx >= 0 ? (line0[sepIdx + 1] ?? line0[sepIdx]) : undefined,
+            currency: pm[2],
+          }
+        }
+      }
+
       // Always use a separate background shape when TextFrame has a fill
       // (Fabric.js backgroundColor only covers text height, not full InDesign frame)
       const tfCr = obj.cornerRadius ? obj.cornerRadius * Math.min(Math.abs(obj.scaleX), Math.abs(obj.scaleY)) : 0
@@ -532,6 +555,7 @@ function idmlObjectToFabric(obj: IdmlObject): FabricObject | FabricObject[] | nu
               originText: fullText,
               originStyles: fabricCharStyles ?? {},
               mergeFields: obj.mergeFields ?? [],
+              ...(priceFormat ? { priceFormat } : {}),
             } : {}),
             // Auto-fit (réduction de police pour tenir dans le cadre) UNIQUEMENT pour les
             // cadres FIXES. Les cadres « auto-size » InDesign (AutoSizingType HeightOnly /

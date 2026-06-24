@@ -8,6 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
+import { formatPriceParts, type PriceSegment } from './priceFormat'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
 import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
@@ -207,6 +208,33 @@ function fitTextToZone(obj: IText, zone: FitZone, baseFontSize: number): void {
     }
   }
   obj.setCoords()
+}
+
+interface PriceFormatStyle {
+  integerStyle?: object
+  currencyStyle?: object
+  decimalsStyle?: object
+  currency: string
+}
+
+/** Map de styles Fabric (ligne 0) : applique le style capturé de chaque rôle à ses caractères. */
+function buildPriceStyles(
+  segments: PriceSegment[],
+  pf: PriceFormatStyle,
+): Record<number, Record<number, object>> {
+  const line: Record<number, object> = {}
+  let idx = 0
+  for (const seg of segments) {
+    const style =
+      seg.role === 'integer' ? pf.integerStyle
+      : seg.role === 'currency' ? pf.currencyStyle
+      : pf.decimalsStyle
+    for (let i = 0; i < seg.text.length; i++) {
+      if (style) line[idx] = JSON.parse(JSON.stringify(style)) as object
+      idx++
+    }
+  }
+  return { 0: line }
 }
 
 export function useDataMerge() {
@@ -427,12 +455,19 @@ export function useDataMerge() {
           const fitToZone = obj.data?.fitToZone === true && !!obj.data?.fitZone
           const isSinglePlaceholder = !fitToZone && !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
           const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
-          obj.set('text', resolved)
-
-          // Repositionner les styles des caractères littéraux (%, DT, etc.)
-          if (tStyles && Object.keys(tStyles).length > 0) {
-            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
-            ;(obj as any).styles = remapped
+          const priceFormat = obj.data.priceFormat as PriceFormatStyle | undefined
+          const priceParts = priceFormat ? formatPriceParts(resolved, priceFormat.currency, 2) : null
+          if (priceFormat && priceParts) {
+            // Bloc « prix » : reformater « entier<devise>,centimes » + styles par partie.
+            obj.set('text', priceParts.text)
+            ;(obj as any).styles = buildPriceStyles(priceParts.segments, priceFormat)
+          } else {
+            obj.set('text', resolved)
+            // Repositionner les styles des caractères littéraux (%, DT, etc.)
+            if (tStyles && Object.keys(tStyles).length > 0) {
+              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
+              ;(obj as any).styles = remapped
+            }
           }
 
           if (fitToZone) {
