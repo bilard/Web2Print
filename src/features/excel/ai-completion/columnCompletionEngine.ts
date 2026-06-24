@@ -71,6 +71,66 @@ export function mapResults(parsed: CompletionBatch, chunk: ExcelRow[]): Record<s
   return out
 }
 
+export type CompletionStatus = 'done' | 'failed' | 'skipped' | 'aborted'
+
+export interface BatchRunDeps {
+  callBatch: (chunk: ExcelRow[]) => Promise<Record<string, string>>
+  onItem: (rowId: string, status: CompletionStatus, value?: string, error?: string) => void
+  onChunkDone?: (index: number, total: number) => void
+  abortRef: { current: boolean }
+  rateLimitMs?: number
+  sleep?: (ms: number) => Promise<void>
+}
+
+/**
+ * Orchestration des lots, avec dépendances injectées (testable sans React ni réseau).
+ * Filtre les lignes vides (skipped), appelle callBatch sur le reste, mappe les résultats
+ * (done / failed), s'arrête proprement entre lots si abortRef devient true (aborted).
+ */
+export async function runCompletionBatches(
+  rows: ExcelRow[],
+  prompt: string,
+  columns: ExcelColumn[],
+  deps: BatchRunDeps,
+  chunkSize = 20,
+): Promise<void> {
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
+  const rateLimitMs = deps.rateLimitMs ?? 300
+  const chunks = buildChunks(rows, chunkSize)
+
+  for (let c = 0; c < chunks.length; c++) {
+    if (deps.abortRef.current) {
+      for (let k = c; k < chunks.length; k++) for (const row of chunks[k]) deps.onItem(row._id, 'aborted')
+      return
+    }
+    const chunk = chunks[c]
+    const toSend: ExcelRow[] = []
+    for (const row of chunk) {
+      if (isRowEmpty(prompt, row, columns)) deps.onItem(row._id, 'skipped')
+      else toSend.push(row)
+    }
+
+    if (toSend.length > 0) {
+      try {
+        const results = await deps.callBatch(toSend)
+        for (const row of toSend) {
+          if (Object.prototype.hasOwnProperty.call(results, row._id)) {
+            deps.onItem(row._id, 'done', results[row._id])
+          } else {
+            deps.onItem(row._id, 'failed', undefined, 'Aucun résultat renvoyé pour cette ligne')
+          }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Erreur'
+        for (const row of toSend) deps.onItem(row._id, 'failed', undefined, msg)
+      }
+    }
+
+    deps.onChunkDone?.(c, chunks.length)
+    if (c < chunks.length - 1 && !deps.abortRef.current) await sleep(rateLimitMs)
+  }
+}
+
 /** Slug du label, garanti unique parmi les clés existantes (suffixe _2, _3…). */
 export function uniqueColumnKey(label: string, existing: ExcelColumn[]): string {
   const base =
