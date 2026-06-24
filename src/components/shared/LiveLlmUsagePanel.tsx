@@ -787,7 +787,7 @@ export function LiveLlmUsagePanel() {
             </div>
           </div>
           <a
-            href="https://cloud.higgsfield.ai/billing"
+            href="https://cloud.higgsfield.ai/credits"
             target="_blank"
             rel="noopener noreferrer"
             title="Solde & conso réels (dashboard Higgsfield)"

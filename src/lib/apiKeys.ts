@@ -163,7 +163,7 @@ export const API_KEYS: ApiKeyConfig[] = [
     description: 'Génération image/vidéo IA (Soul, Kling, Veo, DoP…). Format de clé « KEY_ID:KEY_SECRET ».',
     links: {
       manage: 'https://cloud.higgsfield.ai/api-keys',
-      billing: 'https://cloud.higgsfield.ai/',
+      billing: 'https://cloud.higgsfield.ai/credits',
     },
   },
 ]

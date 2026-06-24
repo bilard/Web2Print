@@ -36,6 +36,8 @@ interface HiggsfieldAsset {
 }
 
 interface HiggsfieldInputs {
+  /** Texte amont (ex. node « Saisie texte ») utilisé comme prompt si le champ est vide. */
+  prompt?: unknown
   image?: unknown
 }
 
@@ -373,7 +375,10 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
     'Génère une image (Soul) ou une vidéo (DoP image→vidéo) via Higgsfield — styles & mouvements/caméra du catalogue. Sort des assets chaînables vers Save DAM.',
   icon: Clapperboard,
   connectors: ['higgsfield'],
-  inputs: [{ name: 'image', type: 'asset[]', required: false }],
+  inputs: [
+    { name: 'prompt', type: 'any', required: false },
+    { name: 'image', type: 'asset[]', required: false },
+  ],
   outputs: [{ name: 'assets', type: 'asset[]' }],
   configSchema: [],
   defaultConfig: {
@@ -395,8 +400,15 @@ const higgsfieldNode: NodeSpec<HiggsfieldConfig, HiggsfieldInputs, { assets: Hig
   ConfigComponent: HiggsfieldConfigUi,
   cardSummary: (c) => (c.mode === 'video' ? 'Vidéo (DoP)' : 'Image (Soul)'),
   run: async (ctx, config, inputs) => {
-    const prompt = config.prompt?.trim()
-    if (!prompt) throw new Error('Prompt manquant — saisis une description dans la config du node.')
+    // Le champ config a priorité ; sinon on prend le texte du port « prompt »
+    // (ex. relié à un node « Saisie texte »).
+    const fromPort = typeof inputs.prompt === 'string' ? inputs.prompt.trim() : ''
+    const prompt = config.prompt?.trim() || fromPort
+    if (!prompt) {
+      throw new Error(
+        'Prompt manquant — saisis une description dans la config OU relie une « Saisie texte » au port « prompt ».',
+      )
+    }
     const mode = config.mode === 'video' ? 'video' : 'image'
 
     let imageUrl: string | undefined

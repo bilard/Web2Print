@@ -30,9 +30,10 @@ registerServerNode({
       const n = Number(v)
       return Number.isFinite(n) ? n : undefined
     }
+    const fromPort = typeof inputs.prompt === 'string' ? inputs.prompt.trim() : ''
     const params: HiggsfieldParams = {
       mode,
-      prompt: String(config.prompt ?? ''),
+      prompt: String(config.prompt ?? '').trim() || fromPort,
       aspectRatio: String(config.aspectRatio ?? '1:1'),
       quality: config.quality === '720p' ? '720p' : '1080p',
       videoModel: (['dop-lite', 'dop-turbo', 'dop-standard'] as const).includes(
