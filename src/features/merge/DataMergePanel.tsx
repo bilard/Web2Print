@@ -17,6 +17,7 @@ import { SourceSwitcher } from './SourceSwitcher'
 import { VendorStatusPanel } from './VendorStatusPanel'
 import { ExportModal } from './ExportModal'
 import { TaggedBlocksList } from './TaggedBlocksList'
+import { FieldMappingEditor } from './FieldMappingEditor'
 
 /** Convertit les clés [col_key] → [col_label] pour l'affichage */
 function normalizeForDisplay(formula: string, columns: { key: string; label: string }[]): string {
@@ -143,6 +144,9 @@ export function DataMergePanel() {
 
       {/* Blocs balisés IDML */}
       <TaggedBlocksList />
+
+      {/* Mapping explicite balise → colonne */}
+      <FieldMappingEditor />
 
       {/* Bindings actifs */}
       <ActiveBindings columns={columns} />

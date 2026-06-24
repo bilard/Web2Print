@@ -496,6 +496,7 @@ export function useLoadCanvas(fabricRef: React.RefObject<Canvas | null>) {
           restoreMergeData<string>(data.mergeFormulas, (s, k, v) => s.setFormula(k, v))
           restoreMergeData<boolean>(data.mergeHideLineIfEmpty, (s, k, v) => s.setHideLineIfEmpty(k, v))
           restoreMergeData<FormulaConfig>(data.mergeFormulaConfigs, (s, k, v) => s.setFormulaConfig(k, v))
+          restoreMergeData<string>(data.mergeFieldMap, (s, k, v) => s.setFieldMap(k, v))
         }
 
         // Print marks are now handled by usePrintMarksSync hook (live updates when params change)

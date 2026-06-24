@@ -272,6 +272,8 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
           ? JSON.stringify(useMergeStore.getState().formulaConfigs) : null,
         mergeHideLineIfEmpty: Object.keys(useMergeStore.getState().hideLineIfEmpty).length > 0
           ? JSON.stringify(useMergeStore.getState().hideLineIfEmpty) : null,
+        mergeFieldMap: Object.keys(useMergeStore.getState().fieldMap).length > 0
+          ? JSON.stringify(useMergeStore.getState().fieldMap) : null,
         canvasWidth,
         canvasHeight,
         canvasBg,

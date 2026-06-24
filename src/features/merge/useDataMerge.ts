@@ -420,18 +420,18 @@ export function useDataMerge() {
           }
         }
         if (obj.data?.templateText) {
-          const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
+          const { formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap } = useMergeStore.getState()
           const tmpl = obj.data.templateText as string
           const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
           // Cadre de composition fixe (champ PDF aligné/wrappé) : pas d'auto-fit.
           const fitToZone = obj.data?.fitToZone === true && !!obj.data?.fitZone
           const isSinglePlaceholder = !fitToZone && !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
-          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
           obj.set('text', resolved)
 
           // Repositionner les styles des caractères littéraux (%, DT, etc.)
           if (tStyles && Object.keys(tStyles).length > 0) {
-            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
             ;(obj as any).styles = remapped
           }
 
@@ -446,7 +446,7 @@ export function useDataMerge() {
             autoFitPlaceholderWidth(obj)
             // Re-appliquer les styles après initDimensions (par précaution)
             if (tStyles && Object.keys(tStyles).length > 0) {
-              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
               ;(obj as any).styles = remapped
             }
           }
@@ -587,6 +587,14 @@ export function useDataMerge() {
     applyRow(rows[currentRowIndex])
   }, [isConnected, currentRowIndex, rows, applyRow])
 
+  // Re-merger immédiatement quand le mapping explicite (fieldMap) change
+  const fieldMap = useMergeStore((s) => s.fieldMap)
+  useEffect(() => {
+    if (!isConnected) return
+    const { rows: r, currentRowIndex: idx } = useMergeStore.getState()
+    if (r[idx]) applyRow(r[idx])
+  }, [fieldMap, isConnected, applyRow])
+
   // Intercepter l'édition de texte en mode merge
   useEffect(() => {
     const canvas = globalFabricCanvas
@@ -626,29 +634,29 @@ export function useDataMerge() {
         } else {
           delete target.data.templateStyles
         }
-        const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
+        const { formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap } = useMergeStore.getState()
         const row = rows[currentRowIndex]
         if (row) {
-          const resolved = resolveText(currentText, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+          const resolved = resolveText(currentText, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
           target.set('text', resolved)
           const tStyles = target.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
           if (tStyles && Object.keys(tStyles).length > 0) {
-            ;(target as any).styles = remapStyles(currentText, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+            ;(target as any).styles = remapStyles(currentText, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
           }
         }
       } else if (target.data?.templateText) {
         // Le texte n'a pas de {{}} mais un template existe →
         // l'utilisateur a peut-être juste changé une propriété (couleur, etc.)
         // On re-résout depuis le template existant sans le supprimer
-        const { formulas, hideLineIfEmpty, formulaConfigs, columns } = useMergeStore.getState()
+        const { formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap } = useMergeStore.getState()
         const row = rows[currentRowIndex]
         const tmpl = target.data.templateText as string
         const tStyles = target.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
         if (row) {
-          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
           target.set('text', resolved)
           if (tStyles && Object.keys(tStyles).length > 0) {
-            ;(target as any).styles = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns)
+            ;(target as any).styles = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
           }
         }
       }

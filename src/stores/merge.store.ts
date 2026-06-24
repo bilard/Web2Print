@@ -55,6 +55,10 @@ interface MergeState {
   hideLineIfEmpty: Record<string, boolean>
   setHideLineIfEmpty: (variable: string, hide: boolean) => void
 
+  // Mapping explicite balise → column.key (priorité sur le devinage par nom)
+  fieldMap: Record<string, string>
+  setFieldMap: (field: string, columnKey: string) => void
+
   // Persisted source reference
   savedDataSource: DataSourceRef | null
   setSavedDataSource: (source: DataSourceRef | null) => void
@@ -96,6 +100,14 @@ export const useMergeStore = create<MergeState>((set, get) => ({
   hideLineIfEmpty: {},
   setHideLineIfEmpty: (variable, hide) =>
     set((s) => ({ hideLineIfEmpty: { ...s.hideLineIfEmpty, [variable]: hide } })),
+  fieldMap: {},
+  setFieldMap: (field, columnKey) =>
+    set((s) => {
+      const next = { ...s.fieldMap }
+      if (!columnKey) delete next[field]
+      else next[field] = columnKey
+      return { fieldMap: next }
+    }),
   savedDataSource: null,
   setSavedDataSource: (source) => set({ savedDataSource: source }),
 
@@ -105,7 +117,7 @@ export const useMergeStore = create<MergeState>((set, get) => ({
     set({ dataSource: source, columns, rows, currentRowIndex: 0, isConnected: true }),
 
   disconnect: () =>
-    set({ dataSource: null, columns: [], rows: [], currentRowIndex: 0, isConnected: false, mergeMode: 'fabric' }),
+    set({ dataSource: null, columns: [], rows: [], currentRowIndex: 0, isConnected: false, mergeMode: 'fabric', fieldMap: {} }),
 
   setCurrentRow: (index) => {
     const { rows } = get()
