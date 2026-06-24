@@ -7,14 +7,18 @@ type FabricStyles = Record<number, Record<number, Record<string, unknown>>>
  * label → key. L'utilisateur peut écrire `{{Description}}` (label) ou
  * `{{ai_description}}` (key) — les deux résolvent vers la même colonne.
  *
- * Ordre : (1) lookup direct par key, (2) match exact sur label,
- * (3) match insensible casse + trim sur label. Retourne `undefined` si aucun.
+ * Ordre : (0) fieldMap explicite (priorité absolue), (1) lookup direct par key,
+ * (2) match exact sur label, (3) match insensible casse + trim sur label.
+ * Retourne `undefined` si aucun.
  */
-function getRowValue(
+export function getRowValue(
   row: MergeRow,
   variable: string,
   columns?: MergeColumn[],
+  fieldMap?: Record<string, string>,
 ): unknown {
+  const mappedKey = fieldMap?.[variable]
+  if (mappedKey) return row[mappedKey]
   if (row[variable] !== undefined) return row[variable]
   if (!columns || columns.length === 0) return undefined
   const exact = columns.find((c) => c.label === variable)
@@ -30,10 +34,17 @@ function getRowValue(
 }
 
 /**
- * True si `variable` matche une colonne, soit par key soit par label
+ * True si `variable` matche une colonne, soit par key soit par label,
+ * soit via le mapping explicite fieldMap.
  * (utilisé par l'UI pour décider si un binding est "actif" ou "!" rouge).
  */
-export function variableMatchesColumn(variable: string, columns: MergeColumn[]): boolean {
+export function variableMatchesColumn(
+  variable: string,
+  columns: MergeColumn[],
+  fieldMap?: Record<string, string>,
+): boolean {
+  const mappedKey = fieldMap?.[variable]
+  if (mappedKey && columns.some((c) => c.key === mappedKey)) return true
   if (columns.some((c) => c.key === variable)) return true
   if (columns.some((c) => c.label === variable)) return true
   const normalized = variable.trim().toLowerCase()
@@ -56,6 +67,7 @@ export function remapStyles(
   hideLineIfEmpty?: Record<string, boolean>,
   formulaConfigs?: Record<string, FormulaConfig>,
   columns?: MergeColumn[],
+  fieldMap?: Record<string, string>,
 ): FabricStyles {
   const PH_RE = /\{\{([^}]+)\}\}/g
   const newStyles: FabricStyles = {}
@@ -68,7 +80,7 @@ export function remapStyles(
       while ((m = PH_RE.exec(templateLines[li])) !== null) {
         const key = m[1]
         if (hideLineIfEmpty[key]) {
-          const r = getRowValue(row, key, columns)
+          const r = getRowValue(row, key, columns, fieldMap)
           if (r == null || String(r).trim() === '') { removedLines.add(li); break }
         }
       }
@@ -105,9 +117,9 @@ export function remapStyles(
         rPos++
       }
 
-      const rawValue = getRowValue(row, ph.key, columns)
+      const rawValue = getRowValue(row, ph.key, columns, fieldMap)
       let value = formulas?.[ph.key]
-        ? evaluateFormula(formulas[ph.key], row, columns)
+        ? evaluateFormula(formulas[ph.key], row, columns, fieldMap)
         : String(rawValue ?? `{{${ph.key}}}`)
       if (formulas?.[ph.key] && formulaConfigs) {
         value = formatFormulaResult(value, formulaConfigs[ph.key])
@@ -169,10 +181,15 @@ export function hasPlaceholders(text: string): boolean {
  */
 const COL_REF_RE = /\[([^\]]+)\]/g
 
-export function evaluateFormula(formula: string, row: MergeRow, columns?: MergeColumn[]): string {
+export function evaluateFormula(
+  formula: string,
+  row: MergeRow,
+  columns?: MergeColumn[],
+  fieldMap?: Record<string, string>,
+): string {
   // Step 1: Replace [column] references with values (with fallback label → key)
   let result = formula.replace(COL_REF_RE, (_, colKey: string) => {
-    const val = getRowValue(row, colKey, columns)
+    const val = getRowValue(row, colKey, columns, fieldMap)
     if (val === undefined || val === null) return ''
     return String(val)
   })
@@ -220,6 +237,7 @@ export function resolveText(
   hideLineIfEmpty?: Record<string, boolean>,
   formulaConfigs?: Record<string, FormulaConfig>,
   columns?: MergeColumn[],
+  fieldMap?: Record<string, string>,
 ): string {
   // Phase 1 : résoudre les variables, tracker les lignes avec valeurs vides
   const linesToRemove = new Set<number>()
@@ -229,10 +247,10 @@ export function resolveText(
     return line.replace(PLACEHOLDER_RE, (match, key: string) => {
       let value: string
       if (formulas && formulas[key]) {
-        value = evaluateFormula(formulas[key], row, columns)
+        value = evaluateFormula(formulas[key], row, columns, fieldMap)
         value = formatFormulaResult(value, formulaConfigs?.[key])
       } else {
-        const raw = getRowValue(row, key, columns)
+        const raw = getRowValue(row, key, columns, fieldMap)
         if (raw === undefined || raw === null) return match
         value = String(raw)
       }
@@ -240,7 +258,7 @@ export function resolveText(
       // Si la valeur brute de la colonne est vide et l'option "supprimer ligne" est active → marquer la ligne
       // On vérifie la valeur brute (pas le résultat de la formule) car une formule comme `"[brands]"`
       // donne `""` quand brands est vide, ce qui n'est pas techniquement vide.
-      const rawVal = getRowValue(row, key, columns)
+      const rawVal = getRowValue(row, key, columns, fieldMap)
       const rawIsEmpty = rawVal === undefined || rawVal === null || String(rawVal).trim() === ''
       if (rawIsEmpty && hideLineIfEmpty?.[key]) {
         linesToRemove.add(lineIdx)
@@ -261,8 +279,13 @@ export function resolveText(
  * Résout une valeur de binding propriété (fill, stroke, opacity, src).
  * Retourne la valeur de la colonne ou null si non trouvée.
  */
-export function resolveBinding(columnKey: string, row: MergeRow, columns?: MergeColumn[]): string | null {
-  const value = getRowValue(row, columnKey, columns)
+export function resolveBinding(
+  columnKey: string,
+  row: MergeRow,
+  columns?: MergeColumn[],
+  fieldMap?: Record<string, string>,
+): string | null {
+  const value = getRowValue(row, columnKey, columns, fieldMap)
   if (value === undefined || value === null) return null
   return String(value)
 }
