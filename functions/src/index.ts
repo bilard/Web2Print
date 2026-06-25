@@ -41,6 +41,9 @@ export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
 // --- Workflow webhook entrant (déclenchement externe) ---
 export { workflowWebhook } from './workflow/webhookTrigger'
 
+// --- Plugin InDesign : API lecture seule (token personnel) ---
+export { pluginApi } from './plugin/pluginApi'
+
 // --- Proxy LLM authentifié (clé Firestore + budget mensuel bloquant) ---
 export { llmProxy } from './llm/llmProxy'
 
