@@ -30,14 +30,21 @@ async function connect() {
   const token = byId<HTMLInputElement>('token').value.trim()
   if (!token) { showStatus('Colle un token w2p_…'); return }
   client = new PluginClient(BASE_URL, token)
-  showStatus('Connexion…')
+  console.log('[W2P] connect: début, token len', token.length)
+  showStatus('Connexion… (1/4 requête)')
   try {
     const datasets = await client.listDatasets()
+    console.log('[W2P] connect: datasets reçus', datasets.length)
+    showStatus(`Connexion… (2/4 ${datasets.length} dataset(s))`)
     fillDatasets(datasets)
+    console.log('[W2P] connect: fillDatasets OK')
+    showStatus('Connexion… (3/4 affichage)')
     $('connect').style.display = 'none'
     $('main').style.display = 'flex'
+    showStatus('Connecté ✓ (4/4)', true)
   } catch (e) {
-    showStatus(`Connexion échouée : ${e instanceof Error ? e.message : e}`)
+    console.log('[W2P] connect ERREUR', String(e))
+    showStatus(`Échec : ${e instanceof Error ? e.message : e}`)
   }
 }
 

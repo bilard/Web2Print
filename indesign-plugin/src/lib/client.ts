@@ -12,9 +12,14 @@ export class PluginClient {
   constructor(private baseUrl: string, private token: string) {}
 
   private async get<T>(path: string): Promise<T> {
-    const res = await fetch(buildUrl(this.baseUrl, path), { headers: { Authorization: `Bearer ${this.token}` } })
+    const url = buildUrl(this.baseUrl, path)
+    console.log('[W2P] GET →', url)
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${this.token}` } })
+    console.log('[W2P] GET ← status', res.status)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return res.json() as Promise<T>
+    const json = await res.json()
+    console.log('[W2P] GET ← json OK', path)
+    return json as T
   }
 
   async listDatasets(): Promise<DatasetSummary[]> {
