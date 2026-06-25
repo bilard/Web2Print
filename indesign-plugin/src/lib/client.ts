@@ -1,7 +1,7 @@
 // indesign-plugin/src/lib/client.ts
 export interface DatasetSummary { docId: string; fileName: string; sheetCount: number; rowCount: number }
 export interface ColumnInfo { key: string; label: string; fieldType: string }
-export interface ValueEntry { key: string; label: string; value: string }
+interface ValueEntry { key: string; label: string; value: string }
 export interface RowResult { rowIndex: number; total: number; values: ValueEntry[] }
 
 export function buildUrl(baseUrl: string, path: string): string {

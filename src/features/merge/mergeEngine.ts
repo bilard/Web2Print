@@ -2,6 +2,14 @@ import type { MergeRow, MergeColumn, FormulaConfig } from '@/stores/merge.store'
 
 type FabricStyles = Record<number, Record<number, Record<string, unknown>>>
 
+/** Forme canonique pour matcher un placeholder à une colonne malgré accents et
+ *  séparateurs : NFD + retrait des diacritiques + minuscules + suppression de
+ *  tout ce qui n'est pas alphanumérique. « Nom du produit », « Nom_du_produit »
+ *  et « nomduproduit » deviennent identiques. */
+function canonicalizeField(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
 /**
  * Résout la valeur d'une row pour un nom de variable donné, avec fallback
  * label → key. L'utilisateur peut écrire `{{Description}}` (label) ou
@@ -30,6 +38,13 @@ export function getRowValue(
     c.aliases?.some((a) => a.trim().toLowerCase() === normalized),
   )
   if (aliased) return row[aliased.key]
+  const canon = canonicalizeField(variable)
+  if (canon) {
+    const canonMatch = columns.find(
+      (c) => canonicalizeField(c.label) === canon || canonicalizeField(c.key) === canon,
+    )
+    if (canonMatch) return row[canonMatch.key]
+  }
   return undefined
 }
 
@@ -49,8 +64,11 @@ export function variableMatchesColumn(
   if (columns.some((c) => c.label === variable)) return true
   const normalized = variable.trim().toLowerCase()
   if (columns.some((c) => c.label.trim().toLowerCase() === normalized)) return true
-  return columns.some((c) =>
-    c.aliases?.some((a) => a.trim().toLowerCase() === normalized),
+  if (columns.some((c) => c.aliases?.some((a) => a.trim().toLowerCase() === normalized))) return true
+  const canon = canonicalizeField(variable)
+  if (!canon) return false
+  return columns.some(
+    (c) => canonicalizeField(c.label) === canon || canonicalizeField(c.key) === canon,
   )
 }
 

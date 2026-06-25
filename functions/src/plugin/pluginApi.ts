@@ -65,7 +65,7 @@ export const pluginApi = onRequest(
       res.status(404).json({ error: 'Route inconnue' })
     } catch (err) {
       console.error('pluginApi: erreur', { path: req.path, err })
-      res.status(500).json({ error: err instanceof Error ? err.message : String(err) })
+      res.status(500).json({ error: 'Erreur interne' })
     }
   },
 )
