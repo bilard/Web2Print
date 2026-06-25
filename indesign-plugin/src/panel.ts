@@ -89,10 +89,17 @@ function renderFields() {
     const li = document.createElement('li')
     li.className = n > 0 ? 'field tagged' : 'field'
 
+    const leftBox = document.createElement('span')
+    leftBox.className = 'left'
     const name = document.createElement('span')
     name.className = 'name'
     name.textContent = c.label
-    li.appendChild(name)
+    leftBox.appendChild(name)
+    const type = document.createElement('span')
+    type.className = 'type'
+    type.textContent = c.fieldType
+    leftBox.appendChild(type)
+    li.appendChild(leftBox)
 
     const right = document.createElement('span')
     if (n > 0) {
