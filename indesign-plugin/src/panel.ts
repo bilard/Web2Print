@@ -98,9 +98,9 @@ function renderTable() {
 function renderFields() {
   // En mode Aperçu : tableau propre de l'enregistrement (au lieu de la liste de balisage).
   if (previewOn) { renderTable(); return }
-  // Accès doc sûr : aucun document ouvert → counts vide → « Champs posés » se vide.
+  // app.activeDocument lève s'il n'y a aucun document → catch → doc null → « Champs posés » se vide.
   let doc: any = null
-  try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* aucun document */ }
+  try { doc = app.activeDocument } catch { /* aucun document ouvert */ }
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
   let selectedLi: HTMLElement | null = null
@@ -335,7 +335,7 @@ byId('miFill').addEventListener('click', async () => {
   toggleMenu(false)
   if (!client) return
   let doc: any = null
-  try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* */ }
+  try { doc = app.activeDocument } catch { /* aucun document */ }
   if (!doc) { showStatus('Aucun document ouvert'); return }
   await loadRowValues()
   const r = fillPageWithRow(doc, rowValues)
@@ -344,7 +344,7 @@ byId('miFill').addEventListener('click', async () => {
 byId('miRestore').addEventListener('click', () => {
   toggleMenu(false)
   let doc: any = null
-  try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* */ }
+  try { doc = app.activeDocument } catch { /* aucun document */ }
   if (!doc) { showStatus('Aucun document ouvert'); return }
   const n = restoreAllPlaceholders(doc)
   showStatus(`Restauré ${n} {{champ(s)}}`, true)
@@ -368,11 +368,8 @@ function onDocChanged() {
 // surveille une signature (nb de docs + id de l'actif) et on vide à tout changement.
 let lastDocSig = ''
 function docSignature(): string {
-  try {
-    const n = app.documents?.length ?? 0
-    if (n === 0) return '0'
-    return `${n}:${app.activeDocument?.id ?? '?'}`
-  } catch { return '0' }
+  // app.activeDocument lève s'il n'y a aucun document → '0' (= fermé).
+  try { return String(app.activeDocument?.id ?? '0') } catch { return '0' }
 }
 function watchDoc() {
   if (!client) return
