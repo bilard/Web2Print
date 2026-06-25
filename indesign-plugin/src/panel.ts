@@ -14,6 +14,7 @@ let rowIndex = 0
 let total = 0
 let previewOn = false
 let rowEntries: { label: string; value: string }[] = [] // toutes les colonnes (tableau d'aperçu)
+let selectedTag: string | null = null // tag de l'élément sélectionné dans InDesign
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -85,6 +86,7 @@ function renderFields() {
   try { doc = app.activeDocument } catch { /* aucun document ouvert */ }
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
+  let selectedLi: HTMLElement | null = null
 
   // Décorer chaque champ de son nombre d'occurrences, puis remonter les posés.
   const decorated = columns.map((c, i) => ({ c, i, n: counts[slugifyTag(c.label)] ?? 0 }))
@@ -107,8 +109,10 @@ function renderFields() {
     if (n > 0 && !taggedHeaderDone) { addSectionLabel('Champs posés'); taggedHeaderDone = true }
     if (n === 0 && !availHeaderDone) { addSectionLabel('Disponibles'); availHeaderDone = true }
 
+    const isSel = selectedTag !== null && slugifyTag(c.label) === selectedTag
     const li = document.createElement('li')
-    li.className = n > 0 ? 'field tagged' : 'field'
+    li.className = `field${n > 0 ? ' tagged' : ''}${isSel ? ' selected' : ''}`
+    if (isSel) selectedLi = li
 
     const leftBox = document.createElement('span')
     leftBox.className = 'left'
@@ -139,6 +143,7 @@ function renderFields() {
     }
     ul.appendChild(li)
   }
+  if (selectedLi) { try { (selectedLi as HTMLElement).scrollIntoView() } catch { /* */ } }
 }
 
 function renderRowLabel() {
@@ -175,6 +180,49 @@ function step(delta: number) {
   renderRowLabel()
   refreshPreview()
 }
+
+/** Tag de l'élément balisé le plus profond sous la sélection InDesign (ne lève jamais). */
+function selectionTag(): string | null {
+  try {
+    const a = require('indesign')?.app
+    const sel = a?.selection
+    if (!sel || sel.length === 0) return null
+    const obj = sel[0]
+    const ip = obj?.insertionPoints?.item?.(0)
+    const idx: number | undefined = ip?.index
+    const storyId = ip?.parentStory?.id
+    if (typeof idx === 'number' && storyId != null) {
+      let best: any = null
+      let bestLen = Infinity
+      const consider = (el: any) => {
+        try {
+          const t = el.xmlContent
+          if (t?.parentStory?.id === storyId && typeof t.index === 'number' && el.markupTag) {
+            const len = t.characters?.length ?? 0
+            if (idx >= t.index && idx <= t.index + len && len <= bestLen) { best = el; bestLen = len }
+          }
+        } catch { /* */ }
+      }
+      const walk = (el: any) => { consider(el); const n = el.xmlElements?.length ?? 0; for (let i = 0; i < n; i++) walk(el.xmlElements.item(i)) }
+      const root = a?.activeDocument?.xmlElements?.item(0)
+      if (root) walk(root)
+      if (best?.markupTag) return String(best.markupTag.name)
+    }
+    const xe = obj?.associatedXMLElement
+    if (xe && xe.isValid && xe.markupTag) return String(xe.markupTag.name)
+  } catch { /* silencieux */ }
+  return null
+}
+
+// InDesign n'émet pas d'event de sélection → on poll, et on ne re-rend qu'au changement.
+function checkSelection() {
+  if (!client || previewOn) return
+  const tag = selectionTag()
+  if (tag === selectedTag) return
+  selectedTag = tag
+  renderFields()
+}
+setInterval(checkSelection, 500)
 
 byId('btnConnect').addEventListener('click', connect)
 byId('dataset').addEventListener('change', onDatasetChange)
