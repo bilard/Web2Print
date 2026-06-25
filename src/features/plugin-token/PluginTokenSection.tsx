@@ -1,6 +1,6 @@
 // src/features/plugin-token/PluginTokenSection.tsx
 import { useEffect, useState } from 'react'
-import { Plug, Copy, Trash2, RefreshCw } from 'lucide-react'
+import { Plug, Copy, Trash2, RefreshCw, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePluginTokens, type PluginToken } from '@/features/plugin-token/usePluginTokens'
 
@@ -47,7 +47,7 @@ export function PluginTokenSection() {
           placeholder="Nom (ex : mon poste)"
           value={label}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLabel(e.target.value)}
-          className="flex-1 bg-white/[0.05] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
+          className="flex-1 bg-well border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
         />
         <button
           type="button"
@@ -71,6 +71,14 @@ export function PluginTokenSection() {
               title="Copier"
             >
               <Copy className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setFreshToken(null)}
+              className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+              title="Fermer"
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
