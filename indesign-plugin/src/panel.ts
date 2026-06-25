@@ -4,7 +4,8 @@ import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
 import { applyRowPreview, restorePreview, resetPreviewMemory } from './idml/preview'
 
-const { app } = require('indesign') as { app: any }
+const { app } = require("indesign") as { app: any }
+function activeDoc(): any { try { return app.activeDocument } catch { return null } }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
 
 let client: PluginClient | null = null
@@ -98,7 +99,7 @@ function renderTable() {
 function renderFields() {
   // En mode Aperçu : tableau propre de l'enregistrement (au lieu de la liste de balisage).
   if (previewOn) { renderTable(); return }
-  const doc = app.activeDocument
+  const doc = activeDoc()
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
   let selectedLi: HTMLElement | null = null
@@ -201,7 +202,7 @@ function renderRowLabel() {
 async function refreshPreview() {
   if (!client) return
   previewOn = byId<HTMLInputElement>('preview').checked
-  const doc = app.activeDocument
+  const doc = activeDoc()
   if (previewOn) {
     await loadRowValues()
     if (doc) applyRowPreview(doc, rowValues) // écrit les valeurs DANS la page (balises conservées)
@@ -218,7 +219,7 @@ async function step(delta: number) {
   rowIndex = Math.max(0, Math.min(rowIndex + delta, total - 1))
   if (previewOn) {
     await loadRowValues()
-    const doc = app.activeDocument
+    const doc = activeDoc()
     if (doc) applyRowPreview(doc, rowValues)
   }
   renderRowLabel()
@@ -261,7 +262,7 @@ function selectionInfo(): { tag: string | null; dbg: string } {
     const idx: number | undefined = ip?.index
     const storyId = ip?.parentStory?.id
     if (typeof idx === 'number' && storyId != null) {
-      const doc = app.activeDocument
+      const doc = activeDoc()
       let best: any = null
       let bestLen = Infinity
       const consider = (el: any) => {
