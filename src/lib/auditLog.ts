@@ -38,6 +38,8 @@ const AUDIT_ACTIONS: Record<string, string> = {
   'library.project.delete': 'Projet supprimé',
   'library.project.duplicate': 'Projet dupliqué',
   'library.version.restore': 'Version restaurée',
+  'library.version.create': 'Version créée',
+  'library.version.snapshot': 'Snapshot auto',
   'data.dataset.save': 'DataSet enregistré',
   'data.dataset.delete': 'DataSet supprimé',
   'data.dataset.import': 'DataSet importé',
@@ -50,6 +52,7 @@ const AUDIT_ACTIONS: Record<string, string> = {
   'export.social': 'Export pack social',
   'export.declines': 'Pages déclinées',
   'export.batch': 'Export par lot (fusion)',
+  'export.xlsx': 'Export Excel (XLSX)',
   'workflow.run': 'Workflow exécuté',
   'ai.completion': 'IA — complétion de colonne',
   'ai.workflow.generate': 'IA — génération de workflow',
@@ -58,6 +61,19 @@ const AUDIT_ACTIONS: Record<string, string> = {
 /** Libellé lisible d'une action (clé inconnue → la clé brute). */
 export function auditActionLabel(action: string): string {
   return AUDIT_ACTIONS[action] ?? action
+}
+
+// Mémoire en RAM du dernier log par clé, pour throttler les actions fréquentes (autosave).
+const lastLoggedAt: Record<string, number> = {}
+
+/** Comme recordAudit, mais ignore l'appel si la même `throttleKey` a déjà été loggée il y
+ *  a moins de `minIntervalMs` (évite de noyer le journal avec l'autosave). */
+export async function recordAuditThrottled(throttleKey: string, minIntervalMs: number, entry: AuditInput): Promise<void> {
+  const now = Date.now()
+  const prev = lastLoggedAt[throttleKey]
+  if (prev && now - prev < minIntervalMs) return
+  lastLoggedAt[throttleKey] = now
+  await recordAudit(entry)
 }
 
 /** Enregistre une action d'audit. Ne lève jamais, ne bloque jamais l'appelant. */

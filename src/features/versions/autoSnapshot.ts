@@ -5,6 +5,7 @@
 // slots (`versions/auto-0` … `auto-9`). L'ID de slot est dérivé du temps →
 // le plus ancien est naturellement écrasé, aucune purge à exécuter.
 import { doc, setDoc } from 'firebase/firestore'
+import { recordAudit } from '@/lib/auditLog'
 import { db } from '@/lib/firebase/config'
 
 export const AUTO_SNAPSHOT_THROTTLE_MS = 10 * 60_000
@@ -40,6 +41,7 @@ export async function maybeAutoSnapshot(projectId: string, snapshot: Record<stri
       auto: true,
       snapshot,
     })
+    void recordAudit({ action: 'library.version.snapshot', module: 'library', targetId: projectId })
   } catch (err) {
     // Best-effort : un échec de snapshot ne doit pas remonter jusqu'au save.
     lastAutoByProject.delete(projectId)

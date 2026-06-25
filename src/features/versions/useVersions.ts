@@ -80,6 +80,7 @@ export function useVersions(projectId: string | null): UseVersions {
         createdAt: Date.now(),
         snapshot,
       })
+      recordAudit({ action: 'library.version.create', module: 'library', targetId: projectId, targetLabel: label.trim() || undefined })
       // Purge au-delà du plafond (les plus anciennes). Les snapshots AUTO ont
       // leur propre ring buffer (autoSnapshot.ts) et ne comptent pas ici —
       // sinon ils évinceraient des versions manuelles.

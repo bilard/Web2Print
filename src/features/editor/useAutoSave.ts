@@ -10,6 +10,7 @@ import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { maybeAutoSnapshot } from '@/features/versions/autoSnapshot'
+import { recordAuditThrottled } from '@/lib/auditLog'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
@@ -291,6 +292,8 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         updatedAt: Date.now(),
       })
       setSaveStatus('saved')
+      // Audit throttlé (au plus 1×/2 min par projet) : l'autosave est trop fréquent pour tout logger.
+      void recordAuditThrottled(`save:${projectId}`, 120_000, { action: 'library.project.save', module: 'library', targetId: projectId, targetLabel: title })
 
       // Filet de sécurité : snapshot auto (ring buffer, throttle 10 min) en
       // plus des versions manuelles — fire-and-forget, n'affecte pas le save.
