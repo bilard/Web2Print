@@ -2,10 +2,13 @@
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName } from './idml/tagging'
-import { applyRowPreview, restorePreview, restoreAllPlaceholders } from './idml/preview'
 
-const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
+
+// Ré-acquérir `app`/le document à chaque appel (un const figé au chargement est parfois
+// undefined — timing UXP). activeDoc() renvoie null s'il n'y a aucun document.
+function getApp(): any { try { return require('indesign').app } catch { return null } }
+function activeDoc(): any { try { return getApp()?.activeDocument ?? null } catch { return null } }
 
 let client: PluginClient | null = null
 let docId = ''
@@ -30,21 +33,15 @@ async function connect() {
   const token = byId<HTMLInputElement>('token').value.trim()
   if (!token) { showStatus('Colle un token w2p_…'); return }
   client = new PluginClient(BASE_URL, token)
-  console.log('[W2P] connect: début, token len', token.length)
-  showStatus('Connexion… (1/4 requête)')
+  showStatus('Connexion…')
   try {
     const datasets = await client.listDatasets()
-    console.log('[W2P] connect: datasets reçus', datasets.length)
-    showStatus(`Connexion… (2/4 ${datasets.length} dataset(s))`)
     fillDatasets(datasets)
-    console.log('[W2P] connect: fillDatasets OK')
-    showStatus('Connexion… (3/4 affichage)')
     $('connect').style.display = 'none'
     $('main').style.display = 'flex'
-    showStatus('Connecté ✓ (4/4)', true)
+    showStatus('')
   } catch (e) {
-    console.log('[W2P] connect ERREUR', String(e))
-    showStatus(`Échec : ${e instanceof Error ? e.message : e}`)
+    showStatus(`Connexion échouée : ${e instanceof Error ? e.message : e}`)
   }
 }
 
@@ -90,7 +87,7 @@ function renderTable() {
 function renderFields() {
   if (previewOn) { renderTable(); return } // mode Aperçu = tableau de l'enregistrement
   let doc: any = null
-  try { doc = app.activeDocument } catch { /* aucun document ouvert */ }
+  try { doc = activeDoc() } catch { /* aucun document */ }
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
   let selectedLi: HTMLElement | null = null
@@ -183,7 +180,7 @@ function step(delta: number) {
 /** Tag de l'élément balisé le plus profond sous la sélection InDesign (ne lève jamais). */
 function selectionTag(): string | null {
   try {
-    const a = require('indesign')?.app
+    const a = getApp()
     const sel = a?.selection
     if (!sel || sel.length === 0) return null
     const obj = sel[0]
@@ -223,7 +220,7 @@ function checkSelection() {
   const tag = selectionTag()
   if (tag !== selectedTag) { selectedTag = tag; needRender = true }
   let doc: any = null
-  try { doc = app.activeDocument } catch { /* aucun document */ }
+  try { doc = activeDoc() } catch { /* aucun document */ }
   const sig = doc ? JSON.stringify(countTaggedByName(doc)) : ''
   if (sig !== lastCountsSig) { lastCountsSig = sig; needRender = true }
   if (needRender) renderFields()
@@ -235,7 +232,3 @@ byId('dataset').addEventListener('change', onDatasetChange)
 byId('prev').addEventListener('click', () => step(-1))
 byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
-byId('restoreAll').addEventListener('click', () => {
-  const doc = app.activeDocument
-  if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
-})

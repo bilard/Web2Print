@@ -1,9 +1,8 @@
 // indesign-plugin/src/idml/tagging.ts
 import { slugifyTag } from '../lib/slug'
 
-// Le module 'indesign' fournit l'objet app au runtime UXP.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { app } = require('indesign') as { app: any }
+// Ré-acquérir `app` à chaque appel (un const figé au chargement est parfois undefined — timing UXP).
+function getApp(): any { try { return require('indesign').app } catch { return null } }
 
 /** Id de la story d'un objet (cadre, texte, ou XMLElement) — pour comparer « même bloc ». */
 function storyIdOf(obj: any): number | null {
@@ -50,9 +49,10 @@ export function ensureTag(doc: any, name: string): any {
  * Web2Print relit via xmlElementStory.ts (flatten → {{<name>}}).
  */
 export function applyTagToSelection(name: string): { ok: boolean; message?: string } {
-  const doc = app.activeDocument
+  const a = getApp()
+  const doc = a?.activeDocument
   if (!doc) return { ok: false, message: 'Aucun document ouvert' }
-  const sel = app.selection
+  const sel = a.selection
   if (!sel || sel.length === 0) return { ok: false, message: 'Sélectionne un texte ou un cadre' }
 
   const tagName = slugifyTag(name)
