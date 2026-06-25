@@ -3,6 +3,7 @@ import { Plus, Trash2, GripVertical, Key, ArrowUp, ArrowDown, ArrowUpDown, Chevr
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
+import { recordAudit } from '@/lib/auditLog'
 import { FieldTypeSelector } from './FieldTypeSelector'
 import { StatsBadges } from './StatsBadges'
 import { ColumnMenu } from './ColumnMenu'
@@ -407,7 +408,12 @@ export function DataTable() {
       finalValue = ['true', 'oui', 'yes', '1'].includes(editValue.toLowerCase())
     }
 
+    const beforeRow = sheet.rows.find((r) => r._id === editingCell.rowId)
+    const before = beforeRow ? beforeRow[editingCell.colKey] : undefined
     updateCell(activeSheetIndex, editingCell.rowId, editingCell.colKey, finalValue)
+    if (String(before ?? '') !== String(finalValue ?? '')) {
+      recordAudit({ action: 'data.cell.edit', module: 'data', targetLabel: col?.label ?? editingCell.colKey, meta: { before: String(before ?? '—'), after: String(finalValue ?? '—') } })
+    }
     setEditingCell(null)
   }
 

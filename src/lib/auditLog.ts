@@ -55,6 +55,7 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   'data.dataset.import': 'DataSet importé',
   'data.dataset.rename': 'DataSet renommé',
   'data.dataset.move': 'DataSet déplacé',
+  'data.cell.edit': 'Cellule modifiée',
   'export.pdf': 'Export PDF',
   'export.png': 'Export PNG',
   'export.pptx': 'Export PPTX',
