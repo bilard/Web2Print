@@ -55,6 +55,21 @@
         list-style: none; margin: 0; padding: 8px 12px;
         overflow-y: auto; flex: 1; min-height: 0;
       }
+
+      /* --- Tableau d'aperçu (style « Indicateur des enregistrements ») --- */
+      .rec-row { display: flex; align-items: stretch; }
+      .rec-row.odd { background: rgba(255,255,255,0.03); }
+      .rec-label {
+        width: 42%; flex-shrink: 0; box-sizing: border-box;
+        text-align: right; padding: 4px 8px; font-size: 11px;
+        color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.05);
+        border-right: 1px solid rgba(0,0,0,0.25);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .rec-value {
+        flex: 1; min-width: 0; padding: 4px 8px; font-size: 12px; color: #f2f3f7;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
       .section-label {
         font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
         color: rgba(255,255,255,0.4); padding: 8px 2px 2px;

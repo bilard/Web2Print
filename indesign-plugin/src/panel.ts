@@ -13,7 +13,8 @@ let columns: ColumnInfo[] = []
 let rowIndex = 0
 let total = 0
 let previewOn = false
-let rowValues: Record<string, string> = {} // valeurs de la ligne courante, par nom de tag (aperçu panneau)
+let rowValues: Record<string, string> = {} // valeurs de la ligne courante, par nom de tag (écriture page)
+let rowEntries: { label: string; value: string }[] = [] // toutes les colonnes (tableau d'aperçu)
 let liveOn = false
 let selectedTag: string | null = null // nom de tag de l'élément sélectionné dans InDesign (mode Live)
 
@@ -74,9 +75,29 @@ async function loadRowValues() {
   rowIndex = r.rowIndex; total = r.total
   rowValues = {}
   for (const v of r.values) rowValues[slugifyTag(v.label)] = v.value
+  rowEntries = r.values.map((v) => ({ label: v.label, value: v.value }))
+}
+
+/** Tableau d'aperçu : toutes les colonnes de l'enregistrement courant (libellé | valeur). */
+function renderTable() {
+  const ul = $('fields'); ul.innerHTML = ''
+  if (rowEntries.length === 0) {
+    const empty = document.createElement('li'); empty.className = 'section-label'; empty.textContent = 'Aucune donnée'
+    ul.appendChild(empty); return
+  }
+  rowEntries.forEach((e, i) => {
+    const row = document.createElement('li')
+    row.className = `rec-row ${i % 2 ? 'odd' : 'even'}`
+    const lbl = document.createElement('span'); lbl.className = 'rec-label'; lbl.textContent = e.label
+    const val = document.createElement('span'); val.className = 'rec-value'; val.textContent = e.value !== '' ? e.value : '—'
+    row.appendChild(lbl); row.appendChild(val)
+    ul.appendChild(row)
+  })
 }
 
 function renderFields() {
+  // En mode Aperçu : tableau propre de l'enregistrement (au lieu de la liste de balisage).
+  if (previewOn) { renderTable(); return }
   const doc = app.activeDocument
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
@@ -161,15 +182,6 @@ function renderFields() {
     }
     head.appendChild(right)
     li.appendChild(head)
-
-    // Aperçu PANNEAU : afficher la valeur de la ligne sous le champ (sans toucher au doc).
-    if (previewOn) {
-      const val = rowValues[slugifyTag(c.label)]
-      const v = document.createElement('div')
-      v.className = 'value'
-      v.textContent = val !== undefined && val !== '' ? val : '—'
-      li.appendChild(v)
-    }
 
     // Clic sur la ligne = poser le tag sur la sélection courante.
     li.onclick = () => {
