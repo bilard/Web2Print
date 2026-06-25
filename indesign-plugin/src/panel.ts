@@ -220,36 +220,48 @@ function cancelConnect() {
   showStatus('')
 }
 
-/** Nom de tag de l'élément XML associé à la sélection InDesign courante (mode Live). */
-function currentSelectionTag(): string | null {
-  try {
-    const sel = app.selection
-    if (!sel || sel.length === 0) return null
-    const obj = sel[0]
-    let xe = obj?.associatedXMLElement
-    if ((!xe || !xe.isValid) && obj?.parent?.associatedXMLElement) xe = obj.parent.associatedXMLElement
-    if (xe && xe.isValid && xe.markupTag) return xe.markupTag.name as string
-  } catch { /* sélection non balisée */ }
-  return null
+/** Élément XML associé à la sélection InDesign + diagnostic (plusieurs stratégies,
+ *  car l'API varie selon qu'on sélectionne un cadre, du texte, un point d'insertion…). */
+function selectionInfo(): { tag: string | null; dbg: string } {
+  let sel: any
+  try { sel = app.selection } catch (e) { return { tag: null, dbg: 'err sel: ' + String(e) } }
+  if (!sel || sel.length === 0) return { tag: null, dbg: 'aucune sélection' }
+  const obj = sel[0]
+  let kind = '?'
+  try { kind = String(obj?.constructor?.name || obj) } catch { /* */ }
+
+  const tryXe = (o: any): any => {
+    try { const xe = o?.associatedXMLElement; return xe && xe.isValid ? xe : null } catch { return null }
+  }
+  const attempts: Array<[string, () => any]> = [
+    ['self', () => obj],
+    ['texts[0]', () => obj?.texts?.item?.(0)],
+    ['parent', () => obj?.parent],
+    ['parentTextFrame', () => obj?.parentTextFrames?.[0]],
+    ['paragraphs[0]', () => obj?.paragraphs?.item?.(0)],
+  ]
+  for (const [via, get] of attempts) {
+    const xe = tryXe(get())
+    if (xe && xe.markupTag) return { tag: String(xe.markupTag.name), dbg: `${kind} via ${via}` }
+  }
+  return { tag: null, dbg: `${kind} — pas d'élément XML` }
 }
 
 /** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur).
- *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval) ;
- *  on ne re-render que si le tag sélectionné a réellement changé. */
+ *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval).
+ *  Diagnostic affiché en statut tant qu'on stabilise l'accès à l'élément XML. */
 function onSelectionChanged() {
   if (!liveOn) return
-  const tag = currentSelectionTag()
-  if (tag === selectedTag) return // pas de changement → éviter un re-render inutile
-  selectedTag = tag
-  if (selectedTag) {
-    const col = columns.find((c) => slugifyTag(c.label) === selectedTag)
-    if (col) {
-      const val = previewOn ? rowValues[selectedTag] : undefined
-      showStatus(val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`, true)
-    }
+  const { tag, dbg } = selectionInfo()
+  if (tag) {
+    const col = columns.find((c) => slugifyTag(c.label) === tag)
+    const val = previewOn && col ? rowValues[tag] : undefined
+    showStatus(col ? (val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`) : `tag ${tag} (hors dataSet)`, true)
   } else {
-    showStatus('')
+    showStatus(`Live: ${dbg}`)
   }
+  if (tag === selectedTag) return // pas de changement → pas de re-render
+  selectedTag = tag
   renderFields()
 }
 
