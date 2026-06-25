@@ -98,7 +98,9 @@ function renderTable() {
 function renderFields() {
   // En mode Aperçu : tableau propre de l'enregistrement (au lieu de la liste de balisage).
   if (previewOn) { renderTable(); return }
-  const doc = app.activeDocument
+  // Accès doc sûr : aucun document ouvert → counts vide → « Champs posés » se vide.
+  let doc: any = null
+  try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* aucun document */ }
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
   let selectedLi: HTMLElement | null = null
@@ -349,12 +351,35 @@ byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFie
 function onDocChanged() {
   resetPreviewMemory()
   previewOn = false
+  liveOn = false
+  selectedTag = null
   rowValues = {}
+  rowEntries = []
   byId<HTMLInputElement>('preview').checked = false
+  byId<HTMLInputElement>('live').checked = false
   renderFields()
   renderRowLabel()
 }
+
+// InDesign n'émet pas d'event fiable de fermeture/changement de doc sous UXP → on
+// surveille une signature (nb de docs + id de l'actif) et on vide à tout changement.
+let lastDocSig = ''
+function docSignature(): string {
+  try {
+    const n = app.documents?.length ?? 0
+    if (n === 0) return '0'
+    return `${n}:${app.activeDocument?.id ?? '?'}`
+  } catch { return '0' }
+}
+function watchDoc() {
+  if (!client) return
+  const sig = docSignature()
+  if (sig === lastDocSig) return
+  lastDocSig = sig
+  onDocChanged()
+}
+setInterval(watchDoc, 700)
 try {
   app.addEventListener('afterClose', onDocChanged)
   app.addEventListener('afterOpen', onDocChanged)
-} catch { /* events indisponibles : ignorer */ }
+} catch { /* events indisponibles : le poll prend le relais */ }
