@@ -102,17 +102,38 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
       <div className="space-y-1">
         {loading && <p className="text-xs text-white/40 px-3">Chargement…</p>}
         {!loading && filtered.length === 0 && <p className="text-xs text-white/40 px-3">Aucune action.</p>}
-        {filtered.map((e) => (
-          <div key={e.id} className="flex items-center gap-3 rounded bg-surface-2 px-3 py-2 text-xs">
-            <span className="w-28 shrink-0 text-white/50 tabular-nums">{fmt(e.createdAt)}</span>
-            {showWho && <span className="w-44 shrink-0 text-white truncate" title={e.userEmail}>{e.userName || e.userEmail || '—'}</span>}
-            <span className="w-40 shrink-0 text-white">{auditActionLabel(e.action)}</span>
-            <span className="w-24 shrink-0 text-white/45">{e.module}</span>
-            <span className="flex-1 min-w-0 text-white/70 truncate" title={e.targetLabel ?? e.targetId ?? ''}>
-              {e.targetLabel ?? e.targetId ?? '—'}
-            </span>
-          </div>
-        ))}
+        {filtered.map((e) => {
+          const before = e.meta?.before
+          const after = e.meta?.after
+          const hasChange = before !== undefined || after !== undefined
+          const otherMeta = e.meta
+            ? Object.entries(e.meta).filter(([k]) => k !== 'before' && k !== 'after')
+            : []
+          return (
+            <div key={e.id} className="rounded bg-surface-2 px-3 py-2 text-xs">
+              <div className="flex items-center gap-3">
+                <span className="w-28 shrink-0 text-white/50 tabular-nums">{fmt(e.createdAt)}</span>
+                {showWho && <span className="w-44 shrink-0 text-white truncate" title={e.userEmail}>{e.userName || e.userEmail || '—'}</span>}
+                <span className="w-40 shrink-0 text-white">{auditActionLabel(e.action)}</span>
+                <span className="w-24 shrink-0 text-white/45">{e.module}</span>
+                <span className="flex-1 min-w-0 text-white/70 truncate" title={e.targetLabel ?? e.targetId ?? ''}>
+                  {e.targetLabel ?? e.targetId ?? '—'}
+                </span>
+              </div>
+              {hasChange && (
+                <div className="mt-1 pl-[7.25rem] text-[11px] text-white/55">
+                  Avant : <span className="text-amber-300/90">{String(before ?? '—')}</span>
+                  {' → '}Après : <span className="text-emerald-300/90">{String(after ?? '—')}</span>
+                </div>
+              )}
+              {otherMeta.length > 0 && (
+                <div className="mt-0.5 pl-[7.25rem] text-[11px] text-white/40">
+                  {otherMeta.map(([k, v]) => `${k} : ${String(v)}`).join(' · ')}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

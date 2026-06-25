@@ -42,15 +42,20 @@ export function UsersTab() {
     refresh()
   }
 
+  const roleName = (roleId: string | null) =>
+    roleId ? (roles.find((r) => r.id === roleId)?.name ?? roleId) : 'aucun rôle'
+
   const setRole = async (u: ManagedUser, roleId: string) => {
+    const before = roleName(u.accessRoleId)
+    const after = roleName(roleId || null)
     await updateUserAccess(u.uid, { accessRoleId: roleId || null })
-    recordAudit({ action: roleId ? 'access.role.assign' : 'access.role.remove', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { roleId: roleId || null } })
+    recordAudit({ action: roleId ? 'access.role.assign' : 'access.role.remove', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { before, after } })
     refresh()
   }
   const toggleBlocked = async (u: ManagedUser) => {
     const blocked = !u.accessBlocked
     await updateUserAccess(u.uid, { accessBlocked: blocked })
-    recordAudit({ action: blocked ? 'access.block' : 'access.unblock', module: 'access', targetId: u.uid, targetLabel: u.email })
+    recordAudit({ action: blocked ? 'access.block' : 'access.unblock', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { before: u.accessBlocked ? 'bloqué' : 'actif', after: blocked ? 'bloqué' : 'actif' } })
     refresh()
   }
   const resetOverrides = async (u: ManagedUser) => {
@@ -65,7 +70,7 @@ export function UsersTab() {
     if (cur.has(key)) cur.delete(key)
     else { cur.add(key); otherSet.delete(key) } // grant et revoke mutuellement exclusifs
     await updateUserAccess(u.uid, { [field]: [...cur], [other]: [...otherSet] })
-    if (adding) recordAudit({ action: kind === 'grant' ? 'access.grant' : 'access.revoke', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { permission: key } })
+    if (adding) recordAudit({ action: kind === 'grant' ? 'access.grant' : 'access.revoke', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { permission: key, before: 'hérité du rôle', after: kind === 'grant' ? 'accordé' : 'révoqué' } })
     refresh()
   }
 
