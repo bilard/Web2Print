@@ -7,6 +7,7 @@ import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
+import { recordAudit } from '@/lib/auditLog'
 
 const USD_TO_EUR = 0.92
 
@@ -502,7 +503,12 @@ export function LiveLlmUsagePanel() {
                     <BudgetEditor
                       label={meta.label}
                       value={row.budget}
-                      onChange={(v) => setBudget(row.provider, v)}
+                      onChange={(v) => {
+                        if (v !== row.budget) {
+                          recordAudit({ action: 'settings.ai.budget', module: 'settings', targetLabel: meta.label, meta: { before: row.budget === null ? 'aucun' : `$${row.budget}`, after: v === null ? 'aucun' : `$${v}` } })
+                        }
+                        setBudget(row.provider, v)
+                      }}
                     />
                     {row.budget !== null && row.pct !== null && (
                       <ProgressBar pct={row.pct} kind={row.kind} />
@@ -570,7 +576,12 @@ export function LiveLlmUsagePanel() {
                 <BudgetEditor
                   label="Bright Data"
                   value={brightDataRow.budget}
-                  onChange={setBrightDataBudget}
+                  onChange={(v) => {
+                    if (v !== brightDataRow.budget) {
+                      recordAudit({ action: 'settings.ai.budget', module: 'settings', targetLabel: 'Bright Data', meta: { before: brightDataRow.budget === null ? 'aucun' : `$${brightDataRow.budget}`, after: v === null ? 'aucun' : `$${v}` } })
+                    }
+                    setBrightDataBudget(v)
+                  }}
                 />
                 {brightDataRow.budget !== null && brightDataRow.pct !== null && (
                   <div className="w-24"><ProgressBar pct={brightDataRow.pct} kind={brightDataRow.kind} /></div>

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { recordAudit } from '@/lib/auditLog'
 
 export type ThemePref = 'light' | 'dark' | 'system'
 
@@ -36,16 +37,21 @@ interface ThemeState {
 
 const pref = initialThemePref()
 
-export const useThemeStore = create<ThemeState>((set) => ({
+export const useThemeStore = create<ThemeState>((set, get) => ({
   themePref: pref,
   resolvedTheme: resolve(pref),
   setThemePref: (pref) => {
+    const before = get().themePref
     try {
       localStorage.setItem(STORAGE_KEY, pref)
     } catch { /* localStorage indisponible (Safari privé) : pas de persistance */ }
     const resolved = resolve(pref)
     applyToDom(resolved)
     set({ themePref: pref, resolvedTheme: resolved })
+    if (before !== pref) {
+      const label = (p: ThemePref) => (p === 'light' ? 'clair' : p === 'dark' ? 'sombre' : 'système')
+      void recordAudit({ action: 'settings.theme', module: 'settings', meta: { before: label(before), after: label(pref) } })
+    }
   },
 }))
 

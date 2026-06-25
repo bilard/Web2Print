@@ -10,6 +10,7 @@ import {
 } from '@/lib/apiKeys'
 import { AI_MODELS, type AiProvider, type AiModelInfo } from '@/lib/aiModels'
 import { useAiSettingsStore } from '@/stores/aiSettings.store'
+import { recordAudit } from '@/lib/auditLog'
 
 interface AiProviderCardProps {
   provider: AiProvider
@@ -398,7 +399,12 @@ export function AiProviderCard({ provider, apiKeyId, label, description, logo, a
                   filteredModels.map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => { setSelectedModel(provider, m.id); setPopoverOpen(false); setQuery('') }}
+                      onClick={() => {
+                        if (m.id !== selectedId) {
+                          recordAudit({ action: 'settings.ai.model', module: 'settings', targetLabel: label, meta: { before: selected.label, after: m.label } })
+                        }
+                        setSelectedModel(provider, m.id); setPopoverOpen(false); setQuery('')
+                      }}
                       className={`w-full flex flex-col items-start px-2.5 py-1.5 hover:bg-white/5 transition-colors ${m.id === selected.id ? 'bg-white/[0.04]' : ''}`}
                     >
                       <span className="text-xs text-white/80">{m.label}</span>

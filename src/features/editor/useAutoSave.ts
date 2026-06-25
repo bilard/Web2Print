@@ -10,7 +10,7 @@ import { usePagesStore } from '@/stores/pages.store'
 import { useMergeStore } from '@/stores/merge.store'
 import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { maybeAutoSnapshot } from '@/features/versions/autoSnapshot'
-import { recordAuditThrottled } from '@/lib/auditLog'
+import { recordAudit, recordAuditThrottled } from '@/lib/auditLog'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
@@ -385,20 +385,28 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
   }, [projectId, setSaveStatus])
 
   // Save title immediately when it changes — but only after initial load
+  const prevTitleRef = useRef<{ id: string; title: string } | null>(null)
   useEffect(() => {
     if (!projectId || !projectTitle || !titleLoaded) return
 
+    const prev = prevTitleRef.current
+    const isRename = prev?.id === projectId && prev.title !== projectTitle
     const saveTitle = async () => {
       try {
         await updateDoc(doc(db, 'projects', projectId), {
           title: projectTitle,
           updatedAt: Date.now(),
         })
+        // Renommage réel uniquement (même projet, titre différent) → audit avant/après.
+        if (isRename) {
+          recordAudit({ action: 'library.project.rename', module: 'library', targetId: projectId, targetLabel: projectTitle, meta: { before: prev!.title, after: projectTitle } })
+        }
       } catch (err) {
         console.error('Title save error', err)
       }
     }
     saveTitle()
+    prevTitleRef.current = { id: projectId, title: projectTitle }
   }, [projectTitle, projectId, titleLoaded])
 
   return { save }

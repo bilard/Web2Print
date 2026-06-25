@@ -22,7 +22,7 @@ export interface AuditEntry extends AuditInput {
 }
 
 /** Liste canonique de TOUS les modules (pour le filtre « Type », même sans données). */
-export const AUDIT_MODULES = ['access', 'auth', 'library', 'data', 'export', 'workflows', 'ai'] as const
+export const AUDIT_MODULES = ['access', 'auth', 'library', 'data', 'export', 'workflows', 'ai', 'settings'] as const
 
 /** Module d'une clé d'action (`library.project.create` → `library` ; `workflow.run` → `workflows`). */
 export function auditModuleOf(action: string): string {
@@ -44,6 +44,7 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   'access.role.delete': 'Rôle supprimé',
   'library.project.create': 'Projet créé',
   'library.project.save': 'Projet modifié',
+  'library.project.rename': 'Projet renommé',
   'library.project.delete': 'Projet supprimé',
   'library.project.duplicate': 'Projet dupliqué',
   'library.version.restore': 'Version restaurée',
@@ -52,6 +53,8 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   'data.dataset.save': 'DataSet enregistré',
   'data.dataset.delete': 'DataSet supprimé',
   'data.dataset.import': 'DataSet importé',
+  'data.dataset.rename': 'DataSet renommé',
+  'data.dataset.move': 'DataSet déplacé',
   'export.pdf': 'Export PDF',
   'export.png': 'Export PNG',
   'export.pptx': 'Export PPTX',
@@ -65,6 +68,9 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   'workflow.run': 'Workflow exécuté',
   'ai.completion': 'IA — complétion de colonne',
   'ai.workflow.generate': 'IA — génération de workflow',
+  'settings.theme': 'Thème changé',
+  'settings.ai.model': 'Modèle IA par défaut',
+  'settings.ai.budget': 'Budget IA mensuel',
 }
 
 /** Libellé lisible d'une action (clé inconnue → la clé brute). */

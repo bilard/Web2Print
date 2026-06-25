@@ -60,8 +60,12 @@ export function RolesTab() {
 
   const save = async () => {
     if (!editing || !editing.name.trim()) return
+    const prev = roles.find((r) => r.id === editing.id)
+    const beforeCount = prev?.permissions.length ?? 0
+    const afterCount = [...editing.permissions].length
     await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions] })
-    recordAudit({ action: 'access.role.save', module: 'access', targetId: editing.id, targetLabel: editing.name, meta: { count: [...editing.permissions].length } })
+    const renamed = prev && prev.name !== editing.name ? { nom: `${prev.name} → ${editing.name}` } : {}
+    recordAudit({ action: 'access.role.save', module: 'access', targetId: editing.id, targetLabel: editing.name, meta: { before: `${beforeCount} perms`, after: `${afterCount} perms`, ...renamed } })
     setEditing(null); refresh()
   }
 

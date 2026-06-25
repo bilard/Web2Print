@@ -139,7 +139,11 @@ export function useExcelFirebase() {
     const trimmed = newFileName.trim()
     if (!trimmed) return
     const ref = doc(db, COLLECTION, docId)
+    const before = (await getDoc(ref)).data()?.fileName as string | undefined
     await updateDoc(ref, { fileName: trimmed, updatedAt: serverTimestamp() })
+    if (before !== trimmed) {
+      recordAudit({ action: 'data.dataset.rename', module: 'data', targetId: docId, targetLabel: trimmed, meta: { before: before ?? '—', after: trimmed } })
+    }
   }
 
   /** Déplace une base vers un autre chemin dans l'arbre (path vide = racine). */
@@ -148,7 +152,13 @@ export function useExcelFirebase() {
     if (!user) return
     const cleaned = nextPath.map((s) => s.trim()).filter(Boolean)
     const ref = doc(db, COLLECTION, docId)
+    const snap = await getDoc(ref)
+    const beforePath = Array.isArray(snap.data()?.path) ? (snap.data()?.path as string[]) : []
     await updateDoc(ref, { path: cleaned, updatedAt: serverTimestamp() })
+    recordAudit({
+      action: 'data.dataset.move', module: 'data', targetId: docId, targetLabel: snap.data()?.fileName as string | undefined,
+      meta: { before: beforePath.join(' / ') || 'racine', after: cleaned.join(' / ') || 'racine' },
+    })
   }
 
   /** Persiste l'ordre manuel d'un groupe de bases (siblings d'un même path).
