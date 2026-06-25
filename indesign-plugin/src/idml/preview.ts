@@ -28,49 +28,29 @@ function eachTaggedElement(doc: any, fn: (el: any, tagName: string) => void) {
  *  - élément qui tague une PLAGE de texte → on remplace le 1er caractère existant puis
  *    on supprime les anciens (l'élément n'est jamais vidé, l'ancrage de plage tient). */
 function replaceTaggedText(el: any, value: string): void {
-  // --- DIAGNOSTIC : inspecter l'élément et ses accès texte ---
-  const dbg: Record<string, unknown> = {}
-  try { dbg.tag = el.markupTag?.name } catch { dbg.tag = 'err' }
-  try { dbg.elType = String(el?.constructor?.name) } catch { dbg.elType = 'err' }
   let content: any
-  try { content = el.xmlContent; dbg.contentType = String(content?.constructor?.name) } catch (e) { dbg.contentType = 'err ' + String(e) }
-  try { dbg.contentHasContents = content ? (typeof content.contents) : 'no-content' } catch (e) { dbg.contentHasContents = 'err ' + String(e) }
-  try { dbg.elCharsLen = el.characters?.length } catch (e) { dbg.elCharsLen = 'err ' + String(e) }
-  try { dbg.contentTextsLen = content?.texts?.length } catch (e) { dbg.contentTextsLen = 'err ' + String(e) }
-  console.log('[W2P] replaceTaggedText', JSON.stringify(dbg))
+  try { content = el.xmlContent } catch { /* */ }
+  let ctype = ''
+  try { ctype = String(content?.constructor?.name || '') } catch { /* */ }
 
-  // Tentative 1 : écrire le contenu de l'objet pointé (cadre/story).
-  try {
-    if (content && typeof content.contents !== 'undefined') {
-      content.contents = value
-      console.log('[W2P]  → écrit via content.contents OK')
-      return
-    }
-  } catch (e) { console.log('[W2P]  ✗ content.contents:', String(e)) }
+  // CADRE/STORY taggé → la balise est sur le cadre : écrire le contenu est sûr.
+  if (content && (ctype === 'TextFrame' || ctype === 'Story')) {
+    try { content.contents = value; return } catch (e) { console.log('[W2P] ✗ frame.contents', String(e)) }
+  }
 
-  // Tentative 2 : écrire le texte de la story du contenu.
-  try {
-    if (content?.texts?.length) {
-      content.texts.item(0).contents = value
-      console.log('[W2P]  → écrit via content.texts[0].contents OK')
-      return
-    }
-  } catch (e) { console.log('[W2P]  ✗ content.texts[0]:', String(e)) }
-
-  // Tentative 3 : manipulation caractères de l'élément (plage taguée).
+  // PLAGE DE TEXTE taguée (xmlContent = Text/Character/…) → manip caractères :
+  // remplacer le 1er char existant par la valeur puis supprimer les anciens restants.
+  // L'élément n'est jamais vidé → l'ancrage de la balise tient (≠ content.contents qui supprime la balise).
   try {
     const origLen = el.characters.length
-    if (origLen === 0) { el.insertionPoints.item(0).contents = value; console.log('[W2P]  → insert (vide) OK'); return }
+    if (origLen === 0) { el.insertionPoints.item(0).contents = value; return }
     el.characters.item(0).contents = value
     const remaining = origLen - 1
     const chars = el.characters
     const total = chars.length
     for (let i = total - 1; i >= total - remaining; i--) chars.item(i).remove()
-    console.log('[W2P]  → écrit via characters OK')
     return
-  } catch (e) { console.log('[W2P]  ✗ characters:', String(e)) }
-
-  console.log('[W2P]  ⚠️ AUCUNE méthode n’a fonctionné pour ce champ')
+  } catch (e) { console.log('[W2P] ✗ chars', String(e)) }
 }
 
 /** Action explicite : remplit la page avec les valeurs de la ligne (balises conservées).
