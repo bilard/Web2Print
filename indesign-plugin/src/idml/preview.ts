@@ -28,29 +28,22 @@ function eachTaggedElement(doc: any, fn: (el: any, tagName: string) => void) {
  *  - élément qui tague une PLAGE de texte → on remplace le 1er caractère existant puis
  *    on supprime les anciens (l'élément n'est jamais vidé, l'ancrage de plage tient). */
 function replaceTaggedText(el: any, value: string): void {
-  let content: any
-  try { content = el.xmlContent } catch { /* */ }
-  let ctype = ''
-  try { ctype = String(content?.constructor?.name || '') } catch { /* */ }
-
-  // CADRE/STORY taggé → la balise est sur le cadre : écrire le contenu est sûr.
-  if (content && (ctype === 'TextFrame' || ctype === 'Story')) {
-    try { content.contents = value; return } catch (e) { console.log('[W2P] ✗ frame.contents', String(e)) }
-  }
-
-  // PLAGE DE TEXTE taguée (xmlContent = Text/Character/…) → manip caractères :
-  // remplacer le 1er char existant par la valeur puis supprimer les anciens restants.
-  // L'élément n'est jamais vidé → l'ancrage de la balise tient (≠ content.contents qui supprime la balise).
+  // Méthode qui mettait bien les données dans la page : insérer la valeur au début de
+  // l'élément (dans le marquage) puis supprimer les anciens caractères. L'élément n'est
+  // jamais vidé → la balise garde son ancrage.
   try {
-    const origLen = el.characters.length
-    if (origLen === 0) { el.insertionPoints.item(0).contents = value; return }
-    el.characters.item(0).contents = value
-    const remaining = origLen - 1
+    const before = el.characters.length
+    el.insertionPoints.item(0).contents = value
+    const after = el.characters.length
+    const insertedLen = after - before
+    if (insertedLen <= 0) {
+      // L'insertion n'a rien ajouté dans l'élément → écrire directement le contenu.
+      el.texts.item(0).contents = value
+      return
+    }
     const chars = el.characters
-    const total = chars.length
-    for (let i = total - 1; i >= total - remaining; i--) chars.item(i).remove()
-    return
-  } catch (e) { console.log('[W2P] ✗ chars', String(e)) }
+    for (let i = after - 1; i >= insertedLen; i--) chars.item(i).remove()
+  } catch (e) { console.log('[W2P] fill err', String(e)) }
 }
 
 /** Action explicite : remplit la page avec les valeurs de la ligne (balises conservées).
