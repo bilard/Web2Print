@@ -250,8 +250,8 @@ function cancelConnect() {
  *  Repli cadre : associatedXMLElement direct. */
 function selectionInfo(): { tag: string | null; dbg: string } {
   let sel: any
-  try { sel = app.selection } catch (e) { return { tag: null, dbg: 'err sel: ' + String(e) } }
-  if (!sel || sel.length === 0) return { tag: null, dbg: 'aucune sélection' }
+  try { sel = require('indesign')?.app?.selection } catch { return { tag: null, dbg: '' } }
+  if (!sel || sel.length === 0) return { tag: null, dbg: '' }
   const obj = sel[0]
   let kind = '?'
   try { kind = String(obj?.constructor?.name || obj) } catch { /* */ }
@@ -305,10 +305,11 @@ function onSelectionChanged() {
   if (tag) {
     const col = columns.find((c) => slugifyTag(c.label) === tag)
     const val = previewOn && col ? rowValues[tag] : undefined
-    showStatus(col ? (val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`) : `tag ${tag} (hors dataSet)`, true)
+    showStatus(col ? (val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`) : `tag ${tag}`, true)
   } else {
-    showStatus(`Live: ${dbg}`)
+    showStatus('') // silencieux : plus d'erreur en statut
   }
+  void dbg
   if (tag === selectedTag) return // pas de changement → pas de re-render
   selectedTag = tag
   renderFields()
