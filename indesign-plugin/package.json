@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "esbuild src/panel.ts --bundle --format=esm --external:indesign --outfile=dist/panel.js",
+    "build": "esbuild src/panel.ts --bundle --format=iife --external:indesign --external:uxp --outfile=dist/panel.js",
     "test": "vitest run"
   },
   "devDependencies": {
