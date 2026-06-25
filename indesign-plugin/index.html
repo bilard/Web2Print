@@ -33,6 +33,8 @@
         background: rgba(255,255,255,0.06); color: #e8e8e8;
       }
 
+      .dataset-row { display: flex; align-items: center; gap: 6px; }
+      .dataset-row #dataset { flex: 1; }
       .rownav { display: flex; align-items: center; justify-content: space-between; }
       .rownav .nav { display: flex; align-items: center; gap: 6px; }
       .navbtn {
@@ -89,7 +91,10 @@
 
     <div id="main">
       <div class="toolbar">
-        <select id="dataset"></select>
+        <div class="dataset-row">
+          <select id="dataset"></select>
+          <button id="settings" class="navbtn" title="Changer de token">⚙</button>
+        </div>
         <div class="rownav">
           <div class="nav">
             <button id="prev" class="navbtn">◀</button>

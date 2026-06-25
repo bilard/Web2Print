@@ -137,11 +137,24 @@ function step(delta: number) {
   refreshPreview()
 }
 
+/** Paramètres : se déconnecter pour saisir un autre token. */
+function changeToken() {
+  client = null
+  columns = []
+  rowIndex = 0
+  total = 0
+  byId<HTMLInputElement>('token').value = ''
+  $('main').style.display = 'none'
+  $('connect').style.display = 'flex'
+  showStatus('Colle un nouveau token, puis Connecter.')
+}
+
 byId('btnConnect').addEventListener('click', connect)
 byId('dataset').addEventListener('change', onDatasetChange)
 byId('prev').addEventListener('click', () => step(-1))
 byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
+byId('settings').addEventListener('click', changeToken)
 byId('restoreAll').addEventListener('click', () => {
   const doc = app.activeDocument
   if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
