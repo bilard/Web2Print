@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  hashToken, parseRoute, projectDataset, firstSheetColumns, projectRow,
+  hashToken, parseRoute, projectDataset, firstSheetColumns, projectRow, toCsv,
 } from './pluginApiCore'
 
 describe('hashToken', () => {
@@ -18,8 +18,23 @@ describe('parseRoute', () => {
   it('liste', () => expect(parseRoute('/datasets')).toEqual({ kind: 'list' }))
   it('colonnes', () => expect(parseRoute('/datasets/abc')).toEqual({ kind: 'columns', docId: 'abc' }))
   it('ligne', () => expect(parseRoute('/datasets/abc/row')).toEqual({ kind: 'row', docId: 'abc' }))
+  it('csv', () => expect(parseRoute('/datasets/abc/csv')).toEqual({ kind: 'csv', docId: 'abc' }))
   it('tolère un slash final', () => expect(parseRoute('/datasets/')).toEqual({ kind: 'list' }))
   it('inconnu', () => expect(parseRoute('/nope')).toEqual({ kind: 'unknown' }))
+})
+
+describe('toCsv', () => {
+  const sheets = [{
+    columns: [{ key: 'ref', label: 'Référence' }, { key: 'desc', label: 'Description' }],
+    rows: [
+      { _id: 'r0', ref: 'A-1', desc: 'Bleu, 220cm' },
+      { _id: 'r1', ref: 'B-2', desc: 'Dit "grand"' },
+    ],
+  }]
+  it('en-tête = libellés, 1 ligne par enregistrement, CRLF', () => {
+    expect(toCsv(sheets)).toBe('Référence,Description\r\nA-1,"Bleu, 220cm"\r\nB-2,"Dit ""grand"""')
+  })
+  it('feuilles vides → chaîne vide', () => expect(toCsv([])).toBe(''))
 })
 
 describe('projectDataset', () => {

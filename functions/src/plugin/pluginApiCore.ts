@@ -4,6 +4,7 @@ export type Route =
   | { kind: 'list' }
   | { kind: 'columns'; docId: string }
   | { kind: 'row'; docId: string }
+  | { kind: 'csv'; docId: string }
   | { kind: 'unknown' }
 
 export interface DatasetSummary { docId: string; fileName: string; sheetCount: number; rowCount: number }
@@ -26,7 +27,23 @@ export function parseRoute(path: string): Route {
   const docId = parts[1]
   if (parts.length === 2) return { kind: 'columns', docId }
   if (parts.length === 3 && parts[2] === 'row') return { kind: 'row', docId }
+  if (parts.length === 3 && parts[2] === 'csv') return { kind: 'csv', docId }
   return { kind: 'unknown' }
+}
+
+/** Génère le CSV (Fusion de données InDesign) : 1re ligne = libellés, puis 1 ligne par
+ *  enregistrement. Échappement RFC 4180 (guillemets doublés, champ cité si , " ou saut). */
+export function toCsv(sheets: Sheet[]): string {
+  const sheet = sheets[0]
+  if (!sheet) return ''
+  const cols = sheet.columns ?? []
+  const esc = (v: unknown): string => {
+    const s = v === undefined || v === null ? '' : String(v)
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+  }
+  const header = cols.map((c) => esc(c.label)).join(',')
+  const lines = (sheet.rows ?? []).map((row) => cols.map((c) => esc(row[c.key])).join(','))
+  return [header, ...lines].join('\r\n')
 }
 
 export function projectDataset(docId: string, data: Record<string, unknown>): DatasetSummary {

@@ -4,7 +4,7 @@ import { onRequest } from 'firebase-functions/v2/https'
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import {
-  hashToken, parseRoute, projectDataset, firstSheetColumns, projectRow, type Sheet,
+  hashToken, parseRoute, projectDataset, firstSheetColumns, projectRow, toCsv, type Sheet,
 } from './pluginApiCore'
 
 if (!getApps().length) initializeApp()
@@ -61,6 +61,12 @@ export const pluginApi = onRequest(
         if (!sheets) { res.status(404).json({ error: 'Dataset introuvable' }); return }
         const i = Number.parseInt(String(req.query.i ?? '0'), 10) || 0
         res.status(200).json(projectRow(sheets, i)); return
+      }
+      if (route.kind === 'csv') {
+        const sheets = await loadSheets(db, uid, route.docId)
+        if (!sheets) { res.status(404).json({ error: 'Dataset introuvable' }); return }
+        res.set('Content-Type', 'text/csv; charset=utf-8')
+        res.status(200).send('﻿' + toCsv(sheets)); return // BOM UTF-8 pour InDesign
       }
       res.status(404).json({ error: 'Route inconnue' })
     } catch (err) {
