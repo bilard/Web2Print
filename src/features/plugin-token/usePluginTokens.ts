@@ -1,4 +1,4 @@
-import { doc, setDoc, collection, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, collection, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { generatePluginToken, sha256Hex } from './pluginTokenCrypto'
 
@@ -44,14 +44,16 @@ export function usePluginTokens() {
           revoked: x.revoked === true,
         }
       })
+      .filter((t) => !t.revoked) // les KEYs supprimées (legacy soft-revoked) n'apparaissent plus
       .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
   }
 
-  const revokeToken = async (id: string): Promise<void> => {
+  /** Supprime définitivement une KEY (le doc disparaît → token plus résoluble côté serveur). */
+  const deleteToken = async (id: string): Promise<void> => {
     const user = auth.currentUser
     if (!user) return
-    await updateDoc(doc(db, COLLECTION, id), { revoked: true })
+    await deleteDoc(doc(db, COLLECTION, id))
   }
 
-  return { createToken, listTokens, revokeToken }
+  return { createToken, listTokens, deleteToken }
 }

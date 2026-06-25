@@ -5,11 +5,12 @@ import { toast } from 'sonner'
 import { usePluginTokens, type PluginToken } from '@/features/plugin-token/usePluginTokens'
 
 export function PluginTokenSection() {
-  const { createToken, listTokens, revokeToken } = usePluginTokens()
+  const { createToken, listTokens, deleteToken } = usePluginTokens()
   const [tokens, setTokens] = useState<PluginToken[]>([])
   const [tokenKey, setTokenKey] = useState('')
   const [freshToken, setFreshToken] = useState<string | null>(null)
   const [showToken, setShowToken] = useState(false)
+  const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
 
   const refresh = () => { listTokens().then(setTokens) }
@@ -28,9 +29,17 @@ export function PluginTokenSection() {
     toast.success('Token copié')
   }
 
-  const onRevoke = async (id: string) => {
-    await revokeToken(id)
+  const onDelete = async (id: string) => {
+    await deleteToken(id)
     refresh()
+  }
+
+  const toggleKey = (id: string) => {
+    setRevealedKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
   }
 
   return (
@@ -99,22 +108,30 @@ export function PluginTokenSection() {
         {tokens.length === 0 && <p className="text-xs text-white/40">Aucun token.</p>}
         {tokens.map((t) => (
           <div key={t.id} className="flex items-center justify-between rounded bg-surface-2 px-3 py-2 text-xs">
-            <div className="min-w-0">
-              <span className={t.revoked ? 'text-white/40 line-through' : 'text-white'}>{t.label}</span>
-              <span className="ml-2 text-white/40">
+            <div className="min-w-0 flex items-center gap-2">
+              <span className="text-white truncate">
+                {revealedKeys.has(t.id) ? t.label : '•'.repeat(Math.min(t.label.length || 6, 12))}
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleKey(t.id)}
+                className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
+                title={revealedKeys.has(t.id) ? 'Masquer la KEY' : 'Voir la KEY'}
+              >
+                {revealedKeys.has(t.id) ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+              <span className="text-white/40 shrink-0">
                 {t.lastUsedAt ? `utilisé ${t.lastUsedAt.toLocaleDateString()}` : 'jamais utilisé'}
               </span>
             </div>
-            {!t.revoked && (
-              <button
-                type="button"
-                onClick={() => onRevoke(t.id)}
-                className="p-1 rounded hover:bg-white/10 text-red-400/70 hover:text-red-400 transition-colors"
-                title="Révoquer"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => onDelete(t.id)}
+              className="p-1 rounded hover:bg-white/10 text-red-400/70 hover:text-red-400 transition-colors shrink-0"
+              title="Supprimer"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         ))}
         <button
