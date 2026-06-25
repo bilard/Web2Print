@@ -2,7 +2,7 @@
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
-import { applyRowPreview, restorePreview, resetPreviewMemory } from './idml/preview'
+import { fillPageWithRow, restoreAllPlaceholders } from './idml/preview'
 
 const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
@@ -203,14 +203,8 @@ function renderRowLabel() {
 async function refreshPreview() {
   if (!client) return
   previewOn = byId<HTMLInputElement>('preview').checked
-  const doc = app.activeDocument
-  if (previewOn) {
-    await loadRowValues()
-    if (doc) applyRowPreview(doc, rowValues) // écrit les valeurs DANS la page (balises conservées)
-  } else {
-    if (doc) restorePreview(doc) // remet les {{champs}} d'origine
-    rowValues = {}
-  }
+  if (previewOn) await loadRowValues() // Aperçu = tableau panneau uniquement (ne touche PAS le document)
+  else rowEntries = []
   renderRowLabel()
   renderFields()
 }
@@ -218,11 +212,7 @@ async function refreshPreview() {
 async function step(delta: number) {
   if (total === 0) return
   rowIndex = Math.max(0, Math.min(rowIndex + delta, total - 1))
-  if (previewOn) {
-    await loadRowValues()
-    const doc = app.activeDocument
-    if (doc) applyRowPreview(doc, rowValues)
-  }
+  if (previewOn) await loadRowValues()
   renderRowLabel()
   renderFields()
 }
@@ -345,11 +335,28 @@ function toggleMenu(force?: boolean) {
 byId('menuBtn').addEventListener('click', () => toggleMenu())
 byId('miChangeToken').addEventListener('click', () => { toggleMenu(false); changeToken() })
 byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFields() })
+byId('miFill').addEventListener('click', async () => {
+  toggleMenu(false)
+  if (!client) return
+  let doc: any = null
+  try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* */ }
+  if (!doc) { showStatus('Aucun document ouvert'); return }
+  await loadRowValues()
+  fillPageWithRow(doc, rowValues)
+  showStatus(`Page remplie (ligne ${rowIndex + 1})`, true)
+})
+byId('miRestore').addEventListener('click', () => {
+  toggleMenu(false)
+  let doc: any = null
+  try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* */ }
+  if (!doc) { showStatus('Aucun document ouvert'); return }
+  restoreAllPlaceholders(doc)
+  showStatus('Maquette restaurée ({{champs}})', true)
+})
 
 // À la fermeture/ouverture d'un document : rafraîchir la liste des balises (vidée
 // s'il n'y a plus de document actif) SANS se déconnecter (le dataSet reste choisi).
 function onDocChanged() {
-  resetPreviewMemory()
   previewOn = false
   liveOn = false
   selectedTag = null
