@@ -1,14 +1,15 @@
 // src/features/plugin-token/PluginTokenSection.tsx
 import { useEffect, useState } from 'react'
-import { Plug, Copy, Trash2, RefreshCw, X } from 'lucide-react'
+import { Plug, Copy, Trash2, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePluginTokens, type PluginToken } from '@/features/plugin-token/usePluginTokens'
 
 export function PluginTokenSection() {
   const { createToken, listTokens, revokeToken } = usePluginTokens()
   const [tokens, setTokens] = useState<PluginToken[]>([])
-  const [label, setLabel] = useState('')
+  const [tokenKey, setTokenKey] = useState('')
   const [freshToken, setFreshToken] = useState<string | null>(null)
+  const [showToken, setShowToken] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const refresh = () => { listTokens().then(setTokens) }
@@ -17,8 +18,8 @@ export function PluginTokenSection() {
   const onCreate = async () => {
     setBusy(true)
     try {
-      const t = await createToken(label)
-      if (t) { setFreshToken(t); setLabel(''); refresh() }
+      const t = await createToken(tokenKey)
+      if (t) { setFreshToken(t); setShowToken(false); setTokenKey(''); refresh() }
     } finally { setBusy(false) }
   }
 
@@ -44,9 +45,9 @@ export function PluginTokenSection() {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Nom (ex : mon poste)"
-          value={label}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLabel(e.target.value)}
+          placeholder="KEY (ex : poste-fabrication)"
+          value={tokenKey}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTokenKey(e.target.value)}
           className="flex-1 bg-well border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50"
         />
         <button
@@ -63,7 +64,17 @@ export function PluginTokenSection() {
         <div className="rounded-md bg-well p-3 space-y-2">
           <p className="text-xs text-amber-400">Copie ce token maintenant — il ne sera plus affiché.</p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 truncate text-xs text-white">{freshToken}</code>
+            <code className="flex-1 truncate text-xs text-white">
+              {showToken ? freshToken : '•'.repeat(Math.min(freshToken.length, 40))}
+            </code>
+            <button
+              type="button"
+              onClick={() => setShowToken((v) => !v)}
+              className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+              title={showToken ? 'Masquer' : 'Afficher'}
+            >
+              {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
             <button
               type="button"
               onClick={() => onCopy(freshToken)}
