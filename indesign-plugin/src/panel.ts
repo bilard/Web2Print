@@ -235,25 +235,21 @@ function cancelConnect() {
   showStatus('')
 }
 
-/** Élément XML le PLUS PROFOND à l'endroit de la sélection (le vrai champ, pas le
- *  conteneur). Pour une sélection texte : on prend le point d'insertion et on
- *  cherche l'élément balisé dont la plage de texte (la plus courte) contient l'index.
- *  Repli cadre : associatedXMLElement direct. */
-function selectionInfo(): { tag: string | null; dbg: string } {
-  let sel: any
-  try { sel = app.selection } catch (e) { return { tag: null, dbg: 'err sel: ' + String(e) } }
-  if (!sel || sel.length === 0) return { tag: null, dbg: 'aucune sélection' }
-  const obj = sel[0]
-  let kind = '?'
-  try { kind = String(obj?.constructor?.name || obj) } catch { /* */ }
-
-  // 1) Sélection texte → élément balisé le plus profond contenant le point d'insertion.
+/** Nom de tag de l'élément balisé le PLUS PROFOND à l'endroit de la sélection (le vrai
+ *  champ, pas le conteneur). À TOUTE ÉPREUVE : ne lève jamais, renvoie null si rien. */
+function selectionTag(): string | null {
   try {
+    const a = require('indesign')?.app
+    const sel = a?.selection
+    if (!sel || sel.length === 0) return null
+    const obj = sel[0]
+
+    // 1) Sélection texte → élément balisé le plus profond contenant le point d'insertion.
     const ip = obj?.insertionPoints?.item?.(0)
     const idx: number | undefined = ip?.index
     const storyId = ip?.parentStory?.id
     if (typeof idx === 'number' && storyId != null) {
-      const doc = app.activeDocument
+      const doc = a?.activeDocument
       let best: any = null
       let bestLen = Infinity
       const consider = (el: any) => {
@@ -274,34 +270,34 @@ function selectionInfo(): { tag: string | null; dbg: string } {
       }
       const root = doc?.xmlElements?.item(0)
       if (root) walk(root)
-      if (best && best.markupTag) return { tag: String(best.markupTag.name), dbg: `${kind} @${idx} profond` }
+      if (best?.markupTag) return String(best.markupTag.name)
     }
-  } catch { /* pas une sélection texte */ }
 
-  // 2) Repli : cadre/objet balisé directement.
-  try {
+    // 2) Repli : cadre/objet balisé directement.
     const xe = obj?.associatedXMLElement
-    if (xe && xe.isValid && xe.markupTag) return { tag: String(xe.markupTag.name), dbg: `${kind} via cadre` }
-  } catch { /* */ }
-
-  return { tag: null, dbg: `${kind} — pas trouvé` }
+    if (xe && xe.isValid && xe.markupTag) return String(xe.markupTag.name)
+  } catch { /* silencieux : Live ne doit jamais spammer d'erreur */ }
+  return null
 }
 
 /** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur).
- *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval).
- *  Diagnostic affiché en statut tant qu'on stabilise l'accès à l'élément XML. */
+ *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval). */
 function onSelectionChanged() {
   if (!liveOn) return
-  const { tag, dbg } = selectionInfo()
-  if (tag) {
-    const col = columns.find((c) => slugifyTag(c.label) === tag)
-    const val = previewOn && col ? rowValues[tag] : undefined
-    showStatus(col ? (val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`) : `tag ${tag} (hors dataSet)`, true)
-  } else {
-    showStatus(`Live: ${dbg}`)
-  }
+  const tag = selectionTag()
   if (tag === selectedTag) return // pas de changement → pas de re-render
   selectedTag = tag
+  if (tag) {
+    const col = columns.find((c) => slugifyTag(c.label) === tag)
+    if (col) {
+      const val = rowValues[tag]
+      showStatus(previewOn && val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`, true)
+    } else {
+      showStatus(`balise « ${tag} »`, true)
+    }
+  } else {
+    showStatus('')
+  }
   renderFields()
 }
 
