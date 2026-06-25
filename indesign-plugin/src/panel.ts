@@ -221,13 +221,20 @@ function selectionTag(): string | null {
   return null
 }
 
-// InDesign n'émet pas d'event de sélection → on poll, et on ne re-rend qu'au changement.
+// InDesign n'émet pas d'event de sélection ni de modif de balises → on poll, et on ne
+// re-rend QUE si la sélection OU l'ensemble des balises a changé (détecte aussi les
+// suppressions/ajouts de balises faits hors du plugin, ex. dans le panneau Structure).
+let lastCountsSig = ''
 function checkSelection() {
   if (!client || previewOn) return
+  let needRender = false
   const tag = selectionTag()
-  if (tag === selectedTag) return
-  selectedTag = tag
-  renderFields()
+  if (tag !== selectedTag) { selectedTag = tag; needRender = true }
+  let doc: any = null
+  try { doc = app.activeDocument } catch { /* aucun document */ }
+  const sig = doc ? JSON.stringify(countTaggedByName(doc)) : ''
+  if (sig !== lastCountsSig) { lastCountsSig = sig; needRender = true }
+  if (needRender) renderFields()
 }
 setInterval(checkSelection, 500)
 
