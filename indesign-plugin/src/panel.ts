@@ -233,16 +233,22 @@ function currentSelectionTag(): string | null {
   return null
 }
 
-/** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur). */
+/** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur).
+ *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval) ;
+ *  on ne re-render que si le tag sélectionné a réellement changé. */
 function onSelectionChanged() {
   if (!liveOn) return
-  selectedTag = currentSelectionTag()
+  const tag = currentSelectionTag()
+  if (tag === selectedTag) return // pas de changement → éviter un re-render inutile
+  selectedTag = tag
   if (selectedTag) {
     const col = columns.find((c) => slugifyTag(c.label) === selectedTag)
     if (col) {
       const val = previewOn ? rowValues[selectedTag] : undefined
       showStatus(val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`, true)
     }
+  } else {
+    showStatus('')
   }
   renderFields()
 }
@@ -253,13 +259,20 @@ byId('prev').addEventListener('click', () => step(-1))
 byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
 byId('cancelConnect').addEventListener('click', cancelConnect)
+let liveTimer: ReturnType<typeof setInterval> | null = null
 byId('live').addEventListener('change', () => {
   liveOn = byId<HTMLInputElement>('live').checked
-  if (!liveOn) { selectedTag = null; showStatus('') }
-  onSelectionChanged()
-  if (!liveOn) renderFields() // re-render pour retirer le surlignage
+  if (liveOn) {
+    selectedTag = null
+    onSelectionChanged() // reflet immédiat de la sélection courante
+    if (liveTimer === null) liveTimer = setInterval(onSelectionChanged, 400)
+  } else {
+    if (liveTimer !== null) { clearInterval(liveTimer); liveTimer = null }
+    selectedTag = null
+    showStatus('')
+    renderFields() // retirer le surlignage
+  }
 })
-try { app.addEventListener('afterSelectionChanged', onSelectionChanged) } catch { /* event indisponible */ }
 
 /** Menu hamburger (préférences). Affichage inline (UXP gère mal position:absolute). */
 function toggleMenu(force?: boolean) {
