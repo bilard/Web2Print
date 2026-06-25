@@ -503,7 +503,9 @@ service cloud.firestore {
     match /auditLog/{logId} {
       allow read:   if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if false; // immuable : une entrée n'est jamais modifiée
+      // Purge autorisée : chacun peut effacer SES propres entrées, l'admin toutes.
+      allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }
 
     // ── Telegram entrant (2a) ──────────────────────────────────
