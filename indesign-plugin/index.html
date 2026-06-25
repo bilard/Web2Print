@@ -67,8 +67,20 @@
       .field .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .field .type {
         font-size: 10px; color: rgba(255,255,255,0.4); flex-shrink: 0;
-        text-transform: lowercase;
+        text-transform: lowercase; margin-left: 10px;
       }
+
+      /* --- Menu préférences (hamburger) --- */
+      .menu {
+        display: flex; flex-direction: column;
+        padding: 4px; border-radius: 6px;
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      }
+      .menu-item {
+        text-align: left; background: transparent; border: none; color: #e8e8e8;
+        font-size: 12px; padding: 7px 8px; border-radius: 4px;
+      }
+      .menu-item:hover { background: rgba(255,255,255,0.1); }
       .field.tagged {
         background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55); color: #c7c9ff;
       }
@@ -99,7 +111,12 @@
       <div class="toolbar">
         <div class="dataset-row">
           <select id="dataset"></select>
-          <button id="settings" class="navbtn" title="Changer de token">⚙</button>
+          <button id="menuBtn" class="navbtn" title="Préférences">☰</button>
+        </div>
+        <div id="menu" class="menu" style="display:none">
+          <button class="menu-item" id="miChangeToken">Changer de token</button>
+          <button class="menu-item" id="miRefresh">Rafraîchir les champs</button>
+          <button class="menu-item" id="miRestore">Restaurer tous les {{champs}}</button>
         </div>
         <div class="rownav">
           <div class="nav">

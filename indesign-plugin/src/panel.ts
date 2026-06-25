@@ -169,8 +169,22 @@ byId('dataset').addEventListener('change', onDatasetChange)
 byId('prev').addEventListener('click', () => step(-1))
 byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
-byId('settings').addEventListener('click', changeToken)
 byId('cancelConnect').addEventListener('click', cancelConnect)
+
+/** Menu hamburger (préférences). Affichage inline (UXP gère mal position:absolute). */
+function toggleMenu(force?: boolean) {
+  const m = $('menu')
+  const show = force ?? (m.style.display === 'none')
+  m.style.display = show ? 'flex' : 'none'
+}
+byId('menuBtn').addEventListener('click', () => toggleMenu())
+byId('miChangeToken').addEventListener('click', () => { toggleMenu(false); changeToken() })
+byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFields() })
+byId('miRestore').addEventListener('click', () => {
+  toggleMenu(false)
+  const doc = app.activeDocument
+  if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
+})
 byId('restoreAll').addEventListener('click', () => {
   const doc = app.activeDocument
   if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
