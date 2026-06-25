@@ -21,8 +21,17 @@ export interface AuditEntry extends AuditInput {
   createdAt: Date | null
 }
 
+/** Liste canonique de TOUS les modules (pour le filtre « Type », même sans données). */
+export const AUDIT_MODULES = ['access', 'auth', 'library', 'data', 'export', 'workflows', 'ai'] as const
+
+/** Module d'une clé d'action (`library.project.create` → `library` ; `workflow.run` → `workflows`). */
+export function auditModuleOf(action: string): string {
+  const head = action.split('.')[0]
+  return head === 'workflow' ? 'workflows' : head
+}
+
 /** Libellés FR des actions (pour le filtre QUOI et l'affichage). Étendre au besoin. */
-const AUDIT_ACTIONS: Record<string, string> = {
+export const AUDIT_ACTIONS: Record<string, string> = {
   'auth.login': 'Connexion',
   'access.role.assign': 'Rôle attribué',
   'access.role.remove': 'Rôle retiré',
@@ -34,7 +43,7 @@ const AUDIT_ACTIONS: Record<string, string> = {
   'access.role.save': 'Rôle enregistré',
   'access.role.delete': 'Rôle supprimé',
   'library.project.create': 'Projet créé',
-  'library.project.save': 'Projet enregistré',
+  'library.project.save': 'Projet modifié',
   'library.project.delete': 'Projet supprimé',
   'library.project.duplicate': 'Projet dupliqué',
   'library.version.restore': 'Version restaurée',

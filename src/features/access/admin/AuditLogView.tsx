@@ -3,7 +3,7 @@
 // (plage de dates). Réutilisé par l'onglet admin (showWho) et la vue « Mon activité ».
 import { useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { auditActionLabel, type AuditEntry } from '@/lib/auditLog'
+import { auditActionLabel, AUDIT_ACTIONS, AUDIT_MODULES, auditModuleOf, type AuditEntry } from '@/lib/auditLog'
 
 interface Props {
   entries: AuditEntry[]
@@ -30,14 +30,14 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
     () => Array.from(new Set(entries.map((e) => e.userEmail).filter(Boolean))).sort(),
     [entries],
   )
-  const moduleOptions = useMemo(
-    () => Array.from(new Set(entries.map((e) => e.module).filter(Boolean))).sort(),
-    [entries],
-  )
-  // Actions proposées : restreintes au module choisi (cohérence des deux filtres).
+  // Tous les modules du catalogue (même ceux sans données encore).
+  const moduleOptions = AUDIT_MODULES
+  // Toutes les actions du catalogue, restreintes au module choisi, triées par libellé.
   const whatOptions = useMemo(
-    () => Array.from(new Set(entries.filter((e) => !mod || e.module === mod).map((e) => e.action))).sort(),
-    [entries, mod],
+    () => Object.keys(AUDIT_ACTIONS)
+      .filter((k) => !mod || auditModuleOf(k) === mod)
+      .sort((a, b) => auditActionLabel(a).localeCompare(auditActionLabel(b), 'fr')),
+    [mod],
   )
 
   const filtered = useMemo(() => {
