@@ -5,7 +5,7 @@ import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } 
 import { applyRowPreview, restorePreview, resetPreviewMemory } from './idml/preview'
 
 const { app } = require("indesign") as { app: any }
-function activeDoc(): any { try { return app.activeDocument } catch { return null } }
+function activeDoc(): any { try { return require('indesign').app.activeDocument } catch { return null } }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
 
 let client: PluginClient | null = null
