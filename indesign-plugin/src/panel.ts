@@ -12,6 +12,8 @@ let docId = ''
 let columns: ColumnInfo[] = []
 let rowIndex = 0
 let total = 0
+let previewOn = false
+let rowEntries: { label: string; value: string }[] = [] // toutes les colonnes (tableau d'aperçu)
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -60,8 +62,27 @@ async function onDatasetChange() {
   renderRowLabel()
 }
 
+/** Tableau d'aperçu : toutes les colonnes de l'enregistrement courant (libellé | valeur). */
+function renderTable() {
+  const ul = $('fields'); ul.innerHTML = ''
+  if (rowEntries.length === 0) {
+    const empty = document.createElement('li'); empty.className = 'section-label'; empty.textContent = 'Aucune donnée'
+    ul.appendChild(empty); return
+  }
+  rowEntries.forEach((e, i) => {
+    const row = document.createElement('li')
+    row.className = `rec-row ${i % 2 ? 'odd' : 'even'}`
+    const lbl = document.createElement('span'); lbl.className = 'rec-label'; lbl.textContent = e.label
+    const val = document.createElement('span'); val.className = 'rec-value'; val.textContent = e.value !== '' ? e.value : '—'
+    row.appendChild(lbl); row.appendChild(val)
+    ul.appendChild(row)
+  })
+}
+
 function renderFields() {
-  const doc = app.activeDocument
+  if (previewOn) { renderTable(); return } // mode Aperçu = tableau de l'enregistrement
+  let doc: any = null
+  try { doc = app.activeDocument } catch { /* aucun document ouvert */ }
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
 
@@ -126,15 +147,26 @@ function renderRowLabel() {
 
 async function refreshPreview() {
   if (!client) return
-  const doc = app.activeDocument
-  if (!doc) return
-  if (!byId<HTMLInputElement>('preview').checked) { restorePreview(doc); return }
-  const r = await client.row(docId, rowIndex)
-  rowIndex = r.rowIndex; total = r.total
-  const valuesByTag: Record<string, string> = {}
-  for (const v of r.values) valuesByTag[slugifyTag(v.label)] = v.value
-  applyRowPreview(doc, valuesByTag)
+  previewOn = byId<HTMLInputElement>('preview').checked
+  if (previewOn) {
+    const r = await client.row(docId, rowIndex)
+    rowIndex = r.rowIndex; total = r.total
+    rowEntries = r.values.map((v) => ({ label: v.label, value: v.value }))
+    // écriture dans la page : best-effort, ne bloque pas le tableau si l'accès doc échoue
+    try {
+      const doc = app.activeDocument
+      if (doc) {
+        const valuesByTag: Record<string, string> = {}
+        for (const v of r.values) valuesByTag[slugifyTag(v.label)] = v.value
+        applyRowPreview(doc, valuesByTag)
+      }
+    } catch { /* doc inaccessible : on garde au moins le tableau */ }
+  } else {
+    rowEntries = []
+    try { const doc = app.activeDocument; if (doc) restorePreview(doc) } catch { /* */ }
+  }
   renderRowLabel()
+  renderFields()
 }
 
 function step(delta: number) {
