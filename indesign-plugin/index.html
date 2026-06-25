@@ -84,8 +84,14 @@
       .field.tagged {
         background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55); color: #c7c9ff;
       }
-      .field .badge { font-size: 11px; color: #a5b4fc; margin-left: 8px; flex-shrink: 0; }
-      .field .add { font-size: 11px; color: rgba(255,255,255,0.5); margin-left: 8px; flex-shrink: 0; }
+      .field .actions { display: flex; align-items: center; flex-shrink: 0; margin-left: 8px; }
+      .field .badge { font-size: 11px; color: #a5b4fc; flex-shrink: 0; }
+      .field .add { font-size: 11px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
+      .field .act {
+        background: transparent; border: none; color: rgba(255,255,255,0.55);
+        font-size: 14px; line-height: 1; padding: 2px 5px; margin-left: 4px; border-radius: 4px;
+      }
+      .field .act:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
       /* --- Pied --- */
       .footer { padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.1); }

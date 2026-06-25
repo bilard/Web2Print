@@ -1,7 +1,7 @@
 // indesign-plugin/src/panel.ts
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
-import { applyTagToSelection, countTaggedByName } from './idml/tagging'
+import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
 import { applyRowPreview, restorePreview, restoreAllPlaceholders } from './idml/preview'
 
 const { app } = require('indesign') as { app: any }
@@ -104,15 +104,44 @@ function renderFields() {
     li.appendChild(left)
 
     const right = document.createElement('span')
+    right.className = 'actions'
     if (n > 0) {
-      right.className = 'badge'
-      right.textContent = `✓${n > 1 ? ` ×${n}` : ''}`
+      const badge = document.createElement('span')
+      badge.className = 'badge'
+      badge.textContent = `✓${n > 1 ? ` ×${n}` : ''}`
+      right.appendChild(badge)
+
+      const goto = document.createElement('button')
+      goto.className = 'act'
+      goto.textContent = '◎'
+      goto.title = "Atteindre l'élément"
+      goto.onclick = (ev: Event) => {
+        ev.stopPropagation()
+        const r = gotoFieldElement(c.label)
+        if (!r.ok) showStatus(r.message ?? 'Échec', false)
+      }
+      right.appendChild(goto)
+
+      const untag = document.createElement('button')
+      untag.className = 'act'
+      untag.textContent = '⊘'
+      untag.title = "Annuler la balise de l'élément"
+      untag.onclick = (ev: Event) => {
+        ev.stopPropagation()
+        const r = untagField(c.label)
+        showStatus(r.ok ? `Balise retirée (${r.count})` : (r.message ?? 'Échec'), r.ok)
+        renderFields()
+      }
+      right.appendChild(untag)
     } else {
-      right.className = 'add'
-      right.textContent = '+ poser'
+      const add = document.createElement('span')
+      add.className = 'add'
+      add.textContent = '+ poser'
+      right.appendChild(add)
     }
     li.appendChild(right)
 
+    // Clic sur la ligne = poser le tag sur la sélection courante.
     li.onclick = () => {
       const res = applyTagToSelection(c.label)
       showStatus(res.ok ? `« ${c.label} » posé` : (res.message ?? 'Échec'), res.ok)
