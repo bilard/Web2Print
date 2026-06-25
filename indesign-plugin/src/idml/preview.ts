@@ -22,15 +22,23 @@ function eachTaggedElement(doc: any, fn: (el: any, tagName: string) => void) {
   if (root) walk(root)
 }
 
-/** Remplace le texte de l'élément balisé SANS supprimer la balise. */
+/** Remplace le texte de l'élément balisé SANS supprimer la balise.
+ *  Technique sûre : on remplace le 1er caractère EXISTANT (donc à l'intérieur du
+ *  marquage) par toute la valeur, puis on supprime les anciens caractères restants.
+ *  L'élément n'est jamais vidé → la balise garde son ancrage. (Pas d'insertion à un
+ *  bord ambigu, qui pouvait écrire hors balise.) */
 function replaceTaggedText(el: any, value: string): void {
   try {
-    const before = el.characters.length
-    el.insertionPoints.item(0).contents = value // insérer au début (dans le marquage)
-    const after = el.characters.length
-    const insertedLen = after - before
+    const origLen = el.characters.length
+    if (origLen === 0) {
+      el.insertionPoints.item(0).contents = value // élément vide : insérer dedans
+      return
+    }
+    el.characters.item(0).contents = value // remplace le 1er char (dans la balise) par la valeur
+    const remaining = origLen - 1 // anciens caractères restants, désormais à la fin
     const chars = el.characters
-    for (let i = after - 1; i >= insertedLen; i--) chars.item(i).remove() // supprimer l'ancien
+    const total = chars.length
+    for (let i = total - 1; i >= total - remaining; i--) chars.item(i).remove()
   } catch { /* élément non textuel (image, etc.) : ignorer */ }
 }
 
