@@ -21,6 +21,7 @@ function fmt(d: Date | null): string {
 
 export function AuditLogView({ entries, loading, showWho = false, onRefresh }: Props) {
   const [who, setWho] = useState('')
+  const [mod, setMod] = useState('')
   const [what, setWhat] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -29,9 +30,14 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
     () => Array.from(new Set(entries.map((e) => e.userEmail).filter(Boolean))).sort(),
     [entries],
   )
-  const whatOptions = useMemo(
-    () => Array.from(new Set(entries.map((e) => e.action))).sort(),
+  const moduleOptions = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.module).filter(Boolean))).sort(),
     [entries],
+  )
+  // Actions proposées : restreintes au module choisi (cohérence des deux filtres).
+  const whatOptions = useMemo(
+    () => Array.from(new Set(entries.filter((e) => !mod || e.module === mod).map((e) => e.action))).sort(),
+    [entries, mod],
   )
 
   const filtered = useMemo(() => {
@@ -39,15 +45,16 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
     const toTs = to ? new Date(to + 'T23:59:59').getTime() : null
     return entries.filter((e) => {
       if (who && e.userEmail !== who) return false
+      if (mod && e.module !== mod) return false
       if (what && e.action !== what) return false
       const ts = e.createdAt?.getTime() ?? 0
       if (fromTs && ts < fromTs) return false
       if (toTs && ts > toTs) return false
       return true
     })
-  }, [entries, who, what, from, to])
+  }, [entries, who, mod, what, from, to])
 
-  const reset = () => { setWho(''); setWhat(''); setFrom(''); setTo('') }
+  const reset = () => { setWho(''); setMod(''); setWhat(''); setFrom(''); setTo('') }
 
   return (
     <div className="space-y-3">
@@ -59,6 +66,10 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
             {whoOptions.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         )}
+        <select className={sel} value={mod} onChange={(e) => { setMod(e.target.value); setWhat('') }} title="Type / module">
+          <option value="">Type : tous les modules</option>
+          {moduleOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
         <select className={sel} value={what} onChange={(e) => setWhat(e.target.value)} title="Quoi">
           <option value="">Quoi : toutes les actions</option>
           {whatOptions.map((o) => <option key={o} value={o}>{auditActionLabel(o)}</option>)}
@@ -67,7 +78,7 @@ export function AuditLogView({ entries, loading, showWho = false, onRefresh }: P
         <input type="date" className={sel} value={from} onChange={(e) => setFrom(e.target.value)} />
         <label className="text-xs text-white/40">au</label>
         <input type="date" className={sel} value={to} onChange={(e) => setTo(e.target.value)} />
-        {(who || what || from || to) && (
+        {(who || mod || what || from || to) && (
           <button onClick={reset} className="text-xs text-white/50 hover:text-white px-2 py-1">Réinitialiser</button>
         )}
         <span className="text-xs text-white/40 ml-auto">{filtered.length} action(s)</span>
