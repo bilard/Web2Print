@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { useExcelStore } from '@/stores/excel.store'
+import { recordAudit } from '@/lib/auditLog'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import {
   PRODUCT_TAXONOMY_ID_KEY,
@@ -273,7 +274,12 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       const n = parseFloat(editValue.replace(',', '.').replace(/[€$%]/g, ''))
       v = isNaN(n) ? editValue : n
     }
+    const beforeRow = sheet.rows.find((r) => r._id === rowId)
+    const before = beforeRow ? beforeRow[colKey] : undefined
     updateCell(activeSheetIndex, rowId, colKey, v)
+    if (String(before ?? '') !== String(v ?? '')) {
+      recordAudit({ action: 'data.cell.edit', module: 'data', targetLabel: col?.label ?? colKey, meta: { before: String(before ?? '—'), after: String(v ?? '—') } })
+    }
     setEditingField(null)
   }
 
