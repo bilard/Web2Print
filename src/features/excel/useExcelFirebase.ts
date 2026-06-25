@@ -35,6 +35,16 @@ export function useExcelFirebase() {
     const fullDocId = ref.id
     const payloadRef = doc(db, PAYLOAD_COLLECTION, fullDocId)
 
+    const totalRows = sheets.reduce((acc, s) => acc + s.rows.length, 0)
+    const totalColumns = sheets.reduce((acc, s) => acc + s.columns.length, 0)
+    const after = `${totalRows} lignes / ${totalColumns} col`
+    // Taille avant (uniquement si on met à jour une base existante).
+    let before: string | undefined
+    if (existingDocId) {
+      const prev = (await getDoc(ref)).data()
+      if (prev) before = `${prev.totalRows ?? 0} lignes / ${prev.totalColumns ?? 0} col`
+    }
+
     const batch = writeBatch(db)
     batch.set(ref, {
       userId: user.uid,
@@ -42,8 +52,8 @@ export function useExcelFirebase() {
       path,
       sheets: deleteField(),
       sheetCount: sheets.length,
-      totalRows: sheets.reduce((acc, s) => acc + s.rows.length, 0),
-      totalColumns: sheets.reduce((acc, s) => acc + s.columns.length, 0),
+      totalRows,
+      totalColumns,
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     }, { merge: true })
@@ -54,7 +64,9 @@ export function useExcelFirebase() {
     }, { merge: true })
     await batch.commit()
 
-    recordAudit({ action: 'data.dataset.save', module: 'data', targetId: fullDocId, targetLabel: fileName })
+    // Détail : si la taille a changé → avant→après ; sinon on montre au moins la taille.
+    const meta = before && before !== after ? { before, after } : { taille: after }
+    recordAudit({ action: 'data.dataset.save', module: 'data', targetId: fullDocId, targetLabel: fileName, meta })
     return fullDocId
   }
 
