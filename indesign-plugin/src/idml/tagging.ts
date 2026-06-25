@@ -25,10 +25,23 @@ export function applyTagToSelection(name: string): { ok: boolean; message?: stri
   const sel = app.selection
   if (!sel || sel.length === 0) return { ok: false, message: 'Sélectionne un texte ou un cadre' }
 
+  const tagName = slugifyTag(name)
+  // Garde-fou : ne JAMAIS re-poser la même balise sur une sélection déjà balisée ainsi
+  // (évite les doublons quand on reclique). On remonte la chaîne des éléments associés.
+  try {
+    let xe = sel[0]?.associatedXMLElement
+    let guard = 0
+    while (xe && xe.isValid && guard++ < 50) {
+      if (xe.markupTag?.name === tagName) {
+        return { ok: false, message: `« ${name} » déjà posé ici` }
+      }
+      xe = xe.parent && xe.parent.isValid ? xe.parent : null
+    }
+  } catch { /* pas d'élément associé : on pose normalement */ }
+
   const tag = ensureTag(doc, name)
   const root = doc.xmlElements.item(0)
   try {
-    // root.xmlElements.add(tag, storyContent) — storyContent = sélection texte/cadre
     root.xmlElements.add(tag, sel[0])
     return { ok: true }
   } catch (err) {
