@@ -5,6 +5,36 @@ import { slugifyTag } from '../lib/slug'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { app } = require('indesign') as { app: any }
 
+/** Id de la story d'un objet (cadre, texte, ou XMLElement) — pour comparer « même bloc ». */
+function storyIdOf(obj: any): number | null {
+  try {
+    if (obj?.parentStory?.id != null) return obj.parentStory.id
+    const t = obj?.texts?.item?.(0)
+    if (t?.parentStory?.id != null) return t.parentStory.id
+    const c = obj?.xmlContent
+    if (c?.parentStory?.id != null) return c.parentStory.id
+    const tf = obj?.parentTextFrames?.[0]
+    if (tf?.parentStory?.id != null) return tf.parentStory.id
+  } catch { /* */ }
+  return null
+}
+
+/** Collecte tous les XMLElement portant un tag donné (parcours récursif). */
+function collectByTag(doc: any, tagName: string): any[] {
+  const out: any[] = []
+  const walk = (el: any) => {
+    const n = el.xmlElements?.length ?? 0
+    for (let i = 0; i < n; i++) {
+      const child = el.xmlElements.item(i)
+      if (child.markupTag?.name === tagName) out.push(child)
+      walk(child)
+    }
+  }
+  const root = doc.xmlElements?.item(0)
+  if (root) walk(root)
+  return out
+}
+
 /** Récupère le XMLTag par nom (slugifié) ou le crée. */
 export function ensureTag(doc: any, name: string): any {
   const tagName = slugifyTag(name)
@@ -26,18 +56,18 @@ export function applyTagToSelection(name: string): { ok: boolean; message?: stri
   if (!sel || sel.length === 0) return { ok: false, message: 'Sélectionne un texte ou un cadre' }
 
   const tagName = slugifyTag(name)
-  // Garde-fou : ne JAMAIS re-poser la même balise sur une sélection déjà balisée ainsi
-  // (évite les doublons quand on reclique). On remonte la chaîne des éléments associés.
+  // Garde-fou anti-doublon : refuser si un élément de ce tag existe déjà dans la même
+  // story que la sélection (= le même bloc de texte). Évite les ×N en recliquant.
   try {
-    let xe = sel[0]?.associatedXMLElement
-    let guard = 0
-    while (xe && xe.isValid && guard++ < 50) {
-      if (xe.markupTag?.name === tagName) {
-        return { ok: false, message: `« ${name} » déjà posé ici` }
+    const selStory = storyIdOf(sel[0])
+    if (selStory != null) {
+      for (const el of collectByTag(doc, tagName)) {
+        if (storyIdOf(el) === selStory) {
+          return { ok: false, message: `« ${name} » déjà posé sur ce bloc` }
+        }
       }
-      xe = xe.parent && xe.parent.isValid ? xe.parent : null
     }
-  } catch { /* pas d'élément associé : on pose normalement */ }
+  } catch { /* impossible de vérifier : on pose normalement */ }
 
   const tag = ensureTag(doc, name)
   const root = doc.xmlElements.item(0)
