@@ -64,6 +64,20 @@ export default function DashboardPage() {
     const state = location.state as { section?: Section; intent?: string } | null
     if (state?.section) setActiveSection(state.section)
     setModuleIntent(state?.intent ?? null)
+    // `location.state` est stocké dans l'History API et SURVIT à un reload : sans
+    // ça, recharger rejouerait section+intent (→ ré-ouverture de la modale d'import).
+    // On les retire de l'état d'historique APRÈS les avoir appliqués en mémoire ;
+    // React Router garde sa location courante (pas de re-render), mais un reload
+    // repartira propre sur l'accueil.
+    if (state?.section || state?.intent) {
+      const h = window.history.state
+      if (h?.usr) {
+        const usr = { ...h.usr }
+        delete usr.section
+        delete usr.intent
+        window.history.replaceState({ ...h, usr }, '')
+      }
+    }
   }, [location.key, location.state, setModuleIntent])
   // Permet aux étapes du tour guidé d'ouvrir une section (navigation injectée).
   useEffect(() => {
