@@ -28,26 +28,49 @@ function eachTaggedElement(doc: any, fn: (el: any, tagName: string) => void) {
  *  - élément qui tague une PLAGE de texte → on remplace le 1er caractère existant puis
  *    on supprime les anciens (l'élément n'est jamais vidé, l'ancrage de plage tient). */
 function replaceTaggedText(el: any, value: string): void {
-  // Cas cadre taggé : xmlContent est un TextFrame → .contents remplace le texte du cadre.
+  // --- DIAGNOSTIC : inspecter l'élément et ses accès texte ---
+  const dbg: Record<string, unknown> = {}
+  try { dbg.tag = el.markupTag?.name } catch { dbg.tag = 'err' }
+  try { dbg.elType = String(el?.constructor?.name) } catch { dbg.elType = 'err' }
+  let content: any
+  try { content = el.xmlContent; dbg.contentType = String(content?.constructor?.name) } catch (e) { dbg.contentType = 'err ' + String(e) }
+  try { dbg.contentHasContents = content ? (typeof content.contents) : 'no-content' } catch (e) { dbg.contentHasContents = 'err ' + String(e) }
+  try { dbg.elCharsLen = el.characters?.length } catch (e) { dbg.elCharsLen = 'err ' + String(e) }
+  try { dbg.contentTextsLen = content?.texts?.length } catch (e) { dbg.contentTextsLen = 'err ' + String(e) }
+  console.log('[W2P] replaceTaggedText', JSON.stringify(dbg))
+
+  // Tentative 1 : écrire le contenu de l'objet pointé (cadre/story).
   try {
-    const content = el.xmlContent
-    const typeName = String(content?.constructor?.name || '')
-    if (content && (typeName === 'TextFrame' || typeName === 'Story')) {
+    if (content && typeof content.contents !== 'undefined') {
       content.contents = value
+      console.log('[W2P]  → écrit via content.contents OK')
       return
     }
-  } catch { /* pas un cadre : on tente la plage ci-dessous */ }
+  } catch (e) { console.log('[W2P]  ✗ content.contents:', String(e)) }
 
-  // Cas plage de texte taggée : remplacer le 1er char, puis trim.
+  // Tentative 2 : écrire le texte de la story du contenu.
+  try {
+    if (content?.texts?.length) {
+      content.texts.item(0).contents = value
+      console.log('[W2P]  → écrit via content.texts[0].contents OK')
+      return
+    }
+  } catch (e) { console.log('[W2P]  ✗ content.texts[0]:', String(e)) }
+
+  // Tentative 3 : manipulation caractères de l'élément (plage taguée).
   try {
     const origLen = el.characters.length
-    if (origLen === 0) { el.insertionPoints.item(0).contents = value; return }
+    if (origLen === 0) { el.insertionPoints.item(0).contents = value; console.log('[W2P]  → insert (vide) OK'); return }
     el.characters.item(0).contents = value
     const remaining = origLen - 1
     const chars = el.characters
     const total = chars.length
     for (let i = total - 1; i >= total - remaining; i--) chars.item(i).remove()
-  } catch { /* élément non textuel (image, etc.) : ignorer */ }
+    console.log('[W2P]  → écrit via characters OK')
+    return
+  } catch (e) { console.log('[W2P]  ✗ characters:', String(e)) }
+
+  console.log('[W2P]  ⚠️ AUCUNE méthode n’a fonctionné pour ce champ')
 }
 
 /** Action explicite : remplit la page avec les valeurs de la ligne (balises conservées).
@@ -55,9 +78,10 @@ function replaceTaggedText(el: any, value: string): void {
 export function fillPageWithRow(doc: any, valuesByTag: Record<string, string>): { filled: number; types: string } {
   let filled = 0
   const types = new Set<string>()
+  console.log('[W2P] fillPageWithRow — tags valeurs:', JSON.stringify(Object.keys(valuesByTag)))
   eachTaggedElement(doc, (el, tagName) => {
     const value = valuesByTag[tagName]
-    if (value === undefined) return
+    if (value === undefined) { console.log('[W2P] tag sans valeur (slug ≠ colonne):', tagName); return }
     try { types.add(String(el.xmlContent?.constructor?.name || '?')) } catch { types.add('?') }
     replaceTaggedText(el, value)
     filled++
