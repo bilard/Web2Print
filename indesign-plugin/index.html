@@ -111,8 +111,13 @@
         font-size: 12px; width: 100%;
       }
       .ghost:hover { background: rgba(255,255,255,0.06); }
-      #status { font-size: 11px; color: #f0a; min-height: 14px; padding: 0 12px 6px; }
+      #status {
+        font-size: 11px; color: #ffd479; min-height: 16px; padding: 6px 12px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
       #status.ok { color: #6ee7b7; }
+      #status:empty { display: none; }
     </style>
   </head>
   <body>
@@ -120,7 +125,6 @@
       <input id="token" type="password" placeholder="Token w2p_…" />
       <button id="btnConnect" class="btn">Connecter</button>
       <button id="cancelConnect" class="ghost" style="display:none">Annuler</button>
-      <div id="status"></div>
     </div>
 
     <div id="main">
@@ -148,6 +152,8 @@
 
       <ul id="fields"></ul>
     </div>
+
+    <div id="status"></div>
 
     <script src="dist/panel.js"></script>
   </body>
