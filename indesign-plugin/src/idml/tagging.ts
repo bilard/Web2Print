@@ -3,7 +3,7 @@ import { slugifyTag } from '../lib/slug'
 
 // Le module 'indesign' fournit l'objet app au runtime UXP.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { app } = require('indesign') as { app: any }
+function getApp(): any { try { return require('indesign').app } catch { return null } }
 
 /** Récupère le XMLTag par nom (slugifié) ou le crée. */
 export function ensureTag(doc: any, name: string): any {
@@ -20,9 +20,9 @@ export function ensureTag(doc: any, name: string): any {
  * Web2Print relit via xmlElementStory.ts (flatten → {{<name>}}).
  */
 export function applyTagToSelection(name: string): { ok: boolean; message?: string } {
-  const doc = app.activeDocument
+  const a = getApp(); const doc = a?.activeDocument
   if (!doc) return { ok: false, message: 'Aucun document ouvert' }
-  const sel = app.selection
+  const sel = a?.selection
   if (!sel || sel.length === 0) return { ok: false, message: 'Sélectionne un texte ou un cadre' }
 
   const tag = ensureTag(doc, name)
@@ -71,14 +71,14 @@ function collectByTag(doc: any, tagName: string): any[] {
 
 /** Sélectionne et cadre le premier élément portant le tag du champ (« Atteindre l'élément »). */
 export function gotoFieldElement(name: string): { ok: boolean; message?: string } {
-  const doc = app.activeDocument
+  const a = getApp(); const doc = a?.activeDocument
   if (!doc) return { ok: false, message: 'Aucun document ouvert' }
   const els = collectByTag(doc, slugifyTag(name))
   if (els.length === 0) return { ok: false, message: 'Champ non posé' }
   try {
     const content = els[0].xmlContent // Text ou PageItem représenté par l'élément
-    app.select(content)
-    try { app.activeWindow.zoom(require('indesign').ZoomOptions.FIT_SELECTION) } catch { /* zoom best-effort */ }
+    a.select(content)
+    try { a.activeWindow.zoom(require('indesign').ZoomOptions.FIT_SELECTION) } catch { /* zoom best-effort */ }
     return { ok: true }
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : String(err) }
@@ -88,7 +88,7 @@ export function gotoFieldElement(name: string): { ok: boolean; message?: string 
 /** Retire la balise de tous les éléments d'un champ (« Annuler la balise de l'élément »).
  *  untag() conserve le contenu, supprime seulement le marquage XML. */
 export function untagField(name: string): { ok: boolean; count: number; message?: string } {
-  const doc = app.activeDocument
+  const a = getApp(); const doc = a?.activeDocument
   if (!doc) return { ok: false, count: 0, message: 'Aucun document ouvert' }
   const els = collectByTag(doc, slugifyTag(name))
   try {
