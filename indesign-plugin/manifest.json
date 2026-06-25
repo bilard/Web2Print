@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "main": "index.html",
   "manifestVersion": 5,
-  "host": [{ "app": "indesign", "minVersion": "18.0" }],
+  "host": { "app": "ID", "minVersion": "18.5" },
   "entrypoints": [
     { "type": "panel", "id": "web2printPanel", "label": { "default": "Web2Print" },
       "minimumSize": { "width": 280, "height": 400 } }
