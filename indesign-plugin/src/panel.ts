@@ -338,16 +338,16 @@ byId('miFill').addEventListener('click', async () => {
   try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* */ }
   if (!doc) { showStatus('Aucun document ouvert'); return }
   await loadRowValues()
-  fillPageWithRow(doc, rowValues)
-  showStatus(`Page remplie (ligne ${rowIndex + 1})`, true)
+  const r = fillPageWithRow(doc, rowValues)
+  showStatus(`Rempli ${r.filled} champ(s) [${r.types}] — ligne ${rowIndex + 1}`, true)
 })
 byId('miRestore').addEventListener('click', () => {
   toggleMenu(false)
   let doc: any = null
   try { if ((app.documents?.length ?? 0) > 0) doc = app.activeDocument } catch { /* */ }
   if (!doc) { showStatus('Aucun document ouvert'); return }
-  restoreAllPlaceholders(doc)
-  showStatus('Maquette restaurée ({{champs}})', true)
+  const n = restoreAllPlaceholders(doc)
+  showStatus(`Restauré ${n} {{champ(s)}}`, true)
 })
 
 // À la fermeture/ouverture d'un document : rafraîchir la liste des balises (vidée

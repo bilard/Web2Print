@@ -22,36 +22,52 @@ function eachTaggedElement(doc: any, fn: (el: any, tagName: string) => void) {
   if (root) walk(root)
 }
 
-/** Remplace le texte de l'élément balisé SANS supprimer la balise.
- *  Technique sûre : on remplace le 1er caractère EXISTANT (donc à l'intérieur du
- *  marquage) par toute la valeur, puis on supprime les anciens caractères restants.
- *  L'élément n'est jamais vidé → la balise garde son ancrage. (Pas d'insertion à un
- *  bord ambigu, qui pouvait écrire hors balise.) */
+/** Remplace le texte d'un élément balisé SANS supprimer la balise. Gère 2 cas :
+ *  - élément qui tague un CADRE de texte → on écrit le contenu du cadre (la balise est
+ *    sur le cadre, qui persiste) : sûr et simple.
+ *  - élément qui tague une PLAGE de texte → on remplace le 1er caractère existant puis
+ *    on supprime les anciens (l'élément n'est jamais vidé, l'ancrage de plage tient). */
 function replaceTaggedText(el: any, value: string): void {
+  // Cas cadre taggé : xmlContent est un TextFrame → .contents remplace le texte du cadre.
   try {
-    const origLen = el.characters.length
-    if (origLen === 0) {
-      el.insertionPoints.item(0).contents = value // élément vide : insérer dedans
+    const content = el.xmlContent
+    const typeName = String(content?.constructor?.name || '')
+    if (content && (typeName === 'TextFrame' || typeName === 'Story')) {
+      content.contents = value
       return
     }
-    el.characters.item(0).contents = value // remplace le 1er char (dans la balise) par la valeur
-    const remaining = origLen - 1 // anciens caractères restants, désormais à la fin
+  } catch { /* pas un cadre : on tente la plage ci-dessous */ }
+
+  // Cas plage de texte taggée : remplacer le 1er char, puis trim.
+  try {
+    const origLen = el.characters.length
+    if (origLen === 0) { el.insertionPoints.item(0).contents = value; return }
+    el.characters.item(0).contents = value
+    const remaining = origLen - 1
     const chars = el.characters
     const total = chars.length
     for (let i = total - 1; i >= total - remaining; i--) chars.item(i).remove()
   } catch { /* élément non textuel (image, etc.) : ignorer */ }
 }
 
-/** Action explicite : remplit la page avec les valeurs de la ligne (balises conservées). */
-export function fillPageWithRow(doc: any, valuesByTag: Record<string, string>): void {
+/** Action explicite : remplit la page avec les valeurs de la ligne (balises conservées).
+ *  Retourne un diagnostic (nb rempli + types d'éléments rencontrés). */
+export function fillPageWithRow(doc: any, valuesByTag: Record<string, string>): { filled: number; types: string } {
+  let filled = 0
+  const types = new Set<string>()
   eachTaggedElement(doc, (el, tagName) => {
     const value = valuesByTag[tagName]
     if (value === undefined) return
+    try { types.add(String(el.xmlContent?.constructor?.name || '?')) } catch { types.add('?') }
     replaceTaggedText(el, value)
+    filled++
   })
+  return { filled, types: Array.from(types).join(',') }
 }
 
 /** Action explicite : remet chaque élément balisé à `{{champ}}` (réversible, sans mémoire). */
-export function restoreAllPlaceholders(doc: any): void {
-  eachTaggedElement(doc, (el, tagName) => replaceTaggedText(el, `{{${tagName}}}`))
+export function restoreAllPlaceholders(doc: any): number {
+  let n = 0
+  eachTaggedElement(doc, (el, tagName) => { replaceTaggedText(el, `{{${tagName}}}`); n++ })
+  return n
 }
