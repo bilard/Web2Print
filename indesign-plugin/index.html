@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8" /></head>
+  <body style="font-family: sans-serif; padding: 8px;">
+    <div id="connect">
+      <input id="token" type="password" placeholder="Token w2p_…" style="width:100%" />
+      <button id="btnConnect">Connecter</button>
+    </div>
+    <div id="main" style="display:none">
+      <select id="dataset"></select>
+      <div id="rowNav">
+        <button id="prev">◀</button><span id="rowLabel">0/0</span><button id="next">▶</button>
+        <label><input id="preview" type="checkbox" /> Aperçu</label>
+      </div>
+      <ul id="fields"></ul>
+      <button id="restoreAll">Restaurer tout</button>
+    </div>
+    <script type="module" src="dist/panel.js"></script>
+  </body>
+</html>

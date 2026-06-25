@@ -1,0 +1,16 @@
+{
+  "id": "com.ibsstudio.web2print.indesign",
+  "name": "Web2Print",
+  "version": "0.1.0",
+  "main": "index.html",
+  "manifestVersion": 5,
+  "host": [{ "app": "indesign", "minVersion": "18.0" }],
+  "entrypoints": [
+    { "type": "panel", "id": "web2printPanel", "label": { "default": "Web2Print" },
+      "minimumSize": { "width": 280, "height": 400 } }
+  ],
+  "requiredPermissions": {
+    "network": { "domains": ["https://europe-west1-web2print-6fe5a.cloudfunctions.net"] },
+    "clipboard": "read"
+  }
+}
