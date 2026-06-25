@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { recordAudit } from '@/lib/auditLog'
 import { cleanupOrphanLinksInTaxonomies } from './useDeleteProject'
 import type { ProjectData } from '@/types/project'
 import type { CanvasBgType } from '@/stores/ui.store'
@@ -80,7 +81,8 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: (params: CreateProjectParams) => createProject(user!.uid, params),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      recordAudit({ action: 'library.project.create', module: 'library', targetId: data.id, targetLabel: data.title })
       queryClient.invalidateQueries({ queryKey: ['projects', user?.uid] })
       queryClient.invalidateQueries({ queryKey: ['taxonomies', user?.uid] })
     },

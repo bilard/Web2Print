@@ -4,6 +4,7 @@ import { Plus, Trash2, Save, Lock, Check, Eye, LayoutGrid, ListTree, Network, Ch
 import { CloseButton } from '@/components/shared/CloseButton'
 import { permissionsByModule, permissionParent, permissionChildren, permissionLabel } from '@/features/access/permissions'
 import { listRoles, saveRole, deleteRole, type Role } from '@/features/access/rolesApi'
+import { recordAudit } from '@/lib/auditLog'
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
 import { PermissionTree } from './PermissionTree'
@@ -60,10 +61,16 @@ export function RolesTab() {
   const save = async () => {
     if (!editing || !editing.name.trim()) return
     await saveRole({ id: editing.id, name: editing.name, permissions: [...editing.permissions] })
+    recordAudit({ action: 'access.role.save', module: 'access', targetId: editing.id, targetLabel: editing.name, meta: { count: [...editing.permissions].length } })
     setEditing(null); refresh()
   }
 
-  const remove = async (id: string) => { await deleteRole(id); refresh() }
+  const remove = async (id: string) => {
+    const r = roles.find((x) => x.id === id)
+    await deleteRole(id)
+    recordAudit({ action: 'access.role.delete', module: 'access', targetId: id, targetLabel: r?.name ?? id })
+    refresh()
+  }
 
   if (editing) {
     return (

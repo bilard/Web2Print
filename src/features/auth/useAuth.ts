@@ -3,6 +3,7 @@ import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from
 import { auth } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { writeUserProfile } from '@/features/access/writeUserProfile'
+import { recordAudit } from '@/lib/auditLog'
 
 const googleProvider = new GoogleAuthProvider()
 // Force le sélecteur de compte Google à CHAQUE connexion. Sans ce paramètre,
@@ -63,7 +64,11 @@ export function useAuthInit() {
 }
 
 export function useSignInWithGoogle() {
-  return () => signInWithPopup(auth, googleProvider)
+  return async () => {
+    const cred = await signInWithPopup(auth, googleProvider)
+    void recordAudit({ action: 'auth.login', module: 'auth', targetLabel: cred.user.email ?? '' })
+    return cred
+  }
 }
 
 /** Préfixe commun à la plupart des données utilisateur mises en cache dans localStorage

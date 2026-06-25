@@ -3,6 +3,7 @@ import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, serverTi
 import { ref, listAll, deleteObject } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
+import { recordAudit } from '@/lib/auditLog'
 
 /** Known subfolders where project assets are stored */
 const PROJECT_SUBFOLDERS = ['links', 'fonts']
@@ -105,6 +106,7 @@ export function useDeleteProject() {
     mutationFn: async (projectId: string) => {
       await deleteProjectWithAssets(projectId)
       if (user?.uid) await cleanupOrphanLinksInTaxonomies(user.uid, projectId)
+      recordAudit({ action: 'library.project.delete', module: 'library', targetId: projectId })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', user?.uid] })

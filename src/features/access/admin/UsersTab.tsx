@@ -5,6 +5,7 @@ import { PERMISSIONS, permissionsByModule, permissionLabel } from '@/features/ac
 import { moduleMeta, orderedModuleEntries } from '@/features/access/moduleMeta'
 import { ModuleCard } from './ModuleCard'
 import { listUsers, updateUserAccess, deleteUser, type ManagedUser } from '@/features/access/usersApi'
+import { recordAudit } from '@/lib/auditLog'
 import { listRoles, type Role } from '@/features/access/rolesApi'
 import { computeEffectivePermissions } from '@/features/access/computePermissions'
 import { isOwnerEmail } from '@/features/auth/useAuth'
@@ -35,16 +36,22 @@ export function UsersTab() {
 
   const removeUser = async (u: ManagedUser) => {
     await deleteUser(u.uid)
+    recordAudit({ action: 'access.user.delete', module: 'access', targetId: u.uid, targetLabel: u.email })
     setConfirmDelete(null)
     setExpanded(null)
     refresh()
   }
 
   const setRole = async (u: ManagedUser, roleId: string) => {
-    await updateUserAccess(u.uid, { accessRoleId: roleId || null }); refresh()
+    await updateUserAccess(u.uid, { accessRoleId: roleId || null })
+    recordAudit({ action: roleId ? 'access.role.assign' : 'access.role.remove', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { roleId: roleId || null } })
+    refresh()
   }
   const toggleBlocked = async (u: ManagedUser) => {
-    await updateUserAccess(u.uid, { accessBlocked: !u.accessBlocked }); refresh()
+    const blocked = !u.accessBlocked
+    await updateUserAccess(u.uid, { accessBlocked: blocked })
+    recordAudit({ action: blocked ? 'access.block' : 'access.unblock', module: 'access', targetId: u.uid, targetLabel: u.email })
+    refresh()
   }
   const resetOverrides = async (u: ManagedUser) => {
     await updateUserAccess(u.uid, { accessGrants: [], accessRevokes: [] }); refresh()
@@ -54,9 +61,12 @@ export function UsersTab() {
     const other = kind === 'grant' ? 'accessRevokes' : 'accessGrants'
     const cur = new Set(u[field])
     const otherSet = new Set(u[other])
+    const adding = !cur.has(key)
     if (cur.has(key)) cur.delete(key)
     else { cur.add(key); otherSet.delete(key) } // grant et revoke mutuellement exclusifs
-    await updateUserAccess(u.uid, { [field]: [...cur], [other]: [...otherSet] }); refresh()
+    await updateUserAccess(u.uid, { [field]: [...cur], [other]: [...otherSet] })
+    if (adding) recordAudit({ action: kind === 'grant' ? 'access.grant' : 'access.revoke', module: 'access', targetId: u.uid, targetLabel: u.email, meta: { permission: key } })
+    refresh()
   }
 
   const roleOf = (u: ManagedUser) => roles.find((r) => r.id === u.accessRoleId)

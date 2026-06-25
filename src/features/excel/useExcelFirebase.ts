@@ -1,6 +1,7 @@
 import { doc, getDoc, collection, getDocs, serverTimestamp, query, where, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
+import { recordAudit } from '@/lib/auditLog'
 import type { ExcelSheet } from './types'
 
 const COLLECTION = 'excel_data'
@@ -53,6 +54,7 @@ export function useExcelFirebase() {
     }, { merge: true })
     await batch.commit()
 
+    recordAudit({ action: 'data.dataset.save', module: 'data', targetId: fullDocId, targetLabel: fileName })
     return fullDocId
   }
 
@@ -127,6 +129,7 @@ export function useExcelFirebase() {
     batch.delete(doc(db, COLLECTION, docId))
     batch.delete(doc(db, PAYLOAD_COLLECTION, docId))
     await batch.commit()
+    recordAudit({ action: 'data.dataset.delete', module: 'data', targetId: docId })
   }
 
   /** Renomme une base (met à jour uniquement le libellé `fileName`). */
