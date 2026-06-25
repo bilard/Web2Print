@@ -25,6 +25,7 @@ import { AiCascadeEditor } from '@/features/ai/AiCascadeEditor'
 import { ResetLlmModelsButton } from '@/features/ai/ResetLlmModelsButton'
 import { useAccessStore } from '@/stores/access.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { PluginTokenSection } from '@/features/plugin-token/PluginTokenSection'
 
 const PROVIDER_LABELS: Record<AiProvider, string> = {
   claude: 'Claude',
@@ -434,6 +435,10 @@ function ConnectorsTab() {
         <div className="bg-white/[0.03] rounded-xl p-3">
           <TelegramSettings />
         </div>
+      </div>
+
+      <div className="border-t border-white/10 pt-4 mt-4">
+        <PluginTokenSection />
       </div>
     </div>
   )
