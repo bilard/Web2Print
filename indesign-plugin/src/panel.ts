@@ -4,8 +4,12 @@ import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
 import { fillPageWithRow, restoreAllPlaceholders } from './idml/preview'
 
-const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
+
+// ⚠️ Ré-acquérir `app`/le document À CHAQUE APPEL : le `app` capturé au chargement du
+// module est parfois undefined (timing UXP) → un const figé échoue par intermittence.
+function getApp(): any { try { return require('indesign').app } catch { return null } }
+function activeDoc(): any { try { return getApp()?.activeDocument ?? null } catch { return null } }
 
 let client: PluginClient | null = null
 let docId = ''
@@ -98,9 +102,9 @@ function renderTable() {
 function renderFields() {
   // En mode Aperçu : tableau propre de l'enregistrement (au lieu de la liste de balisage).
   if (previewOn) { renderTable(); return }
-  // app.activeDocument lève s'il n'y a aucun document → catch → doc null → « Champs posés » se vide.
+  // activeDoc() lève s'il n'y a aucun document → catch → doc null → « Champs posés » se vide.
   let doc: any = null
-  try { doc = app.activeDocument } catch { /* aucun document ouvert */ }
+  try { doc = activeDoc() } catch { /* aucun document ouvert */ }
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
   let selectedLi: HTMLElement | null = null
@@ -335,7 +339,7 @@ byId('miFill').addEventListener('click', async () => {
   toggleMenu(false)
   if (!client) return
   let doc: any = null
-  try { doc = app.activeDocument } catch { /* aucun document */ }
+  try { doc = activeDoc() } catch { /* aucun document */ }
   if (!doc) { showStatus('Aucun document ouvert'); return }
   await loadRowValues()
   const r = fillPageWithRow(doc, rowValues)
@@ -344,7 +348,7 @@ byId('miFill').addEventListener('click', async () => {
 byId('miRestore').addEventListener('click', () => {
   toggleMenu(false)
   let doc: any = null
-  try { doc = app.activeDocument } catch { /* aucun document */ }
+  try { doc = activeDoc() } catch { /* aucun document */ }
   if (!doc) { showStatus('Aucun document ouvert'); return }
   const n = restoreAllPlaceholders(doc)
   showStatus(`Restauré ${n} {{champ(s)}}`, true)
@@ -368,8 +372,8 @@ function onDocChanged() {
 // surveille une signature (nb de docs + id de l'actif) et on vide à tout changement.
 let lastDocSig = ''
 function docSignature(): string {
-  // app.activeDocument lève s'il n'y a aucun document → '0' (= fermé).
-  try { return String(app.activeDocument?.id ?? '0') } catch { return '0' }
+  // activeDoc() lève s'il n'y a aucun document → '0' (= fermé).
+  try { return String(activeDoc()?.id ?? '0') } catch { return '0' }
 }
 function watchDoc() {
   if (!client) return
@@ -380,6 +384,6 @@ function watchDoc() {
 }
 setInterval(watchDoc, 700)
 try {
-  app.addEventListener('afterClose', onDocChanged)
-  app.addEventListener('afterOpen', onDocChanged)
+  getApp()?.addEventListener('afterClose', onDocChanged)
+  getApp()?.addEventListener('afterOpen', onDocChanged)
 } catch { /* events indisponibles : le poll prend le relais */ }
