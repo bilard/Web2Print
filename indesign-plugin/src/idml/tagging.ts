@@ -71,12 +71,15 @@ export function applyTagToSelection(name: string): { ok: boolean; message?: stri
 
   const tag = ensureTag(doc, name)
   const root = doc.xmlElements.item(0)
-  // Toujours baliser le TEXTE du bloc : si on a sélectionné un CADRE, on cible son
-  // texte (→ crochets + cohérent avec les autres champs + meilleur pour la fusion).
+  // Toujours baliser le TEXTE du bloc : si la sélection n'est pas déjà du texte mais
+  // contient du texte (cadre, quel que soit son type), on cible son texte → crochets,
+  // cohérent avec les autres champs, et meilleur pour la fusion.
   let target = sel[0]
   try {
-    if (String(sel[0]?.constructor?.name) === 'TextFrame') {
-      const t = sel[0].texts?.item?.(0)
+    const tn = String(sel[0]?.constructor?.name || '')
+    const isTextObj = /^(Text|Character|Word|Line|Paragraph|TextColumn|InsertionPoint|TextStyleRange)$/.test(tn)
+    if (!isTextObj) {
+      const t = sel[0]?.texts?.item?.(0)
       if (t && t.isValid) target = t
     }
   } catch { /* on garde la sélection telle quelle */ }
