@@ -153,6 +153,7 @@ export const MODULE_ITEMS: ModuleItem[] = [
     children: [
       { id: 'tab:users', label: 'Utilisateurs', intent: 'access:tab:users' },
       { id: 'tab:roles', label: 'Rôles',        intent: 'access:tab:roles' },
+      { id: 'tab:audit', label: 'Journal',      intent: 'access:tab:audit' },
     ],
   },
 ]

@@ -497,6 +497,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── Journal d'audit (QUI/QUOI/QUAND) ───────────────────────
+    // Immuable : créé par l'utilisateur (pour ses propres actions), lu par l'admin
+    // (tout) ou par chacun pour ses propres entrées. Jamais modifiable/supprimable.
+    match /auditLog/{logId} {
+      allow read:   if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // ── Telegram entrant (2a) ──────────────────────────────────
     // File des messages reçus : lisible/modifiable par tout utilisateur connecté
     // (l'app perso est mono-utilisateur ; le mapping chat_id→uid est hors périmètre 2a).
