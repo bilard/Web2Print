@@ -26,12 +26,4 @@ export class PluginClient {
   async row(docId: string, i: number): Promise<RowResult> {
     return this.get<RowResult>(`/datasets/${docId}/row?i=${i}`)
   }
-  /** CSV complet (Fusion de données InDesign). */
-  async csv(docId: string): Promise<string> {
-    const res = await fetch(buildUrl(this.baseUrl, `/datasets/${docId}/csv`), {
-      headers: { Authorization: `Bearer ${this.token}` },
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return res.text()
-  }
 }

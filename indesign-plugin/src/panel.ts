@@ -2,14 +2,10 @@
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
-import { fillPageWithRow, restoreAllPlaceholders } from './idml/preview'
+import { applyRowPreview, restorePreview, resetPreviewMemory } from './idml/preview'
 
+const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
-
-// ⚠️ Ré-acquérir `app`/le document À CHAQUE APPEL : le `app` capturé au chargement du
-// module est parfois undefined (timing UXP) → un const figé échoue par intermittence.
-function getApp(): any { try { return require('indesign').app } catch { return null } }
-function activeDoc(): any { try { return getApp()?.activeDocument ?? null } catch { return null } }
 
 let client: PluginClient | null = null
 let docId = ''
@@ -102,9 +98,7 @@ function renderTable() {
 function renderFields() {
   // En mode Aperçu : tableau propre de l'enregistrement (au lieu de la liste de balisage).
   if (previewOn) { renderTable(); return }
-  // activeDoc() lève s'il n'y a aucun document → catch → doc null → « Champs posés » se vide.
-  let doc: any = null
-  try { doc = activeDoc() } catch { /* aucun document ouvert */ }
+  const doc = app.activeDocument
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
   let selectedLi: HTMLElement | null = null
@@ -207,8 +201,14 @@ function renderRowLabel() {
 async function refreshPreview() {
   if (!client) return
   previewOn = byId<HTMLInputElement>('preview').checked
-  if (previewOn) await loadRowValues() // Aperçu = tableau panneau uniquement (ne touche PAS le document)
-  else rowEntries = []
+  const doc = app.activeDocument
+  if (previewOn) {
+    await loadRowValues()
+    if (doc) applyRowPreview(doc, rowValues) // écrit les valeurs DANS la page (balises conservées)
+  } else {
+    if (doc) restorePreview(doc) // remet les {{champs}} d'origine
+    rowValues = {}
+  }
   renderRowLabel()
   renderFields()
 }
@@ -216,7 +216,11 @@ async function refreshPreview() {
 async function step(delta: number) {
   if (total === 0) return
   rowIndex = Math.max(0, Math.min(rowIndex + delta, total - 1))
-  if (previewOn) await loadRowValues()
+  if (previewOn) {
+    await loadRowValues()
+    const doc = app.activeDocument
+    if (doc) applyRowPreview(doc, rowValues)
+  }
   renderRowLabel()
   renderFields()
 }
@@ -239,21 +243,25 @@ function cancelConnect() {
   showStatus('')
 }
 
-/** Nom de tag de l'élément balisé le PLUS PROFOND à l'endroit de la sélection (le vrai
- *  champ, pas le conteneur). À TOUTE ÉPREUVE : ne lève jamais, renvoie null si rien. */
-function selectionTag(): string | null {
-  try {
-    const a = require('indesign')?.app
-    const sel = a?.selection
-    if (!sel || sel.length === 0) return null
-    const obj = sel[0]
+/** Élément XML le PLUS PROFOND à l'endroit de la sélection (le vrai champ, pas le
+ *  conteneur). Pour une sélection texte : on prend le point d'insertion et on
+ *  cherche l'élément balisé dont la plage de texte (la plus courte) contient l'index.
+ *  Repli cadre : associatedXMLElement direct. */
+function selectionInfo(): { tag: string | null; dbg: string } {
+  let sel: any
+  try { sel = app.selection } catch (e) { return { tag: null, dbg: 'err sel: ' + String(e) } }
+  if (!sel || sel.length === 0) return { tag: null, dbg: 'aucune sélection' }
+  const obj = sel[0]
+  let kind = '?'
+  try { kind = String(obj?.constructor?.name || obj) } catch { /* */ }
 
-    // 1) Sélection texte → élément balisé le plus profond contenant le point d'insertion.
+  // 1) Sélection texte → élément balisé le plus profond contenant le point d'insertion.
+  try {
     const ip = obj?.insertionPoints?.item?.(0)
     const idx: number | undefined = ip?.index
     const storyId = ip?.parentStory?.id
     if (typeof idx === 'number' && storyId != null) {
-      const doc = a?.activeDocument
+      const doc = app.activeDocument
       let best: any = null
       let bestLen = Infinity
       const consider = (el: any) => {
@@ -274,34 +282,34 @@ function selectionTag(): string | null {
       }
       const root = doc?.xmlElements?.item(0)
       if (root) walk(root)
-      if (best?.markupTag) return String(best.markupTag.name)
+      if (best && best.markupTag) return { tag: String(best.markupTag.name), dbg: `${kind} @${idx} profond` }
     }
+  } catch { /* pas une sélection texte */ }
 
-    // 2) Repli : cadre/objet balisé directement.
+  // 2) Repli : cadre/objet balisé directement.
+  try {
     const xe = obj?.associatedXMLElement
-    if (xe && xe.isValid && xe.markupTag) return String(xe.markupTag.name)
-  } catch { /* silencieux : Live ne doit jamais spammer d'erreur */ }
-  return null
+    if (xe && xe.isValid && xe.markupTag) return { tag: String(xe.markupTag.name), dbg: `${kind} via cadre` }
+  } catch { /* */ }
+
+  return { tag: null, dbg: `${kind} — pas trouvé` }
 }
 
 /** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur).
- *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval). */
+ *  InDesign n'émet PAS d'event de changement de sélection → on poll (setInterval).
+ *  Diagnostic affiché en statut tant qu'on stabilise l'accès à l'élément XML. */
 function onSelectionChanged() {
   if (!liveOn) return
-  const tag = selectionTag()
-  if (tag === selectedTag) return // pas de changement → pas de re-render
-  selectedTag = tag
+  const { tag, dbg } = selectionInfo()
   if (tag) {
     const col = columns.find((c) => slugifyTag(c.label) === tag)
-    if (col) {
-      const val = rowValues[tag]
-      showStatus(previewOn && val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`, true)
-    } else {
-      showStatus(`balise « ${tag} »`, true)
-    }
+    const val = previewOn && col ? rowValues[tag] : undefined
+    showStatus(col ? (val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`) : `tag ${tag} (hors dataSet)`, true)
   } else {
-    showStatus('')
+    showStatus(`Live: ${dbg}`)
   }
+  if (tag === selectedTag) return // pas de changement → pas de re-render
+  selectedTag = tag
   renderFields()
 }
 
@@ -333,72 +341,20 @@ function toggleMenu(force?: boolean) {
   m.style.display = show ? 'flex' : 'none'
 }
 byId('menuBtn').addEventListener('click', () => toggleMenu())
-byId('miExportCsv').addEventListener('click', async () => {
-  toggleMenu(false)
-  if (!client) { showStatus('Connecte-toi d’abord'); return }
-  try {
-    showStatus('Génération du CSV…')
-    const csv = await client.csv(docId)
-    const fs = require('uxp').storage.localFileSystem
-    const file = await fs.getFileForSaving('fusion-donnees.csv', { types: ['csv'] })
-    if (!file) { showStatus(''); return } // annulé
-    await file.write(csv)
-    showStatus('CSV exporté ✓ — Fichier → Fusion de données → Sélectionner la source', true)
-  } catch (e) {
-    showStatus('Échec export CSV : ' + (e instanceof Error ? e.message : String(e)))
-  }
-})
 byId('miChangeToken').addEventListener('click', () => { toggleMenu(false); changeToken() })
 byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFields() })
-byId('miFill').addEventListener('click', async () => {
-  toggleMenu(false)
-  if (!client) return
-  let doc: any = null
-  try { doc = activeDoc() } catch { /* aucun document */ }
-  if (!doc) { showStatus('Aucun document ouvert'); return }
-  await loadRowValues()
-  const r = fillPageWithRow(doc, rowValues)
-  showStatus(`Rempli ${r.filled} champ(s) [${r.types}] — ligne ${rowIndex + 1}`, true)
-})
-byId('miRestore').addEventListener('click', () => {
-  toggleMenu(false)
-  let doc: any = null
-  try { doc = activeDoc() } catch { /* aucun document */ }
-  if (!doc) { showStatus('Aucun document ouvert'); return }
-  const n = restoreAllPlaceholders(doc)
-  showStatus(`Restauré ${n} {{champ(s)}}`, true)
-})
 
 // À la fermeture/ouverture d'un document : rafraîchir la liste des balises (vidée
 // s'il n'y a plus de document actif) SANS se déconnecter (le dataSet reste choisi).
 function onDocChanged() {
+  resetPreviewMemory()
   previewOn = false
-  liveOn = false
-  selectedTag = null
   rowValues = {}
-  rowEntries = []
   byId<HTMLInputElement>('preview').checked = false
-  byId<HTMLInputElement>('live').checked = false
   renderFields()
   renderRowLabel()
 }
-
-// InDesign n'émet pas d'event fiable de fermeture/changement de doc sous UXP → on
-// surveille une signature (nb de docs + id de l'actif) et on vide à tout changement.
-let lastDocSig = ''
-function docSignature(): string {
-  // activeDoc() lève s'il n'y a aucun document → '0' (= fermé).
-  try { return String(activeDoc()?.id ?? '0') } catch { return '0' }
-}
-function watchDoc() {
-  if (!client) return
-  const sig = docSignature()
-  if (sig === lastDocSig) return
-  lastDocSig = sig
-  onDocChanged()
-}
-setInterval(watchDoc, 700)
 try {
-  getApp()?.addEventListener('afterClose', onDocChanged)
-  getApp()?.addEventListener('afterOpen', onDocChanged)
-} catch { /* events indisponibles : le poll prend le relais */ }
+  app.addEventListener('afterClose', onDocChanged)
+  app.addEventListener('afterOpen', onDocChanged)
+} catch { /* events indisponibles : ignorer */ }
