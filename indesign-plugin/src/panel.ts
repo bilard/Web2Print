@@ -343,6 +343,21 @@ function toggleMenu(force?: boolean) {
   m.style.display = show ? 'flex' : 'none'
 }
 byId('menuBtn').addEventListener('click', () => toggleMenu())
+byId('miExportCsv').addEventListener('click', async () => {
+  toggleMenu(false)
+  if (!client) { showStatus('Connecte-toi d’abord'); return }
+  try {
+    showStatus('Génération du CSV…')
+    const csv = await client.csv(docId)
+    const fs = require('uxp').storage.localFileSystem
+    const file = await fs.getFileForSaving('fusion-donnees.csv', { types: ['csv'] })
+    if (!file) { showStatus(''); return } // annulé
+    await file.write(csv)
+    showStatus('CSV exporté ✓ — InDesign : Fenêtre → Utilitaires → Fusion de données', true)
+  } catch (e) {
+    showStatus('Échec export CSV : ' + (e instanceof Error ? e.message : String(e)))
+  }
+})
 byId('miChangeToken').addEventListener('click', () => { toggleMenu(false); changeToken() })
 byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFields() })
 
