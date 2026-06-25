@@ -58,11 +58,17 @@
         color: rgba(255,255,255,0.4); padding: 8px 2px 2px;
       }
       .field {
-        display: flex; align-items: center; justify-content: space-between;
+        display: flex; flex-direction: column;
         padding: 7px 10px; border-radius: 6px; font-size: 12px;
         background: rgba(255,255,255,0.04); border: 1px solid transparent;
       }
       .field:hover { background: rgba(255,255,255,0.09); }
+      .field-head { display: flex; align-items: center; justify-content: space-between; }
+      .field .value {
+        font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; padding-left: 2px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .field.tagged .value { color: #c7c9ff; }
       .field .left { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; }
       .field .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .field .type {
@@ -122,7 +128,6 @@
         <div id="menu" class="menu" style="display:none">
           <button class="menu-item" id="miChangeToken">Changer de token</button>
           <button class="menu-item" id="miRefresh">Rafraîchir les champs</button>
-          <button class="menu-item" id="miRestore">Restaurer tous les {{champs}}</button>
         </div>
         <div class="rownav">
           <div class="nav">
@@ -135,10 +140,6 @@
       </div>
 
       <ul id="fields"></ul>
-
-      <div class="footer">
-        <button id="restoreAll" class="ghost">Restaurer tout</button>
-      </div>
     </div>
 
     <script src="dist/panel.js"></script>

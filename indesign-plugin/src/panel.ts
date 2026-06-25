@@ -2,7 +2,6 @@
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
-import { applyRowPreview, restorePreview, restoreAllPlaceholders, resetPreviewMemory } from './idml/preview'
 
 const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
@@ -12,6 +11,8 @@ let docId = ''
 let columns: ColumnInfo[] = []
 let rowIndex = 0
 let total = 0
+let previewOn = false
+let rowValues: Record<string, string> = {} // valeurs de la ligne courante, par nom de tag (aperçu panneau)
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -58,8 +59,18 @@ async function onDatasetChange() {
   rowIndex = 0
   const r = await client.row(docId, 0)
   total = r.total
+  if (previewOn) await loadRowValues()
   renderFields()
   renderRowLabel()
+}
+
+/** Charge les valeurs de la ligne courante pour l'aperçu PANNEAU (aucune écriture doc). */
+async function loadRowValues() {
+  if (!client) return
+  const r = await client.row(docId, rowIndex)
+  rowIndex = r.rowIndex; total = r.total
+  rowValues = {}
+  for (const v of r.values) rowValues[slugifyTag(v.label)] = v.value
 }
 
 function renderFields() {
@@ -91,6 +102,9 @@ function renderFields() {
     const li = document.createElement('li')
     li.className = n > 0 ? 'field tagged' : 'field'
 
+    const head = document.createElement('div')
+    head.className = 'field-head'
+
     const left = document.createElement('span')
     left.className = 'left'
     const name = document.createElement('span')
@@ -101,7 +115,7 @@ function renderFields() {
     type.className = 'type'
     type.textContent = c.fieldType
     left.appendChild(type)
-    li.appendChild(left)
+    head.appendChild(left)
 
     const right = document.createElement('span')
     right.className = 'actions'
@@ -139,7 +153,17 @@ function renderFields() {
       add.textContent = '+ poser'
       right.appendChild(add)
     }
-    li.appendChild(right)
+    head.appendChild(right)
+    li.appendChild(head)
+
+    // Aperçu PANNEAU : afficher la valeur de la ligne sous le champ (sans toucher au doc).
+    if (previewOn) {
+      const val = rowValues[slugifyTag(c.label)]
+      const v = document.createElement('div')
+      v.className = 'value'
+      v.textContent = val !== undefined && val !== '' ? val : '—'
+      li.appendChild(v)
+    }
 
     // Clic sur la ligne = poser le tag sur la sélection courante.
     li.onclick = () => {
@@ -157,23 +181,19 @@ function renderRowLabel() {
 
 async function refreshPreview() {
   if (!client) return
-  const doc = app.activeDocument
-  if (!doc) return
-  if (!byId<HTMLInputElement>('preview').checked) { restorePreview(doc); renderFields(); return }
-  const r = await client.row(docId, rowIndex)
-  rowIndex = r.rowIndex; total = r.total
-  const valuesByTag: Record<string, string> = {}
-  for (const v of r.values) valuesByTag[slugifyTag(v.label)] = v.value
-  applyRowPreview(doc, valuesByTag)
+  previewOn = byId<HTMLInputElement>('preview').checked
+  if (previewOn) await loadRowValues()
+  else rowValues = {}
   renderRowLabel()
   renderFields()
 }
 
-function step(delta: number) {
+async function step(delta: number) {
   if (total === 0) return
   rowIndex = Math.max(0, Math.min(rowIndex + delta, total - 1))
+  if (previewOn) await loadRowValues()
   renderRowLabel()
-  refreshPreview()
+  renderFields()
 }
 
 /** Paramètres : revenir à la saisie pour changer de token. La session courante est
@@ -210,16 +230,12 @@ function toggleMenu(force?: boolean) {
 byId('menuBtn').addEventListener('click', () => toggleMenu())
 byId('miChangeToken').addEventListener('click', () => { toggleMenu(false); changeToken() })
 byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFields() })
-byId('miRestore').addEventListener('click', () => {
-  toggleMenu(false)
-  const doc = app.activeDocument
-  if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
-})
 
-// À la fermeture/ouverture/activation d'un document : rafraîchir la liste des
-// balises (vidée s'il n'y a plus de document actif) SANS se déconnecter.
+// À la fermeture/ouverture d'un document : rafraîchir la liste des balises (vidée
+// s'il n'y a plus de document actif) SANS se déconnecter (le dataSet reste choisi).
 function onDocChanged() {
-  resetPreviewMemory()
+  previewOn = false
+  rowValues = {}
   byId<HTMLInputElement>('preview').checked = false
   renderFields()
   renderRowLabel()
@@ -228,7 +244,3 @@ try {
   app.addEventListener('afterClose', onDocChanged)
   app.addEventListener('afterOpen', onDocChanged)
 } catch { /* events indisponibles : ignorer */ }
-byId('restoreAll').addEventListener('click', () => {
-  const doc = app.activeDocument
-  if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
-})
