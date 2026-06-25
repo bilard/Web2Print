@@ -7,6 +7,7 @@ const COLLECTION = 'pluginTokens'
 export interface PluginToken {
   id: string
   label: string
+  token?: string // valeur en clair (w2p_…), stockée pour pouvoir la réafficher (owner-only)
   createdAt: Date | null
   lastUsedAt: Date | null
   revoked: boolean
@@ -22,6 +23,7 @@ export function usePluginTokens() {
     await setDoc(doc(db, COLLECTION, id), {
       uid: user.uid,
       label: label.trim() || 'Plugin InDesign',
+      token, // valeur en clair conservée pour réaffichage (lisible par le propriétaire seul)
       createdAt: serverTimestamp(),
       lastUsedAt: null,
       revoked: false,
@@ -39,6 +41,7 @@ export function usePluginTokens() {
         return {
           id: d.id,
           label: x.label ?? '',
+          token: typeof x.token === 'string' ? x.token : undefined,
           createdAt: x.createdAt?.toDate?.() ?? null,
           lastUsedAt: x.lastUsedAt?.toDate?.() ?? null,
           revoked: x.revoked === true,

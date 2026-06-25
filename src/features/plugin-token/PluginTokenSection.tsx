@@ -107,31 +107,50 @@ export function PluginTokenSection() {
       <div className="space-y-1">
         {tokens.length === 0 && <p className="text-xs text-white/40">Aucun token.</p>}
         {tokens.map((t) => (
-          <div key={t.id} className="flex items-center justify-between rounded bg-surface-2 px-3 py-2 text-xs">
-            <div className="min-w-0 flex items-center gap-2">
-              <span className="text-white truncate">
-                {revealedKeys.has(t.id) ? t.label : '•'.repeat(Math.min(t.label.length || 6, 12))}
-              </span>
+          <div key={t.id} className="rounded bg-surface-2 px-3 py-2 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex items-center gap-2">
+                <span className="text-white truncate">{t.label}</span>
+                <button
+                  type="button"
+                  onClick={() => toggleKey(t.id)}
+                  className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
+                  title={revealedKeys.has(t.id) ? 'Masquer la KEY' : 'Voir la KEY'}
+                >
+                  {revealedKeys.has(t.id) ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+                <span className="text-white/40 shrink-0">
+                  {t.lastUsedAt ? `utilisé ${t.lastUsedAt.toLocaleDateString()}` : 'jamais utilisé'}
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => toggleKey(t.id)}
-                className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
-                title={revealedKeys.has(t.id) ? 'Masquer la KEY' : 'Voir la KEY'}
+                onClick={() => onDelete(t.id)}
+                className="p-1 rounded hover:bg-white/10 text-red-400/70 hover:text-red-400 transition-colors shrink-0"
+                title="Supprimer"
               >
-                {revealedKeys.has(t.id) ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                <Trash2 className="h-4 w-4" />
               </button>
-              <span className="text-white/40 shrink-0">
-                {t.lastUsedAt ? `utilisé ${t.lastUsedAt.toLocaleDateString()}` : 'jamais utilisé'}
-              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => onDelete(t.id)}
-              className="p-1 rounded hover:bg-white/10 text-red-400/70 hover:text-red-400 transition-colors shrink-0"
-              title="Supprimer"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {revealedKeys.has(t.id) && (
+              <div className="mt-1.5 flex items-center gap-2">
+                {t.token ? (
+                  <>
+                    <code className="flex-1 truncate text-white/80 bg-well rounded px-2 py-1">{t.token}</code>
+                    <button
+                      type="button"
+                      onClick={() => onCopy(t.token as string)}
+                      className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0"
+                      title="Copier"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-white/40 italic">Valeur indisponible — régénère ce token pour pouvoir l'afficher.</span>
+                )}
+              </div>
+            )}
           </div>
         ))}
         <button
