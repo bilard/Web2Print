@@ -220,8 +220,10 @@ function cancelConnect() {
   showStatus('')
 }
 
-/** Élément XML associé à la sélection InDesign + diagnostic (plusieurs stratégies,
- *  car l'API varie selon qu'on sélectionne un cadre, du texte, un point d'insertion…). */
+/** Élément XML le PLUS PROFOND à l'endroit de la sélection (le vrai champ, pas le
+ *  conteneur). Pour une sélection texte : on prend le point d'insertion et on
+ *  cherche l'élément balisé dont la plage de texte (la plus courte) contient l'index.
+ *  Repli cadre : associatedXMLElement direct. */
 function selectionInfo(): { tag: string | null; dbg: string } {
   let sel: any
   try { sel = app.selection } catch (e) { return { tag: null, dbg: 'err sel: ' + String(e) } }
@@ -230,21 +232,44 @@ function selectionInfo(): { tag: string | null; dbg: string } {
   let kind = '?'
   try { kind = String(obj?.constructor?.name || obj) } catch { /* */ }
 
-  const tryXe = (o: any): any => {
-    try { const xe = o?.associatedXMLElement; return xe && xe.isValid ? xe : null } catch { return null }
-  }
-  const attempts: Array<[string, () => any]> = [
-    ['self', () => obj],
-    ['texts[0]', () => obj?.texts?.item?.(0)],
-    ['parent', () => obj?.parent],
-    ['parentTextFrame', () => obj?.parentTextFrames?.[0]],
-    ['paragraphs[0]', () => obj?.paragraphs?.item?.(0)],
-  ]
-  for (const [via, get] of attempts) {
-    const xe = tryXe(get())
-    if (xe && xe.markupTag) return { tag: String(xe.markupTag.name), dbg: `${kind} via ${via}` }
-  }
-  return { tag: null, dbg: `${kind} — pas d'élément XML` }
+  // 1) Sélection texte → élément balisé le plus profond contenant le point d'insertion.
+  try {
+    const ip = obj?.insertionPoints?.item?.(0)
+    const idx: number | undefined = ip?.index
+    const storyId = ip?.parentStory?.id
+    if (typeof idx === 'number' && storyId != null) {
+      const doc = app.activeDocument
+      let best: any = null
+      let bestLen = Infinity
+      const consider = (el: any) => {
+        try {
+          const t = el.xmlContent
+          const ps = t?.parentStory
+          if (ps && ps.id === storyId && typeof t.index === 'number' && el.markupTag) {
+            const start = t.index
+            const len = t.characters?.length ?? 0
+            if (idx >= start && idx <= start + len && len <= bestLen) { best = el; bestLen = len }
+          }
+        } catch { /* élément non textuel */ }
+      }
+      const walk = (el: any) => {
+        consider(el)
+        const n = el.xmlElements?.length ?? 0
+        for (let i = 0; i < n; i++) walk(el.xmlElements.item(i))
+      }
+      const root = doc?.xmlElements?.item(0)
+      if (root) walk(root)
+      if (best && best.markupTag) return { tag: String(best.markupTag.name), dbg: `${kind} @${idx} profond` }
+    }
+  } catch { /* pas une sélection texte */ }
+
+  // 2) Repli : cadre/objet balisé directement.
+  try {
+    const xe = obj?.associatedXMLElement
+    if (xe && xe.isValid && xe.markupTag) return { tag: String(xe.markupTag.name), dbg: `${kind} via cadre` }
+  } catch { /* */ }
+
+  return { tag: null, dbg: `${kind} — pas trouvé` }
 }
 
 /** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur).
