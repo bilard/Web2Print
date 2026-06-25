@@ -45,7 +45,10 @@
       }
       .navbtn:hover { background: rgba(255,255,255,0.14); }
       #rowLabel { min-width: 56px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); }
-      .preview-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+      .toggles { display: flex; align-items: center; }
+      .preview-toggle { display: flex; align-items: center; font-size: 12px; }
+      .preview-toggle input { margin-right: 5px; }
+      .preview-toggle.live { margin-left: 12px; }
 
       /* --- Liste scrollable des champs --- */
       #fields {
@@ -90,6 +93,7 @@
       .field.tagged {
         background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55); color: #c7c9ff;
       }
+      .field.selected { background: rgba(99,102,241,0.4); border-color: #818cf8; }
       .field .actions { display: flex; align-items: center; flex-shrink: 0; margin-left: 8px; }
       .field .badge { font-size: 11px; color: #a5b4fc; flex-shrink: 0; }
       .field .add { font-size: 11px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
@@ -135,7 +139,10 @@
             <span id="rowLabel">0 / 0</span>
             <button id="next" class="navbtn">▶</button>
           </div>
-          <label class="preview-toggle"><input id="preview" type="checkbox" /> Aperçu</label>
+          <div class="toggles">
+            <label class="preview-toggle"><input id="preview" type="checkbox" /> Aperçu</label>
+            <label class="preview-toggle live"><input id="live" type="checkbox" /> Live</label>
+          </div>
         </div>
       </div>
 

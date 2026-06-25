@@ -13,6 +13,8 @@ let rowIndex = 0
 let total = 0
 let previewOn = false
 let rowValues: Record<string, string> = {} // valeurs de la ligne courante, par nom de tag (aperçu panneau)
+let liveOn = false
+let selectedTag: string | null = null // nom de tag de l'élément sélectionné dans InDesign (mode Live)
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -77,6 +79,7 @@ function renderFields() {
   const doc = app.activeDocument
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
+  let selectedLi: HTMLElement | null = null
 
   // Décorer chaque champ de son nombre d'occurrences, posés en haut puis tri alphabétique.
   const decorated = columns.map((c) => ({ c, n: counts[slugifyTag(c.label)] ?? 0 }))
@@ -99,8 +102,10 @@ function renderFields() {
     if (n > 0 && !taggedHeaderDone) { addSectionLabel('Champs posés'); taggedHeaderDone = true }
     if (n === 0 && !availHeaderDone) { addSectionLabel('Disponibles'); availHeaderDone = true }
 
+    const isSel = selectedTag !== null && slugifyTag(c.label) === selectedTag
     const li = document.createElement('li')
-    li.className = n > 0 ? 'field tagged' : 'field'
+    li.className = `field${n > 0 ? ' tagged' : ''}${isSel ? ' selected' : ''}`
+    if (isSel) selectedLi = li
 
     const head = document.createElement('div')
     head.className = 'field-head'
@@ -173,6 +178,7 @@ function renderFields() {
     }
     ul.appendChild(li)
   }
+  if (selectedLi) { try { (selectedLi as HTMLElement).scrollIntoView() } catch { /* no-op */ } }
 }
 
 function renderRowLabel() {
@@ -214,12 +220,46 @@ function cancelConnect() {
   showStatus('')
 }
 
+/** Nom de tag de l'élément XML associé à la sélection InDesign courante (mode Live). */
+function currentSelectionTag(): string | null {
+  try {
+    const sel = app.selection
+    if (!sel || sel.length === 0) return null
+    const obj = sel[0]
+    let xe = obj?.associatedXMLElement
+    if ((!xe || !xe.isValid) && obj?.parent?.associatedXMLElement) xe = obj.parent.associatedXMLElement
+    if (xe && xe.isValid && xe.markupTag) return xe.markupTag.name as string
+  } catch { /* sélection non balisée */ }
+  return null
+}
+
+/** Mode Live : le panneau suit la sélection InDesign (surligne le champ + sa valeur). */
+function onSelectionChanged() {
+  if (!liveOn) return
+  selectedTag = currentSelectionTag()
+  if (selectedTag) {
+    const col = columns.find((c) => slugifyTag(c.label) === selectedTag)
+    if (col) {
+      const val = previewOn ? rowValues[selectedTag] : undefined
+      showStatus(val !== undefined ? `${col.label} : ${val || '—'}` : `Sélection : ${col.label}`, true)
+    }
+  }
+  renderFields()
+}
+
 byId('btnConnect').addEventListener('click', connect)
 byId('dataset').addEventListener('change', onDatasetChange)
 byId('prev').addEventListener('click', () => step(-1))
 byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
 byId('cancelConnect').addEventListener('click', cancelConnect)
+byId('live').addEventListener('change', () => {
+  liveOn = byId<HTMLInputElement>('live').checked
+  if (!liveOn) { selectedTag = null; showStatus('') }
+  onSelectionChanged()
+  if (!liveOn) renderFields() // re-render pour retirer le surlignage
+})
+try { app.addEventListener('afterSelectionChanged', onSelectionChanged) } catch { /* event indisponible */ }
 
 /** Menu hamburger (préférences). Affichage inline (UXP gère mal position:absolute). */
 function toggleMenu(force?: boolean) {
