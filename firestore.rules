@@ -87,6 +87,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Plugin Tokens ─────────────────────────────────────────────────────
+    // Tokens du plugin InDesign : créés/listés/révoqués par leur propriétaire.
+    // Le doc-id est le sha256 du token ; on ne stocke jamais le token en clair.
+    match /pluginTokens/{tokenId} {
+      allow read, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid
+                    && request.resource.data.uid == request.auth.uid;
+    }
+
     // ── Projects ──────────────────────────────────────────────────────────────
 
     match /projects/{projectId} {
