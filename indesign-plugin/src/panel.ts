@@ -160,22 +160,14 @@ function renderRowLabel() {
 async function refreshPreview() {
   if (!client) return
   previewOn = byId<HTMLInputElement>('preview').checked
+  // Aperçu = TABLEAU dans le panneau uniquement. On NE TOUCHE PLUS au document
+  // (l'écriture in-page abîmait la mise en page).
   if (previewOn) {
     const r = await client.row(docId, rowIndex)
     rowIndex = r.rowIndex; total = r.total
     rowEntries = r.values.map((v) => ({ label: v.label, value: v.value }))
-    // écriture dans la page : best-effort, ne bloque pas le tableau si l'accès doc échoue
-    try {
-      const doc = app.activeDocument
-      if (doc) {
-        const valuesByTag: Record<string, string> = {}
-        for (const v of r.values) valuesByTag[slugifyTag(v.label)] = v.value
-        applyRowPreview(doc, valuesByTag)
-      }
-    } catch { /* doc inaccessible : on garde au moins le tableau */ }
   } else {
     rowEntries = []
-    try { const doc = app.activeDocument; if (doc) restorePreview(doc) } catch { /* */ }
   }
   renderRowLabel()
   renderFields()
