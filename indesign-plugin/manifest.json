@@ -11,7 +11,6 @@
   ],
   "requiredPermissions": {
     "network": { "domains": ["https://europe-west1-web2print-6fe5a.cloudfunctions.net"] },
-    "clipboard": "read",
-    "localFileSystem": "request"
+    "clipboard": "read"
   }
 }

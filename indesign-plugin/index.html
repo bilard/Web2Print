@@ -33,8 +33,6 @@
         background: rgba(255,255,255,0.06); color: #e8e8e8;
       }
 
-      .dataset-row { display: flex; align-items: center; gap: 6px; }
-      .dataset-row #dataset { flex: 1; }
       .rownav { display: flex; align-items: center; justify-content: space-between; }
       .rownav .nav { display: flex; align-items: center; gap: 6px; }
       .navbtn {
@@ -45,78 +43,30 @@
       }
       .navbtn:hover { background: rgba(255,255,255,0.14); }
       #rowLabel { min-width: 56px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); }
-      .toggles { display: flex; align-items: center; }
-      .preview-toggle { display: flex; align-items: center; font-size: 12px; }
-      .preview-toggle input { margin-right: 5px; }
-      .preview-toggle.live { margin-left: 12px; }
+      .preview-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 
       /* --- Liste scrollable des champs --- */
       #fields {
         list-style: none; margin: 0; padding: 8px 12px;
         overflow-y: auto; flex: 1; min-height: 0;
-      }
-
-      /* --- Tableau d'aperçu (style « Indicateur des enregistrements ») --- */
-      .rec-row { display: flex; align-items: stretch; }
-      .rec-row.odd { background: rgba(255,255,255,0.03); }
-      .rec-label {
-        width: 42%; flex-shrink: 0; box-sizing: border-box;
-        text-align: right; padding: 4px 8px; font-size: 11px;
-        color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.05);
-        border-right: 1px solid rgba(0,0,0,0.25);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
-      .rec-value {
-        flex: 1; min-width: 0; padding: 4px 8px; font-size: 12px; color: #f2f3f7;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        display: flex; flex-direction: column; gap: 4px;
       }
       .section-label {
         font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
         color: rgba(255,255,255,0.4); padding: 8px 2px 2px;
       }
       .field {
-        display: block; margin-bottom: 4px;
+        display: flex; align-items: center; justify-content: space-between;
         padding: 7px 10px; border-radius: 6px; font-size: 12px;
         background: rgba(255,255,255,0.04); border: 1px solid transparent;
       }
       .field:hover { background: rgba(255,255,255,0.09); }
-      .field-head { display: flex; align-items: center; justify-content: space-between; }
-      .field .value {
-        display: block; font-size: 12px; color: #f2f3f7; margin-top: 6px; padding: 4px 6px;
-        background: rgba(0,0,0,0.3); border-radius: 4px;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
-      .field.tagged .value { color: #ffffff; background: rgba(0,0,0,0.35); }
-      .field .left { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; }
       .field .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .field .type {
-        font-size: 10px; color: rgba(255,255,255,0.4); flex-shrink: 0;
-        text-transform: lowercase; margin-left: 10px;
-      }
-
-      /* --- Menu préférences (hamburger) --- */
-      .menu {
-        display: flex; flex-direction: column;
-        padding: 4px; border-radius: 6px;
-        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
-      }
-      .menu-item {
-        text-align: left; background: transparent; border: none; color: #e8e8e8;
-        font-size: 12px; padding: 7px 8px; border-radius: 4px;
-      }
-      .menu-item:hover { background: rgba(255,255,255,0.1); }
       .field.tagged {
         background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55); color: #c7c9ff;
       }
-      .field.selected { background: rgba(99,102,241,0.4); border-color: #818cf8; }
-      .field .actions { display: flex; align-items: center; flex-shrink: 0; margin-left: 8px; }
-      .field .badge { font-size: 11px; color: #a5b4fc; flex-shrink: 0; }
-      .field .add { font-size: 11px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
-      .field .act {
-        background: transparent; border: none; color: rgba(255,255,255,0.55);
-        font-size: 14px; line-height: 1; padding: 2px 5px; margin-left: 4px; border-radius: 4px;
-      }
-      .field .act:hover { background: rgba(255,255,255,0.18); color: #fff; }
+      .field .badge { font-size: 11px; color: #a5b4fc; margin-left: 8px; flex-shrink: 0; }
+      .field .add { font-size: 11px; color: rgba(255,255,255,0.5); margin-left: 8px; flex-shrink: 0; }
 
       /* --- Pied --- */
       .footer { padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.1); }
@@ -126,50 +76,36 @@
         font-size: 12px; width: 100%;
       }
       .ghost:hover { background: rgba(255,255,255,0.06); }
-      #status {
-        font-size: 11px; color: #ffd479; min-height: 16px; padding: 6px 12px;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
+      #status { font-size: 11px; color: #f0a; min-height: 14px; padding: 0 12px 6px; }
       #status.ok { color: #6ee7b7; }
-      #status:empty { display: none; }
     </style>
   </head>
   <body>
     <div id="connect">
       <input id="token" type="password" placeholder="Token w2p_…" />
       <button id="btnConnect" class="btn">Connecter</button>
-      <button id="cancelConnect" class="ghost" style="display:none">Annuler</button>
+      <div id="status"></div>
     </div>
 
     <div id="main">
       <div class="toolbar">
-        <div class="dataset-row">
-          <select id="dataset"></select>
-          <button id="menuBtn" class="navbtn" title="Préférences">☰</button>
-        </div>
-        <div id="menu" class="menu" style="display:none">
-          <button class="menu-item" id="miExportCsv">Exporter CSV (Fusion de données)</button>
-          <button class="menu-item" id="miChangeToken">Changer de token</button>
-          <button class="menu-item" id="miRefresh">Rafraîchir les champs</button>
-        </div>
+        <select id="dataset"></select>
         <div class="rownav">
           <div class="nav">
             <button id="prev" class="navbtn">◀</button>
             <span id="rowLabel">0 / 0</span>
             <button id="next" class="navbtn">▶</button>
           </div>
-          <div class="toggles">
-            <label class="preview-toggle"><input id="preview" type="checkbox" /> Aperçu</label>
-            <label class="preview-toggle live"><input id="live" type="checkbox" /> Live</label>
-          </div>
+          <label class="preview-toggle"><input id="preview" type="checkbox" /> Aperçu</label>
         </div>
       </div>
 
       <ul id="fields"></ul>
-    </div>
 
-    <div id="status"></div>
+      <div class="footer">
+        <button id="restoreAll" class="ghost">Restaurer tout</button>
+      </div>
+    </div>
 
     <script src="dist/panel.js"></script>
   </body>

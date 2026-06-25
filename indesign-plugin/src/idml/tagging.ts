@@ -3,7 +3,7 @@ import { slugifyTag } from '../lib/slug'
 
 // Le module 'indesign' fournit l'objet app au runtime UXP.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-function getApp(): any { try { return require('indesign').app } catch { return null } }
+const { app } = require('indesign') as { app: any }
 
 /** Récupère le XMLTag par nom (slugifié) ou le crée. */
 export function ensureTag(doc: any, name: string): any {
@@ -20,9 +20,9 @@ export function ensureTag(doc: any, name: string): any {
  * Web2Print relit via xmlElementStory.ts (flatten → {{<name>}}).
  */
 export function applyTagToSelection(name: string): { ok: boolean; message?: string } {
-  const a = getApp(); const doc = a?.activeDocument
+  const doc = app.activeDocument
   if (!doc) return { ok: false, message: 'Aucun document ouvert' }
-  const sel = a?.selection
+  const sel = app.selection
   if (!sel || sel.length === 0) return { ok: false, message: 'Sélectionne un texte ou un cadre' }
 
   const tag = ensureTag(doc, name)
@@ -51,52 +51,4 @@ export function countTaggedByName(doc: any): Record<string, number> {
   const root = doc.xmlElements?.item(0)
   if (root) walk(root)
   return counts
-}
-
-/** Collecte tous les XMLElement portant un tag donné (parcours récursif). */
-function collectByTag(doc: any, tagName: string): any[] {
-  const out: any[] = []
-  const walk = (el: any) => {
-    const n = el.xmlElements?.length ?? 0
-    for (let i = 0; i < n; i++) {
-      const child = el.xmlElements.item(i)
-      if (child.markupTag?.name === tagName) out.push(child)
-      walk(child)
-    }
-  }
-  const root = doc.xmlElements?.item(0)
-  if (root) walk(root)
-  return out
-}
-
-/** Sélectionne et cadre le premier élément portant le tag du champ (« Atteindre l'élément »). */
-export function gotoFieldElement(name: string): { ok: boolean; message?: string } {
-  const a = getApp(); const doc = a?.activeDocument
-  if (!doc) return { ok: false, message: 'Aucun document ouvert' }
-  const els = collectByTag(doc, slugifyTag(name))
-  if (els.length === 0) return { ok: false, message: 'Champ non posé' }
-  try {
-    const content = els[0].xmlContent // Text ou PageItem représenté par l'élément
-    a.select(content)
-    try { a.activeWindow.zoom(require('indesign').ZoomOptions.FIT_SELECTION) } catch { /* zoom best-effort */ }
-    return { ok: true }
-  } catch (err) {
-    return { ok: false, message: err instanceof Error ? err.message : String(err) }
-  }
-}
-
-/** Retire la balise de tous les éléments d'un champ (« Annuler la balise de l'élément »).
- *  untag() conserve le contenu, supprime seulement le marquage XML. */
-export function untagField(name: string): { ok: boolean; count: number; message?: string } {
-  const a = getApp(); const doc = a?.activeDocument
-  if (!doc) return { ok: false, count: 0, message: 'Aucun document ouvert' }
-  const els = collectByTag(doc, slugifyTag(name))
-  try {
-    let count = 0
-    // De la fin vers le début : untag() mute l'arbre.
-    for (let i = els.length - 1; i >= 0; i--) { els[i].untag(); count++ }
-    return { ok: true, count }
-  } catch (err) {
-    return { ok: false, count: 0, message: err instanceof Error ? err.message : String(err) }
-  }
 }
