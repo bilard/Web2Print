@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
-import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network } from 'lucide-react'
+import { Eye, EyeOff, RotateCcw, User, BarChart2, Plug, HardDrive, CheckCircle2, Sparkles, Flame, Plus, RefreshCw, Cookie, Trash2, Network, ScrollText } from 'lucide-react'
 import { DataModelDiagram } from '@/features/data-graph/DataModelDiagram'
+import { MyActivityTab } from '@/features/access/MyActivityTab'
 import {
   FirebaseLogo, GeminiLogo, ClaudeLogo, OpenAILogo, DeepSeekLogo, KimiLogo,
   OpenRouterLogo, QwenLogo, JinaLogo, RemoveBgLogo, FirecrawlLogo, ScrapflyLogo, GoogleVisionLogo,
@@ -61,7 +62,7 @@ function formatTokens(n: number): string {
   return n.toLocaleString('fr-FR')
 }
 
-type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'data'
+type SettingsTab = 'profile' | 'ai' | 'firebase' | 'connectors' | 'cookies' | 'stats' | 'data' | 'activity'
 
 interface TabConfig {
   id: SettingsTab
@@ -78,6 +79,7 @@ const TABS: TabConfig[] = [
   { id: 'cookies',    label: 'Cookies',       icon: Cookie,    accent: 'text-amber-300' },
   { id: 'data',       label: 'Données',       icon: Network,   accent: 'text-cyan-400' },
   { id: 'stats',      label: 'Statistiques',  icon: BarChart2, accent: 'text-sky-400' },
+  { id: 'activity',   label: 'Mon activité',  icon: ScrollText, accent: 'text-rose-400' },
 ]
 
 const TAB_PERMISSION: Partial<Record<SettingsTab, string>> = {
@@ -622,6 +624,7 @@ export function SettingsPanel({
       {activeTab === 'connectors' && canTab('connectors') && <ConnectorsTab />}
       {activeTab === 'cookies' && canTab('cookies') && <CookiesTab />}
       {activeTab === 'stats' && <StatsTab />}
+      {activeTab === 'activity' && <MyActivityTab />}
       {activeTab === 'data' && isOwner && <DataModelDiagram />}
     </>
   )

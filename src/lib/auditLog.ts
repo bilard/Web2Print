@@ -22,7 +22,7 @@ export interface AuditEntry extends AuditInput {
 }
 
 /** Libellés FR des actions (pour le filtre QUOI et l'affichage). Étendre au besoin. */
-export const AUDIT_ACTIONS: Record<string, string> = {
+const AUDIT_ACTIONS: Record<string, string> = {
   'auth.login': 'Connexion',
   'access.role.assign': 'Rôle attribué',
   'access.role.remove': 'Rôle retiré',
