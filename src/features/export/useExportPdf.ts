@@ -6,6 +6,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { CANVAS_DPI } from '@/features/print/dimensions'
+import { recordAudit } from '@/lib/auditLog'
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace('#', '')
@@ -201,6 +202,7 @@ export function useExportPdf() {
       a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}${suffix}.pdf`
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 5000)
+      recordAudit({ action: 'export.pdf', module: 'export', targetLabel: a.download })
     },
     [projectTitle, canvasWidth, canvasHeight, bleedMm],
   )

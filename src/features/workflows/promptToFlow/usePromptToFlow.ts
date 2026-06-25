@@ -4,6 +4,7 @@ import type { LLMProviderId } from '@/features/ai/llmRouter'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useProgressStore } from '@/stores/progress.store'
 import { generateWorkflow } from './generateWorkflow'
+import { recordAudit } from '@/lib/auditLog'
 import { validateGraph } from './validateGraph'
 import { layoutGraph } from './layoutGraph'
 import type { ValidatedGraph } from './types'
@@ -33,6 +34,7 @@ export function usePromptToFlow(): UsePromptToFlow {
   const generate = useCallback(async (prompt: string, forceProvider?: LLMProviderId) => {
     setPhase('generating')
     setError(null)
+    recordAudit({ action: 'ai.workflow.generate', module: 'ai', targetLabel: prompt.slice(0, 80) })
     useProgressStore.getState().begin('Génération du workflow…')
     try {
       const raw = await generateWorkflow(prompt, { forceProvider })

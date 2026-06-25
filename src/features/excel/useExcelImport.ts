@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx'
 import type { ExcelSheet, ExcelColumn, ExcelRow, CellValue } from './types'
 import { detectColumnType, computeColumnStats } from './fieldDetection'
 import { useExcelStore } from '@/stores/excel.store'
+import { recordAudit } from '@/lib/auditLog'
 
 /** Parse a file into ExcelSheet[] without touching the store */
 export async function parseExcelFile(file: File): Promise<ExcelSheet[]> {
@@ -47,6 +48,7 @@ export function useExcelImport() {
       const baseName = file.name.replace(/\.[^.]+$/, '')
       setCurrentFileName(baseName)
       setSheets(sheets)
+      recordAudit({ action: 'data.dataset.import', module: 'data', targetLabel: file.name })
       return sheets
     } finally {
       setDetecting(false)

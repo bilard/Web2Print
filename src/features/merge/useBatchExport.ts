@@ -8,6 +8,7 @@ import { useEditorStore } from '@/stores/editor.store'
 import { useMergeStore, type MergeRow } from '@/stores/merge.store'
 import { useDataMerge } from './useDataMerge'
 import { resolveFileName } from './mergeEngine'
+import { recordAudit } from '@/lib/auditLog'
 
 export type ExportFormat = 'pdf' | 'pptx' | 'png'
 export type ExportMode = 'multi-page' | 'zip'
@@ -72,6 +73,7 @@ export function useBatchExport() {
       } else {
         await exportZip(selectedRows, config)
       }
+      recordAudit({ action: 'export.batch', module: 'export', meta: { format: config.format, rows: selectedRows.length } })
     } finally {
       setIsExporting(false)
       setProgress(0)

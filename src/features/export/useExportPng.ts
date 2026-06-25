@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import type { Canvas } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
+import { recordAudit } from '@/lib/auditLog'
 
 export type PngDpi = 72 | 150 | 300
 
@@ -66,6 +67,7 @@ export function useExportPng() {
     a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}_${dpi}dpi.png`
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 5000)
+    recordAudit({ action: 'export.png', module: 'export', targetLabel: a.download })
   }, [projectTitle])
 
   return { exportPng }

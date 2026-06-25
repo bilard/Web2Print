@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useExcelStore } from '@/stores/excel.store'
 import { generateJson } from '@/features/ai/llmRouter'
+import { recordAudit } from '@/lib/auditLog'
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 import {
   buildBatchPrompt, mapResults, runCompletionBatches, uniqueColumnKey,
@@ -45,6 +46,7 @@ export function useColumnCompletion() {
 
   const run = useCallback(async (input: RunInput): Promise<void> => {
     setRunning(true)
+    recordAudit({ action: 'ai.completion', module: 'ai', targetLabel: input.targetColKey, meta: { rows: input.rows.length } })
     abortRef.current.current = false
     setItems(input.rows.map((r) => ({ rowId: r._id, status: 'failed' as CompletionStatus })))
     const { activeSheetIndex } = useExcelStore.getState()

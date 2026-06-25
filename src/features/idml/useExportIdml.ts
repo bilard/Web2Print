@@ -4,6 +4,7 @@ import { getIdmlBuffer, globalIdmlSource } from './idmlSource'
 import { exportIdmlModified } from './idmlExporter'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
+import { recordAudit } from '@/lib/auditLog'
 
 export function useExportIdml() {
   const projectTitle = useEditorStore((s) => s.projectTitle)
@@ -60,7 +61,7 @@ export function useExportIdml() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     }
-
+    recordAudit({ action: 'export.idml', module: 'export', targetId: projectId ?? undefined, targetLabel: projectTitle })
   }, [projectTitle, projectId])
 
   return { exportIdml, canExportIdml }

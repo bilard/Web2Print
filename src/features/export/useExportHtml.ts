@@ -5,6 +5,7 @@ import type { Canvas, FabricObject } from 'fabric'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
+import { recordAudit } from '@/lib/auditLog'
 
 /** Génère un div positionné absolument avec le texte transparent (accessible, sélectionnable) */
 function textToHtmlOverlay(obj: FabricObject): string {
@@ -240,6 +241,7 @@ export function useExportHtml() {
     a.download = `${slug}_html.zip`
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 5000)
+    recordAudit({ action: 'export.html', module: 'export', targetLabel: a.download })
   }, [projectTitle, canvasWidth, canvasHeight])
 
   return { exportHtml }

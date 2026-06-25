@@ -7,6 +7,7 @@ import { useCallback } from 'react'
 import JSZip from 'jszip'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
+import { recordAudit } from '@/lib/auditLog'
 import { useUIStore } from '@/stores/ui.store'
 
 const PACK_TARGETS = [
@@ -88,6 +89,7 @@ export function useExportSocialPack() {
     a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}_pack_social.zip`
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 5000)
+    recordAudit({ action: 'export.social', module: 'export', targetLabel: a.download })
   }, [projectTitle])
 
   return { exportSocialPack }

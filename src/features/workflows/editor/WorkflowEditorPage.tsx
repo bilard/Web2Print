@@ -10,6 +10,7 @@ import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
 import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
+import { recordAudit } from '@/lib/auditLog'
 import { nodeRegistry } from '../registry'
 import { initWorkflowsRegistry } from '../registry/builtin'
 import { WorkflowEditor } from './WorkflowEditor'
@@ -88,6 +89,7 @@ export function WorkflowEditorPage() {
   // Exécute le workflow puis confirme le résultat : succès / avertissement / erreur.
   // stepByStep = mode debug : pause avant chaque node jusqu'au clic « Étape suivante ».
   const run = async (stepByStep = false) => {
+    recordAudit({ action: 'workflow.run', module: 'workflows', targetId: wf.id, targetLabel: wf.name })
     const outcome = await executeWorkflow(wf, stepByStep ? { middleware: [stepMiddleware] } : {})
     notifyRunOutcome(outcome, wf.name)
   }

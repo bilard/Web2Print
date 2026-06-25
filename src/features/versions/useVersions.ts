@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { globalSave } from '@/features/editor/useAutoSave'
+import { recordAudit } from '@/lib/auditLog'
 
 const MAX_VERSIONS = 20
 
@@ -101,6 +102,8 @@ export function useVersions(projectId: string | null): UseVersions {
       const snapshot = vSnap.data()?.snapshot as Record<string, unknown> | undefined
       if (!snapshot) throw new Error('Version introuvable ou vide.')
       await setDoc(doc(db, 'projects', projectId), { ...snapshot, updatedAt: Date.now() }, { merge: true })
+      // await : la page va se recharger, on s'assure que le log est parti avant.
+      await recordAudit({ action: 'library.version.restore', module: 'library', targetId: projectId, targetLabel: versionId })
       // Recharge l'éditeur : le chargement standard (sanitize + fixAndReattach) s'applique.
       window.location.reload()
     },

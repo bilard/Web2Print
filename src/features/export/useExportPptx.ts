@@ -6,6 +6,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { CANVAS_DPI } from '@/features/print/dimensions'
+import { recordAudit } from '@/lib/auditLog'
 
 // Le canvas est en pt (1 px = 1 pt = 1/72 inch).
 const pxToIn = (px: number) => px / CANVAS_DPI
@@ -151,6 +152,7 @@ export function useExportPptx() {
     a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}.pptx`
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 5000)
+    recordAudit({ action: 'export.pptx', module: 'export', targetLabel: a.download })
   }, [projectTitle, canvasWidth, canvasHeight])
 
   return { exportPptx }

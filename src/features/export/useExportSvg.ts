@@ -4,6 +4,7 @@ import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { useEditorStore } from '@/stores/editor.store'
 import { useUIStore } from '@/stores/ui.store'
 import { buildFontFaceCss } from '@/features/assets/fontBufferRegistry'
+import { recordAudit } from '@/lib/auditLog'
 
 /**
  * Pré-assigne `clipPathId` à chaque clipPath du graphe d'objets.
@@ -414,6 +415,7 @@ export function useExportSvg() {
     a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}.svg`
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
+    recordAudit({ action: 'export.svg', module: 'export', targetLabel: a.download })
   }, [projectTitle])
 
   return { exportSvg }

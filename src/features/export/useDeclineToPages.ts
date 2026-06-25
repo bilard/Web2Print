@@ -10,6 +10,7 @@ import { usePagesStore } from '@/stores/pages.store'
 import { useUIStore } from '@/stores/ui.store'
 import { relayoutToFormats } from './relayoutToFormats'
 import { projectObjectsToFormat, type DeclineTarget } from './declineLayout'
+import { recordAudit } from '@/lib/auditLog'
 import type { DesignObject } from './relayoutMultiFormat'
 
 interface SerializedCanvas {
@@ -102,6 +103,7 @@ export function useDeclineToPages() {
 
       // Le canvas affiche toujours la page source : on y recale l'index.
       setCurrentPage(Math.min(originalIndex, pages.length - 1))
+      recordAudit({ action: 'export.declines', module: 'export', meta: { created } })
       return { created, usedFallback }
     },
     [],

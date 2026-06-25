@@ -3,6 +3,7 @@ import { addDoc, collection, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
+import { recordAudit } from '@/lib/auditLog'
 import type { ProjectData } from '@/types/project'
 
 async function duplicateProject(
@@ -44,7 +45,8 @@ export function useDuplicateProject() {
 
   return useMutation({
     mutationFn: (projectId: string) => duplicateProject(user!.uid, projectId),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      recordAudit({ action: 'library.project.duplicate', module: 'library', targetId: data.id, targetLabel: data.title })
       qc.invalidateQueries({ queryKey: ['projects', user?.uid] })
       toast.success('Projet dupliqué')
     },
