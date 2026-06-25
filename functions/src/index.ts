@@ -32,6 +32,9 @@ export { telegramResponder } from './telegram/responder'
 export { googleOAuthCallback } from './google/serverAuth'
 export { mintGoogleToken } from './google/mintGoogleToken'
 
+// --- RBAC : notifications email (nouvel inscrit en attente + confirmation d'accès) ---
+export { onUserAccessChange } from './access/onUserAccessChange'
+
 // --- Workflow cron serveur ---
 export { workflowCronScheduler, runWorkflowNow } from './workflow/scheduler'
 
