@@ -2,7 +2,7 @@
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
-import { applyRowPreview, restorePreview, restoreAllPlaceholders } from './idml/preview'
+import { applyRowPreview, restorePreview, restoreAllPlaceholders, resetPreviewMemory } from './idml/preview'
 
 const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
@@ -159,13 +159,14 @@ async function refreshPreview() {
   if (!client) return
   const doc = app.activeDocument
   if (!doc) return
-  if (!byId<HTMLInputElement>('preview').checked) { restorePreview(doc); return }
+  if (!byId<HTMLInputElement>('preview').checked) { restorePreview(doc); renderFields(); return }
   const r = await client.row(docId, rowIndex)
   rowIndex = r.rowIndex; total = r.total
   const valuesByTag: Record<string, string> = {}
   for (const v of r.values) valuesByTag[slugifyTag(v.label)] = v.value
   applyRowPreview(doc, valuesByTag)
   renderRowLabel()
+  renderFields()
 }
 
 function step(delta: number) {
@@ -214,6 +215,19 @@ byId('miRestore').addEventListener('click', () => {
   const doc = app.activeDocument
   if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
 })
+
+// À la fermeture/ouverture/activation d'un document : rafraîchir la liste des
+// balises (vidée s'il n'y a plus de document actif) SANS se déconnecter.
+function onDocChanged() {
+  resetPreviewMemory()
+  byId<HTMLInputElement>('preview').checked = false
+  renderFields()
+  renderRowLabel()
+}
+try {
+  app.addEventListener('afterClose', onDocChanged)
+  app.addEventListener('afterOpen', onDocChanged)
+} catch { /* events indisponibles : ignorer */ }
 byId('restoreAll').addEventListener('click', () => {
   const doc = app.activeDocument
   if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
