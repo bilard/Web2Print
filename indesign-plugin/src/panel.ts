@@ -2,6 +2,7 @@
 import { PluginClient, type ColumnInfo, type DatasetSummary } from './lib/client'
 import { slugifyTag } from './lib/slug'
 import { applyTagToSelection, countTaggedByName, gotoFieldElement, untagField } from './idml/tagging'
+import { applyRowPreview, restorePreview, resetPreviewMemory } from './idml/preview'
 
 const { app } = require('indesign') as { app: any }
 const BASE_URL = 'https://europe-west1-web2print-6fe5a.cloudfunctions.net/pluginApi'
@@ -188,8 +189,14 @@ function renderRowLabel() {
 async function refreshPreview() {
   if (!client) return
   previewOn = byId<HTMLInputElement>('preview').checked
-  if (previewOn) await loadRowValues()
-  else rowValues = {}
+  const doc = app.activeDocument
+  if (previewOn) {
+    await loadRowValues()
+    if (doc) applyRowPreview(doc, rowValues) // écrit les valeurs DANS la page (balises conservées)
+  } else {
+    if (doc) restorePreview(doc) // remet les {{champs}} d'origine
+    rowValues = {}
+  }
   renderRowLabel()
   renderFields()
 }
@@ -197,7 +204,11 @@ async function refreshPreview() {
 async function step(delta: number) {
   if (total === 0) return
   rowIndex = Math.max(0, Math.min(rowIndex + delta, total - 1))
-  if (previewOn) await loadRowValues()
+  if (previewOn) {
+    await loadRowValues()
+    const doc = app.activeDocument
+    if (doc) applyRowPreview(doc, rowValues)
+  }
   renderRowLabel()
   renderFields()
 }
@@ -324,6 +335,7 @@ byId('miRefresh').addEventListener('click', () => { toggleMenu(false); renderFie
 // À la fermeture/ouverture d'un document : rafraîchir la liste des balises (vidée
 // s'il n'y a plus de document actif) SANS se déconnecter (le dataSet reste choisi).
 function onDocChanged() {
+  resetPreviewMemory()
   previewOn = false
   rowValues = {}
   byId<HTMLInputElement>('preview').checked = false
