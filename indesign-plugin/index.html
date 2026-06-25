@@ -63,7 +63,12 @@
         background: rgba(255,255,255,0.04); border: 1px solid transparent;
       }
       .field:hover { background: rgba(255,255,255,0.09); }
+      .field .left { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; }
       .field .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .field .type {
+        font-size: 10px; color: rgba(255,255,255,0.4); flex-shrink: 0;
+        text-transform: lowercase;
+      }
       .field.tagged {
         background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55); color: #c7c9ff;
       }
@@ -86,6 +91,7 @@
     <div id="connect">
       <input id="token" type="password" placeholder="Token w2p_…" />
       <button id="btnConnect" class="btn">Connecter</button>
+      <button id="cancelConnect" class="ghost" style="display:none">Annuler</button>
       <div id="status"></div>
     </div>
 

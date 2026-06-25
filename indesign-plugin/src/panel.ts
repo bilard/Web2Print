@@ -26,13 +26,15 @@ function showStatus(msg: string, ok = false) {
 async function connect() {
   const token = byId<HTMLInputElement>('token').value.trim()
   if (!token) { showStatus('Colle un token w2p_…'); return }
-  client = new PluginClient(BASE_URL, token)
+  const c = new PluginClient(BASE_URL, token)
   showStatus('Connexion…')
   try {
-    const datasets = await client.listDatasets()
+    const datasets = await c.listDatasets()
+    client = c // on ne remplace la session qu'en cas de succès
     fillDatasets(datasets)
     $('connect').style.display = 'none'
     $('main').style.display = 'flex'
+    showStatus('')
   } catch (e) {
     showStatus(`Connexion échouée : ${e instanceof Error ? e.message : e}`)
   }
@@ -65,12 +67,12 @@ function renderFields() {
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
 
-  // Décorer chaque champ de son nombre d'occurrences, puis remonter les posés.
-  const decorated = columns.map((c, i) => ({ c, i, n: counts[slugifyTag(c.label)] ?? 0 }))
+  // Décorer chaque champ de son nombre d'occurrences, posés en haut puis tri alphabétique.
+  const decorated = columns.map((c) => ({ c, n: counts[slugifyTag(c.label)] ?? 0 }))
   decorated.sort((a, b) => {
     const ta = a.n > 0 ? 0 : 1
     const tb = b.n > 0 ? 0 : 1
-    return ta - tb || a.i - b.i // posés d'abord, sinon ordre d'origine
+    return ta - tb || a.c.label.localeCompare(b.c.label, 'fr', { sensitivity: 'base' })
   })
 
   const addSectionLabel = (text: string) => {
@@ -89,10 +91,17 @@ function renderFields() {
     const li = document.createElement('li')
     li.className = n > 0 ? 'field tagged' : 'field'
 
+    const left = document.createElement('span')
+    left.className = 'left'
     const name = document.createElement('span')
     name.className = 'name'
     name.textContent = c.label
-    li.appendChild(name)
+    left.appendChild(name)
+    const type = document.createElement('span')
+    type.className = 'type'
+    type.textContent = c.fieldType
+    left.appendChild(type)
+    li.appendChild(left)
 
     const right = document.createElement('span')
     if (n > 0) {
@@ -137,16 +146,22 @@ function step(delta: number) {
   refreshPreview()
 }
 
-/** Paramètres : se déconnecter pour saisir un autre token. */
+/** Paramètres : revenir à la saisie pour changer de token. La session courante est
+ *  conservée tant qu'on n'a pas reconnecté → « Annuler » permet d'y revenir. */
 function changeToken() {
-  client = null
-  columns = []
-  rowIndex = 0
-  total = 0
   byId<HTMLInputElement>('token').value = ''
   $('main').style.display = 'none'
   $('connect').style.display = 'flex'
+  byId('cancelConnect').style.display = client ? 'block' : 'none'
   showStatus('Colle un nouveau token, puis Connecter.')
+}
+
+/** Annuler le changement de token : revenir à la session active. */
+function cancelConnect() {
+  if (!client) return
+  $('connect').style.display = 'none'
+  $('main').style.display = 'flex'
+  showStatus('')
 }
 
 byId('btnConnect').addEventListener('click', connect)
@@ -155,6 +170,7 @@ byId('prev').addEventListener('click', () => step(-1))
 byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
 byId('settings').addEventListener('click', changeToken)
+byId('cancelConnect').addEventListener('click', cancelConnect)
 byId('restoreAll').addEventListener('click', () => {
   const doc = app.activeDocument
   if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
