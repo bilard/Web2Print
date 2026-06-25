@@ -16,17 +16,25 @@ let total = 0
 const $ = (id: string) => document.getElementById(id) as HTMLElement
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
+/** Affiche un message dans la ligne de statut (UXP ne supporte pas alert()). */
+function showStatus(msg: string, ok = false) {
+  const el = $('status')
+  el.textContent = msg
+  el.className = ok ? 'ok' : ''
+}
+
 async function connect() {
   const token = byId<HTMLInputElement>('token').value.trim()
-  if (!token) return
+  if (!token) { showStatus('Colle un token w2p_…'); return }
   client = new PluginClient(BASE_URL, token)
+  showStatus('Connexion…')
   try {
     const datasets = await client.listDatasets()
     fillDatasets(datasets)
     $('connect').style.display = 'none'
-    $('main').style.display = 'block'
+    $('main').style.display = 'flex'
   } catch (e) {
-    alert(`Connexion échouée : ${e instanceof Error ? e.message : e}`)
+    showStatus(`Connexion échouée : ${e instanceof Error ? e.message : e}`)
   }
 }
 
@@ -56,25 +64,57 @@ function renderFields() {
   const doc = app.activeDocument
   const counts = doc ? countTaggedByName(doc) : {}
   const ul = $('fields'); ul.innerHTML = ''
-  for (const c of columns) {
-    const tagName = slugifyTag(c.label)
+
+  // Décorer chaque champ de son nombre d'occurrences, puis remonter les posés.
+  const decorated = columns.map((c, i) => ({ c, i, n: counts[slugifyTag(c.label)] ?? 0 }))
+  decorated.sort((a, b) => {
+    const ta = a.n > 0 ? 0 : 1
+    const tb = b.n > 0 ? 0 : 1
+    return ta - tb || a.i - b.i // posés d'abord, sinon ordre d'origine
+  })
+
+  const addSectionLabel = (text: string) => {
     const li = document.createElement('li')
-    const n = counts[tagName] ?? 0
-    const badge = n > 0 ? ` ✓${n > 1 ? `×${n}` : ''}` : ''
-    const btn = document.createElement('button')
-    btn.textContent = `${c.label}${badge}`
-    btn.onclick = () => {
+    li.className = 'section-label'
+    li.textContent = text
+    ul.appendChild(li)
+  }
+
+  let taggedHeaderDone = false
+  let availHeaderDone = false
+  for (const { c, n } of decorated) {
+    if (n > 0 && !taggedHeaderDone) { addSectionLabel('Champs posés'); taggedHeaderDone = true }
+    if (n === 0 && !availHeaderDone) { addSectionLabel('Disponibles'); availHeaderDone = true }
+
+    const li = document.createElement('li')
+    li.className = n > 0 ? 'field tagged' : 'field'
+
+    const name = document.createElement('span')
+    name.className = 'name'
+    name.textContent = c.label
+    li.appendChild(name)
+
+    const right = document.createElement('span')
+    if (n > 0) {
+      right.className = 'badge'
+      right.textContent = `✓${n > 1 ? ` ×${n}` : ''}`
+    } else {
+      right.className = 'add'
+      right.textContent = '+ poser'
+    }
+    li.appendChild(right)
+
+    li.onclick = () => {
       const res = applyTagToSelection(c.label)
-      if (!res.ok) alert(res.message)
+      showStatus(res.ok ? `« ${c.label} » posé` : (res.message ?? 'Échec'), res.ok)
       renderFields()
     }
-    li.appendChild(btn)
     ul.appendChild(li)
   }
 }
 
 function renderRowLabel() {
-  $('rowLabel').textContent = `${total === 0 ? 0 : rowIndex + 1}/${total}`
+  $('rowLabel').textContent = `${total === 0 ? 0 : rowIndex + 1} / ${total}`
 }
 
 async function refreshPreview() {
@@ -93,6 +133,7 @@ async function refreshPreview() {
 function step(delta: number) {
   if (total === 0) return
   rowIndex = Math.max(0, Math.min(rowIndex + delta, total - 1))
+  renderRowLabel()
   refreshPreview()
 }
 
@@ -103,5 +144,5 @@ byId('next').addEventListener('click', () => step(1))
 byId('preview').addEventListener('change', refreshPreview)
 byId('restoreAll').addEventListener('click', () => {
   const doc = app.activeDocument
-  if (doc) restoreAllPlaceholders(doc)
+  if (doc) { restoreAllPlaceholders(doc); showStatus('Placeholders {{…}} restaurés', true) }
 })

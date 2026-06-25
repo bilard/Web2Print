@@ -1,20 +1,112 @@
 <!DOCTYPE html>
 <html>
-  <head><meta charset="utf-8" /></head>
-  <body style="font-family: sans-serif; padding: 8px;">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font-family: sans-serif; margin: 0; padding: 0;
+        color: #e8e8e8; height: 100vh;
+        display: flex; flex-direction: column;
+      }
+      button { cursor: pointer; }
+      .btn { background: #6366f1; color: #fff; border: none; border-radius: 6px; padding: 7px 10px; font-size: 12px; }
+      .btn:hover { background: #5457e5; }
+
+      /* --- Écran connexion --- */
+      #connect { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+      #token {
+        width: 100%; box-sizing: border-box; padding: 7px 9px; font-size: 12px;
+        border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06); color: #e8e8e8;
+      }
+
+      /* --- Écran principal --- */
+      #main { display: none; flex: 1; flex-direction: column; min-height: 0; }
+
+      .toolbar {
+        padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      #dataset {
+        width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 12px;
+        border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06); color: #e8e8e8;
+      }
+
+      .rownav { display: flex; align-items: center; justify-content: space-between; }
+      .rownav .nav { display: flex; align-items: center; gap: 6px; }
+      .navbtn {
+        width: 28px; height: 28px; border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06);
+        color: #e8e8e8; font-size: 12px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .navbtn:hover { background: rgba(255,255,255,0.14); }
+      #rowLabel { min-width: 56px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); }
+      .preview-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+
+      /* --- Liste scrollable des champs --- */
+      #fields {
+        list-style: none; margin: 0; padding: 8px 12px;
+        overflow-y: auto; flex: 1; min-height: 0;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .section-label {
+        font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+        color: rgba(255,255,255,0.4); padding: 8px 2px 2px;
+      }
+      .field {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 7px 10px; border-radius: 6px; font-size: 12px;
+        background: rgba(255,255,255,0.04); border: 1px solid transparent;
+      }
+      .field:hover { background: rgba(255,255,255,0.09); }
+      .field .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .field.tagged {
+        background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.55); color: #c7c9ff;
+      }
+      .field .badge { font-size: 11px; color: #a5b4fc; margin-left: 8px; flex-shrink: 0; }
+      .field .add { font-size: 11px; color: rgba(255,255,255,0.5); margin-left: 8px; flex-shrink: 0; }
+
+      /* --- Pied --- */
+      .footer { padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.1); }
+      .ghost {
+        background: transparent; border: 1px solid rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.75); border-radius: 6px; padding: 7px 10px;
+        font-size: 12px; width: 100%;
+      }
+      .ghost:hover { background: rgba(255,255,255,0.06); }
+      #status { font-size: 11px; color: #f0a; min-height: 14px; padding: 0 12px 6px; }
+      #status.ok { color: #6ee7b7; }
+    </style>
+  </head>
+  <body>
     <div id="connect">
-      <input id="token" type="password" placeholder="Token w2p_…" style="width:100%" />
-      <button id="btnConnect">Connecter</button>
+      <input id="token" type="password" placeholder="Token w2p_…" />
+      <button id="btnConnect" class="btn">Connecter</button>
+      <div id="status"></div>
     </div>
-    <div id="main" style="display:none">
-      <select id="dataset"></select>
-      <div id="rowNav">
-        <button id="prev">◀</button><span id="rowLabel">0/0</span><button id="next">▶</button>
-        <label><input id="preview" type="checkbox" /> Aperçu</label>
+
+    <div id="main">
+      <div class="toolbar">
+        <select id="dataset"></select>
+        <div class="rownav">
+          <div class="nav">
+            <button id="prev" class="navbtn">◀</button>
+            <span id="rowLabel">0 / 0</span>
+            <button id="next" class="navbtn">▶</button>
+          </div>
+          <label class="preview-toggle"><input id="preview" type="checkbox" /> Aperçu</label>
+        </div>
       </div>
+
       <ul id="fields"></ul>
-      <button id="restoreAll">Restaurer tout</button>
+
+      <div class="footer">
+        <button id="restoreAll" class="ghost">Restaurer tout</button>
+      </div>
     </div>
+
     <script src="dist/panel.js"></script>
   </body>
 </html>
