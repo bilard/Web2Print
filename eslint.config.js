@@ -21,6 +21,7 @@ export default tseslint.config(
       'public/**',
       'extension/dist/**',
       'extension/src/overlay-main.ts',
+      'indesign-plugin/**',
       '*.config.{js,cjs,ts}',
       'api-server.js',
     ],
