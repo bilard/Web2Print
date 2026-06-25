@@ -16,7 +16,7 @@ interface UserDoc {
   accessBlocked?: boolean
 }
 
-const APP_URL = 'https://ibs-studio.com'
+const APP_URL = 'https://ibs-studio.com/dashboard'
 
 function escapeHtml(s: string): string {
   return s
