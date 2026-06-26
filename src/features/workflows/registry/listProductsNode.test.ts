@@ -1,6 +1,24 @@
 // src/features/workflows/registry/listProductsNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { resolveEan, pickListingUrl, parseListingItemList, mergeListing } from './listProductsNode'
+import { resolveEan, pickListingUrl, parseListingItemList, mergeListing, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProductsNode'
+
+describe('shouldRetryExtraction — relance anti faux-négatif du LLM (parité serveur)', () => {
+  it('relance : 0 produit sur contenu riche, page principale', () => {
+    expect(shouldRetryExtraction(0, 32000, true, 1)).toBe(true)
+  })
+  it('ne relance pas si des produits ont été trouvés', () => {
+    expect(shouldRetryExtraction(5, 32000, true, 1)).toBe(false)
+  })
+  it('jamais sur la pagination (0 = fin de catalogue légitime)', () => {
+    expect(shouldRetryExtraction(0, 32000, false, 1)).toBe(false)
+  })
+  it('contenu réellement maigre → pas de relance', () => {
+    expect(shouldRetryExtraction(0, RETRY_EXTRACT_MIN_CONTENT, true, 1)).toBe(false)
+  })
+  it('plafond de tentatives respecté', () => {
+    expect(shouldRetryExtraction(0, 32000, true, MAX_EXTRACT_TRIES)).toBe(false)
+  })
+})
 
 describe('pickListingUrl (découverte page liste par famille)', () => {
   it('préfère la page catégorie, écarte la fiche produit', () => {
