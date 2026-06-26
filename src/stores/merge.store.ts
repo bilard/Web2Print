@@ -114,7 +114,10 @@ export const useMergeStore = create<MergeState>((set, get) => ({
   setMergeMode: (mode: MergeMode) => set({ mergeMode: mode }),
 
   connect: (source, columns, rows) =>
-    set({ dataSource: source, columns, rows, currentRowIndex: 0, isConnected: true }),
+    // Mémoriser aussi la source comme « dernière source connue » : survit à la
+    // déconnexion (bouton « Reconnecter ») et alimente le schéma de champs des
+    // règles conditionnelles hors connexion live.
+    set({ dataSource: source, savedDataSource: source, columns, rows, currentRowIndex: 0, isConnected: true }),
 
   disconnect: () =>
     set({ dataSource: null, columns: [], rows: [], currentRowIndex: 0, isConnected: false, mergeMode: 'fabric', fieldMap: {} }),

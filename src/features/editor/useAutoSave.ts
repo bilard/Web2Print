@@ -279,7 +279,13 @@ export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {
         title,
         canvasData: json,
         charSpacingMaps: Object.keys(charSpacingMaps).length > 0 ? JSON.stringify(charSpacingMaps) : null,
-        dataSource: dataSource ? JSON.stringify(dataSource) : null,
+        // Persister la source LIVE si connectée, sinon la dernière source connue —
+        // sauvegarder en état déconnecté ne doit pas effacer la réf (sinon perte du
+        // bouton « Reconnecter » et des champs de règles au prochain chargement).
+        dataSource: (() => {
+          const ref = dataSource ?? useMergeStore.getState().savedDataSource
+          return ref ? JSON.stringify(ref) : null
+        })(),
         mergeFormulas: Object.keys(useMergeStore.getState().formulas).length > 0
           ? JSON.stringify(useMergeStore.getState().formulas) : null,
         mergeFormulaConfigs: Object.keys(useMergeStore.getState().formulaConfigs).length > 0

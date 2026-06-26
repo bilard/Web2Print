@@ -8,8 +8,9 @@ import { ChevronRight, GitBranch, Plus } from 'lucide-react'
 import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
 import { collectObjectsDeep } from '@/features/editor/deepObjects'
 import { syncToStore } from '@/features/editor/useAddObject'
-import { useMergeStore } from '@/stores/merge.store'
+import { useMergeStore, type MergeColumn } from '@/stores/merge.store'
 import { applyConditionalRulesForRow } from '@/features/merge/applyConditionalRules'
+import { loadColumnsOnly } from '@/features/merge/loadColumns'
 import type { ConditionalRule } from '@/features/merge/conditionalRules'
 import { ConditionalRuleRow } from './ConditionalRuleRow'
 
@@ -21,6 +22,21 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
   const [open, setOpen] = useState(false)
   const [rules, setRules] = useState<ConditionalRule[]>([])
   const { columns, rows, currentRowIndex, fieldMap, isConnected } = useMergeStore()
+  const savedDataSource = useMergeStore((s) => s.savedDataSource)
+
+  // Champs disponibles pour les règles : ceux de la fusion live si connectée,
+  // sinon le schéma de la dernière source connue (chargé sans aperçu). Permet de
+  // configurer des règles — même sur un calque graphique — sans reconnexion.
+  const [schemaColumns, setSchemaColumns] = useState<MergeColumn[]>([])
+  useEffect(() => {
+    if (columns.length || !savedDataSource) { setSchemaColumns([]); return }
+    let cancelled = false
+    loadColumnsOnly(savedDataSource)
+      .then((cols) => { if (!cancelled) setSchemaColumns(cols) })
+      .catch(() => { if (!cancelled) setSchemaColumns([]) })
+    return () => { cancelled = true }
+  }, [columns.length, savedDataSource])
+  const availableColumns = columns.length ? columns : schemaColumns
 
   const canvas = globalFabricCanvas
   const obj = canvas && selectedObjectId
@@ -58,7 +74,7 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
     ...rules,
     {
       id: newRuleId(),
-      field: columns[0]?.key ?? '',
+      field: availableColumns[0]?.key ?? '',
       operator: 'contains',
       value: '',
       action: { type: 'hide' },
@@ -89,9 +105,15 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
 
       {open && (
         <div className="flex flex-col gap-2">
-          {!isConnected && (
+          {!isConnected && availableColumns.length > 0 && (
             <p className="text-[10px] text-white/40 leading-snug">
-              Connectez une source de données pour que les règles s'évaluent à la fusion.
+              Les champs proviennent de « {savedDataSource?.fileName} ». Les règles s'évaluent
+              à la fusion (reconnectez la source pour l'aperçu live).
+            </p>
+          )}
+          {!isConnected && availableColumns.length === 0 && (
+            <p className="text-[10px] text-white/40 leading-snug">
+              Connectez une source de données pour choisir un champ et que les règles s'évaluent.
             </p>
           )}
           {conflictProp && (
@@ -104,7 +126,7 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
             <ConditionalRuleRow
               key={rule.id}
               rule={rule}
-              columns={columns}
+              columns={availableColumns}
               onChange={(next) => persist(rules.map((r) => (r.id === next.id ? next : r)))}
               onRemove={() => persist(rules.filter((r) => r.id !== rule.id))}
             />
