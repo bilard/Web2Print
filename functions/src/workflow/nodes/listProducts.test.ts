@@ -1,6 +1,6 @@
 // functions/src/workflow/nodes/listProducts.test.ts
 import { describe, it, expect } from 'vitest'
-import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing, shouldEscalateToBrowser, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProducts'
+import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProducts'
 import { htmlToText } from '../brightData'
 
 describe('priceMarkerCount — détection de grille produit maigre', () => {
@@ -36,16 +36,18 @@ describe('priceMarkerCount — détection de grille produit maigre', () => {
 })
 
 describe('shouldEscalateToBrowser — escalade rendu JS ciblée (anti-surcoût)', () => {
-  it('escalade quand la page PRINCIPALE ne sort AUCUN produit (grille 100 % JS, ex Leroy Merlin)', () => {
-    expect(shouldEscalateToBrowser(0, true)).toBe(true)
+  it('escalade sur la page PRINCIPALE quand le résultat est maigre (vide OU partiel, ex Leroy Merlin 5)', () => {
+    expect(shouldEscalateToBrowser(0, true)).toBe(true)  // grille 100 % JS
+    expect(shouldEscalateToBrowser(5, true)).toBe(true)  // partielle (SSR/sponsorisés seuls)
   })
-  it('non-régression : des produits trouvés → PAS d’escalade (zéro surcoût Castorama/Jardiland)', () => {
-    expect(shouldEscalateToBrowser(24, true)).toBe(false)
-    expect(shouldEscalateToBrowser(1, true)).toBe(false)
+  it('non-régression : une grille normale → PAS d’escalade (zéro surcoût Castorama ~11/Jardiland ~47)', () => {
+    expect(shouldEscalateToBrowser(ESCALATE_BELOW_COUNT, true)).toBe(false) // au seuil = pas d'escalade
+    expect(shouldEscalateToBrowser(11, true)).toBe(false)
+    expect(shouldEscalateToBrowser(47, true)).toBe(false)
   })
-  it('garde-fou coût : JAMAIS sur les pages de pagination (0 produit = fin de catalogue, normal)', () => {
+  it('garde-fou coût : JAMAIS sur les pages de pagination (peu/0 produit = fin de catalogue, normal)', () => {
     expect(shouldEscalateToBrowser(0, false)).toBe(false)
-    expect(shouldEscalateToBrowser(24, false)).toBe(false)
+    expect(shouldEscalateToBrowser(5, false)).toBe(false)
   })
 })
 

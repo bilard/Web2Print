@@ -214,6 +214,37 @@ export function shouldRetryExtraction(found: number, contentLength: number, allo
   return found === 0 && allowRetry && contentLength > RETRY_EXTRACT_MIN_CONTENT && triesSoFar < MAX_EXTRACT_TRIES
 }
 
+/** En dessous de ce nombre de produits sur la page principale, la grille est jugée
+ *  ANORMALEMENT MAIGRE (vide = rendue 100 % JS, ou partielle = le Web Unlocker n'a rendu que
+ *  les produits SSR/sponsorisés — cf. Leroy Merlin le soir : 5 alors que la page en a 24+).
+ *  Seuil bas pour épargner les grilles normales (Castorama ~11, Jardiland ~47). Jumeau serveur. */
+export const ESCALATE_BELOW_COUNT = 8
+/** Faut-il tenter le Scraping Browser (rendu JS) ? Page principale uniquement, résultat maigre. */
+export function shouldEscalateToBrowser(productCount: number, isMainPage: boolean): boolean {
+  return productCount < ESCALATE_BELOW_COUNT && isMainPage
+}
+
+/** Réduit du HTML brut au texte significatif pour l'extraction LLM (jumeau de
+ *  functions/src/workflow/brightData.ts) : retire script/style/head, garde liens + sources
+ *  d'images (le chemin image porte souvent l'EAN), aplatit les espaces. */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<head[\s\S]*?<\/head>/gi, ' ')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>/gi, ' [$1] ')
+    .replace(/<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi, ' [$1] ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&euro;/gi, '€')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 const COLUMNS: ExcelColumn[] = [
   { key: 'site', label: 'Site', fieldType: 'text', detectedType: 'text', isPrimary: false, width: 160 },
   { key: 'name', label: 'Produit', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 320 },
@@ -381,13 +412,52 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
     }
 
     const { readPageWithEscalation } = await import('@/features/scraping/readPageWithEscalation')
-    const { brightDataScrapeHtml } = await import('@/features/scraping/core/brightDataFallback')
+    const { brightDataScrapeHtml, forceScrapingBrowserHtml } = await import('@/features/scraping/core/brightDataFallback')
     const allRows: ExcelRow[] = []
     const seen = new Set<string>()
     let rowId = 0
     // Modèles LLM réellement utilisés (diagnostic visible dans le log de synthèse : confirme
     // que la bascule preferProviders utilise bien gemini-3.1-pro et non le repli deepseek).
     const modelsSeen = new Set<string>()
+
+    // Extraction LLM d'une LISTE (JSON exhaustif) : modèle fiable d'abord (gemini-3.1-pro via
+    // forceProvider, cascade en repli) + relance anti faux-négatif sur la page principale.
+    const runExtraction = async (context: string, label: string, allowRetry: boolean): Promise<{ products: LdProduct[]; error: unknown }> => {
+      let products: LdProduct[] = []
+      let error: unknown = null
+      for (let tries = 0; ; tries++) {
+        try {
+          const extracted = await generateJson<Extracted>({
+            task: 'product.enrichment',
+            version: 'listProducts.extract.v1',
+            prompt:
+              'Voici le contenu MARKDOWN d’une page LISTE / catégorie d’un site e-commerce. ' +
+              'Extrais TOUS les produits réellement listés sur cette page (ignore le menu de navigation, ' +
+              'le pied de page, les bannières promo génériques et les blocs « vous aimerez aussi »). ' +
+              'Pour chaque produit : name = intitulé complet ; brand = marque ; ean = code EAN à 13 chiffres ' +
+              'UNIQUEMENT s’il apparaît LITTÉRALEMENT dans l’URL de la fiche (ex : « 4892210822604_CAFR.prd ») ou le nom de fichier image — ' +
+              'ne le devine JAMAIS, ne le reconstitue pas : sinon "" ; ' +
+              'price = prix de vente ACTUEL en euros (s’il y a un prix barré et un prix promo, prends TOUJOURS le plus bas, le prix promo) ; ' +
+              'originalPrice = le prix D’ORIGINE barré (avant réduction) s’il est affiché barré au-dessus du prix actuel, sinon 0 ; ' +
+              'url = lien absolu de la fiche produit ; image = URL absolue de l’image du produit ' +
+              '(son chemin contient souvent l’EAN même quand l’URL fiche ne l’a pas).\n\n' +
+              `## CONTENU\n${context}`,
+            schema: ExtractedSchema,
+            schemaForLLM: EXTRACTED_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
+            forceProvider: 'gemini',
+            onProviderUsed: ({ model }) => modelsSeen.add(model),
+          })
+          products = extracted.products ?? []
+          error = null
+        } catch (e) {
+          error = e
+          products = []
+        }
+        if (!shouldRetryExtraction(products.length, context.length, allowRetry, tries + 1)) break
+        ctx.log('info', `${label} : 0 produit sur ${context.length} chars → nouvelle tentative d’extraction (${tries + 2}/${MAX_EXTRACT_TRIES}) — le LLM rend parfois une liste vide à tort.`)
+      }
+      return { products, error }
+    }
 
     for (let i = 0; i < pages.length; i++) {
       if (ctx.signal.aborted) break
@@ -428,49 +498,34 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       const context = markdown.length > 28000 ? markdown.slice(0, 28000) : markdown
       ctx.reportConnector?.('llm')
       // Extraction d'une LISTE = JSON exhaustif non déterministe : deepseek-chat sous-extrait
-      // (Leroy Merlin : 0/5/24 sur le même markdown). On privilégie un modèle fiable en JSON
-      // (gemini-3.1-pro via forceProvider, cascade en repli) et on relance tant qu'un contenu
-      // substantiel sort 0 produit sur la page principale.
-      let llmProducts: LdProduct[] = []
-      let llmError: unknown = null
-      for (let tries = 0; ; tries++) {
-        try {
-          const extracted = await generateJson<Extracted>({
-            task: 'product.enrichment',
-            version: 'listProducts.extract.v1',
-            prompt:
-              'Voici le contenu MARKDOWN d’une page LISTE / catégorie d’un site e-commerce. ' +
-              'Extrais TOUS les produits réellement listés sur cette page (ignore le menu de navigation, ' +
-              'le pied de page, les bannières promo génériques et les blocs « vous aimerez aussi »). ' +
-              'Pour chaque produit : name = intitulé complet ; brand = marque ; ean = code EAN à 13 chiffres ' +
-              'UNIQUEMENT s’il apparaît LITTÉRALEMENT dans l’URL de la fiche (ex : « 4892210822604_CAFR.prd ») ou le nom de fichier image — ' +
-              'ne le devine JAMAIS, ne le reconstitue pas : sinon "" ; ' +
-              'price = prix de vente ACTUEL en euros (s’il y a un prix barré et un prix promo, prends TOUJOURS le plus bas, le prix promo) ; ' +
-              'originalPrice = le prix D’ORIGINE barré (avant réduction) s’il est affiché barré au-dessus du prix actuel, sinon 0 ; ' +
-              'url = lien absolu de la fiche produit ; image = URL absolue de l’image du produit ' +
-              '(son chemin contient souvent l’EAN même quand l’URL fiche ne l’a pas).\n\n' +
-              `## CONTENU\n${context}`,
-            schema: ExtractedSchema,
-            schemaForLLM: EXTRACTED_SCHEMA_FOR_LLM as unknown as Record<string, unknown>,
-            forceProvider: 'gemini',
-            onProviderUsed: ({ model }) => modelsSeen.add(model),
-          })
-          llmProducts = extracted.products ?? []
-          llmError = null
-        } catch (e) {
-          llmError = e
-          llmProducts = []
-        }
-        if (!shouldRetryExtraction(llmProducts.length, context.length, isMain, tries + 1)) break
-        ctx.log('info', `${site} : 0 produit sur ${context.length} chars → nouvelle tentative d’extraction (${tries + 2}/${MAX_EXTRACT_TRIES}) — le LLM rend parfois une liste vide à tort.`)
-      }
+      // (Leroy Merlin : 0/5/24 sur le même markdown). On privilégie gemini-3.1-pro et on relance
+      // tant qu'un contenu substantiel sort 0 produit (cf. runExtraction).
+      const { products: llmProducts, error: llmError } = await runExtraction(context, site, isMain)
       if (llmError && llmProducts.length === 0) {
         // L'ItemList déterministe sauve la page même si le LLM échoue.
         if (ld.length === 0) { ctx.log('error', `Extraction LLM échouée pour ${site} : ${llmError instanceof Error ? llmError.message : String(llmError)}`); continue }
         ctx.log('warn', `Extraction LLM échouée pour ${site} (${llmError instanceof Error ? llmError.message : String(llmError)}) — repli sur l'ItemList JSON-LD.`)
       }
 
-      const products = mergeListing(ld, llmProducts)
+      let products = mergeListing(ld, llmProducts)
+      // Escalade rendu JS sur résultat MAIGRE (page principale) : le Web Unlocker peut ne rendre
+      // qu'une grille partielle (produits SSR/sponsorisés — ex Leroy Merlin le soir : 5 / 24).
+      // Le Scraping Browser (navigateur réel) rend la grille complète. On ne REMPLACE que s'il
+      // ramène STRICTEMENT PLUS → aucune régression, coût payé uniquement sur un listing maigre.
+      if (shouldEscalateToBrowser(products.length, isMain)) {
+        ctx.log('info', `${site} : ${products.length} produit(s) (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
+        const renderedHtml = await forceScrapingBrowserHtml(url)
+        if (renderedHtml) {
+          const renderedText = htmlToText(renderedHtml).slice(0, 28000)
+          const ld2 = parseListingItemList(renderedHtml)
+          const { products: llm2 } = await runExtraction(renderedText, `${site} (rendu JS)`, true)
+          const products2 = mergeListing(ld2, llm2)
+          if (products2.length > products.length) {
+            ctx.log('info', `${site} : ${products2.length} produit(s) via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${products.length}).`)
+            products = products2
+          }
+        }
+      }
       let added = 0
       for (const p of products) {
         const name = (p.name ?? '').trim()

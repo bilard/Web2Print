@@ -127,6 +127,19 @@ const callScrapingBrowser = httpsCallable<{ url: string }, { html: string; durat
   { timeout: 300_000 },
 )
 
+/** FORCE le Scraping Browser (rendu JS complet, sans passer par le Web Unlocker HTTP).
+ *  Pour les pages dont la grille est injectée 100 % côté client et que le Web Unlocker ne
+ *  rend que partiellement (ex Leroy Merlin /search : produits SSR/sponsorisés seuls). Coûteux
+ *  (navigateur réel) → à n'appeler qu'en dernier recours, sur résultat maigre. '' / null si KO. */
+export async function forceScrapingBrowserHtml(url: string): Promise<string | null> {
+  try {
+    const r = await callScrapingBrowser({ url })
+    return r.data?.html?.trim() ? r.data.html : null
+  } catch {
+    return null
+  }
+}
+
 /** Metadata du dernier appel réussi — utile pour debug / monitoring. */
 let lastSuccess: { country: string; attempts: number; durationMs: number; lengthBytes: number; source?: 'web-unlocker' | 'scraping-browser' } | null = null
 export function getLastBrightDataSuccess() {

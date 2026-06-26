@@ -1,6 +1,33 @@
 // src/features/workflows/registry/listProductsNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { resolveEan, pickListingUrl, parseListingItemList, mergeListing, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProductsNode'
+import { resolveEan, pickListingUrl, parseListingItemList, mergeListing, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, htmlToText } from './listProductsNode'
+
+describe('shouldEscalateToBrowser — escalade rendu JS sur résultat maigre (parité serveur)', () => {
+  it('escalade sur la page principale si maigre (vide ou partiel, ex Leroy Merlin 5)', () => {
+    expect(shouldEscalateToBrowser(0, true)).toBe(true)
+    expect(shouldEscalateToBrowser(5, true)).toBe(true)
+  })
+  it('pas d’escalade pour une grille normale (Castorama ~11, Jardiland ~47)', () => {
+    expect(shouldEscalateToBrowser(ESCALATE_BELOW_COUNT, true)).toBe(false)
+    expect(shouldEscalateToBrowser(11, true)).toBe(false)
+    expect(shouldEscalateToBrowser(47, true)).toBe(false)
+  })
+  it('jamais sur la pagination', () => {
+    expect(shouldEscalateToBrowser(0, false)).toBe(false)
+    expect(shouldEscalateToBrowser(5, false)).toBe(false)
+  })
+})
+
+describe('htmlToText — réduction HTML → texte pour le LLM', () => {
+  it('retire le markup/scripts mais garde le texte et les marqueurs de prix', () => {
+    const html = '<html><head><title>x</title></head><body><script>junk</script><article><h3>Tondeuse RYOBI</h3><span>349 €</span></article></body></html>'
+    const t = htmlToText(html)
+    expect(t).toContain('Tondeuse RYOBI')
+    expect(t).toContain('349 €')
+    expect(t).not.toContain('junk')
+    expect(t).not.toContain('<')
+  })
+})
 
 describe('shouldRetryExtraction — relance anti faux-négatif du LLM (parité serveur)', () => {
   it('relance : 0 produit sur contenu riche, page principale', () => {

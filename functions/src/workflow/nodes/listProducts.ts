@@ -285,15 +285,20 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<{ text: strin
   return { text: content, html }
 }
 
+/** En dessous de ce nombre de produits sur la page principale, la grille est jugée
+ *  ANORMALEMENT MAIGRE : soit vide (rendue 100 % en JS), soit partielle (le Web Unlocker
+ *  n'a rendu que les produits SSR/sponsorisés — cf. Leroy Merlin le soir : 5 alors que la
+ *  page en a 24+). On tente alors le Scraping Browser. Seuil bas pour ne PAS toucher les
+ *  sites qui sortent une grille normale (Castorama ~11, Jardiland ~47) ; le garde
+ *  « remplace si STRICTEMENT meilleur » (cf. scrapePage) annule tout risque de régression :
+ *  on ne paie le Scraping Browser que sur un listing maigre et on ne garde son résultat
+ *  que s'il en ramène davantage. */
+export const ESCALATE_BELOW_COUNT = 8
 /** Faut-il escalader vers le Scraping Browser (rendu JS, coûteux) pour une page liste ?
- *  OUI seulement si la page PRINCIPALE (pas la pagination) n'a sorti AUCUN produit via
- *  Jina + Web Unlocker — signature d'une grille rendue 100 % côté client (ex Leroy Merlin
- *  /search) que ni Jina ni le Web Unlocker HTTP ne matérialisent. Le surcoût n'est donc
- *  payé que quand le résultat serait de toute façon vide : ZÉRO impact sur les sites qui
- *  sortent déjà des produits (Castorama, Jardiland) et JAMAIS sur les pages 2..N (où
- *  0 produit = fin de catalogue, comportement normal). */
+ *  OUI seulement sur la page PRINCIPALE (jamais la pagination, où peu/0 produit = fin de
+ *  catalogue) quand le résultat est anormalement maigre (< ESCALATE_BELOW_COUNT). */
 export function shouldEscalateToBrowser(productCount: number, isMainPage: boolean): boolean {
-  return productCount === 0 && isMainPage
+  return productCount < ESCALATE_BELOW_COUNT && isMainPage
 }
 
 /** Au-delà de ce nombre de chars, un contenu qui sort « 0 produit » est presque toujours
@@ -454,17 +459,18 @@ registerServerNode({
     const scrapePage = async (url: string, site: string, isMainPage: boolean): Promise<ExtractedProduct[]> => {
       const { text, html } = await fetchListingContent(ctx, url)
       let products = await extractFrom(html, text, site, isMainPage)
-      // Escalade rendu JS : une grille injectée 100 % côté client (ex Leroy Merlin) n'est
-      // matérialisée ni par Jina ni par le Web Unlocker HTTP → 0 produit malgré un contenu
-      // volumineux. Dernier recours : le Scraping Browser (Chrome distant) rend le DOM, on
-      // ré-extrait. Ciblé page principale uniquement (cf. shouldEscalateToBrowser).
+      // Escalade rendu JS : grille rendue en JS (vide) OU partielle (le Web Unlocker n'a
+      // rendu que les produits SSR/sponsorisés — ex Leroy Merlin le soir : 5 alors que la
+      // page en a 24+). Dernier recours : le Scraping Browser (Chrome distant) rend le DOM,
+      // on ré-extrait. Ciblé page principale + résultat maigre (cf. shouldEscalateToBrowser) ;
+      // on ne REMPLACE que si le rendu JS ramène STRICTEMENT PLUS → zéro régression.
       if (shouldEscalateToBrowser(products.length, isMainPage)) {
-        ctx.log('info', `${site} : 0 produit via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
+        ctx.log('info', `${site} : ${products.length} produit(s) (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
         const rendered = (await scrapingBrowserRead(url)).html
         if (rendered.trim()) {
           const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`, true)
-          if (products2.length > 0) {
-            ctx.log('info', `${site} : ${products2.length} produit(s) via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant).`)
+          if (products2.length > products.length) {
+            ctx.log('info', `${site} : ${products2.length} produit(s) via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${products.length}).`)
             products = products2
           }
         }
