@@ -143,17 +143,19 @@ export function remapStyles(
         value = formatFormulaResult(value, formulaConfigs[ph.key])
       }
 
-      // Appliquer le style du placeholder à tous les caractères résolus.
-      // Chercher le style au début du placeholder, sinon le premier style de la ligne.
+      // Style à appliquer aux caractères résolus du placeholder : celui posé au
+      // début du placeholder, sinon un style situé DANS la plage du placeholder
+      // (couvre un décalage d'indices après save/load). Si AUCUN style propre au
+      // placeholder, on laisse les caractères SANS style → ils héritent de la police
+      // de base du bloc. NE PAS retomber sur un style hors-plage (ex. le « % »
+      // littéral qui suit) : cela écraserait la taille des chiffres et casserait la
+      // hiérarchie (ex. « 22 » qui prend la taille du « % »).
       let phStyle = lineStyles?.[ph.start]
       if (!phStyle && lineStyles) {
-        // Fallback: premier style disponible sur la ligne (couvre le cas où
-        // les indices ont été décalés lors d'un cycle save/load)
         const keys = Object.keys(lineStyles).map(Number).sort((a, b) => a - b)
         for (const k of keys) {
           if (k >= ph.start && k < ph.end) { phStyle = lineStyles[k]; break }
         }
-        if (!phStyle && keys.length > 0) phStyle = lineStyles[keys[0]]
       }
       for (let i = 0; i < value.length; i++) {
         if (phStyle) newLine[rPos + i] = { ...phStyle }

@@ -180,7 +180,11 @@ function fitTextToZone(obj: IText, zone: FitZone, baseFontSize: number): void {
     obj.set('fontSize', clampFitFont(baseFontSize * scale))
     for (const s of styleSizes) {
       const cell = anyObj.styles?.[s.l]?.[s.c]
-      if (cell) cell.fontSize = clampFitFont(s.size * scale)
+      // À l'échelle 1 (aucun rétrécissement), on PRÉSERVE la taille d'origine du
+      // caractère — sinon le plancher lisible (clampFitFont) remonterait un style
+      // volontairement petit (ex. « d'économie » à 3 px → 6 px) et casserait la
+      // hiérarchie du gabarit. Le plancher ne s'applique qu'en cas de réduction.
+      if (cell) cell.fontSize = scale === 1 ? s.size : clampFitFont(s.size * scale)
     }
     obj.set(isWrap ? { width: zone.width, scaleX: 1, scaleY: 1 } : { scaleX: 1, scaleY: 1 })
     anyObj.initDimensions?.()
