@@ -1,6 +1,6 @@
 // functions/src/workflow/nodes/listProducts.test.ts
 import { describe, it, expect } from 'vitest'
-import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing, shouldEscalateToBrowser } from './listProducts'
+import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing, shouldEscalateToBrowser, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProducts'
 import { htmlToText } from '../brightData'
 
 describe('priceMarkerCount — détection de grille produit maigre', () => {
@@ -46,6 +46,26 @@ describe('shouldEscalateToBrowser — escalade rendu JS ciblée (anti-surcoût)'
   it('garde-fou coût : JAMAIS sur les pages de pagination (0 produit = fin de catalogue, normal)', () => {
     expect(shouldEscalateToBrowser(0, false)).toBe(false)
     expect(shouldEscalateToBrowser(24, false)).toBe(false)
+  })
+})
+
+describe('shouldRetryExtraction — relance anti faux-négatif du LLM', () => {
+  const BIG = RETRY_EXTRACT_MIN_CONTENT + 1
+  it('relance : 0 produit sur un contenu riche, page principale (cas Leroy Merlin ~32k → 0/5/24 selon le tirage)', () => {
+    expect(shouldRetryExtraction(0, 32000, true, 1)).toBe(true)
+    expect(shouldRetryExtraction(0, BIG, true, MAX_EXTRACT_TRIES - 1)).toBe(true)
+  })
+  it('ne relance pas si des produits ont été trouvés', () => {
+    expect(shouldRetryExtraction(5, 32000, true, 1)).toBe(false)
+  })
+  it('garde-fou coût : pas de relance sur la pagination (0 = fin de catalogue, légitime)', () => {
+    expect(shouldRetryExtraction(0, 32000, false, 1)).toBe(false)
+  })
+  it('garde-fou : contenu réellement maigre → pas de relance (page vraiment vide)', () => {
+    expect(shouldRetryExtraction(0, RETRY_EXTRACT_MIN_CONTENT, true, 1)).toBe(false)
+  })
+  it('plafond de tentatives respecté (1 essai + 2 relances)', () => {
+    expect(shouldRetryExtraction(0, 32000, true, MAX_EXTRACT_TRIES)).toBe(false)
   })
 })
 

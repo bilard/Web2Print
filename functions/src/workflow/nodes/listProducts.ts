@@ -296,8 +296,25 @@ export function shouldEscalateToBrowser(productCount: number, isMainPage: boolea
   return productCount === 0 && isMainPage
 }
 
-/** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours). */
-async function extractProducts(ctx: Ctx, content: string, label: string): Promise<ExtractedProduct[]> {
+/** Au-delà de ce nombre de chars, un contenu qui sort « 0 produit » est presque toujours
+ *  un FAUX NÉGATIF du LLM (deepseek/gemini rendent par intermittence une liste vide sur un
+ *  markdown pourtant riche — cf. Leroy Merlin : même page ~32k → 0, 5 ou 24 selon le tirage)
+ *  plutôt qu'une page réellement vide → on relance l'extraction. */
+export const RETRY_EXTRACT_MIN_CONTENT = 1500
+/** Nombre maximum de tentatives d'extraction LLM sur un même contenu (1 essai + 2 relances). */
+export const MAX_EXTRACT_TRIES = 3
+
+/** Faut-il relancer l'extraction LLM ? OUI seulement si elle a sorti 0 produit sur un
+ *  contenu SUBSTANTIEL, sur la page principale, et sous le plafond de tentatives. Cible le
+ *  non-déterminisme du LLM sans gaspiller d'appels sur les pages de pagination vides (fin
+ *  de catalogue = 0 produit légitime) ni sur des contenus réellement maigres. */
+export function shouldRetryExtraction(found: number, contentLength: number, allowRetry: boolean, triesSoFar: number): boolean {
+  return found === 0 && allowRetry && contentLength > RETRY_EXTRACT_MIN_CONTENT && triesSoFar < MAX_EXTRACT_TRIES
+}
+
+/** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours).
+ *  `allowRetry` (page principale) relance l'extraction si un contenu riche sort 0 produit. */
+async function extractProducts(ctx: Ctx, content: string, label: string, allowRetry = false): Promise<ExtractedProduct[]> {
   ctx.reportConnector?.('llm')
   const prompt =
     'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
@@ -313,20 +330,27 @@ async function extractProducts(ctx: Ctx, content: string, label: string): Promis
     'IMPÉRATIF : réponds par l’objet JSON BRUT et lui seul — commence par « { » et finis par « } », ' +
     'AUCUN texte avant/après, AUCUN bloc de code markdown (pas de ```), JSON compact.\n\n--- CONTENU ---\n' +
     content.slice(0, 28000)
-  const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 24576 })
-  const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
-  let products = Array.isArray(parsed?.products) ? parsed!.products! : []
-  if (products.length > 0) {
-    ctx.log('info', `${label} : ${products.length} produit(s), parse direct [${model}, stop=${stopReason ?? '?'}, markdown ${content.length} chars].`)
-  } else {
+  const runOnce = async (): Promise<ExtractedProduct[]> => {
+    const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 24576 })
+    const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
+    const direct = Array.isArray(parsed?.products) ? parsed!.products! : []
+    if (direct.length > 0) {
+      ctx.log('info', `${label} : ${direct.length} produit(s), parse direct [${model}, stop=${stopReason ?? '?'}, markdown ${content.length} chars].`)
+      return direct
+    }
     const recovered = recoverJsonObjects(text) as ExtractedProduct[]
     if (recovered.length > 0) {
-      products = recovered
       // Pas une erreur : réponse LLM tronquée (limite de sortie), produits récupérés intacts.
       ctx.log('info', `${label} : ${recovered.length} produit(s) extrait(s) [${model}] — réponse tronquée (${text.length} chars), récupération OK.`)
-    } else {
-      ctx.log('warn', `${label} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length}].`)
+      return recovered
     }
+    ctx.log('warn', `${label} : 0 produit [${model}, stop=${stopReason ?? '?'}, ${text.length} chars, markdown ${content.length}].`)
+    return []
+  }
+  let products = await runOnce()
+  for (let tries = 1; shouldRetryExtraction(products.length, content.length, allowRetry, tries); tries++) {
+    ctx.log('info', `${label} : 0 produit sur ${content.length} chars → nouvelle tentative d’extraction (${tries + 1}/${MAX_EXTRACT_TRIES}) — le LLM rend parfois une liste vide à tort.`)
+    products = await runOnce()
   }
   return products
 }
@@ -403,19 +427,19 @@ registerServerNode({
     }
     // Extraction depuis un contenu déjà récupéré : 1) JSON-LD ItemList (déterministe, EAN
     // propres) depuis le HTML brut, 2) LLM sur le texte (prix barré + sites sans ItemList).
-    const extractFrom = async (html: string, text: string, label: string): Promise<ExtractedProduct[]> => {
+    const extractFrom = async (html: string, text: string, label: string, allowRetry: boolean): Promise<ExtractedProduct[]> => {
       const ld = parseListingItemList(html)
       if (ld.length) ctx.log('info', `${label} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
       let llm: ExtractedProduct[] = []
       if (text.trim()) {
-        try { llm = await extractProducts(ctx, text, label) }
+        try { llm = await extractProducts(ctx, text, label, allowRetry) }
         catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${label} : ${err instanceof Error ? err.message : err}`) }
       }
       return mergeListing(ld, llm)
     }
     const scrapePage = async (url: string, site: string, isMainPage: boolean): Promise<ExtractedProduct[]> => {
       const { text, html } = await fetchListingContent(ctx, url)
-      let products = await extractFrom(html, text, site)
+      let products = await extractFrom(html, text, site, isMainPage)
       // Escalade rendu JS : une grille injectée 100 % côté client (ex Leroy Merlin) n'est
       // matérialisée ni par Jina ni par le Web Unlocker HTTP → 0 produit malgré un contenu
       // volumineux. Dernier recours : le Scraping Browser (Chrome distant) rend le DOM, on
@@ -424,7 +448,7 @@ registerServerNode({
         ctx.log('info', `${site} : 0 produit via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
         const rendered = (await scrapingBrowserRead(url)).html
         if (rendered.trim()) {
-          const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`)
+          const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`, true)
           if (products2.length > 0) {
             ctx.log('info', `${site} : ${products2.length} produit(s) via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant).`)
             products = products2
