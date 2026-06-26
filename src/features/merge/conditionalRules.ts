@@ -129,12 +129,19 @@ export interface RuleEffect {
 
 // ── Évaluation ───────────────────────────────────────────────────────────────
 
-/** Coerce une valeur en nombre, tolérant la virgule décimale FR. NaN si non numérique. */
+/**
+ * Coerce une valeur en nombre, tolérante aux formats réels saisis/affichés :
+ * devises et symboles (« 100€,00 », « 84,99 DT », « 1 234,56 € »), espaces et
+ * séparateurs de milliers. On ne garde que chiffres / séparateurs / signe ; la
+ * virgule est le séparateur décimal FR (les points deviennent des milliers).
+ * NaN si rien d'exploitable.
+ */
 function toNumber(v: unknown): number {
   if (typeof v === 'number') return v
   if (v == null) return NaN
-  const s = String(v).trim().replace(/\s/g, '').replace(',', '.')
-  if (s === '') return NaN
+  let s = String(v).replace(/[^0-9.,-]/g, '')
+  if (s === '' || s === '-' || s === '.' || s === ',') return NaN
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.')
   return Number(s)
 }
 

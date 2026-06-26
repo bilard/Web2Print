@@ -54,6 +54,15 @@ describe('evaluateCondition — numérique', () => {
     expect(evaluateCondition('neq', '12,50', '12.6')).toBe(true)
   })
 
+  it('tolère les valeurs formatées (devise, € au milieu, milliers)', () => {
+    // Cas réel : l'utilisateur saisit la valeur au format prix affiché « 100€,00 ».
+    expect(evaluateCondition('lt', 84.99, '100€,00')).toBe(true)
+    expect(evaluateCondition('lt', '84€,99', '100')).toBe(true)
+    expect(evaluateCondition('gte', '1 234,56 €', '1000')).toBe(true)
+    expect(evaluateCondition('eq', '12,50 DT', '12.5')).toBe(true)
+    expect(evaluateCondition('lt', '84,99', '100€,00')).toBe(true)
+  })
+
   it('valeur non numérique ⇒ false (jamais un faux positif)', () => {
     expect(evaluateCondition('gt', 'abc', '5')).toBe(false)
     expect(evaluateCondition('eq', '', '0')).toBe(false)
