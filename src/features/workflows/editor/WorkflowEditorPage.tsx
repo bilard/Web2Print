@@ -7,6 +7,7 @@ import { ReactFlowProvider } from '@xyflow/react'
 import { useAuthStore } from '@/stores/auth.store'
 import { getWorkflow, saveWorkflow } from '../persistence/workflowsApi'
 import { useWorkflowStore, startAutosave } from '../persistence/workflow.store'
+import { loadLatestRunStates } from '../persistence/runHistoryClient'
 import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
@@ -55,6 +56,15 @@ export function WorkflowEditorPage() {
     getWorkflow(uid, id).then((w) => {
       setCurrent(w)
       setLoading(false)
+    })
+    // Réhydrate l'aperçu de l'éditeur depuis le DERNIER run durable (workflowRuns) : sinon,
+    // après un ⌘R, les cartes repartent « Sheet vide » alors que le run a bien produit des
+    // données. `hydrateServerRun` ne fait rien si un run est déjà en cours (garde isRunning) ;
+    // un écho serveur réellement plus récent reprend la main ensuite (cf. useServerRunLive).
+    loadLatestRunStates(uid, id).then((latest) => {
+      if (latest && !useRunContext.getState().isRunning) {
+        useRunContext.getState().hydrateServerRun(latest.states, { reset: true })
+      }
     })
     return () => setCurrent(null)
   }, [uid, id, setCurrent])

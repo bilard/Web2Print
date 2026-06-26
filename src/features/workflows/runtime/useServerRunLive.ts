@@ -19,15 +19,28 @@ interface RunLiveDoc {
 
 export function useServerRunLive(workflowId: string | undefined): void {
   const lastRunId = useRef<string | undefined>(undefined)
+  const isInitial = useRef(true)
   useEffect(() => {
     const uid = auth.currentUser?.uid
     if (!uid || !workflowId) return
     lastRunId.current = undefined
+    isInitial.current = true
     return onSnapshot(
       doc(db, 'users', uid, 'workflowRunsLive', workflowId),
       (snap) => {
         const d = snap.data() as RunLiveDoc | undefined
-        if (!d?.nodeStates) return
+        if (!d?.nodeStates) { isInitial.current = false; return }
+        // Écho INITIAL d'un run serveur DÉJÀ TERMINÉ (au chargement de page) : on ne ré-hydrate
+        // PAS. L'aperçu durable (workflowRuns, toutes sources) montre déjà le dernier run ;
+        // ré-hydrater ici écraserait un run CLIENT plus récent par ce run serveur plus ancien.
+        // On ne prend la main que pour un run qui DÉMARRE / PROGRESSE pendant la session.
+        const terminal = !!d.status && d.status !== 'running' && d.status !== 'pending'
+        if (isInitial.current && terminal) {
+          isInitial.current = false
+          lastRunId.current = d.runId
+          return
+        }
+        isInitial.current = false
         // Nouveau run (runId changé) → on vide l'état précédent (aperçu/cartes périmés).
         const reset = !!d.runId && d.runId !== lastRunId.current
         lastRunId.current = d.runId

@@ -59,6 +59,50 @@ export async function persistClientRun(
   }
 }
 
+/** Construit la map d'états attendue par `hydrateServerRun` à partir d'un doc de run durable
+ *  (status par node + outputs par node). Pur → testable. Un node sans outputs garde son status. */
+export function runDocToStates(
+  nodeStates: Record<string, NodeStatus>,
+  nodeOutputs: Record<string, Record<string, unknown>>,
+): Record<string, { status: NodeStatus; outputs?: Record<string, unknown> }> {
+  const states: Record<string, { status: NodeStatus; outputs?: Record<string, unknown> }> = {}
+  for (const [id, status] of Object.entries(nodeStates ?? {})) {
+    states[id] = { status, outputs: nodeOutputs?.[id] }
+  }
+  // Un node peut avoir des outputs sans entrée dans nodeStates (robustesse) → status « success ».
+  for (const [id, outputs] of Object.entries(nodeOutputs ?? {})) {
+    if (!states[id]) states[id] = { status: 'success', outputs }
+  }
+  return states
+}
+
+/** Charge le DERNIER run durable d'un workflow (toutes sources : client + serveur) pour
+ *  réhydrater l'aperçu de l'éditeur après un rechargement de page. Renvoie les états par node
+ *  + l'horodatage de fin (départage un éventuel écho serveur périmé). null si aucun run. */
+export async function loadLatestRunStates(
+  uid: string,
+  workflowId: string,
+): Promise<{ states: Record<string, { status: NodeStatus; outputs?: Record<string, unknown> }>; endedAt: number } | null> {
+  try {
+    const snap = await getDocs(query(collection(db, 'users', uid, 'workflowRuns'), where('workflowId', '==', workflowId)))
+    if (snap.empty) return null
+    // Tri client par endedAt décroissant (pas d'index composite requis).
+    const latest = snap.docs
+      .map((d) => d.data())
+      .sort((a, b) => ((b.endedAt as number) ?? 0) - ((a.endedAt as number) ?? 0))[0]
+    if (!latest) return null
+    const states = runDocToStates(
+      (latest.nodeStates ?? {}) as Record<string, NodeStatus>,
+      (latest.nodeOutputs ?? {}) as Record<string, Record<string, unknown>>,
+    )
+    if (Object.keys(states).length === 0) return null
+    return { states, endedAt: (latest.endedAt as number) ?? 0 }
+  } catch (e) {
+    console.warn('[runHistory] chargement du dernier run échoué :', e)
+    return null
+  }
+}
+
 /** Supprime un run d'historique (irréversible). */
 export async function deleteRun(uid: string, runId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'workflowRuns', runId))
