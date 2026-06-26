@@ -1,6 +1,6 @@
 // src/features/workflows/registry/listProductsNode.test.ts
 import { describe, it, expect } from 'vitest'
-import { resolveEan, pickListingUrl, parseListingItemList, mergeListing, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, htmlToText } from './listProductsNode'
+import { resolveEan, pickListingUrl, parseListingItemList, parseListingDataLayer, dedupListing, mergeListing, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, htmlToText } from './listProductsNode'
 
 describe('shouldEscalateToBrowser — escalade rendu JS sur résultat maigre (parité serveur)', () => {
   it('escalade sur la page principale si maigre (vide ou partiel, ex Leroy Merlin 5)', () => {
@@ -125,6 +125,45 @@ describe('parseListingItemList (client/DOMParser) — JSON-LD ItemList', () => {
     const bad = `<script type="application/ld+json">{"@type":"ItemList","itemListElement":[{"item":{"name":"X","sku":"1234567890123","offers":{"price":10}}}]}</script>`
     expect(parseListingItemList(bad)[0].ean).toBe('')
     expect(parseListingItemList('<body>rien</body>')).toEqual([])
+  })
+})
+
+describe('parseListingDataLayer (client) — grille SPA dans <script type=application/json>', () => {
+  // Forme réelle Leroy Merlin /search : datalayer analytics `cdl_products_list` enveloppé,
+  // URL relative, prix TTC (ati) + HT (tf) dans `offer`, plus un fil d'Ariane à ÉCARTER.
+  const html = `<html><head>
+    <script type="application/json" class="dataTms">[{"name":"cdl_products_list","value":[
+      {"brand":"RYOBI","name":"Tondeuse RYOBI RY18","sku":"82399444","url":"/produits/tondeuse-ryobi-82399444.html","offer":{"unitprice_ati":399,"unitprice_tf":332.5,"initial_price":null}},
+      {"brand":"SUNSEEKER","name":"Robot Tondeuse","url":"/produits/robot-549.html","offer":{"unitprice_ati":549,"unitprice_tf":457.5}}
+    ]}]</script>
+    <script type="application/json">{"breadcrumb":[{"name":"Jardin","url":"/jardin"},{"name":"Tondeuses","url":"/jardin/tondeuses"}]}</script>
+  </head><body></body></html>`
+  const base = 'https://www.leroymerlin.fr/search?q=tondeuse+ryobi'
+
+  it('extrait les produits (nom/marque/prix TTC/URL absolue), pas le fil d’Ariane', () => {
+    const p = parseListingDataLayer(html, base)
+    expect(p.length).toBe(2)
+    expect(p[0]).toMatchObject({
+      name: 'Tondeuse RYOBI RY18', brand: 'RYOBI', price: 399,
+      url: 'https://www.leroymerlin.fr/produits/tondeuse-ryobi-82399444.html',
+    })
+    // prix TTC (ati) choisi, jamais le HT (tf)
+    expect(p[0].price).not.toBe(332.5)
+    // fil d'Ariane (name+url, sans marque/offre/prix) exclu
+    expect(p.some((x) => x.name === 'Jardin' || x.name === 'Tondeuses')).toBe(false)
+  })
+  it('garde-fou : aucun bloc JSON produit → [] (zéro régression)', () => {
+    expect(parseListingDataLayer('<body><script type="application/json">{"foo":1}</script></body>', base)).toEqual([])
+    expect(parseListingDataLayer('<body>rien</body>', base)).toEqual([])
+  })
+  it('dedupListing : union ItemList + datalayer dédupliquée par URL', () => {
+    const b = { brand: '', ean: '', price: 0, originalPrice: 0, image: '' }
+    const merged = dedupListing([
+      { ...b, name: 'A', url: 'https://s/x.html' },
+      { ...b, name: 'A bis', url: 'https://s/x.html?ref=2' },
+      { ...b, name: 'B', url: 'https://s/y.html' },
+    ])
+    expect(merged.map((p) => p.name)).toEqual(['A', 'B'])
   })
 })
 

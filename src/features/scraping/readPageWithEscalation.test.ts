@@ -30,11 +30,12 @@ describe('readPageWithEscalation', () => {
     expect(brightDataScrapeWithDocs).not.toHaveBeenCalled()
   })
 
-  it('escalade vers Bright Data quand Jina lève une erreur', async () => {
+  it('escalade vers Bright Data quand Jina lève une erreur (et expose le HTML brut)', async () => {
     jinaRead.mockRejectedValue(new Error('429 rate limited'))
-    brightDataScrapeWithDocs.mockResolvedValue({ markdown: 'Débloqué BD', pdfLinks: [], structuredData: null })
+    brightDataScrapeWithDocs.mockResolvedValue({ markdown: 'Débloqué BD', pdfLinks: [], structuredData: null, html: '<html>brut</html>' })
     const res = await readPageWithEscalation('https://x.fr', { log })
-    expect(res).toEqual({ markdown: 'Débloqué BD', source: 'brightdata' })
+    // Le HTML brut BD est propagé pour le parsing déterministe (JSON-LD ItemList + datalayer).
+    expect(res).toEqual({ markdown: 'Débloqué BD', source: 'brightdata', html: '<html>brut</html>' })
     expect(log).toHaveBeenCalledWith('warn', expect.stringContaining('Jina a échoué'))
   })
 

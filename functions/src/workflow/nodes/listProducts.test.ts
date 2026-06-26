@@ -1,6 +1,6 @@
 // functions/src/workflow/nodes/listProducts.test.ts
 import { describe, it, expect } from 'vitest'
-import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProducts'
+import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, parseListingDataLayer, dedupListing, mergeListing, shouldEscalateToBrowser, ESCALATE_BELOW_COUNT, shouldRetryExtraction, MAX_EXTRACT_TRIES, RETRY_EXTRACT_MIN_CONTENT } from './listProducts'
 import { htmlToText } from '../brightData'
 
 describe('priceMarkerCount — détection de grille produit maigre', () => {
@@ -157,6 +157,43 @@ describe('parseListingItemList — extraction déterministe JSON-LD ItemList', (
   it('pas d’ItemList → liste vide (repli LLM)', () => {
     expect(parseListingItemList('<html><body>rien</body></html>')).toEqual([])
     expect(parseListingItemList('')).toEqual([])
+  })
+})
+
+describe('parseListingDataLayer — grille SPA dans <script type=application/json> (jumeau client)', () => {
+  // Forme RÉELLE Leroy Merlin /search : datalayer `cdl_products_list` enveloppé, URL relative,
+  // prix TTC (ati) + HT (tf) dans `offer`, plus un fil d'Ariane (name+url) à ÉCARTER.
+  const html = `<html><head>
+    <script type="application/json" class="dataTms">[{"name":"cdl_products_list","value":[
+      {"brand":"RYOBI","name":"Tondeuse RYOBI RY18","sku":"82399444","url":"/produits/tondeuse-ryobi-82399444.html","offer":{"unitprice_ati":399,"unitprice_tf":332.5,"initial_price":null}},
+      {"brand":"SUNSEEKER","name":"Robot Tondeuse","url":"/produits/robot-549.html","offer":{"unitprice_ati":549,"unitprice_tf":457.5}}
+    ]}]</script>
+    <script type="application/json">{"breadcrumb":[{"name":"Jardin","url":"/jardin"},{"name":"Tondeuses","url":"/jardin/tondeuses"}]}</script>
+  </head><body></body></html>`
+  const base = 'https://www.leroymerlin.fr/search?q=tondeuse+ryobi'
+
+  it('extrait nom/marque/prix TTC/URL absolue ; écarte le fil d’Ariane', () => {
+    const p = parseListingDataLayer(html, base)
+    expect(p.length).toBe(2)
+    expect(p[0]).toMatchObject({
+      name: 'Tondeuse RYOBI RY18', brand: 'RYOBI', price: 399,
+      url: 'https://www.leroymerlin.fr/produits/tondeuse-ryobi-82399444.html',
+    })
+    expect(p[0].price).not.toBe(332.5) // TTC (ati) jamais HT (tf)
+    expect(p.some((x) => x.name === 'Jardin' || x.name === 'Tondeuses')).toBe(false)
+  })
+  it('garde-fou : aucun produit → [] (zéro régression)', () => {
+    expect(parseListingDataLayer('<script type="application/json">{"foo":1}</script>', base)).toEqual([])
+    expect(parseListingDataLayer('<body>rien</body>', base)).toEqual([])
+    expect(parseListingDataLayer('', base)).toEqual([])
+  })
+  it('dedupListing : union ItemList + datalayer dédupliquée par URL', () => {
+    const merged = dedupListing([
+      { name: 'A', url: 'https://s/x.html' },
+      { name: 'A bis', url: 'https://s/x.html?ref=2' },
+      { name: 'B', url: 'https://s/y.html' },
+    ])
+    expect(merged.map((p) => p.name)).toEqual(['A', 'B'])
   })
 })
 

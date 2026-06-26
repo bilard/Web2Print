@@ -101,6 +101,125 @@ export function parseListingItemList(html: string): ExtractedProduct[] {
   return out
 }
 
+/** Résout une URL éventuellement relative (datalayer : `/produits/…`) contre la page liste. */
+function resolveListingUrl(raw: unknown, baseUrl: string): string {
+  const u = String(raw ?? '').trim()
+  if (!u) return ''
+  if (/^https?:\/\//i.test(u)) return u
+  try { return new URL(u, baseUrl).href } catch { return '' }
+}
+
+/** Cherche un prix numérique plausible dans un objet produit de datalayer (et son sous-objet
+ *  `offer`/`offers`). Générique (aucun nom de clé propriétaire) : clés contenant price/prix/amount ;
+ *  on PRÉFÈRE le TTC (ati/ttc/incl/brut) et on évite le HT (tf/ht/excl/net) et le barré. 0 si rien. */
+function findDataLayerPrice(it: Record<string, unknown>): number {
+  const cands: Array<{ key: string; val: number }> = []
+  const scan = (o: Record<string, unknown>): void => {
+    for (const [k, v] of Object.entries(o)) {
+      if (typeof v === 'number' && /price|prix|amount/i.test(k)) cands.push({ key: k.toLowerCase(), val: v })
+      else if (typeof v === 'string' && /price|prix|amount/i.test(k) && /^\d+([.,]\d+)?$/.test(v.trim())) cands.push({ key: k.toLowerCase(), val: Number(v.replace(',', '.')) })
+    }
+  }
+  scan(it)
+  const offer = it.offer ?? it.offers ?? it.price
+  if (offer && typeof offer === 'object' && !Array.isArray(offer)) scan(offer as Record<string, unknown>)
+  const positive = cands.filter((c) => c.val > 0 && !/initial|old|was|strike|barr|regular|list|crossed|previous/i.test(c.key))
+  if (positive.length === 0) return 0
+  const ttc = positive.find((c) => /ati|ttc|incl|gross|brut/.test(c.key))
+  if (ttc) return ttc.val
+  const notHt = positive.filter((c) => !/\btf\b|_tf|\bht\b|_ht|excl|net/.test(c.key))
+  return (notHt[0] ?? positive[0]).val
+}
+
+/** EAN d'un objet datalayer : SEULES les clés ean/gtin (jamais sku/identifier = id interne). */
+function findDataLayerEan(it: Record<string, unknown>): string {
+  for (const [k, v] of Object.entries(it)) {
+    if (/\b(ean|gtin)\b|gtin13|ean13/i.test(k)) {
+      const digits = String(v ?? '').replace(/\D/g, '')
+      if (isValidEan13(digits)) return digits
+    }
+  }
+  return ''
+}
+
+/** Un nœud de datalayer est-il un PRODUIT ? Forme : `name`/`title` + au moins un signal produit
+ *  (brand | offer | prix). Écarte fil d'Ariane/menu (name+url seuls) = aucun faux positif de grille. */
+function isDataLayerProduct(v: unknown): v is Record<string, unknown> {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false
+  const o = v as Record<string, unknown>
+  if (!String(o.name ?? o.title ?? '').trim()) return false
+  const hasBrand = typeof o.brand === 'string' ? o.brand.trim() !== '' : (o.brand != null && typeof o.brand === 'object')
+  const hasOffer = (o.offer != null && typeof o.offer === 'object') || (o.offers != null && typeof o.offers === 'object')
+  return hasBrand || hasOffer || findDataLayerPrice(o) > 0
+}
+
+function mapDataLayerProduct(it: Record<string, unknown>, baseUrl: string): ExtractedProduct {
+  const brandRaw = it.brand
+  const imageRaw = it.image ?? it.imageUrl ?? it.thumbnail
+  const price = findDataLayerPrice(it)
+  const url = resolveListingUrl(it.url ?? it.href ?? it.link ?? it.path ?? it.canonicalUrl, baseUrl)
+  return {
+    name: String(it.name ?? it.title ?? '').trim(),
+    brand: typeof brandRaw === 'object' && brandRaw ? String(asObj(brandRaw).name ?? '') : String(brandRaw ?? ''),
+    ean: findDataLayerEan(it) || undefined,
+    price: price > 0 ? price : undefined,
+    url: url || undefined,
+    image: typeof imageRaw === 'string' ? imageRaw : undefined,
+  }
+}
+
+function walkDataLayer(node: unknown, depth: number, out: ExtractedProduct[], seen: Set<string>, baseUrl: string): void {
+  if (node == null || depth > 6) return
+  if (Array.isArray(node)) {
+    for (const it of node) {
+      if (isDataLayerProduct(it)) {
+        const p = mapDataLayerProduct(it, baseUrl)
+        const key = String(p.url ?? '').toLowerCase().replace(/[#?].*$/, '') || String(p.name ?? '').toLowerCase()
+        if (key && !seen.has(key)) { seen.add(key); out.push(p) }
+      }
+    }
+    for (const it of node) walkDataLayer(it, depth + 1, out, seen, baseUrl)
+    return
+  }
+  if (typeof node === 'object') for (const v of Object.values(node as Record<string, unknown>)) walkDataLayer(v, depth + 1, out, seen, baseUrl)
+}
+
+const DATALAYER_SCRIPT_RE = /<script\b[^>]*\btype\s*=\s*["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi
+
+/** Extraction DÉTERMINISTE des produits d'une page liste depuis un datalayer JSON inline
+ *  (`<script type="application/json">` — état d'hydratation SPA / dataLayer analytics GTM/Tealium).
+ *  Beaucoup de sites e-commerce SPA (ex Leroy Merlin) y exposent leur grille PLUTÔT que dans le
+ *  DOM SSR (que le Web Unlocker HTTP ne rend pas) ou en JSON-LD. Générique, basé sur la FORME.
+ *  Aucun bloc/produit → [] (zéro régression : repli ItemList JSON-LD puis LLM). Jumeau client. */
+export function parseListingDataLayer(html: string, baseUrl: string): ExtractedProduct[] {
+  if (!html || html.indexOf('application/json') === -1) return []
+  const out: ExtractedProduct[] = []
+  const seen = new Set<string>()
+  let m: RegExpExecArray | null
+  DATALAYER_SCRIPT_RE.lastIndex = 0
+  while ((m = DATALAYER_SCRIPT_RE.exec(html)) !== null) {
+    const body = (m[1] ?? '').trim()
+    if (!body || (body[0] !== '{' && body[0] !== '[')) continue
+    let data: unknown
+    try { data = JSON.parse(body) } catch { continue }
+    walkDataLayer(data, 0, out, seen, baseUrl)
+  }
+  return out
+}
+
+/** Union déterministe ItemList JSON-LD (EAN propres) + datalayer, dédupliquée par URL (ou nom). */
+export function dedupListing(list: ExtractedProduct[]): ExtractedProduct[] {
+  const seen = new Set<string>()
+  const out: ExtractedProduct[] = []
+  for (const p of list) {
+    const key = String(p.url ?? '').trim().toLowerCase().replace(/[#?].*$/, '') || String(p.name ?? '').toLowerCase()
+    if (key && seen.has(key)) continue
+    if (key) seen.add(key)
+    out.push(p)
+  }
+  return out
+}
+
 /** Fusionne l'ItemList déterministe (base canonique : nom/EAN/prix) avec l'extraction LLM
  *  (apporte le prix barré + produits hors ItemList). Union par URL ; l'ItemList prime sur
  *  nom/EAN/prix, le LLM complète le barré/marque/image. ItemList vide → LLM seul (non-régression). */
@@ -446,9 +565,9 @@ registerServerNode({
     const modelsSeen = new Set<string>()
     // Extraction depuis un contenu déjà récupéré : 1) JSON-LD ItemList (déterministe, EAN
     // propres) depuis le HTML brut, 2) LLM sur le texte (prix barré + sites sans ItemList).
-    const extractFrom = async (html: string, text: string, label: string, allowRetry: boolean): Promise<ExtractedProduct[]> => {
-      const ld = parseListingItemList(html)
-      if (ld.length) ctx.log('info', `${label} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
+    const extractFrom = async (html: string, text: string, label: string, allowRetry: boolean, baseUrl: string): Promise<ExtractedProduct[]> => {
+      const ld = dedupListing([...parseListingItemList(html), ...parseListingDataLayer(html, baseUrl)])
+      if (ld.length) ctx.log('info', `${label} : ${ld.length} produit(s) déterministes (JSON-LD ItemList + datalayer).`)
       let llm: ExtractedProduct[] = []
       if (text.trim()) {
         try { llm = await extractProducts(ctx, text, label, allowRetry, (m) => modelsSeen.add(m)) }
@@ -463,7 +582,7 @@ registerServerNode({
       brandTerm ? list.filter((p) => matchesBrand(String(p.name ?? ''), p.brand, brandTerm)).length : list.length
     const scrapePage = async (url: string, site: string, isMainPage: boolean): Promise<ExtractedProduct[]> => {
       const { text, html } = await fetchListingContent(ctx, url)
-      let products = await extractFrom(html, text, site, isMainPage)
+      let products = await extractFrom(html, text, site, isMainPage, url)
       // Escalade rendu JS : grille rendue en JS (vide) OU partielle (le Web Unlocker n'a
       // rendu que les produits SSR/sponsorisés — ex Leroy Merlin le soir : 5 alors que la
       // page en a 24+). Dernier recours : le Scraping Browser (Chrome distant) rend le DOM,
@@ -473,7 +592,7 @@ registerServerNode({
         ctx.log('info', `${site} : ${usefulCount(products)} produit(s) de marque (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
         const rendered = (await scrapingBrowserRead(url)).html
         if (rendered.trim()) {
-          const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`, true)
+          const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`, true, url)
           if (usefulCount(products2) > usefulCount(products)) {
             ctx.log('info', `${site} : ${usefulCount(products2)} produit(s) de marque via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${usefulCount(products)}).`)
             products = products2

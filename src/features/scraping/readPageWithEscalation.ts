@@ -17,6 +17,9 @@ export interface EscalatedRead {
   markdown: string
   /** Connecteur qui a fourni le contenu (null si rien d'exploitable). */
   source: ScrapeSource
+  /** HTML BRUT quand le contenu vient de Bright Data (sinon absent). Porte les données
+   *  structurées que le markdown perd : JSON-LD ItemList + datalayer JSON inline. */
+  html?: string
 }
 
 type LogFn = (level: 'info' | 'warn' | 'error', msg: string) => void
@@ -57,7 +60,7 @@ export async function readPageWithEscalation(
     const bdMarkdown = bd?.markdown ?? ''
     if (!isBlocked(bdMarkdown)) {
       log('info', '✓ Page débloquée via Bright Data.')
-      return { markdown: bdMarkdown, source: 'brightdata' }
+      return { markdown: bdMarkdown, source: 'brightdata', html: bd?.html ?? '' }
     }
     log('warn', 'Bright Data n’a rien renvoyé d’exploitable (toujours bloqué).')
   } catch (e) {

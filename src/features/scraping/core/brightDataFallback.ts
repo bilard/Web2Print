@@ -304,6 +304,10 @@ export async function brightDataScrapeWithDocs(
    *  scripts <script type="application/ld+json"> mais Turndown les supprime,
    *  donc on parse AVANT la conversion markdown. */
   structuredData: StructuredProductData | null
+  /** HTML BRUT (avant Turndown). Exposé pour que l'appelant parse les données structurées
+   *  qui survivent mal au markdown : JSON-LD ItemList et datalayer JSON inline
+   *  (`<script type="application/json">` — grille des pages liste SPA). */
+  html: string
 } | null> {
   const html = await callScrape(url)
   if (!html) return null
@@ -327,5 +331,5 @@ export async function brightDataScrapeWithDocs(
   } catch (e) {
     console.warn('[brightdata] parseStructuredData failed:', e)
   }
-  return { markdown, pdfLinks, structuredData }
+  return { markdown, pdfLinks, structuredData, html }
 }
