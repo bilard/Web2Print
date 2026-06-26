@@ -565,6 +565,49 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "indesign-xml",
+    "cat": "Import",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Balises XML InDesign (connexion auto)",
+    "intro": "Baliser un document InDesign avec des balises XML natives nommées comme tes colonnes : à l'import de l'IDML, IBS-Studio les transforme en champs {{…}} automatiquement connectés à ta base — une alternative gratuite à EasyCatalog.",
+    "features": [
+      {
+        "title": "1. Baliser le document dans InDesign",
+        "desc": "1. Ouvre le panneau des balises : Fenêtre → Utilitaires → Balises (Window → Utilities → Tags). 2. Crée une balise par champ, avec le nom exact de ta colonne (ex. LibelleArticle, Prixnormal, Marques). 3."
+      },
+      {
+        "title": "2. (Option) Le plug-in IBS-Studio : baliser connecté à ta base",
+        "desc": "Pour baliser en étant connecté à ta base en direct, IBS-Studio fournit un plug-in InDesign (UXP)."
+      },
+      {
+        "title": "3. Exporter l'IDML",
+        "desc": "Dans InDesign : Fichier → Exporter… → InDesign Markup (IDML). Les balises XML sont conservées dans le fichier."
+      },
+      {
+        "title": "4. Importer dans IBS-Studio → champs auto-connectés",
+        "desc": "Tableau de bord → Importer → sélectionne le .idml. À l'ouverture : • chaque balise texte devient un placeholder {{nom}} éditable ; • chaque balise image devient un cadre image lié."
+      },
+      {
+        "title": "Balise XML native ou EasyCatalog : laquelle choisir ?",
+        "desc": "Les deux aboutissent au même résultat (champs {{…}} connectés). EasyCatalog s'impose si ton flux print l'utilise déjà (re-synchro côté InDesign)."
+      },
+      {
+        "title": "Pourquoi je ne vois pas les crochets sur un bloc ?",
+        "desc": "Les crochets [ ] n'apparaissent que sur du texte balisé. Si tu as appliqué la balise au cadre (rectangle) au lieu du texte, tu obtiens un cadre coloré dans la Structure mais pas de crochets — et la valeur ne sera pas remplacée."
+      },
+      {
+        "title": "Les noms doivent-ils correspondre exactement aux colonnes ?",
+        "desc": "Le nom de la balise doit correspondre au nom de la colonne de ta base. La casse, les accents et les espaces/underscores sont tolérés à la correspondance (ex. Prix normal ↔ colonne Prixnormal)."
+      },
+      {
+        "title": "Le plug-in ne se charge pas / le token ne marche pas",
+        "desc": "Le plug-in est distribué en mode développeur (UXP) : il se charge manuellement à chaque session via l'UXP Developer Tool."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "import-pptx",
     "cat": "Import",
     "icon": "📊",
@@ -1504,6 +1547,41 @@ export const MODULES = [
       {
         "title": "Règles de sécurité",
         "desc": "• Les permissions effectives = rôle + permissions accordées − permissions retirées. • Le propriétaire a un accès total non modifiable."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
+    "id": "audit-log",
+    "cat": "Administration",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Journal d'audit & Mon activité",
+    "intro": "Qui a fait quoi, quand. Chaque utilisateur retrouve ses propres actions dans « Mon activité » ; l'administrateur voit tout dans le « Journal », filtrable et avec l'avant/après de chaque changement.",
+    "features": [
+      {
+        "title": "Les filtres : QUI / QUOI / QUAND",
+        "desc": "• Type : le module concerné (Accès, Données, Export, Workflows, IA, Réglages…). • Quoi : l'action précise (la liste se restreint au type choisi). • Qui (Journal admin uniquement) : l'utilisateur. • Quand : une plage de dates (Du / au)."
+      },
+      {
+        "title": "Ce qui est journalisé",
+        "desc": "• Accès / rôles : connexion, attribution/retrait de rôle, blocage/déblocage, permission accordée/révoquée, rôle modifié, suppression d'utilisateur."
+      },
+      {
+        "title": "Vider son historique",
+        "desc": "Dans Mon activité, le bouton « Vider l'historique » (avec confirmation) supprime tes propres entrées. Chaque utilisateur ne peut effacer que les siennes ; l'administrateur peut tout supprimer."
+      },
+      {
+        "title": "Je ne vois pas l'avant/après sur d'anciennes lignes",
+        "desc": "Le détail (avant → après, ou la taille) n'apparaît que sur les actions postérieures à l'ajout de la fonctionnalité. Les entrées sont immuables : elles ne se complètent pas rétroactivement."
+      },
+      {
+        "title": "Pourquoi deux « DataSet enregistré » de suite ?",
+        "desc": "Chaque sauvegarde de base crée une entrée. Si la taille (lignes/colonnes) n'a pas changé, la ligne montre seulement la taille ; si tu as ajouté/supprimé des lignes, elle montre l'avant → après."
+      },
+      {
+        "title": "Qui peut voir le Journal complet ?",
+        "desc": "Seul l'administrateur (ou le propriétaire) voit le Journal de tous les utilisateurs, avec le filtre Qui. Un utilisateur standard ne voit que ses actions, dans Réglages → Mon activité."
       }
     ],
     "shortcuts": []

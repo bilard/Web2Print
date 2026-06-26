@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Settings } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -136,17 +136,6 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'category:daily',   label: 'Vie quotidienne',       intent: 'chat:category:daily' },
       { id: 'category:ideas',   label: 'Idées',                 intent: 'chat:category:ideas' },
       { id: 'category:image',   label: 'Image',                 intent: 'chat:category:image' },
-    ],
-  },
-  { id: 'settings', icon: Settings, label: 'Réglages', accent: 'text-slate-400', activeBg: 'bg-slate-500/[0.1]', activeText: 'text-slate-300',
-    children: [
-      { id: 'tab:profile',    label: 'Profil',        intent: 'settings:tab:profile' },
-      { id: 'tab:ai',         label: 'IA',            intent: 'settings:tab:ai' },
-      { id: 'tab:connectors', label: 'Connecteurs',   intent: 'settings:tab:connectors' },
-      { id: 'tab:cookies',    label: 'Cookies',       intent: 'settings:tab:cookies' },
-      { id: 'tab:firebase',   label: 'Firebase',      intent: 'settings:tab:firebase' },
-      { id: 'tab:stats',      label: 'Statistiques',  intent: 'settings:tab:stats' },
-      { id: 'tab:data',       label: 'Données',       intent: 'settings:tab:data' },
     ],
   },
   { id: 'access', icon: ShieldCheck, label: 'Utilisateurs & rôles', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
