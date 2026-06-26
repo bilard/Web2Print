@@ -27,6 +27,7 @@ import { workflowSection } from './workflow'
 import { hyperframesSection } from './hyperframes'
 import { chatSection } from './chat'
 import { accessSection } from './access'
+import { auditLogSection } from './audit-log'
 import { settingsSection } from './settings'
 import { explorerSection } from './explorer'
 
@@ -59,6 +60,7 @@ export const helpSections: HelpSection[] = [
   telegramSection,
   chatSection,
   accessSection,
+  auditLogSection,
   settingsSection,
   explorerSection,
 ]
