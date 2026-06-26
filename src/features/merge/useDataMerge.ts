@@ -8,6 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
+import { applyConditionalRulesForRow } from './applyConditionalRules'
 import { formatPriceParts, type PriceSegment } from './priceFormat'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
 import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
@@ -527,6 +528,13 @@ export function useDataMerge() {
         }
       }
       refreshAncestorGroups(obj)
+    }
+
+    // Règles conditionnelles par objet (cacher/montrer/couleur/taille…) évaluées
+    // sur la ligne courante, APRÈS texte + bindings (les règles l'emportent).
+    {
+      const { columns: ruleCols, fieldMap: ruleFieldMap } = useMergeStore.getState()
+      applyConditionalRulesForRow(canvas, row, ruleCols, ruleFieldMap)
     }
 
     // Champs vidés par « Supprimer la ligne si vide » : masque + compacte le bloc.

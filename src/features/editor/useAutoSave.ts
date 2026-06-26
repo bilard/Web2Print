@@ -12,6 +12,7 @@ import { globalIdmlSource } from '@/features/idml/idmlSource'
 import { maybeAutoSnapshot } from '@/features/versions/autoSnapshot'
 import { recordAudit, recordAuditThrottled } from '@/lib/auditLog'
 import { FABRIC_SERIALIZED_PROPS } from './serializationProps'
+import { suspendRuleEffectsForSave } from '@/features/merge/applyConditionalRules'
 
 /** Global save function — set by useAutoSave, callable from anywhere */
 export let globalSave: (() => Promise<void>) | null = null
@@ -195,8 +196,20 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string, isCo
     }
   }
 
+  // Step 2c: Suspendre l'aperçu des règles conditionnelles (un « cacher »/couleur
+  // appliqué sur la ligne courante ne doit pas être figé dans le doc sauvegardé).
+  const reapplyRules = suspendRuleEffectsForSave(canvas)
+
   // Step 3: Serialize with all images now having permanent URLs
   const canvasJson = canvas.toObject(FABRIC_SERIALIZED_PROPS)
+
+  // Step 3a: Figer la chaîne MAINTENANT — `toObject` inclut `data` PAR RÉFÉRENCE ;
+  // ré-appliquer l'aperçu (Step 3b) ré-injecterait l'état transitoire _ruleSaved
+  // dans l'objet `data` partagé, qui fuiterait dans le JSON sauvegardé.
+  const serialized = JSON.stringify(canvasJson)
+
+  // Step 3b: Ré-appliquer l'aperçu des règles (l'utilisateur revoit la ligne).
+  reapplyRules()
 
   // Step 4: Restore resolved text/styles/size on canvas (user sees data, not templates)
   for (const { obj, resolved, resolvedStyles, resolvedWidth } of resolvedTexts) {
@@ -208,7 +221,7 @@ async function persistImagesAndSerialize(canvas: Canvas, projectId: string, isCo
     }
   }
 
-  return JSON.stringify(canvasJson)
+  return serialized
 }
 
 export function useAutoSave(fabricRef: React.RefObject<Canvas | null>) {

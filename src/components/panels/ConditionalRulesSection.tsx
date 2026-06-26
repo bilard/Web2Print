@@ -1,0 +1,120 @@
+// src/components/panels/ConditionalRulesSection.tsx
+//
+// Panneau « Règles conditionnelles » de l'objet/calque sélectionné (façon
+// EasyCatalog). Lit/écrit obj.data.conditionalRules, rejoue l'aperçu sur la
+// ligne courante et persiste. Le moteur et l'applier vivent dans features/merge.
+import { useEffect, useState } from 'react'
+import { ChevronRight, GitBranch, Plus } from 'lucide-react'
+import { globalFabricCanvas } from '@/features/editor/CanvasContainer'
+import { collectObjectsDeep } from '@/features/editor/deepObjects'
+import { syncToStore } from '@/features/editor/useAddObject'
+import { useMergeStore } from '@/stores/merge.store'
+import { applyConditionalRulesForRow } from '@/features/merge/applyConditionalRules'
+import type { ConditionalRule } from '@/features/merge/conditionalRules'
+import { ConditionalRuleRow } from './ConditionalRuleRow'
+
+function newRuleId(): string {
+  return `r_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+}
+
+export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId: string | null }) {
+  const [open, setOpen] = useState(false)
+  const [rules, setRules] = useState<ConditionalRule[]>([])
+  const { columns, rows, currentRowIndex, fieldMap, isConnected } = useMergeStore()
+
+  const canvas = globalFabricCanvas
+  const obj = canvas && selectedObjectId
+    ? collectObjectsDeep(canvas.getObjects()).find((o) => o.data?.id === selectedObjectId)
+    : undefined
+
+  // Recharger les règles quand la sélection change.
+  useEffect(() => {
+    const sel = canvas && selectedObjectId
+      ? collectObjectsDeep(canvas.getObjects()).find((o) => o.data?.id === selectedObjectId)
+      : undefined
+    setRules((sel?.data?.conditionalRules as ConditionalRule[] | undefined) ?? [])
+  }, [selectedObjectId, canvas])
+
+  if (!obj) return null
+
+  const persist = (next: ConditionalRule[]) => {
+    setRules(next)
+    if (!obj.data) obj.data = {}
+    obj.data.conditionalRules = next
+    // Rejouer l'aperçu sur la ligne courante (effet immédiat dans l'éditeur).
+    if (canvas && isConnected && rows[currentRowIndex]) {
+      applyConditionalRulesForRow(canvas, rows[currentRowIndex], columns, fieldMap)
+      canvas.requestRenderAll()
+    }
+    if (canvas) {
+      syncToStore(canvas)
+      // Marque « non sauvegardé » → l'autosave débouncé persiste (évite un
+      // toObject complet par frappe / par drag du sélecteur de couleur).
+      canvas.fire('object:modified', { target: obj })
+    }
+  }
+
+  const addRule = () => persist([
+    ...rules,
+    {
+      id: newRuleId(),
+      field: columns[0]?.key ?? '',
+      operator: 'contains',
+      value: '',
+      action: { type: 'hide' },
+    },
+  ])
+
+  // Conflit binding↔règle : une règle qui pilote une prop déjà câblée (fill via
+  // binding + Changer la couleur) verrait sa restauration « ligne off » écrire
+  // la couleur câblée de la ligne PRÉCÉDENTE. On avertit au lieu de le cacher.
+  const bindings = (obj.data?.bindings as Record<string, string> | undefined) ?? {}
+  const conflictProp =
+    rules.some((r) => r.action.type === 'setColor') && bindings.fill ? 'couleur'
+    : rules.some((r) => r.action.type === 'setOpacity') && bindings.opacity ? 'opacité'
+    : null
+
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center gap-1">
+        <button onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/70 transition-colors">
+          <ChevronRight className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+          <GitBranch className="w-3 h-3" /> Règles conditionnelles
+          {rules.length > 0 && (
+            <span className="text-indigo-400 normal-case">({rules.length})</span>
+          )}
+        </button>
+      </div>
+
+      {open && (
+        <div className="flex flex-col gap-2">
+          {!isConnected && (
+            <p className="text-[10px] text-white/40 leading-snug">
+              Connectez une source de données pour que les règles s'évaluent à la fusion.
+            </p>
+          )}
+          {conflictProp && (
+            <p className="text-[10px] text-amber-400/80 leading-snug">
+              ⚠ La {conflictProp} est aussi câblée à une colonne ; une règle qui la modifie
+              peut entrer en conflit avec la liaison de données.
+            </p>
+          )}
+          {rules.map((rule) => (
+            <ConditionalRuleRow
+              key={rule.id}
+              rule={rule}
+              columns={columns}
+              onChange={(next) => persist(rules.map((r) => (r.id === next.id ? next : r)))}
+              onRemove={() => persist(rules.filter((r) => r.id !== rule.id))}
+            />
+          ))}
+          <button onClick={addRule}
+            className="flex items-center justify-center gap-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 bg-well rounded py-1.5 transition-colors">
+            <Plus className="w-3.5 h-3.5" /> Ajouter une règle
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}

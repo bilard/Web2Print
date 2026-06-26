@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  GripVertical, ChevronRight, ChevronDown,
+  GripVertical, ChevronRight, ChevronDown, GitBranch,
 } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
@@ -110,6 +110,10 @@ export function LayerRow({
 
       {hasMixedStyles && (
         <span className="text-[9px] text-indigo-400/60 shrink-0 font-medium">Aa</span>
+      )}
+
+      {obj.hasConditionalRules && (
+        <GitBranch className="w-3 h-3 text-indigo-400/70 shrink-0" aria-label="Règles conditionnelles" />
       )}
 
       <LayerRowControls obj={obj} isSelected={isSelected} />

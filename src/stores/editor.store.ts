@@ -62,6 +62,8 @@ export interface CanvasObjectProps {
   lineHeight?: number
   textColor?: string
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  // Règles conditionnelles (indicateur calque)
+  hasConditionalRules?: boolean
   // Hiérarchie groupes
   children?: CanvasObjectProps[]
   parentId?: string

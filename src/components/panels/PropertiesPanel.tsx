@@ -30,6 +30,7 @@ import type { DamTab } from '@/features/dam/types'
 import { ImageMaskSection } from './ImageMaskSection'
 import { findStoreObjectDeep } from '@/features/editor/deepObjects'
 import { MergeConnectorSection } from './MergeConnectorSection'
+import { ConditionalRulesSection } from './ConditionalRulesSection'
 
 const FILL_IMAGE_SOURCES: { tab: DamTab; label: string; icon: typeof ImageIcon }[] = [
   { tab: 'stock', label: 'Stock', icon: ImageIcon },
@@ -884,6 +885,8 @@ export function PropertiesPanel() {
 
             {/* ── Connecteur IDML (always visible, renders null si pas de champ) ── */}
             <MergeConnectorSection selectedObjectId={selectedObjectId} />
+
+            <ConditionalRulesSection selectedObjectId={selectedObjectId} />
 
             {/* ── Arranger (always visible) ── */}
             <Section title="Arranger" tourId="prop-arrange" help="Ordre de superposition (premier/arrière-plan), alignement et répartition par rapport à la page, et duplication/suppression de l'objet.">

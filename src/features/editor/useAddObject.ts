@@ -158,6 +158,7 @@ function fabricObjToProps(o: FabricObject, index: number, parentId?: string): Ca
     charSpacing: (o as any).charSpacing,
     lineHeight: (o as any).lineHeight,
     textTransform: d.textTransform ?? 'none',
+    hasConditionalRules: Array.isArray(d.conditionalRules) && d.conditionalRules.length > 0,
     children,
     parentId,
   }
