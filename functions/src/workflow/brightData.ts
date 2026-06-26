@@ -57,6 +57,28 @@ export async function brightDataRead(url: string): Promise<{ html: string }> {
   return { html }
 }
 
+/** Lit le HTML RENDU (JavaScript exécuté) d'une URL via le Scraping Browser Bright Data
+ *  (Chrome distant piloté en Puppeteer). À utiliser quand le Web Unlocker HTTP ramène un
+ *  contenu volumineux mais SANS produits : grille e-commerce injectée 100 % côté client
+ *  (ex Leroy Merlin /search) que la requête HTTP ne matérialise pas. Renvoie '' si le
+ *  Scraping Browser n'est pas configuré (config/brightdata.browserWs) ou s'il échoue —
+ *  l'appelant garde alors son résultat précédent. Coûteux : navigateur réel → dernier recours. */
+export async function scrapingBrowserRead(url: string): Promise<{ html: string }> {
+  const browserWs = String((await getFirestore().doc('config/brightdata').get()).data()?.browserWs ?? '').trim()
+  if (!browserWs) {
+    console.warn('[bd] Scraping Browser non configuré (config/brightdata.browserWs) — pas de rendu JS.')
+    return { html: '' }
+  }
+  try {
+    const html = await scrapeViaScrapingBrowser(url, browserWs)
+    console.log(`[bd] Scraping Browser (rendu JS) : ${htmlToText(html).length} chars utiles pour ${url}.`)
+    return { html }
+  } catch (e) {
+    console.warn('[bd] Scraping Browser KO :', e instanceof Error ? e.message.slice(0, 400) : e)
+    return { html: '' }
+  }
+}
+
 /** Réduit du HTML brut au texte significatif pour l'extraction LLM : retire
  *  script/style/head/commentaires, conserve les liens et les sources d'images
  *  en `[url]` (le chemin image porte souvent l'EAN), aplatit les espaces. */

@@ -1,6 +1,7 @@
 // functions/src/workflow/nodes/listProducts.test.ts
 import { describe, it, expect } from 'vitest'
-import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing } from './listProducts'
+import { priceMarkerCount, THIN_LISTING_MARKERS, matchesBrand, parseListingItemList, mergeListing, shouldEscalateToBrowser } from './listProducts'
+import { htmlToText } from '../brightData'
 
 describe('priceMarkerCount — détection de grille produit maigre', () => {
   // Échantillon « maigre » : ce que Jina ramène d'une grille rendue en JS (peu de prix
@@ -31,6 +32,68 @@ describe('priceMarkerCount — détection de grille produit maigre', () => {
 
   it('garde anti-régression : le contenu vide compte 0 (escalade comme avant)', () => {
     expect(priceMarkerCount('')).toBe(0)
+  })
+})
+
+describe('shouldEscalateToBrowser — escalade rendu JS ciblée (anti-surcoût)', () => {
+  it('escalade quand la page PRINCIPALE ne sort AUCUN produit (grille 100 % JS, ex Leroy Merlin)', () => {
+    expect(shouldEscalateToBrowser(0, true)).toBe(true)
+  })
+  it('non-régression : des produits trouvés → PAS d’escalade (zéro surcoût Castorama/Jardiland)', () => {
+    expect(shouldEscalateToBrowser(24, true)).toBe(false)
+    expect(shouldEscalateToBrowser(1, true)).toBe(false)
+  })
+  it('garde-fou coût : JAMAIS sur les pages de pagination (0 produit = fin de catalogue, normal)', () => {
+    expect(shouldEscalateToBrowser(0, false)).toBe(false)
+    expect(shouldEscalateToBrowser(24, false)).toBe(false)
+  })
+})
+
+describe('prémisse de l’escalade : le DOM RENDU porte la grille qu’un shell n’a pas', () => {
+  // Échantillon RÉEL de leroymerlin.fr/search?q=tondeuse+ryobi capturé DOM rendu (titres +
+  // prix réels). La page expose 539 résultats mais AUCUN JSON-LD (parseListingItemList → 0,
+  // cf. assertion plus bas) : c'est donc le chemin LLM. Le Web Unlocker HTTP ne rend que le
+  // « shell » ci-dessous (menu/filtres/footer, ~aucun prix) → 0 produit ; le Scraping Browser
+  // rend la grille → texte riche en prix au-dessus du seuil d'escalade.
+  const REAL_PRODUCTS = [
+    'Robot Tondeuse sans Fil 800 m² RTK Vision|899 €', 'Robot Tondeuse sans Fil 300 m² Garage|599 €',
+    'Robot Tondeuse sans Fil 1000 m² LiDAR 360°|199 €', 'Robot Tondeuse sans Fil AWD 1600 m²|699 €',
+    'Pack tondeuse coupe bordure RYOBI One+ 2x18V|399 €', 'Tondeuse sur batterie 2340W 36V RYOBI Ry36lmxsp46a|490 €',
+    'Tondeuse sur batterie 48V GREENWORKS Lm510dsa1|599 €', 'Tondeuse sur batterie RYOBI ONE+ OLM1833B 18V|220 €',
+    'Tondeuse sur batterie 48V GREENWORKS Gd48lm41iik4|349 €', 'Pack tondeuse coupe-bordure RYOBI One+ RLM18X33B40|299 €',
+    'Scheppach Tondeuse à gazon thermique MS180-51|299 €', 'Tondeuse Robot sans Fil Périphérique Pelouses|199 €',
+    'Scheppach Tondeuse à gazon thermique MS161-46|199 €', 'Scheppach Tondeuse à gazon essence MP132-40|199 €',
+    'Robot tondeuse sans fil HUSQVARNA Aspire R6V 600m²|1099 €', 'Tondeuse sur batterie 90W 18V RYOBI Ry18lmx37a-150|349 €',
+    'Tondeuse sur batterie RYOBI Ry36lmxsp53b-160 l.53|590 €', 'Tondeuse thermique 196CC auto-propulsée|290 €',
+    'Tondeuse électrique filaire RYOBI Rlm3313a 1300W|190 €', 'Tondeuse à gazon sans fil 36V Karcher LMO 5-18|449 €',
+    'Tondeuse sur batterie RYOBI RY18LMH37A-250 Hybride|390 €', 'Tondeuse sur batterie 450W 36V STIHL 6311-011|209 €',
+    'Tondeuse sur batterie 18V RYOBI Rlm18x33b50 l.33|239 €', 'Pack RYOBI débroussailleuse 36V Lithium-ion RBC36X|298 €',
+    'Tondeuse poussée RYOBI 18V Brushless coupe 40cm|299 €', 'Pack RYOBI Tondeuse électrique 1300W 33cm RLM13E33|197 €',
+    'Tondeuse électrique RYOBI RLM13E33S 1300W 33cm|129 €', 'Tondeuse sur batterie RYOBI 36V coupe 46cm|459 €',
+    'Tondeuse thermique RYOBI 196cc tractée 46cm|329 €', 'Robot tondeuse RYOBI RM480 connecté|999 €',
+    'Tondeuse RYOBI 18V sans batterie OLM1833H|159 €', 'Tondeuse RYOBI ONE+ 36V double batterie|549 €',
+  ]
+  const RENDERED = `<html><body><main class="search-results">\n${REAL_PRODUCTS.map((p) => {
+    const [title, price] = p.split('|')
+    return `<article class="product-tile"><a href="/p/x.prd"><h3>${title}</h3><span class="price">${price}</span></a></article>`
+  }).join('\n')}\n</main></body></html>`
+  // Ce que le Web Unlocker HTTP ramène : le shell de la SPA (chrome de navigation), sans grille.
+  const SHELL = `<html><body><header><nav>Produits Terrasse-jardin Revêtement Chauffage Salle-de-bains
+    Aide et contact Me connecter Mes listes Mon panier</nav></header>
+    <aside>Filtrer par marque prix disponibilité note des clients fonction mulching</aside>
+    <footer>Mentions légales Cookies Accessibilité Nos magasins</footer></body></html>`
+
+  it('le shell (Web Unlocker) est quasi sans prix → 0 produit attendu', () => {
+    expect(priceMarkerCount(htmlToText(SHELL))).toBeLessThan(THIN_LISTING_MARKERS)
+    expect(parseListingItemList(SHELL)).toEqual([])
+  })
+  it('le DOM rendu (Scraping Browser) porte la grille : prix > seuil + marque RYOBI présente', () => {
+    const text = htmlToText(RENDERED)
+    expect(priceMarkerCount(text)).toBeGreaterThanOrEqual(THIN_LISTING_MARKERS)
+    expect(/ryobi/i.test(text)).toBe(true)
+  })
+  it('la page n’a AUCUN JSON-LD → l’extraction passe par le LLM (non testé ici), pas l’ItemList', () => {
+    expect(parseListingItemList(RENDERED)).toEqual([]) // confirme : chemin LLM, déterministe vide
   })
 })
 

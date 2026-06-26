@@ -7,7 +7,7 @@
 import { load } from 'cheerio'
 import { registerServerNode } from '../registry'
 import { jinaRead, jinaSearch } from '../jina'
-import { brightDataRead, htmlToText } from '../brightData'
+import { brightDataRead, htmlToText, scrapingBrowserRead } from '../brightData'
 import { callLlm, parseLlmJson, recoverJsonObjects } from '../llm'
 import { fetchHtml } from '../../scraper/fetchHtml'
 import { extractProductIdentity } from '../../scraper/extractProducts'
@@ -285,6 +285,17 @@ async function fetchListingContent(ctx: Ctx, url: string): Promise<{ text: strin
   return { text: content, html }
 }
 
+/** Faut-il escalader vers le Scraping Browser (rendu JS, coûteux) pour une page liste ?
+ *  OUI seulement si la page PRINCIPALE (pas la pagination) n'a sorti AUCUN produit via
+ *  Jina + Web Unlocker — signature d'une grille rendue 100 % côté client (ex Leroy Merlin
+ *  /search) que ni Jina ni le Web Unlocker HTTP ne matérialisent. Le surcoût n'est donc
+ *  payé que quand le résultat serait de toute façon vide : ZÉRO impact sur les sites qui
+ *  sortent déjà des produits (Castorama, Jardiland) et JAMAIS sur les pages 2..N (où
+ *  0 produit = fin de catalogue, comportement normal). */
+export function shouldEscalateToBrowser(productCount: number, isMainPage: boolean): boolean {
+  return productCount === 0 && isMainPage
+}
+
 /** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours). */
 async function extractProducts(ctx: Ctx, content: string, label: string): Promise<ExtractedProduct[]> {
   ctx.reportConnector?.('llm')
@@ -390,25 +401,44 @@ registerServerNode({
       }
       return added
     }
-    const scrapePage = async (url: string, site: string): Promise<ExtractedProduct[]> => {
-      const { text, html } = await fetchListingContent(ctx, url)
-      // 1) JSON-LD ItemList (déterministe, EAN propres) depuis le HTML brut Bright Data.
+    // Extraction depuis un contenu déjà récupéré : 1) JSON-LD ItemList (déterministe, EAN
+    // propres) depuis le HTML brut, 2) LLM sur le texte (prix barré + sites sans ItemList).
+    const extractFrom = async (html: string, text: string, label: string): Promise<ExtractedProduct[]> => {
       const ld = parseListingItemList(html)
-      if (ld.length) ctx.log('info', `${site} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
-      // 2) LLM sur le texte (apporte le prix barré + sites sans ItemList).
+      if (ld.length) ctx.log('info', `${label} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
       let llm: ExtractedProduct[] = []
       if (text.trim()) {
-        try { llm = await extractProducts(ctx, text, site) }
-        catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${url} : ${err instanceof Error ? err.message : err}`) }
+        try { llm = await extractProducts(ctx, text, label) }
+        catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${label} : ${err instanceof Error ? err.message : err}`) }
       }
-      if (ld.length === 0 && !text.trim()) { ctx.log('warn', `Aucun contenu pour ${url}.`); return [] }
       return mergeListing(ld, llm)
+    }
+    const scrapePage = async (url: string, site: string, isMainPage: boolean): Promise<ExtractedProduct[]> => {
+      const { text, html } = await fetchListingContent(ctx, url)
+      let products = await extractFrom(html, text, site)
+      // Escalade rendu JS : une grille injectée 100 % côté client (ex Leroy Merlin) n'est
+      // matérialisée ni par Jina ni par le Web Unlocker HTTP → 0 produit malgré un contenu
+      // volumineux. Dernier recours : le Scraping Browser (Chrome distant) rend le DOM, on
+      // ré-extrait. Ciblé page principale uniquement (cf. shouldEscalateToBrowser).
+      if (shouldEscalateToBrowser(products.length, isMainPage)) {
+        ctx.log('info', `${site} : 0 produit via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
+        const rendered = (await scrapingBrowserRead(url)).html
+        if (rendered.trim()) {
+          const products2 = await extractFrom(rendered, htmlToText(rendered), `${site} (rendu JS)`)
+          if (products2.length > 0) {
+            ctx.log('info', `${site} : ${products2.length} produit(s) via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant).`)
+            products = products2
+          }
+        }
+      }
+      if (products.length === 0 && !text.trim()) { ctx.log('warn', `Aucun contenu pour ${url}.`); return [] }
+      return products
     }
 
     for (const root of urls) {
       if (ctx.signal.aborted) break
       const site = hostOf(root)
-      pushProducts(await scrapePage(root, site), site) // page 1
+      pushProducts(await scrapePage(root, site, true), site) // page 1 (principale)
       // Pages 2..maxPages par vagues — ARRÊT ANTICIPÉ dès qu'une vague n'apporte aucun
       // nouveau produit (site sans pagination / fin du catalogue) : évite de lire 20
       // pages quand il n'y en a que 1-3.
@@ -417,7 +447,7 @@ registerServerNode({
         const sep = root.includes('?') ? '&' : '?'
         const batch: string[] = []
         for (let j = k; j < k + WAVE && j <= maxPages; j++) batch.push(`${root}${sep}${pageParam}=${j}`)
-        const results = await mapLimit(batch, WAVE, (u) => scrapePage(u, site))
+        const results = await mapLimit(batch, WAVE, (u) => scrapePage(u, site, false))
         let waveNew = 0
         for (const products of results) waveNew += pushProducts(products, site)
         if (waveNew === 0) {
