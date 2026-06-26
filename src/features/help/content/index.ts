@@ -7,6 +7,7 @@ import { editorSection } from './editor'
 import { damSection } from './dam'
 import { importIdmlSection } from './import-idml'
 import { easyCatalogSection } from './easycatalog'
+import { indesignXmlSection } from './indesign-xml'
 import { importPptxSection } from './import-pptx'
 import { importExcelSection } from './import-excel'
 import { importImageSection } from './import-image'
@@ -38,6 +39,7 @@ export const helpSections: HelpSection[] = [
   hyperframesSection,
   importIdmlSection,
   easyCatalogSection,
+  indesignXmlSection,
   importPptxSection,
   importExcelSection,
   importImageSection,

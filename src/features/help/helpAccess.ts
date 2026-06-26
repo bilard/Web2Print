@@ -21,6 +21,7 @@ const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   'import-image-to-svg': 'import.view',
   'import-pdf-to-svg': 'import.view',
   easycatalog: 'import.view',
+  'indesign-xml': 'import.view',
   // Modules de données / automatisation / IA
   dam: 'dam.view',
   pim: 'pim.view',
