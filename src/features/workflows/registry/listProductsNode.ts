@@ -459,6 +459,12 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       return { products, error }
     }
 
+    // Nombre de produits RÉELLEMENT utiles (de la marque filtrée) : c'est ce compte qui dit
+    // si la grille est maigre, PAS le total brut (le LLM extrait souvent d'autres marques qui
+    // seront écartées — ex Leroy Merlin : 15 bruts → 5 Ryobi). Sans filtre marque : total brut.
+    const usefulCount = (list: LdProduct[]): number =>
+      brandTerm ? list.filter((p) => matchesBrand(p.name, p.brand, brandTerm)).length : list.length
+
     for (let i = 0; i < pages.length; i++) {
       if (ctx.signal.aborted) break
       const { url, site, isMain } = pages[i]
@@ -512,16 +518,16 @@ const listProductsNode: NodeSpec<ListProductsConfig, Record<string, never>, List
       // qu'une grille partielle (produits SSR/sponsorisés — ex Leroy Merlin le soir : 5 / 24).
       // Le Scraping Browser (navigateur réel) rend la grille complète. On ne REMPLACE que s'il
       // ramène STRICTEMENT PLUS → aucune régression, coût payé uniquement sur un listing maigre.
-      if (shouldEscalateToBrowser(products.length, isMain)) {
-        ctx.log('info', `${site} : ${products.length} produit(s) (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
+      if (shouldEscalateToBrowser(usefulCount(products), isMain)) {
+        ctx.log('info', `${site} : ${usefulCount(products)} produit(s) de marque (maigre) via Jina/Web Unlocker → escalade Scraping Browser (rendu JS).`)
         const renderedHtml = await forceScrapingBrowserHtml(url)
         if (renderedHtml) {
           const renderedText = htmlToText(renderedHtml).slice(0, 28000)
           const ld2 = parseListingItemList(renderedHtml)
           const { products: llm2 } = await runExtraction(renderedText, `${site} (rendu JS)`, true)
           const products2 = mergeListing(ld2, llm2)
-          if (products2.length > products.length) {
-            ctx.log('info', `${site} : ${products2.length} produit(s) via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${products.length}).`)
+          if (usefulCount(products2) > usefulCount(products)) {
+            ctx.log('info', `${site} : ${usefulCount(products2)} produit(s) de marque via Scraping Browser — grille rendue en JS (Web Unlocker insuffisant : ${usefulCount(products)}).`)
             products = products2
           }
         }
