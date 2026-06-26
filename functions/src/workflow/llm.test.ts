@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { parseLlmJson, recoverJsonObjects } from './llm'
+import { parseLlmJson, recoverJsonObjects, buildProviderOrder } from './llm'
+
+describe('buildProviderOrder — préférés en tête, cascade en repli', () => {
+  it('place les préférés avant la cascade et déduplique', () => {
+    expect(buildProviderOrder(['gemini', 'openai', 'claude'], ['deepseek', 'gemini', 'openai']))
+      .toEqual(['gemini', 'openai', 'claude', 'deepseek'])
+  })
+  it('sans préférés → cascade inchangée (non-régression)', () => {
+    expect(buildProviderOrder([], ['deepseek', 'gemini'])).toEqual(['deepseek', 'gemini'])
+  })
+  it('deepseek conservé en dernier recours (repli), jamais perdu', () => {
+    expect(buildProviderOrder(['gemini'], ['deepseek'])).toEqual(['gemini', 'deepseek'])
+  })
+})
 
 describe('parseLlmJson', () => {
   it('parse un objet JSON propre', () => {

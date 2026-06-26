@@ -93,12 +93,22 @@ async function getCascade(uid: string): Promise<string[]> {
   return ['deepseek', 'gemini', 'openai']
 }
 
+/** Ordre d'essai des providers : les `prefer` en tête (modèles plus fiables pour une
+ *  tâche donnée — ex extraction JSON exhaustive), puis la cascade de l'utilisateur en
+ *  repli. Dédupliqué, ordre préservé. Un préféré sans clé est simplement sauté à l'appel,
+ *  donc la cascade reprend la main : aucune régression si l'utilisateur n'a pas la clé. */
+export function buildProviderOrder(prefer: string[], cascade: string[]): string[] {
+  return [...prefer, ...cascade].filter((p, i, a) => a.indexOf(p) === i)
+}
+
 /** Suit la cascade CONFIGURÉE par l'utilisateur (pas un ordre hardcodé) : pour chaque
- *  provider, tente avec sa clé, passe au suivant en cas d'absence/échec. */
-export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: number } = {}): Promise<LlmResult> {
+ *  provider, tente avec sa clé, passe au suivant en cas d'absence/échec. `preferProviders`
+ *  place certains providers en tête sans casser le repli sur la cascade. */
+export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: number; preferProviders?: string[] } = {}): Promise<LlmResult> {
   const maxTokens = opts.maxTokens ?? DEFAULT_MAX_TOKENS
   const cascade = await getCascade(uid)
-  for (const provider of cascade) {
+  const order = buildProviderOrder(opts.preferProviders ?? [], cascade)
+  for (const provider of order) {
     const p = PROVIDERS[provider]
     if (!p) { console.warn(`[llm] provider « ${provider} » non supporté côté serveur — ignoré.`); continue }
     const key = await getUserApiKey(uid, p.keyId)
@@ -110,7 +120,7 @@ export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: n
       console.warn(`[llm] ${provider} KO → provider suivant :`, e instanceof Error ? e.message.slice(0, 200) : e)
     }
   }
-  throw new Error(`Aucun provider LLM de la cascade (${cascade.join(', ')}) n'a répondu — vérifie les clés API.`)
+  throw new Error(`Aucun provider LLM (${order.join(', ')}) n'a répondu — vérifie les clés API.`)
 }
 
 /** Sous-chaîne JSON équilibrée à partir de l'index `from` (un `{` ou `[`), en

@@ -331,7 +331,14 @@ async function extractProducts(ctx: Ctx, content: string, label: string, allowRe
     'AUCUN texte avant/après, AUCUN bloc de code markdown (pas de ```), JSON compact.\n\n--- CONTENU ---\n' +
     content.slice(0, 28000)
   const runOnce = async (): Promise<ExtractedProduct[]> => {
-    const { text, model, stopReason } = await callLlm(ctx.uid, prompt, { maxTokens: 24576 })
+    // Extraction d'une LISTE = JSON exhaustif sur un long contenu : privilégier les modèles
+    // fiables en JSON structuré (gemini-3.1-pro, gpt-5.1, claude). deepseek-chat sous-extrait
+    // les listes longues de façon erratique (Leroy Merlin : 0/5/24 sur le même markdown) →
+    // relégué au repli de la cascade. Pas de régression si l'utilisateur n'a que deepseek.
+    const { text, model, stopReason } = await callLlm(ctx.uid, prompt, {
+      maxTokens: 24576,
+      preferProviders: ['gemini', 'openai', 'claude'],
+    })
     const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
     const direct = Array.isArray(parsed?.products) ? parsed!.products! : []
     if (direct.length > 0) {
