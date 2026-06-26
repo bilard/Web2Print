@@ -73,7 +73,7 @@ export const ACTION_LABELS: Record<RuleActionType, string> = {
   scale: 'Changer la taille',
 }
 
-interface RuleAction {
+export interface RuleAction {
   type: RuleActionType
   /** setColor : couleur cible (ex. '#e11d48'). */
   color?: string
@@ -81,6 +81,27 @@ interface RuleAction {
   opacity?: number
   /** scale : facteur multiplicatif (1 = inchangé, 1.5 = +50 %). */
   scale?: number
+}
+
+// Valeurs par défaut des paramètres d'action (couleur/opacité/échelle).
+export const DEFAULT_RULE_COLOR = '#e11d48'
+export const DEFAULT_RULE_OPACITY = 0.5
+export const DEFAULT_RULE_SCALE = 1.5
+
+/**
+ * Construit une action avec son paramètre par défaut renseigné, en préservant
+ * la valeur existante si compatible. Indispensable : une action « nue » (ex.
+ * `{ type: 'setColor' }` sans `color`) est ignorée silencieusement par
+ * resolveEffect (les guards `if (action.color)` échouent) — l'UI affichait un
+ * défaut sans jamais le persister, d'où des règles « qui ne font rien ».
+ */
+export function actionWithDefaults(type: RuleActionType, prev?: RuleAction): RuleAction {
+  switch (type) {
+    case 'setColor': return { type, color: prev?.color ?? DEFAULT_RULE_COLOR }
+    case 'setOpacity': return { type, opacity: prev?.opacity ?? DEFAULT_RULE_OPACITY }
+    case 'scale': return { type, scale: prev?.scale ?? DEFAULT_RULE_SCALE }
+    default: return { type }
+  }
 }
 
 export interface ConditionalRule {

@@ -3,7 +3,8 @@ import { Trash2 } from 'lucide-react'
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import type { MergeColumn } from '@/stores/merge.store'
 import {
-  OPERATOR_LABELS, ACTION_LABELS, VALUELESS_OPERATORS,
+  OPERATOR_LABELS, ACTION_LABELS, VALUELESS_OPERATORS, actionWithDefaults,
+  DEFAULT_RULE_COLOR, DEFAULT_RULE_OPACITY, DEFAULT_RULE_SCALE,
   type ConditionalRule, type RuleOperator, type RuleActionType,
 } from '@/features/merge/conditionalRules'
 
@@ -57,25 +58,25 @@ export function ConditionalRuleRow({ rule, columns, onChange, onRemove }: {
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] text-white/40 shrink-0">alors</span>
         <select className={SELECT_CLS} value={action.type}
-          onChange={(e) => onChange({ ...rule, action: { type: e.target.value as RuleActionType } })}>
+          onChange={(e) => onChange({ ...rule, action: actionWithDefaults(e.target.value as RuleActionType, action) })}>
           {(Object.keys(ACTION_LABELS) as RuleActionType[]).map((a) => (
             <option key={a} value={a}>{ACTION_LABELS[a]}</option>
           ))}
         </select>
         {action.type === 'setColor' && (
           <div className="shrink-0">
-            <ColorPicker value={action.color ?? '#e11d48'}
+            <ColorPicker value={action.color ?? DEFAULT_RULE_COLOR}
               onChange={(color) => onChange({ ...rule, action: { type: 'setColor', color } })} />
           </div>
         )}
         {action.type === 'setOpacity' && (
           <input type="number" min={0} max={100} step={5} className={`${INPUT_CLS} max-w-[64px]`}
-            value={Math.round((action.opacity ?? 1) * 100)}
+            value={Math.round((action.opacity ?? DEFAULT_RULE_OPACITY) * 100)}
             onChange={(e) => onChange({ ...rule, action: { type: 'setOpacity', opacity: (Number(e.target.value) || 0) / 100 } })} />
         )}
         {action.type === 'scale' && (
           <input type="number" min={10} step={10} className={`${INPUT_CLS} max-w-[64px]`}
-            value={Math.round((action.scale ?? 1) * 100)}
+            value={Math.round((action.scale ?? DEFAULT_RULE_SCALE) * 100)}
             onChange={(e) => onChange({ ...rule, action: { type: 'scale', scale: (Number(e.target.value) || 100) / 100 } })} />
         )}
         {(action.type === 'setOpacity' || action.type === 'scale') && (

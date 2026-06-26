@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   evaluateCondition,
   resolveEffect,
+  actionWithDefaults,
+  DEFAULT_RULE_COLOR,
+  DEFAULT_RULE_OPACITY,
+  DEFAULT_RULE_SCALE,
   type ConditionalRule,
 } from './conditionalRules'
 import type { MergeRow, MergeColumn } from '@/stores/merge.store'
@@ -60,6 +64,32 @@ describe('evaluateCondition — numérique', () => {
     // '007' vs '7' : différent en chaîne, égal en numérique.
     expect(evaluateCondition('is', '007', '7')).toBe(false)
     expect(evaluateCondition('eq', '007', '7')).toBe(true)
+  })
+})
+
+describe('actionWithDefaults — paramètre par défaut renseigné', () => {
+  it('initialise color/opacity/scale (sinon action ignorée par le moteur)', () => {
+    expect(actionWithDefaults('setColor')).toEqual({ type: 'setColor', color: DEFAULT_RULE_COLOR })
+    expect(actionWithDefaults('setOpacity')).toEqual({ type: 'setOpacity', opacity: DEFAULT_RULE_OPACITY })
+    expect(actionWithDefaults('scale')).toEqual({ type: 'scale', scale: DEFAULT_RULE_SCALE })
+    expect(actionWithDefaults('hide')).toEqual({ type: 'hide' })
+  })
+
+  it('préserve un paramètre déjà choisi', () => {
+    expect(actionWithDefaults('setColor', { type: 'setColor', color: '#000' })).toEqual({ type: 'setColor', color: '#000' })
+    expect(actionWithDefaults('scale', { type: 'scale', scale: 2 })).toEqual({ type: 'scale', scale: 2 })
+  })
+
+  it('une action setColor sans couleur ne produit AUCUN effet (régression)', () => {
+    const row = { _id: 'r', x: 'v' } as never
+    const broken: ConditionalRule[] = [
+      { id: '1', field: 'x', operator: 'isNotEmpty', action: { type: 'setColor' } },
+    ]
+    expect(resolveEffect(broken, row)).toEqual({})
+    const fixed: ConditionalRule[] = [
+      { id: '1', field: 'x', operator: 'isNotEmpty', action: actionWithDefaults('setColor') },
+    ]
+    expect(resolveEffect(fixed, row)).toEqual({ fill: DEFAULT_RULE_COLOR })
   })
 })
 

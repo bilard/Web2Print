@@ -11,11 +11,23 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type MergeColumn } from '@/stores/merge.store'
 import { applyConditionalRulesForRow } from '@/features/merge/applyConditionalRules'
 import { loadColumnsOnly } from '@/features/merge/loadColumns'
-import type { ConditionalRule } from '@/features/merge/conditionalRules'
+import { actionWithDefaults, type ConditionalRule } from '@/features/merge/conditionalRules'
 import { ConditionalRuleRow } from './ConditionalRuleRow'
 
 function newRuleId(): string {
   return `r_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+}
+
+/** Renseigne les paramètres d'action manquants (répare les règles « nues »
+ *  enregistrées avant le correctif, ex. setColor sans color). */
+function normalizeRules(rules: ConditionalRule[]): { rules: ConditionalRule[]; changed: boolean } {
+  let changed = false
+  const next = rules.map((r) => {
+    const action = actionWithDefaults(r.action.type, r.action)
+    if (JSON.stringify(action) !== JSON.stringify(r.action)) { changed = true; return { ...r, action } }
+    return r
+  })
+  return { rules: next, changed }
 }
 
 export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId: string | null }) {
@@ -43,12 +55,22 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
     ? collectObjectsDeep(canvas.getObjects()).find((o) => o.data?.id === selectedObjectId)
     : undefined
 
-  // Recharger les règles quand la sélection change.
+  // Recharger les règles quand la sélection change ; réparer au passage les
+  // règles dont l'action n'a pas son paramètre (couleur/opacité/échelle).
   useEffect(() => {
     const sel = canvas && selectedObjectId
       ? collectObjectsDeep(canvas.getObjects()).find((o) => o.data?.id === selectedObjectId)
       : undefined
-    setRules((sel?.data?.conditionalRules as ConditionalRule[] | undefined) ?? [])
+    const stored = (sel?.data?.conditionalRules as ConditionalRule[] | undefined) ?? []
+    const { rules: normalized, changed } = normalizeRules(stored)
+    setRules(normalized)
+    if (changed && sel) {
+      if (!sel.data) sel.data = {}
+      sel.data.conditionalRules = normalized
+      const { rows: r, currentRowIndex: idx, columns: c, fieldMap: fm, isConnected: conn } = useMergeStore.getState()
+      if (canvas && conn && r[idx]) { applyConditionalRulesForRow(canvas, r[idx], c, fm); canvas.requestRenderAll() }
+      if (canvas) canvas.fire('object:modified', { target: sel })
+    }
   }, [selectedObjectId, canvas])
 
   if (!obj) return null
