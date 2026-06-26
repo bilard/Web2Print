@@ -313,8 +313,10 @@ export function shouldRetryExtraction(found: number, contentLength: number, allo
 }
 
 /** Extrait les produits d'un contenu de page via le LLM (+ récupération de secours).
- *  `allowRetry` (page principale) relance l'extraction si un contenu riche sort 0 produit. */
-async function extractProducts(ctx: Ctx, content: string, label: string, allowRetry = false): Promise<ExtractedProduct[]> {
+ *  `allowRetry` (page principale) relance l'extraction si un contenu riche sort 0 produit.
+ *  `onModel` reçoit le modèle réellement utilisé à chaque appel (pour le diagnostic visible
+ *  dans le log de synthèse du node : confirme quel provider de la cascade a répondu). */
+async function extractProducts(ctx: Ctx, content: string, label: string, allowRetry = false, onModel?: (m: string) => void): Promise<ExtractedProduct[]> {
   ctx.reportConnector?.('llm')
   const prompt =
     'Voici le contenu (markdown ou texte extrait du HTML) d’une page LISTE / catégorie e-commerce. Extrais TOUS les produits ' +
@@ -339,6 +341,7 @@ async function extractProducts(ctx: Ctx, content: string, label: string, allowRe
       maxTokens: 24576,
       preferProviders: ['gemini', 'openai', 'claude'],
     })
+    onModel?.(model)
     const parsed = parseLlmJson<{ products?: ExtractedProduct[] }>(text)
     const direct = Array.isArray(parsed?.products) ? parsed!.products! : []
     if (direct.length > 0) {
@@ -432,6 +435,10 @@ registerServerNode({
       }
       return added
     }
+    // Modèles LLM réellement utilisés pour l'extraction (diagnostic : confirme dans le log
+    // de synthèse quel provider de la cascade a répondu — gemini-3.1-pro attendu, deepseek
+    // = repli si les clés préférées manquent côté serveur).
+    const modelsSeen = new Set<string>()
     // Extraction depuis un contenu déjà récupéré : 1) JSON-LD ItemList (déterministe, EAN
     // propres) depuis le HTML brut, 2) LLM sur le texte (prix barré + sites sans ItemList).
     const extractFrom = async (html: string, text: string, label: string, allowRetry: boolean): Promise<ExtractedProduct[]> => {
@@ -439,7 +446,7 @@ registerServerNode({
       if (ld.length) ctx.log('info', `${label} : ${ld.length} produit(s) via JSON-LD ItemList (déterministe).`)
       let llm: ExtractedProduct[] = []
       if (text.trim()) {
-        try { llm = await extractProducts(ctx, text, label, allowRetry) }
+        try { llm = await extractProducts(ctx, text, label, allowRetry, (m) => modelsSeen.add(m)) }
         catch (err) { ctx.log('warn', `Extraction LLM échouée pour ${label} : ${err instanceof Error ? err.message : err}`) }
       }
       return mergeListing(ld, llm)
@@ -529,7 +536,8 @@ registerServerNode({
     }
 
     if (brandTerm && brandFiltered > 0) ctx.log('info', `Filtre marque « ${brandTerm} » : ${brandFiltered} produit(s) hors-marque écarté(s).`)
-    ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}.`)
+    const modelLabel = modelsSeen.size > 0 ? ` — extraction via ${[...modelsSeen].join(', ')}` : ''
+    ctx.log('info', `Total : ${capped.length} produit(s) dédupliqué(s)${rows.length !== capped.length ? ` (cap ${max})` : ''}${modelLabel}.`)
     if (capped.length === 0) ctx.log('warn', 'Aucun produit extrait.')
     return { sheet: { columns: COLUMNS, rows: capped } }
   },
