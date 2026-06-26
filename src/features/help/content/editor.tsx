@@ -112,7 +112,9 @@ export const editorSection: HelpSection = {
 - **Texte** : police (les polices du projet sont chargées), taille, gras/italique/souligné, alignement, **interligne**, **espacement des caractères**, couleur — et des **styles par caractère** en édition (sélectionne une portion du texte avant d'appliquer). Le bouton **Ajuster au contenu** recale la largeur du bloc sur le texte.
 - **Alignement multi-objets** : six boutons (gauche, centre H, droite, haut, centre V, bas — par rapport à la page) + **distribution** horizontale/verticale pour espacer uniformément 3 objets ou plus.
 
-Pendant les déplacements, des **guides magnétiques** (smart guides) apparaissent : aimantation aux bords/centres de la page et aux autres objets.`,
+Pendant les déplacements, des **guides magnétiques** (smart guides) apparaissent : aimantation aux bords/centres de la page et aux autres objets.
+
+> Le panneau Propriétés contient aussi une section **Règles conditionnelles** : faire réagir l'objet à la donnée de chaque ligne en publipostage (masquer, recolorer, redimensionner selon une condition). Voir la section **Règles conditionnelles**.`,
     },
     {
       type: 'text',

@@ -428,6 +428,57 @@ export const MODULES = [
     ]
   },
   {
+    "id": "conditional-rules",
+    "cat": "Édition",
+    "icon": "🔀",
+    "anim": "editor",
+    "title": "Règles conditionnelles",
+    "intro": "Afficher, masquer ou transformer un élément du design selon la donnée de la ligne courante — façon EasyCatalog (« Nouvelle action »), mais directement dans l'éditeur. Idéal en publipostage : un bandeau « PROMO » qui n'apparaît que sur les produits en promotion, un prix qui passe en rouge sous un seuil de stock, un picto agrandi pour les nouveautés…",
+    "features": [
+      {
+        "title": "Ouvrir le panneau",
+        "desc": "1. Sélectionne un objet sur le canvas. 2. Dans la colonne de droite, ouvre le panneau Propriétés, puis déplie la section Règles conditionnelles (icône branche). Un compteur indique le nombre de règles actives sur l'objet. 3."
+      },
+      {
+        "title": "Composer une règle : SI champ → opérateur → valeur → ALORS action",
+        "desc": "Chaque règle se lit de gauche à droite : • Champ : la colonne de données testée (ex. promo, stock, Prixnormal). • Opérateur : la condition à vérifier (voir ci-dessous)."
+      },
+      {
+        "title": "Les opérateurs (3 familles)",
+        "desc": "Texte (comparaison insensible à la casse et aux espaces de début/fin) : • Contient / Ne contient pas • Est / N'est pas (égalité exacte de chaîne) • Commence par / Termine par • Ne commence pas avec / Ne se termine pas avec Présence (pas de…"
+      },
+      {
+        "title": "Les actions (7)",
+        "desc": "• Cacher : l'objet n'est pas rendu (ni à l'écran, ni à l'export). • Montrer : force l'affichage. • Mettre en avant / Mettre à l'arrière : réordonne l'objet dans la pile (z-order)."
+      },
+      {
+        "title": "Aperçu et plusieurs règles",
+        "desc": "Quand une source est connectée, l'effet se rejoue en direct sur la ligne courante : ajoute ou modifie une règle et le canvas se met à jour aussitôt."
+      },
+      {
+        "title": "Quelle différence avec une liaison {{champ}} classique ?",
+        "desc": "Une liaison {{champ}} (ou « Lier à un champ ») remplace le contenu d'un élément par la valeur de la colonne (texte, image)."
+      },
+      {
+        "title": "Mon avertissement « la couleur est aussi câblée » ?",
+        "desc": "Si une propriété est à la fois pilotée par une liaison de données (ex. couleur câblée sur une colonne) et par une règle qui la modifie (Changer la couleur / Changer l'opacité), les deux peuvent se contredire."
+      },
+      {
+        "title": "Les champs n'apparaissent pas dans le sélecteur",
+        "desc": "Connecte une source de données (Excel, Google Sheets, PIM…) depuis le panneau Publipostage. Sans aucune source — jamais branchée — il n'y a pas de colonnes à tester."
+      },
+      {
+        "title": "L'aperçu ne bouge pas quand j'ajoute une règle",
+        "desc": "L'aperçu live nécessite une source connectée (panneau Publipostage). Hors connexion, la règle est bien enregistrée sur l'objet, mais son effet ne sera visible qu'au moment du publipostage / de l'export par lot."
+      },
+      {
+        "title": "EasyCatalog ↔ Règles conditionnelles",
+        "desc": "Le panneau reprend la logique des actions conditionnelles d'EasyCatalog (Contient, Est, Est égal à, Cacher…)."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "hyperframes",
     "cat": "Édition",
     "icon": "🎬",
@@ -603,6 +654,10 @@ export const MODULES = [
       {
         "title": "Le plug-in ne se charge pas / le token ne marche pas",
         "desc": "Le plug-in est distribué en mode développeur (UXP) : il se charge manuellement à chaque session via l'UXP Developer Tool."
+      },
+      {
+        "title": "Afficher / masquer un élément selon la donnée ?",
+        "desc": "Une fois ta base branchée, tu peux faire réagir un élément à la valeur de chaque ligne (masquer un bandeau « PROMO » hors promotion, passer un prix en rouge sous un seuil de stock, agrandir un picto « nouveauté »…)."
       }
     ],
     "shortcuts": []

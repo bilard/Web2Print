@@ -103,6 +103,10 @@ Dans l'éditeur, panneau **Publipostage** : connecte ta source (Excel, Google Sh
           title: 'Le plug-in ne se charge pas / le token ne marche pas',
           md: `Le plug-in est distribué en **mode développeur (UXP)** : il se charge manuellement à chaque session via l'UXP Developer Tool. Vérifie que le **token** collé est bien celui généré dans **Réglages → Token du plugin InDesign** (chaque utilisateur a le sien). Rappel : le balisage XML natif (étape 1) ne nécessite **aucun** plug-in et reste la voie recommandée.`,
         },
+        {
+          title: 'Afficher / masquer un élément selon la donnée ?',
+          md: `Une fois ta base branchée, tu peux faire **réagir** un élément à la valeur de chaque ligne (masquer un bandeau « PROMO » hors promotion, passer un prix en rouge sous un seuil de stock, agrandir un picto « nouveauté »…). C'est le rôle des **Règles conditionnelles** : sélectionne l'objet dans l'éditeur, ouvre le panneau **Propriétés → Règles conditionnelles** et compose tes conditions. Balisage XML (ou EasyCatalog) pour brancher la donnée **+** règles conditionnelles pour la mise en forme = l'alternative complète à un flux print piloté par données. Voir la section **Règles conditionnelles**.`,
+        },
       ],
     },
   ],

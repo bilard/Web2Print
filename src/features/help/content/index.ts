@@ -4,6 +4,7 @@ import { nouveautesSection } from './nouveautes'
 import { onboardingSection } from './onboarding'
 import { navigationSection } from './navigation'
 import { editorSection } from './editor'
+import { conditionalRulesSection } from './conditional-rules'
 import { damSection } from './dam'
 import { importIdmlSection } from './import-idml'
 import { easyCatalogSection } from './easycatalog'
@@ -37,6 +38,7 @@ export const helpSections: HelpSection[] = [
   onboardingSection,
   navigationSection,
   editorSection,
+  conditionalRulesSection,
   hyperframesSection,
   importIdmlSection,
   easyCatalogSection,

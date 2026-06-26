@@ -14,7 +14,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 // nouveau module d'aide n'est pas encore listé ici.
 const ICON = {
   'getting-started': '🚀', nouveautes: '✨', onboarding: '🧰', navigation: '🧭',
-  editor: '✏️', hyperframes: '🎬',
+  editor: '✏️', 'conditional-rules': '🔀', hyperframes: '🎬',
   'import-idml': '📐', easycatalog: '🔗', 'import-pptx': '📊', 'import-excel': '🧮',
   'import-image': '🌄', 'import-svg': '✒️', 'import-image-to-svg': '🪄', 'import-pdf-to-svg': '📄',
   dam: '🖼️', pim: '📦', taxonomies: '🌳', briefs: '📝',
@@ -24,7 +24,7 @@ const ICON = {
 }
 const ANIM = {
   'getting-started': 'pipeline', nouveautes: 'spark', onboarding: 'checklist', navigation: 'taxonomy',
-  editor: 'editor', hyperframes: 'reveal',
+  editor: 'editor', 'conditional-rules': 'editor', hyperframes: 'reveal',
   'import-idml': 'import', easycatalog: 'import', 'import-pptx': 'import', 'import-excel': 'pim',
   'import-image': 'import', 'import-svg': 'img2svg', 'import-image-to-svg': 'img2svg', 'import-pdf-to-svg': 'img2svg',
   dam: 'dam', pim: 'pim', taxonomies: 'taxonomy', briefs: 'chat',
