@@ -201,6 +201,18 @@ export const editorTourSteps: TourStep[] = [
     },
   },
   {
+    element: '[data-tour="opt-prop-conditional"]',
+    prepare: prepareProps,
+    requireSelector: '[data-tour="opt-prop-conditional"]',
+    popover: {
+      title: 'Règles conditionnelles',
+      description:
+        'Faites réagir l’objet à la donnée de chaque ligne en publipostage : le cacher, le recolorer, le redimensionner selon une condition (« si promo est vide → cacher le bandeau »). Évalué ligne par ligne à la fusion. Voir l’aide « Règles conditionnelles ».',
+      side: 'left',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="opt-prop-arrange"]',
     requireSelector: '[data-tour="opt-prop-arrange"]',
     popover: {

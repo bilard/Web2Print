@@ -113,7 +113,7 @@ export function ConditionalRulesSection({ selectedObjectId }: { selectedObjectId
     : null
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-2" data-tour="opt-prop-conditional">
       <div className="flex items-center gap-1">
         <button onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-wider hover:text-white/70 transition-colors">
