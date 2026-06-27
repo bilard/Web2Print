@@ -488,7 +488,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
         <div className="space-y-1">
           {([
             { v: 'none', label: 'Aucune', hint: 'Mail sans pièce jointe.' },
-            { v: 'source', label: 'Fichier source', hint: 'Joint le file du port `attachment` (ex: rapport .html, CSV brut original).' },
+            { v: 'source', label: 'Fichier source', hint: 'Joint ce qui arrive sur le port `attachment` : un fichier (sortie « file ») OU une chaîne HTML (sortie « html ») emballée en .html.' },
             { v: 'filtered', label: 'Sélection (CSV filtré)', hint: 'Génère un CSV avec uniquement les colonnes utilisées dans le corps du mail.' },
           ] as { v: AttachmentMode; label: string; hint: string }[]).map((opt) => (
             <label key={opt.v} className="flex items-start gap-2 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
@@ -605,10 +605,21 @@ const sendGmailNode: NodeSpec<
         const base64 = await fileToBase64(srcFile)
         attachments = [{ filename, mimeType, base64 }]
         ctx.log('info', `Pièce jointe (source) : ${filename} (${(srcFile.size / 1024).toFixed(1)} KB).`)
+      } else if (typeof (inputs.attachment as unknown) === 'string' && (inputs.attachment as unknown as string).trim()) {
+        // Câblage fréquent : on relie la sortie « html » (CHAÎNE, pas un File) du node
+        // « Rapport de coûts IA » au port `attachment`. On l'emballe en fichier .html.
+        const raw = inputs.attachment as unknown as string
+        const looksHtml = /<\s*[a-z!]/i.test(raw)
+        const fallback = looksHtml ? 'rapport.html' : 'contenu.txt'
+        const filename = (config.attachmentFilename || fallback).trim() || fallback
+        const mimeType = looksHtml ? 'text/html; charset=UTF-8' : 'text/plain; charset=UTF-8'
+        const base64 = utf8ToBase64(raw)
+        attachments = [{ filename, mimeType, base64 }]
+        ctx.log('info', `Pièce jointe (source, chaîne → ${looksHtml ? '.html' : '.txt'}) : ${filename} (${(raw.length / 1024).toFixed(1)} KB).`)
       } else {
         ctx.log(
           'warn',
-          "Mode 'Fichier source' actif mais aucun fichier en entrée (relie une sortie « file » au port 'attachment' ou 'data'). Le mail partira sans pièce jointe.",
+          "Mode 'Fichier source' actif mais aucun fichier en entrée (relie la sortie « file » OU « html » du node source au port 'attachment'). Le mail partira sans pièce jointe.",
         )
       }
     } else if (config.attachmentMode === 'filtered') {
