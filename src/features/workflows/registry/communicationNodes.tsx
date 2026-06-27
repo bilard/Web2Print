@@ -211,15 +211,21 @@ function injectTable(body: string, rows: Record<string, unknown>[], isHtml: bool
   })
 }
 
-type AttachmentMode = 'none' | 'source' | 'filtered' | 'gsheet'
+type AttachmentMode = 'none' | 'source' | 'filtered'
 
 /** Extrait l'ID Drive d'un export-result (`DriveFileMeta`) câblé sur un port d'entrée.
- *  Sortie du node « Export Google Sheets » : `{ id, name, mimeType, webViewLink }`. */
+ *  Sortie du node « Export Google Sheets » : `{ id, name, mimeType, webViewLink }`.
+ *  Discriminant STRICT (mimeType google-apps OU webViewLink) pour ne pas confondre
+ *  un export-result avec une ligne de données qui aurait une colonne `id`. */
 function extractDriveFileId(input: unknown): { id: string; name?: string } | null {
   if (input && typeof input === 'object' && !Array.isArray(input)) {
-    const meta = input as { id?: unknown; name?: unknown }
-    if (typeof meta.id === 'string' && meta.id.trim()) {
-      return { id: meta.id.trim(), name: typeof meta.name === 'string' ? meta.name : undefined }
+    const meta = input as { id?: unknown; name?: unknown; mimeType?: unknown; webViewLink?: unknown }
+    const id = typeof meta.id === 'string' ? meta.id.trim() : ''
+    const isExportResult =
+      (typeof meta.mimeType === 'string' && meta.mimeType.startsWith('application/vnd.google-apps')) ||
+      typeof meta.webViewLink === 'string'
+    if (id && isExportResult) {
+      return { id, name: typeof meta.name === 'string' ? meta.name : undefined }
     }
   }
   return null
@@ -233,6 +239,9 @@ interface SendGmailConfig {
   iterate: boolean
   attachmentMode: AttachmentMode
   attachmentFilename: string
+  /** Joint AUSSI le Google Sheet exporté (.xlsx) reçu sur `data`/`attachment`
+   *  (sortie « result » du node « Export Google Sheets »). Additif au mode ci-dessus. */
+  attachGSheet?: boolean
 }
 
 interface SendGmailOutput {
@@ -479,8 +488,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
         <div className="space-y-1">
           {([
             { v: 'none', label: 'Aucune', hint: 'Mail sans pièce jointe.' },
-            { v: 'source', label: 'Fichier source', hint: 'Joint le file du port `attachment` (ex: CSV brut original).' },
-            { v: 'gsheet', label: 'Google Sheet (Excel)', hint: 'Joint le Google Sheet du node « Export Google Sheets » (port `data`), exporté en .xlsx.' },
+            { v: 'source', label: 'Fichier source', hint: 'Joint le file du port `attachment` (ex: rapport .html, CSV brut original).' },
             { v: 'filtered', label: 'Sélection (CSV filtré)', hint: 'Génère un CSV avec uniquement les colonnes utilisées dans le corps du mail.' },
           ] as { v: AttachmentMode; label: string; hint: string }[]).map((opt) => (
             <label key={opt.v} className="flex items-start gap-2 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
@@ -510,6 +518,24 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             />
           </div>
         )}
+
+        {/* Pièce jointe additionnelle : le Google Sheet exporté en .xlsx. S'ADDITIONNE
+            au mode ci-dessus → permet d'envoyer 2 fichiers (ex: rapport .html + .xlsx). */}
+        <label className="flex items-start gap-2 mt-1.5 pt-1.5 border-t border-cyan-500/15 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
+          <input
+            type="checkbox"
+            checked={config.attachGSheet ?? false}
+            onChange={(e) => onChange({ ...config, attachGSheet: e.target.checked })}
+            className="accent-cyan-500 mt-0.5"
+          />
+          <div className="flex-1">
+            <div className="text-[11px] text-neutral-200">Joindre aussi le Google Sheet (.xlsx)</div>
+            <div className="text-[10px] text-neutral-500 leading-snug">
+              Exporte en <code className="text-emerald-300/80">.xlsx</code> le Sheet reçu du node « Export Google Sheets »
+              (sortie <code className="text-emerald-300/80">result</code> sur le port <code className="text-emerald-300/80">data</code>). S'ajoute à la pièce jointe ci-dessus.
+            </div>
+          </div>
+        </label>
       </div>
     </div>
   )
@@ -584,28 +610,6 @@ const sendGmailNode: NodeSpec<
           "Mode 'Fichier source' actif mais aucun fichier en entrée (relie une sortie « file » au port 'attachment' ou 'data'). Le mail partira sans pièce jointe.",
         )
       }
-    } else if (config.attachmentMode === 'gsheet') {
-      // Joint le Google Sheet produit par le node « Export Google Sheets » : sa sortie
-      // (export-result `DriveFileMeta`) est câblée sur `data` (ou `attachment`). On
-      // exporte le Sheet en .xlsx via l'API Drive (downloadDriveFile) avec le même
-      // jeton serveur que l'envoi Gmail.
-      const meta = extractDriveFileId(inputs.attachment) ?? extractDriveFileId(inputs.data)
-      if (!meta) {
-        ctx.log(
-          'warn',
-          "Mode 'Google Sheet' actif mais aucun export-result en entrée. Relie la sortie « result » du node « Export Google Sheets » au port 'data'. Le mail partira sans pièce jointe.",
-        )
-      } else {
-        ctx.log('info', `Export du Google Sheet ${meta.name ?? meta.id} en .xlsx…`)
-        const file = await downloadDriveFile(meta.id, accessToken)
-        const base64 = await fileToBase64(file)
-        attachments = [{
-          filename: file.name,
-          mimeType: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          base64,
-        }]
-        ctx.log('info', `Pièce jointe (Google Sheet) : ${file.name} (${(file.size / 1024).toFixed(1)} KB).`)
-      }
     } else if (config.attachmentMode === 'filtered') {
       if (!inputRows || inputRows.length === 0) {
         ctx.log(
@@ -631,6 +635,33 @@ const sendGmailNode: NodeSpec<
         attachments = [{ filename, mimeType: 'text/csv; charset=UTF-8', base64 }]
       }
     }
+
+    // Pièce jointe ADDITIONNELLE : le Google Sheet exporté en .xlsx. S'ajoute à la
+    // pièce jointe du mode ci-dessus (ex : rapport .html sur `attachment` + .xlsx) →
+    // le mail porte alors 2 fichiers. L'export-result vient du port `data` (typé `any` :
+    // le port `attachment` typé `file` refuse une sortie `export-result` au câblage),
+    // avec repli sur `attachment` par tolérance.
+    if (config.attachGSheet) {
+      const meta = extractDriveFileId(inputs.data) ?? extractDriveFileId(inputs.attachment)
+      if (!meta) {
+        ctx.log(
+          'warn',
+          "« Joindre le Google Sheet » actif mais aucun export-result en entrée. Relie la sortie « result » du node « Export Google Sheets » au port 'data'.",
+        )
+      } else {
+        ctx.log('info', `Export du Google Sheet ${meta.name ?? meta.id} en .xlsx…`)
+        const file = await downloadDriveFile(meta.id, accessToken)
+        const base64 = await fileToBase64(file)
+        const gsheetAttachment: SendGmailAttachment = {
+          filename: file.name,
+          mimeType: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          base64,
+        }
+        attachments = attachments ? [...attachments, gsheetAttachment] : [gsheetAttachment]
+        ctx.log('info', `Pièce jointe (Google Sheet) : ${file.name} (${(file.size / 1024).toFixed(1)} KB).`)
+      }
+    }
+
     if (config.iterate && inputRows && rawConfig) {
       const rows = inputRows
       if (rows.length === 0) {
