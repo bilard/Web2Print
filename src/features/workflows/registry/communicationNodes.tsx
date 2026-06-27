@@ -242,6 +242,9 @@ interface SendGmailConfig {
   /** Joint AUSSI le Google Sheet exporté (.xlsx) reçu sur `data`/`attachment`
    *  (sortie « result » du node « Export Google Sheets »). Additif au mode ci-dessus. */
   attachGSheet?: boolean
+  /** Joint AUSSI le HTML du corps (chaîne reçue sur `data`, ex : sortie « html » de
+   *  « Rapport de coûts IA ») en fichier .html. Évite une 2ᵉ arête vers `attachment`. */
+  attachBodyHtml?: boolean
 }
 
 interface SendGmailOutput {
@@ -536,6 +539,23 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             </div>
           </div>
         </label>
+
+        {/* Pièce jointe additionnelle : le corps HTML lui-même en .html. Reprend la
+            chaîne HTML reçue sur `data` → pas besoin d'une 2ᵉ arête vers `attachment`. */}
+        <label className="flex items-start gap-2 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
+          <input
+            type="checkbox"
+            checked={config.attachBodyHtml ?? false}
+            onChange={(e) => onChange({ ...config, attachBodyHtml: e.target.checked })}
+            className="accent-cyan-500 mt-0.5"
+          />
+          <div className="flex-1">
+            <div className="text-[11px] text-neutral-200">Joindre aussi le corps en .html</div>
+            <div className="text-[10px] text-neutral-500 leading-snug">
+              Joint le HTML reçu sur <code className="text-emerald-300/80">data</code> (sortie <code className="text-emerald-300/80">html</code> de « Rapport de coûts IA ») en fichier <code className="text-emerald-300/80">.html</code>. Aucune arête vers <code className="text-emerald-300/80">attachment</code> requise.
+            </div>
+          </div>
+        </label>
       </div>
     </div>
   )
@@ -673,6 +693,28 @@ const sendGmailNode: NodeSpec<
         }
         attachments = attachments ? [...attachments, gsheetAttachment] : [gsheetAttachment]
         ctx.log('info', `Pièce jointe (Google Sheet) : ${file.name} (${(file.size / 1024).toFixed(1)} KB).`)
+      }
+    }
+
+    // Pièce jointe ADDITIONNELLE : le corps HTML lui-même en .html. Reprend la chaîne
+    // HTML reçue sur `data` (sortie « html » de « Rapport de coûts IA ») → permet de
+    // joindre le rapport SANS 2ᵉ arête vers `attachment`.
+    if (config.attachBodyHtml) {
+      const html = typeof inputs.data === 'string' ? inputs.data : null
+      if (!html || !html.trim()) {
+        ctx.log(
+          'warn',
+          "« Joindre le corps en .html » actif mais le port « data » ne contient pas de HTML (chaîne). Relie la sortie « html » du node source au port « data ».",
+        )
+      } else {
+        const base64 = utf8ToBase64(html)
+        const bodyHtmlAttachment: SendGmailAttachment = {
+          filename: 'rapport.html',
+          mimeType: 'text/html; charset=UTF-8',
+          base64,
+        }
+        attachments = attachments ? [...attachments, bodyHtmlAttachment] : [bodyHtmlAttachment]
+        ctx.log('info', `Pièce jointe (corps HTML) : rapport.html (${(html.length / 1024).toFixed(1)} KB).`)
       }
     }
 
