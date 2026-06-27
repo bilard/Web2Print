@@ -13,7 +13,7 @@ import {
   resolveProductTaxonomy,
 } from '@/features/taxonomy/productTaxonomy'
 import { ProductTaxonomyPicker } from '@/components/taxonomy/ProductTaxonomyPicker'
-import { evaluateFormula } from './formulaEngine'
+import { cellValue } from './cellValue'
 import { getLevelColor, getTaxoColumns } from './taxonomyBuilder'
 import type { ExcelColumn, CellValue, FieldTypeId } from './types'
 import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
@@ -241,10 +241,8 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   const visibleCols = sheet.columns.filter(c => !hiddenCols.has(c.key))
   const levels = sheet.taxonomyLevels ?? {}
 
-  const getValue = (col: ExcelColumn): CellValue =>
-    col.fieldType === 'formula' && col.formula
-      ? evaluateFormula(col.formula, row, sheet.columns)
-      : row[col.key]
+  // cellValue évalue la formule et applique ×100 si « pourcentage » (0,28 → 28).
+  const getValue = (col: ExcelColumn): CellValue => cellValue(col, row, sheet.columns)
 
   const fmt = (value: CellValue, col: ExcelColumn): string => {
     if (value === null || value === undefined || value === '') return '—'
@@ -260,6 +258,10 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
       })
+    if (col.fieldType === 'formula' && col.formulaResultType === 'percent' && !isNaN(num)) {
+      const d = col.formulaDecimals ?? 0
+      return `${num.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d })} %`
+    }
     if (col.fieldType === 'currency' && !isNaN(num)) return `${formatNum(num)} €`
     if (col.fieldType === 'percent' && !isNaN(num)) return `${formatNum(num)}%`
     if (col.fieldType === 'rating' && !isNaN(num)) return '★'.repeat(Math.round(num)) + '☆'.repeat(Math.max(0, 5 - Math.round(num)))

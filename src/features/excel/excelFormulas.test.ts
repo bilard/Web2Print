@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import * as XLSX from 'xlsx'
 import { excelFormulaToColumnFormula, applyExcelFormulas } from './excelFormulas'
 import { evaluateFormula } from './formulaEngine'
+import { cellValue } from './cellValue'
 import type { ExcelColumn, ExcelRow, CellValue } from './types'
 
 const LETTERS = new Map([
@@ -219,6 +220,11 @@ describe.skipIf(!existsSync(REAL_FILE))('applyExcelFormulas — Catalogue_GSB_20
     const divValues = rows.map((r) => r['Unit_price (diviseur)'])
     expect(divValues).toContain(1.49) // produit « Le m² »
     expect(divValues).toContain(15) // produit « Le mètre »
+
+    // Option « Pourcentage » sur Promotion : le ratio 0,28… s'affiche/exporte en 28.
+    const promoPercent: ExcelColumn = { ...promo, formulaResultType: 'percent' }
+    const colsPercent = columns.map((c) => (c.label === 'Promotion' ? promoPercent : c))
+    expect(Number(cellValue(promoPercent, rows[0], colsPercent))).toBeCloseTo(28, 0)
 
     // Fidélité : le moteur reproduit la valeur Excel sur toutes les lignes.
     let mismatches = 0

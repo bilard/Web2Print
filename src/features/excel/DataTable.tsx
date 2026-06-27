@@ -9,7 +9,7 @@ import { StatsBadges } from './StatsBadges'
 import { ColumnMenu } from './ColumnMenu'
 import { AddColumnMenu } from './AddColumnMenu'
 import { FormulaEditor } from './FormulaEditor'
-import { evaluateFormula } from './formulaEngine'
+import { cellValue } from './cellValue'
 import { getTaxoColumns } from './taxonomyBuilder'
 import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { GLOBAL_TAXO_FILTER_KEY, buildGlobalTaxoFilterPredicate } from '@/features/taxonomy/productTaxonomy'
@@ -435,6 +435,14 @@ export function DataTable() {
         if (col.fieldType === 'currency') return `${formatted} €`
         if (col.fieldType === 'percent') return `${formatted}%`
         return formatted
+      }
+    }
+    // Formula « pourcentage » : la valeur reçue est déjà ×100 (cf. cellValue), on suffixe « % »
+    if (col.fieldType === 'formula' && col.formulaResultType === 'percent') {
+      const num = getNumericValue(value)
+      if (num !== null) {
+        const d = col.formulaDecimals ?? 0
+        return `${num.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d })} %`
       }
     }
     // Formula with number result type and decimals
@@ -923,9 +931,7 @@ function DataRow({
 
       {visibleColumns.map((col, vColIdx) => {
         const isFormulaCol = col.fieldType === 'formula' && col.formula
-        const value = isFormulaCol
-          ? evaluateFormula(col.formula!, row, sheet.columns)
-          : row[col.key]
+        const value = cellValue(col, row, sheet.columns)
         const isEditing = editingCell?.rowId === row._id && editingCell?.colKey === col.key && !isFormulaCol
         const colorStyle = getCellColorStyle(value, col)
         // Fraîcheur par champ (produits PIM) : pastille ambre ≥ 30 j, rouge ≥ 90 j.

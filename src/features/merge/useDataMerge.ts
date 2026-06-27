@@ -13,7 +13,7 @@ import { formatPriceParts, type PriceSegment } from './priceFormat'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
 import { collectObjectsDeep, refreshAncestorGroups } from '@/features/editor/deepObjects'
 import { isPimSource, pimProjectIdFromSource, loadPimMergeData } from './pimSource'
-import { evaluateFormula as evaluateExcelFormula } from '@/features/excel/formulaEngine'
+import { cellValue } from '@/features/excel/cellValue'
 import { ENRICHMENT_ALIASES } from '@/features/excel/ai-enrichment/useSaveEnrichedProduct'
 import type { ExcelSheet, CellValue } from '@/features/excel/types'
 
@@ -291,8 +291,12 @@ export function useDataMerge() {
       mergeRows = sheet.rows.map((r) => {
         const row: MergeRow = { ...r }
         for (const col of formulaCols) {
-          const value = evaluateExcelFormula(col.formula!, row as Record<string, CellValue>, sheet.columns)
-          if (col.formulaResultType === 'number' && col.formulaDecimals != null) {
+          // cellValue évalue la formule ET applique ×100 si « pourcentage » (0,28 → 28).
+          const value = cellValue(col, row as Record<string, CellValue>, sheet.columns)
+          if (
+            (col.formulaResultType === 'number' || col.formulaResultType === 'percent') &&
+            col.formulaDecimals != null
+          ) {
             const num = typeof value === 'number' ? value : parseFloat(String(value ?? '').replace(',', '.'))
             row[col.key] = isNaN(num) ? String(value ?? '') : num.toFixed(col.formulaDecimals)
           } else {

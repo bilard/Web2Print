@@ -8,7 +8,7 @@ import { FormulaFunctionList } from './FormulaFunctionList'
 import { FormulaPreview } from './FormulaPreview'
 import { FormulaInput } from './FormulaInput'
 
-type ResultType = 'auto' | 'number' | 'text'
+type ResultType = 'auto' | 'number' | 'text' | 'percent'
 
 /** Remplace les références [clé_technique] par [label_humain] pour l'affichage */
 function normalizeFormulaDisplay(formula: string, columns: ExcelColumn[]): string {
@@ -93,10 +93,11 @@ export function FormulaEditor({
                 >
                   <option value="auto">Auto</option>
                   <option value="number">Nombre</option>
+                  <option value="percent">Pourcentage</option>
                   <option value="text">Texte</option>
                 </select>
               </div>
-              {resultType === 'number' && (
+              {(resultType === 'number' || resultType === 'percent') && (
                 <div className="w-28">
                   <label className="text-[11px] text-white/40 uppercase tracking-wider mb-1.5 block">
                     Décimales
@@ -162,7 +163,8 @@ export function FormulaEditor({
               formula={formula}
               columns={columns}
               rows={rows}
-              decimals={resultType === 'number' ? decimals : null}
+              decimals={resultType === 'number' || resultType === 'percent' ? decimals : null}
+              percent={resultType === 'percent'}
             />
           </div>
 
@@ -181,7 +183,7 @@ export function FormulaEditor({
             Annuler
           </button>
           <button
-            onClick={() => onSave(formula, label, resultType, resultType === 'number' ? decimals : null)}
+            onClick={() => onSave(formula, label, resultType, resultType === 'number' || resultType === 'percent' ? decimals : null)}
             disabled={!formula.trim()}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[#fff] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >

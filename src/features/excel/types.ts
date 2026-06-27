@@ -65,7 +65,7 @@ export interface ExcelColumn {
   taxonomy?: TaxonomyTag[]
   decimals?: number
   formula?: string
-  formulaResultType?: 'auto' | 'number' | 'text'
+  formulaResultType?: 'auto' | 'number' | 'text' | 'percent'
   formulaDecimals?: number | null
 }
 

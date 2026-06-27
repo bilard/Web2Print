@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx'
 import type { ExcelSheet, ExcelColumn, ExcelRow, CellValue } from './types'
 import { detectColumnType, computeColumnStats } from './fieldDetection'
 import { applyExcelFormulas } from './excelFormulas'
+import { cellValue } from './cellValue'
 import { useExcelStore } from '@/stores/excel.store'
 import { recordAudit } from '@/lib/auditLog'
 
@@ -112,7 +113,7 @@ export function useExcelImport() {
       const data = sheet.rows.map((row) => {
         const obj: Record<string, CellValue> = {}
         for (const col of sheet.columns) {
-          obj[col.label] = row[col.key]
+          obj[col.label] = cellValue(col, row, sheet.columns)
         }
         return obj
       })

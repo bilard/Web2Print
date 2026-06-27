@@ -4,6 +4,7 @@
 // granted via le flow OAuth de useGoogleDrive / useGoogleSheetsImport.
 
 import type { ExcelSheet } from '@/features/excel/types'
+import { cellValue } from '@/features/excel/cellValue'
 // xlsx (~484 Ko) et parseExcelFile chargés dynamiquement dans les fonctions GSheets :
 // sinon ils cascadent chez tout consommateur de gdriveCore (nodes Drive, etc.).
 
@@ -431,13 +432,15 @@ async function sheetToXlsxBlob(
   // VRAIS nombres pour les colonnes numériques (sinon Google importe « 177.49 » en TEXTE
   // sous locale FR → SUM/formules en #VALUE!) et on applique le `z` aux cellules data.
   // L'EAN/réf (colonnes texte) restent du texte.
+  // cellValue : évalue les colonnes-formule (et ×100 si « pourcentage ») au lieu d'écrire
+  // la valeur brute périmée. Détection de format et écriture alignées sur la même valeur.
   const formats = sheet.columns.map((col) =>
-    detectColumnFormat(col.key, col.label || col.key, sheet.rows.map((r) => r[col.key])),
+    detectColumnFormat(col.key, col.label || col.key, sheet.rows.map((r) => cellValue(col, r, sheet.columns))),
   )
   const rows = sheet.rows.map((row) => {
     const out: Record<string, unknown> = {}
     sheet.columns.forEach((col, ci) => {
-      const raw = row[col.key]
+      const raw = cellValue(col, row, sheet.columns)
       const fmt = formats[ci]
       const num = !fmt.text && typeof raw === 'string' ? numericString(raw) : null
       out[col.label || col.key] = num !== null ? num : raw

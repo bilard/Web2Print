@@ -6,9 +6,11 @@ interface FormulaPreviewProps {
   columns: ExcelColumn[]
   rows: ExcelRow[]
   decimals?: number | null
+  /** Type résultat « Pourcentage » : multiplie par 100 et suffixe « % » (ratio 0,28 → « 28 % »). */
+  percent?: boolean
 }
 
-export function FormulaPreview({ formula, columns, rows, decimals }: FormulaPreviewProps) {
+export function FormulaPreview({ formula, columns, rows, decimals, percent }: FormulaPreviewProps) {
   const previewRows = rows.slice(0, 5)
 
   if (!formula.trim()) {
@@ -25,7 +27,9 @@ export function FormulaPreview({ formula, columns, rows, decimals }: FormulaPrev
       // Try numeric parsing — handles numbers stored as strings (e.g. "84,900" French format)
       const raw = typeof result === 'number' ? result : parseFloat(String(result).replace(/\s/g, '').replace(',', '.'))
       if (!isNaN(raw)) {
-        return raw.toLocaleString('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+        const n = percent ? raw * 100 : raw
+        const formatted = n.toLocaleString('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+        return percent ? `${formatted} %` : formatted
       }
     }
     return String(result)
