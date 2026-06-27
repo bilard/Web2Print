@@ -14,6 +14,7 @@ import {
   FolderCheck,
   LogIn,
   AlertCircle,
+  Check,
 } from 'lucide-react'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { CloseButton } from '@/components/shared/CloseButton'
@@ -35,6 +36,11 @@ interface Props {
   /** Mode "choisir un dossier" : seuls les dossiers sont listés ; un clic navigue
    *  dedans, et un bouton "Choisir ce dossier" permet de valider la sélection. */
   foldersOnly?: boolean
+  /** Multi-sélection : cases à cocher + « Tout sélectionner » + bouton « Ajouter (N) ».
+   *  Un clic sur un fichier le (dé)sélectionne au lieu de valider immédiatement. */
+  multiple?: boolean
+  /** Reçoit la liste des fichiers sélectionnés (mode `multiple`). */
+  onPickMultiple?: (files: PickedFile[]) => void
   title?: string
 }
 
@@ -62,7 +68,7 @@ interface FolderCrumb {
   name: string
 }
 
-export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', foldersOnly = false, title }: Props) {
+export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', foldersOnly = false, multiple = false, onPickMultiple, title }: Props) {
   const accessToken = useGDriveStore((s) => s.accessToken)
   const accountEmail = useGDriveStore((s) => s.accountEmail)
   const { connectDrive, listFilesBySection, listFilesByParent, disconnect } = useGoogleDrive()
@@ -74,6 +80,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
   const [loading, setLoading] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Map<string, PickedFile>>(() => new Map())
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentFolder = folderStack[folderStack.length - 1] ?? null
@@ -99,6 +106,11 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  // Repart d'une sélection vide à chaque (ré)ouverture du picker.
+  useEffect(() => {
+    if (!open) setSelected(new Map())
+  }, [open])
 
   const handleConnect = async () => {
     setError(null)
@@ -147,6 +159,32 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
   const pickCurrentFolder = () => {
     if (!currentFolder) return
     onPick({ id: currentFolder.id, name: currentFolder.name, mimeType: FOLDER_MIME })
+    onClose()
+  }
+
+  // --- Multi-sélection ---
+  const selectableFiles = visibleFiles.filter((f) => f.mimeType !== FOLDER_MIME)
+  const allSelected = selectableFiles.length > 0 && selectableFiles.every((f) => selected.has(f.id))
+  const toggleSelect = (f: GDriveFile) => {
+    setSelected((m) => {
+      const next = new Map(m)
+      if (next.has(f.id)) next.delete(f.id)
+      else next.set(f.id, { id: f.id, name: f.name, mimeType: f.mimeType })
+      return next
+    })
+  }
+  const toggleSelectAll = () => {
+    setSelected((m) => {
+      const next = new Map(m)
+      if (allSelected) for (const f of selectableFiles) next.delete(f.id)
+      else for (const f of selectableFiles) next.set(f.id, { id: f.id, name: f.name, mimeType: f.mimeType })
+      return next
+    })
+  }
+  const confirmMultiple = () => {
+    if (selected.size === 0) return
+    onPickMultiple?.([...selected.values()])
+    setSelected(new Map())
     onClose()
   }
 
@@ -220,6 +258,26 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                   : 'Sélectionner un fichier Drive'}
             </div>
             <div className="flex items-center gap-2">
+              {multiple && accessToken && !foldersOnly ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    disabled={selectableFiles.length === 0}
+                    className="px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.08] disabled:opacity-30 border border-white/[0.08] text-white/70 text-[12px] transition-colors"
+                  >
+                    {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmMultiple}
+                    disabled={selected.size === 0}
+                    className="px-3 py-1.5 rounded-md bg-blue-500/15 hover:bg-blue-500/25 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-blue-500/30 disabled:border-white/[0.06] text-blue-200 text-[12px] transition-colors"
+                  >
+                    Ajouter ({selected.size})
+                  </button>
+                </>
+              ) : null}
               {foldersOnly && accessToken ? (
                 <button
                   type="button"
@@ -356,12 +414,22 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                         month: 'short',
                         year: 'numeric',
                       })
+                      const isSelected = selected.has(f.id)
                       return (
                         <li key={f.id}>
                           <button
-                            onClick={() => (isFolder ? handleOpenFolder(f) : handlePick(f))}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/[0.05] text-left transition-colors group"
+                            onClick={() => (isFolder ? handleOpenFolder(f) : multiple ? toggleSelect(f) : handlePick(f))}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors group ${
+                              isSelected ? 'bg-blue-500/15 hover:bg-blue-500/20' : 'hover:bg-white/[0.05]'
+                            }`}
                           >
+                            {multiple && !isFolder && (
+                              <div className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center ${
+                                isSelected ? 'bg-blue-500 border-blue-500' : 'border-white/25'
+                              }`}>
+                                {isSelected && <Check className="w-3 h-3 text-[#fff]" />}
+                              </div>
+                            )}
                             <div className="w-5 h-5 shrink-0 flex items-center justify-center">
                               {isFolder ? (
                                 <Folder className="w-5 h-5 text-amber-300" fill="currentColor" fillOpacity={0.3} />
