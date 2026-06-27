@@ -1045,18 +1045,24 @@ function DataRow({
                 }}
                 className="w-full bg-indigo-500/10 border border-indigo-500/30 rounded px-2 py-1 text-[13px] text-white outline-none"
               />
-            ) : col.fieldType === 'image' || isImageValue(value, col) ? (
-              <div className="flex items-center gap-1.5 py-0.5">
-                {value ? (
+            ) : col.fieldType === 'image' || col.fieldType === 'url' || isImageValue(value, col) ? (
+              <div className="flex items-center gap-1.5 py-0.5 min-w-0">
+                {value && (isDriveImageRef(String(value)) || isImageValue(value, col)) ? (
                   <DamImage
                     value={String(value)}
                     className="h-9 w-9 rounded object-cover shrink-0 bg-white/5 border border-white/10"
                   />
                 ) : null}
-                <span className="text-[10px] text-white/25 truncate">
-                  {!value ? '' : isDriveImageRef(String(value)) ? 'DAM (Drive)' : String(value).split('/').pop()}
+                <span className="text-[11px] text-white/35 truncate min-w-0">
+                  {!value
+                    ? ''
+                    : isDriveImageRef(String(value))
+                      ? 'DAM (Drive)'
+                      : col.fieldType === 'image'
+                        ? String(value).split('/').pop()
+                        : String(value)}
                 </span>
-                {col.fieldType === 'image' && (
+                {(col.fieldType === 'image' || col.fieldType === 'url') && (
                   <DamPickButton
                     onPick={(link) => updateCell(activeSheetIndex, row._id, col.key, link)}
                   />
