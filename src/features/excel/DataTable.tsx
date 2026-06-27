@@ -19,7 +19,7 @@ import { useThemeStore } from '@/stores/theme.store'
 import { rowCompleteness, completenessTone } from './completeness'
 import { cellFreshness } from './fieldFreshness'
 import { GalleryView } from './GalleryView'
-import { LayoutGrid, Table as TableIcon } from 'lucide-react'
+import { LayoutGrid, Table as TableIcon, MoveHorizontal } from 'lucide-react'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
 
@@ -390,6 +390,48 @@ export function DataTable() {
     document.addEventListener('mouseup', handleMouseUp)
   }, [activeSheetIndex, updateColumnWidth])
 
+  /** Largeur idéale d'une colonne = max(entête, cellule la plus large), bornée. */
+  const computeAutoFitWidth = (col: ExcelColumn): number => {
+    // Police par type de cellule (cf. rendu : primaire/numérique 13px, texte 12px).
+    const cellFont = col.isPrimary
+      ? `600 13px ${AUTOFIT_FONT_FAMILY}`
+      : numericTypes.includes(col.fieldType)
+        ? `500 13px ${AUTOFIT_FONT_FAMILY}`
+        : col.fieldType === 'image'
+          ? `400 10px ${AUTOFIT_FONT_FAMILY}`
+          : `400 12px ${AUTOFIT_FONT_FAMILY}`
+
+    // Largeur d'entête : libellé (11px gras majuscules) + chrome (grip+tri+menu+fx+padding).
+    const headerWidth = measureTextWidth(col.label.toUpperCase(), `700 11px ${AUTOFIT_FONT_FAMILY}`) + 118
+
+    // Largeur de contenu : la plus large des cellules (échantillonnées si trop nombreuses).
+    const rows = sheet.rows
+    const stride = rows.length > AUTOFIT_SAMPLE ? Math.ceil(rows.length / AUTOFIT_SAMPLE) : 1
+    let maxCell = 0
+    for (let i = 0; i < rows.length; i += stride) {
+      const text = formatCell(cellValue(col, rows[i], sheet.columns), col)
+      if (!text) continue
+      const w = measureTextWidth(text, cellFont)
+      if (w > maxCell) maxCell = w
+    }
+    // Padding cellule px-3 (24) + pastille « récent »/gap (~16) ; image : + vignette 36 + gap.
+    const cellWidth = maxCell > 0 ? maxCell + (col.fieldType === 'image' ? 24 + 44 : 24 + 16) : 0
+
+    return Math.round(Math.min(AUTOFIT_MAX, Math.max(AUTOFIT_MIN, headerWidth, cellWidth)))
+  }
+
+  /** Double-clic sur la bordure : ajuste une colonne au contenu, façon Excel. */
+  const handleAutoFitColumn = (colKey: string) => {
+    const col = sheet.columns.find((c) => c.key === colKey)
+    if (!col) return
+    updateColumnWidth(activeSheetIndex, colKey, computeAutoFitWidth(col))
+  }
+
+  /** Bouton entête : ajuste TOUTES les colonnes visibles au contenu. */
+  const handleAutoFitAllColumns = () => {
+    for (const col of visibleColumns) updateColumnWidth(activeSheetIndex, col.key, computeAutoFitWidth(col))
+  }
+
   const startEdit = (rowId: string, colKey: string, value: CellValue) => {
     setEditingCell({ rowId, colKey })
     setEditValue(value !== null ? String(value) : '')
@@ -489,7 +531,16 @@ export function DataTable() {
   return (
     <div className="flex-1 overflow-auto">
       {/* Bascule tableau / galerie (cartes produit) */}
-      <div className="sticky left-0 flex justify-end px-2 pt-1.5">
+      <div className="sticky left-0 flex justify-end items-center gap-1.5 px-2 pt-1.5">
+        {dataViewMode === 'table' && (
+          <button
+            onClick={handleAutoFitAllColumns}
+            className="flex items-center gap-1 p-1 px-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-neutral-500 hover:text-white transition-colors"
+            title="Ajuster toutes les colonnes au contenu"
+          >
+            <MoveHorizontal className="w-3.5 h-3.5" />
+          </button>
+        )}
         <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">
           <button
             onClick={() => setDataViewMode('table')}
@@ -626,10 +677,12 @@ export function DataTable() {
                     />
                   </span>
                 </div>
-                {/* Resize handle */}
+                {/* Resize handle — double-clic = ajuster au contenu (façon Excel) */}
                 <div
                   className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-indigo-500/40 transition-colors z-20"
+                  title="Glisser pour redimensionner — double-clic pour ajuster au contenu"
                   onMouseDown={(e) => handleResizeStart(e, col.key, col.width)}
+                  onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAutoFitColumn(col.key) }}
                 />
               </th>
             ))}
@@ -810,6 +863,23 @@ function isImageValue(value: CellValue, col: ExcelColumn): boolean {
   if (!value || typeof value !== 'string') return false
   if (col.fieldType === 'image') return true
   return value.startsWith('http') && IMAGE_EXTS.test(value)
+}
+
+// --- Auto-ajustement de largeur (double-clic sur la bordure, façon Excel) ---------
+
+const AUTOFIT_FONT_FAMILY =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+const AUTOFIT_MIN = 80
+const AUTOFIT_MAX = 720 // borne haute pour qu'une cellule très longue ne crée pas une colonne géante
+const AUTOFIT_SAMPLE = 3000 // au-delà, on échantillonne pour rester fluide
+
+let autofitCanvas: HTMLCanvasElement | null = null
+function measureTextWidth(text: string, font: string): number {
+  if (!autofitCanvas) autofitCanvas = document.createElement('canvas')
+  const ctx = autofitCanvas.getContext('2d')
+  if (!ctx) return text.length * 7 // repli grossier si pas de canvas (tests/SSR)
+  ctx.font = font
+  return ctx.measureText(text).width
 }
 
 function getNumericValue(value: CellValue): number | null {
