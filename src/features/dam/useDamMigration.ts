@@ -137,6 +137,7 @@ export function useDamMigration() {
     let done = 0
     let failed = 0
     let cursor = 0
+    let firstError = ''
 
     const worker = async (): Promise<void> => {
       while (cursor < jobs.length) {
@@ -147,8 +148,10 @@ export function useDamMigration() {
           const file = new File([base64ToBlob(data, mimeType)], `${sanitize(job.name)}.${ext}`, { type: mimeType })
           const meta = await uploadFileToDrive(token, file, { name: file.name, parentFolderId: folderId })
           results.set(`${job.rowId}|${job.colKey}`, driveWebViewLink(meta.id))
-        } catch {
+        } catch (e) {
           failed++
+          if (!firstError) firstError = e instanceof Error ? e.message : String(e)
+          console.error('[DAM] échec image', job.url, e)
         }
         done++
         setProgress({ done, total: jobs.length })
@@ -183,8 +186,10 @@ export function useDamMigration() {
     setProgress(null)
     if (failed === 0) {
       toast.success(`${results.size} image(s) centralisée(s) dans le DAM. Pense à sauvegarder.`)
+    } else if (results.size === 0) {
+      toast.error(`Échec de la centralisation${firstError ? ` : ${firstError}` : ''} (image inaccessible côté serveur).`)
     } else {
-      toast.warning(`${results.size} image(s) centralisée(s), ${failed} échec(s). Pense à sauvegarder.`)
+      toast.warning(`${results.size} centralisée(s), ${failed} échec(s)${firstError ? ` — ${firstError}` : ''}. Pense à sauvegarder.`)
     }
   }, [])
 
