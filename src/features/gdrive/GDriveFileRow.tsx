@@ -27,9 +27,11 @@ interface Props {
   onRestore?: (file: GDriveFile) => void
   /** Mode corbeille : supprimer définitivement (irréversible). */
   onDeleteForever?: (file: GDriveFile) => void
+  /** Nombre d'éléments dans le dossier (affiché « Nom (N) »). */
+  fileCount?: number
 }
 
-export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleSelect, onTrash, onRestore, onDeleteForever }: Props) {
+export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleSelect, onTrash, onRestore, onDeleteForever, fileCount }: Props) {
   const cfg = getMimeStyle(file.mimeType)
   const isImage = !cfg.isFolder && file.mimeType.startsWith('image/')
   const rawDate = section === 'shared' ? (file.sharedWithMeTime ?? file.modifiedTime) : file.modifiedTime
@@ -85,7 +87,12 @@ export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleS
             </div>
           </div>
         )}
-        <span className="flex-1 text-sm text-white/70 truncate group-hover:text-white/90 transition-colors">{file.name}</span>
+        <span className="flex-1 text-sm text-white/70 truncate group-hover:text-white/90 transition-colors">
+          {file.name}
+          {cfg.isFolder && typeof fileCount === 'number' && (
+            <span className="ml-1.5 text-xs text-white/35">({fileCount})</span>
+          )}
+        </span>
       </a>
 
       {/* Partagé par (section "shared") */}

@@ -3,7 +3,8 @@ import { Search, X, Globe, FileText, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
-import { trashSheetDamAssets } from '@/features/dam/damCleanup'
+import { trashScrapeFolder } from '@/features/dam/damCleanup'
+import { scrapeFolderName } from '@/features/dam/scrapeFolder'
 
 /** Colonne latérale qui liste les sheets (= sources scrapées/importées) du fichier
  *  courant. Click → setActiveSheet (filtre la table). Recherche pour scaler à des
@@ -23,12 +24,11 @@ export function SheetsColumn() {
   /** Supprime une feuille (scraping) ET corbeille ses images DAM non utilisées ailleurs. */
   const handleDeleteSheet = useCallback((index: number, name: string) => {
     if (!confirm(`Supprimer « ${name} » ?`)) return
-    const all = useExcelStore.getState().sheets
-    const deleted = all[index]
+    const deleted = useExcelStore.getState().sheets[index]
     if (deleted) {
-      const others = all.filter((_, i) => i !== index)
-      void trashSheetDamAssets(deleted, others)
-        .then((n) => { if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`) })
+      // Corbeille le sous-dossier DAM entier de ce scraping (robuste, par emplacement).
+      void trashScrapeFolder(scrapeFolderName(deleted.name, deleted.sourceUrl))
+        .then((n) => { if (n > 0) toast.success('Dossier d’assets du scraping déplacé dans la corbeille Drive') })
         .catch(() => { /* non bloquant */ })
     }
     deleteSheet(index)

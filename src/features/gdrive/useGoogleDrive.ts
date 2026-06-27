@@ -59,5 +59,17 @@ export function useGoogleDrive() {
     return runQuery(finalQ, 'folder,modifiedTime desc')
   }, [runQuery])
 
-  return { connectDrive, listFilesBySection, listFilesByParent, disconnect }
+  /** Nombre d'éléments (fichiers + sous-dossiers) dans un dossier (jusqu'à 1000). */
+  const countFolderFiles = useCallback(async (folderId: string): Promise<number> => {
+    if (!accessToken) return 0
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and trashed=false`, fields: 'files(id)', pageSize: '1000',
+    })
+    const res = await fetch(`${DRIVE_API}/files?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    if (!res.ok) return 0
+    const data = (await res.json()) as { files?: unknown[] }
+    return data.files?.length ?? 0
+  }, [accessToken])
+
+  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, disconnect }
 }

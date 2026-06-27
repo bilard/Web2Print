@@ -18,6 +18,7 @@ import { functions } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import { isDriveImageRef, extractDriveFileId } from './driveAssets'
 import { isJunkImageUrl } from '@/features/excel/ai-enrichment/imageFilter'
+import { scrapeFolderName } from './scrapeFolder'
 import type { ExcelRow } from '@/features/excel/types'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
@@ -42,13 +43,6 @@ const damMove = httpsCallable<
   { moved: number }
 >(functions, 'damMove')
 
-/** Nom de sous-dossier DAM = nom du scraping (feuille), sinon hostname de l'URL source. */
-function scrapeFolderName(sheetName: string | undefined, sourceUrl: string | undefined): string {
-  const name = (sheetName ?? '').trim()
-  if (name && !/^feuille\s*\d*$/i.test(name)) return name
-  if (sourceUrl) { try { return new URL(sourceUrl).hostname.replace(/^www\./, '') } catch { /* ignore */ } }
-  return name || 'Scraping'
-}
 
 const UPLOAD_CONCURRENCY = 4
 

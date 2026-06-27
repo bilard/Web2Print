@@ -22,7 +22,8 @@ import { GalleryView } from './GalleryView'
 import { DamImage } from '@/features/dam/DamImage'
 import { DamPickButton } from '@/features/dam/DamPickButton'
 import { isDriveImageRef } from '@/features/dam/driveAssets'
-import { trashOrphanDamAssets } from '@/features/dam/damCleanup'
+import { trashProductDamAssets } from '@/features/dam/damCleanup'
+import { scrapeFolderName } from '@/features/dam/scrapeFolder'
 import { LayoutGrid, Table as TableIcon, MoveHorizontal } from 'lucide-react'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
@@ -1101,20 +1102,25 @@ function DataRow({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              // Cleanup DAM : corbeille Drive des images du produit non utilisées ailleurs.
+              // Cleanup DAM : corbeille les assets Drive du produit PAR EMPLACEMENT+NOM
+              // (robuste — indépendant des liens en cellule, qui peuvent ne pas être
+              // persistés). Sous-dossier = nom du scraping ; préfixe = libellé produit.
               const st = useExcelStore.getState()
               const sh = st.sheets[activeSheetIndex]
               if (sh) {
-                const others = sh.rows.filter((r) => r._id !== row._id)
-                void trashOrphanDamAssets(row, sh.columns, others)
-                  .then((n) => {
-                    if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`)
-                    else toast.info('Aucune image DAM (lien Drive) dans ce produit — la cellule contient une URL externe, pas un asset Drive.')
-                  })
-                  .catch((e) => {
-                    console.error('[DAM] suppression produit échouée', e)
-                    toast.error(`DAM : suppression Drive échouée — ${e instanceof Error ? e.message : 'erreur'}`)
-                  })
+                const primaryKey = sh.columns.find((c) => c.isPrimary)?.key
+                const label = primaryKey && typeof row[primaryKey] === 'string' ? String(row[primaryKey]) : ''
+                if (label) {
+                  void trashProductDamAssets(scrapeFolderName(sh.name, sh.sourceUrl), label)
+                    .then((n) => {
+                      if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`)
+                      else toast.info('Aucun asset DAM trouvé pour ce produit dans Drive.')
+                    })
+                    .catch((e) => {
+                      console.error('[DAM] suppression produit échouée', e)
+                      toast.error(`DAM : suppression Drive échouée — ${e instanceof Error ? e.message : 'erreur'}`)
+                    })
+                }
               }
               deleteRow(activeSheetIndex, row._id)
             }}

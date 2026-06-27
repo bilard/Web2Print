@@ -41,7 +41,8 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [reloadKey, setReloadKey] = useState(0)
-  const { listFilesBySection, listFilesByParent } = useGoogleDrive()
+  const [folderCounts, setFolderCounts] = useState<Record<string, number>>({})
+  const { listFilesBySection, listFilesByParent, countFolderFiles } = useGoogleDrive()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -59,6 +60,15 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
 
   // Reset la sélection au changement de dossier/section/recherche.
   useEffect(() => { setSelected(new Set()) }, [section, search, parentId])
+
+  // Compte le contenu de chaque dossier affiché (pour « Nom (N) »).
+  useEffect(() => {
+    let cancelled = false
+    const folderIds = files.filter((f) => f.mimeType === FOLDER_MIME).map((f) => f.id)
+    void Promise.all(folderIds.map(async (id) => [id, await countFolderFiles(id)] as const))
+      .then((pairs) => { if (!cancelled) setFolderCounts(Object.fromEntries(pairs)) })
+    return () => { cancelled = true }
+  }, [files, countFolderFiles])
 
   const nonFolderFiles = files.filter((f) => f.mimeType !== FOLDER_MIME)
   const allSelected = nonFolderFiles.length > 0 && nonFolderFiles.every((f) => selected.has(f.id))
@@ -173,7 +183,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         <div>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-1">Dossiers ({folders.length})</p>
           {folders.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} fileCount={folderCounts[file.id]}
               selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
           ))}
         </div>
@@ -183,7 +193,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         <div>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3">Fichiers ({nonFolders.length})</p>
           {nonFolders.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} fileCount={folderCounts[file.id]}
               selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
           ))}
         </div>
@@ -193,7 +203,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         <div key={label}>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3 first:mt-1">{label} ({groupFiles.length})</p>
           {groupFiles.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} fileCount={folderCounts[file.id]}
               selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
           ))}
         </div>

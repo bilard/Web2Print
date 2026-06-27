@@ -31,6 +31,9 @@ export { damMove } from './dam/damMove'
 // --- DAM : résout le dossier cible une fois (anti-course uploads parallèles) ---
 export { damEnsureFolder } from './dam/damEnsureFolder'
 
+// --- DAM : corbeille par emplacement+nom (suppression produit/scraping robuste) ---
+export { damTrashByName } from './dam/damTrashByName'
+
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
 
