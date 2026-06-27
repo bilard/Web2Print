@@ -8,8 +8,17 @@ import { recordAudit } from '@/lib/auditLog'
 
 /** Parse a file into ExcelSheet[] without touching the store */
 export async function parseExcelFile(file: File): Promise<ExcelSheet[]> {
-  const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true })
+  // Fichiers TEXTE (CSV/TSV/TXT) : lire via File.text() qui décode l'UTF-8 et
+  // retire le BOM. En passant par arrayBuffer + type:'array', SheetJS retombe
+  // sur le codepage 1252 par défaut → mojibake sur « € » et les accents
+  // (« 299 € » devient « 299 â¬ »). Les formats binaires (xlsx/xls/ods)
+  // stockent leurs chaînes en UTF-8 en interne : on garde l'ArrayBuffer.
+  const name = file.name.toLowerCase()
+  const isText =
+    /\.(csv|tsv|txt)$/.test(name) || file.type === 'text/csv' || file.type === 'text/plain'
+  const workbook = isText
+    ? XLSX.read(await file.text(), { type: 'string', cellDates: true })
+    : XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true })
   const sheets: ExcelSheet[] = []
 
   for (const sheetName of workbook.SheetNames) {
