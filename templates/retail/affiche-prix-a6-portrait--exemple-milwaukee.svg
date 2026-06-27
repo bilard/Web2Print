@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- APERCU du template retail A6 rempli avec un produit Milwaukee (placeholders resolus). -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="105mm" height="148mm" viewBox="0 0 297.64 419.53">
+
+  <rect x="0" y="0" width="297.64" height="419.53" fill="#FFFFFF"/>
+
+  <!-- En-tete marque -->
+  <rect x="0" y="0" width="297.64" height="58" fill="#DB011C"/>
+  <rect x="0" y="58" width="297.64" height="4" fill="#1A1A1A"/>
+  <text x="18" y="38" font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="30" letter-spacing="1.5" fill="#FFFFFF">MILWAUKEE</text>
+  <text x="280" y="36" text-anchor="end" font-family="Arial,sans-serif" font-weight="700"
+        font-size="8" letter-spacing="2" fill="#FFFFFF" opacity="0.85">HEAVY DUTY</text>
+
+  <!-- Visuel + pastille -->
+  <rect x="22" y="74" width="253.64" height="142" rx="4" fill="#F5F5F5" stroke="#E2E2E2" stroke-width="1"/>
+  <text x="148.82" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="10"
+        fill="#B0B0B0">[ visuel produit ]</text>
+  <circle cx="252" cy="96" r="29" fill="#FFCC00" stroke="#FFFFFF" stroke-width="2"/>
+  <text x="252" y="92" text-anchor="middle" font-family="'Arial Narrow',Arial,sans-serif"
+        font-weight="700" font-size="14" fill="#1A1A1A" transform="rotate(-10 252 96)">PROMO</text>
+  <text x="252" y="106" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700"
+        font-size="8" letter-spacing="1" fill="#1A1A1A" transform="rotate(-10 252 96)">DESTOCKAGE</text>
+
+  <!-- Designation -->
+  <text x="22" y="238" font-family="Arial,sans-serif" font-weight="700" font-size="9"
+        letter-spacing="1.5" fill="#DB011C">OUTILLAGE ELECTROPORTATIF</text>
+  <text x="22" y="258" font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="18" fill="#1A1A1A">M18 FUEL Perceuse-visseuse</text>
+  <text x="22" y="276" font-family="'Arial Narrow','Helvetica Neue',Arial,sans-serif"
+        font-weight="700" font-size="18" fill="#1A1A1A">a percussion FPD3-502X</text>
+  <text x="22" y="300" font-family="Arial,sans-serif" font-size="9.5" fill="#555555">Couple 158 Nm · Moteur POWERSTATE brushless</text>
+  <text x="22" y="312" font-family="Arial,sans-serif" font-size="9.5" fill="#555555">2 batteries M18 5.0 Ah · Mandrin 13 mm · Coffret</text>
+
+  <!-- Bloc prix -->
+  <rect x="0" y="322" width="297.64" height="74" fill="#DB011C"/>
+  <text x="18" y="344" font-family="Arial,sans-serif" font-weight="700" font-size="11"
+        letter-spacing="2" fill="#FFFFFF">PRIX TTC</text>
+  <text x="279" y="344" text-anchor="end" font-family="Arial,sans-serif" font-weight="700"
+        font-size="13" fill="#FFFFFF" opacity="0.85" text-decoration="line-through">379,00 €</text>
+  <text x="148.82" y="385" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900"
+        font-size="46" letter-spacing="-1" fill="#FFFFFF">299,00 €</text>
+
+  <!-- Pied -->
+  <rect x="0" y="396" width="297.64" height="23.53" fill="#1A1A1A"/>
+  <text x="18" y="411" font-family="Arial,sans-serif" font-size="8" letter-spacing="0.5"
+        fill="#FFFFFF">Réf. 4933479864</text>
+  <g fill="#FFFFFF">
+    <rect x="196" y="402" width="2.2" height="11"/><rect x="200" y="402" width="1.1" height="11"/>
+    <rect x="203" y="402" width="3.3" height="11"/><rect x="208" y="402" width="1.1" height="11"/>
+    <rect x="211" y="402" width="2.2" height="11"/><rect x="215" y="402" width="1.1" height="11"/>
+    <rect x="218" y="402" width="3.3" height="11"/><rect x="223" y="402" width="2.2" height="11"/>
+    <rect x="227" y="402" width="1.1" height="11"/><rect x="230" y="402" width="2.2" height="11"/>
+    <rect x="234" y="402" width="3.3" height="11"/><rect x="239" y="402" width="1.1" height="11"/>
+    <rect x="242" y="402" width="2.2" height="11"/><rect x="246" y="402" width="1.1" height="11"/>
+    <rect x="249" y="402" width="3.3" height="11"/><rect x="254" y="402" width="2.2" height="11"/>
+    <rect x="258" y="402" width="1.1" height="11"/><rect x="261" y="402" width="2.2" height="11"/>
+  </g>
+  <text x="279" y="417" text-anchor="end" font-family="Arial,sans-serif" font-size="6.5"
+        letter-spacing="1" fill="#FFFFFF">4058546420109</text>
+
+</svg>

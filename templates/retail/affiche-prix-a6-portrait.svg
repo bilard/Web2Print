@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Modèle PLV retail grande distribution — Affiche prix A6 portrait (105 x 148 mm @ 72 dpi)
+  Champs de fusion ({{...}}) résolus par le moteur de merge via les alias FR :
+    {{Marque}}     -> ai_brand   {{Categorie}}  -> ai_breadcrumb
+    {{Nom}}        -> ai_name     {{Description}}-> ai_description
+    {{Prix}}       -> ai_pricing / price         {{PrixBarre}} -> prix d'origine
+    {{Reference}}  -> ai_distributor_ref / sku   {{EAN}}       -> ai_ean
+  Import : Bibliotheque > Importer > SVG.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="105mm" height="148mm" viewBox="0 0 297.64 419.53">
+
+  <!-- ===== Fond ===== -->
+  <rect data-role="background-decor" x="0" y="0" width="297.64" height="419.53" fill="#FFFFFF"/>
+
+  <!-- ===== En-tete marque ===== -->
+  <g id="header" data-role="header">
+    <rect x="0" y="0" width="297.64" height="58" fill="#DB011C"/>
+    <rect x="0" y="58" width="297.64" height="4" fill="#1A1A1A"/>
+    <text id="brand" data-role="brand" x="18" y="38"
+          font-family="'Arial Narrow', 'Helvetica Neue', Arial, sans-serif"
+          font-weight="700" font-size="30" letter-spacing="1.5" fill="#FFFFFF">{{Marque}}</text>
+    <text id="tagline" x="280" y="36" text-anchor="end"
+          font-family="Arial, sans-serif" font-weight="700" font-size="8"
+          letter-spacing="2" fill="#FFFFFF" opacity="0.85">HEAVY DUTY</text>
+  </g>
+
+  <!-- ===== Zone image produit ===== -->
+  <g id="visuel" data-role="visuel">
+    <rect x="22" y="74" width="253.64" height="142" rx="4" fill="#F5F5F5" stroke="#E2E2E2" stroke-width="1"/>
+    <image id="product-image" data-role="image-slot" xlink:href="placeholder:product"
+           x="32" y="80" width="233.64" height="130" preserveAspectRatio="xMidYMid meet"/>
+    <!-- Pastille promo -->
+    <g id="badge" data-role="badge">
+      <circle cx="252" cy="96" r="29" fill="#FFCC00" stroke="#FFFFFF" stroke-width="2"/>
+      <text x="252" y="92" text-anchor="middle"
+            font-family="'Arial Narrow', Arial, sans-serif" font-weight="700"
+            font-size="14" letter-spacing="0.5" fill="#1A1A1A" transform="rotate(-10 252 96)">PROMO</text>
+      <text x="252" y="106" text-anchor="middle"
+            font-family="Arial, sans-serif" font-weight="700"
+            font-size="8" letter-spacing="1" fill="#1A1A1A" transform="rotate(-10 252 96)">DESTOCKAGE</text>
+    </g>
+  </g>
+
+  <!-- ===== Designation produit ===== -->
+  <g id="produit" data-role="produit">
+    <text id="categorie" data-role="categorie" x="22" y="238"
+          font-family="Arial, sans-serif" font-weight="700" font-size="9"
+          letter-spacing="1.5" fill="#DB011C">{{Categorie}}</text>
+    <text id="title" data-role="title" data-merge-frame="22,253,left" x="22" y="256"
+          font-family="'Arial Narrow', 'Helvetica Neue', Arial, sans-serif"
+          font-weight="700" font-size="18" fill="#1A1A1A">{{Nom}}</text>
+    <text id="description" data-role="description" data-merge-frame="22,253,left" x="22" y="298"
+          font-family="Arial, sans-serif" font-weight="400" font-size="9.5"
+          fill="#555555">{{Description}}</text>
+  </g>
+
+  <!-- ===== Bloc prix ===== -->
+  <g id="prix" data-role="prix">
+    <rect x="0" y="322" width="297.64" height="74" fill="#DB011C"/>
+    <text id="price-label" x="18" y="344"
+          font-family="Arial, sans-serif" font-weight="700" font-size="11"
+          letter-spacing="2" fill="#FFFFFF">PRIX TTC</text>
+    <text id="price-old" data-role="price-old" x="279" y="344" text-anchor="end"
+          font-family="Arial, sans-serif" font-weight="700" font-size="13"
+          fill="#FFFFFF" opacity="0.85" text-decoration="line-through">{{PrixBarre}}</text>
+    <text id="price" data-role="price" x="148.82" y="385" text-anchor="middle"
+          font-family="Arial, sans-serif" font-weight="900" font-size="46"
+          letter-spacing="-1" fill="#FFFFFF">{{Prix}}</text>
+  </g>
+
+  <!-- ===== Pied : reference + code-barres ===== -->
+  <g id="footer" data-role="footer">
+    <rect x="0" y="396" width="297.64" height="23.53" fill="#1A1A1A"/>
+    <text id="reference" data-role="reference" x="18" y="411"
+          font-family="Arial, sans-serif" font-weight="400" font-size="8"
+          letter-spacing="0.5" fill="#FFFFFF">Réf. {{Reference}}</text>
+    <g id="barcode" data-role="barcode">
+      <rect x="196" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+      <rect x="200" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="203" y="402" width="3.3" height="11" fill="#FFFFFF"/>
+      <rect x="208" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="211" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+      <rect x="215" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="218" y="402" width="3.3" height="11" fill="#FFFFFF"/>
+      <rect x="223" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+      <rect x="227" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="230" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+      <rect x="234" y="402" width="3.3" height="11" fill="#FFFFFF"/>
+      <rect x="239" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="242" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+      <rect x="246" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="249" y="402" width="3.3" height="11" fill="#FFFFFF"/>
+      <rect x="254" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+      <rect x="258" y="402" width="1.1" height="11" fill="#FFFFFF"/>
+      <rect x="261" y="402" width="2.2" height="11" fill="#FFFFFF"/>
+    </g>
+    <text id="ean" data-role="ean" x="279" y="417" text-anchor="end"
+          font-family="Arial, sans-serif" font-weight="400" font-size="6.5"
+          letter-spacing="1" fill="#FFFFFF">{{EAN}}</text>
+  </g>
+
+</svg>
