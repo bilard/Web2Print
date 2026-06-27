@@ -6,7 +6,7 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { isDriveImageRef, extractDriveFileId } from './driveAssets'
-import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
+import type { ExcelColumn, ExcelRow, ExcelSheet } from '@/features/excel/types'
 
 const damDelete = httpsCallable<{ fileIds: string[]; op?: 'trash' | 'restore' | 'delete' }, { trashed: number }>(functions, 'damDelete')
 
@@ -46,6 +46,28 @@ function driveFileIdsOfRow(row: ExcelRow, columns: ExcelColumn[]): Set<string> {
     }
   }
   return ids
+}
+
+/** Tous les fileId Drive référencés par une feuille (toutes lignes, cols image/url). */
+function driveFileIdsOfSheet(sheet: ExcelSheet): Set<string> {
+  const ids = new Set<string>()
+  for (const row of sheet.rows) for (const id of driveFileIdsOfRow(row, sheet.columns)) ids.add(id)
+  return ids
+}
+
+/**
+ * Corbeille les assets Drive d'une FEUILLE supprimée (scraping) non référencés
+ * par une AUTRE feuille restante. Retourne le nombre déplacé en corbeille.
+ */
+export async function trashSheetDamAssets(deletedSheet: ExcelSheet, otherSheets: ExcelSheet[]): Promise<number> {
+  const toTrash = driveFileIdsOfSheet(deletedSheet)
+  if (toTrash.size === 0) return 0
+  for (const other of otherSheets) {
+    for (const id of driveFileIdsOfSheet(other)) toTrash.delete(id)
+    if (toTrash.size === 0) return 0
+  }
+  const { data } = await damDelete({ fileIds: [...toTrash] })
+  return data.trashed
 }
 
 /**

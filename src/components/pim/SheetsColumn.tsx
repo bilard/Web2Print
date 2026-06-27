@@ -1,7 +1,9 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Search, X, Globe, FileText, Edit2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
+import { trashSheetDamAssets } from '@/features/dam/damCleanup'
 
 /** Colonne latérale qui liste les sheets (= sources scrapées/importées) du fichier
  *  courant. Click → setActiveSheet (filtre la table). Recherche pour scaler à des
@@ -17,6 +19,20 @@ export function SheetsColumn() {
   const [filter, setFilter] = useState('')
   const [renamingIndex, setRenamingIndex] = useState<number | null>(null)
   const [renamingValue, setRenamingValue] = useState('')
+
+  /** Supprime une feuille (scraping) ET corbeille ses images DAM non utilisées ailleurs. */
+  const handleDeleteSheet = useCallback((index: number, name: string) => {
+    if (!confirm(`Supprimer « ${name} » ?`)) return
+    const all = useExcelStore.getState().sheets
+    const deleted = all[index]
+    if (deleted) {
+      const others = all.filter((_, i) => i !== index)
+      void trashSheetDamAssets(deleted, others)
+        .then((n) => { if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`) })
+        .catch(() => { /* non bloquant */ })
+    }
+    deleteSheet(index)
+  }, [deleteSheet])
 
   /** Click sur une source = toggle d'affichage de SES produits dans la table.
    *  - Source non sélectionnée → on l'active (DataTable lit `activeSheetIndex`)
@@ -159,13 +175,11 @@ export function SheetsColumn() {
                 tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (confirm(`Supprimer « ${sheet.name} » ?`)) deleteSheet(index)
+                  handleDeleteSheet(index, sheet.name)
                 }}
                 onKeyDown={(e) => {
                   e.stopPropagation()
-                  if (e.key === 'Enter') {
-                    if (confirm(`Supprimer « ${sheet.name} » ?`)) deleteSheet(index)
-                  }
+                  if (e.key === 'Enter') handleDeleteSheet(index, sheet.name)
                 }}
                 className="hover:bg-white/10 rounded p-0.5 text-white/40 hover:text-red-300 cursor-pointer transition-colors"
                 title={`Supprimer « ${sheet.name} »`}
