@@ -9,7 +9,7 @@
   Import : Bibliotheque > Importer > SVG.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="105mm" height="148mm" viewBox="0 0 297.64 419.53">
+     width="297.64" height="419.53" viewBox="0 0 297.64 419.53">
 
   <!-- ===== Fond ===== -->
   <rect data-role="background-decor" x="0" y="0" width="297.64" height="419.53" fill="#FFFFFF"/>
