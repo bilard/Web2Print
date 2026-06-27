@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
-import { isDriveImageRef } from './driveAssets'
+import { isDriveImageRef, extractDriveFileId } from './driveAssets'
 import type { ExcelRow } from '@/features/excel/types'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
@@ -28,6 +28,12 @@ const damUpload = httpsCallable<
   { url: string; fileName: string; folderName: string; subFolder?: string },
   { fileId: string; webViewLink: string }
 >(functions, 'damUpload')
+
+// Range les images DÉJÀ dans Drive sous le sous-dossier du scraping.
+const damMove = httpsCallable<
+  { fileIds: string[]; folderName: string; subFolder: string },
+  { moved: number }
+>(functions, 'damMove')
 
 /** Nom de sous-dossier DAM = nom du scraping (feuille), sinon hostname de l'URL source. */
 function scrapeFolderName(sheetName: string | undefined, sourceUrl: string | undefined): string {
@@ -98,6 +104,7 @@ export function useDamMigration() {
     const primaryKey = sheet.columns.find((c) => c.isPrimary)?.key
     const cells: CellDesc[] = []
     const jobs: ImgJob[] = []
+    const existingDriveIds = new Set<string>() // images déjà dans le DAM → à ranger
     let skippedRelative = 0
 
     sheet.rows.forEach((row) => {
@@ -110,7 +117,12 @@ export function useDamMigration() {
         let anyJob = false
         tokens.forEach((tokRaw, tokenIdx) => {
           const tok = decodeEntities(tokRaw.trim())
-          if (!tok || isDriveImageRef(tok)) return
+          if (!tok) return
+          if (isDriveImageRef(tok)) {
+            const id = extractDriveFileId(tok)
+            if (id) existingDriveIds.add(id)
+            return
+          }
           if (col.fieldType !== 'image' && !looksLikeImage(tok)) return
           const abs = toAbsolute(tok, row, sheet.sourceUrl)
           if (!abs) { skippedRelative++; return }
@@ -121,7 +133,8 @@ export function useDamMigration() {
       }
     })
 
-    if (jobs.length === 0) {
+    // Rien à uploader NI à ranger → on s'arrête (sauf relatifs non résolus).
+    if (jobs.length === 0 && !(existingDriveIds.size > 0 && subFolder)) {
       if (!silent) {
         toast.info(
           skippedRelative > 0
@@ -186,16 +199,26 @@ export function useDamMigration() {
       setSheets(nextSheets)
     }
 
+    // Range les images DÉJÀ centralisées (racine) sous le sous-dossier du scraping.
+    let moved = 0
+    if (existingDriveIds.size > 0 && subFolder) {
+      try {
+        moved = (await damMove({ fileIds: [...existingDriveIds], folderName: DAM_FOLDER_NAME, subFolder })).data.moved
+      } catch { /* rangement best-effort, non bloquant */ }
+    }
+
     setRunning(false)
     setProgress(null)
     const ok = jobs.length - failed
+    const movedSuffix = moved > 0 ? ` · ${moved} rangée(s) dans « ${subFolder} »` : ''
     const shortUrl = firstFailUrl ? firstFailUrl.replace(/^https?:\/\//, '').slice(0, 70) : ''
     if (failed === 0) {
-      toast.success(`${ok} image(s) centralisée(s) dans le DAM. Pense à sauvegarder.`)
+      const head = ok > 0 ? `${ok} image(s) centralisée(s)` : 'Images déjà dans le DAM'
+      toast.success(`${head}${movedSuffix}.${ok > 0 ? ' Pense à sauvegarder.' : ''}`)
     } else if (ok === 0) {
       toast.error(`Échec centralisation${firstError ? ` : ${firstError}` : ''}${shortUrl ? `\nURL : …${shortUrl}` : ''}`)
     } else {
-      toast.warning(`${ok} centralisée(s), ${failed} échec(s)${firstError ? ` — ${firstError}` : ''}. Pense à sauvegarder.`)
+      toast.warning(`${ok} centralisée(s), ${failed} échec(s)${movedSuffix}${firstError ? ` — ${firstError}` : ''}. Pense à sauvegarder.`)
     }
   }, [])
 

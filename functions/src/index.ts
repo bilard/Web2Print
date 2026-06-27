@@ -25,6 +25,9 @@ export { damUpload } from './dam/damUpload'
 // --- DAM : corbeille Drive des assets d'un produit supprimé ---
 export { damDelete } from './dam/damDelete'
 
+// --- DAM : ranger les assets existants sous le sous-dossier du scraping ---
+export { damMove } from './dam/damMove'
+
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
 
