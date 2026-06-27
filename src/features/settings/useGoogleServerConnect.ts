@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { clearServerGoogleTokenCache } from '@/features/gdrive/serverGoogleToken'
+import { resetDriveTokenSource } from '@/features/dam/driveAssets'
 
 // Doit rester aligné avec OAUTH_REDIRECT_URI de functions/src/google/serverAuth.ts.
 export const OAUTH_REDIRECT_URI = 'https://googleoauthcallback-4cs64afhba-ew.a.run.app'
@@ -91,6 +92,7 @@ export function useGoogleServerConnect() {
           | undefined
         if (cancelled) return
         token = gs?.refreshToken ?? ''
+        if (gs) resetDriveTokenSource() // jeton serveur dispo → réautoriser sa sollicitation
         setConnectedAt(gs ? gs.connectedAt?.toMillis?.() ?? 0 : null)
       } catch {
         if (!cancelled) setConnectedAt(null)
@@ -155,6 +157,7 @@ export function useGoogleServerConnect() {
     if (!uid) return
     await updateDoc(doc(db, 'users', uid), { googleServer: deleteField() })
     clearServerGoogleTokenCache() // invalide le jeton serveur en cache côté éditeur
+    resetDriveTokenSource() // relâche le latch (prochaine résolution retentera le serveur)
     refreshTokenRef.current = ''
     setConnectedAt(null)
     setTestStatus('empty')

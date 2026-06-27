@@ -8,6 +8,7 @@ import { syncToStore } from '@/features/editor/useAddObject'
 import { useMergeStore, type DataSourceRef, type MergeColumn, type MergeRow } from '@/stores/merge.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { resolveText, resolveBinding, hasPlaceholders, isImageUrl, remapStyles } from './mergeEngine'
+import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { applyConditionalRulesForRow } from './applyConditionalRules'
 import { formatPriceParts, type PriceSegment } from './priceFormat'
 import { fitScaleForWidth, clampFitFont, MIN_FIT_FONT, FIT_SHRINK_STEP } from './fitToZone'
@@ -399,7 +400,17 @@ export function useDataMerge() {
     if (imageCache.has(urlOrName)) return imageCache.get(urlOrName)!
 
     let url = urlOrName
-    if (!isImageUrl(urlOrName)) {
+    if (isDriveImageRef(urlOrName)) {
+      // Référence asset Google Drive (DAM) : télécharge les octets authentifiés →
+      // objectURL blob: (fetch ci-dessous le relit en data: URL, export-safe).
+      const fileId = extractDriveFileId(urlOrName)
+      if (!fileId) return null
+      try {
+        url = await resolveDriveImageUrl(fileId)
+      } catch {
+        return null
+      }
+    } else if (!isImageUrl(urlOrName)) {
       const assetUrl = await getAssetUrl(urlOrName)
       if (!assetUrl) return null
       url = assetUrl

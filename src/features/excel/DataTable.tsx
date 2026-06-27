@@ -19,6 +19,9 @@ import { useThemeStore } from '@/stores/theme.store'
 import { rowCompleteness, completenessTone } from './completeness'
 import { cellFreshness } from './fieldFreshness'
 import { GalleryView } from './GalleryView'
+import { DamImage } from '@/features/dam/DamImage'
+import { DamPickButton } from '@/features/dam/DamPickButton'
+import { isDriveImageRef } from '@/features/dam/driveAssets'
 import { LayoutGrid, Table as TableIcon, MoveHorizontal } from 'lucide-react'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
@@ -749,6 +752,7 @@ export function DataTable() {
               setEditingCell={setEditingCell}
               setSheetRowId={setSheetRowId}
               deleteRow={deleteRow}
+              updateCell={updateCell}
               activeSheetIndex={activeSheetIndex}
               formatCell={formatCell}
               getCellColorStyle={getCellColorStyle}
@@ -775,6 +779,7 @@ export function DataTable() {
                 setEditingCell={setEditingCell}
                 setSheetRowId={setSheetRowId}
                 deleteRow={deleteRow}
+                updateCell={updateCell}
                 activeSheetIndex={activeSheetIndex}
                 formatCell={formatCell}
                 getCellColorStyle={getCellColorStyle}
@@ -923,6 +928,7 @@ interface DataRowProps {
   setEditingCell: (v: null) => void
   setSheetRowId: (id: string) => void
   deleteRow: (sheetIdx: number, rowId: string) => void
+  updateCell: (sheetIdx: number, rowId: string, colKey: string, value: CellValue) => void
   activeSheetIndex: number
   formatCell: (value: CellValue, col: ExcelColumn) => string
   getCellColorStyle: (value: CellValue, col: ExcelColumn) => { bg: string; text: string } | null
@@ -932,7 +938,7 @@ interface DataRowProps {
 function DataRow({
   row, rowIdx, visibleColumns, sheet, editingCell, editValue, setEditValue,
   inputRef, startEdit, commitEdit, setEditingCell, setSheetRowId, deleteRow,
-  activeSheetIndex, formatCell, getCellColorStyle, dragColIdx,
+  updateCell, activeSheetIndex, formatCell, getCellColorStyle, dragColIdx,
 }: DataRowProps) {
   const canDelete = useCan('pim.delete')
   const enriched = isRowEnriched(row)
@@ -1039,16 +1045,22 @@ function DataRow({
                 }}
                 className="w-full bg-indigo-500/10 border border-indigo-500/30 rounded px-2 py-1 text-[13px] text-white outline-none"
               />
-            ) : isImageValue(value, col) ? (
+            ) : col.fieldType === 'image' || isImageValue(value, col) ? (
               <div className="flex items-center gap-1.5 py-0.5">
-                <img
-                  src={String(value)}
-                  alt=""
-                  className="h-9 w-9 rounded object-cover shrink-0 bg-white/5 border border-white/10"
-                  loading="lazy"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                />
-                <span className="text-[10px] text-white/25 truncate">{String(value).split('/').pop()}</span>
+                {value ? (
+                  <DamImage
+                    value={String(value)}
+                    className="h-9 w-9 rounded object-cover shrink-0 bg-white/5 border border-white/10"
+                  />
+                ) : null}
+                <span className="text-[10px] text-white/25 truncate">
+                  {!value ? '' : isDriveImageRef(String(value)) ? 'DAM (Drive)' : String(value).split('/').pop()}
+                </span>
+                {col.fieldType === 'image' && (
+                  <DamPickButton
+                    onPick={(link) => updateCell(activeSheetIndex, row._id, col.key, link)}
+                  />
+                )}
                 {freshDot}
               </div>
             ) : (

@@ -8,7 +8,7 @@ import {
   MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
-  Wand2,
+  Wand2, FolderUp,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -20,6 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { SheetsColumn } from '@/components/pim/SheetsColumn'
 import { useExcelStore } from '@/stores/excel.store'
+import { useDamMigration } from '@/features/dam/useDamMigration'
 import { usePimStore } from '@/stores/pim.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
@@ -59,6 +60,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
     setSheetRowId, setGroupByTaxonomy, pruneEmptySheet,
   } = useExcelStore()
   const { exportToXlsx, createEmpty } = useExcelImport()
+  const { migrateActiveSheet, running: damRunning } = useDamMigration()
   const { saveToFirebase, loadFromFirebase, listSavedFiles, deleteFromFirebase, renameFile, moveFile, reorderFiles } = useExcelFirebase()
   const { data: taxonomies } = useTaxonomies()
   const renameTaxonomy = useRenameTaxonomy()
@@ -471,6 +473,15 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                   EasyCatalog
                 </button>
               )}
+              <button
+                onClick={migrateActiveSheet}
+                disabled={damRunning}
+                className={`${headerBtn} disabled:opacity-40`}
+                title="Centraliser les images (URLs externes) dans le DAM Google Drive et pointer les cellules dessus"
+              >
+                {damRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderUp className="w-3.5 h-3.5" />}
+                DAM
+              </button>
             </>
           )}
         </div>
