@@ -227,8 +227,8 @@ export function AiLiveIndicator() {
   const extraCount = hasActive ? activeList.length - 1 : 0
 
   return (
-    <div className="fixed top-14 inset-x-0 z-[60] pointer-events-none flex flex-col items-center">
-      <div className="flex flex-row items-center gap-1.5 pointer-events-auto justify-center">
+    <div className="fixed top-14 right-3 z-[60] pointer-events-none flex flex-col items-end">
+      <div className="flex flex-row items-center gap-1.5 pointer-events-auto justify-end flex-wrap">
         {primary && <ActivityRow record={primary} primary />}
         {extraCount > 0 && (
           <button
