@@ -527,7 +527,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
         <label className="flex items-start gap-2 mt-1.5 pt-1.5 border-t border-cyan-500/15 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
           <input
             type="checkbox"
-            checked={config.attachGSheet ?? false}
+            checked={config.attachGSheet ?? true}
             onChange={(e) => onChange({ ...config, attachGSheet: e.target.checked })}
             className="accent-cyan-500 mt-0.5"
           />
@@ -545,7 +545,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
         <label className="flex items-start gap-2 cursor-pointer hover:bg-cyan-500/10 rounded px-1.5 py-1 transition-colors">
           <input
             type="checkbox"
-            checked={config.attachBodyHtml ?? false}
+            checked={config.attachBodyHtml ?? true}
             onChange={(e) => onChange({ ...config, attachBodyHtml: e.target.checked })}
             className="accent-cyan-500 mt-0.5"
           />
@@ -587,6 +587,11 @@ const sendGmailNode: NodeSpec<
     iterate: false,
     attachmentMode: 'source',
     attachmentFilename: 'extract.csv',
+    // Opt-OUT : un Google Sheet (sur `gsheet`) ou un HTML (sur `data`) s'attache
+    // AUTOMATIQUEMENT. L'utilisateur décoche s'il n'en veut pas. Les deux sont
+    // des no-op quand l'entrée correspondante est absente.
+    attachGSheet: true,
+    attachBodyHtml: true,
   },
   runtime: 'client',
   ConfigComponent: SendGmailConfigUi,
@@ -638,8 +643,8 @@ const sendGmailNode: NodeSpec<
         ctx.log('info', `Pièce jointe (source, chaîne → ${looksHtml ? '.html' : '.txt'}) : ${filename} (${(raw.length / 1024).toFixed(1)} KB).`)
       } else {
         ctx.log(
-          'warn',
-          "Mode 'Fichier source' actif mais aucun fichier en entrée (relie la sortie « file » OU « html » du node source au port 'attachment'). Le mail partira sans pièce jointe.",
+          'info',
+          "Mode 'Fichier source' : rien sur le port 'attachment'. Les pièces jointes auto (Google Sheet / corps HTML) ci-dessous restent actives.",
         )
       }
     } else if (config.attachmentMode === 'filtered') {
@@ -673,16 +678,11 @@ const sendGmailNode: NodeSpec<
     // le mail porte alors 2 fichiers. L'export-result arrive sur le port DÉDIÉ `gsheet`
     // (typé export-result) → laisse `data` libre pour le HTML du corps ({{html}}).
     // Repli sur `data`/`attachment` pour les anciens câblages.
-    if (config.attachGSheet) {
+    if (config.attachGSheet ?? true) {
       const meta = extractDriveFileId(inputs.gsheet)
         ?? extractDriveFileId(inputs.data)
         ?? extractDriveFileId(inputs.attachment)
-      if (!meta) {
-        ctx.log(
-          'warn',
-          "« Joindre le Google Sheet » actif mais aucun export-result en entrée. Relie la sortie « result » du node « Export Google Sheets » au port 'gsheet'.",
-        )
-      } else {
+      if (meta) {
         ctx.log('info', `Export du Google Sheet ${meta.name ?? meta.id} en .xlsx…`)
         const file = await downloadDriveFile(meta.id, accessToken)
         const base64 = await fileToBase64(file)
@@ -699,14 +699,12 @@ const sendGmailNode: NodeSpec<
     // Pièce jointe ADDITIONNELLE : le corps HTML lui-même en .html. Reprend la chaîne
     // HTML reçue sur `data` (sortie « html » de « Rapport de coûts IA ») → permet de
     // joindre le rapport SANS 2ᵉ arête vers `attachment`.
-    if (config.attachBodyHtml) {
-      const html = typeof inputs.data === 'string' ? inputs.data : null
-      if (!html || !html.trim()) {
-        ctx.log(
-          'warn',
-          "« Joindre le corps en .html » actif mais le port « data » ne contient pas de HTML (chaîne). Relie la sortie « html » du node source au port « data ».",
-        )
-      } else {
+    if (config.attachBodyHtml ?? true) {
+      // N'attache QUE si `data` porte une chaîne qui ressemble à du HTML (balises) :
+      // évite de joindre par surprise un texte brut ou des données non-HTML.
+      const raw = typeof inputs.data === 'string' ? inputs.data : null
+      const html = raw && /<\s*[a-z!]/i.test(raw) ? raw : null
+      if (html) {
         const base64 = utf8ToBase64(html)
         const bodyHtmlAttachment: SendGmailAttachment = {
           filename: 'rapport.html',
