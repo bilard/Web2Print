@@ -430,15 +430,26 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                                 {isSelected && <Check className="w-3 h-3 text-[#fff]" />}
                               </div>
                             )}
-                            <div className="w-5 h-5 shrink-0 flex items-center justify-center">
-                              {isFolder ? (
+                            {isFolder ? (
+                              <div className="w-5 h-5 shrink-0 flex items-center justify-center">
                                 <Folder className="w-5 h-5 text-amber-300" fill="currentColor" fillOpacity={0.3} />
-                              ) : (
+                              </div>
+                            ) : f.thumbnailLink && f.mimeType.startsWith('image/') ? (
+                              <img
+                                src={f.thumbnailLink}
+                                alt=""
+                                referrerPolicy="no-referrer"
+                                loading="lazy"
+                                className="w-10 h-10 shrink-0 rounded object-cover bg-white/5 border border-white/10"
+                                onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
+                              />
+                            ) : (
+                              <div className="w-5 h-5 shrink-0 flex items-center justify-center">
                                 <div className={`w-5 h-5 rounded-sm ${badge.bg} flex items-center justify-center`}>
                                   <span className={`text-[8px] font-bold ${badge.color}`}>{badge.abbrev}</span>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                             <span className="flex-1 text-sm text-white/80 truncate group-hover:text-white">
                               {f.name}
                             </span>
