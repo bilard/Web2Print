@@ -82,4 +82,16 @@ describe('isJunkImageUrl', () => {
       expect(isJunkImageUrl(url)).toBe(false)
     })
   })
+
+  describe('pixels de tracking / analytics', () => {
+    it.each([
+      'https://bat.bing.com/action/0?ti=187238549&tm=gtm002&Ver=2&mid=d302add0-9cbf-4',
+      'https://www.google-analytics.com/collect?v=1&t=pageview',
+      'https://www.facebook.com/tr?id=123&ev=PageView',
+      'https://stats.g.doubleclick.net/r/collect?v=1',
+      'https://example.com/pixel?uid=abc',
+    ])('rejette %s', (url) => {
+      expect(isJunkImageUrl(url)).toBe(true)
+    })
+  })
 })

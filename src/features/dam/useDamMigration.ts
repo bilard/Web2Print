@@ -17,6 +17,7 @@ import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
 import { isDriveImageRef, extractDriveFileId } from './driveAssets'
+import { isJunkImageUrl } from '@/features/excel/ai-enrichment/imageFilter'
 import type { ExcelRow } from '@/features/excel/types'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
@@ -124,6 +125,7 @@ export function useDamMigration() {
             return
           }
           if (col.fieldType !== 'image' && !looksLikeImage(tok)) return
+          if (/^https?:\/\//i.test(tok) && isJunkImageUrl(tok)) return // mouchards/pixels/logos
           const abs = toAbsolute(tok, row, sheet.sourceUrl)
           if (!abs) { skippedRelative++; return }
           jobs.push({ cellIdx, tokenIdx, url: abs })

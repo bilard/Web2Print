@@ -148,6 +148,9 @@ export function isJunkImageUrl(url: string): boolean {
     // Drupal year-folder : /sites/.../files/[styles/<x>/public/]20XX/... = contenu promo/actu daté
     // (un produit légitime serait sous /products/ ou /produits/, pas dans un dossier d'année).
     if (/\/sites\/[^/]+\/files\/(?:styles\/[^/]+\/public\/)?(?:19|20)\d{2}\b/i.test(path) && !/\/produits?\//i.test(path)) return true
+    // Pixels de tracking / balises analytics (1×1, beacons) — jamais une image produit.
+    if (/\b(bat\.bing\.com|google-analytics\.com|googletagmanager\.com|googleadservices|google\.com\/ads|doubleclick\.net|scorecardresearch\.com|quantserve\.com|hotjar\.com|mixpanel\.com|criteo\.(?:com|net)|adservice\.google|facebook\.com\/tr|connect\.facebook\.net)\b/i.test(url)) return true
+    if (/\/(action|collect|pixel|beacon|impression|telemetry|gtm|gtag)(?:\/\d*)?(?:\?|$)/i.test(url)) return true
     // Réseaux sociaux — tester TOUTE l'URL pas juste les 2 derniers segments
     // (certains CDN placent le logo LinkedIn à /assets/social/logo/linkedin.png).
     if (/\b(facebook|fb[-_]|twitter|instagram|youtube|linkedin|tiktok|pinterest|whatsapp|telegram|snapchat|reddit|vimeo|xing|discord)\b/i.test(url)) return true
