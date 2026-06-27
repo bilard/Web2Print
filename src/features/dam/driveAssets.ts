@@ -55,7 +55,7 @@ export function resetDriveTokenSource(): void {
  * NAVIGATEUR (panneau Google Drive, scope drive.file) en repli. Partagé par la
  * résolution (lecture) et la migration (upload).
  */
-export async function getDriveAccessToken(): Promise<string> {
+async function getDriveAccessToken(): Promise<string> {
   if (!serverTokenUnavailable) {
     try {
       return await getServerGoogleToken()

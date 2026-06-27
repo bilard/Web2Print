@@ -16,22 +16,18 @@ import { toast } from 'sonner'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
 import { useExcelStore } from '@/stores/excel.store'
-import { uploadFileToDrive } from '@/features/gdrive/gdriveCore'
-import { ensureDamFolder } from './damFolder'
-import { getDriveAccessToken, isDriveImageRef, driveWebViewLink } from './driveAssets'
+import { isDriveImageRef } from './driveAssets'
 import type { ExcelRow } from '@/features/excel/types'
 
-const imageProxy = httpsCallable<{ url: string; maxBytes: number }, { data: string; mimeType: string }>(functions, 'imageProxy')
-// Images produit haute résolution (ex. Milwaukee `hi_no_padding` ≈ 5,8 Mo) :
-// on relève la limite du proxy au plafond dur côté serveur (7,5 Mo).
-const DAM_MAX_BYTES = 7_500_000
+const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
 
-const EXT_BY_MIME: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-}
+// Upload 100 % SERVEUR : la CF récupère l'image ET l'écrit dans Drive (valide les
+// magic bytes, gère les gros fichiers). Pas de round-trip base64 → fini les
+// fichiers corrompus « sans aperçu » dans Drive.
+const damUpload = httpsCallable<
+  { url: string; fileName: string; folderName: string },
+  { fileId: string; webViewLink: string }
+>(functions, 'damUpload')
 
 const UPLOAD_CONCURRENCY = 4
 
@@ -55,17 +51,6 @@ function splitCell(v: string): { sep: string; tokens: string[] } {
 
 function originOf(u: string): string | null {
   try { return new URL(u).origin } catch { return null }
-}
-
-function base64ToBlob(b64: string, mime: string): Blob {
-  const bin = atob(b64)
-  const bytes = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-  return new Blob([bytes], { type: mime })
-}
-
-function sanitize(name: string): string {
-  return name.replace(/[/\\:*?"<>|]/g, '_').trim().slice(0, 60) || 'asset'
 }
 
 /** Résout une URL (éventuellement relative) en absolue, ou null si impossible. */
@@ -141,18 +126,6 @@ export function useDamMigration() {
     setRunning(true)
     setProgress({ done: 0, total: jobs.length })
 
-    let token: string
-    let folderId: string
-    try {
-      token = await getDriveAccessToken()
-      folderId = await ensureDamFolder(token)
-    } catch (e) {
-      toast.error(`DAM : ${e instanceof Error ? e.message : 'connexion Google requise'}`)
-      setRunning(false)
-      setProgress(null)
-      return
-    }
-
     let done = 0
     let failed = 0
     let cursor = 0
@@ -163,13 +136,10 @@ export function useDamMigration() {
       while (cursor < jobs.length) {
         const job = jobs[cursor++]
         try {
-          const { data, mimeType } = (await imageProxy({ url: job.url, maxBytes: DAM_MAX_BYTES })).data
-          const ext = EXT_BY_MIME[mimeType] ?? 'jpg'
           const cell = cells[job.cellIdx]
-          const name = `${sanitize(cell.rowLabel)}_${job.cellIdx}_${job.tokenIdx}.${ext}`
-          const file = new File([base64ToBlob(data, mimeType)], name, { type: mimeType })
-          const meta = await uploadFileToDrive(token, file, { name, parentFolderId: folderId })
-          cell.tokens[job.tokenIdx] = driveWebViewLink(meta.id)
+          const fileName = `${cell.rowLabel}_${job.cellIdx}_${job.tokenIdx}`
+          const { webViewLink } = (await damUpload({ url: job.url, fileName, folderName: DAM_FOLDER_NAME })).data
+          cell.tokens[job.tokenIdx] = webViewLink
         } catch (e) {
           failed++
           if (!firstError) { firstError = e instanceof Error ? e.message : String(e); firstFailUrl = job.url }

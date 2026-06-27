@@ -21,6 +21,7 @@ import { TypedLogConsole } from './TypedLogConsole'
 import { looksLikeBotChallenge } from './markdownSanitize'
 import { RESELLER_HOSTS, detectBrandFromUrl } from '@/features/scraping/useJina'
 import { classifyImage, getProductRefs } from './imageFilter'
+import { useResolvedImageSrc } from '@/features/dam/useResolvedImageSrc'
 import { useProductEnrichment, type EnrichmentInput } from './useProductEnrichment'
 import { useMatchingTemplate } from '@/features/scraping-templates/useMatchingTemplate'
 import type { ScrapingTemplate } from '@/features/scraping-templates/types'
@@ -82,6 +83,8 @@ function SortableImageItem({
   variant?: GridVariant
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  // Résout les références DAM (Google Drive) en blob URL affichable ; sinon URL directe.
+  const resolvedSrc = useResolvedImageSrc(url)
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -104,7 +107,7 @@ function SortableImageItem({
       >
         <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full" title={getImageName(url)}>
           <img
-            src={url}
+            src={resolvedSrc}
             alt=""
             className={`w-full h-full object-contain ${imgPadding} pointer-events-none`}
             onError={(e) => {
@@ -183,7 +186,7 @@ function SortableImageItem({
         title="Ouvrir"
       >
         <img
-          src={url}
+          src={resolvedSrc}
           alt=""
           className="w-full h-full object-contain p-0.5"
           onError={(e) => {

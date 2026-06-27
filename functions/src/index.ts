@@ -19,6 +19,9 @@ export { damAutocomplete } from './dam/autocomplete'
 // --- Image proxy (contourne CORS pour les photos catalogue scraped) ---
 export { imageProxy } from './imageProxy'
 
+// --- DAM : upload serveur d'une image vers Drive (centralisation, sans base64 client) ---
+export { damUpload } from './dam/damUpload'
+
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
 
