@@ -10,7 +10,7 @@ const DRIVE_SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
 ]
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
-const FILE_FIELDS = 'files(id,name,mimeType,thumbnailLink,webViewLink,modifiedTime,sharedWithMeTime,viewedByMeTime,sharingUser,owners)'
+const FILE_FIELDS = 'files(id,name,mimeType,thumbnailLink,webViewLink,modifiedTime,parents,sharedWithMeTime,viewedByMeTime,sharingUser,owners)'
 
 const SECTION_QUERIES: Record<DriveSection, { q: string; orderBy: string }> = {
   'my-drive': { q: "'root' in parents and trashed=false",    orderBy: 'modifiedTime desc' },
@@ -53,17 +53,17 @@ export function useGoogleDrive() {
     return runQuery(finalQ, orderBy)
   }, [runQuery])
 
-  const listFilesByParent = useCallback((parentId: string, search: string): Promise<GDriveFile[]> => {
-    const base = `'${parentId}' in parents and trashed=false`
+  const listFilesByParent = useCallback((parentId: string, search: string, trashed = false): Promise<GDriveFile[]> => {
+    const base = `'${parentId}' in parents and trashed=${trashed}`
     const finalQ = search.trim() ? `${base} and name contains '${search.trim().replace(/'/g, "\\'")}'` : base
     return runQuery(finalQ, 'folder,modifiedTime desc')
   }, [runQuery])
 
-  /** Nombre d'éléments (fichiers + sous-dossiers) dans un dossier (jusqu'à 1000). */
-  const countFolderFiles = useCallback(async (folderId: string): Promise<number> => {
+  /** Nombre d'éléments dans un dossier (trashed=false par défaut ; true en corbeille). */
+  const countFolderFiles = useCallback(async (folderId: string, trashed = false): Promise<number> => {
     if (!accessToken) return 0
     const params = new URLSearchParams({
-      q: `'${folderId}' in parents and trashed=false`, fields: 'files(id)', pageSize: '1000',
+      q: `'${folderId}' in parents and trashed=${trashed}`, fields: 'files(id)', pageSize: '1000',
     })
     const res = await fetch(`${DRIVE_API}/files?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
     if (!res.ok) return 0

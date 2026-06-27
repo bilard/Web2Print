@@ -11,6 +11,7 @@ export interface GDriveFile {
   thumbnailLink?: string
   webViewLink: string
   modifiedTime: string
+  parents?: string[]
   sharedWithMeTime?: string
   viewedByMeTime?: string
   sharingUser?: GDriveUser

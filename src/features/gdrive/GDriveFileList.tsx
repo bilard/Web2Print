@@ -50,8 +50,9 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
     debounceRef.current = setTimeout(() => {
       setLoading(true)
       setFiles([])
+      // En corbeille, on liste les ENFANTS EN CORBEILLE d'un dossier (trashed=true).
       const request = parentId
-        ? listFilesByParent(parentId, search)
+        ? listFilesByParent(parentId, search, section === 'trash')
         : listFilesBySection(section, search)
       request.then(setFiles).finally(() => setLoading(false))
     }, search ? 400 : 0)
@@ -61,22 +62,32 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
   // Reset la sélection au changement de dossier/section/recherche.
   useEffect(() => { setSelected(new Set()) }, [section, search, parentId])
 
-  // Compte le contenu de chaque dossier affiché (pour « Nom (N) »).
+  const isTrash = section === 'trash'
+
+  // En corbeille, à la racine : masquer les éléments dont un parent est lui-même
+  // un dossier en corbeille (on les voit en entrant dans le dossier) → respecte
+  // la hiérarchie au lieu de tout afficher à plat.
+  const displayFiles = (() => {
+    if (!isTrash || parentId) return files
+    const trashedFolderIds = new Set(files.filter((f) => f.mimeType === FOLDER_MIME).map((f) => f.id))
+    return files.filter((f) => !(f.parents ?? []).some((p) => trashedFolderIds.has(p)))
+  })()
+
+  // Compte le contenu de chaque dossier affiché (en corbeille = enfants en corbeille).
   useEffect(() => {
     let cancelled = false
-    const folderIds = files.filter((f) => f.mimeType === FOLDER_MIME).map((f) => f.id)
-    void Promise.all(folderIds.map(async (id) => [id, await countFolderFiles(id)] as const))
+    const folderIds = displayFiles.filter((f) => f.mimeType === FOLDER_MIME).map((f) => f.id)
+    void Promise.all(folderIds.map(async (id) => [id, await countFolderFiles(id, isTrash)] as const))
       .then((pairs) => { if (!cancelled) setFolderCounts(Object.fromEntries(pairs)) })
     return () => { cancelled = true }
-  }, [files, countFolderFiles])
+  }, [displayFiles, countFolderFiles, isTrash])
 
-  const nonFolderFiles = files.filter((f) => f.mimeType !== FOLDER_MIME)
+  const nonFolderFiles = displayFiles.filter((f) => f.mimeType !== FOLDER_MIME)
   const allSelected = nonFolderFiles.length > 0 && nonFolderFiles.every((f) => selected.has(f.id))
   const toggleSelect = (file: GDriveFile) =>
     setSelected((s) => { const n = new Set(s); if (n.has(file.id)) n.delete(file.id); else n.add(file.id); return n })
   const toggleSelectAll = () =>
     setSelected(() => (allSelected ? new Set() : new Set(nonFolderFiles.map((f) => f.id))))
-  const isTrash = section === 'trash'
   const runOp = async (
     fn: (ids: string[]) => Promise<number>,
     ids: string[],
@@ -106,9 +117,9 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
     : { onTrash: (f: GDriveFile) => void trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier') }
 
   const dateLabel = section === 'shared' ? 'Date de partage' : 'Date de modification'
-  const groups = parentId ? null : groupByDate(files, section)
-  const folders = parentId ? files.filter((f) => f.mimeType === 'application/vnd.google-apps.folder') : []
-  const nonFolders = parentId ? files.filter((f) => f.mimeType !== 'application/vnd.google-apps.folder') : []
+  const groups = parentId ? null : groupByDate(displayFiles, section)
+  const folders = parentId ? displayFiles.filter((f) => f.mimeType === FOLDER_MIME) : []
+  const nonFolders = parentId ? displayFiles.filter((f) => f.mimeType !== FOLDER_MIME) : []
 
   return (
     <div className="flex flex-col min-h-0">
@@ -172,7 +183,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         </div>
       )}
 
-      {!loading && files.length === 0 && (
+      {!loading && displayFiles.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-16">
           <FileText className="w-8 h-8 text-white/10" />
           <p className="text-sm text-white/30">Aucun fichier</p>
