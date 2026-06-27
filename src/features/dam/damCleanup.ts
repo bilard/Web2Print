@@ -10,6 +10,14 @@ import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 
 const damDelete = httpsCallable<{ fileIds: string[] }, { trashed: number }>(functions, 'damDelete')
 
+/** Déplace des fichiers Drive dans la corbeille (récupérable). Retourne le nombre traité. */
+export async function trashDriveFiles(fileIds: string[]): Promise<number> {
+  const ids = fileIds.filter((x) => typeof x === 'string' && x.length > 0)
+  if (ids.length === 0) return 0
+  const { data } = await damDelete({ fileIds: ids })
+  return data.trashed
+}
+
 /** fileId Drive de toutes les cellules image/url d'une ligne (cellules multi-URLs incluses). */
 function driveFileIdsOfRow(row: ExcelRow, columns: ExcelColumn[]): Set<string> {
   const ids = new Set<string>()

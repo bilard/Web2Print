@@ -15,7 +15,10 @@ import {
   LogIn,
   AlertCircle,
   Check,
+  Trash2,
 } from 'lucide-react'
+import { toast } from 'sonner'
+import { trashDriveFiles } from '@/features/dam/damCleanup'
 import { useGDriveStore } from '@/stores/gdrive.store'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { useGoogleDrive } from './useGoogleDrive'
@@ -81,6 +84,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Map<string, PickedFile>>(() => new Map())
+  const [reloadKey, setReloadKey] = useState(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentFolder = folderStack[folderStack.length - 1] ?? null
@@ -98,7 +102,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [open, accessToken, section, search, currentFolder, listFilesBySection, listFilesByParent])
+  }, [open, accessToken, section, search, currentFolder, reloadKey, listFilesBySection, listFilesByParent])
 
   useEffect(() => {
     if (!open) return
@@ -187,6 +191,17 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
     setSelected(new Map())
     onClose()
   }
+  const trashFiles = async (ids: string[], label: string) => {
+    if (ids.length === 0) return
+    try {
+      const n = await trashDriveFiles(ids)
+      setSelected((m) => { const next = new Map(m); for (const id of ids) next.delete(id); return next })
+      setReloadKey((k) => k + 1)
+      toast.success(`${n} ${label}${n > 1 ? 's' : ''} déplacé${n > 1 ? 's' : ''} dans la corbeille Drive`)
+    } catch (e) {
+      toast.error(`Suppression : ${e instanceof Error ? e.message : 'échec'}`)
+    }
+  }
 
   const sectionLabel = SECTIONS.find((s) => s.id === section)?.label ?? ''
 
@@ -270,12 +285,24 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                   </button>
                   <button
                     type="button"
-                    onClick={confirmMultiple}
+                    onClick={() => void trashFiles([...selected.keys()], 'fichier')}
                     disabled={selected.size === 0}
-                    className="px-3 py-1.5 rounded-md bg-blue-500/15 hover:bg-blue-500/25 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-blue-500/30 disabled:border-white/[0.06] text-blue-200 text-[12px] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-red-500/25 disabled:border-white/[0.06] text-red-300 text-[12px] transition-colors"
+                    title="Déplacer la sélection dans la corbeille Drive"
                   >
-                    Ajouter ({selected.size})
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Corbeille ({selected.size})
                   </button>
+                  {onPickMultiple && (
+                    <button
+                      type="button"
+                      onClick={confirmMultiple}
+                      disabled={selected.size === 0}
+                      className="px-3 py-1.5 rounded-md bg-blue-500/15 hover:bg-blue-500/25 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-blue-500/30 disabled:border-white/[0.06] text-blue-200 text-[12px] transition-colors"
+                    >
+                      Ajouter ({selected.size})
+                    </button>
+                  )}
                 </>
               ) : null}
               {foldersOnly && accessToken ? (
@@ -416,12 +443,15 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                       })
                       const isSelected = selected.has(f.id)
                       return (
-                        <li key={f.id}>
+                        <li
+                          key={f.id}
+                          className={`group flex items-center rounded-md transition-colors ${
+                            isSelected ? 'bg-blue-500/15 hover:bg-blue-500/20' : 'hover:bg-white/[0.05]'
+                          }`}
+                        >
                           <button
                             onClick={() => (isFolder ? handleOpenFolder(f) : multiple ? toggleSelect(f) : handlePick(f))}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors group ${
-                              isSelected ? 'bg-blue-500/15 hover:bg-blue-500/20' : 'hover:bg-white/[0.05]'
-                            }`}
+                            className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2 text-left"
                           >
                             {multiple && !isFolder && (
                               <div className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center ${
@@ -455,6 +485,17 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                             </span>
                             <span className="text-[11px] text-white/30 shrink-0">{date}</span>
                           </button>
+                          {multiple && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); void trashFiles([f.id], isFolder ? 'dossier' : 'fichier') }}
+                              className="shrink-0 mr-2 p-1.5 rounded text-white/25 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                              title="Déplacer dans la corbeille Drive"
+                              aria-label="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </li>
                       )
                     })}
