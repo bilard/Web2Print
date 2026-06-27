@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Loader2, FileText, Trash2, CheckSquare, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGoogleDrive } from './useGoogleDrive'
@@ -66,12 +66,13 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
 
   // En corbeille, à la racine : masquer les éléments dont un parent est lui-même
   // un dossier en corbeille (on les voit en entrant dans le dossier) → respecte
-  // la hiérarchie au lieu de tout afficher à plat.
-  const displayFiles = (() => {
+  // la hiérarchie au lieu de tout afficher à plat. MÉMOÏSÉ : sinon un nouveau
+  // tableau à chaque rendu relance l'effet de comptage → boucle infinie (gel).
+  const displayFiles = useMemo(() => {
     if (!isTrash || parentId) return files
     const trashedFolderIds = new Set(files.filter((f) => f.mimeType === FOLDER_MIME).map((f) => f.id))
     return files.filter((f) => !(f.parents ?? []).some((p) => trashedFolderIds.has(p)))
-  })()
+  }, [files, isTrash, parentId])
 
   // Compte le contenu de chaque dossier affiché (en corbeille = enfants en corbeille).
   useEffect(() => {
