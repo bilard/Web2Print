@@ -44,21 +44,25 @@ function detectImageMime(buf: Buffer, ctHint: string): string | null {
   return null
 }
 
-async function ensureFolder(token: string, name: string): Promise<string> {
+/** Garantit l'existence d'un dossier (idempotent), éventuellement sous `parentId`. */
+async function ensureFolder(token: string, name: string, parentId?: string): Promise<string> {
   const auth = { Authorization: `Bearer ${token}` }
   const esc = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+  let q = `name='${esc}' and mimeType='${FOLDER_MIME}' and trashed=false`
+  if (parentId) q += ` and '${parentId}' in parents`
   const params = new URLSearchParams({
-    q: `name='${esc}' and mimeType='${FOLDER_MIME}' and trashed=false`,
-    fields: 'files(id)', orderBy: 'modifiedTime desc', pageSize: '1', spaces: 'drive',
+    q, fields: 'files(id)', orderBy: 'modifiedTime desc', pageSize: '1', spaces: 'drive',
   })
   const find = await fetch(`${DRIVE_API}/files?${params}`, { headers: auth })
   if (find.ok) {
     const d = (await find.json()) as { files?: { id: string }[] }
     if (d.files?.[0]?.id) return d.files[0].id
   }
+  const metadata: Record<string, unknown> = { name, mimeType: FOLDER_MIME }
+  if (parentId) metadata.parents = [parentId]
   const create = await fetch(`${DRIVE_API}/files?fields=id`, {
     method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, mimeType: FOLDER_MIME }),
+    body: JSON.stringify(metadata),
   })
   const j = (await create.json().catch(() => null)) as { id?: string; error?: { message?: string } } | null
   if (!create.ok || !j?.id) throw new HttpsError('internal', `dossier DAM Drive : ${create.status} ${j?.error?.message ?? ''}`)
@@ -69,12 +73,16 @@ export const damUpload = onCall(
   { region: 'europe-west1', memory: '512MiB', timeoutSeconds: 60, maxInstances: 10 },
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Authentification requise')
-    const { url, fileName, folderName } = (request.data ?? {}) as { url?: string; fileName?: string; folderName?: string }
+    const { url, fileName, folderName, subFolder } = (request.data ?? {}) as
+      { url?: string; fileName?: string; folderName?: string; subFolder?: string }
     if (typeof url !== 'string' || url.length === 0) throw new HttpsError('invalid-argument', 'url manquant')
     const safe = assertSafeUrl(url)
 
     const token = await getGoogleAccessToken(request.auth.uid)
-    const folderId = await ensureFolder(token, (typeof folderName === 'string' && folderName) || 'Web2Print — Assets DAM')
+    // Dossier racine du DAM, puis sous-dossier au nom du scraping s'il est fourni.
+    const rootId = await ensureFolder(token, (typeof folderName === 'string' && folderName) || 'Web2Print — Assets DAM')
+    const sub = typeof subFolder === 'string' ? subFolder.replace(/[/\\:*?"<>|]/g, '_').trim().slice(0, 100) : ''
+    const folderId = sub ? await ensureFolder(token, sub, rootId) : rootId
 
     // 1. Récupère l'image côté serveur.
     const ctrl = new AbortController()

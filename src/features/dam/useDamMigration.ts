@@ -25,9 +25,17 @@ const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
 // magic bytes, gère les gros fichiers). Pas de round-trip base64 → fini les
 // fichiers corrompus « sans aperçu » dans Drive.
 const damUpload = httpsCallable<
-  { url: string; fileName: string; folderName: string },
+  { url: string; fileName: string; folderName: string; subFolder?: string },
   { fileId: string; webViewLink: string }
 >(functions, 'damUpload')
+
+/** Nom de sous-dossier DAM = nom du scraping (feuille), sinon hostname de l'URL source. */
+function scrapeFolderName(sheetName: string | undefined, sourceUrl: string | undefined): string {
+  const name = (sheetName ?? '').trim()
+  if (name && !/^feuille\s*\d*$/i.test(name)) return name
+  if (sourceUrl) { try { return new URL(sourceUrl).hostname.replace(/^www\./, '') } catch { /* ignore */ } }
+  return name || 'Scraping'
+}
 
 const UPLOAD_CONCURRENCY = 4
 
@@ -85,6 +93,7 @@ export function useDamMigration() {
       if (!silent) toast.info('Aucune colonne image ou URL dans cette feuille.')
       return
     }
+    const subFolder = scrapeFolderName(sheet.name, sheet.sourceUrl)
 
     const primaryKey = sheet.columns.find((c) => c.isPrimary)?.key
     const cells: CellDesc[] = []
@@ -138,7 +147,7 @@ export function useDamMigration() {
         try {
           const cell = cells[job.cellIdx]
           const fileName = `${cell.rowLabel}_${job.cellIdx}_${job.tokenIdx}`
-          const { webViewLink } = (await damUpload({ url: job.url, fileName, folderName: DAM_FOLDER_NAME })).data
+          const { webViewLink } = (await damUpload({ url: job.url, fileName, folderName: DAM_FOLDER_NAME, subFolder })).data
           cell.tokens[job.tokenIdx] = webViewLink
         } catch (e) {
           failed++
