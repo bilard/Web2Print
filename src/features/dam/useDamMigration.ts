@@ -163,7 +163,8 @@ export function useDamMigration() {
     try {
       ;({ rootId, targetId } = (await damEnsureFolder({ folderName: DAM_FOLDER_NAME, subFolder })).data)
     } catch (e) {
-      toast.error(`DAM : ${e instanceof Error ? e.message : 'connexion Google requise'}`)
+      // En mode auto (silent), on ne spamme pas d'erreur à chaque scrape sans Google.
+      if (!silent) toast.error(`DAM : ${e instanceof Error ? e.message : 'connexion Google requise'}`)
       setRunning(false)
       setProgress(null)
       return

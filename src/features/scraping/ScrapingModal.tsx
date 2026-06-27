@@ -57,7 +57,8 @@ const TABS: { id: Tab; label: string; Icon: typeof Globe; color: string }[] = [
 
 export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props) {
   const { migrateActiveSheet } = useDamMigration()
-  const [autoDam, setAutoDam] = useState(() => localStorage.getItem('dam.autoCentralize') === '1')
+  // Activé par DÉFAUT : centralisation DAM à chaque scraping (sauf opt-out explicite « 0 »).
+  const [autoDam, setAutoDam] = useState(() => localStorage.getItem('dam.autoCentralize') !== '0')
   const [tab, setTab] = useState<Tab>('scrape')
   const [url, setUrl] = useState(resyncSource?.url ?? '')
   const [result, setResult] = useState<ScrapeResult | null>(null)
@@ -584,6 +585,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       }
     }
     triggerAutoClassify(newRowIds)
+    if (autoDam) void migrateActiveSheet({ silent: true })
     handleClose()
   }
 
@@ -638,6 +640,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       }
     }
     triggerAutoClassify(newRowIds)
+    if (autoDam) void migrateActiveSheet({ silent: true })
     handleClose()
   }
 
