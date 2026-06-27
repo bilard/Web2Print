@@ -16,6 +16,8 @@ import { ProductTaxonomyPicker } from '@/components/taxonomy/ProductTaxonomyPick
 import { cellValue } from './cellValue'
 import { getLevelColor, getTaxoColumns } from './taxonomyBuilder'
 import type { ExcelColumn, CellValue, FieldTypeId } from './types'
+import { DamImage } from '@/features/dam/DamImage'
+import { useResolvedImageSrc } from '@/features/dam/useResolvedImageSrc'
 import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
 import { useEnrichmentStore } from './ai-enrichment/enrichmentStore'
@@ -304,6 +306,8 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
   // de la fiche affiche ainsi la fusion des images user + images scrapées.
   if (enrichedProduct?.images?.length) allImages.push(...enrichedProduct.images)
   const uniqueImages = [...new Set(allImages)]
+  // Résout l'image active si c'est une référence DAM (Drive) → blob affichable.
+  const mainImageSrc = useResolvedImageSrc(uniqueImages[activeImg] ?? '')
 
   const contentCols = visibleCols.filter(c =>
     c.key !== primaryCol?.key &&
@@ -394,7 +398,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
       {uniqueImages.length > 0 && (
         <div className="bg-[#f0f0f0] border-b border-white/[0.06] shrink-0">
           <div className="relative flex items-center justify-center h-56 overflow-hidden">
-            <img src={uniqueImages[activeImg]} alt={title}
+            <img src={mainImageSrc} alt={title}
               className="max-h-full max-w-full object-contain"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             {activeImg > 0 && (
@@ -425,8 +429,7 @@ export function ProductSheet({ rowId, allRowIds, onClose, onNavigate }: Props) {
                   className={`shrink-0 w-10 h-10 rounded border overflow-hidden bg-[#fff] transition-all ${
                     i === activeImg ? 'border-indigo-400/60 ring-1 ring-indigo-400/20' : 'border-white/10 opacity-60 hover:opacity-100'
                   }`}>
-                  <img src={url} alt="" className="w-full h-full object-contain p-0.5"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <DamImage value={url} className="w-full h-full object-contain p-0.5" />
                 </button>
               ))}
             </div>
