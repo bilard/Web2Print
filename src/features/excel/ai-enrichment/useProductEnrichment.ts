@@ -2683,6 +2683,22 @@ async function scrapeManufacturerRawData(pageUrl: string): Promise<ManufacturerD
     }
   }
 
+  // ── 2ter. Images depuis le HTML brut (source DÉTERMINISTE) — l'imagesMap Jina
+  //     varie selon le rendu JS ; le HTML, lui, porte toujours les <img>/og:image.
+  //     ADDITIF : on complète data.images, on ne retire jamais. Décodage entités
+  //     (&amp;) + dé-vignettage gérés dans le parser. isJunkImageUrl écarte les
+  //     pictos/logos ; filterImagesByProductRef isolera la galerie en aval. ──
+  try {
+    const { parseImagesFromHtml } = await import('@/features/scraping/core/parsers/parseImagesFromHtml')
+    let added = 0
+    for (const img of parseImagesFromHtml(html)) {
+      if (!isJunkImageUrl(img) && !data.images.includes(img)) { data.images.push(img); added++ }
+    }
+    if (added > 0) console.log('[manufacturer] ✓ images from raw HTML:', added)
+  } catch (err) {
+    console.warn('[manufacturer] HTML image parse failed:', err)
+  }
+
   // ── 3. Parse window.__NEXT_DATA__ (Next.js sites like some Bosch/Makita) ──
   const nextDataMatch = html.match(/window\.__NEXT_DATA__\s*=\s*(\{[\s\S]*?\})(?:\s*<\/script>|;\s*$)/m)
   if (nextDataMatch && data.specs.length === 0) {
