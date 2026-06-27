@@ -22,6 +22,7 @@ import { GalleryView } from './GalleryView'
 import { DamImage } from '@/features/dam/DamImage'
 import { DamPickButton } from '@/features/dam/DamPickButton'
 import { isDriveImageRef } from '@/features/dam/driveAssets'
+import { trashOrphanDamAssets } from '@/features/dam/damCleanup'
 import { LayoutGrid, Table as TableIcon, MoveHorizontal } from 'lucide-react'
 
 type SortDir = 'asc' | 'desc' | 'color' | null
@@ -1098,7 +1099,19 @@ function DataRow({
       >
         {canDelete && (
           <button
-            onClick={(e) => { e.stopPropagation(); deleteRow(activeSheetIndex, row._id) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              // Cleanup DAM : corbeille Drive des images du produit non utilisées ailleurs.
+              const st = useExcelStore.getState()
+              const sh = st.sheets[activeSheetIndex]
+              if (sh) {
+                const others = sh.rows.filter((r) => r._id !== row._id)
+                void trashOrphanDamAssets(row, sh.columns, others)
+                  .then((n) => { if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`) })
+                  .catch(() => { /* non bloquant */ })
+              }
+              deleteRow(activeSheetIndex, row._id)
+            }}
             className="p-1 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
             title="Supprimer la ligne"
             aria-label="Supprimer la ligne"

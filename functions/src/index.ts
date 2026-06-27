@@ -22,6 +22,9 @@ export { imageProxy } from './imageProxy'
 // --- DAM : upload serveur d'une image vers Drive (centralisation, sans base64 client) ---
 export { damUpload } from './dam/damUpload'
 
+// --- DAM : corbeille Drive des assets d'un produit supprimé ---
+export { damDelete } from './dam/damDelete'
+
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
 
