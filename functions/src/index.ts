@@ -28,6 +28,9 @@ export { damDelete } from './dam/damDelete'
 // --- DAM : ranger les assets existants sous le sous-dossier du scraping ---
 export { damMove } from './dam/damMove'
 
+// --- DAM : résout le dossier cible une fois (anti-course uploads parallèles) ---
+export { damEnsureFolder } from './dam/damEnsureFolder'
+
 // --- Telegram entrant (2a) : webhook → file Firestore ---
 export { telegramWebhook } from './telegramWebhook'
 

@@ -10,11 +10,10 @@
 // Usage : httpsCallable(functions,'damUpload')({ url, fileName, folderName })
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { getGoogleAccessToken } from '../google/serverAuth'
+import { ensureDamTarget } from './driveFolders'
 
 const FETCH_TIMEOUT_MS = 20_000
 const MAX_BYTES = 20 * 1024 * 1024 // 20 Mo : pas de base64 vers le client → on peut être large
-const DRIVE_API = 'https://www.googleapis.com/drive/v3'
-const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
 const BLOCKED_HOST_PATTERNS: RegExp[] = [
   /^localhost$/i, /^127\./, /^10\./, /^192\.168\./,
@@ -44,45 +43,23 @@ function detectImageMime(buf: Buffer, ctHint: string): string | null {
   return null
 }
 
-/** Garantit l'existence d'un dossier (idempotent), éventuellement sous `parentId`. */
-async function ensureFolder(token: string, name: string, parentId?: string): Promise<string> {
-  const auth = { Authorization: `Bearer ${token}` }
-  const esc = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
-  let q = `name='${esc}' and mimeType='${FOLDER_MIME}' and trashed=false`
-  if (parentId) q += ` and '${parentId}' in parents`
-  const params = new URLSearchParams({
-    q, fields: 'files(id)', orderBy: 'modifiedTime desc', pageSize: '1', spaces: 'drive',
-  })
-  const find = await fetch(`${DRIVE_API}/files?${params}`, { headers: auth })
-  if (find.ok) {
-    const d = (await find.json()) as { files?: { id: string }[] }
-    if (d.files?.[0]?.id) return d.files[0].id
-  }
-  const metadata: Record<string, unknown> = { name, mimeType: FOLDER_MIME }
-  if (parentId) metadata.parents = [parentId]
-  const create = await fetch(`${DRIVE_API}/files?fields=id`, {
-    method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' },
-    body: JSON.stringify(metadata),
-  })
-  const j = (await create.json().catch(() => null)) as { id?: string; error?: { message?: string } } | null
-  if (!create.ok || !j?.id) throw new HttpsError('internal', `dossier DAM Drive : ${create.status} ${j?.error?.message ?? ''}`)
-  return j.id
-}
 
 export const damUpload = onCall(
   { region: 'europe-west1', memory: '512MiB', timeoutSeconds: 60, maxInstances: 10 },
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Authentification requise')
-    const { url, fileName, folderName, subFolder } = (request.data ?? {}) as
-      { url?: string; fileName?: string; folderName?: string; subFolder?: string }
+    const { url, fileName, folderName, subFolder, folderId: preResolvedFolderId } = (request.data ?? {}) as
+      { url?: string; fileName?: string; folderName?: string; subFolder?: string; folderId?: string }
     if (typeof url !== 'string' || url.length === 0) throw new HttpsError('invalid-argument', 'url manquant')
     const safe = assertSafeUrl(url)
 
     const token = await getGoogleAccessToken(request.auth.uid)
-    // Dossier racine du DAM, puis sous-dossier au nom du scraping s'il est fourni.
-    const rootId = await ensureFolder(token, (typeof folderName === 'string' && folderName) || 'Web2Print — Assets DAM')
-    const sub = typeof subFolder === 'string' ? subFolder.replace(/[/\\:*?"<>|]/g, '_').trim().slice(0, 100) : ''
-    const folderId = sub ? await ensureFolder(token, sub, rootId) : rootId
+    // Dossier cible : pré-résolu (recommandé, évite la course entre uploads
+    // parallèles), sinon résolu ici (racine + sous-dossier au nom du scraping).
+    const folderId =
+      typeof preResolvedFolderId === 'string' && /^[\w-]{10,}$/.test(preResolvedFolderId)
+        ? preResolvedFolderId
+        : (await ensureDamTarget(token, folderName ?? 'Web2Print — Assets DAM', subFolder)).targetId
 
     // 1. Récupère l'image côté serveur.
     const ctrl = new AbortController()

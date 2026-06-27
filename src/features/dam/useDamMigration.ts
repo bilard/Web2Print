@@ -26,13 +26,19 @@ const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
 // magic bytes, gère les gros fichiers). Pas de round-trip base64 → fini les
 // fichiers corrompus « sans aperçu » dans Drive.
 const damUpload = httpsCallable<
-  { url: string; fileName: string; folderName: string; subFolder?: string },
+  { url: string; fileName: string; folderId: string },
   { fileId: string; webViewLink: string }
 >(functions, 'damUpload')
 
+// Résout (crée) le dossier cible UNE fois avant les uploads parallèles.
+const damEnsureFolder = httpsCallable<
+  { folderName: string; subFolder?: string },
+  { rootId: string; targetId: string }
+>(functions, 'damEnsureFolder')
+
 // Range les images DÉJÀ dans Drive sous le sous-dossier du scraping.
 const damMove = httpsCallable<
-  { fileIds: string[]; folderName: string; subFolder: string },
+  { fileIds: string[]; rootId: string; targetId: string },
   { moved: number }
 >(functions, 'damMove')
 
@@ -150,6 +156,19 @@ export function useDamMigration() {
     setRunning(true)
     setProgress({ done: 0, total: jobs.length })
 
+    // Résout le dossier cible UNE fois (évite la course entre uploads parallèles
+    // → fini les sous-dossiers en double).
+    let rootId: string
+    let targetId: string
+    try {
+      ;({ rootId, targetId } = (await damEnsureFolder({ folderName: DAM_FOLDER_NAME, subFolder })).data)
+    } catch (e) {
+      toast.error(`DAM : ${e instanceof Error ? e.message : 'connexion Google requise'}`)
+      setRunning(false)
+      setProgress(null)
+      return
+    }
+
     let done = 0
     let failed = 0
     let cursor = 0
@@ -162,7 +181,7 @@ export function useDamMigration() {
         try {
           const cell = cells[job.cellIdx]
           const fileName = `${cell.rowLabel}_${job.cellIdx}_${job.tokenIdx}`
-          const { webViewLink } = (await damUpload({ url: job.url, fileName, folderName: DAM_FOLDER_NAME, subFolder })).data
+          const { webViewLink } = (await damUpload({ url: job.url, fileName, folderId: targetId })).data
           cell.tokens[job.tokenIdx] = webViewLink
         } catch (e) {
           failed++
@@ -203,9 +222,9 @@ export function useDamMigration() {
 
     // Range les images DÉJÀ centralisées (racine) sous le sous-dossier du scraping.
     let moved = 0
-    if (existingDriveIds.size > 0 && subFolder) {
+    if (existingDriveIds.size > 0 && subFolder && targetId !== rootId) {
       try {
-        moved = (await damMove({ fileIds: [...existingDriveIds], folderName: DAM_FOLDER_NAME, subFolder })).data.moved
+        moved = (await damMove({ fileIds: [...existingDriveIds], rootId, targetId })).data.moved
       } catch { /* rangement best-effort, non bloquant */ }
     }
 
