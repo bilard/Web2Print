@@ -154,6 +154,7 @@ export function useDamMigration() {
     let failed = 0
     let cursor = 0
     let firstError = ''
+    let firstFailUrl = ''
 
     const worker = async (): Promise<void> => {
       while (cursor < jobs.length) {
@@ -168,7 +169,7 @@ export function useDamMigration() {
           cell.tokens[job.tokenIdx] = driveWebViewLink(meta.id)
         } catch (e) {
           failed++
-          if (!firstError) firstError = e instanceof Error ? e.message : String(e)
+          if (!firstError) { firstError = e instanceof Error ? e.message : String(e); firstFailUrl = job.url }
           console.error('[DAM] échec image', job.url, e)
         }
         done++
@@ -206,10 +207,11 @@ export function useDamMigration() {
     setRunning(false)
     setProgress(null)
     const ok = jobs.length - failed
+    const shortUrl = firstFailUrl ? firstFailUrl.replace(/^https?:\/\//, '').slice(0, 70) : ''
     if (failed === 0) {
       toast.success(`${ok} image(s) centralisée(s) dans le DAM. Pense à sauvegarder.`)
     } else if (ok === 0) {
-      toast.error(`Échec de la centralisation${firstError ? ` : ${firstError}` : ''}.`)
+      toast.error(`Échec centralisation${firstError ? ` : ${firstError}` : ''}${shortUrl ? `\nURL : …${shortUrl}` : ''}`)
     } else {
       toast.warning(`${ok} centralisée(s), ${failed} échec(s)${firstError ? ` — ${firstError}` : ''}. Pense à sauvegarder.`)
     }
