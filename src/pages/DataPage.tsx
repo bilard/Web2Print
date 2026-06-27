@@ -474,7 +474,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 </button>
               )}
               <button
-                onClick={migrateActiveSheet}
+                onClick={() => migrateActiveSheet()}
                 disabled={damRunning}
                 className={`${headerBtn} disabled:opacity-40`}
                 title="Centraliser les images (URLs externes) dans le DAM Google Drive et pointer les cellules dessus"

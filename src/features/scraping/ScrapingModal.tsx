@@ -3,6 +3,7 @@ import { Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loa
 import { CloseButton } from '@/components/shared/CloseButton'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'
+import { useDamMigration } from '@/features/dam/useDamMigration'
 import type { ScrapingField, ScrapingMode, ScrapeResult, MapLink, CrawlPage, ExtractionTarget } from './useJina'
 import type { EnrichedProduct } from '@/features/excel/ai-enrichment/types'
 import type { ExcelSheet, ExcelRow } from '@/features/excel/types'
@@ -55,6 +56,8 @@ const TABS: { id: Tab; label: string; Icon: typeof Globe; color: string }[] = [
 ]
 
 export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props) {
+  const { migrateActiveSheet } = useDamMigration()
+  const [autoDam, setAutoDam] = useState(() => localStorage.getItem('dam.autoCentralize') === '1')
   const [tab, setTab] = useState<Tab>('scrape')
   const [url, setUrl] = useState(resyncSource?.url ?? '')
   const [result, setResult] = useState<ScrapeResult | null>(null)
@@ -507,7 +510,7 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       startPreview(result.rows as Record<string, unknown>[], source)
       return
     }
-    const sheet = scrapeResultToSheet(result, lastFields, displayName)
+    const sheet = scrapeResultToSheet(result, lastFields, displayName, url)
     const newRowIds = sheet.rows.map((r) => r._id)
     const store = useExcelStore.getState()
     // Scrape depuis le bouton "+" (targetPath défini) → nouvelle BDD :
@@ -531,6 +534,9 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
       }
     }
     triggerAutoClassify(newRowIds)
+    // Opt-in : centraliser automatiquement les images dans le DAM après import
+    // (détaché — la migration tourne même si la modale se ferme).
+    if (autoDam) void migrateActiveSheet({ silent: true })
     handleClose()
   }
 
@@ -999,6 +1005,18 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         {/* Footer */}
         {(canImport || canImportEnriched || canImportBatch) && (
           <div className="px-5 py-3.5 border-t border-white/[0.06] shrink-0">
+            <label className="flex items-center gap-2 mb-2.5 text-[12px] text-white/45 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoDam}
+                onChange={(e) => {
+                  setAutoDam(e.target.checked)
+                  localStorage.setItem('dam.autoCentralize', e.target.checked ? '1' : '0')
+                }}
+                className="accent-indigo-500"
+              />
+              Centraliser les images dans le DAM (Google Drive) après l'import
+            </label>
             <button
               onClick={() => {
                 if (canImportBatch) return handleImportBatch()

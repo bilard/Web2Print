@@ -421,8 +421,22 @@ const isSpecsArray = (v: unknown): v is { group?: string; name: string; value: s
 const isStringsArray = (v: unknown): v is string[] =>
   Array.isArray(v) && (v.length === 0 || typeof v[0] === 'string')
 
-export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[], name: string): ExcelSheet {
+export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[], name: string, sourceUrl?: string): ExcelSheet {
   const labelMap = Object.fromEntries(fields.map((f) => [f.key, f.label]))
+
+  // Absolutise un chemin d'image relatif (`img/x.jpg`) en URL complète via l'URL
+  // source du scrape — sinon il est inexploitable hors du site (affichage, DAM).
+  const absolutizeImg = (s: string | null): string | null => {
+    if (!s || !sourceUrl) return s
+    return s
+      .split(' | ')
+      .map((part) => {
+        const p = part.trim()
+        if (!p || /^(https?:|data:)/i.test(p)) return p
+        try { return new URL(p, sourceUrl).toString() } catch { return p }
+      })
+      .join(' | ')
+  }
 
   const serializeCell = (v: unknown): string | null => {
     if (v == null) return null
@@ -548,6 +562,7 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
 
   // Ordre : colonnes standard (name en primary) → taxonomie → specs.
   const columns = [...baseColumns, ...taxonomyColumns, ...specsColumns]
+  const imageColKeys = new Set(baseColumns.filter((c) => c.fieldType === 'image').map((c) => c.key))
 
   // 4. Lignes
   const rows: ExcelRow[] = result.rows.map((r, i) => {
@@ -556,7 +571,7 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
       ...Object.fromEntries(
         result.columns
           .filter((k) => k !== BREADCRUMB_KEY && !isSpecsArray(r[k]))
-          .map((k) => [k, serializeCell(r[k])])
+          .map((k) => [k, imageColKeys.has(k) ? absolutizeImg(serializeCell(r[k])) : serializeCell(r[k])])
       ),
     }
     const crumb = Array.isArray(r[BREADCRUMB_KEY]) ? (r[BREADCRUMB_KEY] as unknown[]) : []
@@ -571,6 +586,7 @@ export function scrapeResultToSheet(result: ScrapeResult, fields: ScrapingField[
   })
 
   const sheet: ExcelSheet = { name, columns, rows, taxonomy: [] }
+  if (sourceUrl) sheet.sourceUrl = sourceUrl
   if (breadcrumbDepth > 0) {
     sheet.taxonomyLevels = taxonomyLevels
     sheet.taxonomy = buildTaxonomyFromLevels(sheet, taxonomyLevels)

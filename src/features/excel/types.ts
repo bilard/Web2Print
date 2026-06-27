@@ -125,4 +125,7 @@ export interface ExcelSheet {
   taxonomyLevels?: TaxonomyLevelMap
   /** Règles de coloration conditionnelle (ex: colonne « position » → vert/rouge). */
   colorRules?: SheetColorRule[]
+  /** URL source du scrape (sert à absolutiser les chemins d'images relatifs lors
+   *  de la centralisation DAM). Renseignée par scrapeResultToSheet. */
+  sourceUrl?: string
 }
