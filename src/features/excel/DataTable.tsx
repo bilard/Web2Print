@@ -1107,8 +1107,14 @@ function DataRow({
               if (sh) {
                 const others = sh.rows.filter((r) => r._id !== row._id)
                 void trashOrphanDamAssets(row, sh.columns, others)
-                  .then((n) => { if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`) })
-                  .catch(() => { /* non bloquant */ })
+                  .then((n) => {
+                    if (n > 0) toast.success(`${n} image(s) du DAM déplacée(s) dans la corbeille Drive`)
+                    else toast.info('Aucune image DAM (lien Drive) dans ce produit — la cellule contient une URL externe, pas un asset Drive.')
+                  })
+                  .catch((e) => {
+                    console.error('[DAM] suppression produit échouée', e)
+                    toast.error(`DAM : suppression Drive échouée — ${e instanceof Error ? e.message : 'erreur'}`)
+                  })
               }
               deleteRow(activeSheetIndex, row._id)
             }}
