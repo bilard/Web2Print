@@ -21,7 +21,10 @@ import { ensureDamFolder } from './damFolder'
 import { getDriveAccessToken, isDriveImageRef, driveWebViewLink } from './driveAssets'
 import type { ExcelRow } from '@/features/excel/types'
 
-const imageProxy = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
+const imageProxy = httpsCallable<{ url: string; maxBytes: number }, { data: string; mimeType: string }>(functions, 'imageProxy')
+// Images produit haute résolution (ex. Milwaukee `hi_no_padding` ≈ 5,8 Mo) :
+// on relève la limite du proxy au plafond dur côté serveur (7,5 Mo).
+const DAM_MAX_BYTES = 7_500_000
 
 const EXT_BY_MIME: Record<string, string> = {
   'image/png': 'png',
@@ -160,7 +163,7 @@ export function useDamMigration() {
       while (cursor < jobs.length) {
         const job = jobs[cursor++]
         try {
-          const { data, mimeType } = (await imageProxy({ url: job.url })).data
+          const { data, mimeType } = (await imageProxy({ url: job.url, maxBytes: DAM_MAX_BYTES })).data
           const ext = EXT_BY_MIME[mimeType] ?? 'jpg'
           const cell = cells[job.cellIdx]
           const name = `${sanitize(cell.rowLabel)}_${job.cellIdx}_${job.tokenIdx}.${ext}`

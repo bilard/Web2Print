@@ -1,6 +1,11 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 
-const MAX_BYTES = 4 * 1024 * 1024 // 4 MB, aligné sur la limite inlineData Gemini
+const DEFAULT_MAX_BYTES = 4 * 1024 * 1024 // 4 MB, aligné sur la limite inlineData Gemini
+// Plafond dur : la réponse callable transporte du base64 (+33 %) ; 7,5 Mo d'image
+// → ~10 Mo de base64, sous la limite de réponse callable. Au-delà, le DAM échoue
+// proprement (rare). Surclassable par appel via `maxBytes` (ex. centralisation DAM
+// d'images haute résolution), sans toucher au défaut Gemini.
+const HARD_MAX_BYTES = 7_500_000
 const FETCH_TIMEOUT_MS = 15_000
 
 /**
@@ -59,10 +64,14 @@ export const imageProxy = onCall(
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentification requise')
     }
-    const { url } = (request.data ?? {}) as { url?: string }
+    const { url, maxBytes } = (request.data ?? {}) as { url?: string; maxBytes?: number }
     if (typeof url !== 'string' || url.length === 0) {
       throw new HttpsError('invalid-argument', 'url manquant')
     }
+    const limit = Math.min(
+      typeof maxBytes === 'number' && maxBytes > 0 ? maxBytes : DEFAULT_MAX_BYTES,
+      HARD_MAX_BYTES,
+    )
 
     const safe = assertSafeUrl(url)
 
@@ -91,13 +100,13 @@ export const imageProxy = onCall(
     }
 
     const contentLength = Number(res.headers.get('content-length') ?? '0')
-    if (contentLength > MAX_BYTES) {
-      throw new HttpsError('resource-exhausted', `image trop lourde (${contentLength} > ${MAX_BYTES})`)
+    if (contentLength > limit) {
+      throw new HttpsError('resource-exhausted', `image trop lourde (${contentLength} > ${limit})`)
     }
 
     const buf = await res.arrayBuffer()
-    if (buf.byteLength > MAX_BYTES) {
-      throw new HttpsError('resource-exhausted', `image trop lourde (${buf.byteLength} > ${MAX_BYTES})`)
+    if (buf.byteLength > limit) {
+      throw new HttpsError('resource-exhausted', `image trop lourde (${buf.byteLength} > ${limit})`)
     }
 
     let mimeType = res.headers.get('content-type')?.split(';')[0]?.trim() ?? ''
