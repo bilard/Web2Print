@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag, Search, Folder, Coins } from 'lucide-react'
+import { Globe, Download, AlertCircle, Sparkles, Map as MapIcon, FolderSync, Loader2, ExternalLink, Tag, Search, Folder, Coins, FolderUp } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import { TypedLogConsole } from '@/features/excel/ai-enrichment/TypedLogConsole'
 import { useJina, scrapeResultToSheet, enrichedProductToSheet, enrichedProductsToSheet, detectBrandLabelFromUrl } from './useJina'
@@ -741,6 +741,21 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
           </div>
         </div>
 
+        {/* Opt-in DAM : centraliser les images dans Google Drive après l'import. */}
+        <label className="px-5 py-2.5 border-b border-white/[0.06] shrink-0 flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={autoDam}
+            onChange={(e) => {
+              setAutoDam(e.target.checked)
+              localStorage.setItem('dam.autoCentralize', e.target.checked ? '1' : '0')
+            }}
+            className="accent-indigo-500 shrink-0"
+          />
+          <FolderUp className="w-3.5 h-3.5 text-white/30 shrink-0" />
+          <span className="text-[11px] text-white/45">Centraliser les images dans le DAM (Google Drive) après l'import</span>
+        </label>
+
         {/* Auto-classement IA — taxonomie cible (optionnelle).
              Si renseignée, chaque produit importé est classé automatiquement
              dans le bon nœud après la fin du scrape. */}
@@ -1005,18 +1020,6 @@ export function ScrapingModal({ open, onClose, targetPath, resyncSource }: Props
         {/* Footer */}
         {(canImport || canImportEnriched || canImportBatch) && (
           <div className="px-5 py-3.5 border-t border-white/[0.06] shrink-0">
-            <label className="flex items-center gap-2 mb-2.5 text-[12px] text-white/45 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={autoDam}
-                onChange={(e) => {
-                  setAutoDam(e.target.checked)
-                  localStorage.setItem('dam.autoCentralize', e.target.checked ? '1' : '0')
-                }}
-                className="accent-indigo-500"
-              />
-              Centraliser les images dans le DAM (Google Drive) après l'import
-            </label>
             <button
               onClick={() => {
                 if (canImportBatch) return handleImportBatch()
