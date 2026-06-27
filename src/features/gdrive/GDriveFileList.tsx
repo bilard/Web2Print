@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Loader2, FileText, Trash2, CheckSquare } from 'lucide-react'
+import { Loader2, FileText, Trash2, CheckSquare, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGoogleDrive } from './useGoogleDrive'
 import { GDriveFileRow } from './GDriveFileRow'
-import { trashDriveFiles } from '@/features/dam/damCleanup'
+import { trashDriveFiles, restoreDriveFiles, deleteDriveFilesForever } from '@/features/dam/damCleanup'
 import type { GDriveFile, DriveSection } from './types'
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
@@ -66,17 +66,34 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
     setSelected((s) => { const n = new Set(s); if (n.has(file.id)) n.delete(file.id); else n.add(file.id); return n })
   const toggleSelectAll = () =>
     setSelected(() => (allSelected ? new Set() : new Set(nonFolderFiles.map((f) => f.id))))
-  const trash = async (ids: string[], label: string) => {
+  const isTrash = section === 'trash'
+  const runOp = async (
+    fn: (ids: string[]) => Promise<number>,
+    ids: string[],
+    done: (n: number) => string,
+  ) => {
     if (ids.length === 0) return
     try {
-      const n = await trashDriveFiles(ids)
+      const n = await fn(ids)
       setSelected(new Set())
       setReloadKey((k) => k + 1)
-      toast.success(`${n} ${label}${n > 1 ? 's' : ''} déplacé${n > 1 ? 's' : ''} dans la corbeille Drive`)
+      toast.success(done(n))
     } catch (e) {
-      toast.error(`Suppression : ${e instanceof Error ? e.message : 'échec'}`)
+      toast.error(`Opération : ${e instanceof Error ? e.message : 'échec'}`)
     }
   }
+  const trash = (ids: string[], label: string) =>
+    runOp(trashDriveFiles, ids, (n) => `${n} ${label}${n > 1 ? 's' : ''} déplacé${n > 1 ? 's' : ''} dans la corbeille Drive`)
+  const restore = (ids: string[]) =>
+    runOp(restoreDriveFiles, ids, (n) => `${n} fichier${n > 1 ? 's' : ''} restauré${n > 1 ? 's' : ''}`)
+  const deleteForever = (ids: string[]) => {
+    if (ids.length === 0) return
+    if (!window.confirm(`Supprimer DÉFINITIVEMENT ${ids.length} fichier(s) ? Cette action est irréversible.`)) return
+    void runOp(deleteDriveFilesForever, ids, (n) => `${n} fichier${n > 1 ? 's' : ''} supprimé${n > 1 ? 's' : ''} définitivement`)
+  }
+  const rowActions = isTrash
+    ? { onRestore: (f: GDriveFile) => void restore([f.id]), onDeleteForever: (f: GDriveFile) => deleteForever([f.id]) }
+    : { onTrash: (f: GDriveFile) => void trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier') }
 
   const dateLabel = section === 'shared' ? 'Date de partage' : 'Date de modification'
   const groups = parentId ? null : groupByDate(files, section)
@@ -96,7 +113,27 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
             <CheckSquare className="w-3.5 h-3.5" />
             {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
           </button>
-          {selected.size > 0 && (
+          {selected.size > 0 && (isTrash ? (
+            <>
+              <button
+                type="button"
+                onClick={() => void restore([...selected])}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-300 text-[12px] transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Restaurer ({selected.size})
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteForever([...selected])}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-[12px] transition-colors"
+                title="Suppression définitive (irréversible)"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Supprimer définitivement ({selected.size})
+              </button>
+            </>
+          ) : (
             <button
               type="button"
               onClick={() => void trash([...selected], 'fichier')}
@@ -106,7 +143,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
               <Trash2 className="w-3.5 h-3.5" />
               Corbeille ({selected.size})
             </button>
-          )}
+          ))}
         </div>
       )}
 
@@ -137,8 +174,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-1">Dossiers</p>
           {folders.map((file) => (
             <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
-              selected={selected.has(file.id)} onToggleSelect={toggleSelect}
-              onTrash={(f) => trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier')} />
+              selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
           ))}
         </div>
       )}
@@ -148,8 +184,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3">Fichiers</p>
           {nonFolders.map((file) => (
             <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
-              selected={selected.has(file.id)} onToggleSelect={toggleSelect}
-              onTrash={(f) => trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier')} />
+              selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
           ))}
         </div>
       )}
@@ -159,8 +194,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3 first:mt-1">{label}</p>
           {groupFiles.map((file) => (
             <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
-              selected={selected.has(file.id)} onToggleSelect={toggleSelect}
-              onTrash={(f) => trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier')} />
+              selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
           ))}
         </div>
       ))}

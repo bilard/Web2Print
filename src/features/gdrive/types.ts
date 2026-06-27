@@ -17,5 +17,5 @@ export interface GDriveFile {
   owners?: GDriveUser[]
 }
 
-export type DriveSection = 'my-drive' | 'shared' | 'recent' | 'starred'
+export type DriveSection = 'my-drive' | 'shared' | 'recent' | 'starred' | 'trash'
 

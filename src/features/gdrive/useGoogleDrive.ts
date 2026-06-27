@@ -17,6 +17,7 @@ const SECTION_QUERIES: Record<DriveSection, { q: string; orderBy: string }> = {
   'shared':   { q: 'sharedWithMe=true and trashed=false',    orderBy: 'sharedWithMeTime desc' },
   'recent':   { q: 'trashed=false',                          orderBy: 'modifiedTime desc' },
   'starred':  { q: 'starred=true and trashed=false',         orderBy: 'modifiedTime desc' },
+  'trash':    { q: 'trashed=true',                           orderBy: 'modifiedTime desc' },
 }
 
 export function useGoogleDrive() {

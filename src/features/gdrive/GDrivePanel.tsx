@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Home, Users, Clock, Star, Search, ChevronRight } from 'lucide-react'
+import { Home, Users, Clock, Star, Search, ChevronRight, Trash2 } from 'lucide-react'
 import { GDriveFileList } from './GDriveFileList'
 import type { DriveSection, GDriveFile } from './types'
 
@@ -8,6 +8,7 @@ const NAV: { id: DriveSection; label: string; icon: React.ComponentType<{ classN
   { id: 'shared',   label: 'Partagés avec moi', icon: Users },
   { id: 'recent',   label: 'Récents',            icon: Clock },
   { id: 'starred',  label: 'Suivis',             icon: Star },
+  { id: 'trash',    label: 'Corbeille',          icon: Trash2 },
 ]
 
 interface FolderCrumb {

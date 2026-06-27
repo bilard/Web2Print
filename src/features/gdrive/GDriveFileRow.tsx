@@ -1,4 +1,4 @@
-import { Folder, Trash2, Check } from 'lucide-react'
+import { Folder, Trash2, Check, RotateCcw } from 'lucide-react'
 import { DamImage } from '@/features/dam/DamImage'
 import { driveWebViewLink } from '@/features/dam/driveAssets'
 import type { GDriveFile, DriveSection } from './types'
@@ -21,11 +21,15 @@ interface Props {
   /** Si fourni, affiche une case de sélection (fichiers non-dossier). */
   selected?: boolean
   onToggleSelect?: (file: GDriveFile) => void
-  /** Si fourni, affiche une corbeille au survol. */
+  /** Si fourni, affiche une corbeille au survol (mise en corbeille). */
   onTrash?: (file: GDriveFile) => void
+  /** Mode corbeille : restaurer le fichier. */
+  onRestore?: (file: GDriveFile) => void
+  /** Mode corbeille : supprimer définitivement (irréversible). */
+  onDeleteForever?: (file: GDriveFile) => void
 }
 
-export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleSelect, onTrash }: Props) {
+export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleSelect, onTrash, onRestore, onDeleteForever }: Props) {
   const cfg = getMimeStyle(file.mimeType)
   const isImage = !cfg.isFolder && file.mimeType.startsWith('image/')
   const rawDate = section === 'shared' ? (file.sharedWithMeTime ?? file.modifiedTime) : file.modifiedTime
@@ -94,17 +98,41 @@ export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleS
 
       <span className="w-28 text-xs text-white/35 shrink-0 text-right">{date}</span>
 
-      {onTrash && (
-        <button
-          type="button"
-          onClick={() => onTrash(file)}
-          className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shrink-0 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10"
-          title="Déplacer dans la corbeille Drive"
-          aria-label="Supprimer"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      )}
+      <div className="flex items-center shrink-0">
+        {onRestore && (
+          <button
+            type="button"
+            onClick={() => onRestore(file)}
+            className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10"
+            title="Restaurer depuis la corbeille"
+            aria-label="Restaurer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {onTrash && (
+          <button
+            type="button"
+            onClick={() => onTrash(file)}
+            className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded text-white/30 hover:text-red-400 hover:bg-red-500/10"
+            title="Déplacer dans la corbeille Drive"
+            aria-label="Supprimer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {onDeleteForever && (
+          <button
+            type="button"
+            onClick={() => onDeleteForever(file)}
+            className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded text-red-400/60 hover:text-red-300 hover:bg-red-500/20"
+            title="Supprimer définitivement (irréversible)"
+            aria-label="Supprimer définitivement"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }

@@ -8,14 +8,28 @@ import { functions } from '@/lib/firebase/config'
 import { isDriveImageRef, extractDriveFileId } from './driveAssets'
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 
-const damDelete = httpsCallable<{ fileIds: string[] }, { trashed: number }>(functions, 'damDelete')
+const damDelete = httpsCallable<{ fileIds: string[]; op?: 'trash' | 'restore' | 'delete' }, { trashed: number }>(functions, 'damDelete')
 
-/** Déplace des fichiers Drive dans la corbeille (récupérable). Retourne le nombre traité. */
-export async function trashDriveFiles(fileIds: string[]): Promise<number> {
+async function driveFileOp(fileIds: string[], op: 'trash' | 'restore' | 'delete'): Promise<number> {
   const ids = fileIds.filter((x) => typeof x === 'string' && x.length > 0)
   if (ids.length === 0) return 0
-  const { data } = await damDelete({ fileIds: ids })
+  const { data } = await damDelete({ fileIds: ids, op })
   return data.trashed
+}
+
+/** Déplace des fichiers Drive dans la corbeille (récupérable). */
+export function trashDriveFiles(fileIds: string[]): Promise<number> {
+  return driveFileOp(fileIds, 'trash')
+}
+
+/** Sort des fichiers de la corbeille Drive. */
+export function restoreDriveFiles(fileIds: string[]): Promise<number> {
+  return driveFileOp(fileIds, 'restore')
+}
+
+/** Supprime DÉFINITIVEMENT des fichiers Drive (irréversible). */
+export function deleteDriveFilesForever(fileIds: string[]): Promise<number> {
+  return driveFileOp(fileIds, 'delete')
 }
 
 /** fileId Drive de toutes les cellules image/url d'une ligne (cellules multi-URLs incluses). */
