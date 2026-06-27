@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { Loader2, FileText } from 'lucide-react'
+import { Loader2, FileText, Trash2, CheckSquare } from 'lucide-react'
+import { toast } from 'sonner'
 import { useGoogleDrive } from './useGoogleDrive'
 import { GDriveFileRow } from './GDriveFileRow'
+import { trashDriveFiles } from '@/features/dam/damCleanup'
 import type { GDriveFile, DriveSection } from './types'
+
+const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
 interface Props {
   section: DriveSection
@@ -35,6 +39,8 @@ function groupByDate(files: GDriveFile[], section: DriveSection) {
 export function GDriveFileList({ section, search, parentId, onFolderOpen }: Props) {
   const [files, setFiles] = useState<GDriveFile[]>([])
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [reloadKey, setReloadKey] = useState(0)
   const { listFilesBySection, listFilesByParent } = useGoogleDrive()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -49,7 +55,28 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
       request.then(setFiles).finally(() => setLoading(false))
     }, search ? 400 : 0)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [section, search, parentId])  
+  }, [section, search, parentId, reloadKey])
+
+  // Reset la sélection au changement de dossier/section/recherche.
+  useEffect(() => { setSelected(new Set()) }, [section, search, parentId])
+
+  const nonFolderFiles = files.filter((f) => f.mimeType !== FOLDER_MIME)
+  const allSelected = nonFolderFiles.length > 0 && nonFolderFiles.every((f) => selected.has(f.id))
+  const toggleSelect = (file: GDriveFile) =>
+    setSelected((s) => { const n = new Set(s); if (n.has(file.id)) n.delete(file.id); else n.add(file.id); return n })
+  const toggleSelectAll = () =>
+    setSelected(() => (allSelected ? new Set() : new Set(nonFolderFiles.map((f) => f.id))))
+  const trash = async (ids: string[], label: string) => {
+    if (ids.length === 0) return
+    try {
+      const n = await trashDriveFiles(ids)
+      setSelected(new Set())
+      setReloadKey((k) => k + 1)
+      toast.success(`${n} ${label}${n > 1 ? 's' : ''} déplacé${n > 1 ? 's' : ''} dans la corbeille Drive`)
+    } catch (e) {
+      toast.error(`Suppression : ${e instanceof Error ? e.message : 'échec'}`)
+    }
+  }
 
   const dateLabel = section === 'shared' ? 'Date de partage' : 'Date de modification'
   const groups = parentId ? null : groupByDate(files, section)
@@ -58,6 +85,31 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
 
   return (
     <div className="flex flex-col min-h-0">
+      {/* Barre d'actions : sélection multiple + corbeille */}
+      {!loading && nonFolderFiles.length > 0 && (
+        <div className="flex items-center gap-2 pb-2">
+          <button
+            type="button"
+            onClick={toggleSelectAll}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white/60 text-[12px] transition-colors"
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+          </button>
+          {selected.size > 0 && (
+            <button
+              type="button"
+              onClick={() => void trash([...selected], 'fichier')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-300 text-[12px] transition-colors"
+              title="Déplacer la sélection dans la corbeille Drive"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Corbeille ({selected.size})
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Column header */}
       <div className="flex items-center gap-3 px-3 pb-2 border-b border-white/[0.08] text-xs font-medium text-white/30">
         <div className="w-5 shrink-0" />
@@ -84,7 +136,9 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         <div>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-1">Dossiers</p>
           {folders.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} />
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
+              selected={selected.has(file.id)} onToggleSelect={toggleSelect}
+              onTrash={(f) => trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier')} />
           ))}
         </div>
       )}
@@ -93,7 +147,9 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         <div>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3">Fichiers</p>
           {nonFolders.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} />
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
+              selected={selected.has(file.id)} onToggleSelect={toggleSelect}
+              onTrash={(f) => trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier')} />
           ))}
         </div>
       )}
@@ -102,7 +158,9 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
         <div key={label}>
           <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3 first:mt-1">{label}</p>
           {groupFiles.map((file) => (
-            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen} />
+            <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
+              selected={selected.has(file.id)} onToggleSelect={toggleSelect}
+              onTrash={(f) => trash([f.id], f.mimeType === FOLDER_MIME ? 'dossier' : 'fichier')} />
           ))}
         </div>
       ))}

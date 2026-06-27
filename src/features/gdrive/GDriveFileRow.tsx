@@ -1,4 +1,6 @@
-import { MoreVertical, Folder } from 'lucide-react'
+import { Folder, Trash2, Check } from 'lucide-react'
+import { DamImage } from '@/features/dam/DamImage'
+import { driveWebViewLink } from '@/features/dam/driveAssets'
 import type { GDriveFile, DriveSection } from './types'
 
 function getMimeStyle(mimeType: string): { abbrev: string; color: string; bg: string; isFolder: boolean } {
@@ -16,16 +18,22 @@ interface Props {
   file: GDriveFile
   section: DriveSection
   onFolderOpen?: (file: GDriveFile) => void
+  /** Si fourni, affiche une case de sélection (fichiers non-dossier). */
+  selected?: boolean
+  onToggleSelect?: (file: GDriveFile) => void
+  /** Si fourni, affiche une corbeille au survol. */
+  onTrash?: (file: GDriveFile) => void
 }
 
-export function GDriveFileRow({ file, section, onFolderOpen }: Props) {
+export function GDriveFileRow({ file, section, onFolderOpen, selected, onToggleSelect, onTrash }: Props) {
   const cfg = getMimeStyle(file.mimeType)
+  const isImage = !cfg.isFolder && file.mimeType.startsWith('image/')
   const rawDate = section === 'shared' ? (file.sharedWithMeTime ?? file.modifiedTime) : file.modifiedTime
   const date = new Date(rawDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
   const sharer = file.sharingUser?.displayName ?? file.owners?.[0]?.displayName ?? ''
   const sharerPhoto = file.sharingUser?.photoLink ?? file.owners?.[0]?.photoLink
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleNav = (e: React.MouseEvent) => {
     if (cfg.isFolder && onFolderOpen) {
       e.preventDefault()
       onFolderOpen(file)
@@ -33,27 +41,50 @@ export function GDriveFileRow({ file, section, onFolderOpen }: Props) {
   }
 
   return (
-    <a
-      href={file.webViewLink}
-      target={cfg.isFolder ? undefined : '_blank'}
-      rel="noopener noreferrer"
-      onClick={handleClick}
-      className="flex items-center gap-3 px-3 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors group cursor-pointer border-b border-white/[0.03] last:border-0"
+    <div
+      className={`flex items-center gap-3 px-3 py-1.5 rounded-lg group border-b border-white/[0.03] last:border-0 transition-colors ${
+        selected ? 'bg-blue-500/15' : 'hover:bg-white/[0.04]'
+      }`}
     >
-      {/* Icon */}
-      <div className="w-5 h-5 shrink-0 flex items-center justify-center">
-        {cfg.isFolder
-          ? <Folder className={`w-5 h-5 ${cfg.color}`} fill="currentColor" fillOpacity={0.3} />
-          : <div className={`w-5 h-5 rounded-sm ${cfg.bg} flex items-center justify-center`}>
+      {/* Case de sélection (fichiers seulement) */}
+      {onToggleSelect && !cfg.isFolder && (
+        <button
+          type="button"
+          onClick={() => onToggleSelect(file)}
+          className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors ${
+            selected ? 'bg-blue-500 border-blue-500' : 'border-white/25 hover:border-white/50'
+          }`}
+          aria-label="Sélectionner"
+        >
+          {selected && <Check className="w-3 h-3 text-[#fff]" />}
+        </button>
+      )}
+
+      {/* Icône / vignette + nom (zone cliquable) */}
+      <a
+        href={file.webViewLink}
+        target={cfg.isFolder ? undefined : '_blank'}
+        rel="noopener noreferrer"
+        onClick={handleNav}
+        className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer"
+      >
+        {cfg.isFolder ? (
+          <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+            <Folder className={`w-5 h-5 ${cfg.color}`} fill="currentColor" fillOpacity={0.3} />
+          </div>
+        ) : isImage ? (
+          <DamImage value={driveWebViewLink(file.id)} className="w-9 h-9 shrink-0 rounded object-cover bg-white/5 border border-white/10" />
+        ) : (
+          <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+            <div className={`w-5 h-5 rounded-sm ${cfg.bg} flex items-center justify-center`}>
               <span className={`text-[8px] font-bold ${cfg.color}`}>{cfg.abbrev}</span>
             </div>
-        }
-      </div>
+          </div>
+        )}
+        <span className="flex-1 text-sm text-white/70 truncate group-hover:text-white/90 transition-colors">{file.name}</span>
+      </a>
 
-      {/* Name */}
-      <span className="flex-1 text-sm text-white/70 truncate group-hover:text-white/90 transition-colors">{file.name}</span>
-
-      {/* Shared by (section shared only) */}
+      {/* Partagé par (section "shared") */}
       {section === 'shared' && (
         <div className="w-52 shrink-0 flex items-center gap-2 min-w-0">
           {sharerPhoto && <img src={sharerPhoto} alt="" className="w-5 h-5 rounded-full shrink-0" />}
@@ -61,17 +92,19 @@ export function GDriveFileRow({ file, section, onFolderOpen }: Props) {
         </div>
       )}
 
-      {/* Date */}
       <span className="w-28 text-xs text-white/35 shrink-0 text-right">{date}</span>
 
-      {/* More menu */}
-      <button
-        className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 rounded hover:bg-white/10"
-        onClick={(e) => e.preventDefault()}
-        title="Plus d'options"
-      >
-        <MoreVertical className="w-3.5 h-3.5 text-white/40" />
-      </button>
-    </a>
+      {onTrash && (
+        <button
+          type="button"
+          onClick={() => onTrash(file)}
+          className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shrink-0 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10"
+          title="Déplacer dans la corbeille Drive"
+          aria-label="Supprimer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
   )
 }
