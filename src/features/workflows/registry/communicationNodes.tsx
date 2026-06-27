@@ -532,7 +532,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
             <div className="text-[11px] text-neutral-200">Joindre aussi le Google Sheet (.xlsx)</div>
             <div className="text-[10px] text-neutral-500 leading-snug">
               Exporte en <code className="text-emerald-300/80">.xlsx</code> le Sheet reçu du node « Export Google Sheets »
-              (sortie <code className="text-emerald-300/80">result</code> sur le port <code className="text-emerald-300/80">data</code>). S'ajoute à la pièce jointe ci-dessus.
+              (sortie <code className="text-emerald-300/80">result</code> → port <code className="text-emerald-300/80">gsheet</code>). Laisse le port <code className="text-emerald-300/80">data</code> libre pour le <code className="text-emerald-300/80">{'{{html}}'}</code> du corps.
             </div>
           </div>
         </label>
@@ -543,7 +543,7 @@ function SendGmailConfigUi({ config, onChange, availableColumns = [] }: SendGmai
 
 const sendGmailNode: NodeSpec<
   SendGmailConfig,
-  { data?: unknown; attachment?: File | Blob },
+  { data?: unknown; attachment?: File | Blob; gsheet?: unknown },
   { result: SendGmailOutput }
 > = {
   type: 'send-gmail',
@@ -555,6 +555,7 @@ const sendGmailNode: NodeSpec<
   inputs: [
     { name: 'data', type: 'any' },
     { name: 'attachment', type: 'file' },
+    { name: 'gsheet', type: 'export-result' },
   ],
   outputs: [{ name: 'result', type: 'any' }],
   configSchema: [],
@@ -638,15 +639,17 @@ const sendGmailNode: NodeSpec<
 
     // Pièce jointe ADDITIONNELLE : le Google Sheet exporté en .xlsx. S'ajoute à la
     // pièce jointe du mode ci-dessus (ex : rapport .html sur `attachment` + .xlsx) →
-    // le mail porte alors 2 fichiers. L'export-result vient du port `data` (typé `any` :
-    // le port `attachment` typé `file` refuse une sortie `export-result` au câblage),
-    // avec repli sur `attachment` par tolérance.
+    // le mail porte alors 2 fichiers. L'export-result arrive sur le port DÉDIÉ `gsheet`
+    // (typé export-result) → laisse `data` libre pour le HTML du corps ({{html}}).
+    // Repli sur `data`/`attachment` pour les anciens câblages.
     if (config.attachGSheet) {
-      const meta = extractDriveFileId(inputs.data) ?? extractDriveFileId(inputs.attachment)
+      const meta = extractDriveFileId(inputs.gsheet)
+        ?? extractDriveFileId(inputs.data)
+        ?? extractDriveFileId(inputs.attachment)
       if (!meta) {
         ctx.log(
           'warn',
-          "« Joindre le Google Sheet » actif mais aucun export-result en entrée. Relie la sortie « result » du node « Export Google Sheets » au port 'data'.",
+          "« Joindre le Google Sheet » actif mais aucun export-result en entrée. Relie la sortie « result » du node « Export Google Sheets » au port 'gsheet'.",
         )
       } else {
         ctx.log('info', `Export du Google Sheet ${meta.name ?? meta.id} en .xlsx…`)
