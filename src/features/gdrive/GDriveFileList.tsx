@@ -171,7 +171,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
 
       {!loading && parentId && folders.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-1">Dossiers</p>
+          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-1">Dossiers ({folders.length})</p>
           {folders.map((file) => (
             <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
               selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
@@ -181,7 +181,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
 
       {!loading && parentId && nonFolders.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3">Fichiers</p>
+          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3">Fichiers ({nonFolders.length})</p>
           {nonFolders.map((file) => (
             <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
               selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
@@ -191,7 +191,7 @@ export function GDriveFileList({ section, search, parentId, onFolderOpen }: Prop
 
       {!loading && !parentId && groups?.map(({ label, files: groupFiles }) => (
         <div key={label}>
-          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3 first:mt-1">{label}</p>
+          <p className="text-xs font-medium text-white/25 px-3 py-2 mt-3 first:mt-1">{label} ({groupFiles.length})</p>
           {groupFiles.map((file) => (
             <GDriveFileRow key={file.id} file={file} section={section} onFolderOpen={onFolderOpen}
               selected={selected.has(file.id)} onToggleSelect={toggleSelect} {...rowActions} />
