@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
 import type { ExcelSheet, ExcelColumn, ExcelRow, CellValue } from './types'
 import { detectColumnType, computeColumnStats } from './fieldDetection'
+import { applyExcelFormulas } from './excelFormulas'
 import { useExcelStore } from '@/stores/excel.store'
 import { recordAudit } from '@/lib/auditLog'
 
@@ -32,6 +33,12 @@ export async function parseExcelFile(file: File): Promise<ExcelSheet[]> {
       _id: `row_${idx}`,
       ...Object.fromEntries(keys.map((k) => [k, row[k] ?? null])),
     }))
+
+    // Préserver les formules Excel : une colonne dont chaque cellule porte la même
+    // formule arithmétique « même ligne » (ex. Promotion = `=(E2-L2)/E2`) devient une
+    // colonne `formula` native, recalculée en direct. cf. excelFormulas.ts.
+    const rowNums = jsonData.map((row) => (row as { __rowNum__?: number }).__rowNum__ ?? 0)
+    applyExcelFormulas(ws, columns, rows, rowNums)
 
     sheets.push({ name: sheetName, columns, rows, taxonomy: [] })
   }
