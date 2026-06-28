@@ -737,7 +737,9 @@
     100%{opacity:0}
   }
   /* Importer un Excel — conversion formule Excel → champ calculé IBS Studio */
-  .xf-body{display:flex;flex-direction:column;gap:13px;justify-content:center}
+  .xf-body{display:flex;flex-direction:column;gap:13px;justify-content:center;margin-top:16px}
+  .xf-sep{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:18px}
+  .xf-sep::before,.xf-sep::after{content:"";flex:1;height:1px;background:var(--line)}
   .xf-xls{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
   .xf-xls .xh{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
   .xf-xls .xh svg{width:15px;height:15px;flex:none}
@@ -1919,9 +1921,36 @@
           <div class="scene-detail" id="d-import"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Vos fichiers existants (InDesign, PowerPoint, PDF) sont prisonniers de leur logiciel. Les rouvrir ailleurs les aplatit en image ou casse la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Déposez un <b>IDML, PPTX, SVG, PDF, image ou Excel</b>.</li><li>Le parseur reconstruit <b>calques, styles, polices et mise en page à l'identique</b> — pas une capture figée.</li><li>Pour les images et PDF, la <b>décomposition IA (Google Vision)</b> sépare textes, formes et visuels en calques éditables.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>IDML — InDesign</span><span>PPTX — PowerPoint</span><span>SVG — Illustrator</span><span>PDF → SVG</span><span>Image PNG/JPG/WebP</span><span>Excel / CSV</span><span>Décomposition IA en calques</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vos documents redeviennent éditables bloc par bloc, sans avoir à les recréer.</p></div><div class="sd-block"><span class="sd-k help">Aide intégrée</span><p class="sd-note">Extrait du manuel intégré (bouton « ? » dans l'app) — sections « Import » par format.</p><div class="sd-help"><div class="sdh"><b>Import IDML (InDesign)</b> — parse l'IDML (ZIP XML + ressources) et reconstruit la maquette à l'identique (formes, textes, images, fonts, gradients, ombres) ; ajoute ensuite des placeholders {{title}}, {{price}} pour le data-merge. Fonts non installées → fallback Arial.</div><div class="sdh"><b>Importer PPTX</b> — chaque diapositive d'un .pptx devient une page éditable ; idéal pour transformer une présentation en template. Animations PowerPoint non supportées.</div><div class="sdh"><b>Importer Excel</b> — crée ou complète une base produits du PIM depuis .xlsx, .csv, .json ou Google Sheets ; les types de colonnes sont détectés automatiquement.</div><div class="sdh"><b>Importer une image</b> — pose une image (PNG, JPG, WebP, GIF, SVG) sur le canvas ; elle reste une image (pas de décomposition).</div><div class="sdh"><b>Importer SVG</b> — charge un .svg en calques vectoriels éditables (formes, textes, chemins).</div><div class="sdh"><b>Image → SVG éditable</b> — le raster est verrouillé en fond et l'IA (Google Vision) détecte les textes, recréés en calques éditables par-dessus.</div><div class="sdh"><b>PDF → SVG éditable</b> — la page 1 du PDF est rasterisée en fond, avec les mêmes overlays texte éditables.</div></div></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
-          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un Excel</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:18%;--y1:28%;--x2:60%;--y2:74%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
-          <div class="xf-body mk-body">
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un fichier</span></div>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:14%;--y1:26%;--x2:60%;--y2:78%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <div class="imp-body mk-body">
+            <div class="imp-formats"><span class="imp-fmt on"><span class="d" style="background:#fbbf24"></span>InDesign<i>.idml</i></span><span class="imp-fmt"><span class="d" style="background:#38bdf8"></span>Illustrator<i>.svg</i></span><span class="imp-fmt"><span class="d" style="background:#f472b6"></span>PDF<i>.pdf</i></span><span class="imp-fmt"><span class="d" style="background:#fb923c"></span>PPTX<i>.pptx</i></span><span class="imp-fmt"><span class="d" style="background:#34d399"></span>Excel<i>.xlsx</i></span><span class="imp-fmt"><span class="d" style="background:#a78bfa"></span>Image<i>.png</i></span></div>
+            <div class="imp-res">
+              <div class="imp-src">
+                <span class="imp-doctag">catalogue.idml</span>
+                <span class="imp-shot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><b class="imp-badge">−20 %</b></span>
+                <span class="imp-meta"><b class="imp-tt">SOLDES</b><i class="imp-st">Perceuse 18V Brushless</i><s class="imp-ph">{{price}}</s><em class="imp-ref">Réf. {{ref}}</em></span>
+              </div>
+              <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              <div class="imp-layers">
+                <div class="imp-head">Reconstruction fidèle · .idml</div>
+                <div class="imp-lay"><span class="sw" style="background:#facc15"></span>Titre « Soldes »<span class="ed">¶ style</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">cadre</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#ef4444"></span>Prix<span class="ed ph">{{price}}</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">¶ style</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#fb923c"></span>Badge −20 %<span class="ed">forme</span></div>
+                <div class="imp-lay"><span class="sw" style="background:#a855f7"></span>Polices &amp; gradients<span class="ed">préservés</span></div>
+                <div class="imp-note"><i></i>Image / PDF → décomposition IA (Vision)</div>
+              </div>
+              <div class="imp-fly" aria-hidden="true">
+                <span class="ifc" style="--c:#facc15;--t:18%;--d:0s">Titre</span>
+                <span class="ifc" style="--c:#38bdf8;--t:37%;--d:.9s">Image</span>
+                <span class="ifc" style="--c:#6366f1;--t:56%;--d:1.8s">{{price}}</span>
+                <span class="ifc" style="--c:#fb923c;--t:13%;--d:2.7s">Badge</span>
+              </div>
+            </div>
+            <div class="xf-sep"><span>Et vos formules Excel deviennent des champs calculés</span></div>
+            <div class="xf-body">
             <div class="xf-xls">
               <div class="xh"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v6h6M4 22V4a2 2 0 0 1 2-2h8l6 6v14a2 2 0 0 1-2 2z"/></svg><b>tarifs.xlsx</b> — colonne « Promotion »<i>formule détectée</i></div>
               <div class="xf-grid">
@@ -1949,6 +1978,7 @@
                 <span class="xf-pct" style="animation-delay:1.65s">18 %</span>
                 <span class="xf-pct" style="animation-delay:1.85s">36 %</span>
               </div>
+            </div>
             </div>
           </div>
         </div></div>
