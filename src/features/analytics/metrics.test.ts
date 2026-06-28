@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, type AnalyticsEvent } from './metrics'
+import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -67,5 +67,13 @@ describe('recentEvents', () => {
   it('trie décroissant par ts et applique la limite', () => {
     const out = recentEvents([ev({ ts: 1 }), ev({ ts: 3 }), ev({ ts: 2 })], 2)
     expect(out.map((e) => e.ts)).toEqual([3, 2])
+  })
+})
+
+describe('topSources', () => {
+  it('retombe sur ref quand src absent', () => {
+    const out = topSources([ev({ src: null, ref: 'google.com' }), ev({ src: 'newsletter', ref: 'x.com' })], 8)
+    expect(out).toContainEqual({ label: 'google.com', count: 1 })
+    expect(out).toContainEqual({ label: 'newsletter', count: 1 })
   })
 })

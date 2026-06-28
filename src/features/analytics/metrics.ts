@@ -93,3 +93,17 @@ export function deltaPct(current: number, previous: number): number | null {
 export function recentEvents(events: AnalyticsEvent[], limit = 20): AnalyticsEvent[] {
   return [...events].sort((a, b) => b.ts - a.ts).slice(0, limit)
 }
+
+/** Top des sources effectives : utm_source si présent, sinon domaine référent. */
+export function topSources(events: AnalyticsEvent[], limit: number): { label: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const e of events) {
+    const s = e.src ?? e.ref
+    if (!s) continue
+    counts.set(s, (counts.get(s) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+}

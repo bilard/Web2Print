@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsTopLists.tsx
-import { topBy, type AnalyticsEvent } from '../metrics'
+import { topBy, topSources, type AnalyticsEvent } from '../metrics'
 
 function List({ title, rows }: { title: string; rows: { label: string; count: number }[] }) {
   const max = rows[0]?.count ?? 1
@@ -29,7 +29,7 @@ export function AnalyticsTopLists({ events }: { events: AnalyticsEvent[] }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
       <List title="Top pages" rows={topBy(events, 'path', 8)} />
-      <List title="Sources de trafic" rows={topBy(events, 'src', 8)} />
+      <List title="Sources de trafic" rows={topSources(events, 8)} />
       <List title="Pays" rows={topBy(events, 'country', 8)} />
     </div>
   )

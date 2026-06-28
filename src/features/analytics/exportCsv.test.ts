@@ -15,4 +15,9 @@ describe('eventsToCsv', () => {
     expect(lines).toHaveLength(2)
     expect(lines[1]).toContain('/promo')
   })
+  it('neutralise une formule CSV (préfixe =)', () => {
+    const evil: AnalyticsEvent = { ts: 0, path: '/p', area: 'promo', ref: null, src: '=HYPERLINK("x")', device: 'desktop', country: null, vid: 'v', sid: 's', uid: null }
+    const csv = eventsToCsv([evil])
+    expect(csv).toContain("'=HYPERLINK")
+  })
 })

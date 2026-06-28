@@ -1,17 +1,22 @@
 import * as XLSX from 'xlsx'
 import type { AnalyticsEvent } from './metrics'
 
+/** Neutralise l'injection de formule CSV (=, +, -, @ en tête de cellule). */
+function csvSafe(v: string): string {
+  return /^[=+\-@]/.test(v) ? `'${v}` : v
+}
+
 function rows(events: AnalyticsEvent[]) {
   return events.map((e) => ({
     date: new Date(e.ts).toISOString(),
-    path: e.path,
-    area: e.area,
-    source: e.src ?? e.ref ?? '',
-    device: e.device,
-    country: e.country ?? '',
-    visitor: e.vid,
-    session: e.sid,
-    uid: e.uid ?? '',
+    path: csvSafe(e.path),
+    area: csvSafe(e.area),
+    source: csvSafe(e.src ?? e.ref ?? ''),
+    device: csvSafe(e.device),
+    country: csvSafe(e.country ?? ''),
+    visitor: csvSafe(e.vid),
+    session: csvSafe(e.sid),
+    uid: csvSafe(e.uid ?? ''),
   }))
 }
 

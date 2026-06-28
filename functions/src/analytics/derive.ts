@@ -56,9 +56,9 @@ export function buildEventDoc(
     ref: normalizeRef(headers.referer),
     src: typeof b.src === 'string' ? b.src.slice(0, 120) : null,
     device: deriveDevice(headers.ua),
-    country: headers.country,
+    country: headers.country ? headers.country.slice(0, 8) : null,
     vid: vid.slice(0, 60),
     sid: sid.slice(0, 60),
-    uid: typeof b.uid === 'string' ? b.uid : null,
+    uid: typeof b.uid === 'string' ? b.uid.slice(0, 60) : null,
   }
 }
