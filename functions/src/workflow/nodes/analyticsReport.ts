@@ -178,9 +178,20 @@ function buildSeries(events: AnalyticsEvent[], fromMs: number, toMs: number): Da
   return [...buckets.entries()].map(([day, b]) => ({ day, pageViews: b.pageViews, visitors: b.vids.size }))
 }
 
-function topListHtml(title: string, rows: { label: string; count: number }[]): string {
+/** Palette d'accents — une teinte par carte KPI / panneau (égaye le rapport, thème sombre conservé). */
+interface Accent { solid: string; faint: string }
+const PALETTE: Accent[] = [
+  { solid: '#818cf8', faint: 'rgba(99,102,241,.18)' },   // indigo
+  { solid: '#34d399', faint: 'rgba(16,185,129,.16)' },   // émeraude
+  { solid: '#fbbf24', faint: 'rgba(245,158,11,.16)' },   // ambre
+  { solid: '#22d3ee', faint: 'rgba(6,182,212,.16)' },    // cyan
+  { solid: '#f472b6', faint: 'rgba(236,72,153,.16)' },   // rose
+]
+
+function topListHtml(title: string, rows: { label: string; count: number }[], accent: Accent): string {
+  const styleVars = `--accent:${accent.solid};--bar:${accent.faint}`
   if (rows.length === 0) {
-    return `<div class="panel"><div class="panel-h">${esc(title)}</div><div class="empty">—</div></div>`
+    return `<div class="panel" style="${styleVars}"><div class="panel-h">${esc(title)}</div><div class="empty">—</div></div>`
   }
   const max = Math.max(...rows.map((r) => r.count), 1)
   const items = rows.map((r) => `
@@ -189,7 +200,7 @@ function topListHtml(title: string, rows: { label: string; count: number }[]): s
       <span class="lbl">${esc(r.label)}</span>
       <span class="cnt">${formatNumber(r.count)}</span>
     </div>`).join('')
-  return `<div class="panel"><div class="panel-h">${esc(title)}</div>${items}</div>`
+  return `<div class="panel" style="${styleVars}"><div class="panel-h">${esc(title)}</div>${items}</div>`
 }
 
 function chartHtml(series: DaySeries[]): string {
@@ -201,7 +212,7 @@ function chartHtml(series: DaySeries[]): string {
   }).join('')
   const first = series[0]?.day ?? ''
   const last = series[series.length - 1]?.day ?? ''
-  return `<div class="chart-wrap">
+  return `<div class="chart-wrap" style="--accent:#818cf8">
     <div class="panel-h">Évolution — pages vues par jour (max ${formatNumber(max)})</div>
     <div class="chart">${bars}</div>
     <div class="chart-axis"><span>${first}</span><span>${last}</span></div>
@@ -209,8 +220,8 @@ function chartHtml(series: DaySeries[]): string {
 }
 
 function buildHtml(d: ReportInput): string {
-  const kpi = (h: string, v: string, foot: string): string => `
-    <div class="kpi"><div class="kpi-h">${h}</div><div class="kpi-v">${v}</div><div class="kpi-foot">${foot}</div></div>`
+  const kpi = (h: string, v: string, foot: string, accent: string): string => `
+    <div class="kpi" style="--accent:${accent}"><div class="kpi-h">${h}</div><div class="kpi-v">${v}</div><div class="kpi-foot">${foot}</div></div>`
   return `<!doctype html>
 <html lang="fr">
 <head>
@@ -230,24 +241,24 @@ function buildHtml(d: ReportInput): string {
   h1 { font-size: 17px; font-weight: 600; margin: 0; color: #fff; }
   .sub { font-size: 11px; color: rgba(255,255,255,.32); margin-top: 3px; }
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-  .kpi { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 12px 14px; }
+  .kpi { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-top: 2px solid var(--accent,#818cf8); border-radius: 12px; padding: 12px 14px; }
   .kpi-h { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.32); }
-  .kpi-v { font-size: 24px; font-weight: 600; color: #fff; margin-top: 4px;
+  .kpi-v { font-size: 24px; font-weight: 600; color: var(--accent,#fff); margin-top: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .kpi-foot { font-size: 9.5px; color: rgba(255,255,255,.30); margin-top: 4px; }
   .chart-wrap { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 14px; margin-bottom: 18px; }
   .chart { display: flex; align-items: flex-end; gap: 2px; height: 96px; margin-top: 10px; }
   .cbar { flex: 1; display: flex; align-items: flex-end; height: 100%; min-width: 2px; }
-  .cbar-fill { width: 100%; background: rgba(99,102,241,.55); border-radius: 2px 2px 0 0; }
+  .cbar-fill { width: 100%; background: linear-gradient(180deg, #818cf8, rgba(99,102,241,.45)); border-radius: 2px 2px 0 0; }
   .chart-axis { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(255,255,255,.30);
     margin-top: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 14px; }
-  .panel-h { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.32); margin-bottom: 10px; }
+  .panel-h { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent,rgba(255,255,255,.42)); margin-bottom: 10px; }
   .row { position: relative; display: flex; align-items: center; padding: 7px 8px; border-radius: 7px; overflow: hidden; }
-  .bar { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(99,102,241,.18); border-radius: 7px; }
+  .bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar,rgba(99,102,241,.18)); border-radius: 7px; }
   .lbl { position: relative; font-size: 12px; color: rgba(255,255,255,.82); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cnt { position: relative; font-size: 12px; color: rgba(255,255,255,.55); margin-left: 8px;
+  .cnt { position: relative; font-size: 12px; color: var(--accent,rgba(255,255,255,.55)); margin-left: 8px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .empty { font-size: 12px; color: rgba(255,255,255,.25); padding: 7px 8px; }
   footer { font-size: 9.5px; color: rgba(255,255,255,.25); line-height: 1.6; margin-top: 18px; }
@@ -264,18 +275,18 @@ function buildHtml(d: ReportInput): string {
       </div>
     </header>
     <div class="kpis">
-      ${kpi('Pages vues', formatNumber(d.kpis.pageViews), 'sur la période')}
-      ${kpi('Visiteurs uniques', formatNumber(d.kpis.visitors), 'identifiants distincts')}
-      ${kpi('Sessions', formatNumber(d.kpis.sessions), `rebond ${Math.round(d.kpis.bounceRate * 100)} %`)}
-      ${kpi('Durée moy. session', formatDuration(d.kpis.avgSessionMs), 'par session')}
+      ${kpi('Pages vues', formatNumber(d.kpis.pageViews), 'sur la période', PALETTE[0].solid)}
+      ${kpi('Visiteurs uniques', formatNumber(d.kpis.visitors), 'identifiants distincts', PALETTE[1].solid)}
+      ${kpi('Sessions', formatNumber(d.kpis.sessions), `rebond ${Math.round(d.kpis.bounceRate * 100)} %`, PALETTE[2].solid)}
+      ${kpi('Durée moy. session', formatDuration(d.kpis.avgSessionMs), 'par session', PALETTE[3].solid)}
     </div>
     ${chartHtml(d.series)}
     <div class="grid">
-      ${topListHtml('Pages consultées', d.topPages)}
-      ${topListHtml('Sources de trafic', d.topSources)}
-      ${topListHtml('Pays', d.topCountries)}
-      ${topListHtml('Appareils', d.topDevices)}
-      ${topListHtml('Utilisateurs connectés', d.topUsers)}
+      ${topListHtml('Pages consultées', d.topPages, PALETTE[0])}
+      ${topListHtml('Sources de trafic', d.topSources, PALETTE[1])}
+      ${topListHtml('Pays', d.topCountries, PALETTE[2])}
+      ${topListHtml('Appareils', d.topDevices, PALETTE[3])}
+      ${topListHtml('Utilisateurs connectés', d.topUsers, PALETTE[4])}
     </div>
     <footer>
       Données agrégées depuis Firestore — collection <code>analyticsEvents</code>. Trafic de l'ensemble du site (accès réservé au propriétaire).
@@ -290,15 +301,18 @@ const C = {
   text: '#e8e8ea', dim: '#9a9aa2', faint: '#6a6a72', white: '#ffffff', bar: '#4f46e5',
 } as const
 
-function emailTopList(title: string, rows: { label: string; count: number }[]): string {
+/** Accents email (styles inline obligatoires : Gmail strippe <style> et var()). Calque sur PALETTE. */
+const EMAIL_ACCENTS = ['#818cf8', '#34d399', '#fbbf24', '#22d3ee', '#f472b6'] as const
+
+function emailTopList(title: string, rows: { label: string; count: number }[], accent: string): string {
   const body = rows.length === 0
     ? `<tr><td style="padding:6px 8px;font-size:12px;color:${C.faint};">—</td></tr>`
     : rows.map((r) => `<tr>
         <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
-        <td align="right" style="padding:6px 8px;font-size:12px;color:${C.dim};border-bottom:1px solid ${C.line};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${formatNumber(r.count)}</td>
+        <td align="right" style="padding:6px 8px;font-size:12px;color:${accent};border-bottom:1px solid ${C.line};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${formatNumber(r.count)}</td>
       </tr>`).join('')
-  return `<td width="50%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;">
-    <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin-bottom:6px;">${esc(title)}</div>
+  return `<td width="50%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-top:2px solid ${accent};border-radius:10px;padding:12px;">
+    <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${accent};margin-bottom:6px;">${esc(title)}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>
   </td>`
 }
@@ -309,7 +323,7 @@ function emailChartHtml(series: DaySeries[]): string {
   const H = 72
   const cells = series.map((s) => {
     const h = s.pageViews > 0 ? Math.max(3, Math.round((s.pageViews / max) * H)) : 1
-    return `<td valign="bottom" style="padding:0 1px;"><div style="width:100%;height:${h}px;background:${s.pageViews > 0 ? C.bar : C.line};font-size:1px;line-height:1px;">&nbsp;</div></td>`
+    return `<td valign="bottom" style="padding:0 1px;"><div style="width:100%;height:${h}px;background:${s.pageViews > 0 ? '#818cf8' : C.line};font-size:1px;line-height:1px;">&nbsp;</div></td>`
   }).join('')
   return `<div style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;margin-top:6px;">
     <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin-bottom:8px;">Évolution — pages vues par jour (max ${formatNumber(max)})</div>
@@ -322,10 +336,10 @@ function emailChartHtml(series: DaySeries[]): string {
 }
 
 function buildEmailHtml(d: ReportInput): string {
-  const kpi = (head: string, value: string, foot: string): string =>
-    `<td width="25%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px 14px;">
+  const kpi = (head: string, value: string, foot: string, accent: string): string =>
+    `<td width="25%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-top:2px solid ${accent};border-radius:10px;padding:12px 14px;">
       <div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:${C.dim};">${head}</div>
-      <div style="font-size:22px;font-weight:600;color:${C.white};margin-top:5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${value}</div>
+      <div style="font-size:22px;font-weight:600;color:${accent};margin-top:5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${value}</div>
       <div style="font-size:10px;color:${C.faint};margin-top:4px;">${foot}</div>
     </td>`
   return `<div style="background:${C.bg};color:${C.text};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:24px;border-radius:14px;max-width:720px;margin:0 auto;">
@@ -333,24 +347,24 @@ function buildEmailHtml(d: ReportInput): string {
     <div style="font-size:11px;color:${C.dim};margin-bottom:16px;">${esc(d.periodLabel)} · généré le ${d.dateLabel}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;">
       <tr>
-        ${kpi('Pages vues', formatNumber(d.kpis.pageViews), 'sur la période')}
-        ${kpi('Visiteurs uniques', formatNumber(d.kpis.visitors), 'distincts')}
-        ${kpi('Sessions', formatNumber(d.kpis.sessions), `rebond ${Math.round(d.kpis.bounceRate * 100)} %`)}
-        ${kpi('Durée moy.', formatDuration(d.kpis.avgSessionMs), 'par session')}
+        ${kpi('Pages vues', formatNumber(d.kpis.pageViews), 'sur la période', EMAIL_ACCENTS[0])}
+        ${kpi('Visiteurs uniques', formatNumber(d.kpis.visitors), 'distincts', EMAIL_ACCENTS[1])}
+        ${kpi('Sessions', formatNumber(d.kpis.sessions), `rebond ${Math.round(d.kpis.bounceRate * 100)} %`, EMAIL_ACCENTS[2])}
+        ${kpi('Durée moy.', formatDuration(d.kpis.avgSessionMs), 'par session', EMAIL_ACCENTS[3])}
       </tr>
     </table>
     ${emailChartHtml(d.series)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;margin-top:6px;">
       <tr>
-        ${emailTopList('Pages consultées', d.topPages)}
-        ${emailTopList('Sources de trafic', d.topSources)}
+        ${emailTopList('Pages consultées', d.topPages, EMAIL_ACCENTS[0])}
+        ${emailTopList('Sources de trafic', d.topSources, EMAIL_ACCENTS[1])}
       </tr>
       <tr>
-        ${emailTopList('Pays', d.topCountries)}
-        ${emailTopList('Appareils', d.topDevices)}
+        ${emailTopList('Pays', d.topCountries, EMAIL_ACCENTS[2])}
+        ${emailTopList('Appareils', d.topDevices, EMAIL_ACCENTS[3])}
       </tr>
       <tr>
-        ${emailTopList('Utilisateurs connectés', d.topUsers)}
+        ${emailTopList('Utilisateurs connectés', d.topUsers, EMAIL_ACCENTS[4])}
         <td width="50%"></td>
       </tr>
     </table>
