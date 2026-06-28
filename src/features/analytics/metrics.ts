@@ -103,13 +103,50 @@ const KNOWN_PAGES: Record<string, string> = {
   '/onboarding': 'Bienvenue',
 }
 
-/** Transforme un chemin technique (`/promo/offre`) en nom lisible (`Promo · Offre`). */
+/**
+ * Noms lisibles des ancres/sections du site mono-page public (ancre → libellé).
+ * Source : la navigation de `public/promo/index.html`.
+ */
+const KNOWN_ANCHORS: Record<string, string> = {
+  modules: 'Modules',
+  scraper: 'Collecter',
+  templates: 'Mapper',
+  pim: 'Données',
+  taxonomies: 'Classer',
+  publipostage: 'Décliner',
+  export: 'Publier',
+  import: 'Importer',
+  nouveau: 'Créer',
+  editer: 'Éditer',
+  bibliotheque: 'Organiser',
+  imgen: 'Générer',
+  animation: 'Animer',
+  chat: 'Assister',
+  dam: 'Médias',
+  telegram: 'Piloter',
+  workflows: 'Automatiser',
+  settings: 'Paramétrer',
+  roles: 'Gouverner',
+  decouverte: 'Découverte',
+  explorer: 'Explorer',
+}
+
+const pretty = (s: string): string =>
+  s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+/** Transforme un chemin technique (`/promo/offre`, `/#modules`) en nom lisible. */
 export function pageLabel(path: string): string {
-  if (!path || path === '/') return 'Accueil'
+  if (!path) return 'Accueil'
+  // Ancre/section d'un site mono-page : `/#modules` → « Modules ».
+  const hashIdx = path.indexOf('#')
+  if (hashIdx >= 0) {
+    const anchor = path.slice(hashIdx + 1)
+    if (!anchor) return 'Accueil'
+    return KNOWN_ANCHORS[anchor] ?? pretty(anchor)
+  }
+  if (path === '/') return 'Accueil'
   const clean = path.replace(/\/+$/, '')
   if (KNOWN_PAGES[clean]) return KNOWN_PAGES[clean]
-  const pretty = (s: string): string =>
-    s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   const segs = clean.split('/').filter(Boolean)
   if (segs.length === 0) return 'Accueil'
   if (segs.length === 1) return pretty(segs[0])

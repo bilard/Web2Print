@@ -31,10 +31,20 @@
       return p ? p.slice(0, 120) : null
     } catch (e) { return null }
   }
-  function send() {
+  // Chemin = page + ancre (#section). Sur un site mono-page à ancres, c'est
+  // l'ancre qui identifie la section consultée (#modules, #scraper, …).
+  function currentPath() {
+    return location.pathname + (location.hash || '')
+  }
+  var lastPath = null
+  var timer = null
+  function doSend() {
     try {
+      var p = currentPath()
+      if (p === lastPath) return // dédoublonnage (scroll-spy qui rejoue la même ancre)
+      lastPath = p
       var payload = JSON.stringify({
-        path: location.pathname,
+        path: p,
         vid: visitorId(),
         sid: sessionId(),
         src: utmSource(),
@@ -45,9 +55,16 @@
       else fetch(ENDPOINT, { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true })
     } catch (e) { /* best-effort */ }
   }
+  function send() {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(doSend, 150) // petit anti-rebond pour les changements d'ancre rapides
+  }
 
   // Page vue initiale
   send()
+
+  // Navigation par ancre (#section) sur les sites mono-page
+  window.addEventListener('hashchange', send)
 
   // Navigation SPA : patcher history + popstate
   var push = history.pushState
