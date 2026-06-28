@@ -736,6 +736,40 @@
     85%{opacity:0;transform:translate(228px,0) scale(.8)}
     100%{opacity:0}
   }
+  /* Importer un Excel — conversion formule Excel → champ calculé IBS Studio */
+  .xf-body{display:flex;flex-direction:column;gap:13px;justify-content:center}
+  .xf-xls{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+  .xf-xls .xh{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+  .xf-xls .xh svg{width:15px;height:15px;flex:none}
+  .xf-xls .xh b{color:#34d399;font-weight:800;letter-spacing:.02em}
+  .xf-xls .xh i{font-style:normal;margin-left:auto;color:var(--faint)}
+  .xf-grid{display:grid;grid-template-columns:1.05fr 1fr 1.25fr;font-family:var(--mono);font-size:11.5px}
+  .xf-grid span{padding:7px 11px;border-right:1px solid var(--line);border-top:1px solid var(--line);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .xf-grid span:nth-child(3n){border-right:none}
+  .xf-grid .hd{color:var(--faint);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;border-top:none;background:rgba(255,255,255,.02)}
+  .xf-grid .fx{color:#34d399;background:rgba(52,211,153,.06)}
+  .xf-grid .fx em{font-style:normal;border-radius:4px;padding:0 2px}
+  #import .scene-visual.is-in .xf-grid .fx em{animation:xfScan 2.8s ease-in-out infinite}
+  @keyframes xfScan{0%,100%{background:rgba(99,102,241,0);color:#34d399}48%,62%{background:rgba(99,102,241,.34);color:#c7c9ff}}
+  .xf-conv{display:flex;align-items:center;justify-content:center;gap:9px;font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#a5b4fc}
+  .xf-conv svg{width:15px;height:15px}
+  .xf-conv .ln{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(124,108,255,.5),transparent)}
+  .xf-card{border:1px solid rgba(99,102,241,.34);border-radius:12px;background:rgba(99,102,241,.06);padding:13px 14px;position:relative;overflow:hidden;box-shadow:0 18px 40px -22px rgba(124,108,255,.7)}
+  .xf-ch{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .xf-ch .fxb{width:21px;height:21px;border-radius:6px;background:rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;flex:none}
+  .xf-ch .fxb svg{width:12px;height:12px;color:#a5b4fc}
+  .xf-ch b{font-size:12.5px;font-weight:800;color:var(--ink)}
+  .xf-ch .ty{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:#34d399;border:1px solid rgba(52,211,153,.4);border-radius:5px;padding:2px 8px}
+  .xf-form{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-family:var(--mono);font-size:13.5px;color:var(--muted);line-height:1}
+  .xf-tok{color:var(--faint)}
+  .xf-ref{display:inline-flex;border-radius:5px;padding:2px 8px;font-weight:700;font-size:12px;border:1px solid;opacity:0}
+  #import .scene-visual.is-in .xf-ref{animation:xfPop .5s cubic-bezier(.2,.9,.3,1.4) forwards}
+  @keyframes xfPop{from{opacity:0;transform:scale(.55) translateY(5px)}to{opacity:1;transform:none}}
+  .xf-out{display:flex;align-items:center;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+  .xf-out .ol{font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.05em;text-transform:uppercase;margin-right:1px}
+  .xf-pct{font-family:var(--mono);font-weight:800;font-size:13px;color:#34d399;border:1px solid rgba(52,211,153,.35);border-radius:6px;padding:3px 10px;opacity:0;background:rgba(52,211,153,.05)}
+  #import .scene-visual.is-in .xf-pct{animation:xfPop .45s cubic-bezier(.2,.9,.3,1.4) forwards}
+  #import .scene-visual.is-in .xf-card::after{content:"";position:absolute;left:0;right:0;height:36%;top:-36%;background:linear-gradient(180deg,transparent,rgba(124,108,255,.16),transparent);animation:scan 3s ease-in-out .3s infinite;pointer-events:none;z-index:5}
   /* Création d'image IA */
   .ig-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   .ig-lbl{font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.07em;margin-bottom:8px}
@@ -1880,37 +1914,40 @@
           <span class="scene-num grad-text">02 — IMPORTER</span>
           <h2>Vos fichiers,<br/>fidèles et éditables.</h2>
           <p>Vos fichiers existants s'ouvrent tels quels, sans les recréer. IBS-Studio importe <b>InDesign (IDML &amp; EasyCatalog), Illustrator (SVG), PowerPoint, PDF et Excel</b> en conservant mise en page, styles et typographie — pas une capture aplatie, mais des <b>calques réellement éditables</b>. Images et PDF sont même <b>décomposés par IA</b> (textes, formes et visuels séparés), prêts à reprendre bloc par bloc.</p>
-          <ul class="scene-list"><li>IDML · EasyCatalog · SVG · PDF · PPTX · Excel · image</li><li>IDML/SVG : reconstruction fidèle (calques, styles, polices)</li><li>Image &amp; PDF : décomposition IA en calques</li></ul>
+          <ul class="scene-list"><li>IDML · EasyCatalog · SVG · PDF · PPTX · Excel · image</li><li>IDML/SVG : reconstruction fidèle (calques, styles, polices)</li><li>Excel : formules converties en champs calculés (recalcul live)</li><li>Image &amp; PDF : décomposition IA en calques</li></ul>
           <button class="scene-more" aria-expanded="false" aria-controls="d-import"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Comprendre ce module</button>
           <div class="scene-detail" id="d-import"><div class="scene-detail-inner"><div class="sd-block"><span class="sd-k">Le problème</span><p>Vos fichiers existants (InDesign, PowerPoint, PDF) sont prisonniers de leur logiciel. Les rouvrir ailleurs les aplatit en image ou casse la mise en page.</p></div><div class="sd-block"><span class="sd-k">Comment ça marche</span><ol class="sd-steps"><li>Déposez un <b>IDML, PPTX, SVG, PDF, image ou Excel</b>.</li><li>Le parseur reconstruit <b>calques, styles, polices et mise en page à l'identique</b> — pas une capture figée.</li><li>Pour les images et PDF, la <b>décomposition IA (Google Vision)</b> sépare textes, formes et visuels en calques éditables.</li></ol></div><div class="sd-block"><span class="sd-k">Options</span><div class="sd-opts"><span>IDML — InDesign</span><span>PPTX — PowerPoint</span><span>SVG — Illustrator</span><span>PDF → SVG</span><span>Image PNG/JPG/WebP</span><span>Excel / CSV</span><span>Décomposition IA en calques</span></div></div><div class="sd-block"><span class="sd-k">Le résultat</span><p>Vos documents redeviennent éditables bloc par bloc, sans avoir à les recréer.</p></div><div class="sd-block"><span class="sd-k help">Aide intégrée</span><p class="sd-note">Extrait du manuel intégré (bouton « ? » dans l'app) — sections « Import » par format.</p><div class="sd-help"><div class="sdh"><b>Import IDML (InDesign)</b> — parse l'IDML (ZIP XML + ressources) et reconstruit la maquette à l'identique (formes, textes, images, fonts, gradients, ombres) ; ajoute ensuite des placeholders {{title}}, {{price}} pour le data-merge. Fonts non installées → fallback Arial.</div><div class="sdh"><b>Importer PPTX</b> — chaque diapositive d'un .pptx devient une page éditable ; idéal pour transformer une présentation en template. Animations PowerPoint non supportées.</div><div class="sdh"><b>Importer Excel</b> — crée ou complète une base produits du PIM depuis .xlsx, .csv, .json ou Google Sheets ; les types de colonnes sont détectés automatiquement.</div><div class="sdh"><b>Importer une image</b> — pose une image (PNG, JPG, WebP, GIF, SVG) sur le canvas ; elle reste une image (pas de décomposition).</div><div class="sdh"><b>Importer SVG</b> — charge un .svg en calques vectoriels éditables (formes, textes, chemins).</div><div class="sdh"><b>Image → SVG éditable</b> — le raster est verrouillé en fond et l'IA (Google Vision) détecte les textes, recréés en calques éditables par-dessus.</div><div class="sdh"><b>PDF → SVG éditable</b> — la page 1 du PDF est rasterisée en fond, avec les mêmes overlays texte éditables.</div></div></div></div></div>
         </div>
         <div class="scene-visual"><div class="screen"><div class="glow" aria-hidden="true"></div>
-          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un fichier</span></div>
-          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:14%;--y1:30%;--x2:64%;--y2:60%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
-          <div class="imp-body mk-body">
-            <div class="imp-formats"><span class="imp-fmt on"><span class="d" style="background:#fbbf24"></span>InDesign<i>.idml</i></span><span class="imp-fmt"><span class="d" style="background:#38bdf8"></span>Illustrator<i>.svg</i></span><span class="imp-fmt"><span class="d" style="background:#f472b6"></span>PDF<i>.pdf</i></span><span class="imp-fmt"><span class="d" style="background:#fb923c"></span>PPTX<i>.pptx</i></span><span class="imp-fmt"><span class="d" style="background:#34d399"></span>Excel<i>.xlsx</i></span><span class="imp-fmt"><span class="d" style="background:#a78bfa"></span>Image<i>.png</i></span></div>
-            <div class="imp-res">
-              <div class="imp-src">
-                <span class="imp-doctag">catalogue.idml</span>
-                <span class="imp-shot"><svg class="vico" viewBox="0 0 100 100"><use href="#ic-drill"/></svg><b class="imp-badge">−20 %</b></span>
-                <span class="imp-meta"><b class="imp-tt">SOLDES</b><i class="imp-st">Perceuse 18V Brushless</i><s class="imp-ph">{{price}}</s><em class="imp-ref">Réf. {{ref}}</em></span>
+          <div class="sbar"><span class="sdots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="stitle">Importer un Excel</span></div>
+          <svg class="dcur" viewBox="0 0 24 24" aria-hidden="true" style="--x1:18%;--y1:28%;--x2:60%;--y2:74%"><path d="M4 2v17l4.5-4.5 3 6.5 2.4-1.1-2.9-6.3H17.4z" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="1" stroke-linejoin="round"/></svg>
+          <div class="xf-body mk-body">
+            <div class="xf-xls">
+              <div class="xh"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v6h6M4 22V4a2 2 0 0 1 2-2h8l6 6v14a2 2 0 0 1-2 2z"/></svg><b>tarifs.xlsx</b> — colonne « Promotion »<i>formule détectée</i></div>
+              <div class="xf-grid">
+                <span class="hd">Prix_barré</span><span class="hd">Prix_normal</span><span class="hd">Promotion</span>
+                <span>327,78</span><span>236,00</span><span class="fx">=<em>(B2-C2)/B2</em></span>
+                <span>129,90</span><span>97,40</span><span class="fx">=<em>(B3-C3)/B3</em></span>
               </div>
-              <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-              <div class="imp-layers">
-                <div class="imp-head">Reconstruction fidèle · .idml</div>
-                <div class="imp-lay"><span class="sw" style="background:#facc15"></span>Titre « Soldes »<span class="ed">¶ style</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#0ea5e9"></span>Image produit<span class="ed">cadre</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#ef4444"></span>Prix<span class="ed ph">{{price}}</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#3730a3"></span>Sous-titre<span class="ed">¶ style</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#fb923c"></span>Badge −20 %<span class="ed">forme</span></div>
-                <div class="imp-lay"><span class="sw" style="background:#a855f7"></span>Polices &amp; gradients<span class="ed">préservés</span></div>
-                <div class="imp-note"><i></i>Image / PDF → décomposition IA (Vision)</div>
+            </div>
+            <div class="xf-conv"><span class="ln"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>Conversion en champ calculé IBS<span class="ln"></span></div>
+            <div class="xf-card">
+              <div class="xf-ch"><span class="fxb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h2M8 18h2"/></svg></span><b>Promotion</b><span class="ty">Pourcentage</span></div>
+              <div class="xf-form">
+                <span class="xf-tok">(</span>
+                <span class="xf-ref" style="color:#a5b4fc;background:rgba(99,102,241,.14);border-color:rgba(99,102,241,.45);animation-delay:.5s">Prix_barré</span>
+                <span class="xf-tok">−</span>
+                <span class="xf-ref" style="color:#5eead4;background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.45);animation-delay:.72s">Prix_normal</span>
+                <span class="xf-tok">)</span>
+                <span class="xf-tok">/</span>
+                <span class="xf-ref" style="color:#a5b4fc;background:rgba(99,102,241,.14);border-color:rgba(99,102,241,.45);animation-delay:.94s">Prix_barré</span>
               </div>
-              <div class="imp-fly" aria-hidden="true">
-                <span class="ifc" style="--c:#facc15;--t:18%;--d:0s">Titre</span>
-                <span class="ifc" style="--c:#38bdf8;--t:37%;--d:.9s">Image</span>
-                <span class="ifc" style="--c:#6366f1;--t:56%;--d:1.8s">{{price}}</span>
-                <span class="ifc" style="--c:#fb923c;--t:13%;--d:2.7s">Badge</span>
+              <div class="xf-out">
+                <span class="ol">Recalcul live</span>
+                <span class="xf-pct" style="animation-delay:1.25s">28 %</span>
+                <span class="xf-pct" style="animation-delay:1.45s">25 %</span>
+                <span class="xf-pct" style="animation-delay:1.65s">18 %</span>
+                <span class="xf-pct" style="animation-delay:1.85s">36 %</span>
               </div>
             </div>
           </div>
