@@ -183,6 +183,27 @@ export function pageLabel(path: string): string {
 }
 
 /**
+ * Regroupement des modules par famille — même découpage que le menu « LES 20 MODULES »
+ * de la landing `/promo` (cf. `public/promo/index.html`). Clé = libellé de page (`pageLabel`).
+ */
+const MODULE_GROUP: Record<string, string> = {
+  'Créer': 'Créer & éditer', 'Importer': 'Créer & éditer', 'Éditer': 'Créer & éditer', 'Générer': 'Créer & éditer', 'Animer': 'Créer & éditer',
+  'Données': 'Données & catalogue', 'Classer': 'Données & catalogue', 'Organiser': 'Données & catalogue', 'Médias': 'Données & catalogue',
+  'Mapper': 'Collecter le web', 'Collecter': 'Collecter le web', 'Surveiller': 'Collecter le web', 'Veille': 'Collecter le web',
+  'Décliner': 'Produire & diffuser', 'Publier': 'Produire & diffuser',
+  'Automatiser': 'Automatiser & assister', 'Piloter': 'Automatiser & assister', 'Assister': 'Automatiser & assister',
+  'Gouverner': 'Administrer', 'Paramétrer': 'Administrer', 'Explorer': 'Administrer',
+}
+
+/** Ordre d'affichage des groupes (+ « Autres » pour les pages hors modules). */
+export const MODULE_GROUP_ORDER = ['Créer & éditer', 'Données & catalogue', 'Collecter le web', 'Produire & diffuser', 'Automatiser & assister', 'Administrer', 'Autres'] as const
+
+/** Groupe de modules d'une page (`'Autres'` si la page n'est pas un module). */
+export function moduleGroupOf(path: string): string {
+  return MODULE_GROUP[pageLabel(path)] ?? 'Autres'
+}
+
+/**
  * Navigation interne / peu informative (tableau de bord nu, pages `/workflows/…`,
  * accueil) à exclure de « Activité récente » : ce n'est pas du trafic visiteur utile.
  */

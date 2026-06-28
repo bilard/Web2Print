@@ -131,6 +131,20 @@ function isInternalActivity(path: string): boolean {
   return label === 'Tableau de bord' || label === 'Accueil' || label.startsWith('Workflows')
 }
 
+/** Regroupement des modules par famille (menu « LES 20 MODULES » de /promo) — copie de metrics.ts. */
+const MODULE_GROUP: Record<string, string> = {
+  'Créer': 'Créer & éditer', 'Importer': 'Créer & éditer', 'Éditer': 'Créer & éditer', 'Générer': 'Créer & éditer', 'Animer': 'Créer & éditer',
+  'Données': 'Données & catalogue', 'Classer': 'Données & catalogue', 'Organiser': 'Données & catalogue', 'Médias': 'Données & catalogue',
+  'Mapper': 'Collecter le web', 'Collecter': 'Collecter le web', 'Surveiller': 'Collecter le web', 'Veille': 'Collecter le web',
+  'Décliner': 'Produire & diffuser', 'Publier': 'Produire & diffuser',
+  'Automatiser': 'Automatiser & assister', 'Piloter': 'Automatiser & assister', 'Assister': 'Automatiser & assister',
+  'Gouverner': 'Administrer', 'Paramétrer': 'Administrer', 'Explorer': 'Administrer',
+}
+const MODULE_GROUP_ORDER = ['Créer & éditer', 'Données & catalogue', 'Collecter le web', 'Produire & diffuser', 'Automatiser & assister', 'Administrer', 'Autres'] as const
+function moduleGroupOf(path: string): string {
+  return MODULE_GROUP[pageLabel(path)] ?? 'Autres'
+}
+
 // ───────────────────────────── Rendu (copie de registry/analyticsReport.ts) ──
 type AnalyticsPeriod = '7d' | '30d' | '90d' | '12m'
 const DAY = 86_400_000
@@ -163,18 +177,15 @@ interface ReportInput {
   recent: RecentRow[]
 }
 
-/** Ligne d'activité récente : libellé + méta affichable + champs bruts (area/device) pour filtrer/grouper. */
-interface RecentRow { label: string; meta: string; area: string; device: string }
+/** Ligne d'activité récente : libellé + méta affichable + groupe de modules + appareil (pour filtrer/grouper). */
+interface RecentRow { label: string; meta: string; group: string; device: string }
 
-/** Libellés FR des catégories (area) — sections du corps de mail + filtre du rapport riche. */
-const AREA_LABEL: Record<string, string> = { promo: 'Site (promo)', docs: 'Documentation', app: 'Application', other: 'Autre' }
-
-/** Dernières visites (page + appareil · pays · date/heure) — calque AnalyticsRecent. */
+/** Dernières visites (page + appareil · pays · date/heure), regroupées par module — calque AnalyticsRecent. */
 function buildRecent(events: AnalyticsEvent[], limit: number): RecentRow[] {
   return recentEvents(events.filter((e) => !isInternalActivity(e.path)), limit).map((e) => ({
     label: pageLabel(e.path),
     meta: `${DEVICE_LABEL[e.device] ?? e.device} · ${e.country ?? '—'} · ${new Date(e.ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
-    area: e.area,
+    group: moduleGroupOf(e.path),
     device: e.device,
   }))
 }
@@ -238,12 +249,12 @@ function topListHtml(title: string, rows: { label: string; count: number }[], ac
  */
 function recentListHtml(rows: RecentRow[]): string {
   if (rows.length === 0) return ''
-  const areas = [...new Set(rows.map((r) => r.area))]
+  const groups = MODULE_GROUP_ORDER.filter((g) => rows.some((r) => r.group === g))
   const devices = [...new Set(rows.map((r) => r.device))]
-  const areaOpts = areas.map((a) => `<option value="${esc(a)}">${esc(AREA_LABEL[a] ?? a)}</option>`).join('')
+  const grpOpts = groups.map((g) => `<option value="${esc(g)}">${esc(g)}</option>`).join('')
   const devOpts = devices.map((d) => `<option value="${esc(d)}">${esc(DEVICE_LABEL[d] ?? d)}</option>`).join('')
   const items = rows.map((r) => `
-      <div class="rrow" data-label="${esc(r.label.toLowerCase())}" data-area="${esc(r.area)}" data-device="${esc(r.device)}"><span class="rlbl">${esc(r.label)}</span><span class="rmeta">${esc(r.meta)}</span></div>`).join('')
+      <div class="rrow" data-label="${esc(r.label.toLowerCase())}" data-group="${esc(r.group)}" data-device="${esc(r.device)}"><span class="rlbl">${esc(r.label)}</span><span class="rmeta">${esc(r.meta)}</span></div>`).join('')
   return `<div class="panel recent" id="recent" style="--accent:#a78bfa">
     <div class="recent-top">
       <div class="panel-h">Activité récente <span class="rcount" id="rcount"></span></div>
@@ -251,7 +262,7 @@ function recentListHtml(rows: RecentRow[]): string {
     </div>
     <div class="rfilters">
       <input id="rsearch" class="rinput" type="search" placeholder="Rechercher une page…">
-      <select id="rarea" class="rsel"><option value="all">Toutes catégories</option>${areaOpts}</select>
+      <select id="rgroup" class="rsel"><option value="all">Tous les groupes</option>${grpOpts}</select>
       <select id="rdevice" class="rsel"><option value="all">Tous appareils</option>${devOpts}</select>
     </div>
     <div class="rlist" id="rlist">${items}</div>
@@ -266,7 +277,7 @@ function recentScript(): string {
     var list=document.getElementById('rlist');
     if(!list) return;
     var rows=[].slice.call(list.querySelectorAll('.rrow'));
-    var search=document.getElementById('rsearch'), areaSel=document.getElementById('rarea'), devSel=document.getElementById('rdevice');
+    var search=document.getElementById('rsearch'), groupSel=document.getElementById('rgroup'), devSel=document.getElementById('rdevice');
     var prev=document.getElementById('rprev'), next=document.getElementById('rnext');
     var pageInfo=document.getElementById('rpage'), count=document.getElementById('rcount'), pager=document.querySelector('#recent .rpager');
     var filters=document.querySelector('#recent .rfilters');
@@ -274,7 +285,7 @@ function recentScript(): string {
     function match(r){
       var q=search.value.trim().toLowerCase();
       if(q && r.getAttribute('data-label').indexOf(q)<0) return false;
-      if(areaSel.value!=='all' && r.getAttribute('data-area')!==areaSel.value) return false;
+      if(groupSel.value!=='all' && r.getAttribute('data-group')!==groupSel.value) return false;
       if(devSel.value!=='all' && r.getAttribute('data-device')!==devSel.value) return false;
       return true;
     }
@@ -291,7 +302,7 @@ function recentScript(): string {
     }
     function reset(){ page=0; render(); }
     search.addEventListener('input', reset);
-    areaSel.addEventListener('change', reset);
+    groupSel.addEventListener('change', reset);
     devSel.addEventListener('change', reset);
     prev.addEventListener('click', function(){ page--; render(); });
     next.addEventListener('click', function(){ page++; render(); });
@@ -439,19 +450,17 @@ function emailTopList(title: string, rows: { label: string; count: number }[], a
  * pas de filtres/pagination cliquables. On rend un équivalent STATIQUE : l'activité
  * regroupée par catégorie (sections = « filtre » figé), 8 lignes max par section.
  */
-const AREA_ORDER = ['promo', 'docs', 'app', 'other'] as const
 function emailRecentList(rows: RecentRow[]): string {
   if (rows.length === 0) return ''
   const accent = '#a78bfa'
-  const present = [...AREA_ORDER, ...new Set(rows.map((r) => r.area))].filter((a, i, arr) => arr.indexOf(a) === i)
-  const sections = present.map((area) => {
-    const rs = rows.filter((r) => r.area === area).slice(0, 8)
+  const sections = MODULE_GROUP_ORDER.map((group) => {
+    const rs = rows.filter((r) => r.group === group).slice(0, 8)
     if (rs.length === 0) return ''
     const body = rs.map((r) => `<tr>
         <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
         <td align="right" style="padding:6px 8px;font-size:11px;color:${C.faint};border-bottom:1px solid ${C.line};white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${esc(r.meta)}</td>
       </tr>`).join('')
-    return `<div style="font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:${accent};margin:12px 0 4px;opacity:.85;">${esc(AREA_LABEL[area] ?? area)}</div>
+    return `<div style="font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:${accent};margin:12px 0 4px;opacity:.85;">${esc(group)}</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>`
   }).join('')
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;margin-top:6px;"><tr>
