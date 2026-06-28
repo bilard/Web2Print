@@ -182,6 +182,15 @@ export function pageLabel(path: string): string {
   return head + ' · ' + segs.slice(1).map(pretty).join(' · ')
 }
 
+/**
+ * Navigation interne du propriétaire (tableau de bord nu + pages `/workflows/…`)
+ * à exclure de « Activité récente » : ce n'est pas du trafic visiteur, juste du bruit.
+ */
+export function isInternalActivity(path: string): boolean {
+  const label = pageLabel(path)
+  return label === 'Tableau de bord' || label.startsWith('Workflows')
+}
+
 /** Top des sources effectives : utm_source si présent, sinon domaine référent. */
 export function topSources(events: AnalyticsEvent[], limit: number): { label: string; count: number }[] {
   const counts = new Map<string, number>()

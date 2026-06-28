@@ -1,25 +1,48 @@
 // src/features/analytics/admin/AnalyticsRecent.tsx
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
-import { recentEvents, pageLabel } from '../metrics'
+import { recentEvents, pageLabel, isInternalActivity } from '../metrics'
 
 const PAGE_SIZE = 12
+const AREA_FR: Record<string, string> = { promo: 'Site (promo)', docs: 'Documentation', app: 'Application', other: 'Autre' }
+const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+const SEL = 'bg-surface-2 text-white/80 rounded px-2 py-1 border border-white/10 text-xs'
 
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
-  const sorted = useMemo(() => recentEvents(events, events.length), [events])
+  const [area, setArea] = useState('all')
+  const [device, setDevice] = useState('all')
+  const [q, setQ] = useState('')
   const [page, setPage] = useState(0)
 
-  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
-  const current = Math.min(page, pageCount - 1) // borne si les events ont rétréci
-  const slice = sorted.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE)
+  // Tri par récence, hors navigation interne (tableau de bord / workflows).
+  const sorted = useMemo(
+    () => recentEvents(events, events.length).filter((e) => !isInternalActivity(e.path)),
+    [events],
+  )
+  const areas = useMemo(() => [...new Set(sorted.map((e) => e.area))], [sorted])
+  const devices = useMemo(() => [...new Set(sorted.map((e) => e.device))], [sorted])
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    return sorted.filter(
+      (e) =>
+        (area === 'all' || e.area === area) &&
+        (device === 'all' || e.device === device) &&
+        (needle === '' || pageLabel(e.path).toLowerCase().includes(needle)),
+    )
+  }, [sorted, area, device, q])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const current = Math.min(page, pageCount - 1) // borne si la liste a rétréci
+  const slice = filtered.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE)
 
   return (
     <div className="bg-surface rounded-lg p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="text-white/70 text-sm font-medium">
           Activité récente
-          <span className="text-white/30 font-normal ml-2">{sorted.length.toLocaleString('fr-FR')} événements</span>
+          <span className="text-white/30 font-normal ml-2">{filtered.length.toLocaleString('fr-FR')} événements</span>
         </div>
         {pageCount > 1 && (
           <div className="flex items-center gap-1.5 shrink-0">
@@ -45,6 +68,31 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           </div>
         )}
       </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-white/30" />
+          <input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(0) }}
+            placeholder="Rechercher une page…"
+            className="bg-surface-2 text-white/80 rounded pl-7 pr-2 py-1 border border-white/10 text-xs w-44 placeholder:text-white/30"
+          />
+        </div>
+        {areas.length > 1 && (
+          <select value={area} onChange={(e) => { setArea(e.target.value); setPage(0) }} className={SEL}>
+            <option value="all">Toutes catégories</option>
+            {areas.map((a) => <option key={a} value={a}>{AREA_FR[a] ?? a}</option>)}
+          </select>
+        )}
+        {devices.length > 1 && (
+          <select value={device} onChange={(e) => { setDevice(e.target.value); setPage(0) }} className={SEL}>
+            <option value="all">Tous appareils</option>
+            {devices.map((d) => <option key={d} value={d}>{DEVICE_FR[d] ?? d}</option>)}
+          </select>
+        )}
+      </div>
+
       <div className="space-y-1">
         {slice.map((e, i) => (
           <div
@@ -58,7 +106,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           </div>
         ))}
         {slice.length === 0 && (
-          <div className="text-white/30 text-xs py-2">Aucune activité sur la période.</div>
+          <div className="text-white/30 text-xs py-2">Aucune activité pour ces filtres.</div>
         )}
       </div>
     </div>

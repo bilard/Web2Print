@@ -125,6 +125,12 @@ function pageLabel(path: string): string {
 /** Libellés FR des appareils (mêmes valeurs que le filtre Appareil de l'onglet Analytics). */
 const DEVICE_LABEL: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
 
+/** Navigation interne du propriétaire à exclure de « Activité récente » (copie de metrics.ts). */
+function isInternalActivity(path: string): boolean {
+  const label = pageLabel(path)
+  return label === 'Tableau de bord' || label.startsWith('Workflows')
+}
+
 // ───────────────────────────── Rendu (copie de registry/analyticsReport.ts) ──
 type AnalyticsPeriod = '7d' | '30d' | '90d' | '12m'
 const DAY = 86_400_000
@@ -159,7 +165,7 @@ interface ReportInput {
 
 /** Dernières visites (page + appareil · pays · date/heure) — calque AnalyticsRecent. */
 function buildRecent(events: AnalyticsEvent[], limit: number): { label: string; meta: string }[] {
-  return recentEvents(events, limit).map((e) => ({
+  return recentEvents(events.filter((e) => !isInternalActivity(e.path)), limit).map((e) => ({
     label: pageLabel(e.path),
     meta: `${DEVICE_LABEL[e.device] ?? e.device} · ${e.country ?? '—'} · ${new Date(e.ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
   }))

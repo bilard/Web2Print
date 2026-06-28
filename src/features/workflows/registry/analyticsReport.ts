@@ -8,7 +8,7 @@
 import { collection, getDocs, query, where, orderBy, Timestamp, type DocumentData } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import {
-  computeKpis, topBy, topSources, pageLabel, recentEvents,
+  computeKpis, topBy, topSources, pageLabel, recentEvents, isInternalActivity,
   type AnalyticsEvent, type Kpis,
 } from '@/features/analytics/metrics'
 import { listUsers } from '@/features/access/usersApi'
@@ -96,7 +96,7 @@ export interface ReportInput {
 
 /** Dernières visites (page + appareil · pays · date/heure) — calque AnalyticsRecent. */
 function buildRecent(events: AnalyticsEvent[], limit: number): { label: string; meta: string }[] {
-  return recentEvents(events, limit).map((e) => ({
+  return recentEvents(events.filter((e) => !isInternalActivity(e.path)), limit).map((e) => ({
     label: pageLabel(e.path),
     meta: `${DEVICE_LABEL[e.device] ?? e.device} · ${e.country ?? '—'} · ${new Date(e.ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
   }))
