@@ -12,6 +12,8 @@ type Filters = { user: string; page: string; device: string; country: string; da
 const NONE: Filters = { user: 'all', page: 'all', device: 'all', country: 'all', day: 'all' }
 
 const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
+/** Clé d'identité stable : uid si connecté, sinon l'identifiant de visiteur anonyme. */
+const idKey = (e: AnalyticsEvent) => e.uid ?? `v:${e.vid}`
 
 /** Menu déroulant de filtre pour un en-tête de colonne. */
 function ColFilter({ value, onChange, options, allLabel }: { value: string; onChange: (v: string) => void; options: Opt[]; allLabel: string }) {
@@ -42,17 +44,19 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
 
   // Options de chaque colonne (valeurs réellement présentes).
   const opts = useMemo(() => {
-    const users = new Map<string, string>(); const pages = new Set<string>()
+    const people = new Map<string, { label: string; named: boolean }>(); const pages = new Set<string>()
     const countries = new Set<string>(); const days = new Map<string, true>()
-    let anon = false, noCountry = false
+    let noCountry = false
     for (const e of sorted) {
-      if (e.uid) users.set(e.uid, usersMap.get(e.uid) ?? e.uid); else anon = true
+      const k = idKey(e)
+      if (!people.has(k)) people.set(k, { label: e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${e.vid.slice(-4) || '—'}`, named: !!e.uid })
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
       days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
     }
     return {
-      users: [...[...users].sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ value, label })), ...(anon ? [{ value: '__anon__', label: 'Visiteurs (anonymes)' }] : [])],
+      // Utilisateurs connectés d'abord (par nom), puis chaque visiteur anonyme distinct.
+      users: [...people].sort((a, b) => (Number(b[1].named) - Number(a[1].named)) || a[1].label.localeCompare(b[1].label)).map(([value, info]) => ({ value, label: info.label })),
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
       countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
@@ -61,7 +65,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   }, [sorted, usersMap])
 
   const filtered = useMemo(() => sorted.filter((e) =>
-    (f.user === 'all' || (f.user === '__anon__' ? !e.uid : e.uid === f.user)) &&
+    (f.user === 'all' || idKey(e) === f.user) &&
     (f.page === 'all' || pageLabel(e.path) === f.page) &&
     (f.device === 'all' || e.device === f.device) &&
     (f.country === 'all' || (f.country === '__none__' ? !e.country : e.country === f.country)) &&
