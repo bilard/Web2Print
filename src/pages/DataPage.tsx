@@ -8,7 +8,7 @@ import {
   MoreVertical, ExternalLink,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
-  Wand2, FolderUp,
+  Wand2, FolderUp, Link2,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -21,6 +21,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { SheetsColumn } from '@/components/pim/SheetsColumn'
 import { useExcelStore } from '@/stores/excel.store'
 import { useDamMigration } from '@/features/dam/useDamMigration'
+import { LinkDriveImagesModal } from '@/features/dam/LinkDriveImagesModal'
 import { usePimStore } from '@/stores/pim.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
 import { useExcelFirebase } from '@/features/excel/useExcelFirebase'
@@ -79,6 +80,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [loadingFiles, setLoadingFiles] = useState(false)
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [ecExportOpen, setEcExportOpen] = useState(false)
+  const [linkImagesOpen, setLinkImagesOpen] = useState(false)
   const [scrapingOpen, setScrapingOpen] = useState(false)
   const [aiCompletionOpen, setAiCompletionOpen] = useState(false)
 
@@ -482,6 +484,14 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 {damRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderUp className="w-3.5 h-3.5" />}
                 DAM
               </button>
+              <button
+                onClick={() => setLinkImagesOpen(true)}
+                className={headerBtn}
+                title="Lier les images d'un dossier Google Drive aux lignes, par correspondance de nom de fichier"
+              >
+                <Link2 className="w-3.5 h-3.5" />
+                Lier images
+              </button>
             </>
           )}
         </div>
@@ -802,6 +812,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         sheet={sheet ?? null}
         sourceName={currentFileName ?? sheet?.name ?? 'export'}
       />
+
+      <LinkDriveImagesModal open={linkImagesOpen} onClose={() => setLinkImagesOpen(false)} />
 
     </div>
   )

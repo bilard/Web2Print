@@ -72,6 +72,29 @@ export function useGoogleDrive() {
     return data.files?.length ?? 0
   }, [accessToken])
 
+  /** Liste TOUTES les images d'un dossier (suit nextPageToken — pas de plafond
+   *  100 comme listFilesByParent). Filtre sur les mimeTypes image. */
+  const listAllImagesInFolder = useCallback(async (folderId: string): Promise<GDriveFile[]> => {
+    if (!accessToken) return []
+    const all: GDriveFile[] = []
+    let pageToken: string | undefined
+    do {
+      const params = new URLSearchParams({
+        q: `'${folderId}' in parents and trashed=false and mimeType contains 'image/'`,
+        fields: `nextPageToken,${FILE_FIELDS}`,
+        orderBy: 'name',
+        pageSize: '1000',
+      })
+      if (pageToken) params.set('pageToken', pageToken)
+      const res = await fetch(`${DRIVE_API}/files?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      if (!res.ok) { if (res.status === 401) disconnect(); break }
+      const data = (await res.json()) as { files?: GDriveFile[]; nextPageToken?: string }
+      all.push(...(data.files ?? []))
+      pageToken = data.nextPageToken
+    } while (pageToken)
+    return all
+  }, [accessToken, disconnect])
+
   /** Crée un dossier (scope drive.file). `parentId` absent → racine « Mon Drive ». */
   const createFolder = useCallback(async (name: string, parentId?: string): Promise<GDriveFile | null> => {
     if (!accessToken || !name.trim()) return null
@@ -89,5 +112,5 @@ export function useGoogleDrive() {
     return (await res.json()) as GDriveFile
   }, [accessToken, disconnect])
 
-  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, createFolder, disconnect }
+  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, listAllImagesInFolder, createFolder, disconnect }
 }
