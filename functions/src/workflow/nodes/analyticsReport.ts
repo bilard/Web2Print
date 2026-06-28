@@ -160,14 +160,22 @@ interface ReportInput {
   topCountries: { label: string; count: number }[]
   topDevices: { label: string; count: number }[]
   topUsers: { label: string; count: number }[]
-  recent: { label: string; meta: string }[]
+  recent: RecentRow[]
 }
 
+/** Ligne d'activité récente : libellé + méta affichable + champs bruts (area/device) pour filtrer/grouper. */
+interface RecentRow { label: string; meta: string; area: string; device: string }
+
+/** Libellés FR des catégories (area) — sections du corps de mail + filtre du rapport riche. */
+const AREA_LABEL: Record<string, string> = { promo: 'Site (promo)', docs: 'Documentation', app: 'Application', other: 'Autre' }
+
 /** Dernières visites (page + appareil · pays · date/heure) — calque AnalyticsRecent. */
-function buildRecent(events: AnalyticsEvent[], limit: number): { label: string; meta: string }[] {
+function buildRecent(events: AnalyticsEvent[], limit: number): RecentRow[] {
   return recentEvents(events.filter((e) => !isInternalActivity(e.path)), limit).map((e) => ({
     label: pageLabel(e.path),
     meta: `${DEVICE_LABEL[e.device] ?? e.device} · ${e.country ?? '—'} · ${new Date(e.ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
+    area: e.area,
+    device: e.device,
   }))
 }
 
@@ -222,12 +230,73 @@ function topListHtml(title: string, rows: { label: string; count: number }[], ac
   return `<div class="panel" style="${styleVars}"><div class="panel-h">${esc(title)}</div>${items}</div>`
 }
 
-/** Panneau pleine largeur listant les dernières visites (accent violet). */
-function recentListHtml(rows: { label: string; meta: string }[]): string {
+/**
+ * Panneau pleine largeur des dernières visites, AVEC filtres (recherche/catégorie/
+ * appareil) + pagination pilotés par un `<script>` autonome. Le JS ne s'exécute que
+ * si le fichier est ouvert dans un navigateur (pas l'aperçu Drive, pas le corps de
+ * mail) ; sans JS, dégradation propre via CSS : liste des 12 premières, contrôles masqués.
+ */
+function recentListHtml(rows: RecentRow[]): string {
   if (rows.length === 0) return ''
+  const areas = [...new Set(rows.map((r) => r.area))]
+  const devices = [...new Set(rows.map((r) => r.device))]
+  const areaOpts = areas.map((a) => `<option value="${esc(a)}">${esc(AREA_LABEL[a] ?? a)}</option>`).join('')
+  const devOpts = devices.map((d) => `<option value="${esc(d)}">${esc(DEVICE_LABEL[d] ?? d)}</option>`).join('')
   const items = rows.map((r) => `
-    <div class="rrow"><span class="rlbl">${esc(r.label)}</span><span class="rmeta">${esc(r.meta)}</span></div>`).join('')
-  return `<div class="panel recent" style="--accent:#a78bfa"><div class="panel-h">Activité récente</div>${items}</div>`
+      <div class="rrow" data-label="${esc(r.label.toLowerCase())}" data-area="${esc(r.area)}" data-device="${esc(r.device)}"><span class="rlbl">${esc(r.label)}</span><span class="rmeta">${esc(r.meta)}</span></div>`).join('')
+  return `<div class="panel recent" id="recent" style="--accent:#a78bfa">
+    <div class="recent-top">
+      <div class="panel-h">Activité récente <span class="rcount" id="rcount"></span></div>
+      <div class="rpager"><button type="button" id="rprev" class="rbtn">‹</button><span id="rpage" class="rpageinfo"></span><button type="button" id="rnext" class="rbtn">›</button></div>
+    </div>
+    <div class="rfilters">
+      <input id="rsearch" class="rinput" type="search" placeholder="Rechercher une page…">
+      <select id="rarea" class="rsel"><option value="all">Toutes catégories</option>${areaOpts}</select>
+      <select id="rdevice" class="rsel"><option value="all">Tous appareils</option>${devOpts}</select>
+    </div>
+    <div class="rlist" id="rlist">${items}</div>
+    ${recentScript()}
+  </div>`
+}
+
+/** IIFE vanilla : filtre (recherche + catégorie + appareil) et pagine la liste (12/page). */
+function recentScript(): string {
+  return `<script>(function(){
+    var PS=12, page=0;
+    var list=document.getElementById('rlist');
+    if(!list) return;
+    var rows=[].slice.call(list.querySelectorAll('.rrow'));
+    var search=document.getElementById('rsearch'), areaSel=document.getElementById('rarea'), devSel=document.getElementById('rdevice');
+    var prev=document.getElementById('rprev'), next=document.getElementById('rnext');
+    var pageInfo=document.getElementById('rpage'), count=document.getElementById('rcount'), pager=document.querySelector('#recent .rpager');
+    var filters=document.querySelector('#recent .rfilters');
+    if(filters) filters.style.display='flex';
+    function match(r){
+      var q=search.value.trim().toLowerCase();
+      if(q && r.getAttribute('data-label').indexOf(q)<0) return false;
+      if(areaSel.value!=='all' && r.getAttribute('data-area')!==areaSel.value) return false;
+      if(devSel.value!=='all' && r.getAttribute('data-device')!==devSel.value) return false;
+      return true;
+    }
+    function render(){
+      var vis=rows.filter(match);
+      var pc=Math.max(1, Math.ceil(vis.length/PS));
+      if(page>pc-1) page=pc-1; if(page<0) page=0;
+      rows.forEach(function(r){ r.style.display='none'; });
+      vis.slice(page*PS, page*PS+PS).forEach(function(r){ r.style.display='flex'; });
+      count.textContent=vis.length.toLocaleString('fr-FR')+' événements';
+      pageInfo.textContent=(page+1)+' / '+pc;
+      prev.disabled=page<=0; next.disabled=page>=pc-1;
+      if(pager) pager.style.display = pc>1 ? 'flex' : 'none';
+    }
+    function reset(){ page=0; render(); }
+    search.addEventListener('input', reset);
+    areaSel.addEventListener('change', reset);
+    devSel.addEventListener('change', reset);
+    prev.addEventListener('click', function(){ page--; render(); });
+    next.addEventListener('click', function(){ page++; render(); });
+    render();
+  })();</script>`
 }
 
 function chartHtml(series: DaySeries[]): string {
@@ -288,8 +357,22 @@ function buildHtml(d: ReportInput): string {
   .cnt { position: relative; font-size: 12px; color: var(--accent,rgba(255,255,255,.55)); margin-left: 8px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .recent { margin-top: 10px; }
+  .recent-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .rcount { color: rgba(255,255,255,.30); text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 6px; }
+  .rpager { display: none; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .rbtn { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10); color: rgba(255,255,255,.70);
+    width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+  .rbtn:hover { background: rgba(255,255,255,.09); color: #fff; }
+  .rbtn:disabled { opacity: .3; cursor: default; }
+  .rpageinfo { font-size: 11px; color: rgba(255,255,255,.45); font-variant-numeric: tabular-nums; min-width: 34px; text-align: center; }
+  .rfilters { display: none; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .rinput, .rsel { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10); color: rgba(255,255,255,.82);
+    border-radius: 6px; padding: 4px 8px; font-size: 12px; font-family: inherit; }
+  .rinput { min-width: 180px; }
   .rrow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,.05); }
   .rrow:last-child { border-bottom: none; }
+  /* Sans JS (aperçu Drive) : n'afficher que les 12 premières lignes. */
+  .rlist .rrow:nth-child(n+13) { display: none; }
   .rlbl { font-size: 12px; color: rgba(255,255,255,.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rmeta { font-size: 11px; color: rgba(255,255,255,.40); white-space: nowrap; flex: 0 0 auto;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -351,17 +434,30 @@ function emailTopList(title: string, rows: { label: string; count: number }[], a
   </td>`
 }
 
-function emailRecentList(rows: { label: string; meta: string }[]): string {
+/**
+ * Panneau « Activité récente » email-safe : Gmail n'exécute ni JS ni `<style>`, donc
+ * pas de filtres/pagination cliquables. On rend un équivalent STATIQUE : l'activité
+ * regroupée par catégorie (sections = « filtre » figé), 8 lignes max par section.
+ */
+const AREA_ORDER = ['promo', 'docs', 'app', 'other'] as const
+function emailRecentList(rows: RecentRow[]): string {
   if (rows.length === 0) return ''
   const accent = '#a78bfa'
-  const body = rows.map((r) => `<tr>
-      <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
-      <td align="right" style="padding:6px 8px;font-size:11px;color:${C.faint};border-bottom:1px solid ${C.line};white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${esc(r.meta)}</td>
-    </tr>`).join('')
+  const present = [...AREA_ORDER, ...new Set(rows.map((r) => r.area))].filter((a, i, arr) => arr.indexOf(a) === i)
+  const sections = present.map((area) => {
+    const rs = rows.filter((r) => r.area === area).slice(0, 8)
+    if (rs.length === 0) return ''
+    const body = rs.map((r) => `<tr>
+        <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
+        <td align="right" style="padding:6px 8px;font-size:11px;color:${C.faint};border-bottom:1px solid ${C.line};white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${esc(r.meta)}</td>
+      </tr>`).join('')
+    return `<div style="font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:${accent};margin:12px 0 4px;opacity:.85;">${esc(AREA_LABEL[area] ?? area)}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>`
+  }).join('')
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;margin-top:6px;"><tr>
     <td valign="top" style="background:${C.panel};border:1px solid ${C.border};border-top:2px solid ${accent};border-radius:10px;padding:12px;">
-      <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${accent};margin-bottom:6px;">Activité récente</div>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>
+      <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${accent};margin-bottom:2px;">Activité récente</div>
+      ${sections}
     </td>
   </tr></table>`
 }
@@ -474,7 +570,7 @@ async function collectAnalyticsReportServer(period: AnalyticsPeriod, title: stri
     topCountries: topBy(events, 'country', 8),
     topDevices: topBy(events, 'device', 8).map((dev) => ({ label: DEVICE_LABEL[dev.label] ?? dev.label, count: dev.count })),
     topUsers: buildTopUsers(events, usersMap, 8),
-    recent: buildRecent(events, 12),
+    recent: buildRecent(events, 100),
   }
 
   const summaryRows: Record<string, unknown>[] = input.series.map((s) => ({

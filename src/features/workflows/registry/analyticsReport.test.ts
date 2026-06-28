@@ -17,8 +17,9 @@ const input = {
   topDevices: [{ label: 'Ordinateur', count: 40 }, { label: 'Mobile', count: 13 }],
   topUsers: [{ label: 'Francis Bilard', count: 30 }, { label: 'ibs.studio@gmail.com', count: 5 }],
   recent: [
-    { label: 'Tableau de bord', meta: 'Ordinateur · FR · 28/06 14:30' },
-    { label: 'Accueil', meta: 'Mobile · BE · 28/06 14:12' },
+    { label: 'Promo', meta: 'Ordinateur · FR · 28/06 14:30', area: 'promo', device: 'desktop' },
+    { label: 'Documentation', meta: 'Mobile · BE · 28/06 14:12', area: 'docs', device: 'mobile' },
+    { label: 'Veille', meta: 'Ordinateur · FR · 28/06 14:05', area: 'app', device: 'desktop' },
   ],
 }
 
@@ -56,6 +57,10 @@ describe('buildHtml', () => {
     expect(html).toContain('Francis Bilard')
     expect(html).toContain('Activité récente')
     expect(html).toContain('Ordinateur · FR · 28/06 14:30')
+    // Filtres + pagination interactifs (rapport riche / pièce jointe).
+    expect(html).toContain('Rechercher une page')
+    expect(html).toContain('Toutes catégories')
+    expect(html).toContain('<script>')
   })
   it('échappe le HTML du titre', () => {
     const html = buildHtml({ ...input, title: '<script>x</script>' })
@@ -77,6 +82,10 @@ describe('buildEmailHtml', () => {
     expect(email).toContain('Utilisateurs connectés')
     expect(email).toContain('Francis Bilard')
     expect(email).toContain('Activité récente')
+    // Corps de mail email-safe : sections par catégorie, aucun JS.
+    expect(email).toContain('Site (promo)')
+    expect(email).toContain('Documentation')
+    expect(email).not.toContain('<script')
   })
   it('gère une liste vide', () => {
     const email = buildEmailHtml({ ...input, topCountries: [] })
