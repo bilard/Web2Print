@@ -149,6 +149,19 @@ interface ReportInput {
   topSources: { label: string; count: number }[]
   topCountries: { label: string; count: number }[]
   topDevices: { label: string; count: number }[]
+  topUsers: { label: string; count: number }[]
+}
+
+function buildTopUsers(events: AnalyticsEvent[], usersMap: Map<string, string>, limit: number): { label: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const e of events) {
+    if (!e.uid) continue
+    counts.set(e.uid, (counts.get(e.uid) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([uid, count]) => ({ label: usersMap.get(uid) ?? uid, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
 }
 
 function buildSeries(events: AnalyticsEvent[], fromMs: number, toMs: number): DaySeries[] {
@@ -262,6 +275,7 @@ function buildHtml(d: ReportInput): string {
       ${topListHtml('Sources de trafic', d.topSources)}
       ${topListHtml('Pays', d.topCountries)}
       ${topListHtml('Appareils', d.topDevices)}
+      ${topListHtml('Utilisateurs connectés', d.topUsers)}
     </div>
     <footer>
       Données agrégées depuis Firestore — collection <code>analyticsEvents</code>. Trafic de l'ensemble du site (accès réservé au propriétaire).
@@ -335,6 +349,10 @@ function buildEmailHtml(d: ReportInput): string {
         ${emailTopList('Pays', d.topCountries)}
         ${emailTopList('Appareils', d.topDevices)}
       </tr>
+      <tr>
+        ${emailTopList('Utilisateurs connectés', d.topUsers)}
+        <td width="50%"></td>
+      </tr>
     </table>
     <div style="font-size:9.5px;color:${C.faint};margin-top:18px;line-height:1.6;">
       Données agrégées depuis Firestore (collection analyticsEvents). Trafic de l'ensemble du site.
@@ -350,11 +368,19 @@ async function collectAnalyticsReportServer(period: AnalyticsPeriod, title: stri
   const toMs = Date.now()
   const fromMs = toMs - SPAN[period]
 
-  const snap = await db.collection('analyticsEvents')
-    .where('ts', '>=', Timestamp.fromMillis(fromMs))
-    .where('ts', '<=', Timestamp.fromMillis(toMs))
-    .orderBy('ts', 'asc')
-    .get()
+  const [snap, usersSnap] = await Promise.all([
+    db.collection('analyticsEvents')
+      .where('ts', '>=', Timestamp.fromMillis(fromMs))
+      .where('ts', '<=', Timestamp.fromMillis(toMs))
+      .orderBy('ts', 'asc')
+      .get(),
+    db.collection('users').get().catch(() => null),
+  ])
+  const usersMap = new Map<string, string>()
+  for (const u of usersSnap?.docs ?? []) {
+    const x = u.data()
+    usersMap.set(u.id, (x.displayName as string) || (x.email as string) || u.id)
+  }
 
   const events: AnalyticsEvent[] = snap.docs.map((s) => {
     const d = s.data()
@@ -383,6 +409,7 @@ async function collectAnalyticsReportServer(period: AnalyticsPeriod, title: stri
     topSources: topSources(events, 8),
     topCountries: topBy(events, 'country', 8),
     topDevices: topBy(events, 'device', 8).map((dev) => ({ label: DEVICE_LABEL[dev.label] ?? dev.label, count: dev.count })),
+    topUsers: buildTopUsers(events, usersMap, 8),
   }
 
   const summaryRows: Record<string, unknown>[] = input.series.map((s) => ({

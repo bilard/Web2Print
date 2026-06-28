@@ -11,6 +11,7 @@ import {
   computeKpis, topBy, topSources, pageLabel,
   type AnalyticsEvent, type Kpis,
 } from '@/features/analytics/metrics'
+import { listUsers } from '@/features/access/usersApi'
 
 export type AnalyticsPeriod = '7d' | '30d' | '90d' | '12m'
 
@@ -89,6 +90,20 @@ export interface ReportInput {
   topSources: { label: string; count: number }[]
   topCountries: { label: string; count: number }[]
   topDevices: { label: string; count: number }[]
+  topUsers: { label: string; count: number }[]
+}
+
+/** Utilisateurs connectés (events avec uid) classés par pages vues — calque AnalyticsUsers. */
+function buildTopUsers(events: AnalyticsEvent[], usersMap: Map<string, string>, limit: number): { label: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const e of events) {
+    if (!e.uid) continue
+    counts.set(e.uid, (counts.get(e.uid) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([uid, count]) => ({ label: usersMap.get(uid) ?? uid, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
 }
 
 /** Série quotidienne (pages vues + visiteurs uniques) entre deux bornes. */
@@ -107,7 +122,7 @@ function buildSeries(events: AnalyticsEvent[], fromMs: number, toMs: number): Da
 }
 
 /** Construit l'entrée de rendu (KPIs + courbe + top listes) à partir des events bruts. */
-function buildReportInput(events: AnalyticsEvent[], title: string, period: AnalyticsPeriod, fromMs: number, toMs: number): ReportInput {
+function buildReportInput(events: AnalyticsEvent[], title: string, period: AnalyticsPeriod, fromMs: number, toMs: number, usersMap: Map<string, string>): ReportInput {
   const now = new Date()
   return {
     title: title.trim() || 'Statistiques de fréquentation',
@@ -119,6 +134,7 @@ function buildReportInput(events: AnalyticsEvent[], title: string, period: Analy
     topSources: topSources(events, 8),
     topCountries: topBy(events, 'country', 8),
     topDevices: topBy(events, 'device', 8).map((d) => ({ label: DEVICE_LABEL[d.label] ?? d.label, count: d.count })),
+    topUsers: buildTopUsers(events, usersMap, 8),
   }
 }
 
@@ -130,9 +146,13 @@ export async function collectAnalyticsReport(opts: {
   const period = opts.period ?? '30d'
   const toMs = Date.now()
   const fromMs = toMs - SPAN[period]
-  const events = await fetchEvents(fromMs, toMs)
+  const [events, users] = await Promise.all([
+    fetchEvents(fromMs, toMs),
+    listUsers().catch(() => []),
+  ])
+  const usersMap = new Map(users.map((u) => [u.uid, u.displayName || u.email || u.uid]))
 
-  const input = buildReportInput(events, opts.title ?? '', period, fromMs, toMs)
+  const input = buildReportInput(events, opts.title ?? '', period, fromMs, toMs, usersMap)
   const html = buildHtml(input)
   const emailHtml = buildEmailHtml(input)
 
@@ -242,6 +262,7 @@ export function buildHtml(d: ReportInput): string {
       ${topListHtml('Sources de trafic', d.topSources)}
       ${topListHtml('Pays', d.topCountries)}
       ${topListHtml('Appareils', d.topDevices)}
+      ${topListHtml('Utilisateurs connectés', d.topUsers)}
     </div>
     <footer>
       Données agrégées depuis Firestore — collection <code>analyticsEvents</code>. Trafic de l'ensemble du site (accès réservé au propriétaire).
@@ -316,6 +337,10 @@ export function buildEmailHtml(d: ReportInput): string {
       <tr>
         ${emailTopList('Pays', d.topCountries)}
         ${emailTopList('Appareils', d.topDevices)}
+      </tr>
+      <tr>
+        ${emailTopList('Utilisateurs connectés', d.topUsers)}
+        <td width="50%"></td>
       </tr>
     </table>
     <div style="font-size:9.5px;color:${C.faint};margin-top:18px;line-height:1.6;">
