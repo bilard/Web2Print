@@ -27,17 +27,24 @@ export interface EventFilter {
   device: string
   country: string
   page: string
+  source: string
 }
 
-export const NO_FILTER: EventFilter = { device: 'all', country: 'all', page: 'all' }
+export const NO_FILTER: EventFilter = { device: 'all', country: 'all', page: 'all', source: 'all' }
 
-/** Restreint la liste d'events selon les filtres choisis (appareil / pays / page). */
+/** Source effective d'un event : utm_source si présent, sinon domaine référent. */
+function eventSource(e: AnalyticsEvent): string | null {
+  return e.src ?? e.ref
+}
+
+/** Restreint la liste d'events selon les filtres choisis (appareil / pays / page / source). */
 export function filterEvents(events: AnalyticsEvent[], f: EventFilter): AnalyticsEvent[] {
   return events.filter(
     (e) =>
       (f.device === 'all' || e.device === f.device) &&
       (f.country === 'all' || e.country === f.country) &&
-      (f.page === 'all' || e.path === f.page),
+      (f.page === 'all' || e.path === f.page) &&
+      (f.source === 'all' || eventSource(e) === f.source),
   )
 }
 

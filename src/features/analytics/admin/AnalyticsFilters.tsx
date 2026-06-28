@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsFilters.tsx
-import { topBy, pageLabel, type AnalyticsEvent, type EventFilter } from '../metrics'
+import { topBy, topSources, pageLabel, type AnalyticsEvent, type EventFilter } from '../metrics'
 
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
 
@@ -54,12 +54,14 @@ export function AnalyticsFilters({
   }))
   const countries: Opt[] = topBy(events, 'country', 99).map((r) => ({ value: r.label, label: r.label }))
   const pages: Opt[] = topBy(events, 'path', 99).map((r) => ({ value: r.label, label: pageLabel(r.label) }))
+  const sources: Opt[] = topSources(events, 99).map((r) => ({ value: r.label, label: r.label }))
 
   return (
     <div className="flex flex-wrap items-center gap-3">
       <Field label="Appareil" value={filter.device} options={devices} onChange={(v) => onChange({ ...filter, device: v })} />
       <Field label="Pays" value={filter.country} options={countries} onChange={(v) => onChange({ ...filter, country: v })} />
       <Field label="Page" value={filter.page} options={pages} onChange={(v) => onChange({ ...filter, page: v })} />
+      <Field label="Source" value={filter.source} options={sources} onChange={(v) => onChange({ ...filter, source: v })} />
     </div>
   )
 }

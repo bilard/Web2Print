@@ -60,6 +60,15 @@
     timer = setTimeout(doSend, 150) // petit anti-rebond pour les changements d'ancre rapides
   }
 
+  // L'auth Firebase se résout APRÈS le chargement : le pont uid (uidBridge) appelle
+  // ceci dès qu'il connaît l'utilisateur, pour ré-enregistrer la page courante avec l'uid.
+  window.__w2pIdentify = function (uid) {
+    window.__w2pAnalyticsUid = uid || null
+    if (!uid) return
+    lastPath = null // force le renvoi de la page courante, cette fois taguée avec l'uid
+    send()
+  }
+
   // Page vue initiale
   send()
 
