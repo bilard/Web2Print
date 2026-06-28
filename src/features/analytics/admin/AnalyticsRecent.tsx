@@ -53,11 +53,12 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     return m
   }, [sorted])
   const shortDate = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-  // Identité affichée : nom si connecté, sinon « Appareil · Pays · 1ʳᵉ visite ».
+  // Identité affichée : nom si connecté, sinon « Visiteur du <1ʳᵉ visite> » (sans
+  // répéter l'appareil/le pays, qui ont déjà leurs propres colonnes).
   const personLabel = (e: AnalyticsEvent): string => {
     if (e.uid) return usersMap.get(e.uid) ?? e.uid
     const v = visitorInfo.get(e.vid)
-    return v ? `${DEVICE_FR[v.device] ?? v.device} · ${v.country ?? '—'} · ${shortDate(v.ts)}` : 'Visiteur'
+    return v ? `Visiteur du ${shortDate(v.ts)}` : 'Visiteur'
   }
 
   // Options de chaque colonne (valeurs réellement présentes).
