@@ -70,16 +70,12 @@ export function AnalyticsTab() {
             <>
               <AnalyticsKpiCards cur={kpis} prev={prevKpis} />
               <AnalyticsTimeChart series={series} />
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-                {/* Gauche : métriques compactes en masonry (taille au contenu → pas de vide). */}
-                <div className="lg:col-span-7 columns-1 md:columns-2 gap-3 [&>*]:mb-3 [&>*]:break-inside-avoid">
-                  <AnalyticsTopLists events={events} />
-                  <AnalyticsUsers events={events} />
-                </div>
-                {/* Droite : activité récente groupée par module. */}
-                <div className="lg:col-span-5">
-                  <AnalyticsRecent events={events} />
-                </div>
+              {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
+              <AnalyticsRecent events={events} />
+              {/* Synthèses compactes en masonry (taille au contenu → pas de vide). */}
+              <div className="columns-1 sm:columns-2 xl:columns-4 gap-3 [&>*]:mb-3 [&>*]:break-inside-avoid">
+                <AnalyticsTopLists events={events} />
+                <AnalyticsUsers events={events} />
               </div>
             </>
           )}

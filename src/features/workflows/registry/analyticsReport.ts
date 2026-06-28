@@ -96,7 +96,7 @@ export interface ReportInput {
 }
 
 /** Ligne d'activité récente : libellé + méta affichable + groupe de modules + appareil (pour filtrer/grouper). */
-export interface RecentRow { label: string; meta: string; group: string; device: string }
+interface RecentRow { label: string; meta: string; group: string; device: string }
 
 /** Dernières visites (page + appareil · pays · date/heure), regroupées par module — calque AnalyticsRecent. */
 function buildRecent(events: AnalyticsEvent[], limit: number): RecentRow[] {
