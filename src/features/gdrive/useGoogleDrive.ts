@@ -11,6 +11,7 @@ const DRIVE_SCOPES = [
 ]
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const FILE_FIELDS = 'files(id,name,mimeType,thumbnailLink,webViewLink,modifiedTime,parents,sharedWithMeTime,viewedByMeTime,sharingUser,owners)'
+const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
 const SECTION_QUERIES: Record<DriveSection, { q: string; orderBy: string }> = {
   'my-drive': { q: "'root' in parents and trashed=false",    orderBy: 'modifiedTime desc' },
@@ -71,5 +72,22 @@ export function useGoogleDrive() {
     return data.files?.length ?? 0
   }, [accessToken])
 
-  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, disconnect }
+  /** Crée un dossier (scope drive.file). `parentId` absent → racine « Mon Drive ». */
+  const createFolder = useCallback(async (name: string, parentId?: string): Promise<GDriveFile | null> => {
+    if (!accessToken || !name.trim()) return null
+    const body: { name: string; mimeType: string; parents?: string[] } = { name: name.trim(), mimeType: FOLDER_MIME }
+    if (parentId) body.parents = [parentId]
+    const res = await fetch(`${DRIVE_API}/files?fields=id,name,mimeType,modifiedTime,parents`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      if (res.status === 401) disconnect()
+      return null
+    }
+    return (await res.json()) as GDriveFile
+  }, [accessToken, disconnect])
+
+  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, createFolder, disconnect }
 }

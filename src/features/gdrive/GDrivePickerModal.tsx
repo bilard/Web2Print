@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Check,
   Trash2,
+  FolderPlus,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { trashDriveFiles } from '@/features/dam/damCleanup'
@@ -74,7 +75,7 @@ interface FolderCrumb {
 export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', foldersOnly = false, multiple = false, onPickMultiple, title }: Props) {
   const accessToken = useGDriveStore((s) => s.accessToken)
   const accountEmail = useGDriveStore((s) => s.accountEmail)
-  const { connectDrive, listFilesBySection, listFilesByParent, disconnect } = useGoogleDrive()
+  const { connectDrive, listFilesBySection, listFilesByParent, createFolder, disconnect } = useGoogleDrive()
 
   const [section, setSection] = useState<DriveSection>('my-drive')
   const [search, setSearch] = useState('')
@@ -85,6 +86,9 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Map<string, PickedFile>>(() => new Map())
   const [reloadKey, setReloadKey] = useState(0)
+  const [creatingFolder, setCreatingFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+  const [folderBusy, setFolderBusy] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentFolder = folderStack[folderStack.length - 1] ?? null
@@ -113,7 +117,7 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
 
   // Repart d'une sélection vide à chaque (ré)ouverture du picker.
   useEffect(() => {
-    if (!open) setSelected(new Map())
+    if (!open) { setSelected(new Map()); setCreatingFolder(false); setNewFolderName('') }
   }, [open])
 
   const handleConnect = async () => {
@@ -138,6 +142,25 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
     setFolderStack((s) => [...s, { id: file.id, name: file.name }])
     setSearch('')
   }, [])
+
+  const handleCreateFolder = useCallback(async () => {
+    const name = newFolderName.trim()
+    if (!name || folderBusy) return
+    setFolderBusy(true)
+    try {
+      // parent = dossier courant ; à la racine d'une section → racine « Mon Drive ».
+      const created = await createFolder(name, currentFolder?.id)
+      if (!created) { toast.error('Création du dossier impossible'); return }
+      setNewFolderName('')
+      setCreatingFolder(false)
+      // Entre dans le nouveau dossier : « Choisir ce dossier » devient actif.
+      setFolderStack((s) => [...s, { id: created.id, name: created.name }])
+      setSearch('')
+      toast.success(`Dossier « ${created.name} » créé`)
+    } finally {
+      setFolderBusy(false)
+    }
+  }, [newFolderName, folderBusy, createFolder, currentFolder])
 
   const handleCrumb = useCallback((index: number) => {
     setFolderStack((s) => (index < 0 ? [] : s.slice(0, index + 1)))
@@ -308,6 +331,17 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
               {foldersOnly && accessToken ? (
                 <button
                   type="button"
+                  onClick={() => setCreatingFolder((v) => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white/70 text-[12px] transition-colors"
+                  title="Créer un dossier ici"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  Nouveau dossier
+                </button>
+              ) : null}
+              {foldersOnly && accessToken ? (
+                <button
+                  type="button"
                   onClick={pickCurrentFolder}
                   disabled={!currentFolder}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-500/15 hover:bg-blue-500/25 disabled:bg-white/[0.04] disabled:text-white/30 disabled:cursor-not-allowed border border-blue-500/30 disabled:border-white/[0.06] text-blue-200 text-[12px] transition-colors"
@@ -381,6 +415,31 @@ export function GDrivePickerModal({ open, onClose, onPick, mimeFilter = 'all', f
                     className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg pl-9 pr-3 py-2 text-sm text-white/90 placeholder:text-white/30 outline-none focus:border-blue-500/40"
                   />
                 </div>
+                {foldersOnly && creatingFolder && (
+                  <div className="flex items-center gap-2">
+                    <FolderPlus className="w-4 h-4 text-amber-300 shrink-0" />
+                    <input
+                      autoFocus
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); void handleCreateFolder() }
+                        if (e.key === 'Escape') { setCreatingFolder(false); setNewFolderName('') }
+                      }}
+                      placeholder={`Nom du dossier${currentFolder ? ` (dans ${currentFolder.name})` : ' (dans Mon Drive)'}`}
+                      className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[13px] text-white/90 placeholder:text-white/30 outline-none focus:border-amber-500/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateFolder()}
+                      disabled={!newFolderName.trim() || folderBusy}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 disabled:bg-white/[0.04] disabled:text-white/30 border border-amber-500/30 disabled:border-white/[0.06] text-amber-200 text-[12px] transition-colors"
+                    >
+                      {folderBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      Créer
+                    </button>
+                  </div>
+                )}
                 {folderStack.length > 0 && (
                   <nav className="flex items-center gap-1 text-xs flex-wrap">
                     <button
