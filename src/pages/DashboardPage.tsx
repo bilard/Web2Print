@@ -14,6 +14,7 @@ import { useDeleteProject } from '@/features/projects/useDeleteProject'
 import { useDuplicateProject } from '@/features/projects/useDuplicateProject'
 import { useProjectStore } from '@/stores/project.store'
 import { useExcelImport } from '@/features/excel/useExcelImport'
+import { useExcelStore } from '@/stores/excel.store'
 import { ProjectCard, type ProjectViewMode } from '@/components/shared/ProjectCard'
 import { NewDocumentPanel } from '@/components/shared/NewDocumentPanel'
 import { ImportPanel } from '@/components/shared/ImportPanel'
@@ -140,6 +141,14 @@ export default function DashboardPage() {
   useModuleIntent('library', (action) => {
     if (action === 'view:grid') handleViewModeChange('grid')
     else if (action === 'view:list') handleViewModeChange('list')
+  })
+
+  // Module « Importer » → « Importer un Excel » : bascule sur le PIM et ouvre
+  // l'assistant d'import (avec l'animation de conversion des formules Excel).
+  useModuleIntent('import', (action) => {
+    if (action !== 'action:excel') return
+    setActiveSection('data')
+    useExcelStore.getState().setImportModalOpen(true)
   })
 
   const handleFilterSelect = useCallback((nodeId: string | null, projectIds: string[]) => {

@@ -46,11 +46,12 @@ export const MODULE_ITEMS: ModuleItem[] = [
   { id: 'blank',  icon: FilePlus,       label: 'Nouveau document', accent: 'text-violet-400',  activeBg: 'bg-violet-500/[0.1]',  activeText: 'text-violet-300' },
   { id: 'import', icon: Upload,         label: 'Importer',         accent: 'text-amber-400',   activeBg: 'bg-amber-500/[0.1]',   activeText: 'text-amber-300',
     children: [
+      // Ouvre l'assistant d'import PIM (animation de conversion des formules Excel).
+      { id: 'action:excel',       label: 'Importer un Excel', intent: 'import:action:excel',    permission: 'import.excel' },
       { id: 'format:idml',        label: 'IDML',          intent: 'import:format:idml',        permission: 'import.idml' },
       { id: 'format:pptx',        label: 'PPTX',          intent: 'import:format:pptx',        permission: 'import.pptx' },
       { id: 'format:image',       label: 'Image',         intent: 'import:format:image',       permission: 'import.image' },
       { id: 'format:svg',         label: 'SVG',           intent: 'import:format:svg',         permission: 'import.svg' },
-      { id: 'format:excel',       label: 'Excel/CSV',     intent: 'import:format:excel',       permission: 'import.excel' },
       { id: 'format:image-to-svg',label: 'Image → SVG',  intent: 'import:format:image-to-svg',permission: 'import.imageToSvg' },
       { id: 'format:pdf-to-svg',  label: 'PDF → SVG',    intent: 'import:format:pdf-to-svg',  permission: 'import.pdfToSvg' },
     ],
