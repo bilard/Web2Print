@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './app/App'
+import { initAnalyticsUidBridge } from '@/features/analytics/uidBridge'
 
 // Auto-récupération du « chunk périmé » : si un module chargé en lazy (EditorPage, etc.)
 // ne peut plus être récupéré — typiquement parce qu'un déploiement a remplacé les fichiers
@@ -18,6 +19,8 @@ window.addEventListener('vite:preloadError', (event) => {
     window.location.reload()
   }
 })
+
+initAnalyticsUidBridge()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
