@@ -18,6 +18,7 @@ import { getLevelColor, getTaxoColumns } from './taxonomyBuilder'
 import type { ExcelColumn, CellValue, FieldTypeId } from './types'
 import { DamImage } from '@/features/dam/DamImage'
 import { useResolvedImageSrc } from '@/features/dam/useResolvedImageSrc'
+import { isDriveImageRef } from '@/features/dam/driveAssets'
 import { EnrichmentPanel } from './ai-enrichment/EnrichmentPanel'
 import { ScrapedFieldsTab } from './ai-enrichment/ScrapedFieldsTab'
 import { useEnrichmentStore } from './ai-enrichment/enrichmentStore'
@@ -45,7 +46,9 @@ const VIDEO_EXT = /\.(mp4|webm|mov|avi)(\?.*)?$/i
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const isImageUrl = (v: CellValue): v is string =>
-  typeof v === 'string' && v.startsWith('http') && (IMG_EXTS.test(v) || IMG_CDN.test(v))
+  typeof v === 'string' &&
+  // Référence DAM (Drive webViewLink) : pas d'extension ni de CDN, mais bien une image.
+  (isDriveImageRef(v) || (v.startsWith('http') && (IMG_EXTS.test(v) || IMG_CDN.test(v))))
 
 const isImageCol = (col: ExcelColumn, rows: Record<string, CellValue>[]): boolean => {
   if (col.fieldType === 'image') return true
