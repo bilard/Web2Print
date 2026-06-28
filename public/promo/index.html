@@ -143,6 +143,22 @@
     header.nav,main,footer{margin-left:232px}
   }
 
+  /* Bouton hamburger + tiroir des modules (mobile / tablette, sous 1024px) */
+  .burger{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin-right:auto;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.03);color:var(--ink);cursor:pointer;transition:background .2s,border-color .2s}
+  .burger:hover{background:rgba(255,255,255,.07);border-color:var(--line2)}
+  .burger svg{width:21px;height:21px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+  @media(min-width:1024px){.burger{display:none}}
+  .m-menu{position:fixed;inset:0;z-index:200;display:none}
+  .m-menu.open{display:block}
+  .m-menu-back{position:absolute;inset:0;background:rgba(4,4,8,.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;transition:opacity .28s}
+  .m-menu.open .m-menu-back{opacity:1}
+  .m-menu-panel{position:absolute;top:0;left:0;bottom:0;width:min(86vw,330px);background:var(--bg2);border-right:1px solid var(--line);overflow-y:auto;padding:16px 14px 28px;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);-webkit-overflow-scrolling:touch}
+  .m-menu.open .m-menu-panel{transform:translateX(0)}
+  .m-menu-close{position:absolute;top:13px;right:13px;z-index:2;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.04);color:var(--ink);cursor:pointer}
+  .m-menu-close svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+  /* Le clone du sommaire s'affiche en flux normal dans le tiroir (annule fixed/hidden) */
+  .m-menu-panel .modnav{display:block;position:static;width:100%;height:auto;border-right:none;padding:0;overflow:visible;background:transparent}
+
   /* PANNEAU « COMPRENDRE CE MODULE » (dépliable) */
   .scene-more{margin-top:24px;display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:100px;padding:10px 18px;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
   .scene-more:hover{color:var(--ink);border-color:var(--line2);background:rgba(255,255,255,.06)}
@@ -1410,6 +1426,9 @@
 
 <header class="nav">
   <div class="wrap nav-inner">
+    <button class="burger" id="mBurger" type="button" aria-label="Ouvrir le menu des modules" aria-expanded="false" aria-controls="mMenu">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <nav class="nav-links">
       <a class="link" href="#modules">Modules</a>
       <a class="link" href="/docs/">📖 Documentation</a>
@@ -1417,6 +1436,16 @@
     </nav>
   </div>
 </header>
+
+<div class="m-menu" id="mMenu" role="dialog" aria-modal="true" aria-label="Menu des modules">
+  <div class="m-menu-back" data-close></div>
+  <div class="m-menu-panel">
+    <button class="m-menu-close" type="button" data-close aria-label="Fermer le menu">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div id="mMenuMount"></div>
+  </div>
+</div>
 
 <nav class="modnav" aria-label="Sommaire des modules">
   <a class="mn-logo" href="#top" aria-label="IBS Studio — haut de page"><img src="/logo.png" alt="IBS Studio" width="275" height="215" /><span class="mn-baseline">L'innovation par la contrainte</span></a>
@@ -3450,6 +3479,34 @@ window.loopInView = function(el, opt){
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+})();
+</script>
+
+<!-- Menu mobile : tiroir listant les 20 modules (clone du sommaire latéral) -->
+<script>
+(function(){
+  var menu=document.getElementById('mMenu');
+  var burger=document.getElementById('mBurger');
+  var mount=document.getElementById('mMenuMount');
+  if(!menu||!burger||!mount) return;
+  var built=false;
+  function build(){
+    if(built) return; built=true;
+    var src=document.querySelector('.modnav');
+    if(!src) return;
+    var clone=src.cloneNode(true);          // garde la classe .modnav → styles réutilisés
+    clone.removeAttribute('id');
+    clone.removeAttribute('aria-label');
+    // évite tout doublon de surbrillance/observation avec le scroll-spy d'origine
+    clone.querySelectorAll('[data-spy]').forEach(function(a){ a.removeAttribute('data-spy'); a.classList.remove('on'); });
+    clone.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', close); }); // fermer au clic d'un lien
+    mount.appendChild(clone);
+  }
+  function open(){ build(); menu.classList.add('open'); burger.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
+  function close(){ menu.classList.remove('open'); burger.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+  burger.addEventListener('click', open);
+  menu.querySelectorAll('[data-close]').forEach(function(el){ el.addEventListener('click', close); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
 })();
 </script>
 </body>
