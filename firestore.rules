@@ -508,6 +508,16 @@ service cloud.firestore {
       allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
     }
 
+    // ── Analytics de trafic (pages vues) ───────────────────────
+    // Écriture UNIQUEMENT via la Cloud Function (Admin SDK contourne ces règles).
+    // Lecture réservée à l'owner (dashboard analytics).
+    match /analyticsEvents/{eventId} {
+      allow read:   if isAdmin();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
     // ── Telegram entrant (2a) ──────────────────────────────────
     // File des messages reçus : lisible/modifiable par tout utilisateur connecté
     // (l'app perso est mono-utilisateur ; le mapping chat_id→uid est hors périmètre 2a).

@@ -2,7 +2,10 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{ "source": "**", "destination": "/_app.html" }],
+    "rewrites": [
+      { "source": "/_w2p/collect", "function": { "functionId": "collectAnalytics", "region": "europe-west1" } },
+      { "source": "**", "destination": "/_app.html" }
+    ],
     "headers": [
       {
         "source": "/",
