@@ -183,12 +183,12 @@ export function pageLabel(path: string): string {
 }
 
 /**
- * Navigation interne du propriétaire (tableau de bord nu + pages `/workflows/…`)
- * à exclure de « Activité récente » : ce n'est pas du trafic visiteur, juste du bruit.
+ * Navigation interne / peu informative (tableau de bord nu, pages `/workflows/…`,
+ * accueil) à exclure de « Activité récente » : ce n'est pas du trafic visiteur utile.
  */
 export function isInternalActivity(path: string): boolean {
   const label = pageLabel(path)
-  return label === 'Tableau de bord' || label.startsWith('Workflows')
+  return label === 'Tableau de bord' || label === 'Accueil' || label.startsWith('Workflows')
 }
 
 /** Top des sources effectives : utm_source si présent, sinon domaine référent. */

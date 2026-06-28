@@ -125,10 +125,10 @@ function pageLabel(path: string): string {
 /** Libellés FR des appareils (mêmes valeurs que le filtre Appareil de l'onglet Analytics). */
 const DEVICE_LABEL: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
 
-/** Navigation interne du propriétaire à exclure de « Activité récente » (copie de metrics.ts). */
+/** Navigation interne / accueil à exclure de « Activité récente » (copie de metrics.ts). */
 function isInternalActivity(path: string): boolean {
   const label = pageLabel(path)
-  return label === 'Tableau de bord' || label.startsWith('Workflows')
+  return label === 'Tableau de bord' || label === 'Accueil' || label.startsWith('Workflows')
 }
 
 // ───────────────────────────── Rendu (copie de registry/analyticsReport.ts) ──
