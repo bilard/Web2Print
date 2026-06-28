@@ -8,12 +8,10 @@ import { useUsersMap } from '../useUsersMap'
 const PAGE_SIZE = 15
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
 type Opt = { value: string; label: string }
-type Filters = { user: string; page: string; device: string; country: string; day: string }
-const NONE: Filters = { user: 'all', page: 'all', device: 'all', country: 'all', day: 'all' }
+type Filters = { page: string; device: string; country: string; day: string }
+const NONE: Filters = { page: 'all', device: 'all', country: 'all', day: 'all' }
 
 const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
-/** Clé d'identité stable : uid si connecté, sinon l'identifiant de visiteur anonyme. */
-const idKey = (e: AnalyticsEvent) => e.uid ?? `v:${e.vid}`
 
 // Surnom déterministe pour un visiteur anonyme (pas de vrai nom) : toujours le même
 // pour un id donné, et qui ne ressemble ni à une date ni à une autre colonne.
@@ -53,44 +51,28 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     [events],
   )
 
-  // 1ʳᵉ visite par visiteur anonyme (event le plus ancien du vid) — sert au tri.
-  const visitorFirstTs = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const e of sorted) {
-      if (e.uid) continue
-      const cur = m.get(e.vid)
-      if (cur === undefined || e.ts < cur) m.set(e.vid, e.ts)
-    }
-    return m
-  }, [sorted])
   // Identité affichée : nom si connecté, sinon un surnom fixe « Visiteur <surnom> ».
   const personLabel = (e: AnalyticsEvent): string =>
     e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${codename(e.vid)}`
 
-  // Options de chaque colonne (valeurs réellement présentes).
+  // Options des colonnes filtrables (Page, Appareil, Pays, Jour).
   const opts = useMemo(() => {
-    const people = new Map<string, { label: string; named: boolean; ts: number }>(); const pages = new Set<string>()
-    const countries = new Set<string>(); const days = new Map<string, true>()
+    const pages = new Set<string>(); const countries = new Set<string>(); const days = new Map<string, true>()
     let noCountry = false
     for (const e of sorted) {
-      const k = idKey(e)
-      if (!people.has(k)) people.set(k, { label: personLabel(e), named: !!e.uid, ts: e.uid ? 0 : (visitorFirstTs.get(e.vid) ?? 0) })
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
       days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
     }
     return {
-      // Utilisateurs connectés d'abord (par nom), puis les visiteurs anonymes (1ʳᵉ visite récente d'abord).
-      users: [...people].sort((a, b) => (Number(b[1].named) - Number(a[1].named)) || (a[1].named ? a[1].label.localeCompare(b[1].label) : b[1].ts - a[1].ts)).map(([value, info]) => ({ value, label: info.label })),
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
       countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
       days: [...days.keys()].map((d) => ({ value: d, label: d })),
     }
-  }, [sorted, usersMap, visitorFirstTs])
+  }, [sorted])
 
   const filtered = useMemo(() => sorted.filter((e) =>
-    (f.user === 'all' || idKey(e) === f.user) &&
     (f.page === 'all' || pageLabel(e.path) === f.page) &&
     (f.device === 'all' || e.device === f.device) &&
     (f.country === 'all' || (f.country === '__none__' ? !e.country : e.country === f.country)) &&
@@ -132,7 +114,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
               <th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
             </tr>
             <tr>
-              <th className="p-1 align-top"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
+              <th className="p-1 align-top"></th>
               <th className="p-1 align-top"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
               <th className="p-1 align-top"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
               <th className="p-1 align-top"><ColFilter value={f.country} onChange={(v) => set('country', v)} options={opts.countries} allLabel="Tous" /></th>
