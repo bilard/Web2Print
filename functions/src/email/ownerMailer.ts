@@ -16,7 +16,7 @@ export const OWNER_EMAIL = 'ibs.studio@gmail.com'
 let ownerUidCache: string | null = null
 
 /** UID Firestore de l'owner (résolu par email, mis en cache par instance). */
-async function getOwnerUid(): Promise<string> {
+export async function getOwnerUid(): Promise<string> {
   if (ownerUidCache) return ownerUidCache
   const snap = await getFirestore()
     .collection('users')

@@ -23,6 +23,7 @@ import './webScrapingNode' // node unifié (doit suivre les anciens : il les ré
 import './comparePricesNode'
 import './chartNode'
 import './costReportNode'
+import './analyticsReportNode'
 import './communicationNodes'
 import './telegramNodes'
 import './webhookNode'
