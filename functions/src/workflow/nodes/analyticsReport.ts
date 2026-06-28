@@ -118,6 +118,9 @@ function pageLabel(path: string): string {
   return head + ' · ' + segs.slice(1).map(pretty).join(' · ')
 }
 
+/** Libellés FR des appareils (mêmes valeurs que le filtre Appareil de l'onglet Analytics). */
+const DEVICE_LABEL: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+
 // ───────────────────────────── Rendu (copie de registry/analyticsReport.ts) ──
 type AnalyticsPeriod = '7d' | '30d' | '90d' | '12m'
 const DAY = 86_400_000
@@ -134,14 +137,32 @@ function formatDuration(ms: number): string {
 }
 const formatNumber = (n: number): string => n.toLocaleString('fr-FR')
 
+interface DaySeries { day: string; pageViews: number; visitors: number }
+
 interface ReportInput {
   title: string
   periodLabel: string
   dateLabel: string
   kpis: Kpis
+  series: DaySeries[]
   topPages: { label: string; count: number }[]
   topSources: { label: string; count: number }[]
   topCountries: { label: string; count: number }[]
+  topDevices: { label: string; count: number }[]
+}
+
+function buildSeries(events: AnalyticsEvent[], fromMs: number, toMs: number): DaySeries[] {
+  const buckets = new Map<string, { pageViews: number; vids: Set<string> }>()
+  for (let t = fromMs; t <= toMs; t += DAY) {
+    buckets.set(new Date(t).toISOString().slice(0, 10), { pageViews: 0, vids: new Set() })
+  }
+  for (const e of events) {
+    const b = buckets.get(new Date(e.ts).toISOString().slice(0, 10))
+    if (!b) continue
+    b.pageViews++
+    b.vids.add(e.vid)
+  }
+  return [...buckets.entries()].map(([day, b]) => ({ day, pageViews: b.pageViews, visitors: b.vids.size }))
 }
 
 function topListHtml(title: string, rows: { label: string; count: number }[]): string {
@@ -156,6 +177,22 @@ function topListHtml(title: string, rows: { label: string; count: number }[]): s
       <span class="cnt">${formatNumber(r.count)}</span>
     </div>`).join('')
   return `<div class="panel"><div class="panel-h">${esc(title)}</div>${items}</div>`
+}
+
+function chartHtml(series: DaySeries[]): string {
+  if (series.length === 0) return ''
+  const max = Math.max(...series.map((s) => s.pageViews), 1)
+  const bars = series.map((s) => {
+    const h = s.pageViews > 0 ? Math.max(4, Math.round((s.pageViews / max) * 100)) : 0
+    return `<div class="cbar" title="${s.day} · ${s.pageViews} vues / ${s.visitors} visiteurs"><div class="cbar-fill" style="height:${h}%"></div></div>`
+  }).join('')
+  const first = series[0]?.day ?? ''
+  const last = series[series.length - 1]?.day ?? ''
+  return `<div class="chart-wrap">
+    <div class="panel-h">Évolution — pages vues par jour (max ${formatNumber(max)})</div>
+    <div class="chart">${bars}</div>
+    <div class="chart-axis"><span>${first}</span><span>${last}</span></div>
+  </div>`
 }
 
 function buildHtml(d: ReportInput): string {
@@ -185,7 +222,13 @@ function buildHtml(d: ReportInput): string {
   .kpi-v { font-size: 24px; font-weight: 600; color: #fff; margin-top: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .kpi-foot { font-size: 9.5px; color: rgba(255,255,255,.30); margin-top: 4px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .chart-wrap { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+  .chart { display: flex; align-items: flex-end; gap: 2px; height: 96px; margin-top: 10px; }
+  .cbar { flex: 1; display: flex; align-items: flex-end; height: 100%; min-width: 2px; }
+  .cbar-fill { width: 100%; background: rgba(99,102,241,.55); border-radius: 2px 2px 0 0; }
+  .chart-axis { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(255,255,255,.30);
+    margin-top: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 14px; }
   .panel-h { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.32); margin-bottom: 10px; }
   .row { position: relative; display: flex; align-items: center; padding: 7px 8px; border-radius: 7px; overflow: hidden; }
@@ -213,10 +256,12 @@ function buildHtml(d: ReportInput): string {
       ${kpi('Sessions', formatNumber(d.kpis.sessions), `rebond ${Math.round(d.kpis.bounceRate * 100)} %`)}
       ${kpi('Durée moy. session', formatDuration(d.kpis.avgSessionMs), 'par session')}
     </div>
+    ${chartHtml(d.series)}
     <div class="grid">
       ${topListHtml('Pages consultées', d.topPages)}
       ${topListHtml('Sources de trafic', d.topSources)}
       ${topListHtml('Pays', d.topCountries)}
+      ${topListHtml('Appareils', d.topDevices)}
     </div>
     <footer>
       Données agrégées depuis Firestore — collection <code>analyticsEvents</code>. Trafic de l'ensemble du site (accès réservé au propriétaire).
@@ -228,7 +273,7 @@ function buildHtml(d: ReportInput): string {
 
 const C = {
   bg: '#0b0b0f', panel: '#15151b', border: '#26262e', line: '#1c1c22',
-  text: '#e8e8ea', dim: '#9a9aa2', faint: '#6a6a72', white: '#ffffff',
+  text: '#e8e8ea', dim: '#9a9aa2', faint: '#6a6a72', white: '#ffffff', bar: '#4f46e5',
 } as const
 
 function emailTopList(title: string, rows: { label: string; count: number }[]): string {
@@ -238,10 +283,28 @@ function emailTopList(title: string, rows: { label: string; count: number }[]): 
         <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
         <td align="right" style="padding:6px 8px;font-size:12px;color:${C.dim};border-bottom:1px solid ${C.line};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${formatNumber(r.count)}</td>
       </tr>`).join('')
-  return `<td width="33%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;">
+  return `<td width="50%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;">
     <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin-bottom:6px;">${esc(title)}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>
   </td>`
+}
+
+function emailChartHtml(series: DaySeries[]): string {
+  if (series.length === 0) return ''
+  const max = Math.max(...series.map((s) => s.pageViews), 1)
+  const H = 72
+  const cells = series.map((s) => {
+    const h = s.pageViews > 0 ? Math.max(3, Math.round((s.pageViews / max) * H)) : 1
+    return `<td valign="bottom" style="padding:0 1px;"><div style="width:100%;height:${h}px;background:${s.pageViews > 0 ? C.bar : C.line};font-size:1px;line-height:1px;">&nbsp;</div></td>`
+  }).join('')
+  return `<div style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;margin-top:6px;">
+    <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin-bottom:8px;">Évolution — pages vues par jour (max ${formatNumber(max)})</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;height:${H}px;"><tr>${cells}</tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:4px;"><tr>
+      <td align="left" style="font-size:9.5px;color:${C.faint};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${series[0]?.day ?? ''}</td>
+      <td align="right" style="font-size:9.5px;color:${C.faint};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${series[series.length - 1]?.day ?? ''}</td>
+    </tr></table>
+  </div>`
 }
 
 function buildEmailHtml(d: ReportInput): string {
@@ -262,11 +325,15 @@ function buildEmailHtml(d: ReportInput): string {
         ${kpi('Durée moy.', formatDuration(d.kpis.avgSessionMs), 'par session')}
       </tr>
     </table>
+    ${emailChartHtml(d.series)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;margin-top:6px;">
       <tr>
         ${emailTopList('Pages consultées', d.topPages)}
         ${emailTopList('Sources de trafic', d.topSources)}
+      </tr>
+      <tr>
         ${emailTopList('Pays', d.topCountries)}
+        ${emailTopList('Appareils', d.topDevices)}
       </tr>
     </table>
     <div style="font-size:9.5px;color:${C.faint};margin-top:18px;line-height:1.6;">
@@ -311,23 +378,15 @@ async function collectAnalyticsReportServer(period: AnalyticsPeriod, title: stri
     periodLabel: PERIOD_LABEL[period],
     dateLabel: now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
     kpis: computeKpis(events),
+    series: buildSeries(events, fromMs, toMs),
     topPages: topBy(events, 'path', 8).map((p) => ({ label: pageLabel(p.label), count: p.count })),
     topSources: topSources(events, 8),
     topCountries: topBy(events, 'country', 8),
+    topDevices: topBy(events, 'device', 8).map((dev) => ({ label: DEVICE_LABEL[dev.label] ?? dev.label, count: dev.count })),
   }
 
-  const buckets = new Map<string, { pageViews: number; vids: Set<string> }>()
-  for (let t = fromMs; t <= toMs; t += DAY) {
-    buckets.set(new Date(t).toISOString().slice(0, 10), { pageViews: 0, vids: new Set() })
-  }
-  for (const e of events) {
-    const b = buckets.get(new Date(e.ts).toISOString().slice(0, 10))
-    if (!b) continue
-    b.pageViews++
-    b.vids.add(e.vid)
-  }
-  const summaryRows: Record<string, unknown>[] = [...buckets.entries()].map(([day, b]) => ({
-    Jour: day, 'Pages vues': b.pageViews, Visiteurs: b.vids.size,
+  const summaryRows: Record<string, unknown>[] = input.series.map((s) => ({
+    Jour: s.day, 'Pages vues': s.pageViews, Visiteurs: s.visitors,
   }))
 
   return { html: buildHtml(input), emailHtml: buildEmailHtml(input), summaryRows, kpis: input.kpis }

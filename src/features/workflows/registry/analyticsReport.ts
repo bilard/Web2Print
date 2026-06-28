@@ -23,6 +23,9 @@ export const PERIOD_LABEL: Record<AnalyticsPeriod, string> = {
   '7d': '7 derniers jours', '30d': '30 derniers jours', '90d': '90 derniers jours', '12m': '12 derniers mois',
 }
 
+/** Libellés FR des appareils (mêmes valeurs que le filtre Appareil de l'onglet Analytics). */
+const DEVICE_LABEL: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+
 function mapDoc(d: DocumentData): AnalyticsEvent {
   return {
     ts: (d.ts as Timestamp | undefined)?.toMillis() ?? 0,
@@ -63,8 +66,10 @@ export function formatNumber(n: number): string {
   return n.toLocaleString('fr-FR')
 }
 
+interface DaySeries { day: string; pageViews: number; visitors: number }
+
 export interface AnalyticsReportData {
-  /** Document autonome riche (cartes KPI, listes) — archive Drive / navigateur. */
+  /** Document autonome riche (cartes KPI, listes, courbe) — archive Drive / navigateur. */
   html: string
   /** Variante email-safe (tables + styles inline) — corps de mail (Gmail strippe grid/flex/<style>). */
   emailHtml: string
@@ -74,28 +79,46 @@ export interface AnalyticsReportData {
   eventCount: number
 }
 
-interface ReportInput {
+export interface ReportInput {
   title: string
   periodLabel: string
   dateLabel: string
   kpis: Kpis
+  series: DaySeries[]
   topPages: { label: string; count: number }[]
   topSources: { label: string; count: number }[]
   topCountries: { label: string; count: number }[]
+  topDevices: { label: string; count: number }[]
 }
 
-/** Construit l'entrée de rendu (KPIs + top listes) à partir des events bruts. */
-function buildReportInput(events: AnalyticsEvent[], title: string, period: AnalyticsPeriod): ReportInput {
+/** Série quotidienne (pages vues + visiteurs uniques) entre deux bornes. */
+function buildSeries(events: AnalyticsEvent[], fromMs: number, toMs: number): DaySeries[] {
+  const buckets = new Map<string, { pageViews: number; vids: Set<string> }>()
+  for (let t = fromMs; t <= toMs; t += DAY) {
+    buckets.set(new Date(t).toISOString().slice(0, 10), { pageViews: 0, vids: new Set() })
+  }
+  for (const e of events) {
+    const b = buckets.get(new Date(e.ts).toISOString().slice(0, 10))
+    if (!b) continue
+    b.pageViews++
+    b.vids.add(e.vid)
+  }
+  return [...buckets.entries()].map(([day, b]) => ({ day, pageViews: b.pageViews, visitors: b.vids.size }))
+}
+
+/** Construit l'entrée de rendu (KPIs + courbe + top listes) à partir des events bruts. */
+function buildReportInput(events: AnalyticsEvent[], title: string, period: AnalyticsPeriod, fromMs: number, toMs: number): ReportInput {
   const now = new Date()
-  const topPagesRaw = topBy(events, 'path', 8)
   return {
     title: title.trim() || 'Statistiques de fréquentation',
     periodLabel: PERIOD_LABEL[period],
     dateLabel: now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
     kpis: computeKpis(events),
-    topPages: topPagesRaw.map((p) => ({ label: pageLabel(p.label), count: p.count })),
+    series: buildSeries(events, fromMs, toMs),
+    topPages: topBy(events, 'path', 8).map((p) => ({ label: pageLabel(p.label), count: p.count })),
     topSources: topSources(events, 8),
     topCountries: topBy(events, 'country', 8),
+    topDevices: topBy(events, 'device', 8).map((d) => ({ label: DEVICE_LABEL[d.label] ?? d.label, count: d.count })),
   }
 }
 
@@ -109,23 +132,13 @@ export async function collectAnalyticsReport(opts: {
   const fromMs = toMs - SPAN[period]
   const events = await fetchEvents(fromMs, toMs)
 
-  const input = buildReportInput(events, opts.title ?? '', period)
+  const input = buildReportInput(events, opts.title ?? '', period, fromMs, toMs)
   const html = buildHtml(input)
   const emailHtml = buildEmailHtml(input)
 
   // Résumé : 1 ligne par jour (le plus utile pour un export Sheets / graphe).
-  const buckets = new Map<string, { pageViews: number; vids: Set<string> }>()
-  for (let t = fromMs; t <= toMs; t += DAY) {
-    buckets.set(new Date(t).toISOString().slice(0, 10), { pageViews: 0, vids: new Set() })
-  }
-  for (const e of events) {
-    const b = buckets.get(new Date(e.ts).toISOString().slice(0, 10))
-    if (!b) continue
-    b.pageViews++
-    b.vids.add(e.vid)
-  }
-  const summaryRows: Record<string, unknown>[] = [...buckets.entries()].map(([day, b]) => ({
-    Jour: day, 'Pages vues': b.pageViews, Visiteurs: b.vids.size,
+  const summaryRows: Record<string, unknown>[] = input.series.map((s) => ({
+    Jour: s.day, 'Pages vues': s.pageViews, Visiteurs: s.visitors,
   }))
 
   return { html, emailHtml, summaryRows, kpis: input.kpis, eventCount: events.length }
@@ -144,6 +157,22 @@ function topListHtml(title: string, rows: { label: string; count: number }[]): s
       <span class="cnt">${formatNumber(r.count)}</span>
     </div>`).join('')
   return `<div class="panel"><div class="panel-h">${esc(title)}</div>${items}</div>`
+}
+
+function chartHtml(series: DaySeries[]): string {
+  if (series.length === 0) return ''
+  const max = Math.max(...series.map((s) => s.pageViews), 1)
+  const bars = series.map((s) => {
+    const h = s.pageViews > 0 ? Math.max(4, Math.round((s.pageViews / max) * 100)) : 0
+    return `<div class="cbar" title="${s.day} · ${s.pageViews} vues / ${s.visitors} visiteurs"><div class="cbar-fill" style="height:${h}%"></div></div>`
+  }).join('')
+  const first = series[0]?.day ?? ''
+  const last = series[series.length - 1]?.day ?? ''
+  return `<div class="chart-wrap">
+    <div class="panel-h">Évolution — pages vues par jour (max ${formatNumber(max)})</div>
+    <div class="chart">${bars}</div>
+    <div class="chart-axis"><span>${first}</span><span>${last}</span></div>
+  </div>`
 }
 
 export function buildHtml(d: ReportInput): string {
@@ -173,7 +202,13 @@ export function buildHtml(d: ReportInput): string {
   .kpi-v { font-size: 24px; font-weight: 600; color: #fff; margin-top: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .kpi-foot { font-size: 9.5px; color: rgba(255,255,255,.30); margin-top: 4px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .chart-wrap { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+  .chart { display: flex; align-items: flex-end; gap: 2px; height: 96px; margin-top: 10px; }
+  .cbar { flex: 1; display: flex; align-items: flex-end; height: 100%; min-width: 2px; }
+  .cbar-fill { width: 100%; background: rgba(99,102,241,.55); border-radius: 2px 2px 0 0; }
+  .chart-axis { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(255,255,255,.30);
+    margin-top: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 14px; }
   .panel-h { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.32); margin-bottom: 10px; }
   .row { position: relative; display: flex; align-items: center; padding: 7px 8px; border-radius: 7px; overflow: hidden; }
@@ -201,10 +236,12 @@ export function buildHtml(d: ReportInput): string {
       ${kpi('Sessions', formatNumber(d.kpis.sessions), `rebond ${Math.round(d.kpis.bounceRate * 100)} %`)}
       ${kpi('Durée moy. session', formatDuration(d.kpis.avgSessionMs), 'par session')}
     </div>
+    ${chartHtml(d.series)}
     <div class="grid">
       ${topListHtml('Pages consultées', d.topPages)}
       ${topListHtml('Sources de trafic', d.topSources)}
       ${topListHtml('Pays', d.topCountries)}
+      ${topListHtml('Appareils', d.topDevices)}
     </div>
     <footer>
       Données agrégées depuis Firestore — collection <code>analyticsEvents</code>. Trafic de l'ensemble du site (accès réservé au propriétaire).
@@ -217,7 +254,7 @@ export function buildHtml(d: ReportInput): string {
 // ───────────────────────────── Rendu EMAIL (corps de mail, styles inline) ─────────────────────────────
 const C = {
   bg: '#0b0b0f', panel: '#15151b', border: '#26262e', line: '#1c1c22',
-  text: '#e8e8ea', dim: '#9a9aa2', faint: '#6a6a72', white: '#ffffff',
+  text: '#e8e8ea', dim: '#9a9aa2', faint: '#6a6a72', white: '#ffffff', bar: '#4f46e5',
 } as const
 
 function emailTopList(title: string, rows: { label: string; count: number }[]): string {
@@ -227,10 +264,29 @@ function emailTopList(title: string, rows: { label: string; count: number }[]): 
         <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
         <td align="right" style="padding:6px 8px;font-size:12px;color:${C.dim};border-bottom:1px solid ${C.line};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${formatNumber(r.count)}</td>
       </tr>`).join('')
-  return `<td width="33%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;">
+  return `<td width="50%" valign="top" style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;">
     <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin-bottom:6px;">${esc(title)}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>
   </td>`
+}
+
+/** Courbe email-safe : table de barres verticales (td valign=bottom + div à hauteur fixe). */
+function emailChartHtml(series: DaySeries[]): string {
+  if (series.length === 0) return ''
+  const max = Math.max(...series.map((s) => s.pageViews), 1)
+  const H = 72
+  const cells = series.map((s) => {
+    const h = s.pageViews > 0 ? Math.max(3, Math.round((s.pageViews / max) * H)) : 1
+    return `<td valign="bottom" style="padding:0 1px;"><div style="width:100%;height:${h}px;background:${s.pageViews > 0 ? C.bar : C.line};font-size:1px;line-height:1px;">&nbsp;</div></td>`
+  }).join('')
+  return `<div style="background:${C.panel};border:1px solid ${C.border};border-radius:10px;padding:12px;margin-top:6px;">
+    <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${C.dim};margin-bottom:8px;">Évolution — pages vues par jour (max ${formatNumber(max)})</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;height:${H}px;"><tr>${cells}</tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:4px;"><tr>
+      <td align="left" style="font-size:9.5px;color:${C.faint};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${series[0]?.day ?? ''}</td>
+      <td align="right" style="font-size:9.5px;color:${C.faint};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${series[series.length - 1]?.day ?? ''}</td>
+    </tr></table>
+  </div>`
 }
 
 export function buildEmailHtml(d: ReportInput): string {
@@ -251,11 +307,15 @@ export function buildEmailHtml(d: ReportInput): string {
         ${kpi('Durée moy.', formatDuration(d.kpis.avgSessionMs), 'par session')}
       </tr>
     </table>
+    ${emailChartHtml(d.series)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;margin-top:6px;">
       <tr>
         ${emailTopList('Pages consultées', d.topPages)}
         ${emailTopList('Sources de trafic', d.topSources)}
+      </tr>
+      <tr>
         ${emailTopList('Pays', d.topCountries)}
+        ${emailTopList('Appareils', d.topDevices)}
       </tr>
     </table>
     <div style="font-size:9.5px;color:${C.faint};margin-top:18px;line-height:1.6;">

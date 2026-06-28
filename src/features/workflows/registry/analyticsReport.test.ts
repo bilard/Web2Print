@@ -6,9 +6,15 @@ const input = {
   periodLabel: '30 derniers jours',
   dateLabel: '28 juin 2026',
   kpis: { pageViews: 53, visitors: 3, sessions: 13, avgSessionMs: 171_000, bounceRate: 0.5 },
+  series: [
+    { day: '2026-06-26', pageViews: 0, visitors: 0 },
+    { day: '2026-06-27', pageViews: 5, visitors: 1 },
+    { day: '2026-06-28', pageViews: 48, visitors: 3 },
+  ],
   topPages: [{ label: 'Tableau de bord', count: 34 }, { label: 'Accueil', count: 7 }],
   topSources: [{ label: 'ibs-studio.com', count: 53 }],
   topCountries: [{ label: 'FR', count: 53 }],
+  topDevices: [{ label: 'Ordinateur', count: 40 }, { label: 'Mobile', count: 13 }],
 }
 
 describe('formatDuration', () => {
@@ -34,6 +40,14 @@ describe('buildHtml', () => {
     expect(html).toContain('171 s')
     expect(html).toContain('rebond 50 %')
   })
+  it('inclut le panneau Appareils et la courbe', () => {
+    const html = buildHtml(input)
+    expect(html).toContain('Appareils')
+    expect(html).toContain('Ordinateur')
+    expect(html).toContain('Mobile')
+    expect(html).toContain('Évolution')
+    expect(html).toContain('cbar-fill')
+  })
   it('échappe le HTML du titre', () => {
     const html = buildHtml({ ...input, title: '<script>x</script>' })
     expect(html).not.toContain('<script>x</script>')
@@ -48,6 +62,9 @@ describe('buildEmailHtml', () => {
     expect(email).not.toContain('<style')
     expect(email).not.toContain('display:grid')
     expect(email).toContain('ibs-studio.com')
+    expect(email).toContain('Appareils')
+    expect(email).toContain('Ordinateur')
+    expect(email).toContain('Évolution')
   })
   it('gère une liste vide', () => {
     const email = buildEmailHtml({ ...input, topCountries: [] })
