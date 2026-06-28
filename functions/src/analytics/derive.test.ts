@@ -27,6 +27,7 @@ describe('normalizeRef', () => {
   it('extrait le domaine sans www', () =>
     expect(normalizeRef('https://www.google.com/search?q=x')).toBe('google.com'))
   it('null si vide', () => expect(normalizeRef(undefined)).toBeNull())
+  it('ne jette pas sur une entrée invalide', () => expect(normalizeRef('pas-une-url')).toBeNull())
 })
 
 describe('isBot', () => {
@@ -47,4 +48,12 @@ describe('buildEventDoc', () => {
     expect(buildEventDoc({ vid: 'v1', sid: 's1' }, headers)).toBeNull())
   it('rejette un bot', () =>
     expect(buildEventDoc({ path: '/promo', vid: 'v1', sid: 's1' }, { ...headers, ua: 'Googlebot/2.1' })).toBeNull())
+  it('rejette un payload sans vid', () =>
+    expect(buildEventDoc({ path: '/promo', sid: 's1' }, headers)).toBeNull())
+  it('rejette un payload sans sid', () =>
+    expect(buildEventDoc({ path: '/promo', vid: 'v1' }, headers)).toBeNull())
+  it('rejette un path non-string', () =>
+    expect(buildEventDoc({ path: 42, vid: 'v1', sid: 's1' } as any, headers)).toBeNull())
+  it('rejette un path sans slash initial', () =>
+    expect(buildEventDoc({ path: 'promo', vid: 'v1', sid: 's1' }, headers)).toBeNull())
 })
