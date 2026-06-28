@@ -49,7 +49,7 @@ export function AnalyticsTab() {
           <Download className="w-4 h-4" /> CSV
         </button>
       </div>
-      {cur.isLoading ? (
+      {cur.isLoading || prev.isLoading ? (
         <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
       ) : events.length === 0 ? (
         <div className="text-white/40 text-sm py-12 text-center">

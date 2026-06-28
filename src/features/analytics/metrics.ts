@@ -88,3 +88,8 @@ export function deltaPct(current: number, previous: number): number | null {
   if (previous === 0) return null
   return Math.round(((current - previous) / previous) * 100)
 }
+
+/** Les `limit` events les plus récents (tri décroissant par ts). */
+export function recentEvents(events: AnalyticsEvent[], limit = 20): AnalyticsEvent[] {
+  return [...events].sort((a, b) => b.ts - a.ts).slice(0, limit)
+}

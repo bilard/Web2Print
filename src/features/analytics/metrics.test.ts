@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, topBy, timeSeries, deltaPct, type AnalyticsEvent } from './metrics'
+import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -61,4 +61,11 @@ describe('timeSeries', () => {
 describe('deltaPct', () => {
   it('calcule la variation', () => expect(deltaPct(150, 100)).toBe(50))
   it('null si base 0', () => expect(deltaPct(5, 0)).toBeNull())
+})
+
+describe('recentEvents', () => {
+  it('trie décroissant par ts et applique la limite', () => {
+    const out = recentEvents([ev({ ts: 1 }), ev({ ts: 3 }), ev({ ts: 2 })], 2)
+    expect(out.map((e) => e.ts)).toEqual([3, 2])
+  })
 })
