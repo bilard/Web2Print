@@ -1,44 +1,81 @@
 // src/features/analytics/admin/AnalyticsRecent.tsx
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
 import { recentEvents, pageLabel, isInternalActivity } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
 
 const PAGE_SIZE = 15
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+type Opt = { value: string; label: string }
+type Filters = { user: string; page: string; device: string; country: string; day: string }
+const NONE: Filters = { user: 'all', page: 'all', device: 'all', country: 'all', day: 'all' }
 
-/** Journal de consultation : qui a vu quelle page et quand (1 ligne = 1 vue de page). */
+const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
+
+/** Menu déroulant de filtre pour un en-tête de colonne. */
+function ColFilter({ value, onChange, options, allLabel }: { value: string; onChange: (v: string) => void; options: Opt[]; allLabel: string }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full max-w-[170px] bg-surface-2 text-white/70 rounded px-1.5 py-1 border border-white/10 text-[11px]"
+    >
+      <option value="all">{allLabel}</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  )
+}
+
+/** Journal de consultation : qui a vu quelle page et quand, avec un filtre par colonne. */
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const usersMap = useUsersMap()
-  const [device, setDevice] = useState('all')
-  const [q, setQ] = useState('')
+  const [f, setF] = useState<Filters>(NONE)
   const [page, setPage] = useState(0)
+  const set = (k: keyof Filters, v: string) => { setF((p) => ({ ...p, [k]: v })); setPage(0) }
 
   // Tri par récence, hors navigation interne (tableau de bord / workflows / accueil).
   const sorted = useMemo(
     () => recentEvents(events, events.length).filter((e) => !isInternalActivity(e.path)),
     [events],
   )
-  const devices = useMemo(() => [...new Set(sorted.map((e) => e.device))], [sorted])
 
-  const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase()
-    return sorted.filter(
-      (e) =>
-        (device === 'all' || e.device === device) &&
-        (needle === '' || pageLabel(e.path).toLowerCase().includes(needle)),
-    )
-  }, [sorted, device, q])
+  // Options de chaque colonne (valeurs réellement présentes).
+  const opts = useMemo(() => {
+    const users = new Map<string, string>(); const pages = new Set<string>()
+    const countries = new Set<string>(); const days = new Map<string, true>()
+    let anon = false, noCountry = false
+    for (const e of sorted) {
+      if (e.uid) users.set(e.uid, usersMap.get(e.uid) ?? e.uid); else anon = true
+      pages.add(pageLabel(e.path))
+      if (e.country) countries.add(e.country); else noCountry = true
+      days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
+    }
+    return {
+      users: [...[...users].sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ value, label })), ...(anon ? [{ value: '__anon__', label: 'Visiteurs (anonymes)' }] : [])],
+      pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
+      devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
+      countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
+      days: [...days.keys()].map((d) => ({ value: d, label: d })),
+    }
+  }, [sorted, usersMap])
+
+  const filtered = useMemo(() => sorted.filter((e) =>
+    (f.user === 'all' || (f.user === '__anon__' ? !e.uid : e.uid === f.user)) &&
+    (f.page === 'all' || pageLabel(e.path) === f.page) &&
+    (f.device === 'all' || e.device === f.device) &&
+    (f.country === 'all' || (f.country === '__none__' ? !e.country : e.country === f.country)) &&
+    (f.day === 'all' || dayOf(e.ts) === f.day),
+  ), [sorted, f])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const current = Math.min(page, pageCount - 1)
   const slice = filtered.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE)
 
-  const who = (e: AnalyticsEvent): string =>
-    e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${e.vid.slice(-4) || '—'}`
-  const when = (ts: number): string =>
-    new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const who = (e: AnalyticsEvent) => e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${e.vid.slice(-4) || '—'}`
+  const when = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const TH = 'font-medium text-left py-2 px-2 border-b border-white/10'
+  const TD = 'py-1.5 px-2 border-b border-white/5'
 
   return (
     <div className="bg-surface rounded-lg p-4">
@@ -47,55 +84,41 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           Journal de consultation
           <span className="text-white/35 font-normal ml-2">qui · quand · quelle page — {filtered.length.toLocaleString('fr-FR')} consultations</span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-white/30" />
-            <input
-              value={q}
-              onChange={(e) => { setQ(e.target.value); setPage(0) }}
-              placeholder="Rechercher une page…"
-              className="bg-surface-2 text-white/80 rounded pl-7 pr-2 py-1 border border-white/10 text-xs w-44 placeholder:text-white/30"
-            />
+        {pageCount > 1 && (
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Page précédente" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <span className="text-white/40 text-xs tabular-nums">{current + 1} / {pageCount}</span>
+            <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label="Page suivante" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"><ChevronRight className="w-4 h-4" /></button>
           </div>
-          {devices.length > 1 && (
-            <select value={device} onChange={(e) => { setDevice(e.target.value); setPage(0) }} className="bg-surface-2 text-white/80 rounded px-2 py-1 border border-white/10 text-xs">
-              <option value="all">Tous appareils</option>
-              {devices.map((d) => <option key={d} value={d}>{DEVICE_FR[d] ?? d}</option>)}
-            </select>
-          )}
-          {pageCount > 1 && (
-            <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => setPage(Math.max(0, current - 1))} disabled={current === 0} aria-label="Page précédente" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-white/40 text-xs tabular-nums">{current + 1} / {pageCount}</span>
-              <button type="button" onClick={() => setPage(Math.min(pageCount - 1, current + 1))} disabled={current >= pageCount - 1} aria-label="Page suivante" className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className="text-white/40 text-left">
-              <th className="font-medium py-2 px-2 border-b border-white/10">Utilisateur</th>
-              <th className="font-medium py-2 px-2 border-b border-white/10">Page</th>
-              <th className="font-medium py-2 px-2 border-b border-white/10">Appareil</th>
-              <th className="font-medium py-2 px-2 border-b border-white/10">Pays</th>
-              <th className="font-medium py-2 px-2 border-b border-white/10 text-right whitespace-nowrap">Date &amp; heure</th>
+            <tr className="text-white/40">
+              <th className={TH}>Utilisateur</th>
+              <th className={TH}>Page</th>
+              <th className={TH}>Appareil</th>
+              <th className={TH}>Pays</th>
+              <th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
+            </tr>
+            <tr>
+              <th className="p-1 align-top"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
+              <th className="p-1 align-top"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
+              <th className="p-1 align-top"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
+              <th className="p-1 align-top"><ColFilter value={f.country} onChange={(v) => set('country', v)} options={opts.countries} allLabel="Tous" /></th>
+              <th className="p-1 align-top"><ColFilter value={f.day} onChange={(v) => set('day', v)} options={opts.days} allLabel="Tous les jours" /></th>
             </tr>
           </thead>
           <tbody>
             {slice.map((e, i) => (
               <tr key={`${e.vid}-${e.ts}-${i}`} className="hover:bg-white/[0.03]">
-                <td className={`py-1.5 px-2 border-b border-white/5 truncate max-w-[200px] ${e.uid ? 'text-white/85' : 'text-white/40 italic'}`} title={e.uid ?? e.vid}>{who(e)}</td>
-                <td className="py-1.5 px-2 border-b border-white/5 text-white/70 truncate max-w-[220px]" title={e.path}>{pageLabel(e.path)}</td>
-                <td className="py-1.5 px-2 border-b border-white/5 text-white/55">{DEVICE_FR[e.device] ?? e.device}</td>
-                <td className="py-1.5 px-2 border-b border-white/5 text-white/55">{e.country ?? '—'}</td>
-                <td className="py-1.5 px-2 border-b border-white/5 text-white/55 text-right whitespace-nowrap tabular-nums">{when(e.ts)}</td>
+                <td className={`${TD} truncate max-w-[200px] ${e.uid ? 'text-white/85' : 'text-white/40 italic'}`} title={e.uid ?? e.vid}>{who(e)}</td>
+                <td className={`${TD} text-white/70 truncate max-w-[220px]`} title={e.path}>{pageLabel(e.path)}</td>
+                <td className={`${TD} text-white/55`}>{DEVICE_FR[e.device] ?? e.device}</td>
+                <td className={`${TD} text-white/55`}>{e.country ?? '—'}</td>
+                <td className={`${TD} text-white/55 text-right whitespace-nowrap tabular-nums`}>{when(e.ts)}</td>
               </tr>
             ))}
           </tbody>
