@@ -142,11 +142,11 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
           )}
           <button
             onClick={run}
-            disabled={running || !files.length || !dest}
+            disabled={running || !files.length || !dest || !!result}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 disabled:bg-white/[0.06] disabled:text-white/30 text-[#fff] text-sm font-medium transition-colors"
           >
-            {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderUp className="w-4 h-4" />}
-            {running ? 'Import en cours…' : `Importer${files.length ? ` ${files.length}` : ''}`}
+            {running ? <Loader2 className="w-4 h-4 animate-spin" /> : result ? <CheckCircle2 className="w-4 h-4" /> : <FolderUp className="w-4 h-4" />}
+            {running ? 'Import en cours…' : result ? 'Importé' : `Importer${files.length ? ` ${files.length}` : ''}`}
           </button>
         </footer>
       </div>
@@ -154,7 +154,7 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
       <GDrivePickerModal
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        onPick={(p) => { if (p.mimeType === FOLDER_MIME) setDest({ id: p.id, name: p.name }) }}
+        onPick={(p) => { if (p.mimeType === FOLDER_MIME) { setDest({ id: p.id, name: p.name }); setResult(null) } }}
         foldersOnly
         title="Dossier de destination"
       />
