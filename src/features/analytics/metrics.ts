@@ -1,5 +1,5 @@
-export type Area = 'promo' | 'docs' | 'app' | 'other'
-export type Device = 'mobile' | 'tablet' | 'desktop'
+type Area = 'promo' | 'docs' | 'app' | 'other'
+type Device = 'mobile' | 'tablet' | 'desktop'
 
 export interface AnalyticsEvent {
   ts: number

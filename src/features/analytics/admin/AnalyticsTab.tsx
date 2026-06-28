@@ -1,0 +1,68 @@
+// src/features/analytics/admin/AnalyticsTab.tsx
+import { useMemo } from 'react'
+import { Download } from 'lucide-react'
+import { useAnalyticsEvents } from '../useAnalyticsEvents'
+import { usePeriod, type PeriodKey } from '../usePeriod'
+import { computeKpis, timeSeries } from '../metrics'
+import { downloadEventsCsv } from '../exportCsv'
+import { AnalyticsKpiCards } from './AnalyticsKpiCards'
+import { AnalyticsTimeChart } from './AnalyticsTimeChart'
+import { AnalyticsTopLists } from './AnalyticsTopLists'
+import { AnalyticsRecent } from './AnalyticsRecent'
+
+const PERIODS: { key: PeriodKey; label: string }[] = [
+  { key: '7d', label: '7 j' },
+  { key: '30d', label: '30 j' },
+  { key: '90d', label: '90 j' },
+  { key: '12m', label: '12 mois' },
+]
+
+export function AnalyticsTab() {
+  const { period, setPeriod, fromMs, toMs, prevFromMs, prevToMs } = usePeriod('30d')
+  const cur = useAnalyticsEvents(fromMs, toMs, true)
+  const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
+  const events = cur.data ?? []
+  const kpis = useMemo(() => computeKpis(events), [events])
+  const prevKpis = useMemo(() => computeKpis(prev.data ?? []), [prev.data])
+  const series = useMemo(() => timeSeries(events, fromMs, toMs), [events, fromMs, toMs])
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1">
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`px-3 py-1.5 rounded text-sm ${
+                period === p.key ? 'bg-white/[0.08] text-white' : 'text-white/45 hover:text-white/70'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => downloadEventsCsv(events, `analytics-${period}.csv`)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white/70 hover:text-white bg-surface-2"
+        >
+          <Download className="w-4 h-4" /> CSV
+        </button>
+      </div>
+      {cur.isLoading ? (
+        <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
+      ) : events.length === 0 ? (
+        <div className="text-white/40 text-sm py-12 text-center">
+          Aucune donnée de trafic sur cette période.
+        </div>
+      ) : (
+        <>
+          <AnalyticsKpiCards cur={kpis} prev={prevKpis} />
+          <AnalyticsTimeChart series={series} />
+          <AnalyticsTopLists events={events} />
+          <AnalyticsRecent events={events} />
+        </>
+      )}
+    </div>
+  )
+}
