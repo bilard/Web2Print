@@ -68,3 +68,4 @@ export { higgsfieldCatalog } from './higgsfield/higgsfieldCatalog'
 
 // --- Analytics de trafic : beacon entrant + purge ---
 export { collectAnalytics } from './analytics/collectAnalytics'
+export { purgeAnalytics } from './analytics/purgeAnalytics'
