@@ -99,7 +99,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.country} onChange={(v) => set('country', v)} options={opts.countries} allLabel="Tous" /></th>
-              <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.day} onChange={(v) => set('day', v)} options={opts.days} allLabel="Tous les jours" /></th>
+              <th className="px-2 pb-2 pt-1 align-top text-right"><ColFilter value={f.day} onChange={(v) => set('day', v)} options={opts.days} allLabel="Tous les jours" /></th>
             </tr>
           </thead>
           <tbody>
