@@ -72,8 +72,8 @@ export function AnalyticsTab() {
               <AnalyticsTimeChart series={series} />
               {/* Journal détaillé : qui a vu quelle page et quand (élément principal). */}
               <AnalyticsRecent events={events} />
-              {/* Synthèses compactes en masonry (taille au contenu → pas de vide). */}
-              <div className="columns-1 sm:columns-2 xl:columns-4 gap-3 [&>*]:mb-3 [&>*]:break-inside-avoid">
+              {/* Synthèses : 1 panneau par colonne, réparties sur toute la largeur. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
                 <AnalyticsTopLists events={events} />
                 <AnalyticsUsers events={events} />
               </div>
