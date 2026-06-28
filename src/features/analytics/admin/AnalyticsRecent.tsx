@@ -15,6 +15,17 @@ const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
 /** Clé d'identité stable : uid si connecté, sinon l'identifiant de visiteur anonyme. */
 const idKey = (e: AnalyticsEvent) => e.uid ?? `v:${e.vid}`
 
+// Surnom déterministe pour un visiteur anonyme (pas de vrai nom) : toujours le même
+// pour un id donné, et qui ne ressemble ni à une date ni à une autre colonne.
+const ANIMALS = ['Renard', 'Hibou', 'Loutre', 'Lynx', 'Héron', 'Cerf', 'Faucon', 'Belette', 'Blaireau', 'Martre', 'Castor', 'Sanglier', 'Chouette', 'Écureuil', 'Goéland', 'Corbeau', 'Pinson', 'Grèbe', 'Marmotte', 'Genette', 'Fouine', 'Triton', 'Aigle', 'Busard']
+const COLORS = ['bleu', 'vert', 'doré', 'pourpre', 'ambré', 'gris', 'cuivré', 'indigo', 'ocre', 'turquoise', 'écarlate', 'argenté']
+function codename(vid: string): string {
+  let h = 0
+  for (let i = 0; i < vid.length; i++) h = (h * 31 + vid.charCodeAt(i)) | 0
+  h = Math.abs(h)
+  return `${ANIMALS[h % ANIMALS.length]} ${COLORS[Math.floor(h / ANIMALS.length) % COLORS.length]}`
+}
+
 /** Menu déroulant de filtre pour un en-tête de colonne. */
 function ColFilter({ value, onChange, options, allLabel }: { value: string; onChange: (v: string) => void; options: Opt[]; allLabel: string }) {
   return (
@@ -42,24 +53,19 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     [events],
   )
 
-  // Caractéristiques par visiteur anonyme : appareil + pays + 1ʳᵉ visite (event le plus ancien du vid).
-  const visitorInfo = useMemo(() => {
-    const m = new Map<string, { device: string; country: string | null; ts: number }>()
+  // 1ʳᵉ visite par visiteur anonyme (event le plus ancien du vid) — sert au tri.
+  const visitorFirstTs = useMemo(() => {
+    const m = new Map<string, number>()
     for (const e of sorted) {
       if (e.uid) continue
       const cur = m.get(e.vid)
-      if (!cur || e.ts < cur.ts) m.set(e.vid, { device: e.device, country: e.country, ts: e.ts })
+      if (cur === undefined || e.ts < cur) m.set(e.vid, e.ts)
     }
     return m
   }, [sorted])
-  const shortDate = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-  // Identité affichée : nom si connecté, sinon « Visiteur du <1ʳᵉ visite> » (sans
-  // répéter l'appareil/le pays, qui ont déjà leurs propres colonnes).
-  const personLabel = (e: AnalyticsEvent): string => {
-    if (e.uid) return usersMap.get(e.uid) ?? e.uid
-    const v = visitorInfo.get(e.vid)
-    return v ? `Visiteur du ${shortDate(v.ts)}` : 'Visiteur'
-  }
+  // Identité affichée : nom si connecté, sinon un surnom fixe « Visiteur <surnom> ».
+  const personLabel = (e: AnalyticsEvent): string =>
+    e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${codename(e.vid)}`
 
   // Options de chaque colonne (valeurs réellement présentes).
   const opts = useMemo(() => {
@@ -68,7 +74,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     let noCountry = false
     for (const e of sorted) {
       const k = idKey(e)
-      if (!people.has(k)) people.set(k, { label: personLabel(e), named: !!e.uid, ts: e.uid ? 0 : (visitorInfo.get(e.vid)?.ts ?? 0) })
+      if (!people.has(k)) people.set(k, { label: personLabel(e), named: !!e.uid, ts: e.uid ? 0 : (visitorFirstTs.get(e.vid) ?? 0) })
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
       days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
@@ -81,7 +87,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
       countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
       days: [...days.keys()].map((d) => ({ value: d, label: d })),
     }
-  }, [sorted, usersMap, visitorInfo])
+  }, [sorted, usersMap, visitorFirstTs])
 
   const filtered = useMemo(() => sorted.filter((e) =>
     (f.user === 'all' || idKey(e) === f.user) &&
