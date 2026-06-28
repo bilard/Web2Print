@@ -77,7 +77,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
               >
                 <span className="truncate" title={e.path}>{pageLabel(e.path)}</span>
                 <span className="text-white/40 shrink-0 ml-2">
-                  {e.device} · {e.country ?? '—'} · {new Date(e.ts).toLocaleTimeString('fr-FR')}
+                  {e.device} · {e.country ?? '—'} · {new Date(e.ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
               </div>
             ))}
