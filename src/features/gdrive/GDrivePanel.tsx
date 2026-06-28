@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
-import { Home, Users, Clock, Star, Search, ChevronRight, Trash2 } from 'lucide-react'
+import { Home, Users, Clock, Star, Search, ChevronRight, Trash2, Copy } from 'lucide-react'
 import { GDriveFileList } from './GDriveFileList'
+import { DedupDriveModal } from '@/features/dam/DedupDriveModal'
 import type { DriveSection, GDriveFile } from './types'
 
 const NAV: { id: DriveSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -20,6 +21,7 @@ export function GDrivePanel() {
   const [section, setSection] = useState<DriveSection>('my-drive')
   const [search, setSearch] = useState('')
   const [folderStack, setFolderStack] = useState<FolderCrumb[]>([])
+  const [dedupOpen, setDedupOpen] = useState(false)
 
   const currentFolder = folderStack[folderStack.length - 1] ?? null
   const sectionLabel = NAV.find((n) => n.id === section)?.label ?? ''
@@ -94,6 +96,18 @@ export function GDrivePanel() {
           />
         </div>
 
+        {/* Barre d'actions dossier */}
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => setDedupOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white/70 text-[12px] transition-colors"
+            title={currentFolder ? `Dédupliquer « ${currentFolder.name} » (par contenu, vers la corbeille)` : 'Choisir un dossier à dédupliquer'}
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Dédupliquer{currentFolder ? ` « ${currentFolder.name} »` : '…'}
+          </button>
+        </div>
+
         {/* Breadcrumb */}
         {folderStack.length > 0 && (
           <nav aria-label="Fil d'Ariane" className="flex items-center gap-1 text-sm flex-wrap">
@@ -135,6 +149,8 @@ export function GDrivePanel() {
           onFolderOpen={handleFolderOpen}
         />
       </div>
+
+      <DedupDriveModal open={dedupOpen} onClose={() => setDedupOpen(false)} initialFolder={currentFolder} />
     </div>
   )
 }

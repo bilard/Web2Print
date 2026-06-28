@@ -13,6 +13,14 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const FILE_FIELDS = 'files(id,name,mimeType,thumbnailLink,webViewLink,modifiedTime,parents,sharedWithMeTime,viewedByMeTime,sharingUser,owners)'
 const FOLDER_MIME = 'application/vnd.google-apps.folder'
 
+export interface DriveDedupRaw {
+  id: string
+  name: string
+  md5Checksum?: string
+  createdTime?: string
+  modifiedTime?: string
+}
+
 const SECTION_QUERIES: Record<DriveSection, { q: string; orderBy: string }> = {
   'my-drive': { q: "'root' in parents and trashed=false",    orderBy: 'modifiedTime desc' },
   'shared':   { q: 'sharedWithMe=true and trashed=false',    orderBy: 'sharedWithMeTime desc' },
@@ -95,6 +103,28 @@ export function useGoogleDrive() {
     return all
   }, [accessToken, disconnect])
 
+  /** Liste TOUS les fichiers (hors dossiers) d'un dossier avec leur empreinte md5,
+   *  pour la déduplication par contenu. Paginé. */
+  const listAllForDedup = useCallback(async (folderId: string): Promise<DriveDedupRaw[]> => {
+    if (!accessToken) return []
+    const all: DriveDedupRaw[] = []
+    let pageToken: string | undefined
+    do {
+      const params = new URLSearchParams({
+        q: `'${folderId}' in parents and trashed=false and mimeType != 'application/vnd.google-apps.folder'`,
+        fields: 'nextPageToken,files(id,name,md5Checksum,createdTime,modifiedTime)',
+        pageSize: '1000',
+      })
+      if (pageToken) params.set('pageToken', pageToken)
+      const res = await fetch(`${DRIVE_API}/files?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      if (!res.ok) { if (res.status === 401) disconnect(); break }
+      const data = (await res.json()) as { files?: DriveDedupRaw[]; nextPageToken?: string }
+      all.push(...(data.files ?? []))
+      pageToken = data.nextPageToken
+    } while (pageToken)
+    return all
+  }, [accessToken, disconnect])
+
   /** Crée un dossier (scope drive.file). `parentId` absent → racine « Mon Drive ». */
   const createFolder = useCallback(async (name: string, parentId?: string): Promise<GDriveFile | null> => {
     if (!accessToken || !name.trim()) return null
@@ -112,5 +142,5 @@ export function useGoogleDrive() {
     return (await res.json()) as GDriveFile
   }, [accessToken, disconnect])
 
-  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, listAllImagesInFolder, createFolder, disconnect }
+  return { connectDrive, listFilesBySection, listFilesByParent, countFolderFiles, listAllImagesInFolder, listAllForDedup, createFolder, disconnect }
 }
