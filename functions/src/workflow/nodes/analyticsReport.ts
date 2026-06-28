@@ -88,6 +88,10 @@ function topSources(events: AnalyticsEvent[], limit: number): { label: string; c
   return [...counts.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count).slice(0, limit)
 }
 
+function recentEvents(events: AnalyticsEvent[], limit: number): AnalyticsEvent[] {
+  return [...events].sort((a, b) => b.ts - a.ts).slice(0, limit)
+}
+
 const KNOWN_PAGES: Record<string, string> = {
   '/promo': 'Promo', '/docs': 'Documentation', '/dashboard': 'Tableau de bord', '/login': 'Connexion', '/onboarding': 'Bienvenue',
 }
@@ -150,6 +154,15 @@ interface ReportInput {
   topCountries: { label: string; count: number }[]
   topDevices: { label: string; count: number }[]
   topUsers: { label: string; count: number }[]
+  recent: { label: string; meta: string }[]
+}
+
+/** Dernières visites (page + appareil · pays · date/heure) — calque AnalyticsRecent. */
+function buildRecent(events: AnalyticsEvent[], limit: number): { label: string; meta: string }[] {
+  return recentEvents(events, limit).map((e) => ({
+    label: pageLabel(e.path),
+    meta: `${DEVICE_LABEL[e.device] ?? e.device} · ${e.country ?? '—'} · ${new Date(e.ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`,
+  }))
 }
 
 function buildTopUsers(events: AnalyticsEvent[], usersMap: Map<string, string>, limit: number): { label: string; count: number }[] {
@@ -201,6 +214,14 @@ function topListHtml(title: string, rows: { label: string; count: number }[], ac
       <span class="cnt">${formatNumber(r.count)}</span>
     </div>`).join('')
   return `<div class="panel" style="${styleVars}"><div class="panel-h">${esc(title)}</div>${items}</div>`
+}
+
+/** Panneau pleine largeur listant les dernières visites (accent violet). */
+function recentListHtml(rows: { label: string; meta: string }[]): string {
+  if (rows.length === 0) return ''
+  const items = rows.map((r) => `
+    <div class="rrow"><span class="rlbl">${esc(r.label)}</span><span class="rmeta">${esc(r.meta)}</span></div>`).join('')
+  return `<div class="panel recent" style="--accent:#a78bfa"><div class="panel-h">Activité récente</div>${items}</div>`
 }
 
 function chartHtml(series: DaySeries[]): string {
@@ -260,6 +281,12 @@ function buildHtml(d: ReportInput): string {
   .lbl { position: relative; font-size: 12px; color: rgba(255,255,255,.82); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cnt { position: relative; font-size: 12px; color: var(--accent,rgba(255,255,255,.55)); margin-left: 8px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .recent { margin-top: 10px; }
+  .rrow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .rrow:last-child { border-bottom: none; }
+  .rlbl { font-size: 12px; color: rgba(255,255,255,.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rmeta { font-size: 11px; color: rgba(255,255,255,.40); white-space: nowrap; flex: 0 0 auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .empty { font-size: 12px; color: rgba(255,255,255,.25); padding: 7px 8px; }
   footer { font-size: 9.5px; color: rgba(255,255,255,.25); line-height: 1.6; margin-top: 18px; }
   footer code { color: rgba(255,255,255,.40); }
@@ -288,6 +315,7 @@ function buildHtml(d: ReportInput): string {
       ${topListHtml('Appareils', d.topDevices, PALETTE[3])}
       ${topListHtml('Utilisateurs connectés', d.topUsers, PALETTE[4])}
     </div>
+    ${recentListHtml(d.recent)}
     <footer>
       Données agrégées depuis Firestore — collection <code>analyticsEvents</code>. Trafic de l'ensemble du site (accès réservé au propriétaire).
     </footer>
@@ -315,6 +343,21 @@ function emailTopList(title: string, rows: { label: string; count: number }[], a
     <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${accent};margin-bottom:6px;">${esc(title)}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>
   </td>`
+}
+
+function emailRecentList(rows: { label: string; meta: string }[]): string {
+  if (rows.length === 0) return ''
+  const accent = '#a78bfa'
+  const body = rows.map((r) => `<tr>
+      <td style="padding:6px 8px;font-size:12px;color:${C.text};border-bottom:1px solid ${C.line};">${esc(r.label)}</td>
+      <td align="right" style="padding:6px 8px;font-size:11px;color:${C.faint};border-bottom:1px solid ${C.line};white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${esc(r.meta)}</td>
+    </tr>`).join('')
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:6px;margin-top:6px;"><tr>
+    <td valign="top" style="background:${C.panel};border:1px solid ${C.border};border-top:2px solid ${accent};border-radius:10px;padding:12px;">
+      <div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:${accent};margin-bottom:6px;">Activité récente</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${body}</table>
+    </td>
+  </tr></table>`
 }
 
 function emailChartHtml(series: DaySeries[]): string {
@@ -368,6 +411,7 @@ function buildEmailHtml(d: ReportInput): string {
         <td width="50%"></td>
       </tr>
     </table>
+    ${emailRecentList(d.recent)}
     <div style="font-size:9.5px;color:${C.faint};margin-top:18px;line-height:1.6;">
       Données agrégées depuis Firestore (collection analyticsEvents). Trafic de l'ensemble du site.
     </div>
@@ -424,6 +468,7 @@ async function collectAnalyticsReportServer(period: AnalyticsPeriod, title: stri
     topCountries: topBy(events, 'country', 8),
     topDevices: topBy(events, 'device', 8).map((dev) => ({ label: DEVICE_LABEL[dev.label] ?? dev.label, count: dev.count })),
     topUsers: buildTopUsers(events, usersMap, 8),
+    recent: buildRecent(events, 12),
   }
 
   const summaryRows: Record<string, unknown>[] = input.series.map((s) => ({

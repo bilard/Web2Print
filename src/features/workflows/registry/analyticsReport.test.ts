@@ -16,6 +16,10 @@ const input = {
   topCountries: [{ label: 'FR', count: 53 }],
   topDevices: [{ label: 'Ordinateur', count: 40 }, { label: 'Mobile', count: 13 }],
   topUsers: [{ label: 'Francis Bilard', count: 30 }, { label: 'ibs.studio@gmail.com', count: 5 }],
+  recent: [
+    { label: 'Tableau de bord', meta: 'Ordinateur · FR · 28/06 14:30' },
+    { label: 'Accueil', meta: 'Mobile · BE · 28/06 14:12' },
+  ],
 }
 
 describe('formatDuration', () => {
@@ -50,6 +54,8 @@ describe('buildHtml', () => {
     expect(html).toContain('cbar-fill')
     expect(html).toContain('Utilisateurs connectés')
     expect(html).toContain('Francis Bilard')
+    expect(html).toContain('Activité récente')
+    expect(html).toContain('Ordinateur · FR · 28/06 14:30')
   })
   it('échappe le HTML du titre', () => {
     const html = buildHtml({ ...input, title: '<script>x</script>' })
@@ -70,6 +76,7 @@ describe('buildEmailHtml', () => {
     expect(email).toContain('Évolution')
     expect(email).toContain('Utilisateurs connectés')
     expect(email).toContain('Francis Bilard')
+    expect(email).toContain('Activité récente')
   })
   it('gère une liste vide', () => {
     const email = buildEmailHtml({ ...input, topCountries: [] })
