@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
 import { recentEvents, pageLabel, isInternalActivity } from '../metrics'
-import { useUsersMap } from '../useUsersMap'
 
 const PAGE_SIZE = 15
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
@@ -29,7 +28,6 @@ function ColFilter({ value, onChange, options, allLabel }: { value: string; onCh
 
 /** Journal de consultation : qui a vu quelle page et quand, avec un filtre par colonne. */
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
-  const usersMap = useUsersMap()
   const [f, setF] = useState<Filters>(NONE)
   const [page, setPage] = useState(0)
   const set = (k: keyof Filters, v: string) => { setF((p) => ({ ...p, [k]: v })); setPage(0) }
@@ -39,10 +37,6 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     () => recentEvents(events, events.length).filter((e) => !isInternalActivity(e.path)),
     [events],
   )
-
-  // Identité affichée : nom si connecté, sinon « Visiteur anonyme ».
-  const personLabel = (e: AnalyticsEvent): string =>
-    e.uid ? (usersMap.get(e.uid) ?? e.uid) : 'Visiteur anonyme'
 
   // Options des colonnes filtrables (Page, Appareil, Pays, Jour).
   const opts = useMemo(() => {
@@ -96,14 +90,12 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="text-white/40">
-              <th className={TH}>Utilisateur</th>
               <th className={TH}>Page</th>
               <th className={TH}>Appareil</th>
               <th className={TH}>Pays</th>
               <th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
             </tr>
             <tr>
-              <th className="p-1 align-top"></th>
               <th className="p-1 align-top"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
               <th className="p-1 align-top"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
               <th className="p-1 align-top"><ColFilter value={f.country} onChange={(v) => set('country', v)} options={opts.countries} allLabel="Tous" /></th>
@@ -113,8 +105,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           <tbody>
             {slice.map((e, i) => (
               <tr key={`${e.vid}-${e.ts}-${i}`} className="hover:bg-white/[0.03]">
-                <td className={`${TD} truncate max-w-[200px] ${e.uid ? 'text-white/85' : 'text-white/40 italic'}`} title={e.uid ?? e.vid}>{personLabel(e)}</td>
-                <td className={`${TD} text-white/70 truncate max-w-[220px]`} title={e.path}>{pageLabel(e.path)}</td>
+                <td className={`${TD} text-white/70 truncate max-w-[260px]`} title={e.path}>{pageLabel(e.path)}</td>
                 <td className={`${TD} text-white/55`}>{DEVICE_FR[e.device] ?? e.device}</td>
                 <td className={`${TD} text-white/55`}>{e.country ?? '—'}</td>
                 <td className={`${TD} text-white/55 text-right whitespace-nowrap tabular-nums`}>{when(e.ts)}</td>
