@@ -42,35 +42,45 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     [events],
   )
 
-  // Numéro lisible par visiteur anonyme (vid → 1, 2, 3…), du plus récent au plus ancien.
-  const visitorNum = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const e of sorted) if (!e.uid && !m.has(e.vid)) m.set(e.vid, m.size + 1)
+  // Caractéristiques par visiteur anonyme : appareil + pays + 1ʳᵉ visite (event le plus ancien du vid).
+  const visitorInfo = useMemo(() => {
+    const m = new Map<string, { device: string; country: string | null; ts: number }>()
+    for (const e of sorted) {
+      if (e.uid) continue
+      const cur = m.get(e.vid)
+      if (!cur || e.ts < cur.ts) m.set(e.vid, { device: e.device, country: e.country, ts: e.ts })
+    }
     return m
   }, [sorted])
-  const personLabel = (e: AnalyticsEvent) => e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${visitorNum.get(e.vid) ?? '?'}`
+  const shortDate = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  // Identité affichée : nom si connecté, sinon « Appareil · Pays · 1ʳᵉ visite ».
+  const personLabel = (e: AnalyticsEvent): string => {
+    if (e.uid) return usersMap.get(e.uid) ?? e.uid
+    const v = visitorInfo.get(e.vid)
+    return v ? `${DEVICE_FR[v.device] ?? v.device} · ${v.country ?? '—'} · ${shortDate(v.ts)}` : 'Visiteur'
+  }
 
   // Options de chaque colonne (valeurs réellement présentes).
   const opts = useMemo(() => {
-    const people = new Map<string, { label: string; named: boolean; num: number }>(); const pages = new Set<string>()
+    const people = new Map<string, { label: string; named: boolean; ts: number }>(); const pages = new Set<string>()
     const countries = new Set<string>(); const days = new Map<string, true>()
     let noCountry = false
     for (const e of sorted) {
       const k = idKey(e)
-      if (!people.has(k)) people.set(k, { label: personLabel(e), named: !!e.uid, num: e.uid ? 0 : (visitorNum.get(e.vid) ?? 0) })
+      if (!people.has(k)) people.set(k, { label: personLabel(e), named: !!e.uid, ts: e.uid ? 0 : (visitorInfo.get(e.vid)?.ts ?? 0) })
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
       days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
     }
     return {
-      // Utilisateurs connectés d'abord (par nom), puis les visiteurs anonymes par numéro.
-      users: [...people].sort((a, b) => (Number(b[1].named) - Number(a[1].named)) || (a[1].named ? a[1].label.localeCompare(b[1].label) : a[1].num - b[1].num)).map(([value, info]) => ({ value, label: info.label })),
+      // Utilisateurs connectés d'abord (par nom), puis les visiteurs anonymes (1ʳᵉ visite récente d'abord).
+      users: [...people].sort((a, b) => (Number(b[1].named) - Number(a[1].named)) || (a[1].named ? a[1].label.localeCompare(b[1].label) : b[1].ts - a[1].ts)).map(([value, info]) => ({ value, label: info.label })),
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
       countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
       days: [...days.keys()].map((d) => ({ value: d, label: d })),
     }
-  }, [sorted, usersMap, visitorNum])
+  }, [sorted, usersMap, visitorInfo])
 
   const filtered = useMemo(() => sorted.filter((e) =>
     (f.user === 'all' || idKey(e) === f.user) &&
