@@ -1,14 +1,16 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Download } from 'lucide-react'
 import { useAnalyticsEvents } from '../useAnalyticsEvents'
 import { usePeriod, type PeriodKey } from '../usePeriod'
-import { computeKpis, timeSeries } from '../metrics'
+import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
 import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
 import { AnalyticsRecent } from './AnalyticsRecent'
+import { AnalyticsUsers } from './AnalyticsUsers'
+import { AnalyticsFilters } from './AnalyticsFilters'
 
 const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: '7d', label: '7 j' },
@@ -19,11 +21,13 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
 
 export function AnalyticsTab() {
   const { period, setPeriod, fromMs, toMs, prevFromMs, prevToMs } = usePeriod('30d')
+  const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
   const cur = useAnalyticsEvents(fromMs, toMs, true)
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
-  const events = cur.data ?? []
+  const allEvents = cur.data ?? []
+  const events = useMemo(() => filterEvents(allEvents, filter), [allEvents, filter])
   const kpis = useMemo(() => computeKpis(events), [events])
-  const prevKpis = useMemo(() => computeKpis(prev.data ?? []), [prev.data])
+  const prevKpis = useMemo(() => computeKpis(filterEvents(prev.data ?? [], filter)), [prev.data, filter])
   const series = useMemo(() => timeSeries(events, fromMs, toMs), [events, fromMs, toMs])
 
   return (
@@ -51,16 +55,28 @@ export function AnalyticsTab() {
       </div>
       {cur.isLoading || prev.isLoading ? (
         <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
-      ) : events.length === 0 ? (
+      ) : allEvents.length === 0 ? (
         <div className="text-white/40 text-sm py-12 text-center">
           Aucune donnée de trafic sur cette période.
         </div>
       ) : (
         <>
-          <AnalyticsKpiCards cur={kpis} prev={prevKpis} />
-          <AnalyticsTimeChart series={series} />
-          <AnalyticsTopLists events={events} />
-          <AnalyticsRecent events={events} />
+          <AnalyticsFilters events={allEvents} filter={filter} onChange={setFilter} />
+          {events.length === 0 ? (
+            <div className="text-white/40 text-sm py-12 text-center">
+              Aucune donnée pour ces filtres.
+            </div>
+          ) : (
+            <>
+              <AnalyticsKpiCards cur={kpis} prev={prevKpis} />
+              <AnalyticsTimeChart series={series} />
+              <AnalyticsTopLists events={events} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <AnalyticsUsers events={events} />
+                <AnalyticsRecent events={events} />
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

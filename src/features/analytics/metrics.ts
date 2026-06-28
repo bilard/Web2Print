@@ -22,6 +22,25 @@ export interface Kpis {
   bounceRate: number
 }
 
+/** Filtres d'affichage (façon Google Analytics). `'all'` = pas de filtre. */
+export interface EventFilter {
+  device: string
+  country: string
+  page: string
+}
+
+export const NO_FILTER: EventFilter = { device: 'all', country: 'all', page: 'all' }
+
+/** Restreint la liste d'events selon les filtres choisis (appareil / pays / page). */
+export function filterEvents(events: AnalyticsEvent[], f: EventFilter): AnalyticsEvent[] {
+  return events.filter(
+    (e) =>
+      (f.device === 'all' || e.device === f.device) &&
+      (f.country === 'all' || e.country === f.country) &&
+      (f.page === 'all' || e.path === f.page),
+  )
+}
+
 export function computeKpis(events: AnalyticsEvent[]): Kpis {
   if (events.length === 0) return { pageViews: 0, visitors: 0, sessions: 0, avgSessionMs: 0, bounceRate: 0 }
   const visitors = new Set<string>()
