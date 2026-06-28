@@ -38,11 +38,12 @@ export function AnalyticsTopLists({ events }: { events: AnalyticsEvent[] }) {
     count: r.count,
     raw: r.label,
   }))
+  // Fragment (pas de grille) : les panneaux s'insèrent dans le masonry d'AnalyticsTab.
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <>
       <List title="Pages consultées" rows={pages} />
       <List title="Sources de trafic" rows={topSources(events, 8)} />
       <List title="Pays" rows={topBy(events, 'country', 8)} />
-    </div>
+    </>
   )
 }
