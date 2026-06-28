@@ -1,13 +1,20 @@
 import * as XLSX from 'xlsx'
 import type { ExcelSheet, ExcelColumn, ExcelRow, CellValue } from './types'
 import { detectColumnType, computeColumnStats } from './fieldDetection'
-import { applyExcelFormulas } from './excelFormulas'
+import { applyExcelFormulas, type FormulaConversion } from './excelFormulas'
 import { cellValue } from './cellValue'
 import { useExcelStore } from '@/stores/excel.store'
 import { recordAudit } from '@/lib/auditLog'
 
-/** Parse a file into ExcelSheet[] without touching the store */
-export async function parseExcelFile(file: File): Promise<ExcelSheet[]> {
+/**
+ * Parse a file into ExcelSheet[] without touching the store.
+ * `conversions` (optionnel) collecte les formules Excel converties en champs calculés
+ * IBS Studio, pour animer la métamorphose à l'import.
+ */
+export async function parseExcelFile(
+  file: File,
+  conversions?: FormulaConversion[],
+): Promise<ExcelSheet[]> {
   // Fichiers TEXTE (CSV/TSV/TXT) : lire via File.text() qui décode l'UTF-8 et
   // retire le BOM. En passant par arrayBuffer + type:'array', SheetJS retombe
   // sur le codepage 1252 par défaut → mojibake sur « € » et les accents
@@ -48,7 +55,7 @@ export async function parseExcelFile(file: File): Promise<ExcelSheet[]> {
     // formule arithmétique « même ligne » (ex. Promotion = `=(E2-L2)/E2`) devient une
     // colonne `formula` native, recalculée en direct. cf. excelFormulas.ts.
     const rowNums = jsonData.map((row) => (row as { __rowNum__?: number }).__rowNum__ ?? 0)
-    applyExcelFormulas(ws, columns, rows, rowNums)
+    applyExcelFormulas(ws, columns, rows, rowNums, conversions)
 
     sheets.push({ name: sheetName, columns, rows, taxonomy: [] })
   }

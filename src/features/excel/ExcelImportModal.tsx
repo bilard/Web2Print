@@ -7,6 +7,8 @@ import { CloseButton } from '@/components/shared/CloseButton'
 import { useExcelStore } from '@/stores/excel.store'
 import { useExcelImport } from './useExcelImport'
 import { parseExcelFile } from './useExcelImport'
+import type { FormulaConversion } from './excelFormulas'
+import { FormulaTransformOverlay } from './FormulaTransformOverlay'
 import { FieldTypeIcon } from './FieldTypeIcon'
 import { FIELD_TYPES, type ExcelSheet, type ExcelColumn, type FieldTypeId, type TaxonomyLevelMap } from './types'
 import { buildTaxonomyFromLevels, buildTaxNodesFromLevels, getLevelColor, getMaxLevel } from './taxonomyBuilder'
@@ -79,6 +81,10 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   const [taxoLevels, setTaxoLevels] = useState<TaxonomyLevelMap>({})
   const [expandedCol, setExpandedCol] = useState<string | null>(null)
 
+  // Animation de métamorphose des formules Excel → champ calculé IBS Studio.
+  const [conversions, setConversions] = useState<FormulaConversion[]>([])
+  const [animPlaying, setAnimPlaying] = useState(false)
+
   const resetConfig = () => {
     setParsedSheets(null)
     setParsedFileName('')
@@ -86,6 +92,8 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
     setTaxoLevels({})
     setExpandedCol(null)
     setError(null)
+    setConversions([])
+    setAnimPlaying(false)
   }
 
   const handleFile = useCallback(async (file: File) => {
@@ -96,7 +104,8 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
       return
     }
     try {
-      const sheets = await parseExcelFile(file)
+      const collected: FormulaConversion[] = []
+      const sheets = await parseExcelFile(file, collected)
       setParsedSheets(sheets)
       setParsedFileName(file.name.replace(/\.[^.]+$/, ''))
       // Init column types from detected types
@@ -108,6 +117,9 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
       }
       setColumnTypes(types)
       setTaxoLevels({})
+      // Formules Excel détectées → jouer la métamorphose avant la Configuration.
+      setConversions(collected)
+      setAnimPlaying(collected.length > 0)
     } catch (err) {
       setError(String(err))
     }
@@ -211,6 +223,30 @@ export function ExcelImportModal({ open, onClose, targetPath }: Props) {
   }
 
   if (!open) return null
+
+  // Étape intermédiaire : métamorphose des formules Excel détectées.
+  if (parsedSheets && animPlaying && conversions.length > 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col" style={{ height: 480 }}>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <h2 className="font-semibold text-white text-sm">Import Excel / CSV</h2>
+            </div>
+            <CloseButton onClick={() => { resetConfig(); onClose() }} />
+          </div>
+          <div className="flex-1 min-h-0">
+            <FormulaTransformOverlay
+              conversions={conversions}
+              fileName={parsedFileName}
+              onDone={() => setAnimPlaying(false)}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const sources: { id: Source; icon: React.ReactNode; label: string }[] = [
     { id: 'local', icon: <MonitorUp className="w-4 h-4" />, label: 'Fichiers locaux' },

@@ -331,6 +331,47 @@ html:where(.light) .bg-surface-2 {
   animation: anchor-pulse-frame 1.2s ease-out;
 }
 
+/* ── Métamorphose des formules Excel → champ calculé IBS Studio (import Excel) ── */
+@keyframes fx-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fx-pop {
+  0%   { opacity: 0; transform: scale(0.82); }
+  60%  { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+/* Faisceau de scan qui balaie la cellule Excel pendant la conversion */
+@keyframes fx-beam {
+  0%   { transform: translateY(-120%); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateY(260%); opacity: 0; }
+}
+/* Surbrillance des références de cellule (E2, L2) repérées */
+@keyframes fx-scan {
+  0%, 100% { background-color: rgba(99, 102, 241, 0.06); }
+  50%      { background-color: rgba(99, 102, 241, 0.30); }
+}
+@keyframes fx-result {
+  0%   { opacity: 0; transform: translateX(-8px) scale(0.88); }
+  100% { opacity: 1; transform: none; }
+}
+
+.fx-rise   { animation: fx-rise 0.45s ease-out both; }
+.fx-pop    { animation: fx-pop 0.4s ease-out both; }
+.fx-beam   { animation: fx-beam 1.4s ease-in-out; }
+.fx-scan   { animation: fx-scan 1.3s ease-in-out infinite; }
+.fx-result { animation: fx-result 0.45s ease-out both; }
+
+/* Accessibilité : coupe les animations décoratives lourdes. */
+@media (prefers-reduced-motion: reduce) {
+  .fx-rise, .fx-pop, .fx-beam, .fx-scan, .fx-result {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 .help-highlight-ring {
   position: relative;
   z-index: 1;

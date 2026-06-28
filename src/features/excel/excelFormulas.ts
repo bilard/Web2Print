@@ -3,6 +3,21 @@ import type { ExcelColumn, ExcelRow, CellValue } from './types'
 import { evaluateFormula } from './formulaEngine'
 
 /**
+ * Trace d'une colonne convertie : la formule Excel d'origine et son équivalent IBS Studio.
+ * Éphémère (jamais persistée) — sert uniquement à animer la métamorphose à l'import.
+ */
+export interface FormulaConversion {
+  /** Libellé de la colonne (ex. « Promotion »). */
+  label: string
+  /** Formule Excel brute de la 1re ligne, avec `=` (ex. `=(E2-L2)/E2`). */
+  excelFormula: string
+  /** Formule IBS Studio reconstruite (ex. `( [Prix_barré] - [Prix_normal] ) / [Prix_barré]`). */
+  ibsFormula: string
+  /** Valeur Excel cachée de la 1re ligne, pour afficher un résultat réel. */
+  sampleResult: CellValue
+}
+
+/**
  * Préservation des formules Excel à l'import.
  *
  * Une colonne Excel dont chaque cellule porte une formule arithmétique « même ligne »
@@ -256,6 +271,7 @@ export function applyExcelFormulas(
   columns: ExcelColumn[],
   rows: ExcelRow[],
   rowNums: number[],
+  report?: FormulaConversion[],
 ): void {
   if (!ws['!ref']) return
   const range = XLSX.utils.decode_range(ws['!ref'])
@@ -310,5 +326,21 @@ export function applyExcelFormulas(
 
     col.fieldType = 'formula'
     col.formula = conv.formula
+
+    // Trace pour l'animation : 1re ligne portant réellement une formule Excel.
+    if (report) {
+      for (let i = 0; i < rowNums.length; i++) {
+        const cell = ws[letter + (rowNums[i] + 1)]
+        if (cell?.f) {
+          report.push({
+            label: col.label,
+            excelFormula: '=' + String(cell.f).replace(/^=/, ''),
+            ibsFormula: conv.formula,
+            sampleResult: (cell.v ?? null) as CellValue,
+          })
+          break
+        }
+      }
+    }
   }
 }
