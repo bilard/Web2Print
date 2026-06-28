@@ -55,8 +55,20 @@ export default function DashboardPage() {
   const location = useLocation()
   const setHelpContext = useHelpStore((s) => s.setActiveContext)
   const setModuleIntent = useModuleIntentStore((s) => s.set)
-  const initialSection = (location.state as { section?: Section } | null)?.section ?? 'library'
+  const querySection = new URLSearchParams(location.search).get('section') as Section | null
+  const initialSection =
+    (location.state as { section?: Section } | null)?.section ?? querySection ?? 'library'
   const [activeSection, setActiveSection] = useState<Section>(initialSection)
+  // Deep-link par URL (bookmarkable) : `?section=access&intent=access:tab:analytics`
+  // ouvre directement le module et son onglet. Appliqué une fois au montage.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const section = params.get('section') as Section | null
+    const intent = params.get('intent')
+    if (section) setActiveSection(section)
+    if (intent) setModuleIntent(intent)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // Ouvre la section demandée par la navigation (ex: lien d'aide « Importer un fichier »
   // → state { section: 'import' }). location.key change à chaque navigation, y compris
   // vers la même route → l'écran s'ouvre même si on est déjà sur le dashboard.
