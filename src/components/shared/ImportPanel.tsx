@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { FolderOpen, Presentation, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText } from 'lucide-react'
+import { FolderOpen, Presentation, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText, FolderUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCan } from '@/features/access/useAccess'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
@@ -10,6 +10,7 @@ import { convertImageToEditableSvg } from '@/features/svg/imageToSvg'
 import { convertPdfToEditableSvg, type PdfFontAsset } from '@/features/svg/pdfToSvg'
 import { withProgress } from '@/stores/progress.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { ImportFolderToDriveModal } from '@/features/dam/ImportFolderToDriveModal'
 
 export interface ImportSelection {
   type: 'idml' | 'pptx' | 'image' | 'svg' | 'xlsx' | 'image-to-svg' | 'pdf-to-svg'
@@ -41,6 +42,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   const pdfToSvgInputRef = useRef<HTMLInputElement>(null)
   const [convertingImage, setConvertingImage] = useState(false)
   const [convertingPdf, setConvertingPdf] = useState(false)
+  const [folderToDriveOpen, setFolderToDriveOpen] = useState(false)
 
   // Permissions par type d'import (owner court-circuite → true).
   const canIdml = useCan('import.idml')
@@ -50,6 +52,7 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   const canExcel = useCan('import.excel')
   const canImageToSvg = useCan('import.imageToSvg')
   const canPdfToSvg = useCan('import.pdfToSvg')
+  const canDamUpload = useCan('dam.upload')
 
   useModuleIntent('import', (action) => {
     if (!action.startsWith('format:')) return
@@ -426,6 +429,26 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           />
         </div>
         )}
+
+        {/* Importer un dossier d'images → Google Drive (DAM) */}
+        {canDamUpload && (
+        <div
+          data-import-format="folder-to-drive"
+          onClick={() => setFolderToDriveOpen(true)}
+          className="flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all border-white/10 hover:border-teal-500/40 bg-surface hover:bg-surface-2"
+        >
+          <div className="w-14 h-14 bg-teal-500/10 rounded-2xl flex items-center justify-center">
+            <FolderUp className="w-7 h-7 text-teal-400" />
+          </div>
+          <div data-tour="opt-import-folder-to-drive" className="text-center">
+            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
+              Dossier → Drive
+              <OptionHelp text="Envoie N images d'un dossier local vers le dossier Google Drive de votre choix (DAM). Idéal pour téléverser un lot de visuels d'un coup." />
+            </p>
+            <p className="text-xs text-white/30 mt-1">N images vers Google Drive</p>
+          </div>
+        </div>
+        )}
       </div>
 
       <p className="text-xs text-white/15 mt-6 text-center">
@@ -442,6 +465,9 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
           onClose={handleIdmlClose}
         />
       )}
+
+      {/* Modal import dossier → Drive */}
+      <ImportFolderToDriveModal open={folderToDriveOpen} onClose={() => setFolderToDriveOpen(false)} />
     </div>
   )
 }
