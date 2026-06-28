@@ -1,6 +1,6 @@
 // src/features/analytics/admin/AnalyticsRecent.tsx
 import type { AnalyticsEvent } from '../metrics'
-import { recentEvents } from '../metrics'
+import { recentEvents, pageLabel } from '../metrics'
 
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const recent = recentEvents(events)
@@ -13,7 +13,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
             key={`${e.vid}-${e.ts}-${i}`}
             className="flex justify-between text-xs text-white/70 py-1 border-b border-white/5"
           >
-            <span className="truncate">{e.path}</span>
+            <span className="truncate" title={e.path}>{pageLabel(e.path)}</span>
             <span className="text-white/40 shrink-0 ml-2">
               {e.device} · {e.country ?? '—'} · {new Date(e.ts).toLocaleTimeString('fr-FR')}
             </span>

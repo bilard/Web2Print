@@ -94,6 +94,29 @@ export function recentEvents(events: AnalyticsEvent[], limit = 20): AnalyticsEve
   return [...events].sort((a, b) => b.ts - a.ts).slice(0, limit)
 }
 
+/** Noms lisibles pour les pages connues du site (chemin → libellé humain). */
+const KNOWN_PAGES: Record<string, string> = {
+  '/promo': 'Promo',
+  '/docs': 'Documentation',
+  '/dashboard': 'Tableau de bord',
+  '/login': 'Connexion',
+  '/onboarding': 'Bienvenue',
+}
+
+/** Transforme un chemin technique (`/promo/offre`) en nom lisible (`Promo · Offre`). */
+export function pageLabel(path: string): string {
+  if (!path || path === '/') return 'Accueil'
+  const clean = path.replace(/\/+$/, '')
+  if (KNOWN_PAGES[clean]) return KNOWN_PAGES[clean]
+  const pretty = (s: string): string =>
+    s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  const segs = clean.split('/').filter(Boolean)
+  if (segs.length === 0) return 'Accueil'
+  if (segs.length === 1) return pretty(segs[0])
+  const head = KNOWN_PAGES['/' + segs[0]] ?? pretty(segs[0])
+  return head + ' · ' + segs.slice(1).map(pretty).join(' · ')
+}
+
 /** Top des sources effectives : utm_source si présent, sinon domaine référent. */
 export function topSources(events: AnalyticsEvent[], limit: number): { label: string; count: number }[] {
   const counts = new Map<string, number>()

@@ -1,7 +1,14 @@
 // src/features/analytics/admin/AnalyticsTopLists.tsx
-import { topBy, topSources, type AnalyticsEvent } from '../metrics'
+import { topBy, topSources, pageLabel, type AnalyticsEvent } from '../metrics'
 
-function List({ title, rows }: { title: string; rows: { label: string; count: number }[] }) {
+interface Row {
+  label: string
+  count: number
+  /** Valeur brute (ex. chemin) affichée en infobulle. */
+  raw?: string
+}
+
+function List({ title, rows }: { title: string; rows: Row[] }) {
   const max = rows[0]?.count ?? 1
   return (
     <div className="bg-surface rounded-lg p-4">
@@ -9,13 +16,13 @@ function List({ title, rows }: { title: string; rows: { label: string; count: nu
       <div className="space-y-2">
         {rows.length === 0 && <div className="text-white/35 text-xs">Aucune donnée</div>}
         {rows.map((r) => (
-          <div key={r.label} className="relative">
+          <div key={r.raw ?? r.label} className="relative">
             <div
               className="absolute inset-0 bg-indigo-500/15 rounded"
               style={{ width: `${(r.count / max) * 100}%` }}
             />
             <div className="relative flex justify-between text-xs px-2 py-1">
-              <span className="text-white/80 truncate">{r.label}</span>
+              <span className="text-white/80 truncate" title={r.raw ?? r.label}>{r.label}</span>
               <span className="text-white/50">{r.count}</span>
             </div>
           </div>
@@ -26,9 +33,14 @@ function List({ title, rows }: { title: string; rows: { label: string; count: nu
 }
 
 export function AnalyticsTopLists({ events }: { events: AnalyticsEvent[] }) {
+  const pages: Row[] = topBy(events, 'path', 8).map((r) => ({
+    label: pageLabel(r.label),
+    count: r.count,
+    raw: r.label,
+  }))
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-      <List title="Top pages" rows={topBy(events, 'path', 8)} />
+      <List title="Pages consultées" rows={pages} />
       <List title="Sources de trafic" rows={topSources(events, 8)} />
       <List title="Pays" rows={topBy(events, 'country', 8)} />
     </div>
