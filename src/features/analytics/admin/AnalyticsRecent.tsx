@@ -42,27 +42,35 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     [events],
   )
 
+  // Numéro lisible par visiteur anonyme (vid → 1, 2, 3…), du plus récent au plus ancien.
+  const visitorNum = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const e of sorted) if (!e.uid && !m.has(e.vid)) m.set(e.vid, m.size + 1)
+    return m
+  }, [sorted])
+  const personLabel = (e: AnalyticsEvent) => e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${visitorNum.get(e.vid) ?? '?'}`
+
   // Options de chaque colonne (valeurs réellement présentes).
   const opts = useMemo(() => {
-    const people = new Map<string, { label: string; named: boolean }>(); const pages = new Set<string>()
+    const people = new Map<string, { label: string; named: boolean; num: number }>(); const pages = new Set<string>()
     const countries = new Set<string>(); const days = new Map<string, true>()
     let noCountry = false
     for (const e of sorted) {
       const k = idKey(e)
-      if (!people.has(k)) people.set(k, { label: e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${e.vid.slice(-4) || '—'}`, named: !!e.uid })
+      if (!people.has(k)) people.set(k, { label: personLabel(e), named: !!e.uid, num: e.uid ? 0 : (visitorNum.get(e.vid) ?? 0) })
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
       days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
     }
     return {
-      // Utilisateurs connectés d'abord (par nom), puis chaque visiteur anonyme distinct.
-      users: [...people].sort((a, b) => (Number(b[1].named) - Number(a[1].named)) || a[1].label.localeCompare(b[1].label)).map(([value, info]) => ({ value, label: info.label })),
+      // Utilisateurs connectés d'abord (par nom), puis les visiteurs anonymes par numéro.
+      users: [...people].sort((a, b) => (Number(b[1].named) - Number(a[1].named)) || (a[1].named ? a[1].label.localeCompare(b[1].label) : a[1].num - b[1].num)).map(([value, info]) => ({ value, label: info.label })),
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
       countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
       days: [...days.keys()].map((d) => ({ value: d, label: d })),
     }
-  }, [sorted, usersMap])
+  }, [sorted, usersMap, visitorNum])
 
   const filtered = useMemo(() => sorted.filter((e) =>
     (f.user === 'all' || idKey(e) === f.user) &&
@@ -76,7 +84,6 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
   const current = Math.min(page, pageCount - 1)
   const slice = filtered.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE)
 
-  const who = (e: AnalyticsEvent) => e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${e.vid.slice(-4) || '—'}`
   const when = (ts: number) => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const TH = 'font-medium text-left py-2 px-2 border-b border-white/10'
   const TD = 'py-1.5 px-2 border-b border-white/5'
@@ -118,7 +125,7 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
           <tbody>
             {slice.map((e, i) => (
               <tr key={`${e.vid}-${e.ts}-${i}`} className="hover:bg-white/[0.03]">
-                <td className={`${TD} truncate max-w-[200px] ${e.uid ? 'text-white/85' : 'text-white/40 italic'}`} title={e.uid ?? e.vid}>{who(e)}</td>
+                <td className={`${TD} truncate max-w-[200px] ${e.uid ? 'text-white/85' : 'text-white/40 italic'}`} title={e.uid ?? e.vid}>{personLabel(e)}</td>
                 <td className={`${TD} text-white/70 truncate max-w-[220px]`} title={e.path}>{pageLabel(e.path)}</td>
                 <td className={`${TD} text-white/55`}>{DEVICE_FR[e.device] ?? e.device}</td>
                 <td className={`${TD} text-white/55`}>{e.country ?? '—'}</td>
