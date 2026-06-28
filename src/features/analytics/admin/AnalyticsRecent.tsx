@@ -13,17 +13,6 @@ const NONE: Filters = { page: 'all', device: 'all', country: 'all', day: 'all' }
 
 const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
 
-// Surnom déterministe pour un visiteur anonyme (pas de vrai nom) : toujours le même
-// pour un id donné, et qui ne ressemble ni à une date ni à une autre colonne.
-const ANIMALS = ['Renard', 'Hibou', 'Loutre', 'Lynx', 'Héron', 'Cerf', 'Faucon', 'Belette', 'Blaireau', 'Martre', 'Castor', 'Sanglier', 'Chouette', 'Écureuil', 'Goéland', 'Corbeau', 'Pinson', 'Grèbe', 'Marmotte', 'Genette', 'Fouine', 'Triton', 'Aigle', 'Busard']
-const COLORS = ['bleu', 'vert', 'doré', 'pourpre', 'ambré', 'gris', 'cuivré', 'indigo', 'ocre', 'turquoise', 'écarlate', 'argenté']
-function codename(vid: string): string {
-  let h = 0
-  for (let i = 0; i < vid.length; i++) h = (h * 31 + vid.charCodeAt(i)) | 0
-  h = Math.abs(h)
-  return `${ANIMALS[h % ANIMALS.length]} ${COLORS[Math.floor(h / ANIMALS.length) % COLORS.length]}`
-}
-
 /** Menu déroulant de filtre pour un en-tête de colonne. */
 function ColFilter({ value, onChange, options, allLabel }: { value: string; onChange: (v: string) => void; options: Opt[]; allLabel: string }) {
   return (
@@ -51,9 +40,9 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     [events],
   )
 
-  // Identité affichée : nom si connecté, sinon un surnom fixe « Visiteur <surnom> ».
+  // Identité affichée : nom si connecté, sinon « Visiteur anonyme ».
   const personLabel = (e: AnalyticsEvent): string =>
-    e.uid ? (usersMap.get(e.uid) ?? e.uid) : `Visiteur ${codename(e.vid)}`
+    e.uid ? (usersMap.get(e.uid) ?? e.uid) : 'Visiteur anonyme'
 
   // Options des colonnes filtrables (Page, Appareil, Pays, Jour).
   const opts = useMemo(() => {
