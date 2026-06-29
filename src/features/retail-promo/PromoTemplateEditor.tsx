@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Sparkles, Loader2, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
 import { generatePromoTemplate } from './useGeneratePromoTemplate'
+import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
 import { FONT_OPTIONS, type PromoTemplateConfig, type PromoColorKey } from './RetailPromoCard'
 
 const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
@@ -28,6 +29,33 @@ export function PromoTemplateEditor() {
   const { config, setConfig, rawColumns, rawRows, fieldMap } = useRetailPromoStore()
   const [brief, setBrief] = useState('')
   const [busy, setBusy] = useState(false)
+  const [templates, setTemplates] = useState<UserPromoTemplate[]>([])
+  const [tplName, setTplName] = useState('')
+  const [savingTpl, setSavingTpl] = useState(false)
+
+  useEffect(() => { void listPromoTemplates().then(setTemplates) }, [])
+
+  const saveTemplate = async () => {
+    const name = tplName.trim()
+    if (!name) return
+    setSavingTpl(true)
+    try {
+      await savePromoTemplate(name, config)
+      setTemplates(await listPromoTemplates())
+      setTplName('')
+      toast.success('Modèle enregistré')
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec enregistrement') } finally { setSavingTpl(false) }
+  }
+
+  const applyTemplate = (id: string) => {
+    const t = templates.find((x) => x.id === id)
+    if (t) { setConfig(t.config); toast.success(`Modèle « ${t.name} » appliqué`) }
+  }
+
+  const removeTemplate = async (id: string) => {
+    await deletePromoTemplate(id)
+    setTemplates(await listPromoTemplates())
+  }
 
   const generate = async () => {
     if (!brief.trim()) return
@@ -97,6 +125,37 @@ export function PromoTemplateEditor() {
             {label}
           </label>
         ))}
+      </div>
+
+      {/* Modèles enregistrés */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/5 pt-3">
+        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Modèles</span>
+        <input
+          value={tplName} onChange={(e) => setTplName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void saveTemplate() }}
+          placeholder="Nom du modèle…"
+          className="w-44 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]"
+        />
+        <button onClick={() => void saveTemplate()} disabled={savingTpl || !tplName.trim()}
+          className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 disabled:opacity-40">
+          {savingTpl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
+        </button>
+        {templates.length > 0 && (
+          <>
+            <span className="h-4 w-px bg-white/10" />
+            <select defaultValue="" onChange={(e) => { if (e.target.value) { applyTemplate(e.target.value); e.target.value = '' } }}
+              className="rounded-lg border border-white/10 bg-well px-2 py-1.5 text-sm text-white [&>option]:bg-neutral-900">
+              <option value="">Appliquer un modèle…</option>
+              {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            {templates.map((t) => (
+              <button key={t.id} onClick={() => void removeTemplate(t.id)} title={`Supprimer « ${t.name} »`}
+                className="flex items-center gap-1 rounded bg-white/[0.04] px-2 py-1 text-xs text-white/50 hover:bg-red-500/15 hover:text-red-400">
+                <Trash2 className="h-3 w-3" />{t.name}
+              </button>
+            ))}
+          </>
+        )}
       </div>
     </div>
   )

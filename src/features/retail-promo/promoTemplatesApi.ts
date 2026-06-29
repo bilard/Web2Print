@@ -1,0 +1,35 @@
+import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase/config'
+import type { PromoTemplateConfig } from './RetailPromoCard'
+
+export interface UserPromoTemplate {
+  id: string
+  name: string
+  config: PromoTemplateConfig
+}
+
+const colPath = (uid: string) => collection(db, 'users', uid, 'promoTemplates')
+
+/** Liste les modèles d'habillage de l'utilisateur (triés par nom). */
+export async function listPromoTemplates(): Promise<UserPromoTemplate[]> {
+  const uid = auth.currentUser?.uid
+  if (!uid) return []
+  const snap = await getDocs(colPath(uid))
+  return snap.docs
+    .map((d) => ({ id: d.id, name: String(d.data().name ?? d.id), config: d.data().config as PromoTemplateConfig }))
+    .filter((t) => t.config)
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** Enregistre l'habillage courant comme modèle réutilisable. */
+export async function savePromoTemplate(name: string, config: PromoTemplateConfig): Promise<void> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('Non connecté')
+  await setDoc(doc(colPath(uid)), { name, config, createdAt: serverTimestamp() })
+}
+
+export async function deletePromoTemplate(id: string): Promise<void> {
+  const uid = auth.currentUser?.uid
+  if (!uid) return
+  await deleteDoc(doc(db, 'users', uid, 'promoTemplates', id))
+}
