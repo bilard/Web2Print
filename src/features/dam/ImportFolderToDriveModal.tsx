@@ -21,7 +21,8 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<FolderUploadResult | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
+  const filesInputRef = useRef<HTMLInputElement>(null)
   const { uploadFolder, progress, cancel, isImageFile } = useDamFolderUpload()
 
   const reset = useCallback(() => {
@@ -70,20 +71,38 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
         </header>
 
         <div className="p-5 flex flex-col gap-4">
-          {/* 1. Images */}
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={running}
-            className="flex items-center gap-3 p-4 rounded-lg border-2 border-dashed border-white/10 hover:border-sky-500/40 hover:bg-surface-2 transition-colors text-left disabled:opacity-50"
-          >
-            <Images className="w-5 h-5 text-sky-400 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm text-white">{files.length ? `${files.length} image(s) prête(s)` : 'Choisir un dossier ou des images'}</p>
-              <p className="text-[11px] text-white/40 truncate">{files.length ? files.slice(0, 3).map((f) => f.name).join(', ') + (files.length > 3 ? '…' : '') : 'PNG, JPG, WebP, GIF, SVG'}</p>
+          {/* 1. Source : un dossier complet OU des images choisies une à une */}
+          <div className="rounded-lg border-2 border-dashed border-white/10 p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <Images className="w-5 h-5 text-sky-400 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm text-white">{files.length ? `${files.length} image(s) prête(s)` : 'Aucune image sélectionnée'}</p>
+                <p className="text-[11px] text-white/40 truncate">{files.length ? files.slice(0, 3).map((f) => f.name).join(', ') + (files.length > 3 ? '…' : '') : 'PNG, JPG, WebP, GIF, SVG'}</p>
+              </div>
             </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => folderInputRef.current?.click()}
+                disabled={running}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-white/[0.04] hover:bg-sky-500/10 hover:text-sky-300 border border-white/10 text-sm text-white/80 transition-colors disabled:opacity-50"
+              >
+                <FolderUp className="w-4 h-4 shrink-0" />
+                Choisir un dossier
+              </button>
+              <button
+                type="button"
+                onClick={() => filesInputRef.current?.click()}
+                disabled={running}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-white/[0.04] hover:bg-sky-500/10 hover:text-sky-300 border border-white/10 text-sm text-white/80 transition-colors disabled:opacity-50"
+              >
+                <Images className="w-4 h-4 shrink-0" />
+                Choisir des images
+              </button>
+            </div>
+            {/* Sélection d'un dossier entier (toutes les images dedans) */}
             <input
-              ref={inputRef}
+              ref={folderInputRef}
               type="file"
               multiple
               accept="image/*"
@@ -91,7 +110,16 @@ export function ImportFolderToDriveModal({ open, onClose }: Props) {
               {...({ webkitdirectory: 'true', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>)}
               onChange={(e) => { onFiles(e.target.files); e.target.value = '' }}
             />
-          </button>
+            {/* Sélection d'images individuelles (sans webkitdirectory) */}
+            <input
+              ref={filesInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { onFiles(e.target.files); e.target.value = '' }}
+            />
+          </div>
 
           {/* 2. Dossier Drive */}
           <button

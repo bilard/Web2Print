@@ -41,14 +41,14 @@ export function DamPage() {
   const canGdrive = useCan('dam.gdrive')
 
   return (
-    <div className="flex h-full bg-background">
+    <div className="flex h-full bg-background overflow-hidden">
       <DamNavSidebar />
 
       {activeTab === 'stock' && <DamSidebar />}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {TAB_TITLES[activeTab] && (
-          <div className="flex items-center justify-between px-6 h-14 border-b border-white/5">
+          <div className="flex items-center justify-between px-6 h-14 shrink-0 border-b border-white/5">
             <h1 className="text-[15px] font-semibold text-white tracking-tight">
               {TAB_TITLES[activeTab]}
             </h1>
@@ -69,7 +69,7 @@ export function DamPage() {
         {activeTab === 'generate' && canGenerate && <DamGenerate />}
         {activeTab === 'videos' && canAnimations && <UserAnimationsList />}
         {activeTab === 'gdrive' && canGdrive && (
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto p-6 min-h-0">
             {gdriveConnected ? (
               <GDrivePanel />
             ) : (
