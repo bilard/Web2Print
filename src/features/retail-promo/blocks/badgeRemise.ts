@@ -23,7 +23,7 @@ const def: PromoBlockDef = {
       ry: r,
       fill: palette.accent,
     })
-    const label = new Textbox('{{promo_remiseLabel}}', {
+    const label = new Textbox('-00%', {
       left: x,
       top: y + h * 0.28,
       width: w,
@@ -34,7 +34,11 @@ const def: PromoBlockDef = {
       fontFamily,
       scaleX: 1,
     })
+    // Échantillon court au build : le token {{}} insécable déborderait la box et
+    // corromprait la géométrie du groupe ; la fusion lit data.templateText.
+    label.data = { templateText: '{{promo_remiseLabel}}' }
     const g = new Group([disc, label], { subTargetCheck: true, interactive: false })
+    g.set({ originX: 'left', originY: 'top' })
     g.data = {
       id: `promo_badge-remise_${Date.now()}`,
       type: 'promo-block',

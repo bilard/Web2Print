@@ -28,7 +28,7 @@ const def: PromoBlockDef = {
       fill: palette.primary,
     })
 
-    const prixWas = new Textbox('{{promo_priceWas}}', {
+    const prixWas = new Textbox('00,00 €', {
       left: x,
       top: y + h * 0.06,
       width: w,
@@ -39,9 +39,11 @@ const def: PromoBlockDef = {
       scaleX: 1,
       linethrough: true,
     })
-    prixWas.data = { conditionalRules: [wasRule] }
+    // Échantillon court au build (token {{}} insécable déborderait la box) ;
+    // la fusion résout via data.templateText.
+    prixWas.data = { templateText: '{{promo_priceWas}}', conditionalRules: [wasRule] }
 
-    const prixNow = new Textbox('{{promo_priceNow}}', {
+    const prixNow = new Textbox('00,00 €', {
       left: x,
       top: y + h * 0.44,
       width: w,
@@ -52,8 +54,10 @@ const def: PromoBlockDef = {
       fontFamily,
       scaleX: 1,
     })
+    prixNow.data = { templateText: '{{promo_priceNow}}' }
 
     const g = new Group([bg, prixWas, prixNow], { subTargetCheck: true, interactive: false })
+    g.set({ originX: 'left', originY: 'top' })
     g.data = {
       id: `promo_prix-barre_${Date.now()}`,
       type: 'promo-block',

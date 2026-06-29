@@ -43,6 +43,7 @@ const def: PromoBlockDef = {
       scaleX: 1,
     })
     const g = new Group([bg, txt], { subTargetCheck: true, interactive: false })
+    g.set({ originX: 'left', originY: 'top' })
     g.data = {
       id: `promo_mentions_${Date.now()}`,
       type: 'promo-block',

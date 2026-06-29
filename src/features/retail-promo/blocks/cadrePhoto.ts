@@ -49,6 +49,7 @@ const def: PromoBlockDef = {
 
     // La règle d'opacité est sur le GROUP : c'est l'ensemble du bloc qui s'atténue.
     const g = new Group([placeholder, img], { subTargetCheck: true, interactive: false })
+    g.set({ originX: 'left', originY: 'top' })
     g.data = {
       id: `promo_cadre-photo_${Date.now()}`,
       type: 'promo-block',

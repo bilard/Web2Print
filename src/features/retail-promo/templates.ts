@@ -1,7 +1,7 @@
 import type { PromoLayout } from './promoTypes'
 
 const A4: PromoLayout = {
-  id: 'affiche-a4', label: 'Affiche A4', width: 794, height: 1123, background: '#ffffff',
+  id: 'affiche-a4', label: 'Affiche A4', width: 595, height: 842, background: '#ffffff',
   blocks: [
     { blockId: 'accroche', xPct: 0.06, yPct: 0.05, wPct: 0.88, hPct: 0.12 },
     { blockId: 'cadre-photo', xPct: 0.12, yPct: 0.20, wPct: 0.76, hPct: 0.40 },
@@ -14,7 +14,7 @@ const A4: PromoLayout = {
 }
 
 const ENCART: PromoLayout = {
-  id: 'encart-demi', label: 'Encart ½ page', width: 794, height: 561, background: '#ffffff',
+  id: 'encart-demi', label: 'Encart ½ page', width: 595, height: 421, background: '#ffffff',
   blocks: [
     { blockId: 'cadre-photo', xPct: 0.04, yPct: 0.10, wPct: 0.40, hPct: 0.78 },
     { blockId: 'accroche', xPct: 0.48, yPct: 0.10, wPct: 0.48, hPct: 0.20 },
@@ -25,7 +25,7 @@ const ENCART: PromoLayout = {
 }
 
 const ETIQUETTE: PromoLayout = {
-  id: 'etiquette-a6', label: 'Étiquette rayon A6', width: 559, height: 397, background: '#ffffff',
+  id: 'etiquette-a6', label: 'Étiquette rayon A6', width: 420, height: 298, background: '#ffffff',
   blocks: [
     { blockId: 'accroche', xPct: 0.05, yPct: 0.06, wPct: 0.90, hPct: 0.22 },
     { blockId: 'prix-barre', xPct: 0.05, yPct: 0.34, wPct: 0.60, hPct: 0.46 },
@@ -35,7 +35,7 @@ const ETIQUETTE: PromoLayout = {
 }
 
 const A3: PromoLayout = {
-  id: 'affiche-a3', label: 'Affiche A3', width: 1123, height: 1587, background: '#ffffff',
+  id: 'affiche-a3', label: 'Affiche A3', width: 842, height: 1191, background: '#ffffff',
   blocks: [
     { blockId: 'accroche', xPct: 0.06, yPct: 0.05, wPct: 0.88, hPct: 0.12 },
     { blockId: 'cadre-photo', xPct: 0.10, yPct: 0.20, wPct: 0.80, hPct: 0.42 },
