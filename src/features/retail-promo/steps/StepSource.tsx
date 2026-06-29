@@ -67,6 +67,7 @@ export function StepSource() {
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-white">Source des produits</h2>
       <p className="text-sm text-white/60">Choisissez d'où proviennent vos données produit.</p>
+      <p className="text-xs text-white/40 -mt-2">Pas de catalogue PIM&nbsp;? Prenez <span className="text-white/70">Saisie manuelle</span> (1 produit pour tester) ou <span className="text-white/70">Données Excel</span>. Étapes suivantes&nbsp;: correspondance des champs → aperçu &amp; export PNG.</p>
       {[
         { id: 'pim', icon: Database, label: 'Catalogue PIM', desc: 'Produits de votre catalogue enrichi' },
         { id: 'excel', icon: FileSpreadsheet, label: 'Données Excel / Sheets', desc: 'Fichier BDD importé' },
@@ -97,7 +98,14 @@ export function StepSource() {
           {p.name}
         </button>
       ))}
-      {!loadingItems && pimProjects.length === 0 && <p className="text-white/40 text-sm">Aucun projet PIM.</p>}
+      {!loadingItems && pimProjects.length === 0 && (
+        <div className="text-sm text-white/50 space-y-2">
+          <p>Aucun projet PIM dans votre compte.</p>
+          <button onClick={() => setMode('manual')} className="text-[#6366f1] hover:underline">→ Utiliser la saisie manuelle</button>
+          <span className="text-white/30"> · </span>
+          <button onClick={() => setMode('excel')} className="text-[#6366f1] hover:underline">→ Importer un Excel</button>
+        </div>
+      )}
     </div>
   )
 
