@@ -3,14 +3,21 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AnalyticsEvent } from '../metrics'
 import { recentEvents, pageLabel, isInternalActivity } from '../metrics'
+import { useUsersMap } from '../useUsersMap'
 
 const PAGE_SIZE = 15
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+const ANON = '__anon__'
 type Opt = { value: string; label: string }
-type Filters = { page: string; device: string; country: string; day: string }
-const NONE: Filters = { page: 'all', device: 'all', country: 'all', day: 'all' }
+type Filters = { user: string; page: string; device: string; country: string; day: string }
+const NONE: Filters = { user: 'all', page: 'all', device: 'all', country: 'all', day: 'all' }
 
 const dayOf = (ts: number) => new Date(ts).toLocaleDateString('fr-FR')
+
+/** Détail de l'appareil : « OS · Navigateur » (ce qui est connu), pour la ligne secondaire. */
+const deviceDetail = (e: AnalyticsEvent): string => [e.os, e.browser].filter(Boolean).join(' · ')
+/** Lieu lisible : « Ville, PAYS » ou ce qui est connu (« — » si rien). */
+const placeOf = (e: AnalyticsEvent): string => [e.city, e.country].filter(Boolean).join(', ') || '—'
 
 /** Menu déroulant de filtre pour un en-tête de colonne. */
 function ColFilter({ value, onChange, options, allLabel }: { value: string; onChange: (v: string) => void; options: Opt[]; allLabel: string }) {
@@ -28,6 +35,9 @@ function ColFilter({ value, onChange, options, allLabel }: { value: string; onCh
 
 /** Journal de consultation : qui a vu quelle page et quand, avec un filtre par colonne. */
 export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
+  const usersMap = useUsersMap()
+  const userName = (uid: string | null): string => (uid ? usersMap.get(uid) ?? uid : 'Anonyme')
+
   const [f, setF] = useState<Filters>(NONE)
   const [page, setPage] = useState(0)
   const set = (k: keyof Filters, v: string) => { setF((p) => ({ ...p, [k]: v })); setPage(0) }
@@ -38,24 +48,30 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
     [events],
   )
 
-  // Options des colonnes filtrables (Page, Appareil, Pays, Jour).
+  // Options des colonnes filtrables (Utilisateur, Page, Appareil, Pays, Jour).
   const opts = useMemo(() => {
-    const pages = new Set<string>(); const countries = new Set<string>(); const days = new Map<string, true>()
-    let noCountry = false
+    const users = new Map<string, true>(); const pages = new Set<string>(); const countries = new Set<string>(); const days = new Map<string, true>()
+    let anon = false; let noCountry = false
     for (const e of sorted) {
+      if (e.uid) users.set(e.uid, true); else anon = true
       pages.add(pageLabel(e.path))
       if (e.country) countries.add(e.country); else noCountry = true
       days.set(dayOf(e.ts), true) // sorted = récent→ancien ⇒ ordre déjà chronologique inversé
     }
     return {
+      users: [
+        ...[...users.keys()].map((uid) => ({ value: uid, label: userName(uid) })).sort((a, b) => a.label.localeCompare(b.label)),
+        ...(anon ? [{ value: ANON, label: 'Anonyme' }] : []),
+      ],
       pages: [...pages].sort((a, b) => a.localeCompare(b)).map((p) => ({ value: p, label: p })),
       devices: [...new Set(sorted.map((e) => e.device))].map((d) => ({ value: d, label: DEVICE_FR[d] ?? d })),
       countries: [...[...countries].sort().map((c) => ({ value: c, label: c })), ...(noCountry ? [{ value: '__none__', label: '—' }] : [])],
       days: [...days.keys()].map((d) => ({ value: d, label: d })),
     }
-  }, [sorted])
+  }, [sorted, usersMap])
 
   const filtered = useMemo(() => sorted.filter((e) =>
+    (f.user === 'all' || (f.user === ANON ? !e.uid : e.uid === f.user)) &&
     (f.page === 'all' || pageLabel(e.path) === f.page) &&
     (f.device === 'all' || e.device === f.device) &&
     (f.country === 'all' || (f.country === '__none__' ? !e.country : e.country === f.country)) &&
@@ -90,12 +106,14 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="text-white/40">
+              <th className={TH}>Utilisateur</th>
               <th className={TH}>Page</th>
               <th className={TH}>Appareil</th>
-              <th className={TH}>Pays</th>
+              <th className={TH}>Lieu</th>
               <th className={`${TH} text-right whitespace-nowrap`}>Date &amp; heure</th>
             </tr>
             <tr>
+              <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.user} onChange={(v) => set('user', v)} options={opts.users} allLabel="Tous" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.page} onChange={(v) => set('page', v)} options={opts.pages} allLabel="Toutes" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.device} onChange={(v) => set('device', v)} options={opts.devices} allLabel="Tous" /></th>
               <th className="px-2 pb-2 pt-1 align-top text-left"><ColFilter value={f.country} onChange={(v) => set('country', v)} options={opts.countries} allLabel="Tous" /></th>
@@ -103,14 +121,21 @@ export function AnalyticsRecent({ events }: { events: AnalyticsEvent[] }) {
             </tr>
           </thead>
           <tbody>
-            {slice.map((e, i) => (
-              <tr key={`${e.vid}-${e.ts}-${i}`} className="hover:bg-white/[0.03]">
-                <td className={`${TD} text-white/70 truncate max-w-[260px]`} title={e.path}>{pageLabel(e.path)}</td>
-                <td className={`${TD} text-white/55`}>{DEVICE_FR[e.device] ?? e.device}</td>
-                <td className={`${TD} text-white/55`}>{e.country ?? '—'}</td>
-                <td className={`${TD} text-white/55 text-right whitespace-nowrap tabular-nums`}>{when(e.ts)}</td>
-              </tr>
-            ))}
+            {slice.map((e, i) => {
+              const detail = deviceDetail(e)
+              return (
+                <tr key={`${e.vid}-${e.ts}-${i}`} className="hover:bg-white/[0.03]">
+                  <td className={`${TD} truncate max-w-[180px] ${e.uid ? 'text-white/80' : 'text-white/35 italic'}`} title={e.uid ?? 'Visiteur anonyme'}>{userName(e.uid)}</td>
+                  <td className={`${TD} text-white/70 truncate max-w-[240px]`} title={e.path}>{pageLabel(e.path)}</td>
+                  <td className={`${TD} text-white/55`} title={detail || undefined}>
+                    <span>{DEVICE_FR[e.device] ?? e.device}</span>
+                    {detail && <span className="block text-white/35 text-[10px] leading-tight">{detail}</span>}
+                  </td>
+                  <td className={`${TD} text-white/55`}>{placeOf(e)}</td>
+                  <td className={`${TD} text-white/55 text-right whitespace-nowrap tabular-nums`}>{when(e.ts)}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         {filtered.length === 0 && (

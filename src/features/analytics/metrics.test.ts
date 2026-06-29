@@ -3,7 +3,7 @@ import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, typ
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
-  device: 'desktop', country: 'FR', vid: 'v1', sid: 's1', uid: null, ...o,
+  device: 'desktop', os: null, browser: null, country: 'FR', city: null, vid: 'v1', sid: 's1', uid: null, ...o,
 })
 
 describe('computeKpis', () => {

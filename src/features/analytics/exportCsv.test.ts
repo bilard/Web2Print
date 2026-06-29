@@ -4,7 +4,7 @@ import type { AnalyticsEvent } from './metrics'
 
 const ev: AnalyticsEvent = {
   ts: 0, path: '/promo', area: 'promo', ref: 'google.com', src: null,
-  device: 'mobile', country: 'FR', vid: 'v1', sid: 's1', uid: null,
+  device: 'mobile', os: 'iOS', browser: 'Safari', country: 'FR', city: 'Paris', vid: 'v1', sid: 's1', uid: null,
 }
 
 describe('eventsToCsv', () => {
@@ -16,7 +16,7 @@ describe('eventsToCsv', () => {
     expect(lines[1]).toContain('/promo')
   })
   it('neutralise une formule CSV (préfixe =)', () => {
-    const evil: AnalyticsEvent = { ts: 0, path: '/p', area: 'promo', ref: null, src: '=HYPERLINK("x")', device: 'desktop', country: null, vid: 'v', sid: 's', uid: null }
+    const evil: AnalyticsEvent = { ts: 0, path: '/p', area: 'promo', ref: null, src: '=HYPERLINK("x")', device: 'desktop', os: null, browser: null, country: null, city: null, vid: 'v', sid: 's', uid: null }
     const csv = eventsToCsv([evil])
     expect(csv).toContain("'=HYPERLINK")
   })

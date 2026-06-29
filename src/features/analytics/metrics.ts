@@ -8,7 +8,10 @@ export interface AnalyticsEvent {
   ref: string | null
   src: string | null
   device: Device
+  os: string | null
+  browser: string | null
   country: string | null
+  city: string | null
   vid: string
   sid: string
   uid: string | null

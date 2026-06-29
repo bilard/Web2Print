@@ -18,10 +18,16 @@ export const collectAnalytics = onRequest(
       (req.headers['x-appengine-country'] as string | undefined) ??
       (req.headers['x-country-code'] as string | undefined) ??
       null
+    // Ville best-effort : en-têtes géo edge (souvent vides derrière le rewrite Cloud Run).
+    const city =
+      (req.headers['x-appengine-city'] as string | undefined) ??
+      (req.headers['x-vercel-ip-city'] as string | undefined) ??
+      null
     const doc = buildEventDoc(req.body, {
       ua: (req.headers['user-agent'] as string) ?? '',
       referer: req.headers['referer'] as string | undefined,
       country: country && country !== 'ZZ' ? country : null,
+      city,
     })
     if (!doc) {
       res.status(204).end()
