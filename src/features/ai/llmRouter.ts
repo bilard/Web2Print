@@ -64,6 +64,7 @@ type LLMTask =
   | 'web.answer'
   | 'web.searchPlan'
   | 'data.columnCompletion'
+  | 'design.promoPlan'
 
 interface RouteConfig {
   primary: LLMProviderId
@@ -141,6 +142,9 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // 'telegram.chat'. NE PAS mettre 'claude-opus-4-8' ici, sinon le fallback gemini retombe sur
   // son défaut (souvent gemini-3.5-flash, JSON ~50 % d'échec, cf. mémoire projet).
   'data.columnCompletion': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // Génération de plan de composition retail (Visuels Promo) : placement sémantique de blocs
+  // en pourcentages → gemini-3.1-pro-preview (responseSchema fiable sur v1beta) ; Claude fallback.
+  'design.promoPlan': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
 }
 
 // Extraction = déterministe (temperature 0). Autres tâches créatives = 0.4.
@@ -170,6 +174,8 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   // Complétion de colonne : résultats textuels basés sur le contexte de la ligne,
   // légèrement créatif (résumé, traduction, reformulation) → 0.4.
   'data.columnCompletion':  0.4,
+  // Génération de plan promo : composition créative (placements en %) → légèrement créatif.
+  'design.promoPlan':       0.3,
 }
 
 interface GenerateJsonOptions<T> {
