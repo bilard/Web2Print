@@ -27,6 +27,8 @@ export interface Kpis {
 
 /** Filtres d'affichage (façon Google Analytics). `'all'` = pas de filtre. */
 export interface EventFilter {
+  /** Zone : `'site'` = site web public (tout sauf l'app), `'app'` = application. */
+  zone: string
   device: string
   country: string
   page: string
@@ -34,7 +36,7 @@ export interface EventFilter {
   user: string
 }
 
-export const NO_FILTER: EventFilter = { device: 'all', country: 'all', page: 'all', source: 'all', user: 'all' }
+export const NO_FILTER: EventFilter = { zone: 'all', device: 'all', country: 'all', page: 'all', source: 'all', user: 'all' }
 
 /** Source effective d'un event : utm_source si présent, sinon domaine référent. */
 function eventSource(e: AnalyticsEvent): string | null {
@@ -45,6 +47,7 @@ function eventSource(e: AnalyticsEvent): string | null {
 export function filterEvents(events: AnalyticsEvent[], f: EventFilter): AnalyticsEvent[] {
   return events.filter(
     (e) =>
+      (f.zone === 'all' || (f.zone === 'app' ? e.area === 'app' : e.area !== 'app')) &&
       (f.device === 'all' || e.device === f.device) &&
       (f.country === 'all' || e.country === f.country) &&
       (f.page === 'all' || e.path === f.page) &&

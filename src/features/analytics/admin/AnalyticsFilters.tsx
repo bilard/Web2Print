@@ -3,6 +3,11 @@ import { topBy, topSources, pageLabel, type AnalyticsEvent, type EventFilter } f
 import { useUsersMap } from '../useUsersMap'
 
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
+// Zone : sépare le trafic du site web public (promo, docs, accueil) de celui de l'application.
+const ZONE_OPTS: Opt[] = [
+  { value: 'site', label: 'Site web' },
+  { value: 'app', label: 'Application' },
+]
 
 interface Opt {
   value: string
@@ -69,6 +74,7 @@ export function AnalyticsFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
+      <Field label="Zone" value={filter.zone} options={ZONE_OPTS} onChange={(v) => onChange({ ...filter, zone: v })} />
       <Field label="Appareil" value={filter.device} options={devices} onChange={(v) => onChange({ ...filter, device: v })} />
       <Field label="Pays" value={filter.country} options={countries} onChange={(v) => onChange({ ...filter, country: v })} />
       <Field label="Page" value={filter.page} options={pages} onChange={(v) => onChange({ ...filter, page: v })} />
