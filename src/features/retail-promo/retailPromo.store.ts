@@ -10,6 +10,10 @@ interface PendingPromoApply {
   rows: MergeRow[]
   /** Si défini, générer un fond IA (Nano Banana 2) dans l'éditeur ; valeur = brief créatif. */
   aiBgBrief?: string | null
+  /** Mode « Affiche IA » : NB2 conçoit toute l'affiche, on pose juste les overlays texte. */
+  posterOverlay?: boolean
+  /** Brief créatif pour l'affiche IA. */
+  posterBrief?: string | null
 }
 
 interface RetailPromoState {

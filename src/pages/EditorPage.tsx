@@ -34,7 +34,9 @@ import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
 import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
+import { instantiatePosterOverlay } from '@/features/retail-promo/posterOverlay'
 import { useGeneratePromoBackground } from '@/features/retail-promo/useGeneratePromoBackground'
+import { useGeneratePromoPoster } from '@/features/retail-promo/useGeneratePromoPoster'
 import { SavePromoTemplateButton } from '@/features/retail-promo/SavePromoTemplateButton'
 import { globalSave } from '@/features/editor/useAutoSave'
 import { applyRowToCanvas } from '@/features/merge/useDataMerge'
@@ -58,6 +60,7 @@ export default function EditorPage() {
   // Retail-promo handoff: instantiation canvas + connexion merge augmentée
   const { pendingApply, clearPendingApply } = useRetailPromoStore()
   const { generateBackground } = useGeneratePromoBackground()
+  const { generatePoster } = useGeneratePromoPoster()
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
   const promoAppliedRef = useRef(false)
 
@@ -131,11 +134,29 @@ export default function EditorPage() {
         promoAppliedRef.current = true
         const apply = pendingApply // snapshot avant clear
         clearPendingApply()
-        instantiatePromoLayout(globalFabricCanvas, apply.layout, resolvedTheme)
+        if (apply.posterOverlay) {
+          // Mode « Affiche IA » : NB2 conçoit toute l'affiche (fond) + overlays texte.
+          const sample = (apply.rows[0] ?? {}) as Record<string, unknown>
+          const url = await generatePoster({
+            name: typeof sample.promo_name === 'string' ? sample.promo_name : '',
+            brief: apply.posterBrief ?? undefined,
+            width: apply.layout.width,
+            height: apply.layout.height,
+            imageUrl: typeof sample.promo_image === 'string' ? sample.promo_image : undefined,
+          })
+          if (url) {
+            const ui = useUIStore.getState()
+            ui.setCanvasBgType('image')
+            ui.setCanvasBgImage(url)
+          }
+          instantiatePosterOverlay(globalFabricCanvas, apply.layout.width, apply.layout.height)
+        } else {
+          instantiatePromoLayout(globalFabricCanvas, apply.layout, resolvedTheme)
+        }
         useMergeStore.getState().connect(apply.sourceRef, apply.columns, apply.rows)
         await applyRowToCanvas(globalFabricCanvas, apply.rows[0], { projectId: id })
         // Fond IA (Nano Banana 2) — généré ici car un projet est ouvert (upload gallery OK).
-        if (apply.aiBgBrief != null) {
+        if (!apply.posterOverlay && apply.aiBgBrief != null) {
           const url = await generateBackground({ brief: apply.aiBgBrief, width: apply.layout.width, height: apply.layout.height })
           if (url) {
             const ui = useUIStore.getState()
@@ -159,7 +180,7 @@ export default function EditorPage() {
 
     void tryApply()
     return () => { cancelled = true }
-  }, [pendingApply, id, clearPendingApply, resolvedTheme, generateBackground])
+  }, [pendingApply, id, clearPendingApply, resolvedTheme, generateBackground, generatePoster])
 
   useEffect(() => {
     if (id) setProjectId(id)

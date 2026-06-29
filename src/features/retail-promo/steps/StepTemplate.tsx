@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Wand2, Loader2, Trash2 } from 'lucide-react'
+import { Wand2, Loader2, Trash2, Sparkles } from 'lucide-react'
 import { auth } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '../retailPromo.store'
 import { CURATED_TEMPLATES } from '../templates'
@@ -71,6 +71,35 @@ export function StepTemplate() {
     }
   }
 
+  // Affiche créative entière par NB2 (génération dans l'éditeur via le handoff).
+  const handlePosterAI = async () => {
+    if (!sourceRef) return
+    setConfirming(true)
+    setError(null)
+    try {
+      const dims = CURATED_TEMPLATES[0] // A4 par défaut
+      const project = await createProject.mutateAsync({
+        title: 'Promo – Affiche IA',
+        canvasWidth: dims.width,
+        canvasHeight: dims.height,
+        canvasBg: '#ffffff',
+      })
+      setPendingApply({
+        projectId: project.id,
+        layout: { id: 'poster', label: 'Affiche IA', width: dims.width, height: dims.height, background: '#ffffff', blocks: [] },
+        sourceRef,
+        columns: augmented.columns,
+        rows: augmented.rows,
+        posterOverlay: true,
+        posterBrief: brief,
+      })
+      navigate(`/editor/${project.id}`, { state: { title: 'Promo – Affiche IA' } })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+      setConfirming(false)
+    }
+  }
+
   const handleAiGenerate = async () => {
     const layout = await generate({
       brief: brief || 'Affiche promo retail lisible',
@@ -86,7 +115,36 @@ export function StepTemplate() {
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-white">Gabarit</h2>
-      <p className="text-sm text-white/60">Choisissez un gabarit curé ou laissez l'IA composer.</p>
+      <p className="text-sm text-white/60">Affiche créative générée par IA, ou gabarit simple à remplir.</p>
+
+      {/* Affiche créative ENTIÈRE par NB2 (recommandé) — overlays prix/nom éditables */}
+      <div className="flex flex-col gap-2 p-4 rounded-xl border border-[#6366f1]/40 bg-[#6366f1]/[0.06]">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[#6366f1]" />
+          <span className="text-sm font-medium text-white">Affiche créative (Nano Banana 2)</span>
+        </div>
+        <p className="text-[11px] text-white/45">
+          NB2 conçoit toute l'affiche (produit, décor, pastille, cartouche). Le prix, le nom et le -X%
+          exacts sont ajoutés par-dessus, nets et éditables. ~15-30 s. Format A4.
+        </p>
+        <textarea
+          value={brief}
+          onChange={(e) => setBrief(e.target.value)}
+          rows={2}
+          placeholder="Brief créatif (ex: ambiance atelier, tons chauds, énergie soldes…)"
+          className="px-3 py-2 rounded-lg bg-well border border-white/10 text-white text-sm outline-none focus:border-[#6366f1] resize-none"
+        />
+        <button
+          onClick={() => void handlePosterAI()}
+          disabled={isWorking}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#6366f1] hover:bg-[#5457e5] text-[#fff] text-sm font-semibold disabled:opacity-40 transition-colors"
+        >
+          {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          Générer l'affiche créative
+        </button>
+      </div>
+
+      <p className="text-xs font-medium text-white/40 uppercase tracking-wide pt-1">Ou un gabarit simple</p>
 
       {/* Fond créatif IA (Nano Banana 2) */}
       <label className="flex items-start gap-2.5 p-3 rounded-lg bg-surface border border-white/10 cursor-pointer hover:bg-surface-2 transition-colors">

@@ -86,7 +86,9 @@ function ensurePageBgImage(canvas: Canvas, docW: number, docH: number, imageUrl:
     const img = existing as FabricImage
     const scaleX = docW / (img.width || 1)
     const scaleY = docH / (img.height || 1)
-    img.set({ left: 0, top: 0, scaleX, scaleY })
+    // originX/Y 'left'/'top' : sinon Fabric centre l'image sur (0,0) → ne couvre
+    // que le quart haut-gauche de la page.
+    img.set({ left: 0, top: 0, scaleX, scaleY, originX: 'left', originY: 'top' })
     // Keep it just above the page rect
     const pageRect = canvas.getObjects().find((o) => o.data?.id === PAGE_BG_ID)
     if (pageRect) {
@@ -104,6 +106,7 @@ function ensurePageBgImage(canvas: Canvas, docW: number, docH: number, imageUrl:
   imgEl.onload = () => {
     const fImg = new FabricImage(imgEl, {
       left: 0, top: 0,
+      originX: 'left', originY: 'top',
       selectable: false, evented: false, excludeFromExport: true,
       data: { id: PAGE_BG_IMG_ID, isPageBg: true, srcUrl: imageUrl },
     })
