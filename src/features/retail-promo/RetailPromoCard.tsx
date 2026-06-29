@@ -38,8 +38,10 @@ const CSS = `
 .rp-price { background:#ef4444; color:#fff; padding:26px 40px 30px; display:flex; align-items:flex-end; justify-content:space-between; }
 .rp-plabel { font-weight:700; font-size:14px; letter-spacing:.2em; text-transform:uppercase; opacity:.9; }
 .rp-was { font-size:25px; font-weight:600; text-decoration:line-through; opacity:.7; }
-.rp-left { display:flex; flex-direction:column; gap:8px; }
-.rp-now { font-weight:900; font-size:92px; line-height:.85; letter-spacing:-.02em; }
+.rp-left { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+.rp-now { font-weight:900; line-height:.85; letter-spacing:-.02em; white-space:nowrap;
+  display:flex; align-items:baseline; gap:6px; justify-content:flex-end; }
+.rp-cur { font-size:.5em; font-weight:800; }
 .rp-foot { background:#111827; color:#9ca3af; font-size:12px; padding:10px 40px; text-align:center; letter-spacing:.03em; min-height:38px; }
 `
 
@@ -73,7 +75,18 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData
           {data.priceWas && <span className="rp-was">{data.priceWas}</span>}
           {data.unitPrice && <span className="rp-unit">{data.unitPrice}</span>}
         </div>
-        <div className="rp-now">{data.priceNow}</div>
+        {(() => {
+          const t = (data.priceNow || '').trim()
+          const m = t.match(/^(.*?)\s*([€$£])\s*$/)
+          const amount = m ? m[1].trim() : t
+          const cur = m ? m[2] : ''
+          const fs = amount.length <= 6 ? 88 : amount.length <= 8 ? 68 : 54
+          return (
+            <div className="rp-now" style={{ fontSize: fs }}>
+              {amount}{cur && <span className="rp-cur">{cur}</span>}
+            </div>
+          )
+        })()}
       </div>
       <div className="rp-foot">{data.validite || ''}</div>
     </div>
