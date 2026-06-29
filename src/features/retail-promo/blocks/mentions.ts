@@ -22,7 +22,7 @@ const def: PromoBlockDef = {
   id: 'mentions',
   label: 'Mentions légales',
   conditionalRules: rules,
-  build({ x, y, w, h, palette, fontFamily }) {
+  build({ x, y, w, h, fontFamily }) {
     // Fond transparent : les mentions se lisent sur le fond de page.
     const bg = new Rect({
       left: x,
@@ -37,8 +37,8 @@ const def: PromoBlockDef = {
       width: w,
       fontSize: Math.max(8, h * 0.28),
       fontWeight: '400',
-      textAlign: 'left',
-      fill: palette.text,
+      textAlign: 'center',
+      fill: 'rgba(15,23,42,0.45)',
       fontFamily,
       scaleX: 1,
     })

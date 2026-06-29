@@ -3,13 +3,13 @@ import type { PromoLayout } from './promoTypes'
 const A4: PromoLayout = {
   id: 'affiche-a4', label: 'Affiche A4', width: 595, height: 842, background: '#ffffff',
   blocks: [
-    { blockId: 'accroche', xPct: 0.06, yPct: 0.05, wPct: 0.88, hPct: 0.12 },
-    { blockId: 'cadre-photo', xPct: 0.12, yPct: 0.20, wPct: 0.76, hPct: 0.40 },
-    { blockId: 'prix-barre', xPct: 0.10, yPct: 0.64, wPct: 0.55, hPct: 0.16 },
-    { blockId: 'badge-remise', xPct: 0.68, yPct: 0.60, wPct: 0.24, hPct: 0.16 },
-    { blockId: 'bandeau-lot', xPct: 0.10, yPct: 0.82, wPct: 0.80, hPct: 0.07 },
-    { blockId: 'bandeau-validite', xPct: 0.10, yPct: 0.90, wPct: 0.80, hPct: 0.04 },
-    { blockId: 'mentions', xPct: 0.10, yPct: 0.95, wPct: 0.80, hPct: 0.03 },
+    { blockId: 'accroche', xPct: 0.06, yPct: 0.05, wPct: 0.88, hPct: 0.13 },
+    { blockId: 'cadre-photo', xPct: 0.10, yPct: 0.22, wPct: 0.80, hPct: 0.42 },
+    { blockId: 'badge-remise', xPct: 0.60, yPct: 0.17, wPct: 0.30, hPct: 0.21 },
+    { blockId: 'prix-barre', xPct: 0.14, yPct: 0.68, wPct: 0.72, hPct: 0.19 },
+    { blockId: 'bandeau-lot', xPct: 0.24, yPct: 0.885, wPct: 0.52, hPct: 0.05 },
+    { blockId: 'bandeau-validite', xPct: 0.10, yPct: 0.945, wPct: 0.80, hPct: 0.028 },
+    { blockId: 'mentions', xPct: 0.10, yPct: 0.975, wPct: 0.80, hPct: 0.02 },
   ],
 }
 

@@ -7,7 +7,10 @@ export function blockRectPx(b: PlacedBlock, width: number, height: number) {
   return { x: Math.round(b.xPct * width), y: Math.round(b.yPct * height), w: Math.round(b.wPct * width), h: Math.round(b.hPct * height) }
 }
 
-const DEFAULT_PALETTE = { primary: '#111827', accent: '#e11d48', text: '#111827' }
+// Palette par défaut : navy (texte/prix), indigo de marque (bandeaux/kickers).
+// Le badge de remise porte sa propre couleur soldes (rouge) dans badgeRemise.ts.
+const DEFAULT_PALETTE = { primary: '#0f172a', accent: '#6366f1', text: '#0f172a' }
+const DEFAULT_FONT = 'Montserrat'
 
 export function instantiatePromoLayout(canvas: Canvas, layout: PromoLayout, resolvedTheme: 'light' | 'dark'): void {
   for (const b of layout.blocks) {
@@ -17,7 +20,7 @@ export function instantiatePromoLayout(canvas: Canvas, layout: PromoLayout, reso
     const obj = def.build({
       x, y, w, h,
       palette: { ...DEFAULT_PALETTE, ...(b.palette ?? {}) },
-      fontFamily: b.fontFamily ?? 'Arial',
+      fontFamily: b.fontFamily ?? DEFAULT_FONT,
       resolvedTheme,
     })
     canvas.add(obj)

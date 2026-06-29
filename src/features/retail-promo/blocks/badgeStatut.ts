@@ -9,27 +9,28 @@ const def: PromoBlockDef = {
   id: 'badge-statut',
   label: 'Badge statut (NOUVEAU…)',
   conditionalRules: rules,
-  build({ x, y, w, h, palette, fontFamily }) {
-    const r = h * 0.15
+  build({ x, y, w, h, palette }) {
     const bg = new Rect({
       left: x,
       top: y,
       width: w,
       height: h,
-      rx: r,
-      ry: r,
+      rx: h / 2,
+      ry: h / 2,
       fill: palette.accent,
     })
     // Texte fixe éditable — l'utilisateur peut le modifier dans l'éditeur.
     const txt = new Textbox('NOUVEAU', {
       left: x,
-      top: y + h * 0.22,
+      top: y + h * 0.5 - h * 0.26,
       width: w,
-      fontSize: h * 0.48,
-      fontWeight: '900',
+      fontSize: h * 0.46,
+      fontWeight: '700',
       textAlign: 'center',
+      charSpacing: 150,
       fill: '#ffffff',
-      fontFamily,
+      fontFamily: 'Oswald',
+      lineHeight: 1.0,
       scaleX: 1,
     })
     const g = new Group([bg, txt], { subTargetCheck: true, interactive: false })
