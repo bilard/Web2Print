@@ -5,6 +5,7 @@ import { httpsCallable } from 'firebase/functions'
 import { Download, Package, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { functions } from '@/lib/firebase/config'
+import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { useRetailPromoStore } from '../retailPromo.store'
 import { extractPromoFields } from '../promoMapping'
 import { formatPrice } from '../priceParse'
@@ -17,13 +18,22 @@ const imgCache = new Map<string, string | null>()
 
 async function resolveImg(url?: string): Promise<string | undefined> {
   if (!url) return undefined
-  if (url.startsWith('data:')) return url
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url
   if (imgCache.has(url)) return imgCache.get(url) ?? undefined
   try {
-    const { data } = await imageProxyFn({ url })
-    const dataUrl = `data:${data.mimeType};base64,${data.data}`
-    imgCache.set(url, dataUrl)
-    return dataUrl
+    let resolved: string
+    if (isDriveImageRef(url)) {
+      // Asset DAM (Google Drive privé) → blob: same-origin, capturable par html2canvas.
+      const fileId = extractDriveFileId(url)
+      if (!fileId) throw new Error('fileId Drive introuvable')
+      resolved = await resolveDriveImageUrl(fileId)
+    } else {
+      // URL externe http(s) → proxy serveur (contourne CORS) → data-URI.
+      const { data } = await imageProxyFn({ url })
+      resolved = `data:${data.mimeType};base64,${data.data}`
+    }
+    imgCache.set(url, resolved)
+    return resolved
   } catch {
     imgCache.set(url, null)
     return undefined

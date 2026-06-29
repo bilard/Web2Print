@@ -6,7 +6,7 @@ import { parsePrice, computeMechanism } from './priceParse'
 /** Indices de devinage : libellés/aliases (en minuscules) qui pointent vers chaque champ promo. */
 const GUESS: Partial<Record<PromoFieldKey, string[]>> = {
   name: ['nom', 'name', 'libelle', 'libellé', 'désignation', 'designation', 'ai_name'],
-  image: ['image', 'images', 'photo', 'visuel', 'ai_images'],
+  image: ['image (dam)', 'image(dam)', 'image_dam', 'image dam', 'images', 'image', 'photo', 'visuel', 'ai_images'],
   brand: ['marque', 'brand', 'ai_brand'],
   ref: ['référence', 'reference', 'ref', 'sku', 'ai_distributor_ref'],
   ean: ['ean', 'gencod', 'code-barres', 'barcode', 'ai_ean'],

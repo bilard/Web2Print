@@ -26,9 +26,9 @@ const CSS = `
 .rp-desc { color:#cbd5e1; font-weight:500; font-size:15px; line-height:1.3; margin-top:4px;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .rp-unit { font-weight:600; font-size:15px; opacity:.85; margin-top:2px; }
-.rp-product { position:relative; flex:1; display:flex; align-items:center; justify-content:center; padding:36px;
+.rp-product { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:36px;
   background:radial-gradient(120% 90% at 50% 30%, #f1f5f9 0%, #ffffff 70%); }
-.rp-product img { max-width:84%; max-height:88%; object-fit:contain; filter:drop-shadow(0 24px 30px rgba(15,23,42,.18)); }
+.rp-product img { max-width:84%; max-height:100%; object-fit:contain; filter:drop-shadow(0 24px 30px rgba(15,23,42,.18)); }
 .rp-ph { width:78%; height:74%; border-radius:16px; background:repeating-linear-gradient(45deg,#e9eef5 0 18px,#eef2f8 18px 36px);
   display:flex; align-items:center; justify-content:center; color:#94a3b8; font-weight:700; letter-spacing:.12em; font-size:13px; }
 .rp-badge { position:absolute; top:28px; right:34px; width:150px; height:150px; border-radius:50%; background:#ef4444; color:#fff;
