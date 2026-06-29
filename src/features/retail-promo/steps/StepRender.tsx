@@ -1,13 +1,46 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
+import { httpsCallable } from 'firebase/functions'
 import { Download, Package, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { functions } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '../retailPromo.store'
 import { extractPromoFields } from '../promoMapping'
 import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { RetailPromoCard, type RetailCardData } from '../RetailPromoCard'
+
+const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
+// Cache module : une URL résolue une seule fois (data-URI ou null si échec).
+const imgCache = new Map<string, string | null>()
+
+async function resolveImg(url?: string): Promise<string | undefined> {
+  if (!url) return undefined
+  if (url.startsWith('data:')) return url
+  if (imgCache.has(url)) return imgCache.get(url) ?? undefined
+  try {
+    const { data } = await imageProxyFn({ url })
+    const dataUrl = `data:${data.mimeType};base64,${data.data}`
+    imgCache.set(url, dataUrl)
+    return dataUrl
+  } catch {
+    imgCache.set(url, null)
+    return undefined
+  }
+}
+
+/** Formate la mécanique promo : ratio 0.28 → « -28% », 28 → « -28% », sinon texte brut. */
+function fmtPromoLabel(raw: string): string | undefined {
+  const t = raw.trim()
+  if (!t) return undefined
+  const n = Number(t.replace(',', '.'))
+  if (Number.isFinite(n)) {
+    if (n > 0 && n < 1) return `-${Math.round(n * 100)}%`
+    if (n >= 1 && n < 100) return `-${Math.round(n)}%`
+  }
+  return t
+}
 
 function validText(f: PromoFields): string {
   if (f.validFrom && f.validTo) return `Offre valable du ${f.validFrom} au ${f.validTo}`
@@ -20,9 +53,12 @@ function toCardData(f: PromoFields): RetailCardData {
     name: f.name,
     brand: f.brand || undefined,
     ref: f.ref || undefined,
+    category: f.category || undefined,
+    description: f.description || undefined,
     priceNow: f.newPrice != null ? formatPrice(f.newPrice, f.currency) : '—',
     priceWas: f.oldPrice != null ? formatPrice(f.oldPrice, f.currency) : undefined,
-    remiseLabel: f.remisePct != null ? `-${f.remisePct}%` : undefined,
+    unitPrice: f.unitPrice || undefined,
+    remiseLabel: fmtPromoLabel(f.promoLabel) || (f.remisePct != null ? `-${f.remisePct}%` : undefined),
     validite: validText(f),
     imageUrl: f.image ?? undefined,
   }
@@ -41,12 +77,25 @@ export function StepRender() {
 
   const [index, setIndex] = useState(0)
   const [busy, setBusy] = useState<'one' | 'all' | null>(null)
+  const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
   const previewRef = useRef<HTMLDivElement>(null)
+
+  const safe = cards.length ? Math.min(index, cards.length - 1) : 0
+
+  // Résout l'image du produit affiché (proxy serveur → data-URI capturable).
+  useEffect(() => {
+    let cancelled = false
+    setResolvedImg(undefined)
+    void resolveImg(cards[safe]?.imageUrl).then((u) => { if (!cancelled) setResolvedImg(u) })
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safe, cards[safe]?.imageUrl])
 
   if (cards.length === 0) {
     return <p className="text-white/60 text-sm">Aucun produit. <button className="text-[#6366f1]" onClick={() => setStep('mapping')}>← Retour</button></p>
   }
-  const safe = Math.min(index, cards.length - 1)
+
+  const currentData: RetailCardData = { ...cards[safe], imageUrl: resolvedImg }
 
   const downloadOne = async () => {
     if (!previewRef.current) return
@@ -70,7 +119,9 @@ export function StepRender() {
       const node = previewRef.current
       for (let i = 0; i < cards.length; i++) {
         setIndex(i)
-        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 60)))
+        const img = await resolveImg(cards[i].imageUrl)
+        setResolvedImg(img)
+        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 140)))
         const blob = await capture(node)
         if (blob) zip.file(`promo_${String(i + 1).padStart(3, '0')}_${slug(cards[i].name)}.png`, blob)
       }
@@ -93,7 +144,7 @@ export function StepRender() {
       {/* Aperçu du card (échelle réduite) */}
       <div className="flex justify-center bg-well rounded-xl p-6 overflow-hidden">
         <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
-          <RetailPromoCard ref={previewRef} data={cards[safe]} />
+          <RetailPromoCard ref={previewRef} data={currentData} />
         </div>
       </div>
 

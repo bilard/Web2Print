@@ -4,8 +4,11 @@ export interface RetailCardData {
   name: string
   brand?: string
   ref?: string
+  category?: string
+  description?: string
   priceNow: string
   priceWas?: string
+  unitPrice?: string
   remiseLabel?: string
   validite?: string
   imageUrl?: string
@@ -20,6 +23,9 @@ const CSS = `
   letter-spacing:.18em; text-transform:uppercase; padding:6px 14px; border-radius:4px; }
 .rp-name { font-weight:800; font-size:44px; line-height:1.03; letter-spacing:-.01em; }
 .rp-brand { color:#9ca3af; font-weight:600; font-size:17px; }
+.rp-desc { color:#cbd5e1; font-weight:500; font-size:15px; line-height:1.3; margin-top:4px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.rp-unit { font-weight:600; font-size:15px; opacity:.85; margin-top:2px; }
 .rp-product { position:relative; flex:1; display:flex; align-items:center; justify-content:center; padding:36px;
   background:radial-gradient(120% 90% at 50% 30%, #f1f5f9 0%, #ffffff 70%); }
 .rp-product img { max-width:84%; max-height:88%; object-fit:contain; filter:drop-shadow(0 24px 30px rgba(15,23,42,.18)); }
@@ -43,11 +49,12 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData
     <div ref={ref} className="rp-card">
       <style>{CSS}</style>
       <div className="rp-head">
-        <span className="rp-kicker">Offre spéciale</span>
+        <span className="rp-kicker">{data.category || 'Offre spéciale'}</span>
         <div className="rp-name">{data.name || 'Produit'}</div>
         {(data.brand || data.ref) && (
           <div className="rp-brand">{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
         )}
+        {data.description && <div className="rp-desc">{data.description}</div>}
       </div>
       <div className="rp-product">
         {data.imageUrl
@@ -64,6 +71,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData
         <div className="rp-left">
           <span className="rp-plabel">Prix promo</span>
           {data.priceWas && <span className="rp-was">{data.priceWas}</span>}
+          {data.unitPrice && <span className="rp-unit">{data.unitPrice}</span>}
         </div>
         <div className="rp-now">{data.priceNow}</div>
       </div>
