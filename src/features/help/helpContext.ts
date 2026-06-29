@@ -26,6 +26,7 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   telegram: 'telegram',
   access: 'access',
   'price-watch': 'price-watch',
+  'retail-promo': 'retail-promo',
   editor: 'editor',
 }
 

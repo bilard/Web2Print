@@ -54,6 +54,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'workflows.delete', module: 'Workflows', label: 'Supprimer un workflow' },
   { key: 'workflows.run', module: 'Workflows', label: 'Exécuter les workflows' },
   { key: 'priceWatch.view', module: 'Veille tarifaire', label: 'Voir la veille tarifaire' },
+  { key: 'retailPromo.view', module: 'Promo Retail', label: 'Voir le module Promo Retail' },
+  { key: 'retailPromo.edit', module: 'Promo Retail', label: 'Créer/éditer des promos retail' },
   { key: 'hyperframes.view', module: 'Animation', label: 'Voir le module Animation' },
   { key: 'chat.view', module: 'Chat IA', label: 'Voir le Chat IA' },
   { key: 'telegram.view', module: 'Telegram', label: 'Voir Telegram' },

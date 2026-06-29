@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown } from 'lucide-react'
+import { Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 
@@ -18,7 +18,7 @@ import { useAccessStore } from '@/stores/access.store'
 export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
-  | 'hyperframes' | 'telegram' | 'access' | 'price-watch'
+  | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo'
 
 export interface ModuleChild {
   /** Suffixe d'action, ex. 'tab:favorites'. */
@@ -117,6 +117,12 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'section:comparison', label: 'Comparatif',  intent: 'price-watch:section:comparison' },
     ],
   },
+  { id: 'retail-promo', icon: Tag, label: 'Promo Retail', accent: 'text-rose-400', activeBg: 'bg-rose-500/[0.1]', activeText: 'text-rose-300',
+    children: [
+      { id: 'action:new',  label: 'Créer une promo', intent: 'retail-promo:action:new' },
+      { id: 'action:list', label: 'Mes promos',       intent: 'retail-promo:action:list' },
+    ],
+  },
   { id: 'telegram', icon: Send, label: 'Telegram', accent: 'text-blue-400', activeBg: 'bg-blue-500/[0.1]', activeText: 'text-blue-300',
     children: [
       { id: 'action:new', label: 'Nouveau message', intent: 'telegram:action:new' },
@@ -160,6 +166,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   'scraping-hub': 'scrapingHub.view',
   workflows: 'workflows.view',
   'price-watch': 'priceWatch.view',
+  'retail-promo': 'retailPromo.view',
   hyperframes: 'hyperframes.view',
   chat: 'chat.view',
   telegram: 'telegram.view',
