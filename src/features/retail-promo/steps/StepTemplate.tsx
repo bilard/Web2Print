@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Wand2, Loader2 } from 'lucide-react'
+import { Wand2, Loader2, Trash2 } from 'lucide-react'
+import { auth } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '../retailPromo.store'
 import { CURATED_TEMPLATES } from '../templates'
+import { listPromoTemplates, deletePromoTemplate, type UserPromoTemplate } from '../promoTemplatesApi'
 import { useGeneratePromoPlan } from '../useGeneratePromoPlan'
 import { augmentRowsWithPromo } from '../augmentRows'
 import { useCreateProject } from '@/features/projects/useCreateProject'
@@ -22,6 +24,20 @@ export function StepTemplate() {
   const [aiBg, setAiBg] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [userTemplates, setUserTemplates] = useState<UserPromoTemplate[]>([])
+
+  // Mes modèles persistés (users/{uid}/promoTemplates)
+  useEffect(() => {
+    const uid = auth.currentUser?.uid
+    if (uid) void listPromoTemplates(uid).then(setUserTemplates)
+  }, [])
+
+  const removeTemplate = async (id: string) => {
+    const uid = auth.currentUser?.uid
+    if (!uid) return
+    await deletePromoTemplate(uid, id)
+    setUserTemplates((prev) => prev.filter((t) => t.id !== id))
+  }
 
   // Augment once — reused for both AI sample and the handoff connect
   const augmented = augmentRowsWithPromo(rawColumns, rawRows, fieldMap)
@@ -109,6 +125,38 @@ export function StepTemplate() {
           </button>
         ))}
       </div>
+
+      {/* Mes modèles (persistés) */}
+      {userTemplates.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Mes modèles</p>
+          <div className="grid grid-cols-2 gap-3">
+            {userTemplates.map((t) => (
+              <div key={t.id} className="relative group">
+                <button
+                  onClick={() => void handleConfirm(t.layout)}
+                  disabled={isWorking}
+                  className="w-full flex flex-col items-center gap-2 p-3 rounded-xl border border-[#6366f1]/30 bg-surface hover:bg-surface-2 transition-colors disabled:opacity-40"
+                >
+                  <div
+                    className="rounded bg-[#6366f1]/15 w-full"
+                    style={{ aspectRatio: `${t.layout.width}/${t.layout.height}`, maxHeight: 64 }}
+                  />
+                  <span className="text-xs text-white/70 truncate max-w-full">{t.name}</span>
+                  <span className="text-xs text-white/40">{t.layout.width}×{t.layout.height} px</span>
+                </button>
+                <button
+                  onClick={() => void removeTemplate(t.id)}
+                  title="Supprimer ce modèle"
+                  className="absolute top-1.5 right-1.5 p-1 rounded bg-black/40 text-white/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Générer via IA */}
       {!showBrief ? (

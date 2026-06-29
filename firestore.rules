@@ -203,6 +203,12 @@ service cloud.firestore {
       allow delete: if hasPermission('workflows.delete') && request.auth.uid == uid;
     }
 
+    // Modèles promo personnalisés (module Promo Retail).
+    match /users/{uid}/promoTemplates/{templateId} {
+      allow read:   if isAuthenticated() && request.auth.uid == uid;
+      allow write:  if hasPermission('retailPromo.edit') && request.auth.uid == uid;
+    }
+
     // État du node « Veille prix » + module « Veille tarifaire » : le doc de suivi
     // {watchId} ET ses sous-collections (products / sites / matches / history).
     // Wildcard récursif car les règles ne cascadent pas aux sous-collections.

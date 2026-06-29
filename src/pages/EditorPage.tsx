@@ -35,6 +35,7 @@ import { storage } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
 import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
 import { useGeneratePromoBackground } from '@/features/retail-promo/useGeneratePromoBackground'
+import { SavePromoTemplateButton } from '@/features/retail-promo/SavePromoTemplateButton'
 import { globalSave } from '@/features/editor/useAutoSave'
 import { applyRowToCanvas } from '@/features/merge/useDataMerge'
 import { useMergeStore } from '@/stores/merge.store'
@@ -274,6 +275,7 @@ export default function EditorPage() {
         <ToolBar />
         <div data-tour="canvas" className="flex-1 min-w-0 relative overflow-hidden">
           <CanvasContainer />
+          <SavePromoTemplateButton />
 
           {idmlImporting && (
             <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-3 pointer-events-none">
