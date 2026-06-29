@@ -18,7 +18,10 @@ export type PromoColorKey =
   | 'category' | 'name' | 'brand' | 'description'
   | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow' | 'footer'
 
-export type PromoBlockId = 'header' | 'image' | 'badge' | 'price' | 'footer'
+export type PromoBlockId =
+  | 'header' | 'image' | 'badge' | 'price' | 'footer'
+  | 'category' | 'name' | 'brand' | 'description'
+  | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow'
 
 export interface PromoTemplateConfig {
   accent: string        // accroche + badge + bandeau prix
@@ -162,12 +165,12 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       <div ref={setRefs} className="rp-card" style={styleVars(config)}>
         <style>{PROMO_CSS}</style>
         <div className="rp-head" style={blk('header', { color: hText })} {...drag('header')}>
-          {config.showCategory && <span className="rp-kicker" style={col(config, 'category') ?? { color: aText }}>{data.category || 'Offre spéciale'}</span>}
-          <div className="rp-name" style={col(config, 'name')}>{data.name || 'Produit'}</div>
+          {config.showCategory && <span className="rp-kicker" style={blk('category', col(config, 'category') ?? { color: aText })} {...drag('category')}>{data.category || 'Offre spéciale'}</span>}
+          <div className="rp-name" style={blk('name', col(config, 'name'))} {...drag('name')}>{data.name || 'Produit'}</div>
           {(data.brand || data.ref) && (
-            <div className="rp-brand" style={col(config, 'brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
+            <div className="rp-brand" style={blk('brand', col(config, 'brand'))} {...drag('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
           )}
-          {config.showDescription && data.description && <div className="rp-desc" style={col(config, 'description')}>{data.description}</div>}
+          {config.showDescription && data.description && <div className="rp-desc" style={blk('description', col(config, 'description'))} {...drag('description')}>{data.description}</div>}
         </div>
         <div className="rp-product">
           {data.imageUrl
@@ -182,11 +185,11 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
         </div>
         <div className="rp-price" style={blk('price', { color: aText })} {...drag('price')}>
           <div className="rp-left">
-            <span className="rp-plabel" style={col(config, 'priceLabel')}>Prix promo</span>
-            {data.priceWas && <span className="rp-was" style={col(config, 'priceWas')}>{data.priceWas}</span>}
-            {config.showUnitPrice && data.unitPrice && <span className="rp-unit" style={col(config, 'unitPrice')}>{data.unitPrice}</span>}
+            <span className="rp-plabel" style={blk('priceLabel', col(config, 'priceLabel'))} {...drag('priceLabel')}>Prix promo</span>
+            {data.priceWas && <span className="rp-was" style={blk('priceWas', col(config, 'priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
+            {config.showUnitPrice && data.unitPrice && <span className="rp-unit" style={blk('unitPrice', col(config, 'unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
           </div>
-          <div className="rp-now" style={{ fontSize, ...col(config, 'priceNow') }}>
+          <div className="rp-now" style={blk('priceNow', { fontSize, ...col(config, 'priceNow') })} {...drag('priceNow')}>
             {amount}{cur && <span className="rp-cur">{cur}</span>}
           </div>
         </div>
