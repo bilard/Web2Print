@@ -5,9 +5,9 @@
 import { getStorage } from 'firebase-admin/storage'
 import { Reader, validate, type CityResponse } from 'maxmind'
 
-/** Emplacement de la base dans Cloud Storage (rafraîchie hors-bande chaque mois). */
-const MMDB_BUCKET = 'web2print-6fe5a.firebasestorage.app'
-const MMDB_PATH = 'geoip/dbip-city-lite.mmdb'
+/** Emplacement de la base dans Cloud Storage (rafraîchie chaque mois par `refreshGeoip`). */
+export const MMDB_BUCKET = 'web2print-6fe5a.firebasestorage.app'
+export const MMDB_PATH = 'geoip/dbip-city-lite.mmdb'
 
 let readerPromise: Promise<Reader<CityResponse>> | null = null
 
