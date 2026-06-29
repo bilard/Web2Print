@@ -94,7 +94,7 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, setStep } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, setConfig, setStep } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
 
   const [index, setIndex] = useState(0)
@@ -184,10 +184,17 @@ export function StepRender() {
       {/* Panneau d'édition du template */}
       <PromoTemplateEditor />
 
-      {/* Aperçu du card (échelle réduite) */}
+      {/* Aperçu du card (échelle réduite) — blocs déplaçables par glisser-déposer */}
+      <div className="flex items-center justify-center gap-3 text-xs text-white/40">
+        <span>Glissez les blocs pour les repositionner</span>
+        {Object.keys(config.offsets).length > 0 && (
+          <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
+        )}
+      </div>
       <div className="flex justify-center bg-well rounded-xl p-6 overflow-hidden">
         <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
-          <RetailPromoCard ref={previewRef} data={currentData} config={config} />
+          <RetailPromoCard ref={previewRef} data={currentData} config={config} editable
+            onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })} />
         </div>
       </div>
 

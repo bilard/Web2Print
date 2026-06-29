@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 
 export interface RetailCardData {
   name: string
@@ -18,12 +18,15 @@ export type PromoColorKey =
   | 'category' | 'name' | 'brand' | 'description'
   | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow' | 'footer'
 
+export type PromoBlockId = 'header' | 'image' | 'badge' | 'price' | 'footer'
+
 export interface PromoTemplateConfig {
   accent: string        // accroche + badge + bandeau prix
   headerBg: string      // bandeau d'en-tête + pied
   fontHeading: string   // nom / accroche / badge
   fontPrice: string     // prix
   colors: Partial<Record<PromoColorKey, string>> // surcharge couleur par donnée
+  offsets: Partial<Record<PromoBlockId, { dx: number; dy: number }>> // déplacement par bloc
   showCategory: boolean
   showDescription: boolean
   showUnitPrice: boolean
@@ -39,6 +42,7 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   fontHeading: 'Montserrat',
   fontPrice: 'Montserrat',
   colors: {},
+  offsets: {},
   showCategory: true,
   showDescription: true,
   showUnitPrice: true,
@@ -110,20 +114,54 @@ export function idealText(hex: string): string {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#111827' : '#ffffff'
 }
 
-/** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs configurables. */
-export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData; config?: PromoTemplateConfig }>(
-  ({ data, config = DEFAULT_PROMO_CONFIG }, ref) => {
+interface CardProps {
+  data: RetailCardData
+  config?: PromoTemplateConfig
+  /** Active le glisser-déposer des blocs (aperçu éditable). */
+  editable?: boolean
+  onMoveBlock?: (id: PromoBlockId, dx: number, dy: number) => void
+}
+
+/** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
+export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
+  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)
     const hText = idealText(config.headerBg)
     const aText = idealText(config.accent)
-    const styleVars = {
-      '--rp-accent': config.accent, '--rp-head': config.headerBg,
-      '--rp-font-h': `'${config.fontHeading}', sans-serif`, '--rp-font-p': `'${config.fontPrice}', sans-serif`,
-    } as React.CSSProperties
+    const cardElRef = useRef<HTMLDivElement | null>(null)
+    const setRefs = (el: HTMLDivElement | null) => {
+      cardElRef.current = el
+      if (typeof ref === 'function') ref(el)
+      else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el
+    }
+
+    const startDrag = (e: ReactPointerEvent, id: PromoBlockId) => {
+      if (!editable || !onMoveBlock) return
+      e.preventDefault(); e.stopPropagation()
+      const rect = cardElRef.current?.getBoundingClientRect()
+      const scale = rect && rect.width ? rect.width / 595 : 1
+      const o = config.offsets[id] ?? { dx: 0, dy: 0 }
+      const sx = e.clientX, sy = e.clientY
+      const move = (ev: PointerEvent) =>
+        onMoveBlock(id, Math.round(o.dx + (ev.clientX - sx) / scale), Math.round(o.dy + (ev.clientY - sy) / scale))
+      const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
+    }
+    // Style commun d'un bloc déplaçable : transform du décalage + curseur en mode édition.
+    const blk = (id: PromoBlockId, extra?: React.CSSProperties): React.CSSProperties => {
+      const o = config.offsets[id]
+      return {
+        ...(o ? { transform: `translate(${o.dx}px, ${o.dy}px)` } : null),
+        ...(editable ? { cursor: 'move' } : null),
+        ...extra,
+      }
+    }
+    const drag = (id: PromoBlockId) => (editable ? { onPointerDown: (e: ReactPointerEvent) => startDrag(e, id) } : {})
+
     return (
-      <div ref={ref} className="rp-card" style={styleVars}>
+      <div ref={setRefs} className="rp-card" style={styleVars(config)}>
         <style>{PROMO_CSS}</style>
-        <div className="rp-head" style={{ color: hText }}>
+        <div className="rp-head" style={blk('header', { color: hText })} {...drag('header')}>
           {config.showCategory && <span className="rp-kicker" style={col(config, 'category') ?? { color: aText }}>{data.category || 'Offre spéciale'}</span>}
           <div className="rp-name" style={col(config, 'name')}>{data.name || 'Produit'}</div>
           {(data.brand || data.ref) && (
@@ -133,16 +171,16 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData
         </div>
         <div className="rp-product">
           {data.imageUrl
-            ? <img src={data.imageUrl} crossOrigin="anonymous" alt={data.name} />
+            ? <img src={data.imageUrl} crossOrigin="anonymous" alt={data.name} style={blk('image')} {...drag('image')} />
             : <div className="rp-ph">PHOTO PRODUIT</div>}
           {config.showBadge && data.remiseLabel && (
-            <div className="rp-badge" style={{ color: aText }}>
+            <div className="rp-badge" style={blk('badge', { color: aText })} {...drag('badge')}>
               <span className="rp-pct">{data.remiseLabel}</span>
               <span className="rp-pctlbl">de remise</span>
             </div>
           )}
         </div>
-        <div className="rp-price" style={{ color: aText }}>
+        <div className="rp-price" style={blk('price', { color: aText })} {...drag('price')}>
           <div className="rp-left">
             <span className="rp-plabel" style={col(config, 'priceLabel')}>Prix promo</span>
             {data.priceWas && <span className="rp-was" style={col(config, 'priceWas')}>{data.priceWas}</span>}
@@ -152,9 +190,16 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData
             {amount}{cur && <span className="rp-cur">{cur}</span>}
           </div>
         </div>
-        {config.showFooter && <div className="rp-foot" style={col(config, 'footer')}>{data.validite || ''}</div>}
+        {config.showFooter && <div className="rp-foot" style={blk('footer', col(config, 'footer'))} {...drag('footer')}>{data.validite || ''}</div>}
       </div>
     )
   },
 )
 RetailPromoCard.displayName = 'RetailPromoCard'
+
+function styleVars(config: PromoTemplateConfig): React.CSSProperties {
+  return {
+    '--rp-accent': config.accent, '--rp-head': config.headerBg,
+    '--rp-font-h': `'${config.fontHeading}', sans-serif`, '--rp-font-p': `'${config.fontPrice}', sans-serif`,
+  } as React.CSSProperties
+}
