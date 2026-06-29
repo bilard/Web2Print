@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { FolderOpen, Presentation, Loader2, ImageIcon, FileSpreadsheet, Shapes, Wand2, FileText, FolderUp } from 'lucide-react'
+import { FolderOpen, Presentation, Loader2, FileSpreadsheet, Shapes, Wand2, FileText, FolderUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCan } from '@/features/access/useAccess'
 import { useIdmlUpload } from '@/features/idml/useIdmlUpload'
@@ -35,7 +35,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
 
   const pptxInputRef = useRef<HTMLInputElement>(null)
   const idmlInputRef = useRef<HTMLInputElement>(null)
-  const imageInputRef = useRef<HTMLInputElement>(null)
   const svgInputRef = useRef<HTMLInputElement>(null)
   const xlsxInputRef = useRef<HTMLInputElement>(null)
   const imageToSvgInputRef = useRef<HTMLInputElement>(null)
@@ -47,7 +46,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
   // Permissions par type d'import (owner court-circuite → true).
   const canIdml = useCan('import.idml')
   const canPptx = useCan('import.pptx')
-  const canImage = useCan('import.image')
   const canSvg = useCan('import.svg')
   const canExcel = useCan('import.excel')
   const canImageToSvg = useCan('import.imageToSvg')
@@ -102,14 +100,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
       return
     }
     onImport({ type: 'pptx', files: [file] })
-  }, [onImport])
-
-  const handleImageFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Type non supporté : attendu une image (.png, .jpg, .webp, .gif, .svg)', { description: file.name })
-      return
-    }
-    onImport({ type: 'image', files: [file] })
   }, [onImport])
 
   const handleSvgFile = useCallback((file: File) => {
@@ -171,7 +161,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
         : Array.from(e.dataTransfer.files)
       handleIdmlFiles(files)
     }
-    if (type === 'image' && e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0])
     if (type === 'svg' && e.dataTransfer.files[0]) handleSvgFile(e.dataTransfer.files[0])
     if (type === 'xlsx' && e.dataTransfer.files[0]) handleXlsxFile(e.dataTransfer.files[0])
     if (type === 'image-to-svg' && e.dataTransfer.files[0]) handleImageToSvgFile(e.dataTransfer.files[0])
@@ -256,40 +245,6 @@ export function ImportPanel({ onImport, loading }: ImportPanelProps) {
             accept=".pptx,.ppt"
             className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePptxFile(f); e.target.value = '' }}
-          />
-        </div>
-        )}
-
-        {/* Image Import */}
-        {canImage && (
-        <div
-          data-import-format="image"
-          onDragOver={(e) => { e.preventDefault(); setDragOver('image') }}
-          onDragLeave={() => setDragOver(null)}
-          onDrop={onDrop('image')}
-          onClick={() => imageInputRef.current?.click()}
-          className={`flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
-            dragOver === 'image'
-              ? 'border-sky-500 bg-sky-500/10'
-              : 'border-white/10 hover:border-sky-500/40 bg-surface hover:bg-surface-2'
-          }`}
-        >
-          <div className="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center">
-            <ImageIcon className="w-7 h-7 text-sky-400" />
-          </div>
-          <div data-tour="opt-import-image" className="text-center">
-            <p className="text-sm font-medium text-white flex items-center justify-center gap-1">
-              Importer une image
-              <OptionHelp text="Crée un projet à partir d'une image (PNG, JPG, SVG, WebP). L'image est placée sur le canvas, prête à être habillée." />
-            </p>
-            <p className="text-xs text-white/30 mt-1">PNG, JPG, SVG, WebP</p>
-          </div>
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = '' }}
           />
         </div>
         )}
