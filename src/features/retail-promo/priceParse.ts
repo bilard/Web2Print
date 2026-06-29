@@ -18,7 +18,7 @@ const SYMBOLS: Record<string, string> = { EUR: '€', USD: '$', GBP: '£' }
 
 export function formatPrice(n: number, currency: string): string {
   const body = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
-    .replace(/[  ]/g, ' ')
+    .replace(/[\u00a0\u202f]/g, ' ')
   const sym = SYMBOLS[currency] ?? currency
   return `${body} ${sym}`
 }

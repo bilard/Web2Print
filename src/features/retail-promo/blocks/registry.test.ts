@@ -19,14 +19,11 @@ describe('registry des blocs promo', () => {
     expect(ids).toEqual([...PROMO_BLOCK_IDS].sort())
   })
 
-  it('badge-remise a une règle conditionnelle sur promo_remisePct', () => {
+  it('badge-remise a des règles conditionnelles sur promo_remiseLabel (isNotEmpty/isEmpty)', () => {
     const def = getPromoBlock('badge-remise')!
     expect(def).toBeTruthy()
-    const rule = def.conditionalRules.find(
-      (r) => r.action.type === 'hide' || r.action.type === 'show',
-    )
-    expect(rule).toBeTruthy()
-    expect(rule!.field).toBe('promo_remisePct')
+    expect(def.conditionalRules.some((r) => r.field === 'promo_remiseLabel' && r.operator === 'isNotEmpty')).toBe(true)
+    expect(def.conditionalRules.some((r) => r.field === 'promo_remiseLabel' && r.operator === 'isEmpty')).toBe(true)
   })
 
   it('prix-barre a une règle sur promo_oldPrice (masque le prix barré)', () => {

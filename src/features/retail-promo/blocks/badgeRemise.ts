@@ -4,20 +4,8 @@ import { registerPromoBlock } from './registry'
 import type { PromoBlockDef } from './types'
 
 const rules: ConditionalRule[] = [
-  {
-    id: 'badge-remise-show',
-    field: 'promo_remisePct',
-    operator: 'gt',
-    value: '0',
-    action: { type: 'show' },
-  },
-  {
-    id: 'badge-remise-hide',
-    field: 'promo_remisePct',
-    operator: 'lte',
-    value: '0',
-    action: { type: 'hide' },
-  },
+  { id: 'badge-remise-visible', field: 'promo_remiseLabel', operator: 'isNotEmpty', action: { type: 'show' } },
+  { id: 'badge-remise-hidden',  field: 'promo_remiseLabel', operator: 'isEmpty',    action: { type: 'hide' } },
 ]
 
 const def: PromoBlockDef = {
