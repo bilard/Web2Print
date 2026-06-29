@@ -35,15 +35,15 @@ export function instantiatePosterOverlay(canvas: Canvas, W: number, H: number): 
     { id: 'ov-was-hide', field: 'promo_oldPrice', operator: 'isEmpty', action: { type: 'hide' } },
   ]
   const was = new Textbox('00,00 €', {
-    left: W * 0.1, top: H * 0.79, width: W * 0.8,
-    fontSize: H * 0.032, textAlign: 'center',
+    left: W * 0.04, top: H * 0.8, width: W * 0.92,
+    fontSize: H * 0.03, textAlign: 'center',
     fill: 'rgba(255,255,255,0.85)', fontFamily: 'Montserrat', linethrough: true, shadow: leg(), scaleX: 1,
   })
   was.set('data', { id: `ov_was_${ts}`, type: 'promo-overlay', templateText: '{{promo_priceWas}}', conditionalRules: wasRules })
 
   const now = new Textbox('00,00 €', {
-    left: W * 0.1, top: H * 0.83, width: W * 0.8,
-    fontSize: H * 0.09, fontWeight: '700', textAlign: 'center',
+    left: W * 0.04, top: H * 0.84, width: W * 0.92,
+    fontSize: H * 0.07, fontWeight: '700', textAlign: 'center',
     fill: '#ffffff', fontFamily: 'Oswald', lineHeight: 1.0, shadow: leg(), scaleX: 1,
   })
   now.set('data', { id: `ov_now_${ts}`, type: 'promo-overlay', templateText: '{{promo_priceNow}}' })
