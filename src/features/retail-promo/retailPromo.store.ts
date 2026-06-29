@@ -1,20 +1,6 @@
 import { create } from 'zustand'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
-import type { PromoFieldKey, PromoLayout } from './promoTypes'
-
-interface PendingPromoApply {
-  projectId: string
-  layout: PromoLayout
-  sourceRef: DataSourceRef
-  columns: MergeColumn[]
-  rows: MergeRow[]
-  /** Si défini, générer un fond IA (Nano Banana 2) dans l'éditeur ; valeur = brief créatif. */
-  aiBgBrief?: string | null
-  /** Mode « Affiche IA » : NB2 conçoit toute l'affiche, on pose juste les overlays texte. */
-  posterOverlay?: boolean
-  /** Brief créatif pour l'affiche IA. */
-  posterBrief?: string | null
-}
+import type { PromoFieldKey } from './promoTypes'
 
 interface RetailPromoState {
   step: 'source' | 'mapping' | 'template'
@@ -22,14 +8,11 @@ interface RetailPromoState {
   rawRows: MergeRow[]
   fieldMap: Partial<Record<PromoFieldKey, string>>
   sourceRef: DataSourceRef | null
-  pendingApply: PendingPromoApply | null
 
   setStep: (step: RetailPromoState['step']) => void
   setSource: (ref: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   reset: () => void
-  setPendingApply: (apply: PendingPromoApply) => void
-  clearPendingApply: () => void
 }
 
 const defaultState = {
@@ -38,16 +21,12 @@ const defaultState = {
   rawRows: [] as MergeRow[],
   fieldMap: {} as Partial<Record<PromoFieldKey, string>>,
   sourceRef: null,
-  pendingApply: null,
 }
 
 export const useRetailPromoStore = create<RetailPromoState>((set) => ({
   ...defaultState,
   setStep: (step) => set({ step }),
-  setSource: (sourceRef, rawColumns, rawRows) =>
-    set({ sourceRef, rawColumns, rawRows }),
+  setSource: (sourceRef, rawColumns, rawRows) => set({ sourceRef, rawColumns, rawRows }),
   setFieldMap: (fieldMap) => set({ fieldMap }),
   reset: () => set(defaultState),
-  setPendingApply: (pendingApply) => set({ pendingApply }),
-  clearPendingApply: () => set({ pendingApply: null }),
 }))

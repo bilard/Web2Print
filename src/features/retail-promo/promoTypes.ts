@@ -24,22 +24,3 @@ export interface PromoFields {
 }
 
 export type PromoFieldKey = keyof PromoFields
-
-export type PromoBlockId =
-  | 'prix-barre' | 'badge-remise' | 'bandeau-lot' | 'bandeau-validite'
-  | 'mentions' | 'badge-statut' | 'cadre-photo' | 'accroche'
-
-export interface PlacedBlock {
-  blockId: PromoBlockId
-  xPct: number; yPct: number; wPct: number; hPct: number   // [0..1] de la page
-  palette?: { primary?: string; accent?: string; text?: string }
-  fontFamily?: string
-}
-
-export interface PromoLayout {
-  id: string
-  label: string
-  width: number; height: number   // px (1px = 1/72 in)
-  background: string               // hex
-  blocks: PlacedBlock[]
-}

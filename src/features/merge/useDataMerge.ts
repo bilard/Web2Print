@@ -122,7 +122,7 @@ async function loadImageForProject(urlOrName: string, projectId: string | null |
  * useEditorStore.getState() (comportement identique à l'ancien loadImage/getAssetUrl
  * qui fermaient sur la valeur réactive du hook).
  */
-export async function applyRowToCanvas(
+async function applyRowToCanvas(
   canvas: Canvas,
   row: MergeRow,
   opts?: { projectId?: string | null },

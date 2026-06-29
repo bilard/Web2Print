@@ -1,28 +1,19 @@
-// Side-effect : enregistre les 8 blocs promo dans le registre (même mécanique que builtin.ts)
-import '@/features/retail-promo/blocks'
-import { useEffect } from 'react'
-import { initPromoBlocks } from './blocks'
 import { useRetailPromoStore } from './retailPromo.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { StepSource } from './steps/StepSource'
 import { StepMapping } from './steps/StepMapping'
-import { StepTemplate } from './steps/StepTemplate'
+import { StepRender } from './steps/StepRender'
 
 const STEP_LABELS = {
   source: 'Source',
   mapping: 'Correspondance',
-  template: 'Gabarit',
+  template: 'Aperçu & export',
 } as const
 
 const STEPS = ['source', 'mapping', 'template'] as const
 
 export function RetailPromoPage() {
   const { step, reset } = useRetailPromoStore()
-
-  // Enregistrement des blocs au montage (idempotent — pas de double-registration)
-  useEffect(() => {
-    initPromoBlocks()
-  }, [])
 
   // Intent module : reset sur « action:new »
   useModuleIntent('retail-promo', (action) => {
@@ -62,7 +53,7 @@ export function RetailPromoPage() {
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {step === 'source' && <StepSource />}
         {step === 'mapping' && <StepMapping />}
-        {step === 'template' && <StepTemplate />}
+        {step === 'template' && <StepRender />}
       </div>
     </div>
   )

@@ -1,6 +1,4 @@
-// Side-effect : enregistre les blocs promo dans le registre (nécessaire pour le handoff retail-promo)
-import '@/features/retail-promo/blocks'
-import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { EditorHeader } from '@/components/panels/EditorHeader'
@@ -32,16 +30,6 @@ import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
-import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
-import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
-import { instantiatePosterOverlay } from '@/features/retail-promo/posterOverlay'
-import { useGeneratePromoBackground } from '@/features/retail-promo/useGeneratePromoBackground'
-import { useGeneratePromoPoster } from '@/features/retail-promo/useGeneratePromoPoster'
-import { SavePromoTemplateButton } from '@/features/retail-promo/SavePromoTemplateButton'
-import { globalSave } from '@/features/editor/useAutoSave'
-import { applyRowToCanvas } from '@/features/merge/useDataMerge'
-import { useMergeStore } from '@/stores/merge.store'
-import { useThemeStore } from '@/stores/theme.store'
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -57,12 +45,6 @@ export default function EditorPage() {
     pendingDamInsert,
     setPendingDamInsert,
   } = useProjectStore()
-  // Retail-promo handoff: instantiation canvas + connexion merge augmentée
-  const { pendingApply, clearPendingApply } = useRetailPromoStore()
-  const { generateBackground } = useGeneratePromoBackground()
-  const { generatePoster } = useGeneratePromoPoster()
-  const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
-  const promoAppliedRef = useRef(false)
 
   const { processFiles: processIdmlFiles } = useIdmlUpload()
   const { parseAndRender: parseIdml } = useIdmlParse()
@@ -111,76 +93,6 @@ export default function EditorPage() {
       cancelled = true
     }
   }, [pendingDamInsert, insertOnCanvas, setPendingDamInsert])
-
-  // Reset du guard quand le projet change (déclaré EN PREMIER pour s'exécuter
-  // avant l'effet de handoff sur le même rendu, évitant qu'un ref stale true
-  // empêche le handoff sur un nouveau projet).
-  useEffect(() => {
-    promoAppliedRef.current = false
-  }, [id])
-
-  // Retail-promo handoff : attend le canvas, instancie le layout puis connecte le merge augmenté.
-  // Guard double-apply : clearPendingApply() est appelé dès que le canvas est prêt,
-  // promoAppliedRef évite les ré-entrances dans le retry loop.
-  useEffect(() => {
-    if (!pendingApply || pendingApply.projectId !== id) return
-    if (promoAppliedRef.current) return
-    let cancelled = false
-    let attempts = 0
-
-    const tryApply = async () => {
-      if (cancelled || promoAppliedRef.current) return
-      if (globalFabricCanvas) {
-        promoAppliedRef.current = true
-        const apply = pendingApply // snapshot avant clear
-        clearPendingApply()
-        if (apply.posterOverlay) {
-          // Mode « Affiche IA » : NB2 conçoit toute l'affiche (fond) + overlays texte.
-          const sample = (apply.rows[0] ?? {}) as Record<string, unknown>
-          const url = await generatePoster({
-            name: typeof sample.promo_name === 'string' ? sample.promo_name : '',
-            brief: apply.posterBrief ?? undefined,
-            width: apply.layout.width,
-            height: apply.layout.height,
-            imageUrl: typeof sample.promo_image === 'string' ? sample.promo_image : undefined,
-          })
-          if (url) {
-            const ui = useUIStore.getState()
-            ui.setCanvasBgType('image')
-            ui.setCanvasBgImage(url)
-          }
-          instantiatePosterOverlay(globalFabricCanvas, apply.layout.width, apply.layout.height)
-        } else {
-          instantiatePromoLayout(globalFabricCanvas, apply.layout, resolvedTheme)
-        }
-        useMergeStore.getState().connect(apply.sourceRef, apply.columns, apply.rows)
-        await applyRowToCanvas(globalFabricCanvas, apply.rows[0], { projectId: id })
-        // Fond IA (Nano Banana 2) — généré ici car un projet est ouvert (upload gallery OK).
-        if (!apply.posterOverlay && apply.aiBgBrief != null) {
-          const url = await generateBackground({ brief: apply.aiBgBrief, width: apply.layout.width, height: apply.layout.height })
-          if (url) {
-            const ui = useUIStore.getState()
-            ui.setCanvasBgType('image')
-            ui.setCanvasBgImage(url)
-          }
-        }
-        // Persistance immédiate : le contenu instancié (kit + fond IA) n'est pas
-        // auto-sauvegardé sans action utilisateur → on force un save après le handoff.
-        await globalSave?.()
-        return
-      }
-      attempts++
-      if (attempts < 20) {
-        setTimeout(() => { void tryApply() }, 100)
-      } else {
-        console.warn('[EditorPage] Canvas non prêt après 2s, handoff promo abandonné.')
-        clearPendingApply()
-      }
-    }
-
-    void tryApply()
-    return () => { cancelled = true }
-  }, [pendingApply, id, clearPendingApply, resolvedTheme, generateBackground, generatePoster])
 
   useEffect(() => {
     if (id) setProjectId(id)
@@ -296,7 +208,6 @@ export default function EditorPage() {
         <ToolBar />
         <div data-tour="canvas" className="flex-1 min-w-0 relative overflow-hidden">
           <CanvasContainer />
-          <SavePromoTemplateButton />
 
           {idmlImporting && (
             <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-3 pointer-events-none">

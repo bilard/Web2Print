@@ -1312,6 +1312,16 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "retail-promo",
+    "cat": "Données",
+    "icon": "✦",
+    "anim": "default",
+    "title": "Promo Retail",
+    "intro": "Créez et gérez vos promotions retail : visuels, offres et déclinaisons multi-format.",
+    "features": [],
+    "shortcuts": []
+  },
+  {
     "id": "export",
     "cat": "Export",
     "icon": "📤",
