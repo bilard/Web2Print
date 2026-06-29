@@ -35,6 +35,7 @@ import { storage } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
 import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
 import { useGeneratePromoBackground } from '@/features/retail-promo/useGeneratePromoBackground'
+import { globalSave } from '@/features/editor/useAutoSave'
 import { applyRowToCanvas } from '@/features/merge/useDataMerge'
 import { useMergeStore } from '@/stores/merge.store'
 import { useThemeStore } from '@/stores/theme.store'
@@ -141,6 +142,9 @@ export default function EditorPage() {
             ui.setCanvasBgImage(url)
           }
         }
+        // Persistance immédiate : le contenu instancié (kit + fond IA) n'est pas
+        // auto-sauvegardé sans action utilisateur → on force un save après le handoff.
+        await globalSave?.()
         return
       }
       attempts++
