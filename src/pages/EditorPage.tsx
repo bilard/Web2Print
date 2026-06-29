@@ -34,7 +34,7 @@ import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
 import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
-import { useDataMerge } from '@/features/merge/useDataMerge'
+import { applyRowToCanvas } from '@/features/merge/useDataMerge'
 import { useMergeStore } from '@/stores/merge.store'
 import { useThemeStore } from '@/stores/theme.store'
 
@@ -55,7 +55,6 @@ export default function EditorPage() {
   // Retail-promo handoff: instantiation canvas + connexion merge augmentée
   const { pendingApply, clearPendingApply } = useRetailPromoStore()
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
-  const { applyRow } = useDataMerge()
   const promoAppliedRef = useRef(false)
 
   const { processFiles: processIdmlFiles } = useIdmlUpload()
@@ -106,6 +105,13 @@ export default function EditorPage() {
     }
   }, [pendingDamInsert, insertOnCanvas, setPendingDamInsert])
 
+  // Reset du guard quand le projet change (déclaré EN PREMIER pour s'exécuter
+  // avant l'effet de handoff sur le même rendu, évitant qu'un ref stale true
+  // empêche le handoff sur un nouveau projet).
+  useEffect(() => {
+    promoAppliedRef.current = false
+  }, [id])
+
   // Retail-promo handoff : attend le canvas, instancie le layout puis connecte le merge augmenté.
   // Guard double-apply : clearPendingApply() est appelé dès que le canvas est prêt,
   // promoAppliedRef évite les ré-entrances dans le retry loop.
@@ -123,7 +129,7 @@ export default function EditorPage() {
         clearPendingApply()
         instantiatePromoLayout(globalFabricCanvas, apply.layout, resolvedTheme)
         useMergeStore.getState().connect(apply.sourceRef, apply.columns, apply.rows)
-        await applyRow(apply.rows[0])
+        await applyRowToCanvas(globalFabricCanvas, apply.rows[0], { projectId: id })
         return
       }
       attempts++
@@ -137,12 +143,7 @@ export default function EditorPage() {
 
     void tryApply()
     return () => { cancelled = true }
-  }, [pendingApply, id, clearPendingApply, resolvedTheme, applyRow])
-
-  // Reset du guard quand le projet change (navigation vers un autre éditeur)
-  useEffect(() => {
-    promoAppliedRef.current = false
-  }, [id])
+  }, [pendingApply, id, clearPendingApply, resolvedTheme])
 
   useEffect(() => {
     if (id) setProjectId(id)

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { IText, Textbox, FabricImage } from 'fabric'
+import { IText, Textbox, FabricImage, type Canvas } from 'fabric'
 import { doc, getDoc } from 'firebase/firestore'
 import { ref, getDownloadURL, listAll } from 'firebase/storage'
 import { db, storage } from '@/lib/firebase/config'
@@ -53,6 +53,192 @@ const assetUrlCache = new Map<string, string>()
 
 /** Cache des images téléchargées (URL → dataURL) */
 const imageCache = new Map<string, string>()
+
+/** Résout l'URL Firebase Storage d'un asset par son nom de fichier. */
+async function getAssetUrlForProject(projectId: string | null | undefined, fileName: string): Promise<string | null> {
+  if (!projectId) return null
+  if (assetUrlCache.has(fileName)) return assetUrlCache.get(fileName)!
+
+  try {
+    const folderRef = ref(storage, `projects/${projectId}/links`)
+    const list = await listAll(folderRef)
+    for (const item of list.items) {
+      if (item.name === fileName || item.name.startsWith(fileName.split('.')[0])) {
+        const url = await getDownloadURL(item)
+        assetUrlCache.set(fileName, url)
+        return url
+      }
+    }
+  } catch { /* ignore */ }
+  return null
+}
+
+/** Charge une image (Drive, URL directe ou nom d'asset) → dataURL. */
+async function loadImageForProject(urlOrName: string, projectId: string | null | undefined): Promise<string | null> {
+  if (imageCache.has(urlOrName)) return imageCache.get(urlOrName)!
+
+  let url = urlOrName
+  if (isDriveImageRef(urlOrName)) {
+    const fileId = extractDriveFileId(urlOrName)
+    if (!fileId) return null
+    try {
+      url = await resolveDriveImageUrl(fileId)
+    } catch {
+      return null
+    }
+  } else if (!isImageUrl(urlOrName)) {
+    const assetUrl = await getAssetUrlForProject(projectId, urlOrName)
+    if (!assetUrl) return null
+    url = assetUrl
+  }
+
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result as string
+        imageCache.set(urlOrName, dataUrl)
+        resolve(dataUrl)
+      }
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Applique une ligne de fusion sur le canvas Fabric (textes, bindings, règles
+ * conditionnelles, compactage hideLineIfEmpty, ré-ancrage groupes).
+ *
+ * Fonction standalone extraite de useDataMerge.applyRow pour éliminer le
+ * double-montage du hook dans EditorPage (retail-promo handoff). La logique est
+ * identique ; seule la résolution de projectId et loadImage est déplacée ici.
+ *
+ * projectId est lu depuis opts.projectId si fourni, sinon depuis
+ * useEditorStore.getState() (comportement identique à l'ancien loadImage/getAssetUrl
+ * qui fermaient sur la valeur réactive du hook).
+ */
+export async function applyRowToCanvas(
+  canvas: Canvas,
+  row: MergeRow,
+  opts?: { projectId?: string | null },
+): Promise<void> {
+  const projectId = opts?.projectId ?? useEditorStore.getState().projectId
+
+  const groupAnchors = new Map<import('fabric').Group, { left: number; top: number }>()
+  for (const obj of collectObjectsDeep(canvas.getObjects())) {
+    const g = (obj as FabricObjectWithData).group
+    if (obj.data?.templateText && g && !groupAnchors.has(g)) {
+      const bb = g.getBoundingRect()
+      groupAnchors.set(g, { left: bb.left, top: bb.top })
+    }
+  }
+
+  for (const obj of collectObjectsDeep(canvas.getObjects())) {
+    if (obj.data?.isGrid || obj.data?.isPageBg) continue
+
+    if (obj instanceof IText) {
+      if (!obj.data?.templateText && obj.text && hasPlaceholders(obj.text)) {
+        if (!obj.data) obj.data = {}
+        obj.data.templateText = obj.text
+        const styles = (obj as any).styles
+        if (styles && Object.keys(styles).length > 0) {
+          obj.data.templateStyles = JSON.parse(JSON.stringify(styles))
+        }
+      }
+      if (obj.data?.templateText) {
+        const { formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap } = useMergeStore.getState()
+        const tmpl = obj.data.templateText as string
+        const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
+        const fitToZone = obj.data?.fitToZone === true && !!obj.data?.fitZone
+        const isSinglePlaceholder = !fitToZone && !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
+        const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
+        const priceFormat = obj.data.priceFormat as PriceFormatStyle | undefined
+        const priceParts = priceFormat ? formatPriceParts(resolved, priceFormat.currency, 2) : null
+        if (priceFormat && priceParts) {
+          obj.set('text', priceParts.text)
+          ;(obj as any).styles = buildPriceStyles(priceParts.segments, priceFormat)
+        } else {
+          obj.set('text', resolved)
+          if (tStyles && Object.keys(tStyles).length > 0) {
+            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
+            ;(obj as any).styles = remapped
+          }
+        }
+
+        if (fitToZone) {
+          const base = (obj.data!.baseFontSize as number | undefined) ?? obj.fontSize ?? 16
+          fitTextToZone(obj, obj.data!.fitZone as FitZone, base)
+        } else if (obj instanceof Textbox && isSinglePlaceholder) {
+          autoFitPlaceholderWidth(obj)
+          if (tStyles && Object.keys(tStyles).length > 0) {
+            const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
+            ;(obj as any).styles = remapped
+          }
+        }
+
+        obj.setCoords()
+        ;(obj as any).dirty = true
+        refreshAncestorGroups(obj)
+      }
+    }
+
+    const bindings = obj.data?.bindings as Record<string, string> | undefined
+    if (!bindings) continue
+
+    const { columns: storeColumns } = useMergeStore.getState()
+    for (const [prop, columnKey] of Object.entries(bindings)) {
+      const value = resolveBinding(columnKey, row, storeColumns)
+      if (value === null) continue
+
+      if (prop === 'src' && obj instanceof FabricImage) {
+        const imgData = await loadImageForProject(value, projectId)
+        if (imgData) {
+          const imgEl = new Image()
+          imgEl.src = imgData
+          await new Promise<void>((resolve) => {
+            imgEl.onload = () => {
+              obj.setElement(imgEl)
+              obj.setCoords()
+              resolve()
+            }
+            imgEl.onerror = () => resolve()
+          })
+        }
+      } else if (prop === 'fill' || prop === 'stroke') {
+        obj.set(prop, value)
+      } else if (prop === 'opacity') {
+        const num = parseFloat(value)
+        if (!isNaN(num)) obj.set('opacity', Math.min(1, Math.max(0, num)))
+      }
+    }
+    refreshAncestorGroups(obj)
+  }
+
+  {
+    const { columns: ruleCols, fieldMap: ruleFieldMap } = useMergeStore.getState()
+    applyConditionalRulesForRow(canvas, row, ruleCols, ruleFieldMap)
+  }
+
+  compactHiddenMergeFields(canvas)
+
+  for (const [g, before] of groupAnchors) {
+    g.setCoords()
+    const after = g.getBoundingRect()
+    const dx = before.left - after.left
+    const dy = before.top - after.top
+    if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+      g.set({ left: (g.left ?? 0) + dx, top: (g.top ?? 0) + dy })
+      g.setCoords()
+    }
+  }
+
+  canvas.requestRenderAll()
+}
 
 /**
  * Auto-fit la largeur d'un Textbox à placeholder unique sur son contenu — MAIS
@@ -152,7 +338,7 @@ type FabricObjectWithData = import('fabric').FabricObject & {
   group?: import('fabric').Group
 }
 
-export interface FitZone { width: number; height: number; maxLines?: number }
+interface FitZone { width: number; height: number; maxLines?: number }
 
 /**
  * « Réduire pour tenir dans la zone » : abaisse la taille de police (et celle
@@ -378,197 +564,14 @@ export function useDataMerge() {
     prevRowIndexRef.current = -1
   }, [storeDisconnect])
 
-  const getAssetUrl = useCallback(async (fileName: string): Promise<string | null> => {
-    if (!projectId) return null
-    if (assetUrlCache.has(fileName)) return assetUrlCache.get(fileName)!
-
-    try {
-      const folderRef = ref(storage, `projects/${projectId}/links`)
-      const list = await listAll(folderRef)
-      for (const item of list.items) {
-        if (item.name === fileName || item.name.startsWith(fileName.split('.')[0])) {
-          const url = await getDownloadURL(item)
-          assetUrlCache.set(fileName, url)
-          return url
-        }
-      }
-    } catch { /* ignore */ }
-    return null
-  }, [projectId])
-
-  const loadImage = useCallback(async (urlOrName: string): Promise<string | null> => {
-    if (imageCache.has(urlOrName)) return imageCache.get(urlOrName)!
-
-    let url = urlOrName
-    if (isDriveImageRef(urlOrName)) {
-      // Référence asset Google Drive (DAM) : télécharge les octets authentifiés →
-      // objectURL blob: (fetch ci-dessous le relit en data: URL, export-safe).
-      const fileId = extractDriveFileId(urlOrName)
-      if (!fileId) return null
-      try {
-        url = await resolveDriveImageUrl(fileId)
-      } catch {
-        return null
-      }
-    } else if (!isImageUrl(urlOrName)) {
-      const assetUrl = await getAssetUrl(urlOrName)
-      if (!assetUrl) return null
-      url = assetUrl
-    }
-
-    try {
-      const res = await fetch(url)
-      const blob = await res.blob()
-      return new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          const dataUrl = reader.result as string
-          imageCache.set(urlOrName, dataUrl)
-          resolve(dataUrl)
-        }
-        reader.onerror = () => resolve(null)
-        reader.readAsDataURL(blob)
-      })
-    } catch {
-      return null
-    }
-  }, [getAssetUrl])
-
+  // applyRow délègue à applyRowToCanvas (standalone) et passe le projectId réactif
+  // du hook pour que la résolution des assets Storage soit identique à l'ancien
+  // comportement (loadImage fermait sur la même valeur).
   const applyRow = useCallback(async (row: MergeRow, _cols?: MergeColumn[]) => {
     const canvas = globalFabricCanvas
     if (!canvas) return
-
-    // ANCRAGE des blocs de champs : substitutions + triggerLayout recentrent
-    // le groupe à chaque passe → dérive cumulative (le bloc « montait » à
-    // chaque changement de ligne). On mémorise la bbox absolue de chaque bloc
-    // AVANT la passe et on la ré-ancre après — les déplacements manuels de
-    // l'utilisateur restent respectés (le snapshot part de la position courante).
-    const groupAnchors = new Map<import('fabric').Group, { left: number; top: number }>()
-    for (const obj of collectObjectsDeep(canvas.getObjects())) {
-      const g = (obj as FabricObjectWithData).group
-      if (obj.data?.templateText && g && !groupAnchors.has(g)) {
-        const bb = g.getBoundingRect()
-        groupAnchors.set(g, { left: bb.left, top: bb.top })
-      }
-    }
-
-    for (const obj of collectObjectsDeep(canvas.getObjects())) {
-      if (obj.data?.isGrid || obj.data?.isPageBg) continue
-
-      // Résolution texte {{variable}} — IText couvre aussi les Textbox ;
-      // les textes des imports PDF sont des IText.
-      if (obj instanceof IText) {
-        // Auto-capture templateText si pas encore stocké mais texte contient {{}}
-        if (!obj.data?.templateText && obj.text && hasPlaceholders(obj.text)) {
-          if (!obj.data) obj.data = {}
-          obj.data.templateText = obj.text
-          const styles = (obj as any).styles
-          if (styles && Object.keys(styles).length > 0) {
-            obj.data.templateStyles = JSON.parse(JSON.stringify(styles))
-          }
-        }
-        if (obj.data?.templateText) {
-          const { formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap } = useMergeStore.getState()
-          const tmpl = obj.data.templateText as string
-          const tStyles = obj.data.templateStyles as Record<number, Record<number, Record<string, unknown>>> | undefined
-          // Cadre de composition fixe (champ PDF aligné/wrappé) : pas d'auto-fit.
-          const fitToZone = obj.data?.fitToZone === true && !!obj.data?.fitZone
-          const isSinglePlaceholder = !fitToZone && !obj.data?.mergeFrame && /^\{\{[^}]+\}\}$/.test(tmpl.trim())
-          const resolved = resolveText(tmpl, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
-          const priceFormat = obj.data.priceFormat as PriceFormatStyle | undefined
-          const priceParts = priceFormat ? formatPriceParts(resolved, priceFormat.currency, 2) : null
-          if (priceFormat && priceParts) {
-            // Bloc « prix » : reformater « entier<devise>,centimes » + styles par partie.
-            obj.set('text', priceParts.text)
-            ;(obj as any).styles = buildPriceStyles(priceParts.segments, priceFormat)
-          } else {
-            obj.set('text', resolved)
-            // Repositionner les styles des caractères littéraux (%, DT, etc.)
-            if (tStyles && Object.keys(tStyles).length > 0) {
-              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
-              ;(obj as any).styles = remapped
-            }
-          }
-
-          if (fitToZone) {
-            // « Réduire pour tenir dans la zone » : abaisse la police (styles inclus).
-            const base = (obj.data!.baseFontSize as number | undefined) ?? obj.fontSize ?? 16
-            fitTextToZone(obj, obj.data!.fitZone as FitZone, base)
-          } else if (obj instanceof Textbox && isSinglePlaceholder) {
-            // Auto-fit largeur pour blocs à placeholder unique (taille adaptée à
-            // chaque valeur), SAUF si la valeur se replie sur plusieurs lignes
-            // (alors cadre fixe — sinon la description gagne une ligne par save).
-            autoFitPlaceholderWidth(obj)
-            // Re-appliquer les styles après initDimensions (par précaution)
-            if (tStyles && Object.keys(tStyles).length > 0) {
-              const remapped = remapStyles(tmpl, tStyles, row, formulas, hideLineIfEmpty, formulaConfigs, columns, fieldMap)
-              ;(obj as any).styles = remapped
-            }
-          }
-
-          obj.setCoords()
-          ;(obj as any).dirty = true
-          refreshAncestorGroups(obj)
-        }
-      }
-
-      // Résolution bindings propriétés
-      const bindings = obj.data?.bindings as Record<string, string> | undefined
-      if (!bindings) continue
-
-      const { columns: storeColumns } = useMergeStore.getState()
-      for (const [prop, columnKey] of Object.entries(bindings)) {
-        const value = resolveBinding(columnKey, row, storeColumns)
-        if (value === null) continue
-
-        if (prop === 'src' && obj instanceof FabricImage) {
-          const imgData = await loadImage(value)
-          if (imgData) {
-            const imgEl = new Image()
-            imgEl.src = imgData
-            await new Promise<void>((resolve) => {
-              imgEl.onload = () => {
-                obj.setElement(imgEl)
-                obj.setCoords()
-                resolve()
-              }
-              imgEl.onerror = () => resolve()
-            })
-          }
-        } else if (prop === 'fill' || prop === 'stroke') {
-          obj.set(prop, value)
-        } else if (prop === 'opacity') {
-          const num = parseFloat(value)
-          if (!isNaN(num)) obj.set('opacity', Math.min(1, Math.max(0, num)))
-        }
-      }
-      refreshAncestorGroups(obj)
-    }
-
-    // Règles conditionnelles par objet (cacher/montrer/couleur/taille…) évaluées
-    // sur la ligne courante, APRÈS texte + bindings (les règles l'emportent).
-    {
-      const { columns: ruleCols, fieldMap: ruleFieldMap } = useMergeStore.getState()
-      applyConditionalRulesForRow(canvas, row, ruleCols, ruleFieldMap)
-    }
-
-    // Champs vidés par « Supprimer la ligne si vide » : masque + compacte le bloc.
-    compactHiddenMergeFields(canvas)
-
-    // Ré-ancre chaque bloc sur sa bbox d'avant la passe (zéro dérive).
-    for (const [g, before] of groupAnchors) {
-      g.setCoords()
-      const after = g.getBoundingRect()
-      const dx = before.left - after.left
-      const dy = before.top - after.top
-      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
-        g.set({ left: (g.left ?? 0) + dx, top: (g.top ?? 0) + dy })
-        g.setCoords()
-      }
-    }
-
-    canvas.requestRenderAll()
-  }, [loadImage])
+    await applyRowToCanvas(canvas, row, { projectId })
+  }, [projectId])
 
   // Synchroniser applyRowRef après chaque render pour éviter dépendance circulaire
   applyRowRef.current = applyRow
