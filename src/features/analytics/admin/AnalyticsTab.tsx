@@ -77,6 +77,14 @@ export function AnalyticsTab() {
                 <AnalyticsTopLists events={events} />
                 <AnalyticsUsers events={events} />
               </div>
+              {/* Attribution requise par la licence CC BY 4.0 de la base de géolocalisation. */}
+              <div className="text-white/25 text-[10px] pt-1">
+                Géolocalisation IP par{' '}
+                <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/40">
+                  DB-IP
+                </a>
+                {' '}(CC BY 4.0)
+              </div>
             </>
           )}
         </>

@@ -18,6 +18,7 @@
     "cheerio": "^1.0.0",
     "firebase-admin": "^13.8.0",
     "firebase-functions": "^7.2.5",
+    "maxmind": "^4.3.29",
     "puppeteer-core": "^24.40.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
