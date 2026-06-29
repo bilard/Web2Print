@@ -13,15 +13,13 @@ const NB2_MODELS = [
  *  sont ajoutés ensuite en overlay texte → on lui demande des zones SANS chiffres. */
 function buildPosterPrompt(name: string, brief: string | undefined, hasImage: boolean): string {
   return [
-    `Affiche promotionnelle retail PROFESSIONNELLE et créative, format vertical, qualité studio.`,
-    `Produit héros : « ${name} »${hasImage ? `, intègre FIDÈLEMENT le produit de l'image fournie (ne le déforme pas)` : ''}.`,
+    `Visuel PUBLICITAIRE RETAIL de grande distribution (style prospectus / catalogue promo type Leroy Merlin, Castorama, Brico Dépôt, Carrefour), format vertical.`,
+    `Produit héros : « ${name} »${hasImage ? `, intègre FIDÈLEMENT le produit de l'image fournie (packshot net, ne le déforme pas)` : ' en packshot net'}.`,
     brief ? `Ambiance : ${brief}.` : '',
-    `Composition type grande surface de bricolage haut de gamme, fort contraste, énergie « promo », fond travaillé (pas blanc plat).`,
-    `ZONES À RESPECTER STRICTEMENT : (1) le produit héros bien éclairé occupe la moitié SUPÉRIEURE/centre ;`,
-    `(2) une pastille/explosion de remise colorée dans le COIN SUPÉRIEUR DROIT ;`,
-    `(3) une BANDE ou cartouche de prix élégant occupant tout le CINQUIÈME INFÉRIEUR (bas) de l'image, fond uni lisible.`,
-    `IMPORTANT : la pastille de remise ET la bande de prix doivent rester SANS AUCUN CHIFFRE ni texte (zones stylées VIDES) —`,
-    `le pourcentage et le prix EXACTS seront ajoutés par-dessus en texte net. N'écris AUCUN chiffre, AUCUN prix, AUCUN pourcentage.`,
+    `STYLE : graphisme commercial PROPRE, LUMINEUX et à PLAT — fond clair ou aplats de couleurs de marque francs, packshot produit détouré bien éclairé (lumière douce de studio, PAS de scène), composition nette type flyer promo.`,
+    `ZONES À RESPECTER STRICTEMENT : (1) produit détouré au centre/haut sur fond propre ; (2) pastille/macaron de remise (rond ou étoile) dans le COIN SUPÉRIEUR DROIT ; (3) BANDE de prix occupant tout le CINQUIÈME INFÉRIEUR, aplat de couleur uni et lisible.`,
+    `INTERDICTIONS ABSOLUES : PAS de style jeu vidéo, PAS de rendu cinématique ou 3D dramatique, PAS d'ambiance sombre, PAS d'étincelles/flammes/explosions de particules, PAS de lens flare, PAS de fond d'atelier ou de scène d'action. Rester sobre, lumineux et commercial.`,
+    `La pastille et la bande de prix doivent rester SANS AUCUN CHIFFRE ni texte (zones VIDES) — le pourcentage et le prix EXACTS sont ajoutés par-dessus. N'écris AUCUN chiffre, AUCUN prix, AUCUN pourcentage.`,
   ]
     .filter(Boolean)
     .join(' ')
