@@ -1,4 +1,6 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
+// Side-effect : enregistre les blocs promo dans le registre (nécessaire pour le handoff retail-promo)
+import '@/features/retail-promo/blocks'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { EditorHeader } from '@/components/panels/EditorHeader'
@@ -30,6 +32,11 @@ import { applyPrintDefaults } from '@/features/print/printDefaults'
 import { TourLauncher } from '@/features/tour/TourLauncher'
 import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
+import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
+import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
+import { useDataMerge } from '@/features/merge/useDataMerge'
+import { useMergeStore } from '@/stores/merge.store'
+import { useThemeStore } from '@/stores/theme.store'
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -45,6 +52,12 @@ export default function EditorPage() {
     pendingDamInsert,
     setPendingDamInsert,
   } = useProjectStore()
+  // Retail-promo handoff: instantiation canvas + connexion merge augmentée
+  const { pendingApply, clearPendingApply } = useRetailPromoStore()
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
+  const { applyRow } = useDataMerge()
+  const promoAppliedRef = useRef(false)
+
   const { processFiles: processIdmlFiles } = useIdmlUpload()
   const { parseAndRender: parseIdml } = useIdmlParse()
   const { parseAndRender: parsePptx, state: pptxState } = usePptxParse()
@@ -92,6 +105,44 @@ export default function EditorPage() {
       cancelled = true
     }
   }, [pendingDamInsert, insertOnCanvas, setPendingDamInsert])
+
+  // Retail-promo handoff : attend le canvas, instancie le layout puis connecte le merge augmenté.
+  // Guard double-apply : clearPendingApply() est appelé dès que le canvas est prêt,
+  // promoAppliedRef évite les ré-entrances dans le retry loop.
+  useEffect(() => {
+    if (!pendingApply || pendingApply.projectId !== id) return
+    if (promoAppliedRef.current) return
+    let cancelled = false
+    let attempts = 0
+
+    const tryApply = async () => {
+      if (cancelled || promoAppliedRef.current) return
+      if (globalFabricCanvas) {
+        promoAppliedRef.current = true
+        const apply = pendingApply // snapshot avant clear
+        clearPendingApply()
+        instantiatePromoLayout(globalFabricCanvas, apply.layout, resolvedTheme)
+        useMergeStore.getState().connect(apply.sourceRef, apply.columns, apply.rows)
+        await applyRow(apply.rows[0])
+        return
+      }
+      attempts++
+      if (attempts < 20) {
+        setTimeout(() => { void tryApply() }, 100)
+      } else {
+        console.warn('[EditorPage] Canvas non prêt après 2s, handoff promo abandonné.')
+        clearPendingApply()
+      }
+    }
+
+    void tryApply()
+    return () => { cancelled = true }
+  }, [pendingApply, id, clearPendingApply, resolvedTheme, applyRow])
+
+  // Reset du guard quand le projet change (navigation vers un autre éditeur)
+  useEffect(() => {
+    promoAppliedRef.current = false
+  }, [id])
 
   useEffect(() => {
     if (id) setProjectId(id)
