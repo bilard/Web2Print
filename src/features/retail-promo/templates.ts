@@ -6,7 +6,7 @@ const A4: PromoLayout = {
     { blockId: 'accroche', xPct: 0.06, yPct: 0.05, wPct: 0.88, hPct: 0.13 },
     { blockId: 'cadre-photo', xPct: 0.10, yPct: 0.22, wPct: 0.80, hPct: 0.42 },
     { blockId: 'badge-remise', xPct: 0.60, yPct: 0.17, wPct: 0.30, hPct: 0.21 },
-    { blockId: 'prix-barre', xPct: 0.14, yPct: 0.68, wPct: 0.72, hPct: 0.19 },
+    { blockId: 'prix-barre', xPct: 0.14, yPct: 0.66, wPct: 0.72, hPct: 0.22 },
     { blockId: 'bandeau-lot', xPct: 0.24, yPct: 0.885, wPct: 0.52, hPct: 0.05 },
     { blockId: 'bandeau-validite', xPct: 0.10, yPct: 0.945, wPct: 0.80, hPct: 0.028 },
     { blockId: 'mentions', xPct: 0.10, yPct: 0.975, wPct: 0.80, hPct: 0.02 },

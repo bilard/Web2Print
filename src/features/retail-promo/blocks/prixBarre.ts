@@ -35,13 +35,13 @@ const def: PromoBlockDef = {
     // Kicker « PRIX PROMO » (accent, lettré).
     const kicker = new Textbox('PRIX PROMO', {
       left: x,
-      top: y + h * 0.1,
+      top: y + h * 0.08,
       width: w,
       fontSize: h * 0.1,
       fontWeight: '700',
       textAlign: 'center',
       charSpacing: 300,
-      fill: palette.accent,
+      fill: '#a5b4fc',
       fontFamily,
       scaleX: 1,
     })
@@ -49,9 +49,9 @@ const def: PromoBlockDef = {
     // Ancien prix barré, discret.
     const prixWas = new Textbox('00,00 €', {
       left: x,
-      top: y + h * 0.26,
+      top: y + h * 0.32,
       width: w,
-      fontSize: h * 0.16,
+      fontSize: h * 0.13,
       textAlign: 'center',
       fill: 'rgba(255,255,255,0.55)',
       fontFamily,
@@ -65,9 +65,9 @@ const def: PromoBlockDef = {
     // Prix choc, police d'affichage condensée Oswald.
     const prixNow = new Textbox('00,00 €', {
       left: x,
-      top: y + h * 0.42,
+      top: y + h * 0.5,
       width: w,
-      fontSize: h * 0.44,
+      fontSize: h * 0.34,
       fontWeight: '700',
       textAlign: 'center',
       fill: '#ffffff',

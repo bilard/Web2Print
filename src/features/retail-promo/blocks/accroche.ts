@@ -21,17 +21,18 @@ const def: PromoBlockDef = {
       fill: palette.accent,
       shadow: new Shadow({ color: 'rgba(15,23,42,0.18)', blur: 18, offsetX: 0, offsetY: 6 }),
     })
-    const fontSize = Math.min(h * 0.42, (w / Math.max(8, 12)) * 1.6)
+    // Dimensionné pour tenir jusqu'à 2 lignes dans le bandeau, centré verticalement.
+    const fontSize = Math.min(h * 0.34, (w / 12) * 1.5)
     const title = new Textbox('{{promo_name}}', {
       left: x + w * 0.06,
-      top: y + h * 0.5 - fontSize * 0.62,
+      top: y + h * 0.5 - fontSize,
       width: w * 0.88,
       fontSize,
       fontWeight: '700',
       textAlign: 'center',
       fill: '#ffffff',
       fontFamily,
-      lineHeight: 1.0,
+      lineHeight: 1.05,
       scaleX: 1,
     })
     const g = new Group([band, title], { subTargetCheck: true, interactive: false })
