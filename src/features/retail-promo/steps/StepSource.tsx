@@ -67,11 +67,11 @@ export function StepSource() {
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-white">Source des produits</h2>
       <p className="text-sm text-white/60">Choisissez d'où proviennent vos données produit.</p>
-      <p className="text-xs text-white/40 -mt-2">Pas de catalogue PIM&nbsp;? Prenez <span className="text-white/70">Saisie manuelle</span> (1 produit pour tester) ou <span className="text-white/70">Données Excel</span>. Étapes suivantes&nbsp;: correspondance des champs → aperçu &amp; export PNG.</p>
+      <p className="text-xs text-white/40 -mt-2">Choisissez un dataset existant&nbsp;: chaque produit deviendra un visuel promo. Étapes&nbsp;: correspondance des champs → aperçu &amp; export PNG (ou ZIP).</p>
       {[
-        { id: 'pim', icon: Database, label: 'Catalogue PIM', desc: 'Produits de votre catalogue enrichi' },
-        { id: 'excel', icon: FileSpreadsheet, label: 'Données Excel / Sheets', desc: 'Fichier BDD importé' },
-        { id: 'manual', icon: PenLine, label: 'Saisie manuelle', desc: 'Quelques produits à la main' },
+        { id: 'excel', icon: Database, label: 'Mes bases de données', desc: 'Vos catalogues du PIM (ex. Catalogue_GSB_2026, Scraping…)' },
+        { id: 'manual', icon: PenLine, label: 'Saisie manuelle', desc: '1 produit pour tester rapidement' },
+        { id: 'pim', icon: FileSpreadsheet, label: 'Projets PIM enrichis', desc: 'Collection pim_projects (avancé)' },
       ].map(({ id, icon: Icon, label, desc }) => (
         <button key={id} onClick={() => setMode(id as Mode)}
           className="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-surface hover:bg-surface-2 transition-colors text-left">
@@ -112,7 +112,7 @@ export function StepSource() {
   if (mode === 'excel') return (
     <div className="flex flex-col gap-3">
       <button onClick={() => setMode('choose')} className="text-sm text-white/50 hover:text-white text-left">← Retour</button>
-      <h2 className="text-lg font-semibold text-white">Données Excel</h2>
+      <h2 className="text-lg font-semibold text-white">Mes bases de données</h2>
       {error && <p className="text-red-400 text-sm">{error}</p>}
       {(isLoading || loadingItems) && <Loader2 className="w-5 h-5 animate-spin text-white/50" />}
       {datasets.map((ds) => (
