@@ -2,15 +2,27 @@ import { useEffect, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { httpsCallable } from 'firebase/functions'
-import { Download, Package, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Download, Package, ChevronLeft, ChevronRight, Loader2, FileCode } from 'lucide-react'
 import { toast } from 'sonner'
 import { functions } from '@/lib/firebase/config'
+import { getRowValue } from '@/features/merge/mergeEngine'
 import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { useRetailPromoStore } from '../retailPromo.store'
 import { extractPromoFields } from '../promoMapping'
 import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { RetailPromoCard, type RetailCardData } from '../RetailPromoCard'
+import { PromoTemplateEditor } from '../PromoTemplateEditor'
+import { buildPromoHtml } from '../buildPromoHtml'
+
+/** Convertit une URL blob:/http en data-URI (HTML autonome) ; data: renvoyé tel quel. */
+async function toDataUrl(url?: string): Promise<string | undefined> {
+  if (!url || url.startsWith('data:')) return url
+  try {
+    const blob = await (await fetch(url)).blob()
+    return await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsDataURL(blob) })
+  } catch { return undefined }
+}
 
 const imageProxyFn = httpsCallable<{ url: string }, { data: string; mimeType: string }>(functions, 'imageProxy')
 // Cache module : une URL résolue une seule fois (data-URI ou null si échec).
@@ -82,11 +94,11 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, setStep } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, setStep } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
 
   const [index, setIndex] = useState(0)
-  const [busy, setBusy] = useState<'one' | 'all' | null>(null)
+  const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
   const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
   const previewRef = useRef<HTMLDivElement>(null)
 
@@ -144,6 +156,24 @@ export function StepRender() {
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export') } finally { setBusy(null) }
   }
 
+  const downloadHtml = async () => {
+    setBusy('html')
+    try {
+      const dataUrl = await toDataUrl(resolvedImg ?? (await resolveImg(cards[safe].imageUrl)))
+      const allFields = rawColumns.map((c) => ({
+        label: c.label || c.key,
+        value: String(getRowValue(rawRows[safe], c.key, rawColumns) ?? ''),
+      }))
+      const html = buildPromoHtml({ ...cards[safe], imageUrl: dataUrl }, config, allFields)
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `promo_${slug(cards[safe].name)}.html`
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+      toast.success('HTML téléchargé (éditable)')
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export HTML') } finally { setBusy(null) }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -151,10 +181,13 @@ export function StepRender() {
         <button onClick={() => setStep('mapping')} className="text-sm text-white/50 hover:text-white">← Mappage</button>
       </div>
 
+      {/* Panneau d'édition du template */}
+      <PromoTemplateEditor />
+
       {/* Aperçu du card (échelle réduite) */}
       <div className="flex justify-center bg-well rounded-xl p-6 overflow-hidden">
         <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
-          <RetailPromoCard ref={previewRef} data={currentData} />
+          <RetailPromoCard ref={previewRef} data={currentData} config={config} />
         </div>
       </div>
 
@@ -171,7 +204,11 @@ export function StepRender() {
       <div className="flex gap-2">
         <button onClick={() => void downloadOne()} disabled={!!busy}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white text-sm font-medium disabled:opacity-40">
-          {busy === 'one' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Télécharger ce visuel (PNG)
+          {busy === 'one' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PNG
+        </button>
+        <button onClick={() => void downloadHtml()} disabled={!!busy}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white/[0.06] hover:bg-white/10 border border-white/10 text-white text-sm font-medium disabled:opacity-40">
+          {busy === 'html' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4" />} HTML éditable
         </button>
         {cards.length > 1 && (
           <button onClick={() => void downloadAll()} disabled={!!busy}

@@ -14,12 +14,34 @@ export interface RetailCardData {
   imageUrl?: string
 }
 
-const CSS = `
+export interface PromoTemplateConfig {
+  accent: string        // accroche + badge + bandeau prix
+  headerBg: string      // bandeau d'en-tête + pied
+  showCategory: boolean
+  showDescription: boolean
+  showUnitPrice: boolean
+  showBadge: boolean
+  showFooter: boolean
+}
+
+export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
+  accent: '#ef4444',
+  headerBg: '#111827',
+  showCategory: true,
+  showDescription: true,
+  showUnitPrice: true,
+  showBadge: true,
+  showFooter: true,
+}
+
+/** CSS du template — couleurs pilotées par variables (--rp-accent / --rp-head).
+ *  Partagé entre la carte React (aperçu/capture) et l'export HTML autonome. */
+export const PROMO_CSS = `
 .rp-card * { margin:0; padding:0; box-sizing:border-box; }
 .rp-card { position:relative; width:595px; height:842px; background:#fff; overflow:hidden;
   display:flex; flex-direction:column; font-family:'Montserrat','Inter',system-ui,sans-serif; color:#111827; }
-.rp-head { background:#111827; color:#fff; padding:30px 40px 26px; display:flex; flex-direction:column; gap:8px; }
-.rp-kicker { align-self:flex-start; background:#ef4444; color:#fff; font-weight:800; font-size:14px;
+.rp-head { background:var(--rp-head,#111827); color:#fff; padding:30px 40px 26px; display:flex; flex-direction:column; gap:8px; }
+.rp-kicker { align-self:flex-start; background:var(--rp-accent,#ef4444); color:#fff; font-weight:800; font-size:14px;
   letter-spacing:.18em; text-transform:uppercase; padding:6px 14px; border-radius:4px; }
 .rp-name { font-weight:800; font-size:44px; line-height:1.03; letter-spacing:-.01em; }
 .rp-brand { color:#9ca3af; font-weight:600; font-size:17px; }
@@ -31,65 +53,70 @@ const CSS = `
 .rp-product img { max-width:84%; max-height:100%; object-fit:contain; filter:drop-shadow(0 24px 30px rgba(15,23,42,.18)); }
 .rp-ph { width:78%; height:74%; border-radius:16px; background:repeating-linear-gradient(45deg,#e9eef5 0 18px,#eef2f8 18px 36px);
   display:flex; align-items:center; justify-content:center; color:#94a3b8; font-weight:700; letter-spacing:.12em; font-size:13px; }
-.rp-badge { position:absolute; top:28px; right:34px; width:150px; height:150px; border-radius:50%; background:#ef4444; color:#fff;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(239,68,68,.30); }
+.rp-badge { position:absolute; top:28px; right:34px; width:150px; height:150px; border-radius:50%; background:var(--rp-accent,#ef4444); color:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(15,23,42,.25); }
 .rp-pct { font-weight:900; font-size:50px; line-height:.9; }
 .rp-pctlbl { font-weight:700; font-size:12px; letter-spacing:.14em; text-transform:uppercase; margin-top:2px; }
-.rp-price { background:#ef4444; color:#fff; padding:26px 40px 30px; display:flex; align-items:flex-end; justify-content:space-between; }
+.rp-price { background:var(--rp-accent,#ef4444); color:#fff; padding:26px 40px 30px; display:flex; align-items:flex-end; justify-content:space-between; }
 .rp-plabel { font-weight:700; font-size:14px; letter-spacing:.2em; text-transform:uppercase; opacity:.9; }
 .rp-was { font-size:25px; font-weight:600; text-decoration:line-through; opacity:.7; }
 .rp-left { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
 .rp-now { font-weight:900; line-height:.85; letter-spacing:-.02em; white-space:nowrap;
   display:flex; align-items:baseline; gap:6px; justify-content:flex-end; }
 .rp-cur { font-size:.5em; font-weight:800; }
-.rp-foot { background:#111827; color:#9ca3af; font-size:12px; padding:10px 40px; text-align:center; letter-spacing:.03em; min-height:38px; }
+.rp-foot { background:var(--rp-head,#111827); color:#9ca3af; font-size:12px; padding:10px 40px; text-align:center; letter-spacing:.03em; min-height:38px; }
 `
 
-/** Carte promo Retail (HTML/CSS) — design moderne data-driven. Rendue puis capturée en PNG (html2canvas). */
-export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData }>(({ data }, ref) => {
-  return (
-    <div ref={ref} className="rp-card">
-      <style>{CSS}</style>
-      <div className="rp-head">
-        <span className="rp-kicker">{data.category || 'Offre spéciale'}</span>
-        <div className="rp-name">{data.name || 'Produit'}</div>
-        {(data.brand || data.ref) && (
-          <div className="rp-brand">{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
-        )}
-        {data.description && <div className="rp-desc">{data.description}</div>}
-      </div>
-      <div className="rp-product">
-        {data.imageUrl
-          ? <img src={data.imageUrl} crossOrigin="anonymous" alt={data.name} />
-          : <div className="rp-ph">PHOTO PRODUIT</div>}
-        {data.remiseLabel && (
-          <div className="rp-badge">
-            <span className="rp-pct">{data.remiseLabel}</span>
-            <span className="rp-pctlbl">de remise</span>
-          </div>
-        )}
-      </div>
-      <div className="rp-price">
-        <div className="rp-left">
-          <span className="rp-plabel">Prix promo</span>
-          {data.priceWas && <span className="rp-was">{data.priceWas}</span>}
-          {data.unitPrice && <span className="rp-unit">{data.unitPrice}</span>}
+/** Découpe « 1 144,29 € » en montant + symbole, et choisit une taille qui tient sur une ligne. */
+export function splitPrice(priceNow: string): { amount: string; cur: string; fontSize: number } {
+  const t = (priceNow || '').trim()
+  const m = t.match(/^(.*?)\s*([€$£])\s*$/)
+  const amount = m ? m[1].trim() : t
+  const cur = m ? m[2] : ''
+  const fontSize = amount.length <= 6 ? 88 : amount.length <= 8 ? 68 : 54
+  return { amount, cur, fontSize }
+}
+
+/** Carte promo Retail (HTML/CSS) — design moderne data-driven, couleurs/champs configurables. */
+export const RetailPromoCard = forwardRef<HTMLDivElement, { data: RetailCardData; config?: PromoTemplateConfig }>(
+  ({ data, config = DEFAULT_PROMO_CONFIG }, ref) => {
+    const { amount, cur, fontSize } = splitPrice(data.priceNow)
+    const styleVars = { '--rp-accent': config.accent, '--rp-head': config.headerBg } as React.CSSProperties
+    return (
+      <div ref={ref} className="rp-card" style={styleVars}>
+        <style>{PROMO_CSS}</style>
+        <div className="rp-head">
+          {config.showCategory && <span className="rp-kicker">{data.category || 'Offre spéciale'}</span>}
+          <div className="rp-name">{data.name || 'Produit'}</div>
+          {(data.brand || data.ref) && (
+            <div className="rp-brand">{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
+          )}
+          {config.showDescription && data.description && <div className="rp-desc">{data.description}</div>}
         </div>
-        {(() => {
-          const t = (data.priceNow || '').trim()
-          const m = t.match(/^(.*?)\s*([€$£])\s*$/)
-          const amount = m ? m[1].trim() : t
-          const cur = m ? m[2] : ''
-          const fs = amount.length <= 6 ? 88 : amount.length <= 8 ? 68 : 54
-          return (
-            <div className="rp-now" style={{ fontSize: fs }}>
-              {amount}{cur && <span className="rp-cur">{cur}</span>}
+        <div className="rp-product">
+          {data.imageUrl
+            ? <img src={data.imageUrl} crossOrigin="anonymous" alt={data.name} />
+            : <div className="rp-ph">PHOTO PRODUIT</div>}
+          {config.showBadge && data.remiseLabel && (
+            <div className="rp-badge">
+              <span className="rp-pct">{data.remiseLabel}</span>
+              <span className="rp-pctlbl">de remise</span>
             </div>
-          )
-        })()}
+          )}
+        </div>
+        <div className="rp-price">
+          <div className="rp-left">
+            <span className="rp-plabel">Prix promo</span>
+            {data.priceWas && <span className="rp-was">{data.priceWas}</span>}
+            {config.showUnitPrice && data.unitPrice && <span className="rp-unit">{data.unitPrice}</span>}
+          </div>
+          <div className="rp-now" style={{ fontSize }}>
+            {amount}{cur && <span className="rp-cur">{cur}</span>}
+          </div>
+        </div>
+        {config.showFooter && <div className="rp-foot">{data.validite || ''}</div>}
       </div>
-      <div className="rp-foot">{data.validite || ''}</div>
-    </div>
-  )
-})
+    )
+  },
+)
 RetailPromoCard.displayName = 'RetailPromoCard'
