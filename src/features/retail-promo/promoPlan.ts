@@ -46,8 +46,8 @@ export function repairPromoPlan(raw: unknown, fallback: PromoLayout): PromoLayou
   }
 }
 
-/** Schéma JSON pour l'appel LLM (Claude/Gemini structuré) — tâche 8. */
-export const promoPlanJsonSchema = {
+/** Schéma JSON pour l'appel LLM (Claude/Gemini structuré) — tâche 8. (export ajouté à T8) */
+const promoPlanJsonSchema = {
   type: 'object',
   required: ['blocks'],
   properties: {
