@@ -34,6 +34,7 @@ import { ref as fbStorageRef, uploadBytes } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 import { useRetailPromoStore } from '@/features/retail-promo/retailPromo.store'
 import { instantiatePromoLayout } from '@/features/retail-promo/instantiateLayout'
+import { useGeneratePromoBackground } from '@/features/retail-promo/useGeneratePromoBackground'
 import { applyRowToCanvas } from '@/features/merge/useDataMerge'
 import { useMergeStore } from '@/stores/merge.store'
 import { useThemeStore } from '@/stores/theme.store'
@@ -54,6 +55,7 @@ export default function EditorPage() {
   } = useProjectStore()
   // Retail-promo handoff: instantiation canvas + connexion merge augmentée
   const { pendingApply, clearPendingApply } = useRetailPromoStore()
+  const { generateBackground } = useGeneratePromoBackground()
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
   const promoAppliedRef = useRef(false)
 
@@ -130,6 +132,15 @@ export default function EditorPage() {
         instantiatePromoLayout(globalFabricCanvas, apply.layout, resolvedTheme)
         useMergeStore.getState().connect(apply.sourceRef, apply.columns, apply.rows)
         await applyRowToCanvas(globalFabricCanvas, apply.rows[0], { projectId: id })
+        // Fond IA (Nano Banana 2) — généré ici car un projet est ouvert (upload gallery OK).
+        if (apply.aiBgBrief != null) {
+          const url = await generateBackground({ brief: apply.aiBgBrief, width: apply.layout.width, height: apply.layout.height })
+          if (url) {
+            const ui = useUIStore.getState()
+            ui.setCanvasBgType('image')
+            ui.setCanvasBgImage(url)
+          }
+        }
         return
       }
       attempts++
@@ -143,7 +154,7 @@ export default function EditorPage() {
 
     void tryApply()
     return () => { cancelled = true }
-  }, [pendingApply, id, clearPendingApply, resolvedTheme])
+  }, [pendingApply, id, clearPendingApply, resolvedTheme, generateBackground])
 
   useEffect(() => {
     if (id) setProjectId(id)

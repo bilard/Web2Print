@@ -22,6 +22,8 @@ export interface GenerationRequest {
   /** Target dimensions from selected block (pixels) */
   targetWidth?: number
   targetHeight?: number
+  /** Override de la liste de modèles à essayer (ex: prioriser Nano Banana 2/Pro). */
+  models?: readonly string[]
 }
 
 export interface CompressionOptions {

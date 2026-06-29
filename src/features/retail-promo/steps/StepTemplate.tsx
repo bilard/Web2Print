@@ -19,6 +19,7 @@ export function StepTemplate() {
 
   const [brief, setBrief] = useState('')
   const [showBrief, setShowBrief] = useState(false)
+  const [aiBg, setAiBg] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,12 +37,15 @@ export function StepTemplate() {
         canvasHeight: layout.height,
         canvasBg: layout.background,
       })
+      // Le fond IA (Nano Banana 2) est généré dans l'éditeur (où un projet est
+      // ouvert → l'upload gallery fonctionne). On transmet le brief via le relais.
       setPendingApply({
         projectId: project.id,
         layout,
         sourceRef,
         columns: augmented.columns,
         rows: augmented.rows,
+        aiBgBrief: aiBg ? brief : null,
       })
       navigate(`/editor/${project.id}`, { state: { title: `Promo – ${layout.label}` } })
     } catch (err) {
@@ -67,6 +71,21 @@ export function StepTemplate() {
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-white">Gabarit</h2>
       <p className="text-sm text-white/60">Choisissez un gabarit curé ou laissez l'IA composer.</p>
+
+      {/* Fond créatif IA (Nano Banana 2) */}
+      <label className="flex items-start gap-2.5 p-3 rounded-lg bg-surface border border-white/10 cursor-pointer hover:bg-surface-2 transition-colors">
+        <input
+          type="checkbox"
+          checked={aiBg}
+          onChange={(e) => setAiBg(e.target.checked)}
+          disabled={isWorking}
+          className="mt-0.5 accent-[#6366f1]"
+        />
+        <span className="min-w-0">
+          <span className="block text-sm text-white">Fond créatif IA (Nano Banana 2)</span>
+          <span className="block text-[11px] text-white/40">Génère un arrière-plan designé derrière le visuel. Ajoute ~15-30 s.</span>
+        </span>
+      </label>
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
 

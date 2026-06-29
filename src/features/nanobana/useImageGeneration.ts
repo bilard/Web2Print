@@ -96,7 +96,7 @@ export function useImageGeneration() {
         // Firestore + budget bloquant), fallback direct standard.
         let response: Awaited<ReturnType<typeof llmPostWithFallback>> | null = null
         let lastError = ''
-        for (const model of NANO_BANANA_MODELS) {
+        for (const model of request.models ?? NANO_BANANA_MODELS) {
           response = await llmPostWithFallback('gemini', model, requestBody, 90_000)
           if (response.ok) {
             break

@@ -8,6 +8,8 @@ interface PendingPromoApply {
   sourceRef: DataSourceRef
   columns: MergeColumn[]
   rows: MergeRow[]
+  /** Si défini, générer un fond IA (Nano Banana 2) dans l'éditeur ; valeur = brief créatif. */
+  aiBgBrief?: string | null
 }
 
 interface RetailPromoState {

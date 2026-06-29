@@ -33,6 +33,9 @@ export function useImageGallery() {
   /** Upload an image with compression + thumbnail */
   const uploadToGallery = useCallback(
     async (file: File, tags: string[] = []): Promise<GalleryImage | null> => {
+      // Lecture à l'appel (et non via closure) : robuste au timing — l'upload peut
+      // être déclenché juste après l'ouverture d'un projet (ex: handoff promo).
+      const projectId = useEditorStore.getState().projectId
       if (!userId || !projectId) return null
 
       const ts = Date.now()
@@ -76,7 +79,7 @@ export function useImageGallery() {
       addImage(image)
       return image
     },
-    [userId, projectId, compress, thumbnail, addImage],
+    [userId, compress, thumbnail, addImage],
   )
 
   /** Delete an image from Storage + Firestore */
