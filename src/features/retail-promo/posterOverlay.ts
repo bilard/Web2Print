@@ -14,9 +14,11 @@ const leg = () => new Shadow({ color: 'rgba(0,0,0,0.65)', blur: 10, offsetX: 0, 
 export function instantiatePosterOverlay(canvas: Canvas, W: number, H: number): void {
   const ts = Date.now()
 
+  // Nom calé à gauche/haut (largeur réduite) pour ne pas chevaucher le macaron
+  // de remise placé en haut à droite.
   const name = new Textbox('{{promo_name}}', {
-    left: W * 0.08, top: H * 0.05, width: W * 0.84,
-    fontSize: H * 0.05, fontWeight: '700', textAlign: 'center',
+    left: W * 0.06, top: H * 0.05, width: W * 0.56,
+    fontSize: H * 0.045, fontWeight: '700', textAlign: 'left',
     fill: '#ffffff', fontFamily: 'Montserrat', lineHeight: 1.05, shadow: leg(), scaleX: 1,
   })
   name.set('data', { id: `ov_name_${ts}`, type: 'promo-overlay', templateText: '{{promo_name}}' })
