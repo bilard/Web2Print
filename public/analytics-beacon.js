@@ -37,13 +37,19 @@
     return location.pathname + (location.hash || '')
   }
   var lastPath = null
+  var lastEid = null // id du dernier event envoyé, réutilisé pour le re-tag uid (cf. doSend)
   var timer = null
-  function doSend() {
+  // reuse=true : ré-envoie l'event courant SOUS LE MÊME eid (re-tag uid), sans créer de doublon.
+  function doSend(reuse) {
     try {
       var p = currentPath()
-      if (p === lastPath) return // dédoublonnage (scroll-spy qui rejoue la même ancre)
+      if (!reuse && p === lastPath) return // dédoublonnage (scroll-spy qui rejoue la même ancre)
+      // Re-tag (reuse) : on garde l'eid de l'event déjà envoyé → le serveur fusionne (merge).
+      var eid = reuse && lastEid ? lastEid : rand()
+      lastEid = eid
       lastPath = p
       var payload = JSON.stringify({
+        eid: eid,
         path: p,
         vid: visitorId(),
         sid: sessionId(),
@@ -55,9 +61,11 @@
       else fetch(ENDPOINT, { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true })
     } catch (e) { /* best-effort */ }
   }
-  function send() {
+  // reuse===true uniquement (les écouteurs hashchange/popstate passent un Event → ignoré).
+  function send(reuse) {
+    var r = reuse === true
     if (timer) clearTimeout(timer)
-    timer = setTimeout(doSend, 150) // petit anti-rebond pour les changements d'ancre rapides
+    timer = setTimeout(function () { doSend(r) }, 150) // petit anti-rebond pour les changements d'ancre rapides
   }
 
   // L'auth Firebase se résout APRÈS le chargement : le pont uid (uidBridge) appelle
@@ -65,8 +73,8 @@
   window.__w2pIdentify = function (uid) {
     window.__w2pAnalyticsUid = uid || null
     if (!uid) return
-    lastPath = null // force le renvoi de la page courante, cette fois taguée avec l'uid
-    send()
+    // Re-tag de la page courante avec l'uid SOUS LE MÊME eid : pas de 2e doc (pas de double comptage).
+    send(true)
   }
 
   // Page vue initiale

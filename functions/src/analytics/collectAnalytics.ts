@@ -40,8 +40,18 @@ export const collectAnalytics = onRequest(
       res.status(204).end()
       return
     }
+    // `eid` (id stable côté client) : le beacon ré-envoie l'event d'entrée sous le même
+    // eid pour y backfiller l'uid une fois l'auth résolue. On écrit en `set(merge)` sur ce
+    // doc → un seul document (sinon double comptage des pages d'entrée d'app). Absent sur
+    // les pages publiques / anciens beacons → `add()` classique.
+    const rawEid = (req.body as { eid?: unknown } | null | undefined)?.eid
+    const eid = typeof rawEid === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(rawEid) ? rawEid : null
     try {
-      await db.collection('analyticsEvents').add({ ...doc, ts: FieldValue.serverTimestamp() })
+      if (eid) {
+        await db.collection('analyticsEvents').doc(eid).set({ ...doc, ts: FieldValue.serverTimestamp() }, { merge: true })
+      } else {
+        await db.collection('analyticsEvents').add({ ...doc, ts: FieldValue.serverTimestamp() })
+      }
     } catch {
       // best-effort : on n'expose jamais d'erreur au visiteur
     }
