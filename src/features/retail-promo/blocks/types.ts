@@ -2,7 +2,7 @@ import type { Object as FabricObject } from 'fabric'
 import type { ConditionalRule } from '@/features/merge/conditionalRules'
 import type { PromoBlockId, PlacedBlock } from '../promoTypes'
 
-interface BlockBuildCtx {
+export interface BlockBuildCtx {
   x: number
   y: number
   w: number

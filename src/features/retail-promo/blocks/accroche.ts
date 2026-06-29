@@ -34,6 +34,7 @@ const def: PromoBlockDef = {
       id: `promo_accroche_${Date.now()}`,
       type: 'promo-block',
       blockId: 'accroche',
+      conditionalRules: [],
     }
     return g
   },

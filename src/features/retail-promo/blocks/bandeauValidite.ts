@@ -28,7 +28,7 @@ const def: PromoBlockDef = {
       top: y,
       width: w,
       height: h,
-      fill: palette.text,
+      fill: palette.primary,
     })
     const txt = new Textbox('{{promo_validText}}', {
       left: x,

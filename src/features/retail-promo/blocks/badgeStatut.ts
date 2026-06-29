@@ -37,6 +37,7 @@ const def: PromoBlockDef = {
       id: `promo_badge-statut_${Date.now()}`,
       type: 'promo-block',
       blockId: 'badge-statut',
+      conditionalRules: [],
     }
     return g
   },

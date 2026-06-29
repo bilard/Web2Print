@@ -12,7 +12,8 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignore": [
         "src/components/ui/**",
-        "src/types/fabric.d.ts"
+        "src/types/fabric.d.ts",
+        "src/features/retail-promo/blocks/types.ts"
       ]
     },
     "functions": {
