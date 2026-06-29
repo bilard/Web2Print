@@ -1,10 +1,16 @@
 // src/features/analytics/admin/AnalyticsTab.tsx
 import { useMemo, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Trash2, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useAnalyticsEvents } from '../useAnalyticsEvents'
 import { usePeriod, type PeriodKey } from '../usePeriod'
 import { computeKpis, timeSeries, filterEvents, NO_FILTER, type EventFilter } from '../metrics'
 import { downloadEventsCsv } from '../exportCsv'
+import { useClearAnalytics } from '../useClearAnalytics'
 import { AnalyticsKpiCards } from './AnalyticsKpiCards'
 import { AnalyticsTimeChart } from './AnalyticsTimeChart'
 import { AnalyticsTopLists } from './AnalyticsTopLists'
@@ -22,6 +28,17 @@ const PERIODS: { key: PeriodKey; label: string }[] = [
 export function AnalyticsTab() {
   const { period, setPeriod, fromMs, toMs, prevFromMs, prevToMs } = usePeriod('30d')
   const [filter, setFilter] = useState<EventFilter>(NO_FILTER)
+  const [confirmClear, setConfirmClear] = useState(false)
+  const clear = useClearAnalytics()
+  const handleClear = () => {
+    clear.mutate(undefined, {
+      onSuccess: (deleted) => {
+        setConfirmClear(false)
+        toast.success(`Historique vidé — ${deleted.toLocaleString('fr-FR')} consultation(s) supprimée(s).`)
+      },
+      onError: (e) => toast.error(`Échec : ${e instanceof Error ? e.message : 'erreur inconnue'}`),
+    })
+  }
   const cur = useAnalyticsEvents(fromMs, toMs, true)
   const prev = useAnalyticsEvents(prevFromMs, prevToMs, true)
   const allEvents = cur.data ?? []
@@ -46,13 +63,44 @@ export function AnalyticsTab() {
             </button>
           ))}
         </div>
-        <button
-          onClick={() => downloadEventsCsv(events, `analytics-${period}.csv`)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white/70 hover:text-white bg-surface-2"
-        >
-          <Download className="w-4 h-4" /> CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => downloadEventsCsv(events, `analytics-${period}.csv`)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white/70 hover:text-white bg-surface-2"
+          >
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button
+            onClick={() => setConfirmClear(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-400/80 hover:text-red-300 bg-surface-2 hover:bg-red-500/10"
+            title="Vider tout l'historique de consultation"
+          >
+            <Trash2 className="w-4 h-4" /> Vider
+          </button>
+        </div>
       </div>
+
+      <AlertDialog open={confirmClear} onOpenChange={(o) => !clear.isPending && setConfirmClear(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Vider tout l'historique ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprime <strong>définitivement toutes les consultations</strong> enregistrées
+              (toutes périodes confondues), pas seulement celles affichées. Elle est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clear.isPending}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleClear() }}
+              disabled={clear.isPending}
+              className="bg-red-600 hover:bg-red-700 text-[#fff]"
+            >
+              {clear.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Suppression…</> : 'Vider définitivement'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {cur.isLoading || prev.isLoading ? (
         <div className="text-white/40 text-sm py-12 text-center">Chargement…</div>
       ) : allEvents.length === 0 ? (
