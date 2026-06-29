@@ -10,7 +10,7 @@ export type PngDpi = 72 | 150 | 300
  * Cœur paramétré : rasterise `canvas` à la résolution donnée et retourne un Blob PNG.
  * Ne déclenche aucun téléchargement. Utilisable depuis les workflows.
  */
-async function exportPngBlob(canvas: Canvas, dpi: number = 150): Promise<Blob> {
+export async function exportPngBlob(canvas: Canvas, dpi: number = 150): Promise<Blob> {
   const multiplier = dpi / 72
 
   // Déselectionner avant export

@@ -9,6 +9,8 @@ import { useMergeStore, type MergeRow } from '@/stores/merge.store'
 import { useDataMerge } from './useDataMerge'
 import { resolveFileName } from './mergeEngine'
 import { recordAudit } from '@/lib/auditLog'
+import { exportPngBlob } from '@/features/export/useExportPng'
+import { exportPdfBlob } from '@/features/export/useExportPdf'
 
 export type ExportFormat = 'pdf' | 'pptx' | 'png'
 export type ExportMode = 'multi-page' | 'zip'
@@ -19,6 +21,13 @@ export interface BatchExportConfig {
   rangeStart: number     // 0-indexed
   rangeEnd: number       // 0-indexed inclusive
   fileNamePattern: string // ex: "carte_{{nom}}"
+  dpi?: 72 | 150 | 300        // défaut 150 — résolution PNG/PDF par ligne
+  withPrintMarks?: boolean    // défaut false — marques de coupe (PDF zip uniquement)
+}
+
+/** Convertit un DPI en multiplicateur Fabric (base 72 px/inch). */
+export function dpiToMultiplier(dpi: 72 | 150 | 300 | undefined): number {
+  return (dpi ?? 150) / 72
 }
 
 export function useBatchExport() {
@@ -130,22 +139,22 @@ export function useBatchExport() {
       const fileName = resolveFileName(config.fileNamePattern || `export_${i + 1}`, row, useMergeStore.getState().columns)
 
       if (config.format === 'png') {
-        const dataUrl = captureCanvas()
-        const base64 = dataUrl.split(',')[1]
-        zip.file(`${fileName}.png`, base64, { base64: true })
+        if (!globalFabricCanvas) continue
+        const blob = await exportPngBlob(globalFabricCanvas, config.dpi ?? 150)
+        zip.file(`${fileName}.png`, new Uint8Array(await blob.arrayBuffer()))
 
       } else if (config.format === 'pdf') {
-        const pdfDoc = await PDFDocument.create()
-        const dataUrl = captureCanvas()
-        const pngBytes = await fetch(dataUrl).then((r) => r.arrayBuffer())
-        const pngImage = await pdfDoc.embedPng(pngBytes)
-        const page = pdfDoc.addPage([canvasWidth, canvasHeight])
-        page.drawRectangle({ x: 0, y: 0, width: canvasWidth, height: canvasHeight, color: rgb(1, 1, 1) })
-        page.drawImage(pngImage, { x: 0, y: 0, width: canvasWidth, height: canvasHeight })
-        const pdfBytes = await pdfDoc.save()
-        zip.file(`${fileName}.pdf`, pdfBytes)
+        if (!globalFabricCanvas) continue
+        const blob = await exportPdfBlob(globalFabricCanvas, {
+          canvasWidth,
+          canvasHeight,
+          withPrintMarks: config.withPrintMarks ?? false,
+          multiplier: dpiToMultiplier(config.dpi),
+        })
+        zip.file(`${fileName}.pdf`, new Uint8Array(await blob.arrayBuffer()))
 
       } else if (config.format === 'pptx') {
+        // V1 : pptx et multi-page PDF conservent captureCanvas (multiplier fixe) — marques non requises
         const pptx = new PptxGenJS()
         const slideW = pxToIn(canvasWidth)
         const slideH = pxToIn(canvasHeight)
