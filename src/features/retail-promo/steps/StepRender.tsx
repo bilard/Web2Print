@@ -8,9 +8,8 @@ import { functions } from '@/lib/firebase/config'
 import { getRowValue } from '@/features/merge/mergeEngine'
 import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { useRetailPromoStore } from '../retailPromo.store'
-import { extractPromoFields, computeRemiseLabel } from '../promoMapping'
-import { formatPrice } from '../priceParse'
-import type { PromoFields } from '../promoTypes'
+import { extractPromoFields } from '../promoMapping'
+import { toCardData } from '../promoCardData'
 import { resolveEffect, type RuleEffect } from '@/features/merge/conditionalRules'
 import { RULE_SYNTHETIC_COLUMNS, augmentRowForRules } from '../promoRuleFields'
 import { savePromo, listPromos } from '../promosApi'
@@ -59,29 +58,7 @@ async function resolveImg(url?: string): Promise<string | undefined> {
   }
 }
 
-function validText(f: PromoFields): string {
-  if (f.validFrom && f.validTo) return `Offre valable du ${f.validFrom} au ${f.validTo}`
-  if (f.validTo) return `Offre valable jusqu'au ${f.validTo}`
-  return 'Dans la limite des stocks disponibles'
-}
-
-function toCardData(f: PromoFields, euroSep: { now?: boolean; was?: boolean } = {}): RetailCardData {
-  return {
-    name: f.name,
-    brand: f.brand || undefined,
-    ref: f.ref || undefined,
-    category: f.category || undefined,
-    description: f.description || undefined,
-    priceNow: f.newPrice != null ? formatPrice(f.newPrice, f.currency, euroSep.now) : '—',
-    priceWas: f.oldPrice != null ? formatPrice(f.oldPrice, f.currency, euroSep.was) : undefined,
-    unitPrice: f.unitPrice || undefined,
-    remiseLabel: computeRemiseLabel(f),
-    validite: validText(f),
-    imageUrl: f.image ?? undefined,
-  }
-}
-
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'produit'
+const slug =(s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'produit'
 const PREVIEW_SCALE = 0.95 // échelle d'affichage de la carte dans l'aperçu (n'affecte pas l'export)
 
 async function capture(node: HTMLDivElement): Promise<Blob | null> {
