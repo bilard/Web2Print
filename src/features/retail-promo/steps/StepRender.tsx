@@ -109,11 +109,11 @@ async function captureThumb(node: HTMLDivElement): Promise<string | undefined> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, sourceRef, imgOverride, setImgOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, sourceRef, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const euroSep = { now: config.styles?.priceNow?.euroSep, was: config.styles?.priceWas?.euroSep }
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap), euroSep))
 
-  const [index, setIndex] = useState(0)
+  const index = currentIndex, setIndex = setCurrentIndex
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
   const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
   const [ficheName, setFicheName] = useState('')
@@ -146,7 +146,15 @@ export function StepRender() {
   }
 
   const shownImage = resolvedImg
-  const currentData: RetailCardData = { ...cards[safe], imageUrl: shownImage }
+  const tov = textOverride[safe] ?? {}
+  const currentData: RetailCardData = {
+    ...cards[safe], imageUrl: shownImage,
+    name: tov.name ?? cards[safe].name,
+    category: tov.category ?? cards[safe].category,
+    brand: tov.brand ?? cards[safe].brand,
+    description: tov.description ?? cards[safe].description,
+    validite: tov.footer ?? cards[safe].validite,
+  }
 
   // Règles conditionnelles : effet visuel par bloc pour le produit affiché.
   const effects = useMemo(() => {
@@ -172,7 +180,7 @@ export function StepRender() {
       }
       // Upsert par nom : réenregistrer une fiche du même nom l'écrase (pas de doublon).
       const existing = (await listPromos()).find((p) => p.name === name)
-      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows, imgOverride, thumbnail }, existing?.id)
+      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows, imgOverride, textOverride, thumbnail }, existing?.id)
       setFicheName(name)
       toast.success(existing ? `Fiche « ${name} » mise à jour` : `Fiche « ${name} » enregistrée`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement') } finally { setSavingFiche(false) }
@@ -224,7 +232,7 @@ export function StepRender() {
         label: c.label || c.key,
         value: String(getRowValue(rawRows[safe], c.key, rawColumns) ?? ''),
       }))
-      const html = buildPromoHtml({ ...cards[safe], imageUrl: dataUrl }, config, allFields, effects)
+      const html = buildPromoHtml({ ...currentData, imageUrl: dataUrl }, config, allFields, effects)
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -290,9 +298,9 @@ export function StepRender() {
           {/* Navigation produit */}
           {cards.length > 1 && (
             <div className="flex items-center justify-center gap-4 text-white/70 text-sm">
-              <button onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={safe === 0} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+              <button onClick={() => setIndex(Math.max(0, safe - 1))} disabled={safe === 0} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
               <span>{safe + 1} / {cards.length}</span>
-              <button onClick={() => setIndex((i) => Math.min(cards.length - 1, i + 1))} disabled={safe === cards.length - 1} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+              <button onClick={() => setIndex(Math.min(cards.length - 1, safe + 1))} disabled={safe === cards.length - 1} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
             </div>
           )}
         </div>

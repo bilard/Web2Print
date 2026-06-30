@@ -17,17 +17,26 @@ const FIELD_OF: Partial<Record<PromoColorKey, PromoFieldKey>> = {
 
 /** OPTIONS DE TEXTE : police, paragraphe, transformation, connecteur. */
 const PRICE_KEYS: PromoColorKey[] = ['priceNow', 'priceWas']
+const EDITABLE_KEYS: PromoColorKey[] = ['name', 'category', 'brand', 'description', 'footer']
 
 export function PromoTextOptions({ id }: { id: PromoColorKey }) {
-  const { config, fieldMap, rawColumns, setElementStyle } = useRetailPromoStore()
+  const { config, fieldMap, rawColumns, currentIndex, textOverride, setElementStyle, setTextOverrideAt } = useRetailPromoStore()
   const st = config.styles?.[id] ?? {}
   const set = (patch: Partial<ElementStyle>) => setElementStyle(id, patch)
+  const ovText = textOverride[currentIndex]?.[id] ?? ''
   const fieldKey = FIELD_OF[id]
   const boundCol = fieldKey ? fieldMap[fieldKey] : undefined
   const colLabel = boundCol ? (rawColumns.find((c) => c.key === boundCol)?.label || boundCol) : undefined
 
   return (
     <>
+      {EDITABLE_KEYS.includes(id) && (
+        <Section title="Contenu (cette fiche)">
+          <textarea value={ovText} onChange={(e) => setTextOverrideAt(currentIndex, id, e.target.value)} rows={id === 'description' ? 3 : 1}
+            placeholder="Personnaliser ce texte… (vide = valeur du dataset)"
+            className={`${inputCls} resize-none`} />
+        </Section>
+      )}
       {PRICE_KEYS.includes(id) && (
         <Section title="Format du prix">
           <label className="flex items-center gap-2 text-sm text-white/70">

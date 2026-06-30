@@ -2,7 +2,7 @@ import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } 
 import { auth, db } from '@/lib/firebase/config'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from './promoTypes'
-import type { PromoTemplateConfig } from './RetailPromoCard'
+import type { PromoTemplateConfig, PromoColorKey } from './RetailPromoCard'
 
 /** Fiche promo enregistrée (métadonnées + habillage ; les lignes vivent dans un doc payload séparé). */
 export interface SavedPromoMeta {
@@ -19,6 +19,7 @@ export interface PromoPayload {
   columns: MergeColumn[]
   rows: MergeRow[]
   imgOverride?: Record<number, string> // images produit remplacées (panneau Images)
+  textOverride?: Record<number, Partial<Record<PromoColorKey, string>>> // textes personnalisés par produit
 }
 export interface SavePromoInput {
   name: string
@@ -28,6 +29,7 @@ export interface SavePromoInput {
   columns: MergeColumn[]
   rows: MergeRow[]
   imgOverride?: Record<number, string>
+  textOverride?: Record<number, Partial<Record<PromoColorKey, string>>>
   thumbnail?: string
 }
 
@@ -39,7 +41,7 @@ const MAX_PAYLOAD = 900_000 // garde-fou limite Firestore ~1 Mo/doc
 export async function savePromo(input: SavePromoInput, existingId?: string): Promise<string> {
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('Non connecté')
-  const payload: PromoPayload = { columns: input.columns, rows: input.rows, imgOverride: input.imgOverride }
+  const payload: PromoPayload = { columns: input.columns, rows: input.rows, imgOverride: input.imgOverride, textOverride: input.textOverride }
   const payloadJson = JSON.stringify(payload)
   if (payloadJson.length > MAX_PAYLOAD) throw new Error('Catalogue trop volumineux pour être sauvegardé (> 900 Ko)')
 

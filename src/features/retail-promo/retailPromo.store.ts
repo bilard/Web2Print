@@ -12,15 +12,20 @@ interface RetailPromoState {
   sourceRef: DataSourceRef | null
   config: PromoTemplateConfig
   selectedKey: PromoBlockId | null
+  currentIndex: number // produit affiché dans l'aperçu
   imgOverride: Record<number, string> // image produit remplacée par index (panneau Images)
+  textOverride: Record<number, Partial<Record<PromoColorKey, string>>> // textes personnalisés par produit
 
   setStep: (step: RetailPromoState['step']) => void
   setSource: (ref: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   setConfig: (patch: Partial<PromoTemplateConfig>) => void
   setSelectedKey: (key: PromoBlockId | null) => void
+  setCurrentIndex: (i: number) => void
   setImgOverride: (map: Record<number, string>) => void
   setImgOverrideAt: (index: number, url: string) => void
+  setTextOverride: (map: Record<number, Partial<Record<PromoColorKey, string>>>) => void
+  setTextOverrideAt: (index: number, key: PromoColorKey, value: string) => void
   setElementStyle: (key: PromoColorKey, patch: Partial<ElementStyle>) => void
   setBlockFill: (id: PromoBlockId, patch: Partial<BlockFill>) => void
   setShape: (id: PromoBlockId, patch: Partial<ShapeStyle>) => void
@@ -37,7 +42,9 @@ const defaultState = {
   sourceRef: null,
   config: DEFAULT_PROMO_CONFIG,
   selectedKey: null as PromoBlockId | null,
+  currentIndex: 0,
   imgOverride: {} as Record<number, string>,
+  textOverride: {} as Record<number, Partial<Record<PromoColorKey, string>>>,
 }
 
 export const useRetailPromoStore = create<RetailPromoState>((set) => ({
@@ -47,8 +54,15 @@ export const useRetailPromoStore = create<RetailPromoState>((set) => ({
   setFieldMap: (fieldMap) => set({ fieldMap }),
   setConfig: (patch) => set((s) => ({ config: { ...s.config, ...patch } })),
   setSelectedKey: (selectedKey) => set({ selectedKey }),
+  setCurrentIndex: (currentIndex) => set({ currentIndex }),
   setImgOverride: (imgOverride) => set({ imgOverride }),
   setImgOverrideAt: (index, url) => set((s) => ({ imgOverride: { ...s.imgOverride, [index]: url } })),
+  setTextOverride: (textOverride) => set({ textOverride }),
+  setTextOverrideAt: (index, key, value) => set((s) => {
+    const row = { ...s.textOverride[index] }
+    if (value) row[key] = value; else delete row[key] // vide = revenir à la valeur du dataset
+    return { textOverride: { ...s.textOverride, [index]: row } }
+  }),
   setElementStyle: (key, patch) => set((s) => ({
     config: { ...s.config, styles: { ...s.config.styles, [key]: { ...s.config.styles?.[key], ...patch } } },
   })),
