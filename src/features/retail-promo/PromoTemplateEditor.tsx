@@ -57,7 +57,8 @@ export function PromoTemplateEditor() {
         new Set(rawRows.slice(0, 60).map((r) => extractPromoFields(r, rawColumns, fieldMap).category).filter(Boolean)),
       )
       const patch = await generatePromoTemplate(brief.trim(), cats)
-      setConfig(patch)
+      // Réinitialise les surcharges par élément : sinon styles[key].fill (precedence > colors) masque l'habillage IA.
+      setConfig({ ...patch, styles: {}, blockFills: {} })
       toast.success('Habillage généré')
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec génération IA') } finally { setBusy(false) }
   }

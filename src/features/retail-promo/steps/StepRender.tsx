@@ -14,6 +14,8 @@ import type { PromoFields } from '../promoTypes'
 import { RetailPromoCard, type RetailCardData } from '../RetailPromoCard'
 import { PromoTemplateEditor } from '../PromoTemplateEditor'
 import { PromoPropertiesPanel } from '../PromoPropertiesPanel'
+import { PromoLayersPanel } from '../PromoLayersPanel'
+import { PromoImagePanel } from '../PromoImagePanel'
 import { buildPromoHtml } from '../buildPromoHtml'
 
 /** Convertit une URL blob:/http en data-URI (HTML autonome) ; data: renvoyé tel quel. */
@@ -88,6 +90,7 @@ function toCardData(f: PromoFields): RetailCardData {
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'produit'
+const PREVIEW_SCALE = 0.78 // échelle d'affichage de la carte dans l'aperçu (n'affecte pas l'export)
 
 async function capture(node: HTMLDivElement): Promise<Blob | null> {
   const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false })
@@ -101,6 +104,7 @@ export function StepRender() {
   const [index, setIndex] = useState(0)
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
   const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
+  const [imgOverride, setImgOverride] = useState<Record<number, string>>({}) // image remplacée par produit (panneau Images)
   const [capturing, setCapturing] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
 
@@ -126,7 +130,8 @@ export function StepRender() {
     return <p className="text-white/60 text-sm">Aucun produit. <button className="text-[#6366f1]" onClick={() => setStep('mapping')}>← Retour</button></p>
   }
 
-  const currentData: RetailCardData = { ...cards[safe], imageUrl: resolvedImg }
+  const shownImage = imgOverride[safe] ?? resolvedImg
+  const currentData: RetailCardData = { ...cards[safe], imageUrl: shownImage }
 
   const downloadOne = async () => {
     if (!previewRef.current) return
@@ -169,7 +174,7 @@ export function StepRender() {
   const downloadHtml = async () => {
     setBusy('html')
     try {
-      const dataUrl = await toDataUrl(resolvedImg ?? (await resolveImg(cards[safe].imageUrl)))
+      const dataUrl = await toDataUrl(shownImage ?? (await resolveImg(cards[safe].imageUrl)))
       const allFields = rawColumns.map((c) => ({
         label: c.label || c.key,
         value: String(getRowValue(rawRows[safe], c.key, rawColumns) ?? ''),
@@ -194,8 +199,13 @@ export function StepRender() {
       {/* Panneau d'édition du template (IA / champs / modèles) */}
       <PromoTemplateEditor />
 
-      {/* Aperçu (gauche) + panneau de propriétés (droite) */}
+      {/* Calques + Images (gauche) · Aperçu (centre) · Propriétés (droite) */}
       <div className="flex items-start gap-4">
+        <div className="flex shrink-0 flex-col gap-4">
+          <PromoLayersPanel />
+          <PromoImagePanel currentImage={shownImage} onReplace={(url) => setImgOverride((p) => ({ ...p, [safe]: url }))} />
+        </div>
+
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex items-center justify-center gap-3 text-xs text-white/40">
             <span>Cliquez un texte pour le styler · glissez les blocs pour les repositionner</span>
@@ -203,8 +213,8 @@ export function StepRender() {
               <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
             )}
           </div>
-          <div className="flex justify-center bg-well rounded-xl p-6 overflow-hidden">
-            <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
+          <div className="flex justify-center bg-well rounded-xl p-4 overflow-auto" style={{ maxHeight: 'calc(100vh - 360px)' }}>
+            <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top center', height: 842 * PREVIEW_SCALE, width: 595 * PREVIEW_SCALE }}>
               <RetailPromoCard ref={previewRef} data={currentData} config={config} editable
                 selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
                 onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })}

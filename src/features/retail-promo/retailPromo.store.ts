@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from './promoTypes'
-import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId, type ElementStyle, type BlockFill } from './RetailPromoCard'
+import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId, type ElementStyle, type BlockFill, type ShapeStyle } from './RetailPromoCard'
 
 interface RetailPromoState {
   step: 'source' | 'mapping' | 'template'
@@ -19,6 +19,8 @@ interface RetailPromoState {
   setSelectedKey: (key: PromoBlockId | null) => void
   setElementStyle: (key: PromoColorKey, patch: Partial<ElementStyle>) => void
   setBlockFill: (id: PromoBlockId, patch: Partial<BlockFill>) => void
+  setShape: (id: PromoBlockId, patch: Partial<ShapeStyle>) => void
+  setHidden: (id: PromoBlockId, hidden: boolean) => void
   reset: () => void
 }
 
@@ -44,6 +46,12 @@ export const useRetailPromoStore = create<RetailPromoState>((set) => ({
   })),
   setBlockFill: (id, patch) => set((s) => ({
     config: { ...s.config, blockFills: { ...s.config.blockFills, [id]: { fillType: 'solid', ...s.config.blockFills?.[id], ...patch } } },
+  })),
+  setShape: (id, patch) => set((s) => ({
+    config: { ...s.config, shapes: { ...s.config.shapes, [id]: { ...s.config.shapes?.[id], ...patch } } },
+  })),
+  setHidden: (id, hidden) => set((s) => ({
+    config: { ...s.config, hidden: { ...s.config.hidden, [id]: hidden } },
   })),
   reset: () => set(defaultState),
 }))

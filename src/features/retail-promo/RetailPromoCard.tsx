@@ -32,7 +32,7 @@ export interface ElementStyle {
   fontSize?: number                 // px (priceNow : remplace la taille auto)
   fontWeight?: number               // 400…900
   fontStyle?: 'normal' | 'italic'
-  textAlign?: 'left' | 'center' | 'right'
+  textAlign?: 'left' | 'center' | 'right' | 'justify'
   letterSpacing?: number            // em
   lineHeight?: number               // sans unité
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
@@ -49,6 +49,16 @@ export interface BlockFill {
   gradient?: GradientConfig
 }
 
+/** Attributs « forme » universels (texte ET bloc) : opacité, fusion, ombre, contour, rotation, ordre. */
+export interface ShapeStyle {
+  opacity?: number                                   // 0..1
+  blendMode?: string                                 // mix-blend-mode (⚠ non rendu au PNG)
+  rotation?: number                                  // degrés
+  zIndex?: number                                    // ordre d'empilement
+  shadow?: { x: number; y: number; blur: number; color: string } | null  // texte→text-shadow, bloc→box-shadow
+  stroke?: { width: number; color: string } | null  // texte→-webkit-text-stroke, bloc→border
+}
+
 export interface PromoTemplateConfig {
   accent: string        // accroche + badge + bandeau prix
   headerBg: string      // bandeau d'en-tête + pied
@@ -59,6 +69,8 @@ export interface PromoTemplateConfig {
   offsets: Partial<Record<PromoBlockId, { dx: number; dy: number }>> // déplacement par bloc
   scales?: Partial<Record<PromoBlockId, { sx: number; sy: number }>> // resize (échelle) par bloc déco
   blockFills?: Partial<Record<PromoBlockId, BlockFill>> // fond (uni/dégradé) des blocs déco
+  shapes?: Partial<Record<PromoBlockId, ShapeStyle>> // opacité/fusion/ombre/contour/rotation/ordre
+  hidden?: Partial<Record<PromoBlockId, boolean>> // visibilité par bloc (panneau Calques)
   showCategory: boolean
   showDescription: boolean
   showUnitPrice: boolean
@@ -87,6 +99,8 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   offsets: {},
   scales: {},
   blockFills: {},
+  shapes: {},
+  hidden: {},
   showCategory: true,
   showDescription: true,
   showUnitPrice: true,
@@ -218,6 +232,28 @@ export function blockBgCss(config: PromoTemplateConfig, id: PromoBlockId): strin
   return cssToInline(resolveBlockBg(config, id))
 }
 
+/** Transform (décalage + échelle + rotation) + attributs forme (opacité/fusion/ombre/contour/ordre) — source unique rendu/export. */
+function blockBoxCss(config: PromoTemplateConfig, id: PromoBlockId): React.CSSProperties {
+  const o = config.offsets[id], sc = config.scales?.[id], sh = config.shapes?.[id]
+  const isText = (STYLE_KEYS as PromoBlockId[]).includes(id)
+  const t: string[] = []
+  if (o) t.push(`translate(${o.dx}px, ${o.dy}px)`)
+  if (sc) t.push(`scale(${sc.sx}, ${sc.sy})`)
+  if (sh?.rotation) t.push(`rotate(${sh.rotation}deg)`)
+  const css: React.CSSProperties = {}
+  if (t.length) { css.transform = t.join(' '); if (sc || sh?.rotation) css.transformOrigin = 'top left' }
+  if (sh?.opacity != null) css.opacity = sh.opacity
+  if (sh?.blendMode && sh.blendMode !== 'normal') css.mixBlendMode = sh.blendMode as React.CSSProperties['mixBlendMode']
+  if (sh?.zIndex != null) css.zIndex = sh.zIndex
+  if (sh?.shadow) css[isText ? 'textShadow' : 'boxShadow'] = `${sh.shadow.x}px ${sh.shadow.y}px ${sh.shadow.blur}px ${sh.shadow.color}`
+  if (sh?.stroke) { if (isText) css.WebkitTextStroke = `${sh.stroke.width}px ${sh.stroke.color}`; else css.border = `${sh.stroke.width}px solid ${sh.stroke.color}` }
+  return css
+}
+/** blockBoxCss en chaîne inline (export HTML). */
+export function blockBoxCssString(config: PromoTemplateConfig, id: PromoBlockId): string {
+  return cssToInline(blockBoxCss(config, id))
+}
+
 /** Couleur de texte lisible (noir/blanc) selon la luminance du fond — évite blanc sur fond clair. */
 export function idealText(hex: string): string {
   const h = (hex || '').replace('#', '')
@@ -282,14 +318,10 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     }
     // Style commun d'un bloc : transform (décalage + échelle) + curseur + contour de sélection.
     const blk = (id: PromoBlockId, extra?: React.CSSProperties): React.CSSProperties => {
-      const o = config.offsets[id]
-      const sc = config.scales?.[id]
       const selected = editable && !capturing && selectedKey === id
-      const tparts: string[] = []
-      if (o) tparts.push(`translate(${o.dx}px, ${o.dy}px)`)
-      if (sc) tparts.push(`scale(${sc.sx}, ${sc.sy})`)
       return {
-        ...(tparts.length ? { transform: tparts.join(' '), ...(sc ? { transformOrigin: 'top left' } : null) } : null),
+        ...blockBoxCss(config, id),
+        ...(config.hidden?.[id] ? { display: 'none' } : null),
         ...(editable ? { cursor: 'move' } : null),
         ...(selected ? { outline: '2px solid #6366f1', outlineOffset: 2, borderRadius: 2 } : null),
         ...extra,
