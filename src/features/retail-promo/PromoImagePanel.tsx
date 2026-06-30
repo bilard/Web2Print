@@ -12,8 +12,12 @@ interface Props {
   onReplace: (url: string) => void
 }
 
-const fileToDataUrl = (f: File): Promise<string> =>
-  new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(f) })
+const blobToDataUrl = (b: Blob): Promise<string> =>
+  new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(b) })
+const fileToDataUrl = (f: File): Promise<string> => blobToDataUrl(f)
+// Remove.bg n'accepte une URL non publique (blob:) que via `image_file` → on convertit en data-URL.
+const toDataUrl = async (url: string): Promise<string> =>
+  url.startsWith('data:') ? url : blobToDataUrl(await (await fetch(url)).blob())
 
 /** Panneau Images : aperçu produit, remplacement (upload / banque stock) et suppression du fond. */
 export function PromoImagePanel({ currentImage, onReplace }: Props) {
@@ -29,9 +33,12 @@ export function PromoImagePanel({ currentImage, onReplace }: Props) {
   }
   const onRemoveBg = async () => {
     if (!currentImage) return
-    const out = await removeBg(currentImage)
-    // Le vrai motif (ex. « Insufficient credits ») est exposé via rbError, affiché sous le bouton.
-    if (out) { onReplace(out); toast.success('Fond supprimé') }
+    try {
+      const src = await toDataUrl(currentImage) // blob:/http → data-URL (sinon « Invalid image_url »)
+      const out = await removeBg(src)
+      // Le vrai motif (ex. « Insufficient credits ») est exposé via rbError, affiché sous le bouton.
+      if (out) { onReplace(out); toast.success('Fond supprimé') }
+    } catch { toast.error('Image illisible pour le détourage') }
   }
 
   return (
