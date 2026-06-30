@@ -322,7 +322,8 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       const el = blockEls.current.get(editingKey)
       if (!el) return
       el.focus()
-      const range = document.createRange(); range.selectNodeContents(el)
+      // Curseur à la fin SANS tout sélectionner (modifier les caractères, pas remplacer).
+      const range = document.createRange(); range.selectNodeContents(el); range.collapse(false)
       const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(range)
     }, [editingKey])
     const canEdit = (key: PromoColorKey) => editable && !!onEditText && EDITABLE_TEXT.includes(key)
