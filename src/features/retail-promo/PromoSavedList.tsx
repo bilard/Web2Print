@@ -6,6 +6,8 @@ import { listPromos, loadPromoPayload, deletePromo, type SavedPromoMeta } from '
 
 interface Props { onOpened: () => void; onNew: () => void }
 
+const fmtDate = (ms: number) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+
 /** Écran « Mes promos » : fiches enregistrées, ouverture et suppression. */
 export function PromoSavedList({ onOpened, onNew }: Props) {
   const { setSource, setFieldMap, setConfig, setStep, setImgOverride } = useRetailPromoStore()
@@ -48,19 +50,25 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {promos.map((p) => (
-            <div key={p.id} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-surface p-4">
-              <div className="flex items-start gap-2">
-                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[#818cf8]" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-white">{p.name}</div>
-                  <div className="text-xs text-white/40">{p.rowCount} produit{p.rowCount > 1 ? 's' : ''}</div>
-                </div>
-                <button onClick={() => void remove(p.id)} title="Supprimer" className="text-white/30 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
+            <div key={p.id} className="flex flex-col gap-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
+              <div className="flex h-40 items-center justify-center bg-well">
+                {p.thumbnail
+                  ? <img src={p.thumbnail} alt={p.name} className="h-full w-full object-contain" />
+                  : <FileText className="h-8 w-8 text-white/15" />}
               </div>
-              <button onClick={() => void open(p)} disabled={opening === p.id}
-                className="mt-1 flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-sm text-white hover:bg-white/10 disabled:opacity-40">
-                {opening === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Ouvrir
-              </button>
+              <div className="flex flex-col gap-2 p-4 pt-2">
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-white">{p.name}</div>
+                    <div className="text-xs text-white/40">{p.rowCount} produit{p.rowCount > 1 ? 's' : ''}{p.updatedAt ? ` · ${fmtDate(p.updatedAt)}` : ''}</div>
+                  </div>
+                  <button onClick={() => void remove(p.id)} title="Supprimer" className="text-white/30 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
+                </div>
+                <button onClick={() => void open(p)} disabled={opening === p.id}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-sm text-white hover:bg-white/10 disabled:opacity-40">
+                  {opening === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Ouvrir
+                </button>
+              </div>
             </div>
           ))}
         </div>

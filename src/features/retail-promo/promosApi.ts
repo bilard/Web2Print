@@ -13,6 +13,7 @@ export interface SavedPromoMeta {
   config: PromoTemplateConfig
   rowCount: number
   updatedAt: number
+  thumbnail?: string // vignette JPEG (data-URL réduit) du visuel courant
 }
 export interface PromoPayload {
   columns: MergeColumn[]
@@ -27,6 +28,7 @@ export interface SavePromoInput {
   columns: MergeColumn[]
   rows: MergeRow[]
   imgOverride?: Record<number, string>
+  thumbnail?: string
 }
 
 const metaCol = (uid: string) => collection(db, 'users', uid, 'promos')
@@ -44,7 +46,8 @@ export async function savePromo(input: SavePromoInput, existingId?: string): Pro
   const ref = existingId ? doc(metaCol(uid), existingId) : doc(metaCol(uid))
   await setDoc(ref, {
     name: input.name, sourceRef: input.sourceRef, fieldMap: input.fieldMap,
-    config: input.config, rowCount: input.rows.length, updatedAt: serverTimestamp(),
+    config: input.config, rowCount: input.rows.length,
+    ...(input.thumbnail ? { thumbnail: input.thumbnail } : null), updatedAt: serverTimestamp(),
   })
   await setDoc(payloadDoc(uid, ref.id), { payload: payloadJson, updatedAt: serverTimestamp() })
   return ref.id
@@ -62,6 +65,7 @@ export async function listPromos(): Promise<SavedPromoMeta[]> {
         id: d.id, name: String(v.name ?? d.id), sourceRef: (v.sourceRef ?? null) as DataSourceRef | null,
         fieldMap: (v.fieldMap ?? {}) as SavedPromoMeta['fieldMap'], config: v.config as PromoTemplateConfig,
         rowCount: Number(v.rowCount ?? 0), updatedAt: Number(v.updatedAt?.seconds ?? 0) * 1000,
+        thumbnail: v.thumbnail as string | undefined,
       }
     })
     .filter((p) => p.config)

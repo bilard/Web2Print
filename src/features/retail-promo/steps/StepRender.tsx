@@ -100,6 +100,14 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png', 1))
 }
 
+// Vignette JPEG réduite (data-URL léger) pour la liste « Mes promos ».
+async function captureThumb(node: HTMLDivElement): Promise<string | undefined> {
+  try {
+    const canvas = await html2canvas(node, { scale: 0.34, useCORS: true, backgroundColor: '#ffffff', logging: false })
+    return canvas.toDataURL('image/jpeg', 0.72)
+  } catch { return undefined }
+}
+
 export function StepRender() {
   const { rawColumns, rawRows, fieldMap, config, sourceRef, imgOverride, setImgOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
@@ -153,9 +161,17 @@ export function StepRender() {
     const name = (ficheName.trim() || cards[safe]?.name || 'Fiche').slice(0, 80)
     setSavingFiche(true)
     try {
+      // Vignette du visuel courant (sélection masquée via capturing).
+      let thumbnail: string | undefined
+      if (previewRef.current) {
+        setSelectedKey(null); setCapturing(true)
+        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 60)))
+        thumbnail = await captureThumb(previewRef.current)
+        setCapturing(false)
+      }
       // Upsert par nom : réenregistrer une fiche du même nom l'écrase (pas de doublon).
       const existing = (await listPromos()).find((p) => p.name === name)
-      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows, imgOverride }, existing?.id)
+      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows, imgOverride, thumbnail }, existing?.id)
       setFicheName(name)
       toast.success(existing ? `Fiche « ${name} » mise à jour` : `Fiche « ${name} » enregistrée`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement') } finally { setSavingFiche(false) }
