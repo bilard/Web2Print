@@ -109,7 +109,7 @@ async function captureThumb(node: HTMLDivElement): Promise<string | undefined> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, sourceRef, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, sourceRef, currentIndex, setCurrentIndex, imgOverride, setImgOverrideAt, textOverride, setTextOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const euroSep = { now: config.styles?.priceNow?.euroSep, was: config.styles?.priceWas?.euroSep }
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap), euroSep))
 
@@ -151,9 +151,11 @@ export function StepRender() {
     ...cards[safe], imageUrl: shownImage,
     name: tov.name ?? cards[safe].name,
     category: tov.category ?? cards[safe].category,
-    brand: tov.brand ?? cards[safe].brand,
     description: tov.description ?? cards[safe].description,
     validite: tov.footer ?? cards[safe].validite,
+    priceLabel: tov.priceLabel ?? cards[safe].priceLabel,
+    // Marque éditée = remplace le « marque · réf » calculé (réf masquée).
+    ...(tov.brand ? { brand: tov.brand, ref: undefined } : null),
   }
 
   // Règles conditionnelles : effet visuel par bloc pour le produit affiché.
@@ -280,7 +282,7 @@ export function StepRender() {
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <div className="flex items-center justify-center gap-3 text-xs text-white/40">
-            <span>Cliquez un texte pour le styler · glissez les blocs pour les repositionner</span>
+            <span>Cliquez pour styler · double-cliquez un texte pour l'éditer · glissez pour repositionner</span>
             {Object.keys(config.offsets).length > 0 && (
               <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
             )}
@@ -291,7 +293,8 @@ export function StepRender() {
                 selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
                 onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })}
                 onResizeText={(key, patch) => setElementStyle(key, patch)}
-                onScaleBlock={(id, sx, sy, dx, dy) => setConfig({ scales: { ...config.scales, [id]: { sx, sy } }, offsets: { ...config.offsets, [id]: { dx, dy } } })} />
+                onScaleBlock={(id, sx, sy, dx, dy) => setConfig({ scales: { ...config.scales, [id]: { sx, sy } }, offsets: { ...config.offsets, [id]: { dx, dy } } })}
+                onEditText={(key, value) => setTextOverrideAt(safe, key, value)} />
             </div>
           </div>
 

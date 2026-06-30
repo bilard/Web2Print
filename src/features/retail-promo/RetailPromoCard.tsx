@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useCallback, type PointerEvent as ReactPointerEvent } from 'react'
+import { forwardRef, useRef, useState, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from 'react'
 import type { GradientConfig } from '@/stores/editor.store'
 import { gradientToCss } from '@/components/shared/GradientPicker'
 import type { ConditionalRule, RuleEffect } from '@/features/merge/conditionalRules'
@@ -12,6 +12,7 @@ export interface RetailCardData {
   description?: string
   priceNow: string
   priceWas?: string
+  priceLabel?: string
   unitPrice?: string
   remiseLabel?: string
   validite?: string
@@ -88,6 +89,8 @@ export const STYLE_KEYS: PromoColorKey[] = [
 ]
 /** Blocs déco sélectionnables (fond uni/dégradé + resize par échelle). */
 const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price']
+/** Textes éditables inline (double-clic dans la carte). */
+const EDITABLE_TEXT: PromoColorKey[] = ['category', 'name', 'brand', 'description', 'priceLabel', 'footer']
 const SELECTABLE: PromoBlockId[] = [...(STYLE_KEYS as PromoBlockId[]), ...DECO_BLOCKS]
 
 export const FONT_OPTIONS = ['Montserrat', 'Oswald', 'Poppins', 'Archivo', 'Bebas Neue', 'Anton', 'Playfair Display', 'Inter'] as const
@@ -282,6 +285,8 @@ interface CardProps {
   onResizeText?: (key: PromoColorKey, patch: { fontSize?: number; width?: number }) => void
   /** Resize d'un bloc déco (échelle + ancrage du décalage). */
   onScaleBlock?: (id: PromoBlockId, sx: number, sy: number, dx: number, dy: number) => void
+  /** Édition inline du texte d'un élément (double-clic) → surcharge pour ce produit. */
+  onEditText?: (key: PromoColorKey, value: string) => void
   /** Effets des règles conditionnelles pour le produit courant (par bloc). */
   effects?: Partial<Record<PromoBlockId, RuleEffect>>
   /** Aplatit le dégradé-texte et masque contour/poignées (capture PNG fidèle). */
@@ -290,7 +295,7 @@ interface CardProps {
 
 /** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
 export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
-  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, effects, capturing = false }, ref) => {
+  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, onEditText, effects, capturing = false }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)
     const hText = idealText(config.headerBg)
     const aText = idealText(config.accent)
@@ -309,6 +314,31 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       if (typeof ref === 'function') ref(el)
       else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el
     }, [ref])
+
+    // ── Édition inline du texte (double-clic) ───────────────────────────────────
+    const [editingKey, setEditingKey] = useState<PromoColorKey | null>(null)
+    useEffect(() => {
+      if (!editingKey) return
+      const el = blockEls.current.get(editingKey)
+      if (!el) return
+      el.focus()
+      const range = document.createRange(); range.selectNodeContents(el)
+      const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(range)
+    }, [editingKey])
+    const canEdit = (key: PromoColorKey) => editable && !!onEditText && EDITABLE_TEXT.includes(key)
+    const editProps = (key: PromoColorKey): React.HTMLAttributes<HTMLElement> => {
+      if (!canEdit(key)) return {}
+      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); setEditingKey(key) }, title: 'Double-cliquez pour éditer' }
+      return {
+        contentEditable: true, suppressContentEditableWarning: true,
+        onDoubleClick: (e) => e.stopPropagation(),
+        onBlur: (e) => { onEditText!(key, (e.currentTarget.innerText || '').replace(/\s*\n\s*/g, ' ').trim()); setEditingKey(null) },
+        onKeyDown: (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); setEditingKey(null) }
+          else if (e.key === 'Enter' && key !== 'description') { e.preventDefault(); (e.currentTarget as HTMLElement).blur() }
+        },
+      }
+    }
 
     const startDrag = (e: ReactPointerEvent, id: PromoBlockId) => {
       if (!editable) return
@@ -331,7 +361,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       const css: React.CSSProperties = {
         ...blockBoxCss(config, id),
         ...(config.hidden?.[id] ? { display: 'none' } : null),
-        ...(editable ? { cursor: 'move' } : null),
+        ...(editable ? { cursor: editingKey === id ? 'text' : 'move' } : null),
         ...(selected ? { outline: '2px solid #6366f1', outlineOffset: 2, borderRadius: 2 } : null),
         ...extra,
       }
@@ -348,18 +378,18 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     }
     const es = (key: PromoColorKey) => resolveElementStyle(config, key, { capturing })
     const bg = (id: PromoBlockId) => resolveBlockBg(config, id)
-    const drag = (id: PromoBlockId) => (editable ? { onPointerDown: (e: ReactPointerEvent) => startDrag(e, id) } : {})
+    const drag = (id: PromoBlockId) => (editable && editingKey !== id ? { onPointerDown: (e: ReactPointerEvent) => startDrag(e, id) } : {})
 
     return (
       <div ref={setRefs} className="rp-card" style={styleVars(config)}>
         <style>{PROMO_CSS}</style>
         <div ref={setEl('header')} className="rp-head" style={blk('header', { color: hText, ...bg('header') })} {...drag('header')}>
-          {config.showCategory && <span ref={setEl('category')} className="rp-kicker" style={blk('category', { color: aText, ...es('category') })} {...drag('category')}>{data.category || 'Offre spéciale'}</span>}
-          <div ref={setEl('name')} className="rp-name" style={blk('name', es('name'))} {...drag('name')}>{data.name || 'Produit'}</div>
+          {config.showCategory && <span ref={setEl('category')} className="rp-kicker" style={blk('category', { color: aText, ...es('category') })} {...drag('category')} {...editProps('category')}>{data.category || 'Offre spéciale'}</span>}
+          <div ref={setEl('name')} className="rp-name" style={blk('name', es('name'))} {...drag('name')} {...editProps('name')}>{data.name || 'Produit'}</div>
           {(data.brand || data.ref) && (
-            <div ref={setEl('brand')} className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
+            <div ref={setEl('brand')} className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')} {...editProps('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
           )}
-          {config.showDescription && data.description && <div ref={setEl('description')} className="rp-desc" style={blk('description', es('description'))} {...drag('description')}>{data.description}</div>}
+          {config.showDescription && data.description && <div ref={setEl('description')} className="rp-desc" style={blk('description', es('description'))} {...drag('description')} {...editProps('description')}>{data.description}</div>}
         </div>
         <div className="rp-product" style={bg('image')}>
           {data.imageUrl
@@ -374,7 +404,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
         </div>
         <div ref={setEl('price')} className="rp-price" style={blk('price', { color: aText, ...bg('price') })} {...drag('price')}>
           <div className="rp-left">
-            <span ref={setEl('priceLabel')} className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')}>Prix promo</span>
+            <span ref={setEl('priceLabel')} className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')} {...editProps('priceLabel')}>{data.priceLabel || 'Prix promo'}</span>
             {data.priceWas && <span ref={setEl('priceWas')} className="rp-was" style={blk('priceWas', es('priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
             {config.showUnitPrice && data.unitPrice && <span ref={setEl('unitPrice')} className="rp-unit" style={blk('unitPrice', es('unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
           </div>
@@ -382,7 +412,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
             {amount}{cur && <span className="rp-cur">{cur}</span>}
           </div>
         </div>
-        {config.showFooter && <div ref={setEl('footer')} className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')}>{data.validite || ''}</div>}
+        {config.showFooter && <div ref={setEl('footer')} className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')} {...editProps('footer')}>{data.validite || ''}</div>}
         {editable && !capturing && selectedKey && (
           <PromoSelectionOverlay
             cardRef={cardElRef}

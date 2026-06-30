@@ -92,7 +92,7 @@ export function buildPromoHtml(
     </div>
     <div class="rp-price" style="color:${aText};${bgCss(config, 'price')}${boxCss(config, 'price')}${efCss(effects, 'price')}">
       <div class="rp-left">
-        <span class="rp-plabel"${subAttr(config, 'priceLabel', effects)}>Prix promo</span>
+        <span class="rp-plabel"${subAttr(config, 'priceLabel', effects)}>${esc(data.priceLabel || 'Prix promo')}</span>
         ${data.priceWas ? `<span class="rp-was"${subAttr(config, 'priceWas', effects)}>${esc(data.priceWas)}</span>` : ''}
         ${config.showUnitPrice && data.unitPrice ? `<span class="rp-unit"${subAttr(config, 'unitPrice', effects)}>${esc(data.unitPrice)}</span>` : ''}
       </div>
