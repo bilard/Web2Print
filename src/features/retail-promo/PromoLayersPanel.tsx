@@ -81,7 +81,10 @@ export function PromoLayersPanel() {
   const needle = q.toLowerCase().trim()
   const matches = (n: LayerNode) => n.label.toLowerCase().includes(needle) || blockValue(n.id).toLowerCase().includes(needle)
 
-  const toggle = (id: string) => setCollapsed((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  // Accordéon : un seul groupe ouvert à la fois. `collapsed` = groupes fermés.
+  // Ouvrir id → fermer tous les autres ; recliquer le groupe ouvert → tout fermé.
+  const toggle = (id: string) => setCollapsed((s) =>
+    s.has(id) ? new Set(GROUP_IDS.filter((g) => g !== id)) : new Set(GROUP_IDS))
 
   const renderRow = (n: LayerNode, depth: number, hasChildren: boolean, open: boolean) => {
     const hidden = !!config.hidden?.[n.id]
@@ -125,8 +128,8 @@ export function PromoLayersPanel() {
     <aside className="flex min-h-0 w-56 flex-1 flex-col rounded-xl border border-white/10 bg-surface">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">Calques</h3>
-        <button onClick={() => setCollapsed((s) => (s.size ? new Set() : new Set(GROUP_IDS)))}
-          className="text-xs text-white/40 hover:text-white" title={collapsed.size ? 'Tout déplier' : 'Tout replier'}>{ALL.length}</button>
+        <button onClick={() => setCollapsed(new Set(GROUP_IDS))}
+          className="text-xs text-white/40 hover:text-white" title="Tout replier">{ALL.length}</button>
       </div>
       <div className="px-3 py-2">
         <div className="flex items-center gap-2 rounded border border-white/10 bg-well px-2 py-1">
