@@ -8,6 +8,7 @@ import {
   type ConditionalRule, type RuleOperator, type RuleActionType,
 } from '@/features/merge/conditionalRules'
 import { STYLE_KEYS, type PromoBlockId } from './RetailPromoCard'
+import { RULE_SYNTHETIC_COLUMNS } from './promoRuleFields'
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r${Math.round(performance.now() * 1000)}`)
 
@@ -15,10 +16,11 @@ const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.r
 export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
   const { config, rawColumns, setRules } = useRetailPromoStore()
   const isDeco = !(STYLE_KEYS as PromoBlockId[]).includes(id)
+  const fieldCols = [...RULE_SYNTHETIC_COLUMNS, ...rawColumns] // « Remise (%) » + colonnes source
   const rules = config.rules?.[id] ?? []
   const update = (next: ConditionalRule[]) => setRules(id, next)
   const patch = (rid: string, p: Partial<ConditionalRule>) => update(rules.map((r) => r.id === rid ? { ...r, ...p } : r))
-  const add = () => update([...rules, { id: uid(), field: rawColumns[0]?.key ?? '', operator: 'contains', value: '', action: { type: 'hide' } }])
+  const add = () => update([...rules, { id: uid(), field: fieldCols[0]?.key ?? '', operator: 'contains', value: '', action: { type: 'hide' } }])
 
   return (
     <Section title="Règles conditionnelles" defaultOpen={false} badge={rules.length ? `(${rules.length})` : undefined}>
@@ -31,7 +33,7 @@ export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] uppercase text-white/40">Si</span>
                 <select value={r.field} onChange={(e) => patch(r.id, { field: e.target.value })} className={inputCls}>
-                  {rawColumns.map((c) => <option key={c.key} value={c.key}>{c.label || c.key}</option>)}
+                  {fieldCols.map((c) => <option key={c.key} value={c.key}>{c.label || c.key}</option>)}
                 </select>
                 <button onClick={() => update(rules.filter((x) => x.id !== r.id))} className="shrink-0 text-white/40 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>

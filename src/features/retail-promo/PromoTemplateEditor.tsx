@@ -3,6 +3,7 @@ import { Sparkles, Loader2, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
+import { RULE_SYNTHETIC_COLUMNS, augmentRowForRules } from './promoRuleFields'
 import { generatePromoTemplate } from './useGeneratePromoTemplate'
 import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
 import type { PromoTemplateConfig } from './RetailPromoCard'
@@ -56,10 +57,12 @@ export function PromoTemplateEditor() {
       const cats = Array.from(
         new Set(rawRows.slice(0, 60).map((r) => extractPromoFields(r, rawColumns, fieldMap).category).filter(Boolean)),
       )
-      // Échantillons par colonne (pour que l'IA respecte le format des valeurs dans les conditions).
-      const columns = rawColumns.map((c) => ({
+      // Échantillons par colonne (synthétiques « Remise (%) »… + colonnes source) pour que
+      // l'IA cible le bon champ et respecte le format des valeurs dans les conditions.
+      const sampleRows = rawRows.slice(0, 40).map((r) => augmentRowForRules(r, rawColumns, fieldMap))
+      const columns = [...RULE_SYNTHETIC_COLUMNS, ...rawColumns].map((c) => ({
         label: c.label || c.key,
-        samples: Array.from(new Set(rawRows.slice(0, 40).map((r) => String((r as Record<string, unknown>)[c.key] ?? '').trim()).filter(Boolean))).slice(0, 3),
+        samples: Array.from(new Set(sampleRows.map((r) => String((r as Record<string, unknown>)[c.key] ?? '').trim()).filter(Boolean))).slice(0, 3),
       }))
       const { style, rules } = await generatePromoTemplate(brief.trim(), { categories: cats as string[], columns })
       const patch: Partial<PromoTemplateConfig> = {}

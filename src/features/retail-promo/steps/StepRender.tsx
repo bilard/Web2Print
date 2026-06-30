@@ -12,6 +12,7 @@ import { extractPromoFields } from '../promoMapping'
 import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { resolveEffect, type RuleEffect } from '@/features/merge/conditionalRules'
+import { RULE_SYNTHETIC_COLUMNS, augmentRowForRules } from '../promoRuleFields'
 import { savePromo, listPromos } from '../promosApi'
 import { uploadPromoImageToDam } from '../damImageUpload'
 import { RetailPromoCard, type RetailCardData, type PromoBlockId } from '../RetailPromoCard'
@@ -159,14 +160,17 @@ export function StepRender() {
   }
 
   // Règles conditionnelles : effet visuel par bloc pour le produit affiché.
+  // Évalue sur une ligne ENRICHIE (remise/prix calculés) + colonnes synthétiques.
   const effects = useMemo(() => {
     const row = rawRows[safe]; const out: Partial<Record<PromoBlockId, RuleEffect>> = {}
     if (!row || !config.rules) return out
+    const augRow = augmentRowForRules(row, rawColumns, fieldMap)
+    const augCols = [...RULE_SYNTHETIC_COLUMNS, ...rawColumns]
     for (const [id, rules] of Object.entries(config.rules)) {
-      if (rules && rules.length) out[id as PromoBlockId] = resolveEffect(rules, row, rawColumns)
+      if (rules && rules.length) out[id as PromoBlockId] = resolveEffect(rules, augRow, augCols)
     }
     return out
-  }, [safe, rawRows, rawColumns, config.rules])
+  }, [safe, rawRows, rawColumns, fieldMap, config.rules])
 
   const saveFiche = async () => {
     const name = (ficheName.trim() || cards[safe]?.name || 'Fiche').slice(0, 80)
