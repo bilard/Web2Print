@@ -58,6 +58,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'openrouter/auto',                          label: 'OpenRouter Auto (routing)',                  pricing: { input: 0,    output: 0 },    isDefault: true },
 
     // Anthropic — Claude
+    { id: 'anthropic/claude-opus-4.8',                label: 'Claude Opus 4.8',                            pricing: { input: 5,    output: 25 } },
     { id: 'anthropic/claude-opus-4.7',                label: 'Claude Opus 4.7',                            pricing: { input: 5,    output: 25 } },
     { id: 'anthropic/claude-sonnet-4.6',              label: 'Claude Sonnet 4.6',                          pricing: { input: 3,    output: 15 } },
     { id: 'anthropic/claude-haiku-4.5',               label: 'Claude Haiku 4.5',                           pricing: { input: 1,    output: 5 } },
