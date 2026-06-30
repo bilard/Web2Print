@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { DataSourceRef, MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from './promoTypes'
+import type { ConditionalRule } from '@/features/merge/conditionalRules'
 import { DEFAULT_PROMO_CONFIG, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId, type ElementStyle, type BlockFill, type ShapeStyle } from './RetailPromoCard'
 
 interface RetailPromoState {
@@ -21,6 +22,7 @@ interface RetailPromoState {
   setBlockFill: (id: PromoBlockId, patch: Partial<BlockFill>) => void
   setShape: (id: PromoBlockId, patch: Partial<ShapeStyle>) => void
   setHidden: (id: PromoBlockId, hidden: boolean) => void
+  setRules: (id: PromoBlockId, rules: ConditionalRule[]) => void
   reset: () => void
 }
 
@@ -52,6 +54,9 @@ export const useRetailPromoStore = create<RetailPromoState>((set) => ({
   })),
   setHidden: (id, hidden) => set((s) => ({
     config: { ...s.config, hidden: { ...s.config.hidden, [id]: hidden } },
+  })),
+  setRules: (id, rules) => set((s) => ({
+    config: { ...s.config, rules: { ...s.config.rules, [id]: rules } },
   })),
   reset: () => set(defaultState),
 }))

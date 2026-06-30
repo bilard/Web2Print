@@ -2,6 +2,7 @@ import { AlignLeft, AlignCenter, AlignRight, AlignJustify, Italic, Link2 } from 
 import { ColorPicker } from '@/components/shared/ColorPicker'
 import { useRetailPromoStore } from './retailPromo.store'
 import { Section, NumField, SegButtons, inputCls } from './promoPanelUi'
+import { PromoConditionalSection } from './PromoConditionalSection'
 import { FONT_OPTIONS, type PromoColorKey, type ElementStyle } from './RetailPromoCard'
 import type { PromoFieldKey } from './promoTypes'
 
@@ -77,6 +78,8 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
             : <span className="text-white/40">Texte fixe (non lié à une colonne)</span>}
         </div>
       </Section>
+
+      <PromoConditionalSection id={id} />
     </>
   )
 }

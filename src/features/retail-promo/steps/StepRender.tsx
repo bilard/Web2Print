@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { httpsCallable } from 'firebase/functions'
@@ -11,7 +11,8 @@ import { useRetailPromoStore } from '../retailPromo.store'
 import { extractPromoFields } from '../promoMapping'
 import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
-import { RetailPromoCard, type RetailCardData } from '../RetailPromoCard'
+import { resolveEffect, type RuleEffect } from '@/features/merge/conditionalRules'
+import { RetailPromoCard, type RetailCardData, type PromoBlockId } from '../RetailPromoCard'
 import { PromoTemplateEditor } from '../PromoTemplateEditor'
 import { PromoPropertiesPanel } from '../PromoPropertiesPanel'
 import { PromoLayersPanel } from '../PromoLayersPanel'
@@ -133,6 +134,16 @@ export function StepRender() {
   const shownImage = imgOverride[safe] ?? resolvedImg
   const currentData: RetailCardData = { ...cards[safe], imageUrl: shownImage }
 
+  // Règles conditionnelles : effet visuel par bloc pour le produit affiché.
+  const effects = useMemo(() => {
+    const row = rawRows[safe]; const out: Partial<Record<PromoBlockId, RuleEffect>> = {}
+    if (!row || !config.rules) return out
+    for (const [id, rules] of Object.entries(config.rules)) {
+      if (rules && rules.length) out[id as PromoBlockId] = resolveEffect(rules, row, rawColumns)
+    }
+    return out
+  }, [safe, rawRows, rawColumns, config.rules])
+
   const downloadOne = async () => {
     if (!previewRef.current) return
     setBusy('one')
@@ -179,7 +190,7 @@ export function StepRender() {
         label: c.label || c.key,
         value: String(getRowValue(rawRows[safe], c.key, rawColumns) ?? ''),
       }))
-      const html = buildPromoHtml({ ...cards[safe], imageUrl: dataUrl }, config, allFields)
+      const html = buildPromoHtml({ ...cards[safe], imageUrl: dataUrl }, config, allFields, effects)
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -203,7 +214,10 @@ export function StepRender() {
       <div className="flex items-start gap-4">
         <div className="flex shrink-0 flex-col gap-4">
           <PromoLayersPanel />
-          <PromoImagePanel currentImage={shownImage} onReplace={(url) => setImgOverride((p) => ({ ...p, [safe]: url }))} />
+          <PromoImagePanel currentImage={shownImage} onReplace={(url) => {
+            // URL externe (stock) → proxy → data-URI capturable ; data:/blob: gardés tels quels.
+            void resolveImg(url).then((r) => setImgOverride((p) => ({ ...p, [safe]: r ?? url })))
+          }} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
@@ -215,7 +229,7 @@ export function StepRender() {
           </div>
           <div className="flex justify-center bg-well rounded-xl p-4 overflow-auto" style={{ maxHeight: 'calc(100vh - 360px)' }}>
             <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top center', height: 842 * PREVIEW_SCALE, width: 595 * PREVIEW_SCALE }}>
-              <RetailPromoCard ref={previewRef} data={currentData} config={config} editable
+              <RetailPromoCard ref={previewRef} data={currentData} config={config} editable effects={effects}
                 selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
                 onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })}
                 onResizeText={(key, patch) => setElementStyle(key, patch)}

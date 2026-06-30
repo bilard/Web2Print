@@ -1,6 +1,7 @@
 import { forwardRef, useRef, useCallback, type PointerEvent as ReactPointerEvent } from 'react'
 import type { GradientConfig } from '@/stores/editor.store'
 import { gradientToCss } from '@/components/shared/GradientPicker'
+import type { ConditionalRule, RuleEffect } from '@/features/merge/conditionalRules'
 import { PromoSelectionOverlay } from './PromoSelectionOverlay'
 
 export interface RetailCardData {
@@ -71,6 +72,7 @@ export interface PromoTemplateConfig {
   blockFills?: Partial<Record<PromoBlockId, BlockFill>> // fond (uni/dégradé) des blocs déco
   shapes?: Partial<Record<PromoBlockId, ShapeStyle>> // opacité/fusion/ombre/contour/rotation/ordre
   hidden?: Partial<Record<PromoBlockId, boolean>> // visibilité par bloc (panneau Calques)
+  rules?: Partial<Record<PromoBlockId, ConditionalRule[]>> // règles conditionnelles par élément
   showCategory: boolean
   showDescription: boolean
   showUnitPrice: boolean
@@ -101,6 +103,7 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   blockFills: {},
   shapes: {},
   hidden: {},
+  rules: {},
   showCategory: true,
   showDescription: true,
   showUnitPrice: true,
@@ -275,13 +278,15 @@ interface CardProps {
   onResizeText?: (key: PromoColorKey, patch: { fontSize?: number; width?: number }) => void
   /** Resize d'un bloc déco (échelle + ancrage du décalage). */
   onScaleBlock?: (id: PromoBlockId, sx: number, sy: number, dx: number, dy: number) => void
+  /** Effets des règles conditionnelles pour le produit courant (par bloc). */
+  effects?: Partial<Record<PromoBlockId, RuleEffect>>
   /** Aplatit le dégradé-texte et masque contour/poignées (capture PNG fidèle). */
   capturing?: boolean
 }
 
 /** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
 export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
-  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, capturing = false }, ref) => {
+  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, effects, capturing = false }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)
     const hText = idealText(config.headerBg)
     const aText = idealText(config.accent)
@@ -319,13 +324,23 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     // Style commun d'un bloc : transform (décalage + échelle) + curseur + contour de sélection.
     const blk = (id: PromoBlockId, extra?: React.CSSProperties): React.CSSProperties => {
       const selected = editable && !capturing && selectedKey === id
-      return {
+      const css: React.CSSProperties = {
         ...blockBoxCss(config, id),
         ...(config.hidden?.[id] ? { display: 'none' } : null),
         ...(editable ? { cursor: 'move' } : null),
         ...(selected ? { outline: '2px solid #6366f1', outlineOffset: 2, borderRadius: 2 } : null),
         ...extra,
       }
+      // Effet des règles conditionnelles (produit courant) — l'emporte sur le style statique.
+      const ef = effects?.[id]
+      if (ef) {
+        if (ef.visible === false) css.display = 'none'
+        if (ef.opacity != null) css.opacity = ef.opacity
+        if (ef.fill) css.color = ef.fill
+        if (ef.zOrder) css.zIndex = ef.zOrder === 'front' ? 999 : -1
+        if (ef.scale && ef.scale !== 1) css.transform = `${css.transform ?? ''} scale(${ef.scale})`.trim()
+      }
+      return css
     }
     const es = (key: PromoColorKey) => resolveElementStyle(config, key, { capturing })
     const bg = (id: PromoBlockId) => resolveBlockBg(config, id)

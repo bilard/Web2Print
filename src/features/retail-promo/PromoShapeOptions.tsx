@@ -3,6 +3,7 @@ import { ColorPicker } from '@/components/shared/ColorPicker'
 import { GradientPicker, DEFAULT_GRADIENT } from '@/components/shared/GradientPicker'
 import { useRetailPromoStore } from './retailPromo.store'
 import { Section, NumField, SelectField, SliderField, SegButtons } from './promoPanelUi'
+import { PromoConditionalSection } from './PromoConditionalSection'
 import { STYLE_KEYS, type PromoBlockId, type PromoColorKey, type BlockFill } from './RetailPromoCard'
 
 const BLEND_MODES: Array<{ v: string; label: string }> = [
@@ -110,6 +111,8 @@ export function PromoShapeOptions({ id }: { id: PromoBlockId }) {
           <NumField label="Rotation" unit="°" value={sh.rotation} placeholder="0" onChange={(r) => setShape(id, { rotation: r })} />
         </div>
       </Section>
+
+      <PromoConditionalSection id={id} />
 
       <Section title="Arranger" defaultOpen={false}>
         <SegButtons value={undefined} onChange={arrange}
