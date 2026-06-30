@@ -13,6 +13,7 @@ import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { RetailPromoCard, type RetailCardData } from '../RetailPromoCard'
 import { PromoTemplateEditor } from '../PromoTemplateEditor'
+import { PromoPropertiesPanel } from '../PromoPropertiesPanel'
 import { buildPromoHtml } from '../buildPromoHtml'
 
 /** Convertit une URL blob:/http en data-URI (HTML autonome) ; data: renvoyé tel quel. */
@@ -94,13 +95,21 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, setConfig, setStep } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, setConfig, setStep, selectedKey, setSelectedKey } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
 
   const [index, setIndex] = useState(0)
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
   const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
+  const [capturing, setCapturing] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
+
+  // Désélectionne + aplatit les dégradés-texte avant capture (rendu PNG fidèle), puis restaure.
+  const captureSafe = async (node: HTMLDivElement): Promise<Blob | null> => {
+    setSelectedKey(null); setCapturing(true)
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 60)))
+    try { return await capture(node) } finally { setCapturing(false) }
+  }
 
   const safe = cards.length ? Math.min(index, cards.length - 1) : 0
 
@@ -123,7 +132,7 @@ export function StepRender() {
     if (!previewRef.current) return
     setBusy('one')
     try {
-      const blob = await capture(previewRef.current)
+      const blob = await captureSafe(previewRef.current)
       if (!blob) throw new Error('Capture vide')
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -136,6 +145,7 @@ export function StepRender() {
   const downloadAll = async () => {
     if (!previewRef.current) return
     setBusy('all')
+    setSelectedKey(null); setCapturing(true)
     try {
       const zip = new JSZip()
       const node = previewRef.current
@@ -153,7 +163,7 @@ export function StepRender() {
       a.href = url; a.download = `promos_retail_${cards.length}.zip`
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
       toast.success(`${cards.length} visuels exportés`)
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export') } finally { setBusy(null) }
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec export') } finally { setBusy(null); setCapturing(false) }
   }
 
   const downloadHtml = async () => {
@@ -181,31 +191,38 @@ export function StepRender() {
         <button onClick={() => setStep('mapping')} className="text-sm text-white/50 hover:text-white">← Mappage</button>
       </div>
 
-      {/* Panneau d'édition du template */}
+      {/* Panneau d'édition du template (IA / champs / modèles) */}
       <PromoTemplateEditor />
 
-      {/* Aperçu du card (échelle réduite) — blocs déplaçables par glisser-déposer */}
-      <div className="flex items-center justify-center gap-3 text-xs text-white/40">
-        <span>Glissez les blocs pour les repositionner</span>
-        {Object.keys(config.offsets).length > 0 && (
-          <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
-        )}
-      </div>
-      <div className="flex justify-center bg-well rounded-xl p-6 overflow-hidden">
-        <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
-          <RetailPromoCard ref={previewRef} data={currentData} config={config} editable
-            onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })} />
-        </div>
-      </div>
+      {/* Aperçu (gauche) + panneau de propriétés (droite) */}
+      <div className="flex items-start gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="flex items-center justify-center gap-3 text-xs text-white/40">
+            <span>Cliquez un texte pour le styler · glissez les blocs pour les repositionner</span>
+            {Object.keys(config.offsets).length > 0 && (
+              <button onClick={() => setConfig({ offsets: {} })} className="text-[#6366f1] hover:underline">Réinitialiser les positions</button>
+            )}
+          </div>
+          <div className="flex justify-center bg-well rounded-xl p-6 overflow-hidden">
+            <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
+              <RetailPromoCard ref={previewRef} data={currentData} config={config} editable
+                selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
+                onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })} />
+            </div>
+          </div>
 
-      {/* Navigation produit */}
-      {cards.length > 1 && (
-        <div className="flex items-center justify-center gap-4 text-white/70 text-sm">
-          <button onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={safe === 0} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
-          <span>{safe + 1} / {cards.length}</span>
-          <button onClick={() => setIndex((i) => Math.min(cards.length - 1, i + 1))} disabled={safe === cards.length - 1} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+          {/* Navigation produit */}
+          {cards.length > 1 && (
+            <div className="flex items-center justify-center gap-4 text-white/70 text-sm">
+              <button onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={safe === 0} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+              <span>{safe + 1} / {cards.length}</span>
+              <button onClick={() => setIndex((i) => Math.min(cards.length - 1, i + 1))} disabled={safe === cards.length - 1} className="p-1.5 rounded hover:bg-white/10 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+            </div>
+          )}
         </div>
-      )}
+
+        <PromoPropertiesPanel />
+      </div>
 
       {/* Actions */}
       <div className="flex gap-2">

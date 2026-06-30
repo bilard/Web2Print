@@ -1,4 +1,6 @@
 import { forwardRef, useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import type { GradientConfig } from '@/stores/editor.store'
+import { gradientToCss } from '@/components/shared/GradientPicker'
 
 export interface RetailCardData {
   name: string
@@ -23,12 +25,28 @@ export type PromoBlockId =
   | 'category' | 'name' | 'brand' | 'description'
   | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow'
 
+/** Caractéristiques typographiques + remplissage d'un sous-élément texte. */
+export interface ElementStyle {
+  fontFamily?: string
+  fontSize?: number                 // px (priceNow : remplace la taille auto)
+  fontWeight?: number               // 400…900
+  fontStyle?: 'normal' | 'italic'
+  textAlign?: 'left' | 'center' | 'right'
+  letterSpacing?: number            // em
+  lineHeight?: number               // sans unité
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  fillType?: 'solid' | 'gradient'
+  fill?: string                     // couleur unie
+  gradient?: GradientConfig
+}
+
 export interface PromoTemplateConfig {
   accent: string        // accroche + badge + bandeau prix
   headerBg: string      // bandeau d'en-tête + pied
   fontHeading: string   // nom / accroche / badge
   fontPrice: string     // prix
-  colors: Partial<Record<PromoColorKey, string>> // surcharge couleur par donnée
+  colors: Partial<Record<PromoColorKey, string>> // surcharge couleur par donnée (legacy)
+  styles?: Partial<Record<PromoColorKey, ElementStyle>> // caractéristiques typo/remplissage par donnée
   offsets: Partial<Record<PromoBlockId, { dx: number; dy: number }>> // déplacement par bloc
   showCategory: boolean
   showDescription: boolean
@@ -36,6 +54,12 @@ export interface PromoTemplateConfig {
   showBadge: boolean
   showFooter: boolean
 }
+
+/** Sous-éléments texte sélectionnables/stylables. */
+const STYLE_KEYS: PromoColorKey[] = [
+  'category', 'name', 'brand', 'description',
+  'priceLabel', 'priceWas', 'unitPrice', 'priceNow', 'footer',
+]
 
 export const FONT_OPTIONS = ['Montserrat', 'Oswald', 'Poppins', 'Archivo', 'Bebas Neue', 'Anton', 'Playfair Display', 'Inter'] as const
 
@@ -45,6 +69,7 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   fontHeading: 'Montserrat',
   fontPrice: 'Montserrat',
   colors: {},
+  styles: {},
   offsets: {},
   showCategory: true,
   showDescription: true,
@@ -107,7 +132,61 @@ export function splitPrice(priceNow: string): { amount: string; cur: string; fon
   return { amount, cur, fontSize }
 }
 
-const col = (c: PromoTemplateConfig, k: PromoColorKey) => (c.colors[k] ? { color: c.colors[k] } : undefined)
+/**
+ * Style effectif d'un sous-élément (source unique : aperçu, PNG et export HTML).
+ * Précédence remplissage : styles.gradient/fill > colors[key] (legacy) > défaut hérité.
+ * `capturing` aplatit le dégradé-texte en couleur unie (html2canvas ne sait pas clipper le texte).
+ */
+function resolveElementStyle(
+  config: PromoTemplateConfig,
+  key: PromoColorKey,
+  opts?: { capturing?: boolean },
+): React.CSSProperties {
+  const st = config.styles?.[key]
+  const css: React.CSSProperties = {}
+  if (st?.fontFamily) css.fontFamily = `'${st.fontFamily}', sans-serif`
+  if (st?.fontSize) css.fontSize = st.fontSize
+  if (st?.fontWeight) css.fontWeight = st.fontWeight
+  if (st?.fontStyle) css.fontStyle = st.fontStyle
+  if (st?.textAlign) css.textAlign = st.textAlign
+  if (st?.letterSpacing != null) css.letterSpacing = `${st.letterSpacing}em`
+  if (st?.lineHeight != null) css.lineHeight = st.lineHeight
+  if (st?.textTransform) css.textTransform = st.textTransform
+  const fillType = st?.fillType ?? (st?.gradient ? 'gradient' : st?.fill ? 'solid' : undefined)
+  if (fillType === 'gradient' && st?.gradient) {
+    if (opts?.capturing) {
+      css.color = st.gradient.stops[0]?.color ?? '#000000'
+    } else {
+      css.backgroundImage = gradientToCss(st.gradient)
+      css.WebkitBackgroundClip = 'text'
+      css.backgroundClip = 'text'
+      css.color = 'transparent'
+      css.WebkitTextFillColor = 'transparent'
+    }
+  } else if (fillType === 'solid' && st?.fill) {
+    css.color = st.fill
+  } else if (config.colors[key]) {
+    css.color = config.colors[key]
+  }
+  return css
+}
+
+const UNITLESS = new Set(['fontWeight', 'lineHeight', 'opacity', 'zIndex'])
+/** Sérialise des CSSProperties en chaîne inline (export HTML). Gère les préfixes Webkit. */
+function cssToInline(css: React.CSSProperties): string {
+  return Object.entries(css)
+    .map(([k, v]) => {
+      const prop = k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
+      const val = typeof v === 'number' && !UNITLESS.has(k) ? `${v}px` : String(v)
+      return `${prop}:${val}`
+    })
+    .join(';')
+}
+
+/** Style effectif d'un sous-élément en chaîne inline (export HTML : dégradé réel). */
+export function elementCss(config: PromoTemplateConfig, key: PromoColorKey): string {
+  return cssToInline(resolveElementStyle(config, key))
+}
 
 /** Couleur de texte lisible (noir/blanc) selon la luminance du fond — évite blanc sur fond clair. */
 export function idealText(hex: string): string {
@@ -120,14 +199,19 @@ export function idealText(hex: string): string {
 interface CardProps {
   data: RetailCardData
   config?: PromoTemplateConfig
-  /** Active le glisser-déposer des blocs (aperçu éditable). */
+  /** Active le glisser-déposer + la sélection des blocs (aperçu éditable). */
   editable?: boolean
   onMoveBlock?: (id: PromoBlockId, dx: number, dy: number) => void
+  /** Sous-élément sélectionné (contour + cible du panneau de propriétés). */
+  selectedKey?: PromoColorKey | null
+  onSelect?: (key: PromoColorKey) => void
+  /** Aplatit le dégradé-texte et masque le contour (capture PNG fidèle). */
+  capturing?: boolean
 }
 
 /** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
 export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
-  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock }, ref) => {
+  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, capturing = false }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)
     const hText = idealText(config.headerBg)
     const aText = idealText(config.accent)
@@ -139,8 +223,11 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     }
 
     const startDrag = (e: ReactPointerEvent, id: PromoBlockId) => {
-      if (!editable || !onMoveBlock) return
-      e.preventDefault(); e.stopPropagation()
+      if (!editable) return
+      e.stopPropagation()
+      if (onSelect && (STYLE_KEYS as PromoBlockId[]).includes(id)) onSelect(id as PromoColorKey)
+      if (!onMoveBlock) return
+      e.preventDefault()
       const rect = cardElRef.current?.getBoundingClientRect()
       const scale = rect && rect.width ? rect.width / 595 : 1
       const o = config.offsets[id] ?? { dx: 0, dy: 0 }
@@ -153,24 +240,27 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     // Style commun d'un bloc déplaçable : transform du décalage + curseur en mode édition.
     const blk = (id: PromoBlockId, extra?: React.CSSProperties): React.CSSProperties => {
       const o = config.offsets[id]
+      const selected = editable && !capturing && selectedKey === id
       return {
         ...(o ? { transform: `translate(${o.dx}px, ${o.dy}px)` } : null),
         ...(editable ? { cursor: 'move' } : null),
+        ...(selected ? { outline: '2px solid #6366f1', outlineOffset: 2, borderRadius: 2 } : null),
         ...extra,
       }
     }
+    const es = (key: PromoColorKey) => resolveElementStyle(config, key, { capturing })
     const drag = (id: PromoBlockId) => (editable ? { onPointerDown: (e: ReactPointerEvent) => startDrag(e, id) } : {})
 
     return (
       <div ref={setRefs} className="rp-card" style={styleVars(config)}>
         <style>{PROMO_CSS}</style>
         <div className="rp-head" style={blk('header', { color: hText })} {...drag('header')}>
-          {config.showCategory && <span className="rp-kicker" style={blk('category', col(config, 'category') ?? { color: aText })} {...drag('category')}>{data.category || 'Offre spéciale'}</span>}
-          <div className="rp-name" style={blk('name', col(config, 'name'))} {...drag('name')}>{data.name || 'Produit'}</div>
+          {config.showCategory && <span className="rp-kicker" style={blk('category', { color: aText, ...es('category') })} {...drag('category')}>{data.category || 'Offre spéciale'}</span>}
+          <div className="rp-name" style={blk('name', es('name'))} {...drag('name')}>{data.name || 'Produit'}</div>
           {(data.brand || data.ref) && (
-            <div className="rp-brand" style={blk('brand', col(config, 'brand'))} {...drag('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
+            <div className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
           )}
-          {config.showDescription && data.description && <div className="rp-desc" style={blk('description', col(config, 'description'))} {...drag('description')}>{data.description}</div>}
+          {config.showDescription && data.description && <div className="rp-desc" style={blk('description', es('description'))} {...drag('description')}>{data.description}</div>}
         </div>
         <div className="rp-product">
           {data.imageUrl
@@ -185,15 +275,15 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
         </div>
         <div className="rp-price" style={blk('price', { color: aText })} {...drag('price')}>
           <div className="rp-left">
-            <span className="rp-plabel" style={blk('priceLabel', col(config, 'priceLabel'))} {...drag('priceLabel')}>Prix promo</span>
-            {data.priceWas && <span className="rp-was" style={blk('priceWas', col(config, 'priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
-            {config.showUnitPrice && data.unitPrice && <span className="rp-unit" style={blk('unitPrice', col(config, 'unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
+            <span className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')}>Prix promo</span>
+            {data.priceWas && <span className="rp-was" style={blk('priceWas', es('priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
+            {config.showUnitPrice && data.unitPrice && <span className="rp-unit" style={blk('unitPrice', es('unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
           </div>
-          <div className="rp-now" style={blk('priceNow', { fontSize, ...col(config, 'priceNow') })} {...drag('priceNow')}>
+          <div className="rp-now" style={blk('priceNow', { fontSize, ...es('priceNow') })} {...drag('priceNow')}>
             {amount}{cur && <span className="rp-cur">{cur}</span>}
           </div>
         </div>
-        {config.showFooter && <div className="rp-foot" style={blk('footer', col(config, 'footer'))} {...drag('footer')}>{data.validite || ''}</div>}
+        {config.showFooter && <div className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')}>{data.validite || ''}</div>}
       </div>
     )
   },

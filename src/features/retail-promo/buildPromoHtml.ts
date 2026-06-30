@@ -1,4 +1,4 @@
-import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './RetailPromoCard'
+import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, elementCss, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './RetailPromoCard'
 
 const esc = (s: unknown): string =>
   String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
@@ -8,10 +8,11 @@ const offCss = (config: PromoTemplateConfig, id: PromoBlockId): string => {
   return o ? `transform:translate(${o.dx}px,${o.dy}px);` : ''
 }
 
-/** Attribut style combiné (couleur de la donnée + décalage) pour un sous-élément. */
+/** Attribut style combiné (caractéristiques typo/remplissage + décalage) pour un sous-élément. */
 const subAttr = (config: PromoTemplateConfig, key: PromoColorKey): string => {
   const parts: string[] = []
-  if (config.colors[key]) parts.push(`color:${esc(config.colors[key])}`)
+  const css = elementCss(config, key)
+  if (css) parts.push(css)
   const o = config.offsets[key]
   if (o) parts.push(`transform:translate(${o.dx}px,${o.dy}px)`)
   return parts.length ? ` style="${parts.join(';')}"` : ''
@@ -62,7 +63,7 @@ export function buildPromoHtml(
   <div class="rp-card" data-composition-id="promo" data-width="595" data-height="842"
        style="--rp-accent:${esc(config.accent)};--rp-head:${esc(config.headerBg)};--rp-font-h:'${esc(config.fontHeading)}',sans-serif;--rp-font-p:'${esc(config.fontPrice)}',sans-serif">
     <div class="rp-head" style="color:${hText};${offCss(config, 'header')}">
-      ${config.showCategory ? `<span class="rp-kicker" style="color:${esc(config.colors.category || aText)};${offCss(config, 'category')}">${esc(data.category || 'Offre spéciale')}</span>` : ''}
+      ${config.showCategory ? `<span class="rp-kicker" style="${elementCss(config, 'category') || `color:${aText}`};${offCss(config, 'category')}">${esc(data.category || 'Offre spéciale')}</span>` : ''}
       <div class="rp-name"${subAttr(config, 'name')}>${esc(data.name || 'Produit')}</div>
       ${(data.brand || data.ref) ? `<div class="rp-brand"${subAttr(config, 'brand')}>${esc([data.brand, data.ref].filter(Boolean).join(' · '))}</div>` : ''}
       ${config.showDescription && data.description ? `<div class="rp-desc"${subAttr(config, 'description')}>${esc(data.description)}</div>` : ''}
@@ -77,7 +78,7 @@ export function buildPromoHtml(
         ${data.priceWas ? `<span class="rp-was"${subAttr(config, 'priceWas')}>${esc(data.priceWas)}</span>` : ''}
         ${config.showUnitPrice && data.unitPrice ? `<span class="rp-unit"${subAttr(config, 'unitPrice')}>${esc(data.unitPrice)}</span>` : ''}
       </div>
-      <div class="rp-now" style="font-size:${fontSize}px${config.colors.priceNow ? `;color:${esc(config.colors.priceNow)}` : ''};${offCss(config, 'priceNow')}">${esc(amount)}${cur ? `<span class="rp-cur">${esc(cur)}</span>` : ''}</div>
+      <div class="rp-now" style="font-size:${fontSize}px;${elementCss(config, 'priceNow')};${offCss(config, 'priceNow')}">${esc(amount)}${cur ? `<span class="rp-cur">${esc(cur)}</span>` : ''}</div>
     </div>
     ${config.showFooter ? `<div class="rp-foot" style="${config.colors.footer ? `color:${esc(config.colors.footer)};` : ''}${offCss(config, 'footer')}">${esc(data.validite || '')}</div>` : ''}
   </div>

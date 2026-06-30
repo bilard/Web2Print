@@ -5,7 +5,7 @@ import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
 import { generatePromoTemplate } from './useGeneratePromoTemplate'
 import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
-import { FONT_OPTIONS, type PromoTemplateConfig, type PromoColorKey } from './RetailPromoCard'
+import type { PromoTemplateConfig } from './RetailPromoCard'
 
 const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
   { key: 'showCategory', label: 'Catégorie' },
@@ -15,16 +15,7 @@ const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
   { key: 'showFooter', label: 'Pied de page' },
 ]
 
-const COLOR_FIELDS: Array<{ key: PromoColorKey; label: string; fallback: string }> = [
-  { key: 'category', label: 'Catégorie', fallback: '#ffffff' },
-  { key: 'name', label: 'Nom', fallback: '#ffffff' },
-  { key: 'description', label: 'Description', fallback: '#cbd5e1' },
-  { key: 'priceNow', label: 'Prix promo', fallback: '#ffffff' },
-  { key: 'priceWas', label: 'Prix barré', fallback: '#ffffff' },
-  { key: 'footer', label: 'Pied', fallback: '#9ca3af' },
-]
-
-/** Panneau d'édition du template : prompt IA + polices + couleurs par donnée + champs (aperçu live). */
+/** Barre d'édition du template : prompt IA + champs affichés + modèles enregistrés (couleurs/typo → panneau droit). */
 export function PromoTemplateEditor() {
   const { config, setConfig, rawColumns, rawRows, fieldMap } = useRetailPromoStore()
   const [brief, setBrief] = useState('')
@@ -49,7 +40,8 @@ export function PromoTemplateEditor() {
 
   const applyTemplate = (id: string) => {
     const t = templates.find((x) => x.id === id)
-    if (t) { setConfig(t.config); toast.success(`Modèle « ${t.name} » appliqué`) }
+    // Normalise styles/colors : un ancien modèle sans ces clés ne doit pas conserver l'état de la session.
+    if (t) { setConfig({ ...t.config, styles: t.config.styles ?? {}, colors: t.config.colors ?? {} }); toast.success(`Modèle « ${t.name} » appliqué`) }
   }
 
   const removeTemplate = async (id: string) => {
@@ -84,36 +76,6 @@ export function PromoTemplateEditor() {
           className="flex shrink-0 items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-2 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Générer (IA)
         </button>
-      </div>
-
-      {/* Couleurs de fond + polices */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Habillage</span>
-        <label className="flex items-center gap-2 text-sm text-white/70">Accent
-          <input type="color" value={config.accent} onChange={(e) => setConfig({ accent: e.target.value })} className="h-6 w-8 cursor-pointer rounded border border-white/10 bg-transparent p-0" /></label>
-        <label className="flex items-center gap-2 text-sm text-white/70">En-tête
-          <input type="color" value={config.headerBg} onChange={(e) => setConfig({ headerBg: e.target.value })} className="h-6 w-8 cursor-pointer rounded border border-white/10 bg-transparent p-0" /></label>
-        <label className="flex items-center gap-2 text-sm text-white/70">Police titres
-          <select value={config.fontHeading} onChange={(e) => setConfig({ fontHeading: e.target.value })}
-            className="rounded border border-white/10 bg-well px-2 py-1 text-sm text-white [&>option]:bg-neutral-900">
-            {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}</select></label>
-        <label className="flex items-center gap-2 text-sm text-white/70">Police prix
-          <select value={config.fontPrice} onChange={(e) => setConfig({ fontPrice: e.target.value })}
-            className="rounded border border-white/10 bg-well px-2 py-1 text-sm text-white [&>option]:bg-neutral-900">
-            {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}</select></label>
-      </div>
-
-      {/* Couleur par donnée */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Couleur des textes</span>
-        {COLOR_FIELDS.map(({ key, label, fallback }) => (
-          <label key={key} className="flex items-center gap-1.5 text-sm text-white/60">
-            {label}
-            <input type="color" value={config.colors[key] ?? fallback}
-              onChange={(e) => setConfig({ colors: { ...config.colors, [key]: e.target.value } })}
-              className="h-6 w-7 cursor-pointer rounded border border-white/10 bg-transparent p-0" />
-          </label>
-        ))}
       </div>
 
       {/* Champs affichés */}
