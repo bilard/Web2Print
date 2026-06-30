@@ -317,20 +317,24 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
 
     // ── Édition inline du texte (double-clic) ───────────────────────────────────
     const [editingKey, setEditingKey] = useState<PromoColorKey | null>(null)
+    const clickPos = useRef<{ x: number; y: number } | null>(null)
     useEffect(() => {
       if (!editingKey) return
       const el = blockEls.current.get(editingKey)
       if (!el) return
       el.focus()
-      // Curseur à la fin SANS tout sélectionner (modifier les caractères, pas remplacer).
-      const range = document.createRange(); range.selectNodeContents(el); range.collapse(false)
-      const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(range)
+      const sel = window.getSelection()
+      const pos = clickPos.current; clickPos.current = null
+      // Curseur à l'endroit cliqué (caretRangeFromPoint) ; repli : fin du texte.
+      const fromPoint = pos && (document as Document & { caretRangeFromPoint?: (x: number, y: number) => Range | null }).caretRangeFromPoint?.(pos.x, pos.y)
+      const range = (fromPoint && el.contains(fromPoint.startContainer)) ? fromPoint : (() => { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); return r })()
+      sel?.removeAllRanges(); sel?.addRange(range)
     }, [editingKey])
     const canEdit = (key: PromoColorKey) => editable && !!onEditText && EDITABLE_TEXT.includes(key)
-    const startEdit = (key: PromoColorKey) => { onSelect?.(key); setEditingKey(key) }
+    const startEdit = (key: PromoColorKey, x?: number, y?: number) => { clickPos.current = (x != null && y != null) ? { x, y } : null; onSelect?.(key); setEditingKey(key) }
     const editProps = (key: PromoColorKey): React.HTMLAttributes<HTMLElement> => {
       if (!canEdit(key)) return {}
-      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); startEdit(key) }, title: 'Double-cliquez pour éditer' }
+      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); startEdit(key, e.clientX, e.clientY) }, title: 'Double-cliquez pour éditer' }
       return {
         contentEditable: true, suppressContentEditableWarning: true,
         onDoubleClick: (e) => e.stopPropagation(),
