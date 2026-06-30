@@ -19,7 +19,7 @@ const fileToDataUrl = (f: File): Promise<string> =>
 export function PromoImagePanel({ currentImage, onReplace }: Props) {
   const [tab, setTab] = useState<'gallery' | 'upload' | 'stock'>('gallery')
   const fileRef = useRef<HTMLInputElement>(null)
-  const { removeBg, loading: rbLoading } = useRemoveBg()
+  const { removeBg, loading: rbLoading, error: rbError } = useRemoveBg()
   const { query, setQuery, results, loading: stockLoading } = useDamStore()
   const { search } = useDamSearch()
 
@@ -30,8 +30,8 @@ export function PromoImagePanel({ currentImage, onReplace }: Props) {
   const onRemoveBg = async () => {
     if (!currentImage) return
     const out = await removeBg(currentImage)
+    // Le vrai motif (ex. « Insufficient credits ») est exposé via rbError, affiché sous le bouton.
     if (out) { onReplace(out); toast.success('Fond supprimé') }
-    else toast.error('Échec — vérifiez la clé Remove.bg (Paramètres > Connecteurs)')
   }
 
   return (
@@ -61,6 +61,7 @@ export function PromoImagePanel({ currentImage, onReplace }: Props) {
               className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-medium text-white hover:bg-white/10 disabled:opacity-40">
               {rbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />} Supprimer le fond
             </button>
+            {rbError && <p className="text-[11px] leading-snug text-red-400">{rbError === 'Insufficient credits' ? 'Crédits Remove.bg épuisés (0 crédit). Rechargez votre compte Remove.bg.' : rbError}</p>}
           </>
         )}
 
