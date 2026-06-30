@@ -16,10 +16,16 @@ export function parsePrice(value: unknown): number | null {
 
 const SYMBOLS: Record<string, string> = { EUR: '€', USD: '$', GBP: '£' }
 
-export function formatPrice(n: number, currency: string): string {
+/** Formate un prix. `euroSep` : le symbole \u20ac sert de s\u00e9parateur d\u00e9cimal (327\u20ac78) si la devise est l'euro. */
+export function formatPrice(n: number, currency: string, euroSep = false): string {
+  const sym = SYMBOLS[currency] ?? currency
+  if (euroSep && sym === '\u20ac') {
+    const v = Math.round(Math.abs(n) * 100)
+    const euros = new Intl.NumberFormat('fr-FR').format(Math.floor(v / 100)).replace(/[\u00a0\u202f]/g, ' ')
+    return `${n < 0 ? '-' : ''}${euros}\u20ac${String(v % 100).padStart(2, '0')}`
+  }
   const body = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
     .replace(/[\u00a0\u202f]/g, ' ')
-  const sym = SYMBOLS[currency] ?? currency
   return `${body} ${sym}`
 }
 

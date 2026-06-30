@@ -76,15 +76,15 @@ function validText(f: PromoFields): string {
   return 'Dans la limite des stocks disponibles'
 }
 
-function toCardData(f: PromoFields): RetailCardData {
+function toCardData(f: PromoFields, euroSep = false): RetailCardData {
   return {
     name: f.name,
     brand: f.brand || undefined,
     ref: f.ref || undefined,
     category: f.category || undefined,
     description: f.description || undefined,
-    priceNow: f.newPrice != null ? formatPrice(f.newPrice, f.currency) : '—',
-    priceWas: f.oldPrice != null ? formatPrice(f.oldPrice, f.currency) : undefined,
+    priceNow: f.newPrice != null ? formatPrice(f.newPrice, f.currency, euroSep) : '—',
+    priceWas: f.oldPrice != null ? formatPrice(f.oldPrice, f.currency, euroSep) : undefined,
     unitPrice: f.unitPrice || undefined,
     remiseLabel: fmtPromoLabel(f.promoLabel) || (f.remisePct != null ? `-${f.remisePct}%` : undefined),
     validite: validText(f),
@@ -110,7 +110,7 @@ async function captureThumb(node: HTMLDivElement): Promise<string | undefined> {
 
 export function StepRender() {
   const { rawColumns, rawRows, fieldMap, config, sourceRef, imgOverride, setImgOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
-  const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
+  const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap), config.priceEuroSep))
 
   const [index, setIndex] = useState(0)
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)

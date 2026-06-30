@@ -16,8 +16,10 @@ const FIELD_OF: Partial<Record<PromoColorKey, PromoFieldKey>> = {
 }
 
 /** OPTIONS DE TEXTE : police, paragraphe, transformation, connecteur. */
+const PRICE_KEYS: PromoColorKey[] = ['priceNow', 'priceWas', 'unitPrice']
+
 export function PromoTextOptions({ id }: { id: PromoColorKey }) {
-  const { config, fieldMap, rawColumns, setElementStyle } = useRetailPromoStore()
+  const { config, fieldMap, rawColumns, setElementStyle, setConfig } = useRetailPromoStore()
   const st = config.styles?.[id] ?? {}
   const set = (patch: Partial<ElementStyle>) => setElementStyle(id, patch)
   const fieldKey = FIELD_OF[id]
@@ -26,6 +28,14 @@ export function PromoTextOptions({ id }: { id: PromoColorKey }) {
 
   return (
     <>
+      {PRICE_KEYS.includes(id) && (
+        <Section title="Format du prix">
+          <label className="flex items-center gap-2 text-sm text-white/70">
+            <input type="checkbox" checked={!!config.priceEuroSep} onChange={(e) => setConfig({ priceEuroSep: e.target.checked })} className="accent-[#6366f1]" />
+            € comme séparateur <span className="text-white/40">(327€78)</span>
+          </label>
+        </Section>
+      )}
       <Section title="Police">
         <div className="grid grid-cols-2 gap-2.5">
           <label className="col-span-2 flex flex-col gap-1 text-[11px] uppercase tracking-wide text-white/40">Famille

@@ -73,6 +73,7 @@ export interface PromoTemplateConfig {
   shapes?: Partial<Record<PromoBlockId, ShapeStyle>> // opacité/fusion/ombre/contour/rotation/ordre
   hidden?: Partial<Record<PromoBlockId, boolean>> // visibilité par bloc (panneau Calques)
   rules?: Partial<Record<PromoBlockId, ConditionalRule[]>> // règles conditionnelles par élément
+  priceEuroSep?: boolean // format prix « 327€78 » (le € sépare euros/centimes)
   showCategory: boolean
   showDescription: boolean
   showUnitPrice: boolean
@@ -104,6 +105,7 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   shapes: {},
   hidden: {},
   rules: {},
+  priceEuroSep: false,
   showCategory: true,
   showDescription: true,
   showUnitPrice: true,
@@ -155,14 +157,17 @@ export const PROMO_CSS = `
 .rp-foot { background:var(--rp-head,#111827); color:#9ca3af; font-size:12px; padding:10px 40px; text-align:center; letter-spacing:.03em; min-height:38px; }
 `
 
-/** Découpe « 1 144,29 € » en montant + symbole, et choisit une taille qui tient sur une ligne. */
+/** Découpe « 1 144,29 € » (ou « 327€78 ») en montant + symbole/centimes, et choisit une taille qui tient sur une ligne. */
 export function splitPrice(priceNow: string): { amount: string; cur: string; fontSize: number } {
   const t = (priceNow || '').trim()
+  const sizeFor = (a: string) => (a.length <= 6 ? 88 : a.length <= 8 ? 68 : 54)
+  // Format « € séparateur » : 327€78 → montant « 327 », exposant « €78 ».
+  const euroMid = t.match(/^(.+?)€(\d{2})$/)
+  if (euroMid) { const amount = euroMid[1].trim(); return { amount, cur: `€${euroMid[2]}`, fontSize: sizeFor(amount) } }
   const m = t.match(/^(.*?)\s*([€$£])\s*$/)
   const amount = m ? m[1].trim() : t
   const cur = m ? m[2] : ''
-  const fontSize = amount.length <= 6 ? 88 : amount.length <= 8 ? 68 : 54
-  return { amount, cur, fontSize }
+  return { amount, cur, fontSize: sizeFor(amount) }
 }
 
 /**
