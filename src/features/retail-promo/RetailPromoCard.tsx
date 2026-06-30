@@ -326,9 +326,10 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(range)
     }, [editingKey])
     const canEdit = (key: PromoColorKey) => editable && !!onEditText && EDITABLE_TEXT.includes(key)
+    const startEdit = (key: PromoColorKey) => { onSelect?.(key); setEditingKey(key) }
     const editProps = (key: PromoColorKey): React.HTMLAttributes<HTMLElement> => {
       if (!canEdit(key)) return {}
-      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); setEditingKey(key) }, title: 'Double-cliquez pour éditer' }
+      if (editingKey !== key) return { onDoubleClick: (e) => { e.stopPropagation(); startEdit(key) }, title: 'Double-cliquez pour éditer' }
       return {
         contentEditable: true, suppressContentEditableWarning: true,
         onDoubleClick: (e) => e.stopPropagation(),
@@ -413,7 +414,7 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
           </div>
         </div>
         {config.showFooter && <div ref={setEl('footer')} className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')} {...editProps('footer')}>{data.validite || ''}</div>}
-        {editable && !capturing && selectedKey && (
+        {editable && !capturing && selectedKey && !editingKey && (
           <PromoSelectionOverlay
             cardRef={cardElRef}
             getEl={() => (selectedKey ? blockEls.current.get(selectedKey) ?? null : null)}
