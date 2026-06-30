@@ -1,6 +1,7 @@
-import { forwardRef, useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { forwardRef, useRef, useCallback, type PointerEvent as ReactPointerEvent } from 'react'
 import type { GradientConfig } from '@/stores/editor.store'
 import { gradientToCss } from '@/components/shared/GradientPicker'
+import { PromoSelectionOverlay } from './PromoSelectionOverlay'
 
 export interface RetailCardData {
   name: string
@@ -35,8 +36,16 @@ export interface ElementStyle {
   letterSpacing?: number            // em
   lineHeight?: number               // sans unité
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  width?: number                    // px (resize horizontal d'un texte → retour à la ligne)
   fillType?: 'solid' | 'gradient'
   fill?: string                     // couleur unie
+  gradient?: GradientConfig
+}
+
+/** Remplissage de fond d'un bloc déco (PNG-safe, y compris dégradé). */
+export interface BlockFill {
+  fillType: 'solid' | 'gradient'
+  fill?: string
   gradient?: GradientConfig
 }
 
@@ -48,6 +57,8 @@ export interface PromoTemplateConfig {
   colors: Partial<Record<PromoColorKey, string>> // surcharge couleur par donnée (legacy)
   styles?: Partial<Record<PromoColorKey, ElementStyle>> // caractéristiques typo/remplissage par donnée
   offsets: Partial<Record<PromoBlockId, { dx: number; dy: number }>> // déplacement par bloc
+  scales?: Partial<Record<PromoBlockId, { sx: number; sy: number }>> // resize (échelle) par bloc déco
+  blockFills?: Partial<Record<PromoBlockId, BlockFill>> // fond (uni/dégradé) des blocs déco
   showCategory: boolean
   showDescription: boolean
   showUnitPrice: boolean
@@ -55,11 +66,14 @@ export interface PromoTemplateConfig {
   showFooter: boolean
 }
 
-/** Sous-éléments texte sélectionnables/stylables. */
-const STYLE_KEYS: PromoColorKey[] = [
+/** Sous-éléments texte sélectionnables/stylables (typo + resize fontSize/largeur). */
+export const STYLE_KEYS: PromoColorKey[] = [
   'category', 'name', 'brand', 'description',
   'priceLabel', 'priceWas', 'unitPrice', 'priceNow', 'footer',
 ]
+/** Blocs déco sélectionnables (fond uni/dégradé + resize par échelle). */
+const DECO_BLOCKS: PromoBlockId[] = ['header', 'image', 'badge', 'price']
+const SELECTABLE: PromoBlockId[] = [...(STYLE_KEYS as PromoBlockId[]), ...DECO_BLOCKS]
 
 export const FONT_OPTIONS = ['Montserrat', 'Oswald', 'Poppins', 'Archivo', 'Bebas Neue', 'Anton', 'Playfair Display', 'Inter'] as const
 
@@ -71,6 +85,8 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   colors: {},
   styles: {},
   offsets: {},
+  scales: {},
+  blockFills: {},
   showCategory: true,
   showDescription: true,
   showUnitPrice: true,
@@ -146,6 +162,7 @@ function resolveElementStyle(
   const css: React.CSSProperties = {}
   if (st?.fontFamily) css.fontFamily = `'${st.fontFamily}', sans-serif`
   if (st?.fontSize) css.fontSize = st.fontSize
+  if (st?.width) { css.width = st.width; css.whiteSpace = 'normal' }
   if (st?.fontWeight) css.fontWeight = st.fontWeight
   if (st?.fontStyle) css.fontStyle = st.fontStyle
   if (st?.textAlign) css.textAlign = st.textAlign
@@ -188,6 +205,19 @@ export function elementCss(config: PromoTemplateConfig, key: PromoColorKey): str
   return cssToInline(resolveElementStyle(config, key))
 }
 
+/** Fond effectif d'un bloc déco (uni ou dégradé) — PNG-safe. Renvoie {} si non personnalisé. */
+function resolveBlockBg(config: PromoTemplateConfig, id: PromoBlockId): React.CSSProperties {
+  const bf = config.blockFills?.[id]
+  if (!bf) return {}
+  if (bf.fillType === 'gradient' && bf.gradient) return { background: gradientToCss(bf.gradient) }
+  if (bf.fill) return { background: bf.fill }
+  return {}
+}
+/** Fond d'un bloc déco en chaîne inline (export HTML). */
+export function blockBgCss(config: PromoTemplateConfig, id: PromoBlockId): string {
+  return cssToInline(resolveBlockBg(config, id))
+}
+
 /** Couleur de texte lisible (noir/blanc) selon la luminance du fond — évite blanc sur fond clair. */
 export function idealText(hex: string): string {
   const h = (hex || '').replace('#', '')
@@ -199,33 +229,46 @@ export function idealText(hex: string): string {
 interface CardProps {
   data: RetailCardData
   config?: PromoTemplateConfig
-  /** Active le glisser-déposer + la sélection des blocs (aperçu éditable). */
+  /** Active le glisser-déposer + la sélection + les poignées de resize (aperçu éditable). */
   editable?: boolean
   onMoveBlock?: (id: PromoBlockId, dx: number, dy: number) => void
-  /** Sous-élément sélectionné (contour + cible du panneau de propriétés). */
-  selectedKey?: PromoColorKey | null
-  onSelect?: (key: PromoColorKey) => void
-  /** Aplatit le dégradé-texte et masque le contour (capture PNG fidèle). */
+  /** Bloc sélectionné (contour + poignées + cible du panneau de propriétés). */
+  selectedKey?: PromoBlockId | null
+  onSelect?: (id: PromoBlockId) => void
+  /** Resize d'un texte (fontSize / largeur). */
+  onResizeText?: (key: PromoColorKey, patch: { fontSize?: number; width?: number }) => void
+  /** Resize d'un bloc déco (échelle + ancrage du décalage). */
+  onScaleBlock?: (id: PromoBlockId, sx: number, sy: number, dx: number, dy: number) => void
+  /** Aplatit le dégradé-texte et masque contour/poignées (capture PNG fidèle). */
   capturing?: boolean
 }
 
 /** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
 export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
-  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, capturing = false }, ref) => {
+  ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, capturing = false }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)
     const hText = idealText(config.headerBg)
     const aText = idealText(config.accent)
     const cardElRef = useRef<HTMLDivElement | null>(null)
-    const setRefs = (el: HTMLDivElement | null) => {
+    const blockEls = useRef(new Map<PromoBlockId, HTMLElement | null>())
+    const setters = useRef(new Map<PromoBlockId, (el: HTMLElement | null) => void>())
+    // Callback ref stable par bloc (évite le thrash des refs à chaque render).
+    const setEl = (id: PromoBlockId) => {
+      let fn = setters.current.get(id)
+      if (!fn) { fn = (el) => { blockEls.current.set(id, el) }; setters.current.set(id, fn) }
+      return fn
+    }
+    // Stable : un callback ref recréé à chaque render serait rappelé avec null (thrash → rect effacé).
+    const setRefs = useCallback((el: HTMLDivElement | null) => {
       cardElRef.current = el
       if (typeof ref === 'function') ref(el)
       else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el
-    }
+    }, [ref])
 
     const startDrag = (e: ReactPointerEvent, id: PromoBlockId) => {
       if (!editable) return
       e.stopPropagation()
-      if (onSelect && (STYLE_KEYS as PromoBlockId[]).includes(id)) onSelect(id as PromoColorKey)
+      if (onSelect && SELECTABLE.includes(id)) onSelect(id)
       if (!onMoveBlock) return
       e.preventDefault()
       const rect = cardElRef.current?.getBoundingClientRect()
@@ -237,53 +280,69 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
       window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
     }
-    // Style commun d'un bloc déplaçable : transform du décalage + curseur en mode édition.
+    // Style commun d'un bloc : transform (décalage + échelle) + curseur + contour de sélection.
     const blk = (id: PromoBlockId, extra?: React.CSSProperties): React.CSSProperties => {
       const o = config.offsets[id]
+      const sc = config.scales?.[id]
       const selected = editable && !capturing && selectedKey === id
+      const tparts: string[] = []
+      if (o) tparts.push(`translate(${o.dx}px, ${o.dy}px)`)
+      if (sc) tparts.push(`scale(${sc.sx}, ${sc.sy})`)
       return {
-        ...(o ? { transform: `translate(${o.dx}px, ${o.dy}px)` } : null),
+        ...(tparts.length ? { transform: tparts.join(' '), ...(sc ? { transformOrigin: 'top left' } : null) } : null),
         ...(editable ? { cursor: 'move' } : null),
         ...(selected ? { outline: '2px solid #6366f1', outlineOffset: 2, borderRadius: 2 } : null),
         ...extra,
       }
     }
     const es = (key: PromoColorKey) => resolveElementStyle(config, key, { capturing })
+    const bg = (id: PromoBlockId) => resolveBlockBg(config, id)
     const drag = (id: PromoBlockId) => (editable ? { onPointerDown: (e: ReactPointerEvent) => startDrag(e, id) } : {})
 
     return (
       <div ref={setRefs} className="rp-card" style={styleVars(config)}>
         <style>{PROMO_CSS}</style>
-        <div className="rp-head" style={blk('header', { color: hText })} {...drag('header')}>
-          {config.showCategory && <span className="rp-kicker" style={blk('category', { color: aText, ...es('category') })} {...drag('category')}>{data.category || 'Offre spéciale'}</span>}
-          <div className="rp-name" style={blk('name', es('name'))} {...drag('name')}>{data.name || 'Produit'}</div>
+        <div ref={setEl('header')} className="rp-head" style={blk('header', { color: hText, ...bg('header') })} {...drag('header')}>
+          {config.showCategory && <span ref={setEl('category')} className="rp-kicker" style={blk('category', { color: aText, ...es('category') })} {...drag('category')}>{data.category || 'Offre spéciale'}</span>}
+          <div ref={setEl('name')} className="rp-name" style={blk('name', es('name'))} {...drag('name')}>{data.name || 'Produit'}</div>
           {(data.brand || data.ref) && (
-            <div className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
+            <div ref={setEl('brand')} className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
           )}
-          {config.showDescription && data.description && <div className="rp-desc" style={blk('description', es('description'))} {...drag('description')}>{data.description}</div>}
+          {config.showDescription && data.description && <div ref={setEl('description')} className="rp-desc" style={blk('description', es('description'))} {...drag('description')}>{data.description}</div>}
         </div>
-        <div className="rp-product">
+        <div className="rp-product" style={bg('image')}>
           {data.imageUrl
-            ? <img src={data.imageUrl} crossOrigin="anonymous" alt={data.name} style={blk('image')} {...drag('image')} />
+            ? <img ref={setEl('image')} src={data.imageUrl} crossOrigin="anonymous" alt={data.name} style={blk('image')} {...drag('image')} />
             : <div className="rp-ph">PHOTO PRODUIT</div>}
           {config.showBadge && data.remiseLabel && (
-            <div className="rp-badge" style={blk('badge', { color: aText })} {...drag('badge')}>
+            <div ref={setEl('badge')} className="rp-badge" style={blk('badge', { color: aText, ...bg('badge') })} {...drag('badge')}>
               <span className="rp-pct">{data.remiseLabel}</span>
               <span className="rp-pctlbl">de remise</span>
             </div>
           )}
         </div>
-        <div className="rp-price" style={blk('price', { color: aText })} {...drag('price')}>
+        <div ref={setEl('price')} className="rp-price" style={blk('price', { color: aText, ...bg('price') })} {...drag('price')}>
           <div className="rp-left">
-            <span className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')}>Prix promo</span>
-            {data.priceWas && <span className="rp-was" style={blk('priceWas', es('priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
-            {config.showUnitPrice && data.unitPrice && <span className="rp-unit" style={blk('unitPrice', es('unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
+            <span ref={setEl('priceLabel')} className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')}>Prix promo</span>
+            {data.priceWas && <span ref={setEl('priceWas')} className="rp-was" style={blk('priceWas', es('priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
+            {config.showUnitPrice && data.unitPrice && <span ref={setEl('unitPrice')} className="rp-unit" style={blk('unitPrice', es('unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
           </div>
-          <div className="rp-now" style={blk('priceNow', { fontSize, ...es('priceNow') })} {...drag('priceNow')}>
+          <div ref={setEl('priceNow')} className="rp-now" style={blk('priceNow', { fontSize, ...es('priceNow') })} {...drag('priceNow')}>
             {amount}{cur && <span className="rp-cur">{cur}</span>}
           </div>
         </div>
-        {config.showFooter && <div className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')}>{data.validite || ''}</div>}
+        {config.showFooter && <div ref={setEl('footer')} className="rp-foot" style={blk('footer', es('footer'))} {...drag('footer')}>{data.validite || ''}</div>}
+        {editable && !capturing && selectedKey && (
+          <PromoSelectionOverlay
+            cardRef={cardElRef}
+            getEl={() => (selectedKey ? blockEls.current.get(selectedKey) ?? null : null)}
+            selected={selectedKey}
+            isText={(STYLE_KEYS as PromoBlockId[]).includes(selectedKey)}
+            config={config}
+            onResizeText={onResizeText}
+            onScaleBlock={onScaleBlock}
+          />
+        )}
       </div>
     )
   },

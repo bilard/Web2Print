@@ -95,7 +95,7 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, setConfig, setStep, selectedKey, setSelectedKey } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
 
   const [index, setIndex] = useState(0)
@@ -207,7 +207,9 @@ export function StepRender() {
             <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', height: 842 * 0.55 }}>
               <RetailPromoCard ref={previewRef} data={currentData} config={config} editable
                 selectedKey={capturing ? null : selectedKey} onSelect={setSelectedKey} capturing={capturing}
-                onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })} />
+                onMoveBlock={(id, dx, dy) => setConfig({ offsets: { ...config.offsets, [id]: { dx, dy } } })}
+                onResizeText={(key, patch) => setElementStyle(key, patch)}
+                onScaleBlock={(id, sx, sy, dx, dy) => setConfig({ scales: { ...config.scales, [id]: { sx, sy } }, offsets: { ...config.offsets, [id]: { dx, dy } } })} />
             </div>
           </div>
 

@@ -40,8 +40,8 @@ export function PromoTemplateEditor() {
 
   const applyTemplate = (id: string) => {
     const t = templates.find((x) => x.id === id)
-    // Normalise styles/colors : un ancien modèle sans ces clés ne doit pas conserver l'état de la session.
-    if (t) { setConfig({ ...t.config, styles: t.config.styles ?? {}, colors: t.config.colors ?? {} }); toast.success(`Modèle « ${t.name} » appliqué`) }
+    // Normalise les dictionnaires : un ancien modèle sans ces clés ne doit pas conserver l'état de la session.
+    if (t) { setConfig({ ...t.config, styles: t.config.styles ?? {}, colors: t.config.colors ?? {}, scales: t.config.scales ?? {}, blockFills: t.config.blockFills ?? {} }); toast.success(`Modèle « ${t.name} » appliqué`) }
   }
 
   const removeTemplate = async (id: string) => {
