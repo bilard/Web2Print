@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { defaultPromoFieldMap, extractPromoFields } from './promoMapping'
+import { defaultPromoFieldMap, extractPromoFields, computeRemiseLabel, displayedRemisePct } from './promoMapping'
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
+import type { PromoFields } from './promoTypes'
+
+/** PromoFields neutre + surcharges, pour tester l'affichage de la remise. */
+const F = (over: Partial<PromoFields>): PromoFields => ({
+  name: '', image: null, brand: '', ref: '', ean: '', oldPrice: null, newPrice: null,
+  currency: 'EUR', unit: '', description: '', category: '', unitPrice: '', promoLabel: '',
+  mechanism: 'simple', remisePct: null, remiseMontant: null, lotQty: null, lotOffert: null,
+  lotPrice: null, validFrom: null, validTo: null, mentions: '', enseigne: '', badges: [], ...over,
+})
 
 const cols: MergeColumn[] = [
   { key: 'ai_name', label: 'Nom', fieldType: 'text' },
@@ -38,5 +47,30 @@ describe('extractPromoFields', () => {
     expect(f.image).toBeNull()
     expect(f.mechanism).toBe('simple')
     expect(f.currency).toBe('EUR')
+  })
+})
+
+describe('computeRemiseLabel', () => {
+  it('colonne « Promotion » prioritaire (entier, ratio, brut)', () => {
+    expect(computeRemiseLabel(F({ promoLabel: '28' }))).toBe('-28%')
+    expect(computeRemiseLabel(F({ promoLabel: '0.28' }))).toBe('-28%')
+    expect(computeRemiseLabel(F({ promoLabel: '3 achetés = 1 offert' }))).toBe('3 achetés = 1 offert')
+  })
+  it('repli sur la remise calculée si pas de « Promotion »', () => {
+    expect(computeRemiseLabel(F({ remisePct: 25 }))).toBe('-25%')
+    expect(computeRemiseLabel(F({}))).toBeUndefined()
+  })
+})
+
+describe('displayedRemisePct (colonne synthétique « Remise (%) »)', () => {
+  it('reflète la remise AFFICHÉE, quelle que soit son origine', () => {
+    expect(displayedRemisePct(F({ promoLabel: '28' }))).toBe(28)      // entier → -28% → 28
+    expect(displayedRemisePct(F({ promoLabel: '0.28' }))).toBe(28)    // ratio → -28% → 28
+    expect(displayedRemisePct(F({ promoLabel: '28%' }))).toBe(28)     // texte « 28% » brut → 28
+    expect(displayedRemisePct(F({ remisePct: 25 }))).toBe(25)         // calcul pur prix → 25
+  })
+  it('null si le badge n’exprime pas un pourcentage', () => {
+    expect(displayedRemisePct(F({ promoLabel: 'Lot 3+1' }))).toBeNull()
+    expect(displayedRemisePct(F({}))).toBeNull()
   })
 })

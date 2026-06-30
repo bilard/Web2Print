@@ -3,7 +3,7 @@
 // dérivés (la remise affichée « -28% » vient du calcul prix barré/promo, pas d'une colonne).
 import type { MergeColumn, MergeRow } from '@/stores/merge.store'
 import type { PromoFieldKey } from './promoTypes'
-import { extractPromoFields } from './promoMapping'
+import { extractPromoFields, displayedRemisePct } from './promoMapping'
 
 /** Colonnes synthétiques (clés préfixées `__` pour éviter toute collision). */
 export const RULE_SYNTHETIC_COLUMNS: MergeColumn[] = [
@@ -21,7 +21,9 @@ export function augmentRowForRules(
   const f = extractPromoFields(row, columns, fieldMap)
   return {
     ...row,
-    __remisePct: f.remisePct ?? '',
+    // Remise AFFICHÉE (colonne « Promotion » prioritaire, sinon calcul) — pas la
+    // remise prix-pure : c'est ce que voit l'utilisateur sur le badge.
+    __remisePct: displayedRemisePct(f) ?? '',
     __newPrice: f.newPrice ?? '',
     __oldPrice: f.oldPrice ?? '',
   }

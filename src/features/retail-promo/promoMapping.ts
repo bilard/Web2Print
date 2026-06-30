@@ -59,6 +59,40 @@ function num(row: MergeRow, columns: MergeColumn[], key?: string): number | null
   return parsePrice(getRowValue(row, key, columns))
 }
 
+/** Formate la mécanique promo affichée : ratio 0.28 → « -28% », 28 → « -28% », sinon texte brut. */
+function fmtPromoLabel(raw: string): string | undefined {
+  const t = raw.trim()
+  if (!t) return undefined
+  const n = Number(t.replace(',', '.'))
+  if (Number.isFinite(n)) {
+    if (n > 0 && n < 1) return `-${Math.round(n * 100)}%`
+    if (n >= 1 && n < 100) return `-${Math.round(n)}%`
+  }
+  return t
+}
+
+/**
+ * Libellé de remise AFFICHÉ sur le badge : la colonne « Promotion » (promoLabel)
+ * est prioritaire, sinon la remise calculée prix barré/promo. Source unique
+ * partagée par l'aperçu (toCardData) ET les règles conditionnelles.
+ */
+export function computeRemiseLabel(f: PromoFields): string | undefined {
+  return fmtPromoLabel(f.promoLabel) || (f.remisePct != null ? `-${f.remisePct}%` : undefined)
+}
+
+/**
+ * Magnitude numérique de la remise AFFICHÉE (pour la colonne synthétique
+ * « Remise (%) » des règles). Dérive du libellé final (computeRemiseLabel) pour
+ * garantir l'égalité avec ce que voit l'utilisateur, quelle que soit l'origine
+ * (colonne « Promotion » ou calcul). `null` si le badge n'exprime pas un pourcentage.
+ */
+export function displayedRemisePct(f: PromoFields): number | null {
+  const label = computeRemiseLabel(f)
+  if (!label) return null
+  const m = label.match(/-?(\d+(?:[.,]\d+)?)\s*%/)
+  return m ? Number(m[1].replace(',', '.')) : null
+}
+
 export function extractPromoFields(
   row: MergeRow,
   columns: MergeColumn[],

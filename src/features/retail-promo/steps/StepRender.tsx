@@ -8,7 +8,7 @@ import { functions } from '@/lib/firebase/config'
 import { getRowValue } from '@/features/merge/mergeEngine'
 import { isDriveImageRef, extractDriveFileId, resolveDriveImageUrl } from '@/features/dam/driveAssets'
 import { useRetailPromoStore } from '../retailPromo.store'
-import { extractPromoFields } from '../promoMapping'
+import { extractPromoFields, computeRemiseLabel } from '../promoMapping'
 import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { resolveEffect, type RuleEffect } from '@/features/merge/conditionalRules'
@@ -59,18 +59,6 @@ async function resolveImg(url?: string): Promise<string | undefined> {
   }
 }
 
-/** Formate la mécanique promo : ratio 0.28 → « -28% », 28 → « -28% », sinon texte brut. */
-function fmtPromoLabel(raw: string): string | undefined {
-  const t = raw.trim()
-  if (!t) return undefined
-  const n = Number(t.replace(',', '.'))
-  if (Number.isFinite(n)) {
-    if (n > 0 && n < 1) return `-${Math.round(n * 100)}%`
-    if (n >= 1 && n < 100) return `-${Math.round(n)}%`
-  }
-  return t
-}
-
 function validText(f: PromoFields): string {
   if (f.validFrom && f.validTo) return `Offre valable du ${f.validFrom} au ${f.validTo}`
   if (f.validTo) return `Offre valable jusqu'au ${f.validTo}`
@@ -87,7 +75,7 @@ function toCardData(f: PromoFields, euroSep: { now?: boolean; was?: boolean } = 
     priceNow: f.newPrice != null ? formatPrice(f.newPrice, f.currency, euroSep.now) : '—',
     priceWas: f.oldPrice != null ? formatPrice(f.oldPrice, f.currency, euroSep.was) : undefined,
     unitPrice: f.unitPrice || undefined,
-    remiseLabel: fmtPromoLabel(f.promoLabel) || (f.remisePct != null ? `-${f.remisePct}%` : undefined),
+    remiseLabel: computeRemiseLabel(f),
     validite: validText(f),
     imageUrl: f.image ?? undefined,
   }
