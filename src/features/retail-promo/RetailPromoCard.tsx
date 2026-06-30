@@ -338,6 +338,8 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       return {
         contentEditable: true, suppressContentEditableWarning: true,
         onDoubleClick: (e) => e.stopPropagation(),
+        // Laisse le clic placer le curseur dans le texte sans déclencher le drag du bloc parent.
+        onPointerDown: (e) => e.stopPropagation(),
         onBlur: (e) => { onEditText!(key, (e.currentTarget.innerText || '').replace(/\s*\n\s*/g, ' ').trim()); setEditingKey(null) },
         onKeyDown: (e) => {
           if (e.key === 'Escape') { e.preventDefault(); setEditingKey(null) }
@@ -376,7 +378,8 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
       if (ef) {
         if (ef.visible === false) css.display = 'none'
         if (ef.opacity != null) css.opacity = ef.opacity
-        if (ef.fill) css.color = ef.fill
+        // « Changer la couleur » : texte → couleur du texte ; bloc déco → fond.
+        if (ef.fill) { if ((STYLE_KEYS as PromoBlockId[]).includes(id)) css.color = ef.fill; else css.background = ef.fill }
         if (ef.zOrder) css.zIndex = ef.zOrder === 'front' ? 999 : -1
         if (ef.scale && ef.scale !== 1) css.transform = `${css.transform ?? ''} scale(${ef.scale})`.trim()
       }

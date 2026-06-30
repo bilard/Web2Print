@@ -7,13 +7,14 @@ import {
   DEFAULT_RULE_OPACITY, DEFAULT_RULE_SCALE,
   type ConditionalRule, type RuleOperator, type RuleActionType,
 } from '@/features/merge/conditionalRules'
-import type { PromoBlockId } from './RetailPromoCard'
+import { STYLE_KEYS, type PromoBlockId } from './RetailPromoCard'
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r${Math.round(performance.now() * 1000)}`)
 
 /** Section « Règles conditionnelles » par élément (afficher/styler selon la valeur d'une colonne). */
 export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
   const { config, rawColumns, setRules } = useRetailPromoStore()
+  const isDeco = !(STYLE_KEYS as PromoBlockId[]).includes(id)
   const rules = config.rules?.[id] ?? []
   const update = (next: ConditionalRule[]) => setRules(id, next)
   const patch = (rid: string, p: Partial<ConditionalRule>) => update(rules.map((r) => r.id === rid ? { ...r, ...p } : r))
@@ -46,7 +47,10 @@ export function PromoConditionalSection({ id }: { id: PromoBlockId }) {
                   {(Object.keys(ACTION_LABELS) as RuleActionType[]).map((a) => <option key={a} value={a}>{ACTION_LABELS[a]}</option>)}
                 </select>
               </div>
-              {r.action.type === 'setColor' && <ColorPicker value={r.action.color ?? '#e11d48'} onChange={(c) => patch(r.id, { action: { type: 'setColor', color: c } })} />}
+              {r.action.type === 'setColor' && <>
+                <ColorPicker value={r.action.color ?? '#e11d48'} onChange={(c) => patch(r.id, { action: { type: 'setColor', color: c } })} />
+                <p className="text-[10px] text-white/30">{isDeco ? 'Colore le fond de ce bloc.' : 'Colore le texte.'}</p>
+              </>}
               {r.action.type === 'setOpacity' && (
                 <input type="number" min={0} max={100} value={Math.round((r.action.opacity ?? DEFAULT_RULE_OPACITY) * 100)}
                   onChange={(e) => patch(r.id, { action: { type: 'setOpacity', opacity: Number(e.target.value) / 100 } })} className={inputCls} />

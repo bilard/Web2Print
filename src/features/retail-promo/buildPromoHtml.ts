@@ -1,5 +1,5 @@
 import type { RuleEffect } from '@/features/merge/conditionalRules'
-import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, elementCss, blockBgCss, blockBoxCssString, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './RetailPromoCard'
+import { PROMO_CSS, FONTS_HREF, splitPrice, idealText, elementCss, blockBgCss, blockBoxCssString, STYLE_KEYS, type RetailCardData, type PromoTemplateConfig, type PromoColorKey, type PromoBlockId } from './RetailPromoCard'
 
 type Effects = Partial<Record<PromoBlockId, RuleEffect>>
 
@@ -12,7 +12,7 @@ const efCss = (effects: Effects | undefined, id: PromoBlockId): string => {
   if (!e) return ''
   const p: string[] = []
   if (e.visible === false) p.push('display:none')
-  if (e.fill) p.push(`color:${esc(e.fill)}`)
+  if (e.fill) p.push(`${(STYLE_KEYS as PromoBlockId[]).includes(id) ? 'color' : 'background'}:${esc(e.fill)}`)
   if (e.opacity != null) p.push(`opacity:${e.opacity}`)
   if (e.zOrder) p.push(`z-index:${e.zOrder === 'front' ? 999 : -1}`)
   return p.length ? `${p.join(';')};` : ''
