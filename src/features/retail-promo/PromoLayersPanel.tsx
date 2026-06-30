@@ -57,7 +57,9 @@ export function PromoLayersPanel() {
         const u = card.imageUrl
         if (!u) return ''
         if (u.startsWith('data:') || u.startsWith('blob:')) return 'Image intégrée'
-        return u.split('?')[0].split(/[/\\]/).pop() || ''
+        if (/drive\.google|googleusercontent/.test(u)) return 'Image Drive'
+        const file = u.split('?')[0].split(/[/\\]/).pop() || ''
+        return /^(view|preview|edit)$/i.test(file) ? 'Image' : file
       }
       default: return '' // header, price : conteneurs déco sans texte propre
     }
