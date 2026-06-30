@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useRetailPromoStore } from './retailPromo.store'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { StepSource } from './steps/StepSource'
 import { StepMapping } from './steps/StepMapping'
 import { StepRender } from './steps/StepRender'
+import { PromoSavedList } from './PromoSavedList'
 
 const STEP_LABELS = {
   source: 'Source',
@@ -14,11 +16,23 @@ const STEPS = ['source', 'mapping', 'template'] as const
 
 export function RetailPromoPage() {
   const { step, reset } = useRetailPromoStore()
+  const [mode, setMode] = useState<'wizard' | 'list'>('wizard')
 
-  // Intent module : reset sur « action:new »
+  // Intent module : reset sur « action:new », liste sur « action:list ».
   useModuleIntent('retail-promo', (action) => {
-    if (action === 'action:new') reset()
+    if (action === 'action:new') { reset(); setMode('wizard') }
+    if (action === 'action:list') setMode('list')
   })
+
+  if (mode === 'list') {
+    return (
+      <div className="flex h-full flex-col bg-background">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <PromoSavedList onOpened={() => setMode('wizard')} onNew={() => { reset(); setMode('wizard') }} />
+        </div>
+      </div>
+    )
+  }
 
   const currentStepIndex = STEPS.indexOf(step)
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 import JSZip from 'jszip'
 import { httpsCallable } from 'firebase/functions'
-import { Download, Package, ChevronLeft, ChevronRight, Loader2, FileCode } from 'lucide-react'
+import { Download, Package, ChevronLeft, ChevronRight, Loader2, FileCode, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { functions } from '@/lib/firebase/config'
 import { getRowValue } from '@/features/merge/mergeEngine'
@@ -12,6 +12,7 @@ import { extractPromoFields } from '../promoMapping'
 import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { resolveEffect, type RuleEffect } from '@/features/merge/conditionalRules'
+import { savePromo, listPromos } from '../promosApi'
 import { RetailPromoCard, type RetailCardData, type PromoBlockId } from '../RetailPromoCard'
 import { PromoTemplateEditor } from '../PromoTemplateEditor'
 import { PromoPropertiesPanel } from '../PromoPropertiesPanel'
@@ -99,13 +100,15 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, sourceRef, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
 
   const [index, setIndex] = useState(0)
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
   const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
   const [imgOverride, setImgOverride] = useState<Record<number, string>>({}) // image remplacée par produit (panneau Images)
+  const [ficheName, setFicheName] = useState('')
+  const [savingFiche, setSavingFiche] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
 
@@ -143,6 +146,18 @@ export function StepRender() {
     }
     return out
   }, [safe, rawRows, rawColumns, config.rules])
+
+  const saveFiche = async () => {
+    const name = (ficheName.trim() || cards[safe]?.name || 'Fiche').slice(0, 80)
+    setSavingFiche(true)
+    try {
+      // Upsert par nom : réenregistrer une fiche du même nom l'écrase (pas de doublon).
+      const existing = (await listPromos()).find((p) => p.name === name)
+      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows }, existing?.id)
+      setFicheName(name)
+      toast.success(existing ? `Fiche « ${name} » mise à jour` : `Fiche « ${name} » enregistrée`)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement') } finally { setSavingFiche(false) }
+  }
 
   const downloadOne = async () => {
     if (!previewRef.current) return
@@ -209,6 +224,20 @@ export function StepRender() {
 
       {/* Panneau d'édition du template (IA / champs / modèles) */}
       <PromoTemplateEditor />
+
+      {/* Enregistrer la fiche (réutilisable depuis « Mes promos ») */}
+      <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-surface px-4 py-2.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-white/40">Fiche</span>
+        <input value={ficheName} onChange={(e) => setFicheName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void saveFiche() }}
+          placeholder={`Nom de la fiche… (déf. ${cards[safe]?.name?.slice(0, 24) || 'produit'})`}
+          className="w-64 rounded-lg border border-white/10 bg-well px-2.5 py-1.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#6366f1]" />
+        <button onClick={() => void saveFiche()} disabled={savingFiche}
+          className="flex items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-1.5 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
+          {savingFiche ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer la fiche
+        </button>
+        <span className="text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
+      </div>
 
       {/* Calques + Images (gauche) · Aperçu (centre) · Propriétés (droite) */}
       <div className="flex items-start gap-4">

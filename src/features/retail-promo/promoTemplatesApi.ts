@@ -21,11 +21,13 @@ export async function listPromoTemplates(): Promise<UserPromoTemplate[]> {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-/** Enregistre l'habillage courant comme modèle réutilisable. */
+/** Enregistre l'habillage courant comme modèle réutilisable (upsert par nom → pas de doublon). */
 export async function savePromoTemplate(name: string, config: PromoTemplateConfig): Promise<void> {
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('Non connecté')
-  await setDoc(doc(colPath(uid)), { name, config, createdAt: serverTimestamp() })
+  const existing = (await listPromoTemplates()).find((t) => t.name === name)
+  const ref = existing ? doc(db, 'users', uid, 'promoTemplates', existing.id) : doc(colPath(uid))
+  await setDoc(ref, { name, config, createdAt: serverTimestamp() })
 }
 
 export async function deletePromoTemplate(id: string): Promise<void> {
