@@ -254,7 +254,8 @@ export function StepRender() {
           className="flex items-center gap-2 rounded-lg bg-[#6366f1] px-3 py-1.5 text-sm font-medium text-[#fff] hover:bg-[#5457e5] disabled:opacity-40">
           {savingFiche ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer la fiche
         </button>
-        <span className="text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
+        {sourceRef?.fileName && <span className="truncate text-xs text-white/40" title={sourceRef.fileName}>📄 {sourceRef.fileName}</span>}
+        <span className="ml-auto shrink-0 text-xs text-white/30">{cards.length} produit{cards.length > 1 ? 's' : ''}</span>
       </div>
 
       {/* Calques + Images (gauche) · Aperçu (centre) · Propriétés (droite) */}

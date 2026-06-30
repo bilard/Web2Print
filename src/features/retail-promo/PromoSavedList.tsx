@@ -60,6 +60,7 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-white">{p.name}</div>
+                    <div className="truncate text-[11px] text-white/30" title={p.sourceRef?.fileName}>{p.sourceRef?.fileName ?? 'Saisie manuelle'}</div>
                     <div className="text-xs text-white/40">{p.rowCount} produit{p.rowCount > 1 ? 's' : ''}{p.updatedAt ? ` · ${fmtDate(p.updatedAt)}` : ''}</div>
                   </div>
                   <button onClick={() => void remove(p.id)} title="Supprimer" className="text-white/30 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
