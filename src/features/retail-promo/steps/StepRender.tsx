@@ -13,6 +13,7 @@ import { formatPrice } from '../priceParse'
 import type { PromoFields } from '../promoTypes'
 import { resolveEffect, type RuleEffect } from '@/features/merge/conditionalRules'
 import { savePromo, listPromos } from '../promosApi'
+import { uploadPromoImageToDam } from '../damImageUpload'
 import { RetailPromoCard, type RetailCardData, type PromoBlockId } from '../RetailPromoCard'
 import { PromoTemplateEditor } from '../PromoTemplateEditor'
 import { PromoPropertiesPanel } from '../PromoPropertiesPanel'
@@ -120,20 +121,22 @@ export function StepRender() {
 
   const safe = cards.length ? Math.min(index, cards.length - 1) : 0
 
-  // Résout l'image du produit affiché (proxy serveur → data-URI capturable).
+  // Résout l'image affichée (override DAM/Drive prioritaire, sinon image du dataset)
+  // → data-URI/blob capturable par html2canvas.
+  const srcRef = imgOverride[safe] ?? cards[safe]?.imageUrl
   useEffect(() => {
     let cancelled = false
     setResolvedImg(undefined)
-    void resolveImg(cards[safe]?.imageUrl).then((u) => { if (!cancelled) setResolvedImg(u) })
+    void resolveImg(srcRef).then((u) => { if (!cancelled) setResolvedImg(u) })
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safe, cards[safe]?.imageUrl])
+  }, [safe, srcRef])
 
   if (cards.length === 0) {
     return <p className="text-white/60 text-sm">Aucun produit. <button className="text-[#6366f1]" onClick={() => setStep('mapping')}>← Retour</button></p>
   }
 
-  const shownImage = imgOverride[safe] ?? resolvedImg
+  const shownImage = resolvedImg
   const currentData: RetailCardData = { ...cards[safe], imageUrl: shownImage }
 
   // Règles conditionnelles : effet visuel par bloc pour le produit affiché.
@@ -181,7 +184,7 @@ export function StepRender() {
       const node = previewRef.current
       for (let i = 0; i < cards.length; i++) {
         setIndex(i)
-        const img = await resolveImg(cards[i].imageUrl)
+        const img = await resolveImg(imgOverride[i] ?? cards[i].imageUrl)
         setResolvedImg(img)
         await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 140)))
         const blob = await capture(node)
@@ -243,8 +246,9 @@ export function StepRender() {
         <div className="flex shrink-0 flex-col gap-4">
           <PromoLayersPanel />
           <PromoImagePanel currentImage={shownImage} onReplace={(url) => {
-            // URL externe (stock) → proxy → data-URI capturable ; data:/blob: gardés tels quels.
-            void resolveImg(url).then((r) => setImgOverrideAt(safe, r ?? url))
+            // Upload vers le DAM (Drive) → on ne stocke qu'une réf légère dans la fiche.
+            const p = uploadPromoImageToDam(url, cards[safe]?.name || 'image').then((ref) => setImgOverrideAt(safe, ref))
+            toast.promise(p, { loading: 'Enregistrement de l\'image dans le DAM…', success: 'Image enregistrée (DAM)', error: (e) => (e instanceof Error ? e.message : 'Échec upload DAM') })
           }} />
         </div>
 
