@@ -243,7 +243,7 @@ export function StepRender() {
 
       {/* Calques + Images (gauche) · Aperçu (centre) · Propriétés (droite) */}
       <div className="flex items-start gap-4">
-        <div className="flex shrink-0 flex-col gap-4">
+        <div className="sticky top-2 flex max-h-[calc(100vh-96px)] shrink-0 flex-col gap-4 self-start">
           <PromoLayersPanel />
           <PromoImagePanel currentImage={shownImage} onReplace={(url) => {
             // Upload vers le DAM (Drive) → on ne stocke qu'une réf légère dans la fiche.

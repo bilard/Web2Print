@@ -42,7 +42,7 @@ export function PromoImagePanel({ currentImage, onReplace }: Props) {
   }
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col rounded-xl border border-white/10 bg-surface" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+    <aside className="flex max-h-[42vh] w-56 shrink-0 flex-col rounded-xl border border-white/10 bg-surface">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">Images</h3>
       </div>

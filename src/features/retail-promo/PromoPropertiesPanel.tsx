@@ -21,7 +21,7 @@ export function PromoPropertiesPanel() {
   useEffect(() => { setTab(isText ? 'text' : 'shape') }, [selectedKey, isText])
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col rounded-xl border border-white/10 bg-surface" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+    <aside className="sticky top-2 flex max-h-[calc(100vh-96px)] w-72 shrink-0 flex-col self-start rounded-xl border border-white/10 bg-surface">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">Propriétés</h3>
         {selectedKey && <button onClick={() => setSelectedKey(null)} className="text-white/40 hover:text-white" title="Désélectionner"><X className="h-4 w-4" /></button>}

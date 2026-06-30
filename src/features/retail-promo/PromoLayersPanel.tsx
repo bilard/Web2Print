@@ -29,7 +29,7 @@ export function PromoLayersPanel() {
   const rows = LAYERS.filter((l) => l.label.toLowerCase().includes(q.toLowerCase()))
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col rounded-xl border border-white/10 bg-surface" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+    <aside className="flex min-h-0 w-56 flex-1 flex-col rounded-xl border border-white/10 bg-surface">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">Calques</h3>
         <span className="text-xs text-white/40">{LAYERS.length}</span>
