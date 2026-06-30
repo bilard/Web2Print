@@ -56,10 +56,18 @@ export function PromoTemplateEditor() {
       const cats = Array.from(
         new Set(rawRows.slice(0, 60).map((r) => extractPromoFields(r, rawColumns, fieldMap).category).filter(Boolean)),
       )
-      const patch = await generatePromoTemplate(brief.trim(), cats)
-      // Réinitialise les surcharges par élément : sinon styles[key].fill (precedence > colors) masque l'habillage IA.
-      setConfig({ ...patch, styles: {}, blockFills: {} })
-      toast.success('Habillage généré')
+      // Échantillons par colonne (pour que l'IA respecte le format des valeurs dans les conditions).
+      const columns = rawColumns.map((c) => ({
+        label: c.label || c.key,
+        samples: Array.from(new Set(rawRows.slice(0, 40).map((r) => String((r as Record<string, unknown>)[c.key] ?? '').trim()).filter(Boolean))).slice(0, 3),
+      }))
+      const { style, rules } = await generatePromoTemplate(brief.trim(), { categories: cats as string[], columns })
+      const patch: Partial<PromoTemplateConfig> = {}
+      // Habillage : réinitialise les surcharges par élément (sinon styles[key].fill masque les couleurs IA).
+      if (style) Object.assign(patch, style, { styles: {}, blockFills: {} })
+      if (rules) patch.rules = { ...config.rules, ...rules }
+      setConfig(patch)
+      toast.success(rules && !style ? 'Règle conditionnelle générée' : style && rules ? 'Habillage + règle générés' : 'Habillage généré')
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec génération IA') } finally { setBusy(false) }
   }
 
