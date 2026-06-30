@@ -88,7 +88,7 @@ export function PromoLayersPanel() {
     const active = selectedKey === n.id
     const value = blockValue(n.id)
     return (
-      <div key={n.id} onClick={() => setSelectedKey(n.id)} style={{ paddingLeft: 8 + depth * 16 }}
+      <div key={n.id} onClick={() => { setSelectedKey(n.id); if (hasChildren) toggle(n.id) }} style={{ paddingLeft: 8 + depth * 16 }}
         className={`flex cursor-pointer items-center gap-1.5 rounded py-1.5 pr-2 text-sm ${active ? 'bg-[#6366f1]/20 text-white' : 'text-white/70 hover:bg-white/5'}`}>
         {hasChildren
           ? <button onClick={(e) => { e.stopPropagation(); toggle(n.id) }} className="shrink-0 text-white/40 hover:text-white" title={open ? 'Replier' : 'Déplier'}>
