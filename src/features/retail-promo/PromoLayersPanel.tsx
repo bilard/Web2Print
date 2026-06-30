@@ -42,7 +42,7 @@ const Icon = ({ k }: { k: IconKind }) =>
 export function PromoLayersPanel() {
   const { config, selectedKey, setSelectedKey, setHidden, rawRows, rawColumns, fieldMap, currentIndex, textOverride } = useRetailPromoStore()
   const [q, setQ] = useState('')
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set()) // groupes ouverts par défaut
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(GROUP_IDS)) // groupes repliés par défaut
 
   // Carte du produit courant (sans surcharges) + surcharges texte par fiche.
   const safe = rawRows.length ? Math.min(currentIndex, rawRows.length - 1) : 0
