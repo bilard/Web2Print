@@ -1,35 +1,48 @@
-import { useState } from 'react'
-import { Eye, EyeOff, Type, Square, ImageIcon, Circle, Search } from 'lucide-react'
+import { Fragment, useState } from 'react'
+import { Eye, EyeOff, Type, Square, ImageIcon, Circle, Search, ChevronRight, ChevronDown } from 'lucide-react'
 import { useRetailPromoStore } from './retailPromo.store'
 import { extractPromoFields } from './promoMapping'
 import { toCardData } from './promoCardData'
 import type { PromoBlockId, RetailCardData } from './RetailPromoCard'
 
-// Ordre d'affichage (haut → bas de la carte). icon : type d'élément.
-const LAYERS: Array<{ id: PromoBlockId; label: string; isText: boolean; icon: 'block' | 'text' | 'image' | 'badge' }> = [
-  { id: 'header', label: 'Bandeau en-tête', isText: false, icon: 'block' },
-  { id: 'category', label: 'Catégorie', isText: true, icon: 'text' },
-  { id: 'name', label: 'Nom', isText: true, icon: 'text' },
-  { id: 'brand', label: 'Marque', isText: true, icon: 'text' },
-  { id: 'description', label: 'Description', isText: true, icon: 'text' },
-  { id: 'image', label: 'Cadre photo', isText: false, icon: 'image' },
-  { id: 'badge', label: 'Badge remise', isText: false, icon: 'badge' },
-  { id: 'price', label: 'Bandeau prix', isText: false, icon: 'block' },
-  { id: 'priceLabel', label: 'Libellé prix', isText: true, icon: 'text' },
-  { id: 'priceWas', label: 'Prix barré', isText: true, icon: 'text' },
-  { id: 'unitPrice', label: 'Prix unitaire', isText: true, icon: 'text' },
-  { id: 'priceNow', label: 'Prix promo', isText: true, icon: 'text' },
+type IconKind = 'block' | 'text' | 'image' | 'badge'
+interface LayerNode { id: PromoBlockId; label: string; isText: boolean; icon: IconKind; children?: LayerNode[] }
+
+// Arbre des calques par GROUPE (conteneur déco → ses sous-éléments), reflétant
+// la structure de la carte. Ordre haut → bas.
+const TREE: LayerNode[] = [
+  { id: 'header', label: 'Bandeau en-tête', isText: false, icon: 'block', children: [
+    { id: 'category', label: 'Catégorie', isText: true, icon: 'text' },
+    { id: 'name', label: 'Nom', isText: true, icon: 'text' },
+    { id: 'brand', label: 'Marque', isText: true, icon: 'text' },
+    { id: 'description', label: 'Description', isText: true, icon: 'text' },
+  ] },
+  { id: 'image', label: 'Cadre photo', isText: false, icon: 'image', children: [
+    { id: 'badge', label: 'Badge remise', isText: false, icon: 'badge' },
+  ] },
+  { id: 'price', label: 'Bandeau prix', isText: false, icon: 'block', children: [
+    { id: 'priceLabel', label: 'Libellé prix', isText: true, icon: 'text' },
+    { id: 'priceWas', label: 'Prix barré', isText: true, icon: 'text' },
+    { id: 'unitPrice', label: 'Prix unitaire', isText: true, icon: 'text' },
+    { id: 'priceNow', label: 'Prix promo', isText: true, icon: 'text' },
+  ] },
   { id: 'footer', label: 'Pied de page', isText: true, icon: 'text' },
 ]
-const Icon = ({ k }: { k: 'block' | 'text' | 'image' | 'badge' }) =>
+
+const flatten = (nodes: LayerNode[]): LayerNode[] => nodes.flatMap((n) => [n, ...(n.children ? flatten(n.children) : [])])
+const ALL = flatten(TREE)
+const GROUP_IDS = TREE.filter((n) => n.children?.length).map((n) => n.id)
+
+const Icon = ({ k }: { k: IconKind }) =>
   k === 'text' ? <Type className="h-3.5 w-3.5" /> : k === 'image' ? <ImageIcon className="h-3.5 w-3.5" /> : k === 'badge' ? <Circle className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />
 
-/** Panneau Calques : liste des éléments de la carte (sélection, visibilité).
- *  Chaque calque montre AUSSI la valeur réelle du produit affiché (même source
- *  que l'aperçu) pour distinguer d'un coup d'œil deux blocs de même type. */
+/** Panneau Calques : ARBRE par groupe (bandeau → sous-éléments). Chaque calque
+ *  montre la valeur réelle du produit affiché (même source que l'aperçu) pour
+ *  distinguer d'un coup d'œil deux blocs de même type. */
 export function PromoLayersPanel() {
   const { config, selectedKey, setSelectedKey, setHidden, rawRows, rawColumns, fieldMap, currentIndex, textOverride } = useRetailPromoStore()
   const [q, setQ] = useState('')
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set()) // groupes ouverts par défaut
 
   // Carte du produit courant (sans surcharges) + surcharges texte par fiche.
   const safe = rawRows.length ? Math.min(currentIndex, rawRows.length - 1) : 0
@@ -66,13 +79,54 @@ export function PromoLayersPanel() {
   }
 
   const needle = q.toLowerCase().trim()
-  const rows = LAYERS.filter((l) => !needle || l.label.toLowerCase().includes(needle) || blockValue(l.id).toLowerCase().includes(needle))
+  const matches = (n: LayerNode) => n.label.toLowerCase().includes(needle) || blockValue(n.id).toLowerCase().includes(needle)
+
+  const toggle = (id: string) => setCollapsed((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+
+  const renderRow = (n: LayerNode, depth: number, hasChildren: boolean, open: boolean) => {
+    const hidden = !!config.hidden?.[n.id]
+    const active = selectedKey === n.id
+    const value = blockValue(n.id)
+    return (
+      <div key={n.id} onClick={() => setSelectedKey(n.id)} style={{ paddingLeft: 8 + depth * 16 }}
+        className={`flex cursor-pointer items-center gap-1.5 rounded py-1.5 pr-2 text-sm ${active ? 'bg-[#6366f1]/20 text-white' : 'text-white/70 hover:bg-white/5'}`}>
+        {hasChildren
+          ? <button onClick={(e) => { e.stopPropagation(); toggle(n.id) }} className="shrink-0 text-white/40 hover:text-white" title={open ? 'Replier' : 'Déplier'}>
+              {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            </button>
+          : <span className="w-3.5 shrink-0" />}
+        <span className="text-white/40"><Icon k={n.icon} /></span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate">{n.label}</span>
+            {n.isText && <span className="text-[10px] font-bold text-[#818cf8]">Aa</span>}
+          </div>
+          {value && <div className="truncate text-[11px] leading-tight text-white/40" title={value}>{value}</div>}
+        </div>
+        <button onClick={(e) => { e.stopPropagation(); setHidden(n.id, !hidden) }} className="shrink-0 text-white/40 hover:text-white" title={hidden ? 'Afficher' : 'Masquer'}>
+          {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    )
+  }
+
+  const renderTree = (n: LayerNode, depth: number) => {
+    const hasChildren = !!n.children?.length
+    const open = !collapsed.has(n.id)
+    return (
+      <Fragment key={n.id}>
+        {renderRow(n, depth, hasChildren, open)}
+        {hasChildren && open && n.children!.map((c) => renderTree(c, depth + 1))}
+      </Fragment>
+    )
+  }
 
   return (
     <aside className="flex min-h-0 w-56 flex-1 flex-col rounded-xl border border-white/10 bg-surface">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">Calques</h3>
-        <span className="text-xs text-white/40">{LAYERS.length}</span>
+        <button onClick={() => setCollapsed((s) => (s.size ? new Set() : new Set(GROUP_IDS)))}
+          className="text-xs text-white/40 hover:text-white" title={collapsed.size ? 'Tout déplier' : 'Tout replier'}>{ALL.length}</button>
       </div>
       <div className="px-3 py-2">
         <div className="flex items-center gap-2 rounded border border-white/10 bg-well px-2 py-1">
@@ -81,27 +135,9 @@ export function PromoLayersPanel() {
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
-        {rows.map((l) => {
-          const hidden = !!config.hidden?.[l.id]
-          const active = selectedKey === l.id
-          const value = blockValue(l.id)
-          return (
-            <div key={l.id} onClick={() => setSelectedKey(l.id)}
-              className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm ${active ? 'bg-[#6366f1]/20 text-white' : 'text-white/70 hover:bg-white/5'}`}>
-              <span className="text-white/40"><Icon k={l.icon} /></span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate">{l.label}</span>
-                  {l.isText && <span className="text-[10px] font-bold text-[#818cf8]">Aa</span>}
-                </div>
-                {value && <div className="truncate text-[11px] leading-tight text-white/40" title={value}>{value}</div>}
-              </div>
-              <button onClick={(e) => { e.stopPropagation(); setHidden(l.id, !hidden) }} className="shrink-0 text-white/40 hover:text-white" title={hidden ? 'Afficher' : 'Masquer'}>
-                {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              </button>
-            </div>
-          )
-        })}
+        {needle
+          ? ALL.filter(matches).map((n) => renderRow(n, 0, false, false))
+          : TREE.map((n) => renderTree(n, 0))}
       </div>
     </aside>
   )
