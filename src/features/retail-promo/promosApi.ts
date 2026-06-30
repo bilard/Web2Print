@@ -17,6 +17,7 @@ export interface SavedPromoMeta {
 export interface PromoPayload {
   columns: MergeColumn[]
   rows: MergeRow[]
+  imgOverride?: Record<number, string> // images produit remplacées (panneau Images)
 }
 export interface SavePromoInput {
   name: string
@@ -25,6 +26,7 @@ export interface SavePromoInput {
   config: PromoTemplateConfig
   columns: MergeColumn[]
   rows: MergeRow[]
+  imgOverride?: Record<number, string>
 }
 
 const metaCol = (uid: string) => collection(db, 'users', uid, 'promos')
@@ -35,7 +37,7 @@ const MAX_PAYLOAD = 900_000 // garde-fou limite Firestore ~1 Mo/doc
 export async function savePromo(input: SavePromoInput, existingId?: string): Promise<string> {
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('Non connecté')
-  const payload: PromoPayload = { columns: input.columns, rows: input.rows }
+  const payload: PromoPayload = { columns: input.columns, rows: input.rows, imgOverride: input.imgOverride }
   const payloadJson = JSON.stringify(payload)
   if (payloadJson.length > MAX_PAYLOAD) throw new Error('Catalogue trop volumineux pour être sauvegardé (> 900 Ko)')
 

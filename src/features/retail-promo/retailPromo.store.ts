@@ -12,12 +12,15 @@ interface RetailPromoState {
   sourceRef: DataSourceRef | null
   config: PromoTemplateConfig
   selectedKey: PromoBlockId | null
+  imgOverride: Record<number, string> // image produit remplacée par index (panneau Images)
 
   setStep: (step: RetailPromoState['step']) => void
   setSource: (ref: DataSourceRef, columns: MergeColumn[], rows: MergeRow[]) => void
   setFieldMap: (map: Partial<Record<PromoFieldKey, string>>) => void
   setConfig: (patch: Partial<PromoTemplateConfig>) => void
   setSelectedKey: (key: PromoBlockId | null) => void
+  setImgOverride: (map: Record<number, string>) => void
+  setImgOverrideAt: (index: number, url: string) => void
   setElementStyle: (key: PromoColorKey, patch: Partial<ElementStyle>) => void
   setBlockFill: (id: PromoBlockId, patch: Partial<BlockFill>) => void
   setShape: (id: PromoBlockId, patch: Partial<ShapeStyle>) => void
@@ -34,6 +37,7 @@ const defaultState = {
   sourceRef: null,
   config: DEFAULT_PROMO_CONFIG,
   selectedKey: null as PromoBlockId | null,
+  imgOverride: {} as Record<number, string>,
 }
 
 export const useRetailPromoStore = create<RetailPromoState>((set) => ({
@@ -43,6 +47,8 @@ export const useRetailPromoStore = create<RetailPromoState>((set) => ({
   setFieldMap: (fieldMap) => set({ fieldMap }),
   setConfig: (patch) => set((s) => ({ config: { ...s.config, ...patch } })),
   setSelectedKey: (selectedKey) => set({ selectedKey }),
+  setImgOverride: (imgOverride) => set({ imgOverride }),
+  setImgOverrideAt: (index, url) => set((s) => ({ imgOverride: { ...s.imgOverride, [index]: url } })),
   setElementStyle: (key, patch) => set((s) => ({
     config: { ...s.config, styles: { ...s.config.styles, [key]: { ...s.config.styles?.[key], ...patch } } },
   })),

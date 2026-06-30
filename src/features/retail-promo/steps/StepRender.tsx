@@ -100,13 +100,12 @@ async function capture(node: HTMLDivElement): Promise<Blob | null> {
 }
 
 export function StepRender() {
-  const { rawColumns, rawRows, fieldMap, config, sourceRef, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
+  const { rawColumns, rawRows, fieldMap, config, sourceRef, imgOverride, setImgOverrideAt, setConfig, setStep, selectedKey, setSelectedKey, setElementStyle } = useRetailPromoStore()
   const cards = rawRows.map((r) => toCardData(extractPromoFields(r, rawColumns, fieldMap)))
 
   const [index, setIndex] = useState(0)
   const [busy, setBusy] = useState<'one' | 'all' | 'html' | null>(null)
   const [resolvedImg, setResolvedImg] = useState<string | undefined>(undefined)
-  const [imgOverride, setImgOverride] = useState<Record<number, string>>({}) // image remplacée par produit (panneau Images)
   const [ficheName, setFicheName] = useState('')
   const [savingFiche, setSavingFiche] = useState(false)
   const [capturing, setCapturing] = useState(false)
@@ -153,7 +152,7 @@ export function StepRender() {
     try {
       // Upsert par nom : réenregistrer une fiche du même nom l'écrase (pas de doublon).
       const existing = (await listPromos()).find((p) => p.name === name)
-      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows }, existing?.id)
+      await savePromo({ name, sourceRef, fieldMap, config, columns: rawColumns, rows: rawRows, imgOverride }, existing?.id)
       setFicheName(name)
       toast.success(existing ? `Fiche « ${name} » mise à jour` : `Fiche « ${name} » enregistrée`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'enregistrement') } finally { setSavingFiche(false) }
@@ -245,7 +244,7 @@ export function StepRender() {
           <PromoLayersPanel />
           <PromoImagePanel currentImage={shownImage} onReplace={(url) => {
             // URL externe (stock) → proxy → data-URI capturable ; data:/blob: gardés tels quels.
-            void resolveImg(url).then((r) => setImgOverride((p) => ({ ...p, [safe]: r ?? url })))
+            void resolveImg(url).then((r) => setImgOverrideAt(safe, r ?? url))
           }} />
         </div>
 

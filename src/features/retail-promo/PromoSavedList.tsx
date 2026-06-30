@@ -8,7 +8,7 @@ interface Props { onOpened: () => void; onNew: () => void }
 
 /** Écran « Mes promos » : fiches enregistrées, ouverture et suppression. */
 export function PromoSavedList({ onOpened, onNew }: Props) {
-  const { setSource, setFieldMap, setConfig, setStep } = useRetailPromoStore()
+  const { setSource, setFieldMap, setConfig, setStep, setImgOverride } = useRetailPromoStore()
   const [promos, setPromos] = useState<SavedPromoMeta[] | null>(null)
   const [opening, setOpening] = useState<string | null>(null)
 
@@ -22,6 +22,7 @@ export function PromoSavedList({ onOpened, onNew }: Props) {
       setConfig(p.config)
       setFieldMap(p.fieldMap)
       setSource(p.sourceRef ?? { excelDocId: `saved_${p.id}`, sheetIndex: 0, fileName: p.name }, payload.columns, payload.rows)
+      setImgOverride(payload.imgOverride ?? {})
       setStep('template')
       onOpened()
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec de l\'ouverture') } finally { setOpening(null) }
