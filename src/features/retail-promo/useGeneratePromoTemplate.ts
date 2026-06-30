@@ -1,12 +1,22 @@
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { FONT_OPTIONS, type PromoTemplateConfig, type PromoBlockId } from './RetailPromoCard'
+import { FONT_OPTIONS, PROMO_LAYOUT_IDS, type PromoLayoutId, type PromoTemplateConfig, type PromoBlockId } from './RetailPromoCard'
 import { OPERATOR_LABELS, ACTION_LABELS, actionWithDefaults, type ConditionalRule, type RuleOperator, type RuleActionType } from '@/features/merge/conditionalRules'
 
 const FontEnum = z.enum(FONT_OPTIONS)
+const LayoutEnum = z.enum(PROMO_LAYOUT_IDS)
 const OPERATORS = Object.keys(OPERATOR_LABELS) as [RuleOperator, ...RuleOperator[]]
 const ACTIONS = Object.keys(ACTION_LABELS) as [RuleActionType, ...RuleActionType[]]
 const BLOCKS = ['header', 'image', 'badge', 'price', 'category', 'name', 'brand', 'description', 'priceLabel', 'priceWas', 'unitPrice', 'priceNow', 'footer'] as const
+
+// Ajustement fin d'un bloc dans la mise en page choisie (décalage px, échelle, masquage).
+const AdjOut = z.object({
+  block: z.enum(BLOCKS),
+  dx: z.number().optional(),
+  dy: z.number().optional(),
+  scale: z.number().optional(),
+  hidden: z.boolean().optional(),
+})
 
 // Règle conditionnelle générée par l'IA.
 const RuleOut = z.object({
@@ -21,6 +31,9 @@ const RuleOut = z.object({
 })
 
 const ResultSchema = z.object({
+  // Mise en page (optionnel — si la demande concerne la STRUCTURE/disposition).
+  layout: LayoutEnum.optional(),
+  adjustments: z.array(AdjOut).optional(),
   // Habillage (optionnel — seulement si la demande concerne le style).
   accent: z.string().optional(),
   headerBg: z.string().optional(),
@@ -45,6 +58,23 @@ type Result = z.infer<typeof ResultSchema>
 const SCHEMA_FOR_LLM: Record<string, unknown> = {
   type: 'object',
   properties: {
+    layout: {
+      type: 'string',
+      enum: [...PROMO_LAYOUT_IDS],
+      description: 'mise en page (STRUCTURE) : classique=en-tête/photo/bandeau prix empilés ; photo-cover=photo plein cadre avec bandeaux en surimpression ; prix-fort=grand bloc prix dominant en bas, chiffre géant ; minimal=fond blanc épuré avec filets accent (étiquette rayon). Ne renvoie ce champ QUE si la demande concerne la disposition/structure.',
+    },
+    adjustments: {
+      type: 'array',
+      description: 'ajustements fins par bloc DANS la mise en page choisie : décalage (dx/dy en px), échelle (scale), masquage (hidden).',
+      items: {
+        type: 'object',
+        properties: {
+          block: { type: 'string', enum: [...BLOCKS] },
+          dx: { type: 'number' }, dy: { type: 'number' }, scale: { type: 'number' }, hidden: { type: 'boolean' },
+        },
+        required: ['block'],
+      },
+    },
     accent: { type: 'string', description: 'hex bandeau prix + badge (style seulement)' },
     headerBg: { type: 'string', description: 'hex bandeau en-tête + pied (style seulement)' },
     fontHeading: { type: 'string', enum: [...FONT_OPTIONS] },
@@ -77,6 +107,12 @@ const SCHEMA_FOR_LLM: Record<string, unknown> = {
 export interface PromoGenResult {
   style?: Partial<PromoTemplateConfig>
   rules?: Partial<Record<PromoBlockId, ConditionalRule[]>>
+  layout?: PromoLayoutId
+  adjustments?: {
+    offsets: Partial<Record<PromoBlockId, { dx: number; dy: number }>>
+    scales: Partial<Record<PromoBlockId, { sx: number; sy: number }>>
+    hidden: Partial<Record<PromoBlockId, boolean>>
+  }
 }
 
 const uid = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `r${Math.round(performance.now() * 1000)}`)
@@ -101,6 +137,20 @@ function toResult(r: Result): PromoGenResult {
       if (r[k] !== undefined) (style as Record<string, unknown>)[k] = r[k]
     }
     out.style = style
+  }
+  // Mise en page + ajustements fins par bloc.
+  if (r.layout) out.layout = r.layout
+  if (r.adjustments?.length) {
+    const offsets: NonNullable<PromoGenResult['adjustments']>['offsets'] = {}
+    const scales: NonNullable<PromoGenResult['adjustments']>['scales'] = {}
+    const hidden: NonNullable<PromoGenResult['adjustments']>['hidden'] = {}
+    for (const a of r.adjustments) {
+      const block = a.block as PromoBlockId
+      if (a.dx != null || a.dy != null) offsets[block] = { dx: a.dx ?? 0, dy: a.dy ?? 0 }
+      if (a.scale != null) scales[block] = { sx: a.scale, sy: a.scale }
+      if (a.hidden != null) hidden[block] = a.hidden
+    }
+    out.adjustments = { offsets, scales, hidden }
   }
   // Règles conditionnelles groupées par bloc.
   if (r.rules?.length) {
@@ -131,7 +181,10 @@ export async function generatePromoTemplate(brief: string, ctx: PromoGenContext 
     version: 'retailPromo.template.v2',
     prompt:
       "Tu configures un gabarit d'affiche promo RETAIL (grande distribution, lumineux, JAMAIS jeu vidéo). " +
-      'Selon la demande, produis SOIT un habillage (style), SOIT des règles conditionnelles, SOIT les deux.\n' +
+      'Selon la demande, produis une MISE EN PAGE (structure), un HABILLAGE (style), des RÈGLES conditionnelles — un, plusieurs ou tous.\n' +
+      '• MISE EN PAGE (`layout`) : choisis la disposition selon l’intention. Ex. « photo en grand / plein cadre » → photo-cover ; ' +
+      '« gros prix / prix qui claque » → prix-fort ; « épuré / sobre / étiquette rayon » → minimal ; sinon classique. ' +
+      'Affine si besoin avec `adjustments` (décalage dx/dy, échelle, masquage par bloc). Ne renvoie ces champs QUE si la demande concerne la disposition.\n' +
       '• HABILLAGE (couleurs/polices) : couleurs hex, polices STRICTEMENT parmi ' + FONT_OPTIONS.join(', ') + '. ' +
       'Ne renvoie ces champs QUE si la demande concerne le style.\n' +
       '• RÈGLES CONDITIONNELLES (« si [champ] [opérateur] [valeur] alors [action] ») : remplis `rules`. ' +

@@ -6,6 +6,7 @@ import { extractPromoFields } from './promoMapping'
 import { RULE_SYNTHETIC_COLUMNS, augmentRowForRules } from './promoRuleFields'
 import { generatePromoTemplate } from './useGeneratePromoTemplate'
 import { listPromoTemplates, savePromoTemplate, deletePromoTemplate, type UserPromoTemplate } from './promoTemplatesApi'
+import { PromoLayoutPicker } from './PromoLayoutPicker'
 import type { PromoTemplateConfig } from './RetailPromoCard'
 
 const TOGGLES: Array<{ key: keyof PromoTemplateConfig; label: string }> = [
@@ -42,7 +43,7 @@ export function PromoTemplateEditor() {
   const applyTemplate = (id: string) => {
     const t = templates.find((x) => x.id === id)
     // Normalise les dictionnaires : un ancien modèle sans ces clés ne doit pas conserver l'état de la session.
-    if (t) { setConfig({ ...t.config, styles: t.config.styles ?? {}, colors: t.config.colors ?? {}, scales: t.config.scales ?? {}, blockFills: t.config.blockFills ?? {} }); toast.success(`Modèle « ${t.name} » appliqué`) }
+    if (t) { setConfig({ ...t.config, layout: t.config.layout ?? 'classique', styles: t.config.styles ?? {}, colors: t.config.colors ?? {}, scales: t.config.scales ?? {}, blockFills: t.config.blockFills ?? {} }); toast.success(`Modèle « ${t.name} » appliqué`) }
   }
 
   const removeTemplate = async (id: string) => {
@@ -64,13 +65,19 @@ export function PromoTemplateEditor() {
         label: c.label || c.key,
         samples: Array.from(new Set(sampleRows.map((r) => String((r as Record<string, unknown>)[c.key] ?? '').trim()).filter(Boolean))).slice(0, 3),
       }))
-      const { style, rules } = await generatePromoTemplate(brief.trim(), { categories: cats as string[], columns })
+      const { style, rules, layout, adjustments } = await generatePromoTemplate(brief.trim(), { categories: cats as string[], columns })
       const patch: Partial<PromoTemplateConfig> = {}
       // Habillage : réinitialise les surcharges par élément (sinon styles[key].fill masque les couleurs IA).
       if (style) Object.assign(patch, style, { styles: {}, blockFills: {} })
+      if (layout) patch.layout = layout
+      // Nouveau design (mise en page ou habillage) → efface les déplacements/échelles obsolètes, puis applique les ajustements IA.
+      if (style || layout) { patch.offsets = adjustments?.offsets ?? {}; patch.scales = adjustments?.scales ?? {} }
+      else if (adjustments) { patch.offsets = adjustments.offsets; patch.scales = adjustments.scales }
+      if (adjustments?.hidden) patch.hidden = { ...config.hidden, ...adjustments.hidden }
       if (rules) patch.rules = { ...config.rules, ...rules }
       setConfig(patch)
-      toast.success(rules && !style ? 'Règle conditionnelle générée' : style && rules ? 'Habillage + règle générés' : 'Habillage généré')
+      const done = [layout && 'mise en page', style && 'habillage', rules && 'règle(s)'].filter(Boolean).join(' + ')
+      toast.success(done ? `Généré : ${done}` : 'Aucune modification suggérée')
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Échec génération IA') } finally { setBusy(false) }
   }
 
@@ -100,6 +107,9 @@ export function PromoTemplateEditor() {
           </label>
         ))}
       </div>
+
+      {/* Mise en page (structure) */}
+      <PromoLayoutPicker />
 
       {/* Modèles enregistrés */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/5 pt-3">

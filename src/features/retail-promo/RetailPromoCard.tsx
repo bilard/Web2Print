@@ -28,6 +28,32 @@ export type PromoBlockId =
   | 'category' | 'name' | 'brand' | 'description'
   | 'priceLabel' | 'priceWas' | 'unitPrice' | 'priceNow'
 
+/** Variantes de mise en page curées (structure graphique, pas seulement les couleurs). */
+export const PROMO_LAYOUT_IDS = ['classique', 'photo-cover', 'prix-fort', 'minimal'] as const
+export type PromoLayoutId = typeof PROMO_LAYOUT_IDS[number]
+export const PROMO_LAYOUTS: { id: PromoLayoutId; label: string; hint: string }[] = [
+  { id: 'classique', label: 'Classique', hint: 'En-tête / photo / bandeau prix empilés' },
+  { id: 'photo-cover', label: 'Photo plein cadre', hint: 'Photo en fond, bandeaux en surimpression' },
+  { id: 'prix-fort', label: 'Prix dominant', hint: 'Grand bloc prix en bas, gros chiffre' },
+  { id: 'minimal', label: 'Minimal', hint: 'Fond blanc, filets accent, étiquette rayon' },
+]
+
+/** Réglages que le CSS ne peut pas surcharger (styles inline) : couleurs de texte + échelle du prix selon la variante. */
+export interface LayoutTune {
+  priceFontScale: number
+  headerColor?: string   // texte de l'en-tête (surcharge idealText)
+  categoryColor?: string // texte du chip catégorie
+  priceColor?: string    // texte du bandeau prix
+}
+export function layoutTune(config: PromoTemplateConfig): LayoutTune {
+  switch (config.layout ?? 'classique') {
+    case 'photo-cover': return { priceFontScale: 1, headerColor: '#ffffff' }
+    case 'prix-fort': return { priceFontScale: 1.45 }
+    case 'minimal': return { priceFontScale: 1.2, headerColor: '#111827', categoryColor: config.accent, priceColor: config.accent }
+    default: return { priceFontScale: 1 }
+  }
+}
+
 /** Caractéristiques typographiques + remplissage d'un sous-élément texte. */
 export interface ElementStyle {
   fontFamily?: string
@@ -63,6 +89,7 @@ export interface ShapeStyle {
 }
 
 export interface PromoTemplateConfig {
+  layout?: PromoLayoutId // variante de mise en page (défaut : classique)
   accent: string        // accroche + badge + bandeau prix
   headerBg: string      // bandeau d'en-tête + pied
   fontHeading: string   // nom / accroche / badge
@@ -96,6 +123,7 @@ const SELECTABLE: PromoBlockId[] = [...(STYLE_KEYS as PromoBlockId[]), ...DECO_B
 export const FONT_OPTIONS = ['Montserrat', 'Oswald', 'Poppins', 'Archivo', 'Bebas Neue', 'Anton', 'Playfair Display', 'Inter'] as const
 
 export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
+  layout: 'classique',
   accent: '#ef4444',
   headerBg: '#111827',
   fontHeading: 'Montserrat',
@@ -157,6 +185,34 @@ export const PROMO_CSS = `
   display:flex; align-items:baseline; gap:6px; justify-content:flex-end; }
 .rp-cur { font-size:.5em; font-weight:800; }
 .rp-foot { background:var(--rp-head,#111827); color:#9ca3af; font-size:12px; padding:10px 40px; text-align:center; letter-spacing:.03em; min-height:38px; }
+
+/* ── Variante « photo-cover » : photo plein cadre, bandeaux en surimpression ── */
+.rp-card[data-layout="photo-cover"] { display:block; }
+.rp-card[data-layout="photo-cover"] .rp-product { position:absolute; inset:0; z-index:0; padding:0; background:#0b1020; }
+.rp-card[data-layout="photo-cover"] .rp-product img { max-width:100%; max-height:100%; width:100%; height:100%; object-fit:cover; filter:none; }
+.rp-card[data-layout="photo-cover"] .rp-ph { width:100%; height:100%; border-radius:0; }
+.rp-card[data-layout="photo-cover"] .rp-head { position:absolute; top:0; left:0; right:0; z-index:2; background:linear-gradient(180deg, rgba(2,6,23,.78) 0%, rgba(2,6,23,0) 100%); padding:34px 40px 78px; }
+.rp-card[data-layout="photo-cover"] .rp-price { position:absolute; bottom:0; left:0; right:0; z-index:2; }
+.rp-card[data-layout="photo-cover"] .rp-badge { z-index:3; }
+.rp-card[data-layout="photo-cover"] .rp-foot { display:none; }
+
+/* ── Variante « prix-fort » : grand bloc prix dominant en bas ── */
+.rp-card[data-layout="prix-fort"] .rp-head { padding:22px 40px 16px; gap:4px; }
+.rp-card[data-layout="prix-fort"] .rp-name { font-size:36px; }
+.rp-card[data-layout="prix-fort"] .rp-product { flex:0 0 40%; padding:22px; }
+.rp-card[data-layout="prix-fort"] .rp-price { flex:1; align-items:center; padding:30px 44px; }
+.rp-card[data-layout="prix-fort"] .rp-plabel { font-size:18px; }
+
+/* ── Variante « minimal » : fond blanc, filets accent, étiquette rayon ── */
+.rp-card[data-layout="minimal"] { background:#fff; }
+.rp-card[data-layout="minimal"] .rp-head { background:#fff; border-bottom:3px solid var(--rp-accent,#ef4444); padding:34px 40px 20px; }
+.rp-card[data-layout="minimal"] .rp-kicker { background:transparent; padding:0; letter-spacing:.24em; }
+.rp-card[data-layout="minimal"] .rp-brand { color:#6b7280; }
+.rp-card[data-layout="minimal"] .rp-desc { color:#475569; }
+.rp-card[data-layout="minimal"] .rp-product { background:#fff; }
+.rp-card[data-layout="minimal"] .rp-price { background:#fff; border-top:3px solid var(--rp-accent,#ef4444); align-items:center; }
+.rp-card[data-layout="minimal"] .rp-was { color:#9ca3af; }
+.rp-card[data-layout="minimal"] .rp-foot { background:#fff; color:#94a3b8; }
 `
 
 /** Découpe « 1 144,29 € » (ou « 327€78 ») en montant + symbole/centimes, et choisit une taille qui tient sur une ligne. */
@@ -297,8 +353,12 @@ interface CardProps {
 export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
   ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, onEditText, effects, capturing = false }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)
-    const hText = idealText(config.headerBg)
+    const tune = layoutTune(config)
+    const hText = tune.headerColor ?? idealText(config.headerBg)
     const aText = idealText(config.accent)
+    const catText = tune.categoryColor ?? aText
+    const priceText = tune.priceColor ?? aText
+    const priceFontSize = Math.round(fontSize * tune.priceFontScale)
     const cardElRef = useRef<HTMLDivElement | null>(null)
     const blockEls = useRef(new Map<PromoBlockId, HTMLElement | null>())
     const setters = useRef(new Map<PromoBlockId, (el: HTMLElement | null) => void>())
@@ -390,10 +450,10 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
     const drag = (id: PromoBlockId) => (editable && editingKey !== id ? { onPointerDown: (e: ReactPointerEvent) => startDrag(e, id) } : {})
 
     return (
-      <div ref={setRefs} className="rp-card" style={styleVars(config)}>
+      <div ref={setRefs} className="rp-card" data-layout={config.layout ?? 'classique'} style={styleVars(config)}>
         <style>{PROMO_CSS}</style>
         <div ref={setEl('header')} className="rp-head" style={blk('header', { color: hText, ...bg('header') })} {...drag('header')}>
-          {config.showCategory && <span ref={setEl('category')} className="rp-kicker" style={blk('category', { color: aText, ...es('category') })} {...drag('category')} {...editProps('category')}>{data.category || 'Offre spéciale'}</span>}
+          {config.showCategory && <span ref={setEl('category')} className="rp-kicker" style={blk('category', { color: catText, ...es('category') })} {...drag('category')} {...editProps('category')}>{data.category || 'Offre spéciale'}</span>}
           <div ref={setEl('name')} className="rp-name" style={blk('name', es('name'))} {...drag('name')} {...editProps('name')}>{data.name || 'Produit'}</div>
           {(data.brand || data.ref) && (
             <div ref={setEl('brand')} className="rp-brand" style={blk('brand', es('brand'))} {...drag('brand')} {...editProps('brand')}>{[data.brand, data.ref].filter(Boolean).join(' · ')}</div>
@@ -411,13 +471,13 @@ export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
             </div>
           )}
         </div>
-        <div ref={setEl('price')} className="rp-price" style={blk('price', { color: aText, ...bg('price') })} {...drag('price')}>
+        <div ref={setEl('price')} className="rp-price" style={blk('price', { color: priceText, ...bg('price') })} {...drag('price')}>
           <div className="rp-left">
             <span ref={setEl('priceLabel')} className="rp-plabel" style={blk('priceLabel', es('priceLabel'))} {...drag('priceLabel')} {...editProps('priceLabel')}>{data.priceLabel || 'Prix promo'}</span>
             {data.priceWas && <span ref={setEl('priceWas')} className="rp-was" style={blk('priceWas', es('priceWas'))} {...drag('priceWas')}>{data.priceWas}</span>}
             {config.showUnitPrice && data.unitPrice && <span ref={setEl('unitPrice')} className="rp-unit" style={blk('unitPrice', es('unitPrice'))} {...drag('unitPrice')}>{data.unitPrice}</span>}
           </div>
-          <div ref={setEl('priceNow')} className="rp-now" style={blk('priceNow', { fontSize, ...es('priceNow') })} {...drag('priceNow')}>
+          <div ref={setEl('priceNow')} className="rp-now" style={blk('priceNow', { fontSize: priceFontSize, ...es('priceNow') })} {...drag('priceNow')}>
             {amount}{cur && <span className="rp-cur">{cur}</span>}
           </div>
         </div>
