@@ -38,6 +38,7 @@ export interface ElementStyle {
   lineHeight?: number               // sans unité
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
   width?: number                    // px (resize horizontal d'un texte → retour à la ligne)
+  euroSep?: boolean                 // prix : « € » comme séparateur décimal (327€78)
   fillType?: 'solid' | 'gradient'
   fill?: string                     // couleur unie
   gradient?: GradientConfig
@@ -73,7 +74,6 @@ export interface PromoTemplateConfig {
   shapes?: Partial<Record<PromoBlockId, ShapeStyle>> // opacité/fusion/ombre/contour/rotation/ordre
   hidden?: Partial<Record<PromoBlockId, boolean>> // visibilité par bloc (panneau Calques)
   rules?: Partial<Record<PromoBlockId, ConditionalRule[]>> // règles conditionnelles par élément
-  priceEuroSep?: boolean // format prix « 327€78 » (le € sépare euros/centimes)
   showCategory: boolean
   showDescription: boolean
   showUnitPrice: boolean
@@ -105,7 +105,6 @@ export const DEFAULT_PROMO_CONFIG: PromoTemplateConfig = {
   shapes: {},
   hidden: {},
   rules: {},
-  priceEuroSep: false,
   showCategory: true,
   showDescription: true,
   showUnitPrice: true,
