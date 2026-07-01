@@ -43,6 +43,46 @@ function eventSource(e: AnalyticsEvent): string | null {
   return e.src ?? e.ref
 }
 
+/**
+ * Règles de catégorisation d'une source (domaine référent ou `utm_source`) en canal
+ * lisible. Testées sur la valeur en minuscules ; l'ordre compte (email d'abord, puis
+ * réseaux sociaux, puis moteurs de recherche). Un domaine non reconnu est conservé tel quel.
+ */
+const SOURCE_RULES: { re: RegExp; label: string }[] = [
+  { re: /newsletter|mailchimp|sendgrid|mailjet|sendinblue|brevo|mailerlite|gmail|mail\.google|mail\.yahoo|outlook|hotmail|courriel|e-?mail/, label: 'Email' },
+  { re: /linkedin|lnkd\.in/, label: 'LinkedIn' },
+  { re: /(^|\.)t\.co$|twitter|(^|\.)x\.com$/, label: 'X (Twitter)' },
+  { re: /facebook|(^|\.)fb\.|(^|\.)fb\.me/, label: 'Facebook' },
+  { re: /instagram|instagr\.am/, label: 'Instagram' },
+  { re: /youtube|youtu\.be/, label: 'YouTube' },
+  { re: /reddit|redd\.it/, label: 'Reddit' },
+  { re: /pinterest|pin\.it/, label: 'Pinterest' },
+  { re: /tiktok/, label: 'TikTok' },
+  { re: /threads\.net/, label: 'Threads' },
+  { re: /whatsapp|(^|\.)wa\.me/, label: 'WhatsApp' },
+  { re: /telegram|(^|\.)t\.me/, label: 'Telegram' },
+  { re: /google|goo\.gl/, label: 'Google' },
+  { re: /(^|\.)bing\./, label: 'Bing' },
+  { re: /duckduckgo/, label: 'DuckDuckGo' },
+  { re: /(^|\.)yahoo\./, label: 'Yahoo' },
+  { re: /ecosia/, label: 'Ecosia' },
+  { re: /qwant/, label: 'Qwant' },
+  { re: /yandex/, label: 'Yandex' },
+  { re: /baidu/, label: 'Baidu' },
+]
+
+/**
+ * Catégorise une source effective (`utm_source` sinon domaine référent) en canal lisible :
+ * « LinkedIn », « Google », « Email »… L'accès direct (source absente) devient « Direct » ;
+ * un domaine/valeur non reconnu est renvoyé tel quel.
+ */
+export function sourceCategory(source: string | null): string {
+  if (!source) return 'Direct'
+  const s = source.toLowerCase()
+  for (const { re, label } of SOURCE_RULES) if (re.test(s)) return label
+  return source
+}
+
 /** Restreint la liste d'events selon les filtres choisis (appareil / pays / page / source / utilisateur). */
 export function filterEvents(events: AnalyticsEvent[], f: EventFilter): AnalyticsEvent[] {
   return events.filter(
@@ -51,7 +91,7 @@ export function filterEvents(events: AnalyticsEvent[], f: EventFilter): Analytic
       (f.device === 'all' || e.device === f.device) &&
       (f.country === 'all' || e.country === f.country) &&
       (f.page === 'all' || e.path === f.page) &&
-      (f.source === 'all' || eventSource(e) === f.source) &&
+      (f.source === 'all' || sourceCategory(eventSource(e)) === f.source) &&
       (f.user === 'all' || e.uid === f.user),
   )
 }
@@ -218,13 +258,29 @@ export function isInternalActivity(path: string): boolean {
   return label === 'Tableau de bord' || label === 'Accueil' || label.startsWith('Workflows')
 }
 
-/** Top des sources effectives : utm_source si présent, sinon domaine référent. */
+/** Top des sources effectives brutes : utm_source si présent, sinon domaine référent (accès direct exclu). */
 export function topSources(events: AnalyticsEvent[], limit: number): { label: string; count: number }[] {
   const counts = new Map<string, number>()
   for (const e of events) {
     const s = e.src ?? e.ref
     if (!s) continue
     counts.set(s, (counts.get(s) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+}
+
+/**
+ * Top des sources de trafic regroupées par canal (« LinkedIn », « Google », « Direct »…).
+ * Compte tous les events, y compris l'accès direct (classé « Direct »).
+ */
+export function topSourceCategories(events: AnalyticsEvent[], limit: number): { label: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const e of events) {
+    const cat = sourceCategory(e.src ?? e.ref)
+    counts.set(cat, (counts.get(cat) ?? 0) + 1)
   }
   return [...counts.entries()]
     .map(([label, count]) => ({ label, count }))

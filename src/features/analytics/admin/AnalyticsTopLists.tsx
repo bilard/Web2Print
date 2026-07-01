@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsTopLists.tsx
-import { topBy, topSources, pageLabel, type AnalyticsEvent } from '../metrics'
+import { topBy, topSourceCategories, pageLabel, type AnalyticsEvent } from '../metrics'
 
 interface Row {
   label: string
@@ -42,7 +42,7 @@ export function AnalyticsTopLists({ events }: { events: AnalyticsEvent[] }) {
   return (
     <>
       <List title="Pages consultées" rows={pages} />
-      <List title="Sources de trafic" rows={topSources(events, 8)} />
+      <List title="Sources de trafic" rows={topSourceCategories(events, 8)} />
       <List title="Pays" rows={topBy(events, 'country', 8)} />
     </>
   )

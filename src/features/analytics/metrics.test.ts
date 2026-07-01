@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, type AnalyticsEvent } from './metrics'
+import { computeKpis, topBy, timeSeries, deltaPct, recentEvents, topSources, sourceCategory, topSourceCategories, type AnalyticsEvent } from './metrics'
 
 const ev = (o: Partial<AnalyticsEvent>): AnalyticsEvent => ({
   ts: 0, path: '/promo', area: 'promo', ref: null, src: null,
@@ -75,5 +75,37 @@ describe('topSources', () => {
     const out = topSources([ev({ src: null, ref: 'google.com' }), ev({ src: 'newsletter', ref: 'x.com' })], 8)
     expect(out).toContainEqual({ label: 'google.com', count: 1 })
     expect(out).toContainEqual({ label: 'newsletter', count: 1 })
+  })
+})
+
+describe('sourceCategory', () => {
+  it('mappe les domaines connus vers un canal lisible', () => {
+    expect(sourceCategory('www.linkedin.com')).toBe('LinkedIn')
+    expect(sourceCategory('lnkd.in')).toBe('LinkedIn')
+    expect(sourceCategory('google.fr')).toBe('Google')
+    expect(sourceCategory('t.co')).toBe('X (Twitter)')
+    expect(sourceCategory('l.facebook.com')).toBe('Facebook')
+    expect(sourceCategory('newsletter')).toBe('Email')
+  })
+  it('classe l’accès direct (source nulle) en « Direct »', () => {
+    expect(sourceCategory(null)).toBe('Direct')
+  })
+  it('conserve un domaine inconnu tel quel', () => {
+    expect(sourceCategory('blog.exemple.com')).toBe('blog.exemple.com')
+  })
+  it('ne confond pas un domaine se terminant par x.com (ex. netflix) avec X', () => {
+    expect(sourceCategory('netflix.com')).toBe('netflix.com')
+  })
+})
+
+describe('topSourceCategories', () => {
+  it('regroupe par canal et compte l’accès direct comme « Direct »', () => {
+    const out = topSourceCategories(
+      [ev({ ref: 'google.com' }), ev({ ref: 'www.google.fr' }), ev({ src: 'linkedin' }), ev({ ref: null, src: null })],
+      8,
+    )
+    expect(out).toContainEqual({ label: 'Google', count: 2 })
+    expect(out).toContainEqual({ label: 'LinkedIn', count: 1 })
+    expect(out).toContainEqual({ label: 'Direct', count: 1 })
   })
 })

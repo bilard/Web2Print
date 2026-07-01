@@ -1,5 +1,5 @@
 // src/features/analytics/admin/AnalyticsFilters.tsx
-import { topBy, topSources, pageLabel, type AnalyticsEvent, type EventFilter } from '../metrics'
+import { topBy, topSourceCategories, pageLabel, type AnalyticsEvent, type EventFilter } from '../metrics'
 import { useUsersMap } from '../useUsersMap'
 
 const DEVICE_FR: Record<string, string> = { desktop: 'Ordinateur', mobile: 'Mobile', tablet: 'Tablette' }
@@ -60,7 +60,7 @@ export function AnalyticsFilters({
   }))
   const countries: Opt[] = topBy(events, 'country', 99).map((r) => ({ value: r.label, label: r.label }))
   const pages: Opt[] = topBy(events, 'path', 99).map((r) => ({ value: r.label, label: pageLabel(r.label) }))
-  const sources: Opt[] = topSources(events, 99).map((r) => ({ value: r.label, label: r.label }))
+  const sources: Opt[] = topSourceCategories(events, 99).map((r) => ({ value: r.label, label: r.label }))
   // Utilisateurs connectés (uid renseigné), résolus en nom/email.
   const usersMap = useUsersMap()
   const userCounts = new Map<string, number>()
