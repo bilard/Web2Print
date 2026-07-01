@@ -634,7 +634,7 @@ function getCascadedNumber(
 
 export async function parseSvgToFabric(svgText: string): Promise<SvgParseResult> {
   // Phase 0: Neutralise placeholder images before Fabric parsing
-  // (Fabric v6 crashes on <image href="placeholder:XXX">)
+  // (Fabric crashes on <image href="placeholder:XXX">)
   const neutralizedSvg = neutralizePlaceholderImages(svgText)
 
   // Phase 1: Augment SVG with missing width attributes

@@ -55,7 +55,6 @@ export const MODULES = [
     "id": "getting-started",
     "cat": "Getting started",
     "icon": "🚀",
-    "anim": "pipeline",
     "title": "Getting started",
     "intro": "Sign-in, dashboard and creating your first project.",
     "features": [
@@ -107,7 +106,6 @@ export const MODULES = [
     "id": "nouveautes",
     "cat": "Getting started",
     "icon": "✨",
-    "anim": "spark",
     "title": "What's new",
     "intro": "What's just landed in the app — June 2026.",
     "features": [
@@ -150,7 +148,6 @@ export const MODULES = [
     "id": "onboarding",
     "cat": "Getting started",
     "icon": "🧰",
-    "anim": "checklist",
     "title": "Setup assistant",
     "intro": "Set up your workspace step by step: AI keys, models, connectors and guided tour.",
     "features": [
@@ -189,7 +186,6 @@ export const MODULES = [
     "id": "navigation",
     "cat": "Getting started",
     "icon": "🧭",
-    "anim": "taxonomy",
     "title": "Navigation & guided tours",
     "intro": "Move between modules from anywhere, and (re)launch the guided tours.",
     "features": [
@@ -235,7 +231,6 @@ export const MODULES = [
     "id": "editor",
     "cat": "Editing",
     "icon": "✏️",
-    "anim": "editor",
     "title": "The editor",
     "intro": "Canvas, tools, layers and saving the project.",
     "features": [
@@ -428,7 +423,6 @@ export const MODULES = [
     "id": "conditional-rules",
     "cat": "Editing",
     "icon": "🔀",
-    "anim": "editor",
     "title": "Conditional rules",
     "intro": "Show, hide or transform a design element based on the current row's data — EasyCatalog style (\"New action\"), but directly in the editor. Ideal for mail merge: a \"PROMO\" banner that appears only on discounted products, a price turning red below a stock threshold, an enlarged icon for new items…",
     "features": [
@@ -479,7 +473,6 @@ export const MODULES = [
     "id": "hyperframes",
     "cat": "Editing",
     "icon": "🎬",
-    "anim": "reveal",
     "title": "Animation",
     "intro": "Generate standalone HTML animations (video) from a brief or a canvas design.",
     "features": [
@@ -526,7 +519,6 @@ export const MODULES = [
     "id": "import-idml",
     "cat": "Import",
     "icon": "📐",
-    "anim": "import",
     "title": "IDML import",
     "intro": "Bring in an InDesign layout and turn it into an IBS-Studio template.",
     "features": [
@@ -569,7 +561,6 @@ export const MODULES = [
     "id": "easycatalog",
     "cat": "Import",
     "icon": "🔗",
-    "anim": "import",
     "title": "EasyCatalog (InDesign)",
     "intro": "Round-trip with the EasyCatalog plug-in: import a template, merge its fields, then re-export a natively recognised IDML.",
     "features": [
@@ -616,7 +607,6 @@ export const MODULES = [
     "id": "indesign-xml",
     "cat": "Import",
     "icon": "✦",
-    "anim": "default",
     "title": "InDesign XML tags (auto-connect)",
     "intro": "Tag an InDesign document with native XML tags named like your columns: when the IDML is imported, IBS-Studio turns them into {{…}} fields automatically connected to your database — a free alternative to EasyCatalog.",
     "features": [
@@ -663,7 +653,6 @@ export const MODULES = [
     "id": "import-pptx",
     "cat": "Import",
     "icon": "📊",
-    "anim": "import",
     "title": "Import PPTX",
     "intro": "Import a .pptx to reuse it as a template or starting point.",
     "features": [
@@ -686,7 +675,6 @@ export const MODULES = [
     "id": "import-excel",
     "cat": "Import",
     "icon": "🧮",
-    "anim": "pim",
     "title": "Import Excel",
     "intro": "Populate the PIM from an Excel, CSV/TSV or Google Sheets file.",
     "features": [
@@ -709,7 +697,6 @@ export const MODULES = [
     "id": "import-image",
     "cat": "Import",
     "icon": "🌄",
-    "anim": "import",
     "title": "Import an image",
     "intro": "Place an image (PNG, JPG, WebP, GIF, SVG) onto the canvas of a new project.",
     "features": [],
@@ -719,7 +706,6 @@ export const MODULES = [
     "id": "import-svg",
     "cat": "Import",
     "icon": "✒️",
-    "anim": "img2svg",
     "title": "Import SVG",
     "intro": "Load an .svg as editable vector layers.",
     "features": [
@@ -734,7 +720,6 @@ export const MODULES = [
     "id": "import-image-to-svg",
     "cat": "Import",
     "icon": "🪄",
-    "anim": "img2svg",
     "title": "Image → editable SVG",
     "intro": "Make a raster image editable: locked background + text broken out by AI.",
     "features": [
@@ -765,7 +750,6 @@ export const MODULES = [
     "id": "import-pdf-to-svg",
     "cat": "Import",
     "icon": "📄",
-    "anim": "img2svg",
     "title": "PDF → editable SVG",
     "intro": "Start from a PDF: page 1 rasterised as the background + editable text.",
     "features": [
@@ -800,7 +784,6 @@ export const MODULES = [
     "id": "dam",
     "cat": "Data",
     "icon": "🖼️",
-    "anim": "dam",
     "title": "DAM",
     "intro": "Image bank, AI generation, editing, variants and organising your visuals.",
     "features": [
@@ -947,7 +930,6 @@ export const MODULES = [
     "id": "pim",
     "cat": "Data",
     "icon": "📦",
-    "anim": "pim",
     "title": "PIM",
     "intro": "Manage your product databases: sheets, AI enrichment, structured fields and export.",
     "features": [
@@ -1014,7 +996,6 @@ export const MODULES = [
     "id": "taxonomies",
     "cat": "Data",
     "icon": "🌳",
-    "anim": "taxonomy",
     "title": "Taxonomies",
     "intro": "Classify products and projects in a navigable hierarchy.",
     "features": [
@@ -1081,7 +1062,6 @@ export const MODULES = [
     "id": "briefs",
     "cat": "Data",
     "icon": "📝",
-    "anim": "chat",
     "title": "Briefs & AI generation",
     "intro": "Describe what you want in plain language, and the AI produces the content.",
     "features": [
@@ -1124,7 +1104,6 @@ export const MODULES = [
     "id": "scraping",
     "cat": "Data",
     "icon": "🕸️",
-    "anim": "scrape",
     "title": "Product scraping",
     "intro": "Pull product sheets from the web — with no manual entry.",
     "features": [
@@ -1175,7 +1154,6 @@ export const MODULES = [
     "id": "scraping-templates",
     "cat": "Data",
     "icon": "🧩",
-    "anim": "scrape",
     "title": "Scraping templates",
     "intro": "Create and maintain per-supplier extraction templates: CSS selectors, prompts and tests.",
     "features": [
@@ -1218,7 +1196,6 @@ export const MODULES = [
     "id": "scraping-hub",
     "cat": "Data",
     "icon": "🛰️",
-    "anim": "scrape",
     "title": "Scraping Hub",
     "intro": "The scraping control centre: team rules, per-supplier view and extraction debugging.",
     "features": [
@@ -1257,7 +1234,6 @@ export const MODULES = [
     "id": "price-watch",
     "cat": "Data",
     "icon": "💰",
-    "anim": "pricewatch",
     "title": "Price monitoring",
     "intro": "Track your competitors' prices: dashboard of gaps, positioning and alerts.",
     "features": [
@@ -1312,7 +1288,6 @@ export const MODULES = [
     "id": "retail-promo",
     "cat": "Data",
     "icon": "✦",
-    "anim": "default",
     "title": "Studio creation",
     "intro": "Create and manage your retail promotions: visuals, offers and multi-format adaptations.",
     "features": [],
@@ -1322,7 +1297,6 @@ export const MODULES = [
     "id": "export",
     "cat": "Export",
     "icon": "📤",
-    "anim": "export",
     "title": "Multi-format export",
     "intro": "Output a print PDF, an IDML, a PPTX, an SVG, a PNG, an HTML web folder or a social media pack — single or in batch.",
     "features": [
@@ -1365,7 +1339,6 @@ export const MODULES = [
     "id": "workflow",
     "cat": "Automation",
     "icon": "⚡",
-    "anim": "workflow",
     "title": "Workflows",
     "intro": "Chain the app's functions into visual pipelines — Zapier / Make style.",
     "features": [
@@ -1464,7 +1437,6 @@ export const MODULES = [
     "id": "telegram",
     "cat": "Automation",
     "icon": "✈️",
-    "anim": "telegram",
     "title": "Telegram",
     "intro": "Control IBS-Studio from Telegram: AI chat with web access, generating and running workflows.",
     "features": [
@@ -1527,7 +1499,6 @@ export const MODULES = [
     "id": "chat",
     "cat": "AI Assistant",
     "icon": "💬",
-    "anim": "chat",
     "title": "AI Chat",
     "intro": "A built-in conversational assistant: questions, writing, code, image generation.",
     "features": [
@@ -1574,7 +1545,6 @@ export const MODULES = [
     "id": "access",
     "cat": "Administration",
     "icon": "🛡️",
-    "anim": "access",
     "title": "Users & roles",
     "intro": "Approve accounts, assign roles and fine-tune permissions. Owner only.",
     "features": [
@@ -1617,7 +1587,6 @@ export const MODULES = [
     "id": "audit-log",
     "cat": "Administration",
     "icon": "✦",
-    "anim": "default",
     "title": "Audit log & My activity",
     "intro": "Who did what, when. Each user finds their own actions in \"My activity\"; the administrator sees everything in the \"Log\", filterable and with the before/after of each change.",
     "features": [
@@ -1652,7 +1621,6 @@ export const MODULES = [
     "id": "settings",
     "cat": "Administration",
     "icon": "⚙️",
-    "anim": "settings",
     "title": "Settings",
     "intro": "API keys and AI models, connectors (Drive, Telegram, scraping), cookies, usage statistics.",
     "features": [
@@ -1707,7 +1675,6 @@ export const MODULES = [
     "id": "explorer",
     "cat": "Data",
     "icon": "🗺️",
-    "anim": "taxonomy",
     "title": "Data explorer",
     "intro": "Firestore mapping: relational schema (ERD) of collections, keys and cardinalities, and live inspection of records. Owner only.",
     "features": [

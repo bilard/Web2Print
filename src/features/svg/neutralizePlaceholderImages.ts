@@ -2,7 +2,7 @@
  * Neutralise les images placeholder (href="placeholder:XXX") en les convertissant
  * en rectangles simples que Fabric peut parser sans crasher.
  *
- * Fabric v6 crashe avec "Cannot read properties of null (reading 'fill')"
+ * Fabric crashe avec "Cannot read properties of null (reading 'fill')"
  * quand il rencontre des <image href="placeholder:..."> parce que:
  * 1. fabric.Image.fromElement cherche à charger l'image
  * 2. Le href invalid retourne null

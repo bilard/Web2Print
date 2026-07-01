@@ -1,6 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
-  "ignoreDependencies": ["dotenv", "express", "@types/chrome"],
+  "ignoreDependencies": [
+    "@types/chrome"
+  ],
   "workspaces": {
     ".": {
       "entry": [
@@ -9,15 +11,21 @@
         "postcss.config.{js,cjs}",
         "src/**/*.test.{ts,tsx}"
       ],
-      "project": ["src/**/*.{ts,tsx}"],
+      "project": [
+        "src/**/*.{ts,tsx}"
+      ],
       "ignore": [
         "src/components/ui/**",
         "src/types/fabric.d.ts"
       ]
     },
     "functions": {
-      "project": ["src/**/*.ts"],
-      "ignoreBinaries": ["firebase"]
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignoreBinaries": [
+        "firebase"
+      ]
     }
   }
 }

@@ -9,6 +9,8 @@ import { httpsCallable } from 'firebase/functions'
 import { auth, storage, functions } from '@/lib/firebase/config'
 
 const DAM_FOLDER_NAME = 'Web2Print — Assets DAM'
+// Nom HISTORIQUE du module (renommé « Création studio » en 2026-07) conservé tel
+// quel : le changer créerait un second sous-dossier Drive à côté de l'existant.
 const SUB_FOLDER = 'Promo Retail'
 
 const damEnsureFolder = httpsCallable<{ folderName: string; subFolder?: string }, { rootId: string; targetId: string }>(functions, 'damEnsureFolder')

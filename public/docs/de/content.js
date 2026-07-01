@@ -55,7 +55,6 @@ export const MODULES = [
     "id": "getting-started",
     "cat": "Erste Schritte",
     "icon": "🚀",
-    "anim": "pipeline",
     "title": "Einstieg",
     "intro": "Anmeldung, Dashboard und Erstellung des ersten Projekts.",
     "features": [
@@ -107,7 +106,6 @@ export const MODULES = [
     "id": "nouveautes",
     "cat": "Erste Schritte",
     "icon": "✨",
-    "anim": "spark",
     "title": "Neuigkeiten",
     "intro": "Was gerade in der Anwendung neu ist — Juni 2026.",
     "features": [
@@ -150,7 +148,6 @@ export const MODULES = [
     "id": "onboarding",
     "cat": "Erste Schritte",
     "icon": "🧰",
-    "anim": "checklist",
     "title": "Einrichtungsassistent",
     "intro": "Richten Sie Ihren Arbeitsbereich Schritt für Schritt ein: KI-Schlüssel, Modelle, Konnektoren und geführte Tour.",
     "features": [
@@ -189,7 +186,6 @@ export const MODULES = [
     "id": "navigation",
     "cat": "Erste Schritte",
     "icon": "🧭",
-    "anim": "taxonomy",
     "title": "Navigation & geführte Touren",
     "intro": "Von überall aus zwischen Modulen wechseln und geführte Touren (erneut) starten.",
     "features": [
@@ -235,7 +231,6 @@ export const MODULES = [
     "id": "editor",
     "cat": "Bearbeitung",
     "icon": "✏️",
-    "anim": "editor",
     "title": "Der Editor",
     "intro": "Canvas, Werkzeuge, Ebenen und Speichern des Projekts.",
     "features": [
@@ -428,7 +423,6 @@ export const MODULES = [
     "id": "conditional-rules",
     "cat": "Bearbeitung",
     "icon": "🔀",
-    "anim": "editor",
     "title": "Bedingte Regeln",
     "intro": "Ein Design-Element je nach Daten der aktuellen Zeile anzeigen, ausblenden oder umwandeln — nach Art von EasyCatalog („Neue Aktion“), aber direkt im Editor. Ideal beim Serienbrief: ein Banner „PROMO“, das nur auf Produkten im Angebot erscheint, ein Preis, der unter einem Bestandsschwellenwert rot wird, ein vergrößertes Piktogramm für Neuheiten…",
     "features": [
@@ -479,7 +473,6 @@ export const MODULES = [
     "id": "hyperframes",
     "cat": "Bearbeitung",
     "icon": "🎬",
-    "anim": "reveal",
     "title": "Animation",
     "intro": "Eigenständige HTML-Animationen (Video) aus einem Briefing oder einem Canvas-Design generieren.",
     "features": [
@@ -526,7 +519,6 @@ export const MODULES = [
     "id": "import-idml",
     "cat": "Import",
     "icon": "📐",
-    "anim": "import",
     "title": "IDML-Import",
     "intro": "Ein InDesign-Layout übernehmen und in ein IBS-Studio-Template verwandeln.",
     "features": [
@@ -569,7 +561,6 @@ export const MODULES = [
     "id": "easycatalog",
     "cat": "Import",
     "icon": "🔗",
-    "anim": "import",
     "title": "EasyCatalog (InDesign)",
     "intro": "Hin und zurück mit dem Plug-in EasyCatalog: eine Vorlage importieren, ihre Felder zusammenführen und dann ein nativ erkanntes IDML zurückexportieren.",
     "features": [
@@ -616,7 +607,6 @@ export const MODULES = [
     "id": "indesign-xml",
     "cat": "Import",
     "icon": "✦",
-    "anim": "default",
     "title": "InDesign-XML-Tags (automatische Verbindung)",
     "intro": "Kennzeichnen Sie ein InDesign-Dokument mit nativen XML-Tags, die wie Ihre Spalten benannt sind: Beim Import des IDML wandelt IBS-Studio sie in {{…}}-Felder um, die automatisch mit Ihrer Datenbank verbunden sind — eine kostenlose Alternative zu EasyCatalog.",
     "features": [
@@ -663,7 +653,6 @@ export const MODULES = [
     "id": "import-pptx",
     "cat": "Import",
     "icon": "📊",
-    "anim": "import",
     "title": "PPTX importieren",
     "intro": "Eine .pptx importieren, um sie als Template oder Ausgangspunkt wiederzuverwenden.",
     "features": [
@@ -686,7 +675,6 @@ export const MODULES = [
     "id": "import-excel",
     "cat": "Import",
     "icon": "🧮",
-    "anim": "pim",
     "title": "Excel importieren",
     "intro": "Das PIM aus einer Excel-, CSV/TSV- oder Google-Sheets-Datei befüllen.",
     "features": [
@@ -709,7 +697,6 @@ export const MODULES = [
     "id": "import-image",
     "cat": "Import",
     "icon": "🌄",
-    "anim": "import",
     "title": "Ein Bild importieren",
     "intro": "Ein Bild (PNG, JPG, WebP, GIF, SVG) auf dem Canvas eines neuen Projekts platzieren.",
     "features": [],
@@ -719,7 +706,6 @@ export const MODULES = [
     "id": "import-svg",
     "cat": "Import",
     "icon": "✒️",
-    "anim": "img2svg",
     "title": "SVG importieren",
     "intro": "Eine .svg als bearbeitbare Vektorebenen laden.",
     "features": [
@@ -734,7 +720,6 @@ export const MODULES = [
     "id": "import-image-to-svg",
     "cat": "Import",
     "icon": "🪄",
-    "anim": "img2svg",
     "title": "Bild → bearbeitbares SVG",
     "intro": "Ein Rasterbild bearbeitbar machen: gesperrter Hintergrund + per KI zerlegte Texte.",
     "features": [
@@ -765,7 +750,6 @@ export const MODULES = [
     "id": "import-pdf-to-svg",
     "cat": "Import",
     "icon": "📄",
-    "anim": "img2svg",
     "title": "PDF → bearbeitbares SVG",
     "intro": "Von einem PDF ausgehen: Seite 1 als Hintergrund gerastert + bearbeitbare Texte.",
     "features": [
@@ -800,7 +784,6 @@ export const MODULES = [
     "id": "dam",
     "cat": "Daten",
     "icon": "🖼️",
-    "anim": "dam",
     "title": "DAM",
     "intro": "Bilddatenbank, KI-Generierung, Bearbeitung, Varianten und Organisation der Visuals.",
     "features": [
@@ -947,7 +930,6 @@ export const MODULES = [
     "id": "pim",
     "cat": "Daten",
     "icon": "📦",
-    "anim": "pim",
     "title": "PIM",
     "intro": "Ihre Produktdatenbanken verwalten: Datenblätter, KI-Anreicherung, strukturierte Felder und Export.",
     "features": [
@@ -1014,7 +996,6 @@ export const MODULES = [
     "id": "taxonomies",
     "cat": "Daten",
     "icon": "🌳",
-    "anim": "taxonomy",
     "title": "Taxonomien",
     "intro": "Produkte und Projekte in einer navigierbaren Hierarchie klassifizieren.",
     "features": [
@@ -1081,7 +1062,6 @@ export const MODULES = [
     "id": "briefs",
     "cat": "Daten",
     "icon": "📝",
-    "anim": "chat",
     "title": "Briefings & KI-Generierung",
     "intro": "Beschreiben Sie in natürlicher Sprache, was Sie möchten, die KI erzeugt den Inhalt.",
     "features": [
@@ -1124,7 +1104,6 @@ export const MODULES = [
     "id": "scraping",
     "cat": "Daten",
     "icon": "🕸️",
-    "anim": "scrape",
     "title": "Produkt-Scraping",
     "intro": "Produktdatenblätter aus dem Web abrufen — ohne manuelle Eingabe.",
     "features": [
@@ -1175,7 +1154,6 @@ export const MODULES = [
     "id": "scraping-templates",
     "cat": "Daten",
     "icon": "🧩",
-    "anim": "scrape",
     "title": "Scraping-Templates",
     "intro": "Die Extraktions-Templates pro Lieferant erstellen und pflegen: CSS-Selektoren, Prompts und Tests.",
     "features": [
@@ -1218,7 +1196,6 @@ export const MODULES = [
     "id": "scraping-hub",
     "cat": "Daten",
     "icon": "🛰️",
-    "anim": "scrape",
     "title": "Scraping Hub",
     "intro": "Die Steuerzentrale des Scrapings: Teamregeln, Ansicht pro Lieferant und Debugging der Extraktionen.",
     "features": [
@@ -1257,7 +1234,6 @@ export const MODULES = [
     "id": "price-watch",
     "cat": "Daten",
     "icon": "💰",
-    "anim": "pricewatch",
     "title": "Preisüberwachung",
     "intro": "Verfolgen Sie die Preise Ihrer Wettbewerber: Dashboard der Abweichungen, Positionierung und Alarme.",
     "features": [
@@ -1312,7 +1288,6 @@ export const MODULES = [
     "id": "retail-promo",
     "cat": "Daten",
     "icon": "✦",
-    "anim": "default",
     "title": "Studio-Erstellung",
     "intro": "Erstellen und verwalten Sie Ihre Retail-Promotionen: Visuals, Angebote und Multiformat-Ableitungen.",
     "features": [],
@@ -1322,7 +1297,6 @@ export const MODULES = [
     "id": "export",
     "cat": "Export",
     "icon": "📤",
-    "anim": "export",
     "title": "Multiformat-Export",
     "intro": "Ein Druck-PDF, ein IDML, ein PPTX, ein SVG, ein PNG, einen HTML-Web-Ordner oder ein Social-Media-Paket ausgeben — einzeln oder in Serie.",
     "features": [
@@ -1365,7 +1339,6 @@ export const MODULES = [
     "id": "workflow",
     "cat": "Automatisierung",
     "icon": "⚡",
-    "anim": "workflow",
     "title": "Workflows",
     "intro": "Die Funktionen der App in visuellen Pipelines verketten — nach Art von Zapier / Make.",
     "features": [
@@ -1464,7 +1437,6 @@ export const MODULES = [
     "id": "telegram",
     "cat": "Automatisierung",
     "icon": "✈️",
-    "anim": "telegram",
     "title": "Telegram",
     "intro": "IBS-Studio von Telegram aus steuern: KI-Chat mit Web-Zugriff, Generierung und Ausführung von Workflows.",
     "features": [
@@ -1527,7 +1499,6 @@ export const MODULES = [
     "id": "chat",
     "cat": "KI-Assistent",
     "icon": "💬",
-    "anim": "chat",
     "title": "KI-Chat",
     "intro": "Ein integrierter dialogorientierter Assistent: Fragen, Verfassen, Code, Bildgenerierung.",
     "features": [
@@ -1574,7 +1545,6 @@ export const MODULES = [
     "id": "access",
     "cat": "Verwaltung",
     "icon": "🛡️",
-    "anim": "access",
     "title": "Benutzer & Rollen",
     "intro": "Konten genehmigen, Rollen zuweisen und Berechtigungen fein einstellen. Nur für den Eigentümer.",
     "features": [
@@ -1617,7 +1587,6 @@ export const MODULES = [
     "id": "audit-log",
     "cat": "Verwaltung",
     "icon": "✦",
-    "anim": "default",
     "title": "Audit-Protokoll & Meine Aktivität",
     "intro": "Wer hat was wann getan. Jeder Benutzer findet seine eigenen Aktionen in „Meine Aktivität“; der Administrator sieht alles im „Protokoll“, filterbar und mit dem Vorher/Nachher jeder Änderung.",
     "features": [
@@ -1652,7 +1621,6 @@ export const MODULES = [
     "id": "settings",
     "cat": "Verwaltung",
     "icon": "⚙️",
-    "anim": "settings",
     "title": "Einstellungen",
     "intro": "API-Schlüssel und KI-Modelle, Konnektoren (Drive, Telegram, Scraping), Cookies, Nutzungsstatistiken.",
     "features": [
@@ -1707,7 +1675,6 @@ export const MODULES = [
     "id": "explorer",
     "cat": "Daten",
     "icon": "🗺️",
-    "anim": "taxonomy",
     "title": "Daten-Explorer",
     "intro": "Firestore-Kartografie: relationales Schema (ERD) der Collections, Schlüssel und Kardinalitäten sowie Live-Inspektion der Datensätze. Nur für den Eigentümer.",
     "features": [

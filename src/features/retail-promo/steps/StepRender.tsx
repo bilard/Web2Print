@@ -104,7 +104,6 @@ export function StepRender() {
     setResolvedImg(undefined)
     void resolveImg(srcRef).then((u) => { if (!cancelled) setResolvedImg(u) })
     return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [safe, srcRef])
 
   if (cards.length === 0) {

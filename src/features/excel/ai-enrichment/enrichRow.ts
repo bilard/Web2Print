@@ -15,7 +15,8 @@ export interface EnrichRowInput {
   url: string
   /** Champs à enrichir (clés du template, ex. ['name', 'description', 'specifications']). */
   targetFields: string[]
-  /** Annulation best-effort (non propagée au moteur PIM pour l'instant). */
+  /** ⚠ Accepté mais IGNORÉ par enrichRow (aucune annulation en cours de ligne) :
+   *  les appelants doivent tester le signal ENTRE les lignes. */
   signal?: AbortSignal
   log?: (msg: string) => void
 }

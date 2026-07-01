@@ -25,9 +25,9 @@ React 18, Vite 8, TypeScript strict (cible ES2022), Fabric.js v7, Zustand v4, Re
 - Config dans `.env.local` (gitignored) et `src/lib/firebase/config.ts`
 
 ## Commandes & vérification
-- Dev : `npm run dev` (spawn `server.mjs` proxy + Vite)
+- Dev : `npm run dev` (Vite)
 - Build : `npm run build` (= `tsc -b && vite build`)
 - **Types : `npx tsc -b`** — ⚠️ le projet utilise des *project references* ; `tsc --noEmit` seul ne vérifie RIEN (`tsconfig.json` racine a `files: []` + `references`). Toujours utiliser `tsc -b`.
 - Lint : `npm run lint` (eslint, warnings tolérés mais erreurs bloquantes)
 - Tests : `npm run test:run` (Vitest)
-- Code mort : `npx knip` — baseline **exit 0** depuis 2026-06-09 ; toute nouvelle sortie = vrai code mort à traiter. Les faux positifs connus (deps de `server.mjs`, `@types/chrome` de `extension/`) sont déclarés dans `knip.json` (`ignoreDependencies`). Convention : un symbole utilisé seulement dans son fichier ne doit PAS être exporté (les nodes de workflow s'enregistrent par effet de bord sans export).
+- Code mort : `npx knip` — baseline **exit 0** depuis 2026-06-09 ; toute nouvelle sortie = vrai code mort à traiter. Le faux positif connu (`@types/chrome` de `extension/`) est déclaré dans `knip.json` (`ignoreDependencies`). Convention : un symbole utilisé seulement dans son fichier ne doit PAS être exporté (les nodes de workflow s'enregistrent par effet de bord sans export).

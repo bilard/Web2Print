@@ -12,7 +12,7 @@ import type { FabricObject } from 'fabric'
 import type { IdmlObject, IdmlColor, IdmlParagraph } from './idmlParser'
 import { resolveAvailableFont } from '@/features/assets/useFonts'
 
-// GIF 1×1 transparent : src sûr pour un FabricImage placeholder (pas de crash Fabric v6,
+// GIF 1×1 transparent : src sûr pour un FabricImage placeholder (pas de crash Fabric,
 // instanceof FabricImage = true → débloque la branche binding 'src' du merge).
 const EC_TRANSPARENT_1PX =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'

@@ -36,11 +36,13 @@ const DirectiveSchema = z.object({
 })
 type Directive = z.infer<typeof DirectiveSchema>
 
-const MotionPlanSchema = z.object({
+// Schéma STRICT : ne sert qu'à dériver le type MotionPlan (la validation runtime
+// passe par le schéma lâche ci-dessous + repairMotionPlan), d'où le préfixe _.
+const _MotionPlanSchema = z.object({
   fromScratch: z.boolean(),
   directives: z.array(DirectiveSchema).max(24),
 })
-export type MotionPlan = z.infer<typeof MotionPlanSchema>
+export type MotionPlan = z.infer<typeof _MotionPlanSchema>
 
 // Schéma LÂCHE passé à generateJson : structure seulement (pas de bornes/regex/enum).
 // repairMotionPlan est la SEULE autorité de validation (il clamp/drop) — sinon une

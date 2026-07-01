@@ -3,7 +3,7 @@ import type { TspanInfo, TextStyle } from './svgTextParser'
 /**
  * Char-level style accepté par Fabric.Textbox.toObject().
  *
- * Fabric v6 sérialise les styles via stylesToArray (alias `xi`) qui ne compare
+ * Fabric sérialise les styles via stylesToArray (alias `xi`) qui ne compare
  * QUE ce jeu de clés. Une entrée char qui ne contient AUCUNE clé reconnue (par
  * ex. uniquement `letterSpacing` ou `textDecoration` brut) fait crasher la
  * sérialisation avec « Cannot read properties of undefined (reading 'end') ».

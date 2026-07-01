@@ -131,7 +131,6 @@ main { flex: 1; }
 .feat-list { display: flex; flex-direction: column; gap: 9px; margin: 0; }
 .feat-item { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; padding: 13px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.15s; }
 .feat-item:hover { border-color: var(--border-strong); }
-.feat-item.no-ico { grid-template-columns: 1fr; }
 .feat-body dt { font-weight: 650; font-size: 1rem; margin-bottom: 3px; }
 .feat-body dd { margin: 0; color: var(--text-dim); font-size: 0.95rem; }
 .feat-ico { width: 44px; height: 44px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }

@@ -596,7 +596,7 @@ function applyCropImage(): void {
   const dyF = visTopLocal - fTop
   const newVisLeft = fLeft + dxF * cosF - dyF * sinF
   const newVisTop = fTop + dxF * sinF + dyF * cosF
-  // IMPORTANT : Fabric v6 FabricImage `set({width})` recalcule scaleX pour
+  // IMPORTANT : Fabric FabricImage `set({width})` recalcule scaleX pour
   // préserver la taille visuelle. On contourne en assignant directement les
   // propriétés, puis on restaure scaleX/scaleY explicitement APRÈS.
   ;(image as any).width = newW

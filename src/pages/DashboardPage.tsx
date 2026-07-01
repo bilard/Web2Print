@@ -69,7 +69,6 @@ export default function DashboardPage() {
     const intent = params.get('intent')
     if (section) setActiveSection(section)
     if (intent) setModuleIntent(intent)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   // Ouvre la section demandée par la navigation (ex: lien d'aide « Importer un fichier »
   // → state { section: 'import' }). location.key change à chaque navigation, y compris

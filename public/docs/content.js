@@ -58,7 +58,6 @@ export const MODULES = [
     "id": "getting-started",
     "cat": "Démarrage",
     "icon": "🚀",
-    "anim": "pipeline",
     "title": "Prise en main",
     "intro": "Connexion, tableau de bord et création du premier projet.",
     "features": [
@@ -110,7 +109,6 @@ export const MODULES = [
     "id": "nouveautes",
     "cat": "Démarrage",
     "icon": "✨",
-    "anim": "spark",
     "title": "Nouveautés",
     "intro": "Ce qui vient d'arriver dans l'application — juin 2026.",
     "features": [
@@ -153,7 +151,6 @@ export const MODULES = [
     "id": "onboarding",
     "cat": "Démarrage",
     "icon": "🧰",
-    "anim": "checklist",
     "title": "Assistant de configuration",
     "intro": "Mettre en place son espace pas à pas : clés IA, modèles, connecteurs et visite guidée.",
     "features": [
@@ -192,7 +189,6 @@ export const MODULES = [
     "id": "navigation",
     "cat": "Démarrage",
     "icon": "🧭",
-    "anim": "taxonomy",
     "title": "Navigation & visites guidées",
     "intro": "Passer d'un module à l'autre depuis n'importe où, et (re)lancer les visites guidées.",
     "features": [
@@ -238,7 +234,6 @@ export const MODULES = [
     "id": "editor",
     "cat": "Édition",
     "icon": "✏️",
-    "anim": "editor",
     "title": "L'éditeur",
     "intro": "Canvas, outils, calques et sauvegarde du projet.",
     "features": [
@@ -431,7 +426,6 @@ export const MODULES = [
     "id": "conditional-rules",
     "cat": "Édition",
     "icon": "🔀",
-    "anim": "editor",
     "title": "Règles conditionnelles",
     "intro": "Afficher, masquer ou transformer un élément du design selon la donnée de la ligne courante — façon EasyCatalog (« Nouvelle action »), mais directement dans l'éditeur. Idéal en publipostage : un bandeau « PROMO » qui n'apparaît que sur les produits en promotion, un prix qui passe en rouge sous un seuil de stock, un picto agrandi pour les nouveautés…",
     "features": [
@@ -482,7 +476,6 @@ export const MODULES = [
     "id": "hyperframes",
     "cat": "Édition",
     "icon": "🎬",
-    "anim": "reveal",
     "title": "Animation",
     "intro": "Générer des animations HTML autonomes (vidéo) à partir d'un brief ou d'un design du canvas.",
     "features": [
@@ -529,7 +522,6 @@ export const MODULES = [
     "id": "import-idml",
     "cat": "Import",
     "icon": "📐",
-    "anim": "import",
     "title": "Import IDML",
     "intro": "Récupérer une maquette InDesign et la transformer en template IBS-Studio.",
     "features": [
@@ -572,7 +564,6 @@ export const MODULES = [
     "id": "easycatalog",
     "cat": "Import",
     "icon": "🔗",
-    "anim": "import",
     "title": "EasyCatalog (InDesign)",
     "intro": "Aller-retour avec le plug-in EasyCatalog : importer un gabarit, fusionner ses champs, puis réexporter un IDML reconnu nativement.",
     "features": [
@@ -619,7 +610,6 @@ export const MODULES = [
     "id": "indesign-xml",
     "cat": "Import",
     "icon": "✦",
-    "anim": "default",
     "title": "Balises XML InDesign (connexion auto)",
     "intro": "Baliser un document InDesign avec des balises XML natives nommées comme tes colonnes : à l'import de l'IDML, IBS-Studio les transforme en champs {{…}} automatiquement connectés à ta base — une alternative gratuite à EasyCatalog.",
     "features": [
@@ -666,7 +656,6 @@ export const MODULES = [
     "id": "import-pptx",
     "cat": "Import",
     "icon": "📊",
-    "anim": "import",
     "title": "Importer PPTX",
     "intro": "Importer un .pptx pour le réutiliser comme template ou point de départ.",
     "features": [
@@ -689,7 +678,6 @@ export const MODULES = [
     "id": "import-excel",
     "cat": "Import",
     "icon": "🧮",
-    "anim": "pim",
     "title": "Importer Excel",
     "intro": "Alimenter le PIM depuis un fichier Excel, CSV/TSV ou Google Sheets.",
     "features": [
@@ -712,7 +700,6 @@ export const MODULES = [
     "id": "import-image",
     "cat": "Import",
     "icon": "🌄",
-    "anim": "import",
     "title": "Importer une image",
     "intro": "Placer une image (PNG, JPG, WebP, GIF, SVG) sur le canvas d'un nouveau projet.",
     "features": [],
@@ -722,7 +709,6 @@ export const MODULES = [
     "id": "import-svg",
     "cat": "Import",
     "icon": "✒️",
-    "anim": "img2svg",
     "title": "Importer SVG",
     "intro": "Charger un .svg comme calques vectoriels éditables.",
     "features": [
@@ -737,7 +723,6 @@ export const MODULES = [
     "id": "import-image-to-svg",
     "cat": "Import",
     "icon": "🪄",
-    "anim": "img2svg",
     "title": "Image → SVG éditable",
     "intro": "Rendre une image raster éditable : fond verrouillé + textes décomposés par IA.",
     "features": [
@@ -768,7 +753,6 @@ export const MODULES = [
     "id": "import-pdf-to-svg",
     "cat": "Import",
     "icon": "📄",
-    "anim": "img2svg",
     "title": "PDF → SVG éditable",
     "intro": "Repartir d'un PDF : page 1 rasterisée en fond + textes éditables.",
     "features": [
@@ -803,7 +787,6 @@ export const MODULES = [
     "id": "dam",
     "cat": "Données",
     "icon": "🖼️",
-    "anim": "dam",
     "title": "DAM",
     "intro": "Banque d'images, génération IA, édition, variantes et organisation des visuels.",
     "features": [
@@ -950,7 +933,6 @@ export const MODULES = [
     "id": "pim",
     "cat": "Données",
     "icon": "📦",
-    "anim": "pim",
     "title": "PIM",
     "intro": "Gérer tes bases de données produits : fiches, enrichissement IA, champs structurés et export.",
     "features": [
@@ -1017,7 +999,6 @@ export const MODULES = [
     "id": "taxonomies",
     "cat": "Données",
     "icon": "🌳",
-    "anim": "taxonomy",
     "title": "Taxonomies",
     "intro": "Classifier produits et projets dans une hiérarchie navigable.",
     "features": [
@@ -1084,7 +1065,6 @@ export const MODULES = [
     "id": "briefs",
     "cat": "Données",
     "icon": "📝",
-    "anim": "chat",
     "title": "Briefs & génération IA",
     "intro": "Décrire en français ce qu'on veut, l'IA produit le contenu.",
     "features": [
@@ -1127,7 +1107,6 @@ export const MODULES = [
     "id": "scraping",
     "cat": "Données",
     "icon": "🕸️",
-    "anim": "scrape",
     "title": "Scraping produits",
     "intro": "Récupérer des fiches produits depuis le web — sans saisie manuelle.",
     "features": [
@@ -1178,7 +1157,6 @@ export const MODULES = [
     "id": "scraping-templates",
     "cat": "Données",
     "icon": "🧩",
-    "anim": "scrape",
     "title": "Templates scraping",
     "intro": "Créer et maintenir les templates d'extraction par fournisseur : sélecteurs CSS, prompts et tests.",
     "features": [
@@ -1221,7 +1199,6 @@ export const MODULES = [
     "id": "scraping-hub",
     "cat": "Données",
     "icon": "🛰️",
-    "anim": "scrape",
     "title": "Scraping Hub",
     "intro": "Le centre de contrôle du scraping : règles d'équipe, vue par fournisseur et debug des extractions.",
     "features": [
@@ -1260,7 +1237,6 @@ export const MODULES = [
     "id": "price-watch",
     "cat": "Données",
     "icon": "💰",
-    "anim": "pricewatch",
     "title": "Veille tarifaire",
     "intro": "Suis les prix de tes concurrents : tableau de bord des écarts, positionnement et alertes.",
     "features": [
@@ -1315,7 +1291,6 @@ export const MODULES = [
     "id": "retail-promo",
     "cat": "Données",
     "icon": "✦",
-    "anim": "default",
     "title": "Création studio",
     "intro": "Créez et gérez vos promotions retail : visuels, offres et déclinaisons multi-format.",
     "features": [],
@@ -1325,7 +1300,6 @@ export const MODULES = [
     "id": "export",
     "cat": "Export",
     "icon": "📤",
-    "anim": "export",
     "title": "Export multi-format",
     "intro": "Sortir un PDF imprimeur, un IDML, un PPTX, un SVG, un PNG, un dossier web HTML ou un pack réseaux sociaux — unitaire ou en série.",
     "features": [
@@ -1368,7 +1342,6 @@ export const MODULES = [
     "id": "workflow",
     "cat": "Automatisation",
     "icon": "⚡",
-    "anim": "workflow",
     "title": "Workflows",
     "intro": "Enchaîner les fonctions de l'app en pipelines visuels — façon Zapier / Make.",
     "features": [
@@ -1467,7 +1440,6 @@ export const MODULES = [
     "id": "telegram",
     "cat": "Automatisation",
     "icon": "✈️",
-    "anim": "telegram",
     "title": "Telegram",
     "intro": "Piloter IBS-Studio depuis Telegram : chat IA avec accès web, génération et exécution de workflows.",
     "features": [
@@ -1530,7 +1502,6 @@ export const MODULES = [
     "id": "chat",
     "cat": "Assistant IA",
     "icon": "💬",
-    "anim": "chat",
     "title": "Chat IA",
     "intro": "Un assistant conversationnel intégré : questions, rédaction, code, génération d'images.",
     "features": [
@@ -1577,7 +1548,6 @@ export const MODULES = [
     "id": "access",
     "cat": "Administration",
     "icon": "🛡️",
-    "anim": "access",
     "title": "Utilisateurs & rôles",
     "intro": "Approuver les comptes, attribuer des rôles et régler finement les permissions. Réservé au propriétaire.",
     "features": [
@@ -1620,7 +1590,6 @@ export const MODULES = [
     "id": "audit-log",
     "cat": "Administration",
     "icon": "✦",
-    "anim": "default",
     "title": "Journal d'audit & Mon activité",
     "intro": "Qui a fait quoi, quand. Chaque utilisateur retrouve ses propres actions dans « Mon activité » ; l'administrateur voit tout dans le « Journal », filtrable et avec l'avant/après de chaque changement.",
     "features": [
@@ -1655,7 +1624,6 @@ export const MODULES = [
     "id": "settings",
     "cat": "Administration",
     "icon": "⚙️",
-    "anim": "settings",
     "title": "Paramètres",
     "intro": "Clés API et modèles IA, connecteurs (Drive, Telegram, scraping), cookies, statistiques d'usage.",
     "features": [
@@ -1710,7 +1678,6 @@ export const MODULES = [
     "id": "explorer",
     "cat": "Données",
     "icon": "🗺️",
-    "anim": "taxonomy",
     "title": "Explorateur de données",
     "intro": "Cartographie Firestore : schéma relationnel (ERD) des collections, clés et cardinalités, et inspection des enregistrements en direct. Réservé au propriétaire.",
     "features": [

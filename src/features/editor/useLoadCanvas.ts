@@ -61,7 +61,7 @@ classRegistry.setClass(Triangle, 'Triangle')
  */
 function sanitizeCanvasJson(objects: any[]): void {
   for (const obj of objects) {
-    // data.type = 'text'/'rect'/'image' collides with Fabric v6 classRegistry.
+    // data.type = 'text'/'rect'/'image' collides with Fabric classRegistry.
     // Move to _type before load; fixAndReattach restores it after.
     if (obj.data && typeof obj.data === 'object' && obj.data.type) {
       obj.data._type = obj.data.type

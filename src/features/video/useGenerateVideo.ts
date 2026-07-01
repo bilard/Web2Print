@@ -70,8 +70,8 @@ export interface GenerateVideoInput {
   customHeight?: number
   /** Durée totale souhaitée pour l'animation en secondes (3-60).
    *  Mode standalone : Gemini ajuste les scènes pour matcher.
-   *  Mode canvas (design-reveal) : ignoré pour l'instant — le template
-   *  HTML hardcode 10 s. */
+   *  Mode canvas (design-reveal) : appliqué via `vars.durationScale = sec/10`
+   *  (le template est calé sur 10 s par défaut et scale ses timings GSAP). */
   targetDurationSec?: number
   /** Si fourni (mode standalone), skip l'appel Gemini et utilise directement
    *  cette composition (sert au flow "Enrichir avec images IA" qui modifie

@@ -191,7 +191,7 @@ describe('textboxConverter', () => {
 
   // ------- Sanitisation des styles pour Fabric (régression import SVG) -------
   //
-  // Fabric v6 stylesToArray (xi) compare les styles char-level via un set de clés
+  // Fabric stylesToArray (xi) compare les styles char-level via un set de clés
   // fermé : fill, stroke, fontSize, fontFamily, fontWeight, fontStyle, underline,
   // overline, linethrough, deltaY, textDecorationColor, textDecorationThickness,
   // textBackgroundColor. Si la map ne contient QUE des clés non reconnues

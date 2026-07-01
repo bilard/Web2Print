@@ -190,7 +190,7 @@ export function applyCustomControls() {
   proto.cornerStyle = 'circle'
   proto.padding = 0
 
-  // Patch défensif `findControl` : Fabric v6 crash sur Object.entries(undefined)
+  // Patch défensif `findControl` : Fabric crash sur Object.entries(undefined)
   // au mouseMove si un objet a hasControls=true mais oCoords pas encore calculé
   // (cas typique : enfants de Group qui n'ont jamais eu setCoords appelé).
   // On force setCoords() pour calculer les oCoords manquants puis on laisse

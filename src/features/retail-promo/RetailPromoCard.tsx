@@ -349,7 +349,7 @@ interface CardProps {
   capturing?: boolean
 }
 
-/** Carte promo Retail (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
+/** Carte Création studio (HTML/CSS) — design data-driven, couleurs/polices/champs/positions configurables. */
 export const RetailPromoCard = forwardRef<HTMLDivElement, CardProps>(
   ({ data, config = DEFAULT_PROMO_CONFIG, editable = false, onMoveBlock, selectedKey = null, onSelect, onResizeText, onScaleBlock, onEditText, effects, capturing = false }, ref) => {
     const { amount, cur, fontSize } = splitPrice(data.priceNow)

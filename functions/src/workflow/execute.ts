@@ -92,8 +92,8 @@ export async function executeWorkflowHeadless(
   const log = (level: RunLog['level'], msg: string, node?: string) => {
     logs.push({ ts: Date.now(), level, node, msg })
     opts.onLog?.(logs)
-    // Miroir vers les logs Cloud Functions : sans UI d'historique de runs serveur
-    // côté client, c'est la seule façon de diagnostiquer un run cron/serveur partiel.
+    // Miroir vers les logs Cloud Functions : l'écran Résultats côté client montre
+    // les nodes/sorties mais PAS les logs — ce miroir reste le seul accès au détail.
     if (level === 'error' || level === 'warn') {
       const line = `[wf:${wf.name}]${node ? ` [node:${node}]` : ''} ${msg}`
       if (level === 'error') console.error(line)
@@ -297,9 +297,9 @@ export async function executeWorkflowHeadless(
   // Statut final par node, pour l'affichage live côté client (cartes colorées).
   const nodeStates = deriveStates()
   console.log(`[wf:${wf.name}] run ${status} — ${nodeCount} node(s) OK, ${errorCount} en erreur`)
-  // Trace complète (info inclus) à CHAQUE run : sans UI d'historique côté client,
-  // c'est le seul moyen de voir le détail par node (nb de produits, modèle LLM,
-  // appariements…), y compris sur un run success. Visible via `firebase functions:log`.
+  // Trace complète (info inclus) à CHAQUE run : l'écran Résultats montre nodeOutputs/
+  // nodeStates mais pas les logs `info` (nb de produits, modèle LLM, appariements…) —
+  // cette trace reste le seul accès à ce détail. Visible via `firebase functions:log`.
   const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
   console.log(`[wf:${wf.name}] trace:\n${trace}`)
   return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors, startedNodes: [...started] }

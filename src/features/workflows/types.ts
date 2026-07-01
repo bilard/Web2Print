@@ -56,7 +56,8 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
   /**
    * Connecteurs / services externes utilisés par le node (ids du registre
    * `registry/connectors.ts`), affichés en pastilles sous le titre de la carte.
-   * Optionnel : si absent, un mapping par type prend le relais (cf. `connectorsForType`).
+   * Optionnel : si absent, un mapping par type prend le relais
+   * (cf. `connectorsForSpec` / `CONNECTORS_BY_TYPE` dans `registry/connectors.ts`).
    */
   connectors?: string[]
   /**

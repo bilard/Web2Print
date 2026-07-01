@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { valueXmlElementStory, extractStoryFields, templatizeXmlElementStory } from './xmlElementStory'
+import { valueXmlElementStory, extractStoryFields } from './xmlElementStory'
 
 const STORY = (inner: string) =>
   `<?xml version="1.0"?><idPkg:Story xmlns:idPkg="x"><Story Self="s1">${inner}</Story></idPkg:Story>`

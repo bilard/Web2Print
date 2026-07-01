@@ -104,7 +104,7 @@ export function useDamCanvasInsert() {
 
       // "Cover" : scale uniforme pour remplir le frame sans déformation,
       // puis crop centré sur l'excédent via cropX/cropY + width/height
-      // (Fabric v6 : width/height = taille de la source affichée,
+      // (Fabric : width/height = taille de la source affichée,
       // scaleX/scaleY = scale visuel appliqué par-dessus).
       const scale = Math.max(frameW / nativeW, frameH / nativeH)
       const srcW = frameW / scale

@@ -10,8 +10,8 @@ import { dirname, join } from 'node:path'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-// Icône (emoji) + animation « signature » par module. Défauts gracieux si un
-// nouveau module d'aide n'est pas encore listé ici.
+// Icône (emoji) par module. Défaut gracieux si un nouveau module d'aide
+// n'est pas encore listé ici.
 const ICON = {
   'getting-started': '🚀', nouveautes: '✨', onboarding: '🧰', navigation: '🧭',
   editor: '✏️', 'conditional-rules': '🔀', hyperframes: '🎬',
@@ -22,17 +22,6 @@ const ICON = {
   export: '📤', workflow: '⚡', telegram: '✈️', chat: '💬', access: '🛡️', settings: '⚙️',
   explorer: '🗺️',
 }
-const ANIM = {
-  'getting-started': 'pipeline', nouveautes: 'spark', onboarding: 'checklist', navigation: 'taxonomy',
-  editor: 'editor', 'conditional-rules': 'editor', hyperframes: 'reveal',
-  'import-idml': 'import', easycatalog: 'import', 'import-pptx': 'import', 'import-excel': 'pim',
-  'import-image': 'import', 'import-svg': 'img2svg', 'import-image-to-svg': 'img2svg', 'import-pdf-to-svg': 'img2svg',
-  dam: 'dam', pim: 'pim', taxonomies: 'taxonomy', briefs: 'chat',
-  scraping: 'scrape', 'scraping-templates': 'scrape', 'scraping-hub': 'scrape', 'price-watch': 'pricewatch',
-  export: 'export', workflow: 'workflow', telegram: 'telegram', chat: 'chat', access: 'access', settings: 'settings',
-  explorer: 'taxonomy',
-}
-
 // Métadonnées d'affichage des 8 catégories (ordre = ordre des sections).
 const CATEGORIES = [
   { id: 'demarrage', label: 'Démarrage', icon: '🚀', desc: 'Connexion, prise en main, navigation et nouveautés : tout pour bien démarrer.' },
@@ -111,7 +100,6 @@ try {
       id: s.id,
       cat: s.category,
       icon: ICON[s.id] || '✦',
-      anim: ANIM[s.id] || 'default',
       title: s.title,
       intro: s.intro,
       features,
